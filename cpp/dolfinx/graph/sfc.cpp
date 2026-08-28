@@ -13,12 +13,12 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/sort.h>
-#include <functional>
 #include <limits>
 #include <numeric>
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 using namespace dolfinx;
@@ -125,38 +125,48 @@ RoutingPlan compute_routing_plan(MPI_Comm comm,
   return plan;
 }
 
-/// @brief Route `values` (one entry per RoutingPlan::perm entry) to
-/// their owning ranks.
-std::vector<std::uint64_t> route(const RoutingPlan& plan,
-                                 std::span<const std::uint64_t> values)
+/// @brief Route (key, weight) pairs (one pair per RoutingPlan::perm
+/// entry) to their owning ranks, in a single combined exchange since
+/// both share the same routing plan. A key, reinterpreted as
+/// std::int64_t, is exchanged alongside its weight in one
+/// MPI_Neighbor_alltoallv call by doubling the plan's per-rank
+/// counts/displacements, rather than issuing two separate calls.
+std::pair<std::vector<std::uint64_t>, std::vector<std::int64_t>>
+route_key_weight(const RoutingPlan& plan, std::span<const std::uint64_t> keys,
+                 std::span<const std::int64_t> weights)
 {
-  std::vector<std::uint64_t> send_buf(plan.perm.size());
+  std::vector<std::int64_t> send_buf(2 * plan.perm.size());
   for (std::size_t i = 0; i < plan.perm.size(); ++i)
-    send_buf[i] = values[plan.perm[i]];
+  {
+    send_buf[2 * i] = static_cast<std::int64_t>(keys[plan.perm[i]]);
+    send_buf[2 * i + 1] = weights[plan.perm[i]];
+  }
 
-  std::vector<std::uint64_t> recv_buf(plan.recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buf.data(), plan.send_counts.data(),
-                         plan.send_disp.data(), MPI_UINT64_T, recv_buf.data(),
-                         plan.recv_counts.data(), plan.recv_disp.data(),
-                         MPI_UINT64_T, plan.neigh_comm);
-  return recv_buf;
-}
+  auto scale2 = [](int c) { return 2 * c; };
+  std::vector<int> send_counts(plan.send_counts.size());
+  std::ranges::transform(plan.send_counts, send_counts.begin(), scale2);
+  std::vector<int> send_disp(plan.send_disp.size());
+  std::ranges::transform(plan.send_disp, send_disp.begin(), scale2);
+  std::vector<int> recv_counts(plan.recv_counts.size());
+  std::ranges::transform(plan.recv_counts, recv_counts.begin(), scale2);
+  std::vector<int> recv_disp(plan.recv_disp.size());
+  std::ranges::transform(plan.recv_disp, recv_disp.begin(), scale2);
 
-/// @brief Route `values` (one entry per RoutingPlan::perm entry) to
-/// their owning ranks.
-std::vector<std::int64_t> route(const RoutingPlan& plan,
-                                std::span<const std::int64_t> values)
-{
-  std::vector<std::int64_t> send_buf(plan.perm.size());
-  for (std::size_t i = 0; i < plan.perm.size(); ++i)
-    send_buf[i] = values[plan.perm[i]];
+  std::vector<std::int64_t> recv_buf(recv_disp.back());
+  MPI_Neighbor_alltoallv(send_buf.data(), send_counts.data(), send_disp.data(),
+                         MPI_INT64_T, recv_buf.data(), recv_counts.data(),
+                         recv_disp.data(), MPI_INT64_T, plan.neigh_comm);
 
-  std::vector<std::int64_t> recv_buf(plan.recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buf.data(), plan.send_counts.data(),
-                         plan.send_disp.data(), MPI_INT64_T, recv_buf.data(),
-                         plan.recv_counts.data(), plan.recv_disp.data(),
-                         MPI_INT64_T, plan.neigh_comm);
-  return recv_buf;
+  const std::size_t num_recv = plan.recv_disp.back();
+  std::vector<std::uint64_t> recv_keys(num_recv);
+  std::vector<std::int64_t> recv_weights(num_recv);
+  for (std::size_t i = 0; i < num_recv; ++i)
+  {
+    recv_keys[i] = static_cast<std::uint64_t>(recv_buf[2 * i]);
+    recv_weights[i] = recv_buf[2 * i + 1];
+  }
+
+  return {std::move(recv_keys), std::move(recv_weights)};
 }
 
 /// @brief Assign each of `keys` an owning rank, by slicing
@@ -433,26 +443,39 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
     prev = next;
   }
 
-  std::uint64_t local_min
-      = n > 0 ? sample_keys.front() : std::numeric_limits<std::uint64_t>::max();
-  std::uint64_t local_max = n > 0 ? sample_keys.back() : 0;
-  std::uint64_t gmin, gmax;
-  MPI_Allreduce(&local_min, &gmin, 1, MPI_UINT64_T, MPI_MIN, comm);
-  MPI_Allreduce(&local_max, &gmax, 1, MPI_UINT64_T, MPI_MAX, comm);
+  // Reduce {-min, max} in one MPI_MAX, as for the bounding box above.
+  // Keys fit in 63 bits, so reinterpreting as std::int64_t and negating
+  // is safe for any real key (int64_t's range covers [-2^63, 2^63-1),
+  // and a real key, negated, is in (-2^63+1, 0]). A rank with no local
+  // sample contributes sentinels that always lose: INT64_MAX negated
+  // for the min side, INT64_MIN (never negated) for the max side --
+  // when every rank is empty, the reduced max stays negative, which no
+  // real (non-negative) key can produce, flagging the degenerate case
+  // before any cast back to std::uint64_t is attempted.
+  std::array<std::int64_t, 2> local_bounds
+      = {n > 0 ? -static_cast<std::int64_t>(sample_keys.front())
+               : -std::numeric_limits<std::int64_t>::max(),
+         n > 0 ? static_cast<std::int64_t>(sample_keys.back())
+               : std::numeric_limits<std::int64_t>::min()};
+  std::array<std::int64_t, 2> global_bounds;
+  MPI_Allreduce(local_bounds.data(), global_bounds.data(), 2, MPI_INT64_T,
+                MPI_MAX, comm);
 
   // Degenerate case: no points anywhere
-  if (gmin > gmax)
+  if (global_bounds[1] < 0)
     return std::vector<int>(num_points, 0);
+
+  std::uint64_t gmin = static_cast<std::uint64_t>(-global_bounds[0]);
+  std::uint64_t gmax = static_cast<std::uint64_t>(global_bounds[1]);
 
   std::vector<std::int32_t> owner
       = key_range_owners(sample_keys, gmin, gmax, size);
   RoutingPlan plan = compute_routing_plan(comm, owner);
-  std::vector<std::uint64_t> recv_keys = route(plan, sample_keys);
-  std::vector<std::int64_t> recv_weights
-      = route(plan, std::span<const std::int64_t>(sample_weights));
+  auto [recv_keys, recv_weights] = route_key_weight(
+      plan, sample_keys, std::span<const std::int64_t>(sample_weights));
   MPI_Comm_free(&plan.neigh_comm);
 
-  // route() groups by destination rank, not by key, so the receiver
+  // route_key_weight() groups by destination rank, not by key, so the receiver
   // must sort by key itself before it can walk cumulative weight.
   std::vector<std::int32_t> rorder(recv_keys.size());
   std::iota(rorder.begin(), rorder.end(), 0);
