@@ -1170,6 +1170,12 @@ def assemble_residual(
             "bcs": bcs}
         snes.setFunction(assemble_residual, b, kargs=cntx)
 
+    Note:
+        The ``b`` passed in is not always the vector given to
+        ``SNES.setFunction``: a line search, for instance, evaluates the
+        residual in a work vector duplicated from it. Always assemble into
+        the ``b`` this function receives, not a vector cached elsewhere.
+
     Args:
         _snes: The solver instance.
         x: The vector containing the point to evaluate the residual at.
@@ -1245,6 +1251,11 @@ def assemble_jacobian(
         cntx = {"u": u, "jacobian": jacobian,
             "preconditioner": preconditioner, "bcs": bcs}
         snes.setJacobian(assemble_jacobian, A, P_mat, kargs=cntx)
+
+    Note:
+        The ``J`` and ``P_mat`` passed in are not always the matrices given
+        to ``SNES.setJacobian``. Always assemble into the matrices this
+        function receives, not ones cached elsewhere.
 
     Args:
         _snes: The solver instance.
@@ -1506,6 +1517,15 @@ class NonlinearProblem(typing.Generic[_U]):
                 ]
             )
             self.solver.getKSP().getPC().setFieldSplitIS(*fieldsplit_IS)
+
+    def set_update(self, update: typing.Callable[[int], None]) -> None:
+        """Set a function called before each nonlinear iteration.
+
+        Args:
+            update: Function called with the index of the iteration that
+                is about to be taken.
+        """
+        self.solver.setUpdate(lambda _snes, step: update(step))
 
     def solve(self) -> _U:
         """Solve the problem.
