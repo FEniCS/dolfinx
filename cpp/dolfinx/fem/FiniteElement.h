@@ -34,20 +34,6 @@ enum class doftransform : std::uint8_t
 template <std::floating_point T>
 class FiniteElement;
 
-/// @brief Directly-callable (non type-erased) DOF transformation for a
-/// non-mixed, non-blocked element, see
-/// FiniteElement::with_dof_transformation_fn. Defined after
-/// FiniteElement.
-template <std::floating_point T, doftransform ttype>
-class DirectDofTransform;
-
-/// @brief Directly-callable (non type-erased) DOF transformation for a
-/// non-mixed, non-blocked element, see
-/// FiniteElement::with_dof_transformation_right_fn. Defined after
-/// FiniteElement.
-template <std::floating_point T, doftransform ttype>
-class DirectDofTransformRight;
-
 /// @brief Basix element holder
 /// @tparam T Scalar type
 template <std::floating_point T>
@@ -408,28 +394,6 @@ public:
   /// @return True if DOF transformations are required.
   bool needs_dof_permutations() const noexcept;
 
-  /// @brief Check whether this element is eligible for a directly
-  /// callable (non type-erased) DOF transformation, see
-  /// with_dof_transformation_fn() and with_dof_transformation_right_fn().
-  ///
-  /// This is true exactly when dof_transformation_fn()/
-  /// dof_transformation_right_fn() would apply T_apply()/Tt_apply()/etc.
-  /// directly to `this`, rather than recursing into sub-elements: a
-  /// non-mixed element that needs a DOF transformation, and is either
-  /// not blocked or `scalar_element` is requested.
-  ///
-  /// @param[in] scalar_element Matches the `scalar_element` argument
-  /// that will be passed to dof_transformation_fn()/
-  /// dof_transformation_right_fn().
-  /// @return True if a DirectDofTransform/DirectDofTransformRight can
-  /// be used instead of the type-erased closure.
-  bool is_direct_transform_eligible(bool scalar_element = false) const noexcept
-  {
-    return _needs_dof_transformations
-           and (_sub_elements.empty()
-                or (_reference_value_shape.has_value() and scalar_element));
-  }
-
   /// @brief Return a function that applies a DOF transformation
   /// operator to some data (see T_apply()).
   ///
@@ -551,36 +515,6 @@ public:
     }
   }
 
-  /// @brief Invoke `continuation` with the best available DOF
-  /// transformation kernel for this element and `ttype` (left-apply
-  /// convention, see dof_transformation_fn()).
-  ///
-  /// When is_direct_transform_eligible(scalar_element) is true,
-  /// `continuation` is called with a DirectDofTransform -- a small,
-  /// directly-callable (non type-erased) object that lets the compiler
-  /// inline the transformation at the call site, avoiding the
-  /// std::function indirection inherent to dof_transformation_fn() in
-  /// per-cell assembly/interpolation loops. Otherwise `continuation` is
-  /// called with the closure returned by dof_transformation_fn(),
-  /// unchanged (including a possible `nullptr` when no transformation
-  /// is needed).
-  ///
-  /// @param[in] continuation Callable invoked with the transformation
-  /// kernel; its return value is returned unchanged.
-  /// @param[in] scalar_element See dof_transformation_fn().
-  template <typename U, doftransform ttype>
-  decltype(auto) with_dof_transformation_fn(auto&& continuation,
-                                            bool scalar_element = false) const
-  {
-    if (is_direct_transform_eligible(scalar_element))
-      return continuation(DirectDofTransform<geometry_type, ttype>(*this));
-    else
-    {
-      auto P = dof_transformation_fn<U>(ttype, scalar_element);
-      return continuation(P);
-    }
-  }
-
   /// @brief Return a function that applies DOF transformation to some
   /// transposed data (see T_apply_right()).
   ///
@@ -693,31 +627,6 @@ public:
       { T_apply_right(data, cell_info[cell], n); };
     default:
       throw std::runtime_error("Unknown transformation type");
-    }
-  }
-
-  /// @brief Invoke `continuation` with the best available DOF
-  /// transformation kernel for this element and `ttype` (right-apply
-  /// convention, see dof_transformation_right_fn()). See
-  /// with_dof_transformation_fn() for the rationale and contract; the
-  /// only difference is that the direct path uses
-  /// DirectDofTransformRight and the generic path uses
-  /// dof_transformation_right_fn().
-  ///
-  /// @param[in] continuation Callable invoked with the transformation
-  /// kernel; its return value is returned unchanged.
-  /// @param[in] scalar_element See dof_transformation_right_fn().
-  template <typename U, doftransform ttype>
-  decltype(auto) with_dof_transformation_right_fn(auto&& continuation,
-                                                  bool scalar_element
-                                                  = false) const
-  {
-    if (is_direct_transform_eligible(scalar_element))
-      return continuation(DirectDofTransformRight<geometry_type, ttype>(*this));
-    else
-    {
-      auto P = dof_transformation_right_fn<U>(ttype, scalar_element);
-      return continuation(P);
     }
   }
 
@@ -979,104 +888,6 @@ private:
   // Quadrature points of a quadrature element (0 dimensional array for
   // all elements except quadrature elements)
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> _points;
-};
-
-/// @brief Directly-callable (non type-erased) DOF transformation kernel
-/// for a non-mixed, non-blocked element (left-apply convention).
-///
-/// Equivalent in behaviour to the closure returned by
-/// FiniteElement::dof_transformation_fn for the case where that
-/// function falls through to its final `switch (ttype)` (i.e. when
-/// FiniteElement::is_direct_transform_eligible is true), but avoids
-/// the std::function indirection so the compiler can inline the call
-/// at the call site. Not constructible for elements where that isn't
-/// the case -- see FiniteElement::with_dof_transformation_fn, which
-/// constructs this only when eligible.
-template <std::floating_point T, doftransform ttype>
-class DirectDofTransform
-{
-public:
-  /// @brief Wrap `element`'s direct transformation.
-  /// @pre `element.is_direct_transform_eligible()` (with a matching
-  /// `scalar_element` argument) must be true.
-  explicit DirectDofTransform(const FiniteElement<T>& element) noexcept
-      : _element(&element)
-  {
-  }
-
-  /// @brief Apply the transformation, see FiniteElement::T_apply() and
-  /// related methods for `ttype`.
-  ///
-  /// @note `data` is accepted by forwarding reference (rather than
-  /// `std::span<U>`) and converted via `std::span`'s CTAD, so that (as
-  /// with the `std::function` returned by dof_transformation_fn())
-  /// callers may pass any contiguous-range argument, e.g. a
-  /// `std::vector<U>&`, not only an already-constructed span.
-  template <typename Container>
-  void operator()(Container&& data, std::span<const std::uint32_t> cell_info,
-                  std::int32_t cell, int block_size) const
-  {
-    std::span data_span(std::forward<Container>(data));
-    if constexpr (ttype == doftransform::inverse_transpose)
-      _element->Tt_inv_apply(data_span, cell_info[cell], block_size);
-    else if constexpr (ttype == doftransform::transpose)
-      _element->Tt_apply(data_span, cell_info[cell], block_size);
-    else if constexpr (ttype == doftransform::inverse)
-      _element->Tinv_apply(data_span, cell_info[cell], block_size);
-    else
-      _element->T_apply(data_span, cell_info[cell], block_size);
-  }
-
-  /// @brief Always valid -- present for parity with the `nullptr`-able
-  /// closure returned by FiniteElement::dof_transformation_fn.
-  explicit constexpr operator bool() const noexcept { return true; }
-
-private:
-  const FiniteElement<T>* _element;
-};
-
-/// @brief Directly-callable (non type-erased) DOF transformation kernel
-/// for a non-mixed, non-blocked element (right-apply convention). See
-/// DirectDofTransform for the rationale; this wraps
-/// FiniteElement::T_apply_right() and related methods instead.
-template <std::floating_point T, doftransform ttype>
-class DirectDofTransformRight
-{
-public:
-  /// @brief Wrap `element`'s direct transformation.
-  /// @pre `element.is_direct_transform_eligible()` (with a matching
-  /// `scalar_element` argument) must be true.
-  explicit DirectDofTransformRight(const FiniteElement<T>& element) noexcept
-      : _element(&element)
-  {
-  }
-
-  /// @brief Apply the transformation, see FiniteElement::T_apply_right()
-  /// and related methods for `ttype`.
-  ///
-  /// @note See DirectDofTransform::operator() for why `data` is a
-  /// forwarding reference rather than `std::span<U>`.
-  template <typename Container>
-  void operator()(Container&& data, std::span<const std::uint32_t> cell_info,
-                  std::int32_t cell, int n) const
-  {
-    std::span data_span(std::forward<Container>(data));
-    if constexpr (ttype == doftransform::inverse_transpose)
-      _element->Tt_inv_apply_right(data_span, cell_info[cell], n);
-    else if constexpr (ttype == doftransform::transpose)
-      _element->Tt_apply_right(data_span, cell_info[cell], n);
-    else if constexpr (ttype == doftransform::inverse)
-      _element->Tinv_apply_right(data_span, cell_info[cell], n);
-    else
-      _element->T_apply_right(data_span, cell_info[cell], n);
-  }
-
-  /// @brief Always valid -- present for parity with the `nullptr`-able
-  /// closure returned by FiniteElement::dof_transformation_right_fn.
-  explicit constexpr operator bool() const noexcept { return true; }
-
-private:
-  const FiniteElement<T>* _element;
 };
 
 } // namespace dolfinx::fem

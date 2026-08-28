@@ -124,12 +124,9 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   std::vector<T> coords(num_nodes * 3, 0.0);
   std::array<std::size_t, 2> cshape = {num_nodes, 3};
   // Transformation from reference element basis function data to
-  // conforming element basis function. Unlike the assembly/
-  // interpolation loops in fem/*.h, with_dof_transformation_fn is not
-  // used here: this function tabulates Lagrange (point-evaluation)
-  // dof coordinates, which never need a DOF transformation, so the
-  // DirectDofTransform branch would be dead code and its wrapping
-  // only adds overhead to this loop.
+  // conforming element basis function. This function tabulates Lagrange
+  // (point-evaluation) dof coordinates, which never need a DOF
+  // transformation, so this is always a no-op (nullptr) closure.
   auto apply_dof_transformation
       = element->template dof_transformation_fn<T>(fem::doftransform::standard);
   for (std::int32_t c = 0; c < num_cells; ++c)

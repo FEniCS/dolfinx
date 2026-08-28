@@ -319,12 +319,10 @@ public:
       // TODO: Check transform
       //
       // Basis function reference-to-conforming transformation function.
-      // Unlike the assembly/interpolation loops in fem/*.h,
-      // with_dof_transformation_fn is not used here: this function is
-      // only reachable for elements with interpolation_ident() (point
-      // evaluation, e.g. Lagrange), which never need a DOF
-      // transformation, so the DirectDofTransform branch would be dead
-      // code and its wrapping only adds overhead to this loop.
+      // This function is only reachable for elements with
+      // interpolation_ident() (point evaluation, e.g. Lagrange), which
+      // never need a DOF transformation, so this is always a no-op
+      // (nullptr) closure.
       auto apply_dof_transformation
           = _elements[i]->template dof_transformation_fn<geometry_type>(
               doftransform::standard);

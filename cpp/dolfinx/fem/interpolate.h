@@ -399,9 +399,14 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
   auto dofmap1 = V1->dofmap();
   auto dofmap0 = V0->dofmap();
 
-  // Get block sizes
+  // Get block sizes and dof transformation operators
   const int bs1 = dofmap1->bs();
   const int bs0 = dofmap0->bs();
+  auto apply_dof_transformation = element0->template dof_transformation_fn<T>(
+      doftransform::transpose, false);
+  auto apply_inverse_dof_transform
+      = element1->template dof_transformation_fn<T>(
+          doftransform::inverse_transpose, false);
 
   // Create working array
   std::vector<T> local0(element0->space_dimension());
@@ -410,52 +415,37 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
   // Create interpolation operator
   auto [i_m, im_shape] = element1->create_interpolation_operator(*element0);
 
-  // Iterate over mesh and interpolate on each cell, using whichever of
-  // DirectDofTransform or the generic std::function-based closure
-  // applies for element0/element1 -- see
-  // FiniteElement::with_dof_transformation_fn for the rationale.
+  // Iterate over mesh and interpolate on each cell
   using X = U; // geometry (real) type, independent of the value scalar T
   if (cells0.size() != cells1.size())
     throw std::runtime_error("Length of cells0 and cells1 must match.");
-  element0->template with_dof_transformation_fn<T, doftransform::transpose>(
-      [&](const auto& apply_dof_transformation)
-      {
-        element1->template with_dof_transformation_fn<
-            T, doftransform::inverse_transpose>(
-            [&](const auto& apply_inverse_dof_transform)
-            {
-              for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
-                   cell0_it != cells0.end() and cell1_it != cells1.end();
-                   ++cell0_it, ++cell1_it)
-              {
-                // Pack and transform cell dofs to reference ordering
-                std::span<const std::int32_t> dofs0
-                    = dofmap0->cell_dofs(*cell0_it);
-                for (std::size_t i = 0; i < dofs0.size(); ++i)
-                  for (int k = 0; k < bs0; ++k)
-                    local0[bs0 * i + k] = u0_array[bs0 * dofs0[i] + k];
+  for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
+       cell0_it != cells0.end() and cell1_it != cells1.end();
+       ++cell0_it, ++cell1_it)
+  {
+    // Pack and transform cell dofs to reference ordering
+    std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(*cell0_it);
+    for (std::size_t i = 0; i < dofs0.size(); ++i)
+      for (int k = 0; k < bs0; ++k)
+        local0[bs0 * i + k] = u0_array[bs0 * dofs0[i] + k];
 
-                if (apply_dof_transformation)
-                  apply_dof_transformation(local0, cell_info0, *cell0_it, 1);
+    if (apply_dof_transformation)
+      apply_dof_transformation(local0, cell_info0, *cell0_it, 1);
 
-                // FIXME: Get compile-time ranges from Basix
-                // Apply interpolation operator
-                std::ranges::fill(local1, 0);
-                for (std::size_t i = 0; i < im_shape[0]; ++i)
-                  for (std::size_t j = 0; j < im_shape[1]; ++j)
-                    local1[i]
-                        += static_cast<X>(i_m[im_shape[1] * i + j]) * local0[j];
+    // FIXME: Get compile-time ranges from Basix
+    // Apply interpolation operator
+    std::ranges::fill(local1, 0);
+    for (std::size_t i = 0; i < im_shape[0]; ++i)
+      for (std::size_t j = 0; j < im_shape[1]; ++j)
+        local1[i] += static_cast<X>(i_m[im_shape[1] * i + j]) * local0[j];
 
-                if (apply_inverse_dof_transform)
-                  apply_inverse_dof_transform(local1, cell_info1, *cell1_it, 1);
-                std::span<const std::int32_t> dofs1
-                    = dofmap1->cell_dofs(*cell1_it);
-                for (std::size_t i = 0; i < dofs1.size(); ++i)
-                  for (int k = 0; k < bs1; ++k)
-                    u1_array[bs1 * dofs1[i] + k] = local1[bs1 * i + k];
-              }
-            });
-      });
+    if (apply_inverse_dof_transform)
+      apply_inverse_dof_transform(local1, cell_info1, *cell1_it, 1);
+    std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(*cell1_it);
+    for (std::size_t i = 0; i < dofs1.size(); ++i)
+      for (int k = 0; k < bs1; ++k)
+        u1_array[bs1 * dofs1[i] + k] = local1[bs1 * i + k];
+  }
 }
 
 /// @brief Interpolate from one finite element Function to another on
@@ -515,9 +505,13 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
 
   const auto [X, Xshape] = element1->interpolation_points();
 
-  // Get block sizes
+  // Get block sizes and dof transformation operators
   const int bs0 = element0->block_size();
   const int bs1 = element1->block_size();
+  auto apply_dof_transformation0 = element0->template dof_transformation_fn<U>(
+      doftransform::standard, false);
+  auto apply_inv_dof_transform1 = element1->template dof_transformation_fn<T>(
+      doftransform::inverse_transpose, false);
 
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
@@ -603,143 +597,113 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   auto pull_back_fn1
       = element1->basix_element().template map_fn<V_t, v_t, K_t, J_t>();
 
-  // Iterate over mesh and interpolate on each cell, using whichever of
-  // DirectDofTransform or the generic std::function-based closure
-  // applies for element0/element1 -- see
-  // FiniteElement::with_dof_transformation_fn for the rationale.
+  // Iterate over mesh and interpolate on each cell
   std::span<const T> array0 = u0.x()->array();
   std::span<T> array1 = u1.x()->array();
   if (cells0.size() != cells1.size())
     throw std::runtime_error("Length of cells0 and cells1 must match.");
-  element0->template with_dof_transformation_fn<U, doftransform::standard>(
-      [&](const auto& apply_dof_transformation0)
+  for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
+       cell0_it != cells0.end() and cell1_it != cells1.end();
+       ++cell0_it, ++cell1_it)
+  {
+    // Get cell geometry (coordinate dofs)
+    auto x_dofs = md::submdspan(x_dofmap, *cell0_it, md::full_extent);
+    for (std::size_t i = 0; i < num_dofs_g; ++i)
+    {
+      const int pos = 3 * x_dofs[i];
+      for (int j = 0; j < gdim; ++j)
+        coord_dofs(i, j) = x_g[pos + j];
+    }
+
+    // Compute Jacobians and reference points for current cell
+    std::ranges::fill(J_b, 0);
+    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    {
+      auto dphi
+          = md::submdspan(phi, std::pair(1, tdim + 1), p, md::full_extent, 0);
+      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+      cmap.compute_jacobian(dphi, coord_dofs, _J);
+      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+      cmap.compute_jacobian_inverse(_J, _K);
+      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
+    }
+
+    // Copy evaluated basis on reference, apply DOF transformations, and
+    // push forward to physical element
+    for (std::size_t k0 = 0; k0 < basis_reference0.extent(0); ++k0)
+      for (std::size_t k1 = 0; k1 < basis_reference0.extent(1); ++k1)
+        for (std::size_t k2 = 0; k2 < basis_reference0.extent(2); ++k2)
+          basis_reference0(k0, k1, k2)
+              = basis_derivatives_reference0(0, k0, k1, k2);
+
+    if (apply_dof_transformation0)
+    {
+      for (std::size_t p = 0; p < Xshape[0]; ++p)
       {
-        element1->template with_dof_transformation_fn<
-            T, doftransform::inverse_transpose>(
-            [&](const auto& apply_inv_dof_transform1)
-            {
-              for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
-                   cell0_it != cells0.end() and cell1_it != cells1.end();
-                   ++cell0_it, ++cell1_it)
-              {
-                // Get cell geometry (coordinate dofs)
-                auto x_dofs
-                    = md::submdspan(x_dofmap, *cell0_it, md::full_extent);
-                for (std::size_t i = 0; i < num_dofs_g; ++i)
-                {
-                  const int pos = 3 * x_dofs[i];
-                  for (int j = 0; j < gdim; ++j)
-                    coord_dofs(i, j) = x_g[pos + j];
-                }
+        apply_dof_transformation0(
+            std::span(basis_reference0_b.data() + p * dim0 * value_size_ref0,
+                      dim0 * value_size_ref0),
+            cell_info0, *cell0_it, value_size_ref0);
+      }
+    }
 
-                // Compute Jacobians and reference points for current cell
-                std::ranges::fill(J_b, 0);
-                for (std::size_t p = 0; p < Xshape[0]; ++p)
-                {
-                  auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), p,
-                                            md::full_extent, 0);
-                  auto _J
-                      = md::submdspan(J, p, md::full_extent, md::full_extent);
-                  cmap.compute_jacobian(dphi, coord_dofs, _J);
-                  auto _K
-                      = md::submdspan(K, p, md::full_extent, md::full_extent);
-                  cmap.compute_jacobian_inverse(_J, _K);
-                  detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
-                }
+    for (std::size_t i = 0; i < basis0.extent(0); ++i)
+    {
+      auto _u = md::submdspan(basis0, i, md::full_extent, md::full_extent);
+      auto _U = md::submdspan(basis_reference0, i, md::full_extent,
+                              md::full_extent);
+      auto _K = md::submdspan(K, i, md::full_extent, md::full_extent);
+      auto _J = md::submdspan(J, i, md::full_extent, md::full_extent);
+      push_forward_fn0(_u, _U, _J, detJ[i], _K);
+    }
 
-                // Copy evaluated basis on reference, apply DOF transformations,
-                // and push forward to physical element
-                for (std::size_t k0 = 0; k0 < basis_reference0.extent(0); ++k0)
-                  for (std::size_t k1 = 0; k1 < basis_reference0.extent(1);
-                       ++k1)
-                    for (std::size_t k2 = 0; k2 < basis_reference0.extent(2);
-                         ++k2)
-                      basis_reference0(k0, k1, k2)
-                          = basis_derivatives_reference0(0, k0, k1, k2);
+    // Copy expansion coefficients for v into local array
+    const int dof_bs0 = dofmap0->bs();
+    std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(*cell0_it);
+    for (std::size_t i = 0; i < dofs0.size(); ++i)
+      for (int k = 0; k < dof_bs0; ++k)
+        coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
 
-                if (apply_dof_transformation0)
-                {
-                  for (std::size_t p = 0; p < Xshape[0]; ++p)
-                  {
-                    apply_dof_transformation0(
-                        std::span(basis_reference0_b.data()
-                                      + p * dim0 * value_size_ref0,
-                                  dim0 * value_size_ref0),
-                        cell_info0, *cell0_it, value_size_ref0);
-                  }
-                }
+    // Evaluate v at the interpolation points (physical space values)
+    using X = U; // geometry (real) type, independent of the value scalar T
+    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    {
+      for (int k = 0; k < bs0; ++k)
+      {
+        for (std::size_t j = 0; j < value_size0; ++j)
+        {
+          T acc = 0;
+          for (std::size_t i = 0; i < dim0; ++i)
+            acc += coeffs0[bs0 * i + k] * static_cast<X>(basis0(p, i, j));
+          values0(p, 0, j * bs0 + k) = acc;
+        }
+      }
+    }
 
-                for (std::size_t i = 0; i < basis0.extent(0); ++i)
-                {
-                  auto _u = md::submdspan(basis0, i, md::full_extent,
-                                          md::full_extent);
-                  auto _U = md::submdspan(basis_reference0, i, md::full_extent,
-                                          md::full_extent);
-                  auto _K
-                      = md::submdspan(K, i, md::full_extent, md::full_extent);
-                  auto _J
-                      = md::submdspan(J, i, md::full_extent, md::full_extent);
-                  push_forward_fn0(_u, _U, _J, detJ[i], _K);
-                }
+    // Pull back the physical values to the u reference
+    for (std::size_t i = 0; i < values0.extent(0); ++i)
+    {
+      auto _u = md::submdspan(values0, i, md::full_extent, md::full_extent);
+      auto _U
+          = md::submdspan(mapped_values0, i, md::full_extent, md::full_extent);
+      auto _K = md::submdspan(K, i, md::full_extent, md::full_extent);
+      auto _J = md::submdspan(J, i, md::full_extent, md::full_extent);
+      pull_back_fn1(_U, _u, _K, 1.0 / detJ[i], _J);
+    }
 
-                // Copy expansion coefficients for v into local array
-                const int dof_bs0 = dofmap0->bs();
-                std::span<const std::int32_t> dofs0
-                    = dofmap0->cell_dofs(*cell0_it);
-                for (std::size_t i = 0; i < dofs0.size(); ++i)
-                  for (int k = 0; k < dof_bs0; ++k)
-                    coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
+    auto values
+        = md::submdspan(mapped_values0, md::full_extent, 0, md::full_extent);
+    interpolation_apply(Pi_1, values, std::span(local1), bs1);
+    if (apply_inv_dof_transform1)
+      apply_inv_dof_transform1(local1, cell_info1, *cell1_it, 1);
 
-                // Evaluate v at the interpolation points (physical space
-                // values)
-                using X = U; // geometry (real) type, independent of the value
-                             // scalar T
-                for (std::size_t p = 0; p < Xshape[0]; ++p)
-                {
-                  for (int k = 0; k < bs0; ++k)
-                  {
-                    for (std::size_t j = 0; j < value_size0; ++j)
-                    {
-                      T acc = 0;
-                      for (std::size_t i = 0; i < dim0; ++i)
-                        acc += coeffs0[bs0 * i + k]
-                               * static_cast<X>(basis0(p, i, j));
-                      values0(p, 0, j * bs0 + k) = acc;
-                    }
-                  }
-                }
-
-                // Pull back the physical values to the u reference
-                for (std::size_t i = 0; i < values0.extent(0); ++i)
-                {
-                  auto _u = md::submdspan(values0, i, md::full_extent,
-                                          md::full_extent);
-                  auto _U = md::submdspan(mapped_values0, i, md::full_extent,
-                                          md::full_extent);
-                  auto _K
-                      = md::submdspan(K, i, md::full_extent, md::full_extent);
-                  auto _J
-                      = md::submdspan(J, i, md::full_extent, md::full_extent);
-                  pull_back_fn1(_U, _u, _K, 1.0 / detJ[i], _J);
-                }
-
-                auto values = md::submdspan(mapped_values0, md::full_extent, 0,
-                                            md::full_extent);
-                interpolation_apply(Pi_1, values, std::span(local1), bs1);
-                if (apply_inv_dof_transform1)
-                  apply_inv_dof_transform1(local1, cell_info1, *cell1_it, 1);
-
-                // Copy local coefficients to the correct position in u dof
-                // array
-                const int dof_bs1 = dofmap1->bs();
-                std::span<const std::int32_t> dofs1
-                    = dofmap1->cell_dofs(*cell1_it);
-                for (std::size_t i = 0; i < dofs1.size(); ++i)
-                  for (int k = 0; k < dof_bs1; ++k)
-                    array1[dof_bs1 * dofs1[i] + k] = local1[dof_bs1 * i + k];
-              }
-            });
-      });
+    // Copy local coefficients to the correct position in u dof array
+    const int dof_bs1 = dofmap1->bs();
+    std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(*cell1_it);
+    for (std::size_t i = 0; i < dofs1.size(); ++i)
+      for (int k = 0; k < dof_bs1; ++k)
+        array1[dof_bs1 * dofs1[i] + k] = local1[dof_bs1 * i + k];
+  }
 }
 
 /// @brief Interpolate data into coefficients for an identity-mapped
@@ -767,116 +731,105 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
   const int num_scalar_dofs = element.space_dimension() / element_bs;
   const int dofmap_bs = dofmap.bs();
 
+  auto apply_inv_transpose_dof_transformation
+      = element.template dof_transformation_fn<T>(
+          doftransform::inverse_transpose, true);
   std::vector<T> coeffs_b(num_scalar_dofs);
 
   // Skip the div/mod below when block sizes match (the common case)
   const bool same_bs = (dofmap_bs == element_bs);
 
-  // Use whichever of DirectDofTransform or the generic
-  // std::function-based closure applies for `element` -- see
-  // FiniteElement::with_dof_transformation_fn for the rationale.
-  // scalar_element=true: for a blocked element this requests the
-  // scalar (unblocked) transformation, which is also the case where
-  // is_direct_transform_eligible(true) can be true for a blocked
-  // element.
-  element.template with_dof_transformation_fn<T,
-                                              doftransform::inverse_transpose>(
-      [&](const auto& apply_inv_transpose_dof_transformation)
+  if (symmetric)
+  {
+    std::size_t matrix_size = 0;
+    while (matrix_size * matrix_size < fshape[0])
+      ++matrix_size;
+
+    // Loop over cells
+    for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
+    {
+      // The entries of a symmetric matrix are numbered (for an
+      // example 4x4 element):
+      //  0 * * *
+      //  1 2 * *
+      //  3 4 5 *
+      //  6 7 8 9
+      // The loop extracts these elements. In this loop, row is the
+      // row of this matrix, and (k - rowstart) is the column
+      std::size_t row = 0;
+      std::size_t rowstart = 0;
+      std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
+      std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
+      for (int k = 0; k < element_bs; ++k)
       {
-        if (symmetric)
+        if (k - rowstart > row)
         {
-          std::size_t matrix_size = 0;
-          while (matrix_size * matrix_size < fshape[0])
-            ++matrix_size;
+          ++row;
+          rowstart = k;
+        }
 
-          // Loop over cells
-          for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
-          {
-            // The entries of a symmetric matrix are numbered (for an
-            // example 4x4 element):
-            //  0 * * *
-            //  1 2 * *
-            //  3 4 5 *
-            //  6 7 8 9
-            // The loop extracts these elements. In this loop, row is the
-            // row of this matrix, and (k - rowstart) is the column
-            std::size_t row = 0;
-            std::size_t rowstart = 0;
-            std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
-            std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
-            for (int k = 0; k < element_bs; ++k)
-            {
-              if (k - rowstart > row)
-              {
-                ++row;
-                rowstart = k;
-              }
-
-              // num_scalar_dofs is the number of interpolation points per
-              // cell in this case (interpolation matrix is identity)
-              std::copy_n(
-                  std::next(f.begin(),
-                            (row * matrix_size + k - rowstart) * fshape[1]
-                                + offset * num_scalar_dofs),
-                  num_scalar_dofs, coeffs_b.data());
-              if (apply_inv_transpose_dof_transformation)
-              {
-                apply_inv_transpose_dof_transformation(coeffs_b, cell_info,
-                                                       *cell_it, 1);
-              }
-              if (same_bs)
-              {
-                for (int i = 0; i < num_scalar_dofs; ++i)
-                  coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
-              }
-              else
-              {
-                for (int i = 0; i < num_scalar_dofs; ++i)
-                {
-                  std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
-                  coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
-                }
-              }
-            }
-          }
+        // num_scalar_dofs is the number of interpolation points per
+        // cell in this case (interpolation matrix is identity)
+        std::copy_n(
+            std::next(f.begin(), (row * matrix_size + k - rowstart) * fshape[1]
+                                     + offset * num_scalar_dofs),
+            num_scalar_dofs, coeffs_b.data());
+        if (apply_inv_transpose_dof_transformation)
+        {
+          apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
+                                                 1);
+        }
+        if (same_bs)
+        {
+          for (int i = 0; i < num_scalar_dofs; ++i)
+            coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
         }
         else
         {
-          // Loop over cells
-          for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
+          for (int i = 0; i < num_scalar_dofs; ++i)
           {
-            std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
-            std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
-            for (int k = 0; k < element_bs; ++k)
-            {
-              // num_scalar_dofs is the number of interpolation points per
-              // cell in this case (interpolation matrix is identity)
-              std::copy_n(std::next(f.begin(),
-                                    k * fshape[1] + offset * num_scalar_dofs),
-                          num_scalar_dofs, coeffs_b.data());
-              if (apply_inv_transpose_dof_transformation)
-              {
-                apply_inv_transpose_dof_transformation(coeffs_b, cell_info,
-                                                       *cell_it, 1);
-              }
-              if (same_bs)
-              {
-                for (int i = 0; i < num_scalar_dofs; ++i)
-                  coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
-              }
-              else
-              {
-                for (int i = 0; i < num_scalar_dofs; ++i)
-                {
-                  std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
-                  coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
-                }
-              }
-            }
+            std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
+            coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
           }
         }
-      },
-      /*scalar_element=*/true);
+      }
+    }
+  }
+  else
+  {
+    // Loop over cells
+    for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
+    {
+      std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
+      std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
+      for (int k = 0; k < element_bs; ++k)
+      {
+        // num_scalar_dofs is the number of interpolation points per
+        // cell in this case (interpolation matrix is identity)
+        std::copy_n(
+            std::next(f.begin(), k * fshape[1] + offset * num_scalar_dofs),
+            num_scalar_dofs, coeffs_b.data());
+        if (apply_inv_transpose_dof_transformation)
+        {
+          apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
+                                                 1);
+        }
+        if (same_bs)
+        {
+          for (int i = 0; i < num_scalar_dofs; ++i)
+            coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
+        }
+        else
+        {
+          for (int i = 0; i < num_scalar_dofs; ++i)
+          {
+            std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
+            coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
+          }
+        }
+      }
+    }
+  }
 }
 
 /// @brief Interpolate data into coefficients for an identity-mapped but
@@ -919,60 +872,54 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const std::size_t num_interp_points = Pi.extent(1);
   assert(static_cast<int>(Pi.extent(0)) == num_scalar_dofs);
 
+  auto apply_inv_transpose_dof_transformation
+      = element.template dof_transformation_fn<T>(
+          doftransform::inverse_transpose, true);
+
   // Skip the div/mod below when block sizes match (the common case)
   const bool same_bs = (dofmap_bs == element_bs);
 
-  // Loop over cells, using whichever of DirectDofTransform or the
-  // generic std::function-based closure applies for `element` -- see
-  // FiniteElement::with_dof_transformation_fn for the rationale
-  // (scalar_element=true, see point_evaluation() above).
+  // Loop over cells
   std::vector<T> ref_data_b(num_interp_points);
   md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 1>> ref_data(
       ref_data_b.data(), num_interp_points, 1);
   std::vector<T> coeffs_b(num_scalar_dofs);
-  element.template with_dof_transformation_fn<T,
-                                              doftransform::inverse_transpose>(
-      [&](const auto& apply_inv_transpose_dof_transformation)
+  for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
+  {
+    std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
+    std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
+    for (int k = 0; k < element_bs; ++k)
+    {
+      for (int i = 0; i < element_vs; ++i)
       {
-        for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
-        {
-          std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
-          std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
-          for (int k = 0; k < element_bs; ++k)
-          {
-            for (int i = 0; i < element_vs; ++i)
-            {
-              std::copy_n(std::next(f.begin(), (i + k) * fshape[1]
-                                                   + offset * num_interp_points
-                                                         / element_vs),
-                          num_interp_points / element_vs,
-                          std::next(ref_data_b.begin(),
-                                    i * num_interp_points / element_vs));
-            }
+        std::copy_n(
+            std::next(f.begin(), (i + k) * fshape[1]
+                                     + offset * num_interp_points / element_vs),
+            num_interp_points / element_vs,
+            std::next(ref_data_b.begin(), i * num_interp_points / element_vs));
+      }
 
-            impl::interpolation_apply(Pi, ref_data, std::span(coeffs_b), 1);
-            if (apply_inv_transpose_dof_transformation)
-            {
-              apply_inv_transpose_dof_transformation(coeffs_b, cell_info,
-                                                     *cell_it, 1);
-            }
-            if (same_bs)
-            {
-              for (int i = 0; i < num_scalar_dofs; ++i)
-                coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
-            }
-            else
-            {
-              for (int i = 0; i < num_scalar_dofs; ++i)
-              {
-                std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
-                coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
-              }
-            }
-          }
+      impl::interpolation_apply(Pi, ref_data, std::span(coeffs_b), 1);
+      if (apply_inv_transpose_dof_transformation)
+      {
+        apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
+                                               1);
+      }
+      if (same_bs)
+      {
+        for (int i = 0; i < num_scalar_dofs; ++i)
+          coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
+      }
+      else
+      {
+        for (int i = 0; i < num_scalar_dofs; ++i)
+        {
+          std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
         }
-      },
-      /*scalar_element=*/true);
+      }
+    }
+  }
 }
 
 /// @brief Interpolate data into coefficients for a Piola-mapped point
@@ -1067,6 +1014,12 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), md::full_extent,
                             md::full_extent, 0);
 
+  std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
+                     int)>
+      apply_inv_trans_dof_transformation
+      = element.template dof_transformation_fn<T>(
+          doftransform::inverse_transpose);
+
   // Get interpolation operator
   const auto [_Pi, pi_shape] = element.interpolation_operator();
   md::mdspan<const U, std::dextents<std::size_t, 2>> Pi(_Pi.data(), pi_shape);
@@ -1080,91 +1033,74 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       = element.basix_element().template map_fn<U_t, u_t, J_t, K_t>();
 
   std::vector<T> coeffs_b(num_scalar_dofs);
-  // Use whichever of DirectDofTransform or the generic
-  // std::function-based closure applies for `element` -- see
-  // FiniteElement::with_dof_transformation_fn for the rationale.
-  element.template with_dof_transformation_fn<T,
-                                              doftransform::inverse_transpose>(
-      [&](const auto& apply_inv_trans_dof_transformation)
+  for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
+  {
+    auto x_dofs = md::submdspan(x_dofmap, *cell_it, md::full_extent);
+    for (int i = 0; i < num_dofs_g; ++i)
+    {
+      const int pos = 3 * x_dofs[i];
+      for (int j = 0; j < gdim; ++j)
+        coord_dofs(i, j) = x_g[pos + j];
+    }
+
+    // Compute J, detJ and K
+    std::ranges::fill(J_b, 0);
+    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    {
+      auto _dphi = md::submdspan(dphi, md::full_extent, p, md::full_extent);
+      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+      cmap.compute_jacobian(_dphi, coord_dofs, _J);
+      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+      cmap.compute_jacobian_inverse(_J, _K);
+      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
+    }
+
+    const std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
+    std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
+    for (int k = 0; k < element_bs; ++k)
+    {
+      // Extract computed expression values for element block k
+      for (int m = 0; m < value_size; ++m)
       {
-        for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
+        for (std::size_t k0 = 0; k0 < Xshape[0]; ++k0)
         {
-          auto x_dofs = md::submdspan(x_dofmap, *cell_it, md::full_extent);
-          for (int i = 0; i < num_dofs_g; ++i)
-          {
-            const int pos = 3 * x_dofs[i];
-            for (int j = 0; j < gdim; ++j)
-              coord_dofs(i, j) = x_g[pos + j];
-          }
-
-          // Compute J, detJ and K
-          std::ranges::fill(J_b, 0);
-          for (std::size_t p = 0; p < Xshape[0]; ++p)
-          {
-            auto _dphi
-                = md::submdspan(dphi, md::full_extent, p, md::full_extent);
-            auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-            cmap.compute_jacobian(_dphi, coord_dofs, _J);
-            auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-            cmap.compute_jacobian_inverse(_J, _K);
-            detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
-          }
-
-          const std::size_t offset
-              = std::ranges::distance(cells.begin(), cell_it);
-          std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
-          for (int k = 0; k < element_bs; ++k)
-          {
-            // Extract computed expression values for element block k
-            for (int m = 0; m < value_size; ++m)
-            {
-              for (std::size_t k0 = 0; k0 < Xshape[0]; ++k0)
-              {
-                _vals(k0, 0, m) = f[fshape[1] * (k * value_size + m)
-                                    + offset * Xshape[0] + k0];
-              }
-            }
-
-            // Get element degrees of freedom for block
-            for (std::size_t i = 0; i < Xshape[0]; ++i)
-            {
-              auto _u
-                  = md::submdspan(_vals, i, md::full_extent, md::full_extent);
-              auto _U = md::submdspan(ref_data, i, md::full_extent,
-                                      md::full_extent);
-              auto _K = md::submdspan(K, i, md::full_extent, md::full_extent);
-              auto _J = md::submdspan(J, i, md::full_extent, md::full_extent);
-              pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
-            }
-
-            auto ref
-                = md::submdspan(ref_data, md::full_extent, 0, md::full_extent);
-            impl::interpolation_apply(Pi, ref, std::span(coeffs_b), element_bs);
-            if (apply_inv_trans_dof_transformation)
-            {
-              apply_inv_trans_dof_transformation(coeffs_b, cell_info, *cell_it,
-                                                 1);
-            }
-
-            // Copy interpolation dofs into coefficient vector
-            assert(coeffs_b.size()
-                   == static_cast<std::size_t>(num_scalar_dofs));
-            if (same_bs)
-            {
-              for (int i = 0; i < num_scalar_dofs; ++i)
-                coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
-            }
-            else
-            {
-              for (int i = 0; i < num_scalar_dofs; ++i)
-              {
-                std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
-                coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
-              }
-            }
-          }
+          _vals(k0, 0, m)
+              = f[fshape[1] * (k * value_size + m) + offset * Xshape[0] + k0];
         }
-      });
+      }
+
+      // Get element degrees of freedom for block
+      for (std::size_t i = 0; i < Xshape[0]; ++i)
+      {
+        auto _u = md::submdspan(_vals, i, md::full_extent, md::full_extent);
+        auto _U = md::submdspan(ref_data, i, md::full_extent, md::full_extent);
+        auto _K = md::submdspan(K, i, md::full_extent, md::full_extent);
+        auto _J = md::submdspan(J, i, md::full_extent, md::full_extent);
+        pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
+      }
+
+      auto ref = md::submdspan(ref_data, md::full_extent, 0, md::full_extent);
+      impl::interpolation_apply(Pi, ref, std::span(coeffs_b), element_bs);
+      if (apply_inv_trans_dof_transformation)
+        apply_inv_trans_dof_transformation(coeffs_b, cell_info, *cell_it, 1);
+
+      // Copy interpolation dofs into coefficient vector
+      assert(coeffs_b.size() == static_cast<std::size_t>(num_scalar_dofs));
+      if (same_bs)
+      {
+        for (int i = 0; i < num_scalar_dofs; ++i)
+          coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
+      }
+      else
+      {
+        for (int i = 0; i < num_scalar_dofs; ++i)
+        {
+          std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
+        }
+      }
+    }
+  }
 }
 
 //----------------------------------------------------------------------------

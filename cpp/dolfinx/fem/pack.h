@@ -134,51 +134,46 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   assert(element);
   int space_dim = element->space_dimension();
 
+  // Transformation from conforming degrees-of-freedom to reference
+  // degrees-of-freedom
+  auto transformation
+      = element->template dof_transformation_fn<T>(doftransform::transpose);
   const int bs = dofmap.bs();
 
-  // Transformation from conforming degrees-of-freedom to reference
-  // degrees-of-freedom. Use whichever of DirectDofTransform or the
-  // generic std::function-based closure applies -- see
-  // FiniteElement::with_dof_transformation_fn for the rationale.
-  element->template with_dof_transformation_fn<T, doftransform::transpose>(
-      [&](const auto& transformation)
+  // Passing the block size as a compile-time constant lets `pack_impl`
+  // unroll its inner (per-DOF) loop for the common block sizes 1, 2,
+  // and 3, rather than looping `bs` times at runtime for every cell.
+  // `bs_c` is a `std::integral_constant<int, N>`, converted to `N` via
+  // `bs_c()` where `pack_impl`'s `_bs` template parameter is needed.
+  auto pack_for_bs = [&cells, &c, &cstride, &offset, &space_dim, &bs, &v,
+                      &cell_info, &dofmap, &transformation](auto bs_c)
+  {
+    for (std::size_t e = 0; e < cells.extent(0); ++e)
+    {
+      if (std::int32_t cell = cells(e); cell >= 0)
       {
-        // Passing the block size as a compile-time constant lets
-        // `pack_impl` unroll its inner (per-DOF) loop for the common block
-        // sizes 1, 2, and 3, rather than looping `bs` times at runtime for
-        // every cell. `bs_c` is a `std::integral_constant<int, N>`,
-        // converted to `N` via `bs_c()` where `pack_impl`'s `_bs` template
-        // parameter is needed.
-        auto pack_for_bs = [&cells, &c, &cstride, &offset, &space_dim, &bs, &v,
-                            &cell_info, &dofmap, &transformation](auto bs_c)
-        {
-          for (std::size_t e = 0; e < cells.extent(0); ++e)
-          {
-            if (std::int32_t cell = cells(e); cell >= 0)
-            {
-              auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
-              pack_impl<bs_c()>(cell_coeff, cell, bs, v, cell_info, dofmap,
-                                transformation);
-            }
-          }
-        };
+        auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+        pack_impl<bs_c()>(cell_coeff, cell, bs, v, cell_info, dofmap,
+                          transformation);
+      }
+    }
+  };
 
-        switch (bs)
-        {
-        case 1:
-          pack_for_bs(std::integral_constant<int, 1>());
-          break;
-        case 2:
-          pack_for_bs(std::integral_constant<int, 2>());
-          break;
-        case 3:
-          pack_for_bs(std::integral_constant<int, 3>());
-          break;
-        default:
-          pack_for_bs(std::integral_constant<int, -1>());
-          break;
-        }
-      });
+  switch (bs)
+  {
+  case 1:
+    pack_for_bs(std::integral_constant<int, 1>());
+    break;
+  case 2:
+    pack_for_bs(std::integral_constant<int, 2>());
+    break;
+  case 3:
+    pack_for_bs(std::integral_constant<int, 3>());
+    break;
+  default:
+    pack_for_bs(std::integral_constant<int, -1>());
+    break;
+  }
 }
 } // namespace impl
 

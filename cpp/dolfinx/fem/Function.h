@@ -656,6 +656,11 @@ public:
     auto push_forward_fn
         = element->basix_element().template map_fn<xu_t, xU_t, xJ_t, xK_t>();
 
+    // Transformation function for basis function values
+    auto apply_dof_transformation
+        = element->template dof_transformation_fn<geometry_type>(
+            doftransform::standard);
+
     // Size of tensor for symmetric elements, unused in non-symmetric
     // case, but placed outside the loop for pre-computation.
     int matrix_size = 0;
@@ -665,94 +670,83 @@ public:
         ++matrix_size;
     }
 
-    // Transformation function for basis function values. Use whichever
-    // of DirectDofTransform or the generic std::function-based closure
-    // applies -- see FiniteElement::with_dof_transformation_fn.
     const std::size_t num_basis_values = space_dimension * reference_value_size;
-    element->template with_dof_transformation_fn<geometry_type,
-                                                 doftransform::standard>(
-        [&](const auto& apply_dof_transformation)
+    for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
+    {
+      if (*cell_it < 0) // Skip negative cell indices
+        continue;
+
+      // Permute the reference basis function values to account for the
+      // cell's orientation
+      std::size_t p = std::ranges::distance(cells.begin(), cell_it);
+      if (apply_dof_transformation)
+      {
+        apply_dof_transformation(
+            std::span(basis_derivatives_reference_values_b.data()
+                          + p * num_basis_values,
+                      num_basis_values),
+            cell_info, *cell_it, reference_value_size);
+      }
+
+      {
+        auto _U = md::submdspan(basis_derivatives_reference_values, 0, p,
+                                md::full_extent, md::full_extent);
+        auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+        auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+        push_forward_fn(basis_values, _U, _J, detJ[p], _K);
+      }
+
+      // Get degrees of freedom for current cell
+      std::span<const std::int32_t> dofs = dofmap->cell_dofs(*cell_it);
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+        for (int k = 0; k < bs_dof; ++k)
+          coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
+
+      if (element->symmetric())
+      {
+        // Compute expansion
+        int row = 0;
+        int rowstart = 0;
+        for (int k = 0; k < bs_element; ++k)
         {
-          for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
+          if (k - rowstart > row)
           {
-            if (*cell_it < 0) // Skip negative cell indices
-              continue;
-
-            // Permute the reference basis function values to account for the
-            // cell's orientation
-            std::size_t p = std::ranges::distance(cells.begin(), cell_it);
-            if (apply_dof_transformation)
+            row++;
+            rowstart = k;
+          }
+          for (std::size_t i = 0; i < space_dimension; ++i)
+          {
+            for (std::size_t j = 0; j < value_size; ++j)
             {
-              apply_dof_transformation(
-                  std::span(basis_derivatives_reference_values_b.data()
-                                + p * num_basis_values,
-                            num_basis_values),
-                  cell_info, *cell_it, reference_value_size);
-            }
-
-            {
-              auto _U = md::submdspan(basis_derivatives_reference_values, 0, p,
-                                      md::full_extent, md::full_extent);
-              auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-              auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-              push_forward_fn(basis_values, _U, _J, detJ[p], _K);
-            }
-
-            // Get degrees of freedom for current cell
-            std::span<const std::int32_t> dofs = dofmap->cell_dofs(*cell_it);
-            for (std::size_t i = 0; i < dofs.size(); ++i)
-              for (int k = 0; k < bs_dof; ++k)
-                coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
-
-            if (element->symmetric())
-            {
-              // Compute expansion
-              int row = 0;
-              int rowstart = 0;
-              for (int k = 0; k < bs_element; ++k)
+              u[p * ushape[1]
+                + (j * bs_element + row * matrix_size + k - rowstart)]
+                  += coefficients[bs_element * i + k] * basis_values(i, j);
+              if (k - rowstart != row)
               {
-                if (k - rowstart > row)
-                {
-                  row++;
-                  rowstart = k;
-                }
-                for (std::size_t i = 0; i < space_dimension; ++i)
-                {
-                  for (std::size_t j = 0; j < value_size; ++j)
-                  {
-                    u[p * ushape[1]
-                      + (j * bs_element + row * matrix_size + k - rowstart)]
-                        += coefficients[bs_element * i + k]
-                           * basis_values(i, j);
-                    if (k - rowstart != row)
-                    {
-                      u[p * ushape[1]
-                        + (j * bs_element + row + matrix_size * (k - rowstart))]
-                          += coefficients[bs_element * i + k]
-                             * basis_values(i, j);
-                    }
-                  }
-                }
-              }
-            }
-            else
-            {
-              // Compute expansion
-              for (int k = 0; k < bs_element; ++k)
-              {
-                for (std::size_t i = 0; i < space_dimension; ++i)
-                {
-                  for (std::size_t j = 0; j < value_size; ++j)
-                  {
-                    u[p * ushape[1] + (j * bs_element + k)]
-                        += coefficients[bs_element * i + k]
-                           * basis_values(i, j);
-                  }
-                }
+                u[p * ushape[1]
+                  + (j * bs_element + row + matrix_size * (k - rowstart))]
+                    += coefficients[bs_element * i + k] * basis_values(i, j);
               }
             }
           }
-        });
+        }
+      }
+      else
+      {
+        // Compute expansion
+        for (int k = 0; k < bs_element; ++k)
+        {
+          for (std::size_t i = 0; i < space_dimension; ++i)
+          {
+            for (std::size_t j = 0; j < value_size; ++j)
+            {
+              u[p * ushape[1] + (j * bs_element + k)]
+                  += coefficients[bs_element * i + k] * basis_values(i, j);
+            }
+          }
+        }
+      }
+    }
   }
 
   /// Name
