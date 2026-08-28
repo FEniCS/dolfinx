@@ -8,7 +8,7 @@
 
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/partition.h>
+#include <dolfinx/mesh/types.h>
 
 namespace dolfinx::refinement
 {

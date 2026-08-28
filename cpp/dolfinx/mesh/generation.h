@@ -8,7 +8,7 @@
 
 #include "Mesh.h"
 #include "cell_types.h"
-#include "partition.h"
+#include "types.h"
 #include "utils.h"
 #include <algorithm>
 #include <array>

@@ -18,7 +18,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>
-#include <dolfinx/mesh/partition.h>
+#include <dolfinx/mesh/types.h>
 #include <dolfinx/mesh/utils.h>
 #include <functional>
 #include <nanobind/nanobind.h>

@@ -11,7 +11,7 @@
 #include "MeshTags.h"
 #include "Topology.h"
 #include "graphbuild.h"
-#include "partition.h"
+#include "types.h"
 #include <algorithm>
 #include <array>
 #include <basix/mdspan.hpp>

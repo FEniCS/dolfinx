@@ -8,8 +8,9 @@
 
 #include <cstdint>
 
-/// @file partition.h
-/// @brief Mesh partitioning ghost mode.
+/// @file types.h
+/// @brief Small, foundational mesh types (enums, etc.) with minimal
+/// dependencies.
 
 namespace dolfinx::mesh
 {
