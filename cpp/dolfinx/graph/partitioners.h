@@ -117,9 +117,13 @@ graph::partition_fn repartitioner(double ipc2redist = 1000.0,
                                   double imbalance = 1.02,
                                   std::array<int, 3> options = {1, 0, 5});
 
-/// @brief Create a geometric graph partitioning function that uses
-/// ParMETIS to order the coordinates along a space-filling curve
-/// (`ParMETIS_V3_PartGeom`).
+/// @brief A geometric graph partitioning function (matching
+/// ::geom_partition_fn) that uses ParMETIS to order the coordinates
+/// along a space-filling curve (`ParMETIS_V3_PartGeom`).
+///
+/// Unlike ::repartitioner and ::geom_partitioner_kway, this is not a
+/// factory: it takes no configuration, so it is the partitioning
+/// function itself, ready to use directly.
 ///
 /// The graph edges are unused for partitioning, so this is much cheaper
 /// than ::geom_partitioner_kway, but cuts more edges.
@@ -131,10 +135,17 @@ graph::partition_fn repartitioner(double ipc2redist = 1000.0,
 /// @note This partitions into one part per rank of the communicator, so
 /// `nparts` must equal the communicator size.
 ///
-/// @note ::geom_partition_fn has no graph, so the returned function
-/// has no `ghosting` parameter and is never asked to ghost.
+/// @note ::geom_partition_fn has no graph, so this has no `ghosting`
+/// parameter and is never asked to ghost.
 ///
-/// @return A geometric graph partitioning function. It requires `x`.
+/// @param[in] comm MPI Communicator that the graph is distributed
+/// across.
+/// @param[in] nparts Number of partitions to divide graph nodes into;
+/// must equal the size of `comm`.
+/// @param[in] x Node coordinates, row-major with `gdim` columns and one
+/// row per node.
+/// @param[in] gdim Number of coordinate components per node.
+/// @return Destination rank for each input node.
 std::vector<int> geom_partitioner(MPI_Comm comm, int nparts,
                                   std::span<const double> x, int gdim);
 

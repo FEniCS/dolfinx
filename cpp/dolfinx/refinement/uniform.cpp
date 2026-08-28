@@ -1,4 +1,11 @@
+// Copyright (C) 2025-2026 Chris Richardson, Garth N. Wells, Jørgen S. Dokken
+// and Paul T. Kühner
+//
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "uniform.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -6,8 +13,6 @@
 #include <format>
 #include <iterator>
 #include <vector>
-
-#include "uniform.h"
 
 using namespace dolfinx;
 
@@ -304,8 +309,7 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     geometry_cmaps.push_back(cm);
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, std::nullopt, geometry_cmaps,
-      mesh.comm(), new_x, {new_x.size() / 3, 3}, partitioner, ghost_mode, 2,
-      1);
+      mesh.comm(), new_x, {new_x.size() / 3, 3}, partitioner, ghost_mode, 2, 1);
 
   return new_mesh;
 }

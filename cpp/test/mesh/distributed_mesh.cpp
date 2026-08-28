@@ -14,7 +14,6 @@
 #include <dolfinx/graph/partitioners.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <dolfinx/mesh/graphbuild.h>
 #include <memory>
 
 using namespace dolfinx;
@@ -138,9 +137,9 @@ void test_distributed_mesh(const graph::partition_fn& partitioner)
   CHECK(xshape[1] == 2);
 
   // Build mesh
-  mesh::Mesh mesh = mesh::create_mesh(comm, subset_comm, cells, std::nullopt,
-                                      cmap, comm, x, xshape, partitioner,
-                                      mesh::GhostMode::none, 2, 1);
+  mesh::Mesh mesh
+      = mesh::create_mesh(comm, subset_comm, cells, std::nullopt, cmap, comm, x,
+                          xshape, partitioner, mesh::GhostMode::none, 2, 1);
   auto t = mesh.topology();
   int tdim = t->dim();
   CHECK(t->index_map(tdim)->size_global() == 2 * N * N);
@@ -167,9 +166,8 @@ TEST_CASE("Create box", "[create_box]")
   CHECK_NOTHROW(test_create_box(graph::parmetis::partitioner()));
 #endif
   // #ifdef HAS_KAHIP
-  //   CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
-  //       mesh::GhostMode::none, graph::kahip::partitioner(1, 1, 0.03,
-  //       false))));
+  //   CHECK_NOTHROW(
+  //       test_create_box(graph::kahip::partitioner(1, 1, 0.03, false)));
   // #endif
 }
 

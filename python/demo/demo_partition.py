@@ -30,7 +30,7 @@
 # involves a trade-off between the cost of computing the partition and its
 # quality.
 #
-# Two families are used here:
+# Three families are used here:
 #
 # - **Graph partitioners** work on the mesh *dual graph*, in which each
 #   cell is a node and cells sharing a facet are connected by an edge.
@@ -44,42 +44,35 @@
 #   are ordered along a space-filling curve through the mesh and the curve
 #   is cut into equal pieces. This is much cheaper than graph
 #   partitioning, and the cost barely grows with the number of ranks, but
-#   more edges are cut. A partitioner that uses only the cell positions
-#   can be passed to {py:func}`create_mesh <dolfinx.mesh.create_mesh>`
-#   directly, where it is called with a coordinate for each cell (the mean
-#   of its vertex positions) rather than the graph -- a custom geometric
-#   partitioning function must first be wrapped with
+#   more edges are cut. Such a partitioner is called with a coordinate for
+#   each cell (the mean of its vertex positions) rather than the graph, so
+#   a custom one must first be wrapped with
 #   {py:func}`create_geometric_cell_partitioner
-#   <dolfinx.mesh.create_geometric_cell_partitioner>`, but the built-in
-#   ones below (`Morton`, `Hilbert`, `Geom`) already come wrapped. A
-#   **hybrid** partitioner, one that also uses the graph edges as part of
-#   the partitioning decision itself rather than only to determine ghost
-#   cells, works the same way: a custom one is wrapped with
-#   {py:func}`create_hybrid_cell_partitioner
-#   <dolfinx.mesh.create_hybrid_cell_partitioner>`, but `GeomKway` below
-#   already comes wrapped.
+#   <dolfinx.mesh.create_geometric_cell_partitioner>` before it can be
+#   passed to {py:func}`create_mesh <dolfinx.mesh.create_mesh>`; the
+#   built-in ones below (`Morton`, `Hilbert`, `Geom`) already come
+#   wrapped.
 #
-#   ParMETIS provides two: `GeomKway` (hybrid), which uses the
-#   space-filling curve to redistribute the graph and then applies k-way
-#   partitioning to it, and `Geom` (purely geometric), which uses the
-#   curve alone.
-#
-#   DOLFINx provides curve partitioners that require no external library,
-#   for two curves, both purely geometric. A **Morton** ('Z-order') curve
-#   is cheap to evaluate, but jumps a long way in space whenever a high
-#   bit of the key changes, so consecutive cells on the curve are not
-#   always neighbours. A **Hilbert** curve has no such jumps: successive
-#   points on it are always neighbours, which gives more compact
-#   partitions and a smaller edge cut.
+#   ParMETIS provides `Geom`, which uses a space-filling curve alone.
+#   DOLFINx provides two curves that require no external library, both
+#   purely geometric. A **Morton** ('Z-order') curve is cheap to
+#   evaluate, but jumps a long way in space whenever a high bit of the
+#   key changes, so consecutive cells on the curve are not always
+#   neighbours. A **Hilbert** curve has no such jumps: successive points
+#   on it are always neighbours, which gives more compact partitions and
+#   a smaller edge cut.
 #
 #   A geometric partitioner just needs to map each cell's centroid to a
 #   destination rank, so a simple one is easy to write by hand -- see
-#   `slab_partitioner` below, which cuts the domain into slabs along the
-#   `x` axis. It is included to show the shape a custom geometric
-#   partitioner takes, not because it performs well: unlike a
-#   space-filling curve, it ignores the other coordinates entirely, so
-#   it keeps cells together in only one direction and balances cell
-#   counts well only when they are spread evenly along `x`.
+#   `slab_partitioner` further below for an example.
+# - **Hybrid partitioners** also use the graph edges as part of the
+#   partitioning decision itself, rather than only to determine ghost
+#   cells, but are otherwise called the same way as a geometric
+#   partitioner and wrapped with {py:func}`create_hybrid_cell_partitioner
+#   <dolfinx.mesh.create_hybrid_cell_partitioner>`. ParMETIS provides
+#   `GeomKway`, which uses the space-filling curve to redistribute the
+#   graph and then applies k-way partitioning to it; it already comes
+#   wrapped.
 #
 # Which of ParMETIS, PT-SCOTCH and KaHIP are present depends on the build,
 # so the demo checks {py:data}`dolfinx.has_parmetis`,

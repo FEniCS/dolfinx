@@ -250,13 +250,13 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
-      - name: Run Python demos (PETSc, serial)
+      - name: Run Python demos (serial)
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
           python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
-      - name: Run Python demos (PETSc, MPI)
+      - name: Run Python demos (MPI)
         shell: spack-bash {0}
         run: |
           spack env activate ci
@@ -273,12 +273,24 @@ jobs:
           spack env activate ci
           spack load gcc
           python -m pytest -n=auto --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
-      - name: Run Python unit tests (no PETSC, MPI)
+      - name: Run Python unit tests (no PETSc, MPI)
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
           mpiexec -np 3 python -m pytest --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
+      - name: Run Python unit tests (PETSc, serial)
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          spack load gcc
+          python -m pytest -n=auto --durations=50 -m "not petsc4py" dolfinx-src/python/test/unit/
+      - name: Run Python unit tests (PETSc, MPI)
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          spack load gcc
+          mpiexec -np 3 python -m pytest --durations=50 -m "not petsc4py" dolfinx-src/python/test/unit/
 
       # The test tools are environment roots, so '--only dependencies'
       # skips them and they need naming explicitly. Only the final push

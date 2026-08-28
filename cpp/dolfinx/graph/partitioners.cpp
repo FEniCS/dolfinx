@@ -511,6 +511,7 @@ split_and_build_node_disp(MPI_Comm comm, idx_t num_local_nodes)
 /// @param[in] node_disp Node displacement array for `pcomm`.
 /// @param[in] part Partition index of each local node.
 /// @return Destination rank(s) for each node.
+// FIXME: Is it implicit that the first entry is the owner?
 graph::AdjacencyList<int>
 finalise_partition(MPI_Comm pcomm, bool ghosting,
                    const graph::AdjacencyList<std::int64_t>& graph,
@@ -525,6 +526,42 @@ finalise_partition(MPI_Comm pcomm, bool ghosting,
   if (pcomm != MPI_COMM_NULL)
     MPI_Comm_free(&pcomm);
   return dest;
+}
+
+/// @brief ParMETIS element/edge weight vectors and the `wgtflag` value
+/// that tells ParMETIS which of them are present.
+struct ParmetisWeights
+{
+  idx_t wgtflag = 0;
+  std::vector<idx_t> elmwgt;
+  std::vector<idx_t> edgwgt;
+};
+
+/// @brief Build the ParMETIS element/edge weight vectors and `wgtflag`
+/// from optional node/edge weight spans, logging which (if either) are
+/// applied.
+ParmetisWeights build_parmetis_weights(
+    std::optional<std::span<const std::int32_t>> node_weights,
+    std::optional<std::span<const std::int32_t>> edge_weights)
+{
+  ParmetisWeights w;
+  if (node_weights)
+    w.elmwgt.assign(node_weights->begin(), node_weights->end());
+  if (edge_weights)
+    w.edgwgt.assign(edge_weights->begin(), edge_weights->end());
+
+  if (!w.elmwgt.empty())
+  {
+    spdlog::info("ParMETIS: applying node weights");
+    w.wgtflag += 2;
+  }
+  if (!w.edgwgt.empty())
+  {
+    spdlog::info("ParMETIS: applying edge weights");
+    w.wgtflag += 1;
+  }
+
+  return w;
 }
 
 } // namespace
@@ -562,24 +599,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       // Options and data for ParMETIS
       std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
       idx_t ncon = 1;
-      idx_t wgtflag(0), edgecut(0), numflag(0);
-      std::vector<idx_t> elmwgt;
-      if (node_weights)
-        elmwgt.assign(node_weights->begin(), node_weights->end());
-      std::vector<idx_t> edgwgt;
-      if (edge_weights)
-        edgwgt.assign(edge_weights->begin(), edge_weights->end());
-
-      if (!elmwgt.empty())
-      {
-        spdlog::info("ParMETIS: applying node weights");
-        wgtflag += 2;
-      }
-      if (!edgwgt.empty())
-      {
-        spdlog::info("ParMETIS: applying edge weights");
-        wgtflag += 1;
-      }
+      idx_t edgecut(0), numflag(0);
+      ParmetisWeights w = build_parmetis_weights(node_weights, edge_weights);
 
       std::vector<real_t> tpwgts(ncon * nparts,
                                  1.0 / static_cast<real_t>(nparts));
@@ -588,8 +609,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       // Partition
       common::Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
       int err = ParMETIS_V3_PartKway(
-          node_disp.data(), offsets.data(), array.data(), elmwgt.data(),
-          edgwgt.data(), &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(),
+          node_disp.data(), offsets.data(), array.data(), w.elmwgt.data(),
+          w.edgwgt.data(), &w.wgtflag, &numflag, &ncon, &nparts, tpwgts.data(),
           &ubvec, opts.data(), &edgecut, part.data(), &pcomm);
       if (err != METIS_OK)
       {
@@ -598,7 +619,6 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       }
     }
 
-    // FIXME: Is it implicit that the first entry is the owner?
     return finalise_partition(pcomm, ghosting, graph, node_disp, part);
   };
 }
@@ -654,24 +674,8 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
       std::array<idx_t, 4> opts
           = {options[0], options[1], options[2], PARMETIS_PSR_UNCOUPLED};
       idx_t ncon = 1;
-      idx_t wgtflag(0), numflag(0), edgecut(0);
-      std::vector<idx_t> elmwgt;
-      if (node_weights)
-        elmwgt.assign(node_weights->begin(), node_weights->end());
-      std::vector<idx_t> edgwgt;
-      if (edge_weights)
-        edgwgt.assign(edge_weights->begin(), edge_weights->end());
-
-      if (!elmwgt.empty())
-      {
-        spdlog::info("ParMETIS: applying node weights");
-        wgtflag += 2;
-      }
-      if (!edgwgt.empty())
-      {
-        spdlog::info("ParMETIS: applying edge weights");
-        wgtflag += 1;
-      }
+      idx_t numflag(0), edgecut(0);
+      ParmetisWeights w = build_parmetis_weights(node_weights, edge_weights);
 
       std::vector<real_t> tpwgts(ncon * nparts,
                                  1.0 / static_cast<real_t>(nparts));
@@ -680,8 +684,8 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
 
       common::Timer timer1("ParMETIS: call ParMETIS_V3_AdaptiveRepart");
       int err = ParMETIS_V3_AdaptiveRepart(
-          node_disp.data(), offsets.data(), array.data(), elmwgt.data(),
-          vsize.data(), edgwgt.data(), &wgtflag, &numflag, &ncon, &nparts,
+          node_disp.data(), offsets.data(), array.data(), w.elmwgt.data(),
+          vsize.data(), w.edgwgt.data(), &w.wgtflag, &numflag, &ncon, &nparts,
           tpwgts.data(), ubvec.data(), &itr, opts.data(), &edgecut, part.data(),
           &pcomm);
       if (err != METIS_OK)
@@ -745,13 +749,13 @@ graph::hybrid_partition_fn
 graph::parmetis::geom_partitioner_kway(double imbalance,
                                        std::array<int, 3> options)
 {
-  return [imbalance, options](
-             MPI_Comm comm, idx_t nparts,
-             const graph::AdjacencyList<std::int64_t>& graph,
-             std::span<const double> x,
-             std::optional<std::span<const std::int32_t>> node_weights,
-             std::optional<std::span<const std::int32_t>> edge_weights,
-             bool ghosting)
+  return [imbalance,
+          options](MPI_Comm comm, idx_t nparts,
+                   const graph::AdjacencyList<std::int64_t>& graph,
+                   std::span<const double> x,
+                   std::optional<std::span<const std::int32_t>> node_weights,
+                   std::optional<std::span<const std::int32_t>> edge_weights,
+                   bool ghosting)
   {
     spdlog::info("Compute geometric graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS geometric)");
@@ -786,24 +790,8 @@ graph::parmetis::geom_partitioner_kway(double imbalance,
                                  graph.offsets().end());
       std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
       idx_t ncon = 1;
-      idx_t wgtflag(0), edgecut(0), numflag(0);
-      std::vector<idx_t> elmwgt;
-      if (node_weights)
-        elmwgt.assign(node_weights->begin(), node_weights->end());
-      std::vector<idx_t> edgwgt;
-      if (edge_weights)
-        edgwgt.assign(edge_weights->begin(), edge_weights->end());
-
-      if (!elmwgt.empty())
-      {
-        spdlog::info("ParMETIS: applying node weights");
-        wgtflag += 2;
-      }
-      if (!edgwgt.empty())
-      {
-        spdlog::info("ParMETIS: applying edge weights");
-        wgtflag += 1;
-      }
+      idx_t edgecut(0), numflag(0);
+      ParmetisWeights w = build_parmetis_weights(node_weights, edge_weights);
 
       std::vector<real_t> tpwgts(ncon * nparts,
                                  1.0 / static_cast<real_t>(nparts));
@@ -811,8 +799,8 @@ graph::parmetis::geom_partitioner_kway(double imbalance,
 
       common::Timer timer1("ParMETIS: call ParMETIS_V3_PartGeomKway");
       int err = ParMETIS_V3_PartGeomKway(
-          node_disp.data(), offsets.data(), array.data(), elmwgt.data(),
-          edgwgt.data(), &wgtflag, &numflag, &ndims, xyz.data(), &ncon,
+          node_disp.data(), offsets.data(), array.data(), w.elmwgt.data(),
+          w.edgwgt.data(), &w.wgtflag, &numflag, &ndims, xyz.data(), &ncon,
           &nparts, tpwgts.data(), &ubvec, opts.data(), &edgecut, part.data(),
           &pcomm);
       if (err != METIS_OK)

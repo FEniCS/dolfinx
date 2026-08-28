@@ -76,10 +76,8 @@ partitioner_wrap_py_to_cpp(const PythonPartitionFunction& p)
   };
 }
 
-dolfinx::graph::geom_partition_fn partitioner_wrap_py_to_cpp(
-    const std::function<nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
-        MPICommWrapper, int,
-        nb::ndarray<const double, nb::ndim<2>, nb::numpy>)>& p)
+dolfinx::graph::geom_partition_fn
+partitioner_wrap_py_to_cpp(const PythonGeoPartitionFunction& p)
 {
   return [p](MPI_Comm comm, int nparts, std::span<const double> x,
              int gdim) -> std::vector<int>
@@ -94,12 +92,8 @@ dolfinx::graph::geom_partition_fn partitioner_wrap_py_to_cpp(
   };
 }
 
-dolfinx::graph::hybrid_partition_fn partitioner_wrap_py_to_cpp(
-    const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPICommWrapper, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
-        nb::ndarray<const double, nb::ndim<2>, nb::numpy>,
-        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
-        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>& p)
+dolfinx::graph::hybrid_partition_fn
+partitioner_wrap_py_to_cpp(const PythonHybridPartitionFunction& p)
 {
   return [p](MPI_Comm comm, int nparts,
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
@@ -301,10 +295,7 @@ void graph(nb::module_& m)
 
   m.def(
       "create_geometric_cell_partitioner",
-      [](const std::function<nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
-             MPICommWrapper, int,
-             nb::ndarray<const double, nb::ndim<2>, nb::numpy>)>& part)
-          -> GeometricPartitioner
+      [](const PythonGeoPartitionFunction& part) -> GeometricPartitioner
       { return GeometricPartitioner{partitioner_wrap_py_to_cpp(part)}; },
       nb::arg("part"),
       "Create a geometric cell partitioner from a geometric graph "
@@ -317,13 +308,7 @@ void graph(nb::module_& m)
 
   m.def(
       "create_hybrid_cell_partitioner",
-      [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-             MPICommWrapper, int,
-             const dolfinx::graph::AdjacencyList<std::int64_t>&,
-             nb::ndarray<const double, nb::ndim<2>, nb::numpy>,
-             std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
-             std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>&
-             part) -> HybridPartitioner
+      [](const PythonHybridPartitionFunction& part) -> HybridPartitioner
       { return HybridPartitioner{partitioner_wrap_py_to_cpp(part)}; },
       nb::arg("part"),
       "Create a cell partitioner from a hybrid graph partitioning "

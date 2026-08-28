@@ -7,7 +7,6 @@
 """Tools to extract data from Gmsh models."""
 
 import typing
-from collections.abc import Callable
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -20,12 +19,18 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.cpp.graph import AdjacencyList_int32 as _AdjacencyList_int32
-from dolfinx.cpp.graph import AdjacencyList_int64 as _AdjacencyList_int64
 from dolfinx.fem import coordinate_element
 from dolfinx.graph import adjacencylist
 from dolfinx.io.utils import distribute_entity_data
-from dolfinx.mesh import CellType, GhostMode, Mesh, MeshTags, create_mesh, meshtags_from_entities
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    Mesh,
+    MeshTags,
+    PartitioningFunc,
+    create_mesh,
+    meshtags_from_entities,
+)
 
 __all__ = [
     "MeshData",
@@ -289,18 +294,7 @@ def model_to_mesh(
     comm: _MPI.Comm,
     rank: int,
     gdim: int = 3,
-    partitioner: Callable[
-        [
-            _MPI.Comm,
-            int,
-            _AdjacencyList_int64,
-            npt.NDArray[np.int32],
-            npt.NDArray[np.int32],
-            bool,
-        ],
-        _AdjacencyList_int32,
-    ]
-    | None = None,
+    partitioner: PartitioningFunc | None = None,
     dtype: npt.DTypeLike = default_real_type,
     max_facet_to_cell_links: int = 2,
     ghost_mode: GhostMode = GhostMode.none,
@@ -526,18 +520,7 @@ def read_from_msh(
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
-    partitioner: Callable[
-        [
-            _MPI.Comm,
-            int,
-            _AdjacencyList_int64,
-            npt.NDArray[np.int32],
-            npt.NDArray[np.int32],
-            bool,
-        ],
-        _AdjacencyList_int32,
-    ]
-    | None = None,
+    partitioner: PartitioningFunc | None = None,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a mesh and cell facet markers.
 

@@ -93,10 +93,9 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
 
   mesh::GhostMode ghost_mode = mesh::GhostMode::shared_facet;
 
-  // TODO: see https://github.com/FEniCS/dolfinx/issues/3358
-  //   auto part
-  //       = mesh::create_cell_partitioner(ghost_mode,
-  //       graph::scotch::partitioner());
+  // A real graph partitioner (e.g. PT-SCOTCH) is not used here: its
+  // result is not guaranteed stable across platforms (see #3358), so a
+  // fixed partition table is hardcoded instead for a reproducible test.
   graph::partition_fn part
       = [comm_size](
             MPI_Comm /* comm */, int /* nparts */,

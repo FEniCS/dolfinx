@@ -7,6 +7,7 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <cassert>
 #include <concepts>
 #include <cstdint>
@@ -64,6 +65,10 @@ namespace impl
 {
 /// @brief Compute the centroid of each cell from its vertex positions.
 ///
+/// @note The returned centroids are always `double`, regardless of `T`,
+/// for the same reason as graph::geom_partition_fn: partition quality
+/// is insensitive to position precision.
+///
 /// @tparam T Scalar type of `x`.
 /// @param[in] comm Communicator that `cells` is distributed across.
 /// @param[in] num_vertices_per_cell Number of vertices per cell, one
@@ -106,6 +111,16 @@ compute_cell_centroids(MPI_Comm comm,
   const std::vector<T> coords
       = dolfinx::MPI::distribute_data(comm, nodes, commg, x, gdim);
 
+  // Hash map from global vertex index to its position in `nodes` (and
+  // so its row in `coords`), turning the many repeated cell-vertex
+  // lookups below into an O(1) average lookup rather than an
+  // O(log(nodes.size())) binary search each time -- most vertices are
+  // shared by several cells, so the same key is looked up repeatedly.
+  boost::unordered_flat_map<std::int64_t, std::size_t> node_to_pos;
+  node_to_pos.reserve(nodes.size());
+  for (std::size_t i = 0; i < nodes.size(); ++i)
+    node_to_pos.emplace(nodes[i], i);
+
   // Cell 'centroids', i.e. the mean of the cell vertex positions
   std::size_t num_cells = 0;
   for (std::size_t i = 0; i < cells.size(); ++i)
@@ -121,10 +136,9 @@ compute_cell_centroids(MPI_Comm comm,
     {
       for (int v = 0; v < nv; ++v)
       {
-        // Position of the vertex in `nodes` is its row in `coords`
-        auto it = std::ranges::lower_bound(nodes, cells[i][nv * c + v]);
-        assert(it != nodes.end() and *it == cells[i][nv * c + v]);
-        std::size_t pos = std::ranges::distance(nodes.begin(), it);
+        auto it = node_to_pos.find(cells[i][nv * c + v]);
+        assert(it != node_to_pos.end());
+        std::size_t pos = it->second;
         for (int d = 0; d < gdim; ++d)
           centroid[gdim * (c0 + c) + d] += w * coords[gdim * pos + d];
       }

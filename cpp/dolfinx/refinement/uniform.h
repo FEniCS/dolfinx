@@ -1,8 +1,14 @@
+// Copyright (C) 2025-2026 Chris Richardson and Garth N. Wells
+//
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+
+#pragma once
+
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/partition.h>
-
-#pragma once
 
 namespace dolfinx::refinement
 {

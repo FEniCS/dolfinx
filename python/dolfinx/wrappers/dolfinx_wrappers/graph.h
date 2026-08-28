@@ -35,6 +35,24 @@ using PythonPartitionFunction
         std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
         std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>;
 
+/// Shape of a plain Python geometric graph partitioning function, as
+/// wrapped by partitioner_wrap_py_to_cpp / create_geometric_cell_partitioner
+/// below.
+using PythonGeoPartitionFunction
+    = std::function<nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
+        MPICommWrapper, int,
+        nb::ndarray<const double, nb::ndim<2>, nb::numpy>)>;
+
+/// Shape of a plain Python hybrid graph partitioning function, as
+/// wrapped by partitioner_wrap_py_to_cpp / create_hybrid_cell_partitioner
+/// below.
+using PythonHybridPartitionFunction
+    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        MPICommWrapper, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        nb::ndarray<const double, nb::ndim<2>, nb::numpy>,
+        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
+        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>;
+
 /// Wrap a Python graph partitioning function as a C++ function. A
 /// std::nullopt weight is passed through as Python None, not a
 /// zero-length array, so a custom Python partitioner can distinguish
@@ -50,10 +68,8 @@ partitioner_wrap_py_to_cpp(const PythonPartitionFunction& p);
 /// flat `x` span for the call, matching how `x` is passed to a Python
 /// geometric partitioner elsewhere (e.g. create_geometric_cell_partitioner).
 /// Defined in graph.cpp.
-dolfinx::graph::geom_partition_fn partitioner_wrap_py_to_cpp(
-    const std::function<nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
-        MPICommWrapper, int,
-        nb::ndarray<const double, nb::ndim<2>, nb::numpy>)>& p);
+dolfinx::graph::geom_partition_fn
+partitioner_wrap_py_to_cpp(const PythonGeoPartitionFunction& p);
 
 /// Wrap a Python hybrid graph partitioning function as a C++ function.
 /// `gdim` is recovered from `local_graph`'s node count and `x`'s flat
@@ -62,12 +78,8 @@ dolfinx::graph::geom_partition_fn partitioner_wrap_py_to_cpp(
 /// to do for it (unlike node/edge weights, which follow the same
 /// None-means-std::nullopt convention as the plain graph partitioner).
 /// Defined in graph.cpp.
-dolfinx::graph::hybrid_partition_fn partitioner_wrap_py_to_cpp(
-    const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPICommWrapper, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
-        nb::ndarray<const double, nb::ndim<2>, nb::numpy>,
-        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
-        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>& p);
+dolfinx::graph::hybrid_partition_fn
+partitioner_wrap_py_to_cpp(const PythonHybridPartitionFunction& p);
 
 /// Opaque handle wrapping a partitioning function `Fn`, bound to
 /// Python as its own type -- see GraphPartitioner/GeometricPartitioner/
