@@ -1,9 +1,11 @@
 from mpi4py import MPI
+
 import numpy as np
-import ufl
-import basix
 import pytest
+
+import basix
 import dolfinx
+import ufl
 
 
 @pytest.mark.parametrize("extrapolate", [True, False])
