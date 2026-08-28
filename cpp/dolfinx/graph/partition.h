@@ -147,6 +147,24 @@ AdjacencyList<std::int32_t> partition_graph(
     std::optional<std::span<const std::int32_t>> node_weights,
     std::optional<std::span<const std::int32_t>> edge_weights, bool ghosting);
 
+/// @brief An ::AnyPartitionFunction together with the node weights it
+/// should be called with, if any.
+///
+/// Bundles the two arguments that are otherwise threaded through
+/// mesh::create_mesh and mesh::impl::partition_cells separately, since
+/// a weight only makes sense alongside the partitioner it is meant
+/// for.
+struct Partitioner
+{
+  /// Partitioning function. Defaults to ::partition_graph, the default
+  /// graph partitioner.
+  AnyPartitionFunction fn = partition_fn(partition_graph);
+
+  /// Node weights, one entry per node the partitioner is called with.
+  /// If `std::nullopt`, nodes are treated as having equal weight.
+  std::optional<std::span<const std::int32_t>> node_weights = std::nullopt;
+};
+
 /// Tools for distributed graphs
 ///
 /// @todo Add a function that sends data to the 'owner'

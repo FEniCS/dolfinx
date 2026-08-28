@@ -948,7 +948,12 @@ compute_cell_centroids(MPI_Comm comm,
 /// @param[in] p1_geometry True if every layout in `doflayouts` is a
 /// vertex-only dof layout, so that a cell's 'nodes' are already exactly
 /// its vertices and extracting the topology is unnecessary.
-/// @param[in] partitioner Partitioner, as for ::create_mesh.
+/// @param[in] partitioner Partitioner, as for ::create_mesh, together
+/// with the node weights it is called with (one entry per cell in
+/// `cells`, flattened across cell types in the same order as `cells`;
+/// if `std::nullopt`, cells are treated as having equal weight). Used
+/// only if `partitioner.fn` holds a graph::partition_fn or a
+/// graph::hybrid_partition_fn.
 /// @param[in] ghosting Flag to enable ghosting of the output cell
 /// distribution. Passed on to `partitioner` if it holds a
 /// graph::partition_fn or a graph::hybrid_partition_fn; has no
@@ -963,11 +968,6 @@ compute_cell_centroids(MPI_Comm comm,
 /// @param[in] num_threads Number of threads to use when building the
 /// mesh dual graph. Must be >= 1. Used only if `partitioner` holds a
 /// graph::partition_fn or a graph::hybrid_partition_fn.
-/// @param[in] cell_weights Weights associated with each cell in `cells`
-/// (flattened across cell types in the same order as `cells`). Used
-/// only if `partitioner` holds a graph::partition_fn or a
-/// graph::hybrid_partition_fn. If std::nullopt, cells are treated as
-/// having equal weight.
 /// @param[in] commg Communicator that `x` is distributed on. Used only
 /// if `partitioner` holds a graph::geom_partition_fn or a
 /// graph::hybrid_partition_fn.
@@ -988,19 +988,17 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
                 const std::vector<std::span<const std::int64_t>>& cells,
                 const std::vector<CellType>& celltypes,
                 const std::vector<fem::ElementDofLayout>& doflayouts,
-                bool p1_geometry,
-                const graph::AnyPartitionFunction& partitioner, bool ghosting,
+                bool p1_geometry, const graph::Partitioner& partitioner,
+                bool ghosting,
                 std::optional<std::int32_t> max_facet_to_cell_links,
-                int num_threads,
-                std::optional<std::span<const std::int32_t>> cell_weights,
-                MPI_Comm commg, std::span<const T> x,
+                int num_threads, MPI_Comm commg, std::span<const T> x,
                 std::array<std::size_t, 2> xshape)
 {
   const std::int32_t num_cell_types = cells.size();
   std::vector<std::vector<std::int64_t>> cells1(num_cell_types);
   std::vector<std::vector<std::int64_t>> original_idx1(num_cell_types);
   std::vector<std::vector<int>> ghost_owners(num_cell_types);
-  if (graph::has_partitioner(partitioner))
+  if (graph::has_partitioner(partitioner.fn))
   {
     spdlog::info("Using partitioner with cell data ({} cell types)",
                  num_cell_types);
@@ -1069,15 +1067,15 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
               {
                 return p(commt, size, dual_graph(),
                          std::span<const double>(centroids().first),
-                         cell_weights, std::nullopt, ghosting);
+                         partitioner.node_weights, std::nullopt, ghosting);
               }
               else
               {
-                return p(commt, size, dual_graph(), cell_weights, std::nullopt,
-                         ghosting);
+                return p(commt, size, dual_graph(), partitioner.node_weights,
+                         std::nullopt, ghosting);
               }
             },
-            partitioner);
+            partitioner.fn);
       }
       catch (const std::exception& e)
       {
@@ -1200,10 +1198,6 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
 /// cells this will be just the cell vertices. For higher-order geometry
 /// cells, other cell 'nodes' will be included. See io::cells for
 /// examples of the Basix ordering.
-/// @param[in] cell_weights Weights associated with each cell in `cells`
-/// (flattened across cell types in the same order as `cells`), e.g. for
-/// use by the graph partitioner. If std::nullopt, cells are treated as
-/// having equal weight.
 /// @param[in] elements Coordinate elements for the cells, where
 /// `elements[i]` is the coordinate element for the cells in `cells[i]`.
 /// **The list of elements must be the same on all calling parallel
@@ -1215,8 +1209,11 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
 /// `x` rows on all lower ranks than the caller.
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Partitioner that computes the owning rank for
-/// each cell in `cells`. If not callable, cells are not redistributed.
-/// If it holds a graph::geom_partition_fn or a
+/// each cell in `cells`, together with the node weights it is called
+/// with (one entry per cell in `cells`, flattened across cell types in
+/// the same order as `cells`; if `std::nullopt`, cells are treated as
+/// having equal weight). If `partitioner.fn` is not callable, cells are
+/// not redistributed. If it holds a graph::geom_partition_fn or a
 /// graph::hybrid_partition_fn, this function computes the centroid
 /// of each cell in `cells` (from `x`) and supplies them, see
 /// graph::AnyPartitionFunction.
@@ -1235,11 +1232,10 @@ template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt,
     std::vector<std::span<const std::int64_t>> cells,
-    std::optional<std::span<const std::int32_t>> cell_weights,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
-    const graph::AnyPartitionFunction& partitioner, GhostMode ghost_mode,
+    const graph::Partitioner& partitioner, GhostMode ghost_mode,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
     const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
@@ -1276,7 +1272,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   const bool ghosting = (ghost_mode != GhostMode::none);
   auto [cells1, original_idx1, ghost_owners] = impl::partition_cells(
       comm, commt, cells, celltypes, doflayouts, p1_geometry, partitioner,
-      ghosting, max_facet_to_cell_links, num_threads, cell_weights, commg,
+      ghosting, max_facet_to_cell_links, num_threads, commg,
       std::span<const T>(x), xshape);
 
   // Extract cell 'topology', i.e. extract the vertices for each cell
@@ -1412,9 +1408,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// will be just the cell vertices. For higher-order cells, other cells
 /// 'nodes' will be included. See dolfinx::io::cells for examples of the
 /// Basix ordering.
-/// @param[in] cell_weights Weights associated with each cell in `cells`,
-/// e.g. for use by the graph partitioner. If std::nullopt, cells are
-/// treated as having equal weight.
 /// @param[in] element Coordinate element for the cells.
 /// @param[in] commg Communicator for geometry.
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
@@ -1423,9 +1416,12 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// all processes with a lower rank than the caller.
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Partitioner that computes the owning rank for
-/// each cell. If not callable, cells are not redistributed. See the
-/// more general ::create_mesh for the graph::geom_partition_fn and
-/// graph::hybrid_partition_fn alternatives.
+/// each cell, together with the node weights it is called with (one
+/// entry per cell in `cells`; if `std::nullopt`, cells are treated as
+/// having equal weight). If `partitioner.fn` is not callable, cells are
+/// not redistributed. See the more general ::create_mesh for the
+/// graph::geom_partition_fn and graph::hybrid_partition_fn
+/// alternatives.
 /// @param[in] ghost_mode Ghost mode of the created mesh, as for the
 /// more general ::create_mesh.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
@@ -1438,18 +1434,16 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt, std::span<const std::int64_t> cells,
-    std::optional<std::span<const std::int32_t>> cell_weights,
     const fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
-    const graph::AnyPartitionFunction& partitioner, GhostMode ghost_mode,
+    const graph::Partitioner& partitioner, GhostMode ghost_mode,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
     const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
-  return create_mesh(comm, commt, std::vector{cells}, cell_weights,
-                     std::vector{element}, commg, x, xshape, partitioner,
-                     ghost_mode, max_facet_to_cell_links, num_threads,
-                     reorder_fn);
+  return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
+                     commg, x, xshape, partitioner, ghost_mode,
+                     max_facet_to_cell_links, num_threads, reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
@@ -1482,16 +1476,15 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
 {
   if (dolfinx::MPI::size(comm) == 1)
   {
-    return create_mesh(comm, comm, std::vector{cells}, std::nullopt,
-                       std::vector{elements}, comm, x, xshape,
-                       graph::partition_fn(nullptr), ghost_mode,
-                       max_facet_to_cell_links, 1);
+    return create_mesh(
+        comm, comm, std::vector{cells}, std::vector{elements}, comm, x, xshape,
+        graph::Partitioner{graph::partition_fn(nullptr), std::nullopt},
+        ghost_mode, max_facet_to_cell_links, 1);
   }
   else
   {
-    return create_mesh(comm, comm, std::vector{cells}, std::nullopt,
-                       std::vector{elements}, comm, x, xshape,
-                       graph::partition_graph, ghost_mode,
+    return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
+                       comm, x, xshape, graph::Partitioner{}, ghost_mode,
                        max_facet_to_cell_links, 1);
   }
 }

@@ -198,9 +198,8 @@ XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
   // TODO: figure out how to include cell weight data with XDMFFile
   const std::vector<double>& _x = std::get<std::vector<double>>(x);
   mesh::Mesh<double> mesh = mesh::create_mesh(
-      _comm.comm(), _comm.comm(), cells, std::nullopt, {element}, _comm.comm(),
-      _x, xshape, dolfinx::graph::partition_graph, mode,
-      max_facet_to_cell_links, 1);
+      _comm.comm(), _comm.comm(), cells, {element}, _comm.comm(), _x, xshape,
+      dolfinx::graph::Partitioner{}, mode, max_facet_to_cell_links, 1);
 
   mesh.name = name;
   return mesh;
