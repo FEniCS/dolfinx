@@ -58,6 +58,19 @@ concept BlockSizeArg = std::integral<std::remove_cvref_t<T>>
 /// wrapper around `std::lower_bound` for the sole purpose of removing
 /// that duplication.
 ///
+/// @note Clang-20 mirrors the above in reverse: it if-converts this
+/// same `std::lower_bound` into a branchless `cmov` chain, ~35-50%
+/// *slower* here than GCC's branchy codegen -- the `cmov` serializes
+/// each iteration's load behind the prior comparison, killing the
+/// speculation a branch gets on this short, cache-resident row.
+/// `__builtin_expect` recovers full speed but only inside a hand-rolled
+/// loop (a comparator carrying the same hint is inlined away with no
+/// effect; `-mllvm -x86-cmov-converter=true` and
+/// `std::ranges::lower_bound` don't help either). Not worth
+/// reimplementing `lower_bound` over a codegen quirk -- left as-is; if
+/// this gets worse, prefer caching resolved offsets across reassembly
+/// (avoids the search entirely) over a hand-rolled comparison here.
+///
 /// @param[in] cols CSR column indices for the whole matrix.
 /// @param[in] begin Start of the row's range within `cols`.
 /// @param[in] end End (one past last) of the row's range within
