@@ -155,6 +155,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           build-args: |
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebInfo
             BASEIMAGE=${{ env.BASEIMAGE }}
           context: .
           file: dolfinx/${{ env.DOCKERFILE }}
@@ -166,6 +167,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           build-args: |
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebInfo
             BASEIMAGE=${{ env.BASEIMAGE }}
           context: .
           file: dolfinx/${{ env.DOCKERFILE }}
