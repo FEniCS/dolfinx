@@ -105,7 +105,9 @@ mesh::CellPartitionFunction mesh::create_cell_partitioner(
 {
   return [partfn = std::move(partfn), ghost_mode, max_facet_to_cell_links](
              MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
-             const std::vector<std::span<const std::int64_t>>& cells)
+             const std::vector<std::span<const std::int64_t>>& cells,
+             std::span<const std::int32_t> cell_weights,
+             std::span<const std::int32_t> edge_weights)
              -> graph::AdjacencyList<std::int32_t>
   {
     spdlog::info("Compute partition of cells across ranks");
@@ -118,7 +120,8 @@ mesh::CellPartitionFunction mesh::create_cell_partitioner(
     bool ghosting = (ghost_mode != GhostMode::none);
 
     // Compute partition
-    return partfn(comm, nparts, dual_graph, ghosting);
+    return partfn(comm, nparts, dual_graph, cell_weights, edge_weights,
+                  ghosting);
   };
 }
 //-----------------------------------------------------------------------------
