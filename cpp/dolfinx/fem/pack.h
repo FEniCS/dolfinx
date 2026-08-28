@@ -13,6 +13,7 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "traits.h"
+#include <algorithm>
 #include <array>
 #include <basix/mdspan.hpp>
 #include <concepts>
@@ -73,21 +74,20 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
 /// @param[in] dofmap Dofmap used to look up `cell`'s DOFs.
 /// @param[in] transform DOF transformation applied to `coeffs` after
 /// gathering (see FiniteElement::dof_transformation_fn).
+/// @param[in] transform_set Whether `transform` is a set (non-null)
+/// transform (see is_transform_set) -- passed in rather than checked
+/// here since it is loop-invariant across the cells a caller packs in
+/// a single call.
 template <dolfinx::scalar T>
 void pack_impl(std::span<T> coeffs, std::int32_t cell, auto bs,
                std::span<const T> v, std::span<const std::uint32_t> cell_info,
-               const DofMap& dofmap, auto transform)
+               const DofMap& dofmap, auto transform, bool transform_set)
 {
   std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
   for (std::size_t i = 0; i < dofs.size(); ++i)
-  {
-    const int pos_c = bs * i;
-    const int pos_v = bs * dofs[i];
-    for (int k = 0; k < bs; ++k)
-      coeffs[pos_c + k] = v[pos_v + k];
-  }
+    std::copy_n(v.data() + bs * dofs[i], bs, coeffs.data() + bs * i);
 
-  if (transform)
+  if (transform_set)
     transform(coeffs, cell_info, cell, 1);
 }
 
@@ -128,19 +128,25 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
       = element->template dof_transformation_fn<T>(doftransform::transpose);
   const int bs = dofmap.bs();
 
+  // `transformation` does not change across cells in this call, so
+  // whether it is a set (non-null) transform is loop-invariant --
+  // checked once here rather than on every cell.
+  const bool transform_set = is_transform_set(transformation);
+
   // Passing the block size as a compile-time constant
   // (std::integral_constant<int, N>) lets `pack_impl` unroll its inner
   // (per-DOF) loop for the common block sizes 1, 2, and 3, rather than
   // looping `bs` times at runtime for every cell.
   auto pack_for_bs = [&cells, &c, &cstride, &offset, &space_dim, &v, &cell_info,
-                      &dofmap, &transformation](auto bs)
+                      &dofmap, &transformation, transform_set](auto bs)
   {
     for (std::size_t e = 0; e < cells.extent(0); ++e)
     {
       if (std::int32_t cell = cells(e); cell >= 0)
       {
         auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
-        pack_impl(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+        pack_impl(cell_coeff, cell, bs, v, cell_info, dofmap, transformation,
+                  transform_set);
       }
     }
   };
