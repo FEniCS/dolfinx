@@ -163,7 +163,6 @@ jobs:
           sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
           sudo apt-get install libegl1
 
-
       - name: Run demos (Python, serial)
         run: |
           pip install pytest-xdist
@@ -274,6 +273,7 @@ jobs:
 
       - name: Install pyvista (and dependencies)
         run: |
+          apt-get update
           apt-get install libegl1 libxrender1
           pip install pyvista
 
