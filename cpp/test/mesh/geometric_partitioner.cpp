@@ -88,7 +88,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
         std::vector<std::span<const std::int64_t>>{
             std::span<const std::int64_t>(cells)},
         std::vector<fem::CoordinateElement<double>>{element}, comm, x, xshape,
-        graph::Partitioner{part, std::nullopt}, ghost_mode, 2, 1);
+        graph::Partitioner{.fn = part}, ghost_mode, 2, 1);
     mesh.topology_mutable()->create_entities(1);
     mesh.topology_mutable()->create_entities(2);
 
@@ -159,8 +159,8 @@ TEST_CASE("SFC point partition", "[partition_sfc]")
   for (auto partition :
        {&graph::partition_sfc_morton, &graph::partition_sfc_hilbert})
   {
-    graph::AdjacencyList<std::int32_t> dest
-        = graph::regular_adjacency_list(partition(comm, size, x, 1), 1);
+    graph::AdjacencyList<std::int32_t> dest = graph::regular_adjacency_list(
+        partition(comm, size, x, 1, std::nullopt), 1);
     REQUIRE(dest.num_nodes() == num_points);
 
     // There is exactly one destination per point (no graph, so no
@@ -183,8 +183,8 @@ TEST_CASE("SFC point partition", "[partition_sfc]")
     CHECK(std::ranges::is_sorted(part));
 
     // A single partition holds everything
-    graph::AdjacencyList<std::int32_t> part1
-        = graph::regular_adjacency_list(partition(comm, 1, x, 1), 1);
+    graph::AdjacencyList<std::int32_t> part1 = graph::regular_adjacency_list(
+        partition(comm, 1, x, 1, std::nullopt), 1);
     CHECK(std::ranges::all_of(part1.array(), [](int p) { return p == 0; }));
   }
 }
@@ -213,7 +213,7 @@ TEST_CASE("SFC curve properties", "[partition_sfc]")
   auto curve_order = [&x, num_points](auto partition)
   {
     graph::AdjacencyList<std::int32_t> dest = graph::regular_adjacency_list(
-        partition(MPI_COMM_SELF, num_points, x, 3), 1);
+        partition(MPI_COMM_SELF, num_points, x, 3, std::nullopt), 1);
     std::span<const std::int32_t> part = dest.array();
 
     // The part indices must be a permutation of [0, num_points), i.e.

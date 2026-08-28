@@ -79,15 +79,16 @@ partitioner_wrap_py_to_cpp(const PythonPartitionFunction& p)
 dolfinx::graph::geom_partition_fn
 partitioner_wrap_py_to_cpp(const PythonGeoPartitionFunction& p)
 {
-  return [p](MPI_Comm comm, int nparts, std::span<const double> x,
-             int gdim) -> std::vector<int>
+  return [p](MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
+             std::optional<std::span<const std::int32_t>> node_weights)
+             -> std::vector<int>
   {
     std::size_t shape0 = gdim > 0 ? x.size() / gdim : 0;
     std::size_t shape[2] = {shape0, static_cast<std::size_t>(gdim)};
     nb::ndarray<const double, nb::ndim<2>, nb::numpy> x_nb(x.data(), 2, shape,
                                                            nb::handle());
-    nb::ndarray<const int, nb::ndim<1>, nb::numpy> dest
-        = p(MPICommWrapper(comm), nparts, x_nb);
+    nb::ndarray<const int, nb::ndim<1>, nb::numpy> dest = p(
+        MPICommWrapper(comm), nparts, x_nb, weights_to_ndarray(node_weights));
     return std::vector<int>(dest.data(), dest.data() + dest.size());
   };
 }
@@ -240,14 +241,18 @@ void graph(nb::module_& m)
       .def(
           "__call__",
           [](const GeometricPartitioner& self, MPICommWrapper comm, int nparts,
-             nb::ndarray<const double, nb::ndim<2>, nb::c_contig> x)
+             nb::ndarray<const double, nb::ndim<2>, nb::c_contig> x,
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 node_weights)
           {
             int gdim = static_cast<int>(x.shape(1));
-            return as_nbarray(
-                self.fn(comm.get(), nparts,
-                        std::span<const double>(x.data(), x.size()), gdim));
+            return as_nbarray(self.fn(
+                comm.get(), nparts, std::span<const double>(x.data(), x.size()),
+                gdim, weights_to_span(node_weights)));
           },
           nb::arg("comm"), nb::arg("nparts"), nb::arg("x").noconvert(),
+          nb::arg("node_weights").none(),
           "Compute the destination rank for each row of x (cell centroids, "
           "not raw node coordinates -- see compute_cell_centroids).");
 

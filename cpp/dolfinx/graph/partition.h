@@ -61,9 +61,14 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 /// @param[in] x Node coordinates, row-major with `gdim` columns and one
 /// row per node.
 /// @param[in] gdim Number of coordinate components per node.
+/// @param[in] node_weights Node weights, one entry per row of `x`. If
+/// `std::nullopt`, nodes are treated as having equal weight. Not every
+/// ::geom_partition_fn can honour node weights; one that cannot throws
+/// if given anything other than `std::nullopt`.
 /// @return Destination rank(s) for each input node.
 using geom_partition_fn = std::function<std::vector<int>(
-    MPI_Comm, int, std::span<const double>, int)>;
+    MPI_Comm, int, std::span<const double>, int,
+    std::optional<std::span<const std::int32_t>>)>;
 
 /// @brief Signature of functions for computing the parallel
 /// partitioning of a distributed graph using both its edges and the
@@ -120,11 +125,7 @@ using AnyPartitionFunction
 /// @param[in] partitioner Partitioner to check.
 /// @return `true` if `partitioner` holds a callable function, `false`
 /// if it is default-constructed (not callable).
-inline bool has_partitioner(const AnyPartitionFunction& partitioner)
-{
-  return std::visit([](const auto& p) { return static_cast<bool>(p); },
-                    partitioner);
-}
+bool has_partitioner(const AnyPartitionFunction& partitioner);
 
 /// @brief Partition graph across processes using the default graph
 /// partitioner.

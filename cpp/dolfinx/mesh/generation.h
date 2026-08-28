@@ -306,8 +306,7 @@ create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
     if (gdim == 1)
     {
       return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF,
-                         x1d, {npts, 1},
-                         graph::Partitioner{partitioner, std::nullopt},
+                         x1d, {npts, 1}, graph::Partitioner{.fn = partitioner},
                          ghost_mode, 2, 1, reorder_fn);
     }
     std::vector<T> x(npts * gdim, T(0));
@@ -315,15 +314,15 @@ create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
       x[i * gdim] = x1d[i];
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
                        {npts, static_cast<std::size_t>(gdim)},
-                       graph::Partitioner{partitioner, std::nullopt},
-                       ghost_mode, 2, 1, reorder_fn);
+                       graph::Partitioner{.fn = partitioner}, ghost_mode, 2, 1,
+                       reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
                        std::vector<T>{}, {0, static_cast<std::size_t>(gdim)},
-                       graph::Partitioner{partitioner, std::nullopt},
-                       ghost_mode, 2, 1, reorder_fn);
+                       graph::Partitioner{.fn = partitioner}, ghost_mode, 2, 1,
+                       reorder_fn);
   }
 }
 
@@ -447,9 +446,8 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3},
-                     graph::Partitioner{partitioner, std::nullopt}, ghost_mode,
-                     2, 1, reorder_fn);
+                     {x.size() / 3, 3}, graph::Partitioner{.fn = partitioner},
+                     ghost_mode, 2, 1, reorder_fn);
 }
 
 template <std::floating_point T>
@@ -494,9 +492,8 @@ build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3},
-                     graph::Partitioner{partitioner, std::nullopt}, ghost_mode,
-                     2, 1, reorder_fn);
+                     {x.size() / 3, 3}, graph::Partitioner{.fn = partitioner},
+                     ghost_mode, 2, 1, reorder_fn);
 }
 
 template <std::floating_point T>
@@ -544,9 +541,8 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3},
-                     graph::Partitioner{partitioner, std::nullopt}, ghost_mode,
-                     2, 1, reorder_fn);
+                     {x.size() / 3, 3}, graph::Partitioner{.fn = partitioner},
+                     ghost_mode, 2, 1, reorder_fn);
 }
 
 template <std::floating_point T>
@@ -703,8 +699,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     if (gdim == 2)
     {
       return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                         {npts, 2},
-                         graph::Partitioner{partitioner, std::nullopt},
+                         {npts, 2}, graph::Partitioner{.fn = partitioner},
                          ghost_mode, 2, 1, reorder_fn);
     }
     std::vector<T> xg(npts * gdim, T(0));
@@ -715,15 +710,15 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     }
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, xg,
                        {npts, static_cast<std::size_t>(gdim)},
-                       graph::Partitioner{partitioner, std::nullopt},
-                       ghost_mode, 2, 1, reorder_fn);
+                       graph::Partitioner{.fn = partitioner}, ghost_mode, 2, 1,
+                       reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
                        std::vector<T>{}, {0, static_cast<std::size_t>(gdim)},
-                       graph::Partitioner{partitioner, std::nullopt},
-                       ghost_mode, 2, 1, reorder_fn);
+                       graph::Partitioner{.fn = partitioner}, ghost_mode, 2, 1,
+                       reorder_fn);
   }
 }
 
@@ -774,8 +769,7 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     if (gdim == 2)
     {
       return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                         {npts, 2},
-                         graph::Partitioner{partitioner, std::nullopt},
+                         {npts, 2}, graph::Partitioner{.fn = partitioner},
                          ghost_mode, 2, 1, reorder_fn);
     }
     std::vector<T> xg(npts * gdim, T(0));
@@ -786,15 +780,15 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     }
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, xg,
                        {npts, static_cast<std::size_t>(gdim)},
-                       graph::Partitioner{partitioner, std::nullopt},
-                       ghost_mode, 2, 1, reorder_fn);
+                       graph::Partitioner{.fn = partitioner}, ghost_mode, 2, 1,
+                       reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
                        std::vector<T>{}, {0, static_cast<std::size_t>(gdim)},
-                       graph::Partitioner{partitioner, std::nullopt},
-                       ghost_mode, 2, 1, reorder_fn);
+                       graph::Partitioner{.fn = partitioner}, ghost_mode, 2, 1,
+                       reorder_fn);
   }
 }
 } // namespace impl

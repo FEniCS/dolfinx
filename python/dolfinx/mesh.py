@@ -105,7 +105,7 @@ PartitioningFunc = typing.Callable[
 # the return value is a plain destination rank per node, not an
 # AdjacencyList: a geometric partitioner never ghosts.
 GeometricPartitioningFunc = typing.Callable[
-    [_MPI.Comm, int, npt.NDArray[np.float64]],
+    [_MPI.Comm, int, npt.NDArray[np.float64], npt.NDArray[np.int32] | None],
     npt.NDArray[np.int32],
 ]
 HybridPartitioningFunc = typing.Callable[
@@ -138,6 +138,12 @@ def create_geometric_cell_partitioner(
     regardless of what is otherwise requested. Use
     :func:`create_hybrid_cell_partitioner` for a partitioner that also
     needs the dual graph, e.g. to support ghosting.
+
+    ``part`` is also passed optional node weights, matching
+    :data:`PartitioningFunc`; :func:`create_mesh` supplies its
+    ``cell_weights`` argument as the node weights. Not every geometric
+    partitioner can honour node weights, e.g. ``partitioner_parmetis_geom``
+    raises if given anything other than ``None``.
 
     Args:
         part: A custom geometric graph partitioning function. The

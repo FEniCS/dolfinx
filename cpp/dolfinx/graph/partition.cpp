@@ -129,6 +129,12 @@ DistributionPlan compute_distribution_plan(
 } // namespace
 
 //-----------------------------------------------------------------------------
+bool graph::has_partitioner(const AnyPartitionFunction& partitioner)
+{
+  return std::visit([](const auto& p) { return static_cast<bool>(p); },
+                    partitioner);
+}
+//-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> graph::partition_graph(
     MPI_Comm comm, int nparts, const AdjacencyList<std::int64_t>& local_graph,
     std::optional<std::span<const std::int32_t>> node_weights,

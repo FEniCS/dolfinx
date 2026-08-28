@@ -1059,8 +1059,8 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
               {
                 auto [centroid, cshape] = centroids();
                 return graph::regular_adjacency_list(
-                    p(commt, size, std::span<const double>(centroid),
-                      cshape[1]),
+                    p(commt, size, std::span<const double>(centroid), cshape[1],
+                      partitioner.node_weights),
                     1);
               }
               else if constexpr (std::is_same_v<P, graph::hybrid_partition_fn>)
@@ -1476,10 +1476,10 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
 {
   if (dolfinx::MPI::size(comm) == 1)
   {
-    return create_mesh(
-        comm, comm, std::vector{cells}, std::vector{elements}, comm, x, xshape,
-        graph::Partitioner{graph::partition_fn(nullptr), std::nullopt},
-        ghost_mode, max_facet_to_cell_links, 1);
+    return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
+                       comm, x, xshape,
+                       graph::Partitioner{.fn = graph::partition_fn(nullptr)},
+                       ghost_mode, max_facet_to_cell_links, 1);
   }
   else
   {

@@ -699,10 +699,16 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
   };
 }
 //-----------------------------------------------------------------------------
-std::vector<int> graph::parmetis::geom_partitioner(MPI_Comm comm, int nparts,
-                                                   std::span<const double> x,
-                                                   int gdim)
+std::vector<int> graph::parmetis::geom_partitioner(
+    MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
+    std::optional<std::span<const std::int32_t>> node_weights)
 {
+  if (node_weights)
+  {
+    throw std::runtime_error(
+        "ParMETIS_V3_PartGeom does not support node weights.");
+  }
+
   spdlog::info("Compute geometric graph partition using ParMETIS");
   common::Timer timer("Compute graph partition (ParMETIS geometric)");
 

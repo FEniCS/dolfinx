@@ -154,8 +154,7 @@ refine(const mesh::Mesh<T>& mesh,
   mesh::Mesh<T> mesh1 = mesh::create_mesh(
       mesh.comm(), mesh.comm(), cell_adj.array(),
       mesh.geometry().cmaps().front(), mesh.comm(), new_vertex_coords, xshape,
-      graph::Partitioner{std::get<graph::partition_fn>(partitioner),
-                         std::nullopt},
+      graph::Partitioner{.fn = std::get<graph::partition_fn>(partitioner)},
       ghost_mode, 2, 1);
 
   // Report the number of refined cells

@@ -8,6 +8,8 @@
 
 #include "partition.h"
 #include <array>
+#include <optional>
+#include <span>
 
 namespace dolfinx::graph
 {
@@ -145,9 +147,12 @@ graph::partition_fn repartitioner(double ipc2redist = 1000.0,
 /// @param[in] x Node coordinates, row-major with `gdim` columns and one
 /// row per node.
 /// @param[in] gdim Number of coordinate components per node.
+/// @param[in] node_weights Unused: `ParMETIS_V3_PartGeom` does not
+/// support node weights. Must be `std::nullopt`.
 /// @return Destination rank for each input node.
-std::vector<int> geom_partitioner(MPI_Comm comm, int nparts,
-                                  std::span<const double> x, int gdim);
+std::vector<int>
+geom_partitioner(MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
+                 std::optional<std::span<const std::int32_t>> node_weights);
 
 /// @brief Create a geometric graph partitioning function that uses
 /// ParMETIS to order the coordinates along a space-filling curve,

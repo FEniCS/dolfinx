@@ -304,7 +304,10 @@ def partition_quality(msh: Mesh) -> tuple[float, int]:
 
 
 def slab_partitioner(
-    comm: MPI.Comm, nparts: int, x: npt.NDArray[np.float64]
+    comm: MPI.Comm,
+    nparts: int,
+    x: npt.NDArray[np.float64],
+    node_weights: npt.NDArray[np.int32] | None,
 ) -> npt.NDArray[np.int32]:
     """Partition cells into slabs of the domain, ordered by `x`-coordinate.
 
@@ -321,6 +324,8 @@ def slab_partitioner(
             per-row destination.
         nparts: Number of parts to divide the domain into.
         x: Cell centroids, with shape ``(num_cells, gdim)``.
+        node_weights: Unused; this partitioner does not support node
+            weights.
 
     Returns:
         Destination rank for each row of `x`.

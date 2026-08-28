@@ -309,8 +309,8 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     geometry_cmaps.push_back(cm);
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, geometry_cmaps, mesh.comm(), new_x,
-      {new_x.size() / 3, 3}, graph::Partitioner{partitioner, std::nullopt},
-      ghost_mode, 2, 1);
+      {new_x.size() / 3, 3}, graph::Partitioner{.fn = partitioner}, ghost_mode,
+      2, 1);
 
   return new_mesh;
 }

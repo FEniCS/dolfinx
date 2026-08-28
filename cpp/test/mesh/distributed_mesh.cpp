@@ -137,10 +137,9 @@ void test_distributed_mesh(const graph::partition_fn& partitioner)
   CHECK(xshape[1] == 2);
 
   // Build mesh
-  mesh::Mesh mesh
-      = mesh::create_mesh(comm, subset_comm, cells, cmap, comm, x, xshape,
-                          graph::Partitioner{partitioner, std::nullopt},
-                          mesh::GhostMode::none, 2, 1);
+  mesh::Mesh mesh = mesh::create_mesh(
+      comm, subset_comm, cells, cmap, comm, x, xshape,
+      graph::Partitioner{.fn = partitioner}, mesh::GhostMode::none, 2, 1);
   auto t = mesh.topology();
   int tdim = t->dim();
   CHECK(t->index_map(tdim)->size_global() == 2 * N * N);

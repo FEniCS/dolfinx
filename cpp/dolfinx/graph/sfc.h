@@ -10,6 +10,7 @@
 #include "partition.h"
 #include <cstdint>
 #include <mpi.h>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -47,9 +48,14 @@ namespace dolfinx::graph
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
 /// @param[in] gdim Number of coordinate components per point. Must be
 /// 1, 2 or 3.
+/// @param[in] weights Point weights, one entry per row of `x`.
+/// Partitions aim for equal sums of weight along the curve rather than
+/// equal counts. If `std::nullopt`, points are treated as having equal
+/// weight.
 /// @return Destination rank for each point, one entry per row of `x`.
-std::vector<int> partition_sfc_morton(MPI_Comm comm, int nparts,
-                                      std::span<const double> x, int gdim);
+std::vector<int> partition_sfc_morton(
+    MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
+    std::optional<std::span<const std::int32_t>> weights = std::nullopt);
 
 /// @brief Partition points into `nparts` groups of (approximately) equal
 /// size using a Hilbert space-filling curve.
@@ -72,8 +78,12 @@ std::vector<int> partition_sfc_morton(MPI_Comm comm, int nparts,
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
 /// @param[in] gdim Number of coordinate components per point. Must be
 /// 1, 2 or 3.
+/// @param[in] weights Point weights, one entry per row of `x`.
+/// Partitions aim for equal sums of weight along the curve rather than
+/// equal counts. If `std::nullopt`, points are treated as having equal
+/// weight.
 /// @return Destination rank for each point, one entry per row of `x`.
-std::vector<int> partition_sfc_hilbert(MPI_Comm comm, int nparts,
-                                       std::span<const double> x, int gdim);
-
+std::vector<int> partition_sfc_hilbert(
+    MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
+    std::optional<std::span<const std::int32_t>> weights = std::nullopt);
 } // namespace dolfinx::graph

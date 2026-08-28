@@ -356,8 +356,9 @@ void declare_mesh(nb::module_& m, std::string type)
         return dolfinx::mesh::create_mesh(
             comm.get(), comm.get(), cells, elements, comm.get(),
             std::span(x.data(), x.size()), {x.shape(0), shape1},
-            dolfinx::graph::Partitioner{part::impl::to_any_cell_partitioner(p),
-                                        to_cell_weights_span(cell_weights)},
+            dolfinx::graph::Partitioner{
+                .fn = part::impl::to_any_cell_partitioner(p),
+                .node_weights = to_cell_weights_span(cell_weights)},
             ghost_mode, max_facet_to_cell_links, num_threads);
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("elements"),
@@ -384,8 +385,9 @@ void declare_mesh(nb::module_& m, std::string type)
             comm.get(), comm.get(), std::span(cells.data(), cells.size()),
             element, comm.get(), std::span(x.data(), x.size()),
             {x.shape(0), shape1},
-            dolfinx::graph::Partitioner{part::impl::to_any_cell_partitioner(p),
-                                        to_cell_weights_span(cell_weights)},
+            dolfinx::graph::Partitioner{
+                .fn = part::impl::to_any_cell_partitioner(p),
+                .node_weights = to_cell_weights_span(cell_weights)},
             ghost_mode, max_facet_to_cell_links, num_threads);
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),

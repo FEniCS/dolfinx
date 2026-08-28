@@ -40,8 +40,8 @@ using PythonPartitionFunction
 /// below.
 using PythonGeoPartitionFunction
     = std::function<nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
-        MPICommWrapper, int,
-        nb::ndarray<const double, nb::ndim<2>, nb::numpy>)>;
+        MPICommWrapper, int, nb::ndarray<const double, nb::ndim<2>, nb::numpy>,
+        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>)>;
 
 /// Shape of a plain Python hybrid graph partitioning function, as
 /// wrapped by partitioner_wrap_py_to_cpp / create_hybrid_cell_partitioner
@@ -67,7 +67,9 @@ partitioner_wrap_py_to_cpp(const PythonPartitionFunction& p);
 /// it is recovered from `x`'s own second dimension when reshaping the
 /// flat `x` span for the call, matching how `x` is passed to a Python
 /// geometric partitioner elsewhere (e.g. create_geometric_cell_partitioner).
-/// Defined in graph.cpp.
+/// A std::nullopt weight is passed through as Python None, matching
+/// graph::geom_partition_fn's own std::optional weights. Defined in
+/// graph.cpp.
 dolfinx::graph::geom_partition_fn
 partitioner_wrap_py_to_cpp(const PythonGeoPartitionFunction& p);
 
