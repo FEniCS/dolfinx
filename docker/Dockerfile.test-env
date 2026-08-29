@@ -9,34 +9,29 @@
 # You can build an optimised version of the FEniCS development environment
 # (without the FEniCS components) for your platform using the command:
 #
-#    docker build --target dev-env --file dolfinx/docker/Dockerfile.test-env --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
+#    docker build --target dev-env --file docker/Dockerfile.test-env --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
+#
+# The build context is the repository root, from which
+# python/pyproject.toml is copied in below.
 #
 
-ARG DOXYGEN_VERSION=1_17_0
 ARG GMSH_VERSION=4_15_2
 ARG KAHIP_VERSION=3.25
-# NOTE: The NumPy version (https://pypi.org/project/numpy/#history)
-# should be pinned to the most recent NumPy release that is supported by
-# the most recent Numba release, see
-# https://numba.readthedocs.io/en/stable/user/installing.html#version-support-information
-ARG NUMPY_VERSION=2.4.6
+ARG OCCT_VERSION=7_9_3
 ARG PETSC_VERSION=3.25.4
 ARG SLEPC_VERSION=3.25.1
-ARG SPDLOG_VERSION=1.17.0
 
 ########################################
 
 FROM ubuntu:26.04 AS dev-env
 LABEL maintainer="FEniCS Steering Council <fenics-steering-council@googlegroups.com>"
-LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
+LABEL description="FEniCS testing and development environment with PETSc real and complex, 32-bit modes"
 
-ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
 ARG KAHIP_VERSION
+ARG OCCT_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
-ARG SPDLOG_VERSION
-ARG NUMPY_VERSION
 
 # The following ARGS are used in the dev-env layer.
 # They are safe defaults. They can be overridden by the user.
@@ -49,7 +44,7 @@ ARG BUILD_NP=4
 
 # PETSc/SLEPc configurations to build, as PETSC_ARCH names understood by
 # petsc4py/slepc4py's colon-separated PETSC_ARCH install syntax.
-ARG PETSC_ARCHS="linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64"
+ARG PETSC_ARCHS="linux-gnu-real64-32:linux-gnu-complex128-32"
 
 WORKDIR /tmp
 
@@ -58,83 +53,76 @@ ENV OPENBLAS_NUM_THREADS=1 \
     OPENBLAS_VERBOSE=0
 
 # Install dependencies available via apt-get.
-# - First set of packages are required to build and run FEniCS.
-# - Second set of packages are recommended and/or required to build
-#   documentation or tests.
-# - Third set of packages are optional, but required to run gmsh
-#   pre-built binaries.
+# OCCT (gmsh's CAD kernel) is built from source below since Ubuntu's
+# libocct-data-exchange-dev drags in the full libvtk9-dev toolchain.
+# libx11-dev is OCCT's own header-only dependency.
+# libfltk1.3-dev pulls the whole GUI stack gmsh needs.
+# python3-adios2 carries the Python API and python3-adios2-mpi
+# the compiled bindings, so both are needed explicitly.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install --no-install-recommends \
+    catch2 \
     cmake \
+    doxygen \
     g++ \
     gfortran \
+    git \
+    graphviz \
     libadios2-mpi-c++-dev \
     libboost-dev \
+    libfltk1.3-dev \
+    libglu1-mesa-dev \
     libhdf5-mpi-dev \
     liblapack-dev \
     libopenblas-dev \
     libpugixml-dev \
+    libspdlog-dev \
+    libx11-dev \
+    make \
     mpi-default-dev \
     ninja-build \
     pkg-config \
+    python3-adios2 \
+    python3-adios2-mpi \
+    python3-cffi \
     python3-dev \
+    python3-mpi4py \
+    python3-numpy \
+    python3-numpy-dev \
+    python3-packaging \
     python3-pip \
-    python3-venv && \
-    #
-    apt-get -y install \
-    catch2 \
-    git \
-    graphviz \
-    libeigen3-dev \
-    valgrind \
+    python3-pytest \
+    python3-pytest-xdist \
+    python3-scipy \
+    python3-venv \
     wget && \
-    #
-    apt-get -y install \
-    libglu1 \
-    libxcursor-dev \
-    libxft2 \
-    libxinerama1 \
-    libfltk1.3-dev \
-    libfreetype6-dev  \
-    libgl1-mesa-dev \
-    libocct-foundation-dev \
-    libocct-data-exchange-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install spdlog from source - Ubuntu version is incompatible with CUDA 12.
-RUN wget -nc --quiet https://github.com/gabime/spdlog/archive/refs/tags/v${SPDLOG_VERSION}.tar.gz && \
-    tar xfz v${SPDLOG_VERSION}.tar.gz && \
-    cd spdlog-${SPDLOG_VERSION} && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_BUILD_SHARED=ON -DSPDLOG_BUILD_PIC=ON -B build-dir . && \
-    cmake --build build-dir && \
-    cmake --install build-dir && \
-    rm -rf /tmp/*
+# adios2 imports its serial bindings unless it detects an mpirun
+# environment. This forces adios2 MPI bindings always.
+ENV ADIOS2_ALWAYS_USE_MPI=1
 
-# Install Doxygen
-RUN apt-get -qq update && \
-    apt-get -y install bison flex && \
-    wget -nc --quiet https://github.com/doxygen/doxygen/archive/refs/tags/Release_${DOXYGEN_VERSION}.tar.gz && \
-    tar xfz Release_${DOXYGEN_VERSION}.tar.gz && \
-    cd doxygen-Release_${DOXYGEN_VERSION} && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir . && \
-    cmake --build build-dir && \
-    cmake --install build-dir && \
-    apt-get -y purge bison flex && \
-    apt-get -y autoremove && \
-    apt-get clean && \
-    rm -rf /tmp/*
+# CMake's FindHDF5 picks the serial build whenever Ubuntu's serial and
+# MPI HDF5 are both present. Pin HDF5_ROOT to the MPI build.
+RUN ln -s /usr/lib/$(gcc -print-multiarch)/hdf5/openmpi /usr/lib/hdf5-mpi
+ENV HDF5_ROOT=/usr/lib/hdf5-mpi
 
 ENV VIRTUAL_ENV=/dolfinx-env
 ENV PATH=/dolfinx-env/bin:$PATH
-RUN python3 -m venv ${VIRTUAL_ENV}
+RUN python3 -m venv --system-site-packages ${VIRTUAL_ENV}
 
-# Install Python packages (via pip)
+# Install Python packages (via pip).
+# matplotlib is pip-only because Ubuntu's python3-fonttools pulls sympy
+# and unicode-data (~70 MiB); networkx, numba and pyamg follow it to keep
+# the demo and optional sets on one installer.
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir cython numpy==${NUMPY_VERSION} && \
-    pip install --no-cache-dir mpi4py
+    # Cython 3.3 tightened pointer-indexing checks that break
+    # petsc4py 3.25.4's generated PC.pyx; pin below that for now.
+    pip install --no-cache-dir "cython<3.3" && \
+    pip install --no-cache-dir matplotlib networkx numba pyamg
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
@@ -144,14 +132,39 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
     cmake --install build-dir && \
     rm -rf /tmp/*
 
-# Install GMSH
-RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.onelab.info/gmsh/gmsh.git && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1 -B build-dir -S gmsh && \
+# Headless OCCT: only the modules gmsh's STEP/IGES/meshing needs are
+# built. FreeType is force-disabled since DataExchange still probes for
+# it with Visualization disabled.
+RUN git clone -b V${OCCT_VERSION} --single-branch --depth 1 https://github.com/Open-Cascade-SAS/OCCT.git && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_LIBRARY_TYPE=Shared \
+    -DBUILD_MODULE_ApplicationFramework=OFF \
+    -DBUILD_MODULE_DataExchange=ON \
+    -DBUILD_MODULE_Draw=OFF \
+    -DBUILD_MODULE_FoundationClasses=ON \
+    -DBUILD_MODULE_ModelingAlgorithms=ON \
+    -DBUILD_MODULE_ModelingData=ON \
+    -DBUILD_MODULE_Visualization=OFF \
+    -DINSTALL_DIR_INCLUDE=include/opencascade \
+    -DINSTALL_TEST_CASES=OFF \
+    -DUSE_FREETYPE=OFF \
+    -DUSE_TBB=OFF \
+    -B build-dir -S OCCT && \
     cmake --build build-dir && \
     cmake --install build-dir && \
+    ldconfig && \
     rm -rf /tmp/*
 
-# GMSH installs python library in /usr/local/lib, see: https://gitlab.onelab.info/gmsh/gmsh/-/issues/1414
+# Install GMSH. The FLTK GUI costs ~70 MiB and is kept so gmsh.fltk.run()
+# works against a forwarded X11 display.
+RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.onelab.info/gmsh/gmsh.git && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1 -DENABLE_OPENMP=1 -DENABLE_FLTK=1 -B build-dir -S gmsh && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    ldconfig && \
+    rm -rf /tmp/*
+
+# GMSH installs Python library in /usr/local/lib, see: https://gitlab.onelab.info/gmsh/gmsh/-/issues/1414
 ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 
 # Install PETSc and petsc4py with real and complex types
@@ -210,26 +223,6 @@ RUN apt-get -qq update && \
     --with-scalar-type=complex \
     --with-precision=double && \
     make PETSC_ARCH=linux-gnu-complex128-32 -j${BUILD_NP} all && \
-    # Real64, 64-bit int
-    ./configure \
-    PETSC_ARCH=linux-gnu-real64-64 \
-    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --with-64-bit-indices=yes \
-    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
-    --with-fortran-bindings=no \
-    --with-shared-libraries \
-    --download-hypre \
-    --download-mumps-avoid-mpi-in-place \
-    --download-mumps \
-    --download-ptscotch \
-    --download-scalapack \
-    --download-suitesparse \
-    --download-superlu_dist \
-    --with-scalar-type=real \
-    --with-precision=double && \
-    make PETSC_ARCH=linux-gnu-real64-64 -j${BUILD_NP} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
     PETSC_ARCH=${PETSC_ARCHS} pip -v install --no-cache-dir --no-build-isolation . && \
@@ -259,13 +252,16 @@ RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git 
     export PETSC_ARCH=linux-gnu-complex128-32 && \
     ./configure && \
     make && \
-    export PETSC_ARCH=linux-gnu-real64-64 && \
-    ./configure && \
-    make && \
     # Install slepc4py
     cd src/binding/slepc4py && \
     PETSC_ARCH=${PETSC_ARCHS} pip -v install --no-cache-dir --no-build-isolation . && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
+
+# The DOLFINx build dependencies, read from pyproject.toml rather than
+# duplicated here.
+COPY python/pyproject.toml /tmp/pyproject.toml
+RUN pip install --no-cache-dir --group /tmp/pyproject.toml:build && \
+    rm /tmp/pyproject.toml
 
 WORKDIR /root
