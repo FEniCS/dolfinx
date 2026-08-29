@@ -184,9 +184,6 @@ jobs:
     container: "ghcr.io/fenics/test-env:current"
     env:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
-      OMPI_ALLOW_RUN_AS_ROOT: 1
-      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
       PYTEST_ADDOPTS: "-W error"
 
     name: Build and test (${{ matrix.petsc_arch }})
@@ -295,9 +292,6 @@ jobs:
     container: "ghcr.io/fenics/test-env:current"
     env:
       PETSC_ARCH: linux-gnu-real64-32
-      OMPI_ALLOW_RUN_AS_ROOT: 1
-      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
     name: Build and publish docs
     steps:
