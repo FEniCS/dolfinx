@@ -15,10 +15,15 @@
       ]
     },
     "mpi",
-    "parmetis",
     "pugixml",
     "pkgconf",
+    { "name": "scotch",
+      "features": [
+        "ptscotch"
+      ]
+    },
     "spdlog",
+    "superlu-dist",
     "vcpkg-cmake",
     "vcpkg-cmake-config"
   ]
