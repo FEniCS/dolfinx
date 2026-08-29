@@ -262,7 +262,9 @@ disclosure process.
   `cmake ... -DCMAKE_BUILD_TYPE=Developer` and Python parts
   `pip ... -Ccmake.build-type=Developer` must be built in Developer mode
   which enables hardened debugging/correctness checks. Performance
-  profiling must be done on a build built with `Release` mode.
+  profiling must be done on a build built with `Release` mode. For finding
+  bugs and step through debugging, rather than performance profiling,
+  see the [sanitizer info](cpp/cmake/sanitizers/README.md).
 - **C++**: Catch2 3, in `cpp/test/`. FFCx-generated forms are compiled
   as part of the test build (see `cpp/test/CMakeLists.txt`).
 - **Python**: `pytest`, in `python/test/`. Use `mpi4py.MPI` fixtures

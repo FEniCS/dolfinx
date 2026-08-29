@@ -122,6 +122,13 @@ target_compile_definitions(
 )
 target_compile_features(cpp PRIVATE cxx_std_20)
 
+# nanobind_add_stub's own sanitizer auto-detection only sees -fsanitize= in a
+# target's COMPILE_OPTIONS/LINK_OPTIONS, not in CMAKE_CXX_FLAGS.
+if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=[^ ]+")
+  target_compile_options(cpp PRIVATE ${CMAKE_MATCH_0})
+  target_link_options(cpp PRIVATE ${CMAKE_MATCH_0})
+endif()
+
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
   set_target_properties(

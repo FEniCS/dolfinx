@@ -1,0 +1,12 @@
+# LeakSanitizer suppressions for DOLFINx DeveloperDebug builds. These cover
+# allocations made by MPI, PETSc and HDF5. More may be needed.
+#
+# Use with: LSAN_OPTIONS=suppressions=<path-to-this-file>
+leak:libmpi
+leak:libopen-pal
+leak:libopen-rte
+leak:mca_
+leak:libpmix
+leak:libpetsc
+leak:libhdf5
+leak:H5
