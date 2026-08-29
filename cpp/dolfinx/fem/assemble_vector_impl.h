@@ -101,6 +101,9 @@ void assemble_cells(
   // rather than on every cell.
   const bool p0_set = is_transform_set(P0);
 
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
@@ -117,8 +120,8 @@ void assemble_cells(
 
     // Tabulate vector for cell
     std::ranges::fill(be, 0);
-    kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs_b.data(),
-           nullptr, nullptr, nullptr);
+    kernel(be.data(), coeffs_data + index * cstride, constants.data(),
+           cdofs_b.data(), nullptr, nullptr, nullptr);
     if (p0_set)
       P0(be, cell_info0, c0, 1);
 
@@ -207,6 +210,9 @@ void assemble_entities(
   // than on every entity.
   const bool p0_set = is_transform_set(P0);
 
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
   for (std::size_t f = 0; f < entities.extent(0); ++f)
   {
     // Cell in the integration domain, local facet index relative to the
@@ -227,8 +233,8 @@ void assemble_entities(
 
     // Tabulate element vector
     std::ranges::fill(be, 0);
-    kernel(be.data(), &coeffs(f, 0), constants.data(), cdofs_b.data(),
-           &local_entity, &perm, nullptr);
+    kernel(be.data(), coeffs_data + f * cstride, constants.data(),
+           cdofs_b.data(), &local_entity, &perm, nullptr);
     if (p0_set)
       P0(be, cell_info0, cell0, 1);
 
@@ -303,6 +309,9 @@ void assemble_interior_facets(
   assert(be_b.size() >= static_cast<std::size_t>(bs) * 2 * dmap_size);
   auto be = be_b.first(bs * 2 * dmap_size);
 
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = 2 * coeffs.extent(2);
+
   assert(facets0.size() == facets.size());
 
   const U* x_ptr = x.data_handle();
@@ -349,8 +358,8 @@ void assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    kernel(be.data(), &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
-           local_facet.data(), perm.data(), nullptr);
+    kernel(be.data(), coeffs_data + f * cstride, constants.data(),
+           cdofs_b.data(), local_facet.data(), perm.data(), nullptr);
 
     if (p0_set and cells0[0] >= 0)
       P0(be, cell_info0, cells0[0], 1);

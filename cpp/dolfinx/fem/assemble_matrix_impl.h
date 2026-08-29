@@ -130,6 +130,9 @@ void assemble_cells_matrix(
   const bool p0_set = is_transform_set(P0);
   const bool p1t_set = is_transform_set(P1T);
 
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
   // Iterate over active cells
   assert(cells0.size() == cells.size());
   assert(cells1.size() == cells.size());
@@ -159,9 +162,9 @@ void assemble_cells_matrix(
     }
 
     // Tabulate tensor
-    std::ranges::fill(Ae, T{0});
-    kernel(Ae.data(), &coeffs(c, 0), constants.data(), cdofs_b.data(), nullptr,
-           nullptr, nullptr);
+    std::ranges::fill(Ae, 0);
+    kernel(Ae.data(), coeffs_data + c * cstride, constants.data(),
+           cdofs_b.data(), nullptr, nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
     if (p0_set)
@@ -320,6 +323,9 @@ void assemble_entities(
   const bool p0_set = is_transform_set(P0);
   const bool p1t_set = is_transform_set(P1T);
 
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
   for (std::size_t f = 0; f < entities.extent(0); ++f)
   {
     // Cell in the integration domain, local entity index relative to the
@@ -352,8 +358,8 @@ void assemble_entities(
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), &coeffs(f, 0), constants.data(), cdofs_b.data(),
-           &local_entity, &perm, nullptr);
+    kernel(Ae.data(), coeffs_data + f * cstride, constants.data(),
+           cdofs_b.data(), &local_entity, &perm, nullptr);
     if (p0_set)
       P0(Ae, cell_info0, cell0, ndim1);
     if (p1t_set)
@@ -522,6 +528,10 @@ void assemble_interior_facets(
   // where both cells exist, so such blocks must be inserted
   // individually rather than as part of the full joint block.
   assert(Ae_block_b.size() >= dmap0_size * bs0 * dmap1_size * bs1);
+
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = 2 * coeffs.extent(2);
+
   auto insert_block = [&Ae_block_b, &Ae, &bs0, &bs1, &num_cols,
                        &mat_set](std::span<const std::int32_t> rdofs,
                                  std::span<const std::int32_t> cdofs,
@@ -614,8 +624,8 @@ void assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    kernel(Ae.data(), &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
-           local_facet.data(), perm.data(), nullptr);
+    kernel(Ae.data(), coeffs_data + f * cstride, constants.data(),
+           cdofs_b.data(), local_facet.data(), perm.data(), nullptr);
 
     // Local element layout is a 2x2 block matrix with structure
     //
