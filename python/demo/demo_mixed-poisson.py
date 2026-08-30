@@ -211,7 +211,7 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
             "ksp_type": "gmres",
             "pc_type": "fieldsplit",
             "pc_fieldsplit_type": "additive",
-            "ksp_rtol": 1e-6 if np.finfo(dtype).bits == 32 else 1e-8,
+            "ksp_rtol": 1e-5 if np.finfo(dtype).bits == 32 else 1e-8,
             "ksp_gmres_restart": 100,
             "ksp_error_if_not_converged": True,
         },
