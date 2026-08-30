@@ -279,7 +279,16 @@ for k in (1, 2):
     if has_adios2:
         # VTX supports (discontinuous) Lagrange functions, so interpolate
         # the flux.
-        V_sigma = fem.functionspace(msh, ("Discontinuous Lagrange", k, (msh.geometry.dim,)))
+        V_sigma = fem.functionspace(
+            msh,
+            element(
+                "Discontinuous Lagrange",
+                msh.basix_cell(),
+                k,
+                shape=(msh.geometry.dim,),
+                dtype=xdtype,
+            ),
+        )
         sigma_output = fem.Function(V_sigma, name="sigma", dtype=dtype)
         sigma_output.interpolate(sigma)
         with VTXWriter(msh.comm, f"output_mixed_poisson_sigma_{k}.bp", sigma_output) as f:
