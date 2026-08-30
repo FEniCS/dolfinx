@@ -100,14 +100,14 @@ import numpy as np
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_real_type, default_scalar_type, fem, has_adios2, mesh
+from dolfinx import fem, has_adios2, mesh
 from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.mesh import CellType, create_unit_square
 
 # Solution scalar (e.g., float32, complex128) and geometry (float32/64)
 # types
-dtype = default_scalar_type
-xdtype = default_real_type
+dtype = PETSc.ScalarType
+xdtype = PETSc.RealType
 # -
 
 # Create a two-dimensional mesh. The iterative solver constructed
