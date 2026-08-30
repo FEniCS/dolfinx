@@ -240,18 +240,18 @@ def solve(k: int) -> tuple[fem.Function, fem.Function]:
     return sigma, u
 
 
-for k in (1, 2):
-    sigma, u = solve(k)
+solutions = {k: solve(k) for k in (1, 2)}
 # -
 
-# We save the solution `u` in VTX format:
+# We save the solutions `u` in VTX format:
 
 # +
 if has_adios2:
     from dolfinx.io import VTXWriter
 
-    with VTXWriter(msh.comm, "output_mixed_poisson.bp", u) as f:
-        f.write(0.0)
+    for k, (_, u) in solutions.items():
+        with VTXWriter(msh.comm, f"output_mixed_poisson_{k}.bp", u) as f:
+            f.write(0.0)
 else:
     print("ADIOS2 required for VTX output.")
 # -
