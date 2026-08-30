@@ -122,9 +122,8 @@ facets_top = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1],
 facets_bottom = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
 cells_top = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
 cells_bottom = mesh.compute_incident_entities(msh.topology, facets_bottom, fdim, fdim + 1)
-can_use_hypre = PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(
-    dtype, np.complexfloating
-)
+has_hypre = PETSc.Sys().hasExternalPackage("hypre")
+hypre_ams_compatible = not np.issubdtype(dtype, np.complexfloating)
 # -
 #
 # Here we construct compatible function spaces for the mixed Poisson
@@ -137,6 +136,19 @@ can_use_hypre = PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(
 # ```
 # The lowest-order case is $k=1$. The solver below can be called with a
 # higher degree, though convergence generally degrades as $k$ increases.
+# For each degree, `solve` constructs the function spaces, assembles the
+# blocked variational form, applies the essential flux boundary conditions,
+# and solves for both $\sigma$ and $u$.
+#
+# The source is $f = 10\exp(-((x_0 - 0.5)^2 + (x_1 - 0.5)^2) / 0.02)$.
+# The flux boundary condition $\sigma \cdot n = \sin(5x_0)$ is imposed on
+# the top and bottom boundaries. The $H({\rm div})$ block is preconditioned
+# using either Hypre AMS or LU; the discontinuous Lagrange mass block uses
+# PETSc's default preconditioner.
+#
+# Hypre AMS is available only for real scalar types. In two dimensions,
+# it can precondition this $H({\rm div})$ problem because $H({\rm div})$
+# and $H({\rm curl})$ are equivalent up to a rotation by $\pi/2$.
 
 
 # +
@@ -149,8 +161,10 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
     """
     if k < 1:
         raise ValueError("Element degree must be at least 1.")
-    if use_hypre and not can_use_hypre:
-        raise RuntimeError("Hypre AMS requires real scalar types and PETSc configured with Hypre.")
+    if use_hypre and not has_hypre:
+        raise RuntimeError("PETSc is not configured with Hypre.")
+    if use_hypre and not hypre_ams_compatible:
+        raise RuntimeError("Hypre AMS does not support complex scalar types.")
 
     V = fem.functionspace(msh, element("RT", msh.basix_cell(), k, dtype=xdtype))
     W = fem.functionspace(
@@ -204,8 +218,11 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
         },
     )
     ksp = problem.solver
+    solver_label = f"k={k} ({'Hypre AMS' if use_hypre else 'LU'})"
     ksp.setMonitor(
-        lambda _, its, rnorm: PETSc.Sys.Print(f"Iteration: {its:>4d}, residual: {rnorm:.3e}")
+        lambda _, its, rnorm: PETSc.Sys.Print(
+            f"{solver_label}: iteration {its:>4d}, residual: {rnorm:.3e}"
+        )
     )
 
     ksp_sigma, _ = ksp.getPC().getFieldSplitSubKSP()
@@ -250,12 +267,14 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
     return sigma, u
 
 
+# Solve and save the scalar solution for the lowest-order and next-order
+# cases.
 if has_adios2:
     from dolfinx.io import VTXWriter
 
 
 for k in (1, 2):
-    sigma, u = solve(k, can_use_hypre)
+    sigma, u = solve(k, has_hypre and hypre_ams_compatible)
     if has_adios2:
         with VTXWriter(msh.comm, f"output_mixed_poisson_{k}.bp", u) as f:
             f.write(0.0)
