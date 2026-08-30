@@ -14,7 +14,7 @@
 # (two-field) formulation and a block-preconditioned iterative solver.
 # In particular, it illustrates how to
 #
-# * Use mixed and non-continuous finite element spaces.
+# * Use mixed and discontinuous finite element spaces.
 # * Set essential boundary conditions for subspaces and
 #   $H(\mathrm{div})$ spaces.
 # * Construct a blocked linear system.
@@ -32,8 +32,8 @@
 # ## Equation and problem definition
 #
 # An alternative formulation of Poisson equation can be formulated by
-# introducing an additional (vector) variable, namely the (negative)
-# flux: $\sigma = \nabla u$. The partial differential equations
+# introducing an additional vector variable, the flux $\sigma = \nabla u$.
+# The partial differential equations
 # then read
 #
 # $$
@@ -122,12 +122,12 @@ msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle, dtype=xdtype
 # Here we construct compatible function spaces for the mixed Poisson
 # problem. The `V` Raviart-Thomas ($\mathbb{RT}$) space is a
 # vector-valued $H({\rm div})$ conforming space. The `W` space is a
-# space of discontinuous Lagrange function of degree `k`.
+# discontinuous Lagrange space of degree `k - 1`.
 # ```{note}
 # The $\mathbb{RT}_{k}$ element in DOLFINx/Basix is usually denoted as
 # $\mathbb{RT}_{k-1}$ in the literature.
 # ```
-# In the lowest-order case $k=1$. It can be increased, by the
+# The lowest-order case is $k=1$. It can be increased, but the
 # convergence of the iterative solver will degrade.
 
 # +
@@ -154,7 +154,7 @@ f = 10 * ufl.exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 
 # We now declare the blocked bilinear and linear forms. We use
 # `ufl.extract_blocks` to extract the block structure of the bilinear
 # and linear form. For the first block of the right-hand side, we provide
-# a form that efficiently is 0. We do this to preserve knowledge of the
+# an identically zero form. We do this to preserve knowledge of the
 # test space in the block. *Note that the defined `L` corresponds to
 # $u_{0} = 0$ on $\Gamma_{D}$.*
 
@@ -172,11 +172,11 @@ L = [ufl.ZeroBaseForm((tau,)), -ufl.inner(f, v) * dx]
 # In preparation for Dirichlet boundary conditions, we use the function
 # {py:func}`locate_entities_boundary
 # <dolfinx.mesh.locate_entities_boundary>` to locate mesh entities
-# (facets) with which degree-of-freedoms to be constrained are
+# (facets) with which degrees of freedom to be constrained are
 # associated with, and then use {py:func}`locate_dofs_topological
 # <dolfinx.fem.locate_dofs_topological>`
-# to get the  degree-of-freedom indices. Below we identify the
-# degree-of-freedom in `V` on the (i) top ($x_{1} = 1$)
+# to get the degree-of-freedom indices. Below we identify the
+# degrees of freedom in `V` on the (i) top ($x_{1} = 1$)
 # and (ii) bottom ($x_{1} = 0$) of the mesh/domain.
 
 # +
@@ -191,10 +191,10 @@ dofs_bottom = fem.locate_dofs_topological(V, fdim, facets_bottom)
 # \cdot n = \sin(5 x_0)$ on the top and bottom boundaries:
 
 # +
-cells_top_ = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
+cells_top = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
 cells_bottom = mesh.compute_incident_entities(msh.topology, facets_bottom, fdim, fdim + 1)
 g = fem.Function(V, dtype=dtype)
-g.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.sin(5 * x[0]))), cells0=cells_top_)
+g.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.sin(5 * x[0]))), cells0=cells_top)
 g.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), -np.sin(5 * x[0]))), cells0=cells_bottom)
 bcs = [fem.dirichletbc(g, dofs_top), fem.dirichletbc(g, dofs_bottom)]
 # -
@@ -251,7 +251,7 @@ problem = fem.petsc.LinearProblem(
         "pc_fieldsplit_type": "additive",
         "ksp_rtol": 1e-8,
         "ksp_gmres_restart": 100,
-        "ksp_view": "",
+        "ksp_error_if_not_converged": True,
     },
 )
 # -
@@ -278,7 +278,7 @@ ksp.setMonitor(
 # two-dimensions, just rotated by $\pi/2$.
 
 # +
-ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
+ksp_sigma, _ksp_u = ksp.getPC().getFieldSplitSubKSP()
 pc_sigma = ksp_sigma.getPC()
 if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.complexfloating):
     pc_sigma.setType("hypre")
@@ -341,8 +341,6 @@ else:
 
 # +
 problem.solve()
-converged_reason = problem.solver.getConvergedReason()
-assert converged_reason > 0, f"Krylov solver has not converged, reason: {converged_reason}."  # type: ignore[operator]
 # -
 
 # We save the solution `u` in VTX format:
