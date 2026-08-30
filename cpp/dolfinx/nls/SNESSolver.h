@@ -130,7 +130,7 @@ public:
   /// @brief Solve \f$F(x) = 0\f$.
   ///
   /// Non-convergence is not treated as an error (a warning is logged);
-  /// use snes() and `SNESGetConvergedReason`, or the
+  /// check the returned convergence reason, or use the
   /// `-snes_error_if_not_converged` option.
   ///
   /// @note An exception thrown by a callback is re-thrown here. The
@@ -139,8 +139,12 @@ public:
   ///
   /// @param[in,out] x Solution vector, holding the initial guess on
   /// entry.
-  /// @return Number of nonlinear iterations performed.
-  PetscInt solve(Vec x);
+  /// @return The PETSc convergence reason (positive on convergence,
+  /// negative on divergence).
+  [[nodiscard(
+      "check the converged reason - positive on convergence, negative on "
+      "divergence")]] SNESConvergedReason
+  solve(Vec x);
 
   /// @brief Set the prefix used by PETSc when searching the PETSc
   /// options database.

@@ -36,6 +36,7 @@
 #include <petscsys.h>
 #include <petscsystypes.h>
 #include <petscvec.h>
+#include <stdexcept>
 
 using namespace dolfinx;
 using T = PetscScalar;
@@ -190,7 +191,8 @@ int main(int argc, char* argv[])
     solver.set_options_prefix("hyperelasticity_");
     solver.set_from_options();
 
-    PetscInt niter = solver.solve(u_vec.vec());
+    if (solver.solve(u_vec.vec()) < 0)
+      throw std::runtime_error("SNES solver did not converge.");
     common::petsc::check(
         VecGhostUpdateBegin(u_vec.vec(), INSERT_VALUES, SCATTER_FORWARD),
         "VecGhostUpdateBegin");
@@ -199,7 +201,10 @@ int main(int argc, char* argv[])
         "VecGhostUpdateEnd");
 
     // The SNES object is available for anything the solver does not
-    // wrap, here the total number of linear solver iterations
+    // wrap, here the number of Newton and linear solver iterations
+    PetscInt niter = 0;
+    common::petsc::check(SNESGetIterationNumber(solver.snes(), &niter),
+                         "SNESGetIterationNumber");
     PetscInt lin_iter = 0;
     common::petsc::check(SNESGetLinearSolveIterations(solver.snes(), &lin_iter),
                          "SNESGetLinearSolveIterations");
