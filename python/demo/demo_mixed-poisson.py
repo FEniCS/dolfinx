@@ -249,7 +249,7 @@ problem = fem.petsc.LinearProblem(
         "ksp_type": "gmres",
         "pc_type": "fieldsplit",
         "pc_fieldsplit_type": "additive",
-        "ksp_rtol": 1e-8,
+        "ksp_rtol": 1e-6 if np.finfo(dtype).bits == 32 else 1e-8,
         "ksp_gmres_restart": 100,
         "ksp_view": "",
     },

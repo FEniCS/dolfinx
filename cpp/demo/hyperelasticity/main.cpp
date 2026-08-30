@@ -15,22 +15,24 @@
 // ## C++ program
 
 #include "hyperelasticity.h"
-#include <algorithm>
 #include <basix/finite-element.h>
-#include <climits>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/fem/assembler.h>
+#include <dolfinx/common/petsc.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/nls/SNESSolver.h>
 #include <format>
+#include <functional>
+#include <memory>
 #include <numbers>
 #include <petscmat.h>
+#include <petscsnes.h>
 #include <petscsys.h>
 #include <petscsystypes.h>
 #include <petscvec.h>
@@ -38,187 +40,6 @@
 using namespace dolfinx;
 using T = PetscScalar;
 using U = typename dolfinx::scalar_value_t<T>;
-
-/// Hyperelastic problem class
-class HyperElasticProblem
-{
-public:
-  /// Constructor
-  HyperElasticProblem(fem::Form<T>& L, fem::Form<T>& J,
-                      const std::vector<fem::DirichletBC<T>>& bcs)
-      : _l(L), _j(J), _bcs(bcs.begin(), bcs.end()),
-        _b_vec(L.function_spaces()[0]->dofmap()->index_map,
-               L.function_spaces()[0]->dofmap()->index_map_bs()),
-        _matJ(la::petsc::Matrix(fem::petsc::create_matrix(J, "aij"), false)),
-        _solver(L.function_spaces()[0]->dofmap()->index_map->comm())
-  {
-    auto map = L.function_spaces()[0]->dofmap()->index_map;
-    const int bs = L.function_spaces()[0]->dofmap()->index_map_bs();
-    std::int32_t size_local = bs * map->size_local();
-
-    std::vector<PetscInt> ghosts(map->ghosts().begin(), map->ghosts().end());
-    std::int64_t size_global = bs * map->size_global();
-    common::petsc::check(
-        VecCreateGhostBlockWithArray(map->comm(), bs, size_local, size_global,
-                                     ghosts.size(), ghosts.data(),
-                                     _b_vec.array().data(), &_b),
-        "VecCreateGhostBlockWithArray");
-
-    // Create linear solver. Default to LU.
-    _solver.set_options_prefix("nls_solve_");
-    common::petsc::set_option("nls_solve_ksp_type", "preonly");
-    common::petsc::set_option("nls_solve_pc_type", "lu");
-    _solver.set_from_options();
-  }
-
-  /// Destructor
-  virtual ~HyperElasticProblem()
-  {
-    assert(_b);
-    // Destructor is implicitly noexcept, so a thrown error here calls
-    // std::terminate rather than propagating
-    common::petsc::check(VecDestroy(&_b), "VecDestroy");
-  }
-
-  /// @brief Newton Solver
-  /// @param x Solution vector
-  /// @return Iteration count and flag indicating convergence
-  std::pair<int, bool> solve(Vec x)
-  {
-    int iteration = 0;
-    PetscReal residual0 = 0;
-
-    auto converged
-        = [&iteration, &residual0, this](const Vec r) -> std::pair<double, bool>
-    {
-      PetscReal residual = 0;
-      common::petsc::check(VecNorm(r, NORM_2, &residual), "VecNorm");
-
-      // Relative residual
-      const double relative_residual = residual / residual0;
-
-      // Output iteration number and residual
-      spdlog::info("Newton iteration {}"
-                   ": r (abs) = {} (tol = {}), r (rel) = {} (tol = {})",
-                   iteration, residual, atol, relative_residual, rtol);
-
-      // Return true if convergence criterion is met
-      bool converged = relative_residual < rtol or residual < atol;
-      return {residual, converged};
-    };
-
-    assert(_b);
-    F(x);
-
-    auto [residual, newton_converged] = converged(_b);
-
-    _solver.set_operators(_matJ.mat(), _matJ.mat());
-
-    Vec dx;
-    common::petsc::check(MatCreateVecs(_matJ.mat(), &dx, nullptr),
-                         "MatCreateVecs");
-
-    int max_it = 50;
-    int krylov_iterations = 0;
-
-    // Start iterations
-    while (!newton_converged and iteration < max_it)
-    {
-      // Compute Jacobian
-      assert(_matJ.mat());
-      J(x, _matJ.mat());
-
-      // Perform linear solve and update total number of Krylov iterations
-      krylov_iterations += _solver.solve(dx, _b);
-
-      // Update solution
-      double relaxation_parameter = 1.0;
-      common::petsc::check(VecAXPY(x, -relaxation_parameter, dx), "VecAXPY");
-
-      // Increment iteration count
-      ++iteration;
-
-      // Compute F
-      F(x);
-
-      // Initialize residual0
-      if (iteration == 1)
-        common::petsc::check(VecNorm(dx, NORM_2, &residual0), "VecNorm");
-
-      // Test for convergence
-      std::tie(residual, newton_converged) = converged(_b);
-    }
-
-    if (not newton_converged)
-      throw std::runtime_error("Newton solver did not converge.");
-
-    spdlog::info("Newton solver finished in {} iterations and {} linear "
-                 "solver iterations.",
-                 iteration, krylov_iterations);
-
-    common::petsc::check(VecDestroy(&dx), "VecDestroy");
-
-    return {iteration, newton_converged};
-  }
-
-  /// Compute F at current point x
-  void F(const Vec x)
-  {
-    common::petsc::check(VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD),
-                         "VecGhostUpdateBegin");
-    common::petsc::check(VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD),
-                         "VecGhostUpdateEnd");
-
-    // Assemble b and update ghosts
-    std::span b(_b_vec.array());
-    std::ranges::fill(b, 0);
-    fem::assemble_vector(b, _l);
-    common::petsc::check(VecGhostUpdateBegin(_b, ADD_VALUES, SCATTER_REVERSE),
-                         "VecGhostUpdateBegin");
-    common::petsc::check(VecGhostUpdateEnd(_b, ADD_VALUES, SCATTER_REVERSE),
-                         "VecGhostUpdateEnd");
-
-    // Set bcs
-    fem::petsc::set_bc(_b, _bcs, x, -1);
-  }
-
-  /// Compute J = F' at current point x
-  void J(const Vec, Mat A)
-  {
-    common::petsc::check(MatZeroEntries(A), "MatZeroEntries");
-    fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), _j,
-                         _bcs);
-    common::petsc::check(MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY),
-                         "MatAssemblyBegin");
-    common::petsc::check(MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY),
-                         "MatAssemblyEnd");
-    fem::set_diagonal(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
-                      *_j.function_spaces()[0], _bcs);
-    common::petsc::check(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY),
-                         "MatAssemblyBegin");
-    common::petsc::check(MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY),
-                         "MatAssemblyEnd");
-  }
-
-  /// @brief Relative convergence tolerance.
-  double rtol = 1e-9;
-
-  /// @brief Absolute convergence tolerance.
-  double atol = 1e-10;
-
-private:
-  fem::Form<T>& _l;
-  fem::Form<T>& _j;
-  std::vector<std::reference_wrapper<const fem::DirichletBC<T>>> _bcs;
-  la::Vector<T> _b_vec;
-  Vec _b = nullptr;
-
-  // Jacobian matrix
-  la::petsc::Matrix _matJ;
-
-  // Linear solver
-  dolfinx::la::petsc::KrylovSolver _solver;
-};
 
 int main(int argc, char* argv[])
 {
@@ -329,13 +150,62 @@ int main(int argc, char* argv[])
         = {fem::DirichletBC<T>(std::vector<T>{0, 0, 0}, bdofs_left, V),
            fem::DirichletBC<T>(u_rotation, bdofs_right)};
 
-    HyperElasticProblem problem(L, a, bcs);
-    problem.rtol = 10 * std::numeric_limits<T>::epsilon();
-    problem.atol = 10 * std::numeric_limits<T>::epsilon();
+    // `A_layout` and `b_layout` set the layout of the Jacobian and
+    // residual that the solver works with. `u_vec` shares data with the
+    // degrees-of-freedom of `u`, and holds the initial guess on entry
+    // to the solve and the solution on return.
+    la::petsc::Matrix A_layout(fem::petsc::create_matrix(a, "aij"), false);
+    la::petsc::Vector b_layout(
+        la::petsc::create_vector(*V->dofmap()->index_map,
+                                 V->dofmap()->index_map_bs()),
+        false);
+    la::petsc::Vector u_vec(la::petsc::create_vector_wrap(*u->x()), false);
+    std::vector<std::reference_wrapper<const fem::DirichletBC<T>>> bcs_ref(
+        bcs.begin(), bcs.end());
 
-    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
-    auto [niter, success] = problem.solve(_u.vec());
+    // Create the solver, and attach the residual and Jacobian assembly.
+    // Each callback assembles at the point `x` into the `b` or `Jmat`
+    // it is passed, which may or may not be `b_layout.vec()` or
+    // `A_layout.mat()`: a line search, for instance, evaluates the
+    // residual in a work vector duplicated from `b_layout.vec()`.
+    nls::petsc::SNESSolver solver(mesh->comm());
+    solver.set_F([&L, &a, &bcs_ref, &u](const Vec x, Vec b)
+                 { fem::petsc::assemble_residual(x, b, L, a, bcs_ref, *u); },
+                 b_layout.vec());
+    solver.set_J(
+        [&a, &bcs_ref, &u](const Vec x, Mat Jmat, Mat)
+        { fem::petsc::assemble_jacobian(x, Jmat, nullptr, a, bcs_ref, *u); },
+        A_layout.mat());
+
+    // Begin configuring the solver through the PETSc options database.  The
+    // Newton update is solved for with a direct LU solver, and a failure to
+    // converge raises an error rather than being reported by the return value.
+    const U tol = 10 * std::numeric_limits<U>::epsilon();
+    common::petsc::set_option("hyperelasticity_ksp_type", "preonly");
+    common::petsc::set_option("hyperelasticity_pc_type", "lu");
+    common::petsc::set_option("hyperelasticity_snes_rtol", tol);
+    common::petsc::set_option("hyperelasticity_snes_atol", tol);
+    common::petsc::set_option("hyperelasticity_snes_error_if_not_converged");
+
+    solver.set_options_prefix("hyperelasticity_");
+    solver.set_from_options();
+
+    PetscInt niter = solver.solve(u_vec.vec());
+    common::petsc::check(
+        VecGhostUpdateBegin(u_vec.vec(), INSERT_VALUES, SCATTER_FORWARD),
+        "VecGhostUpdateBegin");
+    common::petsc::check(
+        VecGhostUpdateEnd(u_vec.vec(), INSERT_VALUES, SCATTER_FORWARD),
+        "VecGhostUpdateEnd");
+
+    // The SNES object is available for anything the solver does not
+    // wrap, here the total number of linear solver iterations
+    PetscInt lin_iter = 0;
+    common::petsc::check(SNESGetLinearSolveIterations(solver.snes(), &lin_iter),
+                         "SNESGetLinearSolveIterations");
     std::cout << "Number of Newton iterations: " << niter << std::endl;
+    std::cout << "Number of linear solver iterations: " << lin_iter
+              << std::endl;
 
     // Compute Cauchy stress. Construct appropriate Basix element for
     // stress.
