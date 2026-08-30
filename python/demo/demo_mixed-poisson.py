@@ -168,9 +168,7 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
         raise RuntimeError("Hypre AMS does not support complex scalar types.")
 
     V = fem.functionspace(msh, element("RT", msh.basix_cell(), k, dtype=xdtype))
-    W = fem.functionspace(
-        msh, element("Discontinuous Lagrange", msh.basix_cell(), k - 1, dtype=xdtype)
-    )
+    W = fem.functionspace(msh, element("DG", msh.basix_cell(), k - 1, dtype=xdtype))
     Q = ufl.MixedFunctionSpace(V, W)
     sigma_trial, u_trial = ufl.TrialFunctions(Q)
     tau, v = ufl.TestFunctions(Q)
@@ -282,7 +280,7 @@ for k in (1, 2):
         # the flux.
         V_sigma = fem.functionspace(
             msh,
-            element("Discontinuous Lagrange", msh.basix_cell(), k, shape=(gdim,), dtype=xdtype),
+            element("DG", msh.basix_cell(), k, shape=(gdim,), dtype=xdtype),
         )
         sigma_output = fem.Function(V_sigma, name="sigma", dtype=dtype)
         sigma_output.interpolate(sigma)
