@@ -208,11 +208,10 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
         bcs=bcs,
         petsc_options_prefix=f"demo_mixed_poisson_{k}_",
         petsc_options={
-            "ksp_type": "gmres",
+            "ksp_type": "minres",
             "pc_type": "fieldsplit",
             "pc_fieldsplit_type": "additive",
             "ksp_rtol": 1e-5 if np.finfo(dtype).bits == 32 else 1e-8,
-            "ksp_gmres_restart": 100,
             "ksp_error_if_not_converged": True,
         },
     )
