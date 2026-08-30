@@ -9,8 +9,10 @@
 #include "NewtonSolver.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/petsc.h>
 #include <dolfinx/la/petsc.h>
 #include <iostream>
+#include <petscksp.h>
 #include <string>
 #include <utility>
 
@@ -207,8 +209,14 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
     if (_fnP)
       _fnP(x, _matP);
 
-    // Perform linear solve and update total number of Krylov iterations
-    _krylov_iterations += _solver.solve(_dx, _b);
+    // Perform linear solve
+    static_cast<void>(_solver.solve(_dx, _b));
+
+    // Update total number of Krylov iterations
+    PetscInt ksp_iterations = 0;
+    common::petsc::check(KSPGetIterationNumber(_solver.ksp(), &ksp_iterations),
+                         "KSPGetIterationNumber");
+    _krylov_iterations += ksp_iterations;
 
     // Update solution
     this->_update_solution(*this, _dx, x);

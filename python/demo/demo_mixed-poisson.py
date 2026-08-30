@@ -14,7 +14,7 @@
 # (two-field) formulation and a block-preconditioned iterative solver.
 # In particular, it illustrates how to
 #
-# * Use mixed and non-continuous finite element spaces.
+# * Use mixed and discontinuous finite element spaces.
 # * Set essential boundary conditions for subspaces and
 #   $H(\mathrm{div})$ spaces.
 # * Construct a blocked linear system.
@@ -32,9 +32,8 @@
 # ## Equation and problem definition
 #
 # An alternative formulation of Poisson equation can be formulated by
-# introducing an additional (vector) variable, namely the (negative)
-# flux: $\sigma = \nabla u$. The partial differential equations
-# then read
+# introducing an additional vector variable, the flux $\sigma = \nabla
+# u$. The partial differential equations then read
 #
 # $$
 # \begin{aligned}
@@ -100,259 +99,198 @@ import numpy as np
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_real_type, default_scalar_type, fem, has_adios2, mesh
+from dolfinx import fem, has_adios2, mesh
 from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.mesh import CellType, create_unit_square
 
 # Solution scalar (e.g., float32, complex128) and geometry (float32/64)
 # types
-dtype = default_scalar_type
-xdtype = default_real_type
+dtype = PETSc.ScalarType
+xdtype = PETSc.RealType
 # -
 
-# Create a two-dimensional mesh. The iterative solver constructed
-# later requires special construction that is specific to two
-# dimensions. Application in three-dimensions would require a number of
-# changes to the linear solver.
+# Create a two-dimensional mesh. The iterative solver constructed later
+# requires special construction that is specific to two dimensions.
+# Application in three-dimensions would require a number of changes to
+# the linear solver.
 
 # +
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle, dtype=xdtype)
+gdim = msh.geometry.dim
+fdim = msh.topology.dim - 1
+facets_top = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
+facets_bottom = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
+cells_top = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
+cells_bottom = mesh.compute_incident_entities(msh.topology, facets_bottom, fdim, fdim + 1)
+has_hypre = PETSc.Sys().hasExternalPackage("hypre")
+hypre_ams_compatible = not np.issubdtype(dtype, np.complexfloating)
 # -
 #
 # Here we construct compatible function spaces for the mixed Poisson
 # problem. The `V` Raviart-Thomas ($\mathbb{RT}$) space is a
 # vector-valued $H({\rm div})$ conforming space. The `W` space is a
-# space of discontinuous Lagrange function of degree `k`.
+# discontinuous Lagrange space of degree `k - 1`.
 # ```{note}
 # The $\mathbb{RT}_{k}$ element in DOLFINx/Basix is usually denoted as
 # $\mathbb{RT}_{k-1}$ in the literature.
 # ```
-# In the lowest-order case $k=1$. It can be increased, by the
-# convergence of the iterative solver will degrade.
-
-# +
-k = 1
-V = fem.functionspace(msh, element("RT", msh.basix_cell(), k, dtype=xdtype))
-W = fem.functionspace(msh, element("Discontinuous Lagrange", msh.basix_cell(), k - 1, dtype=xdtype))
-Q = ufl.MixedFunctionSpace(V, W)
-# -
-
-# Trial functions for $\sigma$ and $u$ are declared on the space $V$ and
-# $W$, with corresponding test functions $\tau$ and $v$:
-
-sigma, u = ufl.TrialFunctions(Q)
-tau, v = ufl.TestFunctions(Q)
-
-# The source function is set to be $f = 10\exp(-((x_{0} - 0.5)^2 +
-# (x_{1} - 0.5)^2) / 0.02)$:
-
-# +
-x = ufl.SpatialCoordinate(msh)
-f = 10 * ufl.exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
-# -
-
-# We now declare the blocked bilinear and linear forms. We use
-# `ufl.extract_blocks` to extract the block structure of the bilinear
-# and linear form. For the first block of the right-hand side, we provide
-# a form that efficiently is 0. We do this to preserve knowledge of the
-# test space in the block. *Note that the defined `L` corresponds to
-# $u_{0} = 0$ on $\Gamma_{D}$.*
-
-# +
-dx = ufl.Measure("dx", msh)
-
-a = ufl.extract_blocks(
-    ufl.inner(sigma, tau) * dx + ufl.inner(u, ufl.div(tau)) * dx + ufl.inner(ufl.div(sigma), v) * dx
-)
-L = [ufl.ZeroBaseForm((tau,)), -ufl.inner(f, v) * dx]
-
-# -
-
-
-# In preparation for Dirichlet boundary conditions, we use the function
-# {py:func}`locate_entities_boundary
-# <dolfinx.mesh.locate_entities_boundary>` to locate mesh entities
-# (facets) with which degree-of-freedoms to be constrained are
-# associated with, and then use {py:func}`locate_dofs_topological
-# <dolfinx.fem.locate_dofs_topological>`
-# to get the  degree-of-freedom indices. Below we identify the
-# degree-of-freedom in `V` on the (i) top ($x_{1} = 1$)
-# and (ii) bottom ($x_{1} = 0$) of the mesh/domain.
-
-# +
-fdim = msh.topology.dim - 1
-facets_top = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
-facets_bottom = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
-dofs_top = fem.locate_dofs_topological(V, fdim, facets_top)
-dofs_bottom = fem.locate_dofs_topological(V, fdim, facets_bottom)
-# -
-
-# Now, we create Dirichlet boundary objects for the condition $\sigma
-# \cdot n = \sin(5 x_0)$ on the top and bottom boundaries:
-
-# +
-cells_top_ = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
-cells_bottom = mesh.compute_incident_entities(msh.topology, facets_bottom, fdim, fdim + 1)
-g = fem.Function(V, dtype=dtype)
-g.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.sin(5 * x[0]))), cells0=cells_top_)
-g.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), -np.sin(5 * x[0]))), cells0=cells_bottom)
-bcs = [fem.dirichletbc(g, dofs_top), fem.dirichletbc(g, dofs_bottom)]
-# -
-
-# Rather than solving the linear system $A x = b$, we will solve the
-# preconditioned problem $P^{-1} A x = P^{-1} b$. Commonly $P = A$, but
-# this does not lead to efficient solvers for saddle point problems.
+# The lowest-order case is $k=1$. The solver below can be called with a
+# higher degree, though convergence generally degrades as $k$ increases.
+# For each degree, `solve` constructs the function spaces, assembles the
+# blocked variational form, applies the essential flux boundary conditions,
+# and solves for both $\sigma$ and $u$.
 #
-# For this problem, we introduce the preconditioner
+# The source is $f = 10\exp(-((x_0 - 0.5)^2 + (x_1 - 0.5)^2) / 0.02)$.
+# The flux boundary condition $\sigma \cdot n = \sin(5x_0)$ is imposed on
+# the top and bottom boundaries. The $H({\rm div})$ block is preconditioned
+# using either Hypre AMS or LU; the discontinuous Lagrange mass block uses
+# PETSc's default preconditioner.
 #
-# $$
-# a_p((\sigma, u), (\tau, v))
-# = \begin{bmatrix} \int_{\Omega} \sigma \cdot \tau + (\nabla \cdot
-# \sigma) (\nabla \cdot \tau) \ {\rm d} x  & 0 \\ 0 &
-# \int_{\Omega} u \cdot v \ {\rm d} x \end{bmatrix}
-# $$
-#
-# and assemble it into the matrix `P`:
-
-# +
-a_p = ufl.extract_blocks(
-    ufl.inner(sigma, tau) * dx + ufl.inner(ufl.div(sigma), ufl.div(tau)) * dx + ufl.inner(u, v) * dx
-)
-
-# -
-
-# We create finite element functions that will hold the $\sigma$ and $u$
-# solutions:
-
-# +
-sigma, u = fem.Function(V, name="sigma", dtype=dtype), fem.Function(W, name="u", dtype=dtype)
-# -
-
-# We now create a linear problem solver for the mixed problem.
-# As we will use different preconditions for the individual blocks of
-# the saddle point problem, we specify the matrix kind to be "nest",
-# so that we can use [`fieldsplit`](https://petsc.org/release/manual/ksp/#sec-block-matrices)
-# (block) type and set the 'splits' between the $\sigma$ and $u$ fields.
+# Hypre AMS is available only for real scalar types. In two dimensions,
+# it can precondition this $H({\rm div})$ problem because $H({\rm div})$
+# and $H({\rm curl})$ are equivalent up to a rotation by $\pi/2$.
 
 
 # +
+def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
+    """Solve the mixed Poisson problem with Raviart-Thomas degree ``k``.
 
-problem = fem.petsc.LinearProblem(
-    a,
-    L,
-    u=[sigma, u],
-    P=a_p,
-    kind="nest",
-    bcs=bcs,
-    petsc_options_prefix="demo_mixed_poisson_",
-    petsc_options={
-        "ksp_type": "gmres",
-        "pc_type": "fieldsplit",
-        "pc_fieldsplit_type": "additive",
-        "ksp_rtol": 1e-6 if np.finfo(dtype).bits == 32 else 1e-8,
-        "ksp_gmres_restart": 100,
-        "ksp_view": "",
-    },
-)
-# -
+    Args:
+        k: Raviart-Thomas element degree.
+        use_hypre: Whether to use Hypre AMS rather than LU.
+    """
+    if k < 1:
+        raise ValueError("Element degree must be at least 1.")
+    if use_hypre and not has_hypre:
+        raise RuntimeError("PETSc is not configured with Hypre.")
+    if use_hypre and not hypre_ams_compatible:
+        raise RuntimeError("Hypre AMS does not support complex scalar types.")
 
+    V = fem.functionspace(msh, element("RT", msh.basix_cell(), k, dtype=xdtype))
+    W = fem.functionspace(msh, element("DG", msh.basix_cell(), k - 1, dtype=xdtype))
+    Q = ufl.MixedFunctionSpace(V, W)
+    sigma_trial, u_trial = ufl.TrialFunctions(Q)
+    tau, v = ufl.TestFunctions(Q)
 
-# +
-ksp = problem.solver
-ksp.setMonitor(
-    lambda _, its, rnorm: PETSc.Sys.Print(f"Iteration: {its:>4d}, residual: {rnorm:.3e}")
-)
-# -
+    x = ufl.SpatialCoordinate(msh)
+    f = 10 * ufl.exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
+    dx = ufl.Measure("dx", msh)
+    a = ufl.extract_blocks(
+        ufl.inner(sigma_trial, tau) * dx
+        + ufl.inner(u_trial, ufl.div(tau)) * dx
+        + ufl.inner(ufl.div(sigma_trial), v) * dx
+    )
+    L = [ufl.ZeroBaseForm((tau,)), -ufl.inner(f, v) * dx]
+    a_p = ufl.extract_blocks(
+        ufl.inner(sigma_trial, tau) * dx
+        + ufl.inner(ufl.div(sigma_trial), ufl.div(tau)) * dx
+        + ufl.inner(u_trial, v) * dx
+    )
 
-# For the $P_{11}$ block, which is the discontinuous Lagrange mass
-# matrix, we let the preconditioner be the default, which is incomplete
-# LU factorisation and which can solve the block exactly in one
-# iteration. The $P_{00}$ requires careful handling as $H({\rm div})$
-# problems require special preconditioners to be efficient.
-#
-# If PETSc has been configured with Hypre, we use the Hypre [Auxiliary
-# Maxwell Space](https://hypre.readthedocs.io/en/latest/solvers-ams.html)
-# (AMS) algebraic multigrid preconditioner. We can use
-# AMS for this $H({\rm div})$-type problem in two-dimensions because
-# $H({\rm div})$ and $H({\rm curl})$ spaces are effectively the same in
-# two-dimensions, just rotated by $\pi/2$.
+    dofs_top = fem.locate_dofs_topological(V, fdim, facets_top)
+    dofs_bottom = fem.locate_dofs_topological(V, fdim, facets_bottom)
+    g = fem.Function(V, dtype=dtype)
+    g.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.sin(5 * x[0]))), cells0=cells_top)
+    g.interpolate(
+        lambda x: np.vstack((np.zeros_like(x[0]), -np.sin(5 * x[0]))), cells0=cells_bottom
+    )
+    bcs = [fem.dirichletbc(g, dofs_top), fem.dirichletbc(g, dofs_bottom)]
 
-# +
-ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
-pc_sigma = ksp_sigma.getPC()
-if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.complexfloating):
-    pc_sigma.setType("hypre")
-    pc_sigma.setHYPREType("ams")
+    sigma = fem.Function(V, name="sigma", dtype=dtype)
+    u = fem.Function(W, name="u", dtype=dtype)
+    problem = fem.petsc.LinearProblem(
+        a,
+        L,
+        u=[sigma, u],
+        P=a_p,
+        kind="nest",
+        bcs=bcs,
+        petsc_options_prefix=f"demo_mixed_poisson_{k}_",
+        petsc_options={
+            "ksp_type": "minres",
+            "pc_type": "fieldsplit",
+            "pc_fieldsplit_type": "additive",
+            "ksp_rtol": 1e-5 if np.finfo(dtype).bits == 32 else 1e-7,
+            "ksp_error_if_not_converged": True,
+        },
+    )
+    ksp = problem.solver
+    solver_label = f"k={k} ({'Hypre AMS' if use_hypre else 'LU'})"
+    ksp.setMonitor(
+        lambda _, its, rnorm: PETSc.Sys.Print(
+            f"{solver_label}: iteration {its:>4d}, residual: {rnorm:.3e}"
+        )
+    )
 
-    opts = PETSc.Options()
-    opts[f"{ksp_sigma.prefix}pc_hypre_ams_cycle_type"] = 7  # type: ignore[index]
-    opts[f"{ksp_sigma.prefix}pc_hypre_ams_relax_times"] = 2  # type: ignore[index]
+    ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
+    ksp_u.getPC().setType("jacobi")
+    ksp_u.setFromOptions()
+    pc_sigma = ksp_sigma.getPC()
 
-    # Construct and set the 'discrete gradient' operator, which maps
-    # grad H1 -> H(curl), i.e. the gradient of a scalar Lagrange space
-    # to a H(curl) space
-    V_H1 = fem.functionspace(msh, element("Lagrange", msh.basix_cell(), k, dtype=xdtype))
-    V_curl = fem.functionspace(msh, element("N1curl", msh.basix_cell(), k, dtype=xdtype))
-    G = discrete_gradient(V_H1, V_curl)
-    G.assemble()
-    pc_sigma.setHYPREDiscreteGradient(G)
+    if use_hypre:
+        pc_sigma.setType("hypre")
+        pc_sigma.setHYPREType("ams")
 
-    assert k > 0, "Element degree must be at least 1."
-    if k == 1:
-        # For the lowest order base (k=1), we can supply interpolation
-        # of the '1' vectors in the space V. Hypre can then construct
-        # the required operators from G and the '1' vectors.
-        cvec0, cvec1 = fem.Function(V), fem.Function(V)
-        cvec0.interpolate(lambda x: np.vstack((np.ones_like(x[0]), np.zeros_like(x[1]))))
-        cvec1.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.ones_like(x[1]))))
-        pc_sigma.setHYPRESetEdgeConstantVectors(cvec0.x.petsc_vec, cvec1.x.petsc_vec, None)
+        opts = PETSc.Options()
+        opts[f"{ksp_sigma.prefix}pc_hypre_ams_cycle_type"] = 7  # type: ignore[index]
+        opts[f"{ksp_sigma.prefix}pc_hypre_ams_relax_times"] = 3  # type: ignore[index]
+
+        V_H1 = fem.functionspace(msh, element("Lagrange", msh.basix_cell(), k, dtype=xdtype))
+        V_curl = fem.functionspace(msh, element("N1curl", msh.basix_cell(), k, dtype=xdtype))
+        G = discrete_gradient(V_H1, V_curl)
+        G.assemble()
+        pc_sigma.setHYPREDiscreteGradient(G)
+
+        if k == 1:
+            cvec0, cvec1 = fem.Function(V), fem.Function(V)
+            cvec0.interpolate(lambda x: np.vstack((np.ones_like(x[0]), np.zeros_like(x[1]))))
+            cvec1.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.ones_like(x[1]))))
+            pc_sigma.setHYPRESetEdgeConstantVectors(cvec0.x.petsc_vec, cvec1.x.petsc_vec, None)
+        else:
+            V_H1d = fem.functionspace(msh, ("Lagrange", k, (msh.geometry.dim,)))
+            Pi = interpolation_matrix(V_H1d, V)
+            Pi.assemble()
+            pc_sigma.setHYPRESetInterpolations(msh.geometry.dim, None, None, Pi, None)
+            opts[f"{ksp_sigma.prefix}pc_hypre_ams_tol"] = 1e-12  # type: ignore[index]
+            opts[f"{ksp_sigma.prefix}pc_hypre_ams_max_iter"] = 3  # type: ignore[index]
+
     else:
-        # For high-order spaces, we must provide the (H1)^d -> H(div)
-        # interpolation operator/matrix
-        V_H1d = fem.functionspace(msh, ("Lagrange", k, (msh.geometry.dim,)))
-        Pi = interpolation_matrix(V_H1d, V)  # (H1)^d -> H(div)
-        Pi.assemble()
-        pc_sigma.setHYPRESetInterpolations(msh.geometry.dim, None, None, Pi, None)
-
-        # High-order elements generally converge less well than the
-        # lowest-order case with algebraic multigrid, so we perform
-        # extra work at the multigrid stage
-        opts[f"{ksp_sigma.prefix}pc_hypre_ams_tol"] = 1e-12  # type: ignore[index]
-        opts[f"{ksp_sigma.prefix}pc_hypre_ams_max_iter"] = 3  # type: ignore[index]
+        pc_sigma.setType("lu")
+        use_superlu = PETSc.IntType == np.int64
+        if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
+            pc_sigma.setFactorSolverType("mumps")
+        elif PETSc.Sys().hasExternalPackage("superlu_dist"):
+            pc_sigma.setFactorSolverType("superlu_dist")
 
     ksp_sigma.setFromOptions()
-else:
-    # If Hypre is not available, use LU factorisation on the $P_{00}$
-    # block
-    pc_sigma.setType("lu")
-    use_superlu = PETSc.IntType == np.int64
-    if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
-        pc_sigma.setFactorSolverType("mumps")
-    elif PETSc.Sys().hasExternalPackage("superlu_dist"):
-        pc_sigma.setFactorSolverType("superlu_dist")
-# -
 
-# Once we have set the preconditioners for the two blocks, we can
-# solve the linear system.
-# {py:class}`LinearProblem<dolfinx.fem.petsc.LinearProblem>` will
-# automatically assemble the linear system, apply the boundary
-# conditions, call the Krylov solver and update the solution
-# vectors `u` and `sigma`.
+    problem.solve()
+    return sigma, u
 
-# +
-problem.solve()
-converged_reason = problem.solver.getConvergedReason()
-assert converged_reason > 0, f"Krylov solver has not converged, reason: {converged_reason}."  # type: ignore[operator]
-# -
 
-# We save the solution `u` in VTX format:
-
-# +
+# Solve and save the flux and scalar solutions for the lowest-order and
+# next-order cases.
 if has_adios2:
     from dolfinx.io import VTXWriter
 
-    with VTXWriter(msh.comm, "output_mixed_poisson.bp", u) as f:
-        f.write(0.0)
-else:
+
+use_hypre = has_hypre and hypre_ams_compatible
+for k in (1, 2):
+    sigma, u = solve(k, use_hypre)
+    if has_adios2:
+        # VTX supports (discontinuous) Lagrange functions, so
+        # interpolate the flux
+        V_sigma = fem.functionspace(
+            msh,
+            element("DG", msh.basix_cell(), k, shape=(gdim,), dtype=xdtype),
+        )
+        sigma_output = fem.Function(V_sigma, name="sigma", dtype=dtype)
+        sigma_output.interpolate(sigma)
+        with VTXWriter(msh.comm, f"output_mixed_poisson_sigma_{k}.bp", sigma_output) as f:
+            f.write(0.0)
+        with VTXWriter(msh.comm, f"output_mixed_poisson_{k}.bp", u) as f:
+            f.write(0.0)
+
+if not has_adios2:
     print("ADIOS2 required for VTX output.")
 # -

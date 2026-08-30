@@ -605,7 +605,8 @@ void petsc::KrylovSolver::set_operators(const Mat A, const Mat P)
   common::petsc::check(KSPSetOperators(_ksp, A, P), "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
-PetscInt petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose)
+KSPConvergedReason petsc::KrylovSolver::solve(Vec x, const Vec b,
+                                              bool transpose)
 {
   common::Timer timer("PETSc Krylov solver");
   assert(_ksp);
@@ -627,9 +628,8 @@ PetscInt petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose)
                        "KSPGetIterationNumber");
 
   // Check if the solution converged and warn if not. Note: this does
-  // not throw on non-convergence -- the caller is responsible for
-  // checking the convergence reason (via ksp()) if this matters for
-  // its use case.
+  // not throw on non-convergence -- the caller must check the
+  // returned convergence reason if this matters for its use case.
   KSPConvergedReason reason;
   common::petsc::check(KSPGetConvergedReason(_ksp, &reason),
                        "KSPGetConvergedReason");
@@ -643,7 +643,7 @@ PetscInt petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose)
                  num_iterations, reason_str);
   }
 
-  return num_iterations;
+  return reason;
 }
 //-----------------------------------------------------------------------------
 void petsc::KrylovSolver::set_options_prefix(std::string_view options_prefix)
