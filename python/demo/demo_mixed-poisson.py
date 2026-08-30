@@ -267,8 +267,8 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
     return sigma, u
 
 
-# Solve and save the scalar solution for the lowest-order and next-order
-# cases.
+# Solve and save the flux and scalar solutions for the lowest-order and
+# next-order cases.
 if has_adios2:
     from dolfinx.io import VTXWriter
 
@@ -276,6 +276,22 @@ if has_adios2:
 for k in (1, 2):
     sigma, u = solve(k, has_hypre and hypre_ams_compatible)
     if has_adios2:
+        # VTX supports (discontinuous) Lagrange functions, so interpolate
+        # the flux.
+        V_sigma = fem.functionspace(
+            msh,
+            element(
+                "Discontinuous Lagrange",
+                msh.basix_cell(),
+                k,
+                shape=(msh.geometry.dim,),
+                dtype=xdtype,
+            ),
+        )
+        sigma_output = fem.Function(V_sigma, name="sigma", dtype=dtype)
+        sigma_output.interpolate(sigma)
+        with VTXWriter(msh.comm, f"output_mixed_poisson_sigma_{k}.bp", sigma_output) as f:
+            f.write(0.0)
         with VTXWriter(msh.comm, f"output_mixed_poisson_{k}.bp", u) as f:
             f.write(0.0)
 
