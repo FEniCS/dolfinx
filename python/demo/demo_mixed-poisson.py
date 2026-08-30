@@ -32,9 +32,8 @@
 # ## Equation and problem definition
 #
 # An alternative formulation of Poisson equation can be formulated by
-# introducing an additional vector variable, the flux $\sigma = \nabla u$.
-# The partial differential equations
-# then read
+# introducing an additional vector variable, the flux $\sigma = \nabla
+# u$. The partial differential equations then read
 #
 # $$
 # \begin{aligned}
@@ -110,10 +109,10 @@ dtype = PETSc.ScalarType
 xdtype = PETSc.RealType
 # -
 
-# Create a two-dimensional mesh. The iterative solver constructed
-# later requires special construction that is specific to two
-# dimensions. Application in three-dimensions would require a number of
-# changes to the linear solver.
+# Create a two-dimensional mesh. The iterative solver constructed later
+# requires special construction that is specific to two dimensions.
+# Application in three-dimensions would require a number of changes to
+# the linear solver.
 
 # +
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle, dtype=xdtype)
@@ -252,7 +251,6 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
             opts[f"{ksp_sigma.prefix}pc_hypre_ams_tol"] = 1e-12  # type: ignore[index]
             opts[f"{ksp_sigma.prefix}pc_hypre_ams_max_iter"] = 3  # type: ignore[index]
 
-        ksp_sigma.setFromOptions()
     else:
         pc_sigma.setType("lu")
         use_superlu = PETSc.IntType == np.int64
@@ -260,6 +258,8 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
             pc_sigma.setFactorSolverType("mumps")
         elif PETSc.Sys().hasExternalPackage("superlu_dist"):
             pc_sigma.setFactorSolverType("superlu_dist")
+
+    ksp_sigma.setFromOptions()
 
     problem.solve()
     return sigma, u
@@ -275,8 +275,8 @@ use_hypre = has_hypre and hypre_ams_compatible
 for k in (1, 2):
     sigma, u = solve(k, use_hypre)
     if has_adios2:
-        # VTX supports (discontinuous) Lagrange functions, so interpolate
-        # the flux.
+        # VTX supports (discontinuous) Lagrange functions, so
+        # interpolate the flux
         V_sigma = fem.functionspace(
             msh,
             element("DG", msh.basix_cell(), k, shape=(gdim,), dtype=xdtype),
