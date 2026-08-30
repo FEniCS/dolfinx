@@ -59,6 +59,7 @@ ENV OPENBLAS_NUM_THREADS=1 \
 # libocct-data-exchange-dev drags in the full libvtk9-dev toolchain.
 # libx11-dev is OCCT's own header-only dependency.
 # libfltk1.3-dev pulls the whole GUI stack gmsh needs.
+# libfreetype-dev is needed to enable gmsh's OCC CAF support.
 # python3-adios2 carries the Python API and python3-adios2-mpi
 # the compiled bindings, so both are needed explicitly.
 RUN export DEBIAN_FRONTEND=noninteractive && \
@@ -75,6 +76,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libadios2-mpi-c++-dev \
     libboost-dev \
     libfltk1.3-dev \
+    libfreetype-dev \
     libglu1-mesa-dev \
     libhdf5-mpi-dev \
     liblapack-dev \
@@ -160,7 +162,7 @@ RUN git clone -b V${OCCT_VERSION} --single-branch --depth 1 https://github.com/O
 # Install GMSH. The FLTK GUI costs ~70 MiB and is kept so gmsh.fltk.run()
 # works against a forwarded X11 display.
 RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.onelab.info/gmsh/gmsh.git && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1 -DENABLE_OPENMP=1 -DENABLE_FLTK=1 -B build-dir -S gmsh && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1 -DENABLE_OCC_CAF=1 -DENABLE_OPENMP=1 -DENABLE_FLTK=1 -B build-dir -S gmsh && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     ldconfig && \
