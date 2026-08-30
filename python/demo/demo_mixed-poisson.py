@@ -117,6 +117,7 @@ xdtype = PETSc.RealType
 
 # +
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle, dtype=xdtype)
+gdim = msh.geometry.dim
 fdim = msh.topology.dim - 1
 facets_top = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
 facets_bottom = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
@@ -281,13 +282,7 @@ for k in (1, 2):
         # the flux.
         V_sigma = fem.functionspace(
             msh,
-            element(
-                "Discontinuous Lagrange",
-                msh.basix_cell(),
-                k,
-                shape=(msh.geometry.dim,),
-                dtype=xdtype,
-            ),
+            element("Discontinuous Lagrange", msh.basix_cell(), k, shape=(gdim,), dtype=xdtype),
         )
         sigma_output = fem.Function(V_sigma, name="sigma", dtype=dtype)
         sigma_output.interpolate(sigma)
