@@ -378,25 +378,27 @@ def test_cell_h(c0, c1, c5):
         assert c[0].h(c[1], np.array([c[2]]))
 
 
-def test_cell_h_prism():
+@pytest.mark.parametrize("num_threads", [1, 2])
+def test_cell_h_prism(num_threads):
     N = 3
     mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=CellType.prism)
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
     cells = np.arange(num_cells, dtype=np.int32)
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, cells)
+    h = _cpp.mesh.h(mesh._cpp_object, tdim, cells, num_threads)
     assert np.allclose(h, np.sqrt(3 / (N**2)))
 
 
+@pytest.mark.parametrize("num_threads", [1, 2])
 @pytest.mark.parametrize("ct", [CellType.hexahedron, CellType.tetrahedron])
-def test_facet_h(ct):
+def test_facet_h(ct, num_threads):
     N = 3
     mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, ct)
     left_facets = locate_entities_boundary(
         mesh, mesh.topology.dim - 1, lambda x: np.isclose(x[0], 0)
     )
-    h = _cpp.mesh.h(mesh._cpp_object, mesh.topology.dim - 1, left_facets)
+    h = _cpp.mesh.h(mesh._cpp_object, mesh.topology.dim - 1, left_facets, num_threads)
     assert np.allclose(h, np.sqrt(2 / (N**2)))
 
 
@@ -414,6 +416,7 @@ def dirname(request):
 
 
 @pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("num_threads", [1, 2])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize(
     "_mesh,hmin,hmax",
@@ -423,12 +426,12 @@ def dirname(request):
         (mesh_3d, math.sqrt(2.0), math.sqrt(2.0)),
     ],
 )
-def test_hmin_hmax(_mesh, dtype, hmin, hmax):
+def test_hmin_hmax(_mesh, dtype, hmin, hmax, num_threads):
     mesh = _mesh(dtype)
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells))
+    h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells), num_threads)
     assert h.min() == pytest.approx(hmin)
     assert h.max() == pytest.approx(hmax)
 

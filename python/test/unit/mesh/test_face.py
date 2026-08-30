@@ -41,7 +41,8 @@ def test_area(cube, square):
     assert area == pytest.approx(1.0)
 
 
-def test_normals(cube, square):
+@pytest.mark.parametrize("num_threads", [1, 2])
+def test_normals(cube, square, num_threads):
     """Test cell normals for a subset of facets."""
 
     def left_side(x):
@@ -49,10 +50,10 @@ def test_normals(cube, square):
 
     fdim = cube.topology.dim - 1
     facets = locate_entities_boundary(cube, fdim, left_side)
-    normals = cell_normals(cube._cpp_object, fdim, facets)
+    normals = cell_normals(cube._cpp_object, fdim, facets, num_threads)
     assert np.allclose(np.abs(normals), [1, 0, 0])
 
     fdim = square.topology.dim - 1
     facets = locate_entities_boundary(square, fdim, left_side)
-    normals = cell_normals(square._cpp_object, fdim, facets)
+    normals = cell_normals(square._cpp_object, fdim, facets, num_threads)
     assert np.allclose(np.abs(normals), [1, 0, 0])
