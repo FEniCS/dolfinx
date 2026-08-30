@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -27,17 +28,26 @@ namespace dolfinx::fem
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
 /// degrees-of-freedom.
+///
 /// @tparam T The floating point (real) type of the mesh geometry and
 /// the finite element basis.
-template <std::floating_point T>
+/// @tparam S Scatterer type used to scatter/gather dof data between the
+/// local (owned + ghost) and global dof layouts.
+template <std::floating_point T,
+          typename S = common::Scatterer<std::vector<std::int32_t>>>
 class FunctionSpace
 {
 public:
   /// Geometry type of the Mesh that the FunctionSpace is defined on.
   using geometry_type = T;
 
+  /// Scatterer type used to scatter/gather dof data between the local (owned +
+  /// ghost) and global dof layouts.
+  using scatterer_type = S;
+
   /// @brief Create function space for given mesh, element and
   /// degree-of-freedom map.
+  ///
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] element Finite element for the space.
   /// @param[in] dofmap Degree-of-freedom map for the space.
@@ -45,6 +55,8 @@ public:
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _elements{element}, _dofmaps{std::move(dofmap)},
+        _scatterer(std::make_shared<scatterer_type>(
+            *_dofmaps.front()->index_map, _dofmaps.front()->index_map_bs())),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
     // Do nothing
@@ -52,6 +64,7 @@ public:
 
   /// @brief Create function space for given mesh, elements and
   /// degree-of-freedom maps.
+  ///
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] elements Finite elements for the space, one for each cell type.
   /// The elements must be ordered to be consistent with
@@ -63,6 +76,8 @@ public:
       std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements,
       std::vector<std::shared_ptr<const DofMap>> dofmaps)
       : _mesh(mesh), _elements(elements), _dofmaps(std::move(dofmaps)),
+        _scatterer(std::make_shared<scatterer_type>(
+            *_dofmaps.front()->index_map, _dofmaps.front()->index_map_bs())),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
     std::vector<mesh::CellType> cell_types = mesh->topology()->cell_types();
@@ -146,10 +161,11 @@ public:
     return sub_space;
   }
 
-  /// @brief Check whether V is subspace of this, or this itself
-  /// @param[in] V The space to be tested for inclusion
+  /// @brief Check whether V is subspace of this, or this itself.
+  ///
+  /// @param[in] V The space to be tested for inclusion.
   /// @return True if V is contained in or is equal to this
-  /// FunctionSpace
+  /// FunctionSpace.
   bool contains(const FunctionSpace& V) const
   {
     if (this == std::addressof(V)) // Spaces are the same (same memory address)
@@ -172,8 +188,9 @@ public:
       return true;
   }
 
-  /// Collapse a subspace and return a new function space and a map from
-  /// new to old dofs
+  /// @brief Collapse a subspace and return a new function space and a
+  /// map from new to old dofs.
+  ///
   /// @return The new function space and a map from new to old dofs
   std::pair<FunctionSpace, std::vector<std::vector<std::int32_t>>>
   collapse() const
@@ -202,6 +219,7 @@ public:
   }
 
   /// @brief Get the component with respect to the root superspace.
+  ///
   /// @return The component with respect to the root superspace, i.e.
   /// `W.sub(1).sub(0) == [1, 0]`.
   std::vector<int> component() const { return _component; }
@@ -400,6 +418,12 @@ public:
     return _dofmaps;
   }
 
+  /// @brief The scatterer associated with the function space.
+  ///
+  /// Used to scatter data between the local (owned + ghost) dof layout
+  /// and the global layout.
+  std::shared_ptr<const scatterer_type> scatterer() const { return _scatterer; }
+
 private:
   // The mesh
   std::shared_ptr<const mesh::Mesh<geometry_type>> _mesh;
@@ -409,6 +433,10 @@ private:
 
   // The dofmap
   std::vector<std::shared_ptr<const DofMap>> _dofmaps;
+
+  // An associated scatterer for the function space. This is used to scatter
+  // data from the local dof layout to the global dof layout and vice versa.
+  std::shared_ptr<scatterer_type> _scatterer;
 
   // The component w.r.t. to root space
   std::vector<int> _component;

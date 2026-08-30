@@ -38,7 +38,7 @@ public:
   };
 
   /// Create empty table
-  Table(std::string title = "", bool right_justify = true);
+  explicit Table(std::string title = "", bool right_justify = true);
 
   /// Copy constructor
   Table(const Table& table) = default;
