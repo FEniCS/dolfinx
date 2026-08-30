@@ -210,7 +210,7 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
             "ksp_type": "minres",
             "pc_type": "fieldsplit",
             "pc_fieldsplit_type": "additive",
-            "ksp_rtol": 1e-5 if np.finfo(dtype).bits == 32 else 1e-8,
+            "ksp_rtol": 1e-5 if np.finfo(dtype).bits == 32 else 1e-7,
             "ksp_error_if_not_converged": True,
         },
     )
@@ -222,15 +222,18 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
         )
     )
 
-    ksp_sigma, _ = ksp.getPC().getFieldSplitSubKSP()
+    ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
+    ksp_u.getPC().setType("jacobi")
+    ksp_u.setFromOptions()
     pc_sigma = ksp_sigma.getPC()
+
     if use_hypre:
         pc_sigma.setType("hypre")
         pc_sigma.setHYPREType("ams")
 
         opts = PETSc.Options()
         opts[f"{ksp_sigma.prefix}pc_hypre_ams_cycle_type"] = 7  # type: ignore[index]
-        opts[f"{ksp_sigma.prefix}pc_hypre_ams_relax_times"] = 2  # type: ignore[index]
+        opts[f"{ksp_sigma.prefix}pc_hypre_ams_relax_times"] = 3  # type: ignore[index]
 
         V_H1 = fem.functionspace(msh, element("Lagrange", msh.basix_cell(), k, dtype=xdtype))
         V_curl = fem.functionspace(msh, element("N1curl", msh.basix_cell(), k, dtype=xdtype))
