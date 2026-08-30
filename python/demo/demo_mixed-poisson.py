@@ -117,6 +117,14 @@ xdtype = PETSc.RealType
 
 # +
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle, dtype=xdtype)
+fdim = msh.topology.dim - 1
+facets_top = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
+facets_bottom = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
+cells_top = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
+cells_bottom = mesh.compute_incident_entities(msh.topology, facets_bottom, fdim, fdim + 1)
+can_use_hypre = PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(
+    dtype, np.complexfloating
+)
 # -
 #
 # Here we construct compatible function spaces for the mixed Poisson
@@ -141,10 +149,8 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
     """
     if k < 1:
         raise ValueError("Element degree must be at least 1.")
-    if use_hypre and np.issubdtype(dtype, np.complexfloating):
-        raise RuntimeError("Hypre AMS does not support complex scalar types.")
-    if use_hypre and not PETSc.Sys().hasExternalPackage("hypre"):
-        raise RuntimeError("PETSc is not configured with Hypre.")
+    if use_hypre and not can_use_hypre:
+        raise RuntimeError("Hypre AMS requires real scalar types and PETSc configured with Hypre.")
 
     V = fem.functionspace(msh, element("RT", msh.basix_cell(), k, dtype=xdtype))
     W = fem.functionspace(
@@ -169,13 +175,8 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
         + ufl.inner(u_trial, v) * dx
     )
 
-    fdim = msh.topology.dim - 1
-    facets_top = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
-    facets_bottom = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
     dofs_top = fem.locate_dofs_topological(V, fdim, facets_top)
     dofs_bottom = fem.locate_dofs_topological(V, fdim, facets_bottom)
-    cells_top = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
-    cells_bottom = mesh.compute_incident_entities(msh.topology, facets_bottom, fdim, fdim + 1)
     g = fem.Function(V, dtype=dtype)
     g.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.sin(5 * x[0]))), cells0=cells_top)
     g.interpolate(
@@ -253,9 +254,8 @@ if has_adios2:
     from dolfinx.io import VTXWriter
 
 
-use_hypre = PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.complexfloating)
 for k in (1, 2):
-    sigma, u = solve(k, use_hypre)
+    sigma, u = solve(k, can_use_hypre)
     if has_adios2:
         with VTXWriter(msh.comm, f"output_mixed_poisson_{k}.bp", u) as f:
             f.write(0.0)
