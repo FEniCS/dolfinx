@@ -34,8 +34,8 @@ int main(int argc, char* argv[])
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
         MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}}, {1, 4},
-        mesh::CellType::quadrilateral,
-        mesh::create_cell_partitioner(mesh::GhostMode::shared_facet, 2)));
+        mesh::CellType::quadrilateral, graph::partition_graph,
+        mesh::DiagonalType::right, 2, mesh::GhostMode::shared_facet));
 
     basix::FiniteElement element = basix::create_element<U>(
         basix::element::family::P, basix::cell::type::quadrilateral, 1,

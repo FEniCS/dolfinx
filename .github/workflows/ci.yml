@@ -253,25 +253,49 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
-      - name: Run Python demos (serial and MPI)
+      - name: Run Python demos (serial)
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
           python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
-          python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
+      - name: Run Python demos (MPI)
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          spack load gcc
+          python -m pytest -vs -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
 
       # NOTE: the marker expression is written '!matrix.petsc && X || Y'
       # rather than 'matrix.petsc && Y || X'. GitHub expressions treat the
       # empty string as false, so the latter form falls through to X on
       # every leg and silently skips the petsc4py tests everywhere.
-      - name: Run Python unit tests (serial and MPI)
+      - name: Run Python unit tests (no PETSc, serial)
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
           python -m pytest -n=auto --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
+      - name: Run Python unit tests (no PETSc, MPI)
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          spack load gcc
           mpiexec -np 3 python -m pytest --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
+      - name: Run Python unit tests (PETSc, serial)
+        if: ${{ matrix.petsc }}
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          spack load gcc
+          python -m pytest -n=auto --durations=50 -m petsc4py dolfinx-src/python/test/unit/
+      - name: Run Python unit tests (PETSc, MPI)
+        if: ${{ matrix.petsc }}
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          spack load gcc
+          mpiexec -np 3 python -m pytest --durations=50 -m petsc4py dolfinx-src/python/test/unit/
 
       # The test tools are environment roots, so '--only dependencies'
       # skips them and they need naming explicitly. Only the final push
