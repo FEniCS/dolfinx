@@ -136,6 +136,8 @@
 #include <dolfinx/fem/petsc.h>
 #include <memory>
 #include <numbers>
+#include <petscksp.h>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -256,7 +258,15 @@ int main(int argc, char* argv[])
     lu.set_operator(A.mat());
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
-    lu.solve(_u.vec(), _b.vec());
+    if (lu.solve(_u.vec(), _b.vec()) < 0)
+      throw std::runtime_error("Linear solver did not converge.");
+
+    // The KSP object is available for anything the solver does not
+    // wrap, here the number of linear solver iterations
+    PetscInt num_it = 0;
+    common::petsc::check(KSPGetIterationNumber(lu.ksp(), &num_it),
+                         "KSPGetIterationNumber");
+    std::cout << "Number of linear solver iterations: " << num_it << std::endl;
 
     //  Update ghost values before output
     u.x()->scatter_fwd();

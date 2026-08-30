@@ -170,7 +170,7 @@ void nls::petsc::SNESSolver::set_update(
   common::petsc::check(SNESSetUpdate(_snes, update_step), "SNESSetUpdate");
 }
 //-----------------------------------------------------------------------------
-PetscInt nls::petsc::SNESSolver::solve(Vec x)
+SNESConvergedReason nls::petsc::SNESSolver::solve(Vec x)
 {
   common::Timer timer("PETSc SNES solver");
   assert(_snes);
@@ -194,9 +194,8 @@ PetscInt nls::petsc::SNESSolver::solve(Vec x)
                        "SNESGetIterationNumber");
 
   // Check if the solution converged and warn if not. Note: this does
-  // not throw on non-convergence -- the caller is responsible for
-  // checking the convergence reason (via snes()) if this matters for
-  // their use case.
+  // not throw on non-convergence -- the caller must check the
+  // returned convergence reason if this matters for their use case.
   SNESConvergedReason reason;
   common::petsc::check(SNESGetConvergedReason(_snes, &reason),
                        "SNESGetConvergedReason");
@@ -210,7 +209,7 @@ PetscInt nls::petsc::SNESSolver::solve(Vec x)
                  num_iterations, reason_str);
   }
 
-  return num_iterations;
+  return reason;
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::SNESSolver::set_options_prefix(std::string_view options_prefix)
