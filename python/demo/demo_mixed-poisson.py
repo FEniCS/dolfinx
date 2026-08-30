@@ -132,10 +132,19 @@ msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle, dtype=xdtype
 
 
 # +
-def solve(k: int) -> tuple[fem.Function, fem.Function]:
-    """Solve the mixed Poisson problem with Raviart-Thomas degree ``k``."""
+def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
+    """Solve the mixed Poisson problem with Raviart-Thomas degree ``k``.
+
+    Args:
+        k: Raviart-Thomas element degree.
+        use_hypre: Whether to use Hypre AMS rather than LU.
+    """
     if k < 1:
         raise ValueError("Element degree must be at least 1.")
+    if use_hypre and np.issubdtype(dtype, np.complexfloating):
+        raise RuntimeError("Hypre AMS does not support complex scalar types.")
+    if use_hypre and not PETSc.Sys().hasExternalPackage("hypre"):
+        raise RuntimeError("PETSc is not configured with Hypre.")
 
     V = fem.functionspace(msh, element("RT", msh.basix_cell(), k, dtype=xdtype))
     W = fem.functionspace(
@@ -200,7 +209,7 @@ def solve(k: int) -> tuple[fem.Function, fem.Function]:
 
     ksp_sigma, _ = ksp.getPC().getFieldSplitSubKSP()
     pc_sigma = ksp_sigma.getPC()
-    if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.complexfloating):
+    if use_hypre:
         pc_sigma.setType("hypre")
         pc_sigma.setHYPREType("ams")
 
@@ -244,8 +253,9 @@ if has_adios2:
     from dolfinx.io import VTXWriter
 
 
+use_hypre = PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.complexfloating)
 for k in (1, 2):
-    sigma, u = solve(k)
+    sigma, u = solve(k, use_hypre)
     if has_adios2:
         with VTXWriter(msh.comm, f"output_mixed_poisson_{k}.bp", u) as f:
             f.write(0.0)
