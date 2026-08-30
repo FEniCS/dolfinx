@@ -50,7 +50,9 @@ WORKDIR /tmp
 
 # Environment variables
 ENV OPENBLAS_NUM_THREADS=1 \
-    OPENBLAS_VERBOSE=0
+    OPENBLAS_VERBOSE=0 \
+    OMPI_ALLOW_RUN_AS_ROOT=1 \
+    OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
 # Install dependencies available via apt-get.
 # OCCT (gmsh's CAD kernel) is built from source below since Ubuntu's
