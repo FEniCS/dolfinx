@@ -240,7 +240,8 @@ def solve(k: int) -> tuple[fem.Function, fem.Function]:
     return sigma, u
 
 
-sigma, u = solve(1)
+for k in (1, 2):
+    sigma, u = solve(k)
 # -
 
 # We save the solution `u` in VTX format:
