@@ -210,20 +210,27 @@ std::size_t sample_size(MPI_Comm comm, std::size_t num_points, int nparts)
   std::array<std::int64_t, 2> local_counts
       = {static_cast<std::int64_t>(num_points), num_points > 0 ? 1 : 0};
   std::array<std::int64_t, 2> global_counts;
-  MPI_Allreduce(local_counts.data(), global_counts.data(), 2, MPI_INT64_T,
-                MPI_SUM, comm);
+  const std::int64_t local_extra_points
+      = num_points > 0 ? static_cast<std::int64_t>(num_points) - 1 : 0;
+  std::int64_t extra_offset = 0;
+
+  // global_counts and extra_offset each depend only on this rank's local
+  // input, not on each other, so start both collectives before waiting on
+  // either -- one round-trip latency instead of two.
+  std::array<MPI_Request, 2> requests;
+  MPI_Iallreduce(local_counts.data(), global_counts.data(), 2, MPI_INT64_T,
+                 MPI_SUM, comm, &requests[0]);
+  MPI_Iexscan(&local_extra_points, &extra_offset, 1, MPI_INT64_T, MPI_SUM, comm,
+              &requests[1]);
+  MPI_Waitall(2, requests.data(), MPI_STATUSES_IGNORE);
 
   const std::int64_t total_points = global_counts[0];
   const std::int64_t num_nonempty_ranks = global_counts[1];
   const std::int64_t num_samples = std::min(
       total_points, std::max(static_cast<std::int64_t>(oversample) * nparts,
                              num_nonempty_ranks));
-  const std::int64_t local_extra_points
-      = num_points > 0 ? static_cast<std::int64_t>(num_points) - 1 : 0;
   const std::int64_t total_extra_points = total_points - num_nonempty_ranks;
 
-  std::int64_t extra_offset = 0;
-  MPI_Exscan(&local_extra_points, &extra_offset, 1, MPI_INT64_T, MPI_SUM, comm);
   if (rank == 0)
     extra_offset = 0;
 
@@ -536,13 +543,18 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
   // arithmetic matters here: a scan over floating-point weights isn't
   // guaranteed bit-for-bit consistent across ranks, and could leave a
   // target unclaimed, or claimed twice, at a rank boundary.
+  // offset and total_weight both reduce the same local_weight value but
+  // don't depend on each other, so overlap them as above.
   std::int64_t offset = 0;
-  MPI_Exscan(&local_weight, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
+  std::int64_t total_weight = 0;
+  std::array<MPI_Request, 2> weight_requests;
+  MPI_Iexscan(&local_weight, &offset, 1, MPI_INT64_T, MPI_SUM, comm,
+              &weight_requests[0]);
+  MPI_Iallreduce(&local_weight, &total_weight, 1, MPI_INT64_T, MPI_SUM, comm,
+                 &weight_requests[1]);
+  MPI_Waitall(2, weight_requests.data(), MPI_STATUSES_IGNORE);
   if (rank == 0)
     offset = 0; // Exscan leaves rank 0's recvbuf value unspecified
-
-  std::int64_t total_weight = 0;
-  MPI_Allreduce(&local_weight, &total_weight, 1, MPI_INT64_T, MPI_SUM, comm);
 
   // Degenerate case: total weight of zero
   if (total_weight <= 0)
