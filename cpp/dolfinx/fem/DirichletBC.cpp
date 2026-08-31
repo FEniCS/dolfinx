@@ -17,6 +17,7 @@
 #include <format>
 #include <map>
 #include <numeric>
+#include <stdexcept>
 #include <utility>
 
 using namespace dolfinx;
@@ -260,7 +261,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     }
   }
   else
-    throw std::runtime_error("Block size combination not supported");
+    throw std::invalid_argument("Block size combination not supported");
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates

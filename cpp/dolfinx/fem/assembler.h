@@ -23,6 +23,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <vector>
 
 /// @file assembler.h
@@ -74,7 +75,7 @@ void tabulate_expression(
   // Check that domain is the same as mesh of the expression
   if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Expression was created on a different mesh. Cannot tabulate.");
   }
   auto [X, Xshape] = e.X();
@@ -105,7 +106,7 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
   // Check that domain is the same as mesh of the expression
   if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Expression was created on a different mesh. Cannot tabulate.");
   }
 
@@ -357,13 +358,13 @@ void apply_lifting(
 
   if (!x0.empty() and x0.size() != a.size())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Mismatch in size between x0 and bilinear form in assembler.");
   }
 
   if (a.size() != bcs1.size())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Mismatch in size between a and bcs in assembler.");
   }
 

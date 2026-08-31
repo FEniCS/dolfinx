@@ -292,8 +292,9 @@ void pack_coefficients(const Form<T, U>& form,
           // logic error, so fail loudly rather than pack it anyway.
           if (int codim = form_tdim - mesh->topology()->dim(); codim > 0)
           {
-            throw std::runtime_error("Should not be packing coefficients with "
-                                     "codim>0 in a cell integral");
+            throw std::invalid_argument(
+                "Should not be packing coefficients with "
+                "codim>0 in a cell integral");
           }
 
           std::span<const std::int32_t> cells_b
@@ -372,7 +373,7 @@ void pack_coefficients(const Form<T, U>& form,
         break;
       }
       default:
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Could not pack coefficient. Integral type not supported.");
       }
     }
@@ -453,7 +454,7 @@ std::vector<std::int32_t> extract_coefficient_cells_from_entities(
         // to cells of the submesh
         if (!inverse)
         {
-          throw std::runtime_error(
+          throw std::invalid_argument(
               "Unsupported mapping. Can only map from submesh to parent mesh.");
         }
         assert(codim > 0);
@@ -528,7 +529,7 @@ void pack_coefficients(
 
     if (it == entity_maps.end())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Incompatible mesh. argument entity_maps must be provided.");
     }
     return *it;

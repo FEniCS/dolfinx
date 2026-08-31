@@ -394,9 +394,9 @@ def test_mixed_sub_interpolation():
         V0 = functionspace(mesh, P.sub_elements[0])
         V1 = functionspace(mesh, P.sub_elements[1])
         v0, v1 = Function(V0), Function(V1)
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             v0.interpolate(U.sub(1))
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             v1.interpolate(U.sub(0))
 
 
@@ -409,7 +409,7 @@ def test_mixed_interpolation():
         "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
     )
     v = Function(functionspace(mesh, mixed_element([A, B])))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
 
 
@@ -882,7 +882,7 @@ def test_interpolate_callable():
     u0.interpolate(lambda x: x[0])
     u1.interpolate(f)
     assert np.allclose(u0.x.array, u1.x.array)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         u0.interpolate(lambda x: np.vstack([x[0], x[1]]))
 
 

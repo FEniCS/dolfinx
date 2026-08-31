@@ -17,6 +17,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -511,7 +512,7 @@ public:
                     std::int32_t cell, int block_size)
       { T_apply(data, cell_info[cell], block_size); };
     default:
-      throw std::runtime_error("Unknown transformation type");
+      throw std::invalid_argument("Unknown transformation type");
     }
   }
 
@@ -626,7 +627,7 @@ public:
                     std::int32_t cell, int n)
       { T_apply_right(data, cell_info[cell], n); };
     default:
-      throw std::runtime_error("Unknown transformation type");
+      throw std::invalid_argument("Unknown transformation type");
     }
   }
 
