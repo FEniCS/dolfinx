@@ -111,8 +111,10 @@ void assemble_jacobian_nest(const Vec x, Mat J)
 // Residual/Jacobian callback matching PETSc's raw SNESFunction /
 // SNESJacobianFunction signature, taking the target constant c via ctx
 // instead of via a captured/member SNESSolver, to exercise wiring
-// SNESSetFunction/SNESSetJacobian directly.
-PetscErrorCode residual_ctx(SNES, Vec x, Vec b, void* ctx)
+// SNESSetFunction/SNESSetJacobian directly. noexcept: no invoke() here
+// to re-throw after the solve, so terminate cleanly rather than let an
+// exception hit PETSc's C frames.
+PetscErrorCode residual_ctx(SNES, Vec x, Vec b, void* ctx) noexcept
 {
   const PetscScalar c = *static_cast<const PetscScalar*>(ctx);
   const PetscScalar* _x;
@@ -128,7 +130,7 @@ PetscErrorCode residual_ctx(SNES, Vec x, Vec b, void* ctx)
   return 0;
 }
 
-PetscErrorCode jacobian_ctx(SNES, Vec x, Mat J, Mat, void*)
+PetscErrorCode jacobian_ctx(SNES, Vec x, Mat J, Mat, void*) noexcept
 {
   assemble_jacobian(x, J);
   return 0;
