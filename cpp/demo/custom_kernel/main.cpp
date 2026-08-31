@@ -21,6 +21,7 @@
 #include <map>
 #include <stdint.h>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -146,9 +147,9 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   std::vector<T> Ab(dofmap.map().extent(1) * dofmap.map().extent(1));
   fem::impl::assemble_cells_matrix<false>(
       A.mat_add_values(), g.dofmaps().front(), x, cells,
-      std::tuple{dofmap.map(), 1, cells}, ident,
-      std::tuple{dofmap.map(), 1, cells}, ident, {}, {}, kernel, {}, {}, {}, {},
-      std::span(Ab), std::span(cdofs_b));
+      std::tuple{dofmap.map(), std::integral_constant<int, 1>{}, cells}, ident,
+      std::tuple{dofmap.map(), std::integral_constant<int, 1>{}, cells}, ident,
+      {}, {}, kernel, {}, {}, {}, {}, std::span(Ab), std::span(cdofs_b));
   A.scatter_rev();
   return A.squared_norm();
 }
