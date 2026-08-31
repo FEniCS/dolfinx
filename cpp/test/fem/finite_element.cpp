@@ -5,6 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
 
 #include <basix/finite-element.h>
 
@@ -16,6 +18,7 @@
 #include <memory>
 #include <numeric>
 #include <span>
+#include <string_view>
 #include <vector>
 
 using namespace dolfinx;
@@ -24,6 +27,30 @@ namespace
 {
 using Func = std::function<void(
     std::span<double>, std::span<const std::uint32_t>, std::int32_t, int)>;
+
+/// The sub-span slicing under test is shared by every transformation
+/// type, so all four are exercised.
+constexpr std::array ttypes{
+    fem::doftransform::standard, fem::doftransform::transpose,
+    fem::doftransform::inverse, fem::doftransform::inverse_transpose};
+
+/// Transformation type name, for test failure output.
+std::string_view name(fem::doftransform ttype)
+{
+  switch (ttype)
+  {
+  case fem::doftransform::standard:
+    return "standard";
+  case fem::doftransform::transpose:
+    return "transpose";
+  case fem::doftransform::inverse:
+    return "inverse";
+  case fem::doftransform::inverse_transpose:
+    return "inverse_transpose";
+  default:
+    return "unknown";
+  }
+}
 
 /// Nedelec (first kind), degree 2, on a triangle. Two DOFs per edge, so
 /// the DOF transformations are non-trivial (and not permutations).
@@ -87,9 +114,11 @@ TEST_CASE("Mixed element DOF transformation from the right, block size > 1",
   const fem::FiniteElement<double> e({sub_lagrange, sub_nedelec});
   REQUIRE(e.needs_dof_transformations());
 
+  const fem::doftransform ttype = GENERATE(from_range(ttypes));
+  CAPTURE(name(ttype));
+
   const int ncols = e.space_dimension();
-  const Func Pt
-      = e.dof_transformation_right_fn<double>(fem::doftransform::transpose);
+  const Func Pt = e.dof_transformation_right_fn<double>(ttype);
   REQUIRE(Pt);
 
   SECTION("Single row is unaffected")
@@ -130,9 +159,11 @@ TEST_CASE("Mixed element DOF transformation from the right, zero offset",
   const fem::FiniteElement<double> e({sub_nedelec, sub_lagrange});
   REQUIRE(e.needs_dof_transformations());
 
+  const fem::doftransform ttype = GENERATE(from_range(ttypes));
+  CAPTURE(name(ttype));
+
   const int ncols = e.space_dimension();
-  const Func Pt
-      = e.dof_transformation_right_fn<double>(fem::doftransform::transpose);
+  const Func Pt = e.dof_transformation_right_fn<double>(ttype);
   REQUIRE(Pt);
 
   const int nrows = 3;
@@ -155,9 +186,11 @@ TEST_CASE("Non-mixed element DOF transformation from the right, block size > 1",
   const fem::FiniteElement<double> e(nedelec());
   REQUIRE(e.needs_dof_transformations());
 
+  const fem::doftransform ttype = GENERATE(from_range(ttypes));
+  CAPTURE(name(ttype));
+
   const int ncols = e.space_dimension();
-  const Func Pt
-      = e.dof_transformation_right_fn<double>(fem::doftransform::transpose);
+  const Func Pt = e.dof_transformation_right_fn<double>(ttype);
   REQUIRE(Pt);
 
   const int nrows = 3;
