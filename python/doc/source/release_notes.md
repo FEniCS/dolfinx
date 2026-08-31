@@ -1,5 +1,23 @@
 # Release notes
 
+## v0.12.0 (draft)
+
+### A first-class SNES interface for C++
+
+**Authors**: [Jack Hale](https://github.com/jhale)
+
+C++ users now have a `nls::petsc::SNESSolver` class that adapts C++ callables
+to the PETSc SNES callback interface and handles PETSc memory management,
+approximately following the existing
+{py:class}`dolfinx.fem.petsc.NonlinearProblem` on the Python side. The C++
+hyperelasticity demo has a full example of use.
+
+### Removal of the deprecated Newton solver
+
+The `NewtonSolver` and `NewtonSolverNonlinearProblem` classes, deprecated in
+v0.10.0 in favor of {py:class}`dolfinx.fem.petsc.NonlinearProblem` for Python
+users, have now been removed from both interfaces.
+
 ## v0.11.0
 
 Since the 0.10.0 release, there has been 177 merged pull requests from 27 contributors.
@@ -203,8 +221,6 @@ One of the visually pleasing improvements is the use of `@property`-decorators.
 {py:attr}`cellname<ufl.AbstractCell.cellname>`, etc. while
 {py:class}`ufl.Mesh` now has {py:attr}`geometric_dimension<ufl.Mesh.geometric_dimension>`.
 See [UFL PR \#385](https://github.com/FEniCS/ufl/pull/385) for more details.
-
-
 
 ## v0.10.0
 
