@@ -270,7 +270,7 @@ void declare_bbtree(nb::module_& m, const std::string& type)
          std::optional<
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              cells,
-         bool allow_extrapolation)
+         bool find_closest_cell)
       {
         std::size_t p_s0 = num_points_3d(points, "points");
         std::span<const T> _p(points.data(), 3 * p_s0);
@@ -278,16 +278,16 @@ void declare_bbtree(nb::module_& m, const std::string& type)
         {
           return dolfinx::geometry::determine_point_ownership<T>(
               mesh, _p, padding, std::span(cells->data(), cells->size()),
-              allow_extrapolation);
+              find_closest_cell);
         }
         else
         {
           return dolfinx::geometry::determine_point_ownership<T>(
-              mesh, _p, padding, std::nullopt, allow_extrapolation);
+              mesh, _p, padding, std::nullopt, find_closest_cell);
         }
       },
       nb::arg("mesh"), nb::arg("points"), nb::arg("padding"),
-      nb::arg("cells").none(), nb::arg("allow_extrapolation"),
+      nb::arg("cells").none(), nb::arg("find_closest_cell"),
       "Compute point ownership data for mesh-points pair.");
 
   std::string pod_pyclass_name = "PointOwnershipData_" + type;

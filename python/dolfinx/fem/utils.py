@@ -82,12 +82,18 @@ def create_interpolation_data(
         V_from: Function space to interpolate from.
         cells: Indices of the cells associated with `V_to` on which to
             interpolate into.
-        padding: Absolute padding of bounding boxes of all entities on
-            mesh_to.
-        allow_extrapolation: If ``True`` (default), points in `V_to`'s
-            mesh not overlapped by any cell in `V_from`'s mesh are
-            assigned the closest cell (within `padding`). If ``False``,
-            such points are left unowned.
+        padding: Absolute padding applied to the bounding box of each
+            cell in `V_from`'s mesh before searching for candidate
+            cells. Increasing ``padding`` increases the number of
+            cells considered as candidates for an interpolation point;
+            it does not by itself decide whether a point with no
+            actually-containing cell is assigned an owner, which is
+            controlled by ``allow_extrapolation``.
+        allow_extrapolation: If ``True`` (default), a point from
+            `V_to`'s mesh not actually contained in any candidate cell
+            of `V_from`'s mesh is instead assigned the candidate cell
+            closest to it (relevant e.g. if the two meshes do not fully
+            overlap). If ``False``, such points are left unowned.
 
     Returns:
         Data needed to interpolation functions defined on function

@@ -8,8 +8,8 @@ import dolfinx
 import ufl
 
 
-@pytest.mark.parametrize("extrapolate", [True, False])
-def test_determine_point_ownership(extrapolate):
+@pytest.mark.parametrize("find_closest_cell", [True, False])
+def test_determine_point_ownership(find_closest_cell):
     comm = MPI.COMM_WORLD
 
     # Define mesh consiting of a single tetrahedron
@@ -42,7 +42,7 @@ def test_determine_point_ownership(extrapolate):
 
     # Check, which rank contains the point, if any does
     point_owner_ship_data = dolfinx.geometry.determine_point_ownership(
-        mesh, points_ext, padding=0.0, allow_extrapolation=extrapolate
+        mesh, points_ext, padding=0.0, find_closest_cell=find_closest_cell
     )
 
     dest_cells = point_owner_ship_data.dest_cells
@@ -50,13 +50,13 @@ def test_determine_point_ownership(extrapolate):
 
     num_cells = mesh.geometry.dofmaps[0].shape[0]
     if num_cells > 0:
-        if extrapolate:
+        if find_closest_cell:
             assert len(dest_cells) == 2
         else:
             assert len(dest_cells) == 1
 
     if rank == 0:
-        if extrapolate:
+        if find_closest_cell:
             assert len(np.flatnonzero(src_owner != -1)) == 2
             assert src_owner[2] == -1
         else:

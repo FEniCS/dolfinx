@@ -656,40 +656,50 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
   return graph::AdjacencyList(std::move(colliding_cells), std::move(offsets));
 }
 
-/// @brief Given a set of points, determine which process is colliding,
-/// using the GJK algorithm on cells to determine collisions.
+/// @brief Determine, for a set of points, the owning process of the
+/// cell (if any) that contains each point.
 ///
-/// @todo This docstring is unclear. Needs fixing.
+/// A cell is a *candidate* for a point if the cell's bounding box,
+/// padded by `padding`, contains the point. Each candidate is then
+/// tested for actual containment of the point with the GJK algorithm.
+/// If no candidate actually contains a point, the point is either left
+/// unowned or, if `find_closest_cell` is `true`, assigned to the
+/// candidate cell closest to it (by GJK distance).
 ///
 /// @param[in] mesh The mesh
 /// @param[in] points Points to check for collision (`shape=(num_points,
 /// 3)`). Storage is row-major.
+/// @param[in] padding Amount of absolute padding applied to each
+/// cell's bounding box before searching for candidate cells/processes.
+/// Increasing `padding` increases the number of cells considered as
+/// candidates for a point; it does not by itself decide whether a
+/// point with no actually-containing cell is assigned an owner, which
+/// is controlled by `find_closest_cell`.
 /// @param[in] cells Cells to check for ownership
-/// @param[in] padding Amount of absolute padding of bounding boxes of the mesh.
-/// Each bounding box of the mesh is padded with this amount, to increase
-/// the number of candidates, avoiding rounding errors in determining the owner
-/// of a point if the point is on the surface of a cell in the mesh.
-/// @param[in] allow_extrapolation If `true`, a point that does not collide
-/// with any cell is assigned the owner of the closest cell among all
-/// processes with a bounding box (padded by `padding`) containing the point.
-/// If `false`, such a point is left unowned, i.e. its entry in `src_owner`
-/// is `-1`.
+/// @param[in] find_closest_cell If `true` (default), a point not
+/// actually contained in any candidate cell is instead assigned to the
+/// process owning the candidate cell closest to it. If `false`, such a
+/// point is left unowned.
 /// @return Point ownership data.
 ///
 /// @note `dest_owner` is sorted
-/// @note `src_owner` is -1 if no colliding process is found
+/// @note An entry of `src_owner` is `-1` if the corresponding point
+/// was not contained in any candidate cell and, if `find_closest_cell`
+/// is `true`, had no candidate cell to fall back on either (e.g. because
+/// `padding` was too small).
 /// @note dest_points is flattened row-major, shape `(dest_owner.size(),
 /// 3)`
-/// @note A large padding value can increase the runtime of the function by
-/// orders of magnitude, because for non-colliding cells
-/// one has to determine the closest cell among all processes with an
-/// intersecting bounding box, which is an expensive operation to perform.
+/// @note With `find_closest_cell` set to `true`, a large padding
+/// value can increase the runtime of the function by orders of
+/// magnitude, since a point not contained in any candidate then
+/// requires a GJK distance computation against every candidate cell
+/// across all processes with an intersecting bounding box.
 template <std::floating_point T>
 PointOwnershipData<T>
 determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
                           T padding,
                           std::optional<std::span<const std::int32_t>> cells,
-                          bool allow_extrapolation = true)
+                          bool find_closest_cell = true)
 {
   MPI_Comm comm = mesh.comm();
 
@@ -850,7 +860,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       point_owners[pos] = recv_ranks[i];
   }
 
-  if (allow_extrapolation)
+  if (find_closest_cell)
   {
     // Create extrapolation marker for those points already sent to other
     // process
@@ -872,6 +882,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
                            recv_offsets.data(), MPI_UINT8_T, forward_comm);
 
     std::vector<T> squared_distances(received_points.size() / 3, -1);
+    std::vector<T> nodes(3 * x_dofmap.extent(1), 0);
 
     for (std::size_t i = 0; i < dest_extrapolate.size(); i++)
     {
@@ -888,7 +899,6 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
         for (auto cell : candidate_collisions.links(i))
         {
           auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-          std::vector<T> nodes(3 * dofs.size());
           for (std::size_t j = 0; j < dofs.size(); ++j)
           {
             const int pos = 3 * dofs[j];
