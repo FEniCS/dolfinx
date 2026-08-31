@@ -23,7 +23,6 @@ from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
 from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags
-from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
@@ -423,7 +422,8 @@ class XDMFFile:
             cells,
             cmap,
             x,
-            _cell_partitioner(ghost_mode, max_facet_to_cell_links),
+            _cpp.graph.partitioner(),
+            ghost_mode,
             max_facet_to_cell_links,
             1,
             cell_weights=None,

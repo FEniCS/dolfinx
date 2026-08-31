@@ -30,9 +30,8 @@ from scipy.special import jv, jvp
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import fem, io, mesh, plot
+from dolfinx import fem, graph, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
-from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
 
 try:
     from dolfinx.io import VTXWriter
@@ -452,8 +451,15 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = _cell_partitioner(mesh.GhostMode.shared_facet, 2)
-mesh_data = io.gmsh.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
+partitioner = graph.partitioner()
+mesh_data = io.gmsh.model_to_mesh(
+    model,
+    MPI.COMM_WORLD,
+    0,
+    gdim=2,
+    partitioner=partitioner,
+    ghost_mode=mesh.GhostMode.shared_facet,
+)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
 

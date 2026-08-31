@@ -15,7 +15,6 @@ import ufl
 from basix.ufl import element
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.cpp.mesh import cell_num_vertices
 from dolfinx.fem import coordinate_element
 from dolfinx.graph import partitioner
 from dolfinx.io import XDMFFile
@@ -24,7 +23,6 @@ from dolfinx.mesh import (
     GhostMode,
     compute_midpoints,
     create_box,
-    create_cell_partitioner,
     create_mesh,
 )
 
@@ -80,14 +78,13 @@ except ImportError:
 @pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron, CellType.prism])
 def test_partition_box_mesh(gpart, Nx, cell_type):
-    part = create_cell_partitioner(gpart, GhostMode.none, 2)
     mesh = create_box(
         MPI.COMM_WORLD,
         [np.array([0, 0, 0]), np.array([1, 1, 1])],
         [Nx, Nx, Nx],
         cell_type,
         ghost_mode=GhostMode.shared_facet,
-        partitioner=part,
+        partitioner=gpart,
     )
     tdim = mesh.topology.dim
     c = {CellType.tetrahedron: 6, CellType.prism: 2, CellType.hexahedron: 1}[cell_type]
@@ -173,11 +170,11 @@ def test_asymmetric_partitioner():
         x = np.zeros((0, 2), dtype=np.float64)
 
     # Send cells to self, and if on process 1, also send to process 0.
-    def partitioner(comm, n, cell_types, topo, cell_weights, edge_weights):
+    def partitioner(comm, n, dual_graph, cell_weights, edge_weights, ghosting):
         r = comm.Get_rank()
         dests = []
         offsets = [0]
-        num_cells = len(topo[0]) // cell_num_vertices(cell_types[0])
+        num_cells = dual_graph.num_nodes
         for i in range(num_cells):
             dests.append(r)
             if r == 1:
@@ -250,14 +247,16 @@ def test_mixed_topology_partitioning():
         cells_np = [np.zeros(0) for c in cells]
 
     nparts = 4
-    part = create_cell_partitioner(GhostMode.none, 2)
+    cell_types = [CellType.hexahedron, CellType.pyramid, CellType.tetrahedron]
+    dual_graph = _cpp.mesh.build_dual_graph(MPI.COMM_WORLD, cell_types, cells_np, 2, 1)
+    part = partitioner()
     p = part(
         MPI.COMM_WORLD,
         nparts,
-        [CellType.hexahedron, CellType.pyramid, CellType.tetrahedron],
-        cells_np,
+        dual_graph,
         np.array([], dtype=np.int32),
         np.array([], dtype=np.int32),
+        False,
     )
 
     counts = np.array([sum(p.array == i) for i in range(nparts)])
@@ -325,14 +324,13 @@ def test_partition_respects_cell_weights(gpart):
     local_points = np.array_split(points, comm.size)[comm.rank]
 
     elem = coordinate_element(CellType.triangle, 1)
-    part = create_cell_partitioner(gpart, GhostMode.none, 2)
 
     new_mesh = create_mesh(
         comm,
         local_cells,
         elem,
         local_points,
-        partitioner=part,
+        partitioner=gpart,
         cell_weights=local_weights,
     )
 

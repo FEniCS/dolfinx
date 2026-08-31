@@ -16,6 +16,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <iterator>
 #include <mpi.h>
+#include <optional>
 #include <vector>
 
 using namespace dolfinx;
@@ -92,16 +93,16 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
 
   mesh::GhostMode ghost_mode = mesh::GhostMode::shared_facet;
 
-  // TODO: see https://github.com/FEniCS/dolfinx/issues/3358
-  //   auto part
-  //       = mesh::create_cell_partitioner(ghost_mode,
-  //       graph::scotch::partitioner());
-  mesh::CellPartitionFunction part =
-      [comm_size](MPI_Comm /* comm */, int /* nparts */,
-                  const std::vector<mesh::CellType>& /* cell_types */,
-                  const std::vector<std::span<const std::int64_t>>& /* cells */,
-                  std::span<const std::int32_t> /* cell_weights */,
-                  std::span<const std::int32_t> /* edge_weights */)
+  // A real partitioner (e.g. PT-SCOTCH) isn't used: its result isn't
+  // stable across platforms (#3358), so hardcode a fixed table instead
+  // for a reproducible test.
+  graph::partition_fn part
+      = [comm_size](
+            MPI_Comm /* comm */, int /* nparts */,
+            const graph::AdjacencyList<std::int64_t>& /* dual_graph */,
+            std::optional<std::span<const std::int32_t>> /* cell_weights */,
+            std::optional<std::span<const std::int32_t>> /* edge_weights */,
+            bool /* ghosting */)
   {
     std::vector<std::vector<std::int32_t>> data;
     if (comm_size == 1)

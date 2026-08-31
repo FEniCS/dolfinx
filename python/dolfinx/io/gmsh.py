@@ -7,7 +7,6 @@
 """Tools to extract data from Gmsh models."""
 
 import typing
-from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -20,11 +19,18 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.cpp.graph import AdjacencyList_int32 as _AdjacencyList_int32
 from dolfinx.fem import coordinate_element
 from dolfinx.graph import adjacencylist
 from dolfinx.io.utils import distribute_entity_data
-from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags_from_entities
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    Mesh,
+    MeshTags,
+    PartitioningFunc,
+    create_mesh,
+    meshtags_from_entities,
+)
 
 __all__ = [
     "MeshData",
@@ -288,20 +294,10 @@ def model_to_mesh(
     comm: _MPI.Comm,
     rank: int,
     gdim: int = 3,
-    partitioner: Callable[
-        [
-            _MPI.Comm,
-            int,
-            Sequence[CellType],
-            Sequence[npt.NDArray[np.int64]],
-            npt.NDArray[np.int32],
-            npt.NDArray[np.int32],
-        ],
-        _AdjacencyList_int32,
-    ]
-    | None = None,
+    partitioner: PartitioningFunc | None = None,
     dtype: npt.DTypeLike = default_real_type,
     max_facet_to_cell_links: int = 2,
+    ghost_mode: GhostMode = GhostMode.none,
 ) -> MeshData:
     """Create a Mesh from a Gmsh model.
 
@@ -320,6 +316,8 @@ def model_to_mesh(
         dtype: Data-type used for the mesh coordinates
         max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
+        ghost_mode: Ghost mode used in the mesh partitioning, passed to
+            ``partitioner`` at call time.
 
     Returns:
         MeshData with mesh and tags of corresponding entities by
@@ -452,6 +450,7 @@ def model_to_mesh(
             cmaps,  # type: ignore[arg-type]
             x[:, :gdim].astype(dtype).copy(),
             partitioner,
+            ghost_mode,
             max_facet_to_cell_links,
             1,
             cell_weights=None,
@@ -467,6 +466,7 @@ def model_to_mesh(
             ufl_domains[0],
             x[:, :gdim].astype(dtype, copy=False),
             partitioner,
+            ghost_mode=ghost_mode,
             max_facet_to_cell_links=max_facet_to_cell_links,
         )
     if tdim != mesh.topology.dim:
@@ -520,18 +520,7 @@ def read_from_msh(
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
-    partitioner: Callable[
-        [
-            _MPI.Comm,
-            int,
-            Sequence[CellType],
-            Sequence[npt.NDArray[np.int64]],
-            npt.NDArray[np.int32],
-            npt.NDArray[np.int32],
-        ],
-        _AdjacencyList_int32,
-    ]
-    | None = None,
+    partitioner: PartitioningFunc | None = None,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a mesh and cell facet markers.
 

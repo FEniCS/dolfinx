@@ -10,6 +10,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/graphbuild.h
   ${CMAKE_CURRENT_SOURCE_DIR}/permutationcomputation.h
   ${CMAKE_CURRENT_SOURCE_DIR}/topologycomputation.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/types.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
   ${CMAKE_CURRENT_SOURCE_DIR}/EntityMap.h
   PARENT_SCOPE
