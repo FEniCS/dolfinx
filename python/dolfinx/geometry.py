@@ -383,9 +383,9 @@ def determine_point_ownership(
             of the cell size.
     """
     return PointOwnershipData(
-        _cpp.geometry.determine_point_ownership(  # type: ignore[call-overload]
-            mesh._cpp_object,
-            points,
+        _cpp.geometry.determine_point_ownership(
+            mesh._cpp_object,  # type: ignore[arg-type]
+            points,  # type: ignore[arg-type]
             padding,
             cells,
             find_closest_cell,
