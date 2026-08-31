@@ -8,6 +8,7 @@ import dolfinx
 import ufl
 
 
+@pytest.mark.skip_in_parallel  # Skip in parallel as there is only one cell
 @pytest.mark.parametrize("find_closest_cell", [True, False])
 def test_determine_point_ownership(find_closest_cell):
     comm = MPI.COMM_WORLD
