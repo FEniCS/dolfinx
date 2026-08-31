@@ -148,7 +148,7 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
   CHECK(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY) == 0);
   CHECK(MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY) == 0);
 
-  SECTION("Solve returns the iteration count")
+  SECTION("Solve returns the convergence reason")
   {
     la::petsc::KrylovSolver solver(MPI_COMM_WORLD);
     solver.set_operator(A);
@@ -157,7 +157,11 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
     CHECK(MatCreateVecs(A, &x, &b) == 0);
     CHECK(VecSet(b, 1.0) == 0);
 
-    PetscInt num_it = solver.solve(x, b, false);
+    CHECK(solver.solve(x, b, false) > 0);
+
+    // The number of iterations is available via the raw PETSc API
+    PetscInt num_it = -1;
+    CHECK(KSPGetIterationNumber(solver.ksp(), &num_it) == 0);
     CHECK(num_it >= 0);
 
     // A is the identity, so x == b
@@ -207,8 +211,7 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
     CHECK(MatCreateVecs(A, &x, &b) == 0);
     CHECK(VecSet(b, 1.0) == 0);
 
-    PetscInt num_it = solver.solve(x, b, true);
-    CHECK(num_it >= 0);
+    CHECK(solver.solve(x, b, true) > 0);
 
     PetscReal norm = 0;
     CHECK(VecAXPY(x, -1.0, b) == 0);
@@ -228,8 +231,7 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
     CHECK(MatCreateVecs(A, &x, &b) == 0);
     CHECK(VecSet(b, 1.0) == 0);
 
-    PetscInt num_it = solver.solve(x, b, false);
-    CHECK(num_it >= 0);
+    CHECK(solver.solve(x, b, false) > 0);
 
     CHECK(VecDestroy(&x) == 0);
     CHECK(VecDestroy(&b) == 0);
@@ -251,8 +253,7 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
       CHECK(MatCreateVecs(A, &x, &b) == 0);
       CHECK(VecSet(b, 1.0) == 0);
 
-      PetscInt num_it = solver.solve(x, b, false);
-      CHECK(num_it >= 0);
+      CHECK(solver.solve(x, b, false) > 0);
 
       PetscReal norm = 0;
       CHECK(VecAXPY(x, -1.0, b) == 0);

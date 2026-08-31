@@ -13,6 +13,7 @@
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/defines.h>
+#include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
 #include <nanobind/nanobind.h>
@@ -212,6 +213,17 @@ void common(nb::module_& m)
 
   m.def("hardware_concurrency",
         []() { return std::max<int>(1, std::thread::hardware_concurrency()); });
+
+  m.def(
+      "local_range",
+      [](int index, std::int64_t N, int size)
+      {
+        std::array<std::int64_t, 2> range
+            = dolfinx::common::local_range(index, N, size);
+        return std::make_pair(range[0], range[1]);
+      },
+      nb::arg("index"), nb::arg("N"), nb::arg("size"),
+      "Local range for partitioning [0, N) into size almost-equal blocks");
 
   m.def(
       "list_timings",

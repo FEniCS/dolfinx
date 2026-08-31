@@ -17,15 +17,21 @@ from dolfinx.cpp.mesh import (
     Mesh_float32,
     Mesh_float64,
     compute_mixed_cell_pairs,
-    create_cell_partitioner,
     create_geometry,
     create_mesh,
     create_topology,
     locate_entities,
 )
 from dolfinx.fem import coordinate_element
+from dolfinx.graph import partitioner
 from dolfinx.log import LogLevel, set_log_level
-from dolfinx.mesh import CellType, GhostMode, Mesh, Topology, create_unit_cube
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    Mesh,
+    Topology,
+    create_unit_cube,
+)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -356,7 +362,7 @@ def test_locate_entities(dtype):
         cells = [np.array([], dtype=np.int64), np.array([], dtype=np.int64)]
         geom = np.array([], dtype=dtype)
 
-    part = create_cell_partitioner(GhostMode.none, 2)
+    part = partitioner()
     hexahedron = coordinate_element(CellType.hexahedron, 1, dtype=dtype)
     prism = coordinate_element(CellType.prism, 1, dtype=dtype)
     comm = MPI.COMM_WORLD
@@ -367,6 +373,7 @@ def test_locate_entities(dtype):
         [hexahedron._cpp_object, prism._cpp_object],
         geom,
         part,
+        GhostMode.none,
         max_cells_per_facet,
         1,
         cell_weights=None,

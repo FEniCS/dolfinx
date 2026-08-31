@@ -136,6 +136,8 @@
 #include <dolfinx/fem/petsc.h>
 #include <memory>
 #include <numbers>
+#include <petscksp.h>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -157,10 +159,10 @@ int main(int argc, char* argv[])
   PetscInitialize(&argc, &argv, nullptr, nullptr);
   {
     //  Create mesh
-    auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet, 2);
-    auto mesh = std::make_shared<mesh::Mesh<U>>(
-        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
-                                  {32, 32}, mesh::CellType::triangle, part));
+    auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
+        MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 32},
+        mesh::CellType::triangle, graph::partition_graph,
+        mesh::DiagonalType::right, 2, mesh::GhostMode::shared_facet));
 
     //    A function space object, which is defined in the generated code,
     //    is created:
@@ -256,7 +258,15 @@ int main(int argc, char* argv[])
     lu.set_operator(A.mat());
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
-    lu.solve(_u.vec(), _b.vec());
+    if (lu.solve(_u.vec(), _b.vec()) < 0)
+      throw std::runtime_error("Linear solver did not converge.");
+
+    // The KSP object is available for anything the solver does not
+    // wrap, here the number of linear solver iterations
+    PetscInt num_it = 0;
+    common::petsc::check(KSPGetIterationNumber(lu.ksp(), &num_it),
+                         "KSPGetIterationNumber");
+    std::cout << "Number of linear solver iterations: " << num_it << std::endl;
 
     //  Update ghost values before output
     u.x()->scatter_fwd();

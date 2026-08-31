@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2024 Garth N. Wells and Paul T. Kühner
+# Copyright (C) 2021-2026 Garth N. Wells and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -7,11 +7,13 @@
 
 from typing import Generic
 
+from mpi4py import MPI as _MPI
+
 import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.graph import partitioner
+from dolfinx.cpp.graph import partition_hilbert, partition_morton, partitioner
 from dolfinx.typing import Index
 
 # Import graph partitioners, which may or may not be available
@@ -29,6 +31,15 @@ _partitioner_kahip = getattr(_cpp.graph, "partitioner_kahip", None)
 if _partitioner_kahip is not None:
     partitioner_kahip = _partitioner_kahip
 
+# Geometric partitioners, i.e. partitioners that use the position of each
+# graph node. As above, availability depends on the build configuration.
+_partitioner_parmetis_geom = getattr(_cpp.graph, "partitioner_parmetis_geom", None)
+if _partitioner_parmetis_geom is not None:
+    partitioner_parmetis_geom = _partitioner_parmetis_geom
+_partitioner_parmetis_hybrid = getattr(_cpp.graph, "partitioner_parmetis_hybrid", None)
+if _partitioner_parmetis_hybrid is not None:
+    partitioner_parmetis_hybrid = _partitioner_parmetis_hybrid
+
 
 __all__ = [
     "AdjacencyList",
@@ -36,6 +47,9 @@ __all__ = [
     "comm_graph",
     "comm_graph_data",
     "comm_to_json",
+    "distribute",
+    "partition_hilbert",
+    "partition_morton",
     "partitioner",
 ]
 
@@ -145,6 +159,40 @@ def adjacencylist(
 
     cpp_object = cpp_t(data, offsets) if offsets is not None else cpp_t(data)  # type: ignore[arg-type]
     return AdjacencyList(cpp_object)
+
+
+def distribute(
+    comm: _MPI.Comm,
+    list: npt.NDArray[np.int64],
+    destinations: _cpp.graph.AdjacencyList_int32,
+) -> tuple[
+    npt.NDArray[np.int64], npt.NDArray[np.int32], npt.NDArray[np.int64], npt.NDArray[np.int32]
+]:
+    """Distribute rows of a fixed-degree array to destination ranks.
+
+    Uses a scalable neighbourhood exchange: send/receive ranks are
+    discovered via NBX consensus rather than an all-to-all, keeping
+    communication sparse as the communicator grows, at the cost of at
+    least one non-blocking consensus round.
+
+    Args:
+        comm: MPI communicator that ``list``/``destinations`` are
+            distributed across.
+        list: Rows to distribute, with shape ``(num_nodes, degree)``.
+            The global index of row ``i`` is assumed to be ``i`` plus
+            the number of rows owned by lower-ranked processes.
+        destinations: Destination rank(s) for the ith row of ``list``.
+            The first rank is the 'owner' of the row; any further ranks
+            receive it as a ghost.
+
+    Returns:
+        Tuple of (received rows, source rank of each received row,
+        original global index of each received row, owning rank of the
+        ghost rows). The last entry has one entry per ghost row -- the
+        trailing rows of the first entry -- not one entry per received
+        row.
+    """
+    return _cpp.graph.distribute(comm, np.ascontiguousarray(list, dtype=np.int64), destinations)
 
 
 def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:

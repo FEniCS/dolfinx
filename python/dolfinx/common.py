@@ -27,6 +27,7 @@ from dolfinx.cpp.common import (
     has_ptscotch,
     has_slepc,
     has_superlu_dist,
+    local_range,
     ufcx_signature,
 )
 
@@ -47,6 +48,7 @@ __all__ = [
     "has_slepc",
     "has_superlu_dist",
     "list_timings",
+    "local_range",
     "timed",
     "timing",
     "ufcx_signature",

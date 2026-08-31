@@ -21,6 +21,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::common
@@ -421,11 +422,18 @@ public:
   /// Set operator and preconditioner matrix (Mat)
   void set_operators(const Mat A, const Mat P);
 
-  /// Solve linear system Ax = b and return number of iterations (A^t x
-  /// = b if transpose is true). Non-convergence is not treated as an
-  /// error by this function (a warning is logged); use ksp() and
-  /// KSPGetConvergedReason to check the outcome if required.
-  PetscInt solve(Vec x, const Vec b, bool transpose = false);
+  /// @brief Solve linear system Ax = b (A^t x = b if `transpose` is
+  /// true).
+  ///
+  /// Non-convergence is not treated as an error (a warning is
+  /// logged); check the returned convergence reason.
+  ///
+  /// @return The PETSc convergence reason (positive on convergence,
+  /// negative on divergence).
+  [[nodiscard(
+      "check the converged reason - positive on convergence, negative on "
+      "divergence")]] KSPConvergedReason
+  solve(Vec x, const Vec b, bool transpose = false);
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
