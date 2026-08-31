@@ -16,6 +16,7 @@
 #include <mpi.h>
 #include <numeric>
 #include <span>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -275,15 +276,17 @@ public:
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
     {
-      impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, set_fn,
-                                 num_rows);
+      impl::insert_csr(_data, _cols, _row_ptr, x, rows, cols, set_fn, num_rows,
+                       std::integral_constant<int, BS0>{},
+                       std::integral_constant<int, BS1>{});
     }
     else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Set blocked data in a regular CSR matrix (_bs[0]=1, _bs[1]=1)
       // with correct sparsity
-      impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
-                                         set_fn, num_rows);
+      impl::insert_blocked_csr(_data, _cols, _row_ptr, x, rows, cols, set_fn,
+                               num_rows, std::integral_constant<int, BS0>{},
+                               std::integral_constant<int, BS1>{});
     }
     else
     {
@@ -321,14 +324,16 @@ public:
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
     {
-      impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, add_fn,
-                                 num_rows);
+      impl::insert_csr(_data, _cols, _row_ptr, x, rows, cols, add_fn, num_rows,
+                       std::integral_constant<int, BS0>{},
+                       std::integral_constant<int, BS1>{});
     }
     else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Add blocked data to a regular CSR matrix (_bs[0]=1, _bs[1]=1)
-      impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
-                                         add_fn, num_rows);
+      impl::insert_blocked_csr(_data, _cols, _row_ptr, x, rows, cols, add_fn,
+                               num_rows, std::integral_constant<int, BS0>{},
+                               std::integral_constant<int, BS1>{});
     }
     else
     {

@@ -87,8 +87,6 @@ std::size_t csr_position(const V& cols, std::size_t begin, std::size_t end,
 
 /// @brief Incorporate data into a CSR matrix.
 ///
-/// @tparam BS0 Row block size (of both matrix and data).
-/// @tparam BS1 Column block size (of both matrix and data).
 /// @tparam OP The operation (usually "set" or "add").
 /// @param[out] data CSR matrix data.
 /// @param[in] cols CSR column indices.
@@ -101,6 +99,12 @@ std::size_t csr_position(const V& cols, std::size_t begin, std::size_t end,
 /// @param[in] num_rows Maximum row index that can be set. Used when
 /// debugging to check that rows beyond a permitted range are not being
 /// set.
+/// @param[in] BS0 Row block size (of both matrix and data). Either a
+/// runtime integral value or a `std::integral_constant<U, N>` for some
+/// integral type `U`.
+/// @param[in] BS1 Column block size (of both matrix and data). Either a
+/// runtime integral value or a `std::integral_constant<U, N>` for some
+/// integral type `U`.
 ///
 /// @note In the case of block data, where BS0 or BS1 are greater than
 /// one, the layout of the input data is still the same. For example,
@@ -114,11 +118,12 @@ std::size_t csr_position(const V& cols, std::size_t begin, std::size_t end,
 /// 8  9  | 10 11
 /// 12 13 | 14 15
 ///
-template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
-          typename X, typename Y>
+template <typename OP, typename U, typename V, typename W, typename X,
+          typename Y>
 void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
                 const Y& xrows, const Y& xcols, OP op,
-                [[maybe_unused]] typename Y::value_type num_rows)
+                [[maybe_unused]] typename Y::value_type num_rows,
+                BlockSizeArg auto BS0, BlockSizeArg auto BS1)
 {
   const std::size_t nc = xcols.size();
   assert(x.size() == xrows.size() * xcols.size() * BS0 * BS1);
@@ -146,9 +151,9 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       std::size_t di = d * BS0 * BS1;
       std::size_t xi = c * BS1;
       assert(di < data.size());
-      for (int i = 0; i < BS0; ++i)
+      for (decltype(+BS0) i = 0; i < BS0; ++i)
       {
-        for (int j = 0; j < BS1; ++j)
+        for (decltype(+BS1) j = 0; j < BS1; ++j)
           op(data[di + j], xr[xi + j]);
         di += BS1;
         xi += nc * BS1;
@@ -164,8 +169,6 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// accept the data.
 /// @note See ::insert_csr for data layout.
 ///
-/// @tparam BS0 Row block size of data.
-/// @tparam BS1 Column block size of data.
 /// @tparam OP The operation (usually "set" or "add").
 /// @param[out] data CSR matrix data.
 /// @param[in] cols CSR column indices.
@@ -178,11 +181,16 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// @param[in] num_rows Maximum row index that can be set. Used when
 /// debugging to check that rows beyond a permitted range are not being
 /// set.
-template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
-          typename X, typename Y>
+/// @param[in] BS0 Row block size of data. Either a runtime integral
+/// value or a `std::integral_constant<U, N>` for some integral type `U`.
+/// @param[in] BS1 Column block size of data. Either a runtime integral
+/// value or a `std::integral_constant<U, N>` for some integral type `U`.
+template <typename OP, typename U, typename V, typename W, typename X,
+          typename Y>
 void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
                         const Y& xrows, const Y& xcols, OP op,
-                        [[maybe_unused]] typename Y::value_type num_rows)
+                        [[maybe_unused]] typename Y::value_type num_rows,
+                        BlockSizeArg auto BS0, BlockSizeArg auto BS1)
 {
   const std::size_t nc = xcols.size();
   assert(x.size() == xrows.size() * xcols.size() * BS0 * BS1);
@@ -195,7 +203,7 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       throw std::runtime_error("Local row out of range");
 #endif
 
-    for (int i = 0; i < BS0; ++i)
+    for (decltype(+BS0) i = 0; i < BS0; ++i)
     {
       using T = typename X::value_type;
       const T* xr = x.data() + (r * BS0 + i) * nc * BS1;
@@ -212,7 +220,7 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 
         assert(d < data.size());
         std::size_t xi = c * BS1;
-        for (int j = 0; j < BS1; ++j)
+        for (decltype(+BS1) j = 0; j < BS1; ++j)
           op(data[d + j], xr[xi + j]);
       }
     }
@@ -236,42 +244,46 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// @param[in] num_rows Maximum row index that can be set. Used when
 /// debugging to check that rows beyond a permitted range are not being
 /// set.
-/// @param[in] bs0 Row block size of matrix.
-/// @param[in] bs1 Column block size of matrix.
+/// @param[in] bs0 Row block size of matrix. Either a runtime integral
+/// value or a `std::integral_constant<U, N>` for some integral type `U`.
+/// @param[in] bs1 Column block size of matrix. Either a runtime integral
+/// value or a `std::integral_constant<U, N>` for some integral type `U`.
 template <typename OP, typename U, typename V, typename W, typename X,
           typename Y>
 void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
                            const X& x, const Y& xrows, const Y& xcols, OP op,
                            [[maybe_unused]] typename Y::value_type num_rows,
-                           int bs0, int bs1)
+                           BlockSizeArg auto bs0, BlockSizeArg auto bs1)
 {
   const std::size_t nc = xcols.size();
-  const int nbs = bs0 * bs1;
+  const auto nbs = bs0 * bs1;
 
   assert(x.size() == xrows.size() * xcols.size());
   for (std::size_t r = 0; r < xrows.size(); ++r)
   {
     // Row index and current data row
-    auto rdiv = std::div(xrows[r], bs0);
+    const auto row = xrows[r] / bs0;
+    const auto row_rem = xrows[r] % bs0;
     using T = typename X::value_type;
     const T* xr = x.data() + r * nc;
 
 #ifndef NDEBUG
-    if (rdiv.quot >= num_rows)
+    if (row >= num_rows)
       throw std::runtime_error("Local row out of range");
 #endif
     // Columns indices for row
-    std::size_t row_begin = row_ptr[rdiv.quot];
-    std::size_t row_end = row_ptr[rdiv.quot + 1];
+    std::size_t row_begin = row_ptr[row];
+    std::size_t row_end = row_ptr[row + 1];
     for (std::size_t c = 0; c < nc; ++c)
     {
       // Find position of column index
-      auto cdiv = std::div(xcols[c], bs1);
-      std::size_t d = csr_position(cols, row_begin, row_end, cdiv.quot);
-      if (d == row_end or cols[d] != cdiv.quot)
+      const auto col = xcols[c] / bs1;
+      const auto col_rem = xcols[c] % bs1;
+      std::size_t d = csr_position(cols, row_begin, row_end, col);
+      if (d == row_end or cols[d] != col)
         throw std::runtime_error("Entry not in sparsity");
 
-      std::size_t di = d * nbs + rdiv.rem * bs1 + cdiv.rem;
+      std::size_t di = d * nbs + row_rem * bs1 + col_rem;
       assert(di < data.size());
       op(data[di], xr[c]);
     }
