@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2019 Garth N. Wells
+// Copyright (C) 2018-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -93,10 +93,9 @@ template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    std::span<const std::int32_t> cells,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    std::span<const std::int32_t> cells, const DofMapPackCells auto& dofmap0,
     const fem::DofTransformKernel<T> auto& P0,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    const DofMapPackCells auto& dofmap1,
     const fem::DofTransformKernel<T> auto& P1T,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
     const FEkernel<T, U> auto& kernel,
@@ -111,15 +110,25 @@ void assemble_cells_matrix(
   const auto [dmap0, bs0, cells0] = dofmap0;
   const auto [dmap1, bs1, cells1] = dofmap1;
 
-  // Iterate over active cells
   std::size_t num_dofs0 = dmap0.extent(1);
   std::size_t num_dofs1 = dmap1.extent(1);
   std::size_t ndim0 = bs0 * num_dofs0;
   std::size_t ndim1 = bs1 * num_dofs1;
 
+  const U* x_ptr = x.data_handle();
+  const std::int32_t gdim = x.extent(1);
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
+  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+
   assert(Ab.size() >= ndim0 * ndim1);
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
   auto Ae = Ab.first(ndim0 * ndim1);
+
+  // P0/P1T do not change across cells in this call, so whether each is a
+  // set (non-null) transform is loop-invariant -- checked once here
+  // rather than on every cell.
+  const bool p0_set = is_transform_set(P0);
+  const bool p1t_set = is_transform_set(P1T);
 
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = coeffs.extent(1);
@@ -146,9 +155,11 @@ void assemble_cells_matrix(
     }
 
     // Get cell coordinates/geometry
-    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
+    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+    {
+      const U* _x_ptr = x_ptr + x_dofmap_ptr[cell * num_x_dofs_cell + i] * gdim;
+      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
+    }
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
@@ -156,8 +167,10 @@ void assemble_cells_matrix(
            cdofs_b.data(), nullptr, nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
-    P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
-    P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
+    if (p0_set)
+      P0(Ae, cell_info0, cell0, ndim1); // B = P0 \tilde{A}
+    if (p1t_set)
+      P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
     // In lifting mode only BC dofs are assembled, while in standard mode these
     // row/column dofs are zeroed.
@@ -271,15 +284,9 @@ void assemble_entities(
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
-    std::tuple<mdspan2_t, int,
-               md::mdspan<const std::int32_t,
-                          std::extents<std::size_t, md::dynamic_extent, 2>>>
-        dofmap0,
+    const DofMapPackEntities auto& dofmap0,
     const fem::DofTransformKernel<T> auto& P0,
-    std::tuple<mdspan2_t, int,
-               md::mdspan<const std::int32_t,
-                          std::extents<std::size_t, md::dynamic_extent, 2>>>
-        dofmap1,
+    const DofMapPackEntities auto& dofmap1,
     const fem::DofTransformKernel<T> auto& P1T,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
     const FEkernel<T, U> auto& kernel,
@@ -305,6 +312,17 @@ void assemble_entities(
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
   auto Ae = Ab.first(ndim0 * ndim1);
 
+  const U* x_ptr = x.data_handle();
+  const std::int32_t gdim = x.extent(1);
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
+  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+
+  // P0/P1T do not change across entities in this call, so whether each is a
+  // set (non-null) transform is loop-invariant -- checked once here rather
+  // than on every entity.
+  const bool p0_set = is_transform_set(P0);
+  const bool p1t_set = is_transform_set(P1T);
+
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = coeffs.extent(1);
 
@@ -329,9 +347,11 @@ void assemble_entities(
     }
 
     // Get cell coordinates/geometry
-    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
+    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+    {
+      const U* _x_ptr = x_ptr + x_dofmap_ptr[cell * num_x_dofs_cell + i] * gdim;
+      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
+    }
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
@@ -340,8 +360,10 @@ void assemble_entities(
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeffs_data + f * cstride, constants.data(),
            cdofs_b.data(), &local_entity, &perm, nullptr);
-    P0(Ae, cell_info0, cell0, ndim1);
-    P1T(Ae, cell_info1, cell1, ndim0);
+    if (p0_set)
+      P0(Ae, cell_info0, cell0, ndim1);
+    if (p1t_set)
+      P1T(Ae, cell_info1, cell1, ndim0);
 
     // Don't clear rows/cols in LiftingMode
     if constexpr (!LiftingMode)
@@ -442,10 +464,10 @@ void assemble_entities(
 /// @param cdofs_b Buffer for local element geometry. Size must be at
 /// least `2 * 3 * x_dofmap.extent(1))`.
 /// @param dofs_b Buffer for degrees-of-freedom. Size must be at least
-/// `2 * dmap0.map().extent(1) + 2 * dmap1.map().extent(1)`.
+/// `2 * dmap0.extent(1) + 2 * dmap1.extent(1)`.
 /// @param Ae_block_b Buffer used to gather a single (test, trial) block
 /// of the local element matrix. Size must be at least `(bs0 *
-/// dmap0.map().extent(1)) * (bs1 * dmap1.map().extent(1))`.
+/// dmap0.extent(1)) * (bs1 * dmap1.extent(1))`.
 template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -453,15 +475,9 @@ void assemble_interior_facets(
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
-    std::tuple<const DofMap&, int,
-               md::mdspan<const std::int32_t,
-                          std::extents<std::size_t, md::dynamic_extent, 2, 2>>>
-        dofmap0,
+    const DofMapPackFacets auto& dofmap0,
     const fem::DofTransformKernel<T> auto& P0,
-    std::tuple<const DofMap&, int,
-               md::mdspan<const std::int32_t,
-                          std::extents<std::size_t, md::dynamic_extent, 2, 2>>>
-        dofmap1,
+    const DofMapPackFacets auto& dofmap1,
     const fem::DofTransformKernel<T> auto& P1T,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
     const FEkernel<T, U> auto& kernel,
@@ -485,8 +501,13 @@ void assemble_interior_facets(
   auto cdofs0 = cdofs_b.first(3 * x_dofmap.extent(1));
   auto cdofs1 = cdofs_b.last(3 * x_dofmap.extent(1));
 
-  std::size_t dmap0_size = dmap0.map().extent(1);
-  std::size_t dmap1_size = dmap1.map().extent(1);
+  const U* x_ptr = x.data_handle();
+  const std::int32_t gdim = x.extent(1);
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
+  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+
+  std::size_t dmap0_size = dmap0.extent(1);
+  std::size_t dmap1_size = dmap1.extent(1);
   std::size_t num_rows = bs0 * 2 * dmap0_size;
   std::size_t num_cols = bs1 * 2 * dmap1_size;
 
@@ -529,6 +550,12 @@ void assemble_interior_facets(
     mat_set(rdofs, cdofs, Ae_block);
   };
 
+  // P0/P1T do not change across facets in this call, so whether each is a
+  // set (non-null) transform is loop-invariant -- checked once here rather
+  // than on every facet.
+  const bool p0_set = is_transform_set(P0);
+  const bool p1t_set = is_transform_set(P1T);
+
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
     // Cells in integration domain,  test function domain and trial
@@ -541,34 +568,45 @@ void assemble_interior_facets(
     std::array local_facet{facets(f, 0, 1), facets(f, 1, 1)};
 
     // Get cell geometry
-    auto x_dofs0 = md::submdspan(x_dofmap, cells[0], md::full_extent);
-    for (std::size_t i = 0; i < x_dofs0.size(); ++i)
-      std::copy_n(&x(x_dofs0[i], 0), 3, std::next(cdofs0.begin(), 3 * i));
-    auto x_dofs1 = md::submdspan(x_dofmap, cells[1], md::full_extent);
-    for (std::size_t i = 0; i < x_dofs1.size(); ++i)
-      std::copy_n(&x(x_dofs1[i], 0), 3, std::next(cdofs1.begin(), 3 * i));
+    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+    {
+      const U* _x_ptr0
+          = x_ptr + x_dofmap_ptr[cells[0] * num_x_dofs_cell + i] * gdim;
+      std::copy_n(_x_ptr0, gdim, cdofs0.data() + 3 * i);
+      const U* _x_ptr1
+          = x_ptr + x_dofmap_ptr[cells[1] * num_x_dofs_cell + i] * gdim;
+      std::copy_n(_x_ptr1, gdim, cdofs1.data() + 3 * i);
+    }
 
     // Get dof maps for cells and pack
     // When integrating over interfaces between two domains, the test function
     // might only be defined on one side, so we check which cells exist in the
     // test function domain
     std::span<const std::int32_t> dmap0_cell0
-        = cells0[0] >= 0 ? dmap0.cell_dofs(cells0[0])
-                         : std::span<const std::int32_t>();
+        = cells0[0] >= 0
+              ? std::span(dmap0.data_handle() + cells0[0] * dmap0_size,
+                          dmap0_size)
+              : std::span<const std::int32_t>();
     std::span<const std::int32_t> dmap0_cell1
-        = cells0[1] >= 0 ? dmap0.cell_dofs(cells0[1])
-                         : std::span<const std::int32_t>();
+        = cells0[1] >= 0
+              ? std::span(dmap0.data_handle() + cells0[1] * dmap0_size,
+                          dmap0_size)
+              : std::span<const std::int32_t>();
 
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
     std::ranges::copy(dmap0_cell1, std::next(dmapjoint0.begin(), dmap0_size));
 
     // Check which cells exist in the trial function domain
     std::span<const std::int32_t> dmap1_cell0
-        = cells1[0] >= 0 ? dmap1.cell_dofs(cells1[0])
-                         : std::span<const std::int32_t>();
+        = cells1[0] >= 0
+              ? std::span(dmap1.data_handle() + cells1[0] * dmap1_size,
+                          dmap1_size)
+              : std::span<const std::int32_t>();
     std::span<const std::int32_t> dmap1_cell1
-        = cells1[1] >= 0 ? dmap1.cell_dofs(cells1[1])
-                         : std::span<const std::int32_t>();
+        = cells1[1] >= 0
+              ? std::span(dmap1.data_handle() + cells1[1] * dmap1_size,
+                          dmap1_size)
+              : std::span<const std::int32_t>();
 
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
     std::ranges::copy(dmap1_cell1, std::next(dmapjoint1.begin(), dmap1_size));
@@ -597,19 +635,18 @@ void assemble_interior_facets(
     // where each block is element tensor of size (dmap0, dmap1).
 
     // Only apply transformation when cells exist
-    if (cells0[0] >= 0)
+    if (p0_set and cells0[0] >= 0)
       P0(Ae, cell_info0, cells0[0], num_cols);
-    if (cells0[1] >= 0)
+    if (p0_set and cells0[1] >= 0)
     {
       std::span sub_Ae0(Ae.data() + bs0 * dmap0_size * num_cols,
                         bs0 * dmap0_size * num_cols);
-
       P0(sub_Ae0, cell_info0, cells0[1], num_cols);
     }
-    if (cells1[0] >= 0)
+    if (p1t_set and cells1[0] >= 0)
       P1T(Ae, cell_info1, cells1[0], num_rows);
 
-    if (cells1[1] >= 0)
+    if (p1t_set and cells1[1] >= 0)
     {
       for (std::size_t row = 0; row < num_rows; ++row)
       {
@@ -793,11 +830,34 @@ void assemble_matrix(
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
-      impl::assemble_cells_matrix<LiftingMode>(
-          mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
-          {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
-          md::mdspan(coeffs.data(), cells.size(), cstride), constants,
-          cell_info0, cell_info1, std::span(Ab), std::span(cdofs_b));
+      if (bs0 == 1 and bs1 == 1)
+      {
+        impl::assemble_cells_matrix<LiftingMode>(
+            mat_set, x_dofmap, x, cells,
+            std::tuple{dofs0, std::integral_constant<int, 1>{}, cells0}, P0,
+            std::tuple{dofs1, std::integral_constant<int, 1>{}, cells1}, P1T,
+            bc0, bc1, fn, md::mdspan(coeffs.data(), cells.size(), cstride),
+            constants, cell_info0, cell_info1, std::span(Ab),
+            std::span(cdofs_b));
+      }
+      else if (bs0 == 3 and bs1 == 3)
+      {
+        impl::assemble_cells_matrix<LiftingMode>(
+            mat_set, x_dofmap, x, cells,
+            std::tuple{dofs0, std::integral_constant<int, 3>{}, cells0}, P0,
+            std::tuple{dofs1, std::integral_constant<int, 3>{}, cells1}, P1T,
+            bc0, bc1, fn, md::mdspan(coeffs.data(), cells.size(), cstride),
+            constants, cell_info0, cell_info1, std::span(Ab),
+            std::span(cdofs_b));
+      }
+      else
+      {
+        impl::assemble_cells_matrix<LiftingMode>(
+            mat_set, x_dofmap, x, cells, std::tuple{dofs0, bs0, cells0}, P0,
+            std::tuple{dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
+            md::mdspan(coeffs.data(), cells.size(), cstride), constants,
+            cell_info0, cell_info1, std::span(Ab), std::span(cdofs_b));
+      }
     }
 
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
@@ -838,18 +898,51 @@ void assemble_matrix(
       std::span facets0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
       std::span facets1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
-      impl::assemble_interior_facets<LiftingMode>(
-          mat_set, x_dofmap, x,
-          mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-          {*dofmap0, bs0,
-           mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
-          P0,
-          {*dofmap1, bs1,
-           mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
-          P1T, bc0, bc1, fn,
-          mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride), constants,
-          cell_info0, cell_info1, facet_perms, std::span(Ab),
-          std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
+      if (bs0 == 1 and bs1 == 1)
+      {
+        impl::assemble_interior_facets<LiftingMode>(
+            mat_set, x_dofmap, x,
+            mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
+            std::tuple{dofs0, std::integral_constant<int, 1>{},
+                       mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
+            P0,
+            std::tuple{dofs1, std::integral_constant<int, 1>{},
+                       mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
+            P1T, bc0, bc1, fn,
+            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
+            constants, cell_info0, cell_info1, facet_perms, std::span(Ab),
+            std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
+      }
+      else if (bs0 == 3 and bs1 == 3)
+      {
+        impl::assemble_interior_facets<LiftingMode>(
+            mat_set, x_dofmap, x,
+            mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
+            std::tuple{dofs0, std::integral_constant<int, 3>{},
+                       mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
+            P0,
+            std::tuple{dofs1, std::integral_constant<int, 3>{},
+                       mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
+            P1T, bc0, bc1, fn,
+            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
+            constants, cell_info0, cell_info1, facet_perms, std::span(Ab),
+            std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
+      }
+      else
+      {
+        impl::assemble_interior_facets<LiftingMode>(
+            mat_set, x_dofmap, x,
+            mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
+            std::tuple{dofs0, bs0,
+                       mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
+            P0,
+            std::tuple{dofs1, bs1,
+                       mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
+            P1T, bc0, bc1, fn,
+            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
+            constants, cell_info0, cell_info1, facet_perms, std::span(Ab),
+            std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
+      }
     }
 
     for (auto itg_type : {fem::IntegralType::exterior_facet,
@@ -884,11 +977,36 @@ void assemble_matrix(
         std::span e1 = a.domain_arg(itg_type, 1, i, 0);
         mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
         assert((entities.size() / 2) * cstride == coeffs.size());
-        impl::assemble_entities<LiftingMode>(
-            mat_set, x_dofmap, x, entities, {dofs0, bs0, entities0}, P0,
-            {dofs1, bs1, entities1}, P1T, bc0, bc1, fn,
-            md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
-            cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b));
+        if (bs0 == 1 and bs1 == 1)
+        {
+          impl::assemble_entities<LiftingMode>(
+              mat_set, x_dofmap, x, entities,
+              std::tuple{dofs0, std::integral_constant<int, 1>{}, entities0},
+              P0,
+              std::tuple{dofs1, std::integral_constant<int, 1>{}, entities1},
+              P1T, bc0, bc1, fn,
+              md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
+              cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b));
+        }
+        else if (bs0 == 3 and bs1 == 3)
+        {
+          impl::assemble_entities<LiftingMode>(
+              mat_set, x_dofmap, x, entities,
+              std::tuple{dofs0, std::integral_constant<int, 3>{}, entities0},
+              P0,
+              std::tuple{dofs1, std::integral_constant<int, 3>{}, entities1},
+              P1T, bc0, bc1, fn,
+              md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
+              cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b));
+        }
+        else
+        {
+          impl::assemble_entities<LiftingMode>(
+              mat_set, x_dofmap, x, entities, std::tuple{dofs0, bs0, entities0},
+              P0, std::tuple{dofs1, bs1, entities1}, P1T, bc0, bc1, fn,
+              md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
+              cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b));
+        }
       }
     }
   }

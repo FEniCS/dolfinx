@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 Garth N. Wells, Jørgen S. Dokken
+// Copyright (C) 2015-2026 Garth N. Wells, Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -204,9 +204,12 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
       std::size_t offset = p * size; // Offset for point p
 
       // Shape: (num_phi , (value_size * num_derivs))
-      apply_dof_transformation0(std::span(dPhi0.data_handle() + offset, size),
-                                cell_info, c,
-                                dPhi0.extent(2) * dPhi0.extent(3));
+      if (apply_dof_transformation0)
+      {
+        apply_dof_transformation0(std::span(dPhi0.data_handle() + offset, size),
+                                  cell_info, c,
+                                  dPhi0.extent(2) * dPhi0.extent(3));
+      }
     }
 
     // Compute curl
@@ -238,7 +241,8 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
             Ab[space_dim0 * j + i] += static_cast<U>(pi_val * curl(p, i, k));
         }
 
-    apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
+    if (apply_inverse_dof_transform1)
+      apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
     mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
   }
 }
@@ -346,7 +350,8 @@ void discrete_gradient(mesh::Topology& topology,
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     std::ranges::copy(Ab, Ae.begin());
-    apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
+    if (apply_inverse_dof_transform)
+      apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
     mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
   }
 }
@@ -557,12 +562,15 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     // element-by-element mdspan loop.
     std::ranges::copy(basis_derivatives_reference0_b,
                       basis_reference0_b.begin());
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    if (apply_dof_transformation0)
     {
-      apply_dof_transformation0(
-          std::span(basis_reference0.data_handle() + p * dim0 * value_size_ref0,
-                    dim0 * value_size_ref0),
-          cell_info, c, value_size_ref0);
+      for (std::size_t p = 0; p < Xshape[0]; ++p)
+      {
+        apply_dof_transformation0(std::span(basis_reference0.data_handle()
+                                                + p * dim0 * value_size_ref0,
+                                            dim0 * value_size_ref0),
+                                  cell_info, c, value_size_ref0);
+      }
     }
 
     for (std::size_t p = 0; p < basis0.extent(0); ++p)
@@ -646,7 +654,8 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
       }
     }
 
-    apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
+    if (apply_inverse_dof_transform1)
+      apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
 
     // Zero out all rows that have already been added on this process
     // and only add owned rows

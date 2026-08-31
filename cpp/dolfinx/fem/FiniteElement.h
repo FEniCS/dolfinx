@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2024 Garth N. Wells and Matthew W. Scroggs
+// Copyright (C) 2020-2026 Garth N. Wells and Matthew W. Scroggs
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,6 +9,7 @@
 #include "traits.h"
 #include <array>
 #include <basix/finite-element.h>
+#include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
@@ -29,6 +30,9 @@ enum class doftransform : std::uint8_t
   inverse = 2,           ///< Inverse
   inverse_transpose = 3, ///< Transpose inverse
 };
+
+template <std::floating_point T>
+class FiniteElement;
 
 /// @brief Basix element holder
 /// @tparam T Scalar type
@@ -150,7 +154,7 @@ public:
   /// not be relied upon for determining the element type. Use other
   /// functions, commonly returning enums, to determine element
   /// properties.
-  std::string signature() const noexcept;
+  const std::string& signature() const noexcept;
 
   /// @brief Dimension of the finite element function space (the number
   /// of degrees-of-freedom for the element).
@@ -435,13 +439,7 @@ public:
   dof_transformation_fn(doftransform ttype, bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
-    {
-      // If no permutation needed, return function that does nothing
-      return [](std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)
-      {
-        // Do nothing
-      };
-    }
+      return nullptr;
 
     if (!_sub_elements.empty())
     {
@@ -451,6 +449,8 @@ public:
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
             sub_element_fns;
         std::vector<int> dims;
+        sub_element_fns.reserve(_sub_elements.size());
+        dims.reserve(_sub_elements.size());
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
         {
           sub_element_fns.push_back(
@@ -467,8 +467,11 @@ public:
           for (std::size_t e = 0; e < sub_element_fns.size(); ++e)
           {
             const std::size_t width = dims[e] * block_size;
-            sub_element_fns[e](data.subspan(offset, width), cell_info, cell,
-                               block_size);
+            if (sub_element_fns[e])
+            {
+              sub_element_fns[e](data.subspan(offset, width), cell_info, cell,
+                                 block_size);
+            }
             offset += width;
           }
         };
@@ -480,6 +483,7 @@ public:
                            std::int32_t, int)>
             sub_fn
             = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
+        assert(sub_fn); // Consistent with needs_dof_transformations() above
         const int ebs = _bs;
         return [ebs, sub_fn = std::move(sub_fn)](
                    std::span<U> data, std::span<const std::uint32_t> cell_info,
@@ -541,13 +545,7 @@ public:
                               bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
-    {
-      // If no permutation needed, return function that does nothing
-      return [](std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)
-      {
-        // Do nothing
-      };
-    }
+      return nullptr;
     else if (!_sub_elements.empty())
     {
       if (!_reference_value_shape) // Mixed element
@@ -556,6 +554,8 @@ public:
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
             sub_element_fns;
         std::vector<int> dims;
+        sub_element_fns.reserve(_sub_elements.size());
+        dims.reserve(_sub_elements.size());
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
         {
           sub_element_fns.push_back(
@@ -571,8 +571,11 @@ public:
           std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_fns.size(); ++e)
           {
-            sub_element_fns[e](data.subspan(offset, data.size() - offset),
-                               cell_info, cell, block_size);
+            if (sub_element_fns[e])
+            {
+              sub_element_fns[e](data.subspan(offset, data.size() - offset),
+                                 cell_info, cell, block_size);
+            }
             offset += dims[e];
           }
         };
@@ -588,6 +591,7 @@ public:
                            std::int32_t, int)>
             sub_fn
             = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
+        assert(sub_fn); // Consistent with needs_dof_transformations() above
         return [this, sub_fn = std::move(sub_fn)](
                    std::span<U> data, std::span<const std::uint32_t> cell_info,
                    std::int32_t cell, int data_block_size)

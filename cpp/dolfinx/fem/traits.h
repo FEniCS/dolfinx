@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Joseph P. Dean and Garth N. Wells
+// Copyright (C) 2024-2026 Joseph P. Dean and Garth N. Wells
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
@@ -20,6 +20,23 @@ template <class U, class T>
 concept DofTransformKernel
     = std::is_invocable_v<U, std::span<T>, std::span<const std::uint32_t>,
                           std::int32_t, int>;
+
+/// @brief Whether a DofTransformKernel `fn` should be invoked.
+///
+/// A nullable kernel (`std::function`) is checked for truthiness,
+/// matching the "no transform needed" convention used throughout the
+/// assembly/interpolation code. A non-nullable callable (e.g. a plain
+/// lambda, as used when calling the low-level `impl::assemble_*`
+/// kernels directly -- see the `custom_kernel` demo) can never be
+/// "unset", so it is always invoked.
+template <typename F>
+constexpr bool is_transform_set(const F& fn)
+{
+  if constexpr (requires { static_cast<bool>(fn); })
+    return static_cast<bool>(fn);
+  else
+    return true;
+}
 
 /// @brief Finite element cell kernel concept.
 ///

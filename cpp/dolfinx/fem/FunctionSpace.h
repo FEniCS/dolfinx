@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2023 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2026 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -317,7 +317,12 @@ public:
           = md::submdspan(phi_full, 0, md::full_extent, md::full_extent, 0);
 
       // TODO: Check transform
-      // Basis function reference-to-conforming transformation function
+      //
+      // Basis function reference-to-conforming transformation function.
+      // This function is only reachable for elements with
+      // interpolation_ident() (point evaluation, e.g. Lagrange), which
+      // never need a DOF transformation, so this is always a no-op
+      // (nullptr) closure.
       auto apply_dof_transformation
           = _elements[i]->template dof_transformation_fn<geometry_type>(
               doftransform::standard);
@@ -332,8 +337,12 @@ public:
 
         // Tabulate dof coordinates on cell
         cmap.push_forward(x, coordinate_dofs, phi);
-        apply_dof_transformation(
-            x_b, std::span(cell_info.data(), cell_info.size()), c, x.extent(1));
+        if (apply_dof_transformation)
+        {
+          apply_dof_transformation(
+              x_b, std::span(cell_info.data(), cell_info.size()), c,
+              x.extent(1));
+        }
 
         // Get cell dofmap
         auto dofs = _dofmaps[i]->cell_dofs(c);

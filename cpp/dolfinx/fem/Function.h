@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2024 Anders Logg, Garth N. Wells and Massimiliano Leoni
+// Copyright (C) 2003-2026 Anders Logg, Garth N. Wells and Massimiliano Leoni
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -679,11 +679,14 @@ public:
       // Permute the reference basis function values to account for the
       // cell's orientation
       std::size_t p = std::ranges::distance(cells.begin(), cell_it);
-      apply_dof_transformation(
-          std::span(basis_derivatives_reference_values_b.data()
-                        + p * num_basis_values,
-                    num_basis_values),
-          cell_info, *cell_it, reference_value_size);
+      if (apply_dof_transformation)
+      {
+        apply_dof_transformation(
+            std::span(basis_derivatives_reference_values_b.data()
+                          + p * num_basis_values,
+                      num_basis_values),
+            cell_info, *cell_it, reference_value_size);
+      }
 
       {
         auto _U = md::submdspan(basis_derivatives_reference_values, 0, p,
