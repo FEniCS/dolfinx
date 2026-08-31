@@ -8,15 +8,19 @@
 
 C++ users now have a `nls::petsc::SNESSolver` class that adapts C++ callables
 to the PETSc SNES callback interface and handles PETSc memory management,
-approximately following the existing
+approximately following the design of
 {py:class}`dolfinx.fem.petsc.NonlinearProblem` on the Python side. The C++
 hyperelasticity demo has a full example of use.
+
+Python users should use {py:class}`dolfinx.fem.petsc.NonlinearProblem`, which
+works with petsc4py's SNES interface directly.
 
 ### Removal of the deprecated Newton solver
 
 The `NewtonSolver` and `NewtonSolverNonlinearProblem` classes, deprecated in
 v0.10.0 in favor of {py:class}`dolfinx.fem.petsc.NonlinearProblem` for Python
-users, have now been removed from both interfaces.
+users, have now been removed from both interfaces. As `NewtonSolver` was the
+only member of the `dolfinx.nls` module, the module has been removed.
 
 ## v0.11.0
 

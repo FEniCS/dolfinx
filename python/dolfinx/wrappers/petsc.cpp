@@ -273,16 +273,11 @@ void petsc_fem_module(nb::module_& m)
       nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"));
 }
 
-void petsc_nls_module(nb::module_&)
-{
-  // No PETSc-specific nonlinear solver classes are currently bound.
-}
-
 } // namespace
 
 namespace dolfinx_wrappers
 {
-void petsc(nb::module_& m_fem, nb::module_& m_la, nb::module_& m_nls)
+void petsc(nb::module_& m_fem, nb::module_& m_la)
 {
   nb::module_ petsc_fem_mod
       = m_fem.def_submodule("petsc", "PETSc-specific finite element module");
@@ -291,10 +286,6 @@ void petsc(nb::module_& m_fem, nb::module_& m_la, nb::module_& m_nls)
   nb::module_ petsc_la_mod
       = m_la.def_submodule("petsc", "PETSc-specific linear algebra module");
   petsc_la_module(petsc_la_mod);
-
-  nb::module_ petsc_nls_mod
-      = m_nls.def_submodule("petsc", "PETSc-specific nonlinear solvers");
-  petsc_nls_module(petsc_nls_mod);
 }
 } // namespace dolfinx_wrappers
 #endif
