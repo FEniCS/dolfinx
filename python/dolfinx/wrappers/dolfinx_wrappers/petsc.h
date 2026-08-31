@@ -28,7 +28,6 @@
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/nls/NewtonSolver.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
