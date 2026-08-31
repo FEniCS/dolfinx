@@ -67,8 +67,8 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
   // Check the number of available sub systems
   if (component[0] >= finite_element.num_sub_elements())
   {
-    throw std::invalid_argument("Cannot extract subsystem of finite element. "
-                                "Requested subsystem out of range.");
+    throw std::out_of_range("Cannot extract subsystem of finite element. "
+                            "Requested subsystem out of range.");
   }
 
   // Get sub system
