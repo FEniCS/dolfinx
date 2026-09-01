@@ -32,7 +32,7 @@ PetscErrorCode invoke(F&& f, std::exception_ptr& exception)
   try
   {
     std::forward<F>(f)();
-    return PETSC_SUCCESS;;
+    return PETSC_SUCCESS;
   }
   catch (const std::exception& e)
   {
