@@ -185,7 +185,7 @@ std::vector<T> squared_distance(const mesh::Mesh<T>& mesh, int dim,
 namespace impl
 {
 /// Check whether bounding box is a leaf node
-constexpr bool is_leaf(std::array<int, 2> bbox)
+constexpr bool is_leaf(std::array<std::int32_t, 2> bbox)
 {
   // Leaf nodes are marked by setting child_0 equal to child_1
   return bbox[0] == bbox[1];
@@ -244,7 +244,7 @@ _compute_closest_entity(const geometry::BoundingBoxTree<T>& tree,
 {
   // Get children of current bounding box node (child_1 denotes entity
   // index for leaves)
-  const std::array<int, 2> bbox = tree.bbox(node);
+  const std::array<std::int32_t, 2> bbox = tree.bbox(node);
   T r2;
   if (is_leaf(bbox))
   {
@@ -289,10 +289,10 @@ _compute_closest_entity(const geometry::BoundingBoxTree<T>& tree,
 
     // Check both children. We use R2 (as opposed to r2), as a bounding
     // box can be closer than the actual entity.
-    std::pair<int, T> p0 = _compute_closest_entity(tree, point, bbox.front(),
-                                                   mesh, closest_entity, R2);
-    std::pair<int, T> p1 = _compute_closest_entity(tree, point, bbox.back(),
-                                                   mesh, p0.first, p0.second);
+    std::pair<std::int32_t, T> p0 = _compute_closest_entity(
+        tree, point, bbox.front(), mesh, closest_entity, R2);
+    std::pair<std::int32_t, T> p1 = _compute_closest_entity(
+        tree, point, bbox.back(), mesh, p0.first, p0.second);
     return p1;
   }
 }
@@ -310,7 +310,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
   std::deque<std::int32_t> stack;
   std::int32_t next = tree.num_bboxes() - 1;
   std::span<const T> coords = tree.bbox_coordinates();
-  auto view_bbox = [&coords](std::size_t node)
+  auto view_bbox = [&coords](std::int32_t node)
   { return std::span<const T, 6>(coords.data() + 6 * node, 6); };
   while (next != -1)
   {
@@ -581,7 +581,7 @@ compute_closest_entity(const BoundingBoxTree<T>& tree,
     // Use midpoint tree to find initial closest entity to the point.
     // Start by using a leaf node as the initial guess for the input
     // entity
-    std::array<int, 2> leaf0 = midpoint_tree.bbox(0);
+    std::array<std::int32_t, 2> leaf0 = midpoint_tree.bbox(0);
     assert(impl::is_leaf(leaf0));
     std::array<T, 6> diff = midpoint_tree.get_bbox(0);
     for (std::size_t k = 0; k < 3; ++k)
