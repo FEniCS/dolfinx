@@ -757,8 +757,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   {
     for (auto p : collisions.links(i / 3))
     {
-      int neighbor = rank_to_neighbor[p];
-      int pos = send_offsets[neighbor] + counter[neighbor];
+      std::int32_t neighbor = rank_to_neighbor[p];
+      std::int32_t pos = send_offsets[neighbor] + counter[neighbor];
       auto it = std::next(send_data.begin(), pos);
       std::copy_n(std::next(points.begin(), i), 3, it);
       unpack_map[pos / 3] = i / 3;
@@ -796,7 +796,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
     std::array<T, 3> point;
     std::copy_n(std::next(received_points.begin(), p), 3, point.begin());
     // Find first colliding cell among the cells with colliding bounding boxes
-    const int colliding_cell = geometry::compute_first_colliding_cell(
+    const std::int32_t colliding_cell = geometry::compute_first_colliding_cell(
         mesh, candidate_collisions.links(p / 3), point,
         10 * std::numeric_limits<T>::epsilon());
     // If a collding cell is found, store the rank of the current process
@@ -940,7 +940,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   {
     for (auto p : collisions.links(i))
     {
-      int neighbor = rank_to_neighbor[p];
+      std::int32_t neighbor = rank_to_neighbor[p];
       send_owners[send_offsets[neighbor] + counter[neighbor]++]
           = point_owners[i];
     }
