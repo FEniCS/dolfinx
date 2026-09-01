@@ -227,7 +227,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
 {
   if (a.rank() != 2)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cannot create sparsity pattern. Form is not a bilinear.");
   }
 
@@ -305,7 +305,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         }
         break;
       default:
-        throw std::runtime_error("Unsupported integral type");
+        throw std::invalid_argument("Unsupported integral type");
       }
     }
   }
@@ -427,17 +427,17 @@ Form<T, U> create_form_factory(
   for (const ufcx_form& ufcx_form : ufcx_forms)
   {
     if (ufcx_form.rank != (int)spaces.size())
-      throw std::runtime_error("Wrong number of argument spaces for Form.");
+      throw std::invalid_argument("Wrong number of argument spaces for Form.");
     if (ufcx_form.num_coefficients != (int)coefficients.size())
     {
-      throw std::runtime_error("Mismatch between number of expected and "
-                               "provided Form coefficients.");
+      throw std::invalid_argument("Mismatch between number of expected and "
+                                  "provided Form coefficients.");
     }
 
     // Check Constants for rank and size consistency
     if (ufcx_form.num_constants != (int)constants.size())
     {
-      throw std::runtime_error(std::format(
+      throw std::invalid_argument(std::format(
           "Mismatch between number of expected and "
           "provided Form Constants. Expected {} constants, but got {}.",
           ufcx_form.num_constants, constants.size()));
@@ -446,7 +446,7 @@ Form<T, U> create_form_factory(
     {
       if (ufcx_form.constant_ranks[c] != (int)constants[c]->shape.size())
       {
-        throw std::runtime_error(std::format(
+        throw std::invalid_argument(std::format(
             "Mismatch between expected and actual rank of "
             "Form Constant. Rank of Constant {} should be {}, but got rank {}.",
             c, ufcx_form.constant_ranks[c], constants[c]->shape.size()));
@@ -454,7 +454,7 @@ Form<T, U> create_form_factory(
       if (!std::equal(constants[c]->shape.begin(), constants[c]->shape.end(),
                       ufcx_form.constant_shapes[c]))
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             std::format("Mismatch between expected and actual shape of Form "
                         "Constant for Constant {}.",
                         c));
@@ -474,7 +474,7 @@ Form<T, U> create_form_factory(
           and element_hash
                   != spaces[i]->elements(form_idx)->basix_element().hash())
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Cannot create form. Elements are different to "
             "those used to compile the form.");
       }
@@ -485,7 +485,7 @@ Form<T, U> create_form_factory(
   if (!mesh and !spaces.empty())
     mesh = spaces.front()->mesh();
   if (!mesh)
-    throw std::runtime_error("No mesh could be associated with the Form.");
+    throw std::invalid_argument("No mesh could be associated with the Form.");
 
   auto topology = mesh->topology();
   assert(topology);
@@ -571,7 +571,7 @@ Form<T, U> create_form_factory(
         impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
         if (!k)
         {
-          throw std::runtime_error(
+          throw std::invalid_argument(
               "UFCx kernel function is NULL. Check requested types.");
         }
 
@@ -726,7 +726,7 @@ Form<T, U> create_form_factory(
         break;
       }
       default:
-        throw std::runtime_error("Unsupported integral type");
+        throw std::invalid_argument("Unsupported integral type");
       }
 
       const std::function<std::vector<std::int32_t>(const mesh::Topology&,
@@ -934,7 +934,7 @@ FunctionSpace<T> create_functionspace(
   assert(mesh);
   assert(mesh->topology());
   if (e->cell_type() != mesh->topology()->cell_type())
-    throw std::runtime_error("Cell type of element and mesh must match.");
+    throw std::invalid_argument("Cell type of element and mesh must match.");
 
   // Create element dof layout
   fem::ElementDofLayout layout = fem::create_element_dof_layout(*e);
@@ -961,8 +961,8 @@ Expression<T, U> create_expression(
 {
   if (e.rank > 0 and !argument_space)
   {
-    throw std::runtime_error("Expression has Argument but no Argument "
-                             "function space was provided.");
+    throw std::invalid_argument("Expression has Argument but no Argument "
+                                "function space was provided.");
   }
 
   std::vector<U> X(e.points, e.points + e.num_points * e.entity_dimension);
@@ -991,7 +991,7 @@ Expression<T, U> create_expression(
     tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_complex128);
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else
-    throw std::runtime_error("Type not supported.");
+    throw std::invalid_argument("Type not supported.");
 
   assert(tabulate_tensor);
   std::uint64_t e_hash = e.coordinate_element_hash;
@@ -1076,7 +1076,7 @@ mesh::Mesh<T> interpolate_geometry(
   const CoordinateElement<T>& old_cmap = mesh->geometry().cmaps().front();
   if (new_cmap.cell_shape() != old_cmap.cell_shape())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cell shape of new coordinate element must match input mesh.");
   }
 

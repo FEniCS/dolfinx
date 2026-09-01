@@ -104,7 +104,7 @@ Mat create_matrix_block(
   }
 
   if (!mesh)
-    throw std::runtime_error("Could not find a Mesh.");
+    throw std::invalid_argument("Could not find a Mesh.");
 
   // Compute offsets for the fields
   std::array<std::vector<std::pair<
@@ -223,7 +223,8 @@ Mat create_matrix_nest(
     std::optional<std::vector<std::vector<std::optional<std::string>>>> types)
 {
   if (a.empty())
-    throw std::runtime_error("Rectangular array of forms must be non-empty.");
+    throw std::invalid_argument(
+        "Rectangular array of forms must be non-empty.");
 
   // Extract and check row/column ranges
   auto V = fem::common_function_spaces(extract_function_spaces(a));
@@ -249,7 +250,7 @@ Mat create_matrix_nest(
   }
 
   if (!mesh)
-    throw std::runtime_error("Could not find a Mesh.");
+    throw std::invalid_argument("Could not find a Mesh.");
 
   // Initialise block (MatNest) matrix. On error, destroy the
   // already-created sub-matrices in `mats` before propagating, since
@@ -402,7 +403,7 @@ void apply_lifting(
     const std::vector<Vec>& x0, PetscScalar alpha)
 {
   if (!x0.empty() and x0.size() != a.size())
-    throw std::runtime_error("Mismatch between x0 and a in apply_lifting.");
+    throw std::invalid_argument("Mismatch between x0 and a in apply_lifting.");
 
   Vec b_local;
   common::petsc::check(VecGhostGetLocalForm(b, &b_local),
@@ -486,7 +487,7 @@ void apply_lifting(
     const std::vector<Vec>& x0, PetscScalar alpha)
 {
   if (!x0.empty() and x0.size() != a.size())
-    throw std::runtime_error("Mismatch between x0 and a in apply_lifting.");
+    throw std::invalid_argument("Mismatch between x0 and a in apply_lifting.");
 
   Vec b_local;
   common::petsc::check(VecGhostGetLocalForm(b, &b_local),

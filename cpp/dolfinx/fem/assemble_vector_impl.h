@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2025 Garth N. Wells and Paul T. Kühner
+// Copyright (C) 2018-2026 Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -89,6 +89,18 @@ void assemble_cells(
   assert(be_b.size() >= bs * dmap.extent(1));
   auto be = be_b.first(bs * dmap.extent(1));
 
+  const U* x_ptr = x.data_handle();
+  const std::int32_t gdim = x.extent(1);
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
+  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+  const std::int32_t* dmap_ptr = dmap.data_handle();
+  const std::size_t num_dofs = dmap.extent(1);
+
+  // P0 does not change across cells in this call, so whether it is a
+  // set (non-null) transform is loop-invariant -- checked once here
+  // rather than on every cell.
+  const bool p0_set = is_transform_set(P0);
+
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = coeffs.extent(1);
 
@@ -100,18 +112,21 @@ void assemble_cells(
     std::int32_t c0 = cells0[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
+    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+    {
+      const U* _x_ptr = x_ptr + x_dofmap_ptr[c * num_x_dofs_cell + i] * gdim;
+      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
+    }
 
     // Tabulate vector for cell
     std::ranges::fill(be, 0);
     kernel(be.data(), coeffs_data + index * cstride, constants.data(),
            cdofs_b.data(), nullptr, nullptr, nullptr);
-    P0(be, cell_info0, c0, 1);
+    if (p0_set)
+      P0(be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
-    auto dofs = md::submdspan(dmap, c0, md::full_extent);
+    std::span dofs(dmap_ptr + c0 * num_dofs, num_dofs);
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (int k = 0; k < bs; ++k)
         b[bs * dofs[i] + k] += be[bs * i + k];
@@ -178,11 +193,22 @@ void assemble_entities(
 
   const auto [dmap, bs, entities0] = dofmap;
 
-  const int num_dofs = dmap.extent(1);
+  const std::size_t num_dofs = dmap.extent(1);
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
   assert(be_b.size() >= static_cast<std::size_t>(bs) * num_dofs);
   auto be = be_b.first(bs * num_dofs);
   assert(entities0.size() == entities.size());
+
+  const U* x_ptr = x.data_handle();
+  const std::int32_t gdim = x.extent(1);
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
+  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+  const std::int32_t* dmap_ptr = dmap.data_handle();
+
+  // P0 does not change across entities in this call, so whether it is a
+  // set (non-null) transform is loop-invariant -- checked once here rather
+  // than on every entity.
+  const bool p0_set = is_transform_set(P0);
 
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = coeffs.extent(1);
@@ -196,9 +222,11 @@ void assemble_entities(
     std::int32_t cell0 = entities0(f, 0);
 
     // Get cell coordinates/geometry
-    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
+    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+    {
+      const U* _x_ptr = x_ptr + x_dofmap_ptr[cell * num_x_dofs_cell + i] * gdim;
+      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
+    }
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
@@ -207,17 +235,14 @@ void assemble_entities(
     std::ranges::fill(be, 0);
     kernel(be.data(), coeffs_data + f * cstride, constants.data(),
            cdofs_b.data(), &local_entity, &perm, nullptr);
-    P0(be, cell_info0, cell0, 1);
+    if (p0_set)
+      P0(be, cell_info0, cell0, 1);
 
     // Add to global vector
-    auto dofs = md::submdspan(dmap, cell0, md::full_extent);
+    std::span dofs(dmap_ptr + cell0 * num_dofs, num_dofs);
     for (std::size_t i = 0; i < dofs.size(); ++i)
-    {
-      std::int32_t dof = bs * dofs[i];
-      std::int32_t offset = bs * i;
       for (int k = 0; k < bs; ++k)
-        b[dof + k] += be[offset + k];
-    }
+        b[bs * dofs[i] + k] += be[bs * i + k];
   }
 }
 
@@ -288,6 +313,17 @@ void assemble_interior_facets(
   const std::size_t cstride = 2 * coeffs.extent(2);
 
   assert(facets0.size() == facets.size());
+
+  const U* x_ptr = x.data_handle();
+  const std::int32_t gdim = x.extent(1);
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
+  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+
+  // P0 does not change across facets in this call, so whether it is a
+  // set (non-null) transform is loop-invariant -- checked once here rather
+  // than on every facet.
+  const bool p0_set = is_transform_set(P0);
+
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
     // Cells in integration domain and test function domain meshes
@@ -298,12 +334,15 @@ void assemble_interior_facets(
     std::array<std::int32_t, 2> local_facet{facets(f, 0, 1), facets(f, 1, 1)};
 
     // Get cell geometry
-    auto x_dofs0 = md::submdspan(x_dofmap, cells[0], md::full_extent);
-    for (std::size_t i = 0; i < x_dofs0.size(); ++i)
-      std::copy_n(&x(x_dofs0[i], 0), 3, std::next(cdofs0.begin(), 3 * i));
-    auto x_dofs1 = md::submdspan(x_dofmap, cells[1], md::full_extent);
-    for (std::size_t i = 0; i < x_dofs1.size(); ++i)
-      std::copy_n(&x(x_dofs1[i], 0), 3, std::next(cdofs1.begin(), 3 * i));
+    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+    {
+      const U* _x_ptr0
+          = x_ptr + x_dofmap_ptr[cells[0] * num_x_dofs_cell + i] * gdim;
+      std::copy_n(_x_ptr0, gdim, cdofs0.data() + 3 * i);
+      const U* _x_ptr1
+          = x_ptr + x_dofmap_ptr[cells[1] * num_x_dofs_cell + i] * gdim;
+      std::copy_n(_x_ptr1, gdim, cdofs1.data() + 3 * i);
+    }
 
     // Get dofmaps for cells. When integrating over interfaces between
     // two domains, the test function might only be defined on one side,
@@ -322,9 +361,9 @@ void assemble_interior_facets(
     kernel(be.data(), coeffs_data + f * cstride, constants.data(),
            cdofs_b.data(), local_facet.data(), perm.data(), nullptr);
 
-    if (cells0[0] >= 0)
+    if (p0_set and cells0[0] >= 0)
       P0(be, cell_info0, cells0[0], 1);
-    if (cells0[1] >= 0)
+    if (p0_set and cells0[1] >= 0)
     {
       std::span sub_be(be.data() + bs * dmap_size, bs * dmap_size);
       P0(sub_be, cell_info0, cells0[1], 1);

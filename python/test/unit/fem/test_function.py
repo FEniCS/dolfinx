@@ -175,13 +175,13 @@ def test_eval_manifold(dtype):
 
 def test_interpolation_mismatch_rank0(W):
     u = Function(W)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         u.interpolate(lambda x: np.ones(x.shape[1]))
 
 
 def test_interpolation_mismatch_rank1(W):
     u = Function(W)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         u.interpolate(lambda x: np.ones((2, x.shape[1])))
 
 
@@ -214,7 +214,7 @@ def test_mixed_element_interpolation(dtype):
     el = element("Lagrange", mesh.basix_cell(), 1, dtype=xdtype)
     V = functionspace(mesh, mixed_element([el, el]))
     u = Function(V, dtype=dtype)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         u.interpolate(lambda x: np.ones(2, x.shape[1]))
 
 

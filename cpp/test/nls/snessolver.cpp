@@ -108,6 +108,34 @@ void assemble_jacobian_nest(const Vec x, Mat J)
   CHECK(MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY) == 0);
 }
 
+// Residual/Jacobian callback matching PETSc's raw SNESFunction /
+// SNESJacobianFunction signature, taking the target constant c via ctx
+// instead of via a captured/member SNESSolver, to exercise wiring
+// SNESSetFunction/SNESSetJacobian directly. noexcept: no invoke() here
+// to re-throw after the solve, so terminate cleanly rather than let an
+// exception hit PETSc's C frames.
+PetscErrorCode residual_ctx(SNES, Vec x, Vec b, void* ctx) noexcept
+{
+  const PetscScalar c = *static_cast<const PetscScalar*>(ctx);
+  const PetscScalar* _x;
+  CHECK(VecGetArrayRead(x, &_x) == 0);
+  PetscScalar* _b;
+  CHECK(VecGetArray(b, &_b) == 0);
+  std::span<const PetscScalar> xs(_x, local_size);
+  std::span<PetscScalar> bs(_b, local_size);
+  for (PetscInt i = 0; i < local_size; ++i)
+    bs[i] = xs[i] * xs[i] - c;
+  CHECK(VecRestoreArray(b, &_b) == 0);
+  CHECK(VecRestoreArrayRead(x, &_x) == 0);
+  return 0;
+}
+
+PetscErrorCode jacobian_ctx(SNES, Vec x, Mat J, Mat, void*) noexcept
+{
+  assemble_jacobian(x, J);
+  return 0;
+}
+
 // Reference count of a PETSc object
 template <typename O>
 PetscInt ref_count(O obj)
@@ -176,6 +204,34 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_options_prefix("test_snes_");
     CHECK(solver.get_options_prefix() == "test_snes_");
     solver.set_from_options();
+
+    CHECK(solver.solve(x) > 0);
+    PetscInt num_it = 0;
+    CHECK(SNESGetIterationNumber(solver.snes(), &num_it) == 0);
+    CHECK(num_it > 0);
+    check_solution(x, solver.snes());
+  }
+
+  SECTION("Manually wire SNESSetFunction/SNESSetJacobian with a raw context")
+  {
+    // SNESSolver used only for SNES creation/destruction; set_F/set_J are
+    // never called, so the residual/Jacobian callbacks and their context
+    // are wired directly, bypassing SNESSolver's own trampolines
+    nls::petsc::SNESSolver solver(comm);
+
+    PetscScalar c = 2;
+    CHECK(SNESSetFunction(solver.snes(), b, residual_ctx, &c) == 0);
+    CHECK(SNESSetJacobian(solver.snes(), J, J, jacobian_ctx, &c) == 0);
+
+    // Confirm the context PETSc will invoke the callbacks with is exactly
+    // &c, not SNESSolver's own application-context pointer
+    void* fctx = nullptr;
+    CHECK(SNESGetFunction(solver.snes(), nullptr, nullptr, &fctx) == 0);
+    CHECK(fctx == &c);
+    void* jctx = nullptr;
+    CHECK(SNESGetJacobian(solver.snes(), nullptr, nullptr, nullptr, &jctx)
+          == 0);
+    CHECK(jctx == &c);
 
     CHECK(solver.solve(x) > 0);
     PetscInt num_it = 0;
