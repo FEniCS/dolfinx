@@ -156,7 +156,8 @@ using U = typename dolfinx::scalar_value_t<T>;
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  dolfinx::common::petsc::check(PetscInitialize(&argc, &argv, nullptr, nullptr),
+                                "PetscInitialize");
   {
     //  Create mesh
     auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
@@ -281,6 +282,6 @@ int main(int argc, char* argv[])
     file.write<T>({u}, 0);
   }
 
-  PetscFinalize();
+  common::petsc::check(PetscFinalize(), "PetscFinalize");
   return 0;
 }
