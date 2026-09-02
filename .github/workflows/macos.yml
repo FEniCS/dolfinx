@@ -54,7 +54,10 @@ jobs:
 
       - name: Install Python dependencies (petsc4py)
         run: |
-          pip install cython setuptools wheel
+          # Cython 3.3 tightened pointer-indexing checks that break
+          # petsc4py 3.25.4's generated PC.pyx; pin below that for now.
+          # Mirrors the pin in docker/Dockerfile.test-env.
+          pip install "cython<3.3" setuptools wheel
           pip install mpi4py numpy
 
       - name: Restore cache PETSc and petsc4py
