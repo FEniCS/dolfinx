@@ -385,6 +385,31 @@ macro(dolfinx_prepend_pkgconfig_path dir_env_var)
   endblock()
 endmacro()
 
+# Set the environment variable ${dir_env_var} to the prefix reported by the
+# Python module ${module}, so that dolfinx_prepend_pkgconfig_path() finds a
+# PETSc/SLEPc installed with pip. A variable set by the user always wins.
+macro(dolfinx_python_prefix_hint module dir_env_var)
+  block(SCOPE_FOR VARIABLES)
+    if(NOT DEFINED ENV{${dir_env_var}})
+      find_package(Python3 COMPONENTS Interpreter QUIET)
+      if(Python3_Interpreter_FOUND)
+        execute_process(
+          COMMAND
+            ${Python3_EXECUTABLE} -c
+            "import ${module}, sys; sys.stdout.write(${module}.get_${module}_dir())"
+          OUTPUT_VARIABLE _dir
+          ERROR_QUIET
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(_dir)
+          message(STATUS "Found ${module} Python module at ${_dir}")
+          set(ENV{${dir_env_var}} "${_dir}")
+        endif()
+      endif()
+    endif()
+  endblock()
+endmacro()
+
 # ------------------------------------------------------------------------------
 # Find optional packages
 if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
@@ -395,6 +420,7 @@ endif()
 
 if(DOLFINX_ENABLE_PETSC)
   find_package(PkgConfig REQUIRED)
+  dolfinx_python_prefix_hint(petsc PETSC_DIR)
   dolfinx_prepend_pkgconfig_path(PETSC_DIR)
 
   if(_REQUIRE_PETSC)
@@ -418,6 +444,7 @@ endif()
 
 if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   find_package(PkgConfig REQUIRED)
+  dolfinx_python_prefix_hint(slepc SLEPC_DIR)
   dolfinx_prepend_pkgconfig_path(SLEPC_DIR)
 
   if(_REQUIRE_SLEPC)
