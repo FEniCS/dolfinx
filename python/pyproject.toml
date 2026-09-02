@@ -30,6 +30,11 @@ dependencies = [
       "fenics-basix>=0.12.0.dev0",
       "fenics-ffcx>=0.12.0.dev0",
       "fenics-ufl>=2026.2.0.dev0",
+      # This branch builds PETSc-enabled wheels. libdolfinx has a NEEDED
+      # entry on libpetsc that resolves because petsc4py is imported, and
+      # preloads it, before dolfinx.cpp. petsc4py is therefore required
+      # rather than optional here.
+      "petsc4py",
 ]
 
 [project.optional-dependencies]
