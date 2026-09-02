@@ -1755,7 +1755,7 @@ def get_petsc_lib() -> pathlib.Path:
     exists_paths = []
     for candidate_path in candidate_paths:
         if os.path.exists(candidate_path):
-            exists_paths.append(candidate_path)
+exists_paths = [path for path in candidate_paths if os.path.exists(path)]
 
     if len(exists_paths) == 0:
         raise RuntimeError(
