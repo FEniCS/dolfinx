@@ -174,8 +174,11 @@ jobs:
             dnf install -y epel-release &&
             /usr/bin/crb enable &&
             dnf -y update &&
-            dnf -y install boost-devel boost-program-options git hdf5-mpich-devel make \
+            dnf -y install git hdf5-mpich-devel make \
               mpich-devel ninja-build openblas-devel pugixml-devel spdlog-devel &&
+            curl -L https://archives.boost.io/release/1.92.0/source/boost_1_92_0.tar.gz | tar -xz &&
+            (cd boost_1_92_0/ && ./bootstrap.sh --prefix=/usr/local &&
+              ./b2 -d0 --prefix=/usr/local --with-headers install) &&
             ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
             mkdir -p scotch && curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ \
@@ -199,6 +202,7 @@ jobs:
               -DTPL_ENABLE_LAPACKLIB=ON &&
             cmake --build superlu_dist-build-dir/ &&
             cmake --install superlu_dist-build-dir/ &&
+            echo /usr/local/lib64 > /etc/ld.so.conf.d/usr-local-lib64.conf && ldconfig &&
             pip -v install $(python -c "import tomllib; deps=tomllib.load(open('/project/dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
             MPICC=gcc MPICXX=g++
