@@ -427,6 +427,7 @@ class XDMFFile:
             max_facet_to_cell_links,
             1,
             cell_weights=None,
+            reorder_fn=None,
         )
         msh.name = name
         domain = ufl.Mesh(basix_el)
