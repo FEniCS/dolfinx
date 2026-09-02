@@ -63,6 +63,9 @@ jobs:
     name: Build wheels
     runs-on: ${{ matrix.os }}
     strategy:
+      # Iterating on this branch: let every platform report rather than
+      # cancelling the rest on the first failure.
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
@@ -198,8 +201,10 @@ jobs:
             cmake --install superlu_dist-build-dir/ &&
             pip -v install $(python -c "import tomllib; deps=tomllib.load(open('/project/dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
-            PATH=/usr/lib64/mpich/bin:$PATH
-            PETSC_CONFIGURE_OPTIONS="--with-debugging=0 --with-fc=0"
+            PETSC_CONFIGURE_OPTIONS="--with-debugging=0 --with-fc=0
+            --with-cc=gcc --with-cxx=g++
+            --with-mpi-include=/usr/lib64/mpich/include
+            --with-mpi-lib=/usr/lib64/mpich/lib/libmpi.so"
             pip -v wheel petsc -w /petsc-wheels &&
             pip -v install --no-index --find-links=/petsc-wheels petsc &&
             PETSC_DIR=$(python -c "import petsc; print(petsc.get_petsc_dir())")
