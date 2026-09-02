@@ -1741,8 +1741,12 @@ def get_petsc_lib() -> pathlib.Path:
 
     petsc_dir = _petsc4py.get_config()["PETSC_DIR"]
     petsc_arch = _petsc4py.lib.getPathArchPETSc()[1]  # type: ignore
-    version = ".".join(str(v) for v in PETSc.Sys.getVersion()[:2])
+    petsc_version = PETSc.Sys.getVersion()
+    version = ".".join(str(v) for v in petsc_version[:2])
+    patch_version = ".".join(str(v) for v in petsc_version[:3])
     candidate_paths = [
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.so.{patch_version}"),
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.{patch_version}.dylib"),
         os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.so.{version}"),
         os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.{version}.dylib"),
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
