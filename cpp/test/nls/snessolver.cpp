@@ -127,13 +127,13 @@ PetscErrorCode residual_ctx(SNES, Vec x, Vec b, void* ctx) noexcept
     bs[i] = xs[i] * xs[i] - c;
   CHECK(VecRestoreArray(b, &_b) == 0);
   CHECK(VecRestoreArrayRead(x, &_x) == 0);
-  return 0;
+  return PETSC_SUCCESS;
 }
 
 PetscErrorCode jacobian_ctx(SNES, Vec x, Mat J, Mat, void*) noexcept
 {
   assemble_jacobian(x, J);
-  return 0;
+  return PETSC_SUCCESS;
 }
 
 // Reference count of a PETSc object

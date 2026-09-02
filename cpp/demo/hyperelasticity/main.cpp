@@ -45,7 +45,8 @@ using U = typename dolfinx::scalar_value_t<T>;
 int main(int argc, char* argv[])
 {
   init_logging(argc, argv);
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  dolfinx::common::petsc::check(PetscInitialize(&argc, &argv, nullptr, nullptr),
+                                "PetscInitialize");
 
   // Set the logging thread name to show the process rank
   int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
@@ -243,7 +244,6 @@ int main(int argc, char* argv[])
     file_sigma.write_function(sigma, 0);
   }
 
-  PetscFinalize();
-
+  common::petsc::check(PetscFinalize(), "PetscFinalize");
   return 0;
 }
