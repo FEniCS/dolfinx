@@ -49,7 +49,9 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
   return [&parent_mesh,
           parent_cell](MPI_Comm comm, int /*nparts*/,
                        std::vector<mesh::CellType> cell_types,
-                       std::vector<std::span<const std::int64_t>> cells)
+                       std::vector<std::span<const std::int64_t>> cells,
+                       std::span<const std::int32_t> /* cell_weights */,
+                       std::span<const std::int32_t> /* edge_weights */)
              -> graph::AdjacencyList<std::int32_t>
   {
     auto parent_cell_im
@@ -151,7 +153,8 @@ refine(const mesh::Mesh<T>& mesh,
 
   mesh::Mesh<T> mesh1 = mesh::create_mesh(
       mesh.comm(), mesh.comm(), cell_adj.array(),
-      mesh.geometry().cmaps().front(), mesh.comm(), new_vertex_coords, xshape,
+      std::span<const std::int32_t>(), mesh.geometry().cmaps().front(),
+      mesh.comm(), new_vertex_coords, xshape,
       std::get<mesh::CellPartitionFunction>(partitioner), 2, 1);
 
   // Report the number of refined cells

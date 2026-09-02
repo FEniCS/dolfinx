@@ -1344,7 +1344,7 @@ class TestPETScAssemblers:
             element("Lagrange", cell_type.name, 1, shape=(2,), dtype=default_real_type)
         )
 
-        def partitioner(comm, nparts, local_graph, num_ghost_nodes):
+        def partitioner(comm, nparts, cell_types, cell_topology, cell_weights, edge_weights):
             """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
             return graph.adjacencylist(dest)._cpp_object

@@ -48,7 +48,12 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import numpy as np
-from slepc4py import SLEPc
+
+try:
+    from slepc4py import SLEPc
+except ModuleNotFoundError:
+    print("This demo requires slepc4py.")
+    sys.exit(0)
 
 import ufl
 from basix.ufl import element, mixed_element

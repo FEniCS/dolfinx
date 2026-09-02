@@ -13,6 +13,13 @@ spack:
     all:
       require:
       - target=x86_64_v3
+    # OpenBLAS segfaults on AMD EPYC runners; see PR #4414.
+    blas:
+      require:
+      - netlib-lapack
+    lapack:
+      require:
+      - netlib-lapack
 
   mirrors:
     local-buildcache:

@@ -108,8 +108,8 @@ mesh::CellPartitionFunction mesh::create_cell_partitioner(
           max_facet_to_cell_links](
              MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
              const std::vector<std::span<const std::int64_t>>& cells,
-             std::span<std::int32_t> cell_weights,
-             std::span<std::int32_t> edge_weights)
+             std::span<const std::int32_t> cell_weights,
+             std::span<const std::int32_t> edge_weights)
              -> graph::AdjacencyList<std::int32_t>
   {
     spdlog::info("Compute partition of cells across ranks");

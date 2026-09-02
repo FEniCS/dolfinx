@@ -92,6 +92,7 @@ def test_read_write_higher_order():
         part,
         max_cells_per_facet,
         num_threads=1,
+        cell_weights=None,
     )
     py_mesh = Mesh(mesh, None)
 

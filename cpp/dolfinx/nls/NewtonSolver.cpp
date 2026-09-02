@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2021 Garth N. Wells
+// Copyright (C) 2005-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -77,8 +77,8 @@ nls::petsc::NewtonSolver::NewtonSolver(MPI_Comm comm)
                "removed in a future release.\n";
   // Create linear solver if not already created. Default to LU.
   _solver.set_options_prefix("nls_solve_");
-  la::petsc::options::set("nls_solve_ksp_type", "preonly");
-  la::petsc::options::set("nls_solve_pc_type", "lu");
+  common::petsc::set_option("nls_solve_ksp_type", "preonly");
+  common::petsc::set_option("nls_solve_pc_type", "lu");
   _solver.set_from_options();
 }
 //-----------------------------------------------------------------------------

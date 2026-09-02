@@ -345,11 +345,14 @@ def _assemble_vector_petsc(
         for b_sub, L_sub, const, coeff in zip(
             b.getNestSubVecs(), L, constants, coeffs, strict=True
         ):
+            assert L_sub is not None
             with b_sub.localForm() as b_local:
                 _assemble_vector_array(b_local.array_w, L_sub, const, coeff)
     elif isinstance(L, Sequence):
-        constants = pack_constants(L) if constants is None else constants
-        coeffs = pack_coefficients(L) if coeffs is None else coeffs
+        if constants is None:
+            constants = pack_constants(L)
+        if coeffs is None:
+            coeffs = pack_coefficients(L)
         offset0, offset1 = b.getAttr("_blocks")  # type: ignore
         with b.localForm() as b_l:
             for L_, const, coeff, off0, off1, offg0, offg1 in zip(
@@ -504,8 +507,10 @@ def _assemble_matrix_petsc(
             raise ValueError(
                 "Must provide a sequence of sequences of coefficients when assembling a nest matrix"
             )
-        constants = [pack_constants(forms) for forms in a] if constants is None else constants
-        coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
+        if constants is None:
+            constants = [pack_constants(forms) for forms in a]
+        if coeffs is None:
+            coeffs = [pack_coefficients(forms) for forms in a]
         for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs, strict=True)):
             for j, (a_block, const, coeff) in enumerate(
                 zip(a_row, const_row, coeff_row, strict=True)
@@ -526,7 +531,8 @@ def _assemble_matrix_petsc(
                             )
     elif isinstance(a, Sequence):  # Blocked
         consts = [pack_constants(forms) for forms in a] if constants is None else constants
-        coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
+        if coeffs is None:
+            coeffs = [pack_coefficients(forms) for forms in a]
         V = (_extract_function_spaces(a, 0), _extract_function_spaces(a, 1))
         for index in range(2):
             # the check below is to ensure that a .dofmaps attribute is
@@ -582,8 +588,10 @@ def _assemble_matrix_petsc(
                         _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], _bcs, diag)  # type: ignore[arg-type]
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
     else:  # Non-blocked
-        constants = pack_constants(a) if constants is None else constants
-        coeffs = pack_coefficients(a) if coeffs is None else coeffs
+        if constants is None:
+            constants = pack_constants(a)
+        if coeffs is None:
+            coeffs = pack_coefficients(a)
         _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
         _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)  # type: ignore
         if a.function_spaces[0] is a.function_spaces[1]:
@@ -714,7 +722,8 @@ def apply_lifting(
                         b_l.array_w[off0:off1] = bx_[:size]
                         b_l.array_w[offg0:offg1] = bx_[size:]
             else:
-                x0 = [] if x0 is None else x0
+                if x0 is None:
+                    x0 = []
                 x0 = [stack.enter_context(x.localForm()) for x in x0]
                 x0_r = [x.array_r for x in x0]
                 b_local = stack.enter_context(b.localForm())
@@ -1425,7 +1434,8 @@ class NonlinearProblem(typing.Generic[_U]):
 
         self._u = u
         # Set default values if not supplied
-        bcs = [] if bcs is None else bcs
+        if bcs is None:
+            bcs = []
 
         # Create PETSc structures for the residual, Jacobian and solution
         # vector

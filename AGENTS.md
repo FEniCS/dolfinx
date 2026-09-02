@@ -65,6 +65,12 @@ disclosure process.
   array memory traffic — so local indices must not be silently widened
   in storage or interfaces. Type a variable by the role of its value,
   not by the expression that initialises it.
+- **PETSc/SLEPc index types**: in the thin `la::petsc`/`la::slepc`
+  wrappers, an index or count passed straight through to a PETSc/SLEPc
+  call is `PetscInt`, matching the `PetscScalar`/`Mat`/`Vec` already in
+  those signatures. The fixed-width types above are for
+  DOLFINx-meaningful quantities, such as the sizes and ranges returned
+  by `petsc::Vector`.
 - **Iterator distances**: store `std::distance` results, a signed
   `difference_type`, in `std::size_t` when used as a container offset.
   They are non-negative by construction here, and `-Wsign-compare` is
@@ -262,6 +268,13 @@ disclosure process.
   for parallel-aware tests where relevant.
 - Run the relevant formatter/linter and the affected test suite before
   calling a change done — don't rely on CI to catch formatting.
+- Dependency groups (`build`, `docs`, `lint`, `test`, `ci` in
+  `python/pyproject.toml`) use PEP 735 syntax and require `pip >= 25.1`
+  (or another PEP 735-compliant build frontend) for the `--group` flag.
+  `demo`, `optional`, `petsc4py`, and `typing` remain real
+  `[project.optional-dependencies]` extras since they are user-facing
+  runtime features, or (in the case of `test`) are installed against
+  built wheels where dependency groups are unavailable.
 
 ## Verifying changes locally
 

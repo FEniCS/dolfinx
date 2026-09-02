@@ -40,7 +40,7 @@ jobs:
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install linting tools
-        run: pip install clang-format gersemi ruff
+        run: pip install --group python/pyproject.toml:lint
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
@@ -96,8 +96,7 @@ jobs:
       - name: Install Python build dependencies
         working-directory: python
         run: |
-          pip install scikit-build-core setuptools
-          python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
+          pip install --group pyproject.toml:build setuptools
 
       - name: Install UFL
         run: |
@@ -151,7 +150,7 @@ jobs:
 
       - name: Build Python interface
         run: >
-          pip install  'python/[test]'
+          pip install --group python/pyproject.toml:test 'python/[demo]'
           --check-build-dependencies
           --no-build-isolation
           --config-settings=cmake.build-type="Developer"
@@ -159,11 +158,10 @@ jobs:
       - name: Check Python configuration
         run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
-      - name: Install gmsh and pyvista (and dependencies)
+      - name: Install system dependencies for gmsh and pyvista
         run: |
           sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
           sudo apt-get install libegl1
-          pip install gmsh pyvista
 
 
       - name: Run demos (Python, serial)
@@ -183,14 +181,8 @@ jobs:
     needs: [lint]
     strategy:
       matrix:
-        petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex64-32, linux-gnu-complex128-32, linux-gnu-real64-64, linux-gnu-complex128-64]
-        docker_image: ["ghcr.io/fenics/test-env:current-openmpi"]
-        include:
-          - docker_image: "ghcr.io/fenics/test-env:current-mpich"
-            petsc_arch: linux-gnu-real64-32
-          - docker_image: "ghcr.io/fenics/test-env:current-mpich"
-            petsc_arch: linux-gnu-complex128-32
-    container: ${{ matrix.docker_image }}
+        petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32, linux-gnu-real64-64]
+    container: "ghcr.io/fenics/test-env:current"
     env:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -198,7 +190,7 @@ jobs:
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
       PYTEST_ADDOPTS: "-W error"
 
-    name: Build and test (${{ matrix.petsc_arch }}, ${{ matrix.docker_image }})
+    name: Build and test (${{ matrix.petsc_arch }})
     steps:
       - uses: actions/checkout@v7
 
@@ -208,8 +200,7 @@ jobs:
       - name: Install Python build dependencies
         working-directory: python
         run: |
-          pip install scikit-build-core
-          python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
+          pip install --group pyproject.toml:build
 
       - name: Install UFL
         run: |
@@ -265,7 +256,7 @@ jobs:
 
       - name: Build Python interface
         run: >
-          pip install 'python/[test]'
+          pip install --group python/pyproject.toml:test 'python/'
           --check-build-dependencies
           --no-build-isolation
           --config-settings=cmake.build-type="Developer"
@@ -286,7 +277,6 @@ jobs:
           apt-get install libegl1 libxrender1
           pip install pyvista
 
-
       - name: Run demos (Python, serial)
         run: |
           pip install pytest-xdist
@@ -302,7 +292,7 @@ jobs:
   build-and-publish-docs:
     runs-on: ubuntu-26.04
     needs: [lint]
-    container: "ghcr.io/fenics/test-env:current-openmpi"
+    container: "ghcr.io/fenics/test-env:current"
     env:
       PETSC_ARCH: linux-gnu-real64-32
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -319,8 +309,7 @@ jobs:
       - name: Install Python build dependencies
         working-directory: python
         run: |
-          pip install scikit-build-core setuptools
-          python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
+          pip install --group pyproject.toml:build setuptools
 
       - name: Install FEniCS Python components
         run: |
@@ -336,7 +325,7 @@ jobs:
 
       - name: Build Python interface
         run: >
-          pip install 'python/[docs]'
+          pip install --group python/pyproject.toml:docs 'python/'
           --check-build-dependencies
           --no-build-isolation
 

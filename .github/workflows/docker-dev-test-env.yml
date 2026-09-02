@@ -28,7 +28,6 @@ jobs:
     strategy:
       matrix:
         variant: ["test-env", "dev-env"]
-        mpi: ["openmpi", "mpich"]
         os: ["ubuntu-26.04", "ubuntu-26.04-arm"]
 
     runs-on: ${{ matrix.os }}
@@ -60,7 +59,7 @@ jobs:
       - name: Create image name and tag
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "TAG=${{ env.DH_PREFIX }}/${{ matrix.variant }}:${USER_INPUT:-current}-${{ matrix.mpi }}-${{ env.ARCH_TAG }}" >> $GITHUB_ENV
+          echo "TAG=${{ env.DH_PREFIX }}/${{ matrix.variant }}:${USER_INPUT:-current}-${{ env.ARCH_TAG }}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -87,7 +86,6 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           build-args: |
-            MPI=${{ matrix.mpi }}
             PETSC_SLEPC_OPTFLAGS=${{ env.PETSC_SLEPC_OPTFLAGS }}
             PETSC_SLEPC_DEBUGGING=${{ env.PETSC_SLEPC_DEBUGGING }}
           context: docker/
@@ -125,14 +123,7 @@ jobs:
           # test-env images
           GH_PREFIX="ghcr.io/fenics"
           DH_PREFIX="docker.io/fenicsproject"
-          # openmpi
-          TAG="test-env:${USER_INPUT:-current}-openmpi"
-          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
-            --tag ${GH_PREFIX}/${TAG} \
-            ${DH_PREFIX}/${TAG}-amd64 \
-            ${DH_PREFIX}/${TAG}-arm64
-          # mpich
-          TAG="test-env:${USER_INPUT:-current}-mpich"
+          TAG="test-env:${USER_INPUT:-current}"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-amd64 \
@@ -140,21 +131,8 @@ jobs:
           # dev-env images
           GH_PREFIX="ghcr.io/fenics/dolfinx"
           DH_PREFIX="docker.io/dolfinx"
-          # openmpi
-          TAG="dev-env:${USER_INPUT:-current}-openmpi"
-          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
-            --tag ${GH_PREFIX}/${TAG} \
-            ${DH_PREFIX}/${TAG}-amd64 \
-            ${DH_PREFIX}/${TAG}-arm64
-          # mpich
-          TAG="dev-env:${USER_INPUT:-current}-mpich"
-          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
-            --tag ${GH_PREFIX}/${TAG} \
-            ${DH_PREFIX}/${TAG}-amd64 \
-            ${DH_PREFIX}/${TAG}-arm64
-          # mpich (default)
           TAG="dev-env:${USER_INPUT:-current}"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
-            ${DH_PREFIX}/${TAG}-mpich-amd64 \
-            ${DH_PREFIX}/${TAG}-mpich-arm64
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64

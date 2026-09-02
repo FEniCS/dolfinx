@@ -351,8 +351,8 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 {
   return [imbalance, strategy, seed](MPI_Comm comm, int nparts,
                                      const AdjacencyList<std::int64_t>& graph,
-                                     std::span<std::int32_t> node_weights,
-                                     std::span<std::int32_t> edge_weights,
+                                     std::span<const std::int32_t> node_weights,
+                                     std::span<const std::int32_t> edge_weights,
                                      bool ghosting)
   {
     spdlog::info("Compute graph partition using PT-SCOTCH");
@@ -565,11 +565,11 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 graph::partition_fn graph::parmetis::partitioner(double imbalance,
                                                  std::array<int, 3> options)
 {
-  return
-      [imbalance, options](MPI_Comm comm, idx_t nparts,
-                           const graph::AdjacencyList<std::int64_t>& graph,
-                           std::span<std::int32_t> node_weights,
-                           std::span<std::int32_t> edge_weights, bool ghosting)
+  return [imbalance, options](MPI_Comm comm, idx_t nparts,
+                              const graph::AdjacencyList<std::int64_t>& graph,
+                              std::span<const std::int32_t> node_weights,
+                              std::span<const std::int32_t> edge_weights,
+                              bool ghosting)
   {
     spdlog::info("Compute graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS)");
@@ -677,7 +677,9 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 {
   return [mode, seed, imbalance, suppress_output](
              MPI_Comm comm, int nparts,
-             const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
+             const graph::AdjacencyList<std::int64_t>& graph,
+             std::span<const std::int32_t> node_weights,
+             std::span<const std::int32_t> edge_weights, bool ghosting)
   {
     spdlog::info("Compute graph partition using (parallel) KaHIP");
 
@@ -686,9 +688,8 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 
     common::Timer timer("Compute graph partition (KaHIP)");
 
-    // Graph does not have vertex or adjacency weights, so we use null
-    // pointers as arguments
-    T *vwgt(nullptr), *adjcwgt(nullptr);
+    std::vector<T> vwgt(node_weights.begin(), node_weights.end());
+    std::vector<T> adjcwgt(edge_weights.begin(), edge_weights.end());
 
     // Build adjacency list data
     common::Timer timer1("KaHIP: build adjacency data");
@@ -711,9 +712,10 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     std::vector<T> part(graph.num_nodes());
     int edgecut = 0;
     double _imbalance = imbalance;
-    ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(), vwgt,
-                        adjcwgt, &nparts, &_imbalance, suppress_output, seed,
-                        mode, &edgecut, part.data(), &comm);
+    ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(),
+                        vwgt.data(), adjcwgt.data(), &nparts, &_imbalance,
+                        suppress_output, seed, mode, &edgecut, part.data(),
+                        &comm);
     timer2.stop();
 
     if (ghosting)
