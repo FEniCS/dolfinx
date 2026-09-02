@@ -1735,30 +1735,28 @@ def get_petsc_lib() -> pathlib.Path:
         Full path to the PETSc shared library.
 
     Raises:
-        RuntimeError: If PETSc library cannot be found for if more than
-            one library is found.
+        RuntimeError: If PETSc library cannot be found.
     """
     import petsc4py as _petsc4py
 
     petsc_dir = _petsc4py.get_config()["PETSC_DIR"]
     petsc_arch = _petsc4py.lib.getPathArchPETSc()[1]  # type: ignore
+    petsc_version = PETSc.Sys.getVersion()
+    major_minor_version = ".".join(str(v) for v in petsc_version[:2])
+    major_minor_patch_version = ".".join(str(v) for v in petsc_version[:3])
     candidate_paths = [
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.so.{major_minor_patch_version}"),
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.{major_minor_patch_version}.dylib"),
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.so.{major_minor_version}"),
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.{major_minor_version}.dylib"),
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"),
     ]
-    exists_paths = []
     for candidate_path in candidate_paths:
         if os.path.exists(candidate_path):
-            exists_paths.append(candidate_path)
+            return pathlib.Path(candidate_path)
 
-    if len(exists_paths) == 0:
-        raise RuntimeError(
-            f"Could not find a PETSc shared library. Candidate paths: {candidate_paths}"
-        )
-    elif len(exists_paths) > 1:
-        raise RuntimeError(f"More than one PETSc shared library found. Paths: {exists_paths}")
-
-    return pathlib.Path(exists_paths[0])
+    raise RuntimeError(f"Could not find a PETSc shared library. Candidate paths: {candidate_paths}")
 
 
 class numba_utils:
