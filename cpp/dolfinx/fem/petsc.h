@@ -270,14 +270,14 @@ Mat create_matrix_nest(
   {
     for (Mat& m : mats)
       if (m)
-        MatDestroy(&m);
+        common::petsc::check(MatDestroy(&m), "MatDestroy");
     throw;
   }
 
   // De-reference Mat objects
   for (Mat& m : mats)
     if (m)
-      MatDestroy(&m);
+      common::petsc::check(MatDestroy(&m), "MatDestroy");
 
   return A;
 }

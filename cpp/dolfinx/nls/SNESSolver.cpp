@@ -88,13 +88,13 @@ nls::petsc::SNESSolver::SNESSolver(SNESSolver&& solver) noexcept
 nls::petsc::SNESSolver::~SNESSolver()
 {
   if (_b)
-    VecDestroy(&_b);
+    common::petsc::check(VecDestroy(&_b), "VecDestroy");
   if (_matJ)
-    MatDestroy(&_matJ);
+    common::petsc::check(MatDestroy(&_matJ), "MatDestroy");
   if (_matP)
-    MatDestroy(&_matP);
+    common::petsc::check(MatDestroy(&_matP), "MatDestroy");
   if (_snes)
-    SNESDestroy(&_snes);
+    common::petsc::check(SNESDestroy(&_snes), "SNESDestroy");
 }
 //-----------------------------------------------------------------------------
 nls::petsc::SNESSolver&
@@ -126,7 +126,7 @@ void nls::petsc::SNESSolver::set_F(std::function<void(const Vec x, Vec b)> F,
       PetscObjectReference(reinterpret_cast<PetscObject>(b_layout)),
       "PetscObjectReference");
   if (_b)
-    VecDestroy(&_b);
+    common::petsc::check(VecDestroy(&_b), "VecDestroy");
   _b = b_layout;
 
   common::petsc::check(SNESSetFunction(_snes, _b, residual, this),
@@ -152,9 +152,9 @@ void nls::petsc::SNESSolver::set_J(
       "PetscObjectReference");
 
   if (_matJ)
-    MatDestroy(&_matJ);
+    common::petsc::check(MatDestroy(&_matJ), "MatDestroy");
   if (_matP)
-    MatDestroy(&_matP);
+    common::petsc::check(MatDestroy(&_matP), "MatDestroy");
   _matJ = J_layout;
   _matP = P_layout;
 

@@ -109,7 +109,8 @@ using U = typename dolfinx::scalar_value_t<T>;
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  common::petsc::check(PetscInitialize(&argc, &argv, nullptr, nullptr),
+                       "PetscInitialize");
 
   {
     // Create mesh and function space
@@ -269,7 +270,6 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  PetscFinalize();
-
+  common::petsc::check(PetscFinalize(), "PetscFinalize");
   return 0;
 }
