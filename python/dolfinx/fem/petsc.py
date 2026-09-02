@@ -1735,14 +1735,18 @@ def get_petsc_lib() -> pathlib.Path:
         Full path to the PETSc shared library.
 
     Raises:
-        RuntimeError: If PETSc library cannot be found for if more than
-            one library is found.
+        RuntimeError: If PETSc library cannot be found.
     """
     import petsc4py as _petsc4py
 
     petsc_dir = _petsc4py.get_config()["PETSC_DIR"]
     petsc_arch = _petsc4py.lib.getPathArchPETSc()[1]  # type: ignore
+    # The unversioned libpetsc.so is a GNU ld linker script, not a
+    # shared library, in a pip-installed PETSc.
+    version = ".".join(str(v) for v in PETSc.Sys.getVersion()[:2])
     candidate_paths = [
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.so.{version}"),
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.{version}.dylib"),
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"),
     ]
@@ -1755,8 +1759,6 @@ def get_petsc_lib() -> pathlib.Path:
         raise RuntimeError(
             f"Could not find a PETSc shared library. Candidate paths: {candidate_paths}"
         )
-    elif len(exists_paths) > 1:
-        raise RuntimeError(f"More than one PETSc shared library found. Paths: {exists_paths}")
 
     return pathlib.Path(exists_paths[0])
 
