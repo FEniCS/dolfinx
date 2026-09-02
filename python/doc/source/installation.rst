@@ -114,6 +114,23 @@ To set the installation prefix::
     make install
 
 
+.. rubric:: PETSc and SLEPc installed with pip
+
+PETSc and SLEPc are located with ``pkg-config``. If ``PETSC_DIR``
+(``SLEPC_DIR``) is not set in the environment, the Python interpreter is
+asked for the prefix of a ``pip``-installed ``petsc`` (``slepc``)
+package. PETSc 3.25.5 or later is required, as earlier versions did not
+ship ``pkg-config`` files in the Python package tree::
+
+    PETSC_CONFIGURE_OPTIONS="--download-parmetis --download-metis" \
+        pip install petsc petsc4py
+    cmake ../
+    make install
+
+PETSc installs the required graph partitioner into the same prefix,
+where it is picked up alongside PETSc itself.
+
+
 Python
 ******
 

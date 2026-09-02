@@ -83,9 +83,33 @@ if(NOT TARGET hdf5::hdf5)
   endif()
 endif()
 
+# Set the environment variable ${dir_env_var} to the prefix reported by the
+# Python module ${module}, so that a PETSc/SLEPc installed with pip is found
+# below. A variable set by the user always wins.
+macro(_dolfinx_python_prefix_hint module dir_env_var)
+  if(NOT DEFINED ENV{${dir_env_var}})
+    find_package(Python3 COMPONENTS Interpreter QUIET)
+    if(Python3_Interpreter_FOUND)
+      execute_process(
+        COMMAND
+          ${Python3_EXECUTABLE} -c
+          "import ${module}, sys; sys.stdout.write(${module}.get_${module}_dir())"
+        OUTPUT_VARIABLE _DOLFINX_PY_DIR
+        ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+      if(_DOLFINX_PY_DIR)
+        message(STATUS "Found ${module} Python module at ${_DOLFINX_PY_DIR}")
+        set(ENV{${dir_env_var}} "${_DOLFINX_PY_DIR}")
+      endif()
+    endif()
+  endif()
+endmacro()
+
 if("@PETSC_FOUND@")
   if(NOT TARGET PkgConfig::PETSC)
     find_package(PkgConfig REQUIRED)
+    _dolfinx_python_prefix_hint(petsc PETSC_DIR)
     set(
       ENV{PKG_CONFIG_PATH}
       "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
@@ -97,6 +121,7 @@ endif()
 if("@SLEPC_FOUND@")
   if(NOT TARGET PkgConfig::SLEPC)
     find_package(PkgConfig REQUIRED)
+    _dolfinx_python_prefix_hint(slepc SLEPC_DIR)
     set(
       ENV{PKG_CONFIG_PATH}
       "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
