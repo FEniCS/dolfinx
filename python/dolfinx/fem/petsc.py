@@ -1741,8 +1741,6 @@ def get_petsc_lib() -> pathlib.Path:
 
     petsc_dir = _petsc4py.get_config()["PETSC_DIR"]
     petsc_arch = _petsc4py.lib.getPathArchPETSc()[1]  # type: ignore
-    # The unversioned libpetsc.so is a GNU ld linker script, not a
-    # shared library, in a pip-installed PETSc.
     version = ".".join(str(v) for v in PETSc.Sys.getVersion()[:2])
     candidate_paths = [
         os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.so.{version}"),
