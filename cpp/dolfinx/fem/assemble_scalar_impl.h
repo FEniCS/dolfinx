@@ -9,9 +9,11 @@
 #include "Constant.h"
 #include "Form.h"
 #include "FunctionSpace.h"
+#include "traits.h"
 #include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -29,13 +31,11 @@ namespace dolfinx::fem::impl
 /// a per-call allocation would not be amortized. The buffer must be
 /// sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
-T assemble_cells(
-    mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    std::span<const std::int32_t> cells, const FEkernel<T, U> auto& fn,
-    std::span<const T> constants,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<std::type_identity_t<U>> cdofs_b)
+T assemble_cells(MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
+                 std::span<const std::int32_t> cells,
+                 const FEkernel<T, U> auto& fn, std::span<const T> constants,
+                 md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+                 std::span<std::type_identity_t<U>> cdofs_b)
 {
   T value(0);
   if (cells.empty())
@@ -80,8 +80,7 @@ T assemble_cells(
 /// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_entities(
-    mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
@@ -127,8 +126,7 @@ T assemble_entities(
 /// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_interior_facets(
-    mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
