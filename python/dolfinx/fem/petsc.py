@@ -1742,13 +1742,13 @@ def get_petsc_lib() -> pathlib.Path:
     petsc_dir = _petsc4py.get_config()["PETSC_DIR"]
     petsc_arch = _petsc4py.lib.getPathArchPETSc()[1]  # type: ignore
     petsc_version = PETSc.Sys.getVersion()
-    version = ".".join(str(v) for v in petsc_version[:2])
-    patch_version = ".".join(str(v) for v in petsc_version[:3])
+    major_minor_version = ".".join(str(v) for v in petsc_version[:2])
+    major_minor_patch_version = ".".join(str(v) for v in petsc_version[:3])
     candidate_paths = [
-        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.so.{patch_version}"),
-        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.{patch_version}.dylib"),
-        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.so.{version}"),
-        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.{version}.dylib"),
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.so.{major_minor_patch_version}"),
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.{major_minor_patch_version}.dylib"),
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.so.{major_minor_version}"),
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc.{major_minor_version}.dylib"),
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"),
     ]
