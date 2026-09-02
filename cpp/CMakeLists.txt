@@ -128,6 +128,30 @@ add_feature_info(
   "Ask Python FFCx module where to find ufcx.h header using MODULE mode. Otherwise use CONFIG mode."
 )
 
+# Control PETSc discovery
+option(
+  DOLFINX_PETSC_PYTHON
+  "Ask Python petsc module for a hint where to find PETSc."
+  ON
+)
+add_feature_info(
+  DOLFINX_PETSC_PYTHON
+  DOLFINX_PETSC_PYTHON
+  "Ask Python petsc module for a hint where to find PETSc."
+)
+
+# Control SLEPc discovery
+option(
+  DOLFINX_SLEPC_PYTHON
+  "Ask Python slepc module for a hint where to find SLEPc."
+  ON
+)
+add_feature_info(
+  DOLFINX_SLEPC_PYTHON
+  DOLFINX_SLEPC_PYTHON
+  "Ask Python slepc module for a hint where to find SLEPc."
+)
+
 # clang-tidy
 option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
 add_feature_info(
@@ -386,8 +410,9 @@ macro(dolfinx_prepend_pkgconfig_path dir_env_var)
 endmacro()
 
 # Set the environment variable ${dir_env_var} to the prefix reported by the
-# Python module ${module}, so that dolfinx_prepend_pkgconfig_path() finds a
-# PETSc/SLEPc installed with pip. A variable set by the user always wins.
+# Python module ${module}, so that dolfinx_prepend_pkgconfig_path() finds
+# the PETSc/SLEPc a Python installation was built against. A variable set
+# by the user always wins.
 macro(dolfinx_python_prefix_hint module dir_env_var)
   block(SCOPE_FOR VARIABLES)
     if(NOT DEFINED ENV{${dir_env_var}})
@@ -420,7 +445,9 @@ endif()
 
 if(DOLFINX_ENABLE_PETSC)
   find_package(PkgConfig REQUIRED)
-  dolfinx_python_prefix_hint(petsc PETSC_DIR)
+  if(DOLFINX_PETSC_PYTHON)
+    dolfinx_python_prefix_hint(petsc PETSC_DIR)
+  endif()
   dolfinx_prepend_pkgconfig_path(PETSC_DIR)
 
   if(_REQUIRE_PETSC)
@@ -444,7 +471,9 @@ endif()
 
 if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   find_package(PkgConfig REQUIRED)
-  dolfinx_python_prefix_hint(slepc SLEPC_DIR)
+  if(DOLFINX_SLEPC_PYTHON)
+    dolfinx_python_prefix_hint(slepc SLEPC_DIR)
+  endif()
   dolfinx_prepend_pkgconfig_path(SLEPC_DIR)
 
   if(_REQUIRE_SLEPC)
