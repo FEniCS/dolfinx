@@ -201,8 +201,8 @@ jobs:
             cmake --install superlu_dist-build-dir/ &&
             pip -v install $(python -c "import tomllib; deps=tomllib.load(open('/project/dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
+            MPICC=gcc MPICXX=g++
             PETSC_CONFIGURE_OPTIONS="--with-debugging=0 --with-fc=0
-            --with-cc=gcc --with-cxx=g++
             --with-mpi-include=/usr/lib64/mpich/include
             --with-mpi-lib=/usr/lib64/mpich/lib/libmpi.so"
             pip -v wheel petsc -w /petsc-wheels &&
