@@ -87,23 +87,25 @@ endif()
 # Python module ${module}, so that a PETSc/SLEPc installed with pip is found
 # below. A variable set by the user always wins.
 macro(_dolfinx_python_prefix_hint module dir_env_var)
-  if(NOT DEFINED ENV{${dir_env_var}})
-    find_package(Python3 COMPONENTS Interpreter QUIET)
-    if(Python3_Interpreter_FOUND)
-      execute_process(
-        COMMAND
-          ${Python3_EXECUTABLE} -c
-          "import ${module}, sys; sys.stdout.write(${module}.get_${module}_dir())"
-        OUTPUT_VARIABLE _DOLFINX_PY_DIR
-        ERROR_QUIET
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-      if(_DOLFINX_PY_DIR)
-        message(STATUS "Found ${module} Python module at ${_DOLFINX_PY_DIR}")
-        set(ENV{${dir_env_var}} "${_DOLFINX_PY_DIR}")
+  block(SCOPE_FOR VARIABLES)
+    if(NOT DEFINED ENV{${dir_env_var}})
+      find_package(Python3 COMPONENTS Interpreter QUIET)
+      if(Python3_Interpreter_FOUND)
+        execute_process(
+          COMMAND
+            ${Python3_EXECUTABLE} -c
+            "import ${module}, sys; sys.stdout.write(${module}.get_${module}_dir())"
+          OUTPUT_VARIABLE _dir
+          ERROR_QUIET
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(_dir)
+          message(STATUS "Found ${module} Python module at ${_dir}")
+          set(ENV{${dir_env_var}} "${_dir}")
+        endif()
       endif()
     endif()
-  endif()
+  endblock()
 endmacro()
 
 if("@PETSC_FOUND@")
