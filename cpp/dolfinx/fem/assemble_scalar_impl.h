@@ -198,7 +198,7 @@ T assemble_scalar(
     std::span<const std::int32_t> cells
         = M.domain(IntegralType::cell, i, cell_type_idx);
     assert(cells.size() * cstride == coeffs.size());
-    value += impl::assemble_cells(
+    value += impl::assemble_cells<T, U>(
         x_dofmap, x, cells, fn, constants,
         md::mdspan(coeffs.data(), cells.size(), cstride), cdofs_b);
   }
@@ -231,7 +231,7 @@ T assemble_scalar(
     constexpr std::size_t shape1 = 2 * num_adjacent_cells;
 
     assert((facets.size() / shape1) * 2 * cstride == coeffs.size());
-    value += impl::assemble_interior_facets(
+    value += impl::assemble_interior_facets<T, U>(
         x_dofmap, x,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2, 2>>(
@@ -261,7 +261,7 @@ T assemble_scalar(
 
       // Two values per each adj. cell (cell index and local entity index).
       assert((entities.size() / 2) * cstride == coeffs.size());
-      value += impl::assemble_entities(
+      value += impl::assemble_entities<T, U>(
           x_dofmap, x,
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>(

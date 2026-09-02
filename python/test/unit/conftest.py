@@ -122,5 +122,4 @@ def mixed_topology_mesh():
         GhostMode.none,
         max_cells_per_facet,
         num_threads=1,
-        cell_weights=None,
     )

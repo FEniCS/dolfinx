@@ -925,11 +925,11 @@ def create_mesh(
     cells: npt.NDArray[np.int64],
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     x: npt.NDArray[np.floating],
-    partitioner: Callable | None = None,
+    partitioner: Callable | tuple[Callable, npt.NDArray[np.int32] | None] | None = None,
     ghost_mode: GhostMode = GhostMode.none,
     max_facet_to_cell_links: int = 2,
     num_threads: int = 1,
-    cell_weights: npt.NDArray[np.int32] | None = None,
+    reorder_fn: Callable | None = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -941,18 +941,19 @@ def create_mesh(
             type of ``e``.
         x: Mesh geometry ('node' coordinates), with shape
             ``(num_nodes, gdim)``.
-        partitioner: Function that determines the parallel distribution of
-            cells across MPI ranks.
+        partitioner: ``None``, a partitioner function, or a pair
+            ``(partitioner, cell_weights)``. Cell weights may be ``None``
+            or an array of weights associated with each cell in ``cells``.
         ghost_mode: Ghost mode used in the mesh partitioning, passed to
             ``partitioner`` at call time.
         max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
         num_threads: Number of threads to use to build mesh. Must be
             greater than 0.
-        cell_weights: Weights associated with each cell in ``cells``,
-            e.g. for use by a plain graph partitioner or a hybrid
-            partitioner. If not provided, cells are treated as having
-            equal weight.
+        reorder_fn: Function called with the local cell dual graph. It
+            must return an array that maps each cell index to its new
+            index. If ``None`` (default), reverse Cuthill-McKee ordering
+            is used.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -961,8 +962,18 @@ def create_mesh(
     Returns:
         A mesh.
     """
-    if partitioner is None and comm.size > 1:
-        partitioner = _cpp.graph.partitioner()
+    if partitioner is None:
+        partitioner_fn = _cpp.graph.partitioner() if comm.size > 1 else None
+        cell_weights = None
+    elif isinstance(partitioner, tuple):
+        if len(partitioner) != 2:
+            raise TypeError("partitioner tuple must have two entries.")
+        partitioner_fn, cell_weights = partitioner
+        if partitioner_fn is None:
+            raise TypeError("The partitioner in the tuple must not be None.")
+    else:
+        partitioner_fn = partitioner
+        cell_weights = None
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:
@@ -1011,11 +1022,12 @@ def create_mesh(
         cells=cells,
         element=cmap._cpp_object,  # type: ignore[arg-type]
         x=x,
-        partitioner=partitioner,
+        partitioner=partitioner_fn,
         ghost_mode=ghost_mode,
         max_facet_to_cell_links=max_facet_to_cell_links,
         num_threads=num_threads,
         cell_weights=cell_weights,
+        reorder_fn=reorder_fn,
     )
 
     return Mesh(msh, domain)

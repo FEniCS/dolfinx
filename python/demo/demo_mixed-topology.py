@@ -126,7 +126,6 @@ mesh = create_mesh(
     GhostMode.none,
     2,
     1,
-    cell_weights=None,
 )
 # -
 
