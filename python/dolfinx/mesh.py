@@ -920,12 +920,57 @@ def refine(
     return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
 
 
+_MeshPartitioner = Callable | tuple[Callable, npt.NDArray[np.int32] | None] | None
+
+
+def _get_mesh_partitioner(
+    comm: _MPI.Comm, partitioner: _MeshPartitioner
+) -> tuple[Callable | None, npt.NDArray[np.int32] | None]:
+    """Get a cell partitioner and optional cell weights."""
+    partitioner_fn: Callable | None
+    if partitioner is None:
+        partitioner_fn = _cpp.graph.partitioner() if comm.size > 1 else None
+        return partitioner_fn, None
+    if isinstance(partitioner, tuple):
+        if len(partitioner) != 2:
+            raise TypeError("partitioner tuple must have two entries.")
+        partitioner_fn, cell_weights = partitioner
+        if partitioner_fn is None:
+            raise TypeError("The partitioner in the tuple must not be None.")
+        return partitioner_fn, cell_weights
+    return partitioner, None
+
+
+def _create_mesh_coordinate_element(
+    e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
+    gdim: int,
+) -> tuple[_CoordinateElement, ufl.Mesh | None]:
+    """Create a coordinate element and UFL domain from a mesh element."""
+    if isinstance(e, ufl.domain.Mesh):
+        e_ufl = e.ufl_coordinate_element()
+        return _coordinate_element_from_basix(e_ufl.basix_element), e
+    if isinstance(e, basix.finite_element.FiniteElement):
+        cmap = _coordinate_element_from_basix(e)
+        e_ufl = basix.ufl.blocked_element(basix.ufl._BasixElement(e), shape=(gdim,))
+        domain = ufl.Mesh(e_ufl)
+        assert domain.geometric_dimension == gdim
+        return cmap, domain
+    if isinstance(e, ufl.finiteelement.AbstractFiniteElement):
+        cmap = _coordinate_element_from_basix(e.basix_element)
+        domain = ufl.Mesh(e)
+        assert domain.geometric_dimension == gdim
+        return cmap, domain
+    if isinstance(e, _CoordinateElement):
+        return e, None
+    raise ValueError(f"Unsupported element type {type(e)}.")
+
+
 def create_mesh(
     comm: _MPI.Comm,
     cells: npt.NDArray[np.int64],
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     x: npt.NDArray[np.floating],
-    partitioner: Callable | tuple[Callable, npt.NDArray[np.int32] | None] | None = None,
+    partitioner: _MeshPartitioner = None,
     ghost_mode: GhostMode = GhostMode.none,
     max_facet_to_cell_links: int = 2,
     num_threads: int = 1,
@@ -962,19 +1007,7 @@ def create_mesh(
     Returns:
         A mesh.
     """
-    partitioner_fn: Callable | None
-    if partitioner is None:
-        partitioner_fn = _cpp.graph.partitioner() if comm.size > 1 else None
-        cell_weights = None
-    elif isinstance(partitioner, tuple):
-        if len(partitioner) != 2:
-            raise TypeError("partitioner tuple must have two entries.")
-        partitioner_fn, cell_weights = partitioner
-        if partitioner_fn is None:
-            raise TypeError("The partitioner in the tuple must not be None.")
-    else:
-        partitioner_fn = partitioner
-        cell_weights = None
+    partitioner_fn, cell_weights = _get_mesh_partitioner(comm, partitioner)
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:
@@ -982,39 +1015,9 @@ def create_mesh(
     else:
         gdim = x.shape[1]
 
-    dtype: npt.DTypeLike | None = None
-    if isinstance(e, ufl.domain.Mesh):
-        # e is a UFL domain
-        e_ufl = e.ufl_coordinate_element()
-        cmap = _coordinate_element_from_basix(e_ufl.basix_element)
-        domain = e
-        dtype = cmap.dtype
-        # TODO: Resolve UFL vs Basix geometric dimension issue
-        # assert domain.geometric_dimension() == gdim
-    elif isinstance(e, basix.finite_element.FiniteElement):
-        # e is a Basix element
-        # TODO: Resolve geometric dimension vs shape for manifolds
-        cmap = _coordinate_element_from_basix(e)
-        e_ufl = basix.ufl._BasixElement(e)
-        e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
-        domain = ufl.Mesh(e_ufl)
-        dtype = cmap.dtype
-        assert domain.geometric_dimension == gdim
-    elif isinstance(e, ufl.finiteelement.AbstractFiniteElement):
-        # e is a Basix 'UFL' element
-        cmap = _coordinate_element_from_basix(e.basix_element)
-        domain = ufl.Mesh(e)
-        dtype = cmap.dtype
-        assert domain.geometric_dimension == gdim
-    elif isinstance(e, _CoordinateElement):
-        # e is a CoordinateElement
-        cmap = e
-        domain = None
-        dtype = cmap.dtype
-    else:
-        raise ValueError(f"Unsupported element type {type(e)}.")
+    cmap, domain = _create_mesh_coordinate_element(e, gdim)
 
-    x = np.asarray(x, dtype=dtype, order="C")
+    x = np.asarray(x, dtype=cmap.dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
     if cell_weights is not None:
         cell_weights = np.asarray(cell_weights, dtype=np.int32, order="C")
