@@ -157,13 +157,13 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
 
-  std::vector<T> cdofs_b(3 * x_dofmap.extent(1));
-  std::vector<T> Ab(dmap.extent(1) * dmap.extent(1));
+  std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
+  std::array<T, p1_triangle_dofs_per_cell * p1_triangle_dofs_per_cell> Ab;
   fem::impl::assemble_cells_matrix<false>(
       A.mat_add_values(), x_dofmap, x, cells,
       std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, ident,
       std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, ident, {}, {},
-      kernel, {}, {}, {}, {}, std::span(Ab), std::span(cdofs_b));
+      kernel, {}, {}, {}, {}, std::span<T>(Ab), std::span<T>(cdofs_b));
   A.scatter_rev();
   return A.squared_norm();
 }
@@ -195,12 +195,12 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
   common::Timer timer("Assembler1 lambda (vector)");
-  std::vector<T> cdofs_b(3 * x_dofmap.extent(1));
-  std::vector<T> be_b(dmap.extent(1));
+  std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
+  std::array<T, p1_triangle_dofs_per_cell> be_b;
   fem::impl::assemble_cells(
       [](auto, auto, auto, auto) {}, b.array(), x_dofmap, x, cells,
       std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, kernel, {}, {},
-      {}, std::span(be_b), std::span(cdofs_b));
+      {}, std::span<T>(be_b), std::span<T>(cdofs_b));
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }
