@@ -962,6 +962,7 @@ def create_mesh(
     Returns:
         A mesh.
     """
+    partitioner_fn: Callable | None
     if partitioner is None:
         partitioner_fn = _cpp.graph.partitioner() if comm.size > 1 else None
         cell_weights = None
