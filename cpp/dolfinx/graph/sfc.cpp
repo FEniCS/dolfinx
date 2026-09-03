@@ -9,6 +9,7 @@
 #include "partition.h"
 #include <algorithm>
 #include <array>
+#include <boost/multiprecision/cpp_int.hpp>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -50,13 +51,8 @@ std::uint64_t morton_key(std::array<std::uint32_t, 3> c, int /*gdim*/)
   return spread(c[0]) | (spread(c[1]) << 1) | (spread(c[2]) << 2);
 }
 
-/// Rank count below which the post-office routing in partition_by_curve
-/// uses PCX (simpler, lower per-call overhead, but O(P) memory) to
-/// discover source ranks, and NBX (sparse/scalable, higher constant
-/// overhead) above it. Benchmarked as a clear win for PCX up to the
-/// largest rank count locally testable (12); an estimate pending
-/// validation at real large-scale rank counts, not a measured
-/// crossover point.
+/// Rank count below which post-office routing uses PCX. PCX uses O(P) memory;
+/// NBX is used above this limit to bound memory use.
 constexpr int pcx_rank_limit = 10000;
 
 /// Number of samples per output partition.
@@ -190,13 +186,17 @@ std::vector<std::int32_t> key_range_owners(std::span<const std::uint64_t> keys,
 
 /// @brief floor(total * p / n), without overflowing `std::int64_t`.
 ///
-/// `total` must be non-negative and `p` must be in [0, n].
+/// `total` must be non-negative, `n` must be positive, and `p` must be
+/// in [0, n]. `total`, `p` and `n` are not otherwise bounded -- in
+/// particular a call site summing point/weight counts across many
+/// ranks can exceed `int` range -- so the intermediate product is
+/// formed in 128 bits rather than relying on any tighter bound holding
+/// at every call site.
 std::int64_t scaled_target(std::int64_t total, std::int64_t p, std::int64_t n)
 {
-  // Split total into a multiple of n and a remainder. The first product
-  // cannot exceed total, and n and p are bounded by int at every call site,
-  // so the second product also fits in int64_t.
-  return total / n * p + (total % n) * p / n;
+  using boost::multiprecision::uint128_t;
+  return static_cast<std::int64_t>(uint128_t(total) * uint128_t(p)
+                                   / uint128_t(n));
 }
 
 /// @brief Return the local share of a globally bounded sample.
@@ -304,47 +304,33 @@ std::uint64_t hilbert_key(std::array<std::uint32_t, 3> c, int gdim)
 
   return key;
 }
-
-/// @brief Partition points into `nparts` groups of (approximately) equal
-/// weight by their position along a space-filling curve.
+/// @brief Validate point coordinates and return the number of points.
 ///
-/// @param[in] comm MPI communicator the points are distributed across.
-/// @param[in] nparts Number of partitions.
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
 /// @param[in] gdim Number of coordinate components per point.
-/// @param[in] key Curve key for a point, given its quantised coordinates
-/// and `gdim`.
-/// @param[in] weights Point weights, one entry per row of `x`. If
-/// `std::nullopt`, points are treated as having equal weight.
-/// @return Partition index in `[0, nparts)` for each point.
-template <typename K>
-std::vector<int>
-partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
-                   int gdim, K key,
-                   std::optional<std::span<const std::int32_t>> weights)
+/// @return Number of points in `x`.
+std::size_t check_point_coordinates(std::span<const double> x, int gdim)
 {
   if (gdim < 1 or gdim > 3)
     throw std::runtime_error("Geometric dimension must be 1, 2 or 3.");
-  if (nparts < 1)
-    throw std::runtime_error("Number of partitions must be > 0.");
   if (x.size() % gdim != 0)
   {
     throw std::runtime_error(
         "Point coordinate array size is not a multiple of gdim.");
   }
 
-  const std::size_t num_points = x.size() / gdim;
-  if (weights and weights->size() != num_points)
-  {
-    throw std::runtime_error(
-        "Number of point weights does not match the number of points.");
-  }
+  return x.size() / gdim;
+}
 
-  if (nparts == 1)
-    return std::vector<int>(num_points, 0);
-
-  // Global bounding box of the points. Note: the reduction is over
-  // {-min, max} so that a single MPI_MAX reduction suffices.
+/// @brief Compute point bounds as negated minima and maxima.
+///
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @param[in] num_points Number of points in `x`.
+/// @return Bounds stored as negated minima followed by maxima.
+std::array<double, 6> compute_point_extent(std::span<const double> x, int gdim,
+                                           std::size_t num_points)
+{
   std::array<double, 6> extent;
   extent.fill(std::numeric_limits<double>::lowest());
   for (std::size_t i = 0; i < num_points; ++i)
@@ -355,14 +341,23 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
       extent[3 + d] = std::max(extent[3 + d], x[gdim * i + d]);
     }
   }
-  {
-    std::array<double, 6> recv;
-    MPI_Allreduce(extent.data(), recv.data(), 6, MPI_DOUBLE, MPI_MAX, comm);
-    extent = recv;
-  }
 
-  // Curve key for each point, from its position in the bounding box
-  // scaled to the bit range of the key
+  return extent;
+}
+
+/// @brief Quantise points and compute their space-filling-curve keys.
+///
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @param[in] num_points Number of points in `x`.
+/// @param[in] extent Point bounds as returned by compute_point_extent.
+/// @param[in] key Function that computes a key from quantised coordinates.
+/// @return A key for each point.
+template <typename K>
+std::vector<std::uint64_t>
+compute_sfc_keys(std::span<const double> x, int gdim, std::size_t num_points,
+                 const std::array<double, 6>& extent, K key)
+{
   constexpr double range = (1 << nbits) - 1;
   std::array<double, 3> scale = {0, 0, 0};
   for (int d = 0; d < gdim; ++d)
@@ -382,6 +377,46 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
     }
     keys[i] = key(c, gdim);
   }
+
+  return keys;
+}
+
+/// @brief Partition points into `nparts` groups of (approximately) equal
+/// weight by their position along a space-filling curve.
+///
+/// @param[in] comm MPI communicator the points are distributed across.
+/// @param[in] nparts Number of partitions.
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @param[in] key Curve key for a point, given its quantised coordinates
+/// and `gdim`.
+/// @param[in] weights Point weights, one entry per row of `x`. If
+/// `std::nullopt`, points are treated as having equal weight.
+/// @return Partition index in `[0, nparts)` for each point.
+template <typename K>
+std::vector<int>
+partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
+                   int gdim, K key,
+                   std::optional<std::span<const std::int32_t>> weights)
+{
+  const std::size_t num_points = check_point_coordinates(x, gdim);
+  if (nparts < 1)
+    throw std::runtime_error("Number of partitions must be > 0.");
+  if (weights and weights->size() != num_points)
+  {
+    throw std::runtime_error(
+        "Number of point weights does not match the number of points.");
+  }
+
+  if (nparts == 1)
+    return std::vector<int>(num_points, 0);
+
+  std::array<double, 6> extent = compute_point_extent(x, gdim, num_points);
+  std::array<double, 6> recv;
+  MPI_Allreduce(extent.data(), recv.data(), 6, MPI_DOUBLE, MPI_MAX, comm);
+  extent = recv;
+  std::vector<std::uint64_t> keys
+      = compute_sfc_keys(x, gdim, num_points, extent, key);
 
   // Sample the local keys/weights, using a global budget that is a
   // fixed factor per partition. A sample is kept for every non-empty
@@ -613,6 +648,31 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
 
   return part;
 }
+/// @brief Reorder points by their space-filling-curve keys.
+///
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @param[in] key Function that computes a key from quantised coordinates.
+/// @return Reordering map from each input point to its output index.
+template <typename K>
+std::vector<std::int32_t> reorder_by_curve(std::span<const double> x, int gdim,
+                                           K key)
+{
+  const std::size_t num_points = check_point_coordinates(x, gdim);
+  const std::array<double, 6> extent
+      = compute_point_extent(x, gdim, num_points);
+  std::vector<std::uint64_t> keys
+      = compute_sfc_keys(x, gdim, num_points, extent, key);
+
+  std::vector<std::int32_t> order(num_points);
+  std::iota(order.begin(), order.end(), 0);
+  dolfinx::radix_sort(order, [&keys](std::int32_t i) { return keys[i]; });
+
+  std::vector<std::int32_t> map(num_points);
+  for (std::size_t i = 0; i < order.size(); ++i)
+    map[order[i]] = i;
+  return map;
+}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -630,5 +690,19 @@ std::vector<int> graph::partition_sfc_hilbert(
 {
   common::Timer timer("Compute Hilbert SFC partition of points");
   return partition_by_curve(comm, nparts, x, gdim, hilbert_key, node_weights);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t> graph::reorder_sfc_morton(std::span<const double> x,
+                                                    int gdim)
+{
+  common::Timer timer("Compute Morton SFC ordering of points");
+  return reorder_by_curve(x, gdim, morton_key);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t> graph::reorder_sfc_hilbert(std::span<const double> x,
+                                                     int gdim)
+{
+  common::Timer timer("Compute Hilbert SFC ordering of points");
+  return reorder_by_curve(x, gdim, hilbert_key);
 }
 //-----------------------------------------------------------------------------

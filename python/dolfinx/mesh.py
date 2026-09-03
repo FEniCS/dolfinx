@@ -995,10 +995,11 @@ def create_mesh(
             be connected to.
         num_threads: Number of threads to use to build mesh. Must be
             greater than 0.
-        reorder_fn: Function called with the local cell dual graph. It
-            must return an array that maps each cell index to its new
-            index. If ``None`` (default), reverse Cuthill-McKee ordering
-            is used.
+        reorder_fn: A graph reordering callable receives the local cell
+            dual graph. The built-in ``graph.reorder_morton`` and
+            ``graph.reorder_hilbert`` receive local cell centroids. Both
+            return an array mapping each cell index to its new index. If
+            ``None`` (default), reverse Cuthill-McKee ordering is used.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same

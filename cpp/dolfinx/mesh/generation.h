@@ -49,13 +49,13 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
                   const graph::AnyPartitionFunction& partitioner,
                   DiagonalType diagonal, GhostMode ghost_mode,
-                  const CellReorderFunction& reorder_fn, int gdim);
+                  const graph::Reorder& reorder_fn, int gdim);
 
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
                    const graph::AnyPartitionFunction& partitioner,
-                   GhostMode ghost_mode, const CellReorderFunction& reorder_fn,
+                   GhostMode ghost_mode, const graph::Reorder& reorder_fn,
                    int gdim);
 
 template <std::floating_point T>
@@ -67,21 +67,21 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
                   const graph::AnyPartitionFunction& partitioner,
-                  GhostMode ghost_mode, const CellReorderFunction& reorder_fn);
+                  GhostMode ghost_mode, const graph::Reorder& reorder_fn);
 
 template <std::floating_point T>
 Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
                   const graph::AnyPartitionFunction& partitioner,
-                  GhostMode ghost_mode, const CellReorderFunction& reorder_fn);
+                  GhostMode ghost_mode, const graph::Reorder& reorder_fn);
 
 template <std::floating_point T>
-Mesh<T>
-build_prism(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
-            std::array<std::int64_t, 3> n,
-            const graph::AnyPartitionFunction& partitioner,
-            GhostMode ghost_mode, const CellReorderFunction& reorder_fn);
+Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
+                    std::array<std::array<T, 3>, 2> p,
+                    std::array<std::int64_t, 3> n,
+                    const graph::AnyPartitionFunction& partitioner,
+                    GhostMode ghost_mode, const graph::Reorder& reorder_fn);
 
 /// @brief Call ::create_mesh with the fixed argument pattern shared by
 /// every `build_*`/`create_interval` call site: a single `commx` used
@@ -95,7 +95,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> finalize_mesh(
         typename std::remove_reference_t<typename U::value_type>>& element,
     const U& x, std::array<std::size_t, 2> xshape,
     const graph::AnyPartitionFunction& partitioner, GhostMode ghost_mode,
-    const CellReorderFunction& reorder_fn)
+    const graph::Reorder& reorder_fn)
 {
   return create_mesh(comm, commx, cells, element, commx, x, xshape,
                      graph::Partitioner{.fn = partitioner}, ghost_mode, 2, 1,
@@ -133,7 +133,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    graph::AnyPartitionFunction partitioner = {},
                    GhostMode ghost_mode = GhostMode::none,
-                   const CellReorderFunction& reorder_fn = graph::reorder_rcm)
+                   const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell is required.");
@@ -187,7 +187,7 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    const graph::AnyPartitionFunction& partitioner = {},
                    GhostMode ghost_mode = GhostMode::none,
-                   const CellReorderFunction& reorder_fn = graph::reorder_rcm)
+                   const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   return create_box<T>(comm, comm, p, n, celltype, partitioner, ghost_mode,
                        reorder_fn);
@@ -221,8 +221,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          graph::AnyPartitionFunction partitioner,
                          DiagonalType diagonal = DiagonalType::right,
                          int gdim = 2, GhostMode ghost_mode = GhostMode::none,
-                         const CellReorderFunction& reorder_fn
-                         = graph::reorder_rcm)
+                         const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   if (gdim < 2 || gdim > 3)
     throw std::runtime_error("2 <= gdim <= 3 for rectangle mesh.");
@@ -294,11 +293,11 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return A mesh.
 template <std::floating_point T = double>
-Mesh<T>
-create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
-                mesh::GhostMode ghost_mode = mesh::GhostMode::none,
-                graph::AnyPartitionFunction partitioner = {}, int gdim = 1,
-                const CellReorderFunction& reorder_fn = graph::reorder_rcm)
+Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
+                        mesh::GhostMode ghost_mode = mesh::GhostMode::none,
+                        graph::AnyPartitionFunction partitioner = {},
+                        int gdim = 1,
+                        const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   if (gdim < 1 || gdim > 3)
     throw std::runtime_error("1 <= gdim <= 3 for interval mesh.");
@@ -423,7 +422,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
                   const graph::AnyPartitionFunction& partitioner,
-                  GhostMode ghost_mode, const CellReorderFunction& reorder_fn)
+                  GhostMode ghost_mode, const graph::Reorder& reorder_fn)
 {
   common::Timer timer("Build BoxMesh (tetrahedra)");
   std::vector<T> x;
@@ -468,12 +467,11 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
 }
 
 template <std::floating_point T>
-mesh::Mesh<T>
-build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
-          std::array<std::int64_t, 3> n,
-          const graph::AnyPartitionFunction& partitioner, GhostMode ghost_mode,
-          const std::function<std::vector<std::int32_t>(
-              const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
+mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
+                        std::array<std::array<T, 3>, 2> p,
+                        std::array<std::int64_t, 3> n,
+                        const graph::AnyPartitionFunction& partitioner,
+                        GhostMode ghost_mode, const graph::Reorder& reorder_fn)
 {
   common::Timer timer("Build BoxMesh (hexahedra)");
   std::vector<T> x;
@@ -517,7 +515,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
                     std::array<std::array<T, 3>, 2> p,
                     std::array<std::int64_t, 3> n,
                     const graph::AnyPartitionFunction& partitioner,
-                    GhostMode ghost_mode, const CellReorderFunction& reorder_fn)
+                    GhostMode ghost_mode, const graph::Reorder& reorder_fn)
 {
   std::vector<T> x;
   std::vector<std::int64_t> cells;
@@ -565,7 +563,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
                   const graph::AnyPartitionFunction& partitioner,
                   DiagonalType diagonal, GhostMode ghost_mode,
-                  const CellReorderFunction& reorder_fn, int gdim)
+                  const graph::Reorder& reorder_fn, int gdim)
 {
   fem::CoordinateElement<T> element(CellType::triangle, 1);
   if (gdim < 2 || gdim > 3)
@@ -738,7 +736,7 @@ template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
                    const graph::AnyPartitionFunction& partitioner,
-                   GhostMode ghost_mode, const CellReorderFunction& reorder_fn,
+                   GhostMode ghost_mode, const graph::Reorder& reorder_fn,
                    int gdim)
 {
   if (gdim < 2 || gdim > 3)

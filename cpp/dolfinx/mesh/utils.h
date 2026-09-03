@@ -25,14 +25,18 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
+#include <exception>
 #include <format>
-#include <functional>
 #include <mpi.h>
 #include <numeric>
 #include <optional>
 #include <ranges>
 #include <span>
 #include <stdexcept>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -195,13 +199,6 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology,
 /// of the mesh.
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 
-/// @brief Function that reorders (locally) cells that
-/// are owned by this process. It takes the local mesh dual graph as an
-/// argument and returns a list whose `i`th entry is the new index of
-/// cell `i`.
-using CellReorderFunction = std::function<std::vector<std::int32_t>(
-    const graph::AdjacencyList<std::int32_t>&)>;
-
 namespace impl
 {
 /// @brief Find a mesh's process boundary vertices, reordering cells for
@@ -217,8 +214,11 @@ namespace impl
 /// though it plays no part in finding boundary vertices -- it is
 /// bundled in because the two computations share the same dual graph.
 ///
-/// @param[in] reorder_fn Cell reorder function, applied to the local
-/// dual graph built internally.
+/// @param[in] reorder_fn Cell reordering function. A graph reordering
+/// function is applied to the local dual graph; a geometric reordering
+/// function is applied to cell centroids.
+/// @param[in] cell_centroids Centroids of cells, grouped by cell type.
+/// @param[in] gdim Number of coordinate components in cell_centroids.
 /// @param[in] max_facet_to_cell_links Maximum number of cells a facet can be
 /// connected to.
 /// @param[in] celltypes List of celltypes in mesh.
@@ -234,16 +234,15 @@ namespace impl
 /// @param[in] num_threads Number of threads to use when building the
 /// local dual graph. Must be >= 1.
 /// @return Boundary vertices (for all cell types).
-std::vector<std::int64_t>
-reorder_cells(const CellReorderFunction& reorder_fn,
-              std::optional<std::int32_t> max_facet_to_cell_links,
-              const std::vector<CellType>& celltypes,
-              const std::vector<fem::ElementDofLayout>& doflayouts,
-              const std::vector<std::vector<int>>& ghost_owners,
-              std::vector<std::vector<std::int64_t>>& cells,
-              std::vector<std::span<std::int64_t>>& cells_v,
-              std::vector<std::vector<std::int64_t>>& original_idx,
-              int num_threads);
+std::vector<std::int64_t> reorder_cells(
+    const graph::Reorder& reorder_fn, std::span<const double> cell_centroids,
+    int gdim, std::optional<std::int32_t> max_facet_to_cell_links,
+    const std::vector<CellType>& celltypes,
+    const std::vector<fem::ElementDofLayout>& doflayouts,
+    const std::vector<std::vector<int>>& ghost_owners,
+    std::vector<std::vector<std::int64_t>>& cells,
+    std::vector<std::span<std::int64_t>>& cells_v,
+    std::vector<std::vector<std::int64_t>>& original_idx, int num_threads);
 } // namespace impl
 
 /// @brief Extract topology from cell data, i.e. extract cell vertices.
@@ -845,11 +844,138 @@ compute_incident_entities(const Topology& topology,
 
 namespace impl
 {
-/// @brief Compute the centroid of each cell from its vertex positions.
+/// @brief Run `fn` locally, recording any exception it throws instead
+/// of letting it propagate.
+///
+/// Meant to be used together with ::mpi_check. `fn` may be called
+/// conditionally, e.g. depending on which alternative a
+/// `graph::Partitioner`/`graph::Reorder` variant holds, and so in
+/// general only by a subset of the ranks of some communicator -- unlike
+/// ::mpi_check, this call is therefore never itself collective. `failed`
+/// and `error_msg` may be reused across several ::try_locally calls, so
+/// that a later call does not need to re-check whether an earlier one
+/// on the same rank already failed.
+///
+/// @param[in] fn Nullary callable to run locally.
+/// @param[in,out] failed Set to 1 if `fn` throws; left unmodified
+/// otherwise.
+/// @param[in,out] error_msg Set to the exception message if `fn`
+/// throws; left unmodified otherwise.
+template <typename F>
+void try_locally(F&& fn, int& failed, std::string& error_msg)
+{
+  if (failed)
+    return;
+
+  try
+  {
+    fn();
+  }
+  catch (const std::exception& e)
+  {
+    failed = 1;
+    error_msg = e.what();
+  }
+  catch (...)
+  {
+    failed = 1;
+    error_msg = "unknown exception";
+  }
+}
+
+/// @brief Collectively propagate a local failure recorded by
+/// ::try_locally to every rank of `comm`, throwing the same exception on
+/// every rank if any rank failed.
+///
+/// A rank-local exception cannot simply propagate from a collective
+/// operation: some ranks may already be blocked in a later collective
+/// by the time another rank throws, which would deadlock rather than
+/// fail. Funnelling the failure through an `MPI_Allreduce` first ensures
+/// every rank either continues normally or throws together.
+///
+/// @note Collective.
+///
+/// @param[in] comm Communicator to propagate the failure across.
+/// @param[in] op_name Name of the operation, used in the exception
+/// message on failure.
+/// @param[in] failed 1 if this rank's ::try_locally call(s) failed, 0
+/// otherwise.
+/// @param[in] error_msg This rank's failure message, if `failed`.
+inline void mpi_check(MPI_Comm comm, std::string_view op_name, int failed,
+                      const std::string& error_msg)
+{
+  int any_failed = 0;
+  MPI_Allreduce(&failed, &any_failed, 1, MPI_INT, MPI_MAX, comm);
+  if (any_failed)
+  {
+    throw std::runtime_error(
+        failed ? std::format("{} failed: {}", op_name, error_msg)
+               : std::format("{} failed on another rank.", op_name));
+  }
+}
+
+/// @brief Compute the centroid of each cell from vertex coordinates
+/// already available locally.
+///
+/// Serial -- performs no communication. Used by ::compute_cell_centroids
+/// once the vertex coordinates it needs have been gathered.
 ///
 /// @note The returned centroids are always `double`, regardless of `T`,
 /// for the same reason as graph::geom_partition_fn: partition quality
 /// is insensitive to position precision.
+///
+/// @tparam T Scalar type of `coords`.
+/// @param[in] num_vertices_per_cell Number of vertices per cell, one
+/// entry per cell type of `cells`.
+/// @param[in] cells Cells of each cell type, using the same global
+/// vertex indices as the keys of `node_to_pos`.
+/// @param[in] node_to_pos Map from a global vertex index appearing in
+/// `cells` to its row in `coords`.
+/// @param[in] coords Vertex coordinates, row-major with `gdim` columns,
+/// one row per entry of `node_to_pos`.
+/// @param[in] gdim Number of coordinate components per node.
+/// @return Cell centroids, row-major with `gdim` columns, one row per
+/// cell, with the cells of each cell type concatenated in the order
+/// they appear in `cells`.
+template <std::floating_point T>
+std::vector<double> cell_centroids_local(
+    std::span<const int> num_vertices_per_cell,
+    const std::vector<std::span<const std::int64_t>>& cells,
+    const boost::unordered_flat_map<std::int64_t, std::size_t>& node_to_pos,
+    std::span<const T> coords, int gdim)
+{
+  std::size_t num_cells = 0;
+  for (std::size_t i = 0; i < cells.size(); ++i)
+    num_cells += cells[i].size() / num_vertices_per_cell[i];
+  std::vector<double> centroid(gdim * num_cells, 0);
+
+  std::size_t c0 = 0;
+  for (std::size_t i = 0; i < cells.size(); ++i)
+  {
+    const int nv = num_vertices_per_cell[i];
+    const double w = 1.0 / nv;
+    for (std::size_t c = 0; c < cells[i].size() / nv; ++c)
+    {
+      for (int v = 0; v < nv; ++v)
+      {
+        auto it = node_to_pos.find(cells[i][nv * c + v]);
+        assert(it != node_to_pos.end());
+        std::size_t pos = it->second;
+        for (int d = 0; d < gdim; ++d)
+          centroid[gdim * (c0 + c) + d] += w * coords[gdim * pos + d];
+      }
+    }
+
+    c0 += cells[i].size() / nv;
+  }
+
+  return centroid;
+}
+
+/// @brief Compute the centroid of each cell from its vertex positions.
+///
+/// @note Collective. Exceptions raised by the coordinate exchange are
+/// propagated to every rank of `comm` before they are thrown.
 ///
 /// @tparam T Scalar type of `x`.
 /// @param[in] comm Communicator that `cells` is distributed across.
@@ -903,33 +1029,8 @@ compute_cell_centroids(MPI_Comm comm,
   for (std::size_t i = 0; i < nodes.size(); ++i)
     node_to_pos.emplace(nodes[i], i);
 
-  // Cell 'centroids', i.e. the mean of the cell vertex positions
-  std::size_t num_cells = 0;
-  for (std::size_t i = 0; i < cells.size(); ++i)
-    num_cells += cells[i].size() / num_vertices_per_cell[i];
-  std::vector<double> centroid(gdim * num_cells, 0);
-
-  std::size_t c0 = 0;
-  for (std::size_t i = 0; i < cells.size(); ++i)
-  {
-    const int nv = num_vertices_per_cell[i];
-    const double w = 1.0 / nv;
-    for (std::size_t c = 0; c < cells[i].size() / nv; ++c)
-    {
-      for (int v = 0; v < nv; ++v)
-      {
-        auto it = node_to_pos.find(cells[i][nv * c + v]);
-        assert(it != node_to_pos.end());
-        std::size_t pos = it->second;
-        for (int d = 0; d < gdim; ++d)
-          centroid[gdim * (c0 + c) + d] += w * coords[gdim * pos + d];
-      }
-    }
-
-    c0 += cells[i].size() / nv;
-  }
-
-  return centroid;
+  return cell_centroids_local(num_vertices_per_cell, cells, node_to_pos,
+                              std::span<const T>(coords), gdim);
 }
 
 /// @brief Partition cells across ranks of `comm`, or, if `partitioner`
@@ -1032,6 +1133,7 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
     if (needs_centroids)
     {
       std::vector<int> num_vertices_per_cell;
+      num_vertices_per_cell.reserve(celltypes.size());
       std::ranges::transform(celltypes,
                              std::back_inserter(num_vertices_per_cell),
                              [](CellType c) { return num_cell_vertices(c); });
@@ -1041,78 +1143,65 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
 
     if (std::holds_alternative<graph::geom_partition_fn>(partitioner.fn))
     {
-      try
-      {
-        int size = dolfinx::MPI::size(comm);
-        const auto& p = std::get<graph::geom_partition_fn>(partitioner.fn);
-        dest = graph::regular_adjacency_list(
-            p(comm, size, std::span<const double>(centroid), xshape[1],
-              partitioner.node_weights),
-            1);
-      }
-      catch (const std::exception& e)
-      {
-        failed = 1;
-        error_msg = e.what();
-      }
+      try_locally(
+          [&]
+          {
+            int size = dolfinx::MPI::size(comm);
+            const auto& p = std::get<graph::geom_partition_fn>(partitioner.fn);
+            dest = graph::regular_adjacency_list(
+                p(comm, size, std::span<const double>(centroid), xshape[1],
+                  partitioner.node_weights),
+                1);
+          },
+          failed, error_msg);
     }
 
     if (commt != MPI_COMM_NULL)
     {
-      try
-      {
-        int size = dolfinx::MPI::size(comm);
-        // Shared by the graph::partition_fn and
-        // graph::hybrid_partition_fn alternatives below: neither has any
-        // other way to obtain the mesh dual graph.
-        auto dual_graph = [&]() -> graph::AdjacencyList<std::int64_t>
-        {
-          return build_dual_graph(commt, celltypes, topology_view,
-                                  max_facet_to_cell_links, num_threads);
-        };
-
-        dest = std::visit(
-            [&](const auto& p) -> graph::AdjacencyList<std::int32_t>
+      // A partitioner such as graph::parmetis::geom_partitioner (which
+      // requires nparts to equal the number of ranks calling it) can
+      // throw only on the ranks with commt != MPI_COMM_NULL, which may
+      // be a strict subset of comm (e.g. cells built on rank 0 only).
+      // mpi_check below turns that into a comm-wide decision before any
+      // rank reaches the graph::build::distribute collective, or a throw
+      // here would leave the rest of comm blocked on it forever.
+      try_locally(
+          [&]
+          {
+            int size = dolfinx::MPI::size(comm);
+            // Shared by the graph::partition_fn and
+            // graph::hybrid_partition_fn alternatives below: neither has any
+            // other way to obtain the mesh dual graph.
+            auto dual_graph = [&]() -> graph::AdjacencyList<std::int64_t>
             {
-              using P = std::decay_t<decltype(p)>;
-              if constexpr (std::is_same_v<P, graph::hybrid_partition_fn>)
-              {
-                return p(commt, size, dual_graph(),
-                         std::span<const double>(centroid),
-                         partitioner.node_weights, std::nullopt, ghosting);
-              }
-              else if constexpr (std::is_same_v<P, graph::partition_fn>)
-              {
-                return p(commt, size, dual_graph(), partitioner.node_weights,
-                         std::nullopt, ghosting);
-              }
-              else
-                return dest;
-            },
-            partitioner.fn);
-      }
-      catch (const std::exception& e)
-      {
-        // A partitioner such as graph::parmetis::geom_partitioner (which
-        // requires nparts to equal the number of ranks calling it) can
-        // throw only on the ranks with commt != MPI_COMM_NULL, which may
-        // be a strict subset of comm (e.g. cells built on rank 0 only).
-        // Turn that into a comm-wide decision below before any rank
-        // reaches the graph::build::distribute collective, or a throw
-        // here would leave the rest of comm blocked on it forever.
-        failed = 1;
-        error_msg = e.what();
-      }
+              return build_dual_graph(commt, celltypes, topology_view,
+                                      max_facet_to_cell_links, num_threads);
+            };
+
+            dest = std::visit(
+                [&](const auto& p) -> graph::AdjacencyList<std::int32_t>
+                {
+                  using P = std::decay_t<decltype(p)>;
+                  if constexpr (std::is_same_v<P, graph::hybrid_partition_fn>)
+                  {
+                    return p(commt, size, dual_graph(),
+                             std::span<const double>(centroid),
+                             partitioner.node_weights, std::nullopt, ghosting);
+                  }
+                  else if constexpr (std::is_same_v<P, graph::partition_fn>)
+                  {
+                    return p(commt, size, dual_graph(),
+                             partitioner.node_weights, std::nullopt, ghosting);
+                  }
+                  else
+                    return dest;
+                },
+                partitioner.fn);
+          },
+          failed, error_msg);
     }
 
-    int any_failed = 0;
-    MPI_Allreduce(&failed, &any_failed, 1, MPI_INT, MPI_MAX, comm);
-    if (any_failed)
-    {
-      throw std::runtime_error(
-          failed ? "Cell partitioning failed: " + error_msg
-                 : "Cell partitioning failed on another rank.");
-    }
+    mpi_check(comm, "Cell partitioning", failed, error_msg);
 
     std::int32_t cell_offset = 0;
     for (std::int32_t i = 0; i < num_cell_types; ++i)
@@ -1251,7 +1340,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const graph::Partitioner& partitioner, GhostMode ghost_mode,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
-    const CellReorderFunction& reorder_fn = graph::reorder_rcm)
+    const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   using T = typename std::remove_reference_t<typename U::value_type>;
 
@@ -1312,9 +1401,44 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Re-order cells and get boundary vertices. The re-ordering is done
   // on the cell topology, i.e. the vertex indices, and the higher-order
   // nodes are re-ordered accordingly.
-  const std::vector<std::int64_t> boundary_v = impl::reorder_cells(
-      reorder_fn, max_facet_to_cell_links, celltypes, doflayouts, ghost_owners,
-      cells1, cells1_v, original_idx1, num_threads);
+  std::vector<double> cell_centroids;
+  if (std::holds_alternative<graph::reorder_geom_fn>(reorder_fn))
+  {
+    std::vector<int> num_cell_vertices;
+    num_cell_vertices.reserve(celltypes.size());
+    std::ranges::transform(celltypes, std::back_inserter(num_cell_vertices),
+                           [](CellType c)
+                           { return mesh::num_cell_vertices(c); });
+
+    std::vector<std::span<const std::int64_t>> cells1_v_owned;
+    cells1_v_owned.reserve(cells1_v.size());
+    for (std::size_t i = 0; i < cells1_v.size(); ++i)
+    {
+      const int num_cell_vertices_i = num_cell_vertices[i];
+      const std::size_t num_owned_cells
+          = cells1_v[i].size() / num_cell_vertices_i - ghost_owners[i].size();
+      cells1_v_owned.emplace_back(cells1_v[i].data(),
+                                  num_owned_cells * num_cell_vertices_i);
+    }
+
+    cell_centroids
+        = impl::compute_cell_centroids(comm, num_cell_vertices, cells1_v_owned,
+                                       commg, std::span<const T>(x), xshape[1]);
+  }
+
+  std::vector<std::int64_t> boundary_v;
+  int failed = 0;
+  std::string error_message;
+  impl::try_locally(
+      [&]
+      {
+        boundary_v = impl::reorder_cells(reorder_fn, cell_centroids, xshape[1],
+                                         max_facet_to_cell_links, celltypes,
+                                         doflayouts, ghost_owners, cells1,
+                                         cells1_v, original_idx1, num_threads);
+      },
+      failed, error_message);
+  impl::mpi_check(comm, "Cell reordering", failed, error_message);
 
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 
@@ -1453,7 +1577,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const graph::Partitioner& partitioner, GhostMode ghost_mode,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
-    const CellReorderFunction& reorder_fn = graph::reorder_rcm)
+    const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
                      commg, x, xshape, partitioner, ghost_mode,
