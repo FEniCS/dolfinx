@@ -91,9 +91,14 @@ mesh::impl::reorder_cells(const graph::Reorder& reorder_fn, MPI_Comm comm,
             if constexpr (std::is_same_v<F, graph::reorder_graph_fn>)
               return fn ? fn(graph) : graph::reorder_rcm(graph);
             else
+            {
+              if (!fn)
+                throw std::invalid_argument(
+                    "Geometric cell reordering function is empty.");
               return fn(
                   cell_centroids.subspan(cell_offset, gdim * num_owned_cells),
                   gdim);
+            }
           },
           reorder_fn);
     }
