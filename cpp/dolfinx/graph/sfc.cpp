@@ -304,6 +304,11 @@ std::uint64_t hilbert_key(std::array<std::uint32_t, 3> c, int gdim)
 
   return key;
 }
+/// @brief Validate point coordinates and return the number of points.
+///
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @return Number of points in `x`.
 std::size_t check_point_coordinates(std::span<const double> x, int gdim)
 {
   if (gdim < 1 or gdim > 3)
@@ -317,6 +322,12 @@ std::size_t check_point_coordinates(std::span<const double> x, int gdim)
   return x.size() / gdim;
 }
 
+/// @brief Compute point bounds as negated minima and maxima.
+///
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @param[in] num_points Number of points in `x`.
+/// @return Bounds stored as negated minima followed by maxima.
 std::array<double, 6> compute_point_extent(std::span<const double> x, int gdim,
                                            std::size_t num_points)
 {
@@ -334,6 +345,14 @@ std::array<double, 6> compute_point_extent(std::span<const double> x, int gdim,
   return extent;
 }
 
+/// @brief Quantise points and compute their space-filling-curve keys.
+///
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @param[in] num_points Number of points in `x`.
+/// @param[in] extent Point bounds as returned by compute_point_extent.
+/// @param[in] key Function that computes a key from quantised coordinates.
+/// @return A key for each point.
 template <typename K>
 std::vector<std::uint64_t>
 compute_sfc_keys(std::span<const double> x, int gdim, std::size_t num_points,
@@ -650,6 +669,12 @@ std::vector<int> graph::partition_sfc_hilbert(
 //-----------------------------------------------------------------------------
 namespace
 {
+/// @brief Reorder points by their space-filling-curve keys.
+///
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @param[in] key Function that computes a key from quantised coordinates.
+/// @return Reordering map from each input point to its output index.
 template <typename K>
 std::vector<std::int32_t> reorder_by_curve(std::span<const double> x, int gdim,
                                            K key)
