@@ -738,15 +738,8 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
   assert(x.size() % shape1 == 0);
   const std::int64_t shape0_local = x.size() / shape1;
 
-  // A rank with comm1 == MPI_COMM_NULL is not part of the geometry
-  // group and so should hold no rows of `x` to contribute. Check this
-  // collectively, and throw the same exception on every rank of comm0
-  // if it is violated on any one of them, before any rank reaches a
-  // later comm0/comm1 collective below: every rank of comm0 is already
-  // required to reach this call (the next collective, unconditionally,
-  // is the comm0 MPI_Allreduce further down), so a rank-local throw
-  // here -- rather than one propagated collectively -- would leave the
-  // other ranks blocked forever on that later collective.
+  // A rank outside comm1 must hold no data. Check this collectively before
+  // the later comm0/comm1 collectives to avoid leaving other ranks blocked.
   {
     int invalid_local = (comm1 == MPI_COMM_NULL and !x.empty()) ? 1 : 0;
     int invalid = 0;
