@@ -105,6 +105,7 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import common, graph, has_kahip, has_parmetis, has_ptscotch
+from dolfinx import cpp as _cpp
 from dolfinx.fem import coordinate_element
 from dolfinx.mesh import (
     CellType,
@@ -449,7 +450,9 @@ if weighted_partitioner is not None:
 # benefits of RCM.
 #
 # +
-def identity_cell_ordering(dual_graph):
+def identity_cell_ordering(
+    dual_graph: _cpp.graph.AdjacencyList_int32,
+) -> npt.NDArray[np.int32]:
     """Preserve the local cell order after partitioning."""
     return np.arange(dual_graph.num_nodes, dtype=np.int32)
 
