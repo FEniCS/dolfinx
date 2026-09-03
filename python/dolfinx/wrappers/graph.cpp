@@ -326,15 +326,14 @@ void graph(nb::module_& m)
       "low-level use.")
       .def(
           "__call__",
-          [](const GeometricReorderer& self, MPICommWrapper comm,
+          [](const GeometricReorderer& self,
              nb::ndarray<const double, nb::ndim<2>, nb::c_contig> x)
           {
             const int gdim = static_cast<int>(x.shape(1));
-            return as_nbarray(self.fn(
-                comm.get(), std::span<const double>(x.data(), x.size()), gdim));
+            return as_nbarray(
+                self.fn(std::span<const double>(x.data(), x.size()), gdim));
           },
-          nb::arg("comm"), nb::arg("x").noconvert(),
-          "Compute the reordering of the rows of x.");
+          nb::arg("x").noconvert(), "Compute the reordering of the rows of x.");
 
   m.attr("reorder_morton")
       = GeometricReorderer{dolfinx::graph::reorder_sfc_morton};

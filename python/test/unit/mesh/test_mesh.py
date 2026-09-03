@@ -676,6 +676,9 @@ def test_create_mesh_sfc_reordering():
     x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
 
+    points = np.array([[3.0], [1.0], [2.0], [0.0]])
+    assert np.array_equal(graph.reorder_morton(points), [3, 1, 2, 0])
+
     msh = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=graph.reorder_morton)
     assert np.array_equal(msh.topology.original_cell_index, [0, 1])
 

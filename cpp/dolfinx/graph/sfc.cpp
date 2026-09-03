@@ -317,13 +317,9 @@ std::size_t check_point_coordinates(std::span<const double> x, int gdim)
   return x.size() / gdim;
 }
 
-template <typename K>
-std::vector<std::uint64_t> compute_sfc_keys(MPI_Comm comm,
-                                            std::span<const double> x, int gdim,
-                                            std::size_t num_points, K key)
+std::array<double, 6> compute_point_extent(std::span<const double> x, int gdim,
+                                           std::size_t num_points)
 {
-  // Global bounding box of the points. The reduction is over {-min, max}
-  // so that a single MPI_MAX reduction suffices.
   std::array<double, 6> extent;
   extent.fill(std::numeric_limits<double>::lowest());
   for (std::size_t i = 0; i < num_points; ++i)
@@ -334,10 +330,15 @@ std::vector<std::uint64_t> compute_sfc_keys(MPI_Comm comm,
       extent[3 + d] = std::max(extent[3 + d], x[gdim * i + d]);
     }
   }
-  std::array<double, 6> recv;
-  MPI_Allreduce(extent.data(), recv.data(), 6, MPI_DOUBLE, MPI_MAX, comm);
-  extent = recv;
 
+  return extent;
+}
+
+template <typename K>
+std::vector<std::uint64_t>
+compute_sfc_keys(std::span<const double> x, int gdim, std::size_t num_points,
+                 const std::array<double, 6>& extent, K key)
+{
   constexpr double range = (1 << nbits) - 1;
   std::array<double, 3> scale = {0, 0, 0};
   for (int d = 0; d < gdim; ++d)
@@ -391,8 +392,12 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
   if (nparts == 1)
     return std::vector<int>(num_points, 0);
 
+  std::array<double, 6> extent = compute_point_extent(x, gdim, num_points);
+  std::array<double, 6> recv;
+  MPI_Allreduce(extent.data(), recv.data(), 6, MPI_DOUBLE, MPI_MAX, comm);
+  extent = recv;
   std::vector<std::uint64_t> keys
-      = compute_sfc_keys(comm, x, gdim, num_points, key);
+      = compute_sfc_keys(x, gdim, num_points, extent, key);
 
   // Sample the local keys/weights, using a global budget that is a
   // fixed factor per partition. A sample is kept for every non-empty
@@ -643,16 +648,17 @@ std::vector<int> graph::partition_sfc_hilbert(
   return partition_by_curve(comm, nparts, x, gdim, hilbert_key, node_weights);
 }
 //-----------------------------------------------------------------------------
-
 namespace
 {
 template <typename K>
-std::vector<std::int32_t>
-reorder_by_curve(MPI_Comm comm, std::span<const double> x, int gdim, K key)
+std::vector<std::int32_t> reorder_by_curve(std::span<const double> x, int gdim,
+                                           K key)
 {
   const std::size_t num_points = check_point_coordinates(x, gdim);
+  const std::array<double, 6> extent
+      = compute_point_extent(x, gdim, num_points);
   std::vector<std::uint64_t> keys
-      = compute_sfc_keys(comm, x, gdim, num_points, key);
+      = compute_sfc_keys(x, gdim, num_points, extent, key);
 
   std::vector<std::int32_t> order(num_points);
   std::iota(order.begin(), order.end(), 0);
@@ -666,17 +672,17 @@ reorder_by_curve(MPI_Comm comm, std::span<const double> x, int gdim, K key)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-graph::reorder_sfc_morton(MPI_Comm comm, std::span<const double> x, int gdim)
+std::vector<std::int32_t> graph::reorder_sfc_morton(std::span<const double> x,
+                                                    int gdim)
 {
   common::Timer timer("Compute Morton SFC ordering of points");
-  return reorder_by_curve(comm, x, gdim, morton_key);
+  return reorder_by_curve(x, gdim, morton_key);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-graph::reorder_sfc_hilbert(MPI_Comm comm, std::span<const double> x, int gdim)
+std::vector<std::int32_t> graph::reorder_sfc_hilbert(std::span<const double> x,
+                                                     int gdim)
 {
   common::Timer timer("Compute Hilbert SFC ordering of points");
-  return reorder_by_curve(comm, x, gdim, hilbert_key);
+  return reorder_by_curve(x, gdim, hilbert_key);
 }
 //-----------------------------------------------------------------------------

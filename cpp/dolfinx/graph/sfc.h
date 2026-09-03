@@ -91,27 +91,21 @@ std::vector<int> partition_sfc_hilbert(
 
 /// @brief Reorder points using a Morton ('Z-order') space-filling curve.
 ///
-/// @note Collective.
-///
-/// @param[in] comm MPI communicator that the points are distributed across.
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
 /// @param[in] gdim Number of coordinate components per point. Must be 1, 2 or
 /// 3.
 /// @return Reordering array `map`, where `map[i]` is the new index of point
 /// `i`.
-std::vector<std::int32_t>
-reorder_sfc_morton(MPI_Comm comm, std::span<const double> x, int gdim);
+std::vector<std::int32_t> reorder_sfc_morton(std::span<const double> x,
+                                             int gdim);
 
 /// @brief Reorder points using a Hilbert space-filling curve.
 ///
-/// @note Collective.
-///
-/// @param[in] comm MPI communicator that the points are distributed across.
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
 /// @param[in] gdim Number of coordinate components per point. Must be 1, 2 or
 /// 3.
 /// @return Reordering array `map`, where `map[i]` is the new index of point
 /// `i`.
-std::vector<std::int32_t>
-reorder_sfc_hilbert(MPI_Comm comm, std::span<const double> x, int gdim);
+std::vector<std::int32_t> reorder_sfc_hilbert(std::span<const double> x,
+                                              int gdim);
 } // namespace dolfinx::graph

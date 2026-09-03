@@ -322,7 +322,7 @@ TEST_CASE("Geometric cell reordering", "[geometric_partitioner]")
   const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
 
   const graph::Reorder reorder = graph::geom_reorder_fn(
-      [](MPI_Comm, std::span<const double> centroids, int gdim)
+      [](std::span<const double> centroids, int gdim)
       {
         REQUIRE(gdim == 2);
         REQUIRE(centroids.size() == 4);
@@ -362,7 +362,7 @@ TEST_CASE("SFC point reordering", "[partition_sfc]")
   const std::vector<double> x = {3, 1, 2, 0};
   for (auto reorder : {graph::reorder_sfc_morton, graph::reorder_sfc_hilbert})
   {
-    const std::vector<std::int32_t> map = reorder(MPI_COMM_SELF, x, 1);
+    const std::vector<std::int32_t> map = reorder(x, 1);
     std::vector<double> x_ordered(x.size());
     for (std::size_t i = 0; i < x.size(); ++i)
       x_ordered[map[i]] = x[i];

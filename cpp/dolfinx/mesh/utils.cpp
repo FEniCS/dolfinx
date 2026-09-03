@@ -19,10 +19,12 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <exception>
 #include <format>
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -74,22 +76,47 @@ mesh::impl::reorder_cells(const graph::Reorder& reorder_fn, MPI_Comm comm,
 
     // Store unmatched_facets for current cell type
     facets.emplace_back(std::move(unmatched_facets), max_v);
+    // Compute re-ordering of graph. Synchronise errors because a geometric
+    // callback runs independently on each rank.
+    std::vector<std::int32_t> remap;
+    std::string error_message;
+    int failed = 0;
+    try
+    {
+      remap = std::visit(
+          [cell_centroids, gdim, cell_offset, num_owned_cells,
+           &graph](const auto& fn) -> std::vector<std::int32_t>
+          {
+            using F = std::decay_t<decltype(fn)>;
+            if constexpr (std::is_same_v<F, graph::reorder_fn>)
+              return fn ? fn(graph) : graph::reorder_rcm(graph);
+            else
+              return fn(
+                  cell_centroids.subspan(cell_offset, gdim * num_owned_cells),
+                  gdim);
+          },
+          reorder_fn);
+    }
+    catch (const std::exception& e)
+    {
+      failed = 1;
+      error_message = e.what();
+    }
+    catch (...)
+    {
+      failed = 1;
+      error_message = "unknown exception";
+    }
 
-    // Compute re-ordering of graph
-    const std::vector<std::int32_t> remap = std::visit(
-        [&comm, cell_centroids, gdim, cell_offset, num_owned_cells,
-         &graph](const auto& fn) -> std::vector<std::int32_t>
-        {
-          using F = std::decay_t<decltype(fn)>;
-          if constexpr (std::is_same_v<F, graph::reorder_fn>)
-            return fn ? fn(graph) : graph::reorder_rcm(graph);
-          else
-            return fn(
-                comm,
-                cell_centroids.subspan(cell_offset, gdim * num_owned_cells),
-                gdim);
-        },
-        reorder_fn);
+    int any_failed = 0;
+    MPI_Allreduce(&failed, &any_failed, 1, MPI_INT, MPI_MAX, comm);
+    if (any_failed)
+    {
+      if (failed)
+        throw std::runtime_error("Cell reordering failed: " + error_message);
+      else
+        throw std::runtime_error("Cell reordering failed on another rank.");
+    }
 
     cell_offset += gdim * num_owned_cells;
 
