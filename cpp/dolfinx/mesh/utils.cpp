@@ -19,7 +19,6 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
-#include <exception>
 #include <format>
 #include <optional>
 #include <span>
@@ -33,17 +32,15 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-mesh::impl::reorder_cells(MPI_Comm comm, const graph::Reorder& reorder_fn,
-                          std::span<const double> cell_centroids, int gdim,
-                          std::optional<std::int32_t> max_facet_to_cell_links,
-                          const std::vector<CellType>& celltypes,
-                          const std::vector<fem::ElementDofLayout>& doflayouts,
-                          const std::vector<std::vector<int>>& ghost_owners,
-                          std::vector<std::vector<std::int64_t>>& cells,
-                          std::vector<std::span<std::int64_t>>& cells_v,
-                          std::vector<std::vector<std::int64_t>>& original_idx,
-                          int num_threads)
+std::vector<std::int64_t> mesh::impl::reorder_cells(
+    const graph::Reorder& reorder_fn, std::span<const double> cell_centroids,
+    int gdim, std::optional<std::int32_t> max_facet_to_cell_links,
+    const std::vector<CellType>& celltypes,
+    const std::vector<fem::ElementDofLayout>& doflayouts,
+    const std::vector<std::vector<int>>& ghost_owners,
+    std::vector<std::vector<std::int64_t>>& cells,
+    std::vector<std::span<std::int64_t>>& cells_v,
+    std::vector<std::vector<std::int64_t>>& original_idx, int num_threads)
 {
   // Build local dual graph for owned cells to (i) get list of vertices
   // on the process boundary and (ii) apply re-ordering to cells for
@@ -76,51 +73,26 @@ mesh::impl::reorder_cells(MPI_Comm comm, const graph::Reorder& reorder_fn,
 
     // Store unmatched_facets for current cell type
     facets.emplace_back(std::move(unmatched_facets), max_v);
-    // Compute graph reordering and synchronise callback errors across ranks.
-    std::vector<std::int32_t> remap;
-    std::string error_message;
-    int failed = 0;
-    try
-    {
-      remap = std::visit(
-          [cell_centroids, gdim, cell_offset, num_owned_cells,
-           &graph](const auto& fn) -> std::vector<std::int32_t>
-          {
-            using F = std::decay_t<decltype(fn)>;
-            if constexpr (std::is_same_v<F, graph::reorder_graph_fn>)
-              return fn ? fn(graph) : graph::reorder_rcm(graph);
-            else
-            {
-              if (!fn)
-                throw std::invalid_argument(
-                    "Geometric cell reordering function is empty.");
-              return fn(
-                  cell_centroids.subspan(cell_offset, gdim * num_owned_cells),
-                  gdim);
-            }
-          },
-          reorder_fn);
-    }
-    catch (const std::exception& e)
-    {
-      failed = 1;
-      error_message = e.what();
-    }
-    catch (...)
-    {
-      failed = 1;
-      error_message = "unknown exception";
-    }
 
-    int any_failed = 0;
-    MPI_Allreduce(&failed, &any_failed, 1, MPI_INT, MPI_MAX, comm);
-    if (any_failed)
-    {
-      if (failed)
-        throw std::runtime_error("Cell reordering failed: " + error_message);
-      else
-        throw std::runtime_error("Cell reordering failed on another rank.");
-    }
+    // Compute graph reordering.
+    const std::vector<std::int32_t> remap = std::visit(
+        [cell_centroids, gdim, cell_offset, num_owned_cells,
+         &graph](const auto& fn) -> std::vector<std::int32_t>
+        {
+          using F = std::decay_t<decltype(fn)>;
+          if constexpr (std::is_same_v<F, graph::reorder_graph_fn>)
+            return fn ? fn(graph) : graph::reorder_rcm(graph);
+          else
+          {
+            if (!fn)
+              throw std::invalid_argument(
+                  "Geometric cell reordering function is empty.");
+            return fn(
+                cell_centroids.subspan(cell_offset, gdim * num_owned_cells),
+                gdim);
+          }
+        },
+        reorder_fn);
 
     cell_offset += gdim * num_owned_cells;
 

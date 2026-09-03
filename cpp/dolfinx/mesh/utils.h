@@ -25,6 +25,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
+#include <exception>
 #include <format>
 #include <mpi.h>
 #include <numeric>
@@ -32,6 +33,7 @@
 #include <ranges>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <variant>
 #include <vector>
 
@@ -209,12 +211,9 @@ namespace impl
 /// though it plays no part in finding boundary vertices -- it is
 /// bundled in because the two computations share the same dual graph.
 ///
-/// @note Collective.
-///
 /// @param[in] reorder_fn Cell reordering function. A graph reordering
 /// function is applied to the local dual graph; a geometric reordering
 /// function is applied to cell centroids.
-/// @param[in] comm Mesh communicator.
 /// @param[in] cell_centroids Centroids of cells, grouped by cell type.
 /// @param[in] gdim Number of coordinate components in cell_centroids.
 /// @param[in] max_facet_to_cell_links Maximum number of cells a facet can be
@@ -232,17 +231,15 @@ namespace impl
 /// @param[in] num_threads Number of threads to use when building the
 /// local dual graph. Must be >= 1.
 /// @return Boundary vertices (for all cell types).
-std::vector<std::int64_t>
-reorder_cells(MPI_Comm comm, const graph::Reorder& reorder_fn,
-              std::span<const double> cell_centroids, int gdim,
-              std::optional<std::int32_t> max_facet_to_cell_links,
-              const std::vector<CellType>& celltypes,
-              const std::vector<fem::ElementDofLayout>& doflayouts,
-              const std::vector<std::vector<int>>& ghost_owners,
-              std::vector<std::vector<std::int64_t>>& cells,
-              std::vector<std::span<std::int64_t>>& cells_v,
-              std::vector<std::vector<std::int64_t>>& original_idx,
-              int num_threads);
+std::vector<std::int64_t> reorder_cells(
+    const graph::Reorder& reorder_fn, std::span<const double> cell_centroids,
+    int gdim, std::optional<std::int32_t> max_facet_to_cell_links,
+    const std::vector<CellType>& celltypes,
+    const std::vector<fem::ElementDofLayout>& doflayouts,
+    const std::vector<std::vector<int>>& ghost_owners,
+    std::vector<std::vector<std::int64_t>>& cells,
+    std::vector<std::span<std::int64_t>>& cells_v,
+    std::vector<std::vector<std::int64_t>>& original_idx, int num_threads);
 } // namespace impl
 
 /// @brief Extract topology from cell data, i.e. extract cell vertices.
@@ -1332,10 +1329,35 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Re-order cells and get boundary vertices. The re-ordering is done
   // on the cell topology, i.e. the vertex indices, and the higher-order
   // nodes are re-ordered accordingly.
-  const std::vector<std::int64_t> boundary_v = impl::reorder_cells(
-      comm, reorder_fn, cell_centroids, xshape[1], max_facet_to_cell_links,
-      celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1,
-      num_threads);
+  std::vector<std::int64_t> boundary_v;
+  std::string error_message;
+  int failed = 0;
+  try
+  {
+    boundary_v = impl::reorder_cells(reorder_fn, cell_centroids, xshape[1],
+                                     max_facet_to_cell_links, celltypes,
+                                     doflayouts, ghost_owners, cells1, cells1_v,
+                                     original_idx1, num_threads);
+  }
+  catch (const std::exception& e)
+  {
+    failed = 1;
+    error_message = e.what();
+  }
+  catch (...)
+  {
+    failed = 1;
+    error_message = "unknown exception";
+  }
+
+  int any_failed = 0;
+  MPI_Allreduce(&failed, &any_failed, 1, MPI_INT, MPI_MAX, comm);
+  if (any_failed)
+  {
+    throw std::runtime_error(failed
+                                 ? "Cell reordering failed: " + error_message
+                                 : "Cell reordering failed on another rank.");
+  }
 
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 
