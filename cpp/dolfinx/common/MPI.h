@@ -738,6 +738,25 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
   assert(x.size() % shape1 == 0);
   const std::int64_t shape0_local = x.size() / shape1;
 
+  // A rank with comm1 == MPI_COMM_NULL is not part of the geometry
+  // group and so should hold no rows of `x` to contribute. Check this
+  // collectively, and throw the same exception on every rank of comm0
+  // if it is violated on any one of them, before any rank reaches a
+  // later comm0/comm1 collective below: every rank of comm0 is already
+  // required to reach this call (the next collective, unconditionally,
+  // is the comm0 MPI_Allreduce further down), so a rank-local throw
+  // here -- rather than one propagated collectively -- would leave the
+  // other ranks blocked forever on that later collective.
+  {
+    int invalid_local = (comm1 == MPI_COMM_NULL and !x.empty()) ? 1 : 0;
+    int invalid = 0;
+    int err
+        = MPI_Allreduce(&invalid_local, &invalid, 1, MPI_INT, MPI_MAX, comm0);
+    dolfinx::MPI::check_error(comm0, err);
+    if (invalid)
+      throw std::runtime_error("Non-empty data on null MPI communicator");
+  }
+
   std::int64_t shape0 = 0;
   int err
       = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm0);
@@ -751,8 +770,6 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                      dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM, comm1);
     dolfinx::MPI::check_error(comm1, err);
   }
-  else if (!x.empty())
-    throw std::runtime_error("Non-empty data on null MPI communicator");
 
   return distribute_from_postoffice(comm0, indices, x, {shape0, shape1},
                                     rank_offset);

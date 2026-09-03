@@ -1022,11 +1022,12 @@ std::vector<double> cell_centroids_local(
 
 /// @brief Compute the centroid of each cell from its vertex positions.
 ///
-/// @note Collective. The `MPI::distribute_data` call this makes can
-/// throw on a rank-local condition (e.g. non-empty `x` on a null
-/// `commg`), so a caller invoking this alongside other fallible
-/// collectives should run it, too, inside a ::try_locally /::mpi_check
-/// guarded region.
+/// @note Collective. Any exception this raises (e.g. from
+/// `MPI::distribute_data`) is already propagated to every rank of
+/// `comm` before it is thrown, so it is safe to call directly; a caller
+/// invoking it alongside other, purely local fallible work may still
+/// wrap both in a single ::try_locally /::mpi_check guarded region to
+/// avoid a redundant collective round trip.
 ///
 /// @tparam T Scalar type of `x`.
 /// @param[in] comm Communicator that `cells` is distributed across.
@@ -1183,10 +1184,10 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
 
     if (needs_centroids)
     {
-      // compute_cell_centroids is collective (MPI::distribute_data) and
-      // can throw on a rank-local condition, so it is run inside the
-      // same try_locally/mpi_check guarded region as the partitioner
-      // calls below.
+      // Run alongside the partitioner calls below in the same
+      // try_locally/mpi_check guarded region, so a failure here and a
+      // failure below are reported through a single collective check
+      // rather than each needing its own.
       try_locally(
           [&]
           {
@@ -1464,10 +1465,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Re-order cells and get boundary vertices. The re-ordering is done
   // on the cell topology, i.e. the vertex indices, and the higher-order
   // nodes are re-ordered accordingly. Centroid computation (needed only
-  // for a geometric reorder_fn) is itself collective, so it is run
-  // inside the same guarded region as impl::reorder_cells rather than
-  // ahead of it, so that a failure in either is propagated to every
-  // rank before any rank moves on to a later collective.
+  // for a geometric reorder_fn) is run inside the same guarded region
+  // as impl::reorder_cells rather than ahead of it, so a failure in
+  // either is reported through one collective check rather than two.
   std::vector<std::int64_t> boundary_v;
   int failed = 0;
   std::string error_message;

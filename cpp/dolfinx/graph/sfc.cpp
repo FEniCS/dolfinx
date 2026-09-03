@@ -9,6 +9,7 @@
 #include "partition.h"
 #include <algorithm>
 #include <array>
+#include <boost/multiprecision/cpp_int.hpp>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -185,13 +186,17 @@ std::vector<std::int32_t> key_range_owners(std::span<const std::uint64_t> keys,
 
 /// @brief floor(total * p / n), without overflowing `std::int64_t`.
 ///
-/// `total` must be non-negative and `p` must be in [0, n].
+/// `total` must be non-negative, `n` must be positive, and `p` must be
+/// in [0, n]. `total`, `p` and `n` are not otherwise bounded -- in
+/// particular a call site summing point/weight counts across many
+/// ranks can exceed `int` range -- so the intermediate product is
+/// formed in 128 bits rather than relying on any tighter bound holding
+/// at every call site.
 std::int64_t scaled_target(std::int64_t total, std::int64_t p, std::int64_t n)
 {
-  // Split total into a multiple of n and a remainder. The first product
-  // cannot exceed total, and n and p are bounded by int at every call site,
-  // so the second product also fits in int64_t.
-  return total / n * p + (total % n) * p / n;
+  using boost::multiprecision::uint128_t;
+  return static_cast<std::int64_t>(uint128_t(total) * uint128_t(p)
+                                   / uint128_t(n));
 }
 
 /// @brief Return the local share of a globally bounded sample.
