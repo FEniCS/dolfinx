@@ -337,6 +337,26 @@ TEST_CASE("Geometric cell reordering", "[geometric_partitioner]")
         == std::vector<std::int64_t>{1, 0});
 }
 
+TEST_CASE("Default cell reordering", "[geometric_partitioner]")
+{
+  const std::vector<std::int64_t> cells = {0, 1, 2, 1, 3, 2};
+  const std::vector<double> x = {0, 0, 1, 0, 0, 1, 1, 1};
+  const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
+
+  mesh::Mesh<double> msh_default = mesh::create_mesh(
+      MPI_COMM_SELF, MPI_COMM_SELF, std::span<const std::int64_t>(cells),
+      element, MPI_COMM_SELF, x, {4, 2}, graph::Partitioner{},
+      mesh::GhostMode::none, 2, 1);
+  const graph::Reorder reorder;
+  mesh::Mesh<double> msh_empty = mesh::create_mesh(
+      MPI_COMM_SELF, MPI_COMM_SELF, std::span<const std::int64_t>(cells),
+      element, MPI_COMM_SELF, x, {4, 2}, graph::Partitioner{},
+      mesh::GhostMode::none, 2, 1, reorder);
+
+  CHECK(msh_empty.topology()->original_cell_index
+        == msh_default.topology()->original_cell_index);
+}
+
 TEST_CASE("SFC point reordering", "[partition_sfc]")
 {
   const std::vector<double> x = {3, 1, 2, 0};

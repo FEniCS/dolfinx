@@ -304,47 +304,26 @@ std::uint64_t hilbert_key(std::array<std::uint32_t, 3> c, int gdim)
 
   return key;
 }
-
-/// @brief Partition points into `nparts` groups of (approximately) equal
-/// weight by their position along a space-filling curve.
-///
-/// @param[in] comm MPI communicator the points are distributed across.
-/// @param[in] nparts Number of partitions.
-/// @param[in] x Point coordinates, row-major with `gdim` columns.
-/// @param[in] gdim Number of coordinate components per point.
-/// @param[in] key Curve key for a point, given its quantised coordinates
-/// and `gdim`.
-/// @param[in] weights Point weights, one entry per row of `x`. If
-/// `std::nullopt`, points are treated as having equal weight.
-/// @return Partition index in `[0, nparts)` for each point.
-template <typename K>
-std::vector<int>
-partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
-                   int gdim, K key,
-                   std::optional<std::span<const std::int32_t>> weights)
+std::size_t check_point_coordinates(std::span<const double> x, int gdim)
 {
   if (gdim < 1 or gdim > 3)
     throw std::runtime_error("Geometric dimension must be 1, 2 or 3.");
-  if (nparts < 1)
-    throw std::runtime_error("Number of partitions must be > 0.");
   if (x.size() % gdim != 0)
   {
     throw std::runtime_error(
         "Point coordinate array size is not a multiple of gdim.");
   }
 
-  const std::size_t num_points = x.size() / gdim;
-  if (weights and weights->size() != num_points)
-  {
-    throw std::runtime_error(
-        "Number of point weights does not match the number of points.");
-  }
+  return x.size() / gdim;
+}
 
-  if (nparts == 1)
-    return std::vector<int>(num_points, 0);
-
-  // Global bounding box of the points. Note: the reduction is over
-  // {-min, max} so that a single MPI_MAX reduction suffices.
+template <typename K>
+std::vector<std::uint64_t> compute_sfc_keys(MPI_Comm comm,
+                                            std::span<const double> x, int gdim,
+                                            std::size_t num_points, K key)
+{
+  // Global bounding box of the points. The reduction is over {-min, max}
+  // so that a single MPI_MAX reduction suffices.
   std::array<double, 6> extent;
   extent.fill(std::numeric_limits<double>::lowest());
   for (std::size_t i = 0; i < num_points; ++i)
@@ -355,14 +334,10 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
       extent[3 + d] = std::max(extent[3 + d], x[gdim * i + d]);
     }
   }
-  {
-    std::array<double, 6> recv;
-    MPI_Allreduce(extent.data(), recv.data(), 6, MPI_DOUBLE, MPI_MAX, comm);
-    extent = recv;
-  }
+  std::array<double, 6> recv;
+  MPI_Allreduce(extent.data(), recv.data(), 6, MPI_DOUBLE, MPI_MAX, comm);
+  extent = recv;
 
-  // Curve key for each point, from its position in the bounding box
-  // scaled to the bit range of the key
   constexpr double range = (1 << nbits) - 1;
   std::array<double, 3> scale = {0, 0, 0};
   for (int d = 0; d < gdim; ++d)
@@ -382,6 +357,42 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
     }
     keys[i] = key(c, gdim);
   }
+
+  return keys;
+}
+
+/// @brief Partition points into `nparts` groups of (approximately) equal
+/// weight by their position along a space-filling curve.
+///
+/// @param[in] comm MPI communicator the points are distributed across.
+/// @param[in] nparts Number of partitions.
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @param[in] key Curve key for a point, given its quantised coordinates
+/// and `gdim`.
+/// @param[in] weights Point weights, one entry per row of `x`. If
+/// `std::nullopt`, points are treated as having equal weight.
+/// @return Partition index in `[0, nparts)` for each point.
+template <typename K>
+std::vector<int>
+partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
+                   int gdim, K key,
+                   std::optional<std::span<const std::int32_t>> weights)
+{
+  if (nparts < 1)
+    throw std::runtime_error("Number of partitions must be > 0.");
+  const std::size_t num_points = check_point_coordinates(x, gdim);
+  if (weights and weights->size() != num_points)
+  {
+    throw std::runtime_error(
+        "Number of point weights does not match the number of points.");
+  }
+
+  if (nparts == 1)
+    return std::vector<int>(num_points, 0);
+
+  std::vector<std::uint64_t> keys
+      = compute_sfc_keys(comm, x, gdim, num_points, key);
 
   // Sample the local keys/weights, using a global budget that is a
   // fixed factor per partition. A sample is kept for every non-empty
@@ -639,48 +650,9 @@ template <typename K>
 std::vector<std::int32_t>
 reorder_by_curve(MPI_Comm comm, std::span<const double> x, int gdim, K key)
 {
-  if (gdim < 1 or gdim > 3)
-    throw std::runtime_error("Geometric dimension must be 1, 2 or 3.");
-  if (x.size() % gdim != 0)
-  {
-    throw std::runtime_error(
-        "Point coordinate array size is not a multiple of gdim.");
-  }
-
-  const std::size_t num_points = x.size() / gdim;
-  std::array<double, 6> extent;
-  extent.fill(std::numeric_limits<double>::lowest());
-  for (std::size_t i = 0; i < num_points; ++i)
-  {
-    for (int d = 0; d < gdim; ++d)
-    {
-      extent[d] = std::max(extent[d], -x[gdim * i + d]);
-      extent[3 + d] = std::max(extent[3 + d], x[gdim * i + d]);
-    }
-  }
-  std::array<double, 6> recv;
-  MPI_Allreduce(extent.data(), recv.data(), 6, MPI_DOUBLE, MPI_MAX, comm);
-  extent = recv;
-
-  constexpr double range = (1 << nbits) - 1;
-  std::array<double, 3> scale = {0, 0, 0};
-  for (int d = 0; d < gdim; ++d)
-  {
-    const double width = extent[3 + d] + extent[d];
-    scale[d] = width > 0 ? range / width : 0;
-  }
-
-  std::vector<std::uint64_t> keys(num_points);
-  for (std::size_t i = 0; i < num_points; ++i)
-  {
-    std::array<std::uint32_t, 3> c = {0, 0, 0};
-    for (int d = 0; d < gdim; ++d)
-    {
-      c[d] = static_cast<std::uint32_t>(scale[d]
-                                        * (x[gdim * i + d] + extent[d]));
-    }
-    keys[i] = key(c, gdim);
-  }
+  const std::size_t num_points = check_point_coordinates(x, gdim);
+  std::vector<std::uint64_t> keys
+      = compute_sfc_keys(comm, x, gdim, num_points, key);
 
   std::vector<std::int32_t> order(num_points);
   std::iota(order.begin(), order.end(), 0);

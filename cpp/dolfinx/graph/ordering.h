@@ -46,6 +46,8 @@ using reorder_fn = std::function<std::vector<std::int32_t>(
 
 /// @brief Signature of functions that reorder points from their positions.
 ///
+/// @note Collective on `comm`.
+///
 /// @param[in] comm Communicator over which the points are distributed.
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
 /// @param[in] gdim Number of coordinate components per point.
@@ -56,6 +58,7 @@ using geom_reorder_fn = std::function<std::vector<std::int32_t>(
 
 /// @brief A graph or geometric reordering function for mesh cells.
 ///
-/// A ::geom_reorder_fn is called with the centroids of the locally owned cells.
+/// A default-constructed Reorder selects ::reorder_rcm. A ::geom_reorder_fn is
+/// called with the centroids of the locally owned cells.
 using Reorder = std::variant<reorder_fn, geom_reorder_fn>;
 } // namespace dolfinx::graph
