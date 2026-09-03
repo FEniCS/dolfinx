@@ -102,10 +102,7 @@ using HybridPartitioner
     = OpaquePartitioner<dolfinx::graph::hybrid_partition_fn>;
 
 /// Opaque handle for a geometric mesh reordering function.
-struct GeometricReorderer
-{
-  dolfinx::graph::reorder_geom_fn fn;
-};
+using GeometricReorderer = OpaquePartitioner<dolfinx::graph::reorder_geom_fn>;
 
 /// Bind the AdjacencyList<T, U> properties and methods common to every
 /// instantiation: offsets, num_nodes, equality, and length.

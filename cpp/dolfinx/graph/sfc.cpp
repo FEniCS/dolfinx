@@ -394,9 +394,9 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
                    int gdim, K key,
                    std::optional<std::span<const std::int32_t>> weights)
 {
+  const std::size_t num_points = check_point_coordinates(x, gdim);
   if (nparts < 1)
     throw std::runtime_error("Number of partitions must be > 0.");
-  const std::size_t num_points = check_point_coordinates(x, gdim);
   if (weights and weights->size() != num_points)
   {
     throw std::runtime_error(
