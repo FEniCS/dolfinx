@@ -569,13 +569,20 @@ public:
                    std::span<U> data, std::span<const std::uint32_t> cell_info,
                    std::int32_t cell, int block_size)
         {
+          // `data` is (block_size, ndofs), row-major. Sub-element `e`
+          // owns columns [offset, offset + dims[e]) of every row, so the
+          // rows are transformed one at a time.
+          const std::size_t ndofs = data.size() / block_size;
           std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_fns.size(); ++e)
           {
             if (sub_element_fns[e])
             {
-              sub_element_fns[e](data.subspan(offset, data.size() - offset),
-                                 cell_info, cell, block_size);
+              for (int i = 0; i < block_size; ++i)
+              {
+                sub_element_fns[e](data.subspan(i * ndofs + offset, dims[e]),
+                                   cell_info, cell, 1);
+              }
             }
             offset += dims[e];
           }
