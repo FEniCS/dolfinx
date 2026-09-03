@@ -812,7 +812,7 @@ def test_mesh_single_process_distribution(partitioner):
         cells,
         element,
         x,
-        partitioner=(partitioner(), None),
+        partitioner=partitioner(),
         ghost_mode=dolfinx.mesh.GhostMode.shared_facet,
     )
 
