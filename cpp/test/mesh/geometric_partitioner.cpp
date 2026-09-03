@@ -337,7 +337,7 @@ TEST_CASE("Geometric cell reordering", "[geometric_partitioner]")
         == std::vector<std::int64_t>{1, 0});
 }
 
-TEST_CASE("Default cell reordering", "[geometric_partitioner]")
+TEST_CASE("Default RCM cell reordering", "[geometric_partitioner]")
 {
   const std::vector<std::int64_t> cells = {0, 1, 2, 1, 3, 2};
   const std::vector<double> x = {0, 0, 1, 0, 0, 1, 1, 1};
@@ -347,14 +347,33 @@ TEST_CASE("Default cell reordering", "[geometric_partitioner]")
       MPI_COMM_SELF, MPI_COMM_SELF, std::span<const std::int64_t>(cells),
       element, MPI_COMM_SELF, x, {4, 2}, graph::Partitioner{},
       mesh::GhostMode::none, 2, 1);
-  const graph::Reorder reorder;
-  mesh::Mesh<double> msh_empty = mesh::create_mesh(
+  const graph::Reorder reorder = graph::reorder_graph_fn(graph::reorder_rcm);
+  mesh::Mesh<double> msh_rcm = mesh::create_mesh(
       MPI_COMM_SELF, MPI_COMM_SELF, std::span<const std::int64_t>(cells),
       element, MPI_COMM_SELF, x, {4, 2}, graph::Partitioner{},
       mesh::GhostMode::none, 2, 1, reorder);
 
-  CHECK(msh_empty.topology()->original_cell_index
+  CHECK(msh_rcm.topology()->original_cell_index
         == msh_default.topology()->original_cell_index);
+}
+
+TEST_CASE("SFC cell reordering", "[geometric_partitioner]")
+{
+  const std::vector<std::int64_t> cells = {0, 1, 2, 1, 3, 2};
+  const std::vector<double> x = {0, 0, 1, 0, 0, 1, 1, 1};
+  const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
+
+  for (auto reorder_sfc :
+       {graph::reorder_sfc_morton, graph::reorder_sfc_hilbert})
+  {
+    const graph::Reorder reorder = graph::reorder_geom_fn(reorder_sfc);
+    mesh::Mesh<double> msh = mesh::create_mesh(
+        MPI_COMM_SELF, MPI_COMM_SELF, std::span<const std::int64_t>(cells),
+        element, MPI_COMM_SELF, x, {4, 2}, graph::Partitioner{},
+        mesh::GhostMode::none, 2, 1, reorder);
+    CHECK(msh.topology()->original_cell_index[0]
+          == std::vector<std::int64_t>{0, 1});
+  }
 }
 
 TEST_CASE("SFC point reordering", "[partition_sfc]")
