@@ -28,7 +28,7 @@ Re-ordering
 .. doxygenfunction:: dolfinx::graph::reorder_sfc_hilbert
    :project: DOLFINx
 
-.. doxygenstruct:: dolfinx::graph::Reorder
+.. doxygentypedef:: dolfinx::graph::Reorder
    :project: DOLFINx
 
 Partitioning

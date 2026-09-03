@@ -64,16 +64,16 @@ inline dolfinx::graph::Reorder
 to_cell_reorder(const std::optional<PythonCellReorder>& reorder_fn)
 {
   if (!reorder_fn)
-    return {};
+    return dolfinx::graph::reorder_fn(dolfinx::graph::reorder_rcm);
 
   return std::visit(
       [](const auto& fn) -> dolfinx::graph::Reorder
       {
         using F = std::decay_t<decltype(fn)>;
         if constexpr (std::is_same_v<F, GeometricReorderer>)
-          return {.fn = fn.fn};
+          return fn.fn;
         else
-          return {.fn = dolfinx::graph::reorder_fn(fn)};
+          return dolfinx::graph::reorder_fn(fn);
       },
       *reorder_fn);
 }

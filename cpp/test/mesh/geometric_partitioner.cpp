@@ -321,14 +321,13 @@ TEST_CASE("Geometric cell reordering", "[geometric_partitioner]")
   const std::vector<double> x = {0, 0, 1, 0, 0, 1, 1, 1};
   const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
 
-  const graph::Reorder reorder{
-      .fn = graph::geom_reorder_fn(
-          [](MPI_Comm, std::span<const double> centroids, int gdim)
-          {
-            REQUIRE(gdim == 2);
-            REQUIRE(centroids.size() == 4);
-            return std::vector<std::int32_t>{1, 0};
-          })};
+  const graph::Reorder reorder = graph::geom_reorder_fn(
+      [](MPI_Comm, std::span<const double> centroids, int gdim)
+      {
+        REQUIRE(gdim == 2);
+        REQUIRE(centroids.size() == 4);
+        return std::vector<std::int32_t>{1, 0};
+      });
   mesh::Mesh<double> msh = mesh::create_mesh(
       MPI_COMM_SELF, MPI_COMM_SELF, std::span<const std::int64_t>(cells),
       element, MPI_COMM_SELF, x, {4, 2}, graph::Partitioner{},

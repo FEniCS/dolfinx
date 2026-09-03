@@ -89,7 +89,7 @@ mesh::impl::reorder_cells(const graph::Reorder& reorder_fn, MPI_Comm comm,
                 cell_centroids.subspan(cell_offset, gdim * num_owned_cells),
                 gdim);
         },
-        reorder_fn.fn);
+        reorder_fn);
 
     cell_offset += gdim * num_owned_cells;
 

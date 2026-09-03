@@ -54,17 +54,8 @@ using reorder_fn = std::function<std::vector<std::int32_t>(
 using geom_reorder_fn = std::function<std::vector<std::int32_t>(
     MPI_Comm comm, std::span<const double> x, int gdim)>;
 
-/// @brief A graph or geometric reordering function.
-using AnyReorderFunction = std::variant<reorder_fn, geom_reorder_fn>;
-
-/// @brief A reordering function for mesh cells.
+/// @brief A graph or geometric reordering function for mesh cells.
 ///
-/// The default reordering is ::reorder_rcm. A ::geom_reorder_fn is called with
-/// the centroids of the locally owned cells.
-struct Reorder
-{
-  /// Reordering function. Defaults to ::reorder_rcm.
-  AnyReorderFunction fn = reorder_fn(reorder_rcm);
-};
-
+/// A ::geom_reorder_fn is called with the centroids of the locally owned cells.
+using Reorder = std::variant<reorder_fn, geom_reorder_fn>;
 } // namespace dolfinx::graph
