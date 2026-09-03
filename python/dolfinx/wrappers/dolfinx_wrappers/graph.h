@@ -104,7 +104,7 @@ using HybridPartitioner
 /// Opaque handle for a geometric mesh reordering function.
 struct GeometricReorderer
 {
-  dolfinx::graph::geom_reorder_fn fn;
+  dolfinx::graph::reorder_geom_fn fn;
 };
 
 /// Bind the AdjacencyList<T, U> properties and methods common to every

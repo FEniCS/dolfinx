@@ -88,7 +88,7 @@ mesh::impl::reorder_cells(const graph::Reorder& reorder_fn, MPI_Comm comm,
            &graph](const auto& fn) -> std::vector<std::int32_t>
           {
             using F = std::decay_t<decltype(fn)>;
-            if constexpr (std::is_same_v<F, graph::reorder_fn>)
+            if constexpr (std::is_same_v<F, graph::reorder_graph_fn>)
               return fn ? fn(graph) : graph::reorder_rcm(graph);
             else
               return fn(

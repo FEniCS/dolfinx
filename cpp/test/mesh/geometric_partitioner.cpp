@@ -321,7 +321,7 @@ TEST_CASE("Geometric cell reordering", "[geometric_partitioner]")
   const std::vector<double> x = {0, 0, 1, 0, 0, 1, 1, 1};
   const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
 
-  const graph::Reorder reorder = graph::geom_reorder_fn(
+  const graph::Reorder reorder = graph::reorder_geom_fn(
       [](std::span<const double> centroids, int gdim)
       {
         REQUIRE(gdim == 2);

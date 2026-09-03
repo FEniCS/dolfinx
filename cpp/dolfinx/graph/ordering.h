@@ -40,7 +40,7 @@ std::vector<std::int32_t>
 reorder_rcm(const graph::AdjacencyList<std::int32_t>& graph);
 
 /// @brief Signature of functions that reorder the nodes of a graph.
-using reorder_fn = std::function<std::vector<std::int32_t>(
+using reorder_graph_fn = std::function<std::vector<std::int32_t>(
     const graph::AdjacencyList<std::int32_t>&)>;
 
 /// @brief Signature of functions that reorder points from their positions.
@@ -49,12 +49,12 @@ using reorder_fn = std::function<std::vector<std::int32_t>(
 /// @param[in] gdim Number of coordinate components per point.
 /// @return Reordering array `map`, where `map[i]` is the new index of point
 /// `i`.
-using geom_reorder_fn = std::function<std::vector<std::int32_t>(
+using reorder_geom_fn = std::function<std::vector<std::int32_t>(
     std::span<const double> x, int gdim)>;
 
 /// @brief A graph or geometric reordering function for mesh cells.
 ///
-/// A default-constructed Reorder selects ::reorder_rcm. A ::geom_reorder_fn is
+/// A default-constructed Reorder selects ::reorder_rcm. A ::reorder_geom_fn is
 /// called with the centroids of the locally owned cells.
-using Reorder = std::variant<reorder_fn, geom_reorder_fn>;
+using Reorder = std::variant<reorder_graph_fn, reorder_geom_fn>;
 } // namespace dolfinx::graph
