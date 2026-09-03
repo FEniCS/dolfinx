@@ -34,7 +34,7 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
-mesh::impl::reorder_cells(const graph::Reorder& reorder_fn, MPI_Comm comm,
+mesh::impl::reorder_cells(MPI_Comm comm, const graph::Reorder& reorder_fn,
                           std::span<const double> cell_centroids, int gdim,
                           std::optional<std::int32_t> max_facet_to_cell_links,
                           const std::vector<CellType>& celltypes,

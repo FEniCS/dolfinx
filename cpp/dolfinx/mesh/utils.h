@@ -231,7 +231,7 @@ namespace impl
 /// local dual graph. Must be >= 1.
 /// @return Boundary vertices (for all cell types).
 std::vector<std::int64_t>
-reorder_cells(const graph::Reorder& reorder_fn, MPI_Comm comm,
+reorder_cells(MPI_Comm comm, const graph::Reorder& reorder_fn,
               std::span<const double> cell_centroids, int gdim,
               std::optional<std::int32_t> max_facet_to_cell_links,
               const std::vector<CellType>& celltypes,
@@ -1331,7 +1331,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // on the cell topology, i.e. the vertex indices, and the higher-order
   // nodes are re-ordered accordingly.
   const std::vector<std::int64_t> boundary_v = impl::reorder_cells(
-      reorder_fn, comm, cell_centroids, static_cast<int>(xshape[1]),
+      comm, reorder_fn, cell_centroids, static_cast<int>(xshape[1]),
       max_facet_to_cell_links, celltypes, doflayouts, ghost_owners, cells1,
       cells1_v, original_idx1, num_threads);
 
