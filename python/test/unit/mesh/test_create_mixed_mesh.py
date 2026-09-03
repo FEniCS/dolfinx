@@ -95,6 +95,7 @@ def test_create_mixed_mesh(dtype):
         max_cells_per_facet,
         num_threads=1,
         cell_weights=None,
+        reorder_fn=None,
     )
 
     entity_types = mesh.topology.entity_types[3]

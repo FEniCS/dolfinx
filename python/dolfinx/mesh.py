@@ -920,16 +920,61 @@ def refine(
     return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
 
 
+_MeshPartitioner = Callable | tuple[Callable, npt.NDArray[np.int32] | None] | None
+
+
+def _get_mesh_partitioner(
+    comm: _MPI.Comm, partitioner: _MeshPartitioner
+) -> tuple[Callable | None, npt.NDArray[np.int32] | None]:
+    """Get a cell partitioner and optional cell weights."""
+    partitioner_fn: Callable | None
+    if partitioner is None:
+        partitioner_fn = _cpp.graph.partitioner() if comm.size > 1 else None
+        return partitioner_fn, None
+    if isinstance(partitioner, tuple):
+        if len(partitioner) != 2:
+            raise TypeError("partitioner tuple must have two entries.")
+        partitioner_fn, cell_weights = partitioner
+        if partitioner_fn is None:
+            raise TypeError("The partitioner in the tuple must not be None.")
+        return partitioner_fn, cell_weights
+    return partitioner, None
+
+
+def _create_mesh_coordinate_element(
+    e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
+    gdim: int,
+) -> tuple[_CoordinateElement, ufl.Mesh | None]:
+    """Create a coordinate element and UFL domain from a mesh element."""
+    if isinstance(e, ufl.domain.Mesh):
+        e_ufl = e.ufl_coordinate_element()
+        return _coordinate_element_from_basix(e_ufl.basix_element), e
+    if isinstance(e, basix.finite_element.FiniteElement):
+        cmap = _coordinate_element_from_basix(e)
+        e_ufl = basix.ufl.blocked_element(basix.ufl._BasixElement(e), shape=(gdim,))
+        domain = ufl.Mesh(e_ufl)
+        assert domain.geometric_dimension == gdim
+        return cmap, domain
+    if isinstance(e, ufl.finiteelement.AbstractFiniteElement):
+        cmap = _coordinate_element_from_basix(e.basix_element)
+        domain = ufl.Mesh(e)
+        assert domain.geometric_dimension == gdim
+        return cmap, domain
+    if isinstance(e, _CoordinateElement):
+        return e, None
+    raise ValueError(f"Unsupported element type {type(e)}.")
+
+
 def create_mesh(
     comm: _MPI.Comm,
     cells: npt.NDArray[np.int64],
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     x: npt.NDArray[np.floating],
-    partitioner: Callable | None = None,
+    partitioner: _MeshPartitioner = None,
     ghost_mode: GhostMode = GhostMode.none,
     max_facet_to_cell_links: int = 2,
     num_threads: int = 1,
-    cell_weights: npt.NDArray[np.int32] | None = None,
+    reorder_fn: Callable | None = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -941,18 +986,19 @@ def create_mesh(
             type of ``e``.
         x: Mesh geometry ('node' coordinates), with shape
             ``(num_nodes, gdim)``.
-        partitioner: Function that determines the parallel distribution of
-            cells across MPI ranks.
+        partitioner: ``None``, a partitioner function, or a pair
+            ``(partitioner, cell_weights)``. Cell weights may be ``None``
+            or an array of weights associated with each cell in ``cells``.
         ghost_mode: Ghost mode used in the mesh partitioning, passed to
             ``partitioner`` at call time.
         max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
         num_threads: Number of threads to use to build mesh. Must be
             greater than 0.
-        cell_weights: Weights associated with each cell in ``cells``,
-            e.g. for use by a plain graph partitioner or a hybrid
-            partitioner. If not provided, cells are treated as having
-            equal weight.
+        reorder_fn: Function called with the local cell dual graph. It
+            must return an array that maps each cell index to its new
+            index. If ``None`` (default), reverse Cuthill-McKee ordering
+            is used.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -961,8 +1007,7 @@ def create_mesh(
     Returns:
         A mesh.
     """
-    if partitioner is None and comm.size > 1:
-        partitioner = _cpp.graph.partitioner()
+    partitioner_fn, cell_weights = _get_mesh_partitioner(comm, partitioner)
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:
@@ -970,39 +1015,9 @@ def create_mesh(
     else:
         gdim = x.shape[1]
 
-    dtype: npt.DTypeLike | None = None
-    if isinstance(e, ufl.domain.Mesh):
-        # e is a UFL domain
-        e_ufl = e.ufl_coordinate_element()
-        cmap = _coordinate_element_from_basix(e_ufl.basix_element)
-        domain = e
-        dtype = cmap.dtype
-        # TODO: Resolve UFL vs Basix geometric dimension issue
-        # assert domain.geometric_dimension() == gdim
-    elif isinstance(e, basix.finite_element.FiniteElement):
-        # e is a Basix element
-        # TODO: Resolve geometric dimension vs shape for manifolds
-        cmap = _coordinate_element_from_basix(e)
-        e_ufl = basix.ufl._BasixElement(e)
-        e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
-        domain = ufl.Mesh(e_ufl)
-        dtype = cmap.dtype
-        assert domain.geometric_dimension == gdim
-    elif isinstance(e, ufl.finiteelement.AbstractFiniteElement):
-        # e is a Basix 'UFL' element
-        cmap = _coordinate_element_from_basix(e.basix_element)
-        domain = ufl.Mesh(e)
-        dtype = cmap.dtype
-        assert domain.geometric_dimension == gdim
-    elif isinstance(e, _CoordinateElement):
-        # e is a CoordinateElement
-        cmap = e
-        domain = None
-        dtype = cmap.dtype
-    else:
-        raise ValueError(f"Unsupported element type {type(e)}.")
+    cmap, domain = _create_mesh_coordinate_element(e, gdim)
 
-    x = np.asarray(x, dtype=dtype, order="C")
+    x = np.asarray(x, dtype=cmap.dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
     if cell_weights is not None:
         cell_weights = np.asarray(cell_weights, dtype=np.int32, order="C")
@@ -1011,11 +1026,12 @@ def create_mesh(
         cells=cells,
         element=cmap._cpp_object,  # type: ignore[arg-type]
         x=x,
-        partitioner=partitioner,
+        partitioner=partitioner_fn,
         ghost_mode=ghost_mode,
         max_facet_to_cell_links=max_facet_to_cell_links,
         num_threads=num_threads,
         cell_weights=cell_weights,
+        reorder_fn=reorder_fn,
     )
 
     return Mesh(msh, domain)

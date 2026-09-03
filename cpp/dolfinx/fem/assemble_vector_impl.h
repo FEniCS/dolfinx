@@ -15,6 +15,7 @@
 #include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
+#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -72,29 +73,27 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 template <typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
-void assemble_cells(
-    const fem::DofTransformKernel<T> auto& P0, V&& b, mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    std::span<const std::int32_t> cells, const DofMapPackCells auto& dofmap,
-    const FEkernel<T, U> auto& kernel, std::span<const T> constants,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<const std::uint32_t> cell_info0, std::span<T> be_b,
-    std::span<U> cdofs_b)
+void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
+                    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
+                    std::span<const std::int32_t> cells,
+                    const DofMapPackCells auto& dofmap,
+                    const FEkernel<T, U> auto& kernel,
+                    std::span<const T> constants,
+                    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+                    std::span<const std::uint32_t> cell_info0,
+                    std::span<T> be_b, std::span<U> cdofs_b)
 {
   if (cells.empty())
     return;
 
-  const auto [dmap, bs, cells0] = dofmap;
+  const auto& [dmap, bs, cells0] = dofmap;
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
   assert(be_b.size() >= bs * dmap.extent(1));
   auto be = be_b.first(bs * dmap.extent(1));
 
   const U* x_ptr = x.data_handle();
-  const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
   const std::int32_t* dmap_ptr = dmap.data_handle();
-  const std::size_t num_dofs = dmap.extent(1);
 
   // P0 does not change across cells in this call, so whether it is a
   // set (non-null) transform is loop-invariant -- checked once here
@@ -112,10 +111,13 @@ void assemble_cells(
     std::int32_t c0 = cells0[index];
 
     // Get cell coordinates/geometry
-    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+    for (std::size_t i = 0; i < x_dofmap.extent(1); ++i)
     {
-      const U* _x_ptr = x_ptr + x_dofmap_ptr[c * num_x_dofs_cell + i] * gdim;
-      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
+      const U* _x_ptr
+          = x_ptr + x_dofmap_ptr[c * x_dofmap.extent(1) + i] * x.extent(1);
+      U* cdofs = cdofs_b.data() + 3 * i;
+      for (std::size_t j = 0; j < x.extent(1); ++j)
+        cdofs[j] = _x_ptr[j];
     }
 
     // Tabulate vector for cell
@@ -126,10 +128,14 @@ void assemble_cells(
       P0(be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
-    std::span dofs(dmap_ptr + c0 * num_dofs, num_dofs);
-    for (std::size_t i = 0; i < dofs.size(); ++i)
+    std::span dofs(dmap_ptr + c0 * dmap.extent(1), dmap.extent(1));
+    for (std::size_t i = 0; i < dmap.extent(1); ++i)
+    {
+      std::int32_t dof = bs * dofs[i];
+      std::int32_t offset = bs * i;
       for (int k = 0; k < bs; ++k)
-        b[bs * dofs[i] + k] += be[bs * i + k];
+        b[dof + k] += be[offset + k];
+    }
   }
 }
 
@@ -176,8 +182,8 @@ template <typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void assemble_entities(
-    const fem::DofTransformKernel<T> auto& P0, V&& b, mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    const fem::DofTransformKernel<T> auto& P0, V&& b,
+    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
@@ -282,8 +288,8 @@ template <typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void assemble_interior_facets(
-    const fem::DofTransformKernel<T> auto& P0, V&& b, mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    const fem::DofTransformKernel<T> auto& P0, V&& b,
+    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
