@@ -111,12 +111,12 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
     std::int32_t c0 = cells0[index];
 
     // Get cell coordinates/geometry
-    for (std::int32_t i = 0; i < x_dofmap.extent(1); ++i)
+    for (std::size_t i = 0; i < x_dofmap.extent(1); ++i)
     {
       const U* _x_ptr
           = x_ptr + x_dofmap_ptr[c * x_dofmap.extent(1) + i] * x.extent(1);
       U* cdofs = cdofs_b.data() + 3 * i;
-      for (std::int32_t j = 0; j < x.extent(1); ++j)
+      for (std::size_t j = 0; j < x.extent(1); ++j)
         cdofs[j] = _x_ptr[j];
     }
 

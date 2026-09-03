@@ -376,6 +376,8 @@ def test_locate_entities(dtype):
         GhostMode.none,
         max_cells_per_facet,
         1,
+        None,
+        None,
     )
 
     fdim = mesh.topology.dim - 1
