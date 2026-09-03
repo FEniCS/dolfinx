@@ -209,6 +209,8 @@ namespace impl
 /// though it plays no part in finding boundary vertices -- it is
 /// bundled in because the two computations share the same dual graph.
 ///
+/// @note Collective.
+///
 /// @param[in] reorder_fn Cell reordering function. A graph reordering
 /// function is applied to the local dual graph; a geometric reordering
 /// function is applied to cell centroids.

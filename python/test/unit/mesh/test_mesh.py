@@ -672,15 +672,13 @@ def test_create_mesh_cell_reordering():
 @pytest.mark.skip_in_parallel
 def test_create_mesh_sfc_reordering():
     """Test a built-in space-filling-curve cell reordering."""
-    cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)
+    cells = np.array([[1, 3, 2], [0, 1, 2]], dtype=np.int64)
     x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
 
-    points = np.array([[3.0], [1.0], [2.0], [0.0]])
-    assert np.array_equal(graph.reorder_morton(points), [3, 1, 2, 0])
-
-    msh = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=graph.reorder_morton)
-    assert np.array_equal(msh.topology.original_cell_index, [0, 1])
+    for reorder_sfc in (graph.reorder_morton, graph.reorder_hilbert):
+        msh = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=reorder_sfc)
+        assert np.array_equal(msh.topology.original_cell_index, [1, 0])
 
 
 def compute_num_boundary_facets(mesh):

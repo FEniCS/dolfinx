@@ -56,7 +56,9 @@ using PythonPartitionFn
 using PythonCellReorderFn = std::function<std::vector<std::int32_t>(
     const dolfinx::graph::AdjacencyList<std::int32_t>&)>;
 
-/// Python cell reordering argument accepted by create_mesh.
+/// Python cell reordering argument accepted by create_mesh. The opaque
+/// geometric reordering handle must precede the raw Python callable: nanobind
+/// tries alternatives in order, and the handle is itself callable.
 using PythonCellReorder = std::variant<GeometricReorderer, PythonCellReorderFn>;
 
 /// Convert create_mesh's Python-visible reorder_fn argument to graph::Reorder.
@@ -64,7 +66,7 @@ inline dolfinx::graph::Reorder
 to_cell_reorder(const std::optional<PythonCellReorder>& reorder_fn)
 {
   if (!reorder_fn)
-    return dolfinx::graph::reorder_graph_fn(dolfinx::graph::reorder_rcm);
+    return dolfinx::graph::Reorder{};
 
   return std::visit(
       [](const auto& fn) -> dolfinx::graph::Reorder

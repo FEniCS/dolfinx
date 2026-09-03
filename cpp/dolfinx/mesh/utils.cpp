@@ -76,8 +76,7 @@ mesh::impl::reorder_cells(MPI_Comm comm, const graph::Reorder& reorder_fn,
 
     // Store unmatched_facets for current cell type
     facets.emplace_back(std::move(unmatched_facets), max_v);
-    // Compute re-ordering of graph. Synchronise errors because a geometric
-    // callback runs independently on each rank.
+    // Compute graph reordering and synchronise callback errors across ranks.
     std::vector<std::int32_t> remap;
     std::string error_message;
     int failed = 0;

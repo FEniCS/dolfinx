@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <cmath>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
@@ -359,7 +360,7 @@ TEST_CASE("Default RCM cell reordering", "[geometric_partitioner]")
 
 TEST_CASE("SFC cell reordering", "[geometric_partitioner]")
 {
-  const std::vector<std::int64_t> cells = {0, 1, 2, 1, 3, 2};
+  const std::vector<std::int64_t> cells = {1, 3, 2, 0, 1, 2};
   const std::vector<double> x = {0, 0, 1, 0, 0, 1, 1, 1};
   const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
 
@@ -372,8 +373,23 @@ TEST_CASE("SFC cell reordering", "[geometric_partitioner]")
         element, MPI_COMM_SELF, x, {4, 2}, graph::Partitioner{},
         mesh::GhostMode::none, 2, 1, reorder);
     CHECK(msh.topology()->original_cell_index[0]
-          == std::vector<std::int64_t>{0, 1});
+          == std::vector<std::int64_t>{1, 0});
   }
+}
+
+TEST_CASE("Empty geometric cell reordering", "[geometric_partitioner]")
+{
+  const std::vector<std::int64_t> cells = {0, 1, 2, 1, 3, 2};
+  const std::vector<double> x = {0, 0, 1, 0, 0, 1, 1, 1};
+  const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
+  const graph::Reorder reorder = graph::reorder_geom_fn{};
+
+  REQUIRE_THROWS_WITH(
+      mesh::create_mesh(MPI_COMM_SELF, MPI_COMM_SELF,
+                        std::span<const std::int64_t>(cells), element,
+                        MPI_COMM_SELF, x, {4, 2}, graph::Partitioner{},
+                        mesh::GhostMode::none, 2, 1, reorder),
+      "Cell reordering failed: Geometric cell reordering function is empty.");
 }
 
 TEST_CASE("SFC point reordering", "[partition_sfc]")

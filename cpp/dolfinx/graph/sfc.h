@@ -19,25 +19,12 @@
 
 namespace dolfinx::graph
 {
-/// @brief Partition points into `nparts` groups of (approximately) equal
-/// size using a Morton ('Z-order') space-filling curve.
+/// @brief Partition points into `nparts` groups using a Morton ('Z-order')
+/// space-filling curve.
 ///
-/// Points are ordered by the Morton key of their position in the global
-/// bounding box, and the resulting order is cut into `nparts` equal
-/// pieces. Splitters are found from a distributed sample of the keys,
-/// routed to the rank owning its key range rather than gathered to
-/// every rank, so per-rank cost and memory scale with the sample size
-/// divided across ranks, not multiplied by them.
-///
-/// Compared to a graph partitioner, this is much cheaper because no graph
-/// is required and gives a near-perfect load balance, at the cost of a
-/// larger number of cut edges (typically tens of percent for a mesh dual
-/// graph). The distributed sample uses a global budget proportional to
-/// `nparts`, but every rank stores the `nparts - 1` splitter keys.
-///
-/// A Morton curve jumps a long way in space each time a high bit of the
-/// key changes, so consecutive points on the curve are not always close
-/// together. ::partition_sfc_hilbert avoids this.
+/// Points are ordered by their Morton keys in the global bounding box and
+/// divided into groups with approximately equal numbers of points or total
+/// weight. For improved spatial locality, see ::partition_sfc_hilbert.
 ///
 /// @note Collective.
 ///
@@ -59,15 +46,12 @@ std::vector<int> partition_sfc_morton(
     MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
     std::optional<std::span<const std::int32_t>> weights = std::nullopt);
 
-/// @brief Partition points into `nparts` groups of (approximately) equal
-/// size using a Hilbert space-filling curve.
+/// @brief Partition points into `nparts` groups using a Hilbert
+/// space-filling curve.
 ///
-/// As ::partition_sfc_morton, but points are ordered along a Hilbert
-/// curve. Successive points on a Hilbert curve are always neighbours in
-/// space, which a Morton curve does not guarantee, so the resulting
-/// partitions are more compact and cut fewer edges. Computing the curve
-/// index is more expensive than a Morton key, but in both cases the cost
-/// is dominated by the sampling and the search for each point's part.
+/// As ::partition_sfc_morton, but points are ordered by Hilbert keys. A
+/// Hilbert curve generally preserves spatial locality better than a Morton
+/// curve.
 ///
 /// @note Collective.
 ///
@@ -89,7 +73,11 @@ std::vector<int> partition_sfc_hilbert(
     MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
     std::optional<std::span<const std::int32_t>> weights = std::nullopt);
 
-/// @brief Reorder points using a Morton ('Z-order') space-filling curve.
+/// @brief Reorder locally supplied points using a Morton ('Z-order')
+/// space-filling curve.
+///
+/// The bounding box is computed from `x`. The returned ordering is local and
+/// does not provide a distributed ordering.
 ///
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
 /// @param[in] gdim Number of coordinate components per point. Must be 1, 2 or
@@ -99,7 +87,11 @@ std::vector<int> partition_sfc_hilbert(
 std::vector<std::int32_t> reorder_sfc_morton(std::span<const double> x,
                                              int gdim);
 
-/// @brief Reorder points using a Hilbert space-filling curve.
+/// @brief Reorder locally supplied points using a Hilbert space-filling
+/// curve.
+///
+/// The bounding box is computed from `x`. The returned ordering is local and
+/// does not provide a distributed ordering.
 ///
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
 /// @param[in] gdim Number of coordinate components per point. Must be 1, 2 or

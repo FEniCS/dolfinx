@@ -50,13 +50,8 @@ std::uint64_t morton_key(std::array<std::uint32_t, 3> c, int /*gdim*/)
   return spread(c[0]) | (spread(c[1]) << 1) | (spread(c[2]) << 2);
 }
 
-/// Rank count below which the post-office routing in partition_by_curve
-/// uses PCX (simpler, lower per-call overhead, but O(P) memory) to
-/// discover source ranks, and NBX (sparse/scalable, higher constant
-/// overhead) above it. Benchmarked as a clear win for PCX up to the
-/// largest rank count locally testable (12); an estimate pending
-/// validation at real large-scale rank counts, not a measured
-/// crossover point.
+/// Rank count below which post-office routing uses PCX. PCX uses O(P) memory;
+/// NBX is used above this limit to bound memory use.
 constexpr int pcx_rank_limit = 10000;
 
 /// Number of samples per output partition.
