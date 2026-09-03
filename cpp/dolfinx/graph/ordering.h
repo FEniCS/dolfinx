@@ -54,7 +54,7 @@ using reorder_geom_fn = std::function<std::vector<std::int32_t>(
 
 /// @brief A graph or geometric reordering function for mesh cells.
 ///
-/// A default-constructed Reorder selects ::reorder_rcm. A ::reorder_geom_fn is
-/// called with the centroids of the locally owned cells.
+/// An empty ::reorder_graph_fn selects ::reorder_rcm for mesh construction. A
+/// ::reorder_geom_fn is called with locally owned cell centroids.
 using Reorder = std::variant<reorder_graph_fn, reorder_geom_fn>;
 } // namespace dolfinx::graph
