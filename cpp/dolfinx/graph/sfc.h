@@ -88,4 +88,19 @@ std::vector<int> partition_sfc_morton(
 std::vector<int> partition_sfc_hilbert(
     MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
     std::optional<std::span<const std::int32_t>> weights = std::nullopt);
+
+/// @brief Reorder points using a Morton ('Z-order') space-filling curve.
+///
+/// @note Collective.
+/// @return Reordering array `map`, where `map[i]` is the new index of point
+/// `i`.
+std::vector<std::int32_t>
+reorder_sfc_morton(MPI_Comm comm, std::span<const double> x, int gdim);
+
+/// @brief Reorder points using a Hilbert space-filling curve.
+///
+/// @return Reordering array `map`, where `map[i]` is the new index of point
+/// `i`.
+std::vector<std::int32_t>
+reorder_sfc_hilbert(MPI_Comm comm, std::span<const double> x, int gdim);
 } // namespace dolfinx::graph

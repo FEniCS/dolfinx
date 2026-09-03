@@ -20,18 +20,20 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <format>
-#include <functional>
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
-mesh::impl::reorder_cells(const CellReorderFunction& reorder_fn,
+mesh::impl::reorder_cells(const graph::Reorder& reorder_fn, MPI_Comm comm,
+                          std::span<const double> cell_centroids, int gdim,
                           std::optional<std::int32_t> max_facet_to_cell_links,
                           const std::vector<CellType>& celltypes,
                           const std::vector<fem::ElementDofLayout>& doflayouts,
@@ -55,6 +57,7 @@ mesh::impl::reorder_cells(const CellReorderFunction& reorder_fn,
 
   // Build lists of cells (by cell type) that excludes ghosts
   std::vector<std::span<const std::int64_t>> cells1_v_local;
+  std::size_t cell_offset = 0;
   for (std::size_t i = 0; i < celltypes.size(); ++i)
   {
     int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
@@ -73,7 +76,22 @@ mesh::impl::reorder_cells(const CellReorderFunction& reorder_fn,
     facets.emplace_back(std::move(unmatched_facets), max_v);
 
     // Compute re-ordering of graph
-    const std::vector<std::int32_t> remap = reorder_fn(graph);
+    const std::vector<std::int32_t> remap = std::visit(
+        [&comm, cell_centroids, gdim, cell_offset, num_owned_cells,
+         &graph](const auto& fn) -> std::vector<std::int32_t>
+        {
+          using F = std::decay_t<decltype(fn)>;
+          if constexpr (std::is_same_v<F, graph::reorder_fn>)
+            return fn(graph);
+          else
+            return fn(
+                comm,
+                cell_centroids.subspan(cell_offset, gdim * num_owned_cells),
+                gdim);
+        },
+        reorder_fn.fn);
+
+    cell_offset += gdim * num_owned_cells;
 
     // Update 'original' indices
     const std::vector<std::int64_t>& orig_idx = original_idx[i];

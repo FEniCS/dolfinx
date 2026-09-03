@@ -319,6 +319,28 @@ void graph(nb::module_& m)
 
   m.def("reorder_rcm", &dolfinx::graph::reorder_rcm, nb::arg("graph"));
 
+  nb::class_<GeometricReorderer>(
+      m, "GeometricReorderer",
+      "Mesh cell reordering function that uses cell centroids. Pass it as "
+      "create_mesh's reorder_fn argument; it is also directly callable for "
+      "low-level use.")
+      .def(
+          "__call__",
+          [](const GeometricReorderer& self, MPICommWrapper comm,
+             nb::ndarray<const double, nb::ndim<2>, nb::c_contig> x)
+          {
+            const int gdim = static_cast<int>(x.shape(1));
+            return as_nbarray(self.fn(
+                comm.get(), std::span<const double>(x.data(), x.size()), gdim));
+          },
+          nb::arg("comm"), nb::arg("x").noconvert(),
+          "Compute the reordering of the rows of x.");
+
+  m.attr("reorder_morton")
+      = GeometricReorderer{dolfinx::graph::reorder_sfc_morton};
+  m.attr("reorder_hilbert")
+      = GeometricReorderer{dolfinx::graph::reorder_sfc_hilbert};
+
   m.def(
       "distribute",
       [](const MPICommWrapper comm,

@@ -9,6 +9,10 @@
 #include "AdjacencyList.h"
 #include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <mpi.h>
+#include <span>
+#include <variant>
 #include <vector>
 
 namespace dolfinx::graph
@@ -35,5 +39,32 @@ namespace dolfinx::graph
 /// node `i`.
 std::vector<std::int32_t>
 reorder_rcm(const graph::AdjacencyList<std::int32_t>& graph);
+
+/// @brief Signature of functions that reorder the nodes of a graph.
+using reorder_fn = std::function<std::vector<std::int32_t>(
+    const graph::AdjacencyList<std::int32_t>&)>;
+
+/// @brief Signature of functions that reorder points from their positions.
+///
+/// @param[in] comm Communicator over which the points are distributed.
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @return Reordering array `map`, where `map[i]` is the new index of point
+/// `i`.
+using geom_reorder_fn = std::function<std::vector<std::int32_t>(
+    MPI_Comm comm, std::span<const double> x, int gdim)>;
+
+/// @brief A graph or geometric reordering function.
+using AnyReorderFunction = std::variant<reorder_fn, geom_reorder_fn>;
+
+/// @brief A reordering function for mesh cells.
+///
+/// The default reordering is ::reorder_rcm. A ::geom_reorder_fn is called with
+/// the centroids of the locally owned cells.
+struct Reorder
+{
+  /// Reordering function. Defaults to ::reorder_rcm.
+  AnyReorderFunction fn = reorder_fn(reorder_rcm);
+};
 
 } // namespace dolfinx::graph

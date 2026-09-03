@@ -314,3 +314,39 @@ TEST_CASE("SFC curve properties", "[partition_sfc]")
   CHECK(max_step(curve_order(&graph::partition_sfc_hilbert)) == 1);
   CHECK(max_step(curve_order(&graph::partition_sfc_morton)) > 1);
 }
+
+TEST_CASE("Geometric cell reordering", "[geometric_partitioner]")
+{
+  const std::vector<std::int64_t> cells = {0, 1, 2, 1, 3, 2};
+  const std::vector<double> x = {0, 0, 1, 0, 0, 1, 1, 1};
+  const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
+
+  const graph::Reorder reorder{
+      .fn = graph::geom_reorder_fn(
+          [](MPI_Comm, std::span<const double> centroids, int gdim)
+          {
+            REQUIRE(gdim == 2);
+            REQUIRE(centroids.size() == 4);
+            return std::vector<std::int32_t>{1, 0};
+          })};
+  mesh::Mesh<double> msh = mesh::create_mesh(
+      MPI_COMM_SELF, MPI_COMM_SELF, std::span<const std::int64_t>(cells),
+      element, MPI_COMM_SELF, x, {4, 2}, graph::Partitioner{},
+      mesh::GhostMode::none, 2, 1, reorder);
+
+  CHECK(msh.topology()->original_cell_index[0]
+        == std::vector<std::int64_t>{1, 0});
+}
+
+TEST_CASE("SFC point reordering", "[partition_sfc]")
+{
+  const std::vector<double> x = {3, 1, 2, 0};
+  for (auto reorder : {graph::reorder_sfc_morton, graph::reorder_sfc_hilbert})
+  {
+    const std::vector<std::int32_t> map = reorder(MPI_COMM_SELF, x, 1);
+    std::vector<double> x_ordered(x.size());
+    for (std::size_t i = 0; i < x.size(); ++i)
+      x_ordered[map[i]] = x[i];
+    CHECK(std::ranges::is_sorted(x_ordered));
+  }
+}

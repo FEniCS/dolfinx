@@ -26,7 +26,6 @@
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <format>
-#include <functional>
 #include <mpi.h>
 #include <numeric>
 #include <optional>
@@ -195,13 +194,6 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology,
 /// of the mesh.
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 
-/// @brief Function that reorders (locally) cells that
-/// are owned by this process. It takes the local mesh dual graph as an
-/// argument and returns a list whose `i`th entry is the new index of
-/// cell `i`.
-using CellReorderFunction = std::function<std::vector<std::int32_t>(
-    const graph::AdjacencyList<std::int32_t>&)>;
-
 namespace impl
 {
 /// @brief Find a mesh's process boundary vertices, reordering cells for
@@ -217,8 +209,12 @@ namespace impl
 /// though it plays no part in finding boundary vertices -- it is
 /// bundled in because the two computations share the same dual graph.
 ///
-/// @param[in] reorder_fn Cell reorder function, applied to the local
-/// dual graph built internally.
+/// @param[in] reorder_fn Cell reordering function. A graph reordering
+/// function is applied to the local dual graph; a geometric reordering
+/// function is applied to cell centroids.
+/// @param[in] comm Mesh communicator.
+/// @param[in] cell_centroids Centroids of cells, grouped by cell type.
+/// @param[in] gdim Number of coordinate components in cell_centroids.
 /// @param[in] max_facet_to_cell_links Maximum number of cells a facet can be
 /// connected to.
 /// @param[in] celltypes List of celltypes in mesh.
@@ -235,7 +231,8 @@ namespace impl
 /// local dual graph. Must be >= 1.
 /// @return Boundary vertices (for all cell types).
 std::vector<std::int64_t>
-reorder_cells(const CellReorderFunction& reorder_fn,
+reorder_cells(const graph::Reorder& reorder_fn, MPI_Comm comm,
+              std::span<const double> cell_centroids, int gdim,
               std::optional<std::int32_t> max_facet_to_cell_links,
               const std::vector<CellType>& celltypes,
               const std::vector<fem::ElementDofLayout>& doflayouts,
@@ -1032,9 +1029,9 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
     if (needs_centroids)
     {
       std::vector<int> num_vertices_per_cell;
-      std::ranges::transform(celltypes,
-                             std::back_inserter(num_vertices_per_cell),
-                             [](CellType c) { return num_cell_vertices(c); });
+      std::ranges::transform(
+          celltypes, std::back_inserter(num_vertices_per_cell),
+          [](CellType c) { return mesh::num_cell_vertices(c); });
       centroid = compute_cell_centroids(comm, num_vertices_per_cell,
                                         topology_view, commg, x, xshape[1]);
     }
@@ -1251,7 +1248,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const graph::Partitioner& partitioner, GhostMode ghost_mode,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
-    const CellReorderFunction& reorder_fn = graph::reorder_rcm)
+    const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   using T = typename std::remove_reference_t<typename U::value_type>;
 
@@ -1309,12 +1306,34 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                  cells1_v[i].size());
   }
 
+  std::vector<double> cell_centroids;
+  if (std::holds_alternative<graph::geom_reorder_fn>(reorder_fn.fn))
+  {
+    std::vector<int> num_cell_vertices;
+    std::ranges::transform(celltypes, std::back_inserter(num_cell_vertices),
+                           [](CellType c)
+                           { return mesh::num_cell_vertices(c); });
+    std::vector<std::span<const std::int64_t>> cells1_v_view;
+    cells1_v_view.reserve(cells1_v.size());
+    for (std::size_t i = 0; i < cells1_v.size(); ++i)
+    {
+      const int num_vertices = mesh::num_cell_vertices(celltypes[i]);
+      const std::size_t num_owned
+          = cells1_v[i].size() / num_vertices - ghost_owners[i].size();
+      cells1_v_view.emplace_back(cells1_v[i].data(), num_owned * num_vertices);
+    }
+    cell_centroids = impl::compute_cell_centroids(
+        comm, num_cell_vertices, cells1_v_view, commg, std::span<const T>(x),
+        static_cast<int>(xshape[1]));
+  }
+
   // Re-order cells and get boundary vertices. The re-ordering is done
   // on the cell topology, i.e. the vertex indices, and the higher-order
   // nodes are re-ordered accordingly.
   const std::vector<std::int64_t> boundary_v = impl::reorder_cells(
-      reorder_fn, max_facet_to_cell_links, celltypes, doflayouts, ghost_owners,
-      cells1, cells1_v, original_idx1, num_threads);
+      reorder_fn, comm, cell_centroids, static_cast<int>(xshape[1]),
+      max_facet_to_cell_links, celltypes, doflayouts, ghost_owners, cells1,
+      cells1_v, original_idx1, num_threads);
 
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 
@@ -1453,7 +1472,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const graph::Partitioner& partitioner, GhostMode ghost_mode,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
-    const CellReorderFunction& reorder_fn = graph::reorder_rcm)
+    const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
                      commg, x, xshape, partitioner, ghost_mode,

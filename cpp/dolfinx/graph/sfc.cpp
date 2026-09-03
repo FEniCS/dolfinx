@@ -632,3 +632,79 @@ std::vector<int> graph::partition_sfc_hilbert(
   return partition_by_curve(comm, nparts, x, gdim, hilbert_key, node_weights);
 }
 //-----------------------------------------------------------------------------
+
+namespace
+{
+template <typename K>
+std::vector<std::int32_t>
+reorder_by_curve(MPI_Comm comm, std::span<const double> x, int gdim, K key)
+{
+  if (gdim < 1 or gdim > 3)
+    throw std::runtime_error("Geometric dimension must be 1, 2 or 3.");
+  if (x.size() % gdim != 0)
+  {
+    throw std::runtime_error(
+        "Point coordinate array size is not a multiple of gdim.");
+  }
+
+  const std::size_t num_points = x.size() / gdim;
+  std::array<double, 6> extent;
+  extent.fill(std::numeric_limits<double>::lowest());
+  for (std::size_t i = 0; i < num_points; ++i)
+  {
+    for (int d = 0; d < gdim; ++d)
+    {
+      extent[d] = std::max(extent[d], -x[gdim * i + d]);
+      extent[3 + d] = std::max(extent[3 + d], x[gdim * i + d]);
+    }
+  }
+  std::array<double, 6> recv;
+  MPI_Allreduce(extent.data(), recv.data(), 6, MPI_DOUBLE, MPI_MAX, comm);
+  extent = recv;
+
+  constexpr double range = (1 << nbits) - 1;
+  std::array<double, 3> scale = {0, 0, 0};
+  for (int d = 0; d < gdim; ++d)
+  {
+    const double width = extent[3 + d] + extent[d];
+    scale[d] = width > 0 ? range / width : 0;
+  }
+
+  std::vector<std::uint64_t> keys(num_points);
+  for (std::size_t i = 0; i < num_points; ++i)
+  {
+    std::array<std::uint32_t, 3> c = {0, 0, 0};
+    for (int d = 0; d < gdim; ++d)
+    {
+      c[d] = static_cast<std::uint32_t>(scale[d]
+                                        * (x[gdim * i + d] + extent[d]));
+    }
+    keys[i] = key(c, gdim);
+  }
+
+  std::vector<std::int32_t> order(num_points);
+  std::iota(order.begin(), order.end(), 0);
+  dolfinx::radix_sort(order, [&keys](std::int32_t i) { return keys[i]; });
+
+  std::vector<std::int32_t> map(num_points);
+  for (std::size_t i = 0; i < order.size(); ++i)
+    map[order[i]] = i;
+  return map;
+}
+} // namespace
+
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t>
+graph::reorder_sfc_morton(MPI_Comm comm, std::span<const double> x, int gdim)
+{
+  common::Timer timer("Compute Morton SFC ordering of points");
+  return reorder_by_curve(comm, x, gdim, morton_key);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t>
+graph::reorder_sfc_hilbert(MPI_Comm comm, std::span<const double> x, int gdim)
+{
+  common::Timer timer("Compute Hilbert SFC ordering of points");
+  return reorder_by_curve(comm, x, gdim, hilbert_key);
+}
+//-----------------------------------------------------------------------------

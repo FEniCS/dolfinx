@@ -9,6 +9,7 @@
 #include "MPICommWrapper.h"
 #include "array.h"
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <functional>
 #include <nanobind/nanobind.h>
@@ -99,6 +100,12 @@ using GeometricPartitioner
     = OpaquePartitioner<dolfinx::graph::geom_partition_fn>;
 using HybridPartitioner
     = OpaquePartitioner<dolfinx::graph::hybrid_partition_fn>;
+
+/// Opaque handle for a geometric mesh reordering function.
+struct GeometricReorderer
+{
+  dolfinx::graph::geom_reorder_fn fn;
+};
 
 /// Bind the AdjacencyList<T, U> properties and methods common to every
 /// instantiation: offsets, num_nodes, equality, and length.
