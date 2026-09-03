@@ -12,6 +12,7 @@
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
 #include <basix/quadrature.h>
+#include <cassert>
 #include <cmath>
 #include <concepts>
 #include <dolfinx.h>
@@ -30,6 +31,11 @@ template <typename T, std::size_t ndim>
 using mdspand_t = md::mdspan<T, md::dextents<std::size_t, ndim>>;
 template <typename T, std::size_t n0, std::size_t n1>
 using mdspan2_t = md::mdspan<T, std::extents<std::size_t, n0, n1>>;
+constexpr std::size_t p1_triangle_dofs_per_cell = 3;
+using p1_triangle_dofmap_t = mdspan2_t<const std::int32_t, md::dynamic_extent,
+                                       p1_triangle_dofs_per_cell>;
+static_assert(p1_triangle_dofmap_t::static_extent(1)
+              == p1_triangle_dofs_per_cell);
 
 /// @brief Compute the P1 element mass matrix on the reference cell.
 /// @tparam T Scalar type.
@@ -140,16 +146,24 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   la::MatrixCSR<T> A(sp);
   auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
   common::Timer timer("Assembler1 lambda (matrix)");
+  // P1 triangle coordinate and field dofmaps have three dofs per cell.
+  // The static extent propagates this information into the assembler.
+  const auto x_dofmap0 = g.dofmaps().front();
+  assert(x_dofmap0.extent(1) == p1_triangle_dofs_per_cell);
+  p1_triangle_dofmap_t x_dofmap(x_dofmap0.data_handle(), x_dofmap0.extent(0));
+  const auto dmap0 = dofmap.map();
+  assert(dmap0.extent(1) == p1_triangle_dofs_per_cell);
+  p1_triangle_dofmap_t dmap(dmap0.data_handle(), dmap0.extent(0));
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
 
-  std::vector<T> cdofs_b(3 * g.dofmaps().front().extent(1));
-  std::vector<T> Ab(dofmap.map().extent(1) * dofmap.map().extent(1));
+  std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
+  std::array<T, p1_triangle_dofs_per_cell * p1_triangle_dofs_per_cell> Ab;
   fem::impl::assemble_cells_matrix<false>(
-      A.mat_add_values(), g.dofmaps().front(), x, cells,
-      std::tuple{dofmap.map(), std::integral_constant<int, 1>{}, cells}, ident,
-      std::tuple{dofmap.map(), std::integral_constant<int, 1>{}, cells}, ident,
-      {}, {}, kernel, {}, {}, {}, {}, std::span(Ab), std::span(cdofs_b));
+      A.mat_add_values(), x_dofmap, x, cells,
+      std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, ident,
+      std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, ident, {}, {},
+      kernel, {}, {}, {}, {}, std::span<T>(Ab), std::span<T>(cdofs_b));
   A.scatter_rev();
   return A.squared_norm();
 }
@@ -170,15 +184,23 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
                         auto kernel, const std::vector<std::int32_t>& cells)
 {
   la::Vector<T> b(dofmap.index_map, 1);
+  // P1 triangle coordinate and field dofmaps have three dofs per cell.
+  // The static extent propagates this information into the assembler.
+  const auto x_dofmap0 = g.dofmaps().front();
+  assert(x_dofmap0.extent(1) == p1_triangle_dofs_per_cell);
+  p1_triangle_dofmap_t x_dofmap(x_dofmap0.data_handle(), x_dofmap0.extent(0));
+  const auto dmap0 = dofmap.map();
+  assert(dmap0.extent(1) == p1_triangle_dofs_per_cell);
+  p1_triangle_dofmap_t dmap(dmap0.data_handle(), dmap0.extent(0));
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
   common::Timer timer("Assembler1 lambda (vector)");
-  std::vector<T> cdofs_b(3 * g.dofmaps().front().extent(1));
-  std::vector<T> be_b(dofmap.map().extent(1));
+  std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
+  std::array<T, p1_triangle_dofs_per_cell> be_b;
   fem::impl::assemble_cells(
-      [](auto, auto, auto, auto) {}, b.array(), g.dofmaps().front(), x, cells,
-      std::tuple{dofmap.map(), std::integral_constant<int, 1>{}, cells}, kernel,
-      {}, {}, {}, std::span(be_b), std::span(cdofs_b));
+      [](auto, auto, auto, auto) {}, b.array(), x_dofmap, x, cells,
+      std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, kernel, {}, {},
+      {}, std::span<T>(be_b), std::span<T>(cdofs_b));
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }

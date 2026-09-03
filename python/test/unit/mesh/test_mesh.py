@@ -652,6 +652,23 @@ def test_original_index():
     assert s == (nx**3 * 6 * (nx**3 * 6 - 1) // 2)
 
 
+@pytest.mark.skip_in_parallel
+def test_create_mesh_cell_reordering():
+    """Test a Python callback for cell reordering."""
+    cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)
+    x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
+    graph_sizes = []
+
+    def reorder(dual_graph):
+        graph_sizes.append(dual_graph.num_nodes)
+        return np.arange(dual_graph.num_nodes - 1, -1, -1, dtype=np.int32)
+
+    msh = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=reorder)
+    assert graph_sizes == [2]
+    assert np.array_equal(msh.topology.original_cell_index, [1, 0])
+
+
 def compute_num_boundary_facets(mesh):
     """Compute the total number of boundary facets in the mesh."""
     # Create facets and facet cell connectivity

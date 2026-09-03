@@ -10,6 +10,7 @@
 #include "array.h"
 #include "graph.h"
 #include "numpy_dtype.h"
+#include <cstdint>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -24,6 +25,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
+#include <nanobind/stl/function.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/variant.h>
@@ -48,6 +50,10 @@ namespace dolfinx_wrappers::part::impl
 using PythonPartitionFn
     = std::variant<GraphPartitioner, GeometricPartitioner, HybridPartitioner,
                    std::optional<PythonPartitionFunction>>;
+
+/// Python cell reordering function accepted by create_mesh.
+using PythonCellReorderFn = std::function<std::vector<std::int32_t>(
+    const dolfinx::graph::AdjacencyList<std::int32_t>&)>;
 
 /// Convert create_mesh's Python-visible partitioner argument to the
 /// dolfinx::graph::AnyPartitionFunction that dolfinx::mesh::create_mesh
@@ -343,7 +349,8 @@ void declare_mesh(nb::module_& m, std::string type)
          std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
          std::optional<
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
-             cell_weights)
+             cell_weights,
+         std::optional<part::impl::PythonCellReorderFn> reorder_fn)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
 
@@ -358,12 +365,16 @@ void declare_mesh(nb::module_& m, std::string type)
             dolfinx::graph::Partitioner{
                 .fn = part::impl::to_any_cell_partitioner(p),
                 .node_weights = to_cell_weights_span(cell_weights)},
-            ghost_mode, max_facet_to_cell_links, num_threads);
+            ghost_mode, max_facet_to_cell_links, num_threads,
+            reorder_fn ? dolfinx::mesh::CellReorderFunction(*reorder_fn)
+                       : dolfinx::mesh::CellReorderFunction(
+                             dolfinx::graph::reorder_rcm));
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("elements"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
       nb::arg("ghost_mode"), nb::arg("max_facet_to_cell_links").none(),
       nb::arg("num_threads"), nb::arg("cell_weights").none(),
+      nb::arg("reorder_fn").none(),
       "Helper function for creating a mixed topology mesh.");
 
   m.def(
@@ -377,7 +388,8 @@ void declare_mesh(nb::module_& m, std::string type)
          std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
          std::optional<
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
-             cell_weights)
+             cell_weights,
+         std::optional<part::impl::PythonCellReorderFn> reorder_fn)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
         return dolfinx::mesh::create_mesh(
@@ -387,13 +399,16 @@ void declare_mesh(nb::module_& m, std::string type)
             dolfinx::graph::Partitioner{
                 .fn = part::impl::to_any_cell_partitioner(p),
                 .node_weights = to_cell_weights_span(cell_weights)},
-            ghost_mode, max_facet_to_cell_links, num_threads);
+            ghost_mode, max_facet_to_cell_links, num_threads,
+            reorder_fn ? dolfinx::mesh::CellReorderFunction(*reorder_fn)
+                       : dolfinx::mesh::CellReorderFunction(
+                             dolfinx::graph::reorder_rcm));
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
       nb::arg("ghost_mode"), nb::arg("max_facet_to_cell_links").none(),
       nb::arg("num_threads"), nb::arg("cell_weights").none(),
-      "Helper function for creating meshes.");
+      nb::arg("reorder_fn").none(), "Helper function for creating meshes.");
   m.def(
       "create_submesh",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,

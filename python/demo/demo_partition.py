@@ -105,6 +105,7 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import common, graph, has_kahip, has_parmetis, has_ptscotch
+from dolfinx import cpp as _cpp
 from dolfinx.fem import coordinate_element
 from dolfinx.mesh import (
     CellType,
@@ -399,6 +400,70 @@ for fraction in (0.0, 0.5, 1.0):
         imbalance, cut = partition_quality(msh)
         if comm.rank == 0:
             print(f"{name:<20}{imbalance:>12.3f}{cut:>12}{elapsed:>12.3f}")
+# -
+
+# ## Cell weights
+#
+# Cell weights can account for unequal per-cell work. A weight is a
+# positive integer associated with each local input cell; it is passed to
+# {py:func}`create_mesh <dolfinx.mesh.create_mesh>` together with the
+# partitioner as ``(partitioner, cell_weights)``. The two arrays must have
+# the same length, so the weights follow the cells even when the input is
+# redistributed.
+#
+# PT-SCOTCH and ParMETIS support cell weights. The following example makes
+# every second local input cell twice as expensive and creates a weighted
+# partition. KaHIP is not used here because it ignores weights.
+#
+# +
+weighted_partitioner = (
+    graph.partitioner_scotch()
+    if has_ptscotch
+    else graph.partitioner_parmetis()
+    if has_parmetis
+    else None
+)
+
+if weighted_partitioner is not None:
+    cell_weights = np.where(np.arange(len(cells0)) % 2, 1, 2).astype(np.int32)
+    weighted_mesh = create_mesh(
+        comm,
+        cells0,
+        cmap,
+        x,
+        partitioner=(weighted_partitioner, cell_weights),
+        ghost_mode=ghost_mode,
+    )
+# -
+
+
+# ## Cell ordering
+#
+# By default, DOLFINx applies reverse Cuthill-McKee (RCM) ordering to the
+# cells held by each rank after partitioning. Pass ``reorder_fn`` to
+# {py:func}`create_mesh <dolfinx.mesh.create_mesh>` to select a different
+# local ordering. The callback receives the local cell dual graph and must
+# return an ``int32`` map from each old cell index to its new index.
+#
+# The identity map below preserves the post-partition order. It is useful
+# when reproducible input ordering is more important than the locality
+# benefits of RCM.
+#
+# +
+def identity_cell_ordering(
+    dual_graph: _cpp.graph.AdjacencyList_int32,
+) -> npt.NDArray[np.int32]:
+    """Preserve the local cell order after partitioning."""
+    return np.arange(dual_graph.num_nodes, dtype=np.int32)
+
+
+input_order_mesh = create_mesh(
+    comm,
+    cells0,
+    cmap,
+    x,
+    reorder_fn=identity_cell_ordering,
+)
 # -
 
 # ## Two-stage partitioning

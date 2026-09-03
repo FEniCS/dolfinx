@@ -454,6 +454,7 @@ def model_to_mesh(
             max_facet_to_cell_links,
             1,
             cell_weights=None,
+            reorder_fn=None,
         )
         mesh = Mesh(cpp_mesh, None)
 

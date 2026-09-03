@@ -12,6 +12,7 @@
 #include "traits.h"
 #include "utils.h"
 #include <algorithm>
+#include <concepts>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -92,9 +93,9 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// least `3 * x_dofmap.extent(1))`.
 template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_cells_matrix(
-    la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    std::span<const std::int32_t> cells, const DofMapPackCells auto& dofmap0,
+    la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
+    MDSpan2Floating<U> auto x, std::span<const std::int32_t> cells,
+    const DofMapPackCells auto& dofmap0,
     const fem::DofTransformKernel<T> auto& P0,
     const DofMapPackCells auto& dofmap1,
     const fem::DofTransformKernel<T> auto& P1T,
@@ -280,8 +281,8 @@ void assemble_cells_matrix(
 /// least `3 * x_dofmap.extent(1))`.
 template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_entities(
-    la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
+    MDSpan2Floating<U> auto x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
@@ -471,8 +472,8 @@ void assemble_entities(
 /// dmap0.extent(1)) * (bs1 * dmap1.extent(1))`.
 template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_interior_facets(
-    la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
+    MDSpan2Floating<U> auto x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,

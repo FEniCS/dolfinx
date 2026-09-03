@@ -330,8 +330,7 @@ def test_partition_respects_cell_weights(gpart):
         local_cells,
         elem,
         local_points,
-        partitioner=gpart,
-        cell_weights=local_weights,
+        partitioner=(gpart, local_weights),
     )
 
     tdim = new_mesh.topology.dim
