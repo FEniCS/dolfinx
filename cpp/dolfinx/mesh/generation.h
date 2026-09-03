@@ -133,8 +133,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    graph::AnyPartitionFunction partitioner = {},
                    GhostMode ghost_mode = GhostMode::none,
-                   const graph::Reorder& reorder_fn
-                   = graph::reorder_graph_fn(graph::reorder_rcm))
+                   const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell is required.");
@@ -188,8 +187,7 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    const graph::AnyPartitionFunction& partitioner = {},
                    GhostMode ghost_mode = GhostMode::none,
-                   const graph::Reorder& reorder_fn
-                   = graph::reorder_graph_fn(graph::reorder_rcm))
+                   const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   return create_box<T>(comm, comm, p, n, celltype, partitioner, ghost_mode,
                        reorder_fn);
@@ -223,8 +221,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          graph::AnyPartitionFunction partitioner,
                          DiagonalType diagonal = DiagonalType::right,
                          int gdim = 2, GhostMode ghost_mode = GhostMode::none,
-                         const graph::Reorder& reorder_fn
-                         = graph::reorder_graph_fn(graph::reorder_rcm))
+                         const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   if (gdim < 2 || gdim > 3)
     throw std::runtime_error("2 <= gdim <= 3 for rectangle mesh.");
@@ -300,8 +297,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
                         mesh::GhostMode ghost_mode = mesh::GhostMode::none,
                         graph::AnyPartitionFunction partitioner = {},
                         int gdim = 1,
-                        const graph::Reorder& reorder_fn
-                        = graph::reorder_graph_fn(graph::reorder_rcm))
+                        const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   if (gdim < 1 || gdim > 3)
     throw std::runtime_error("1 <= gdim <= 3 for interval mesh.");

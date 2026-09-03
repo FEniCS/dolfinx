@@ -1248,8 +1248,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const graph::Partitioner& partitioner, GhostMode ghost_mode,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
-    const graph::Reorder& reorder_fn
-    = graph::reorder_graph_fn(graph::reorder_rcm))
+    const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   using T = typename std::remove_reference_t<typename U::value_type>;
 
@@ -1473,8 +1472,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const graph::Partitioner& partitioner, GhostMode ghost_mode,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
-    const graph::Reorder& reorder_fn
-    = graph::reorder_graph_fn(graph::reorder_rcm))
+    const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
                      commg, x, xshape, partitioner, ghost_mode,
