@@ -1322,18 +1322,18 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           = cells1_v[i].size() / num_vertices - ghost_owners[i].size();
       cells1_v_view.emplace_back(cells1_v[i].data(), num_owned * num_vertices);
     }
-    cell_centroids = impl::compute_cell_centroids(
-        comm, num_cell_vertices, cells1_v_view, commg, std::span<const T>(x),
-        static_cast<int>(xshape[1]));
+    cell_centroids
+        = impl::compute_cell_centroids(comm, num_cell_vertices, cells1_v_view,
+                                       commg, std::span<const T>(x), xshape[1]);
   }
 
   // Re-order cells and get boundary vertices. The re-ordering is done
   // on the cell topology, i.e. the vertex indices, and the higher-order
   // nodes are re-ordered accordingly.
   const std::vector<std::int64_t> boundary_v = impl::reorder_cells(
-      comm, reorder_fn, cell_centroids, static_cast<int>(xshape[1]),
-      max_facet_to_cell_links, celltypes, doflayouts, ghost_owners, cells1,
-      cells1_v, original_idx1, num_threads);
+      comm, reorder_fn, cell_centroids, xshape[1], max_facet_to_cell_links,
+      celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1,
+      num_threads);
 
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 
