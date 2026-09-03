@@ -648,27 +648,6 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
 
   return part;
 }
-} // namespace
-
-//-----------------------------------------------------------------------------
-std::vector<int> graph::partition_sfc_morton(
-    MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
-    std::optional<std::span<const std::int32_t>> node_weights)
-{
-  common::Timer timer("Compute Morton SFC partition of points");
-  return partition_by_curve(comm, nparts, x, gdim, morton_key, node_weights);
-}
-//-----------------------------------------------------------------------------
-std::vector<int> graph::partition_sfc_hilbert(
-    MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
-    std::optional<std::span<const std::int32_t>> node_weights)
-{
-  common::Timer timer("Compute Hilbert SFC partition of points");
-  return partition_by_curve(comm, nparts, x, gdim, hilbert_key, node_weights);
-}
-//-----------------------------------------------------------------------------
-namespace
-{
 /// @brief Reorder points by their space-filling-curve keys.
 ///
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
@@ -696,6 +675,22 @@ std::vector<std::int32_t> reorder_by_curve(std::span<const double> x, int gdim,
 }
 } // namespace
 
+//-----------------------------------------------------------------------------
+std::vector<int> graph::partition_sfc_morton(
+    MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
+    std::optional<std::span<const std::int32_t>> node_weights)
+{
+  common::Timer timer("Compute Morton SFC partition of points");
+  return partition_by_curve(comm, nparts, x, gdim, morton_key, node_weights);
+}
+//-----------------------------------------------------------------------------
+std::vector<int> graph::partition_sfc_hilbert(
+    MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
+    std::optional<std::span<const std::int32_t>> node_weights)
+{
+  common::Timer timer("Compute Hilbert SFC partition of points");
+  return partition_by_curve(comm, nparts, x, gdim, hilbert_key, node_weights);
+}
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> graph::reorder_sfc_morton(std::span<const double> x,
                                                     int gdim)
