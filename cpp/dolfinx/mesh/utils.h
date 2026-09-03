@@ -222,11 +222,6 @@ namespace impl
 /// @param[in] max_facet_to_cell_links Maximum number of cells a facet can be
 /// connected to.
 /// @param[in] celltypes List of celltypes in mesh.
-/// @param[in] num_vertices_per_cell Number of vertices per cell, one
-/// entry per cell type, as returned by ::num_vertices_per_cell_type.
-/// @param[in] cells_v_owned View of the owned (non-ghost) cell vertices
-/// of each cell type, as returned by ::owned_cell_vertices for `cells_v`
-/// and `ghost_owners`.
 /// @param[in] doflayouts List of DOF layouts in mesh.
 /// @param[in] ghost_owners List of ghost owner per cell per celltype.
 /// @param[in,out] cells List of cells per celltype. Reordered during the
@@ -243,8 +238,6 @@ std::vector<std::int64_t> reorder_cells(
     const graph::Reorder& reorder_fn, std::span<const double> cell_centroids,
     int gdim, std::optional<std::int32_t> max_facet_to_cell_links,
     const std::vector<CellType>& celltypes,
-    std::span<const int> num_vertices_per_cell,
-    const std::vector<std::span<const std::int64_t>>& cells_v_owned,
     const std::vector<fem::ElementDofLayout>& doflayouts,
     const std::vector<std::vector<int>>& ghost_owners,
     std::vector<std::vector<std::int64_t>>& cells,
@@ -851,50 +844,6 @@ compute_incident_entities(const Topology& topology,
 
 namespace impl
 {
-/// @brief Number of vertices for each cell type in `celltypes`.
-/// @param[in] celltypes Cell types.
-/// @return Number of vertices per cell, one entry per entry of
-/// `celltypes`, in the same order.
-inline std::vector<int>
-num_vertices_per_cell_type(const std::vector<CellType>& celltypes)
-{
-  std::vector<int> n;
-  n.reserve(celltypes.size());
-  std::ranges::transform(celltypes, std::back_inserter(n),
-                         [](CellType c) { return mesh::num_cell_vertices(c); });
-  return n;
-}
-
-/// @brief View of the owned (non-ghost) prefix of each cell type's
-/// vertex array.
-///
-/// `cells_v[i]` must have any ghost cells appended after the cells it
-/// owns, with `ghost_owners[i].size()` trailing ghost entries, as
-/// produced by ::partition_cells.
-///
-/// @param[in] num_vertices_per_cell Number of vertices per cell, one
-/// entry per cell type.
-/// @param[in] cells_v Cell vertices for each cell type, ghosts
-/// included.
-/// @param[in] ghost_owners Owning rank of the ghost cells (the
-/// trailing entries) of each cell type in `cells_v`.
-/// @return View of the owned-cell prefix of `cells_v[i]`, for each `i`.
-inline std::vector<std::span<const std::int64_t>>
-owned_cell_vertices(std::span<const int> num_vertices_per_cell,
-                    const std::vector<std::span<std::int64_t>>& cells_v,
-                    const std::vector<std::vector<int>>& ghost_owners)
-{
-  std::vector<std::span<const std::int64_t>> views;
-  views.reserve(cells_v.size());
-  for (std::size_t i = 0; i < cells_v.size(); ++i)
-  {
-    std::size_t num_owned
-        = cells_v[i].size() / num_vertices_per_cell[i] - ghost_owners[i].size();
-    views.emplace_back(cells_v[i].data(), num_owned * num_vertices_per_cell[i]);
-  }
-  return views;
-}
-
 /// @brief Run `fn` locally, recording any exception it throws instead
 /// of letting it propagate.
 ///
@@ -915,6 +864,9 @@ owned_cell_vertices(std::span<const int> num_vertices_per_cell,
 template <typename F>
 void try_locally(F&& fn, int& failed, std::string& error_msg)
 {
+  if (failed)
+    return;
+
   try
   {
     fn();
@@ -1022,12 +974,8 @@ std::vector<double> cell_centroids_local(
 
 /// @brief Compute the centroid of each cell from its vertex positions.
 ///
-/// @note Collective. Any exception this raises (e.g. from
-/// `MPI::distribute_data`) is already propagated to every rank of
-/// `comm` before it is thrown, so it is safe to call directly; a caller
-/// invoking it alongside other, purely local fallible work may still
-/// wrap both in a single ::try_locally /::mpi_check guarded region to
-/// avoid a redundant collective round trip.
+/// @note Collective. Exceptions raised by the coordinate exchange are
+/// propagated to every rank of `comm` before they are thrown.
 ///
 /// @tparam T Scalar type of `x`.
 /// @param[in] comm Communicator that `cells` is distributed across.
@@ -1184,20 +1132,13 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
 
     if (needs_centroids)
     {
-      // Run alongside the partitioner calls below in the same
-      // try_locally/mpi_check guarded region, so a failure here and a
-      // failure below are reported through a single collective check
-      // rather than each needing its own.
-      try_locally(
-          [&]
-          {
-            std::vector<int> num_vertices_per_cell
-                = num_vertices_per_cell_type(celltypes);
-            centroid
-                = compute_cell_centroids(comm, num_vertices_per_cell,
-                                         topology_view, commg, x, xshape[1]);
-          },
-          failed, error_msg);
+      std::vector<int> num_vertices_per_cell;
+      num_vertices_per_cell.reserve(celltypes.size());
+      std::ranges::transform(celltypes,
+                             std::back_inserter(num_vertices_per_cell),
+                             [](CellType c) { return num_cell_vertices(c); });
+      centroid = compute_cell_centroids(comm, num_vertices_per_cell,
+                                        topology_view, commg, x, xshape[1]);
     }
 
     if (std::holds_alternative<graph::geom_partition_fn>(partitioner.fn))
@@ -1457,35 +1398,44 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                  cells1_v[i].size());
   }
 
-  const std::vector<int> num_cell_vertices
-      = impl::num_vertices_per_cell_type(celltypes);
-  const std::vector<std::span<const std::int64_t>> cells1_v_owned
-      = impl::owned_cell_vertices(num_cell_vertices, cells1_v, ghost_owners);
-
   // Re-order cells and get boundary vertices. The re-ordering is done
   // on the cell topology, i.e. the vertex indices, and the higher-order
-  // nodes are re-ordered accordingly. Centroid computation (needed only
-  // for a geometric reorder_fn) is run inside the same guarded region
-  // as impl::reorder_cells rather than ahead of it, so a failure in
-  // either is reported through one collective check rather than two.
+  // nodes are re-ordered accordingly.
+  std::vector<double> cell_centroids;
+  if (std::holds_alternative<graph::reorder_geom_fn>(reorder_fn))
+  {
+    std::vector<int> num_cell_vertices;
+    num_cell_vertices.reserve(celltypes.size());
+    std::ranges::transform(celltypes, std::back_inserter(num_cell_vertices),
+                           [](CellType c)
+                           { return mesh::num_cell_vertices(c); });
+
+    std::vector<std::span<const std::int64_t>> cells1_v_owned;
+    cells1_v_owned.reserve(cells1_v.size());
+    for (std::size_t i = 0; i < cells1_v.size(); ++i)
+    {
+      const int num_cell_vertices_i = num_cell_vertices[i];
+      const std::size_t num_owned_cells
+          = cells1_v[i].size() / num_cell_vertices_i - ghost_owners[i].size();
+      cells1_v_owned.emplace_back(cells1_v[i].data(),
+                                  num_owned_cells * num_cell_vertices_i);
+    }
+
+    cell_centroids
+        = impl::compute_cell_centroids(comm, num_cell_vertices, cells1_v_owned,
+                                       commg, std::span<const T>(x), xshape[1]);
+  }
+
   std::vector<std::int64_t> boundary_v;
   int failed = 0;
   std::string error_message;
   impl::try_locally(
       [&]
       {
-        std::vector<double> cell_centroids;
-        if (std::holds_alternative<graph::reorder_geom_fn>(reorder_fn))
-        {
-          cell_centroids = impl::compute_cell_centroids(
-              comm, num_cell_vertices, cells1_v_owned, commg,
-              std::span<const T>(x), xshape[1]);
-        }
-
-        boundary_v = impl::reorder_cells(
-            reorder_fn, cell_centroids, xshape[1], max_facet_to_cell_links,
-            celltypes, num_cell_vertices, cells1_v_owned, doflayouts,
-            ghost_owners, cells1, cells1_v, original_idx1, num_threads);
+        boundary_v = impl::reorder_cells(reorder_fn, cell_centroids, xshape[1],
+                                         max_facet_to_cell_links, celltypes,
+                                         doflayouts, ghost_owners, cells1,
+                                         cells1_v, original_idx1, num_threads);
       },
       failed, error_message);
   impl::mpi_check(comm, "Cell reordering", failed, error_message);

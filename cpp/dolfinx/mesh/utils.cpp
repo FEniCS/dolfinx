@@ -36,8 +36,6 @@ std::vector<std::int64_t> mesh::impl::reorder_cells(
     const graph::Reorder& reorder_fn, std::span<const double> cell_centroids,
     int gdim, std::optional<std::int32_t> max_facet_to_cell_links,
     const std::vector<CellType>& celltypes,
-    std::span<const int> num_vertices_per_cell,
-    const std::vector<std::span<const std::int64_t>>& cells_v_owned,
     const std::vector<fem::ElementDofLayout>& doflayouts,
     const std::vector<std::vector<int>>& ghost_owners,
     std::vector<std::vector<std::int64_t>>& cells,
@@ -59,14 +57,17 @@ std::vector<std::int64_t> mesh::impl::reorder_cells(
   std::size_t cell_offset = 0;
   for (std::size_t i = 0; i < celltypes.size(); ++i)
   {
-    int num_cell_vertices = num_vertices_per_cell[i];
-    std::size_t num_owned_cells = cells_v_owned[i].size() / num_cell_vertices;
+    const int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
+    const std::size_t num_owned_cells
+        = cells_v[i].size() / num_cell_vertices - ghost_owners[i].size();
+    const std::span<const std::int64_t> cells_v_owned(
+        cells_v[i].data(), num_owned_cells * num_cell_vertices);
 
     // Build local dual graph for cell type, from the owned (non-ghost)
     // cells only
     auto [graph, unmatched_facets, max_v, _facet_attached_cells]
         = build_local_dual_graph(std::vector{celltypes[i]},
-                                 std::vector{cells_v_owned[i]},
+                                 std::vector{cells_v_owned},
                                  max_facet_to_cell_links, num_threads);
 
     // Store unmatched_facets for current cell type
