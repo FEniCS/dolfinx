@@ -20,7 +20,7 @@ disclosure process.
 - **Standard**: Modern C++20. Use concepts (`std::floating_point T`,
   `std::integral`, `std::ranges` etc.) to constrain templates rather
   than SFINAE. Don't use C-style casts. `const`-correctness is
-  encouraged. Consider using `constexpr` and `consteval`.
+  encouraged. Use `constexpr` and `consteval` where possible.
 - **Avoid overusing the `auto` keyword**: The `auto` keyword should not be
   used on simple-to-reason-about types, e.g. `std::int32_t` and
   `std::vector<T>` as it reduces code readability.
@@ -65,17 +65,18 @@ disclosure process.
   array memory traffic — so local indices must not be silently widened
   in storage or interfaces. Type a variable by the role of its value,
   not by the expression that initialises it.
-- **PETSc/SLEPc index types**: in the thin `la::petsc`/`la::slepc`
-  wrappers, an index or count passed straight through to a PETSc/SLEPc
-  call is `PetscInt`, matching the `PetscScalar`/`Mat`/`Vec` already in
-  those signatures. The fixed-width types above are for
-  DOLFINx-meaningful quantities, such as the sizes and ranges returned
-  by `petsc::Vector`.
-- **Iterator distances**: store `std::distance` results, a signed
-  `difference_type`, in `std::size_t` when used as a container offset.
-  They are non-negative by construction here, and `-Wsign-compare` is
-  `-Werror`, so `std::ptrdiff_t` would force a cast at every
-  comparison against `.size()`.
+- **PETSc/SLEPc index types**: in the thin PETSc/SLEPc wrappers
+  (`la::petsc`, `la::slepc`, `nls::petsc`), an index or count passed to
+  or obtained from a PETSc/SLEPc call is `PetscInt`, including where it
+  is returned to the caller or passed on to a callback, matching the
+  `PetscScalar`/`Mat`/`Vec` already in those signatures. The fixed-width
+  types above are for DOLFINx-meaningful quantities, such as the sizes
+  and ranges returned by `petsc::Vector`.
+- **Iterator distances**: store `std::ranges::distance` results, a
+  signed `difference_type`, in `std::size_t` when used as a container
+  offset. They are non-negative by construction here, and
+  `-Wsign-compare` is `-Werror`, so `std::ptrdiff_t` would force a cast
+  at every comparison against `.size()`.
 - **Narrowing conversions**: neither `-Wconversion` nor
   `-Wshorten-64-to-32` is enabled, so implicit 64-to-32 narrowing is
   legal and widespread. `static_cast` only where the narrowing is the
@@ -96,9 +97,13 @@ disclosure process.
   the first comment draft, compress comments to their essence using
   concise technical language.
 - **Errors and invariants**: For user-facing/API-boundary errors, throw
-  `std::runtime_error` with a descriptive message — unconditionally when
-  the check is O(1), or guarded behind `#ifndef NDEBUG` when the check is
-  more expensive, so it's skipped in release builds. For internal
+  `std::invalid_argument` for a bad argument or violated parameter
+  precondition, `std::out_of_range` for an index/lookup-key failure, and
+  `std::runtime_error` for other runtime/state/IO/MPI failures. Do not
+  introduce a custom exception hierarchy. Use a descriptive message —
+  unconditionally when the check is O(1), or guarded behind
+  `#ifndef NDEBUG` when the check is more expensive, so it's skipped in
+  release builds. For internal
   invariants that indicate a library bug rather than bad user input, use
   `assert` when the check fits in a single expression, or a
   `#ifndef NDEBUG`-guarded block with an explicit throw/abort when it
@@ -157,21 +162,20 @@ disclosure process.
   already matches a callback/`std::function` parameter exactly, pass
   the function directly (e.g. `graph::reorder_rcm`) rather than
   wrapping it in a trivial forwarding lambda.
-- **Lambdas**: no `[=]`/`[&]` — list captures explicitly, e.g.
-  `[&v]`. Capture by reference for lambdas invoked in
-  place; by value (cheap scalars, or
-  `[v = std::move(v)]` to move a container) for lambdas that escape the
-  scope, where a captured reference or `span` into a local dangles
-  silently. `[this]` only if the lambda cannot outlive the object.
-  Never capture a container or `shared_ptr` by value for convenience:
-  the copy happens at capture and again whenever the lambda or its
-  `std::function` is copied.
-  Prefer explicit parameter types over `auto` (`auto&&` in generic
-  code); add an explicit return type when the deduced one is non-obvious
-  or must not decay. Avoid `mutable`. Promote long or reused lambdas to
-  a free function in an anonymous namespace. A by-reference capture is
-  `const` only if the captured variable is, so declare read-only locals
-  `const`.
+- **Lambdas**: no `[=]`/`[&]` — list captures explicitly, e.g. `[&v]`.
+  Capture by reference for lambdas invoked in place; by value (cheap
+  scalars, or `[v = std::move(v)]` to move a container) for lambdas that
+  escape the scope, where a captured reference or `span` into a local
+  dangles silently. `[this]` only if the lambda cannot outlive the
+  object. Never capture a container or `shared_ptr` by value for
+  convenience: the copy happens at capture and again whenever the lambda
+  or its `std::function` is copied.
+  Prefer explicit parameter types over `auto` (`auto&&` in generic code)
+  in non-generic code; add an explicit return type when the deduced one
+  is non-obvious or must not decay. Avoid `mutable`. Promote long or
+  reused lambdas to a free function in an anonymous namespace. A
+  by-reference capture is `const` only if the captured variable is, so
+  declare read-only locals `const`.
 - **Algorithms**: prefer `std::ranges` algorithms (`std::ranges::...`)
   over both hand-written loops and their pre-ranges `<algorithm>`
   equivalents, where it doesn't hurt clarity or performance. Flattened

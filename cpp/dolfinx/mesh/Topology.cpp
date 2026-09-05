@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2025 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -1132,7 +1132,7 @@ MPI_Comm Topology::comm() const
   return it->second->comm();
 }
 //-----------------------------------------------------------------------------
-Topology mesh::create_topology(
+std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
     MPI_Comm comm, const std::vector<CellType>& cell_types,
     std::vector<std::span<const std::int64_t>> cells,
     std::vector<std::span<const std::int64_t>> original_cell_index,
@@ -1502,7 +1502,27 @@ Topology mesh::create_topology(
       original_cell_index, std::back_inserter(orig_index), [](auto idx)
       { return std::vector<std::int64_t>(idx.begin(), idx.end()); });
 
-  return Topology(cell_types, index_map_v, index_map_c, cells_c, orig_index);
+  // Input global vertex indices, sorted (`global_to_local_vertices` is
+  // sorted on its first entry)
+  std::vector<std::int64_t> input_vertex_index(global_to_local_vertices.size());
+  std::ranges::transform(global_to_local_vertices, input_vertex_index.begin(),
+                         [](auto& e) { return e.first; });
+
+  return {Topology(cell_types, index_map_v, index_map_c, cells_c, orig_index),
+          std::move(input_vertex_index)};
+}
+//-----------------------------------------------------------------------------
+Topology mesh::create_topology(
+    MPI_Comm comm, const std::vector<CellType>& cell_types,
+    std::vector<std::span<const std::int64_t>> cells,
+    std::vector<std::span<const std::int64_t>> original_cell_index,
+    std::vector<std::span<const int>> ghost_owners,
+    std::span<const std::int64_t> boundary_vertices, int num_threads)
+{
+  return impl::create_topology(
+             comm, cell_types, std::move(cells), std::move(original_cell_index),
+             std::move(ghost_owners), boundary_vertices, num_threads)
+      .first;
 }
 //-----------------------------------------------------------------------------
 Topology

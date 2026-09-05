@@ -73,6 +73,7 @@ def create_interpolation_data(
     V_from: FunctionSpace,
     cells: npt.NDArray[np.int32],
     padding: float = 1e-14,
+    allow_extrapolation: bool = True,
 ) -> _PointOwnershipData:
     """Generate data for interpolating functions on different meshes.
 
@@ -81,8 +82,18 @@ def create_interpolation_data(
         V_from: Function space to interpolate from.
         cells: Indices of the cells associated with `V_to` on which to
             interpolate into.
-        padding: Absolute padding of bounding boxes of all entities on
-            mesh_to.
+        padding: Absolute padding applied to the bounding box of each
+            cell in `V_from`'s mesh before searching for candidate
+            cells. Increasing ``padding`` increases the number of
+            cells considered as candidates for an interpolation point;
+            it does not by itself decide whether a point with no
+            actually-containing cell is assigned an owner, which is
+            controlled by ``allow_extrapolation``.
+        allow_extrapolation: If ``True`` (default), a point from
+            `V_to`'s mesh not actually contained in any candidate cell
+            of `V_from`'s mesh is instead assigned the candidate cell
+            closest to it (relevant e.g. if the two meshes do not fully
+            overlap). If ``False``, such points are left unowned.
 
     Returns:
         Data needed to interpolation functions defined on function
@@ -95,7 +106,9 @@ def create_interpolation_data(
             _cpp.mesh.Mesh_float32() as mesh1,
         ):
             return _PointOwnershipData(
-                _create_interpolation_data(geometry0, element0, mesh1, cells, padding)
+                _create_interpolation_data(
+                    geometry0, element0, mesh1, cells, padding, allow_extrapolation
+                )
             )
         case (
             _cpp.mesh.Geometry_float64() as geometry0,
@@ -103,7 +116,9 @@ def create_interpolation_data(
             _cpp.mesh.Mesh_float64() as mesh1,
         ):
             return _PointOwnershipData(
-                _create_interpolation_data(geometry0, element0, mesh1, cells, padding)
+                _create_interpolation_data(
+                    geometry0, element0, mesh1, cells, padding, allow_extrapolation
+                )
             )
         case _:
             raise TypeError(

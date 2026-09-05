@@ -48,11 +48,13 @@ add_executable(
   mesh/branching_manifold.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp
+  mesh/geometric_partitioner.cpp
   mesh/read_named_meshtags.cpp
   mesh/refinement/interval.cpp
   mesh/refinement/option.cpp
   mesh/refinement/rectangle.cpp
   mesh/refinement/mark.cpp
+  nls/snessolver.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -466,13 +467,11 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
         return fem::CoordinateElement<U>(cell_type, cell_degree, variant);
       });
 
-  auto part = create_cell_partitioner(mesh::GhostMode::none,
-                                      dolfinx::graph::partition_graph,
-                                      max_facet_to_cell_links);
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());
   return mesh::create_mesh(comm, comm, cells_span, coordinate_elements, comm,
-                           points_pruned, {(std::size_t)x_shape[0], gdim}, part,
+                           points_pruned, {(std::size_t)x_shape[0], gdim},
+                           graph::Partitioner{}, mesh::GhostMode::none,
                            max_facet_to_cell_links, 1);
 }
 } // namespace dolfinx::io::VTKHDF

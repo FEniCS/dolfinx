@@ -1,0 +1,91 @@
+// Copyright (C) 2026 Garth N. Wells
+//
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+
+#pragma once
+
+#include "AdjacencyList.h"
+#include "partition.h"
+#include <cstdint>
+#include <mpi.h>
+#include <optional>
+#include <span>
+#include <vector>
+
+/// @file sfc.h
+/// @brief Point partitioning by position along a space-filling curve.
+
+namespace dolfinx::graph
+{
+/// @brief Partition points into `nparts` groups of (approximately) equal
+/// size using a Morton ('Z-order') space-filling curve.
+///
+/// Points are ordered by the Morton key of their position in the global
+/// bounding box, and the resulting order is cut into `nparts` equal
+/// pieces. Splitters are found from a distributed sample of the keys,
+/// routed to the rank owning its key range rather than gathered to
+/// every rank, so per-rank cost and memory scale with the sample size
+/// divided across ranks, not multiplied by them.
+///
+/// Compared to a graph partitioner, this is much cheaper because no graph
+/// is required and gives a near-perfect load balance, at the cost of a
+/// larger number of cut edges (typically tens of percent for a mesh dual
+/// graph). The distributed sample uses a global budget proportional to
+/// `nparts`, but every rank stores the `nparts - 1` splitter keys.
+///
+/// A Morton curve jumps a long way in space each time a high bit of the
+/// key changes, so consecutive points on the curve are not always close
+/// together. ::partition_sfc_hilbert avoids this.
+///
+/// @note Collective.
+///
+/// @note There is no graph, so this cannot ghost: it always assigns
+/// exactly one destination per point.
+///
+/// @param[in] comm MPI communicator that the points are distributed
+/// across.
+/// @param[in] nparts Number of partitions to divide the points into.
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point. Must be
+/// 1, 2 or 3.
+/// @param[in] weights Point weights, one entry per row of `x`.
+/// Partitions aim for equal sums of weight along the curve rather than
+/// equal counts. If `std::nullopt`, points are treated as having equal
+/// weight.
+/// @return Destination rank for each point, one entry per row of `x`.
+std::vector<int> partition_sfc_morton(
+    MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
+    std::optional<std::span<const std::int32_t>> weights = std::nullopt);
+
+/// @brief Partition points into `nparts` groups of (approximately) equal
+/// size using a Hilbert space-filling curve.
+///
+/// As ::partition_sfc_morton, but points are ordered along a Hilbert
+/// curve. Successive points on a Hilbert curve are always neighbours in
+/// space, which a Morton curve does not guarantee, so the resulting
+/// partitions are more compact and cut fewer edges. Computing the curve
+/// index is more expensive than a Morton key, but in both cases the cost
+/// is dominated by the sampling and the search for each point's part.
+///
+/// @note Collective.
+///
+/// @note There is no graph, so this cannot ghost: it always assigns
+/// exactly one destination per point.
+///
+/// @param[in] comm MPI communicator that the points are distributed
+/// across.
+/// @param[in] nparts Number of partitions to divide the points into.
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point. Must be
+/// 1, 2 or 3.
+/// @param[in] weights Point weights, one entry per row of `x`.
+/// Partitions aim for equal sums of weight along the curve rather than
+/// equal counts. If `std::nullopt`, points are treated as having equal
+/// weight.
+/// @return Destination rank for each point, one entry per row of `x`.
+std::vector<int> partition_sfc_hilbert(
+    MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
+    std::optional<std::span<const std::int32_t>> weights = std::nullopt);
+} // namespace dolfinx::graph

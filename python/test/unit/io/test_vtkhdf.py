@@ -83,15 +83,18 @@ def test_read_write_higher_order():
     ]
 
     max_cells_per_facet = 2
-    part = dolfinx.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.none, max_cells_per_facet)
+    part = dolfinx.graph.partitioner()
     mesh = dolfinx.cpp.mesh.create_mesh(
         MPI.COMM_WORLD,
         cells_np,
         [e._cpp_object for e in coordinate_elements],
         geom,
         part,
+        dolfinx.mesh.GhostMode.none,
         max_cells_per_facet,
         num_threads=1,
+        cell_weights=None,
+        reorder_fn=None,
     )
     py_mesh = Mesh(mesh, None)
 

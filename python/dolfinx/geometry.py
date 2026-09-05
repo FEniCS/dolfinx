@@ -338,23 +338,33 @@ def determine_point_ownership(
     points: npt.NDArray[Real],
     padding: float,
     cells: npt.NDArray[np.int32] | None = None,
+    find_closest_cell: bool = True,
 ) -> PointOwnershipData[Real]:
-    """Build point ownership data for a mesh-points pair.
+    """Determine, for each point, the owning process of a containing cell.
 
-    First, potential collisions are found by computing intersections
-    between the bounding boxes of the cells and the set of points.
-    Then, actual containment pairs are determined using the GJK algorithm.
+    A cell is a *candidate* for a point if the cell's bounding box,
+    padded by ``padding``, contains the point. Each candidate is then
+    tested for actual containment of the point with the GJK algorithm.
+    If no candidate actually contains a point, the point is either left
+    unowned or, if ``find_closest_cell`` is ``True``, assigned to the
+    candidate cell closest to it (by GJK distance).
 
     Args:
         mesh: The mesh
         points: Points to check for collision, ``shape=(num_points, gdim)``
-        padding: Amount of absolute padding of bounding boxes of the mesh.
-            Each bounding box of the mesh is padded with this amount,
-            to increase the number of candidates, avoiding rounding errors
-            in determining the owner of a point if the point is on the
-            surface of a cell in the mesh.
+        padding: Amount of absolute padding applied to each cell's
+            bounding box before searching for candidate cells/processes.
+            Increasing ``padding`` increases the number of cells
+            considered as candidates for a point; it does not by
+            itself decide whether a point with no actually-containing
+            cell is assigned an owner, which is controlled by
+            ``find_closest_cell``.
         cells: Cells to check for ownership
             If ``None`` then all cells are considered.
+        find_closest_cell: If ``True`` (default), a point not
+            actually contained in any candidate cell is instead
+            assigned to the process owning the candidate cell closest
+            to it. If ``False``, such a point is left unowned.
 
     Returns:
         Point ownership data
@@ -362,12 +372,22 @@ def determine_point_ownership(
     Note:
         ``dest_owner`` is sorted
 
-        ``src_owner`` is -1 if no colliding process is found
+        An entry of ``src_owner`` is ``-1`` if the corresponding point
+        was not contained in any candidate cell and, if
+        ``find_closest_cell`` is ``True``, had no candidate cell to
+        fall back on either (e.g. because ``padding`` was too small).
 
-        A large padding value will increase the run-time of the code
-            by orders of magnitude. General advice is to use a padding on
-            the scale of the cell size.
+        With ``find_closest_cell`` set to ``True``, a large padding
+            value will increase the run-time of the code by orders of
+            magnitude. General advice is to use a padding on the scale
+            of the cell size.
     """
     return PointOwnershipData(
-        _cpp.geometry.determine_point_ownership(mesh._cpp_object, points, padding, cells)  # type: ignore[arg-type]
+        _cpp.geometry.determine_point_ownership(
+            mesh._cpp_object,  # type: ignore[arg-type]
+            points,  # type: ignore[arg-type]
+            padding,
+            cells,
+            find_closest_cell,
+        )
     )

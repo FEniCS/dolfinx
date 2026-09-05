@@ -41,7 +41,7 @@ del _np
 
 from dolfinx import common
 from dolfinx import cpp as _cpp
-from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, typing
+from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, plot, typing
 
 from dolfinx.common import (
     git_commit_hash,
@@ -89,7 +89,6 @@ __all__ = [
     "la",
     "log",
     "mesh",
-    "nls",
     "plot",
     "typing",
     "git_commit_hash",

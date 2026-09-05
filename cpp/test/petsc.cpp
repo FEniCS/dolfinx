@@ -39,8 +39,8 @@ TEST_CASE("PETSc wrappers reject null handles", "[petsc]")
   // is examined, so both values must be rejected.
   CHECK_THROWS_AS(la::petsc::Vector(nullptr, true), std::runtime_error);
   CHECK_THROWS_AS(la::petsc::Vector(nullptr, false), std::runtime_error);
-  CHECK_THROWS_AS(la::petsc::Operator(nullptr, true), std::runtime_error);
-  CHECK_THROWS_AS(la::petsc::Operator(nullptr, false), std::runtime_error);
+  CHECK_THROWS_AS(la::petsc::Matrix(nullptr, true), std::runtime_error);
+  CHECK_THROWS_AS(la::petsc::Matrix(nullptr, false), std::runtime_error);
   CHECK_THROWS_AS(la::petsc::KrylovSolver(nullptr, true), std::runtime_error);
   CHECK_THROWS_AS(la::petsc::KrylovSolver(nullptr, false), std::runtime_error);
 }
@@ -51,7 +51,7 @@ TEST_CASE("PETSc wrappers manage reference counts", "[petsc]")
 
   PetscInt refs = 0;
 
-  SECTION("Operator, inc_ref_count = true shares ownership")
+  SECTION("Matrix, inc_ref_count = true shares ownership")
   {
     Mat A = nullptr;
     CHECK(MatCreate(MPI_COMM_WORLD, &A) == 0);
@@ -62,7 +62,7 @@ TEST_CASE("PETSc wrappers manage reference counts", "[petsc]")
     CHECK(MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY) == 0);
 
     {
-      la::petsc::Operator op(A, true);
+      la::petsc::Matrix op(A, true);
       CHECK(PetscObjectGetReference((PetscObject)A, &refs) == 0);
       CHECK(refs == 2);
     }
@@ -73,7 +73,7 @@ TEST_CASE("PETSc wrappers manage reference counts", "[petsc]")
     CHECK(MatDestroy(&A) == 0);
   }
 
-  SECTION("Operator, inc_ref_count = false takes ownership")
+  SECTION("Matrix, inc_ref_count = false takes ownership")
   {
     Mat A = nullptr;
     CHECK(MatCreate(MPI_COMM_WORLD, &A) == 0);
@@ -86,7 +86,7 @@ TEST_CASE("PETSc wrappers manage reference counts", "[petsc]")
     // No caller-side reference remains once the wrapper is constructed;
     // destroying it must be the only thing that frees A (nothing left
     // here to double-destroy).
-    la::petsc::Operator op(A, false);
+    la::petsc::Matrix op(A, false);
     CHECK(PetscObjectGetReference((PetscObject)op.mat(), &refs) == 0);
     CHECK(refs == 1);
   }
@@ -148,7 +148,7 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
   CHECK(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY) == 0);
   CHECK(MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY) == 0);
 
-  SECTION("Solve returns the iteration count")
+  SECTION("Solve returns the convergence reason")
   {
     la::petsc::KrylovSolver solver(MPI_COMM_WORLD);
     solver.set_operator(A);
@@ -157,7 +157,11 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
     CHECK(MatCreateVecs(A, &x, &b) == 0);
     CHECK(VecSet(b, 1.0) == 0);
 
-    PetscInt num_it = solver.solve(x, b, false);
+    CHECK(solver.solve(x, b, false) > 0);
+
+    // The number of iterations is available via the raw PETSc API
+    PetscInt num_it = -1;
+    CHECK(KSPGetIterationNumber(solver.ksp(), &num_it) == 0);
     CHECK(num_it >= 0);
 
     // A is the identity, so x == b
@@ -207,8 +211,7 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
     CHECK(MatCreateVecs(A, &x, &b) == 0);
     CHECK(VecSet(b, 1.0) == 0);
 
-    PetscInt num_it = solver.solve(x, b, true);
-    CHECK(num_it >= 0);
+    CHECK(solver.solve(x, b, true) > 0);
 
     PetscReal norm = 0;
     CHECK(VecAXPY(x, -1.0, b) == 0);
@@ -228,8 +231,7 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
     CHECK(MatCreateVecs(A, &x, &b) == 0);
     CHECK(VecSet(b, 1.0) == 0);
 
-    PetscInt num_it = solver.solve(x, b, false);
-    CHECK(num_it >= 0);
+    CHECK(solver.solve(x, b, false) > 0);
 
     CHECK(VecDestroy(&x) == 0);
     CHECK(VecDestroy(&b) == 0);
@@ -251,8 +253,7 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
       CHECK(MatCreateVecs(A, &x, &b) == 0);
       CHECK(VecSet(b, 1.0) == 0);
 
-      PetscInt num_it = solver.solve(x, b, false);
-      CHECK(num_it >= 0);
+      CHECK(solver.solve(x, b, false) > 0);
 
       PetscReal norm = 0;
       CHECK(VecAXPY(x, -1.0, b) == 0);
