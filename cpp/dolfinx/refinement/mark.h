@@ -16,42 +16,48 @@
 #include <vector>
 
 #include "dolfinx/common/MPI.h"
+#include "dolfinx/la/Vector.h"
 
 namespace dolfinx::refinement
 {
 
 /// @brief Maximum marking of a marker.
 ///
-/// @param[in] marker Input marker (local) - usually an error indicator per
+/// @param[in] marker Input marker - usually an error indicator per
 /// entity
 /// @param[in] theta Cut off parameter, 0 < θ < 1
-/// @param[in] comm Communicator over which the maximum is computed.
-/// @return Indices (local) of marker elements, which satisfy: marker_i ≥ θ
-/// max(marker).
+/// @return Indices (local, including ghosts) of marker elements, which satisfy:
+/// marker_i ≥ θ max(marker).
 template <std::floating_point T>
-std::vector<std::int32_t> mark_maximum(std::span<const T> marker, T theta,
-                                       MPI_Comm comm)
+std::vector<std::int32_t> mark_maximum(const dolfinx::la::Vector<T>& marker,
+                                       T theta)
 {
   if ((theta <= 0) || (theta >= 1))
     throw std::invalid_argument("Theta needs to fulfill 0 < θ < 1.");
 
-  T max = marker.empty() ? std::numeric_limits<T>::lowest()
-                         : std::ranges::max(marker);
+  auto im = marker.index_map();
+  MPI_Comm comm = im->comm();
+
+  std::span local_part = std::span{marker.array()}.subspan(0, im->size_local());
+
+  T max = local_part.empty() ? std::numeric_limits<T>::lowest()
+                             : std::ranges::max(local_part);
   MPI_Allreduce(MPI_IN_PLACE, &max, 1, dolfinx::MPI::mpi_t<T>, MPI_MAX, comm);
 
   auto mark = [&theta, &max](T e) { return e > theta * max; };
 
   std::vector<std::int32_t> indices;
-  indices.reserve(std::ranges::count_if(marker, mark));
+  indices.reserve(std::ranges::count_if(marker.array(), mark));
 
-  for (std::int32_t i = 0; i < static_cast<std::int32_t>(marker.size()); ++i)
+  for (std::int32_t i = 0; i < static_cast<std::int32_t>(marker.array().size());
+       ++i)
   {
-    if (mark(marker[i]))
+    if (mark(marker.array()[i]))
       indices.push_back(i);
   }
 
   spdlog::info("Marking (max) {} / {} (local) entities.", indices.size(),
-               marker.size());
+               im->size_local() + im->num_ghosts());
 
   return indices;
 }
