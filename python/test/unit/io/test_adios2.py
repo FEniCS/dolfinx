@@ -293,3 +293,50 @@ class TestVTX:
 
             cell_arrays = get_data_array_names(xml_cell_data)
             assert "q" in cell_arrays or ("q_imag" in cell_arrays and "q_real" in cell_arrays)
+
+    def test_append_compat_schema(self, tempdir):
+        """Append raises for incomaptible functions."""
+        from dolfinx.io import VTXWriter
+
+        mesh = generate_mesh(3, False)
+        v = Function(functionspace(mesh, ("Lagrange", 1)), name="v")
+
+        filename = Path(tempdir, "v.bp")
+        with VTXWriter(mesh.comm, filename, [v]) as writer:
+            writer.write(0)
+
+        w = v.copy()
+        w.name = "w"
+
+        with pytest.raises(RuntimeError) as err:
+            with VTXWriter(mesh.comm, filename, [w], mode="a") as writer:
+                writer.write(0)
+
+            assert "VTK scheme not compatible." in str(err)
+
+    def test_append_compat_mesh(self, tempdir):
+        """Append raises for incomaptible functions."""
+        from dolfinx.io import VTXMeshPolicy, VTXWriter
+
+        mesh = generate_mesh(3, False)
+        v = Function(functionspace(mesh, ("Lagrange", 1)), name="v")
+
+        mesh2 = generate_mesh(2, False)
+        v2 = Function(functionspace(mesh2, ("Lagrange", 1)), name="v")
+
+        filename = Path(tempdir, "v.bp")
+        with VTXWriter(mesh.comm, filename, [v]) as writer:
+            writer.write(0)
+
+        with VTXWriter(
+            mesh.comm, filename, [v], mesh_policy=VTXMeshPolicy.reuse, mode="a"
+        ) as writer:
+            writer.write(0)
+
+        with pytest.raises(RuntimeError) as err:
+            with VTXWriter(
+                mesh.comm, filename, [v2], mesh_policy=VTXMeshPolicy.reuse, mode="a"
+            ) as writer:
+                writer.write(0)
+
+            assert "Mesh has changed, can not be reused." in str(err)
