@@ -135,13 +135,12 @@ void declare_refinement(nanobind::module_& m)
 
   m.def(
       "mark_maximum",
-      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> marker, T theta,
-         MPICommWrapper comm)
+      [](const dolfinx::la::Vector<T>& marker, T theta)
       {
-        return dolfinx_wrappers::as_nbarray(dolfinx::refinement::mark_maximum(
-            std::span(marker.data(), marker.size()), theta, comm.get()));
+        return dolfinx_wrappers::as_nbarray(
+            dolfinx::refinement::mark_maximum(marker, theta));
       },
-      nb::arg("marker"), nb::arg("theta"), nb::arg("comm"));
+      nb::arg("marker"), nb::arg("theta"));
 }
 
 } // namespace dolfinx_wrappers

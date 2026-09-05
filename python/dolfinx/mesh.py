@@ -1,5 +1,5 @@
-# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells and
-# Jørgen S. Dokken
+# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells, Jørgen S.
+# Dokken, Paul T. Kühner and Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -35,14 +35,13 @@ from dolfinx.cpp.mesh import (
 from dolfinx.cpp.refinement import (
     IdentityPartitionerPlaceholder,
     RefinementOption,
-    mark_maximum,
 )
-from dolfinx.cpp.refinement import (
-    uniform_refine as _uniform_refine,
-)
+from dolfinx.cpp.refinement import mark_maximum as _mark_maximum
+from dolfinx.cpp.refinement import uniform_refine as _uniform_refine
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem.element import _coordinate_element_from_basix
 from dolfinx.graph import AdjacencyList
+from dolfinx.la import Vector
 from dolfinx.typing import Real
 
 __all__ = [
@@ -939,6 +938,27 @@ def _get_mesh_partitioner(
             raise TypeError("The partitioner in the tuple must not be None.")
         return partitioner_fn, cell_weights
     return partitioner, None
+
+
+def mark_maximum(
+    indicators: Vector[Real],
+    theta: float,
+) -> npt.NDArray[np.int32]:
+    r"""Compute maximum-based marking of indicators.
+
+    Returns the indices :math:`i` of the indicators :math:`\eta_i` that
+    satisfy the maximum threshold:
+    :math:`\eta_i > \theta \max_j \eta_j`.
+
+    Args:
+        indicators: Indicators (local) :math:`\eta_i` - usually an error
+            indicator associated with mesh entity :math:`i`.
+        theta: Parameter, :math:`0 < \theta < 1`.
+
+    Returns:
+        Local indices of marked entities (including ghosts).
+    """
+    return _mark_maximum(indicators._cpp_object, theta)  # type: ignore
 
 
 def _create_mesh_coordinate_element(
