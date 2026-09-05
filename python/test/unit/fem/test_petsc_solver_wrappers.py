@@ -23,13 +23,11 @@ class TestPETScSolverWrappers:
         "mode",
         [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet],
     )
-    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_compare_solution_linear_vs_nonlinear_problem(self, mode):
         """Test that the wrapper for Linear problem and NonlinearProblem give the same result."""
         from petsc4py import PETSc
 
         import dolfinx.fem.petsc
-        import dolfinx.nls.petsc
 
         msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
         V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
@@ -68,31 +66,7 @@ class TestPETScSolverWrappers:
         u_lin = linear_problem.solve()
         assert linear_problem.solver.getConvergedReason() > 0
 
-        # Compare LinearProblem solution against the one obtained by
-        # legacy NewtonSolverNonlinearProblem
-        u_nonlin_legacy = dolfinx.fem.Function(V)
-        nonlinear_problem_legacy = dolfinx.fem.petsc.NewtonSolverNonlinearProblem(
-            ufl.replace(F, {uh: u_nonlin_legacy}), u_nonlin_legacy
-        )
-        nonlinear_solver_legacy = dolfinx.nls.petsc.NewtonSolver(msh.comm, nonlinear_problem_legacy)
-        ksp = nonlinear_solver_legacy.krylov_solver
-        ksp.setType("preonly")
-        ksp.getPC().setType("lu")
-        ksp.getPC().setFactorSolverType(factor_type)
-
         eps = 100 * np.finfo(dolfinx.default_scalar_type).eps
-
-        nonlinear_solver_legacy.atol = eps
-        nonlinear_solver_legacy.rtol = eps
-        nonlinear_solver_legacy.solve(u_nonlin_legacy)
-
-        assert np.allclose(u_lin.x.array, u_nonlin_legacy.x.array, atol=eps, rtol=eps)
-
-        with (
-            u_lin.x.petsc_vec.localForm() as _u_lin,
-            u_nonlin_legacy.x.petsc_vec.localForm() as _u_nonlin,
-        ):
-            assert np.allclose(_u_lin.array_r, _u_nonlin.array_r, atol=eps, rtol=eps)
 
         # Compare LinearProblem solution against the one obtained by NonlinearProblem
         petsc_options_nonlinear = {

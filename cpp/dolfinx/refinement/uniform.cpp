@@ -1,4 +1,11 @@
+// Copyright (C) 2025-2026 Chris Richardson, Garth N. Wells, Jørgen S. Dokken
+// and Paul T. Kühner
+//
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "uniform.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -7,14 +14,12 @@
 #include <iterator>
 #include <vector>
 
-#include "uniform.h"
-
 using namespace dolfinx;
 
 template <typename T>
-mesh::Mesh<T>
-refinement::uniform_refine(const mesh::Mesh<T>& mesh,
-                           const mesh::CellPartitionFunction& partitioner)
+mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
+                                         const graph::partition_fn& partitioner,
+                                         mesh::GhostMode ghost_mode)
 {
   // Requires edges (and facets for some 3D meshes) to be built already
   auto topology = mesh.topology();
@@ -304,7 +309,8 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     geometry_cmaps.push_back(cm);
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, geometry_cmaps, mesh.comm(), new_x,
-      {new_x.size() / 3, 3}, partitioner, 2, 1);
+      {new_x.size() / 3, 3}, graph::Partitioner{.fn = partitioner}, ghost_mode,
+      2, 1);
 
   return new_mesh;
 }
@@ -312,8 +318,8 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 /// @cond Explicit instantiation for float and double
 template mesh::Mesh<double>
 refinement::uniform_refine(const mesh::Mesh<double>& mesh,
-                           const mesh::CellPartitionFunction&);
+                           const graph::partition_fn&, mesh::GhostMode);
 template mesh::Mesh<float>
 refinement::uniform_refine(const mesh::Mesh<float>& mesh,
-                           const mesh::CellPartitionFunction&);
+                           const graph::partition_fn&, mesh::GhostMode);
 /// @endcond

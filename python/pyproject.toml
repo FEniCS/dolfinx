@@ -4,13 +4,10 @@
 # NOTE: petsc4py is an optional build dependency, therefore we don't
 # list it here.
 [build-system]
-# scikit-build-core>=0.11 has SPDX license support PEP 639
+# scikit-build-core>=0.11 has SPDX license support PEP 639.
 # scikit-build-core>=1.0.0: editable installs need its PathFinder-based
-# module resolution. Older versions' editable redirect always fails to
-# import dolfinx.cpp, since the nanobind-generated dolfinx/cpp/*.pyi stub
-# directory sits alongside the compiled dolfinx/cpp.<ext> module and
-# confuses their file-vs-package classifier.
-# nanobind>=2.9.2 has working recursive stubgen
+# module resolution, required for nanobind-stubgen `import dolfinx.cpp`.
+# nanobind>=2.9.2 has working recursive stubgen.
 requires = ["scikit-build-core>=1.0.0", "nanobind>=2.9.2", "mpi4py"]
 build-backend = "scikit_build_core.build"
 
@@ -45,6 +42,24 @@ demo = [
       "scipy",
       "pyvista",
 ]
+optional = [
+      "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
+]
+petsc4py = ["petsc4py"]
+typing = ["types-cffi", "types-setuptools", "scipy-stubs"]
+
+[dependency-groups]
+# Keep in sync with [build-system].requires above (petsc4py is an
+# optional build dependency and is intentionally excluded).
+build = ["scikit-build-core>=1.0.0", "nanobind>=2.9.2", "mpi4py"]
+test = [
+      "matplotlib",
+      "networkx",
+      "packaging",
+      "pytest>=9.0.0",
+      "scipy",
+      "fenics-dolfinx[optional]",
+]
 docs = [
       "breathe",
       "jupytext",
@@ -58,33 +73,21 @@ docs = [
       "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
 ]
-lint = ["ruff", "gersemi"]
-mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
-optional = [
-      "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
-]
-petsc4py = ["petsc4py"]
-test = [
-      "matplotlib",
-      "networkx",
-      "packaging",
-      "pytest>=9.0.0",
-      "scipy",
-      "fenics-dolfinx[optional]",
-]
+lint = ["ruff", "gersemi", "clang-format"]
 ci = [
       "pytest-xdist",
-      "fenics-dolfinx[build]",
-      "fenics-dolfinx[docs]",
-      "fenics-dolfinx[lint]",
-      "fenics-dolfinx[mypy]",
+      "mypy",
+      { include-group = "build" },
+      { include-group = "docs" },
+      { include-group = "lint" },
+      { include-group = "test" },
       "fenics-dolfinx[optional]",
-      "fenics-dolfinx[test]",
+      "fenics-dolfinx[typing]",
 ]
 
 [tool.scikit-build]
 wheel.packages = ["dolfinx"]
-sdist.exclude = ["*.cpp"]
+wheel.exclude = ["*.cpp"]
 cmake.build-type = "Release"
 
 [tool.scikit-build.cmake.define]
@@ -102,7 +105,7 @@ markers = [
 
 [tool.mypy]
 # Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
-disallow_untyped_defs = false
+disallow_untyped_defs = true
 disallow_any_unimported = true
 no_implicit_optional = true
 check_untyped_defs = true
@@ -115,9 +118,44 @@ ignore_missing_imports = false
 # patterns; check_untyped_defs and no_implicit_optional are not enforced
 # there.
 [[tool.mypy.overrides]]
-module = ["conftest", "unit.*"]
+module = ["conftest", "unit.*", "test"]
+disallow_untyped_defs = false
 no_implicit_optional = false
 check_untyped_defs = false
+
+# Demos are lightly typed by convention (see AGENTS.md) and exempt from the
+# stricter disallow_untyped_defs enforced on the library. mypy module
+# patterns only allow '*' as a whole dotted component (not as a "demo_*"
+# prefix match), so each demo module is listed explicitly.
+[[tool.mypy.overrides]]
+module = [
+      "demo_axis",
+      "demo_biharmonic",
+      "demo_cahn-hilliard",
+      "demo_comm-pattern",
+      "demo_elasticity",
+      "demo_gmsh",
+      "demo_half-loaded-waveguide",
+      "demo_hdg",
+      "demo_helmholtz",
+      "demo_interpolation-io",
+      "demo_lagrange-variants",
+      "demo_matrix-free-petsc",
+      "demo_mixed-poisson",
+      "demo_mixed-topology",
+      "demo_navier-stokes",
+      "demo_pml",
+      "demo_poisson-matrix-free",
+      "demo_poisson",
+      "demo_pyamg",
+      "demo_pyvista",
+      "demo_scattering-boundary-conditions",
+      "demo_static-condensation",
+      "demo_stokes",
+      "demo_tnt-elements",
+      "demo_types",
+]
+disallow_untyped_defs = false
 
 # Sister FEniCS projects (ufl, ffcx) ship no py.typed/stubs; gmsh, llvmlite,
 # pyamg, slepc4py, pyvista, pyvistaqt and networkx are untyped optional
@@ -142,6 +180,10 @@ module = [
       "pyvista",
       "pyvistaqt",
       "networkx",
+      "scipy.*",
+      "cffi",
+      "cffi.*",
+      "_cffi_backend",
 ]
 ignore_missing_imports = true
 

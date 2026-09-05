@@ -7,7 +7,10 @@
 
 import datetime
 import functools
-from typing import Self
+import typing
+from collections.abc import Callable
+
+from mpi4py import MPI as _MPI
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (
@@ -24,6 +27,7 @@ from dolfinx.cpp.common import (
     has_ptscotch,
     has_slepc,
     has_superlu_dist,
+    local_range,
     ufcx_signature,
 )
 
@@ -44,6 +48,7 @@ __all__ = [
     "has_slepc",
     "has_superlu_dist",
     "list_timings",
+    "local_range",
     "timed",
     "timing",
     "ufcx_signature",
@@ -66,7 +71,7 @@ def timing(task: str) -> tuple[int, datetime.timedelta]:
     return _cpp.common.timing(task)
 
 
-def list_timings(comm, reduction=Reduction.max):
+def list_timings(comm: _MPI.Comm, reduction: _cpp.common.Reduction = Reduction.max) -> None:
     """Print out a summary of all Timer measurements.
 
     When used in parallel, a reduction is applied across all processes.
@@ -132,12 +137,12 @@ class Timer:
         """
         self._cpp_object = _cpp.common.Timer(name)
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> typing.Self:
         """Start timer."""
         self._cpp_object.start()
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: object) -> None:
         """Stop timer and flush timing data to logger."""
         self._cpp_object.stop()
         self._cpp_object.flush()
@@ -178,12 +183,12 @@ class Timer:
         self._cpp_object.flush()
 
 
-def timed(task: str):
+def timed(task: str) -> Callable:
     """Decorator for timing functions."""
 
-    def decorator(func):
+    def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
             with Timer(task):
                 return func(*args, **kwargs)
 

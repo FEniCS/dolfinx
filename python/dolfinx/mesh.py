@@ -11,7 +11,6 @@ from __future__ import annotations
 import typing
 import warnings
 from collections.abc import Callable, Sequence
-from functools import singledispatch
 
 from mpi4py import MPI as _MPI
 
@@ -67,11 +66,13 @@ __all__ = [
     "Topology",
     "build_dual_graph",
     "cell_dim",
+    "compute_cell_centroids",
     "compute_incident_entities",
     "compute_midpoints",
     "create_box",
-    "create_cell_partitioner",
+    "create_geometric_cell_partitioner",
     "create_geometry",
+    "create_hybrid_cell_partitioner",
     "create_interval",
     "create_mesh",
     "create_point_mesh",
@@ -98,60 +99,139 @@ __all__ = [
 ]
 
 PartitioningFunc = typing.Callable[
-    [_MPI.Comm, int, _cpp.graph.AdjacencyList_int64, bool],
+    [
+        _MPI.Comm,
+        int,
+        _cpp.graph.AdjacencyList_int64,
+        npt.NDArray[np.int32] | None,
+        npt.NDArray[np.int32] | None,
+        bool,
+    ],
+    _cpp.graph.AdjacencyList_int32,
+]
+
+# float64 to match the C++ span<double> interface. Unlike
+# PartitioningFunc/HybridPartitioningFunc, the return is a plain
+# destination rank per node, not an AdjacencyList: a geometric
+# partitioner never ghosts.
+GeometricPartitioningFunc = typing.Callable[
+    [_MPI.Comm, int, npt.NDArray[np.float64], npt.NDArray[np.int32] | None],
+    npt.NDArray[np.int32],
+]
+HybridPartitioningFunc = typing.Callable[
+    [
+        _MPI.Comm,
+        int,
+        _cpp.graph.AdjacencyList_int64,
+        npt.NDArray[np.float64],
+        npt.NDArray[np.int32] | None,
+        npt.NDArray[np.int32] | None,
+        bool,
+    ],
     _cpp.graph.AdjacencyList_int32,
 ]
 
 
-@typing.overload
-def create_cell_partitioner(
-    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int | None
-) -> Callable: ...
+def create_geometric_cell_partitioner(
+    part: GeometricPartitioningFunc,
+) -> _cpp.graph.GeometricPartitioner:
+    """Create a function to partition a mesh using cell positions.
 
+    ``part`` is called by :func:`create_mesh` with each cell's centroid
+    (mean of its vertex positions), letting position-based partitioners
+    be used where :func:`create_mesh` otherwise expects graph edges.
 
-@typing.overload
-def create_cell_partitioner(mode: GhostMode, max_facet_to_cell_links: int | None) -> Callable: ...
+    The returned partitioner has no access to the dual graph, so it
+    never ghosts: the mesh always has ``GhostMode.none`` regardless of
+    what was requested. Use :func:`create_hybrid_cell_partitioner` if
+    the partitioner also needs the dual graph, e.g. to support ghosting.
 
-
-@singledispatch
-def create_cell_partitioner(
-    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int | None
-) -> Callable:
-    """Create a function to partition a mesh.
-
-    Args:
-        part: Partition function.
-        mode: Ghosting mode to use.
-        max_facet_to_cell_links: Maximum number of cells connected to a
-            facet. Equal to 2 for non-branching manifold meshes.
-            ``None`` corresponds to no upper bound on the number of
-            possible connections.
-
-    Return:
-        Partitioning function.
-    """
-    if isinstance(part, GhostMode):
-        raise TypeError("Expected a partition function, not a GhostMode.")
-    return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links)
-
-
-@create_cell_partitioner.register(GhostMode)  # type: ignore[attr-defined]
-def _create_cell_partitioner_from_ghost_mode(
-    mode: GhostMode, max_facet_to_cell_links: int | None
-) -> Callable:
-    """Create a function to partition a mesh.
+    ``part`` also receives optional node weights, matching
+    :data:`PartitioningFunc`; :func:`create_mesh` supplies its
+    ``cell_weights`` as the node weights. Not every geometric
+    partitioner honours these, e.g. ``partitioner_parmetis_geom`` raises
+    if given anything other than ``None``.
 
     Args:
-        mode: Ghosting mode to use
-        max_facet_to_cell_links: Maximum number of cells connected to a
-            facet. Equal to 2 for non-branching manifold meshes.
-            ``None`` corresponds to no upper bound on the number of
-            possible connections.
+        part: A custom geometric graph partitioning function. The
+            built-in geometric partitioners (``dolfinx.cpp.graph``'s
+            ``partition_morton``, ``partition_hilbert`` and
+            ``partitioner_parmetis_geom``) already return a
+            :class:`~dolfinx.cpp.graph.GeometricPartitioner` and do not
+            need to be wrapped.
 
     Return:
-        Partitioning function.
+        Partitioning function, for use as :func:`create_mesh`'s
+        ``partitioner`` argument.
     """
-    return _cpp.mesh.create_cell_partitioner(mode, max_facet_to_cell_links)
+    return _cpp.graph.create_geometric_cell_partitioner(part)
+
+
+def create_hybrid_cell_partitioner(
+    part: HybridPartitioningFunc,
+) -> _cpp.graph.HybridPartitioner:
+    """Create a function to partition a mesh using a hybrid partitioner.
+
+    Unlike :func:`create_geometric_cell_partitioner`, the dual graph is
+    always computed and passed to ``part`` along with cell positions,
+    regardless of ghost mode. Use this when the partitioner needs graph
+    edges for the partitioning decision itself, not only to determine
+    ghost cells.
+
+    The dual graph (its ``max_facet_to_cell_links`` and ``num_threads``)
+    is controlled at call time by :func:`create_mesh`'s matching
+    arguments, rather than fixed when the partitioner is created.
+
+    ``part`` also receives optional node and edge weights, matching
+    :data:`PartitioningFunc`; :func:`create_mesh` supplies its
+    ``cell_weights`` as the node weights and always passes ``None`` for
+    edge weights, since it has no way to compute them.
+
+    Args:
+        part: A custom hybrid graph partitioning function. ParMETIS's
+            built-in hybrid partitioner (``dolfinx.cpp.graph``'s
+            ``partitioner_parmetis_hybrid``, i.e. ParMETIS `GeomKway`)
+            already returns a :class:`~dolfinx.cpp.graph.HybridPartitioner`
+            and does not need to be wrapped.
+
+    Return:
+        Partitioning function, for use as :func:`create_mesh`'s
+        ``partitioner`` argument.
+    """
+    return _cpp.graph.create_hybrid_cell_partitioner(part)
+
+
+def compute_cell_centroids(
+    comm: _MPI.Comm,
+    cell_types: Sequence[CellType],
+    cells: Sequence[npt.NDArray[np.int64]],
+    commg: _MPI.Comm,
+    x: npt.NDArray[np.floating],
+) -> npt.NDArray[np.float64]:
+    """Compute the centroid of each cell from its vertex positions.
+
+    :func:`create_mesh` performs this computation internally before
+    calling a partitioner created by
+    :func:`create_geometric_cell_partitioner` or
+    :func:`create_hybrid_cell_partitioner`. Use it directly to call such
+    a partitioner without going through :func:`create_mesh`.
+
+    Args:
+        comm: MPI communicator that ``cells`` is distributed over.
+        cell_types: Cell types in the mesh.
+        cells: Cells of each cell type, using global vertex indices, as
+            accepted by :func:`create_mesh`.
+        commg: MPI communicator that ``x`` is distributed over.
+        x: Geometry ('node') coordinates, distributed over ``commg``.
+
+    Returns:
+        Cell centroids, with shape ``(num_cells, gdim)``, with the cells
+        of each cell type concatenated in the order they appear in
+        ``cells``.
+    """
+    return _cpp.mesh.compute_cell_centroids(
+        comm, cell_types, cells, commg, np.ascontiguousarray(x, dtype=np.float64)
+    )
 
 
 class Topology:
@@ -195,11 +275,11 @@ class Topology:
             )
 
     @property
-    def comm(self):
+    def comm(self) -> _MPI.Comm:
         """Return the MPI communicator associated with the topology."""
         return self._cpp_object.comm
 
-    def create_connectivity(self, d0: int, d1: int):
+    def create_connectivity(self, d0: int, d1: int) -> None:
         """Build entity connectivity ``d0 -> d1``.
 
         Args:
@@ -221,7 +301,7 @@ class Topology:
         """
         return self._cpp_object.create_entities(dim, num_threads)
 
-    def create_entity_permutations(self, num_threads: int = 1):
+    def create_entity_permutations(self, num_threads: int = 1) -> None:
         """Compute entity permutations and reflections.
 
         Args:
@@ -340,7 +420,7 @@ class Geometry(typing.Generic[Real]):
         return self.cmaps[0]
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         """Dimension of the Euclidean coordinate system."""
         return self._cpp_object.dim
 
@@ -413,17 +493,17 @@ class Mesh(typing.Generic[Real]):
             self._ufl_domain._ufl_cargo = self._cpp_object
 
     @property
-    def comm(self):
+    def comm(self) -> _MPI.Comm:
         """MPI communicator associated with the mesh."""
         return self._cpp_object.comm
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Name of the mesh."""
         return self._cpp_object.name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str) -> None:
         self._cpp_object.name = value
 
     def ufl_cell(self) -> ufl.Cell:
@@ -528,7 +608,7 @@ class MeshTags:
         return self._cpp_object.indices
 
     @property
-    def values(self):
+    def values(self) -> npt.NDArray[np.int8 | np.int32 | np.int64 | np.float64]:
         """Values associated with tagged mesh entities."""
         return self._cpp_object.values
 
@@ -538,10 +618,10 @@ class MeshTags:
         return self._cpp_object.name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str) -> None:
         self._cpp_object.name = value
 
-    def find(self, value) -> npt.NDArray[np.int32]:
+    def find(self, value: int | float) -> npt.NDArray[np.int32]:
         """Get a list of all entity indices with a given value.
 
         Args:
@@ -550,13 +630,13 @@ class MeshTags:
         Returns:
             Indices of entities with tag ``value``.
         """
-        return self._cpp_object.find(value)
+        return self._cpp_object.find(value)  # type: ignore[arg-type]
 
 
 class EntityMap:
     """Bidirectional map between entities in two topologies."""
 
-    def __init__(self, entity_map):
+    def __init__(self, entity_map: _cpp.mesh.EntityMap):
         """Initialise an entity map from a C++ `EntityMap` object.
 
         Note:
@@ -570,7 +650,9 @@ class EntityMap:
         self._topology = Topology(self._cpp_object.topology)
         self._sub_topology = Topology(self._cpp_object.sub_topology)
 
-    def sub_topology_to_topology(self, entities, inverse):
+    def sub_topology_to_topology(
+        self, entities: npt.NDArray[np.int32], inverse: bool
+    ) -> npt.NDArray[np.int32]:
         """Map entities between the sub-topology and the parent topology.
 
         If `inverse` is False, this function maps a list of
@@ -600,17 +682,17 @@ class EntityMap:
         return self._cpp_object.sub_topology_to_topology(entities, inverse)
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         """Topological dimension of the entities."""
         return self._cpp_object.dim
 
     @property
-    def topology(self):
+    def topology(self) -> Topology:
         """The topology."""
         return self._topology
 
     @property
-    def sub_topology(self):
+    def sub_topology(self) -> Topology:
         """The sub-topology."""
         return self._sub_topology
 
@@ -663,7 +745,9 @@ def compute_incident_entities(
     return _cpp.mesh.compute_incident_entities(topology._cpp_object, entities, d0, d1)
 
 
-def compute_midpoints(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
+def compute_midpoints(
+    msh: Mesh[Real], dim: int, entities: npt.NDArray[np.int32]
+) -> npt.NDArray[Real]:
     """Compute the midpoints of a set of mesh entities.
 
     Args:
@@ -674,7 +758,7 @@ def compute_midpoints(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
     Returns:
         Midpoints of the entities, shape ``(num_entities, 3)``.
     """
-    return _cpp.mesh.compute_midpoints(msh._cpp_object, dim, entities)
+    return _cpp.mesh.compute_midpoints(msh._cpp_object, dim, entities)  # type: ignore[return-value]
 
 
 def locate_entities(msh: Mesh, dim: int, marker: Callable) -> np.ndarray:
@@ -767,6 +851,7 @@ def transfer_meshtag(
 def uniform_refine(
     msh: Mesh,
     partitioner: Callable | None = None,
+    ghost_mode: GhostMode = GhostMode.none,
 ) -> Mesh:
     """Uniformly refine a mesh.
 
@@ -780,11 +865,13 @@ def uniform_refine(
         msh: Mesh from which to create the refined mesh.
         partitioner: Partitioner to distribute the refined mesh.
             If ``None`` is passed (default) no redistribution will happen.
+        ghost_mode: Ghost mode of the refined mesh, passed to
+            ``partitioner``. Has no effect if ``partitioner`` is ``None``.
 
     Returns:
         The refined mesh.
     """
-    _cpp_mesh = _uniform_refine(msh._cpp_object, partitioner)
+    _cpp_mesh = _uniform_refine(msh._cpp_object, partitioner, ghost_mode)
     if msh._ufl_domain is None:
         raise ValueError("Cannot refine a mesh without a UFL domain.")
     # Create new ufl domain as it will carry a reference to the C++ mesh
@@ -800,6 +887,7 @@ def refine(
         IdentityPartitionerPlaceholder()
     ),
     option: RefinementOption = RefinementOption.parent_cell,
+    ghost_mode: GhostMode = GhostMode.none,
 ) -> tuple[Mesh, npt.NDArray[np.int32] | None, npt.NDArray[np.int8] | None]:
     """Refine a mesh.
 
@@ -822,12 +910,17 @@ def refine(
             redistribution will happen.
         option: Controls whether parent cells and/or parent facets are
             computed.
+        ghost_mode: Ghost mode used in the mesh partitioning, passed to
+            ``partitioner`` at call time if it is a callable. Has no
+            effect if ``partitioner`` is an
+            :py:class:`IdentityPartitionerPlaceholder` (see the note
+            above).
 
     Returns:
        Refined mesh, (optional) parent cells, (optional) parent facets
     """
     mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
-        msh._cpp_object, edges, partitioner, option
+        msh._cpp_object, edges, partitioner, option, ghost_mode
     )
     if msh._ufl_domain is None:
         raise ValueError("Cannot refine a mesh without a UFL domain.")
@@ -919,9 +1012,11 @@ def create_mesh(
     cells: npt.NDArray[np.int64],
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     x: npt.NDArray[np.floating],
-    partitioner: Callable | None = None,
+    partitioner: _MeshPartitioner = None,
+    ghost_mode: GhostMode = GhostMode.none,
     max_facet_to_cell_links: int = 2,
     num_threads: int = 1,
+    reorder_fn: Callable | None = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -933,12 +1028,19 @@ def create_mesh(
             type of ``e``.
         x: Mesh geometry ('node' coordinates), with shape
             ``(num_nodes, gdim)``.
-        partitioner: Function that determines the parallel distribution of
-            cells across MPI ranks.
+        partitioner: ``None``, a partitioner function, or a pair
+            ``(partitioner, cell_weights)``. Cell weights may be ``None``
+            or an array of weights associated with each cell in ``cells``.
+        ghost_mode: Ghost mode used in the mesh partitioning, passed to
+            ``partitioner`` at call time.
         max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
         num_threads: Number of threads to use to build mesh. Must be
             greater than 0.
+        reorder_fn: Function called with the local cell dual graph. It
+            must return an array that maps each cell index to its new
+            index. If ``None`` (default), reverse Cuthill-McKee ordering
+            is used.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -947,8 +1049,7 @@ def create_mesh(
     Returns:
         A mesh.
     """
-    if partitioner is None and comm.size > 1:
-        partitioner = _create_cell_partitioner_from_ghost_mode(GhostMode.none, 2)
+    partitioner_fn, cell_weights = _get_mesh_partitioner(comm, partitioner)
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:
@@ -956,48 +1057,23 @@ def create_mesh(
     else:
         gdim = x.shape[1]
 
-    dtype: npt.DTypeLike | None = None
-    if isinstance(e, ufl.domain.Mesh):
-        # e is a UFL domain
-        e_ufl = e.ufl_coordinate_element()
-        cmap = _coordinate_element_from_basix(e_ufl.basix_element)
-        domain = e
-        dtype = cmap.dtype
-        # TODO: Resolve UFL vs Basix geometric dimension issue
-        # assert domain.geometric_dimension() == gdim
-    elif isinstance(e, basix.finite_element.FiniteElement):
-        # e is a Basix element
-        # TODO: Resolve geometric dimension vs shape for manifolds
-        cmap = _coordinate_element_from_basix(e)
-        e_ufl = basix.ufl._BasixElement(e)
-        e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
-        domain = ufl.Mesh(e_ufl)
-        dtype = cmap.dtype
-        assert domain.geometric_dimension == gdim
-    elif isinstance(e, ufl.finiteelement.AbstractFiniteElement):
-        # e is a Basix 'UFL' element
-        cmap = _coordinate_element_from_basix(e.basix_element)
-        domain = ufl.Mesh(e)
-        dtype = cmap.dtype
-        assert domain.geometric_dimension == gdim
-    elif isinstance(e, _CoordinateElement):
-        # e is a CoordinateElement
-        cmap = e
-        domain = None
-        dtype = cmap.dtype
-    else:
-        raise ValueError(f"Unsupported element type {type(e)}.")
+    cmap, domain = _create_mesh_coordinate_element(e, gdim)
 
-    x = np.asarray(x, dtype=dtype, order="C")
+    x = np.asarray(x, dtype=cmap.dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
+    if cell_weights is not None:
+        cell_weights = np.asarray(cell_weights, dtype=np.int32, order="C")
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
-        comm,
-        cells,
-        cmap._cpp_object,  # type: ignore[arg-type]
-        x,
-        partitioner,
-        max_facet_to_cell_links,
-        num_threads,
+        comm=comm,
+        cells=cells,
+        element=cmap._cpp_object,  # type: ignore[arg-type]
+        x=x,
+        partitioner=partitioner_fn,
+        ghost_mode=ghost_mode,
+        max_facet_to_cell_links=max_facet_to_cell_links,
+        num_threads=num_threads,
+        cell_weights=cell_weights,
+        reorder_fn=reorder_fn,
     )
 
     return Mesh(msh, domain)
@@ -1134,8 +1210,8 @@ def create_interval(
     nx: int,
     points: npt.ArrayLike,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: Callable | None = None,
     gdim: int = 1,
 ) -> Mesh:
     """Create an interval mesh.
@@ -1157,7 +1233,7 @@ def create_interval(
         An interval mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = _cpp.graph.partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1183,8 +1259,8 @@ def create_unit_interval(
     comm: _MPI.Comm,
     nx: int,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: Callable | None = None,
     gdim: int = 1,
 ) -> Mesh:
     """Create a mesh on the unit interval.
@@ -1213,10 +1289,10 @@ def create_rectangle(
     comm: _MPI.Comm,
     points: npt.ArrayLike,
     n: Sequence[int],
-    cell_type=CellType.triangle,
+    cell_type: CellType = CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: Callable | None = None,
     diagonal: DiagonalType = DiagonalType.right,
     gdim: int = 2,
 ) -> Mesh:
@@ -1242,7 +1318,7 @@ def create_rectangle(
         A mesh of a rectangle.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = _cpp.graph.partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1263,6 +1339,7 @@ def create_rectangle(
             partitioner,
             diagonal,
             gdim,
+            ghost_mode,
         )
     elif np.issubdtype(dtype, np.float64):
         msh = _cpp.mesh.create_rectangle_float64(
@@ -1273,6 +1350,7 @@ def create_rectangle(
             partitioner,
             diagonal,
             gdim,
+            ghost_mode,
         )
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
@@ -1284,10 +1362,10 @@ def create_unit_square(
     comm: _MPI.Comm,
     nx: int,
     ny: int,
-    cell_type=CellType.triangle,
+    cell_type: CellType = CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: Callable | None = None,
     diagonal: DiagonalType = DiagonalType.right,
     gdim: int = 2,
 ) -> Mesh:
@@ -1329,10 +1407,10 @@ def create_box(
     comm: _MPI.Comm,
     points: list[npt.ArrayLike],
     n: Sequence[int],
-    cell_type=CellType.tetrahedron,
+    cell_type: CellType = CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: Callable | None = None,
 ) -> Mesh:
     """Create a box mesh.
 
@@ -1352,7 +1430,7 @@ def create_box(
         A mesh of a box domain.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = _cpp.graph.partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1365,9 +1443,9 @@ def create_box(
     )
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)  # type: ignore[arg-type]
+        msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner, ghost_mode)  # type: ignore[arg-type]
     elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner)  # type: ignore[arg-type]
+        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner, ghost_mode)  # type: ignore[arg-type]
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
 
@@ -1379,10 +1457,10 @@ def create_unit_cube(
     nx: int,
     ny: int,
     nz: int,
-    cell_type=CellType.tetrahedron,
+    cell_type: CellType = CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: Callable | None = None,
 ) -> Mesh:
     """Create a mesh of a unit cube.
 
@@ -1414,7 +1492,7 @@ def create_unit_cube(
 
 
 def entities_to_geometry(
-    msh: Mesh, dim: int, entities: npt.NDArray[np.int32], permute=False
+    msh: Mesh, dim: int, entities: npt.NDArray[np.int32], permute: bool = False
 ) -> npt.NDArray[np.int32]:
     """Geometric DOFs associated with the closure of given mesh entities.
 
@@ -1542,7 +1620,7 @@ def transfer_meshtags_to_submesh(
     return MeshTags(cpp_tag)
 
 
-def create_point_mesh(comm: _MPI.Intracomm, points: npt.NDArray[np.float32 | np.float64]) -> Mesh:
+def create_point_mesh(comm: _MPI.Comm, points: npt.NDArray[np.float32 | np.float64]) -> Mesh:
     """Create a mesh consisting of points only.
 
     Note:

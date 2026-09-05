@@ -114,13 +114,31 @@ To set the installation prefix::
     make install
 
 
+.. rubric:: PETSc and SLEPc installed as a Python package
+
+PETSc and SLEPc are located with ``pkg-config``. If ``PETSC_DIR``
+(``SLEPC_DIR``) is not set in the environment, the Python interpreter is
+asked for the prefix of an importable ``petsc`` (``slepc``) package,
+however it was installed. PETSc 3.25.5 or later is required, as earlier
+versions did not ship ``pkg-config`` files in the Python package tree.
+For example, with pip::
+
+    PETSC_CONFIGURE_OPTIONS="--download-parmetis --download-metis" \
+        pip install petsc petsc4py
+    cmake ../
+    make install
+
+PETSc installs the required graph partitioner into the same prefix,
+where it is picked up alongside PETSc itself.
+
+
 Python
 ******
 
 After installation of the C++ interface, from the ``python/`` directory
 the Python interface can be installed using::
 
-    python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
+    pip install --group pyproject.toml:build
     pip install --check-build-dependencies --no-build-isolation .
 
 

@@ -31,10 +31,9 @@ from scipy.special import h2vp, hankel2, jv, jvp
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
+from dolfinx import default_real_type, default_scalar_type, fem, graph, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import gmsh as gmshio
-from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
 
 try:
     from dolfinx.io import VTXWriter
@@ -224,7 +223,7 @@ def compute_a(nu: int, m: complex, alpha: float) -> complex:
 
     a_nu_num = J_nu_alpha * J_nu_malpha_p - m * J_nu_malpha * J_nu_alpha_p
     a_nu_den = H_nu_alpha * J_nu_malpha_p - m * J_nu_malpha * H_nu_alpha_p
-    return a_nu_num / a_nu_den
+    return complex(a_nu_num / a_nu_den)
 
 
 def calculate_analytical_efficiencies(
@@ -375,9 +374,16 @@ if MPI.COMM_WORLD.rank == 0:
         pml_tag,
     )
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = _cell_partitioner(mesh.GhostMode.shared_facet, 2)
+partitioner = graph.partitioner()
 
-mesh_data = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
+mesh_data = gmshio.model_to_mesh(
+    model,
+    MPI.COMM_WORLD,
+    0,
+    gdim=2,
+    partitioner=partitioner,
+    ghost_mode=mesh.GhostMode.shared_facet,
+)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
 assert all(pg.dim == 2 for _, pg in mesh_data.physical_groups.items()), "Wrong physical group dim."
@@ -635,7 +641,7 @@ if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
 elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
     mat_factor_backend = "superlu_dist"
 else:
-    if mesh_data.mesh.comm > 1:
+    if mesh_data.mesh.comm.size > 1:
         raise RuntimeError("This demo requires a parallel LU solver.")
     else:
         mat_factor_backend = "petsc"

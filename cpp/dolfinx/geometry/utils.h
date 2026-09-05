@@ -10,14 +10,18 @@
 #include "gjk.h"
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <deque>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <limits>
 #include <map>
 #include <numeric>
+#include <optional>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::geometry
@@ -517,40 +521,48 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 /// @param[in] point The point (`shape=(3,)`).
 /// @param[in] tol Tolerance for accepting a collision (in the squared
 /// distance).
+/// @param[in,out] coordinate_dofs Scratch buffer, sized at least
+/// `(number of nodes per cell) * 3`, i.e.
+/// `mesh.geometry().dofmaps().front().extent(1) * 3`. A larger buffer is
+/// permitted (e.g. sized for the largest cell type in a mixed-topology
+/// mesh); only the first `(number of nodes per cell) * 3` entries are
+/// used. Callers invoking this function once per point in a loop should
+/// hoist a single buffer outside the loop and pass it here to avoid a
+/// per-call allocation. Its contents on return are unspecified.
 /// @return Local cell index, -1 if not found.
 template <std::floating_point T>
 std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
                                           std::span<const std::int32_t> cells,
-                                          std::array<T, 3> point, T tol)
+                                          std::array<T, 3> point, T tol,
+                                          std::span<T> coordinate_dofs)
 {
   if (cells.empty())
     return -1;
-  else
-  {
-    const mesh::Geometry<T>& geometry = mesh.geometry();
-    std::span<const T> geom_dofs = geometry.x();
-    auto x_dofmap = geometry.dofmaps().front();
-    const std::size_t num_nodes = x_dofmap.extent(1);
-    std::vector<T> coordinate_dofs(num_nodes * 3);
-    for (auto cell : cells)
-    {
-      auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-      for (std::size_t i = 0; i < num_nodes; ++i)
-      {
-        std::copy_n(std::next(geom_dofs.begin(), 3 * dofs[i]), 3,
-                    std::next(coordinate_dofs.begin(), 3 * i));
-      }
 
-      std::array<T, 3> shortest_vector
-          = compute_distance_gjk<T>(point, coordinate_dofs);
-      T d2 = std::reduce(shortest_vector.begin(), shortest_vector.end(), T(0),
-                         [](auto d, auto e) { return d + e * e; });
-      if (d2 < tol)
-        return cell;
+  const mesh::Geometry<T>& geometry = mesh.geometry();
+  std::span<const T> geom_dofs = geometry.x();
+  auto x_dofmap = geometry.dofmaps().front();
+  const std::size_t num_nodes = x_dofmap.extent(1);
+  assert(coordinate_dofs.size() >= num_nodes * 3);
+  std::span<T> cell_dofs = coordinate_dofs.first(num_nodes * 3);
+  for (auto cell : cells)
+  {
+    auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
+    for (std::size_t i = 0; i < num_nodes; ++i)
+    {
+      std::copy_n(std::next(geom_dofs.begin(), 3 * dofs[i]), 3,
+                  std::next(cell_dofs.begin(), 3 * i));
     }
 
-    return -1;
+    std::array<T, 3> shortest_vector
+        = compute_distance_gjk<T>(point, cell_dofs);
+    T d2 = std::reduce(shortest_vector.begin(), shortest_vector.end(), T(0),
+                       [](auto d, auto e) { return d + e * e; });
+    if (d2 < tol)
+      return cell;
   }
+
+  return -1;
 }
 
 /// @brief Compute closest mesh entity to a point.
@@ -656,34 +668,53 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
   return graph::AdjacencyList(std::move(colliding_cells), std::move(offsets));
 }
 
-/// @brief Given a set of points, determine which process is colliding,
-/// using the GJK algorithm on cells to determine collisions.
+/// @brief Determine, for a set of points, the owning process of the
+/// cell (if any) that contains each point.
 ///
-/// @todo This docstring is unclear. Needs fixing.
+/// A cell is a *candidate* for a point if the cell's bounding box,
+/// padded by `padding`, contains the point. Each candidate is then
+/// tested for actual containment of the point with the GJK algorithm.
+/// If no candidate actually contains a point, the point is either left
+/// unowned or, if `find_closest_cell` is `true`, assigned to the
+/// candidate cell closest to it (by GJK distance).
 ///
 /// @param[in] mesh The mesh
 /// @param[in] points Points to check for collision (`shape=(num_points,
 /// 3)`). Storage is row-major.
+/// @param[in] padding Amount of absolute padding applied to each
+/// cell's bounding box before searching for candidate cells/processes.
+/// Increasing `padding` increases the number of cells considered as
+/// candidates for a point; it does not by itself decide whether a
+/// point with no actually-containing cell is assigned an owner, which
+/// is controlled by `find_closest_cell`.
 /// @param[in] cells Cells to check for ownership
-/// @param[in] padding Amount of absolute padding of bounding boxes of the mesh.
-/// Each bounding box of the mesh is padded with this amount, to increase
-/// the number of candidates, avoiding rounding errors in determining the owner
-/// of a point if the point is on the surface of a cell in the mesh.
+/// @param[in] find_closest_cell If `true` (default), a point not
+/// actually contained in any candidate cell is instead assigned to the
+/// process owning the candidate cell closest to it. If `false`, such a
+/// point is left unowned.
 /// @return Point ownership data.
 ///
 /// @note `dest_owner` is sorted
-/// @note `src_owner` is -1 if no colliding process is found
+/// @note An entry of `src_owner` is `-1` if the corresponding point
+/// was not contained in any candidate cell and, if `find_closest_cell`
+/// is `true`, had no candidate cell to fall back on either (e.g. because
+/// `padding` was too small).
 /// @note dest_points is flattened row-major, shape `(dest_owner.size(),
 /// 3)`
-/// @note A large padding value can increase the runtime of the function by
-/// orders of magnitude, because for non-colliding cells
-/// one has to determine the closest cell among all processes with an
-/// intersecting bounding box, which is an expensive operation to perform.
+/// @note With `find_closest_cell` set to `true`, a large padding
+/// value can increase the runtime of the function by orders of
+/// magnitude, since a point not contained in any candidate then
+/// requires a GJK distance computation against every candidate cell
+/// across all processes with an intersecting bounding box.
+/// @note `find_closest_cell` must be the same on every rank of
+/// `mesh.comm()`: it gates collective MPI calls, so ranks disagreeing on
+/// its value will deadlock.
 template <std::floating_point T>
 PointOwnershipData<T>
 determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
                           T padding,
-                          std::optional<std::span<const std::int32_t>> cells)
+                          std::optional<std::span<const std::int32_t>> cells,
+                          bool find_closest_cell = true)
 {
   MPI_Comm comm = mesh.comm();
 
@@ -732,7 +763,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   // Count the number of points to send per neighbor process
   std::vector<std::int32_t> send_sizes(out_ranks.size());
   for (std::size_t i = 0; i < points.size() / 3; ++i)
-    for (auto p : collisions.links(i))
+    for (std::int32_t p : collisions.links(i))
       send_sizes[rank_to_neighbor[p]] += 3;
 
   // Compute receive sizes
@@ -755,7 +786,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   std::vector<std::int32_t> unpack_map(send_offsets.back() / 3);
   for (std::size_t i = 0; i < points.size(); i += 3)
   {
-    for (auto p : collisions.links(i / 3))
+    for (std::int32_t p : collisions.links(i / 3))
     {
       int neighbor = rank_to_neighbor[p];
       int pos = send_offsets[neighbor] + counter[neighbor];
@@ -787,6 +818,11 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       = compute_collisions(bb, std::span<const T>(received_points.data(),
                                                   received_points.size()));
 
+  // Scratch buffer reused across points below to avoid a per-point
+  // allocation, both for the initial collision check and (further down)
+  // for the closest-cell fallback.
+  std::vector<T> coordinate_dofs(3 * x_dofmap.extent(1));
+
   // Each process checks which points collide with a cell on the process
   const int rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> cell_indicator(received_points.size() / 3);
@@ -798,7 +834,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
     // Find first colliding cell among the cells with colliding bounding boxes
     const int colliding_cell = geometry::compute_first_colliding_cell(
         mesh, candidate_collisions.links(p / 3), point,
-        10 * std::numeric_limits<T>::epsilon());
+        10 * std::numeric_limits<T>::epsilon(), std::span<T>(coordinate_dofs));
     // If a collding cell is found, store the rank of the current process
     // which will be sent back to the owner of the point
     cell_indicator[p / 3] = (colliding_cell >= 0) ? rank : -1;
@@ -844,87 +880,93 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       point_owners[pos] = recv_ranks[i];
   }
 
-  // Create extrapolation marker for those points already sent to other
-  // process
-  std::vector<std::uint8_t> send_extrapolate(recv_offsets.back());
-  for (std::int32_t i = 0; i < recv_offsets.back(); i++)
+  if (find_closest_cell)
   {
-    const std::int32_t pos = unpack_map[i];
-    send_extrapolate[i] = point_owners[pos] == -1;
-  }
-
-  // Swap communication direction, to send extrapolation marker to other
-  // processes
-  std::swap(send_sizes, recv_sizes);
-  std::swap(send_offsets, recv_offsets);
-  std::vector<std::uint8_t> dest_extrapolate(recv_offsets.back());
-  MPI_Neighbor_alltoallv(send_extrapolate.data(), send_sizes.data(),
-                         send_offsets.data(), MPI_UINT8_T,
-                         dest_extrapolate.data(), recv_sizes.data(),
-                         recv_offsets.data(), MPI_UINT8_T, forward_comm);
-
-  std::vector<T> squared_distances(received_points.size() / 3, -1);
-
-  for (std::size_t i = 0; i < dest_extrapolate.size(); i++)
-  {
-    if (dest_extrapolate[i] == 1)
+    // Marker for those points already sent to another process that still
+    // need a closest-cell fallback (no owner was found above)
+    std::vector<std::uint8_t> send_needs_closest_cell(recv_offsets.back());
+    for (std::int32_t i = 0; i < recv_offsets.back(); i++)
     {
-      assert(closest_cells[i] == -1);
-      std::array<T, 3> point;
-      std::copy_n(std::next(received_points.begin(), 3 * i), 3, point.begin());
-
-      // Find shortest distance among cells with colliding bounding box
-      T shortest_distance = std::numeric_limits<T>::max();
-      std::int32_t closest_cell = -1;
-      for (auto cell : candidate_collisions.links(i))
-      {
-        auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-        std::vector<T> nodes(3 * dofs.size());
-        for (std::size_t j = 0; j < dofs.size(); ++j)
-        {
-          const int pos = 3 * dofs[j];
-          for (std::size_t k = 0; k < 3; ++k)
-            nodes[3 * j + k] = geom_dofs[pos + k];
-        }
-        const std::array<T, 3> d = compute_distance_gjk<T>(
-            std::span<const T>(point.data(), point.size()), nodes);
-        if (T current_distance = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
-            current_distance < shortest_distance)
-        {
-          shortest_distance = current_distance;
-          closest_cell = cell;
-        }
-      }
-      closest_cells[i] = closest_cell;
-      squared_distances[i] = shortest_distance;
+      const std::int32_t pos = unpack_map[i];
+      send_needs_closest_cell[i] = point_owners[pos] == -1;
     }
-  }
 
-  std::swap(recv_sizes, send_sizes);
-  std::swap(recv_offsets, send_offsets);
+    // Swap communication direction, to send the marker to other processes
+    std::swap(send_sizes, recv_sizes);
+    std::swap(send_offsets, recv_offsets);
+    std::vector<std::uint8_t> dest_needs_closest_cell(recv_offsets.back());
+    MPI_Neighbor_alltoallv(send_needs_closest_cell.data(), send_sizes.data(),
+                           send_offsets.data(), MPI_UINT8_T,
+                           dest_needs_closest_cell.data(), recv_sizes.data(),
+                           recv_offsets.data(), MPI_UINT8_T, forward_comm);
 
-  // Get distances from closest entity of points that were on the other process
-  std::vector<T> recv_distances(recv_offsets.back());
-  MPI_Neighbor_alltoallv(
-      squared_distances.data(), send_sizes.data(), send_offsets.data(),
-      dolfinx::MPI::mpi_t<T>, recv_distances.data(), recv_sizes.data(),
-      recv_offsets.data(), dolfinx::MPI::mpi_t<T>, reverse_comm);
+    std::vector<T> squared_distances(received_points.size() / 3, -1);
 
-  // Update point ownership with extrapolation information
-  std::vector<T> closest_distance(point_owners.size(),
-                                  std::numeric_limits<T>::max());
-  for (std::size_t i = 0; i < out_ranks.size(); i++)
-  {
-    for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
+    for (std::size_t i = 0; i < dest_needs_closest_cell.size(); i++)
     {
-      const std::int32_t pos = unpack_map[j];
-      auto current_dist = recv_distances[j];
-      // Update if closer than previous guess and was found
-      if (auto d = closest_distance[pos];
-          (current_dist > 0) and (current_dist < d))
+      if (dest_needs_closest_cell[i] == 1)
       {
-        point_owners[pos] = out_ranks[i];
-        closest_distance[pos] = current_dist;
+        assert(closest_cells[i] == -1);
+        std::array<T, 3> point;
+        std::copy_n(std::next(received_points.begin(), 3 * i), 3,
+                    point.begin());
+
+        // Find shortest distance among cells with colliding bounding box
+        T shortest_distance = std::numeric_limits<T>::max();
+        std::int32_t closest_cell = -1;
+        for (auto cell : candidate_collisions.links(i))
+        {
+          auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
+          for (std::size_t j = 0; j < dofs.size(); ++j)
+          {
+            const int pos = 3 * dofs[j];
+            for (std::size_t k = 0; k < 3; ++k)
+              coordinate_dofs[3 * j + k] = geom_dofs[pos + k];
+          }
+          const std::array<T, 3> d = compute_distance_gjk<T>(
+              std::span<const T>(point.data(), point.size()),
+              std::span<const T>(coordinate_dofs.data(), 3 * dofs.size()));
+          if (T current_distance = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+              current_distance < shortest_distance)
+          {
+            shortest_distance = current_distance;
+            closest_cell = cell;
+          }
+        }
+        closest_cells[i] = closest_cell;
+        squared_distances[i] = shortest_distance;
+      }
+    }
+
+    std::swap(recv_sizes, send_sizes);
+    std::swap(recv_offsets, send_offsets);
+
+    // Get distances from closest entity of points that were on the other
+    // process
+    std::vector<T> recv_distances(recv_offsets.back());
+    MPI_Neighbor_alltoallv(
+        squared_distances.data(), send_sizes.data(), send_offsets.data(),
+        dolfinx::MPI::mpi_t<T>, recv_distances.data(), recv_sizes.data(),
+        recv_offsets.data(), dolfinx::MPI::mpi_t<T>, reverse_comm);
+
+    // Update point ownership with extrapolation information
+    std::vector<T> closest_distance(point_owners.size(),
+                                    std::numeric_limits<T>::max());
+    for (std::size_t i = 0; i < out_ranks.size(); i++)
+    {
+      for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
+      {
+        const std::int32_t pos = unpack_map[j];
+        T current_dist = recv_distances[j];
+        // Update if closer than previous guess and was found (current_dist
+        // is -1, not a valid squared distance, if no candidate cell was
+        // found on the sending rank)
+        if (T d = closest_distance[pos];
+            (current_dist >= 0) and (current_dist < d))
+        {
+          point_owners[pos] = out_ranks[i];
+          closest_distance[pos] = current_dist;
+        }
       }
     }
   }
@@ -938,7 +980,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   std::ranges::fill(counter, 0);
   for (std::size_t i = 0; i < points.size() / 3; ++i)
   {
-    for (auto p : collisions.links(i))
+    for (std::int32_t p : collisions.links(i))
     {
       int neighbor = rank_to_neighbor[p];
       send_owners[send_offsets[neighbor] + counter[neighbor]++]

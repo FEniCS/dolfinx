@@ -21,6 +21,8 @@ from dolfinx.typing import Scalar
 if TYPE_CHECKING:
     from petsc4py import PETSc
 
+    from scipy import sparse as _sparse
+
 __all__ = [
     "InsertMode",
     "MatrixCSR",
@@ -75,7 +77,7 @@ class Vector(Generic[_T]):
         self._cpp_object = x
         self._petsc_x = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Delete the PETSc vector if it was created."""
         if self._petsc_x is not None:
             self._petsc_x.destroy()
@@ -181,7 +183,7 @@ class MatrixCSR(Generic[Scalar]):
         else:
             self._cpp_object.mult(x._cpp_object, y._cpp_object)  # type: ignore[arg-type]
 
-    def matmul(self, B):
+    def matmul(self, B: MatrixCSR[Scalar]) -> MatrixCSR[Scalar]:
         """Compute matrix product ``A * B``, where `A` is this matrix.
 
         Args:
@@ -200,9 +202,9 @@ class MatrixCSR(Generic[Scalar]):
         ):
             raise RuntimeError("Block size not supported in matmul.")
 
-        return MatrixCSR(self._cpp_object.mult(B._cpp_object))
+        return MatrixCSR(self._cpp_object.mult(B._cpp_object))  # type: ignore[arg-type]
 
-    def transpose(self):
+    def transpose(self) -> MatrixCSR[Scalar]:
         """Compute transpose matrix."""
         return MatrixCSR(self._cpp_object.transpose())
 
@@ -243,6 +245,31 @@ class MatrixCSR(Generic[Scalar]):
         """Scatter and accumulate ghost values."""
         self._cpp_object.scatter_reverse()
 
+    def eliminate_zeros(self, tol: float = 0) -> None:
+        """Remove explicitly-stored entries that are within a tolerance.
+
+        This compacts the underlying storage: entries with
+        ``abs(value) <= tol`` are dropped, and the column indices and
+        row pointers are updated accordingly. Entries with
+        ``abs(value) > tol`` are left untouched.
+
+        Note:
+            This is a terminal, finalizing operation. It can reduce the
+            matrix's sparsity, which invalidates the precomputed
+            communication pattern used to accumulate ghost row
+            contributions. After calling this, the matrix can no longer
+            be modified: further calls to :meth:`add`, :meth:`set`, or
+            :meth:`scatter_reverse` will raise a ``RuntimeError``. Only
+            call this once, after the matrix is fully assembled (i.e.
+            after the final :meth:`scatter_reverse`).
+
+        Args:
+            tol: Entries with magnitude less than or equal to ``tol``
+                are removed from storage. Defaults to removing only
+                exact zeros.
+        """
+        self._cpp_object.eliminate_zeros(self.data.dtype.type(tol))  # type: ignore[arg-type]
+
     def squared_norm(self) -> float:
         """Compute the squared Frobenius norm.
 
@@ -274,7 +301,9 @@ class MatrixCSR(Generic[Scalar]):
         """
         return self._cpp_object.to_dense()  # type: ignore[return-value]
 
-    def to_scipy(self, ghosted: bool = False):
+    def to_scipy(  # type: ignore[no-any-unimported]
+        self, ghosted: bool = False
+    ) -> _sparse.csr_matrix | _sparse.bsr_matrix:
         """Convert to a SciPy CSR/BSR matrix. Data is shared.
 
         Note:
@@ -316,7 +345,9 @@ class MatrixCSR(Generic[Scalar]):
 
 
 def matrix_csr(
-    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype: npt.DTypeLike = np.float64
+    sp: _cpp.la.SparsityPattern,
+    block_mode: BlockMode = BlockMode.compact,
+    dtype: npt.DTypeLike = np.float64,
 ) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
@@ -351,7 +382,7 @@ def matrix_csr(
     return MatrixCSR(ftype(sp, block_mode))
 
 
-def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
+def vector(map: IndexMap, bs: int = 1, dtype: npt.DTypeLike = np.float64) -> Vector:
     """Create a distributed vector.
 
     Args:

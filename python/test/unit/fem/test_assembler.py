@@ -1344,7 +1344,7 @@ class TestPETScAssemblers:
             element("Lagrange", cell_type.name, 1, shape=(2,), dtype=default_real_type)
         )
 
-        def partitioner(comm, nparts, local_graph, num_ghost_nodes):
+        def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
             """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
             return graph.adjacencylist(dest)._cpp_object
@@ -1394,6 +1394,8 @@ class TestPETScAssemblers:
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_matrix_assembly_rectangular(self, mode):
         """Test assembly of block rectangular block matrices."""
+        from petsc4py import PETSc
+
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
 
         msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
@@ -1421,7 +1423,15 @@ class TestPETScAssemblers:
         assert A1.norm() == pytest.approx(np.sqrt(2) * A0.norm(), rel=1.0e-6, abs=1.0e-6)
         for row in range(2):
             A_sub = A2.getNestSubMatrix(row, 0)
-            assert A_sub.equal(A0)
+            assert A_sub.getSize() == A0.getSize()
+            # Mat.equal is exact, but in parallel the nest and monolithic
+            # paths accumulate off-process contributions separately.
+            inf = PETSc.NormType.INFINITY
+            D = A_sub.copy()
+            D.axpy(-1.0, A0, structure=PETSc.Mat.Structure.SAME_NONZERO_PATTERN)
+            tol = max(1.0e-12, 100 * np.finfo(PETSc.ScalarType).eps * A0.norm(inf))
+            assert D.norm(inf) == pytest.approx(0.0, abs=tol)
+            D.destroy()
 
         A0.destroy(), A1.destroy(), A2.destroy()
 
@@ -2149,7 +2159,8 @@ def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype, coefficient):
         x=nodes,
         cells=connectivity,
         e=c_el,
-        partitioner=dolfinx.mesh.create_cell_partitioner(ghost_mode, 2),
+        partitioner=graph.partitioner(),
+        ghost_mode=ghost_mode,
     )
 
     line_element = basix.ufl.element(

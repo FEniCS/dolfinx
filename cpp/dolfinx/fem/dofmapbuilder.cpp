@@ -21,6 +21,7 @@
 #include <iterator>
 #include <memory>
 #include <numeric>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -226,7 +227,7 @@ build_basic_dofmaps(
             std::size_t k = std::ranges::distance(required_dim_et.begin(),
                                                   required_entity_it);
             if (num_entity_dofs_et[k] != (int)entity_dofs_d[e].size())
-              throw std::runtime_error("Incompatible elements detected.");
+              throw std::invalid_argument("Incompatible elements detected.");
           }
         }
       }
