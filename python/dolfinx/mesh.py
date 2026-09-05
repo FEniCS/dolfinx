@@ -35,7 +35,15 @@ from dolfinx.cpp.mesh import (
 from dolfinx.cpp.refinement import (
     IdentityPartitionerPlaceholder,
     RefinementOption,
-    mark_maximum,
+)
+from dolfinx.cpp.refinement import (
+    mark_equidistribution as _mark_equidistribution,
+)
+from dolfinx.cpp.refinement import (
+    mark_equidistribution_squared as _mark_equidistribution_squared,
+)
+from dolfinx.cpp.refinement import (
+    mark_maximum as _mark_maximum,
 )
 from dolfinx.cpp.refinement import (
     uniform_refine as _uniform_refine,
@@ -77,6 +85,8 @@ __all__ = [
     "exterior_facet_indices",
     "locate_entities",
     "locate_entities_boundary",
+    "mark_equidistribution",
+    "mark_equidistribution_squared",
     "mark_maximum",
     "meshtags",
     "meshtags_from_entities",
@@ -920,49 +930,81 @@ def refine(
     return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
 
 
-_MeshPartitioner = Callable | tuple[Callable, npt.NDArray[np.int32] | None] | None
+def mark_maximum(
+    comm: _MPI.Comm,
+    indicators: npt.NDArray[Real],
+    theta: float,
+) -> npt.NDArray[np.int32]:
+    r"""Compute maximum-based marking of indicators.
+
+    Returns the indices :math:`i` of the indicators :math:`\eta_i` that
+    satisfy the maximum threshold:
+    :math:`\eta_i > \theta \max_j \eta_j`.
+
+    Args:
+        comm: Communicator to compute the maximum over.
+        indicators: Indicators (local) :math:`\eta_i` - usually an error
+            indicator associated with mesh entity :math:`i`.
+        theta: Parameter, :math:`0 < \theta < 1`.
+
+    Returns:
+        Local indices of marked entities.
+    """
+    return _mark_maximum(comm, indicators, theta)
 
 
-def _get_mesh_partitioner(
-    comm: _MPI.Comm, partitioner: _MeshPartitioner
-) -> tuple[Callable | None, npt.NDArray[np.int32] | None]:
-    """Get a cell partitioner and optional cell weights."""
-    partitioner_fn: Callable | None
-    if partitioner is None:
-        partitioner_fn = _cpp.graph.partitioner() if comm.size > 1 else None
-        return partitioner_fn, None
-    if isinstance(partitioner, tuple):
-        if len(partitioner) != 2:
-            raise TypeError("partitioner tuple must have two entries.")
-        partitioner_fn, cell_weights = partitioner
-        if partitioner_fn is None:
-            raise TypeError("The partitioner in the tuple must not be None.")
-        return partitioner_fn, cell_weights
-    return partitioner, None
+def mark_equidistribution(
+    comm: _MPI.Comm,
+    indicators: npt.NDArray[Real],
+    theta: float,
+) -> npt.NDArray[np.int32]:
+    r"""Compute equidistribution threshold marking of indicators.
+
+    Returns the indices :math:`i` of the indicators :math:`\eta_i` that
+    satisfy the equidistribution threshold:
+    :math:`\eta_i > \theta \frac{\|\eta\|}{\sqrt{N}}` where
+    :math:`N` is the (global) number of indicators.
+
+    Args:
+        comm: Communicator over which the global equidistribution
+            threshold is computed.
+        indicators: Indicators for owned local entities :math:`\eta_i` -
+            usually associated with mesh entity :math:`i`. Must contain owned
+            entities only; ghost values cause double-counting in the global
+            sum reductions.
+        theta: Parameter, :math:`0 < \theta < 1`.
+
+    Returns:
+        Local indices of indicators that satisfy the threshold.
+    """
+    return _mark_equidistribution(comm, indicators, theta)
 
 
-def _create_mesh_coordinate_element(
-    e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
-    gdim: int,
-) -> tuple[_CoordinateElement, ufl.Mesh | None]:
-    """Create a coordinate element and UFL domain from a mesh element."""
-    if isinstance(e, ufl.domain.Mesh):
-        e_ufl = e.ufl_coordinate_element()
-        return _coordinate_element_from_basix(e_ufl.basix_element), e
-    if isinstance(e, basix.finite_element.FiniteElement):
-        cmap = _coordinate_element_from_basix(e)
-        e_ufl = basix.ufl.blocked_element(basix.ufl._BasixElement(e), shape=(gdim,))
-        domain = ufl.Mesh(e_ufl)
-        assert domain.geometric_dimension == gdim
-        return cmap, domain
-    if isinstance(e, ufl.finiteelement.AbstractFiniteElement):
-        cmap = _coordinate_element_from_basix(e.basix_element)
-        domain = ufl.Mesh(e)
-        assert domain.geometric_dimension == gdim
-        return cmap, domain
-    if isinstance(e, _CoordinateElement):
-        return e, None
-    raise ValueError(f"Unsupported element type {type(e)}.")
+def mark_equidistribution_squared(
+    comm: _MPI.Comm,
+    squared_indicators: npt.NDArray[Real],
+    theta: float,
+) -> npt.NDArray[np.int32]:
+    r"""Compute equidistribution threshold marking of a squared indicator.
+
+    Returns the indices :math:`i` of the squared indicators
+    :math:`\eta_i^2` that satisfy the equidistribution threshold:
+    :math:`\eta_i^2 > \theta^2 \frac{\|\eta\|^2}{N}` where
+    :math:`N` is the (global) number of indicators.
+
+    Args:
+        comm: Communicator over which the global equidistribution
+            threshold is computed.
+        squared_indicators: Input squared indicators for owned local
+            entities :math:`\eta_i^2` - usually associated with mesh
+            entity :math:`i`. Must contain owned entities only; ghost
+            values cause double-counting in the global sum reductions.
+        theta: Parameter, :math:`0 < \theta < 1`.
+
+    Returns:
+        Local indices of squared indicators that satisfy the threshold.
+    """
+    return _mark_equidistribution_squared(comm, squared_indicators, theta)
 
 
 def create_mesh(
