@@ -856,6 +856,7 @@ class TestPETScAssemblers:
             ksp_u.setType("preonly")
             ksp_u.getPC().setType("lu")
             ksp_p.setType("preonly")
+            ksp_p.getPC().setType("lu")
 
             def monitor(ksp, its, rnorm):
                 pass
