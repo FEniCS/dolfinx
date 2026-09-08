@@ -377,6 +377,51 @@ def test_mixed_dom_codim_1(n, k):
     assert np.isclose(c, c1)
 
 
+@pytest.mark.parametrize("n", [(6, 2), (9, 3)])
+@pytest.mark.parametrize("k", [1, 3])
+def test_mixed_dom_codim_1_gradient(n, k):
+    """Test that Grad of a coefficient defined on a codimension-1 submesh
+    (the boundary of a mesh) gives the same result whether integrated via
+    an exterior facet measure on the parent mesh, or directly via a cell
+    measure on the submesh itself.
+
+    Regression test: the parent-mesh facet integral used to silently use
+    the submesh coefficient's own (unavailable) Jacobian instead of the
+    parent's FacetJacobian, giving a facet-independent, wrong result. A
+    non-square rectangle and a coefficient linear in x (whose derivative
+    is a nonzero constant, exactly reproducible at every degree k) are
+    used deliberately: on a symmetric domain with a smooth/periodic
+    coefficient this bug's error can cancel to ~0 across the boundary,
+    masking the regression.
+    """
+    msh = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (3.0, 1.0)), n)
+
+    tdim = msh.topology.dim
+    msh.topology.create_connectivity(tdim - 1, tdim)
+    boundary_facets = exterior_facet_indices(msh.topology)
+    smsh, entity_map = create_submesh(msh, tdim - 1, boundary_facets)[:2]
+
+    Vbar = fem.functionspace(smsh, ("Lagrange", k))
+    g = fem.Function(Vbar)
+    g.interpolate(lambda x: x[0] + 2.0 * x[1])
+
+    ds = ufl.Measure("ds", domain=msh)
+    dx_smsh = ufl.Measure("dx", domain=smsh)
+
+    entity_maps = [entity_map]
+    M_parent = fem.form(g.dx(0) * ds, entity_maps=entity_maps)
+    M_submesh = fem.form(g.dx(0) * dx_smsh)
+
+    c_parent = msh.comm.allreduce(fem.assemble_scalar(M_parent), op=MPI.SUM)
+    c_submesh = msh.comm.allreduce(fem.assemble_scalar(M_submesh), op=MPI.SUM)
+
+    # g.dx(0) is the *manifold* (tangential) gradient's x-component: 1 on
+    # the horizontal edges (tangent (1, 0), total length 6), 0 on the
+    # vertical edges (tangent (0, 1), orthogonal to x).
+    assert np.isclose(c_submesh, 6.0)
+    assert np.isclose(c_parent, c_submesh)
+
+
 def test_disjoint_submeshes():
     # FIXME Simplify this test
     """Test assembly with multiple disjoint submeshes in same variational form."""
