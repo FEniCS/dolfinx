@@ -221,6 +221,9 @@ public:
              and GetPtrConcept<GetPtr, Container, T>
   void scatter_fwd_begin(U pack, GetPtr get_ptr)
   {
+    if (dolfinx::MPI::size(_map->comm()) == 1)
+      return;
+
     pack(_scatterer->local_indices().begin(), _scatterer->local_indices().end(),
          _x.begin(), _buffer_local.begin());
     _scatterer->scatter_fwd_begin(get_ptr(_buffer_local),
@@ -258,6 +261,9 @@ public:
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_fwd_end(U unpack)
   {
+    if (dolfinx::MPI::size(_map->comm()) == 1)
+      return;
+
     _scatterer->scatter_end(_request);
     unpack(_scatterer->remote_indices().begin(),
            _scatterer->remote_indices().end(), _buffer_remote.begin(),
@@ -316,6 +322,9 @@ public:
              and GetPtrConcept<GetPtr, Container, T>
   void scatter_rev_begin(U pack, GetPtr get_ptr)
   {
+    if (dolfinx::MPI::size(_map->comm()) == 1)
+      return;
+
     std::int32_t local_size = _bs * _map->size_local();
     pack(_scatterer->remote_indices().begin(),
          _scatterer->remote_indices().end(), std::next(_x.begin(), local_size),
@@ -351,6 +360,9 @@ public:
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_rev_end(U unpack)
   {
+    if (dolfinx::MPI::size(_map->comm()) == 1)
+      return;
+
     _scatterer->scatter_end(_request);
     unpack(_scatterer->local_indices().begin(),
            _scatterer->local_indices().end(), _buffer_local.begin(),
