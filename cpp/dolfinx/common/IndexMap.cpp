@@ -39,6 +39,7 @@ void check_collective_precondition(MPI_Comm comm, bool local_valid,
     throw std::invalid_argument(std::string(message));
 }
 
+#ifndef NDEBUG
 /// Return true if ranks are sorted and contain no duplicates.
 bool is_sorted_unique(std::span<const int> ranks)
 {
@@ -52,6 +53,7 @@ bool is_valid_peer_rank(int rank, int comm_size, int peer)
 {
   return peer >= 0 and peer < comm_size and peer != rank;
 }
+#endif
 
 /// Return sorted unique values.
 template <typename T>
@@ -69,6 +71,8 @@ void validate_ghost_data(MPI_Comm comm, std::int32_t local_size,
                          std::span<const std::int64_t> ghosts,
                          std::span<const int> owners)
 {
+  bool valid = local_size >= 0;
+#ifndef NDEBUG
   const int rank = dolfinx::MPI::rank(comm);
   const int comm_size = dolfinx::MPI::size(comm);
   const bool ghosts_unique = sorted_unique(ghosts).size() == ghosts.size();
@@ -77,13 +81,13 @@ void validate_ghost_data(MPI_Comm comm, std::int32_t local_size,
       { return is_valid_peer_rank(rank, comm_size, owner); });
   const bool ghosts_valid = std::ranges::all_of(ghosts, [](std::int64_t ghost)
                                                 { return ghost >= 0; });
-  check_collective_precondition(
-      comm,
-      local_size >= 0 and ghosts.size() == owners.size() and ghosts_unique
-          and owners_valid and ghosts_valid,
-      "Invalid IndexMap ghost data.");
+  valid = valid and ghosts.size() == owners.size() and ghosts_unique
+          and owners_valid and ghosts_valid;
+#endif
+  check_collective_precondition(comm, valid, "Invalid IndexMap ghost data.");
 }
 
+#ifndef NDEBUG
 /// Validate the explicit source and destination rank lists.
 void validate_src_dest(MPI_Comm comm, std::span<const int> src,
                        std::span<const int> dest, std::span<const int> owners)
@@ -100,6 +104,7 @@ void validate_src_dest(MPI_Comm comm, std::span<const int> src,
           and std::ranges::equal(src, owner_ranks),
       "Invalid IndexMap source or destination ranks.");
 }
+#endif
 
 /// Compute the owned global range and global size of an index map.
 std::pair<std::array<std::int64_t, 2>, std::int64_t>
@@ -129,6 +134,7 @@ compute_layout(MPI_Comm comm, std::int32_t local_size)
   return {{offset, offset + local_size}, size_global};
 }
 
+#ifndef NDEBUG
 /// Validate submap indices before entering its communication path.
 void validate_submap_indices(const IndexMap& imap,
                              std::span<const std::int32_t> indices)
@@ -142,6 +148,7 @@ void validate_submap_indices(const IndexMap& imap,
       imap.comm(), in_range and unique,
       "Submap indices must be in range and contain no duplicates.");
 }
+#endif
 
 /// Compute source and destination ranks from ghost owners.
 /// @param[in] comm Communicator.
@@ -979,7 +986,9 @@ common::create_sub_index_map(const IndexMap& imap,
                              std::span<const std::int32_t> indices,
                              IndexMapOrder order, bool allow_owner_change)
 {
+#ifndef NDEBUG
   validate_submap_indices(imap, indices);
+#endif
 
   // Compute owned and ghost submap entries in parent-map local numbering.
   auto [submap_owned, submap_ghost, submap_ghost_owners, submap_src,
@@ -1052,7 +1061,9 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
       _dest(src_dest[1])
 {
   validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
+#ifndef NDEBUG
   validate_src_dest(_comm.comm(), _src, _dest, _owners);
+#endif
   const bool verify_dest = true; // dest here is caller-supplied
   auto [local_range, size_global] = finalize_ghosted_layout(
       _comm.comm(), local_size, _src, _dest, _ghosts, _owners, verify_dest);
@@ -1085,10 +1096,10 @@ std::span<const std::int64_t> IndexMap::ghosts() const noexcept
 void IndexMap::local_to_global(std::span<const std::int32_t> local,
                                std::span<std::int64_t> global) const
 {
-  if (local.size() != global.size())
+  if (local.size() > global.size())
   {
     throw std::invalid_argument(
-        "Local and global index arrays must have the same size.");
+        "Global index array is smaller than the local index array.");
   }
   const std::int32_t local_size = _local_range[1] - _local_range[0];
   const std::int32_t size = local_size + _ghosts.size();

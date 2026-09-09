@@ -238,6 +238,7 @@ void test_index_map_preconditions()
 {
   CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, -1), std::invalid_argument);
 
+#ifndef NDEBUG
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
   const int owner = (dolfinx::MPI::rank(MPI_COMM_WORLD) + 1) % mpi_size;
   const std::vector<std::int64_t> ghosts = {0};
@@ -248,7 +249,6 @@ void test_index_map_preconditions()
 
   if (mpi_size > 1)
   {
-#ifndef NDEBUG
     const int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
     const std::vector<std::int64_t> ghost_owned_locally = {rank};
     const std::vector<int> remote_owner = {(rank + 1) % mpi_size};
@@ -276,16 +276,18 @@ void test_index_map_preconditions()
                                        ghost_owned_remotely, remote_owner),
                       std::invalid_argument);
     }
-#endif
   }
+#endif
 
   const common::IndexMap map(MPI_COMM_WORLD, 1);
+#ifndef NDEBUG
   const std::vector<std::int32_t> duplicate_indices = {0, 0};
   const std::vector<std::int32_t> out_of_range_indices = {1};
   CHECK_THROWS_AS(common::create_sub_index_map(map, duplicate_indices),
                   std::invalid_argument);
   CHECK_THROWS_AS(common::create_sub_index_map(map, out_of_range_indices),
                   std::invalid_argument);
+#endif
 
   const std::vector<std::int32_t> valid_indices = {0};
   auto [submap, submap_to_map]
@@ -307,6 +309,12 @@ void test_local_global_index_conversion()
                   std::out_of_range);
   CHECK_THROWS_AS(map.local_to_global(local_out_of_range, global),
                   std::out_of_range);
+
+  std::vector<std::int64_t> global_larger(3, -1);
+  CHECK_NOTHROW(map.local_to_global(local_two, global_larger));
+  CHECK(global_larger[0] == map.local_range()[0]);
+  CHECK(global_larger[1] == map.local_range()[0] + 1);
+  CHECK(global_larger[2] == -1);
 
   std::vector<std::int32_t> local(1);
   const std::vector<std::int64_t> global_two = {0, 1};

@@ -69,10 +69,12 @@ stack_index_maps(
 /// the new map.
 /// @param[in] allow_owner_change Permit an index selected only by ghosting
 /// ranks to acquire a new owner in the submap.
+/// @pre `indices` contains unique local indices in range. This condition is
+/// checked in Developer builds; callers must ensure it in Release builds.
 /// @return (0) New index map and (1) corresponding local indices in `imap`.
-/// @throws std::invalid_argument If `indices` contains a duplicate or an
-/// out-of-range local index, or ownership would change while
-/// `allow_owner_change` is false.
+/// @throws std::invalid_argument If ownership would change while
+/// `allow_owner_change` is false, or if the `indices` precondition is violated
+/// in a Developer build.
 std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
     const IndexMap& imap, std::span<const std::int32_t> indices,
     IndexMapOrder order = IndexMapOrder::any, bool allow_owner_change = false);
@@ -114,10 +116,12 @@ public:
   /// @note Use a distinct `tag` for overlapping consensus calls. All ranks in
   /// one collective call must use the same tag. An MPI barrier before and after
   /// the call is an alternative.
-  /// @pre Each ghost is globally owned by its declared rank. This condition is
-  /// checked in Developer builds; callers must ensure it in Release builds.
-  /// @throws std::invalid_argument If local input requirements are violated, or
-  /// if ghost ownership is invalid in a Developer build.
+  /// @pre `ghosts` and `owners` have equal length, ghosts are unique and
+  /// non-negative, owners are valid non-self ranks, and each ghost is globally
+  /// owned by its declared rank. These conditions are checked in Developer
+  /// builds; callers must ensure them in Release builds.
+  /// @throws std::invalid_argument If `local_size` is negative, or if a ghost
+  /// data precondition is violated in a Developer build.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            std::span<const std::int64_t> ghosts, std::span<const int> owners,
            int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx));
@@ -139,11 +143,13 @@ public:
   /// @param[in] ghosts Unique global indices of ghost entries.
   /// @param[in] owners Non-self rank (on `comm`) that owns each entry in
   /// `ghosts`.
-  /// @pre Each ghost is globally owned by its declared rank and `src_dest[1]`
-  /// matches `src_dest[0]` across `comm`. These conditions are checked in
-  /// Developer builds; callers must ensure them in Release builds.
-  /// @throws std::invalid_argument If local input requirements are violated, or
-  /// if ghost ownership or destination ranks are invalid in a Developer build.
+  /// @pre `ghosts` and `owners` have equal length, ghosts are unique and
+  /// non-negative, owners are valid non-self ranks, each ghost is globally
+  /// owned by its declared rank, and `src_dest[1]` matches `src_dest[0]`
+  /// across `comm`. These conditions are checked in Developer builds; callers
+  /// must ensure them in Release builds.
+  /// @throws std::invalid_argument If `local_size` is negative, or if a ghost
+  /// data precondition is violated in a Developer build.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            const std::array<std::vector<int>, 2>& src_dest,
            std::span<const std::int64_t> ghosts, std::span<const int> owners);
@@ -184,8 +190,8 @@ public:
 
   /// @brief Compute global indices for local indices.
   /// @param[in] local Local indices in `[0, size_local() + num_ghosts())`.
-  /// @param[out] global Global indices. Must have the same size as `local`.
-  /// @throws std::invalid_argument If `local` and `global` differ in size.
+  /// @param[out] global Global indices. Must have at least the size of `local`.
+  /// @throws std::invalid_argument If `global` is smaller than `local`.
   /// @throws std::out_of_range If a local index is out of range.
   void local_to_global(std::span<const std::int32_t> local,
                        std::span<std::int64_t> global) const;
