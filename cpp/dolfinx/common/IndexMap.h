@@ -116,12 +116,14 @@ public:
   /// @note Use a distinct `tag` for overlapping consensus calls. All ranks in
   /// one collective call must use the same tag. An MPI barrier before and after
   /// the call is an alternative.
-  /// @pre `ghosts` and `owners` have equal length, ghosts are unique and
-  /// non-negative, owners are valid non-self ranks, and each ghost is globally
-  /// owned by its declared rank. These conditions are checked in Developer
-  /// builds; callers must ensure them in Release builds.
-  /// @throws std::invalid_argument If `local_size` is negative, or if a ghost
-  /// data precondition is violated in a Developer build.
+  /// @pre `ghosts` and `owners` have equal length; this is always checked.
+  /// Ghosts must also be unique and non-negative, owners must be valid
+  /// non-self ranks, and each ghost must be globally owned by its declared
+  /// rank; these further conditions are checked in Developer builds only,
+  /// and callers must ensure them in Release builds.
+  /// @throws std::invalid_argument If `local_size` is negative, if `ghosts`
+  /// and `owners` differ in length, or if another ghost data precondition
+  /// is violated in a Developer build.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            std::span<const std::int64_t> ghosts, std::span<const int> owners,
            int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx));
@@ -143,13 +145,15 @@ public:
   /// @param[in] ghosts Unique global indices of ghost entries.
   /// @param[in] owners Non-self rank (on `comm`) that owns each entry in
   /// `ghosts`.
-  /// @pre `ghosts` and `owners` have equal length, ghosts are unique and
-  /// non-negative, owners are valid non-self ranks, each ghost is globally
-  /// owned by its declared rank, and `src_dest[1]` matches `src_dest[0]`
-  /// across `comm`. These conditions are checked in Developer builds; callers
+  /// @pre `ghosts` and `owners` have equal length; this is always checked.
+  /// Ghosts must also be unique and non-negative, owners must be valid
+  /// non-self ranks, each ghost must be globally owned by its declared
+  /// rank, and `src_dest[1]` must match `src_dest[0]` across `comm`; these
+  /// further conditions are checked in Developer builds only, and callers
   /// must ensure them in Release builds.
-  /// @throws std::invalid_argument If `local_size` is negative, or if a ghost
-  /// data precondition is violated in a Developer build.
+  /// @throws std::invalid_argument If `local_size` is negative, if `ghosts`
+  /// and `owners` differ in length, or if another ghost data precondition
+  /// is violated in a Developer build.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            const std::array<std::vector<int>, 2>& src_dest,
            std::span<const std::int64_t> ghosts, std::span<const int> owners);

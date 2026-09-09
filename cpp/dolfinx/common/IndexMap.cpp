@@ -71,7 +71,10 @@ void validate_ghost_data(MPI_Comm comm, std::int32_t local_size,
                          std::span<const std::int64_t> ghosts,
                          std::span<const int> owners)
 {
-  bool valid = local_size >= 0;
+  // ghosts.size() == owners.size() is checked unconditionally: several
+  // call sites index owners[i] for i in [0, ghosts.size()), so a size
+  // mismatch is an out-of-bounds access, not just a logical error.
+  bool valid = local_size >= 0 and ghosts.size() == owners.size();
 #ifndef NDEBUG
   const int rank = dolfinx::MPI::rank(comm);
   const int comm_size = dolfinx::MPI::size(comm);
@@ -81,8 +84,7 @@ void validate_ghost_data(MPI_Comm comm, std::int32_t local_size,
       { return is_valid_peer_rank(rank, comm_size, owner); });
   const bool ghosts_valid = std::ranges::all_of(ghosts, [](std::int64_t ghost)
                                                 { return ghost >= 0; });
-  valid = valid and ghosts.size() == owners.size() and ghosts_unique
-          and owners_valid and ghosts_valid;
+  valid = valid and ghosts_unique and owners_valid and ghosts_valid;
 #endif
   check_collective_precondition(comm, valid, "Invalid IndexMap ghost data.");
 }
