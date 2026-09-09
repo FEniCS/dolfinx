@@ -77,12 +77,11 @@ stack_index_maps(
 /// included in `indices` by their owning process can be included in
 /// `indices` by processes that ghost the indices to be included in the
 /// new submap. These indices will be owned by one of the sharing
-/// processes in the submap. If `false`, and exception is raised if an
+/// processes in the submap. If `false`, an exception is raised if an
 /// index is included by a sharing process and not by the owning
 /// process.
 /// @return The (i) new index map and (ii) a map from local indices in
-/// the submap to local indices in the original (this) map.
-/// @pre `indices` must not contain duplicates.
+/// the submap to local indices in `imap`.
 /// @throws std::invalid_argument If `indices` contains a duplicate or an
 /// out-of-range local index.
 std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
@@ -103,6 +102,7 @@ public:
   /// @param[in] comm MPI communicator that the index map is distributed
   /// across.
   /// @param[in] local_size Number of owned entries. Must be non-negative.
+  /// @throws std::invalid_argument If `local_size` is negative.
   IndexMap(MPI_Comm comm, std::int32_t local_size);
 
   /// @brief Create an overlapping (ghosted) index map.
@@ -118,8 +118,9 @@ public:
   /// @param[in] comm MPI communicator that the index map is distributed
   /// across.
   /// @param[in] local_size Number of owned entries. Must be non-negative.
-  /// @param[in] ghosts Unique global indices of ghost entries.
-  /// @param[in] owners Owner rank (on `comm`) of each entry in `ghosts`
+  /// @param[in] ghosts Unique non-negative global indices of ghost entries.
+  /// @param[in] owners Non-self owner rank (on `comm`) of each entry in
+  /// `ghosts`.
   /// @param[in] tag Tag used in non-blocking MPI calls in the consensus
   /// algorithm.
   /// @note A tag can sometimes be required when there are a series of
@@ -132,6 +133,8 @@ public:
   /// constructor must use the same `tag` value.  An alternative to
   /// passing a tag is to have an implicit or explicit MPI barrier
   /// before and after the call to this constructor.
+  /// @throws std::invalid_argument If input data does not meet the documented
+  /// requirements.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            std::span<const std::int64_t> ghosts, std::span<const int> owners,
            int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx));
@@ -141,8 +144,7 @@ public:
   /// This constructor is optimised for the case where the 'source'
   /// (ranks that own indices ghosted by the caller) and 'destination'
   /// ranks (ranks that ghost indices owned by the caller) are already
-  /// available. It allows the complex computation of the destination
-  /// ranks from `owners`.
+  /// available. It avoids computing destination ranks from `owners`.
   ///
   /// @note Collective
   ///
@@ -153,8 +155,11 @@ public:
   /// Both lists must be sorted, unique and contain valid ranks. Source
   /// ranks must be exactly the unique owners of `ghosts`; destination
   /// ranks must be the ranks that ghost entries owned by the caller.
-  /// @param[in] ghosts Unique global indices of ghost entries.
-  /// @param[in] owners Owner rank (on `comm`) of each entry in `ghosts`
+  /// @param[in] ghosts Unique non-negative global indices of ghost entries.
+  /// @param[in] owners Non-self owner rank (on `comm`) of each entry in
+  /// `ghosts`.
+  /// @throws std::invalid_argument If input data does not meet the documented
+  /// requirements.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            const std::array<std::vector<int>, 2>& src_dest,
            std::span<const std::int64_t> ghosts, std::span<const int> owners);

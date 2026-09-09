@@ -44,6 +44,17 @@ bool is_sorted_unique(std::span<const int> ranks)
          and std::ranges::adjacent_find(ranks) == ranks.end();
 }
 
+/// Return sorted unique values.
+template <typename T>
+std::vector<T> sorted_unique(std::span<const T> values)
+{
+  std::vector<T> result(values.begin(), values.end());
+  std::ranges::sort(result);
+  const auto [unique_end, range_end] = std::ranges::unique(result);
+  result.erase(unique_end, range_end);
+  return result;
+}
+
 /// Validate input shared by both ghosted IndexMap constructors.
 void validate_ghost_data(MPI_Comm comm, std::int32_t local_size,
                          std::span<const std::int64_t> ghosts,
@@ -51,10 +62,7 @@ void validate_ghost_data(MPI_Comm comm, std::int32_t local_size,
 {
   const int rank = dolfinx::MPI::rank(comm);
   const int comm_size = dolfinx::MPI::size(comm);
-  std::vector<std::int64_t> sorted_ghosts(ghosts.begin(), ghosts.end());
-  std::ranges::sort(sorted_ghosts);
-  const bool ghosts_unique
-      = std::ranges::adjacent_find(sorted_ghosts) == sorted_ghosts.end();
+  const bool ghosts_unique = sorted_unique(ghosts).size() == ghosts.size();
   const bool owners_valid = std::ranges::all_of(
       owners, [rank, comm_size](int owner)
       { return owner >= 0 and owner < comm_size and owner != rank; });
@@ -73,10 +81,7 @@ void validate_src_dest(MPI_Comm comm, std::span<const int> src,
 {
   const int rank = dolfinx::MPI::rank(comm);
   const int comm_size = dolfinx::MPI::size(comm);
-  std::vector<int> owner_ranks(owners.begin(), owners.end());
-  std::ranges::sort(owner_ranks);
-  const auto [unique_end, range_end] = std::ranges::unique(owner_ranks);
-  owner_ranks.erase(unique_end, range_end);
+  const std::vector<int> owner_ranks = sorted_unique(owners);
   const bool ranks_valid
       = std::ranges::all_of(dest,
                             [rank, comm_size](int destination)
@@ -128,10 +133,7 @@ void validate_submap_indices(const IndexMap& imap,
   const bool in_range
       = std::ranges::all_of(indices, [size](std::int32_t index)
                             { return index >= 0 and index < size; });
-  std::vector<std::int32_t> sorted_indices(indices.begin(), indices.end());
-  std::ranges::sort(sorted_indices);
-  const bool unique
-      = std::ranges::adjacent_find(sorted_indices) == sorted_indices.end();
+  const bool unique = sorted_unique(indices).size() == indices.size();
   check_collective_precondition(
       imap.comm(), in_range and unique,
       "Submap indices must be in range and contain no duplicates.");
@@ -152,10 +154,7 @@ build_src_dest(MPI_Comm comm, std::span<const int> owners, int tag)
     return std::array<std::vector<int>, 2>();
   }
 
-  std::vector<int> src(owners.begin(), owners.end());
-  std::ranges::sort(src);
-  auto [unique_end, range_end] = std::ranges::unique(src);
-  src.erase(unique_end, range_end);
+  std::vector<int> src = sorted_unique(owners);
   src.shrink_to_fit();
   std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src, tag);
   std::ranges::sort(dest);
@@ -274,9 +273,8 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
           std::move(recv_disp)};
 }
 
-/// Given an index map and a subset of local indices (can be owned or
-/// ghost but must be unique and sorted), compute the owned, ghost and
-/// ghost owners in the submap.
+/// Given an index map and a subset of unique local indices (owned or ghost),
+/// compute the owned, ghost and ghost owners in the submap.
 ///
 /// @param[in] imap An index map.
 /// @param[in] indices List of entity indices (indices local to the
@@ -287,7 +285,6 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
 /// by their owning process but included on sharing processes to be
 /// included in the submap. These indices will be owned by one of the
 /// sharing processes in the submap.
-/// @pre `indices` must be sorted and unique.
 /// @return The (1) owned, (2) ghost and (3) ghost owners in the submap,
 /// and (4) submap src ranks and (5) submap destination ranks. All
 /// indices are local and with respect to the original index map.
