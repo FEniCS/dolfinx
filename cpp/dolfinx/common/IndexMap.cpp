@@ -176,6 +176,13 @@ build_src_dest(MPI_Comm comm, std::span<const int> owners, int tag)
 /// send and receive sizes, and send and receive displacements.
 /// @pre `src` is sorted and unique.
 /// @pre `dest` is sorted and unique.
+/// @pre `src`/`dest` must be a globally consistent bipartite graph: for
+/// every pair of ranks (a, b), `b` is in `a`'s `src` if and only if `a`
+/// is in `b`'s `dest`. This is not checked here - an inconsistent graph
+/// risks an MPI deadlock in the neighbourhood collectives below rather
+/// than a clean error. Establish the invariant first, e.g. via
+/// `build_src_dest` (consensus) or a `compute_dest_ranks` comparison
+/// (see `validate_ghost_owners`).
 std::tuple<std::vector<std::int64_t>, std::vector<std::int64_t>,
            std::vector<std::size_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>, std::vector<int>, std::vector<int>>
@@ -285,18 +292,24 @@ std::vector<int> compute_dest_ranks(MPI_Comm comm, std::span<const int> src)
   return dest;
 }
 
-/// Verify that each ghost is owned by its declared rank. Requires a
-/// full ghost-to-owner communication round trip.
+/// Verify that each ghost is owned by its declared rank, and, when
+/// `dest` is caller-supplied rather than consensus-derived, that it is
+/// the global dual of `src` (see `communicate_ghosts_to_owners`).
+/// Requires a full ghost-to-owner communication round trip.
 void validate_ghost_owners(MPI_Comm comm, std::span<const int> src,
                            std::span<const int> dest,
                            std::span<const std::int64_t> ghosts,
                            std::span<const int> owners,
-                           std::array<std::int64_t, 2> local_range)
+                           std::array<std::int64_t, 2> local_range,
+                           bool verify_dest)
 {
-  const std::vector<int> expected_dest = compute_dest_ranks(comm, src);
-  check_collective_precondition(
-      comm, std::ranges::equal(dest, expected_dest),
-      "IndexMap destination ranks do not match source ranks.");
+  if (verify_dest)
+  {
+    const std::vector<int> expected_dest = compute_dest_ranks(comm, src);
+    check_collective_precondition(
+        comm, std::ranges::equal(dest, expected_dest),
+        "IndexMap destination ranks do not match source ranks.");
+  }
 
   std::vector<std::uint8_t> include_ghost(ghosts.size(), 1);
   const auto communication = communicate_ghosts_to_owners(
@@ -312,16 +325,21 @@ void validate_ghost_owners(MPI_Comm comm, std::span<const int> src,
 
 /// Compute the owned range and global size of a ghosted IndexMap,
 /// validating ghost ownership where enabled (see validate_ghost_owners).
+/// `verify_dest` should be false when `dest` was consensus-derived
+/// (e.g. by `build_src_dest`) rather than caller-supplied, since it is
+/// then already guaranteed to be the global dual of `src`.
 std::pair<std::array<std::int64_t, 2>, std::int64_t>
 finalize_ghosted_layout(MPI_Comm comm, std::int32_t local_size,
                         [[maybe_unused]] std::span<const int> src,
                         [[maybe_unused]] std::span<const int> dest,
                         [[maybe_unused]] std::span<const std::int64_t> ghosts,
-                        [[maybe_unused]] std::span<const int> owners)
+                        [[maybe_unused]] std::span<const int> owners,
+                        [[maybe_unused]] bool verify_dest)
 {
   auto [local_range, size_global] = compute_layout(comm, local_size);
 #ifndef NDEBUG
-  validate_ghost_owners(comm, src, dest, ghosts, owners, local_range);
+  validate_ghost_owners(comm, src, dest, ghosts, owners, local_range,
+                        verify_dest);
 #endif
   return {local_range, size_global};
 }
@@ -1015,8 +1033,10 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
 {
   validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
   auto src_dest = build_src_dest(_comm.comm(), _owners, tag);
-  auto [local_range, size_global] = finalize_ghosted_layout(
-      _comm.comm(), local_size, src_dest[0], src_dest[1], _ghosts, _owners);
+  const bool verify_dest = false; // dest here is consensus-derived
+  auto [local_range, size_global]
+      = finalize_ghosted_layout(_comm.comm(), local_size, src_dest[0],
+                                src_dest[1], _ghosts, _owners, verify_dest);
   _local_range = local_range;
   _size_global = size_global;
   _src = std::move(src_dest[0]);
@@ -1033,8 +1053,9 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
 {
   validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
   validate_src_dest(_comm.comm(), _src, _dest, _owners);
+  const bool verify_dest = true; // dest here is caller-supplied
   auto [local_range, size_global] = finalize_ghosted_layout(
-      _comm.comm(), local_size, _src, _dest, _ghosts, _owners);
+      _comm.comm(), local_size, _src, _dest, _ghosts, _owners, verify_dest);
   _local_range = local_range;
   _size_global = size_global;
 }
