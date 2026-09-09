@@ -35,10 +35,11 @@ enum class IndexMapOrder : bool
 ///
 /// @note Collective
 ///
-/// @param[in] indices Sorted unique local indices (owned or ghost).
+/// @param[in] indices Sorted unique local indices (owned or ghost) in
+/// `[0, map.size_local() + map.num_ghosts())`.
 /// @param[in] map The index map.
-/// @pre `indices` is sorted and contains no duplicates. This condition is
-/// checked in Developer builds; callers must ensure it in Release builds.
+/// @pre `indices` is sorted, unique, and in range. This condition is checked
+/// in Developer builds; callers must ensure it in Release builds.
 /// @return Local indices owned by the calling rank.
 /// @throws std::invalid_argument If the `indices` precondition is violated in
 /// a Developer build.
@@ -53,7 +54,9 @@ compute_owned_indices(std::span<const std::int32_t> indices,
 ///
 /// @note Collective. Maps with a block size are unrolled.
 ///
-/// @param[in] maps Pairs of index maps and block sizes.
+/// @param[in] maps Non-empty pairs of index maps and positive block sizes.
+/// All maps must use the same communicator.
+/// @pre All ranks supply corresponding maps in the same order.
 /// @return (0) Global offset on the calling rank, (1) local offsets for owned
 /// entries in each map, (2) global ghost indices for each map, and (3) their
 /// owner ranks.
@@ -235,6 +238,9 @@ public:
       int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx)) const;
 
   /// @brief Return owned indices ghosted by another rank.
+  ///
+  /// @note Collective
+  ///
   /// @return Sorted unique local indices.
   std::vector<std::int32_t> shared_indices() const;
 
@@ -249,6 +255,9 @@ public:
   std::vector<std::int32_t> weights_src() const;
 
   /// @brief Count entries ghosted by each destination rank.
+  ///
+  /// @note Collective
+  ///
   /// @return `weight[i]` is the number of entries ghosted by `dest()[i]`.
   std::vector<std::int32_t> weights_dest() const;
 

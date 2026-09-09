@@ -303,6 +303,8 @@ void test_index_map_preconditions()
                   std::invalid_argument);
   CHECK_THROWS_AS(common::create_sub_index_map(map, out_of_range_indices),
                   std::invalid_argument);
+  CHECK_THROWS_AS(common::compute_owned_indices(out_of_range_indices, map),
+                  std::invalid_argument);
 #endif
 
   const std::vector<std::int32_t> valid_indices = {0};
