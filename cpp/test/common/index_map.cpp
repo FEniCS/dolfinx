@@ -238,9 +238,8 @@ void test_index_map_preconditions()
 {
   CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, -1), std::invalid_argument);
 
-  const int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
-  const int owner = (rank + 1) % mpi_size;
+  const int owner = (dolfinx::MPI::rank(MPI_COMM_WORLD) + 1) % mpi_size;
   const std::vector<std::int64_t> ghosts = {0};
   const std::vector<int> owners = {owner};
   const std::array<std::vector<int>, 2> src_dest = {};
@@ -249,6 +248,8 @@ void test_index_map_preconditions()
 
   if (mpi_size > 1)
   {
+#ifndef NDEBUG
+    const int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
     const std::vector<std::int64_t> ghost_owned_locally = {rank};
     const std::vector<int> remote_owner = {(rank + 1) % mpi_size};
     const std::vector<int> destination = {(rank + mpi_size - 1) % mpi_size};
@@ -265,6 +266,17 @@ void test_index_map_preconditions()
     CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, 1, invalid_src_dest,
                                      out_of_range_ghost, remote_owner),
                     std::invalid_argument);
+
+    if (mpi_size > 2)
+    {
+      const std::vector<std::int64_t> ghost_owned_remotely = {remote_owner[0]};
+      const std::array<std::vector<int>, 2> mismatched_src_dest
+          = {remote_owner, remote_owner};
+      CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, 1, mismatched_src_dest,
+                                       ghost_owned_remotely, remote_owner),
+                      std::invalid_argument);
+    }
+#endif
   }
 
   const common::IndexMap map(MPI_COMM_WORLD, 1);

@@ -262,16 +262,42 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
           std::move(recv_disp)};
 }
 
-/// Verify that each ghost is owned by its declared rank. Requires a
-/// full ghost-to-owner communication round trip, so only checked in
-/// Developer builds.
 #ifndef NDEBUG
+/// Compute destination ranks from source ranks using a safe collective.
+std::vector<int> compute_dest_ranks(MPI_Comm comm, std::span<const int> src)
+{
+  const int comm_size = dolfinx::MPI::size(comm);
+  std::vector<int> send(comm_size, 0);
+  std::vector<int> recv(comm_size, 0);
+  for (int rank : src)
+    send[rank] = 1;
+
+  const int ierr
+      = MPI_Alltoall(send.data(), 1, MPI_INT, recv.data(), 1, MPI_INT, comm);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  std::vector<int> dest;
+  for (int rank = 0; rank < comm_size; ++rank)
+  {
+    if (recv[rank])
+      dest.push_back(rank);
+  }
+  return dest;
+}
+
+/// Verify that each ghost is owned by its declared rank. Requires a
+/// full ghost-to-owner communication round trip.
 void validate_ghost_owners(MPI_Comm comm, std::span<const int> src,
                            std::span<const int> dest,
                            std::span<const std::int64_t> ghosts,
                            std::span<const int> owners,
                            std::array<std::int64_t, 2> local_range)
 {
+  const std::vector<int> expected_dest = compute_dest_ranks(comm, src);
+  check_collective_precondition(
+      comm, std::ranges::equal(dest, expected_dest),
+      "IndexMap destination ranks do not match source ranks.");
+
   std::vector<std::uint8_t> include_ghost(ghosts.size(), 1);
   const auto communication = communicate_ghosts_to_owners(
       comm, src, dest, ghosts, owners, include_ghost);

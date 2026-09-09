@@ -139,10 +139,11 @@ public:
   /// @param[in] ghosts Unique global indices of ghost entries.
   /// @param[in] owners Non-self rank (on `comm`) that owns each entry in
   /// `ghosts`.
-  /// @pre Each ghost is globally owned by its declared rank. This condition is
-  /// checked in Developer builds; callers must ensure it in Release builds.
+  /// @pre Each ghost is globally owned by its declared rank and `src_dest[1]`
+  /// matches `src_dest[0]` across `comm`. These conditions are checked in
+  /// Developer builds; callers must ensure them in Release builds.
   /// @throws std::invalid_argument If local input requirements are violated, or
-  /// if ghost ownership is invalid in a Developer build.
+  /// if ghost ownership or destination ranks are invalid in a Developer build.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            const std::array<std::vector<int>, 2>& src_dest,
            std::span<const std::int64_t> ghosts, std::span<const int> owners);
