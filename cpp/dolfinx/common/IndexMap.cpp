@@ -805,7 +805,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   // Copy owned and ghost indices into return array
   std::vector<std::int32_t> owned;
   owned.reserve(num_ghost_indices + recv_buffer.size());
-  std::copy(indices.begin(), it_owned_end, std::back_inserter(owned));
+  owned.insert(owned.end(), indices.begin(), it_owned_end);
   std::ranges::transform(recv_buffer, std::back_inserter(owned),
                          [range = map.local_range()](auto idx) -> std::int32_t
                          {
