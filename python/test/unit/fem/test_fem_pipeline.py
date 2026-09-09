@@ -225,8 +225,6 @@ def test_petsc_curl_curl_eigenvalue(family, order):
         return
 
     petsc4py = pytest.importorskip("petsc4py")  # noqa: F841
-    from petsc4py import PETSc
-
     from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
 
     slepc4py = pytest.importorskip("slepc4py")  # noqa: F841
@@ -266,13 +264,12 @@ def test_petsc_curl_curl_eigenvalue(family, order):
 
     eps = SLEPc.EPS().create()
     eps.setOperators(A, B)
-    PETSc.Options()["eps_type"] = "krylovschur"
-    PETSc.Options()["eps_gen_hermitian"] = ""
-    PETSc.Options()["eps_target_magnitude"] = ""
-    PETSc.Options()["eps_target"] = 5.0
-    PETSc.Options()["eps_view"] = ""
-    PETSc.Options()["eps_nev"] = 12
-    eps.setFromOptions()
+    eps.setType(SLEPc.EPS.Type.KRYLOVSCHUR)
+    eps.setProblemType(SLEPc.EPS.ProblemType.GHEP)
+    eps.setWhichEigenpairs(SLEPc.EPS.Which.TARGET_MAGNITUDE)
+    eps.setTarget(5.0)
+    eps.setDimensions(nev=12)
+    eps.getST().setType(SLEPc.ST.Type.SINVERT)
     eps.solve()
 
     num_converged = eps.getConverged()
