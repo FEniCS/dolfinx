@@ -8,7 +8,6 @@
 
 #include <algorithm>
 #include <concepts>
-#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -69,13 +68,14 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
         std::format("theta must satisfy 0 < theta <= 1, got {}.", theta));
   }
 
+  const std::int32_t n = values.size();
   const std::int32_t size = index_map.size_local() + index_map.num_ghosts();
-  if (values.size() != static_cast<std::size_t>(size))
+  if (n != size)
   {
     throw std::invalid_argument(
         std::format("values must have size index_map.size_local() + "
                     "index_map.num_ghosts() = {}, got {}.",
-                    size, values.size()));
+                    size, n));
   }
 
   // If no local entries, assign a large negative value for local maximum
@@ -89,7 +89,6 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
                 index_map.comm());
 
   const T threshold = theta * max;
-  const std::int32_t n = values.size();
 
   auto mark = [threshold](T e) { return e > threshold; };
 
