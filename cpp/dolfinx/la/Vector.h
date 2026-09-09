@@ -91,7 +91,7 @@ private:
   }
 
   /// @brief Return an 'unpack' function for unpacking a receive buffer.
-  /// Applied a binary operation an then assigns to entries.
+  /// Applies a binary operation and assigns to entries.
   ///
   /// Typically used to unpack into owned entries on a CPU. Commonly
   /// more than one value per entry is received.
@@ -165,7 +165,7 @@ private:
   }
 
 public:
-  /// @brief Copy-convert vector, possibly using to different container
+  /// @brief Copy-convert vector, possibly using different container
   /// types.
   ///
   /// Examples of use include copying a Vector to a different value
@@ -206,13 +206,13 @@ public:
   /// processes.
   ///
   /// The user provides the function to pack to the send buffer.
-  /// Typically usage would be a specialised function to pack data that
+  /// Typical use is a specialised function to pack data that
   /// resides on a GPU.
   ///
   /// @note Collective MPI operation
   ///
   /// @tparam U Pack function type.
-  /// @tparam GetPtr
+  /// @tparam GetPtr Function type that accesses a container's data pointer.
   /// @param pack Function that packs owned data into a send buffer.
   /// @param get_ptr Function that for a `Container` type returns the
   /// pointer to the underlying data.
@@ -221,9 +221,6 @@ public:
              and GetPtrConcept<GetPtr, Container, T>
   void scatter_fwd_begin(U pack, GetPtr get_ptr)
   {
-    if (_buffer_local.empty() and _buffer_remote.empty())
-      return;
-
     pack(_scatterer->local_indices().begin(), _scatterer->local_indices().end(),
          _x.begin(), _buffer_local.begin());
     _scatterer->scatter_fwd_begin(get_ptr(_buffer_local),
@@ -261,9 +258,6 @@ public:
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_fwd_end(U unpack)
   {
-    if (_buffer_local.empty() and _buffer_remote.empty())
-      return;
-
     _scatterer->scatter_end(_request);
     unpack(_scatterer->remote_indices().begin(),
            _scatterer->remote_indices().end(), _buffer_remote.begin(),
@@ -308,12 +302,12 @@ public:
   /// process of an index.
   ///
   /// The user provides the function to pack to the send buffer.
-  /// Typically usage would be a specialised function to pack data that
+  /// Typical use is a specialised function to pack data that
   /// resides on a GPU.
   ///
   /// @note Collective MPI operation
   /// @tparam U Pack function type.
-  /// @tparam GetPtr
+  /// @tparam GetPtr Function type that accesses a container's data pointer.
   /// @param pack Function that packs ghost data into a send buffer.
   /// @param get_ptr Function that for a `Container` type returns the
   /// pointer to the underlying data.
@@ -322,9 +316,6 @@ public:
              and GetPtrConcept<GetPtr, Container, T>
   void scatter_rev_begin(U pack, GetPtr get_ptr)
   {
-    if (_buffer_local.empty() and _buffer_remote.empty())
-      return;
-
     std::int32_t local_size = _bs * _map->size_local();
     pack(_scatterer->remote_indices().begin(),
          _scatterer->remote_indices().end(), std::next(_x.begin(), local_size),
@@ -360,9 +351,6 @@ public:
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_rev_end(U unpack)
   {
-    if (_buffer_local.empty() and _buffer_remote.empty())
-      return;
-
     _scatterer->scatter_end(_request);
     unpack(_scatterer->local_indices().begin(),
            _scatterer->local_indices().end(), _buffer_local.begin(),
@@ -375,7 +363,7 @@ public:
   ///
   /// For an owned entry, data from more than one process may be
   /// received. The received data can be summed or inserted into the
-  /// owning entry. The this is controlled by the `op` function.
+  /// owning entry. This is controlled by the `op` function.
   ///
   /// @note Collective MPI operation
   ///

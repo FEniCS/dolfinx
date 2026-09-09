@@ -5,8 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <algorithm>
+#include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Scatterer.h>
@@ -76,28 +78,6 @@ void test_scatter_fwd(int n)
         data_ghost, [&val, &mpi_rank, &mpi_size](auto i)
         { return i == val * ((mpi_rank + 1) % mpi_size); }));
   }
-
-  {
-    std::vector<MPI_Request> requests(sct.num_p2p_requests(), MPI_REQUEST_NULL);
-    std::ranges::fill(data_ghost, 0);
-    std::vector<std::int64_t> send_buffer(sct.local_indices().size());
-    {
-      auto& idx = sct.local_indices();
-      for (std::size_t i = 0; i < idx.size(); ++i)
-        send_buffer[i] = data_local[idx[i]];
-    }
-    std::vector<std::int64_t> recv_buffer(sct.remote_indices().size());
-    sct.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), requests);
-    sct.scatter_end(requests);
-    {
-      auto& idx = sct.remote_indices();
-      for (std::size_t i = 0; i < idx.size(); ++i)
-        data_ghost[idx[i]] = recv_buffer[i];
-    }
-    CHECK(std::ranges::all_of(
-        data_ghost, [val, mpi_rank, mpi_size](auto i)
-        { return i == val * ((mpi_rank + 1) % mpi_size); }));
-  }
 }
 
 void test_scatter_rev()
@@ -135,7 +115,6 @@ void test_scatter_rev()
   std::vector<std::int64_t> data_ghost(n * num_ghosts, value);
   {
     MPI_Request request = MPI_REQUEST_NULL;
-    std::vector<std::int64_t> remote_buffer(sct.remote_indices().size(), 0);
     std::vector<std::int64_t> send_buffer(sct.local_indices().size(), 0);
     pack_fn(data_ghost, sct.remote_indices(), send_buffer);
     std::vector<std::int64_t> recv_buffer(sct.remote_indices().size(), 0);
@@ -148,21 +127,53 @@ void test_scatter_rev()
     sum = std::reduce(data_local.begin(), data_local.end(), 0);
     CHECK(sum == n * value * num_ghosts);
   }
+}
+
+void test_scatter_with_isolated_rank()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  if (mpi_size < 3)
+    return;
+
+  std::array<std::vector<int>, 2> src_dest;
+  std::vector<std::int64_t> ghosts;
+  std::vector<int> owners;
+  if (mpi_rank == 0)
+    src_dest[1] = {1};
+  else if (mpi_rank == 1)
+  {
+    src_dest[0] = {0};
+    ghosts = {0};
+    owners = {0};
+  }
+
+  const common::IndexMap map(MPI_COMM_WORLD, 1, src_dest, ghosts, owners);
+  const common::Scatterer scatterer(map, 1);
 
   {
-    int num_requests = idx_map.dest().size() + idx_map.src().size();
-    std::vector<MPI_Request> requests(num_requests, MPI_REQUEST_NULL);
-    std::vector<std::int64_t> remote_buffer(sct.remote_indices().size(), 0);
+    std::vector<std::int64_t> send_buffer(scatterer.local_indices().size(), 17);
+    std::vector<std::int64_t> recv_buffer(scatterer.remote_indices().size());
+    MPI_Request request = MPI_REQUEST_NULL;
+    scatterer.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(),
+                                request);
+    CHECK(request != MPI_REQUEST_NULL);
+    scatterer.scatter_end(request);
+    if (mpi_rank == 1)
+      CHECK(recv_buffer == std::vector<std::int64_t>{17});
+  }
 
-    std::vector<std::int64_t> send_buffer(sct.local_indices().size(), 0);
-    pack_fn(data_ghost, sct.remote_indices(), send_buffer);
-    std::vector<std::int64_t> recv_buffer(sct.remote_indices().size(), 0);
-    sct.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), requests);
-    sct.scatter_end(requests);
-    unpack_fn(recv_buffer, sct.local_indices(), data_local, std::plus<>{});
-
-    std::int64_t sum = std::reduce(data_local.begin(), data_local.end(), 0);
-    CHECK(sum == 2 * n * value * num_ghosts);
+  {
+    std::vector<std::int64_t> send_buffer(scatterer.remote_indices().size(),
+                                          29);
+    std::vector<std::int64_t> recv_buffer(scatterer.local_indices().size());
+    MPI_Request request = MPI_REQUEST_NULL;
+    scatterer.scatter_rev_begin(send_buffer.data(), recv_buffer.data(),
+                                request);
+    CHECK(request != MPI_REQUEST_NULL);
+    scatterer.scatter_end(request);
+    if (mpi_rank == 0)
+      CHECK(recv_buffer == std::vector<std::int64_t>{29});
   }
 }
 
@@ -242,6 +253,11 @@ TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
 TEST_CASE("Scatter reverse using IndexMap", "[index_map_scatter_rev]")
 {
   CHECK_NOTHROW(test_scatter_rev());
+}
+
+TEST_CASE("Scatter with an isolated rank", "[index_map_scatter]")
+{
+  CHECK_NOTHROW(test_scatter_with_isolated_rank());
 }
 
 TEST_CASE("Communication graph edges via consensus "
