@@ -708,8 +708,13 @@ std::vector<int32_t>
 common::compute_owned_indices(std::span<const std::int32_t> indices,
                               const IndexMap& map)
 {
-  // Require that indices are sorted and unique
-  assert(std::ranges::is_sorted(indices));
+#ifndef NDEBUG
+  const bool sorted_unique
+      = std::ranges::is_sorted(indices)
+        and std::ranges::adjacent_find(indices) == indices.end();
+  check_collective_precondition(map.comm(), sorted_unique,
+                                "Indices must be sorted and unique.");
+#endif
 
   std::span ghosts = map.ghosts();
   std::vector<int> owners(map.owners().begin(), map.owners().end());

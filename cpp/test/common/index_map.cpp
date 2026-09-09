@@ -299,6 +299,8 @@ void test_index_map_preconditions()
   const std::vector<std::int32_t> out_of_range_indices = {1};
   CHECK_THROWS_AS(common::create_sub_index_map(map, duplicate_indices),
                   std::invalid_argument);
+  CHECK_THROWS_AS(common::compute_owned_indices(duplicate_indices, map),
+                  std::invalid_argument);
   CHECK_THROWS_AS(common::create_sub_index_map(map, out_of_range_indices),
                   std::invalid_argument);
 #endif

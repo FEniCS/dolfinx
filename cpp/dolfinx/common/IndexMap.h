@@ -35,9 +35,13 @@ enum class IndexMapOrder : bool
 ///
 /// @note Collective
 ///
-/// @param[in] indices Sorted local indices (owned or ghost).
+/// @param[in] indices Sorted unique local indices (owned or ghost).
 /// @param[in] map The index map.
+/// @pre `indices` is sorted and contains no duplicates. This condition is
+/// checked in Developer builds; callers must ensure it in Release builds.
 /// @return Local indices owned by the calling rank.
+/// @throws std::invalid_argument If the `indices` precondition is violated in
+/// a Developer build.
 std::vector<std::int32_t>
 compute_owned_indices(std::span<const std::int32_t> indices,
                       const IndexMap& map);
