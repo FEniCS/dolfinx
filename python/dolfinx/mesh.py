@@ -941,24 +941,46 @@ def _get_mesh_partitioner(
 
 
 def mark_maximum(
-    indicators: Vector[Real],
+    v: Vector[Real],
     theta: float,
 ) -> npt.NDArray[np.int32]:
-    r"""Compute maximum-based marking of indicators.
+    r"""Return local indices of a vector exceeding a fraction of the max.
 
-    Returns the indices :math:`i` of the indicators :math:`\eta_i` that
-    satisfy the maximum threshold:
-    :math:`\eta_i > \theta \max_j \eta_j`.
+    Computes the maximum :math:`\max_j v_j` of ``v`` over the locally
+    owned entries on every rank of the vector's communicator, and returns
+    the local indices :math:`i` satisfying :math:`v_i > \theta \max_j v_j`.
+    This is commonly referred to as 'maximum marking' in the adaptive
+    finite element literature.
+
+    Note:
+        Ghost entries of ``v`` must be up to date, i.e. ``scatter_forward``
+        must have been called since the owned entries were last modified.
+
+        :math:`\theta = 1` marks nothing, since no entry can strictly
+        exceed the true maximum. :math:`\theta = 0` is rejected, since the
+        threshold would be 0 and the criterion would degenerate to marking
+        every entry with a positive value.
+
+        The threshold is bitwise identical on every rank, so an entry is
+        marked consistently by its owner and by every rank ghosting it.
+
+    Warning:
+        Returned indices index ``v``, not mesh entities. A DOF index is not
+        an entity index in general (e.g. a reordered DG0 dofmap), even with
+        one DOF per entity. To get entity indices, build ``v`` directly over
+        the entity's index map (e.g. ``mesh.topology.index_map``) rather
+        than a dofmap's, or map DOFs to entities via the dofmap yourself.
 
     Args:
-        indicators: Indicators (local) :math:`\eta_i` - usually an error
-            indicator associated with mesh entity :math:`i`.
-        theta: Parameter, :math:`0 < \theta < 1`.
+        v: Vector of values, often with each entry associated with a mesh
+            entity, e.g. an error indicator.
+        theta: Cut-off parameter, :math:`0 < \theta \le 1`.
 
     Returns:
-        Local indices of marked entities (including ghosts).
+        Local indices, ascending and including ghosts, of the entries
+        satisfying :math:`v_i > \theta \max_j v_j`.
     """
-    return _mark_maximum(indicators._cpp_object, theta)  # type: ignore
+    return _mark_maximum(v._cpp_object, theta)  # type: ignore
 
 
 def _create_mesh_coordinate_element(
