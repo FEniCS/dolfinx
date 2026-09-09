@@ -123,8 +123,9 @@ void common(nb::module_& m)
           nb::arg("comm"), nb::arg("local_size"), nb::arg("dest_src"),
           nb::arg("ghosts"), nb::arg("ghost_owners"),
           "Create an IndexMap with explicit neighbour ranks. ``dest_src`` "
-          "contains destination ranks followed by source ranks, while "
-          "``ghost_owners`` contains source ranks.")
+          "contains destination ranks followed by source ranks. "
+          "``ghost_owners[i]`` owns ``ghosts[i]``; its unique values must "
+          "equal the source ranks.")
       .def_prop_ro(
           "comm", [](const dolfinx::common::IndexMap& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>())
