@@ -455,10 +455,14 @@ def test_mixed_dom_codim_1_gradient_3d(cell_type):
     c_parent = msh.comm.allreduce(fem.assemble_scalar(M_parent), op=MPI.SUM)
     c_submesh = msh.comm.allreduce(fem.assemble_scalar(M_submesh), op=MPI.SUM)
 
-    # Guard against a vacuous test (a too-symmetric domain/coefficient can
-    # let this bug's error cancel to ~0 across the boundary, as happened
-    # with an earlier version of test_mixed_dom_codim_1_gradient).
-    assert not np.isclose(c_submesh, 0.0)
+    # g.dx(0) is the x-component of the *manifold* (tangential) gradient
+    # of g, i.e. of (1, 2, 3) projected onto each face's own tangent
+    # plane. On the x=const faces (normal (1, 0, 0)) that projection
+    # removes the x-component entirely, giving 0; on the y=const and
+    # z=const faces it is 1. Weighted by each pair of faces' area:
+    # 2 * (0 * 1 * 2) [x=0, x=3; area 1*2] + 2 * (1 * 3 * 2) [y=0, y=1;
+    # area 3*2] + 2 * (1 * 3 * 1) [z=0, z=2; area 3*1] = 0 + 12 + 6 = 18.
+    assert np.isclose(c_submesh, 18.0)
     assert np.isclose(c_parent, c_submesh)
 
 
