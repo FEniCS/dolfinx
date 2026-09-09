@@ -28,14 +28,16 @@ enum class IndexMapOrder : bool
   any = false      ///< Allow arbitrary ghost-index ordering
 };
 
-/// @brief Given a sorted list of indices (local indexing, owned or
-/// ghost) and an index map, this function returns the indices owned by
-/// this process, including indices that might have been in the list of
-/// indices on another processes.
+/// @brief Return selected indices owned by the calling rank.
 ///
-/// @param[in] indices List of indices.
+/// Includes locally owned entries in `indices` and entries selected as ghosts
+/// on other ranks.
+///
+/// @note Collective
+///
+/// @param[in] indices Sorted local indices (owned or ghost).
 /// @param[in] map The index map.
-/// @return Indices owned by the calling process.
+/// @return Local indices owned by the calling rank.
 std::vector<std::int32_t>
 compute_owned_indices(std::span<const std::int32_t> indices,
                       const IndexMap& map);
