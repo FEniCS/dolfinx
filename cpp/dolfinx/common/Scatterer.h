@@ -14,7 +14,6 @@
 #include <concepts>
 #include <cstdint>
 #include <functional>
-#include <memory>
 #include <mpi.h>
 #include <numeric>
 #include <span>
@@ -64,34 +63,35 @@ public:
   /// (the block size).
   Scatterer(const IndexMap& map, int bs)
       : _single_rank(dolfinx::MPI::size(map.comm()) == 1),
-        _src(map.src().begin(), map.src().end()),
-        _dest(map.dest().begin(), map.dest().end()),
-        _sizes_remote(_src.size(), 0), _displs_remote(_src.size() + 1),
-        _sizes_local(_dest.size()), _displs_local(_dest.size() + 1)
+        _sizes_remote(map.src().size(), 0),
+        _displs_remote(map.src().size() + 1), _sizes_local(map.dest().size()),
+        _displs_local(map.dest().size() + 1)
   {
     if (_single_rank)
       return;
 
     int ierr;
+    const std::span<const int> src = map.src();
+    const std::span<const int> dest = map.dest();
 
     // Check that src and dest ranks are unique and sorted
-    assert(std::ranges::is_sorted(_src));
-    assert(std::ranges::is_sorted(_dest));
+    assert(std::ranges::is_sorted(src));
+    assert(std::ranges::is_sorted(dest));
 
     // Create communicators with directed edges:
     // (0) owner -> ghost,
     // (1) ghost -> owner
     MPI_Comm comm0;
     ierr = MPI_Dist_graph_create_adjacent(
-        map.comm(), _src.size(), _src.data(), MPI_UNWEIGHTED, _dest.size(),
-        _dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+        map.comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
+        dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
     _comm0 = dolfinx::MPI::Comm(comm0, false);
     dolfinx::MPI::check_error(map.comm(), ierr);
 
     MPI_Comm comm1;
     ierr = MPI_Dist_graph_create_adjacent(
-        map.comm(), _dest.size(), _dest.data(), MPI_UNWEIGHTED, _src.size(),
-        _src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+        map.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
+        src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
     _comm1 = dolfinx::MPI::Comm(comm1, false);
     dolfinx::MPI::check_error(map.comm(), ierr);
 
@@ -117,12 +117,12 @@ public:
     // disp[i] is the first entry in the buffer sent to neighbourhood
     // rank i, and disp[i + 1] - disp[i] is the number of values sent to
     // rank i.
-    assert(_sizes_remote.size() == _src.size());
-    assert(_displs_remote.size() == _src.size() + 1);
+    assert(_sizes_remote.size() == src.size());
+    assert(_displs_remote.size() == src.size() + 1);
     auto begin = owners_sorted.begin();
-    for (std::size_t i = 0; i < _src.size(); i++)
+    for (std::size_t i = 0; i < src.size(); i++)
     {
-      auto upper = std::upper_bound(begin, owners_sorted.end(), _src[i]);
+      auto upper = std::upper_bound(begin, owners_sorted.end(), src[i]);
       std::size_t num_ind = std::ranges::distance(begin, upper);
       _displs_remote[i + 1] = _displs_remote[i] + num_ind;
       _sizes_remote[i] = num_ind;
@@ -136,8 +136,8 @@ public:
 
     // Compute sizes and displacements of local data (how many local
     // elements to be sent/received grouped by neighbors)
-    assert(_sizes_local.size() == _dest.size());
-    assert(_displs_local.size() == _dest.size() + 1);
+    assert(_sizes_local.size() == dest.size());
+    assert(_displs_local.size() == dest.size() + 1);
     _sizes_remote.reserve(1);
     _sizes_local.reserve(1);
     ierr = MPI_Neighbor_alltoall(_sizes_remote.data(), 1, MPI_INT32_T,
@@ -161,7 +161,7 @@ public:
 
     const std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
-    // Check that all received indice are within the owned range
+    // Check that all received indices are within the owned range
     std::ranges::for_each(recv_buffer, [range](auto idx)
                           { assert(idx >= range[0] and idx < range[1]); });
 #endif
@@ -217,7 +217,6 @@ public:
   template <class U>
   Scatterer(const Scatterer<U>& s)
       : _single_rank(s._single_rank), _comm0(s._comm0), _comm1(s._comm1),
-        _src(s._src), _dest(s._dest),
         _remote_inds(s._remote_inds.begin(), s._remote_inds.end()),
         _sizes_remote(s._sizes_remote), _displs_remote(s._displs_remote),
         _local_inds(s._local_inds.begin(), s._local_inds.end()),
@@ -225,9 +224,8 @@ public:
   {
   }
 
-  /// @brief Start a non-blocking send of owned data to ranks that ghost
-  /// the data using *MPI neighbourhood collective communication*
-  /// (recommended).
+  /// @brief Start a non-blocking neighbourhood collective exchange of
+  /// owned data with ranks that ghost it.
   ///
   /// The communication is completed by calling Scatterer::scatter_end.
   /// See ::local_indices for instructions on packing `send_buffer` and
@@ -286,7 +284,7 @@ public:
   /// `recv_buffer` should be device pointers.
   ///
   /// @param[in] send_buffer Data associated with each ghost index. This
-  /// data is sent to process that owns the index. See
+  /// data is sent to the process that owns the index. See
   /// Scatterer::remote_indices for the order of the buffer and how to
   /// pack.
   /// @param[in,out] recv_buffer Buffer for storing received data. See
@@ -335,7 +333,7 @@ public:
   /// entries in the owned part of the data array into the appropriate
   /// position in a send buffer. For a reverse scatter, indices are used
   /// for assigning (accumulating) the receive buffer values into
-  /// correct position in the owned part of the data array.
+  /// the correct position in the owned part of the data array.
   ///
   /// For a forward scatter, if `x` is the owned part of an array and
   /// `send_buffer` is the send buffer, `send_buffer` is packed such
@@ -365,7 +363,7 @@ public:
   ///
   /// For a forward scatter, the indices are used to unpack received data
   /// into ghost entries. For a reverse scatter, indices are used for assigning
-  /// (accumulating) the receive buffer values to correct position in
+  /// (accumulating) the receive buffer values to the correct position in
   /// the owned array.
   ///
   /// For a forward scatter, if `xg` is the ghost part of the data array
@@ -377,7 +375,7 @@ public:
   ///         xg[idx[i]] = recv_buffer[i];
   ///
   /// For a reverse scatter, if `send_buffer` is the send buffer, then
-  /// `send_buffer` is packaged such that:
+  /// `send_buffer` is packed such that:
   ///
   ///     auto& idx = scatterer.remote_indices()
   ///     std::vector<T> send_buffer(idx.size())
@@ -404,14 +402,6 @@ private:
   // - in-edges (src) are from ranks that 'ghost' my owned indices
   // - out-edges (dest) are to the owning ranks of my ghost indices
   dolfinx::MPI::Comm _comm1{MPI_COMM_NULL};
-
-  // Set of ranks that own ghosts
-  // FIXME: Should we store the index map instead?
-  std::vector<int> _src;
-
-  // Set of ranks ghost owned indices
-  // FIXME: Should we store the index map instead?
-  std::vector<int> _dest;
 
   // Permutation indices used to pack and unpack ghost data (remote)
   container_type _remote_inds;
