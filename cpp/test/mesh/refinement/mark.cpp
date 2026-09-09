@@ -50,7 +50,13 @@ TEMPLATE_TEST_CASE("Mark maximum", "[refinement][mark][maximum]", double, float)
       v[i] = i;
   }
   else
+  {
     CHECK(v.size() == 1);
+    // Poison the ghost slot: if the local max were wrongly computed over
+    // ghosts too, this would inflate the (globally reduced) threshold and
+    // the checks below would fail.
+    v[0] = static_cast<TestType>(1000);
+  }
 
   TestType theta = 0.5;
   auto indices = mark_maximum(std::span<const TestType>(v), im, theta);
