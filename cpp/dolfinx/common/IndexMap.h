@@ -7,7 +7,9 @@
 #pragma once
 
 #include "MPI.h"
+#include <array>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <span>
 #include <tuple>
@@ -35,7 +37,7 @@ enum class IndexMapOrder : bool
 /// @param[in] indices List of indices.
 /// @param[in] map The index map.
 /// @return Indices owned by the calling process.
-std::vector<int32_t>
+std::vector<std::int32_t>
 compute_owned_indices(std::span<const std::int32_t> indices,
                       const IndexMap& map);
 
@@ -80,28 +82,27 @@ stack_index_maps(
 /// process.
 /// @return The (i) new index map and (ii) a map from local indices in
 /// the submap to local indices in the original (this) map.
-/// @pre `indices` must be sorted and must not contain duplicates.
+/// @pre `indices` must not contain duplicates.
+/// @throws std::invalid_argument If `indices` contains a duplicate or an
+/// out-of-range local index.
 std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
     const IndexMap& imap, std::span<const std::int32_t> indices,
     IndexMapOrder order = IndexMapOrder::any, bool allow_owner_change = false);
 
-/// This class represents the distribution index arrays across
-/// processes. An index array is a contiguous collection of `N+1`
-/// indices `[0, 1, . . ., N]` that are distributed across `M`
-/// processes. On a given process, the IndexMap stores a portion of the
-/// index set using local indices `[0, 1, . . . , n]`, and a map from
-/// the local indices to a unique global index.
+/// This class represents the distribution of a global index range
+/// `[0, N)` across MPI processes. Each process owns a contiguous global
+/// range. Local indices `[0, size_local())` address owned entries; ghost
+/// indices follow them and are mapped explicitly to global indices.
 class IndexMap
 {
 public:
-  /// @brief Create an non-overlapping index map.
+  /// @brief Create a non-overlapping index map.
   ///
   /// @note Collective
   ///
   /// @param[in] comm MPI communicator that the index map is distributed
   /// across.
-  /// @param[in] local_size Local size of the index map, i.e. the number
-  /// of owned entries.
+  /// @param[in] local_size Number of owned entries. Must be non-negative.
   IndexMap(MPI_Comm comm, std::int32_t local_size);
 
   /// @brief Create an overlapping (ghosted) index map.
@@ -116,9 +117,8 @@ public:
   ///
   /// @param[in] comm MPI communicator that the index map is distributed
   /// across.
-  /// @param[in] local_size Local size of the index map, i.e. the number
-  /// of owned entries
-  /// @param[in] ghosts The global indices of ghost entries
+  /// @param[in] local_size Number of owned entries. Must be non-negative.
+  /// @param[in] ghosts Unique global indices of ghost entries.
   /// @param[in] owners Owner rank (on `comm`) of each entry in `ghosts`
   /// @param[in] tag Tag used in non-blocking MPI calls in the consensus
   /// algorithm.
@@ -148,18 +148,18 @@ public:
   ///
   /// @param[in] comm MPI communicator that the index map is distributed
   /// across.
-  /// @param[in] local_size Local size of the index map, i.e. the number
-  /// @param[in] src_dest Lists of [0] src and [1] dest ranks. The list
-  /// in each must be sorted and not contain duplicates. `src` ranks are
-  /// owners of the indices in `ghosts`. `dest` ranks are the rank that
-  /// ghost indices owned by the caller.
-  /// @param[in] ghosts The global indices of ghost entries
+  /// @param[in] local_size Number of owned entries. Must be non-negative.
+  /// @param[in] src_dest Lists of (0) source and (1) destination ranks.
+  /// Both lists must be sorted, unique and contain valid ranks. Source
+  /// ranks must be exactly the unique owners of `ghosts`; destination
+  /// ranks must be the ranks that ghost entries owned by the caller.
+  /// @param[in] ghosts Unique global indices of ghost entries.
   /// @param[in] owners Owner rank (on `comm`) of each entry in `ghosts`
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            const std::array<std::vector<int>, 2>& src_dest,
            std::span<const std::int64_t> ghosts, std::span<const int> owners);
 
-  // Copy constructor
+  // Copy constructor (deleted)
   IndexMap(const IndexMap& map) = delete;
 
   /// Move constructor
@@ -168,11 +168,11 @@ public:
   /// Destructor
   ~IndexMap() = default;
 
+  // Copy assignment (deleted)
+  IndexMap& operator=(const IndexMap& map) = delete;
+
   /// Move assignment
   IndexMap& operator=(IndexMap&& map) = default;
-
-  // Copy assignment
-  IndexMap& operator=(const IndexMap& map) = delete;
 
   /// Range of indices (global) owned by this process
   std::array<std::int64_t, 2> local_range() const noexcept;
@@ -194,17 +194,19 @@ public:
   /// @return Communicator
   MPI_Comm comm() const;
 
-  /// @brief Compute global indices for array of local indices.
-  /// @param[in] local Local indices
-  /// @param[out] global The global indices
+  /// @brief Compute global indices for local indices.
+  /// @param[in] local Local indices in `[0, size_local() + num_ghosts())`.
+  /// @param[out] global Global indices. Must have the same size as `local`.
+  /// @throws std::invalid_argument If `local` and `global` differ in size.
+  /// @throws std::out_of_range If a local index is out of range.
   void local_to_global(std::span<const std::int32_t> local,
                        std::span<std::int64_t> global) const;
 
-  /// @brief Compute local indices for array of global indices.
-  /// @param[in] global Global indices
-  /// @param[out] local The local of the corresponding global index in
-  /// 'global'. Returns -1 if the local index does not exist on this
-  /// process.
+  /// @brief Compute local indices for global indices.
+  /// @param[in] global Global indices.
+  /// @param[out] local Local indices. Must have the same size as `global`.
+  /// Entries without a local index are set to -1.
+  /// @throws std::invalid_argument If `global` and `local` differ in size.
   void global_to_local(std::span<const std::int64_t> global,
                        std::span<std::int32_t> local) const;
 
@@ -216,7 +218,7 @@ public:
   /// @brief The ranks that own each ghost index.
   /// @return List of ghost owners. The owning rank of the ith ghost
   /// index is `owners()[i]`.
-  std::span<const int> owners() const { return _owners; }
+  std::span<const int> owners() const noexcept { return _owners; }
 
   /// @todo Aim to remove this function?
   ///
@@ -268,7 +270,7 @@ public:
   /// forward (owner -> ghost) scatter.
   ///
   /// @return A weight vector, where `weight[i]` is the number of
-  /// ghost indices owned by rank IndexMap::src()`[i]`.
+  /// ghost indices owned by rank `src()[i]`.
   std::vector<std::int32_t> weights_src() const;
 
   /// @brief Compute the number of ghost indices owned by each rank in
@@ -279,11 +281,11 @@ public:
   /// 1. Sent from this rank to other ranks when performing a forward
   /// (owner -> ghost) scatter.
   ///
-  /// 2. Received by this rank from other ranks when performing a
-  /// reverse forward (owner <- ghost) scatter.
+  /// 2. Received by this rank from other ranks when performing a reverse
+  /// (owner <- ghost) scatter.
   ///
   /// @return A weight vector, where `weight[i]` is the number of ghost
-  /// indices owned by rank IndexMap::dest()`[i]`.
+  /// indices owned by rank `dest()[i]`.
   std::vector<std::int32_t> weights_dest() const;
 
   /// @brief Destination and source ranks by type, e.g, ranks that are

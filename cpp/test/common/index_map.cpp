@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <algorithm>
+#include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -14,6 +15,7 @@
 #include <iostream>
 #include <numeric>
 #include <set>
+#include <stdexcept>
 #include <vector>
 
 using namespace dolfinx;
@@ -231,6 +233,54 @@ void test_rank_weights()
     REQUIRE(weight_dest.empty());
   }
 }
+
+void test_index_map_preconditions()
+{
+  CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, -1), std::invalid_argument);
+
+  const int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int owner = (rank + 1) % mpi_size;
+  const std::vector<std::int64_t> ghosts = {0};
+  const std::vector<int> owners = {owner};
+  const std::array<std::vector<int>, 2> src_dest = {};
+  CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, 1, src_dest, ghosts, owners),
+                  std::invalid_argument);
+
+  const common::IndexMap map(MPI_COMM_WORLD, 1);
+  const std::vector<std::int32_t> duplicate_indices = {0, 0};
+  const std::vector<std::int32_t> out_of_range_indices = {1};
+  CHECK_THROWS_AS(common::create_sub_index_map(map, duplicate_indices),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(common::create_sub_index_map(map, out_of_range_indices),
+                  std::invalid_argument);
+
+  const std::vector<std::int32_t> valid_indices = {0};
+  auto [submap, submap_to_map]
+      = common::create_sub_index_map(map, valid_indices);
+  CHECK(submap.size_local() == 1);
+  CHECK(submap_to_map == valid_indices);
+}
+
+void test_local_global_index_conversion()
+{
+  const common::IndexMap map(MPI_COMM_WORLD, 2);
+  std::vector<std::int64_t> global(1);
+  const std::vector<std::int32_t> local_two = {0, 1};
+  const std::vector<std::int32_t> local_negative = {-1};
+  const std::vector<std::int32_t> local_out_of_range = {2};
+  CHECK_THROWS_AS(map.local_to_global(local_two, global),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(map.local_to_global(local_negative, global),
+                  std::out_of_range);
+  CHECK_THROWS_AS(map.local_to_global(local_out_of_range, global),
+                  std::out_of_range);
+
+  std::vector<std::int32_t> local(1);
+  const std::vector<std::int64_t> global_two = {0, 1};
+  CHECK_THROWS_AS(map.global_to_local(global_two, local),
+                  std::invalid_argument);
+}
 } // namespace
 
 TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
@@ -259,4 +309,14 @@ TEST_CASE("Split IndexMap communicator by type", "[index_map_comm_split]")
 TEST_CASE("IndexMap stats", "[index_map_stats]")
 {
   CHECK_NOTHROW(test_rank_weights());
+}
+
+TEST_CASE("IndexMap preconditions", "[index_map_preconditions]")
+{
+  CHECK_NOTHROW(test_index_map_preconditions());
+}
+
+TEST_CASE("IndexMap local/global conversions", "[index_map_conversions]")
+{
+  CHECK_NOTHROW(test_local_global_index_conversion());
 }

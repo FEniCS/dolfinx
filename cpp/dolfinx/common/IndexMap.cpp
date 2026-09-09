@@ -8,12 +8,14 @@
 #include "IndexMap.h"
 #include "sort.h"
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <functional>
 #include <numeric>
 #include <ranges>
 #include <set>
 #include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -22,6 +24,119 @@ using namespace dolfinx::common;
 
 namespace
 {
+/// Check a rank-local precondition collectively.
+void check_collective_precondition(MPI_Comm comm, bool local_valid,
+                                   const char* message)
+{
+  int valid = local_valid;
+  int all_valid;
+  const int ierr
+      = MPI_Allreduce(&valid, &all_valid, 1, MPI_INT, MPI_LAND, comm);
+  dolfinx::MPI::check_error(comm, ierr);
+  if (!all_valid)
+    throw std::invalid_argument(message);
+}
+
+/// Return true if ranks are sorted and contain no duplicates.
+bool is_sorted_unique(std::span<const int> ranks)
+{
+  return std::ranges::is_sorted(ranks)
+         and std::ranges::adjacent_find(ranks) == ranks.end();
+}
+
+/// Validate input shared by both ghosted IndexMap constructors.
+void validate_ghost_data(MPI_Comm comm, std::int32_t local_size,
+                         std::span<const std::int64_t> ghosts,
+                         std::span<const int> owners)
+{
+  const int rank = dolfinx::MPI::rank(comm);
+  const int comm_size = dolfinx::MPI::size(comm);
+  std::vector<std::int64_t> sorted_ghosts(ghosts.begin(), ghosts.end());
+  std::ranges::sort(sorted_ghosts);
+  const bool ghosts_unique
+      = std::ranges::adjacent_find(sorted_ghosts) == sorted_ghosts.end();
+  const bool owners_valid = std::ranges::all_of(
+      owners, [rank, comm_size](int owner)
+      { return owner >= 0 and owner < comm_size and owner != rank; });
+  const bool ghosts_valid = std::ranges::all_of(ghosts, [](std::int64_t ghost)
+                                                { return ghost >= 0; });
+  check_collective_precondition(
+      comm,
+      local_size >= 0 and ghosts.size() == owners.size() and ghosts_unique
+          and owners_valid and ghosts_valid,
+      "Invalid IndexMap ghost data.");
+}
+
+/// Validate the explicit source and destination rank lists.
+void validate_src_dest(MPI_Comm comm, std::span<const int> src,
+                       std::span<const int> dest, std::span<const int> owners)
+{
+  const int rank = dolfinx::MPI::rank(comm);
+  const int comm_size = dolfinx::MPI::size(comm);
+  std::vector<int> owner_ranks(owners.begin(), owners.end());
+  std::ranges::sort(owner_ranks);
+  const auto [unique_end, range_end] = std::ranges::unique(owner_ranks);
+  owner_ranks.erase(unique_end, range_end);
+  const bool ranks_valid
+      = std::ranges::all_of(dest,
+                            [rank, comm_size](int destination)
+                            {
+                              return destination >= 0
+                                     and destination < comm_size
+                                     and destination != rank;
+                            });
+  check_collective_precondition(
+      comm,
+      is_sorted_unique(src) and is_sorted_unique(dest) and ranks_valid
+          and std::ranges::equal(src, owner_ranks),
+      "Invalid IndexMap source or destination ranks.");
+}
+
+/// Compute the owned global range and global size of an index map.
+std::pair<std::array<std::int64_t, 2>, std::int64_t>
+compute_layout(MPI_Comm comm, std::int32_t local_size)
+{
+  std::int64_t offset = 0;
+  const std::int64_t local_size_tmp = local_size;
+  MPI_Request request_scan;
+  int ierr = MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM,
+                         comm, &request_scan);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  std::int64_t size_global;
+  MPI_Request request_sum;
+  ierr = MPI_Iallreduce(&local_size_tmp, &size_global, 1, MPI_INT64_T, MPI_SUM,
+                        comm, &request_sum);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  ierr = MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
+  dolfinx::MPI::check_error(comm, ierr);
+  if (dolfinx::MPI::rank(comm) == 0)
+    offset = 0;
+
+  ierr = MPI_Wait(&request_sum, MPI_STATUS_IGNORE);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  return {{offset, offset + local_size}, size_global};
+}
+
+/// Validate submap indices before entering its communication path.
+void validate_submap_indices(const IndexMap& imap,
+                             std::span<const std::int32_t> indices)
+{
+  const std::int32_t size = imap.size_local() + imap.num_ghosts();
+  const bool in_range
+      = std::ranges::all_of(indices, [size](std::int32_t index)
+                            { return index >= 0 and index < size; });
+  std::vector<std::int32_t> sorted_indices(indices.begin(), indices.end());
+  std::ranges::sort(sorted_indices);
+  const bool unique
+      = std::ranges::adjacent_find(sorted_indices) == sorted_indices.end();
+  check_collective_precondition(
+      imap.comm(), in_range and unique,
+      "Submap indices must be in range and contain no duplicates.");
+}
+
 /// @brief Given source ranks (ranks that own indices ghosted by the
 /// calling rank), compute ranks that ghost indices owned by the calling
 /// rank.
@@ -79,7 +194,7 @@ std::tuple<std::vector<std::int64_t>, std::vector<std::int64_t>,
 communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
                              std::span<const int> dest,
                              std::span<const std::int64_t> ghosts,
-                             std::span<const std::int32_t> owners,
+                             std::span<const int> owners,
                              std::span<const std::uint8_t> include_ghost)
 {
   // Send ghost indices to owning rank
@@ -120,8 +235,10 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
     send_sizes.reserve(1);
     recv_sizes.reserve(1);
     MPI_Request sizes_request;
-    MPI_Ineighbor_alltoall(send_sizes.data(), 1, MPI_INT32_T, recv_sizes.data(),
-                           1, MPI_INT32_T, comm0, &sizes_request);
+    ierr = MPI_Ineighbor_alltoall(send_sizes.data(), 1, MPI_INT32_T,
+                                  recv_sizes.data(), 1, MPI_INT32_T, comm0,
+                                  &sizes_request);
+    dolfinx::MPI::check_error(comm, ierr);
 
     // Build send buffer and ghost position to send buffer position
     for (auto& d : send_data)
@@ -134,7 +251,8 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
     recv_disp.resize(dest.size() + 1, 0);
     std::partial_sum(send_sizes.begin(), send_sizes.end(),
                      std::next(send_disp.begin()));
-    MPI_Wait(&sizes_request, MPI_STATUS_IGNORE);
+    ierr = MPI_Wait(&sizes_request, MPI_STATUS_IGNORE);
+    dolfinx::MPI::check_error(comm, ierr);
     std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                      std::next(recv_disp.begin()));
 
@@ -207,8 +325,7 @@ compute_submap_indices(const IndexMap& imap,
   submap_dest.reserve(1);
   const int rank = dolfinx::MPI::rank(imap.comm());
   {
-    // Flag to track if the owner of any indices have changed in the
-    // submap
+    // Flag to track if the owner of any indices has changed in the submap.
     bool owners_changed = false;
 
     // Create a map from (global) indices in `recv_indices` to a list of
@@ -243,10 +360,11 @@ compute_submap_indices(const IndexMap& imap,
           global_idx_to_possible_owner.push_back({idx, dest[i]});
         }
       }
-
-      if (owners_changed and !allow_owner_change)
-        throw std::runtime_error("Index owner change detected!");
     }
+
+    check_collective_precondition(imap.comm(),
+                                  allow_owner_change or !owners_changed,
+                                  "Index owner change detected.");
 
     std::ranges::sort(global_idx_to_possible_owner);
 
@@ -826,6 +944,8 @@ common::create_sub_index_map(const IndexMap& imap,
                              std::span<const std::int32_t> indices,
                              IndexMapOrder order, bool allow_owner_change)
 {
+  validate_submap_indices(imap, indices);
+
   // Compute the owned, ghost, and ghost owners of submap indices.
   // NOTE: All indices are local and numbered w.r.t. the original (imap)
   // index map
@@ -839,6 +959,8 @@ common::create_sub_index_map(const IndexMap& imap,
   int ierr = MPI_Exscan(&submap_local_size, &submap_offset, 1, MPI_INT64_T,
                         MPI_SUM, imap.comm());
   dolfinx::MPI::check_error(imap.comm(), ierr);
+  if (dolfinx::MPI::rank(imap.comm()) == 0)
+    submap_offset = 0;
 
   // Compute the global indices (w.r.t. the submap) of the submap ghosts
   std::vector<std::int64_t> submap_ghost_global(submap_ghost.size());
@@ -864,36 +986,26 @@ common::create_sub_index_map(const IndexMap& imap,
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size) : _comm(comm, true)
 {
-  // Get global offset (index), using partial exclusive reduction
-  std::int64_t offset = 0;
-  const std::int64_t local_size_tmp = local_size;
-  MPI_Request request_scan;
-  int ierr = MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM,
-                         _comm.comm(), &request_scan);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-  // Send local size to sum reduction to get global size
-  MPI_Request request;
-  ierr = MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
-                        _comm.comm(), &request);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-  ierr = MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-  _local_range = {offset, offset + local_size};
-
-  // Wait for the MPI_Iallreduce to complete
-  ierr = MPI_Wait(&request, MPI_STATUS_IGNORE);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
+  check_collective_precondition(_comm.comm(), local_size >= 0,
+                                "IndexMap local size must be non-negative.");
+  auto [local_range, size_global] = compute_layout(_comm.comm(), local_size);
+  _local_range = local_range;
+  _size_global = size_global;
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    std::span<const std::int64_t> ghosts,
                    std::span<const int> owners, int tag)
-    : IndexMap(comm, local_size, build_src_dest(comm, owners, tag), ghosts,
-               owners)
+    : _comm(comm, true), _ghosts(ghosts.begin(), ghosts.end()),
+      _owners(owners.begin(), owners.end())
 {
-  // Do nothing
+  validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
+  auto src_dest = build_src_dest(_comm.comm(), _owners, tag);
+  _src = std::move(src_dest[0]);
+  _dest = std::move(src_dest[1]);
+  auto [local_range, size_global] = compute_layout(_comm.comm(), local_size);
+  _local_range = local_range;
+  _size_global = size_global;
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
@@ -904,32 +1016,11 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
       _owners(owners.begin(), owners.end()), _src(src_dest[0]),
       _dest(src_dest[1])
 {
-  assert(ghosts.size() == owners.size());
-  assert(std::ranges::is_sorted(src_dest[0]));
-  assert(std::ranges::is_sorted(src_dest[1]));
-
-  // Get global offset (index), using partial exclusive reduction
-  std::int64_t offset = 0;
-  const std::int64_t local_size_tmp = local_size;
-  MPI_Request request_scan;
-  int ierr = MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM,
-                         _comm.comm(), &request_scan);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-  // Send local size to sum reduction to get global size
-  MPI_Request request;
-  ierr = MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
-                        _comm.comm(), &request);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-  // Wait for MPI_Iexscan to complete (get offset)
-  ierr = MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-  _local_range = {offset, offset + local_size};
-
-  // Wait for the MPI_Iallreduce to complete
-  ierr = MPI_Wait(&request, MPI_STATUS_IGNORE);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
+  validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
+  validate_src_dest(_comm.comm(), _src, _dest, _owners);
+  auto [local_range, size_global] = compute_layout(_comm.comm(), local_size);
+  _local_range = local_range;
+  _size_global = size_global;
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
@@ -957,8 +1048,18 @@ std::span<const std::int64_t> IndexMap::ghosts() const noexcept
 void IndexMap::local_to_global(std::span<const std::int32_t> local,
                                std::span<std::int64_t> global) const
 {
-  assert(local.size() <= global.size());
+  if (local.size() != global.size())
+  {
+    throw std::invalid_argument(
+        "Local and global index arrays must have the same size.");
+  }
   const std::int32_t local_size = _local_range[1] - _local_range[0];
+  const std::int32_t size = local_size + _ghosts.size();
+  if (!std::ranges::all_of(local, [size](std::int32_t index)
+                           { return index >= 0 and index < size; }))
+  {
+    throw std::out_of_range("Local index is outside the IndexMap range.");
+  }
   std::ranges::transform(
       local, global.begin(),
       [local_size, local_range = _local_range[0], &ghosts = _ghosts](auto local)
@@ -966,16 +1067,18 @@ void IndexMap::local_to_global(std::span<const std::int32_t> local,
         if (local < local_size)
           return local_range + local;
         else
-        {
-          assert((local - local_size) < static_cast<int>(ghosts.size()));
           return ghosts[local - local_size];
-        }
       });
 }
 //-----------------------------------------------------------------------------
 void IndexMap::global_to_local(std::span<const std::int64_t> global,
                                std::span<std::int32_t> local) const
 {
+  if (global.size() != local.size())
+  {
+    throw std::invalid_argument(
+        "Global and local index arrays must have the same size.");
+  }
   const std::int32_t local_size = _local_range[1] - _local_range[0];
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local(
       _ghosts.size());
@@ -1402,7 +1505,7 @@ std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
   assert(std::ranges::is_sorted(split_src));
 
   ierr = MPI_Comm_free(&comm_s);
-  dolfinx::MPI::check_error(comm_s, ierr);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   return {std::move(split_dest), std::move(split_src)};
 }
