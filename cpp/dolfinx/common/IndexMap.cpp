@@ -721,6 +721,9 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
       "Indices must be sorted, unique, and in range.");
 #endif
 
+  std::span ghosts = map.ghosts();
+  std::vector<int> owners(map.owners().begin(), map.owners().end());
+
   // Find first index that is not owned by this rank
   std::int32_t size_local = map.size_local();
   const auto it_owned_end = std::ranges::lower_bound(indices, size_local);
@@ -729,87 +732,79 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   std::size_t first_ghost_index
       = std::ranges::distance(indices.begin(), it_owned_end);
   std::int32_t num_ghost_indices = indices.size() - first_ghost_index;
-
-  std::vector<std::int64_t> recv_buffer;
+  std::vector<std::pair<int, std::int64_t>> owner_to_global(num_ghost_indices);
+  for (std::int32_t i = 0; i < num_ghost_indices; ++i)
   {
-    std::span ghosts = map.ghosts();
-    std::vector<int> owners(map.owners().begin(), map.owners().end());
+    std::int32_t idx = indices[first_ghost_index + i];
+    std::int32_t pos = idx - size_local;
+    owner_to_global[i] = {owners[pos], ghosts[pos]};
+  }
+  std::ranges::sort(owner_to_global);
 
-    std::vector<std::pair<int, std::int64_t>> owner_to_global(
-        num_ghost_indices);
-    for (std::int32_t i = 0; i < num_ghost_indices; ++i)
-    {
-      std::int32_t idx = indices[first_ghost_index + i];
-      std::int32_t pos = idx - size_local;
-      owner_to_global[i] = {owners[pos], ghosts[pos]};
-    }
-    std::ranges::sort(owner_to_global);
+  std::span dest = map.dest();
+  std::span src = map.src();
 
-    std::span dest = map.dest();
-    std::span src = map.src();
+  // Count ghosts per source rank
+  std::vector<int> send_sizes(src.size(), 0);
+  std::vector<int> send_disp(src.size() + 1, 0);
+  auto it = owner_to_global.begin();
+  for (std::size_t i = 0; i < src.size(); ++i)
+  {
+    int owner = src[i];
+    auto begin = std::ranges::find(it, owner_to_global.end(), owner,
+                                   &std::pair<int, std::int64_t>::first);
+    auto end = std::ranges::upper_bound(begin, owner_to_global.end(), owner,
+                                        std::ranges::less(),
+                                        &std::pair<int, std::int64_t>::first);
 
-    // Count ghosts per source rank
-    std::vector<int> send_sizes(src.size(), 0);
-    std::vector<int> send_disp(src.size() + 1, 0);
-    auto it = owner_to_global.begin();
-    for (std::size_t i = 0; i < src.size(); ++i)
-    {
-      int owner = src[i];
-      auto begin = std::ranges::find(it, owner_to_global.end(), owner,
-                                     &std::pair<int, std::int64_t>::first);
-      auto end = std::ranges::upper_bound(begin, owner_to_global.end(), owner,
-                                          std::ranges::less(),
-                                          &std::pair<int, std::int64_t>::first);
+    // Count number of ghosts (if any)
+    send_sizes[i] = std::ranges::distance(begin, end);
+    send_disp[i + 1] = send_disp[i] + send_sizes[i];
 
-      // Count number of ghosts (if any)
-      send_sizes[i] = std::ranges::distance(begin, end);
-      send_disp[i + 1] = send_disp[i] + send_sizes[i];
+    if (begin != end)
+      it = end;
+  }
 
-      if (begin != end)
-        it = end;
-    }
+  // Create ghost -> owner comm
+  MPI_Comm comm;
+  int ierr = MPI_Dist_graph_create_adjacent(
+      map.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
+      src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  dolfinx::MPI::check_error(map.comm(), ierr);
 
-    // Create ghost -> owner comm
-    MPI_Comm comm;
-    int ierr = MPI_Dist_graph_create_adjacent(
-        map.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
-        src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-    dolfinx::MPI::check_error(map.comm(), ierr);
+  // Exchange number of indices to send/receive from each rank
+  std::vector<int> recv_sizes(dest.size(), 0);
+  send_sizes.reserve(1);
+  recv_sizes.reserve(1);
+  ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(),
+                               1, MPI_INT, comm);
+  dolfinx::MPI::check_error(comm, ierr);
 
-    // Exchange number of indices to send/receive from each rank
-    std::vector<int> recv_sizes(dest.size(), 0);
-    send_sizes.reserve(1);
-    recv_sizes.reserve(1);
-    ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT,
-                                 recv_sizes.data(), 1, MPI_INT, comm);
-    dolfinx::MPI::check_error(comm, ierr);
+  // Prepare receive displacement array
+  std::vector<int> recv_disp(dest.size() + 1, 0);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   std::next(recv_disp.begin()));
 
-    // Prepare receive displacement array
-    std::vector<int> recv_disp(dest.size() + 1, 0);
-    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                     std::next(recv_disp.begin()));
+  // Send ghost indices to owner, and receive owned indices. The send
+  // buffer is the global indices in owner-grouped order.
+  std::vector<std::int64_t> recv_buffer(recv_disp.back());
+  std::vector<std::int64_t> send_buffer;
+  send_buffer.reserve(owner_to_global.size());
+  std::ranges::transform(owner_to_global, std::back_inserter(send_buffer),
+                         [](auto x) { return x.second; });
+  ierr = MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                                send_disp.data(), MPI_INT64_T,
+                                recv_buffer.data(), recv_sizes.data(),
+                                recv_disp.data(), MPI_INT64_T, comm);
+  dolfinx::MPI::check_error(comm, ierr);
+  ierr = MPI_Comm_free(&comm);
+  dolfinx::MPI::check_error(map.comm(), ierr);
 
-    // Send ghost indices to owner, and receive owned indices. The send
-    // buffer is the global indices in owner-grouped order.
-    recv_buffer.resize(recv_disp.back());
-    std::vector<std::int64_t> send_buffer;
-    send_buffer.reserve(owner_to_global.size());
-    std::ranges::transform(owner_to_global, std::back_inserter(send_buffer),
-                           [](auto x) { return x.second; });
-    ierr = MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
-                                  send_disp.data(), MPI_INT64_T,
-                                  recv_buffer.data(), recv_sizes.data(),
-                                  recv_disp.data(), MPI_INT64_T, comm);
-    dolfinx::MPI::check_error(comm, ierr);
-    ierr = MPI_Comm_free(&comm);
-    dolfinx::MPI::check_error(map.comm(), ierr);
-
-    // Remove duplicates from received indices
-    {
-      std::ranges::sort(recv_buffer);
-      auto [unique_end, range_end] = std::ranges::unique(recv_buffer);
-      recv_buffer.erase(unique_end, range_end);
-    }
+  // Remove duplicates from received indices
+  {
+    std::ranges::sort(recv_buffer);
+    auto [unique_end, range_end] = std::ranges::unique(recv_buffer);
+    recv_buffer.erase(unique_end, range_end);
   }
 
   // Copy owned and ghost indices into return array
@@ -824,10 +819,11 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
                            return idx - range[0];
                          });
 
-  std::ranges::sort(owned);
-  auto [unique_end, range_end] = std::ranges::unique(owned);
-  owned.erase(unique_end, range_end);
-
+  {
+    std::ranges::sort(owned);
+    auto [unique_end, range_end] = std::ranges::unique(owned);
+    owned.erase(unique_end, range_end);
+  }
   return owned;
 }
 //-----------------------------------------------------------------------------
