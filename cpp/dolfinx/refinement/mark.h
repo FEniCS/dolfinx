@@ -69,9 +69,8 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
         std::format("theta must satisfy 0 < theta <= 1, got {}.", theta));
   }
 
-  const std::size_t size = static_cast<std::size_t>(index_map.size_local()
-                                                    + index_map.num_ghosts());
-  if (values.size() != size)
+  const std::int32_t size = index_map.size_local() + index_map.num_ghosts();
+  if (values.size() != static_cast<std::size_t>(size))
   {
     throw std::invalid_argument(
         std::format("values must have size index_map.size_local() + "
