@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Chris Richardson
+// Copyright (C) 2021-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -124,9 +124,8 @@ void test_vector_scatter_rev()
                                   std::next(v.array().begin(), size_local));
   CHECK(sum0 == 2.0 * num_ghosts);
 
-  // Repeat, to check that std::plus<> accumulates onto the
-  // already-nonzero owned values from the first scatter, rather than
-  // overwriting them
+  // Repeat, to check accumulation onto the non-zero values from the
+  // first scatter, rather than overwriting them
   v.scatter_rev(std::plus<>{});
   const double sum1 = std::reduce(v.array().begin(),
                                   std::next(v.array().begin(), size_local));

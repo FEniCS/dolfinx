@@ -128,9 +128,8 @@ void test_scatter_rev()
     CHECK(sum == n * value * num_ghosts);
   }
 
-  // Repeat the scatter and accumulate again into the already-populated
-  // data_local, to check that unpacking with std::plus<> correctly
-  // accumulates onto a non-zero owned value rather than overwriting it
+  // Repeat, to check accumulation onto the already-populated
+  // data_local rather than overwriting it
   {
     MPI_Request request = MPI_REQUEST_NULL;
     std::vector<std::int64_t> send_buffer(sct.remote_indices().size(), 0);

@@ -254,7 +254,7 @@ public:
   void scatter_fwd_begin(const T* send_buffer, T* recv_buffer,
                          MPI_Request& request) const
   {
-    if (_comm0.comm() == MPI_COMM_NULL)
+    if (!has_neighbours())
       return;
 
     int ierr = MPI_Ineighbor_alltoallv(
@@ -296,7 +296,7 @@ public:
   void scatter_rev_begin(const T* send_buffer, T* recv_buffer,
                          MPI_Request& request) const
   {
-    if (_comm1.comm() == MPI_COMM_NULL)
+    if (!has_neighbours())
       return;
 
     int ierr = MPI_Ineighbor_alltoallv(
@@ -311,20 +311,18 @@ public:
   /// This function completes the communication started by
   /// ::scatter_fwd_begin.
   ///
-  /// @note This is a local completion of the calling rank's own
-  /// request; it is not itself a collective MPI call. Every rank that
-  /// called ::scatter_fwd_begin must nonetheless call this function
-  /// before reusing the send/receive buffers passed to it.
+  /// @note Local completion of the caller's own request, not itself
+  /// collective. Every rank that called ::scatter_fwd_begin must
+  /// still call this before reusing the buffers.
   ///
   /// @param[in] request MPI request handle for tracking the status of
   /// communication.
   void scatter_fwd_end(MPI_Request& request) const
   {
-    if (_comm0.comm() == MPI_COMM_NULL)
+    if (!has_neighbours())
       return;
 
-    int ierr = MPI_Wait(&request, MPI_STATUS_IGNORE);
-    dolfinx::MPI::check_error(_comm0.comm(), ierr);
+    wait(_comm0, request);
   }
 
   /// @brief Complete a non-blocking MPI neighbourhood collective send.
@@ -332,20 +330,18 @@ public:
   /// This function completes the communication started by
   /// ::scatter_rev_begin.
   ///
-  /// @note This is a local completion of the calling rank's own
-  /// request; it is not itself a collective MPI call. Every rank that
-  /// called ::scatter_rev_begin must nonetheless call this function
-  /// before reusing the send/receive buffers passed to it.
+  /// @note Local completion of the caller's own request, not itself
+  /// collective. Every rank that called ::scatter_rev_begin must
+  /// still call this before reusing the buffers.
   ///
   /// @param[in] request MPI request handle for tracking the status of
   /// communication.
   void scatter_rev_end(MPI_Request& request) const
   {
-    if (_comm1.comm() == MPI_COMM_NULL)
+    if (!has_neighbours())
       return;
 
-    int ierr = MPI_Wait(&request, MPI_STATUS_IGNORE);
-    dolfinx::MPI::check_error(_comm1.comm(), ierr);
+    wait(_comm1, request);
   }
 
   /// @brief Array of indices for packing/unpacking owned data to/from a
@@ -408,6 +404,19 @@ public:
   const container_type& remote_indices() const noexcept { return _remote_inds; }
 
 private:
+  // False only on a single rank, where _comm0/_comm1 stay MPI_COMM_NULL
+  bool has_neighbours() const noexcept
+  {
+    return _comm0.comm() != MPI_COMM_NULL;
+  }
+
+  // Complete a non-blocking request, checking errors against `comm`
+  static void wait(const dolfinx::MPI::Comm& comm, MPI_Request& request)
+  {
+    int ierr = MPI_Wait(&request, MPI_STATUS_IGNORE);
+    dolfinx::MPI::check_error(comm.comm(), ierr);
+  }
+
   // Communicator where the source ranks own the indices in the callers
   // halo, and the destination ranks 'ghost' indices owned by the
   // caller. I.e.,

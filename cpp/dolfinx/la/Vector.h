@@ -252,10 +252,9 @@ public:
   /// Typical use is a specialised function to unpack data
   /// that resides on a GPU.
   ///
-  /// @note This is a local completion of the calling rank's own
-  /// request; it is not itself a collective MPI call. Every rank that
-  /// called ::scatter_fwd_begin must nonetheless call this function
-  /// before reusing the send/receive buffers.
+  /// @note Local completion of the caller's own request, not itself
+  /// collective. Every rank that called ::scatter_fwd_begin must
+  /// still call this before reusing the buffers.
   ///
   /// @tparam U Unpack function type.
   /// @param unpack Function to unpack the receive buffer into the ghost
@@ -277,10 +276,9 @@ public:
   /// storage. The receive buffer is unpacked internally by a function
   /// that is suitable for use on a CPU.
   ///
-  /// @note This is a local completion of the calling rank's own
-  /// request; it is not itself a collective MPI call. Every rank that
-  /// called ::scatter_fwd_begin must nonetheless call this function
-  /// before reusing the send/receive buffers.
+  /// @note Local completion of the caller's own request, not itself
+  /// collective. Every rank that called ::scatter_fwd_begin must
+  /// still call this before reusing the buffers.
   void scatter_fwd_end()
     requires requires(Container c) {
       { c.data() } -> std::same_as<T*>;
@@ -358,10 +356,9 @@ public:
   /// received. The received data can be summed or inserted into the
   /// owning entry by the `unpack` function.
   ///
-  /// @note This is a local completion of the calling rank's own
-  /// request; it is not itself a collective MPI call. Every rank that
-  /// called ::scatter_rev_begin must nonetheless call this function
-  /// before reusing the send/receive buffers.
+  /// @note Local completion of the caller's own request, not itself
+  /// collective. Every rank that called ::scatter_rev_begin must
+  /// still call this before reusing the buffers.
   ///
   /// @tparam U Unpack function type.
   template <typename U>
