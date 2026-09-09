@@ -147,10 +147,11 @@ public:
   /// `ghosts`.
   /// @pre `ghosts` and `owners` have equal length; this is always checked.
   /// Ghosts must also be unique and non-negative, owners must be valid
-  /// non-self ranks, each ghost must be globally owned by its declared
-  /// rank, and `src_dest[1]` must match `src_dest[0]` across `comm`; these
-  /// further conditions are checked in Developer builds only, and callers
-  /// must ensure them in Release builds.
+  /// non-self ranks, and each ghost must be globally owned by its declared
+  /// rank. For every pair of ranks `(a, b)`, `b` must be in `a`'s source
+  /// list if and only if `a` is in `b`'s destination list. These further
+  /// conditions are checked in Developer builds only, and callers must
+  /// ensure them in Release builds.
   /// @throws std::invalid_argument If `local_size` is negative, if `ghosts`
   /// and `owners` differ in length, or if another ghost data precondition
   /// is violated in a Developer build.

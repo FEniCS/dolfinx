@@ -131,6 +131,14 @@ def test_explicit_index_map_dest_src_order():
     index_map = IndexMap(comm, 1, [dest, src], ghosts, src)
     assert np.array_equal(index_map.owners, src)
 
+    # Exercise the neighbour lists through a forward exchange. Checking
+    # `owners` alone cannot detect a swapped `dest_src` binding.
+    scatterer = _cpp.common.Scatterer(index_map, 1)
+    values = np.full(index_map.size_local + index_map.num_ghosts, -1, dtype=np.int64)
+    values[: index_map.size_local] = comm.rank
+    scatterer.scatter_fwd(values, values[index_map.size_local :])
+    assert np.array_equal(values[index_map.size_local :], src)
+
 
 # TODO: Add test for case where more than one two process shares an index
 # whose owner changes in the submap
