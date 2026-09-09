@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2025 Garth N. Wells
+// Copyright (C) 2020-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -252,8 +252,10 @@ public:
   /// Typical use is a specialised function to unpack data
   /// that resides on a GPU.
   ///
-  /// @note Collective MPI operation. Every rank in the communicator
-  /// must call this function, including ranks without neighbours.
+  /// @note This is a local completion of the calling rank's own
+  /// request; it is not itself a collective MPI call. Every rank that
+  /// called ::scatter_fwd_begin must nonetheless call this function
+  /// before reusing the send/receive buffers.
   ///
   /// @tparam U Unpack function type.
   /// @param unpack Function to unpack the receive buffer into the ghost
@@ -262,7 +264,7 @@ public:
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_fwd_end(U unpack)
   {
-    _scatterer->scatter_end(_request);
+    _scatterer->scatter_fwd_end(_request);
     unpack(_scatterer->remote_indices().begin(),
            _scatterer->remote_indices().end(), _buffer_remote.begin(),
            std::next(_x.begin(), _bs * _map->size_local()));
@@ -275,8 +277,10 @@ public:
   /// storage. The receive buffer is unpacked internally by a function
   /// that is suitable for use on a CPU.
   ///
-  /// @note Collective MPI operation. Every rank in the communicator
-  /// must call this function, including ranks without neighbours.
+  /// @note This is a local completion of the calling rank's own
+  /// request; it is not itself a collective MPI call. Every rank that
+  /// called ::scatter_fwd_begin must nonetheless call this function
+  /// before reusing the send/receive buffers.
   void scatter_fwd_end()
     requires requires(Container c) {
       { c.data() } -> std::same_as<T*>;
@@ -354,15 +358,17 @@ public:
   /// received. The received data can be summed or inserted into the
   /// owning entry by the `unpack` function.
   ///
-  /// @note Collective MPI operation. Every rank in the communicator
-  /// must call this function, including ranks without neighbours.
+  /// @note This is a local completion of the calling rank's own
+  /// request; it is not itself a collective MPI call. Every rank that
+  /// called ::scatter_rev_begin must nonetheless call this function
+  /// before reusing the send/receive buffers.
   ///
   /// @tparam U Unpack function type.
   template <typename U>
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_rev_end(U unpack)
   {
-    _scatterer->scatter_end(_request);
+    _scatterer->scatter_rev_end(_request);
     unpack(_scatterer->local_indices().begin(),
            _scatterer->local_indices().end(), _buffer_local.begin(),
            _x.begin());

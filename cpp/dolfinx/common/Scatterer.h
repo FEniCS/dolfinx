@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Igor Baratta and Garth N. Wells
+// Copyright (C) 2022-2026 Igor Baratta and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -62,12 +62,11 @@ public:
   /// @param[in] bs Number of values associated with each `map` index
   /// (the block size).
   Scatterer(const IndexMap& map, int bs)
-      : _single_rank(dolfinx::MPI::size(map.comm()) == 1),
-        _sizes_remote(map.src().size(), 0),
+      : _sizes_remote(map.src().size(), 0),
         _displs_remote(map.src().size() + 1), _sizes_local(map.dest().size()),
         _displs_local(map.dest().size() + 1)
   {
-    if (_single_rank)
+    if (dolfinx::MPI::size(map.comm()) == 1)
       return;
 
     int ierr;
@@ -216,7 +215,7 @@ public:
   /// @param s Scatterer to copy
   template <class U>
   Scatterer(const Scatterer<U>& s)
-      : _single_rank(s._single_rank), _comm0(s._comm0), _comm1(s._comm1),
+      : _comm0(s._comm0), _comm1(s._comm1),
         _remote_inds(s._remote_inds.begin(), s._remote_inds.end()),
         _sizes_remote(s._sizes_remote), _displs_remote(s._displs_remote),
         _local_inds(s._local_inds.begin(), s._local_inds.end()),
@@ -227,7 +226,7 @@ public:
   /// @brief Start a non-blocking neighbourhood collective exchange of
   /// owned data with ranks that ghost it.
   ///
-  /// The communication is completed by calling Scatterer::scatter_end.
+  /// The communication is completed by calling Scatterer::scatter_fwd_end.
   /// See ::local_indices for instructions on packing `send_buffer` and
   /// ::remote_indices for instructions on unpacking `recv_buffer`.
   ///
@@ -235,7 +234,7 @@ public:
   /// must call this function, including ranks without neighbours.
   ///
   /// @note The send and receive buffers must **not** be changed or
-  /// accessed until after a call to Scatterer::scatter_end.
+  /// accessed until after a call to Scatterer::scatter_fwd_end.
   ///
   /// @note The pointers `send_buffer` and `recv_buffer` must be
   /// pointers to the data on the *target device*. E.g., if the send and
@@ -250,12 +249,12 @@ public:
   /// Scatterer::remote_indices for the order of the buffer and how to unpack.
   /// @param[in] request MPI request handle for tracking the status of
   /// the non-blocking communication. The same request handle should be
-  /// passed to Scatterer::scatter_end to complete the communication.
+  /// passed to Scatterer::scatter_fwd_end to complete the communication.
   template <typename T>
   void scatter_fwd_begin(const T* send_buffer, T* recv_buffer,
                          MPI_Request& request) const
   {
-    if (_single_rank)
+    if (_comm0.comm() == MPI_COMM_NULL)
       return;
 
     int ierr = MPI_Ineighbor_alltoallv(
@@ -268,7 +267,7 @@ public:
   /// @brief Start a non-blocking neighbourhood collective exchange of
   /// ghost data with owning ranks.
   ///
-  /// The communication is completed by calling Scatterer::scatter_end.
+  /// The communication is completed by calling Scatterer::scatter_rev_end.
   /// See ::remote_indices for instructions on packing `send_buffer` and
   /// ::local_indices  for instructions on unpacking `recv_buffer`.
   ///
@@ -276,7 +275,7 @@ public:
   /// must call this function, including ranks without neighbours.
   ///
   /// @note The send and receive buffers must **not** be changed or
-  /// accessed until after a call to Scatterer::scatter_end.
+  /// accessed until after a call to Scatterer::scatter_rev_end.
   ///
   /// @note The pointers `send_buffer` and `recv_buffer` must be
   /// pointers to the data on the *target device*. E.g., if the send and
@@ -292,12 +291,12 @@ public:
   /// unpack.
   /// @param[in] request MPI request handle for tracking the status of
   /// the non-blocking communication. The same request handle should be
-  /// passed to Scatterer::scatter_end to complete the communication.
+  /// passed to Scatterer::scatter_rev_end to complete the communication.
   template <typename T>
   void scatter_rev_begin(const T* send_buffer, T* recv_buffer,
                          MPI_Request& request) const
   {
-    if (_single_rank)
+    if (_comm1.comm() == MPI_COMM_NULL)
       return;
 
     int ierr = MPI_Ineighbor_alltoallv(
@@ -310,20 +309,43 @@ public:
   /// @brief Complete a non-blocking MPI neighbourhood collective send.
   ///
   /// This function completes the communication started by
-  /// ::scatter_fwd_begin or ::scatter_rev_begin.
+  /// ::scatter_fwd_begin.
   ///
-  /// @note Collective MPI operation. Every rank in the communicator
-  /// must call this function, including ranks without neighbours.
+  /// @note This is a local completion of the calling rank's own
+  /// request; it is not itself a collective MPI call. Every rank that
+  /// called ::scatter_fwd_begin must nonetheless call this function
+  /// before reusing the send/receive buffers passed to it.
   ///
   /// @param[in] request MPI request handle for tracking the status of
   /// communication.
-  void scatter_end(MPI_Request& request) const
+  void scatter_fwd_end(MPI_Request& request) const
   {
-    if (_single_rank)
+    if (_comm0.comm() == MPI_COMM_NULL)
       return;
 
     int ierr = MPI_Wait(&request, MPI_STATUS_IGNORE);
     dolfinx::MPI::check_error(_comm0.comm(), ierr);
+  }
+
+  /// @brief Complete a non-blocking MPI neighbourhood collective send.
+  ///
+  /// This function completes the communication started by
+  /// ::scatter_rev_begin.
+  ///
+  /// @note This is a local completion of the calling rank's own
+  /// request; it is not itself a collective MPI call. Every rank that
+  /// called ::scatter_rev_begin must nonetheless call this function
+  /// before reusing the send/receive buffers passed to it.
+  ///
+  /// @param[in] request MPI request handle for tracking the status of
+  /// communication.
+  void scatter_rev_end(MPI_Request& request) const
+  {
+    if (_comm1.comm() == MPI_COMM_NULL)
+      return;
+
+    int ierr = MPI_Wait(&request, MPI_STATUS_IGNORE);
+    dolfinx::MPI::check_error(_comm1.comm(), ierr);
   }
 
   /// @brief Array of indices for packing/unpacking owned data to/from a
@@ -386,9 +408,6 @@ public:
   const container_type& remote_indices() const noexcept { return _remote_inds; }
 
 private:
-  // True if the source communicator has only one rank
-  bool _single_rank;
-
   // Communicator where the source ranks own the indices in the callers
   // halo, and the destination ranks 'ghost' indices owned by the
   // caller. I.e.,

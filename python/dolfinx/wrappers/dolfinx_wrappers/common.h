@@ -49,7 +49,7 @@ void declare_scatter_functions(
         std::vector<T> recv_buffer(self.remote_indices().size());
         MPI_Request request = MPI_REQUEST_NULL;
         self.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
-        self.scatter_end(request);
+        self.scatter_fwd_end(request);
         {
           auto _remote_data = remote_data.view();
           auto& idx = self.remote_indices();
@@ -87,7 +87,7 @@ void declare_scatter_functions(
         MPI_Request request = MPI_REQUEST_NULL;
         self.scatter_rev_begin<T>(send_buffer.data(), recv_buffer.data(),
                                   request);
-        self.scatter_end(request);
+        self.scatter_rev_end(request);
         {
           auto _local_data = local_data.view();
           auto& idx = self.local_indices();

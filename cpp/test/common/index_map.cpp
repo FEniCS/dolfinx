@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Chris Richardson
+// Copyright (C) 2018-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -67,7 +67,7 @@ void test_scatter_fwd(int n)
     std::vector<std::int64_t> recv_buffer(sct.remote_indices().size());
     MPI_Request request = MPI_REQUEST_NULL;
     sct.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
-    sct.scatter_end(request);
+    sct.scatter_fwd_end(request);
     {
       auto& idx = sct.remote_indices();
       for (std::size_t i = 0; i < idx.size(); ++i)
@@ -115,17 +115,33 @@ void test_scatter_rev()
   std::vector<std::int64_t> data_ghost(n * num_ghosts, value);
   {
     MPI_Request request = MPI_REQUEST_NULL;
-    std::vector<std::int64_t> send_buffer(sct.local_indices().size(), 0);
+    std::vector<std::int64_t> send_buffer(sct.remote_indices().size(), 0);
     pack_fn(data_ghost, sct.remote_indices(), send_buffer);
-    std::vector<std::int64_t> recv_buffer(sct.remote_indices().size(), 0);
+    std::vector<std::int64_t> recv_buffer(sct.local_indices().size(), 0);
     sct.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), request);
-    sct.scatter_end(request);
+    sct.scatter_rev_end(request);
     unpack_fn(recv_buffer, sct.local_indices(), data_local, std::plus<>{});
 
     std::int64_t sum;
     CHECK((int)data_local.size() == n * size_local);
     sum = std::reduce(data_local.begin(), data_local.end(), 0);
     CHECK(sum == n * value * num_ghosts);
+  }
+
+  // Repeat the scatter and accumulate again into the already-populated
+  // data_local, to check that unpacking with std::plus<> correctly
+  // accumulates onto a non-zero owned value rather than overwriting it
+  {
+    MPI_Request request = MPI_REQUEST_NULL;
+    std::vector<std::int64_t> send_buffer(sct.remote_indices().size(), 0);
+    pack_fn(data_ghost, sct.remote_indices(), send_buffer);
+    std::vector<std::int64_t> recv_buffer(sct.local_indices().size(), 0);
+    sct.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), request);
+    sct.scatter_rev_end(request);
+    unpack_fn(recv_buffer, sct.local_indices(), data_local, std::plus<>{});
+
+    std::int64_t sum = std::reduce(data_local.begin(), data_local.end(), 0);
+    CHECK(sum == 2 * n * value * num_ghosts);
   }
 }
 
@@ -158,7 +174,7 @@ void test_scatter_with_isolated_rank()
     scatterer.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(),
                                 request);
     CHECK(request != MPI_REQUEST_NULL);
-    scatterer.scatter_end(request);
+    scatterer.scatter_fwd_end(request);
     if (mpi_rank == 1)
       CHECK(recv_buffer == std::vector<std::int64_t>{17});
   }
@@ -171,7 +187,7 @@ void test_scatter_with_isolated_rank()
     scatterer.scatter_rev_begin(send_buffer.data(), recv_buffer.data(),
                                 request);
     CHECK(request != MPI_REQUEST_NULL);
-    scatterer.scatter_end(request);
+    scatterer.scatter_rev_end(request);
     if (mpi_rank == 0)
       CHECK(recv_buffer == std::vector<std::int64_t>{29});
   }
