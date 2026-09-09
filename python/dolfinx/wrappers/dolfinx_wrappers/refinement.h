@@ -1,5 +1,5 @@
-// Copyright (C) 2018-2024 Chris N. Richardson, Garth N. Wells and Paul T.
-// Kühner
+// Copyright (C) 2018-2026 Chris N. Richardson, Garth N. Wells, Paul T.
+// Kühner and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //

@@ -1,4 +1,4 @@
-// Copyright (C) 2026 Paul T. Kühner
+// Copyright (C) 2026 Paul T. Kühner and Jack S. Hale
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
