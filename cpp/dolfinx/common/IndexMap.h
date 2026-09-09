@@ -21,43 +21,36 @@ namespace dolfinx::common
 // Forward declaration
 class IndexMap;
 
-/// Enum to control preservation of ghost index ordering in
-/// sub-IndexMaps.
+/// Control ghost-index ordering in sub-index maps.
 enum class IndexMapOrder : bool
 {
   preserve = true, ///< Preserve the ordering of ghost indices
-  any = false      ///< Allow arbitrary ordering of ghost indices in sub-maps
+  any = false      ///< Allow arbitrary ghost-index ordering
 };
 
-/// @brief Given a sorted list of indices (local indexing, owned or
-/// ghost) and an index map, this function returns the indices owned by
-/// this process, including indices that might have been in the list of
-/// indices on another processes.
+/// @brief Return selected indices owned by the calling rank.
 ///
-/// @param[in] indices List of indices.
+/// @note Collective
+///
+/// @param[in] indices Sorted local indices (owned or ghost).
 /// @param[in] map The index map.
-/// @return Indices owned by the calling process.
+/// @return Sorted unique local indices owned by the calling rank that are
+/// selected by any rank.
 std::vector<std::int32_t>
 compute_owned_indices(std::span<const std::int32_t> indices,
                       const IndexMap& map);
 
-/// @brief Compute layout data and ghost indices for a stacked
-/// (concatenated) index map, i.e. 'splice' multiple maps into one.
+/// @brief Compute layout data for a concatenated index map.
 ///
-/// The input maps are concatenated, with indices in `maps` and owned by
-/// the caller remaining owned by the caller. Ghost data is stored at
-/// the end of the local range as normal, with the ghosts in blocks in
-/// the order of the index maps in `maps`.
+/// Locally owned entries remain owned by the caller. Ghost entries are
+/// grouped by input map in `maps`.
 ///
-/// @note Index maps with a block size are unrolled in the data for the
-/// concatenated index map.
-/// @note Communication is required to compute the new ghost indices.
+/// @note Collective. Maps with a block size are unrolled.
 ///
-/// @param[in] maps List of (index map, block size) pairs
-/// @returns The (0) global offset of a concatenated map for the calling
-/// rank, (1) local offset for the owned indices of each submap in the
-/// concatenated map, (2) new indices for the ghosts for each submap,
-/// and (3) owner rank of each ghost entry for each submap.
+/// @param[in] maps Pairs of index maps and block sizes.
+/// @return (0) Global offset on the calling rank, (1) local offsets for owned
+/// entries in each map, (2) global ghost indices for each map, and (3) their
+/// owner ranks.
 std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>,
            std::vector<std::vector<int>>>
@@ -65,33 +58,29 @@ stack_index_maps(
     const std::vector<std::pair<std::reference_wrapper<const IndexMap>, int>>&
         maps);
 
-/// @brief Create a new index map from a subset of indices in an
-/// existing index map.
+/// @brief Create an index map from a subset of an existing map.
+///
+/// @note Collective
 ///
 /// @param[in] imap Parent map to create a new sub-map from.
 /// @param[in] indices Local indices in `imap` (owned and ghost) to
 /// include in the new index map.
 /// @param[in] order Control the order in which ghost indices appear in
 /// the new map.
-/// @param[in] allow_owner_change If `true`, indices that are not
-/// included in `indices` by their owning process can be included in
-/// `indices` by processes that ghost the indices to be included in the
-/// new submap. These indices will be owned by one of the sharing
-/// processes in the submap. If `false`, an exception is raised if an
-/// index is included by a sharing process and not by the owning
-/// process.
-/// @return The (i) new index map and (ii) a map from local indices in
-/// the submap to local indices in `imap`.
+/// @param[in] allow_owner_change Permit an index selected only by ghosting
+/// ranks to acquire a new owner in the submap.
+/// @return (0) New index map and (1) corresponding local indices in `imap`.
 /// @throws std::invalid_argument If `indices` contains a duplicate or an
 /// out-of-range local index.
 std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
     const IndexMap& imap, std::span<const std::int32_t> indices,
     IndexMapOrder order = IndexMapOrder::any, bool allow_owner_change = false);
 
-/// This class represents the distribution of a global index range
-/// `[0, N)` across MPI processes. Each process owns a contiguous global
-/// range. Local indices `[0, size_local())` address owned entries; ghost
-/// indices follow them and are mapped explicitly to global indices.
+/// Distribution of a global index range `[0, N)` across MPI ranks.
+///
+/// Each rank owns a contiguous global range. Local indices in
+/// `[0, size_local())` address owned entries; remaining local indices address
+/// ghost entries.
 class IndexMap
 {
 public:
@@ -107,11 +96,9 @@ public:
 
   /// @brief Create an overlapping (ghosted) index map.
   ///
-  /// This constructor uses a 'consensus' algorithm to determine the
-  /// ranks that ghost indices that are owned by the caller. This
-  /// requires non-trivial MPI communication. If the ranks that ghost
-  /// indices owned by the caller are known, it is more efficient to use
-  /// the constructor that takes these ranks as an argument.
+  /// Uses a consensus algorithm to determine ranks that ghost entries owned
+  /// by the caller. Use the explicit source/destination constructor when these
+  /// ranks are known.
   ///
   /// @note Collective
   ///
@@ -123,16 +110,9 @@ public:
   /// `ghosts`.
   /// @param[in] tag Tag used in non-blocking MPI calls in the consensus
   /// algorithm.
-  /// @note A tag can sometimes be required when there are a series of
-  /// calls to this constructor, or other functions that call the
-  /// consensus algorithm, that are close together. In cases where this
-  /// constructor is called a second time on rank and another rank has
-  /// not completed its first consensus algorithm call, communications
-  /// can be corrupted if each collective call of this constructor does
-  /// not have its own `tag` value. Each collective call to this
-  /// constructor must use the same `tag` value.  An alternative to
-  /// passing a tag is to have an implicit or explicit MPI barrier
-  /// before and after the call to this constructor.
+  /// @note Use a distinct `tag` for overlapping consensus calls. All ranks in
+  /// one collective call must use the same tag. An MPI barrier before and after
+  /// the call is an alternative.
   /// @throws std::invalid_argument If input data does not meet the documented
   /// requirements.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
@@ -141,10 +121,8 @@ public:
 
   /// @brief Create an overlapping (ghosted) index map.
   ///
-  /// This constructor is optimised for the case where the 'source'
-  /// (ranks that own indices ghosted by the caller) and 'destination'
-  /// ranks (ranks that ghost indices owned by the caller) are already
-  /// available. It avoids computing destination ranks from `owners`.
+  /// Use this constructor when source ranks (owners of the caller's ghosts)
+  /// and destination ranks (ranks ghosting the caller's entries) are known.
   ///
   /// @note Collective
   ///
@@ -179,20 +157,19 @@ public:
   /// Move assignment
   IndexMap& operator=(IndexMap&& map) = default;
 
-  /// Range of indices (global) owned by this process
+  /// @brief Return the global range of owned indices.
   std::array<std::int64_t, 2> local_range() const noexcept;
 
-  /// Number of ghost indices on this process
+  /// @brief Return the number of ghost indices.
   std::int32_t num_ghosts() const noexcept;
 
-  /// Number of indices owned by this process
+  /// @brief Return the number of owned indices.
   std::int32_t size_local() const noexcept;
 
-  /// Number indices across communicator
+  /// @brief Return the total number of indices across the communicator.
   std::int64_t size_global() const noexcept;
 
-  /// Local-to-global map for ghosts (local indexing beyond end of local
-  /// range)
+  /// @brief Return global indices of ghosts in local ghost-index order.
   std::span<const std::int64_t> ghosts() const noexcept;
 
   /// @brief Return the MPI communicator that the map is defined on.
@@ -215,125 +192,72 @@ public:
   void global_to_local(std::span<const std::int64_t> global,
                        std::span<std::int32_t> local) const;
 
-  /// @brief Build list of indices with global indexing.
-  /// @return The global index for all local indices `(0, 1, 2, ...)` on
-  /// this process, including ghosts
+  /// @brief Return global indices for all local entries, including ghosts.
   std::vector<std::int64_t> global_indices() const;
 
-  /// @brief The ranks that own each ghost index.
-  /// @return List of ghost owners. The owning rank of the ith ghost
-  /// index is `owners()[i]`.
+  /// @brief Return ranks that own ghost entries.
+  /// @return Owner ranks aligned with ghosts().
   std::span<const int> owners() const noexcept { return _owners; }
 
-  /// @todo Aim to remove this function?
-  ///
-  /// @brief For each local (owned) index compute the set of ranks that
-  /// have the index as a ghost.
+  /// @brief Compute sharing ranks for each local index.
   ///
   /// @note Collective
   ///
   /// @param[in] tag Tag to pass to MPI calls.
-  /// @note See ::IndexMap(MPI_Comm,std::int32_t,std::span<const
-  /// std::int64_t>,std::span<const int>,int) for an explanation of when
-  /// `tag` is required.
-  /// @return Shared indices.
+  /// @note See IndexMap(MPI_Comm, std::int32_t, std::span<const
+  /// std::int64_t>, std::span<const int>, int) for tag requirements.
+  /// @return (0) Sharing-rank data and (1) offsets. Ranks sharing local index
+  /// `i` occupy `[offsets[i], offsets[i + 1])`.
   std::pair<std::vector<int>, std::vector<std::int32_t>> index_to_dest_ranks(
       int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx)) const;
 
-  /// @brief Build a list of owned indices that are ghosted by another
-  /// rank.
-  /// @return The local index of owned indices that are ghosts on other
-  /// rank(s). The indices are unique and sorted.
+  /// @brief Return owned indices ghosted by another rank.
+  /// @return Sorted unique local indices.
   std::vector<std::int32_t> shared_indices() const;
 
-  /// @brief Ordered set of MPI ranks that own caller's ghost indices.
-  ///
-  /// Typically used when creating neighbourhood communicators.
-  ///
-  /// @return MPI ranks that own ghost indices.  The ranks are unique
-  /// and sorted.
+  /// @brief Return sorted unique ranks that own the caller's ghosts.
   std::span<const int> src() const noexcept;
 
-  /// @brief Ordered set of MPI ranks that ghost indices owned by
-  /// caller.
-  ///
-  /// Typically used when creating neighbourhood communicators.
-  ///
-  /// @return MPI ranks that ghost indices owned by this rank.
-  /// The ranks are unique and sorted.
+  /// @brief Return sorted unique ranks that ghost entries owned by the caller.
   std::span<const int> dest() const noexcept;
 
-  /// @brief Compute the number of ghost indices owned by each rank in
-  /// IndexMap::src.
-  ///
-  /// This is a measure of the amount of data:
-  ///
-  /// 1. Sent from this rank to other ranks when performing a reverse
-  /// (owner <- ghost) scatter.
-  ///
-  /// 2. Received by this rank from other ranks when performing a
-  /// forward (owner -> ghost) scatter.
-  ///
-  /// @return A weight vector, where `weight[i]` is the number of
-  /// ghost indices owned by rank `src()[i]`.
+  /// @brief Count ghosts owned by each source rank.
+  /// @return `weight[i]` is the number of ghosts owned by `src()[i]`.
   std::vector<std::int32_t> weights_src() const;
 
-  /// @brief Compute the number of ghost indices owned by each rank in
-  /// IndexMap::dest.
-  ///
-  /// This is a measure of the amount of data:
-  ///
-  /// 1. Sent from this rank to other ranks when performing a forward
-  /// (owner -> ghost) scatter.
-  ///
-  /// 2. Received by this rank from other ranks when performing a reverse
-  /// (owner <- ghost) scatter.
-  ///
-  /// @return A weight vector, where `weight[i]` is the number of ghost
-  /// indices owned by rank `dest()[i]`.
+  /// @brief Count entries ghosted by each destination rank.
+  /// @return `weight[i]` is the number of entries ghosted by `dest()[i]`.
   std::vector<std::int32_t> weights_dest() const;
 
-  /// @brief Destination and source ranks by type, e.g, ranks that are
-  /// destination/source ranks for the caller and are in a common
-  /// shared memory region.
+  /// @brief Return destination and source ranks in the caller's split group.
   ///
-  /// This function is used to group destination and source ranks by
-  /// 'type'. The type is defined by the MPI `split_type`. Split types
-  /// include ranks from a common shared memory region
-  /// (`MPI_COMM_TYPE_SHARED`) or a common NUMA region. Splits types are
-  /// listed at
-  /// https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Comm_split_type.3.html#split-types.
+  /// @note Collective on comm().
   ///
-  /// @note Collective operation on comm().
-  ///
-  /// @param[in] split_type MPI split type, as used in the function
-  /// `MPI_Comm_split_type`. See
-  /// https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Comm_split_type.3.html#split-types.
-  /// @return (0) Intersection of ranks in `split_type` and in dest(),
-  /// and (1) intersection of ranks in `split_type` and in src().
-  /// Returned ranks are on the comm() communicator.
+  /// @param[in] split_type Type passed to MPI_Comm_split_type.
+  /// @return (0) destination and (1) source ranks in the split group. Ranks
+  /// are numbered on comm().
   std::array<std::vector<int>, 2> rank_type(int split_type) const;
 
 private:
-  // Range of indices (global) owned by this process
+  // Global range of owned indices
   std::array<std::int64_t, 2> _local_range;
 
-  // Number indices across communicator
+  // Global number of indices
   std::int64_t _size_global;
 
-  // MPI communicator that map is defined on
+  // Map communicator
   dolfinx::MPI::Comm _comm;
 
-  // Local-to-global map for ghost indices
+  // Global ghost indices
   std::vector<std::int64_t> _ghosts;
 
-  // Owning rank on _comm for the ith ghost index
+  // Owner ranks for ghosts
   std::vector<int> _owners;
 
-  // Set of ranks that own ghosts
+  // Ranks that own ghosts
   std::vector<int> _src;
 
-  // Set of ranks ghost owned indices
+  // Ranks that ghost owned entries
   std::vector<int> _dest;
 };
 
