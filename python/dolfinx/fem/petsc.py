@@ -1,4 +1,5 @@
 # Copyright (C) 2018-2026 Garth N. Wells, Nathan Sime and Jørgen S. Dokken
+# Copyright (C) 2026 Musawer Ahmad Saqif
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -488,6 +489,8 @@ def _assemble_matrix_petsc(
         | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
+    *,
+    _check_bcs: bool = True,
 ) -> PETSc.Mat:
     """Assemble bilinear form into a matrix.
 
@@ -515,7 +518,7 @@ def _assemble_matrix_petsc(
             ):
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
-                    _assemble_matrix_petsc(Asub, a_block, bcs, diag, const, coeff)
+                    _assemble_matrix_petsc(Asub, a_block, bcs, diag, const, coeff, _check_bcs=False)
                 elif i == j and bcs is not None:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
@@ -560,6 +563,7 @@ def _assemble_matrix_petsc(
                         coeffs[i][j],  # type: ignore[index]
                         _bcs,  # type: ignore[arg-type]
                         True,
+                        False,
                     )
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
                 elif i == j:
@@ -591,7 +595,7 @@ def _assemble_matrix_petsc(
         if coeffs is None:
             coeffs = pack_coefficients(a)
         _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
-        _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)  # type: ignore
+        _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs, False, _check_bcs)  # type: ignore
         if a.function_spaces[0] is a.function_spaces[1]:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
