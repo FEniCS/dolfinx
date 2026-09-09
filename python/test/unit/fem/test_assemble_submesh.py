@@ -422,6 +422,46 @@ def test_mixed_dom_codim_1_gradient(n, k):
     assert np.isclose(c_parent, c_submesh)
 
 
+@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+def test_mixed_dom_codim_1_gradient_3d(cell_type):
+    """3D analogue of test_mixed_dom_codim_1_gradient.
+
+    Grad of a coefficient defined on a codimension-1 (2D facet) submesh
+    of a 3D mesh must agree whether integrated via an exterior facet
+    measure on the parent mesh or directly on the submesh's own cell
+    measure, for both a simplex parent (tetrahedron -> triangle facets)
+    and a tensor-product parent (hexahedron -> quadrilateral facets).
+    """
+    msh = create_box(
+        MPI.COMM_WORLD, [[0.0, 0.0, 0.0], [3.0, 1.0, 2.0]], (6, 2, 4), cell_type=cell_type
+    )
+
+    tdim = msh.topology.dim
+    msh.topology.create_connectivity(tdim - 1, tdim)
+    boundary_facets = exterior_facet_indices(msh.topology)
+    smsh, entity_map = create_submesh(msh, tdim - 1, boundary_facets)[:2]
+
+    Vbar = fem.functionspace(smsh, ("Lagrange", 1))
+    g = fem.Function(Vbar)
+    g.interpolate(lambda x: x[0] + 2.0 * x[1] + 3.0 * x[2])
+
+    ds = ufl.Measure("ds", domain=msh)
+    dx_smsh = ufl.Measure("dx", domain=smsh)
+
+    entity_maps = [entity_map]
+    M_parent = fem.form(g.dx(0) * ds, entity_maps=entity_maps)
+    M_submesh = fem.form(g.dx(0) * dx_smsh)
+
+    c_parent = msh.comm.allreduce(fem.assemble_scalar(M_parent), op=MPI.SUM)
+    c_submesh = msh.comm.allreduce(fem.assemble_scalar(M_submesh), op=MPI.SUM)
+
+    # Guard against a vacuous test (a too-symmetric domain/coefficient can
+    # let this bug's error cancel to ~0 across the boundary, as happened
+    # with an earlier version of test_mixed_dom_codim_1_gradient).
+    assert not np.isclose(c_submesh, 0.0)
+    assert np.isclose(c_parent, c_submesh)
+
+
 def test_disjoint_submeshes():
     # FIXME Simplify this test
     """Test assembly with multiple disjoint submeshes in same variational form."""
