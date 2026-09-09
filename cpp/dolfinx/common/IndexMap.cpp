@@ -40,11 +40,12 @@ void check_collective_precondition(MPI_Comm comm, bool local_valid,
 }
 
 #ifndef NDEBUG
-/// Return true if ranks are sorted and contain no duplicates.
-bool is_sorted_unique(std::span<const int> ranks)
+/// Return true if values are sorted and contain no duplicates.
+template <typename T>
+bool is_sorted_unique(std::span<const T> values)
 {
-  return std::ranges::is_sorted(ranks)
-         and std::ranges::adjacent_find(ranks) == ranks.end();
+  return std::ranges::is_sorted(values)
+         and std::ranges::adjacent_find(values) == values.end();
 }
 
 /// Return true if rank is a valid peer of the calling rank, i.e. it is
@@ -710,9 +711,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
 {
 #ifndef NDEBUG
   const std::int32_t size = map.size_local() + map.num_ghosts();
-  const bool sorted_unique
-      = std::ranges::is_sorted(indices)
-        and std::ranges::adjacent_find(indices) == indices.end();
+  const bool sorted_unique = is_sorted_unique(indices);
   const bool in_range
       = std::ranges::all_of(indices, [size](std::int32_t index)
                             { return index >= 0 and index < size; });
