@@ -111,10 +111,10 @@ void common(nb::module_& m)
              nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners)
           {
             std::array<std::vector<int>, 2> ranks;
-            ranks[0].assign(dest_src[0].data(),
-                            dest_src[0].data() + dest_src[0].size());
-            ranks[1].assign(dest_src[1].data(),
+            ranks[0].assign(dest_src[1].data(),
                             dest_src[1].data() + dest_src[1].size());
+            ranks[1].assign(dest_src[0].data(),
+                            dest_src[0].data() + dest_src[0].size());
             new (self) dolfinx::common::IndexMap(
                 comm.get(), local_size, ranks,
                 std::span(ghosts.data(), ghosts.size()),

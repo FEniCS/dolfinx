@@ -118,10 +118,6 @@ def test_index_map_ghost_lifetime():
     assert np.array_equal(ghosts, map_ghosts)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="The dest_src argument is forwarded as the C++ src_dest argument without reordering.",
-)
 def test_explicit_index_map_dest_src_order():
     """Check the documented order of explicit IndexMap neighbour lists."""
     comm = MPI.COMM_WORLD
@@ -132,7 +128,8 @@ def test_explicit_index_map_dest_src_order():
     dest = np.array([(comm.rank - 1) % comm.size], dtype=np.int32)
     ghosts = np.array([src[0]], dtype=np.int64)
 
-    IndexMap(comm, 1, [dest, src], ghosts, src)
+    index_map = IndexMap(comm, 1, [dest, src], ghosts, src)
+    assert np.array_equal(index_map.owners, src)
 
 
 # TODO: Add test for case where more than one two process shares an index
