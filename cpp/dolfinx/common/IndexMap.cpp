@@ -258,6 +258,24 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
           std::move(recv_disp)};
 }
 
+/// Verify that each ghost is owned by its declared rank.
+void validate_ghost_owners(MPI_Comm comm, std::span<const int> src,
+                           std::span<const int> dest,
+                           std::span<const std::int64_t> ghosts,
+                           std::span<const int> owners,
+                           std::array<std::int64_t, 2> local_range)
+{
+  std::vector<std::uint8_t> include_ghost(ghosts.size(), 1);
+  const auto communication = communicate_ghosts_to_owners(
+      comm, src, dest, ghosts, owners, include_ghost);
+  const std::vector<std::int64_t>& received_ghosts = std::get<1>(communication);
+  const bool owned = std::ranges::all_of(
+      received_ghosts, [local_range](std::int64_t index)
+      { return index >= local_range[0] and index < local_range[1]; });
+  check_collective_precondition(
+      comm, owned, "Ghost index does not belong to its declared owner.");
+}
+
 /// Given an index map and a subset of unique local indices (owned or ghost),
 /// compute the owned, ghost and ghost owners in the submap.
 ///
@@ -950,12 +968,14 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
       _owners(owners.begin(), owners.end())
 {
   validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
-  auto src_dest = build_src_dest(_comm.comm(), _owners, tag);
-  _src = std::move(src_dest[0]);
-  _dest = std::move(src_dest[1]);
   auto [local_range, size_global] = compute_layout(_comm.comm(), local_size);
+  auto src_dest = build_src_dest(_comm.comm(), _owners, tag);
+  validate_ghost_owners(_comm.comm(), src_dest[0], src_dest[1], _ghosts,
+                        _owners, local_range);
   _local_range = local_range;
   _size_global = size_global;
+  _src = std::move(src_dest[0]);
+  _dest = std::move(src_dest[1]);
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
@@ -969,6 +989,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
   validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
   validate_src_dest(_comm.comm(), _src, _dest, _owners);
   auto [local_range, size_global] = compute_layout(_comm.comm(), local_size);
+  validate_ghost_owners(_comm.comm(), _src, _dest, _ghosts, _owners,
+                        local_range);
   _local_range = local_range;
   _size_global = size_global;
 }

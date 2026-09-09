@@ -247,6 +247,26 @@ void test_index_map_preconditions()
   CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, 1, src_dest, ghosts, owners),
                   std::invalid_argument);
 
+  if (mpi_size > 1)
+  {
+    const std::vector<std::int64_t> ghost_owned_locally = {rank};
+    const std::vector<int> remote_owner = {(rank + 1) % mpi_size};
+    const std::vector<int> destination = {(rank + mpi_size - 1) % mpi_size};
+    const std::array<std::vector<int>, 2> invalid_src_dest
+        = {remote_owner, destination};
+    CHECK_THROWS_AS(
+        common::IndexMap(MPI_COMM_WORLD, 1, ghost_owned_locally, remote_owner),
+        std::invalid_argument);
+    CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, 1, invalid_src_dest,
+                                     ghost_owned_locally, remote_owner),
+                    std::invalid_argument);
+
+    const std::vector<std::int64_t> out_of_range_ghost = {mpi_size};
+    CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, 1, invalid_src_dest,
+                                     out_of_range_ghost, remote_owner),
+                    std::invalid_argument);
+  }
+
   const common::IndexMap map(MPI_COMM_WORLD, 1);
   const std::vector<std::int32_t> duplicate_indices = {0, 0};
   const std::vector<std::int32_t> out_of_range_indices = {1};

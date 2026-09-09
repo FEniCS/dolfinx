@@ -71,7 +71,8 @@ stack_index_maps(
 /// ranks to acquire a new owner in the submap.
 /// @return (0) New index map and (1) corresponding local indices in `imap`.
 /// @throws std::invalid_argument If `indices` contains a duplicate or an
-/// out-of-range local index.
+/// out-of-range local index, or ownership would change while
+/// `allow_owner_change` is false.
 std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
     const IndexMap& imap, std::span<const std::int32_t> indices,
     IndexMapOrder order = IndexMapOrder::any, bool allow_owner_change = false);
@@ -105,8 +106,8 @@ public:
   /// @param[in] comm MPI communicator that the index map is distributed
   /// across.
   /// @param[in] local_size Number of owned entries. Must be non-negative.
-  /// @param[in] ghosts Unique non-negative global indices of ghost entries.
-  /// @param[in] owners Non-self owner rank (on `comm`) of each entry in
+  /// @param[in] ghosts Unique global indices of ghost entries.
+  /// @param[in] owners Non-self rank (on `comm`) that owns each entry in
   /// `ghosts`.
   /// @param[in] tag Tag used in non-blocking MPI calls in the consensus
   /// algorithm.
@@ -114,7 +115,7 @@ public:
   /// one collective call must use the same tag. An MPI barrier before and after
   /// the call is an alternative.
   /// @throws std::invalid_argument If input data does not meet the documented
-  /// requirements.
+  /// requirements, including the global ownership of each ghost.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            std::span<const std::int64_t> ghosts, std::span<const int> owners,
            int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx));
@@ -133,11 +134,11 @@ public:
   /// Both lists must be sorted, unique and contain valid ranks. Source
   /// ranks must be exactly the unique owners of `ghosts`; destination
   /// ranks must be the ranks that ghost entries owned by the caller.
-  /// @param[in] ghosts Unique non-negative global indices of ghost entries.
-  /// @param[in] owners Non-self owner rank (on `comm`) of each entry in
+  /// @param[in] ghosts Unique global indices of ghost entries.
+  /// @param[in] owners Non-self rank (on `comm`) that owns each entry in
   /// `ghosts`.
   /// @throws std::invalid_argument If input data does not meet the documented
-  /// requirements.
+  /// requirements, including the global ownership of each ghost.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            const std::array<std::vector<int>, 2>& src_dest,
            std::span<const std::int64_t> ghosts, std::span<const int> owners);
