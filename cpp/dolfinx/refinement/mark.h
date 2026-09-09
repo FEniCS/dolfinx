@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/la/Vector.h>
 #include <format>
 #include <limits>
 #include <mpi.h>
@@ -24,16 +23,16 @@
 namespace dolfinx::refinement
 {
 
-/// @brief Return local indices of a vector whose value exceeds a fraction of
-/// the global maximum value.
+/// @brief Return local indices of a set of values whose entry exceeds a
+/// fraction of the global maximum value.
 ///
-/// Computes the maximum `max` of @p v over the locally owned entries on every
-/// rank of `v.index_map()->comm()`, and returns the local indices `i`,
-/// satisfying `v[i] > θ max`. This is commonly referred to as 'maximum
+/// Computes the maximum `max` of @p values over the locally owned entries on
+/// every rank of `index_map.comm()`, and returns the local indices `i`,
+/// satisfying `values[i] > θ max`. This is commonly referred to as 'maximum
 /// marking' in the adaptive finite element literature.
 ///
-/// @pre @p v has block size 1.
-/// @pre Ghost entries of @p v are up to date, i.e. `scatter_forward` has
+/// @pre @p values has size `index_map.size_local() + index_map.num_ghosts()`.
+/// @pre Ghost entries of @p values are up to date, i.e. `scatter_forward` has
 /// been called since the owned entries were last modified.
 ///
 /// @note θ = 1 marks nothing, since no entry can strictly exceed the true
@@ -43,19 +42,23 @@ namespace dolfinx::refinement
 /// @note The threshold is bitwise identical on every rank, so an entry is
 /// marked consistently by its owner and by every rank ghosting it.
 ///
-/// @warning Returned indices index @p v, not mesh entities. A DOF index is
-/// not an entity index in general (e.g. a reordered DG0 dofmap), even with
-/// one DOF per entity. To get entity indices, build @p v directly over the
-/// entity's `common::IndexMap` (e.g. `mesh::Topology::index_map`) rather
-/// than a dofmap's, or map DOFs to entities via the dofmap yourself.
+/// @warning Returned indices index @p values, not mesh entities. A DOF index
+/// is not an entity index in general (e.g. a reordered DG0 dofmap), even with
+/// one DOF per entity. To get entity indices, build @p values and
+/// @p index_map directly from the entity's `common::IndexMap` (e.g.
+/// `mesh::Topology::index_map`) rather than a dofmap's, or map DOFs to
+/// entities via the dofmap yourself.
 ///
-/// @param[in] v Vector of indicators, often with each entry associated with a
-///   mesh entity.
+/// @param[in] values Values, often with each entry associated with a mesh
+///   entity, e.g. an error indicator.
+/// @param[in] index_map Index map describing the parallel layout of @p
+///   values.
 /// @param[in] theta Cut-off parameter, 0 < θ ≤ 1.
-/// @return Local indices, ascending and including ghosts, of `v`
-/// that satisfy `v[i] > θ max`.
+/// @return Local indices, ascending and including ghosts, of `values`
+/// that satisfy `values[i] > θ max`.
 template <std::floating_point T>
-std::vector<std::int32_t> mark_maximum(const la::Vector<T>& v,
+std::vector<std::int32_t> mark_maximum(std::span<const T> values,
+                                       const common::IndexMap& index_map,
                                        std::type_identity_t<T> theta)
 {
   // Validate before the collective below
@@ -65,23 +68,25 @@ std::vector<std::int32_t> mark_maximum(const la::Vector<T>& v,
         std::format("theta must satisfy 0 < theta <= 1, got {}.", theta));
   }
 
-  if (v.bs() != 1)
+  const std::size_t size = static_cast<std::size_t>(index_map.size_local()
+                                                    + index_map.num_ghosts());
+  if (values.size() != size)
   {
     throw std::invalid_argument(
-        std::format("v must have a block size of 1, got {}.", v.bs()));
+        std::format("values must have size index_map.size_local() + "
+                    "index_map.num_ghosts() = {}, got {}.",
+                    size, values.size()));
   }
 
-  const common::IndexMap& im = *v.index_map();
-  std::span<const T> values(v.array());
-
   // If no local entries, assign a large negative value for local maximum
-  const T local_max = im.size_local() == 0
-                          ? std::numeric_limits<T>::lowest()
-                          : std::ranges::max(values.first(im.size_local()));
+  const T local_max
+      = index_map.size_local() == 0
+            ? std::numeric_limits<T>::lowest()
+            : std::ranges::max(values.first(index_map.size_local()));
 
   T max = 0;
   MPI_Allreduce(&local_max, &max, 1, dolfinx::MPI::mpi_t<T>, MPI_MAX,
-                im.comm());
+                index_map.comm());
 
   const T threshold = theta * max;
   const std::int32_t n = values.size();

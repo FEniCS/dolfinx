@@ -29,7 +29,7 @@ def test_mark_maximum(theta: float, dtype: np.dtype, ghost_mode: dolfinx.mesh.Gh
     v.array[: v.index_map.size_local] = np.random.default_rng(0).random(v.index_map.size_local)
     v.scatter_forward()
 
-    marked_cells = mesh.mark_maximum(v, theta)
+    marked_cells = mesh.mark_maximum(v.array, v.index_map, theta)
 
     threshold = theta * comm.allreduce(np.max(v.array), MPI.MAX)
     assert np.allclose(

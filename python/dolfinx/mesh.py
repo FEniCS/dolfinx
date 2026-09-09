@@ -41,7 +41,6 @@ from dolfinx.cpp.refinement import uniform_refine as _uniform_refine
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem.element import _coordinate_element_from_basix
 from dolfinx.graph import AdjacencyList
-from dolfinx.la import Vector
 from dolfinx.typing import Real
 
 __all__ = [
@@ -941,20 +940,22 @@ def _get_mesh_partitioner(
 
 
 def mark_maximum(
-    v: Vector[Real],
+    values: npt.NDArray[Real],
+    index_map: _IndexMap,
     theta: float,
 ) -> npt.NDArray[np.int32]:
-    r"""Return local indices of a vector exceeding a fraction of the max.
+    r"""Return local indices of values exceeding a fraction of the max.
 
-    Computes the maximum :math:`\max_j v_j` of ``v`` over the locally
-    owned entries on every rank of the vector's communicator, and returns
-    the local indices :math:`i` satisfying :math:`v_i > \theta \max_j v_j`.
-    This is commonly referred to as 'maximum marking' in the adaptive
-    finite element literature.
+    Computes the maximum :math:`\max_j v_j` of ``values`` over the locally
+    owned entries on every rank of ``index_map``'s communicator, and
+    returns the local indices :math:`i` satisfying
+    :math:`v_i > \theta \max_j v_j`. This is commonly referred to as
+    'maximum marking' in the adaptive finite element literature.
 
     Note:
-        Ghost entries of ``v`` must be up to date, i.e. ``scatter_forward``
-        must have been called since the owned entries were last modified.
+        Ghost entries of ``values`` must be up to date, i.e.
+        ``scatter_forward`` must have been called since the owned entries
+        were last modified.
 
         :math:`\theta = 1` marks nothing, since no entry can strictly
         exceed the true maximum. :math:`\theta = 0` is rejected, since the
@@ -965,22 +966,24 @@ def mark_maximum(
         marked consistently by its owner and by every rank ghosting it.
 
     Warning:
-        Returned indices index ``v``, not mesh entities. A DOF index is not
-        an entity index in general (e.g. a reordered DG0 dofmap), even with
-        one DOF per entity. To get entity indices, build ``v`` directly over
-        the entity's index map (e.g. ``mesh.topology.index_map``) rather
-        than a dofmap's, or map DOFs to entities via the dofmap yourself.
+        Returned indices index ``values``, not mesh entities. A DOF index
+        is not an entity index in general (e.g. a reordered DG0 dofmap),
+        even with one DOF per entity. To get entity indices, build
+        ``values`` and ``index_map`` directly from the entity's index map
+        (e.g. ``mesh.topology.index_map``) rather than a dofmap's, or map
+        DOFs to entities via the dofmap yourself.
 
     Args:
-        v: Vector of values, often with each entry associated with a mesh
+        values: Values, often with each entry associated with a mesh
             entity, e.g. an error indicator.
+        index_map: Index map describing the parallel layout of ``values``.
         theta: Cut-off parameter, :math:`0 < \theta \le 1`.
 
     Returns:
         Local indices, ascending and including ghosts, of the entries
         satisfying :math:`v_i > \theta \max_j v_j`.
     """
-    return _mark_maximum(v._cpp_object, theta)  # type: ignore
+    return _mark_maximum(values, index_map, theta)  # type: ignore
 
 
 def _create_mesh_coordinate_element(
