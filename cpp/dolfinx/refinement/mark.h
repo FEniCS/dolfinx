@@ -103,8 +103,9 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
       indices.push_back(i);
   }
 
-  spdlog::info("Marking (max) {} / {} (owned + ghost) entries.", indices.size(),
-               n);
+  spdlog::info("Marking (maximum): marked {} of {} local entries (owned + "
+               "ghost).",
+               indices.size(), n);
 
   return indices;
 }
