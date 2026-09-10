@@ -95,11 +95,11 @@ common::ScatterPattern::ScatterPattern(const IndexMap& map)
   // elements to be sent/received grouped by neighbours)
   assert(_sizes_local.size() == _dest.size());
   assert(_displs_local.size() == _dest.size() + 1);
+  // Allocate so that data() is not null when a rank has no neighbours
   _sizes_remote.reserve(1);
   _sizes_local.reserve(1);
-  ierr = MPI_Neighbor_alltoall(_sizes_remote.data(), 1, MPI_INT32_T,
-                               _sizes_local.data(), 1, MPI_INT32_T,
-                               _comm1.comm());
+  ierr = MPI_Neighbor_alltoall(_sizes_remote.data(), 1, MPI_INT,
+                               _sizes_local.data(), 1, MPI_INT, _comm1.comm());
   dolfinx::MPI::check_error(_comm1.comm(), ierr);
 
   std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
