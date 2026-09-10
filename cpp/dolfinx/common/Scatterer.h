@@ -15,7 +15,6 @@
 #include <memory>
 #include <mpi.h>
 #include <numeric>
-#include <ranges>
 #include <span>
 #include <type_traits>
 #include <vector>
@@ -538,8 +537,7 @@ private:
   std::vector<int> _displs_local;
 };
 
-/// @brief One-shot forward (owner -> ghost) scatter of contiguous host
-/// data.
+/// @brief One-shot forward (owner -> ghost) scatter of host data.
 ///
 /// Packs `local_data`, communicates, and unpacks into `remote_data`.
 /// The send and receive buffers are allocated for the duration of the
@@ -548,15 +546,18 @@ private:
 /// la::Vector, which holds persistent buffers.
 ///
 /// @note Collective MPI operation.
-/// @note Host data only. The pack/unpack loops dereference the
-/// Scatterer index containers on the host, hence the constraint on
-/// `Container`.
+/// @note For host data. `Container` is constrained to containers with
+/// raw pointer storage, which excludes the device containers used in
+/// GPU builds, but host residency of `local_data` and `remote_data` is
+/// a caller precondition that is not checked.
 ///
 /// @param[in] sc Scatterer describing the communication pattern.
 /// @param[in] local_data Owned values, indexed by local index.
 /// @param[out] remote_data Ghost values, indexed from the first ghost.
 template <typename T, class Container>
-  requires std::ranges::contiguous_range<Container>
+  requires requires(Container c) {
+    { c.data() } -> std::same_as<typename Container::value_type*>;
+  }
 void scatter_fwd(const Scatterer<Container>& sc, std::span<const T> local_data,
                  std::span<T> remote_data)
 {
@@ -575,8 +576,7 @@ void scatter_fwd(const Scatterer<Container>& sc, std::span<const T> local_data,
     remote_data[remote_inds[i]] = recv_buffer[i];
 }
 
-/// @brief One-shot reverse (ghost -> owner) scatter of contiguous host
-/// data.
+/// @brief One-shot reverse (ghost -> owner) scatter of host data.
 ///
 /// Packs `remote_data`, communicates, and accumulates into `local_data`
 /// using `op`. The send and receive buffers are allocated for the
@@ -585,7 +585,7 @@ void scatter_fwd(const Scatterer<Container>& sc, std::span<const T> local_data,
 /// directly, or la::Vector, which holds persistent buffers.
 ///
 /// @note Collective MPI operation.
-/// @note Host data only, see ::scatter_fwd.
+/// @note For host data, see ::scatter_fwd.
 ///
 /// @param[in] sc Scatterer describing the communication pattern.
 /// @param[in,out] local_data Owned values, indexed by local index.
@@ -593,7 +593,9 @@ void scatter_fwd(const Scatterer<Container>& sc, std::span<const T> local_data,
 /// @param[in] op Binary operation applied as `local_data[i] =
 /// op(received, local_data[i])`, e.g. `std::plus<T>()` to accumulate.
 template <typename T, class Container, typename BinaryOperation>
-  requires std::ranges::contiguous_range<Container>
+  requires requires(Container c) {
+    { c.data() } -> std::same_as<typename Container::value_type*>;
+  }
 void scatter_rev(const Scatterer<Container>& sc, std::span<T> local_data,
                  std::span<const T> remote_data, BinaryOperation op)
 {
