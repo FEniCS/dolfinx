@@ -131,13 +131,16 @@ public:
   /// scatter indices, and lets a caller give this vector a scatterer
   /// built on its own communication pattern.
   ///
+  /// The block size is taken from @p scatterer, whose scatter indices
+  /// are expanded for it, so the two cannot disagree.
+  ///
   /// @param map Index map that describes the parallel layout of
   /// the data.
-  /// @param bs Number of entries per index map 'index' (block size).
-  /// @param scatterer Scatterer for @p map and @p bs.
-  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
+  /// @param scatterer Scatterer for @p map.
+  Vector(std::shared_ptr<const common::IndexMap> map,
          std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer)
-      : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
+      : _map(map), _bs(scatterer->bs()),
+        _x(_bs * (map->size_local() + map->num_ghosts())),
         _scatterer(std::move(scatterer)),
         _buffer_local(_scatterer->local_indices().size()),
         _buffer_remote(_scatterer->remote_indices().size())
@@ -150,7 +153,7 @@ public:
   /// the data.
   /// @param bs Number of entries per index map 'index' (block size).
   Vector(std::shared_ptr<const common::IndexMap> map, int bs)
-      : Vector(map, bs,
+      : Vector(map,
                std::make_shared<common::Scatterer<ScatterContainer>>(*map, bs))
   {
   }

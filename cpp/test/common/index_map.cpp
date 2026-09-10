@@ -420,7 +420,8 @@ void test_private_scatter_pattern()
     CHECK(priv->comm0() != shared->comm0());
 
   auto sct = std::make_shared<const common::Scatterer<>>(priv, 1);
-  la::Vector<double> v(map, 1, sct);
+  CHECK(sct->bs() == 1);
+  la::Vector<double> v(map, sct);
 
   // The vector did not take the map's shared pattern
   CHECK(shared.use_count() == 2);

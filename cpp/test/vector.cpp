@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/la/Vector.h>
 #include <functional>
 #include <iterator>
@@ -135,6 +136,48 @@ void test_vector_scatter_rev()
                                   std::next(v.array().begin(), size_local));
   CHECK(sum1 == 2 * sum0);
 }
+void test_vector_shared_scatterer()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+  constexpr int bs = 3;
+
+  // Ghost entries owned by the next process
+  const int num_ghosts = (mpi_size - 1) * 3;
+  std::vector<std::int64_t> ghosts(num_ghosts);
+  for (int i = 0; i < num_ghosts; ++i)
+    ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
+  const std::vector<int> owners(ghosts.size(), (mpi_rank + 1) % mpi_size);
+  auto map = std::make_shared<const common::IndexMap>(
+      MPI_COMM_WORLD, size_local, ghosts, owners);
+
+  auto sct = std::make_shared<const common::Scatterer<>>(*map, bs);
+  CHECK(sct.use_count() == 1);
+  {
+    // One scatterer, two vectors, two scalar types
+    la::Vector<double> u(map, sct);
+    la::Vector<std::int8_t> v(map, sct);
+    CHECK(sct.use_count() == 3);
+    CHECK(u.index_map() == map);
+    // Block size comes from the scatterer, not a separate argument
+    CHECK(u.bs() == bs);
+    CHECK(v.bs() == bs);
+
+    std::ranges::fill_n(u.array().begin(), bs * size_local,
+                        static_cast<double>(mpi_rank));
+    u.scatter_fwd();
+    const double owner = static_cast<double>((mpi_rank + 1) % mpi_size);
+    for (int i = 0; i < bs * num_ghosts; ++i)
+      CHECK(u.array()[bs * size_local + i] == owner);
+
+    std::ranges::fill_n(v.array().begin(), bs * size_local, std::int8_t(7));
+    v.scatter_fwd();
+    for (int i = 0; i < bs * num_ghosts; ++i)
+      CHECK(v.array()[bs * size_local + i] == std::int8_t(7));
+  }
+  CHECK(sct.use_count() == 1);
+}
 } // namespace
 
 TEMPLATE_TEST_CASE("Linear Algebra Vector", "[la_vector]", double,
@@ -151,4 +194,9 @@ TEST_CASE("Linear Algebra Vector", "[la_vector]")
 TEST_CASE("Linear Algebra Vector scatter reverse", "[la_vector]")
 {
   CHECK_NOTHROW(test_vector_scatter_rev());
+}
+
+TEST_CASE("Linear Algebra Vector shared scatterer", "[la_vector]")
+{
+  CHECK_NOTHROW(test_vector_shared_scatterer());
 }

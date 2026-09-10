@@ -122,7 +122,7 @@ public:
   /// @param[in] bs Number of values associated with each index map
   /// index (the block size). Must be greater than zero.
   Scatterer(std::shared_ptr<const ScatterPattern> pattern, int bs)
-      : _pattern(std::move(pattern))
+      : _pattern(std::move(pattern)), _bs(bs)
   {
     if (!_pattern)
       throw std::invalid_argument("Scatterer requires a communication pattern");
@@ -186,7 +186,7 @@ public:
   /// @param s Scatterer to copy
   template <class U>
   Scatterer(const Scatterer<U>& s)
-      : _pattern(s._pattern),
+      : _pattern(s._pattern), _bs(s._bs),
         _remote_inds(s._remote_inds.begin(), s._remote_inds.end()),
         _sizes_remote(s._sizes_remote), _displs_remote(s._displs_remote),
         _local_inds(s._local_inds.begin(), s._local_inds.end()),
@@ -376,6 +376,15 @@ public:
   /// @return Indices container.
   const container_type& remote_indices() const noexcept { return _remote_inds; }
 
+  /// @brief Number of values associated with each index map index that
+  /// this scatterer was built for (the block size).
+  ///
+  /// The scatter indices are expanded for this block size, so a
+  /// scatterer can only be used with data of this block size.
+  ///
+  /// @return Block size.
+  int bs() const noexcept { return _bs; }
+
 private:
   // False only on a single rank, where the pattern's communicators stay
   // MPI_COMM_NULL
@@ -394,6 +403,9 @@ private:
   // Block size-independent communication pattern, shared with every
   // other Scatterer built from the same IndexMap
   std::shared_ptr<const ScatterPattern> _pattern;
+
+  // Block size the scatter indices are expanded for
+  int _bs;
 
   // Permutation indices used to pack and unpack ghost data (remote)
   container_type _remote_inds;
