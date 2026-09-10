@@ -8,7 +8,6 @@
 
 from __future__ import annotations
 
-import functools
 import typing
 import warnings
 from collections.abc import Callable, Sequence
@@ -42,7 +41,6 @@ from dolfinx.cpp.refinement import uniform_refine as _uniform_refine
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem.element import _coordinate_element_from_basix
 from dolfinx.graph import AdjacencyList
-from dolfinx.la import Vector
 from dolfinx.typing import Real
 
 __all__ = [
