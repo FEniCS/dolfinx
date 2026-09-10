@@ -121,10 +121,9 @@ public:
   /// @param[in] comm Communicator that the index map is distributed
   /// across.
   /// @param[in] local_size Number of owned entries. Must be non-negative.
-  /// @pre `local_size` is non-negative. This condition is checked in
-  /// Developer builds; callers must ensure it in Release builds.
-  /// @throws std::invalid_argument If the `local_size` precondition is
-  /// violated in a Developer build.
+  /// @pre `local_size` is non-negative; this is always checked locally
+  /// (no MPI communication).
+  /// @throws std::invalid_argument If `local_size` is negative.
   IndexMap(MPI_Comm comm, std::int32_t local_size);
 
   /// @brief Create an overlapping (ghosted) index map.
@@ -153,13 +152,16 @@ public:
   /// @note Use a distinct `tag` for overlapping consensus calls. All
   /// ranks in one collective call must use the same tag. An MPI barrier
   /// before and after the call is an alternative.
-  /// @pre `local_size` is non-negative, `ghosts` and `owners` have equal
-  /// length, ghosts are unique and non-negative, owners are valid non-self
-  /// ranks, and each ghost is globally owned by its declared rank. These
-  /// conditions are checked in Developer builds; callers must ensure them in
-  /// Release builds.
-  /// @throws std::invalid_argument If a precondition is violated in a
-  /// Developer build.
+  /// @pre `local_size` is non-negative and `ghosts` and `owners` have
+  /// equal length; these are always checked locally (no MPI
+  /// communication). Ghosts must also be unique and non-negative, owners
+  /// must be valid non-self ranks, and each ghost must be globally owned
+  /// by its declared rank; these further conditions are checked in
+  /// Developer builds only, and callers must ensure them in Release
+  /// builds.
+  /// @throws std::invalid_argument If `local_size` is negative, if
+  /// `ghosts` and `owners` differ in length, or if another ghost data
+  /// precondition is violated in a Developer build.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            std::span<const std::int64_t> ghosts, std::span<const int> owners,
            int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx));
@@ -191,14 +193,17 @@ public:
   /// @param[in] ghosts Unique global indices of ghost entries.
   /// @param[in] owners Non-self rank (on `comm`) that owns each entry in
   /// `ghosts`.
-  /// @pre `local_size` is non-negative, `ghosts` and `owners` have equal
-  /// length, ghosts are unique and non-negative, owners are valid non-self
-  /// ranks, and each ghost is globally owned by its declared rank. For every
-  /// pair of ranks `(a, b)`, `b` is in `a`'s source list if and only if `a` is
-  /// in `b`'s destination list. These conditions are checked in Developer
-  /// builds; callers must ensure them in Release builds.
-  /// @throws std::invalid_argument If a precondition is violated in a
-  /// Developer build.
+  /// @pre `local_size` is non-negative and `ghosts` and `owners` have
+  /// equal length; these are always checked locally (no MPI
+  /// communication). Ghosts must also be unique and non-negative, owners
+  /// must be valid non-self ranks, and each ghost must be globally owned
+  /// by its declared rank. For every pair of ranks `(a, b)`, `b` must be
+  /// in `a`'s source list if and only if `a` is in `b`'s destination
+  /// list. These further conditions are checked in Developer builds
+  /// only, and callers must ensure them in Release builds.
+  /// @throws std::invalid_argument If `local_size` is negative, if
+  /// `ghosts` and `owners` differ in length, or if another ghost data
+  /// precondition is violated in a Developer build.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            const std::array<std::vector<int>, 2>& src_dest,
            std::span<const std::int64_t> ghosts, std::span<const int> owners);
