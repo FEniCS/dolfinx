@@ -100,15 +100,16 @@ disclosure process.
   `std::invalid_argument` for a bad argument or violated parameter
   precondition, `std::out_of_range` for an index/lookup-key failure, and
   `std::runtime_error` for other runtime/state/IO/MPI failures. Do not
-  introduce a custom exception hierarchy. Use a descriptive message —
-  unconditionally when the check is O(1), or guarded behind
-  `#ifndef NDEBUG` when the check is more expensive, so it's skipped in
-  release builds. For internal
-  invariants that indicate a library bug rather than bad user input, use
-  `assert` when the check fits in a single expression, or a
-  `#ifndef NDEBUG`-guarded block with an explicit throw/abort when it
-  needs multiple statements. Do not add exceptions inside hot loops.
-  Prefer `spdlog::debug`/`info`/`warn` for logging over
+  introduce a custom exception hierarchy. Use descriptive messages.
+  Unconditionally perform checks when cost is O(1) and no collective MPI
+  operations are used in the check, except in hot loops. Do not add
+  exceptions inside hot loops. Guard behind `#ifndef NDEBUG` when the
+  check is more expensive or requires MPI communication, so it's skipped
+  in release builds. For internal invariants that indicate a library bug
+  rather than bad user input, use `assert` when the check fits in a
+  single expression, or a `#ifndef NDEBUG`-guarded block with an
+  explicit throw/abort when it needs multiple statements. Prefer
+  `spdlog::debug`/`info`/`warn` for logging over
   `std::cout`/`std::cerr`.
 - **MPI collectives**: collective operations (`MPI_Allreduce`,
   neighbourhood collectives, etc.) must be reached by every rank in the
