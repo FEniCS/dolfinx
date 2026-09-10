@@ -10,6 +10,7 @@
 #include "MPI.h"
 #include "ScatterPattern.h"
 #include <algorithm>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -23,6 +24,26 @@
 
 namespace dolfinx::common
 {
+namespace impl
+{
+/// @brief Expand indices by a block size, i.e. index `i` becomes the
+/// `bs` indices `[i * bs, (i + 1) * bs)`.
+///
+/// @tparam V Value type of the expanded indices.
+/// @param[in] indices Indices to expand.
+/// @param[in] bs Block size.
+/// @return Expanded indices.
+template <std::integral V>
+std::vector<V> expand_indices(std::span<const std::int32_t> indices, int bs)
+{
+  std::vector<V> idx(indices.size() * bs);
+  for (std::size_t i = 0; i < indices.size(); i++)
+    for (int j = 0; j < bs; j++)
+      idx[i * bs + j] = indices[i] * bs + j;
+  return idx;
+}
+} // namespace impl
+
 /// @brief A Scatterer supports the scattering and gathering of
 /// distributed data that is associated with a common::IndexMap, using
 /// MPI.
@@ -103,8 +124,9 @@ public:
     }
 
     // Expand the pattern's indices by the block size
-    _local_inds = expand(_pattern->local_indices(), bs);
-    _remote_inds = expand(_pattern->perm(), bs);
+    using V = typename container_type::value_type;
+    _local_inds = impl::expand_indices<V>(_pattern->local_indices(), bs);
+    _remote_inds = impl::expand_indices<V>(_pattern->perm(), bs);
   }
 
   /// @brief Create a scatterer for data with a layout described by an
@@ -426,18 +448,6 @@ public:
   }
 
 private:
-  // Expand indices by the block size, i.e. index i becomes the bs
-  // indices [i * bs, (i + 1) * bs)
-  static std::vector<typename container_type::value_type>
-  expand(std::span<const std::int32_t> indices, int bs)
-  {
-    std::vector<typename container_type::value_type> idx(indices.size() * bs);
-    for (std::size_t i = 0; i < indices.size(); i++)
-      for (int j = 0; j < bs; j++)
-        idx[i * bs + j] = indices[i] * bs + j;
-    return idx;
-  }
-
   // Block size-independent communication pattern, shared with every
   // other Scatterer built from the same IndexMap
   std::shared_ptr<const ScatterPattern> _pattern;
