@@ -22,29 +22,6 @@
 
 namespace dolfinx::la
 {
-namespace impl
-{
-/// @brief Rebind a container template to a different value type, e.g.
-/// `std::vector<double>` to `std::vector<std::int8_t>`.
-///
-/// Allocator and other trailing arguments are dropped, so the rebound
-/// container uses its own defaults.
-template <class Container, class U>
-struct rebind_container;
-
-/// @cond
-template <template <class, class...> class Container, class T, class... Args,
-          class U>
-struct rebind_container<Container<T, Args...>, U>
-{
-  using type = Container<U>;
-};
-/// @endcond
-
-/// @brief Container type of ::rebind_container.
-template <class Container, class U>
-using rebind_container_t = typename rebind_container<Container, U>::type;
-} // namespace impl
 
 /// @brief la::Vector scatter pack/unpack function concept.
 template <class F, class Container, class ScatterContainer>
@@ -150,9 +127,9 @@ public:
   /// @brief Create a distributed vector with a given communication
   /// pattern.
   ///
-  /// Sharing a scatterer avoids rebuilding a communication pattern, and
-  /// with it the two neighbourhood communicators that each Scatterer
-  /// creates.
+  /// Sharing a scatterer avoids rebuilding the block size-expanded
+  /// scatter indices, and lets a caller give this vector a scatterer
+  /// built on its own communication pattern.
   ///
   /// @param map Index map that describes the parallel layout of
   /// the data.
@@ -436,29 +413,6 @@ public:
 
   /// Get IndexMap
   std::shared_ptr<const common::IndexMap> index_map() const { return _map; }
-
-  /// @brief Create a vector over the same layout, entries
-  /// value-initialised and not copied.
-  ///
-  /// The index map and scatterer are shared, so no communication pattern is
-  /// rebuilt. Unlike the copy-converting constructor, no vector data is
-  /// copied, so the Scalar type `T1` can be different to `T`.
-  ///
-  /// @note Both vectors scatter on the same communicators. Each owns its
-  /// buffers and request, so sequential scatters are safe, but concurrent
-  /// scatters must be issued in the same order on every rank.
-  ///
-  /// @tparam T1 Scalar type of the new vector.
-  /// @tparam Container1 Data container type of the new vector. Defaults
-  /// to this vector's container rebound to `T1`, so a device vector
-  /// clones to a device vector.
-  /// @return Vector over the same layout.
-  template <typename T1 = T,
-            typename Container1 = impl::rebind_container_t<Container, T1>>
-  Vector<T1, Container1, ScatterContainer> clone_layout() const
-  {
-    return Vector<T1, Container1, ScatterContainer>(_map, _bs, _scatterer);
-  }
 
   /// Get block size
   constexpr int bs() const { return _bs; }
