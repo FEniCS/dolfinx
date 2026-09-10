@@ -943,7 +943,7 @@ def _get_mesh_partitioner(
 
 @functools.singledispatch
 def mark_maximum(
-    values: npt.NDArray[Real],
+    values: npt.NDArray[Real] | Vector[Real],
     index_map: _IndexMap,
     theta: float,
 ) -> npt.NDArray[np.int32]:
@@ -975,7 +975,7 @@ def mark_maximum(
         Local indices, ascending and including ghosts, of the entries
         satisfying :math:`v_i > \theta \max_j v_j`.
     """
-    return _mark_maximum(values, index_map, theta)  # type: ignore
+    return _mark_maximum(values, index_map, theta)
 
 
 @mark_maximum.register(Vector)
