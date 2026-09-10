@@ -22,6 +22,30 @@
 
 namespace dolfinx::la
 {
+namespace impl
+{
+/// @brief Rebind a container template to a different value type, e.g.
+/// `std::vector<double>` to `std::vector<std::int8_t>`.
+///
+/// Allocator and other trailing arguments are dropped, so the rebound
+/// container uses its own defaults.
+template <class Container, class U>
+struct rebind_container;
+
+/// @cond
+template <template <class, class...> class Container, class T, class... Args,
+          class U>
+struct rebind_container<Container<T, Args...>, U>
+{
+  using type = Container<U>;
+};
+/// @endcond
+
+/// @brief Container type of ::rebind_container.
+template <class Container, class U>
+using rebind_container_t = typename rebind_container<Container, U>::type;
+} // namespace impl
+
 /// @brief la::Vector scatter pack/unpack function concept.
 template <class F, class Container, class ScatterContainer>
 concept VectorPackKernel = requires(F f, ScatterContainer idx, Container x) {
@@ -410,9 +434,12 @@ public:
   /// scatters must be issued in the same order on every rank.
   ///
   /// @tparam T1 Scalar type of the new vector.
-  /// @tparam Container1 Data container type of the new vector.
+  /// @tparam Container1 Data container type of the new vector. Defaults
+  /// to this vector's container rebound to `T1`, so a device vector
+  /// clones to a device vector.
   /// @return Vector over the same layout.
-  template <typename T1 = T, typename Container1 = std::vector<T1>>
+  template <typename T1 = T,
+            typename Container1 = impl::rebind_container_t<Container, T1>>
   Vector<T1, Container1, ScatterContainer> clone_layout() const
   {
     return Vector<T1, Container1, ScatterContainer>(_map, _bs, _scatterer);

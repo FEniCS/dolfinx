@@ -17,12 +17,52 @@
 #include <iterator>
 #include <memory>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 using namespace dolfinx;
 
 namespace
 {
+// Stand-in for a device container: a distinct container template with
+// the same shape as std::vector.
+template <class T, class A = std::allocator<T>>
+struct FakeDeviceVector : std::vector<T, A>
+{
+  using std::vector<T, A>::vector;
+};
+
+// clone_layout must rebind this vector's container to the new scalar
+// type, not fall back to std::vector, or a device vector would clone to
+// host storage while sharing a device scatterer.
+void test_vector_clone_layout_container()
+{
+  using Host
+      = la::Vector<double, std::vector<double>, std::vector<std::int32_t>>;
+  static_assert(
+      std::is_same_v<
+          typename decltype(std::declval<Host>()
+                                .clone_layout<std::int8_t>())::container_type,
+          std::vector<std::int8_t>>);
+
+  using Device
+      = la::Vector<double, FakeDeviceVector<double>, std::vector<std::int32_t>>;
+  static_assert(
+      std::is_same_v<
+          typename decltype(std::declval<Device>()
+                                .clone_layout<std::int8_t>())::container_type,
+          FakeDeviceVector<std::int8_t>>);
+
+  // An explicit container is still honoured
+  static_assert(
+      std::is_same_v<
+          typename decltype(std::declval<Device>()
+                                .clone_layout<std::int8_t,
+                                              std::vector<std::int8_t>>())::
+              container_type,
+          std::vector<std::int8_t>>);
+}
+
 template <typename T>
 void test_vector()
 {
@@ -171,4 +211,5 @@ TEST_CASE("Linear Algebra Vector", "[la_vector]")
 TEST_CASE("Linear Algebra Vector clone_layout", "[la_vector]")
 {
   CHECK_NOTHROW(test_vector_clone_layout());
+  CHECK_NOTHROW(test_vector_clone_layout_container());
 }
