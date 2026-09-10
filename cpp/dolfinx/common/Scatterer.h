@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Igor Baratta and Garth N. Wells
+// Copyright (C) 2022-2026 Igor Baratta, Garth N. Wells and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -15,6 +15,7 @@
 #include <memory>
 #include <mpi.h>
 #include <numeric>
+#include <ranges>
 #include <span>
 #include <type_traits>
 #include <vector>
@@ -536,4 +537,78 @@ private:
   // Displacements of local data for mpi scatter and gather
   std::vector<int> _displs_local;
 };
+
+/// @brief One-shot forward (owner -> ghost) scatter of contiguous host
+/// data.
+///
+/// Packs `local_data`, communicates, and unpacks into `remote_data`.
+/// The send and receive buffers are allocated for the duration of the
+/// call. For repeated scatters where the allocation matters, use
+/// Scatterer::scatter_fwd_begin and Scatterer::scatter_end directly, or
+/// la::Vector, which holds persistent buffers.
+///
+/// @note Collective MPI operation.
+/// @note Host data only. The pack/unpack loops dereference the
+/// Scatterer index containers on the host, hence the constraint on
+/// `Container`.
+///
+/// @param[in] sc Scatterer describing the communication pattern.
+/// @param[in] local_data Owned values, indexed by local index.
+/// @param[out] remote_data Ghost values, indexed from the first ghost.
+template <typename T, class Container>
+  requires std::ranges::contiguous_range<Container>
+void scatter_fwd(const Scatterer<Container>& sc, std::span<const T> local_data,
+                 std::span<T> remote_data)
+{
+  const Container& local_inds = sc.local_indices();
+  std::vector<T> send_buffer(local_inds.size());
+  std::ranges::transform(local_inds, send_buffer.begin(),
+                         [local_data](auto i) { return local_data[i]; });
+
+  const Container& remote_inds = sc.remote_indices();
+  std::vector<T> recv_buffer(remote_inds.size());
+  MPI_Request request = MPI_REQUEST_NULL;
+  sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
+  sc.scatter_end(request);
+
+  for (std::size_t i = 0; i < remote_inds.size(); ++i)
+    remote_data[remote_inds[i]] = recv_buffer[i];
+}
+
+/// @brief One-shot reverse (ghost -> owner) scatter of contiguous host
+/// data.
+///
+/// Packs `remote_data`, communicates, and accumulates into `local_data`
+/// using `op`. The send and receive buffers are allocated for the
+/// duration of the call. For repeated scatters where the allocation
+/// matters, use Scatterer::scatter_rev_begin and Scatterer::scatter_end
+/// directly, or la::Vector, which holds persistent buffers.
+///
+/// @note Collective MPI operation.
+/// @note Host data only, see ::scatter_fwd.
+///
+/// @param[in] sc Scatterer describing the communication pattern.
+/// @param[in,out] local_data Owned values, indexed by local index.
+/// @param[in] remote_data Ghost values, indexed from the first ghost.
+/// @param[in] op Binary operation applied as `local_data[i] =
+/// op(received, local_data[i])`, e.g. `std::plus<T>()` to accumulate.
+template <typename T, class Container, typename BinaryOperation>
+  requires std::ranges::contiguous_range<Container>
+void scatter_rev(const Scatterer<Container>& sc, std::span<T> local_data,
+                 std::span<const T> remote_data, BinaryOperation op)
+{
+  const Container& remote_inds = sc.remote_indices();
+  std::vector<T> send_buffer(remote_inds.size());
+  std::ranges::transform(remote_inds, send_buffer.begin(),
+                         [remote_data](auto i) { return remote_data[i]; });
+
+  const Container& local_inds = sc.local_indices();
+  std::vector<T> recv_buffer(local_inds.size());
+  MPI_Request request = MPI_REQUEST_NULL;
+  sc.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), request);
+  sc.scatter_end(request);
+
+  for (std::size_t i = 0; i < local_inds.size(); ++i)
+    local_data[local_inds[i]] = op(recv_buffer[i], local_data[local_inds[i]]);
+}
 } // namespace dolfinx::common
