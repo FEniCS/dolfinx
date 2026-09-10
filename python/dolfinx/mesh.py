@@ -972,7 +972,7 @@ def mark_maximum(
         Local indices, ascending and including ghosts, of the entries
         satisfying :math:`v_i > \theta \max_j v_j`.
     """
-    return _mark_maximum(values, index_map, theta)  # type: ignore
+    return _mark_maximum(values, index_map, theta)
 
 
 def _create_mesh_coordinate_element(
