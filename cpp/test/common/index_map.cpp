@@ -316,13 +316,16 @@ void test_scatter_pattern_shared()
       vectors.emplace_back(map, 2);
     CHECK(pattern.use_count() == 2 + num_vectors);
 
-    // Cloning a layout shares the scatterer, so does not add a
-    // reference to the pattern
-    la::Vector<std::int8_t> marks = vectors.front().clone_layout<std::int8_t>();
-    CHECK(pattern.use_count() == 2 + num_vectors);
+    // A vector of a different scalar type over the same layout builds
+    // its own Scatterer from the shared pattern: one more reference to
+    // the pattern, and still no new communicators
+    la::Vector<std::int8_t> marks(vectors.front().index_map(),
+                                  vectors.front().bs());
+    CHECK(pattern.use_count() == 3 + num_vectors);
   }
   CHECK(pattern.use_count() == 2);
 }
+
 void test_scatter_overlap()
 {
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
