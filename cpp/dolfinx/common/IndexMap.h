@@ -121,6 +121,9 @@ public:
   /// @param[in] comm Communicator that the index map is distributed
   /// across.
   /// @param[in] local_size Number of owned entries. Must be non-negative.
+  /// @pre Every rank in this collective call supplies a non-negative
+  /// `local_size`. A violation on only some ranks may deadlock in Release
+  /// builds.
   /// @pre `local_size` is non-negative; this is always checked locally
   /// (no MPI communication).
   /// @throws std::invalid_argument If `local_size` is negative.
@@ -152,6 +155,9 @@ public:
   /// @note Use a distinct `tag` for overlapping consensus calls. All
   /// ranks in one collective call must use the same tag. An MPI barrier
   /// before and after the call is an alternative.
+  /// @pre Every rank in this collective call satisfies the locally checked
+  /// preconditions below. A violation on only some ranks may deadlock in
+  /// Release builds.
   /// @pre `local_size` is non-negative and `ghosts` and `owners` have
   /// equal length; these are always checked locally (no MPI
   /// communication). Ghosts must also be unique and non-negative, owners
@@ -193,6 +199,9 @@ public:
   /// @param[in] ghosts Unique global indices of ghost entries.
   /// @param[in] owners Non-self rank (on `comm`) that owns each entry in
   /// `ghosts`.
+  /// @pre Every rank in this collective call satisfies the locally checked
+  /// preconditions below. A violation on only some ranks may deadlock in
+  /// Release builds.
   /// @pre `local_size` is non-negative and `ghosts` and `owners` have
   /// equal length; these are always checked locally (no MPI
   /// communication). Ghosts must also be unique and non-negative, owners
