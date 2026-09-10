@@ -269,7 +269,7 @@ def test_petsc_curl_curl_eigenvalue(family, order):
     eps.setWhichEigenpairs(SLEPc.EPS.Which.TARGET_MAGNITUDE)
     eps.setTarget(5.0)
     eps.setDimensions(nev=12)
-    eps.getST().setType(SLEPc.ST.Type.SINVERT)
+    eps.setTolerances(max_it=1000)
     eps.solve()
 
     num_converged = eps.getConverged()
