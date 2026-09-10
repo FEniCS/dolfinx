@@ -122,6 +122,21 @@ void test_scatter_rev()
     common::Scatterer<std::vector<std::int64_t>> sct2(sct);
   }
 
+  // A scatterer built directly on a wider index container expands the
+  // pattern indices itself, rather than converting an expanded copy
+  {
+    common::Scatterer<std::vector<std::int64_t>> sct2(idx_map, n);
+    CHECK(std::ranges::equal(sct2.local_indices(), sct.local_indices()));
+    CHECK(std::ranges::equal(sct2.remote_indices(), sct.remote_indices()));
+  }
+
+  // Preconditions on the block size and the pattern
+  CHECK_THROWS_AS(common::Scatterer<>(idx_map.scatter_pattern(), 0),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(common::Scatterer<>(idx_map.scatter_pattern(), -1),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(common::Scatterer<>(nullptr, 1), std::invalid_argument);
+
   auto pack_fn = [](auto&& in, auto&& idx, auto&& out)
   {
     for (std::size_t i = 0; i < idx.size(); ++i)

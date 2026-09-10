@@ -13,7 +13,6 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <mpi.h>
 #include <span>
@@ -26,20 +25,38 @@ namespace dolfinx::common
 {
 namespace impl
 {
+/// @brief Scale MPI counts or displacements by a block size.
+///
+/// @param[in] x Counts or displacements for a block size of one.
+/// @param[in] bs Block size.
+/// @return Scaled counts or displacements.
+inline std::vector<int> scale(std::span<const int> x, int bs)
+{
+  std::vector<int> y(x.size());
+  std::ranges::transform(x, y.begin(), [bs](int e) { return e * bs; });
+  return y;
+}
+
 /// @brief Expand indices by a block size, i.e. index `i` becomes the
 /// `bs` indices `[i * bs, (i + 1) * bs)`.
 ///
+/// The expansion is computed in `V`, so a `std::int64_t` expansion of a
+/// large index does not overflow before it is widened.
+///
 /// @tparam V Value type of the expanded indices.
 /// @param[in] indices Indices to expand.
-/// @param[in] bs Block size.
+/// @param[in] bs Block size, greater than zero.
 /// @return Expanded indices.
 template <std::integral V>
 std::vector<V> expand_indices(std::span<const std::int32_t> indices, int bs)
 {
   std::vector<V> idx(indices.size() * bs);
   for (std::size_t i = 0; i < indices.size(); i++)
+  {
+    const V base = static_cast<V>(indices[i]) * bs;
     for (int j = 0; j < bs; j++)
-      idx[i * bs + j] = indices[i] * bs + j;
+      idx[i * bs + j] = base + j;
+  }
   return idx;
 }
 } // namespace impl
@@ -101,29 +118,25 @@ public:
   /// that requires it.
   ///
   /// @param[in] pattern Communication pattern of the index map that
-  /// describes the parallel layout of the data.
+  /// describes the parallel layout of the data. Must not be null.
   /// @param[in] bs Number of values associated with each index map
-  /// index (the block size).
+  /// index (the block size). Must be greater than zero.
   Scatterer(std::shared_ptr<const ScatterPattern> pattern, int bs)
-      : _pattern(std::move(pattern)),
-        _sizes_remote(_pattern->sizes_remote().begin(),
-                      _pattern->sizes_remote().end()),
-        _displs_remote(_pattern->displs_remote().begin(),
-                       _pattern->displs_remote().end()),
-        _sizes_local(_pattern->sizes_local().begin(),
-                     _pattern->sizes_local().end()),
-        _displs_local(_pattern->displs_local().begin(),
-                      _pattern->displs_local().end())
+      : _pattern(std::move(pattern))
   {
-    // Scale sizes and displacements by the block size
-    for (auto& x : {std::ref(_sizes_local), std::ref(_displs_local),
-                    std::ref(_sizes_remote), std::ref(_displs_remote)})
+    if (!_pattern)
+      throw std::invalid_argument("Scatterer requires a communication pattern");
+    if (bs < 1)
     {
-      std::ranges::transform(x.get(), x.get().begin(),
-                             [bs](int e) { return e * bs; });
+      throw std::invalid_argument("Scatterer block size must be greater than "
+                                  "zero");
     }
 
-    // Expand the pattern's indices by the block size
+    _sizes_remote = impl::scale(_pattern->sizes_remote(), bs);
+    _displs_remote = impl::scale(_pattern->displs_remote(), bs);
+    _sizes_local = impl::scale(_pattern->sizes_local(), bs);
+    _displs_local = impl::scale(_pattern->displs_local(), bs);
+
     using V = typename container_type::value_type;
     _local_inds = impl::expand_indices<V>(_pattern->local_indices(), bs);
     _remote_inds = impl::expand_indices<V>(_pattern->perm(), bs);
