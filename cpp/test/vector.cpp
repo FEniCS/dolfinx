@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2026 Chris Richardson and Jack S. Hale
+// Copyright (C) 2021-2026 Chris Richardson, Garth N. Wells and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,12 +10,13 @@
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <complex>
-#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/la/Vector.h>
+#include <functional>
 #include <iterator>
 #include <memory>
+#include <numeric>
 #include <span>
 #include <type_traits>
 #include <vector>
@@ -136,6 +137,44 @@ void test_vector_cast()
   CHECK(la::inner_product(v1, v1) == sumn2);
   CHECK(la::norm(v1, la::Norm::linf) == static_cast<U>(mpi_size - 1));
 }
+
+void test_vector_scatter_rev()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+
+  // Create some ghost entries on next process
+  int num_ghosts = (mpi_size - 1) * 3;
+  std::vector<std::int64_t> ghosts(num_ghosts);
+  for (int i = 0; i < num_ghosts; ++i)
+    ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
+
+  const std::vector<int> global_ghost_owner(ghosts.size(),
+                                            (mpi_rank + 1) % mpi_size);
+
+  // Create an IndexMap
+  auto index_map = std::make_shared<common::IndexMap>(
+      MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
+
+  la::Vector<double> v(index_map, 1);
+  std::ranges::fill(v.array(), 0.0);
+  std::fill(std::next(v.array().begin(), size_local), v.array().end(), 2.0);
+
+  // Scatter ghost values to owning ranks and accumulate into owned
+  // entries via Vector::get_unpack_op
+  v.scatter_rev(std::plus<>{});
+  const double sum0 = std::reduce(v.array().begin(),
+                                  std::next(v.array().begin(), size_local));
+  CHECK(sum0 == 2.0 * num_ghosts);
+
+  // Repeat, to check accumulation onto the non-zero values from the
+  // first scatter, rather than overwriting them
+  v.scatter_rev(std::plus<>{});
+  const double sum1 = std::reduce(v.array().begin(),
+                                  std::next(v.array().begin(), size_local));
+  CHECK(sum1 == 2 * sum0);
+}
 void test_vector_clone_layout()
 {
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
@@ -195,6 +234,7 @@ void test_vector_clone_layout()
   CHECK(zeros.bs() == bs);
   CHECK(std::ranges::all_of(zeros.array(), [](double x) { return x == 0; }));
 }
+
 } // namespace
 
 TEMPLATE_TEST_CASE("Linear Algebra Vector", "[la_vector]", double,
@@ -206,6 +246,11 @@ TEMPLATE_TEST_CASE("Linear Algebra Vector", "[la_vector]", double,
 TEST_CASE("Linear Algebra Vector", "[la_vector]")
 {
   CHECK_NOTHROW(test_vector_cast());
+}
+
+TEST_CASE("Linear Algebra Vector scatter reverse", "[la_vector]")
+{
+  CHECK_NOTHROW(test_vector_scatter_rev());
 }
 
 TEST_CASE("Linear Algebra Vector clone_layout", "[la_vector]")
