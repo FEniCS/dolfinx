@@ -1343,7 +1343,7 @@ std::span<const int> IndexMap::dest() const noexcept { return _dest; }
 std::shared_ptr<const ScatterPattern> IndexMap::scatter_pattern() const
 {
   if (!_scatter_pattern)
-    _scatter_pattern = std::make_shared<const ScatterPattern>(*this);
+    _scatter_pattern = create_scatter_pattern(*this);
   return _scatter_pattern;
 }
 //-----------------------------------------------------------------------------
