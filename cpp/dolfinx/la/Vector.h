@@ -400,10 +400,10 @@ public:
   ///
   /// The index map and scatterer are shared, so no communication pattern is
   /// rebuilt. Unlike the copy-converting constructor, no vector data is
-  /// copied, so `T1` can be different to `T`.
+  /// copied, so the Scalar type `T1` can be different to `T`.
   ///
   /// @note Both vectors scatter on the same communicators. Each owns its
-  /// buffers and request, so sequential scatters is safe, but concurrent
+  /// buffers and request, so sequential scatters are safe, but concurrent
   /// scatters must be issued in the same order on every rank.
   ///
   /// @tparam T1 Scalar type of the new vector.
