@@ -45,6 +45,14 @@ namespace dolfinx::common
 /// that pattern, and with it the neighbourhood communicators, whatever
 /// their block size or index container type.
 ///
+/// @note Scatters may overlap: each caller supplies its own buffers and
+/// MPI request, and forward and reverse scatters use separate
+/// communicators. Because scatterers over one IndexMap share those
+/// communicators, concurrent scatters in the same direction are matched
+/// in the order they are started, so every rank must start them in the
+/// same order. Starting them in a rank-dependent order silently
+/// delivers one scatter's data to another.
+///
 /// @tparam Container Container type for storing the 'local' and
 /// 'remote' indices. On CPUs this is normally
 /// `std::vector<std::int32_t>`. For GPUs the container should store the

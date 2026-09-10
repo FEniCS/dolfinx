@@ -13,6 +13,7 @@
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/la/Vector.h>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <numeric>
@@ -280,6 +281,80 @@ void test_scatter_pattern_shared()
   }
   CHECK(pattern.use_count() == 2);
 }
+void test_scatter_overlap()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+  auto map = std::make_shared<const common::IndexMap>(
+      create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3));
+  std::int32_t num_ghosts = map->num_ghosts();
+
+  // Vectors over one index map, and so over one pair of neighbourhood
+  // communicators. Each holds its own buffers and MPI_Request.
+  constexpr int num_vectors = 4;
+  std::vector<la::Vector<double>> v;
+  v.reserve(num_vectors);
+  for (int k = 0; k < num_vectors; ++k)
+  {
+    v.emplace_back(map, 1);
+    std::ranges::fill_n(v.back().array().begin(), size_local,
+                        100.0 * mpi_rank + k);
+  }
+
+  // Every forward scatter in flight at once on the shared communicator.
+  // Nonblocking collectives on one communicator are matched in issue
+  // order, which is identical on every rank here.
+  for (auto& x : v)
+    x.scatter_fwd_begin();
+  for (auto& x : v)
+    x.scatter_fwd_end();
+
+  // Each vector must receive its own data, not another's
+  const double owner = 100.0 * ((mpi_rank + 1) % mpi_size);
+  for (int k = 0; k < num_vectors; ++k)
+  {
+    const std::vector<double>& x = v[k].array();
+    for (std::int32_t i = 0; i < num_ghosts; ++i)
+      CHECK(x[size_local + i] == owner + k);
+  }
+
+  // A forward and a reverse scatter overlap without an ordering
+  // constraint between them: they use different communicators.
+  std::ranges::fill(v[0].array(), 0.0);
+  std::ranges::fill_n(v[0].array().begin(), size_local, 7.0);
+  std::ranges::fill(v[1].array(), 0.0);
+  std::ranges::fill_n(std::next(v[1].array().begin(), size_local), num_ghosts,
+                      1.0);
+  // out[idx[i]] = out[idx[i]] + in[i]
+  auto unpack_add = [](std::vector<std::int32_t>::const_iterator idx_first,
+                       std::vector<std::int32_t>::const_iterator idx_last,
+                       const auto in_first, auto out_first)
+  {
+    for (auto idx = idx_first; idx != idx_last; ++idx)
+    {
+      std::size_t d = std::ranges::distance(idx_first, idx);
+      auto& out = *std::next(out_first, *idx);
+      out = out + *std::next(in_first, d);
+    }
+  };
+
+  v[0].scatter_fwd_begin();
+  v[1].scatter_rev_begin();
+  v[0].scatter_fwd_end();
+  v[1].scatter_rev_end(unpack_add);
+  for (std::int32_t i = 0; i < num_ghosts; ++i)
+    CHECK(v[0].array()[size_local + i] == 7.0);
+  if (mpi_size > 1)
+  {
+    // Rank r owns the indices ghosted by rank r - 1, three per rank
+    const std::vector<double>& x = v[1].array();
+    double received = 0;
+    for (std::int32_t i = 0; i < size_local; ++i)
+      received += x[i];
+    CHECK(received == static_cast<double>(num_ghosts));
+  }
+}
 } // namespace
 
 TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
@@ -313,4 +388,10 @@ TEST_CASE("IndexMap stats", "[index_map_stats]")
 TEST_CASE("IndexMap scatter pattern is shared", "[index_map_scatter_pattern]")
 {
   CHECK_NOTHROW(test_scatter_pattern_shared());
+}
+
+TEST_CASE("Overlapping scatters share a communicator",
+          "[index_map_scatter_overlap]")
+{
+  CHECK_NOTHROW(test_scatter_overlap());
 }
