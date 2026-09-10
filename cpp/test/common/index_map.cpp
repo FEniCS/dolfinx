@@ -314,6 +314,30 @@ void test_index_map_preconditions()
   CHECK(submap_to_map == valid_indices);
 }
 
+void test_compute_owned_indices()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  if (mpi_size == 1)
+  {
+    const common::IndexMap map(MPI_COMM_WORLD, 1);
+    const std::vector<std::int32_t> selected;
+    CHECK(common::compute_owned_indices(selected, map).empty());
+    return;
+  }
+
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  const int owner = (mpi_rank + 1) % mpi_size;
+  const std::vector<std::int64_t> ghosts = {owner};
+  const std::vector<int> owners = {owner};
+  const common::IndexMap map(MPI_COMM_WORLD, 1, ghosts, owners);
+
+  // Each rank selects its only ghost. Its predecessor therefore selects the
+  // local entry owned by this rank.
+  const std::vector<std::int32_t> selected = {1};
+  const std::vector<std::int32_t> expected = {0};
+  CHECK(common::compute_owned_indices(selected, map) == expected);
+}
+
 void test_local_global_index_conversion()
 {
   const common::IndexMap map(MPI_COMM_WORLD, 2);
@@ -372,6 +396,11 @@ TEST_CASE("IndexMap stats", "[index_map_stats]")
 TEST_CASE("IndexMap preconditions", "[index_map_preconditions]")
 {
   CHECK_NOTHROW(test_index_map_preconditions());
+}
+
+TEST_CASE("Compute owned IndexMap indices", "[index_map_owned_indices]")
+{
+  CHECK_NOTHROW(test_compute_owned_indices());
 }
 
 TEST_CASE("IndexMap local/global conversions", "[index_map_conversions]")

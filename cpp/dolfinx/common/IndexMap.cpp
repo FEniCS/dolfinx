@@ -638,7 +638,7 @@ compute_submap_ghost_indices(std::span<const int> submap_src,
                              std::span<const int> submap_dest,
                              std::span<const std::int32_t> submap_owned,
                              std::span<const std::int64_t> submap_ghosts_global,
-                             std::span<const std::int32_t> submap_ghost_owners,
+                             std::span<const int> submap_ghost_owners,
                              std::int64_t submap_offset, const IndexMap& imap)
 {
   // Send parent-map ghost indices to their submap owners.
@@ -720,11 +720,11 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
       "Indices must be sorted, unique, and in range.");
 #endif
 
-  std::span ghosts = map.ghosts();
-  std::vector<int> owners(map.owners().begin(), map.owners().end());
+  const std::span<const std::int64_t> ghosts = map.ghosts();
+  const std::span<const int> owners = map.owners();
 
   // Find first index that is not owned by this rank
-  std::int32_t size_local = map.size_local();
+  const std::int32_t size_local = map.size_local();
   const auto it_owned_end = std::ranges::lower_bound(indices, size_local);
 
   // Group ghost global indices by owner.
@@ -740,8 +740,8 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   }
   std::ranges::sort(owner_to_global);
 
-  std::span dest = map.dest();
-  std::span src = map.src();
+  const std::span<const int> dest = map.dest();
+  const std::span<const int> src = map.src();
 
   // Count ghosts per source rank
   std::vector<int> send_sizes(src.size(), 0);
