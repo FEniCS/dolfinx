@@ -260,10 +260,10 @@ public:
   /// @brief Compute global indices for local indices.
   ///
   /// @param[in] local Local indices in `[0, size_local() + num_ghosts())`.
-  /// @param[out] global Global indices. Must have the same size as `local`.
+  /// @param[out] global Global indices. Must have at least the size of `local`.
   /// @pre `local` is in range. This condition is checked in Developer builds;
   /// callers must ensure it in Release builds.
-  /// @throws std::invalid_argument If `local` and `global` differ in size.
+  /// @throws std::invalid_argument If `global` is smaller than `local`.
   /// @throws std::out_of_range If the `local` precondition is violated in a
   /// Developer build.
   void local_to_global(std::span<const std::int32_t> local,

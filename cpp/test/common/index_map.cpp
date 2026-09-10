@@ -357,12 +357,14 @@ void test_local_global_index_conversion()
   CHECK_THROWS_AS(map.local_to_global(local_out_of_range, global),
                   std::out_of_range);
 
-  // local_to_global and global_to_local both require exactly matching
-  // input and output sizes.
+  // local_to_global accepts a larger output buffer and leaves its tail
+  // unchanged.
   std::vector<std::int64_t> global_larger(3, -1);
-  CHECK_THROWS_AS(map.local_to_global(local_two, global_larger),
-                  std::invalid_argument);
+  map.local_to_global(local_two, global_larger);
+  const std::int64_t offset = map.local_range()[0];
+  CHECK(global_larger == std::vector<std::int64_t>{offset, offset + 1, -1});
 
+  // global_to_local requires exactly matching input and output sizes.
   std::vector<std::int32_t> local(1);
   const std::vector<std::int64_t> global_two = {0, 1};
   CHECK_THROWS_AS(map.global_to_local(global_two, local),

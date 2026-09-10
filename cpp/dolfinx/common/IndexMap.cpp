@@ -1033,10 +1033,10 @@ std::span<const std::int64_t> IndexMap::ghosts() const noexcept
 void IndexMap::local_to_global(std::span<const std::int32_t> local,
                                std::span<std::int64_t> global) const
 {
-  if (local.size() != global.size())
+  if (local.size() > global.size())
   {
     throw std::invalid_argument(
-        "Local and global index arrays must have the same size.");
+        "Global index array is smaller than the local index array.");
   }
   const std::int32_t local_size = _local_range[1] - _local_range[0];
 #ifndef NDEBUG

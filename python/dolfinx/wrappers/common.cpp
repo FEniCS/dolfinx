@@ -252,12 +252,6 @@ void common(nb::module_& m)
       [](const dolfinx::common::IndexMap& imap,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices)
       {
-        const std::int32_t size = imap.size_local() + imap.num_ghosts();
-        for (std::size_t i = 0; i < indices.size(); ++i)
-        {
-          if (indices.data()[i] < 0 or indices.data()[i] >= size)
-            throw std::runtime_error("Index out of range in indices array.");
-        }
         auto [map, submap_to_map, owners_changed]
             = dolfinx::common::create_sub_index_map(
                 imap, std::span(indices.data(), indices.size()),
@@ -268,8 +262,10 @@ void common(nb::module_& m)
             owners_changed);
       },
       nb::arg("index_map"), nb::arg("indices"),
-      "Create a sub-index map. Returns the new map, the corresponding "
-      "local indices in the parent map, and whether any index acquired a "
-      "new owner in the sub-map.");
+      "Create a sub-index map collectively. ``indices`` must contain unique "
+      "local indices in range. Returns the new map, the corresponding local "
+      "indices in the parent map, and a rank-local flag indicating whether "
+      "an index acquired a new owner. Reduce the flag across the communicator "
+      "before using it to make a collective control-flow decision.");
 }
 } // namespace dolfinx_wrappers
