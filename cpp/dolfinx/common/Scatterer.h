@@ -51,7 +51,10 @@ namespace dolfinx::common
 /// communicators, concurrent scatters in the same direction are matched
 /// in the order they are started, so every rank must start them in the
 /// same order. Starting them in a rank-dependent order silently
-/// delivers one scatter's data to another.
+/// delivers one scatter's data to another. A caller that cannot meet
+/// that requirement can opt out by constructing its own ScatterPattern
+/// from the IndexMap and passing it here, giving it a private pair of
+/// communicators.
 ///
 /// @tparam Container Container type for storing the 'local' and
 /// 'remote' indices. On CPUs this is normally

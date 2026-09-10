@@ -355,6 +355,38 @@ void test_scatter_overlap()
     CHECK(received == static_cast<double>(num_ghosts));
   }
 }
+void test_private_scatter_pattern()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+  auto map = std::make_shared<const common::IndexMap>(
+      create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3));
+  std::int32_t num_ghosts = map->num_ghosts();
+
+  std::shared_ptr<const common::ScatterPattern> shared = map->scatter_pattern();
+
+  // A caller that wants its scatters unordered with respect to every
+  // other scatter on this map can build a private pattern, and with it
+  // a private pair of communicators.
+  auto priv = std::make_shared<const common::ScatterPattern>(*map);
+  CHECK(priv.get() != shared.get());
+  if (mpi_size > 1)
+    CHECK(priv->comm0() != shared->comm0());
+
+  auto sct = std::make_shared<const common::Scatterer<>>(priv, 1);
+  la::Vector<double> v(map, 1, sct);
+
+  // The vector did not take the map's shared pattern
+  CHECK(shared.use_count() == 2);
+
+  // ... and scatters correctly on its own communicators
+  std::ranges::fill_n(v.array().begin(), size_local, 1.0 * mpi_rank);
+  v.scatter_fwd();
+  const double owner = static_cast<double>((mpi_rank + 1) % mpi_size);
+  for (std::int32_t i = 0; i < num_ghosts; ++i)
+    CHECK(v.array()[size_local + i] == owner);
+}
 } // namespace
 
 TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
@@ -394,4 +426,10 @@ TEST_CASE("Overlapping scatters share a communicator",
           "[index_map_scatter_overlap]")
 {
   CHECK_NOTHROW(test_scatter_overlap());
+}
+
+TEST_CASE("Opt out of the shared scatter pattern",
+          "[index_map_private_pattern]")
+{
+  CHECK_NOTHROW(test_private_scatter_pattern());
 }
