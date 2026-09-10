@@ -9,16 +9,13 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-import dolfinx
-from dolfinx import la, mesh
+from dolfinx import mesh
 
 
 @pytest.mark.parametrize("theta", [0.2, 0.4, 0.6, 0.8])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize(
-    "ghost_mode", [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet]
-)
-def test_mark_maximum(theta: float, dtype: np.dtype, ghost_mode: dolfinx.mesh.GhostMode) -> None:
+@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
+def test_mark_maximum(theta: float, dtype: np.dtype, ghost_mode: mesh.GhostMode) -> None:
     msh = mesh.create_unit_square(
         comm := MPI.COMM_WORLD, n := 10, n, dtype=dtype, ghost_mode=ghost_mode
     )
@@ -30,10 +27,7 @@ def test_mark_maximum(theta: float, dtype: np.dtype, ghost_mode: dolfinx.mesh.Gh
     marked_cells = mesh.mark_maximum(marker, im_c, theta)
 
     threshold = theta * comm.allreduce(np.max(marker), MPI.MAX)
-    assert np.allclose(
-        marked_cells,
-        np.argwhere(marker > threshold).flatten(),
-    )
+    assert np.allclose(marked_cells, np.argwhere(marker > threshold).flatten())
 
     msh.topology.create_entities(1)
     marked_edges = mesh.compute_incident_entities(msh.topology, marked_cells, tdim, 1)
