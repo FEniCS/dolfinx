@@ -16,6 +16,7 @@
 #include <mpi.h>
 #include <numeric>
 #include <span>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -275,15 +276,17 @@ public:
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
     {
-      impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, set_fn,
-                                 num_rows);
+      impl::insert_csr(_data, _cols, _row_ptr, x, rows, cols, set_fn, num_rows,
+                       std::integral_constant<int, BS0>{},
+                       std::integral_constant<int, BS1>{});
     }
     else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Set blocked data in a regular CSR matrix (_bs[0]=1, _bs[1]=1)
       // with correct sparsity
-      impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
-                                         set_fn, num_rows);
+      impl::insert_blocked_csr(_data, _cols, _row_ptr, x, rows, cols, set_fn,
+                               num_rows, std::integral_constant<int, BS0>{},
+                               std::integral_constant<int, BS1>{});
     }
     else
     {
@@ -316,24 +319,28 @@ public:
     check_not_finalized();
     auto add_fn = [](value_type& y, const value_type& x) { y += x; };
 
+    std::int32_t num_rows
+        = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts();
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
     {
-      impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, add_fn,
-                                 _row_ptr.size());
+      impl::insert_csr(_data, _cols, _row_ptr, x, rows, cols, add_fn, num_rows,
+                       std::integral_constant<int, BS0>{},
+                       std::integral_constant<int, BS1>{});
     }
     else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Add blocked data to a regular CSR matrix (_bs[0]=1, _bs[1]=1)
-      impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
-                                         add_fn, _row_ptr.size());
+      impl::insert_blocked_csr(_data, _cols, _row_ptr, x, rows, cols, add_fn,
+                               num_rows, std::integral_constant<int, BS0>{},
+                               std::integral_constant<int, BS1>{});
     }
     else
     {
       assert(BS0 == 1 and BS1 == 1);
       // Add non-blocked data to a blocked CSR matrix (BS0=1, BS1=1)
       impl::insert_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, add_fn,
-                                  _row_ptr.size(), _bs[0], _bs[1]);
+                                  num_rows, _bs[0], _bs[1]);
     }
   }
 
@@ -929,14 +936,12 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityType& p, BlockMode mode)
              and it->first == ghost_index_array[i + 1]);
       local_col = it->second;
     }
-    auto cit0 = std::next(_cols.begin(), _row_ptr[local_row]);
-    auto cit1 = std::next(_cols.begin(), _row_ptr[local_row + 1]);
-
     // Find position of column index and insert data
-    auto cit = std::lower_bound(cit0, cit1, local_col);
-    assert(cit != cit1);
-    assert(*cit == local_col);
-    std::size_t d = std::ranges::distance(_cols.begin(), cit);
+    std::size_t row_begin = _row_ptr[local_row];
+    std::size_t row_end = _row_ptr[local_row + 1];
+    std::size_t d = impl::csr_position(_cols, row_begin, row_end, local_col);
+    assert(d != row_end);
+    assert(_cols[d] == local_col);
     _unpack_pos.push_back(d);
   }
 
