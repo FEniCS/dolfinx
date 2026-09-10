@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/la/Vector.h>
 #include <format>
 #include <limits>
 #include <mpi.h>
@@ -60,7 +61,7 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
   }
 
   std::int32_t n = values.size();
- std::int32_t size = index_map.size_local() + index_map.num_ghosts();
+  std::int32_t size = index_map.size_local() + index_map.num_ghosts();
   if (n != size)
   {
     throw std::invalid_argument(
@@ -69,10 +70,9 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
                     size, n));
   }
 
-  T local_max
-      = index_map.size_local() == 0
-            ? std::numeric_limits<T>::lowest()
-            : std::ranges::max(values.first(index_map.size_local()));
+  T local_max = index_map.size_local() == 0
+                    ? std::numeric_limits<T>::lowest()
+                    : std::ranges::max(values.first(index_map.size_local()));
 
   T max = 0;
   MPI_Allreduce(&local_max, &max, 1, dolfinx::MPI::mpi_t<T>, MPI_MAX,
@@ -84,9 +84,6 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
 
   std::vector<std::int32_t> indices;
   indices.reserve(std::ranges::count_if(values, mark));
-  // TODO: replace with std::views::enumerate(values) once dolfinx targets
-  // C++23
-  // values includes ghosts
   for (std::int32_t i = 0; i < n; ++i)
   {
     if (mark(values[i]))
@@ -98,6 +95,14 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
                indices.size(), n);
 
   return indices;
+}
+
+template <std::floating_point T>
+std::vector<std::int32_t> mark_maximum(const dolfinx::la::Vector<T>& values,
+                                       std::type_identity_t<T> theta)
+{
+  return dolfinx::refinement::mark_maximum<T>(values.array(),
+                                              *values.index_map(), theta);
 }
 
 } // namespace dolfinx::refinement
