@@ -11,6 +11,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/math.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MPI.h
   ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/ScatterPattern.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Scatterer.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Table.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Timer.h
@@ -27,6 +28,7 @@ target_sources(
     log.cpp
     MPI.cpp
     petsc.cpp
+    ScatterPattern.cpp
     Table.cpp
     TimeLogger.cpp
     timing.cpp

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "MPI.h"
+#include "ScatterPattern.h"
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -256,6 +257,30 @@ public:
   /// The ranks are unique and sorted.
   std::span<const int> dest() const noexcept;
 
+  /// @brief Communication pattern for scattering data laid out
+  /// according to this index map.
+  ///
+  /// The pattern owns the two neighbourhood communicators used by
+  /// common::Scatterer. It is built on the first call and shared by
+  /// every subsequent caller, so a code that creates many la::Vector or
+  /// fem::Function objects over one index map creates one pair of
+  /// communicators, not one pair per object.
+  ///
+  /// Built on demand rather than in the constructor because most index
+  /// maps are never scattered: a refinement and assembly run measured
+  /// 20 index maps but needed 3 patterns, so building eagerly would
+  /// cost more communicators than the per-Vector patterns this replaces.
+  ///
+  /// @note Collective on comm() on the first call. Every rank must
+  /// reach the first call for a given index map in the same order,
+  /// which is the requirement that constructing a common::Scatterer
+  /// already imposes.
+  ///
+  /// @note Not thread safe.
+  ///
+  /// @return Communication pattern of this index map.
+  std::shared_ptr<const ScatterPattern> scatter_pattern() const;
+
   /// @brief Compute the number of ghost indices owned by each rank in
   /// IndexMap::src.
   ///
@@ -328,6 +353,9 @@ private:
 
   // Set of ranks ghost owned indices
   std::vector<int> _dest;
+
+  // Communication pattern, built on the first call to scatter_pattern()
+  mutable std::shared_ptr<const ScatterPattern> _scatter_pattern;
 };
 
 } // namespace dolfinx::common

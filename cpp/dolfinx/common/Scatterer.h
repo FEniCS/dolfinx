@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Igor Baratta and Garth N. Wells
+// Copyright (C) 2022-2026 Igor Baratta, Garth N. Wells and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,15 +8,17 @@
 
 #include "IndexMap.h"
 #include "MPI.h"
-#include "sort.h"
+#include "ScatterPattern.h"
 #include <algorithm>
-#include <concepts>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <mpi.h>
-#include <numeric>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::common
@@ -38,6 +40,11 @@ namespace dolfinx::common
 /// requests. Callers of the a Scatterer's members are responsible for
 /// managing buffer and MPI request handles.
 ///
+/// A Scatterer is a block size-specific view onto a ScatterPattern that
+/// is owned by the IndexMap. Scatterers built from one IndexMap share
+/// that pattern, and with it the neighbourhood communicators, whatever
+/// their block size or index container type.
+///
 /// @tparam Container Container type for storing the 'local' and
 /// 'remote' indices. On CPUs this is normally
 /// `std::vector<std::int32_t>`. For GPUs the container should store the
@@ -55,146 +62,52 @@ public:
   /// Container type used to store local and remote indices.
   using container_type = Container;
 
+  /// @brief Create a scatterer for data with a layout described by a
+  /// communication pattern and a block size.
+  ///
+  /// No MPI communication is performed; the pattern holds everything
+  /// that requires it.
+  ///
+  /// @param[in] pattern Communication pattern of the index map that
+  /// describes the parallel layout of the data.
+  /// @param[in] bs Number of values associated with each index map
+  /// index (the block size).
+  Scatterer(std::shared_ptr<const ScatterPattern> pattern, int bs)
+      : _pattern(std::move(pattern)),
+        _sizes_remote(_pattern->sizes_remote().begin(),
+                      _pattern->sizes_remote().end()),
+        _displs_remote(_pattern->displs_remote().begin(),
+                       _pattern->displs_remote().end()),
+        _sizes_local(_pattern->sizes_local().begin(),
+                     _pattern->sizes_local().end()),
+        _displs_local(_pattern->displs_local().begin(),
+                      _pattern->displs_local().end())
+  {
+    // Scale sizes and displacements by the block size
+    for (auto& x : {std::ref(_sizes_local), std::ref(_displs_local),
+                    std::ref(_sizes_remote), std::ref(_displs_remote)})
+    {
+      std::ranges::transform(x.get(), x.get().begin(),
+                             [bs](auto e) { return e * bs; });
+    }
+
+    // Expand the pattern's indices by the block size
+    _local_inds = expand(_pattern->local_indices(), bs);
+    _remote_inds = expand(_pattern->perm(), bs);
+  }
+
   /// @brief Create a scatterer for data with a layout described by an
   /// IndexMap and a block size.
+  ///
+  /// @note Collective on `map.comm()` if `map` has not yet built its
+  /// communication pattern. See IndexMap::scatter_pattern.
   ///
   /// @param[in] map Index map that describes the parallel layout of
   /// data.
   /// @param[in] bs Number of values associated with each `map` index
   /// (the block size).
-  Scatterer(const IndexMap& map, int bs)
-      : _src(map.src().begin(), map.src().end()),
-        _dest(map.dest().begin(), map.dest().end()),
-        _sizes_remote(_src.size(), 0), _displs_remote(_src.size() + 1),
-        _sizes_local(_dest.size()), _displs_local(_dest.size() + 1)
+  Scatterer(const IndexMap& map, int bs) : Scatterer(map.scatter_pattern(), bs)
   {
-    if (dolfinx::MPI::size(map.comm()) == 1)
-      return;
-
-    int ierr;
-
-    // Check that src and dest ranks are unique and sorted
-    assert(std::ranges::is_sorted(_src));
-    assert(std::ranges::is_sorted(_dest));
-
-    // Create communicators with directed edges:
-    // (0) owner -> ghost,
-    // (1) ghost -> owner
-    MPI_Comm comm0;
-    ierr = MPI_Dist_graph_create_adjacent(
-        map.comm(), _src.size(), _src.data(), MPI_UNWEIGHTED, _dest.size(),
-        _dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-    _comm0 = dolfinx::MPI::Comm(comm0, false);
-    dolfinx::MPI::check_error(map.comm(), ierr);
-
-    MPI_Comm comm1;
-    ierr = MPI_Dist_graph_create_adjacent(
-        map.comm(), _dest.size(), _dest.data(), MPI_UNWEIGHTED, _src.size(),
-        _src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
-    _comm1 = dolfinx::MPI::Comm(comm1, false);
-    dolfinx::MPI::check_error(map.comm(), ierr);
-
-    // Build permutation array that sorts ghost indices by owning rank
-    std::span owners = map.owners();
-    std::vector<std::int32_t> perm(owners.size());
-    std::iota(perm.begin(), perm.end(), 0);
-    dolfinx::radix_sort(perm, [&owners](auto index) { return owners[index]; });
-
-    // Sort (i) ghost indices and (ii) ghost index owners by rank
-    // (using perm array)
-    std::span ghosts = map.ghosts();
-    std::vector<int> owners_sorted(owners.size());
-    std::vector<std::int64_t> ghosts_sorted(owners.size());
-    std::ranges::transform(perm, owners_sorted.begin(),
-                           [&owners](auto idx) { return owners[idx]; });
-    std::ranges::transform(perm, ghosts_sorted.begin(),
-                           [&ghosts](auto idx) { return ghosts[idx]; });
-
-    // For data associated with ghost indices, packed by owning
-    // (neighbourhood) rank, compute sizes and displacements. I.e., when
-    // sending ghost index data from this rank to the owning ranks,
-    // disp[i] is the first entry in the buffer sent to neighbourhood
-    // rank i, and disp[i + 1] - disp[i] is the number of values sent to
-    // rank i.
-    assert(_sizes_remote.size() == _src.size());
-    assert(_displs_remote.size() == _src.size() + 1);
-    auto begin = owners_sorted.begin();
-    for (std::size_t i = 0; i < _src.size(); i++)
-    {
-      auto upper = std::upper_bound(begin, owners_sorted.end(), _src[i]);
-      std::size_t num_ind = std::ranges::distance(begin, upper);
-      _displs_remote[i + 1] = _displs_remote[i] + num_ind;
-      _sizes_remote[i] = num_ind;
-      begin = upper;
-    }
-
-    // For data associated with owned indices that are ghosted by other
-    // ranks, compute the size and displacement arrays. When sending
-    // data associated with ghost indices to the owner, these size and
-    // displacement arrays are for the receive buffer.
-
-    // Compute sizes and displacements of local data (how many local
-    // elements to be sent/received grouped by neighbors)
-    assert(_sizes_local.size() == _dest.size());
-    assert(_displs_local.size() == _dest.size() + 1);
-    _sizes_remote.reserve(1);
-    _sizes_local.reserve(1);
-    ierr = MPI_Neighbor_alltoall(_sizes_remote.data(), 1, MPI_INT32_T,
-                                 _sizes_local.data(), 1, MPI_INT32_T,
-                                 _comm1.comm());
-    dolfinx::MPI::check_error(_comm1.comm(), ierr);
-
-    std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
-                     std::next(_displs_local.begin()));
-
-    assert(static_cast<int>(ghosts_sorted.size()) == _displs_remote.back());
-
-    // Send ghost global indices to owning rank, and receive owned
-    // indices that are ghosts on other ranks
-    std::vector<std::int64_t> recv_buffer(_displs_local.back(), 0);
-    ierr = MPI_Neighbor_alltoallv(
-        ghosts_sorted.data(), _sizes_remote.data(), _displs_remote.data(),
-        MPI_INT64_T, recv_buffer.data(), _sizes_local.data(),
-        _displs_local.data(), MPI_INT64_T, _comm1.comm());
-    dolfinx::MPI::check_error(_comm1.comm(), ierr);
-
-    const std::array<std::int64_t, 2> range = map.local_range();
-#ifndef NDEBUG
-    // Check that all received indice are within the owned range
-    std::ranges::for_each(recv_buffer, [range](auto idx)
-                          { assert(idx >= range[0] and idx < range[1]); });
-#endif
-
-    {
-      // Scale sizes and displacements by block size
-      for (auto& x : {std::ref(_sizes_local), std::ref(_displs_local),
-                      std::ref(_sizes_remote), std::ref(_displs_remote)})
-      {
-        std::ranges::transform(x.get(), x.get().begin(),
-                               [bs](auto e) { return e * bs; });
-      }
-    }
-
-    {
-      // Expand local indices using block size and convert it from
-      // global to local numbering
-      std::vector<typename container_type::value_type> idx(recv_buffer.size()
-                                                           * bs);
-      std::int64_t offset = range[0] * bs;
-      for (std::size_t i = 0; i < recv_buffer.size(); i++)
-        for (int j = 0; j < bs; j++)
-          idx[i * bs + j] = (recv_buffer[i] * bs + j) - offset;
-      _local_inds = std::move(idx);
-    }
-
-    {
-      // Expand remote indices using block size
-      std::vector<typename container_type::value_type> idx(perm.size() * bs);
-      for (std::size_t i = 0; i < perm.size(); i++)
-        for (int j = 0; j < bs; j++)
-          idx[i * bs + j] = perm[i] * bs + j;
-      _remote_inds = std::move(idx);
-    }
   }
 
   /// @brief Copy constructor
@@ -215,7 +128,7 @@ public:
   /// @param s Scatterer to copy
   template <class U>
   Scatterer(const Scatterer<U>& s)
-      : _comm0(s._comm0), _comm1(s._comm1), _src(s._src), _dest(s._dest),
+      : _pattern(s._pattern),
         _remote_inds(s._remote_inds.begin(), s._remote_inds.end()),
         _sizes_remote(s._sizes_remote), _displs_remote(s._displs_remote),
         _local_inds(s._local_inds.begin(), s._local_inds.end()),
@@ -259,8 +172,9 @@ public:
     int ierr = MPI_Ineighbor_alltoallv(
         send_buffer, _sizes_local.data(), _displs_local.data(),
         dolfinx::MPI::mpi_t<T>, recv_buffer, _sizes_remote.data(),
-        _displs_remote.data(), dolfinx::MPI::mpi_t<T>, _comm0.comm(), &request);
-    dolfinx::MPI::check_error(_comm0.comm(), ierr);
+        _displs_remote.data(), dolfinx::MPI::mpi_t<T>, _pattern->comm0(),
+        &request);
+    dolfinx::MPI::check_error(_pattern->comm0(), ierr);
   }
 
   /// @brief Start a non-blocking send of owned data to ranks that ghost
@@ -280,7 +194,9 @@ public:
   void scatter_fwd_begin(const T* send_buffer, T* recv_buffer,
                          std::span<MPI_Request> requests) const
   {
-    if (requests.size() != _dest.size() + _src.size())
+    std::span<const int> src = _pattern->src();
+    std::span<const int> dest = _pattern->dest();
+    if (requests.size() != dest.size() + src.size())
     {
       throw std::runtime_error(
           "Point-to-point scatterer has wrong number of MPI_Requests.");
@@ -290,20 +206,21 @@ public:
     if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
-    for (std::size_t i = 0; i < _src.size(); ++i)
+    MPI_Comm comm = _pattern->comm0();
+    for (std::size_t i = 0; i < src.size(); ++i)
     {
       int ierr = MPI_Irecv(recv_buffer + _displs_remote[i], _sizes_remote[i],
-                           dolfinx::MPI::mpi_t<T>, _src[i], MPI_ANY_TAG,
-                           _comm0.comm(), &requests[i]);
-      dolfinx::MPI::check_error(_comm0.comm(), ierr);
+                           dolfinx::MPI::mpi_t<T>, src[i], MPI_ANY_TAG, comm,
+                           &requests[i]);
+      dolfinx::MPI::check_error(comm, ierr);
     }
 
-    for (std::size_t i = 0; i < _dest.size(); ++i)
+    for (std::size_t i = 0; i < dest.size(); ++i)
     {
       int ierr = MPI_Isend(send_buffer + _displs_local[i], _sizes_local[i],
-                           dolfinx::MPI::mpi_t<T>, _dest[i], 0, _comm0.comm(),
-                           &requests[i + _src.size()]);
-      dolfinx::MPI::check_error(_comm0.comm(), ierr);
+                           dolfinx::MPI::mpi_t<T>, dest[i], 0, comm,
+                           &requests[i + src.size()]);
+      dolfinx::MPI::check_error(comm, ierr);
     }
   }
 
@@ -344,8 +261,9 @@ public:
     int ierr = MPI_Ineighbor_alltoallv(
         send_buffer, _sizes_remote.data(), _displs_remote.data(),
         dolfinx::MPI::mpi_t<T>, recv_buffer, _sizes_local.data(),
-        _displs_local.data(), dolfinx::MPI::mpi_t<T>, _comm1.comm(), &request);
-    dolfinx::MPI::check_error(_comm1.comm(), ierr);
+        _displs_local.data(), dolfinx::MPI::mpi_t<T>, _pattern->comm1(),
+        &request);
+    dolfinx::MPI::check_error(_pattern->comm1(), ierr);
   }
 
   /// @brief Start a non-blocking send of ghost data to ranks that own
@@ -365,7 +283,9 @@ public:
   void scatter_rev_begin(const T* send_buffer, T* recv_buffer,
                          std::span<MPI_Request> requests) const
   {
-    if (requests.size() != _dest.size() + _src.size())
+    std::span<const int> src = _pattern->src();
+    std::span<const int> dest = _pattern->dest();
+    if (requests.size() != dest.size() + src.size())
     {
       throw std::runtime_error(
           "Point-to-point scatterer has wrong number of MPI_Requests.");
@@ -376,22 +296,23 @@ public:
       return;
 
     // Start non-blocking send from this process to ghost owners
-    for (std::size_t i = 0; i < _dest.size(); i++)
+    MPI_Comm comm = _pattern->comm0();
+    for (std::size_t i = 0; i < dest.size(); i++)
     {
       int ierr = MPI_Irecv(recv_buffer + _displs_local[i], _sizes_local[i],
-                           dolfinx::MPI::mpi_t<T>, _dest[i], MPI_ANY_TAG,
-                           _comm0.comm(), &requests[i]);
-      dolfinx::MPI::check_error(_comm0.comm(), ierr);
+                           dolfinx::MPI::mpi_t<T>, dest[i], MPI_ANY_TAG, comm,
+                           &requests[i]);
+      dolfinx::MPI::check_error(comm, ierr);
     }
 
     // Start non-blocking receive from neighbor process for which an
     // owned index is a ghost
-    for (std::size_t i = 0; i < _src.size(); i++)
+    for (std::size_t i = 0; i < src.size(); i++)
     {
       int ierr = MPI_Isend(send_buffer + _displs_remote[i], _sizes_remote[i],
-                           dolfinx::MPI::mpi_t<T>, _src[i], 0, _comm0.comm(),
-                           &requests[i + _dest.size()]);
-      dolfinx::MPI::check_error(_comm0.comm(), ierr);
+                           dolfinx::MPI::mpi_t<T>, src[i], 0, comm,
+                           &requests[i + dest.size()]);
+      dolfinx::MPI::check_error(comm, ierr);
     }
   }
 
@@ -490,31 +411,25 @@ public:
   /// @return Number of required MPI request handles.
   std::size_t num_p2p_requests() const noexcept
   {
-    return _dest.size() + _src.size();
+    return _pattern->dest().size() + _pattern->src().size();
   }
 
 private:
-  // Communicator where the source ranks own the indices in the callers
-  // halo, and the destination ranks 'ghost' indices owned by the
-  // caller. I.e.,
-  // - in-edges (src) are from ranks that own my ghosts
-  // - out-edges (dest) go to ranks that 'ghost' my owned indices
-  dolfinx::MPI::Comm _comm0{MPI_COMM_NULL};
+  // Expand indices by the block size, i.e. index i becomes the bs
+  // indices [i * bs, (i + 1) * bs)
+  static std::vector<typename container_type::value_type>
+  expand(std::span<const std::int32_t> indices, int bs)
+  {
+    std::vector<typename container_type::value_type> idx(indices.size() * bs);
+    for (std::size_t i = 0; i < indices.size(); i++)
+      for (int j = 0; j < bs; j++)
+        idx[i * bs + j] = indices[i] * bs + j;
+    return idx;
+  }
 
-  // Communicator where the source ranks have ghost indices that are
-  // owned by the caller, and the destination ranks are the owners of
-  // indices in the callers halo region. I.e.,
-  // - in-edges (src) are from ranks that 'ghost' my owned indices
-  // - out-edges (dest) are to the owning ranks of my ghost indices
-  dolfinx::MPI::Comm _comm1{MPI_COMM_NULL};
-
-  // Set of ranks that own ghosts
-  // FIXME: Should we store the index map instead?
-  std::vector<int> _src;
-
-  // Set of ranks ghost owned indices
-  // FIXME: Should we store the index map instead?
-  std::vector<int> _dest;
+  // Block size-independent communication pattern, shared with every
+  // other Scatterer built from the same IndexMap
+  std::shared_ptr<const ScatterPattern> _pattern;
 
   // Permutation indices used to pack and unpack ghost data (remote)
   container_type _remote_inds;

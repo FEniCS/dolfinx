@@ -9,9 +9,12 @@
 #include <catch2/generators/catch_generators.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/ScatterPattern.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/utils.h>
+#include <dolfinx/la/Vector.h>
 #include <iostream>
+#include <memory>
 #include <numeric>
 #include <set>
 #include <vector>
@@ -231,6 +234,52 @@ void test_rank_weights()
     REQUIRE(weight_dest.empty());
   }
 }
+void test_scatter_pattern_shared()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+  auto map = std::make_shared<const common::IndexMap>(
+      create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3));
+
+  // The pattern is built once and returned to every subsequent caller
+  std::shared_ptr<const common::ScatterPattern> pattern
+      = map->scatter_pattern();
+  CHECK(pattern.get() == map->scatter_pattern().get());
+  CHECK(pattern.use_count() == 2);
+
+  // Scatterers share the pattern, whatever their block size or index
+  // container type. Two neighbourhood communicators are created for the
+  // index map, not two per Scatterer.
+  {
+    common::Scatterer<std::vector<std::int32_t>> sct0(*map, 1);
+    common::Scatterer<std::vector<std::int32_t>> sct1(*map, 3);
+    CHECK(pattern.use_count() == 4);
+
+    // The cast-copy constructor shares the pattern rather than
+    // duplicating the communicators
+    common::Scatterer<std::vector<std::int64_t>> sct2(sct0);
+    CHECK(pattern.use_count() == 5);
+  }
+  CHECK(pattern.use_count() == 2);
+
+  // A code that creates many vectors over one index map creates no
+  // extra communicators. This is the regression test for
+  // https://github.com/FEniCS/dolfinx/issues/3065.
+  {
+    constexpr int num_vectors = 16;
+    std::vector<la::Vector<double>> vectors;
+    vectors.reserve(num_vectors);
+    for (int i = 0; i < num_vectors; ++i)
+      vectors.emplace_back(map, 2);
+    CHECK(pattern.use_count() == 2 + num_vectors);
+
+    // Cloning a layout shares the scatterer, so does not add a
+    // reference to the pattern
+    la::Vector<std::int8_t> marks = vectors.front().clone_layout<std::int8_t>();
+    CHECK(pattern.use_count() == 2 + num_vectors);
+  }
+  CHECK(pattern.use_count() == 2);
+}
 } // namespace
 
 TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
@@ -259,4 +308,9 @@ TEST_CASE("Split IndexMap communicator by type", "[index_map_comm_split]")
 TEST_CASE("IndexMap stats", "[index_map_stats]")
 {
   CHECK_NOTHROW(test_rank_weights());
+}
+
+TEST_CASE("IndexMap scatter pattern is shared", "[index_map_scatter_pattern]")
+{
+  CHECK_NOTHROW(test_scatter_pattern_shared());
 }
