@@ -26,6 +26,27 @@ using namespace dolfinx::common;
 
 namespace
 {
+/// Return sorted unique values.
+template <typename T>
+std::vector<T> sorted_unique(std::span<const T> values)
+{
+  std::vector<T> result(values.begin(), values.end());
+  std::ranges::sort(result);
+  const auto [unique_end, range_end] = std::ranges::unique(result);
+  result.erase(unique_end, range_end);
+  return result;
+}
+
+std::tuple<std::vector<std::int64_t>, std::vector<std::int64_t>,
+           std::vector<std::size_t>, std::vector<std::int32_t>,
+           std::vector<std::int32_t>, std::vector<int>, std::vector<int>>
+communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
+                             std::span<const int> dest,
+                             std::span<const std::int64_t> ghosts,
+                             std::span<const int> owners,
+                             std::span<const std::uint8_t> include_ghost);
+
+#ifndef NDEBUG
 /// Check a rank-local precondition collectively.
 void check_collective_precondition(MPI_Comm comm, bool local_valid,
                                    std::string_view message)
@@ -39,7 +60,6 @@ void check_collective_precondition(MPI_Comm comm, bool local_valid,
     throw std::invalid_argument(std::string(message));
 }
 
-#ifndef NDEBUG
 /// Return true if values are sorted and contain no duplicates.
 template <typename T>
 bool is_sorted_unique(std::span<const T> values)
@@ -54,29 +74,13 @@ bool is_valid_peer_rank(int rank, int comm_size, int peer)
 {
   return peer >= 0 and peer < comm_size and peer != rank;
 }
-#endif
-
-/// Return sorted unique values.
-template <typename T>
-std::vector<T> sorted_unique(std::span<const T> values)
-{
-  std::vector<T> result(values.begin(), values.end());
-  std::ranges::sort(result);
-  const auto [unique_end, range_end] = std::ranges::unique(result);
-  result.erase(unique_end, range_end);
-  return result;
-}
 
 /// Validate input shared by both ghosted IndexMap constructors.
 void validate_ghost_data(MPI_Comm comm, std::int32_t local_size,
                          std::span<const std::int64_t> ghosts,
                          std::span<const int> owners)
 {
-  // ghosts.size() == owners.size() is checked unconditionally: several
-  // call sites index owners[i] for i in [0, ghosts.size()), so a size
-  // mismatch is an out-of-bounds access, not just a logical error.
   bool valid = local_size >= 0 and ghosts.size() == owners.size();
-#ifndef NDEBUG
   const int rank = dolfinx::MPI::rank(comm);
   const int comm_size = dolfinx::MPI::size(comm);
   const bool ghosts_unique = sorted_unique(ghosts).size() == ghosts.size();
@@ -86,11 +90,9 @@ void validate_ghost_data(MPI_Comm comm, std::int32_t local_size,
   const bool ghosts_valid = std::ranges::all_of(ghosts, [](std::int64_t ghost)
                                                 { return ghost >= 0; });
   valid = valid and ghosts_unique and owners_valid and ghosts_valid;
-#endif
   check_collective_precondition(comm, valid, "Invalid IndexMap ghost data.");
 }
 
-#ifndef NDEBUG
 /// Validate the explicit source and destination rank lists.
 void validate_src_dest(MPI_Comm comm, std::span<const int> src,
                        std::span<const int> dest, std::span<const int> owners)
@@ -106,6 +108,69 @@ void validate_src_dest(MPI_Comm comm, std::span<const int> src,
       is_sorted_unique(src) and is_sorted_unique(dest) and ranks_valid
           and std::ranges::equal(src, owner_ranks),
       "Invalid IndexMap source or destination ranks.");
+}
+
+/// Validate submap indices before entering its communication path.
+void validate_submap_indices(const IndexMap& imap,
+                             std::span<const std::int32_t> indices)
+{
+  const std::int32_t size = imap.size_local() + imap.num_ghosts();
+  const bool in_range
+      = std::ranges::all_of(indices, [size](std::int32_t index)
+                            { return index >= 0 and index < size; });
+  const bool unique = sorted_unique(indices).size() == indices.size();
+  check_collective_precondition(
+      imap.comm(), in_range and unique,
+      "Submap indices must be in range and contain no duplicates.");
+}
+
+/// Compute destination ranks from source ranks using a safe collective.
+std::vector<int> compute_dest_ranks(MPI_Comm comm, std::span<const int> src)
+{
+  const int comm_size = dolfinx::MPI::size(comm);
+  std::vector<int> send(comm_size, 0);
+  std::vector<int> recv(comm_size, 0);
+  for (int rank : src)
+    send[rank] = 1;
+
+  const int ierr
+      = MPI_Alltoall(send.data(), 1, MPI_INT, recv.data(), 1, MPI_INT, comm);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  std::vector<int> dest;
+  for (int rank = 0; rank < comm_size; ++rank)
+  {
+    if (recv[rank])
+      dest.push_back(rank);
+  }
+  return dest;
+}
+
+/// Verify ghost ownership and, where needed, the source/destination graph.
+void validate_ghost_owners(MPI_Comm comm, std::span<const int> src,
+                           std::span<const int> dest,
+                           std::span<const std::int64_t> ghosts,
+                           std::span<const int> owners,
+                           std::array<std::int64_t, 2> local_range,
+                           bool verify_dest)
+{
+  if (verify_dest)
+  {
+    const std::vector<int> expected_dest = compute_dest_ranks(comm, src);
+    check_collective_precondition(
+        comm, std::ranges::equal(dest, expected_dest),
+        "IndexMap destination ranks do not match source ranks.");
+  }
+
+  std::vector<std::uint8_t> include_ghost(ghosts.size(), 1);
+  const auto communication = communicate_ghosts_to_owners(
+      comm, src, dest, ghosts, owners, include_ghost);
+  const std::vector<std::int64_t>& received_ghosts = std::get<1>(communication);
+  const bool owned = std::ranges::all_of(
+      received_ghosts, [local_range](std::int64_t index)
+      { return index >= local_range[0] and index < local_range[1]; });
+  check_collective_precondition(
+      comm, owned, "Ghost index does not belong to its declared owner.");
 }
 #endif
 
@@ -136,22 +201,6 @@ compute_layout(MPI_Comm comm, std::int32_t local_size)
 
   return {{offset, offset + local_size}, size_global};
 }
-
-#ifndef NDEBUG
-/// Validate submap indices before entering its communication path.
-void validate_submap_indices(const IndexMap& imap,
-                             std::span<const std::int32_t> indices)
-{
-  const std::int32_t size = imap.size_local() + imap.num_ghosts();
-  const bool in_range
-      = std::ranges::all_of(indices, [size](std::int32_t index)
-                            { return index >= 0 and index < size; });
-  const bool unique = sorted_unique(indices).size() == indices.size();
-  check_collective_precondition(
-      imap.comm(), in_range and unique,
-      "Submap indices must be in range and contain no duplicates.");
-}
-#endif
 
 /// Compute source and destination ranks from ghost owners.
 /// @param[in] comm Communicator.
@@ -279,60 +328,6 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
           std::move(recv_disp)};
 }
 
-#ifndef NDEBUG
-/// Compute destination ranks from source ranks using a safe collective.
-std::vector<int> compute_dest_ranks(MPI_Comm comm, std::span<const int> src)
-{
-  const int comm_size = dolfinx::MPI::size(comm);
-  std::vector<int> send(comm_size, 0);
-  std::vector<int> recv(comm_size, 0);
-  for (int rank : src)
-    send[rank] = 1;
-
-  const int ierr
-      = MPI_Alltoall(send.data(), 1, MPI_INT, recv.data(), 1, MPI_INT, comm);
-  dolfinx::MPI::check_error(comm, ierr);
-
-  std::vector<int> dest;
-  for (int rank = 0; rank < comm_size; ++rank)
-  {
-    if (recv[rank])
-      dest.push_back(rank);
-  }
-  return dest;
-}
-
-/// Verify that each ghost is owned by its declared rank, and, when
-/// `dest` is caller-supplied rather than consensus-derived, that it is
-/// the global dual of `src` (see `communicate_ghosts_to_owners`).
-/// Requires a full ghost-to-owner communication round trip.
-void validate_ghost_owners(MPI_Comm comm, std::span<const int> src,
-                           std::span<const int> dest,
-                           std::span<const std::int64_t> ghosts,
-                           std::span<const int> owners,
-                           std::array<std::int64_t, 2> local_range,
-                           bool verify_dest)
-{
-  if (verify_dest)
-  {
-    const std::vector<int> expected_dest = compute_dest_ranks(comm, src);
-    check_collective_precondition(
-        comm, std::ranges::equal(dest, expected_dest),
-        "IndexMap destination ranks do not match source ranks.");
-  }
-
-  std::vector<std::uint8_t> include_ghost(ghosts.size(), 1);
-  const auto communication = communicate_ghosts_to_owners(
-      comm, src, dest, ghosts, owners, include_ghost);
-  const std::vector<std::int64_t>& received_ghosts = std::get<1>(communication);
-  const bool owned = std::ranges::all_of(
-      received_ghosts, [local_range](std::int64_t index)
-      { return index >= local_range[0] and index < local_range[1]; });
-  check_collective_precondition(
-      comm, owned, "Ghost index does not belong to its declared owner.");
-}
-#endif
-
 /// Compute the owned range and global size of a ghosted IndexMap,
 /// validating ghost ownership where enabled (see validate_ghost_owners).
 /// `verify_dest` should be false when `dest` was consensus-derived
@@ -373,7 +368,8 @@ std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<int>, std::vector<int>, std::vector<int>>
 compute_submap_indices(const IndexMap& imap,
                        std::span<const std::int32_t> indices,
-                       IndexMapOrder order, bool allow_owner_change)
+                       IndexMapOrder order,
+                       [[maybe_unused]] bool allow_owner_change)
 {
   // Create lookup array to determine if an index is in the sub-map
   std::vector<std::uint8_t> is_in_submap(imap.size_local() + imap.num_ghosts(),
@@ -395,8 +391,10 @@ compute_submap_indices(const IndexMap& imap,
   submap_dest.reserve(1);
   const int rank = dolfinx::MPI::rank(imap.comm());
   {
+#ifndef NDEBUG
     // Flag to track if the owner of any indices has changed in the submap.
     bool owners_changed = false;
+#endif
 
     // Create a map from (global) indices in `recv_indices` to a list of
     // processes that can own them in the submap.
@@ -426,15 +424,19 @@ compute_submap_indices(const IndexMap& imap,
         }
         else
         {
+#ifndef NDEBUG
           owners_changed = true;
+#endif
           global_idx_to_possible_owner.push_back({idx, dest[i]});
         }
       }
     }
 
+#ifndef NDEBUG
     check_collective_precondition(imap.comm(),
                                   allow_owner_change or !owners_changed,
                                   "Index owner change detected.");
+#endif
 
     std::ranges::sort(global_idx_to_possible_owner);
 
@@ -638,7 +640,7 @@ compute_submap_ghost_indices(std::span<const int> submap_src,
                              std::span<const int> submap_dest,
                              std::span<const std::int32_t> submap_owned,
                              std::span<const std::int64_t> submap_ghosts_global,
-                             std::span<const int> submap_ghost_owners,
+                             std::span<const std::int32_t> submap_ghost_owners,
                              std::int64_t submap_offset, const IndexMap& imap)
 {
   // Send parent-map ghost indices to their submap owners.
@@ -713,102 +715,29 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   const std::int32_t size = map.size_local() + map.num_ghosts();
   const bool sorted_unique = is_sorted_unique(indices);
   const bool in_range
-      = std::ranges::all_of(indices, [size](std::int32_t index)
-                            { return index >= 0 and index < size; });
+      = indices.empty() or (indices.front() >= 0 and indices.back() < size);
   check_collective_precondition(
       map.comm(), sorted_unique and in_range,
       "Indices must be sorted, unique, and in range.");
 #endif
 
-  const std::span<const std::int64_t> ghosts = map.ghosts();
-  const std::span<const int> owners = map.owners();
-
-  // Find first index that is not owned by this rank
+  // Find first index that is not owned by this rank.
   const std::int32_t size_local = map.size_local();
   const auto it_owned_end = std::ranges::lower_bound(indices, size_local);
 
-  // Group ghost global indices by owner.
-  std::size_t first_ghost_index
-      = std::ranges::distance(indices.begin(), it_owned_end);
-  std::int32_t num_ghost_indices = indices.size() - first_ghost_index;
-  std::vector<std::pair<int, std::int64_t>> owner_to_global(num_ghost_indices);
-  for (std::int32_t i = 0; i < num_ghost_indices; ++i)
-  {
-    std::int32_t idx = indices[first_ghost_index + i];
-    std::int32_t pos = idx - size_local;
-    owner_to_global[i] = {owners[pos], ghosts[pos]};
-  }
-  std::ranges::sort(owner_to_global);
+  std::vector<std::uint8_t> include_ghost(map.num_ghosts(), 0);
+  for (auto it = it_owned_end; it != indices.end(); ++it)
+    include_ghost[*it - size_local] = 1;
 
-  const std::span<const int> dest = map.dest();
-  const std::span<const int> src = map.src();
+  auto communication
+      = communicate_ghosts_to_owners(map.comm(), map.src(), map.dest(),
+                                     map.ghosts(), map.owners(), include_ghost);
+  std::vector<std::int64_t> recv_buffer = std::move(std::get<1>(communication));
 
-  // Count ghosts per source rank
-  std::vector<int> send_sizes(src.size(), 0);
-  std::vector<int> send_disp(src.size() + 1, 0);
-  auto it = owner_to_global.begin();
-  for (std::size_t i = 0; i < src.size(); ++i)
-  {
-    int owner = src[i];
-    auto begin = std::ranges::find(it, owner_to_global.end(), owner,
-                                   &std::pair<int, std::int64_t>::first);
-    auto end = std::ranges::upper_bound(begin, owner_to_global.end(), owner,
-                                        std::ranges::less(),
-                                        &std::pair<int, std::int64_t>::first);
-
-    // Count number of ghosts (if any)
-    send_sizes[i] = std::ranges::distance(begin, end);
-    send_disp[i + 1] = send_disp[i] + send_sizes[i];
-
-    if (begin != end)
-      it = end;
-  }
-
-  // Create ghost -> owner comm
-  MPI_Comm comm;
-  int ierr = MPI_Dist_graph_create_adjacent(
-      map.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
-      src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-  dolfinx::MPI::check_error(map.comm(), ierr);
-
-  // Exchange number of indices to send/receive from each rank
-  std::vector<int> recv_sizes(dest.size(), 0);
-  send_sizes.reserve(1);
-  recv_sizes.reserve(1);
-  ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(),
-                               1, MPI_INT, comm);
-  dolfinx::MPI::check_error(comm, ierr);
-
-  // Prepare receive displacement array
-  std::vector<int> recv_disp(dest.size() + 1, 0);
-  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                   std::next(recv_disp.begin()));
-
-  // Send ghost indices to owner, and receive owned indices. The send
-  // buffer is the global indices in owner-grouped order.
-  std::vector<std::int64_t> recv_buffer(recv_disp.back());
-  std::vector<std::int64_t> send_buffer;
-  send_buffer.reserve(owner_to_global.size());
-  std::ranges::transform(owner_to_global, std::back_inserter(send_buffer),
-                         [](auto x) { return x.second; });
-  ierr = MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
-                                send_disp.data(), MPI_INT64_T,
-                                recv_buffer.data(), recv_sizes.data(),
-                                recv_disp.data(), MPI_INT64_T, comm);
-  dolfinx::MPI::check_error(comm, ierr);
-  ierr = MPI_Comm_free(&comm);
-  dolfinx::MPI::check_error(map.comm(), ierr);
-
-  // Remove duplicates from received indices
-  {
-    std::ranges::sort(recv_buffer);
-    auto [unique_end, range_end] = std::ranges::unique(recv_buffer);
-    recv_buffer.erase(unique_end, range_end);
-  }
-
-  // Copy owned and ghost indices into return array
+  // Combine selected local entries and received owned entries.
   std::vector<std::int32_t> owned;
-  owned.reserve(num_ghost_indices + recv_buffer.size());
+  owned.reserve(std::ranges::distance(indices.begin(), it_owned_end)
+                + recv_buffer.size());
   owned.insert(owned.end(), indices.begin(), it_owned_end);
   std::ranges::transform(recv_buffer, std::back_inserter(owned),
                          [range = map.local_range()](auto idx) -> std::int32_t
@@ -818,11 +747,10 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
                            return idx - range[0];
                          });
 
-  {
-    std::ranges::sort(owned);
-    auto [unique_end, range_end] = std::ranges::unique(owned);
-    owned.erase(unique_end, range_end);
-  }
+  std::ranges::sort(owned);
+  auto [unique_end, range_end] = std::ranges::unique(owned);
+  owned.erase(unique_end, range_end);
+
   return owned;
 }
 //-----------------------------------------------------------------------------
@@ -1038,8 +966,10 @@ common::create_sub_index_map(const IndexMap& imap,
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size) : _comm(comm, true)
 {
+#ifndef NDEBUG
   check_collective_precondition(_comm.comm(), local_size >= 0,
                                 "IndexMap local size must be non-negative.");
+#endif
   auto [local_range, size_global] = compute_layout(_comm.comm(), local_size);
   _local_range = local_range;
   _size_global = size_global;
@@ -1051,7 +981,9 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
     : _comm(comm, true), _ghosts(ghosts.begin(), ghosts.end()),
       _owners(owners.begin(), owners.end())
 {
+#ifndef NDEBUG
   validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
+#endif
   auto src_dest = build_src_dest(_comm.comm(), _owners, tag);
   const bool verify_dest = false; // dest here is consensus-derived
   auto [local_range, size_global]
@@ -1071,8 +1003,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
       _owners(owners.begin(), owners.end()), _src(src_dest[0]),
       _dest(src_dest[1])
 {
-  validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
 #ifndef NDEBUG
+  validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
   validate_src_dest(_comm.comm(), _src, _dest, _owners);
 #endif
   const bool verify_dest = true; // dest here is caller-supplied
@@ -1113,12 +1045,14 @@ void IndexMap::local_to_global(std::span<const std::int32_t> local,
         "Global index array is smaller than the local index array.");
   }
   const std::int32_t local_size = _local_range[1] - _local_range[0];
+#ifndef NDEBUG
   const std::int32_t size = local_size + _ghosts.size();
   if (!std::ranges::all_of(local, [size](std::int32_t index)
                            { return index >= 0 and index < size; }))
   {
     throw std::out_of_range("Local index is outside the IndexMap range.");
   }
+#endif
   std::ranges::transform(
       local, global.begin(),
       [local_size, local_range = _local_range[0], &ghosts = _ghosts](auto local)

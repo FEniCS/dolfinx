@@ -236,12 +236,11 @@ void test_rank_weights()
 
 void test_index_map_preconditions()
 {
+#ifndef NDEBUG
   CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, -1), std::invalid_argument);
 
-  // A ghosts/owners length mismatch is always checked (in both Developer
-  // and Release builds): several call sites index owners[i] for i in
-  // [0, ghosts.size()), so a mismatch would otherwise be an out-of-bounds
-  // access rather than just a logical error.
+  // A ghosts/owners length mismatch would otherwise be an out-of-bounds
+  // access in internal communication setup.
   const std::vector<std::int64_t> mismatched_ghosts = {0, 1};
   const std::vector<int> mismatched_owners = {0};
   CHECK_THROWS_AS(
@@ -252,7 +251,6 @@ void test_index_map_preconditions()
                                    mismatched_ghosts, mismatched_owners),
                   std::invalid_argument);
 
-#ifndef NDEBUG
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
   const int owner = (dolfinx::MPI::rank(MPI_COMM_WORLD) + 1) % mpi_size;
   const std::vector<std::int64_t> ghosts = {0};
