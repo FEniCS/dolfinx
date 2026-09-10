@@ -23,15 +23,15 @@ def test_mark_maximum(theta: float, dtype: np.dtype, ghost_mode: dolfinx.mesh.Gh
         comm := MPI.COMM_WORLD, n := 10, n, dtype=dtype, ghost_mode=ghost_mode
     )
     tdim = msh.topology.dim
-    im_c = msh.topology.index_map(tdim)
 
+    im_c = msh.topology.index_map(tdim)
     marker = la.vector(im_c, dtype=dtype)
     marker.array[: marker.index_map.size_local] = np.random.default_rng(0).random(
         marker.index_map.size_local
     )
     marker.scatter_forward()
 
-    marked_cells = mesh.mark_maximum(marker.array, marker.index_map, theta)
+    marked_cells = mesh.mark_maximum(marker, theta)
 
     threshold = theta * comm.allreduce(np.max(marker.array), MPI.MAX)
     assert np.allclose(
