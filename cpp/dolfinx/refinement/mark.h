@@ -97,12 +97,20 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
   return indices;
 }
 
+/// @brief Wrapper for vector based maximum marking.
+///
+/// @note See documentation of index map based mark_maximum.
+///
+/// @param[in] values Values, often with each entry associated with a mesh
+///   entity, e.g. an error indicator.
+/// @param[in] theta Cut-off parameter, 0 < θ ≤ 1.
+/// @return Local indices, ascending and including ghosts, of `values`
+/// that satisfy `values[i] > θ max`.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_maximum(const dolfinx::la::Vector<T>& values,
                                        std::type_identity_t<T> theta)
 {
-  return dolfinx::refinement::mark_maximum<T>(values.array(),
-                                              *values.index_map(), theta);
+  return mark_maximum<T>(values.array(), *values.index_map(), theta);
 }
 
 } // namespace dolfinx::refinement
