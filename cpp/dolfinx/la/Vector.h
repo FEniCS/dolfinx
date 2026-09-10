@@ -105,17 +105,17 @@ private:
               const auto in_first, auto out_first)
     {
       // out[idx[i]] = in[i]
+      auto in = in_first;
       for (typename ScatterContainer::const_iterator idx = idx_first;
-           idx != idx_last; ++idx)
+           idx != idx_last; ++idx, ++in)
       {
-        std::size_t d = std::ranges::distance(idx_first, idx);
-        *std::next(out_first, *idx) = *std::next(in_first, d);
+        *std::next(out_first, *idx) = *in;
       }
     };
   }
 
   /// @brief Return an 'unpack' function for unpacking a receive buffer.
-  /// Applied a binary operation an then assigns to entries.
+  /// Applies a binary operation and assigns to entries.
   ///
   /// Typically used to unpack into owned entries on a CPU. Commonly
   /// more than one value per entry is received.
@@ -127,12 +127,12 @@ private:
                 const auto in_first, auto out_first)
     {
       // out[idx[i]] = op(out[idx[i]], in[i])
+      auto in = in_first;
       for (typename ScatterContainer::const_iterator idx = idx_first;
-           idx != idx_last; ++idx)
+           idx != idx_last; ++idx, ++in)
       {
-        std::size_t d = std::ranges::distance(idx_first, idx);
         auto& out = *std::next(out_first, *idx);
-        out = op(out, *std::next(in_first, d));
+        out = op(out, *in);
       }
     };
   }
@@ -206,7 +206,7 @@ private:
   }
 
 public:
-  /// @brief Copy-convert vector, possibly using to different container
+  /// @brief Copy-convert vector, possibly using different container
   /// types.
   ///
   /// Examples of use include copying a Vector to a different value
@@ -247,13 +247,14 @@ public:
   /// processes.
   ///
   /// The user provides the function to pack to the send buffer.
-  /// Typically usage would be a specialised function to pack data that
+  /// Typical use is a specialised function to pack data that
   /// resides on a GPU.
   ///
-  /// @note Collective MPI operation
+  /// @note Collective MPI operation. Every rank in the communicator
+  /// must call this function, including ranks without neighbours.
   ///
   /// @tparam U Pack function type.
-  /// @tparam GetPtr
+  /// @tparam GetPtr Function type that accesses a container's data pointer.
   /// @param pack Function that packs owned data into a send buffer.
   /// @param get_ptr Function that for a `Container` type returns the
   /// pointer to the underlying data.
@@ -275,7 +276,8 @@ public:
   /// storage. The send buffer is packed internally by a function that
   /// is suitable for use on a CPU.
   ///
-  /// @note Collective MPI operation.
+  /// @note Collective MPI operation. Every rank in the communicator
+  /// must call this function, including ranks without neighbours.
   void scatter_fwd_begin()
     requires requires(Container c) {
       { c.data() } -> std::same_as<T*>;
@@ -288,18 +290,21 @@ public:
   /// other processes.
   ///
   /// The user provides the function to unpack the receive buffer.
-  /// Typically usage would be a specialised function to unpack data
+  /// Typical use is a specialised function to unpack data
   /// that resides on a GPU.
   ///
-  /// @note Collective MPI operation.
+  /// @note Local completion of the caller's own request, not itself
+  /// collective. Every rank that called ::scatter_fwd_begin must
+  /// still call this before reusing the buffers.
   ///
+  /// @tparam U Unpack function type.
   /// @param unpack Function to unpack the receive buffer into the ghost
   /// entries.
   template <typename U>
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_fwd_end(U unpack)
   {
-    _scatterer->scatter_end(_request);
+    _scatterer->scatter_fwd_end(_request);
     unpack(_scatterer->remote_indices().begin(),
            _scatterer->remote_indices().end(), _buffer_remote.begin(),
            std::next(_x.begin(), _bs * _map->size_local()));
@@ -312,7 +317,9 @@ public:
   /// storage. The receive buffer is unpacked internally by a function
   /// that is suitable for use on a CPU.
   ///
-  /// @note Collective MPI operation.
+  /// @note Local completion of the caller's own request, not itself
+  /// collective. Every rank that called ::scatter_fwd_begin must
+  /// still call this before reusing the buffers.
   void scatter_fwd_end()
     requires requires(Container c) {
       { c.data() } -> std::same_as<T*>;
@@ -329,7 +336,8 @@ public:
   /// storage. The send buffer is packed and the receive buffer unpacked
   /// by a function that is suitable for use on a CPU.
   ///
-  /// @note Collective MPI operation
+  /// @note Collective MPI operation. Every rank in the communicator
+  /// must call this function, including ranks without neighbours.
   void scatter_fwd()
     requires requires(Container c) {
       { c.data() } -> std::same_as<T*>;
@@ -343,12 +351,13 @@ public:
   /// process of an index.
   ///
   /// The user provides the function to pack to the send buffer.
-  /// Typically usage would be a specialised function to pack data that
+  /// Typical use is a specialised function to pack data that
   /// resides on a GPU.
   ///
-  /// @note Collective MPI operation
+  /// @note Collective MPI operation. Every rank in the communicator
+  /// must call this function, including ranks without neighbours.
   /// @tparam U Pack function type.
-  /// @tparam GetPtr
+  /// @tparam GetPtr Function type that accesses a container's data pointer.
   /// @param pack Function that packs ghost data into a send buffer.
   /// @param get_ptr Function that for a `Container` type returns the
   /// pointer to the underlying data.
@@ -372,7 +381,8 @@ public:
   /// storage. The send buffer is packed internally by a function that
   /// is suitable for use on a CPU.
   ///
-  /// @note Collective MPI operation
+  /// @note Collective MPI operation. Every rank in the communicator
+  /// must call this function, including ranks without neighbours.
   void scatter_rev_begin()
     requires requires(Container c) {
       { c.data() } -> std::same_as<T*>;
@@ -387,12 +397,16 @@ public:
   /// received. The received data can be summed or inserted into the
   /// owning entry by the `unpack` function.
   ///
-  /// @note Collective MPI operation
+  /// @note Local completion of the caller's own request, not itself
+  /// collective. Every rank that called ::scatter_rev_begin must
+  /// still call this before reusing the buffers.
+  ///
+  /// @tparam U Unpack function type.
   template <typename U>
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_rev_end(U unpack)
   {
-    _scatterer->scatter_end(_request);
+    _scatterer->scatter_rev_end(_request);
     unpack(_scatterer->local_indices().begin(),
            _scatterer->local_indices().end(), _buffer_local.begin(),
            _x.begin());
@@ -404,9 +418,10 @@ public:
   ///
   /// For an owned entry, data from more than one process may be
   /// received. The received data can be summed or inserted into the
-  /// owning entry. The this is controlled by the `op` function.
+  /// owning entry. This is controlled by the `op` function.
   ///
-  /// @note Collective MPI operation
+  /// @note Collective MPI operation. Every rank in the communicator
+  /// must call this function, including ranks without neighbours.
   ///
   /// @param op IndexMap operation (add or insert).
   template <class BinaryOperation>

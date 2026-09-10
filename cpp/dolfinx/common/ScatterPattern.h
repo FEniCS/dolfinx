@@ -63,14 +63,6 @@ public:
   /// @return Neighbourhood communicator, `MPI_COMM_NULL` on one rank.
   MPI_Comm comm1() const noexcept { return _comm1.comm(); }
 
-  /// @brief Ranks that own indices ghosted by the caller.
-  /// @return Sorted list of ranks on comm0()/comm1().
-  std::span<const int> src() const noexcept { return _src; }
-
-  /// @brief Ranks that ghost indices owned by the caller.
-  /// @return Sorted list of ranks on comm0()/comm1().
-  std::span<const int> dest() const noexcept { return _dest; }
-
   /// @brief Number of owned indices shared with each rank in dest(),
   /// for a block size of one.
   /// @return Sizes, one per neighbour.
@@ -119,12 +111,6 @@ private:
   // - in-edges (src) are from ranks that 'ghost' my owned indices
   // - out-edges (dest) are to the owning ranks of my ghost indices
   dolfinx::MPI::Comm _comm1{MPI_COMM_NULL};
-
-  // Set of ranks that own ghosts
-  std::vector<int> _src;
-
-  // Set of ranks that ghost owned indices
-  std::vector<int> _dest;
 
   // Number of remote indices (ghosts) for each neighbour process
   std::vector<int> _sizes_remote;

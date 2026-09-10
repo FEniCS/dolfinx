@@ -22,34 +22,35 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 common::ScatterPattern::ScatterPattern(const IndexMap& map)
-    : _src(map.src().begin(), map.src().end()),
-      _dest(map.dest().begin(), map.dest().end()),
-      _sizes_remote(_src.size(), 0), _displs_remote(_src.size() + 1),
-      _sizes_local(_dest.size()), _displs_local(_dest.size() + 1)
+    : _sizes_remote(map.src().size(), 0), _displs_remote(map.src().size() + 1),
+      _sizes_local(map.dest().size()), _displs_local(map.dest().size() + 1)
 {
   if (dolfinx::MPI::size(map.comm()) == 1)
     return;
 
   int ierr;
 
+  const std::span<const int> src = map.src();
+  const std::span<const int> dest = map.dest();
+
   // Check that src and dest ranks are unique and sorted
-  assert(std::ranges::is_sorted(_src));
-  assert(std::ranges::is_sorted(_dest));
+  assert(std::ranges::is_sorted(src));
+  assert(std::ranges::is_sorted(dest));
 
   // Create communicators with directed edges:
   // (0) owner -> ghost,
   // (1) ghost -> owner
   MPI_Comm comm0;
   ierr = MPI_Dist_graph_create_adjacent(
-      map.comm(), _src.size(), _src.data(), MPI_UNWEIGHTED, _dest.size(),
-      _dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+      map.comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
+      dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
   _comm0 = dolfinx::MPI::Comm(comm0, false);
   dolfinx::MPI::check_error(map.comm(), ierr);
 
   MPI_Comm comm1;
   ierr = MPI_Dist_graph_create_adjacent(
-      map.comm(), _dest.size(), _dest.data(), MPI_UNWEIGHTED, _src.size(),
-      _src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+      map.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
+      src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
   _comm1 = dolfinx::MPI::Comm(comm1, false);
   dolfinx::MPI::check_error(map.comm(), ierr);
 
@@ -74,12 +75,12 @@ common::ScatterPattern::ScatterPattern(const IndexMap& map)
   // sending ghost index data from this rank to the owning ranks,
   // disp[i] is the first entry in the buffer sent to neighbourhood rank
   // i, and disp[i + 1] - disp[i] is the number of values sent to rank i.
-  assert(_sizes_remote.size() == _src.size());
-  assert(_displs_remote.size() == _src.size() + 1);
+  assert(_sizes_remote.size() == src.size());
+  assert(_displs_remote.size() == src.size() + 1);
   auto begin = owners_sorted.begin();
-  for (std::size_t i = 0; i < _src.size(); i++)
+  for (std::size_t i = 0; i < src.size(); i++)
   {
-    auto upper = std::upper_bound(begin, owners_sorted.end(), _src[i]);
+    auto upper = std::upper_bound(begin, owners_sorted.end(), src[i]);
     std::size_t num_ind = std::ranges::distance(begin, upper);
     _displs_remote[i + 1] = _displs_remote[i] + num_ind;
     _sizes_remote[i] = num_ind;
@@ -93,8 +94,8 @@ common::ScatterPattern::ScatterPattern(const IndexMap& map)
 
   // Compute sizes and displacements of local data (how many local
   // elements to be sent/received grouped by neighbours)
-  assert(_sizes_local.size() == _dest.size());
-  assert(_displs_local.size() == _dest.size() + 1);
+  assert(_sizes_local.size() == dest.size());
+  assert(_displs_local.size() == dest.size() + 1);
   // Allocate so that data() is not null when a rank has no neighbours
   _sizes_remote.reserve(1);
   _sizes_local.reserve(1);
