@@ -62,7 +62,7 @@ public:
   /// @param[in] bs Number of values associated with each `map` index
   /// (the block size).
   Scatterer(const IndexMap& map, int bs)
-      : _sizes_remote(map.src().size(), 0),
+      : _bs(bs), _sizes_remote(map.src().size(), 0),
         _displs_remote(map.src().size() + 1), _sizes_local(map.dest().size()),
         _displs_local(map.dest().size() + 1)
   {
@@ -215,7 +215,7 @@ public:
   /// @param s Scatterer to copy
   template <class U>
   Scatterer(const Scatterer<U>& s)
-      : _comm0(s._comm0), _comm1(s._comm1),
+      : _comm0(s._comm0), _comm1(s._comm1), _bs(s._bs),
         _remote_inds(s._remote_inds.begin(), s._remote_inds.end()),
         _sizes_remote(s._sizes_remote), _displs_remote(s._displs_remote),
         _local_inds(s._local_inds.begin(), s._local_inds.end()),
@@ -403,6 +403,15 @@ public:
   /// @return Indices container.
   const container_type& remote_indices() const noexcept { return _remote_inds; }
 
+  /// @brief Number of values associated with each index map index that
+  /// this scatterer was built for (the block size).
+  ///
+  /// The scatter indices are expanded for this block size, so a
+  /// scatterer can only be used with data of this block size.
+  ///
+  /// @return Block size.
+  int bs() const noexcept { return _bs; }
+
 private:
   // False only on a single rank, where _comm0/_comm1 stay MPI_COMM_NULL
   bool has_neighbours() const noexcept
@@ -430,6 +439,9 @@ private:
   // - in-edges (src) are from ranks that 'ghost' my owned indices
   // - out-edges (dest) are to the owning ranks of my ghost indices
   dolfinx::MPI::Comm _comm1{MPI_COMM_NULL};
+
+  // Block size the scatter indices are expanded for
+  int _bs;
 
   // Permutation indices used to pack and unpack ghost data (remote)
   container_type _remote_inds;

@@ -156,11 +156,13 @@ void test_vector_shared_scatterer()
   CHECK(sct.use_count() == 1);
   {
     // One scatterer, two vectors, two scalar types
-    la::Vector<double> u(map, bs, sct);
-    la::Vector<std::int8_t> v(map, bs, sct);
+    la::Vector<double> u(map, sct);
+    la::Vector<std::int8_t> v(map, sct);
     CHECK(sct.use_count() == 3);
     CHECK(u.index_map() == map);
+    // Block size comes from the scatterer, not a separate argument
     CHECK(u.bs() == bs);
+    CHECK(v.bs() == bs);
 
     std::ranges::fill_n(u.array().begin(), bs * size_local,
                         static_cast<double>(mpi_rank));
