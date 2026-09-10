@@ -1,5 +1,5 @@
-// Copyright (C) 2018-2024 Chris N. Richardson, Garth N. Wells and Paul T.
-// Kühner
+// Copyright (C) 2018-2026 Chris N. Richardson, Garth N. Wells, Paul T.
+// Kühner and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -13,6 +13,7 @@
 #include "graph.h"
 #include "mesh.h"
 #include <concepts>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/refinement/mark.h>
 #include <dolfinx/refinement/option.h>
@@ -135,12 +136,14 @@ void declare_refinement(nanobind::module_& m)
 
   m.def(
       "mark_maximum",
-      [](const dolfinx::la::Vector<T>& marker, T theta)
+      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values,
+         const dolfinx::common::IndexMap& index_map, T theta)
       {
-        return dolfinx_wrappers::as_nbarray(
-            dolfinx::refinement::mark_maximum(marker, theta));
+        return dolfinx_wrappers::as_nbarray(dolfinx::refinement::mark_maximum(
+            std::span<const T>(values.data(), values.size()), index_map,
+            theta));
       },
-      nb::arg("marker"), nb::arg("theta"));
+      nb::arg("values"), nb::arg("index_map"), nb::arg("theta"));
 }
 
 } // namespace dolfinx_wrappers

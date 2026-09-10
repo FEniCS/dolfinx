@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import functools
 import typing
 import warnings
 from collections.abc import Callable, Sequence
@@ -940,25 +941,63 @@ def _get_mesh_partitioner(
     return partitioner, None
 
 
+@functools.singledispatch
 def mark_maximum(
-    indicators: Vector[Real],
+    values: npt.NDArray[Real],
+    index_map: _IndexMap,
     theta: float,
 ) -> npt.NDArray[np.int32]:
-    r"""Compute maximum-based marking of indicators.
+    r"""Return local indices of values exceeding a fraction of the max.
 
-    Returns the indices :math:`i` of the indicators :math:`\eta_i` that
-    satisfy the maximum threshold:
-    :math:`\eta_i > \theta \max_j \eta_j`.
+    Computes the maximum :math:`\max_j v_j` of ``values`` over the locally
+    owned entries on every rank of ``index_map``'s communicator, and
+    returns the local indices :math:`i` satisfying
+    :math:`v_i > \theta \max_j v_j`. This is commonly referred to as
+    'maximum marking' in the adaptive finite element literature.
+
+    Note:
+        Ghost entries of ``values`` must be up to date, i.e.
+        ``scatter_forward`` must have been called since the owned entries
+        were last modified.
+
+        :math:`\theta = 1` marks nothing, since no entry can strictly
+        exceed the true maximum. :math:`\theta = 0` is rejected, since the
+        threshold would be 0 and the criterion would degenerate to marking
+        every entry with a positive value.
 
     Args:
-        indicators: Indicators (local) :math:`\eta_i` - usually an error
-            indicator associated with mesh entity :math:`i`.
-        theta: Parameter, :math:`0 < \theta < 1`.
+        values: Values, often with each entry associated with a mesh
+            entity, e.g. an error indicator.
+        index_map: Index map describing the parallel layout of ``values``.
+        theta: Cut-off parameter, :math:`0 < \theta \le 1`.
 
     Returns:
-        Local indices of marked entities (including ghosts).
+        Local indices, ascending and including ghosts, of the entries
+        satisfying :math:`v_i > \theta \max_j v_j`.
     """
-    return _mark_maximum(indicators._cpp_object, theta)  # type: ignore
+    return _mark_maximum(values, index_map, theta)  # type: ignore
+
+
+@mark_maximum.register(Vector)
+def _mark_maximum_vector(
+    values: Vector[Real],
+    theta: float,
+) -> npt.NDArray[np.int32]:
+    r"""Return local indices of values exceeding a fraction of the max.
+
+    Note:
+        Wrapper, see index map based callback for further details.
+
+    Args:
+        values: Values, often with each entry associated with a mesh
+            entity, e.g. an error indicator.
+        theta: Cut-off parameter, :math:`0 < \theta \le 1`.
+
+    Returns:
+        Local indices, ascending and including ghosts, of the entries
+        satisfying :math:`v_i > \theta \max_j v_j`.
+    """
+    return _mark_maximum(values.array, values.index_map, theta)
 
 
 def _create_mesh_coordinate_element(
