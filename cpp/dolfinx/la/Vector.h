@@ -123,17 +123,34 @@ public:
   static_assert(std::is_same_v<value_type, typename container_type::value_type>,
                 "Scalar type and container value type must be the same.");
 
+  /// @brief Create a distributed vector with a given communication
+  /// pattern.
+  ///
+  /// Sharing a scatterer avoids rebuilding a communication pattern, and
+  /// with it the two neighbourhood communicators that each Scatterer
+  /// creates.
+  ///
+  /// @param map Index map that describes the parallel layout of
+  /// the data.
+  /// @param bs Number of entries per index map 'index' (block size).
+  /// @param scatterer Scatterer for @p map and @p bs.
+  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
+         std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer)
+      : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
+        _scatterer(std::move(scatterer)),
+        _buffer_local(_scatterer->local_indices().size()),
+        _buffer_remote(_scatterer->remote_indices().size())
+  {
+  }
+
   /// @brief Create a distributed vector.
   ///
   /// @param map Index map that describes the parallel layout of
   /// the data.
   /// @param bs Number of entries per index map 'index' (block size).
   Vector(std::shared_ptr<const common::IndexMap> map, int bs)
-      : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
-        _scatterer(
-            std::make_shared<common::Scatterer<ScatterContainer>>(*_map, bs)),
-        _buffer_local(_scatterer->local_indices().size()),
-        _buffer_remote(_scatterer->remote_indices().size())
+      : Vector(map, bs,
+               std::make_shared<common::Scatterer<ScatterContainer>>(*map, bs))
   {
   }
 
@@ -182,20 +199,6 @@ public:
       : _map(x.index_map()), _bs(x.bs()), _x(x._x.begin(), x._x.end()),
         _scatterer(scatter_ptr(x._scatterer)), _request(MPI_REQUEST_NULL),
         _buffer_local(_scatterer->local_indices().size()),
-        _buffer_remote(_scatterer->remote_indices().size())
-  {
-  }
-
-  /// @brief Create a vector with a given layout and an existing
-  /// communication pattern.
-  ///
-  /// @param map Index map that describes the parallel layout.
-  /// @param bs Number of entries per index map 'index' (block size).
-  /// @param sc Scatterer for @p map and @p bs. Shared, not rebuilt.
-  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
-         std::shared_ptr<const common::Scatterer<ScatterContainer>> sc)
-      : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
-        _scatterer(sc), _buffer_local(_scatterer->local_indices().size()),
         _buffer_remote(_scatterer->remote_indices().size())
   {
   }
