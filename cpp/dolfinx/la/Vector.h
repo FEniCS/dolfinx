@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2025 Garth N. Wells
+// Copyright (C) 2020-2026 Garth N. Wells and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -182,6 +182,20 @@ public:
       : _map(x.index_map()), _bs(x.bs()), _x(x._x.begin(), x._x.end()),
         _scatterer(scatter_ptr(x._scatterer)), _request(MPI_REQUEST_NULL),
         _buffer_local(_scatterer->local_indices().size()),
+        _buffer_remote(_scatterer->remote_indices().size())
+  {
+  }
+
+  /// @brief Create a vector with a given layout and an existing
+  /// communication pattern.
+  ///
+  /// @param map Index map that describes the parallel layout.
+  /// @param bs Number of entries per index map 'index' (block size).
+  /// @param sc Scatterer for @p map and @p bs. Shared, not rebuilt.
+  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
+         std::shared_ptr<const common::Scatterer<ScatterContainer>> sc)
+      : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
+        _scatterer(sc), _buffer_local(_scatterer->local_indices().size()),
         _buffer_remote(_scatterer->remote_indices().size())
   {
   }
@@ -380,6 +394,29 @@ public:
 
   /// Get IndexMap
   std::shared_ptr<const common::IndexMap> index_map() const { return _map; }
+
+  /// @brief Create a vector over the same layout, entries
+  /// value-initialised and not copied.
+  ///
+  /// The index map and scatterer are shared, so no communication
+  /// pattern is rebuilt. The block size is inherited, a scatterer being
+  /// built for one block size only. Unlike the copy-converting
+  /// constructor, no data is copied, so `T1` need not represent the
+  /// values of this vector, e.g. an `std::int8_t` marker array
+  /// alongside floating-point weights.
+  ///
+  /// @note Both vectors scatter on the same communicators. Each owns
+  /// its buffers and request, so sequential use is safe, but concurrent
+  /// scatters must be issued in the same order on every rank.
+  ///
+  /// @tparam T1 Scalar type of the new vector.
+  /// @tparam Container1 Data container type of the new vector.
+  /// @return Vector over the same layout.
+  template <typename T1 = T, typename Container1 = std::vector<T1>>
+  Vector<T1, Container1, ScatterContainer> clone_layout() const
+  {
+    return Vector<T1, Container1, ScatterContainer>(_map, _bs, _scatterer);
+  }
 
   /// Get block size
   constexpr int bs() const { return _bs; }
