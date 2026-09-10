@@ -84,19 +84,25 @@ stack_index_maps(
 /// include in the new index map.
 /// @param[in] order Control the order in which ghost indices appear in
 /// the new map.
-/// @param[in] allow_owner_change Permit an index selected only by
-/// ghosting ranks to acquire a new owner in the submap.
-/// @pre `indices` contains unique local indices in range, and ownership
-/// does not change unless `allow_owner_change` is true. These conditions
-/// are checked in Developer builds; callers must ensure them in Release
-/// builds.
-/// @return (0) New index map and (1) corresponding local indices in
-/// `imap`.
-/// @throws std::invalid_argument If a precondition is violated in a
-/// Developer build.
-std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
-    const IndexMap& imap, std::span<const std::int32_t> indices,
-    IndexMapOrder order = IndexMapOrder::any, bool allow_owner_change = false);
+/// @pre `indices` contains unique local indices in range. This
+/// condition is checked in Developer builds; callers must ensure it in
+/// Release builds.
+/// @return (0) New index map, (1) corresponding local indices in
+/// `imap`, and (2) whether any index acquired a new owner in the
+/// submap. An index selected only by ghosting ranks, and not by its
+/// owner, is given a new owner in the submap; (2) reports whether this
+/// happened.
+/// @note (2) is rank-local and is not reduced: it can be `true` on some
+/// ranks and `false` on others. A caller that requires ownership to be
+/// preserved must reduce it (e.g. `MPI_Allreduce` with `MPI_LOR`)
+/// before acting on it, since throwing on only some ranks would leave
+/// the others in a subsequent collective.
+/// @throws std::invalid_argument If the `indices` precondition is
+/// violated in a Developer build.
+std::tuple<IndexMap, std::vector<std::int32_t>, bool>
+create_sub_index_map(const IndexMap& imap,
+                     std::span<const std::int32_t> indices,
+                     IndexMapOrder order = IndexMapOrder::any);
 
 /// @brief Distribution of a global index range `[0, N)` across MPI
 /// ranks.
@@ -254,10 +260,10 @@ public:
   /// @brief Compute global indices for local indices.
   ///
   /// @param[in] local Local indices in `[0, size_local() + num_ghosts())`.
-  /// @param[out] global Global indices. Must have at least the size of `local`.
+  /// @param[out] global Global indices. Must have the same size as `local`.
   /// @pre `local` is in range. This condition is checked in Developer builds;
   /// callers must ensure it in Release builds.
-  /// @throws std::invalid_argument If `global` is smaller than `local`.
+  /// @throws std::invalid_argument If `local` and `global` differ in size.
   /// @throws std::out_of_range If the `local` precondition is violated in a
   /// Developer build.
   void local_to_global(std::span<const std::int32_t> local,

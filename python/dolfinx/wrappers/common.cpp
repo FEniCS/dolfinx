@@ -25,6 +25,7 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/string_view.h>
+#include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
@@ -249,8 +250,7 @@ void common(nb::module_& m)
   m.def(
       "create_sub_index_map",
       [](const dolfinx::common::IndexMap& imap,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
-         bool allow_owner_change)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices)
       {
         const std::int32_t size = imap.size_local() + imap.num_ghosts();
         for (std::size_t i = 0; i < indices.size(); ++i)
@@ -258,12 +258,18 @@ void common(nb::module_& m)
           if (indices.data()[i] < 0 or indices.data()[i] >= size)
             throw std::runtime_error("Index out of range in indices array.");
         }
-        auto [map, submap_to_map] = dolfinx::common::create_sub_index_map(
-            imap, std::span(indices.data(), indices.size()),
-            dolfinx::common::IndexMapOrder::any, allow_owner_change);
-        return std::pair(std::move(map), dolfinx_wrappers::as_nbarray(
-                                             std::move(submap_to_map)));
+        auto [map, submap_to_map, owners_changed]
+            = dolfinx::common::create_sub_index_map(
+                imap, std::span(indices.data(), indices.size()),
+                dolfinx::common::IndexMapOrder::any);
+        return std::tuple(
+            std::move(map),
+            dolfinx_wrappers::as_nbarray(std::move(submap_to_map)),
+            owners_changed);
       },
-      nb::arg("index_map"), nb::arg("indices"), nb::arg("allow_owner_change"));
+      nb::arg("index_map"), nb::arg("indices"),
+      "Create a sub-index map. Returns the new map, the corresponding "
+      "local indices in the parent map, and whether any index acquired a "
+      "new owner in the sub-map.");
 }
 } // namespace dolfinx_wrappers

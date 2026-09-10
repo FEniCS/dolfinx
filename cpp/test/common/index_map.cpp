@@ -312,10 +312,11 @@ void test_index_map_preconditions()
 #endif
 
   const std::vector<std::int32_t> valid_indices = {0};
-  auto [submap, submap_to_map]
+  auto [submap, submap_to_map, owners_changed]
       = common::create_sub_index_map(map, valid_indices);
   CHECK(submap.size_local() == 1);
   CHECK(submap_to_map == valid_indices);
+  CHECK_FALSE(owners_changed);
 }
 
 void test_compute_owned_indices()
@@ -356,11 +357,11 @@ void test_local_global_index_conversion()
   CHECK_THROWS_AS(map.local_to_global(local_out_of_range, global),
                   std::out_of_range);
 
+  // local_to_global and global_to_local both require exactly matching
+  // input and output sizes.
   std::vector<std::int64_t> global_larger(3, -1);
-  CHECK_NOTHROW(map.local_to_global(local_two, global_larger));
-  CHECK(global_larger[0] == map.local_range()[0]);
-  CHECK(global_larger[1] == map.local_range()[0] + 1);
-  CHECK(global_larger[2] == -1);
+  CHECK_THROWS_AS(map.local_to_global(local_two, global_larger),
+                  std::invalid_argument);
 
   std::vector<std::int32_t> local(1);
   const std::vector<std::int64_t> global_two = {0, 1};

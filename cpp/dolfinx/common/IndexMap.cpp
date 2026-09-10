@@ -56,10 +56,9 @@ void check_local_precondition(bool valid, std::string_view message)
 }
 
 #ifndef NDEBUG
-/// Check a rank-local precondition collectively. Requires an
-/// MPI_Allreduce, so only used in Developer builds - never call this
-/// unconditionally, as a mismatched-across-ranks call would leave some
-/// ranks waiting on a collective the others skip.
+/// Check a rank-local condition collectively, so that every rank agrees
+/// whether to throw. Requires an MPI_Allreduce, so it is Developer-build
+/// only; call it from a point every rank reaches.
 void check_collective_precondition(MPI_Comm comm, bool local_valid,
                                    std::string_view message)
 {
@@ -147,25 +146,12 @@ void validate_submap_indices(const IndexMap& imap,
       "Submap indices must be in range and contain no duplicates.");
 }
 
-/// Compute destination ranks from source ranks using a safe collective.
+/// Compute the sorted destination ranks dual to `src`, i.e. the ranks
+/// that list the caller in their own source ranks.
 std::vector<int> compute_dest_ranks(MPI_Comm comm, std::span<const int> src)
 {
-  const int comm_size = dolfinx::MPI::size(comm);
-  std::vector<int> send(comm_size, 0);
-  std::vector<int> recv(comm_size, 0);
-  for (int rank : src)
-    send[rank] = 1;
-
-  const int ierr
-      = MPI_Alltoall(send.data(), 1, MPI_INT, recv.data(), 1, MPI_INT, comm);
-  dolfinx::MPI::check_error(comm, ierr);
-
-  std::vector<int> dest;
-  for (int rank = 0; rank < comm_size; ++rank)
-  {
-    if (recv[rank])
-      dest.push_back(rank);
-  }
+  std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+  std::ranges::sort(dest);
   return dest;
 }
 
@@ -380,19 +366,16 @@ finalize_ghosted_layout(MPI_Comm comm, std::int32_t local_size,
 /// process).
 /// @param[in] order Control the order in which ghost indices appear in
 /// the new map.
-/// @param[in] allow_owner_change Allows indices that are not included
-/// by their owning process but included on sharing processes to be
-/// included in the submap. These indices will be owned by one of the
-/// sharing processes in the submap.
 /// @return The (1) owned, (2) ghost and (3) ghost owners in the submap,
-/// and (4) submap src ranks and (5) submap destination ranks. All
-/// indices are local and with respect to the original index map.
+/// (4) submap src ranks, (5) submap destination ranks, and (6) whether
+/// any index acquired a new owner in the submap. All indices are local
+/// and with respect to the original index map. (6) is rank-local and
+/// not reduced.
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-           std::vector<int>, std::vector<int>, std::vector<int>>
+           std::vector<int>, std::vector<int>, std::vector<int>, bool>
 compute_submap_indices(const IndexMap& imap,
                        std::span<const std::int32_t> indices,
-                       IndexMapOrder order,
-                       [[maybe_unused]] bool allow_owner_change)
+                       IndexMapOrder order)
 {
   // Create lookup array to determine if an index is in the sub-map
   std::vector<std::uint8_t> is_in_submap(imap.size_local() + imap.num_ghosts(),
@@ -413,11 +396,11 @@ compute_submap_indices(const IndexMap& imap,
   std::vector<int> submap_dest;
   submap_dest.reserve(1);
   const int rank = dolfinx::MPI::rank(imap.comm());
+
+  // Whether the owner of any index has changed in the submap. Derived
+  // from received data, so rank-local: it is returned unreduced.
+  bool owners_changed = false;
   {
-#ifndef NDEBUG
-    // Flag to track if the owner of any indices has changed in the submap.
-    bool owners_changed = false;
-#endif
 
     // Create a map from (global) indices in `recv_indices` to a list of
     // processes that can own them in the submap.
@@ -447,19 +430,11 @@ compute_submap_indices(const IndexMap& imap,
         }
         else
         {
-#ifndef NDEBUG
           owners_changed = true;
-#endif
           global_idx_to_possible_owner.push_back({idx, dest[i]});
         }
       }
     }
-
-#ifndef NDEBUG
-    check_collective_precondition(imap.comm(),
-                                  allow_owner_change or !owners_changed,
-                                  "Index owner change detected.");
-#endif
 
     std::ranges::sort(global_idx_to_possible_owner);
 
@@ -644,9 +619,9 @@ compute_submap_indices(const IndexMap& imap,
     submap_ghost = std::move(submap_ghost1);
   }
 
-  return {std::move(submap_owned), std::move(submap_ghost),
+  return {std::move(submap_owned),        std::move(submap_ghost),
           std::move(submap_ghost_owners), std::move(submap_src),
-          std::move(submap_dest)};
+          std::move(submap_dest),         owners_changed};
 }
 
 /// Compute global indices of submap ghosts.
@@ -943,10 +918,10 @@ common::stack_index_maps(
           std::move(ghost_owners_new)};
 }
 //-----------------------------------------------------------------------------
-std::pair<IndexMap, std::vector<std::int32_t>>
+std::tuple<IndexMap, std::vector<std::int32_t>, bool>
 common::create_sub_index_map(const IndexMap& imap,
                              std::span<const std::int32_t> indices,
-                             IndexMapOrder order, bool allow_owner_change)
+                             IndexMapOrder order)
 {
 #ifndef NDEBUG
   validate_submap_indices(imap, indices);
@@ -954,8 +929,8 @@ common::create_sub_index_map(const IndexMap& imap,
 
   // Compute owned and ghost submap entries in parent-map local numbering.
   auto [submap_owned, submap_ghost, submap_ghost_owners, submap_src,
-        submap_dest]
-      = compute_submap_indices(imap, indices, order, allow_owner_change);
+        submap_dest, owners_changed]
+      = compute_submap_indices(imap, indices, order);
 
   // Compute submap offset for this rank
   std::int64_t submap_local_size = submap_owned.size();
@@ -983,7 +958,7 @@ common::create_sub_index_map(const IndexMap& imap,
 
   return {IndexMap(imap.comm(), submap_local_size, {submap_src, submap_dest},
                    submap_ghost_gidxs, submap_ghost_owners),
-          std::move(sub_imap_to_imap)};
+          std::move(sub_imap_to_imap), owners_changed};
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -1058,10 +1033,10 @@ std::span<const std::int64_t> IndexMap::ghosts() const noexcept
 void IndexMap::local_to_global(std::span<const std::int32_t> local,
                                std::span<std::int64_t> global) const
 {
-  if (local.size() > global.size())
+  if (local.size() != global.size())
   {
     throw std::invalid_argument(
-        "Global index array is smaller than the local index array.");
+        "Local and global index arrays must have the same size.");
   }
   const std::int32_t local_size = _local_range[1] - _local_range[0];
 #ifndef NDEBUG
