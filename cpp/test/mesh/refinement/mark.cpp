@@ -20,9 +20,9 @@ using namespace dolfinx::refinement;
 TEMPLATE_TEST_CASE("Mark maximum empty", "[refinement][mark][maximum]", double,
                    float)
 {
-  dolfinx::la::Vector<TestType> marker(
-      std::make_shared<common::IndexMap>(MPI_COMM_WORLD, 0), 1);
-  auto indices = mark_maximum<TestType>(marker, .5);
+  common::IndexMap im(MPI_COMM_WORLD, 0);
+  std::vector<TestType> values;
+  auto indices = mark_maximum<TestType>(values, im, .5);
   CHECK(indices.size() == 0);
 }
 
