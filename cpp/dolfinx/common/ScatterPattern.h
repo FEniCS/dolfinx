@@ -8,7 +8,6 @@
 
 #include "MPI.h"
 #include <cstdint>
-#include <memory>
 #include <mpi.h>
 #include <span>
 #include <vector>
@@ -146,7 +145,6 @@ private:
 ///
 /// @param[in] map Index map that describes the parallel layout of data.
 /// @return Communication pattern of `map`.
-std::shared_ptr<const ScatterPattern>
-create_scatter_pattern(const IndexMap& map);
+ScatterPattern create_scatter_pattern(const IndexMap& map);
 
 } // namespace dolfinx::common

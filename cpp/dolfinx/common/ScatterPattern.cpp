@@ -13,7 +13,6 @@
 #include <cassert>
 #include <cstdint>
 #include <iterator>
-#include <memory>
 #include <mpi.h>
 #include <numeric>
 #include <span>
@@ -132,9 +131,8 @@ common::ScatterPattern::ScatterPattern(const IndexMap& map)
                          { return static_cast<std::int32_t>(idx - range[0]); });
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const common::ScatterPattern>
-common::create_scatter_pattern(const IndexMap& map)
+common::ScatterPattern common::create_scatter_pattern(const IndexMap& map)
 {
-  return std::make_shared<const ScatterPattern>(map);
+  return ScatterPattern(map);
 }
 //-----------------------------------------------------------------------------
