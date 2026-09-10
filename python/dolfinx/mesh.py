@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import functools
 import typing
 import warnings
 from collections.abc import Callable, Sequence
@@ -41,6 +42,7 @@ from dolfinx.cpp.refinement import uniform_refine as _uniform_refine
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem.element import _coordinate_element_from_basix
 from dolfinx.graph import AdjacencyList
+from dolfinx.la import Vector
 from dolfinx.typing import Real
 
 __all__ = [
@@ -939,6 +941,7 @@ def _get_mesh_partitioner(
     return partitioner, None
 
 
+@functools.singledispatch
 def mark_maximum(
     values: npt.NDArray[Real],
     index_map: _IndexMap,
@@ -962,8 +965,6 @@ def mark_maximum(
         threshold would be 0 and the criterion would degenerate to marking
         every entry with a positive value.
 
-
-
     Args:
         values: Values, often with each entry associated with a mesh
             entity, e.g. an error indicator.
@@ -975,6 +976,28 @@ def mark_maximum(
         satisfying :math:`v_i > \theta \max_j v_j`.
     """
     return _mark_maximum(values, index_map, theta)  # type: ignore
+
+
+@mark_maximum.register(Vector)
+def _mark_maximum_vector(
+    values: Vector[Real],
+    theta: float,
+) -> npt.NDArray[np.int32]:
+    r"""Return local indices of values exceeding a fraction of the max.
+
+    Note:
+        Wrapper, see index map based callback for further details.
+
+    Args:
+        values: Values, often with each entry associated with a mesh
+            entity, e.g. an error indicator.
+        theta: Cut-off parameter, :math:`0 < \theta \le 1`.
+
+    Returns:
+        Local indices, ascending and including ghosts, of the entries
+        satisfying :math:`v_i > \theta \max_j v_j`.
+    """
+    return _mark_maximum(values.array, values.index_map, theta)
 
 
 def _create_mesh_coordinate_element(
