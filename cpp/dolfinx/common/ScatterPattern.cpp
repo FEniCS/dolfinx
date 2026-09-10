@@ -131,8 +131,3 @@ common::ScatterPattern::ScatterPattern(const IndexMap& map)
                          { return static_cast<std::int32_t>(idx - range[0]); });
 }
 //-----------------------------------------------------------------------------
-common::ScatterPattern common::create_scatter_pattern(const IndexMap& map)
-{
-  return ScatterPattern(map);
-}
-//-----------------------------------------------------------------------------

@@ -414,8 +414,7 @@ void test_private_scatter_pattern()
   // A caller that wants its scatters unordered with respect to every
   // other scatter on this map can build a private pattern, and with it
   // a private pair of communicators.
-  auto priv = std::make_shared<const common::ScatterPattern>(
-      common::create_scatter_pattern(*map));
+  auto priv = std::make_shared<const common::ScatterPattern>(*map);
   CHECK(priv.get() != shared.get());
   if (mpi_size > 1)
     CHECK(priv->comm0() != shared->comm0());

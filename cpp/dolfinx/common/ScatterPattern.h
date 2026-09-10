@@ -32,7 +32,15 @@ class ScatterPattern
 public:
   /// @brief Build the communication pattern of an index map.
   ///
-  /// @note Collective on `map.comm()`.
+  /// The pattern is owned by the caller, and is distinct from the one
+  /// that IndexMap::scatter_pattern shares. Construct one directly to
+  /// give a common::Scatterer its own pair of neighbourhood
+  /// communicators, so that its scatters carry no ordering requirement
+  /// against scatters on other scatterers over the same index map.
+  ///
+  /// @note Collective on `map.comm()`. Each pattern creates two
+  /// neighbourhood communicators, a limited resource, so prefer
+  /// IndexMap::scatter_pattern unless a private pattern is needed.
   ///
   /// @param[in] map Index map that describes the parallel layout of
   /// data.
@@ -130,21 +138,5 @@ private:
   // Owned indices that are ghosted elsewhere, grouped by neighbour
   std::vector<std::int32_t> _local_inds;
 };
-
-/// @brief Build the communication pattern of an index map.
-///
-/// The returned pattern is owned by the caller, and is distinct from the
-/// one that IndexMap::scatter_pattern shares. Use this to give a
-/// common::Scatterer its own pair of neighbourhood communicators, so
-/// that its scatters carry no ordering requirement against scatters on
-/// other scatterers over the same map.
-///
-/// @note Collective on `map.comm()`. Creating a pattern creates two
-/// neighbourhood communicators, a limited resource; prefer
-/// IndexMap::scatter_pattern unless a private pattern is needed.
-///
-/// @param[in] map Index map that describes the parallel layout of data.
-/// @return Communication pattern of `map`.
-ScatterPattern create_scatter_pattern(const IndexMap& map);
 
 } // namespace dolfinx::common
