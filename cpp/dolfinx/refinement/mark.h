@@ -39,15 +39,7 @@ namespace dolfinx::refinement
 /// maximum. θ = 0 is rejected, since `threshold` would be 0 and the
 /// criterion would degenerate to marking every entry with a positive
 /// value.
-/// @note The threshold is bitwise identical on every rank, so an entry is
-/// marked consistently by its owner and by every rank ghosting it.
 ///
-/// @warning Returned indices index @p values, not mesh entities. A DOF index
-/// is not an entity index in general (e.g. a reordered DG0 dofmap), even with
-/// one DOF per entity. To get entity indices, build @p values and
-/// @p index_map directly from the entity's `common::IndexMap` (e.g.
-/// `mesh::Topology::index_map`) rather than a dofmap's, or map DOFs to
-/// entities via the dofmap yourself.
 ///
 /// @param[in] values Values, often with each entry associated with a mesh
 ///   entity, e.g. an error indicator.
@@ -61,15 +53,14 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
                                        const common::IndexMap& index_map,
                                        std::type_identity_t<T> theta)
 {
-  // Validate before the collective below
   if ((theta <= 0) or (theta > 1))
   {
     throw std::invalid_argument(
         std::format("theta must satisfy 0 < theta <= 1, got {}.", theta));
   }
 
-  const std::int32_t n = values.size();
-  const std::int32_t size = index_map.size_local() + index_map.num_ghosts();
+  std::int32_t n = values.size();
+ std::int32_t size = index_map.size_local() + index_map.num_ghosts();
   if (n != size)
   {
     throw std::invalid_argument(
@@ -78,8 +69,7 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
                     size, n));
   }
 
-  // If no local entries, assign a large negative value for local maximum
-  const T local_max
+  T local_max
       = index_map.size_local() == 0
             ? std::numeric_limits<T>::lowest()
             : std::ranges::max(values.first(index_map.size_local()));
@@ -88,7 +78,7 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
   MPI_Allreduce(&local_max, &max, 1, dolfinx::MPI::mpi_t<T>, MPI_MAX,
                 index_map.comm());
 
-  const T threshold = theta * max;
+  T threshold = theta * max;
 
   auto mark = [threshold](T e) { return e > threshold; };
 

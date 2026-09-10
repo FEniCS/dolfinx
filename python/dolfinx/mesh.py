@@ -962,16 +962,7 @@ def mark_maximum(
         threshold would be 0 and the criterion would degenerate to marking
         every entry with a positive value.
 
-        The threshold is bitwise identical on every rank, so an entry is
-        marked consistently by its owner and by every rank ghosting it.
 
-    Warning:
-        Returned indices index ``values``, not mesh entities. A DOF index
-        is not an entity index in general (e.g. a reordered DG0 dofmap),
-        even with one DOF per entity. To get entity indices, build
-        ``values`` and ``index_map`` directly from the entity's index map
-        (e.g. ``mesh.topology.index_map``) rather than a dofmap's, or map
-        DOFs to entities via the dofmap yourself.
 
     Args:
         values: Values, often with each entry associated with a mesh
