@@ -111,12 +111,16 @@ disclosure process.
   explicit throw/abort when it needs multiple statements. Prefer
   `spdlog::debug`/`info`/`warn` for logging over
   `std::cout`/`std::cerr`.
-- **MPI collectives**: collective operations (`MPI_Allreduce`,
-  neighbourhood collectives, etc.) must be reached by every rank in the
-  communicator — an error path, early return, or exception on one rank
-  must not skip a collective that other ranks still call, or the
-  mismatch deadlocks. Validate/throw before entering a code path with
-  collectives, not conditionally partway through it.
+- **MPI collectives**: every rank in a communicator must reach matching
+  collective operations (`MPI_Allreduce`, neighbourhood collectives,
+  etc.) in the same order. An early return or exception on one rank must
+  not skip a collective that peers still call, or they will deadlock. In
+  Release builds, validation must be local: it must not call MPI
+  functions that communicate. Consequently, a collective interface
+  requires locally valid arguments and consistent participation on every
+  rank; invalid input on only some ranks violates this precondition and
+  may deadlock. Validate/throw before entering collective code, never
+  conditionally between collective operations.
 - **Move/copy semantics**: Moving is preferred over copying, unless
   the object is very lightweight. Many DOLFINx classes disable
   copying; none disable moving. `std::move` is used systematically on
