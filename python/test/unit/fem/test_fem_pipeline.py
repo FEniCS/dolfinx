@@ -276,7 +276,7 @@ def test_curl_curl_eigenvalue(family, order, dtype):
     # Discard numerically zero nullspace modes; the physical spectrum starts at 1.
     evals = evals[evals > 0.5]
     assert evals.shape[0] >= evals_exact.shape[0]
-    assert np.isclose(evals[: evals_exact.shape[0]], evals_exact, rtol=5e-1).all()
+    assert np.isclose(evals[: evals_exact.shape[0]], evals_exact, rtol=1e-1).all()
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
