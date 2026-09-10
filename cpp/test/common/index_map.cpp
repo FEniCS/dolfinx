@@ -236,11 +236,16 @@ void test_rank_weights()
 
 void test_index_map_preconditions()
 {
-#ifndef NDEBUG
+  // local_size >= 0 and a ghosts/owners length mismatch are checked
+  // locally and unconditionally (no MPI collective), in both Developer
+  // and Release builds: a mismatch would otherwise be an out-of-bounds
+  // access in internal communication setup. Because the check is local
+  // only, it is not safe to make it inconsistent across ranks (e.g.
+  // valid on rank 0 but not rank 1): that would make the invalid rank
+  // throw and leave before entering compute_layout's collectives, while
+  // the other ranks proceed into them and hang. Every rank below passes
+  // the same (valid or invalid) argument.
   CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, -1), std::invalid_argument);
-
-  // A ghosts/owners length mismatch would otherwise be an out-of-bounds
-  // access in internal communication setup.
   const std::vector<std::int64_t> mismatched_ghosts = {0, 1};
   const std::vector<int> mismatched_owners = {0};
   CHECK_THROWS_AS(
@@ -251,6 +256,7 @@ void test_index_map_preconditions()
                                    mismatched_ghosts, mismatched_owners),
                   std::invalid_argument);
 
+#ifndef NDEBUG
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
   const int owner = (dolfinx::MPI::rank(MPI_COMM_WORLD) + 1) % mpi_size;
   const std::vector<std::int64_t> ghosts = {0};
@@ -262,19 +268,6 @@ void test_index_map_preconditions()
   if (mpi_size > 1)
   {
     const int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-
-    // A precondition failure on one rank is reported on all ranks before
-    // either constructor enters its communication path.
-    CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, rank == 0 ? -1 : 1),
-                    std::invalid_argument);
-    const std::vector<std::int64_t> uneven_ghosts
-        = rank == 0 ? std::vector<std::int64_t>{0}
-                    : std::vector<std::int64_t>{};
-    const std::vector<int> no_owners;
-    CHECK_THROWS_AS(
-        common::IndexMap(MPI_COMM_WORLD, 1, uneven_ghosts, no_owners),
-        std::invalid_argument);
-
     const std::vector<std::int64_t> ghost_owned_locally = {rank};
     const std::vector<int> remote_owner = {(rank + 1) % mpi_size};
     const std::vector<int> destination = {(rank + mpi_size - 1) % mpi_size};

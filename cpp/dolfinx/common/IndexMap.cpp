@@ -46,8 +46,20 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
                              std::span<const int> owners,
                              std::span<const std::uint8_t> include_ghost);
 
+/// Check a local, O(1) precondition. No MPI communication: use only
+/// for a condition that depends solely on this rank's own arguments,
+/// never on data received from other ranks.
+void check_local_precondition(bool valid, std::string_view message)
+{
+  if (!valid)
+    throw std::invalid_argument(std::string(message));
+}
+
 #ifndef NDEBUG
-/// Check a rank-local precondition collectively.
+/// Check a rank-local precondition collectively. Requires an
+/// MPI_Allreduce, so only used in Developer builds - never call this
+/// unconditionally, as a mismatched-across-ranks call would leave some
+/// ranks waiting on a collective the others skip.
 void check_collective_precondition(MPI_Comm comm, bool local_valid,
                                    std::string_view message)
 {
@@ -66,12 +78,21 @@ bool is_valid_peer_rank(int rank, int comm_size, int peer)
 {
   return peer >= 0 and peer < comm_size and peer != rank;
 }
+#endif
 
 /// Validate input shared by both ghosted IndexMap constructors.
 void validate_ghost_data(MPI_Comm comm, std::int32_t local_size,
                          std::span<const std::int64_t> ghosts,
                          std::span<const int> owners)
 {
+  // local_size >= 0 and ghosts.size() == owners.size() are local, O(1)
+  // properties of this rank's own arguments, checked unconditionally
+  // without any collective: several call sites index owners[i] for i
+  // in [0, ghosts.size()), so a size mismatch is an out-of-bounds
+  // access, not just a logical error.
+  check_local_precondition(local_size >= 0 and ghosts.size() == owners.size(),
+                           "Invalid IndexMap ghost data.");
+#ifndef NDEBUG
   const int rank = dolfinx::MPI::rank(comm);
   const int comm_size = dolfinx::MPI::size(comm);
   const bool ghosts_unique = sorted_unique(ghosts).size() == ghosts.size();
@@ -80,13 +101,13 @@ void validate_ghost_data(MPI_Comm comm, std::int32_t local_size,
       { return is_valid_peer_rank(rank, comm_size, owner); });
   const bool ghosts_valid = std::ranges::all_of(ghosts, [](std::int64_t ghost)
                                                 { return ghost >= 0; });
-  check_collective_precondition(
-      comm,
-      local_size >= 0 and ghosts.size() == owners.size() and ghosts_unique
-          and owners_valid and ghosts_valid,
-      "Invalid IndexMap ghost data.");
+  check_collective_precondition(comm,
+                                ghosts_unique and owners_valid and ghosts_valid,
+                                "Invalid IndexMap ghost data.");
+#endif
 }
 
+#ifndef NDEBUG
 /// Return true if values are sorted and contain no duplicates.
 template <typename T>
 bool is_sorted_unique(std::span<const T> values)
@@ -968,10 +989,8 @@ common::create_sub_index_map(const IndexMap& imap,
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size) : _comm(comm, true)
 {
-#ifndef NDEBUG
-  check_collective_precondition(_comm.comm(), local_size >= 0,
-                                "IndexMap local size must be non-negative.");
-#endif
+  check_local_precondition(local_size >= 0,
+                           "IndexMap local size must be non-negative.");
   auto [local_range, size_global] = compute_layout(_comm.comm(), local_size);
   _local_range = local_range;
   _size_global = size_global;
@@ -983,9 +1002,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
     : _comm(comm, true), _ghosts(ghosts.begin(), ghosts.end()),
       _owners(owners.begin(), owners.end())
 {
-#ifndef NDEBUG
   validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
-#endif
   auto src_dest = build_src_dest(_comm.comm(), _owners, tag);
   const bool verify_dest = false; // dest here is consensus-derived
   auto [local_range, size_global]
@@ -1005,8 +1022,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
       _owners(owners.begin(), owners.end()), _src(src_dest[0]),
       _dest(src_dest[1])
 {
-#ifndef NDEBUG
   validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
+#ifndef NDEBUG
   validate_src_dest(_comm.comm(), _src, _dest, _owners);
 #endif
   const bool verify_dest = true; // dest here is caller-supplied
