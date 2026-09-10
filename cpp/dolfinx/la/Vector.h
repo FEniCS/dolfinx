@@ -398,15 +398,12 @@ public:
   /// @brief Create a vector over the same layout, entries
   /// value-initialised and not copied.
   ///
-  /// The index map and scatterer are shared, so no communication
-  /// pattern is rebuilt. The block size is inherited, a scatterer being
-  /// built for one block size only. Unlike the copy-converting
-  /// constructor, no data is copied, so `T1` need not represent the
-  /// values of this vector, e.g. an `std::int8_t` marker array
-  /// alongside floating-point weights.
+  /// The index map and scatterer are shared, so no communication pattern is
+  /// rebuilt. Unlike the copy-converting constructor, no vector data is
+  /// copied, so `T1` can be different to `T`.
   ///
-  /// @note Both vectors scatter on the same communicators. Each owns
-  /// its buffers and request, so sequential use is safe, but concurrent
+  /// @note Both vectors scatter on the same communicators. Each owns its
+  /// buffers and request, so sequential scatters is safe, but concurrent
   /// scatters must be issued in the same order on every rank.
   ///
   /// @tparam T1 Scalar type of the new vector.
