@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Chris Richardson
+// Copyright (C) 2018-2026 Chris Richardson and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //

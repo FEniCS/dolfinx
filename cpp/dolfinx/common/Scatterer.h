@@ -120,7 +120,7 @@ public:
                     std::ref(_sizes_remote), std::ref(_displs_remote)})
     {
       std::ranges::transform(x.get(), x.get().begin(),
-                             [bs](auto e) { return e * bs; });
+                             [bs](int e) { return e * bs; });
     }
 
     // Expand the pattern's indices by the block size
@@ -143,8 +143,20 @@ public:
   {
   }
 
-  /// @brief Copy constructor
+  /// Copy constructor
   Scatterer(const Scatterer& scatterer) = default;
+
+  /// Move constructor
+  Scatterer(Scatterer&& scatterer) = default;
+
+  /// Destructor
+  ~Scatterer() = default;
+
+  /// Copy assignment
+  Scatterer& operator=(const Scatterer& scatterer) = default;
+
+  /// Move assignment
+  Scatterer& operator=(Scatterer&& scatterer) = default;
 
   /// @brief Cast-copy constructor.
   ///

@@ -57,7 +57,7 @@ common::ScatterPattern::ScatterPattern(const IndexMap& map)
   std::span owners = map.owners();
   _perm.resize(owners.size());
   std::iota(_perm.begin(), _perm.end(), 0);
-  dolfinx::radix_sort(_perm, [&owners](auto index) { return owners[index]; });
+  dolfinx::radix_sort(_perm, [&owners](std::int32_t i) { return owners[i]; });
 
   // Sort (i) ghost indices and (ii) ghost index owners by rank (using
   // the permutation array)
@@ -65,9 +65,9 @@ common::ScatterPattern::ScatterPattern(const IndexMap& map)
   std::vector<int> owners_sorted(owners.size());
   std::vector<std::int64_t> ghosts_sorted(owners.size());
   std::ranges::transform(_perm, owners_sorted.begin(),
-                         [&owners](auto idx) { return owners[idx]; });
+                         [&owners](std::int32_t i) { return owners[i]; });
   std::ranges::transform(_perm, ghosts_sorted.begin(),
-                         [&ghosts](auto idx) { return ghosts[idx]; });
+                         [&ghosts](std::int32_t i) { return ghosts[i]; });
 
   // For data associated with ghost indices, packed by owning
   // (neighbourhood) rank, compute sizes and displacements. I.e., when
@@ -119,13 +119,14 @@ common::ScatterPattern::ScatterPattern(const IndexMap& map)
   const std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
   // Check that all received indices are within the owned range
-  std::ranges::for_each(recv_buffer, [range](auto idx)
+  std::ranges::for_each(recv_buffer, [&range](std::int64_t idx)
                         { assert(idx >= range[0] and idx < range[1]); });
 #endif
 
   // Convert the received indices from global to local numbering
   _local_inds.resize(recv_buffer.size());
-  std::ranges::transform(recv_buffer, _local_inds.begin(), [range](auto idx)
+  std::ranges::transform(recv_buffer, _local_inds.begin(),
+                         [&range](std::int64_t idx)
                          { return static_cast<std::int32_t>(idx - range[0]); });
 }
 //-----------------------------------------------------------------------------
