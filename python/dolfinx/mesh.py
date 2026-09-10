@@ -941,9 +941,8 @@ def _get_mesh_partitioner(
     return partitioner, None
 
 
-@functools.singledispatch
 def mark_maximum(
-    values: npt.NDArray[Real] | Vector[Real],
+    values: npt.NDArray[Real],
     index_map: _IndexMap,
     theta: float,
 ) -> npt.NDArray[np.int32]:
@@ -976,28 +975,6 @@ def mark_maximum(
         satisfying :math:`v_i > \theta \max_j v_j`.
     """
     return _mark_maximum(values, index_map, theta)  # type: ignore
-
-
-@mark_maximum.register(Vector)
-def _mark_maximum_vector(
-    values: Vector[Real],
-    theta: float,
-) -> npt.NDArray[np.int32]:
-    r"""Return local indices of values exceeding a fraction of the max.
-
-    Note:
-        Wrapper, see index map based callback for further details.
-
-    Args:
-        values: Values, often with each entry associated with a mesh
-            entity, e.g. an error indicator.
-        theta: Cut-off parameter, :math:`0 < \theta \le 1`.
-
-    Returns:
-        Local indices, ascending and including ghosts, of the entries
-        satisfying :math:`v_i > \theta \max_j v_j`.
-    """
-    return _mark_maximum(values.array, values.index_map, theta)
 
 
 def _create_mesh_coordinate_element(
