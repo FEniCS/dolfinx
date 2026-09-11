@@ -592,7 +592,7 @@ def mixed_direct():
     # Define variational problem
     (u, p) = ufl.TrialFunctions(W)
     (v, q) = ufl.TestFunctions(W)
-    f = Function(Q)
+    f = Function(V)
     a = form(
         (ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(p, ufl.div(v)) + ufl.inner(ufl.div(u), q))
         * ufl.dx
