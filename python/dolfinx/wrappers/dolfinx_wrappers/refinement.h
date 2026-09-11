@@ -144,6 +144,18 @@ void declare_refinement(nanobind::module_& m)
             theta));
       },
       nb::arg("values"), nb::arg("index_map"), nb::arg("theta"));
+
+  m.def(
+      "mark_equidistribution",
+      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values,
+         const dolfinx::common::IndexMap& index_map, T theta)
+      {
+        return dolfinx_wrappers::as_nbarray(
+            dolfinx::refinement::mark_equidistribution(
+                std::span<const T>(values.data(), values.size()), index_map,
+                theta));
+      },
+      nb::arg("values"), nb::arg("index_map"), nb::arg("theta"));
 }
 
 } // namespace dolfinx_wrappers

@@ -36,6 +36,7 @@ from dolfinx.cpp.refinement import (
     IdentityPartitionerPlaceholder,
     RefinementOption,
 )
+from dolfinx.cpp.refinement import mark_equidistribution as _mark_equidistribution
 from dolfinx.cpp.refinement import mark_maximum as _mark_maximum
 from dolfinx.cpp.refinement import uniform_refine as _uniform_refine
 from dolfinx.fem import CoordinateElement as _CoordinateElement
@@ -75,6 +76,7 @@ __all__ = [
     "exterior_facet_indices",
     "locate_entities",
     "locate_entities_boundary",
+    "mark_equidistribution",
     "mark_maximum",
     "meshtags",
     "meshtags_from_entities",
@@ -974,6 +976,12 @@ def mark_maximum(
     """
     return _mark_maximum(values, index_map, theta)
 
+
+def mark_equidistribution(values: npt.NDArray[Real],
+    index_map: _IndexMap,
+    theta: float,
+) -> npt.NDArray[np.int32]:
+    return _mark_equidistribution(values, index_map, theta)
 
 def _create_mesh_coordinate_element(
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
