@@ -102,29 +102,15 @@ private:
     };
   }
 
-  /// @brief Return an 'unpack' function for unpacking a receive buffer. Assigns
-  /// received values to entries.
+  /// @brief Return an 'unpack' function for unpacking a receive buffer.
+  /// Assigns received values to entries.
   ///
   /// Typically used to unpack into ghost entries on a CPU.
   auto get_unpack()
   {
-    return [bs = _bs](typename ScatterContainer::const_iterator idx_first,
-                      typename ScatterContainer::const_iterator idx_last,
-                      const auto in_first, auto out_first)
-    {
-      // out[idx[i] * bs + j] = in[i * bs + j]
-      dispatch_bs(bs,
-                  [&](auto B)
-                  {
-                    auto in = in_first;
-                    for (auto idx = idx_first; idx != idx_last; ++idx)
-                    {
-                      auto out = std::next(out_first, (*idx) * B);
-                      for (int j = 0; j < B; ++j, ++in, ++out)
-                        *out = *in;
-                    }
-                  });
-    };
+    // Assignment is accumulation with an operation that keeps the
+    // received value
+    return get_unpack_op([](auto, auto received) { return received; });
   }
 
   /// @brief Return an 'unpack' function for unpacking a receive buffer.
