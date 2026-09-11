@@ -271,7 +271,7 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   std::vector<T> recv_vals(total_recv * bs[0] * bs[1]);
 
   MPI_Request data_reqs[3];
-  const dolfinx::MPI::Datatype block(bs[0] * bs[1], dolfinx::MPI::mpi_t<T>);
+  const dolfinx::MPI::Datatype<T> block(bs[0] * bs[1]);
   MPI_Datatype mpi_T = block.type();
 
   MPI_Ineighbor_alltoallv(send_row_gidx.data(), send_count.data(),

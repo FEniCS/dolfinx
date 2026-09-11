@@ -70,45 +70,6 @@ dolfinx::MPI::Comm::operator=(dolfinx::MPI::Comm&& comm) noexcept
 //-----------------------------------------------------------------------------
 MPI_Comm dolfinx::MPI::Comm::comm() const noexcept { return _comm; }
 //-----------------------------------------------------------------------------
-dolfinx::MPI::Datatype::Datatype(int count, MPI_Datatype base) : _base(base)
-{
-  if (count > 1)
-  {
-    int err = MPI_Type_contiguous(count, base, &_type);
-    dolfinx::MPI::check_error(MPI_COMM_SELF, err);
-    err = MPI_Type_commit(&_type);
-    dolfinx::MPI::check_error(MPI_COMM_SELF, err);
-  }
-}
-//-----------------------------------------------------------------------------
-dolfinx::MPI::Datatype::Datatype(Datatype&& type) noexcept
-    : _type(type._type), _base(type._base)
-{
-  type._type = MPI_DATATYPE_NULL;
-}
-//-----------------------------------------------------------------------------
-dolfinx::MPI::Datatype::~Datatype()
-{
-  if (_type != MPI_DATATYPE_NULL)
-    MPI_Type_free(&_type);
-}
-//-----------------------------------------------------------------------------
-dolfinx::MPI::Datatype&
-dolfinx::MPI::Datatype::operator=(Datatype&& type) noexcept
-{
-  if (_type != MPI_DATATYPE_NULL)
-    MPI_Type_free(&_type);
-  _type = type._type;
-  _base = type._base;
-  type._type = MPI_DATATYPE_NULL;
-  return *this;
-}
-//-----------------------------------------------------------------------------
-MPI_Datatype dolfinx::MPI::Datatype::type() const noexcept
-{
-  return _type == MPI_DATATYPE_NULL ? _base : _type;
-}
-//-----------------------------------------------------------------------------
 int dolfinx::MPI::rank(const MPI_Comm comm)
 {
   int rank;

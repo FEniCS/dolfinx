@@ -240,7 +240,7 @@ public:
     if (!has_neighbours())
       return;
 
-    const dolfinx::MPI::Datatype type(bs, dolfinx::MPI::mpi_t<T>);
+    const dolfinx::MPI::Datatype<T> type(bs);
     MPI_Datatype dt = type.type();
     int ierr = MPI_Ineighbor_alltoallv(
         send_buffer, _sizes_local.data(), _displs_local.data(), dt, recv_buffer,
@@ -287,7 +287,7 @@ public:
     if (!has_neighbours())
       return;
 
-    dolfinx::MPI::Datatype type(bs, dolfinx::MPI::mpi_t<T>);
+    dolfinx::MPI::Datatype<T> type(bs);
     int ierr = MPI_Ineighbor_alltoallv(
         send_buffer, _sizes_remote.data(), _displs_remote.data(), type.type(),
         recv_buffer, _sizes_local.data(), _displs_local.data(), type.type(),
