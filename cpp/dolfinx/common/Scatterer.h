@@ -227,6 +227,9 @@ public:
   /// and how to pack.
   /// @param[in,out] recv_buffer Buffer for storing received data. See
   /// Scatterer::remote_indices for the order of the buffer and how to unpack.
+  /// @param[in] bs Number of values per index map index (the block
+  /// size). The buffers hold `bs` values for each index in
+  /// ::local_indices and ::remote_indices respectively.
   /// @param[in] request MPI request handle for tracking the status of
   /// the non-blocking communication. The same request handle should be
   /// passed to Scatterer::scatter_fwd_end to complete the communication.
@@ -271,6 +274,9 @@ public:
   /// @param[in,out] recv_buffer Buffer for storing received data. See
   /// Scatterer::local_indices for the order of the buffer and how to
   /// unpack.
+  /// @param[in] bs Number of values per index map index (the block
+  /// size). The buffers hold `bs` values for each index in
+  /// ::remote_indices and ::local_indices respectively.
   /// @param[in] request MPI request handle for tracking the status of
   /// the non-blocking communication. The same request handle should be
   /// passed to Scatterer::scatter_rev_end to complete the communication.
