@@ -6,6 +6,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "IndexMap.h"
+#include "Scatterer.h"
 #include "sort.h"
 #include <algorithm>
 #include <cstdint>
@@ -1337,6 +1338,15 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
 std::span<const int> IndexMap::src() const noexcept { return _src; }
 //-----------------------------------------------------------------------------
 std::span<const int> IndexMap::dest() const noexcept { return _dest; }
+//-----------------------------------------------------------------------------
+std::shared_ptr<const Scatterer<std::vector<std::int32_t>>>
+IndexMap::scatterer() const
+{
+  if (!_scatterer)
+    _scatterer
+        = std::make_shared<const Scatterer<std::vector<std::int32_t>>>(*this);
+  return _scatterer;
+}
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> IndexMap::weights_src() const
 {

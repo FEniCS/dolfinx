@@ -18,6 +18,8 @@ namespace dolfinx::common
 {
 // Forward declaration
 class IndexMap;
+template <class Container>
+class Scatterer;
 
 /// Enum to control preservation of ghost index ordering in
 /// sub-IndexMaps.
@@ -256,6 +258,18 @@ public:
   /// The ranks are unique and sorted.
   std::span<const int> dest() const noexcept;
 
+  /// @brief Scatterer for data laid out according to this index map.
+  ///
+  /// The scatterer owns the two neighbourhood communicators used to
+  /// scatter. It does not depend on the block size, so every la::Vector
+  /// over this index map shares it, whatever their block size.
+  ///
+  /// @note Collective on comm() on the first call.
+  /// @note Not thread safe.
+  ///
+  /// @return Scatterer for this index map.
+  std::shared_ptr<const Scatterer<std::vector<std::int32_t>>> scatterer() const;
+
   /// @brief Compute the number of ghost indices owned by each rank in
   /// IndexMap::src.
   ///
@@ -328,6 +342,10 @@ private:
 
   // Set of ranks ghost owned indices
   std::vector<int> _dest;
+
+  // Scatterer, built on the first call to scatterer()
+  mutable std::shared_ptr<const Scatterer<std::vector<std::int32_t>>>
+      _scatterer;
 };
 
 } // namespace dolfinx::common
