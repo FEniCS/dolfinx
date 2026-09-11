@@ -338,12 +338,15 @@ public:
   /// @param[in] count Number of values in a block.
   explicit Datatype(int count)
   {
+    // Not error checked, matching the other datatype creation sites in
+    // the library: these are local calls, and under the default
+    // MPI_ERRORS_ARE_FATAL handler a failure aborts before a return code
+    // is visible. There is also no communicator here to abort on --
+    // MPI_COMM_SELF would abort this rank alone and hang the rest.
     if (count > 1)
     {
-      int err = MPI_Type_contiguous(count, mpi_t<T>, &_type);
-      dolfinx::MPI::check_error(MPI_COMM_SELF, err);
-      err = MPI_Type_commit(&_type);
-      dolfinx::MPI::check_error(MPI_COMM_SELF, err);
+      MPI_Type_contiguous(count, mpi_t<T>, &_type);
+      MPI_Type_commit(&_type);
     }
   }
 
