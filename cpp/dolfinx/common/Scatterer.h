@@ -207,8 +207,8 @@ public:
   /// owned data with ranks that ghost it.
   ///
   /// The communication is completed by calling Scatterer::scatter_fwd_end.
-  /// See ::local_indices for instructions on packing `send_buffer` and
-  /// ::remote_indices for instructions on unpacking `recv_buffer`.
+  /// See ::local_block_indices for instructions on packing `send_buffer` and
+  /// ::remote_block_indices for instructions on unpacking `recv_buffer`.
   ///
   /// @note Collective MPI operation. Every rank in the communicator
   /// must call this function, including ranks without neighbours.
@@ -223,13 +223,14 @@ public:
   ///
   /// @param[in] send_buffer Packed local data associated with each
   /// owned local index to be sent to processes where the data is
-  /// ghosted. See Scatterer::local_indices for the order of the buffer
+  /// ghosted. See Scatterer::local_block_indices for the order of the buffer
   /// and how to pack.
   /// @param[in,out] recv_buffer Buffer for storing received data. See
-  /// Scatterer::remote_indices for the order of the buffer and how to unpack.
+  /// Scatterer::remote_block_indices for the order of the buffer and how to
+  /// unpack.
   /// @param[in] bs Number of values per index map index (the block
   /// size). The buffers hold `bs` values for each index in
-  /// ::local_indices and ::remote_indices respectively.
+  /// ::local_block_indices and ::remote_block_indices respectively.
   /// @param[in] request MPI request handle for tracking the status of
   /// the non-blocking communication. The same request handle should be
   /// passed to Scatterer::scatter_fwd_end to complete the communication.
@@ -253,8 +254,8 @@ public:
   /// ghost data with owning ranks.
   ///
   /// The communication is completed by calling Scatterer::scatter_rev_end.
-  /// See ::remote_indices for instructions on packing `send_buffer` and
-  /// ::local_indices  for instructions on unpacking `recv_buffer`.
+  /// See ::remote_block_indices for instructions on packing `send_buffer` and
+  /// ::local_block_indices  for instructions on unpacking `recv_buffer`.
   ///
   /// @note Collective MPI operation. Every rank in the communicator
   /// must call this function, including ranks without neighbours.
@@ -269,14 +270,14 @@ public:
   ///
   /// @param[in] send_buffer Data associated with each ghost index. This
   /// data is sent to the process that owns the index. See
-  /// Scatterer::remote_indices for the order of the buffer and how to
+  /// Scatterer::remote_block_indices for the order of the buffer and how to
   /// pack.
   /// @param[in,out] recv_buffer Buffer for storing received data. See
-  /// Scatterer::local_indices for the order of the buffer and how to
+  /// Scatterer::local_block_indices for the order of the buffer and how to
   /// unpack.
   /// @param[in] bs Number of values per index map index (the block
   /// size). The buffers hold `bs` values for each index in
-  /// ::remote_indices and ::local_indices respectively.
+  /// ::remote_block_indices and ::local_block_indices respectively.
   /// @param[in] request MPI request handle for tracking the status of
   /// the non-blocking communication. The same request handle should be
   /// passed to Scatterer::scatter_rev_end to complete the communication.
@@ -346,7 +347,7 @@ public:
   /// `send_buffer` is the send buffer, `send_buffer` is packed such
   /// that:
   ///
-  ///     auto& idx = scatterer.local_indices()
+  ///     auto& idx = scatterer.local_block_indices()
   ///     std::vector<T> send_buffer(idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
   ///         send_buffer[i] = x[idx[i]];
@@ -354,7 +355,7 @@ public:
   /// For a reverse scatter, if `recv_buffer` is the received buffer,
   /// then `x` is updated by
   ///
-  ///     auto& idx = scatterer.local_indices()
+  ///     auto& idx = scatterer.local_block_indices()
   ///     std::vector<T> recv_buffer(idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
   ///         x[idx[i]] = op(recv_buffer[i], x[idx[i]]);
@@ -363,7 +364,10 @@ public:
   /// `x[idx[i]] += buffer[i]`.
   ///
   /// @return Indices container.
-  const container_type& local_indices() const noexcept { return _local_inds; }
+  const container_type& local_block_indices() const noexcept
+  {
+    return _local_inds;
+  }
 
   /// @brief Array of indices for packing/unpacking ghost data to/from a
   /// send/receive buffer.
@@ -373,24 +377,32 @@ public:
   /// (accumulating) the receive buffer values to the correct position in
   /// the owned array.
   ///
+  /// The indices are in blocks, so for a block size `bs` a buffer holds
+  /// `bs` values per index and must be `bs * size()` long.
+  ///
   /// For a forward scatter, if `xg` is the ghost part of the data array
   /// and `recv_buffer` is the receive buffer, `xg` is updated as
   ///
-  ///     auto& idx = scatterer.remote_indices()
-  ///     std::vector<T> recv_buffer(idx.size())
+  ///     auto& idx = scatterer.remote_block_indices()
+  ///     std::vector<T> recv_buffer(bs * idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
-  ///         xg[idx[i]] = recv_buffer[i];
+  ///         for (int j = 0; j < bs; ++j)
+  ///             xg[idx[i] * bs + j] = recv_buffer[i * bs + j];
   ///
   /// For a reverse scatter, if `send_buffer` is the send buffer, then
   /// `send_buffer` is packed such that:
   ///
-  ///     auto& idx = scatterer.remote_indices()
-  ///     std::vector<T> send_buffer(idx.size())
+  ///     auto& idx = scatterer.remote_block_indices()
+  ///     std::vector<T> send_buffer(bs * idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
-  ///         send_buffer[i] = xg[idx[i]];
+  ///         for (int j = 0; j < bs; ++j)
+  ///             send_buffer[i * bs + j] = xg[idx[i] * bs + j];
   ///
-  /// @return Indices container.
-  const container_type& remote_indices() const noexcept { return _remote_inds; }
+  /// @return Block indices container.
+  const container_type& remote_block_indices() const noexcept
+  {
+    return _remote_inds;
+  }
 
 private:
   // False only on a single rank, where _comm0/_comm1 stay MPI_COMM_NULL

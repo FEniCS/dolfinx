@@ -28,33 +28,33 @@ void declare_scatter_functions(
          nb::ndarray<const T, nb::ndim<1>, nb::c_contig> local_data,
          nb::ndarray<T, nb::ndim<1>, nb::c_contig> remote_data, int bs)
       {
-        if (local_data.size() < bs * self.local_indices().size())
+        if (local_data.size() < bs * self.local_block_indices().size())
         {
           throw std::runtime_error(
               "Local data buffer too small in forward scatter.");
         }
-        if (remote_data.size() < bs * self.remote_indices().size())
+        if (remote_data.size() < bs * self.remote_block_indices().size())
         {
           throw std::runtime_error(
               "Ghost data buffer too small in forward scatter.");
         }
 
-        std::vector<T> send_buffer(bs * self.local_indices().size());
+        std::vector<T> send_buffer(bs * self.local_block_indices().size());
         {
           auto _local_data = local_data.view();
-          auto& idx = self.local_indices();
+          auto& idx = self.local_block_indices();
           for (std::size_t i = 0; i < idx.size(); ++i)
             for (int j = 0; j < bs; ++j)
               send_buffer[i * bs + j] = _local_data(idx[i] * bs + j);
         }
-        std::vector<T> recv_buffer(bs * self.remote_indices().size());
+        std::vector<T> recv_buffer(bs * self.remote_block_indices().size());
         MPI_Request request = MPI_REQUEST_NULL;
         self.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), bs,
                                request);
         self.scatter_fwd_end(request);
         {
           auto _remote_data = remote_data.view();
-          auto& idx = self.remote_indices();
+          auto& idx = self.remote_block_indices();
           for (std::size_t i = 0; i < idx.size(); ++i)
             for (int j = 0; j < bs; ++j)
               _remote_data(idx[i] * bs + j) = recv_buffer[i * bs + j];
@@ -68,33 +68,33 @@ void declare_scatter_functions(
          nb::ndarray<T, nb::ndim<1>, nb::c_contig> local_data,
          nb::ndarray<const T, nb::ndim<1>, nb::c_contig> remote_data, int bs)
       {
-        if (local_data.size() < bs * self.local_indices().size())
+        if (local_data.size() < bs * self.local_block_indices().size())
         {
           throw std::runtime_error(
               "Local data buffer too small in reverse scatter.");
         }
-        if (remote_data.size() < bs * self.remote_indices().size())
+        if (remote_data.size() < bs * self.remote_block_indices().size())
         {
           throw std::runtime_error(
               "Ghost data buffer too small in reverse scatter.");
         }
 
-        std::vector<T> send_buffer(bs * self.remote_indices().size());
+        std::vector<T> send_buffer(bs * self.remote_block_indices().size());
         {
           auto _remote_data = remote_data.view();
-          auto& idx = self.remote_indices();
+          auto& idx = self.remote_block_indices();
           for (std::size_t i = 0; i < idx.size(); ++i)
             for (int j = 0; j < bs; ++j)
               send_buffer[i * bs + j] = _remote_data(idx[i] * bs + j);
         }
-        std::vector<T> recv_buffer(bs * self.local_indices().size());
+        std::vector<T> recv_buffer(bs * self.local_block_indices().size());
         MPI_Request request = MPI_REQUEST_NULL;
         self.scatter_rev_begin<T>(send_buffer.data(), recv_buffer.data(), bs,
                                   request);
         self.scatter_rev_end(request);
         {
           auto _local_data = local_data.view();
-          auto& idx = self.local_indices();
+          auto& idx = self.local_block_indices();
           for (std::size_t i = 0; i < idx.size(); ++i)
             for (int j = 0; j < bs; ++j)
               _local_data(idx[i] * bs + j) += recv_buffer[i * bs + j];

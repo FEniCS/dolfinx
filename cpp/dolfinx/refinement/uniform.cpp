@@ -153,20 +153,20 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
               local_range[0] + entity_offsets[j]);
 
     common::Scatterer sc(*index_maps[j]);
-    std::vector<std::int64_t> send_buffer(sc.local_indices().size());
+    std::vector<std::int64_t> send_buffer(sc.local_block_indices().size());
     {
-      auto& idx = sc.local_indices();
+      auto& idx = sc.local_block_indices();
       for (std::size_t i = 0; i < idx.size(); ++i)
         send_buffer[i] = new_v[j][idx[i]];
     }
-    std::vector<std::int64_t> recv_buffer(sc.remote_indices().size());
+    std::vector<std::int64_t> recv_buffer(sc.remote_block_indices().size());
     MPI_Request request = MPI_REQUEST_NULL;
     sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), 1, request);
     sc.scatter_fwd_end(request);
     {
       std::span ghosts(std::next(new_v[j].begin(), num_entities),
                        new_v[j].end());
-      auto& idx = sc.remote_indices();
+      auto& idx = sc.remote_block_indices();
       for (std::size_t i = 0; i < idx.size(); ++i)
         ghosts[idx[i]] = recv_buffer[i];
     }
