@@ -237,11 +237,11 @@ public:
     if (!has_neighbours())
       return;
 
-    block_type<T> type(bs);
+    MPI_Datatype dt = cached_type<T>(bs);
     int ierr = MPI_Ineighbor_alltoallv(
-        send_buffer, _sizes_local.data(), _displs_local.data(), type.get(),
-        recv_buffer, _sizes_remote.data(), _displs_remote.data(), type.get(),
-        _comm0.comm(), &request);
+        send_buffer, _sizes_local.data(), _displs_local.data(), dt, recv_buffer,
+        _sizes_remote.data(), _displs_remote.data(), dt, _comm0.comm(),
+        &request);
     dolfinx::MPI::check_error(_comm0.comm(), ierr);
   }
 
@@ -280,10 +280,10 @@ public:
     if (!has_neighbours())
       return;
 
-    block_type<T> type(bs);
+    MPI_Datatype dt = cached_type<T>(bs);
     int ierr = MPI_Ineighbor_alltoallv(
-        send_buffer, _sizes_remote.data(), _displs_remote.data(), type.get(),
-        recv_buffer, _sizes_local.data(), _displs_local.data(), type.get(),
+        send_buffer, _sizes_remote.data(), _displs_remote.data(), dt,
+        recv_buffer, _sizes_local.data(), _displs_local.data(), dt,
         _comm1.comm(), &request);
     dolfinx::MPI::check_error(_comm1.comm(), ierr);
   }
@@ -386,6 +386,25 @@ public:
   const container_type& remote_indices() const noexcept { return _remote_inds; }
 
 private:
+  // DIAGNOSTIC: one committed datatype per (T, bs), created once
+  template <typename T>
+  static MPI_Datatype cached_type(int bs)
+  {
+    if (bs == 1)
+      return dolfinx::MPI::mpi_t<T>;
+    static MPI_Datatype dt = MPI_DATATYPE_NULL;
+    static int dt_bs = -1;
+    if (dt_bs != bs)
+    {
+      if (dt != MPI_DATATYPE_NULL)
+        MPI_Type_free(&dt);
+      MPI_Type_contiguous(bs, dolfinx::MPI::mpi_t<T>, &dt);
+      MPI_Type_commit(&dt);
+      dt_bs = bs;
+    }
+    return dt;
+  }
+
   // A contiguous block of `bs` values of type T, for sending sizes and
   // displacements measured in blocks. For bs == 1 this is the scalar
   // type itself and nothing is created or freed.
@@ -411,8 +430,7 @@ private:
 
     ~block_type()
     {
-      if (_owned)
-        MPI_Type_free(&_type);
+      // DIAGNOSTIC: deliberately not freeing
     }
 
     block_type& operator=(const block_type&) = delete;

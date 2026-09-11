@@ -76,6 +76,12 @@ private:
     {
       // out[i * bs + j] = in[idx[i] * bs + j], bs contiguous values per
       // index
+      if (bs == 1)
+      {
+        std::transform(idx_first, idx_last, out_first,
+                       [in_first](auto p) { return *std::next(in_first, p); });
+        return;
+      }
       auto out = out_first;
       for (auto idx = idx_first; idx != idx_last; ++idx)
         out = std::copy_n(std::next(in_first, (*idx) * bs), bs, out);
@@ -95,6 +101,12 @@ private:
       // out[idx[i] * bs + j] = in[i * bs + j], bs contiguous values per
       // index
       auto in = in_first;
+      if (bs == 1)
+      {
+        for (auto idx = idx_first; idx != idx_last; ++idx, ++in)
+          *std::next(out_first, *idx) = *in;
+        return;
+      }
       for (auto idx = idx_first; idx != idx_last; ++idx)
       {
         std::copy_n(in, bs, std::next(out_first, (*idx) * bs));
