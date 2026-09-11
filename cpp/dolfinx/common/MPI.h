@@ -319,23 +319,28 @@ MPI_Datatype mpi_datatype()
 template <typename T>
 MPI_Datatype mpi_t = mpi_datatype<T>();
 
-/// @brief An MPI datatype for a contiguous block of `T`, and manage its
-/// lifetime.
+/// @brief An MPI datatype for `count` contiguous values of type `T`, and
+/// manage its lifetime.
 ///
-/// For a block of one value `mpi_t<T>` is used directly and no datatype
-/// is created, so this is cheap to construct in that case.
+/// Lets a buffer be sent with counts and displacements measured in
+/// groups of `count` values rather than in single values. The group is
+/// an index map block size in common::Scatterer, and the row width of a
+/// row-major buffer elsewhere; it is not required to be either.
+///
+/// For `count == 1` no datatype is created and `mpi_t<T>` is used
+/// directly, so this is cheap to construct in that case.
 ///
 /// @note MPI keeps a datatype alive until communication using it has
 /// completed, so this may be destroyed as soon as a non-blocking call
 /// using it has been started.
 ///
-/// @tparam T Type of each value in a block.
+/// @tparam T Type of each value.
 template <typename T>
 class Datatype
 {
 public:
-  /// @brief Create a datatype for a contiguous block of values.
-  /// @param[in] count Number of values in a block.
+  /// @brief Create a datatype for `count` contiguous values.
+  /// @param[in] count Number of values MPI should treat as one unit.
   explicit Datatype(int count)
   {
     // Not error checked, matching the other datatype creation sites in
@@ -380,7 +385,7 @@ public:
   }
 
   /// @brief The datatype to pass to MPI.
-  /// @return Contiguous type, or `mpi_t<T>` if the block holds one value.
+  /// @return Contiguous type, or `mpi_t<T>` when `count` is one.
   MPI_Datatype type() const noexcept
   {
     return _type == MPI_DATATYPE_NULL ? mpi_t<T> : _type;
