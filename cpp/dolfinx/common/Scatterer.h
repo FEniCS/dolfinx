@@ -397,13 +397,12 @@ private:
   class block_type
   {
   public:
-    explicit block_type(int bs) : _type(dolfinx::MPI::mpi_t<T>)
+    explicit block_type(int bs)
     {
       if (bs > 1)
       {
         MPI_Type_contiguous(bs, dolfinx::MPI::mpi_t<T>, &_type);
         MPI_Type_commit(&_type);
-        _owned = true;
       }
     }
 
@@ -412,18 +411,23 @@ private:
 
     ~block_type()
     {
-      if (_owned)
+      if (_type != MPI_DATATYPE_NULL)
         MPI_Type_free(&_type);
     }
 
     block_type& operator=(const block_type&) = delete;
     block_type& operator=(block_type&&) = delete;
 
-    MPI_Datatype get() const noexcept { return _type; }
+    /// The contiguous type, or the scalar type when bs == 1.
+    MPI_Datatype get() const noexcept
+    {
+      return _type == MPI_DATATYPE_NULL ? dolfinx::MPI::mpi_t<T> : _type;
+    }
 
   private:
-    MPI_Datatype _type;
-    bool _owned = false;
+    // A committed contiguous type, or MPI_DATATYPE_NULL when bs == 1 and
+    // nothing was created
+    MPI_Datatype _type = MPI_DATATYPE_NULL;
   };
 
   // False only on a single rank, where _comm0/_comm1 stay MPI_COMM_NULL
