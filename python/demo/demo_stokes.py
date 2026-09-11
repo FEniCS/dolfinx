@@ -650,7 +650,7 @@ def mixed_direct():
         print(f"(D) Norm of velocity coefficient vector (monolithic, direct): {norm_u}")
         print(f"(D) Norm of pressure coefficient vector (monolithic, direct): {norm_p}")
 
-    return norm_u, norm_u
+    return norm_u, norm_p
 
 
 # Solve using LinearProblem class
