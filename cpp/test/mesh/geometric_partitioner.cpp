@@ -10,6 +10,7 @@
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <cmath>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
@@ -22,6 +23,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <numeric>
 #include <span>
+#include <stdexcept>
 #include <vector>
 
 using namespace dolfinx;
@@ -384,12 +386,16 @@ TEST_CASE("Empty geometric cell reordering", "[geometric_partitioner]")
   const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
   const graph::Reorder reorder = graph::reorder_geom_fn{};
 
-  REQUIRE_THROWS_WITH(
+  // The exception from the reordering function reaches the caller with
+  // its own type, not flattened into the std::runtime_error that
+  // mpi_check throws on ranks that did not themselves fail.
+  REQUIRE_THROWS_MATCHES(
       mesh::create_mesh(MPI_COMM_SELF, MPI_COMM_SELF,
                         std::span<const std::int64_t>(cells), element,
                         MPI_COMM_SELF, x, {4, 2}, graph::Partitioner{},
                         mesh::GhostMode::none, 2, 1, reorder),
-      "Cell reordering failed: Geometric cell reordering function is empty.");
+      std::invalid_argument,
+      Catch::Matchers::Message("Geometric cell reordering function is empty."));
 }
 
 TEST_CASE("SFC point reordering", "[partition_sfc]")

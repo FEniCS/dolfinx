@@ -844,48 +844,40 @@ compute_incident_entities(const Topology& topology,
 
 namespace impl
 {
-/// @brief Run `fn` locally, recording any exception it throws instead
+/// @brief Run `fn` locally, capturing any exception it throws instead
 /// of letting it propagate.
 ///
 /// Meant to be used together with ::mpi_check. `fn` may be called
 /// conditionally, e.g. depending on which alternative a
 /// `graph::Partitioner`/`graph::Reorder` variant holds, and so in
 /// general only by a subset of the ranks of some communicator -- unlike
-/// ::mpi_check, this call is therefore never itself collective. `failed`
-/// and `error_msg` may be reused across several ::try_locally calls, so
-/// that a later call does not need to re-check whether an earlier one
-/// on the same rank already failed.
+/// ::mpi_check, this call is therefore never itself collective. `error`
+/// may be reused across several ::try_locally calls, so that a later
+/// call does not need to re-check whether an earlier one on the same
+/// rank already failed.
 ///
 /// @param[in] fn Nullary callable to run locally.
-/// @param[in,out] failed Set to 1 if `fn` throws; left unmodified
-/// otherwise.
-/// @param[in,out] error_msg Set to the exception message if `fn`
-/// throws; left unmodified otherwise.
+/// @param[in,out] error Set to the exception thrown by `fn`; left
+/// unmodified otherwise. `fn` is not called if `error` is already set.
 template <typename F>
-void try_locally(F&& fn, int& failed, std::string& error_msg)
+void try_locally(F&& fn, std::exception_ptr& error)
 {
-  if (failed)
+  if (error)
     return;
 
   try
   {
     fn();
   }
-  catch (const std::exception& e)
-  {
-    failed = 1;
-    error_msg = e.what();
-  }
   catch (...)
   {
-    failed = 1;
-    error_msg = "unknown exception";
+    error = std::current_exception();
   }
 }
 
-/// @brief Collectively propagate a local failure recorded by
-/// ::try_locally to every rank of `comm`, throwing the same exception on
-/// every rank if any rank failed.
+/// @brief Collectively propagate a local failure captured by
+/// ::try_locally to every rank of `comm`, throwing on every rank if any
+/// rank failed.
 ///
 /// A rank-local exception cannot simply propagate from a collective
 /// operation: some ranks may already be blocked in a later collective
@@ -893,24 +885,30 @@ void try_locally(F&& fn, int& failed, std::string& error_msg)
 /// fail. Funnelling the failure through an `MPI_Allreduce` first ensures
 /// every rank either continues normally or throws together.
 ///
+/// A rank that failed re-throws its own exception, preserving its type
+/// and, for a failure inside a Python callback, the Python exception
+/// object and its traceback. Ranks that did not fail have no such
+/// exception and throw `std::runtime_error` naming `op_name` instead.
+///
 /// @note Collective.
 ///
 /// @param[in] comm Communicator to propagate the failure across.
 /// @param[in] op_name Name of the operation, used in the exception
-/// message on failure.
-/// @param[in] failed 1 if this rank's ::try_locally call(s) failed, 0
-/// otherwise.
-/// @param[in] error_msg This rank's failure message, if `failed`.
-inline void mpi_check(MPI_Comm comm, std::string_view op_name, int failed,
-                      const std::string& error_msg)
+/// message on ranks that did not themselves fail.
+/// @param[in] error Exception captured on this rank, or null if this
+/// rank did not fail.
+inline void mpi_check(MPI_Comm comm, std::string_view op_name,
+                      const std::exception_ptr& error)
 {
+  int failed = error ? 1 : 0;
   int any_failed = 0;
   MPI_Allreduce(&failed, &any_failed, 1, MPI_INT, MPI_MAX, comm);
-  if (any_failed)
+  if (error)
+    std::rethrow_exception(error);
+  else if (any_failed)
   {
     throw std::runtime_error(
-        failed ? std::format("{} failed: {}", op_name, error_msg)
-               : std::format("{} failed on another rank.", op_name));
+        std::format("{} failed on another rank.", op_name));
   }
 }
 
@@ -1104,8 +1102,7 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
     spdlog::info("Using partitioner with cell data ({} cell types)",
                  num_cell_types);
     graph::AdjacencyList<std::int32_t> dest(0);
-    int failed = 0;
-    std::string error_msg;
+    std::exception_ptr error;
 
     // Geometric data can be distributed on ranks that do not participate in
     // topology partitioning. Gather cell centroids collectively over `comm`
@@ -1153,7 +1150,7 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
                   partitioner.node_weights),
                 1);
           },
-          failed, error_msg);
+          error);
     }
 
     if (commt != MPI_COMM_NULL)
@@ -1198,10 +1195,10 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
                 },
                 partitioner.fn);
           },
-          failed, error_msg);
+          error);
     }
 
-    mpi_check(comm, "Cell partitioning", failed, error_msg);
+    mpi_check(comm, "Cell partitioning", error);
 
     std::int32_t cell_offset = 0;
     for (std::int32_t i = 0; i < num_cell_types; ++i)
@@ -1401,8 +1398,15 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Re-order cells and get boundary vertices. The re-ordering is done
   // on the cell topology, i.e. the vertex indices, and the higher-order
   // nodes are re-ordered accordingly.
+  // Centroids are required only by a callable graph::reorder_geom_fn.
+  // As elsewhere, `reorder_fn` is assumed to hold the same alternative
+  // on every rank, so an empty function skips the collective exchange
+  // everywhere; impl::reorder_cells then throws, and the failure is
+  // made comm-wide by try_locally/mpi_check below.
   std::vector<double> cell_centroids;
-  if (std::holds_alternative<graph::reorder_geom_fn>(reorder_fn))
+  if (const graph::reorder_geom_fn* fn
+      = std::get_if<graph::reorder_geom_fn>(&reorder_fn);
+      fn and *fn)
   {
     std::vector<int> num_cell_vertices;
     num_cell_vertices.reserve(celltypes.size());
@@ -1427,8 +1431,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   }
 
   std::vector<std::int64_t> boundary_v;
-  int failed = 0;
-  std::string error_message;
+  std::exception_ptr error;
   impl::try_locally(
       [&]
       {
@@ -1437,8 +1440,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                                          doflayouts, ghost_owners, cells1,
                                          cells1_v, original_idx1, num_threads);
       },
-      failed, error_message);
-  impl::mpi_check(comm, "Cell reordering", failed, error_message);
+      error);
+  impl::mpi_check(comm, "Cell reordering", error);
 
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 

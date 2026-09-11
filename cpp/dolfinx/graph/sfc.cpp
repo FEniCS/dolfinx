@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <boost/multiprecision/cpp_int.hpp>
+#include <cassert>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -194,6 +195,7 @@ std::vector<std::int32_t> key_range_owners(std::span<const std::uint64_t> keys,
 /// at every call site.
 std::int64_t scaled_target(std::int64_t total, std::int64_t p, std::int64_t n)
 {
+  assert(total >= 0 and n > 0 and p >= 0 and p <= n);
   using boost::multiprecision::uint128_t;
   return static_cast<std::int64_t>(uint128_t(total) * uint128_t(p)
                                    / uint128_t(n));

@@ -670,6 +670,20 @@ def test_create_mesh_cell_reordering():
 
 
 @pytest.mark.skip_in_parallel
+def test_create_mesh_cell_reordering_exception():
+    """Test that an exception from a cell reordering callback keeps its type."""
+    cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)
+    x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
+
+    def reorder(dual_graph):
+        raise ValueError("reordering callback failed")
+
+    with pytest.raises(ValueError, match="reordering callback failed"):
+        _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=reorder)
+
+
+@pytest.mark.skip_in_parallel
 def test_create_mesh_default_cell_reordering():
     """Test default reverse Cuthill-McKee cell reordering."""
     cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)

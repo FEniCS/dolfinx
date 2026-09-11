@@ -37,10 +37,10 @@ namespace dolfinx::graph
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
 /// @param[in] gdim Number of coordinate components per point. Must be
 /// 1, 2 or 3.
-/// @param[in] weights Point weights, one entry per row of `x`.
-/// Partitions aim for equal sums of weight along the curve rather than
-/// equal counts. If `std::nullopt`, points are treated as having equal
-/// weight.
+/// @param[in] weights Point weights, one entry per row of `x`. Each
+/// weight must be positive. Partitions aim for equal sums of weight
+/// along the curve rather than equal counts. If `std::nullopt`, points
+/// are treated as having equal weight.
 /// @return Destination rank for each point, one entry per row of `x`.
 std::vector<int> partition_sfc_morton(
     MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
@@ -51,6 +51,23 @@ std::vector<int> partition_sfc_morton(
 ///
 /// As ::partition_sfc_morton, but uses Hilbert keys, which generally preserve
 /// spatial locality better than Morton keys.
+///
+/// @note Collective.
+///
+/// @note There is no graph, so this cannot ghost: it always assigns
+/// exactly one destination per point.
+///
+/// @param[in] comm MPI communicator that the points are distributed
+/// across.
+/// @param[in] nparts Number of partitions to divide the points into.
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point. Must be
+/// 1, 2 or 3.
+/// @param[in] weights Point weights, one entry per row of `x`. Each
+/// weight must be positive. Partitions aim for equal sums of weight
+/// along the curve rather than equal counts. If `std::nullopt`, points
+/// are treated as having equal weight.
+/// @return Destination rank for each point, one entry per row of `x`.
 std::vector<int> partition_sfc_hilbert(
     MPI_Comm comm, int nparts, std::span<const double> x, int gdim,
     std::optional<std::span<const std::int32_t>> weights = std::nullopt);
@@ -73,6 +90,12 @@ std::vector<std::int32_t> reorder_sfc_morton(std::span<const double> x,
 /// curve.
 ///
 /// As ::reorder_sfc_morton, but uses Hilbert keys.
+///
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point. Must be 1, 2 or
+/// 3.
+/// @return Reordering array `map`, where `map[i]` is the new index of point
+/// `i`.
 std::vector<std::int32_t> reorder_sfc_hilbert(std::span<const double> x,
                                               int gdim);
 } // namespace dolfinx::graph
