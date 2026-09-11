@@ -74,11 +74,11 @@ private:
                       typename ScatterContainer::const_iterator idx_last,
                       const auto in_first, auto out_first)
     {
-      // out[i * bs + j] = in[idx[i] * bs + j]
-      std::size_t k = 0;
+      // out[i * bs + j] = in[idx[i] * bs + j], bs contiguous values per
+      // index
+      auto out = out_first;
       for (auto idx = idx_first; idx != idx_last; ++idx)
-        for (int j = 0; j < bs; ++j, ++k)
-          *std::next(out_first, k) = *std::next(in_first, (*idx) * bs + j);
+        out = std::copy_n(std::next(in_first, (*idx) * bs), bs, out);
     };
   }
 
@@ -92,11 +92,14 @@ private:
                       typename ScatterContainer::const_iterator idx_last,
                       const auto in_first, auto out_first)
     {
-      // out[idx[i] * bs + j] = in[i * bs + j]
+      // out[idx[i] * bs + j] = in[i * bs + j], bs contiguous values per
+      // index
       auto in = in_first;
       for (auto idx = idx_first; idx != idx_last; ++idx)
-        for (int j = 0; j < bs; ++j, ++in)
-          *std::next(out_first, (*idx) * bs + j) = *in;
+      {
+        std::copy_n(in, bs, std::next(out_first, (*idx) * bs));
+        std::advance(in, bs);
+      }
     };
   }
 
@@ -116,11 +119,9 @@ private:
       auto in = in_first;
       for (auto idx = idx_first; idx != idx_last; ++idx)
       {
-        for (int j = 0; j < bs; ++j, ++in)
-        {
-          auto& out = *std::next(out_first, (*idx) * bs + j);
-          out = op(out, *in);
-        }
+        auto out = std::next(out_first, (*idx) * bs);
+        for (int j = 0; j < bs; ++j, ++in, ++out)
+          *out = op(*out, *in);
       }
     };
   }
