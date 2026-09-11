@@ -240,8 +240,8 @@ public:
     if (!has_neighbours())
       return;
 
-    const block_type<T> type(bs);
-    MPI_Datatype dt = type.get();
+    const dolfinx::MPI::Datatype type(bs, dolfinx::MPI::mpi_t<T>);
+    MPI_Datatype dt = type.type();
     int ierr = MPI_Ineighbor_alltoallv(
         send_buffer, _sizes_local.data(), _displs_local.data(), dt, recv_buffer,
         _sizes_remote.data(), _displs_remote.data(), dt, _comm0.comm(),
@@ -287,10 +287,10 @@ public:
     if (!has_neighbours())
       return;
 
-    block_type<T> type(bs);
+    dolfinx::MPI::Datatype type(bs, dolfinx::MPI::mpi_t<T>);
     int ierr = MPI_Ineighbor_alltoallv(
-        send_buffer, _sizes_remote.data(), _displs_remote.data(), type.get(),
-        recv_buffer, _sizes_local.data(), _displs_local.data(), type.get(),
+        send_buffer, _sizes_remote.data(), _displs_remote.data(), type.type(),
+        recv_buffer, _sizes_local.data(), _displs_local.data(), type.type(),
         _comm1.comm(), &request);
     dolfinx::MPI::check_error(_comm1.comm(), ierr);
   }
@@ -393,49 +393,6 @@ public:
   const container_type& remote_indices() const noexcept { return _remote_inds; }
 
 private:
-  // A contiguous block of `bs` values of type T, for sending sizes and
-  // displacements measured in blocks. For bs == 1 this is the scalar
-  // type itself and nothing is created or freed.
-  //
-  // MPI keeps a datatype alive until communication using it completes,
-  // so this may be destroyed as soon as the non-blocking call returns.
-  template <typename T>
-  class block_type
-  {
-  public:
-    explicit block_type(int bs)
-    {
-      if (bs > 1)
-      {
-        MPI_Type_contiguous(bs, dolfinx::MPI::mpi_t<T>, &_type);
-        MPI_Type_commit(&_type);
-      }
-    }
-
-    block_type(const block_type&) = delete;
-    block_type(block_type&&) = delete;
-
-    ~block_type()
-    {
-      if (_type != MPI_DATATYPE_NULL)
-        MPI_Type_free(&_type);
-    }
-
-    block_type& operator=(const block_type&) = delete;
-    block_type& operator=(block_type&&) = delete;
-
-    /// The contiguous type, or the scalar type when bs == 1.
-    MPI_Datatype get() const noexcept
-    {
-      return _type == MPI_DATATYPE_NULL ? dolfinx::MPI::mpi_t<T> : _type;
-    }
-
-  private:
-    // A committed contiguous type, or MPI_DATATYPE_NULL when bs == 1 and
-    // nothing was created
-    MPI_Datatype _type = MPI_DATATYPE_NULL;
-  };
-
   // False only on a single rank, where _comm0/_comm1 stay MPI_COMM_NULL
   bool has_neighbours() const noexcept
   {

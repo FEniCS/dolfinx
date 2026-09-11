@@ -70,6 +70,51 @@ private:
   MPI_Comm _comm;
 };
 
+/// @brief An MPI datatype for a contiguous block of values, and manage
+/// its lifetime.
+///
+/// For a block of one value the base type is used directly and no
+/// datatype is created, so this is cheap to construct in that case.
+///
+/// @note MPI keeps a datatype alive until communication using it has
+/// completed, so this may be destroyed as soon as a non-blocking call
+/// using it has been started.
+class Datatype
+{
+public:
+  /// @brief Create a datatype for a contiguous block of values.
+  /// @param[in] count Number of values in a block.
+  /// @param[in] base Type of each value.
+  Datatype(int count, MPI_Datatype base);
+
+  // Copy constructor (deleted)
+  Datatype(const Datatype& type) = delete;
+
+  /// Move constructor
+  Datatype(Datatype&& type) noexcept;
+
+  /// Destructor (frees the datatype, if one was created)
+  ~Datatype();
+
+  // Copy assignment (deleted)
+  Datatype& operator=(const Datatype& type) = delete;
+
+  /// Move assignment
+  Datatype& operator=(Datatype&& type) noexcept;
+
+  /// @brief The datatype to pass to MPI.
+  /// @return Contiguous type, or the base type if the block holds one
+  /// value.
+  MPI_Datatype type() const noexcept;
+
+private:
+  // Created contiguous type, or MPI_DATATYPE_NULL if none was created
+  MPI_Datatype _type = MPI_DATATYPE_NULL;
+
+  // Type of each value in a block. Never owned.
+  MPI_Datatype _base;
+};
+
 /// Return process rank for the communicator
 int rank(MPI_Comm comm);
 
