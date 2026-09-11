@@ -76,3 +76,12 @@ TEMPLATE_TEST_CASE("Mark maximum", "[refinement][mark][maximum]", double, float)
     CHECK(expect_marked == marked);
   }
 }
+
+TEMPLATE_TEST_CASE("Mark equidistribution empty", "[refinement][mark][equidistribution]", double,
+                   float)
+{
+  common::IndexMap im(MPI_COMM_WORLD, 0);
+  std::vector<TestType> values;
+  auto indices = mark_equidistribution<TestType>(values, im, .5);
+  CHECK(indices.size() == 0);
+}
