@@ -72,18 +72,6 @@ private:
       return f(std::integral_constant<int, 2>{});
     case 3:
       return f(std::integral_constant<int, 3>{});
-    case 4:
-      return f(std::integral_constant<int, 4>{});
-    case 5:
-      return f(std::integral_constant<int, 5>{});
-    case 6:
-      return f(std::integral_constant<int, 6>{});
-    case 7:
-      return f(std::integral_constant<int, 7>{});
-    case 8:
-      return f(std::integral_constant<int, 8>{});
-    case 9:
-      return f(std::integral_constant<int, 9>{});
     default:
       return f(bs);
     }
@@ -105,8 +93,11 @@ private:
                   {
                     auto out = out_first;
                     for (auto idx = idx_first; idx != idx_last; ++idx)
-                      for (int j = 0; j < B; ++j, ++out)
-                        *out = *std::next(in_first, (*idx) * B + j);
+                    {
+                      auto in = std::next(in_first, (*idx) * B);
+                      for (int j = 0; j < B; ++j, ++in, ++out)
+                        *out = *in;
+                    }
                   });
     };
   }
@@ -127,8 +118,11 @@ private:
                   {
                     auto in = in_first;
                     for (auto idx = idx_first; idx != idx_last; ++idx)
-                      for (int j = 0; j < B; ++j, ++in)
-                        *std::next(out_first, (*idx) * B + j) = *in;
+                    {
+                      auto out = std::next(out_first, (*idx) * B);
+                      for (int j = 0; j < B; ++j, ++in, ++out)
+                        *out = *in;
+                    }
                   });
     };
   }
