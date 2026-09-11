@@ -74,17 +74,31 @@ private:
                       typename ScatterContainer::const_iterator idx_last,
                       const auto in_first, auto out_first)
     {
-      // out[i * bs + j] = in[idx[i] * bs + j], bs contiguous values per
-      // index
-      if (bs == 1)
+      // out[i * bs + j] = in[idx[i] * bs + j]. Dispatch on the common
+      // block sizes so the inner loop has a compile-time trip count, as
+      // la::MatrixCSR::mult does for spmv.
+      auto kernel = [&]<int B>(std::integral_constant<int, B>)
       {
-        std::transform(idx_first, idx_last, out_first,
-                       [in_first](auto p) { return *std::next(in_first, p); });
-        return;
+        auto out = out_first;
+        for (auto idx = idx_first; idx != idx_last; ++idx)
+          for (int j = 0; j < B; ++j, ++out)
+            *out = *std::next(in_first, (*idx) * B + j);
+      };
+      switch (bs)
+      {
+      case 1:
+        return kernel(std::integral_constant<int, 1>{});
+      case 2:
+        return kernel(std::integral_constant<int, 2>{});
+      case 3:
+        return kernel(std::integral_constant<int, 3>{});
+      default:
+      {
+        auto out = out_first;
+        for (auto idx = idx_first; idx != idx_last; ++idx)
+          out = std::copy_n(std::next(in_first, (*idx) * bs), bs, out);
       }
-      auto out = out_first;
-      for (auto idx = idx_first; idx != idx_last; ++idx)
-        out = std::copy_n(std::next(in_first, (*idx) * bs), bs, out);
+      }
     };
   }
 
@@ -98,19 +112,31 @@ private:
                       typename ScatterContainer::const_iterator idx_last,
                       const auto in_first, auto out_first)
     {
-      // out[idx[i] * bs + j] = in[i * bs + j], bs contiguous values per
-      // index
-      auto in = in_first;
-      if (bs == 1)
+      // out[idx[i] * bs + j] = in[i * bs + j]
+      auto kernel = [&]<int B>(std::integral_constant<int, B>)
       {
-        for (auto idx = idx_first; idx != idx_last; ++idx, ++in)
-          *std::next(out_first, *idx) = *in;
-        return;
+        auto in = in_first;
+        for (auto idx = idx_first; idx != idx_last; ++idx)
+          for (int j = 0; j < B; ++j, ++in)
+            *std::next(out_first, (*idx) * B + j) = *in;
+      };
+      switch (bs)
+      {
+      case 1:
+        return kernel(std::integral_constant<int, 1>{});
+      case 2:
+        return kernel(std::integral_constant<int, 2>{});
+      case 3:
+        return kernel(std::integral_constant<int, 3>{});
+      default:
+      {
+        auto in = in_first;
+        for (auto idx = idx_first; idx != idx_last; ++idx)
+        {
+          std::copy_n(in, bs, std::next(out_first, (*idx) * bs));
+          std::advance(in, bs);
+        }
       }
-      for (auto idx = idx_first; idx != idx_last; ++idx)
-      {
-        std::copy_n(in, bs, std::next(out_first, (*idx) * bs));
-        std::advance(in, bs);
       }
     };
   }
