@@ -60,13 +60,35 @@ private:
   /// CPU.
   auto get_pack()
   {
-    return [](typename ScatterContainer::const_iterator idx_first,
-              typename ScatterContainer::const_iterator idx_last,
-              const auto in_first, auto out_first)
+    return [bs = _bs](typename ScatterContainer::const_iterator idx_first,
+                      typename ScatterContainer::const_iterator idx_last,
+                      const auto in_first, auto out_first)
     {
-      // out[i] = in[idx[i]]
-      std::transform(idx_first, idx_last, out_first,
-                     [in_first](auto p) { return *std::next(in_first, p); });
+      // out[i * bs + j] = in[idx[i] * bs + j]. Dispatch on the common
+      // block sizes so the inner loop has a compile-time trip count, as
+      // la::MatrixCSR::mult does for spmv.
+      auto kernel = [&]<int B>(std::integral_constant<int, B>)
+      {
+        auto out = out_first;
+        for (auto idx = idx_first; idx != idx_last; ++idx)
+          for (int j = 0; j < B; ++j, ++out)
+            *out = *std::next(in_first, (*idx) * B + j);
+      };
+      switch (bs)
+      {
+      case 1:
+        return kernel(std::integral_constant<int, 1>{});
+      case 2:
+        return kernel(std::integral_constant<int, 2>{});
+      case 3:
+        return kernel(std::integral_constant<int, 3>{});
+      default:
+      {
+        auto out = out_first;
+        for (auto idx = idx_first; idx != idx_last; ++idx)
+          out = std::copy_n(std::next(in_first, (*idx) * bs), bs, out);
+      }
+      }
     };
   }
 
@@ -76,16 +98,35 @@ private:
   /// Typically used to unpack into ghost entries on a CPU.
   auto get_unpack()
   {
-    return [](typename ScatterContainer::const_iterator idx_first,
-              typename ScatterContainer::const_iterator idx_last,
-              const auto in_first, auto out_first)
+    return [bs = _bs](typename ScatterContainer::const_iterator idx_first,
+                      typename ScatterContainer::const_iterator idx_last,
+                      const auto in_first, auto out_first)
     {
-      // out[idx[i]] = in[i]
-      auto in = in_first;
-      for (typename ScatterContainer::const_iterator idx = idx_first;
-           idx != idx_last; ++idx, ++in)
+      // out[idx[i] * bs + j] = in[i * bs + j]
+      auto kernel = [&]<int B>(std::integral_constant<int, B>)
       {
-        *std::next(out_first, *idx) = *in;
+        auto in = in_first;
+        for (auto idx = idx_first; idx != idx_last; ++idx)
+          for (int j = 0; j < B; ++j, ++in)
+            *std::next(out_first, (*idx) * B + j) = *in;
+      };
+      switch (bs)
+      {
+      case 1:
+        return kernel(std::integral_constant<int, 1>{});
+      case 2:
+        return kernel(std::integral_constant<int, 2>{});
+      case 3:
+        return kernel(std::integral_constant<int, 3>{});
+      default:
+      {
+        auto in = in_first;
+        for (auto idx = idx_first; idx != idx_last; ++idx)
+        {
+          std::copy_n(in, bs, std::next(out_first, (*idx) * bs));
+          std::advance(in, bs);
+        }
+      }
       }
     };
   }
@@ -98,17 +139,17 @@ private:
   template <typename BinaryOp>
   auto get_unpack_op(BinaryOp op)
   {
-    return [op](typename ScatterContainer::const_iterator idx_first,
-                typename ScatterContainer::const_iterator idx_last,
-                const auto in_first, auto out_first)
+    return [op, bs = _bs](typename ScatterContainer::const_iterator idx_first,
+                          typename ScatterContainer::const_iterator idx_last,
+                          const auto in_first, auto out_first)
     {
-      // out[idx[i]] = op(out[idx[i]], in[i])
+      // out[idx[i] * bs + j] = op(out[idx[i] * bs + j], in[i * bs + j])
       auto in = in_first;
-      for (typename ScatterContainer::const_iterator idx = idx_first;
-           idx != idx_last; ++idx, ++in)
+      for (auto idx = idx_first; idx != idx_last; ++idx)
       {
-        auto& out = *std::next(out_first, *idx);
-        out = op(out, *in);
+        auto out = std::next(out_first, (*idx) * bs);
+        for (int j = 0; j < bs; ++j, ++in, ++out)
+          *out = op(*out, *in);
       }
     };
   }
@@ -131,9 +172,9 @@ public:
   Vector(std::shared_ptr<const common::IndexMap> map, int bs)
       : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
         _scatterer(
-            std::make_shared<common::Scatterer<ScatterContainer>>(*_map, bs)),
-        _buffer_local(_scatterer->local_indices().size()),
-        _buffer_remote(_scatterer->remote_indices().size())
+            std::make_shared<common::Scatterer<ScatterContainer>>(*_map)),
+        _buffer_local(bs * _scatterer->local_indices().size()),
+        _buffer_remote(bs * _scatterer->remote_indices().size())
   {
   }
 
@@ -181,8 +222,8 @@ public:
   explicit Vector(const Vector<T0, Container0, ScatterContainer0>& x)
       : _map(x.index_map()), _bs(x.bs()), _x(x._x.begin(), x._x.end()),
         _scatterer(scatter_ptr(x._scatterer)), _request(MPI_REQUEST_NULL),
-        _buffer_local(_scatterer->local_indices().size()),
-        _buffer_remote(_scatterer->remote_indices().size())
+        _buffer_local(_bs * _scatterer->local_indices().size()),
+        _buffer_remote(_bs * _scatterer->remote_indices().size())
   {
   }
 
@@ -225,7 +266,7 @@ public:
     pack(_scatterer->local_indices().begin(), _scatterer->local_indices().end(),
          _x.begin(), _buffer_local.begin());
     _scatterer->scatter_fwd_begin(get_ptr(_buffer_local),
-                                  get_ptr(_buffer_remote), _request);
+                                  get_ptr(_buffer_remote), _bs, _request);
   }
 
   /// @brief Begin scatter (send) of local data that is ghosted on other
@@ -330,7 +371,7 @@ public:
          _scatterer->remote_indices().end(), std::next(_x.begin(), local_size),
          _buffer_remote.begin());
     _scatterer->scatter_rev_begin(get_ptr(_buffer_remote),
-                                  get_ptr(_buffer_local), _request);
+                                  get_ptr(_buffer_local), _bs, _request);
   }
 
   /// @brief Start scatter (send) of ghost entry data to the owning

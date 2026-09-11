@@ -72,9 +72,9 @@ void common(nb::module_& m)
       .value("min", dolfinx::Table::Reduction::min)
       .value("average", dolfinx::Table::Reduction::average);
 
-  auto sc = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
-                .def(nb::init<dolfinx::common::IndexMap&, int>(),
-                     nb::arg("index_map"), nb::arg("block_size"));
+  auto sc
+      = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
+            .def(nb::init<dolfinx::common::IndexMap&>(), nb::arg("index_map"));
   declare_scatter_functions<std::int64_t>(sc);
   declare_scatter_functions<double>(sc);
   declare_scatter_functions<float>(sc);

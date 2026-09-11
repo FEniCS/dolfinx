@@ -49,7 +49,7 @@ void test_scatter_fwd(int n)
   const common::IndexMap idx_map
       = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
   std::int32_t num_ghosts = idx_map.num_ghosts();
-  common::Scatterer sct(idx_map, n);
+  common::Scatterer sct(idx_map);
 
   // Create some data to scatter
   const std::int64_t val = 11;
@@ -58,20 +58,22 @@ void test_scatter_fwd(int n)
 
   // Scatter values to ghost and check value is correctly received
   {
-    std::vector<std::int64_t> send_buffer(sct.local_indices().size());
+    std::vector<std::int64_t> send_buffer(n * sct.local_indices().size());
     {
       auto& idx = sct.local_indices();
       for (std::size_t i = 0; i < idx.size(); ++i)
-        send_buffer[i] = data_local[idx[i]];
+        for (int j = 0; j < n; ++j)
+          send_buffer[i * n + j] = data_local[idx[i] * n + j];
     }
-    std::vector<std::int64_t> recv_buffer(sct.remote_indices().size());
+    std::vector<std::int64_t> recv_buffer(n * sct.remote_indices().size());
     MPI_Request request = MPI_REQUEST_NULL;
-    sct.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
+    sct.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), n, request);
     sct.scatter_fwd_end(request);
     {
       auto& idx = sct.remote_indices();
       for (std::size_t i = 0; i < idx.size(); ++i)
-        data_ghost[idx[i]] = recv_buffer[i];
+        for (int j = 0; j < n; ++j)
+          data_ghost[idx[i] * n + j] = recv_buffer[i * n + j];
     }
     CHECK((int)data_ghost.size() == n * num_ghosts);
     CHECK(std::ranges::all_of(
@@ -93,20 +95,25 @@ void test_scatter_rev()
       = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
   std::int32_t num_ghosts = idx_map.num_ghosts();
 
-  common::Scatterer<std::vector<std::int32_t>> sct(idx_map, n);
+  common::Scatterer<std::vector<std::int32_t>> sct(idx_map);
   {
     common::Scatterer<std::vector<std::int64_t>> sct2(sct);
   }
 
-  auto pack_fn = [](auto&& in, auto&& idx, auto&& out)
+  auto pack_fn = [n](auto&& in, auto&& idx, auto&& out)
   {
     for (std::size_t i = 0; i < idx.size(); ++i)
-      out[i] = in[idx[i]];
+      for (int j = 0; j < n; ++j)
+        out[i * n + j] = in[idx[i] * n + j];
   };
-  auto unpack_fn = [](auto&& in, auto&& idx, auto&& out, auto op)
+  auto unpack_fn = [n](auto&& in, auto&& idx, auto&& out, auto op)
   {
     for (std::size_t i = 0; i < idx.size(); ++i)
-      out[idx[i]] = op(out[idx[i]], in[i]);
+      for (int j = 0; j < n; ++j)
+      {
+        auto& o = out[idx[i] * n + j];
+        o = op(o, in[i * n + j]);
+      }
   };
 
   // Create some data, setting ghost values
@@ -115,10 +122,10 @@ void test_scatter_rev()
   std::vector<std::int64_t> data_ghost(n * num_ghosts, value);
   {
     MPI_Request request = MPI_REQUEST_NULL;
-    std::vector<std::int64_t> send_buffer(sct.remote_indices().size(), 0);
+    std::vector<std::int64_t> send_buffer(n * sct.remote_indices().size(), 0);
     pack_fn(data_ghost, sct.remote_indices(), send_buffer);
-    std::vector<std::int64_t> recv_buffer(sct.local_indices().size(), 0);
-    sct.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), request);
+    std::vector<std::int64_t> recv_buffer(n * sct.local_indices().size(), 0);
+    sct.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), n, request);
     sct.scatter_rev_end(request);
     unpack_fn(recv_buffer, sct.local_indices(), data_local, std::plus<>{});
 
@@ -132,10 +139,10 @@ void test_scatter_rev()
   // data_local rather than overwriting it
   {
     MPI_Request request = MPI_REQUEST_NULL;
-    std::vector<std::int64_t> send_buffer(sct.remote_indices().size(), 0);
+    std::vector<std::int64_t> send_buffer(n * sct.remote_indices().size(), 0);
     pack_fn(data_ghost, sct.remote_indices(), send_buffer);
-    std::vector<std::int64_t> recv_buffer(sct.local_indices().size(), 0);
-    sct.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), request);
+    std::vector<std::int64_t> recv_buffer(n * sct.local_indices().size(), 0);
+    sct.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), n, request);
     sct.scatter_rev_end(request);
     unpack_fn(recv_buffer, sct.local_indices(), data_local, std::plus<>{});
 
@@ -164,13 +171,13 @@ void test_scatter_with_isolated_rank()
   }
 
   const common::IndexMap map(MPI_COMM_WORLD, 1, src_dest, ghosts, owners);
-  const common::Scatterer scatterer(map, 1);
+  const common::Scatterer scatterer(map);
 
   {
     std::vector<std::int64_t> send_buffer(scatterer.local_indices().size(), 17);
     std::vector<std::int64_t> recv_buffer(scatterer.remote_indices().size());
     MPI_Request request = MPI_REQUEST_NULL;
-    scatterer.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(),
+    scatterer.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), 1,
                                 request);
     CHECK(request != MPI_REQUEST_NULL);
     scatterer.scatter_fwd_end(request);
@@ -183,7 +190,7 @@ void test_scatter_with_isolated_rank()
                                           29);
     std::vector<std::int64_t> recv_buffer(scatterer.local_indices().size());
     MPI_Request request = MPI_REQUEST_NULL;
-    scatterer.scatter_rev_begin(send_buffer.data(), recv_buffer.data(),
+    scatterer.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), 1,
                                 request);
     CHECK(request != MPI_REQUEST_NULL);
     scatterer.scatter_rev_end(request);

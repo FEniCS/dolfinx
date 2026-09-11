@@ -59,9 +59,7 @@ public:
   ///
   /// @param[in] map Index map that describes the parallel layout of
   /// data.
-  /// @param[in] bs Number of values associated with each `map` index
-  /// (the block size).
-  Scatterer(const IndexMap& map, int bs)
+  explicit Scatterer(const IndexMap& map)
       : _sizes_remote(map.src().size(), 0),
         _displs_remote(map.src().size() + 1), _sizes_local(map.dest().size()),
         _displs_local(map.dest().size() + 1)
@@ -165,36 +163,18 @@ public:
                           { assert(idx >= range[0] and idx < range[1]); });
 #endif
 
+    // Sizes, displacements and indices are all in blocks. The block
+    // size enters only through the MPI datatype used to send them, and
+    // through the caller's pack/unpack.
     {
-      // Scale sizes and displacements by block size
-      for (auto& x : {std::ref(_sizes_local), std::ref(_displs_local),
-                      std::ref(_sizes_remote), std::ref(_displs_remote)})
-      {
-        std::ranges::transform(x.get(), x.get().begin(),
-                               [bs](auto e) { return e * bs; });
-      }
-    }
-
-    {
-      // Expand local indices using block size and convert it from
-      // global to local numbering
-      std::vector<typename container_type::value_type> idx(recv_buffer.size()
-                                                           * bs);
-      std::int64_t offset = range[0] * bs;
-      for (std::size_t i = 0; i < recv_buffer.size(); i++)
-        for (int j = 0; j < bs; j++)
-          idx[i * bs + j] = (recv_buffer[i] * bs + j) - offset;
+      // Convert the received indices from global to local numbering
+      std::vector<typename container_type::value_type> idx(recv_buffer.size());
+      std::ranges::transform(recv_buffer, idx.begin(),
+                             [range](std::int64_t i) { return i - range[0]; });
       _local_inds = std::move(idx);
     }
 
-    {
-      // Expand remote indices using block size
-      std::vector<typename container_type::value_type> idx(perm.size() * bs);
-      for (std::size_t i = 0; i < perm.size(); i++)
-        for (int j = 0; j < bs; j++)
-          idx[i * bs + j] = perm[i] * bs + j;
-      _remote_inds = std::move(idx);
-    }
+    _remote_inds = container_type(perm.begin(), perm.end());
   }
 
   /// @brief Copy constructor
@@ -251,16 +231,18 @@ public:
   /// the non-blocking communication. The same request handle should be
   /// passed to Scatterer::scatter_fwd_end to complete the communication.
   template <typename T>
-  void scatter_fwd_begin(const T* send_buffer, T* recv_buffer,
+  void scatter_fwd_begin(const T* send_buffer, T* recv_buffer, int bs,
                          MPI_Request& request) const
   {
     if (!has_neighbours())
       return;
 
+    const block_type<T> type(bs);
+    MPI_Datatype dt = type.get();
     int ierr = MPI_Ineighbor_alltoallv(
-        send_buffer, _sizes_local.data(), _displs_local.data(),
-        dolfinx::MPI::mpi_t<T>, recv_buffer, _sizes_remote.data(),
-        _displs_remote.data(), dolfinx::MPI::mpi_t<T>, _comm0.comm(), &request);
+        send_buffer, _sizes_local.data(), _displs_local.data(), dt, recv_buffer,
+        _sizes_remote.data(), _displs_remote.data(), dt, _comm0.comm(),
+        &request);
     dolfinx::MPI::check_error(_comm0.comm(), ierr);
   }
 
@@ -293,16 +275,17 @@ public:
   /// the non-blocking communication. The same request handle should be
   /// passed to Scatterer::scatter_rev_end to complete the communication.
   template <typename T>
-  void scatter_rev_begin(const T* send_buffer, T* recv_buffer,
+  void scatter_rev_begin(const T* send_buffer, T* recv_buffer, int bs,
                          MPI_Request& request) const
   {
     if (!has_neighbours())
       return;
 
+    block_type<T> type(bs);
     int ierr = MPI_Ineighbor_alltoallv(
-        send_buffer, _sizes_remote.data(), _displs_remote.data(),
-        dolfinx::MPI::mpi_t<T>, recv_buffer, _sizes_local.data(),
-        _displs_local.data(), dolfinx::MPI::mpi_t<T>, _comm1.comm(), &request);
+        send_buffer, _sizes_remote.data(), _displs_remote.data(), type.get(),
+        recv_buffer, _sizes_local.data(), _displs_local.data(), type.get(),
+        _comm1.comm(), &request);
     dolfinx::MPI::check_error(_comm1.comm(), ierr);
   }
 
@@ -404,6 +387,45 @@ public:
   const container_type& remote_indices() const noexcept { return _remote_inds; }
 
 private:
+  // A contiguous block of `bs` values of type T, for sending sizes and
+  // displacements measured in blocks. For bs == 1 this is the scalar
+  // type itself and nothing is created or freed.
+  //
+  // MPI keeps a datatype alive until communication using it completes,
+  // so this may be destroyed as soon as the non-blocking call returns.
+  template <typename T>
+  class block_type
+  {
+  public:
+    explicit block_type(int bs) : _type(dolfinx::MPI::mpi_t<T>)
+    {
+      if (bs > 1)
+      {
+        MPI_Type_contiguous(bs, dolfinx::MPI::mpi_t<T>, &_type);
+        MPI_Type_commit(&_type);
+        _owned = true;
+      }
+    }
+
+    block_type(const block_type&) = delete;
+    block_type(block_type&&) = delete;
+
+    ~block_type()
+    {
+      if (_owned)
+        MPI_Type_free(&_type);
+    }
+
+    block_type& operator=(const block_type&) = delete;
+    block_type& operator=(block_type&&) = delete;
+
+    MPI_Datatype get() const noexcept { return _type; }
+
+  private:
+    MPI_Datatype _type;
+    bool _owned = false;
+  };
+
   // False only on a single rank, where _comm0/_comm1 stay MPI_COMM_NULL
   bool has_neighbours() const noexcept
   {
