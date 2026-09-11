@@ -54,6 +54,41 @@ class Vector
   friend class Vector;
 
 private:
+  /// @brief Call `f` with the block size as a compile-time constant for
+  /// the common block sizes, and as a plain `int` otherwise.
+  ///
+  /// The pack/unpack inner loops run over the block size, so giving it
+  /// to the compiler as a constant lets them be unrolled. Without this
+  /// the scatter is several times slower. la::MatrixCSR::mult does the
+  /// same for spmv.
+  template <class F>
+  static void dispatch_bs(int bs, F&& f)
+  {
+    switch (bs)
+    {
+    case 1:
+      return f(std::integral_constant<int, 1>{});
+    case 2:
+      return f(std::integral_constant<int, 2>{});
+    case 3:
+      return f(std::integral_constant<int, 3>{});
+    case 4:
+      return f(std::integral_constant<int, 4>{});
+    case 5:
+      return f(std::integral_constant<int, 5>{});
+    case 6:
+      return f(std::integral_constant<int, 6>{});
+    case 7:
+      return f(std::integral_constant<int, 7>{});
+    case 8:
+      return f(std::integral_constant<int, 8>{});
+    case 9:
+      return f(std::integral_constant<int, 9>{});
+    default:
+      return f(bs);
+    }
+  }
+
   /// @brief Return a 'pack' function for packing a send buffer.
   ///
   /// Typically used for forward and reverse scatter operations on a
@@ -64,31 +99,15 @@ private:
                       typename ScatterContainer::const_iterator idx_last,
                       const auto in_first, auto out_first)
     {
-      // out[i * bs + j] = in[idx[i] * bs + j]. Dispatch on the common
-      // block sizes so the inner loop has a compile-time trip count, as
-      // la::MatrixCSR::mult does for spmv.
-      auto kernel = [&]<int B>(std::integral_constant<int, B>)
-      {
-        auto out = out_first;
-        for (auto idx = idx_first; idx != idx_last; ++idx)
-          for (int j = 0; j < B; ++j, ++out)
-            *out = *std::next(in_first, (*idx) * B + j);
-      };
-      switch (bs)
-      {
-      case 1:
-        return kernel(std::integral_constant<int, 1>{});
-      case 2:
-        return kernel(std::integral_constant<int, 2>{});
-      case 3:
-        return kernel(std::integral_constant<int, 3>{});
-      default:
-      {
-        auto out = out_first;
-        for (auto idx = idx_first; idx != idx_last; ++idx)
-          out = std::copy_n(std::next(in_first, (*idx) * bs), bs, out);
-      }
-      }
+      // out[i * bs + j] = in[idx[i] * bs + j]
+      dispatch_bs(bs,
+                  [&](auto B)
+                  {
+                    auto out = out_first;
+                    for (auto idx = idx_first; idx != idx_last; ++idx)
+                      for (int j = 0; j < B; ++j, ++out)
+                        *out = *std::next(in_first, (*idx) * B + j);
+                  });
     };
   }
 
@@ -103,31 +122,14 @@ private:
                       const auto in_first, auto out_first)
     {
       // out[idx[i] * bs + j] = in[i * bs + j]
-      auto kernel = [&]<int B>(std::integral_constant<int, B>)
-      {
-        auto in = in_first;
-        for (auto idx = idx_first; idx != idx_last; ++idx)
-          for (int j = 0; j < B; ++j, ++in)
-            *std::next(out_first, (*idx) * B + j) = *in;
-      };
-      switch (bs)
-      {
-      case 1:
-        return kernel(std::integral_constant<int, 1>{});
-      case 2:
-        return kernel(std::integral_constant<int, 2>{});
-      case 3:
-        return kernel(std::integral_constant<int, 3>{});
-      default:
-      {
-        auto in = in_first;
-        for (auto idx = idx_first; idx != idx_last; ++idx)
-        {
-          std::copy_n(in, bs, std::next(out_first, (*idx) * bs));
-          std::advance(in, bs);
-        }
-      }
-      }
+      dispatch_bs(bs,
+                  [&](auto B)
+                  {
+                    auto in = in_first;
+                    for (auto idx = idx_first; idx != idx_last; ++idx)
+                      for (int j = 0; j < B; ++j, ++in)
+                        *std::next(out_first, (*idx) * B + j) = *in;
+                  });
     };
   }
 
@@ -144,13 +146,17 @@ private:
                           const auto in_first, auto out_first)
     {
       // out[idx[i] * bs + j] = op(out[idx[i] * bs + j], in[i * bs + j])
-      auto in = in_first;
-      for (auto idx = idx_first; idx != idx_last; ++idx)
-      {
-        auto out = std::next(out_first, (*idx) * bs);
-        for (int j = 0; j < bs; ++j, ++in, ++out)
-          *out = op(*out, *in);
-      }
+      dispatch_bs(bs,
+                  [&](auto B)
+                  {
+                    auto in = in_first;
+                    for (auto idx = idx_first; idx != idx_last; ++idx)
+                    {
+                      auto out = std::next(out_first, (*idx) * B);
+                      for (int j = 0; j < B; ++j, ++in, ++out)
+                        *out = op(*out, *in);
+                    }
+                  });
     };
   }
 
