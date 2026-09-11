@@ -651,7 +651,7 @@ def mixed_direct():
     nsp = PETSc.NullSpace().create(vectors=[null_v.x.petsc_vec])
     nsp.remove(U.x.petsc_vec)
     U.x.scatter_forward()
-    
+
     # Split the mixed solution and collapse
     u, p = U.sub(0).collapse(), U.sub(1).collapse()
 
