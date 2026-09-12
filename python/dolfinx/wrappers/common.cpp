@@ -25,6 +25,7 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/string_view.h>
+#include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
@@ -111,17 +112,21 @@ void common(nb::module_& m)
              nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners)
           {
             std::array<std::vector<int>, 2> ranks;
-            ranks[0].assign(dest_src[0].data(),
-                            dest_src[0].data() + dest_src[0].size());
-            ranks[1].assign(dest_src[1].data(),
+            ranks[0].assign(dest_src[1].data(),
                             dest_src[1].data() + dest_src[1].size());
+            ranks[1].assign(dest_src[0].data(),
+                            dest_src[0].data() + dest_src[0].size());
             new (self) dolfinx::common::IndexMap(
                 comm.get(), local_size, ranks,
                 std::span(ghosts.data(), ghosts.size()),
                 std::span(ghost_owners.data(), ghost_owners.size()));
           },
           nb::arg("comm"), nb::arg("local_size"), nb::arg("dest_src"),
-          nb::arg("ghosts"), nb::arg("ghost_owners"))
+          nb::arg("ghosts"), nb::arg("ghost_owners"),
+          "Create an IndexMap with explicit neighbour ranks. ``dest_src`` "
+          "contains destination ranks followed by source ranks. "
+          "``ghost_owners[i]`` owns ``ghosts[i]``; its unique values must "
+          "equal the source ranks.")
       .def_prop_ro(
           "comm", [](const dolfinx::common::IndexMap& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>())
@@ -245,21 +250,22 @@ void common(nb::module_& m)
   m.def(
       "create_sub_index_map",
       [](const dolfinx::common::IndexMap& imap,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
-         bool allow_owner_change)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices)
       {
-        const std::int32_t size = imap.size_local() + imap.num_ghosts();
-        for (std::size_t i = 0; i < indices.size(); ++i)
-        {
-          if (indices.data()[i] < 0 or indices.data()[i] >= size)
-            throw std::runtime_error("Index out of range in indices array.");
-        }
-        auto [map, submap_to_map] = dolfinx::common::create_sub_index_map(
-            imap, std::span(indices.data(), indices.size()),
-            dolfinx::common::IndexMapOrder::any, allow_owner_change);
-        return std::pair(std::move(map), dolfinx_wrappers::as_nbarray(
-                                             std::move(submap_to_map)));
+        auto [map, submap_to_map, owners_changed]
+            = dolfinx::common::create_sub_index_map(
+                imap, std::span(indices.data(), indices.size()),
+                dolfinx::common::IndexMapOrder::any);
+        return std::tuple(
+            std::move(map),
+            dolfinx_wrappers::as_nbarray(std::move(submap_to_map)),
+            owners_changed);
       },
-      nb::arg("index_map"), nb::arg("indices"), nb::arg("allow_owner_change"));
+      nb::arg("index_map"), nb::arg("indices"),
+      "Create a sub-index map collectively. ``indices`` must contain unique "
+      "local indices in range. Returns the new map, the corresponding local "
+      "indices in the parent map, and a rank-local flag indicating whether "
+      "an index acquired a new owner. Reduce the flag across the communicator "
+      "before using it to make a collective control-flow decision.");
 }
 } // namespace dolfinx_wrappers

@@ -24,6 +24,25 @@ using namespace dolfinx::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
+// Throw if any rank saw a dof acquire a new owner when building a
+// sub-index map. `create_sub_index_map` reports this per rank, so it is
+// reduced first: throwing on only some ranks would leave the others in
+// a later collective. Developer builds only, since the check requires
+// MPI communication.
+void reject_owner_change([[maybe_unused]] const common::IndexMap& map,
+                         [[maybe_unused]] bool owners_changed)
+{
+#ifndef NDEBUG
+  int changed = owners_changed;
+  int changed_any;
+  const int ierr
+      = MPI_Allreduce(&changed, &changed_any, 1, MPI_INT, MPI_LOR, map.comm());
+  dolfinx::MPI::check_error(map.comm(), ierr);
+  if (changed_any)
+    throw std::runtime_error("Index owner change detected.");
+#endif
+}
+//-----------------------------------------------------------------------------
 // Build a collapsed DofMap from a dofmap view. Extracts dofs and
 // doesn't build a new re-ordered dofmap.
 fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view)
@@ -59,8 +78,10 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view)
   spdlog::debug("bs_view={}", bs_view);
   if (bs_view == 1)
   {
-    auto [_index_map, _sub_imap_to_imap] = common::create_sub_index_map(
-        *dofmap_view.index_map, dofs_view, common::IndexMapOrder::preserve);
+    auto [_index_map, _sub_imap_to_imap, owners_changed]
+        = common::create_sub_index_map(*dofmap_view.index_map, dofs_view,
+                                       common::IndexMapOrder::preserve);
+    reject_owner_change(*dofmap_view.index_map, owners_changed);
     index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     sub_imap_to_imap = std::move(_sub_imap_to_imap);
   }
@@ -70,8 +91,10 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view)
     indices.reserve(dofs_view.size());
     std::ranges::transform(dofs_view, std::back_inserter(indices),
                            [bs_view](auto idx) { return idx / bs_view; });
-    auto [_index_map, _sub_imap_to_imap] = common::create_sub_index_map(
-        *dofmap_view.index_map, indices, common::IndexMapOrder::preserve);
+    auto [_index_map, _sub_imap_to_imap, owners_changed]
+        = common::create_sub_index_map(*dofmap_view.index_map, indices,
+                                       common::IndexMapOrder::preserve);
+    reject_owner_change(*dofmap_view.index_map, owners_changed);
     index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     sub_imap_to_imap = std::move(_sub_imap_to_imap);
   }

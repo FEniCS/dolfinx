@@ -1556,8 +1556,23 @@ mesh::create_subtopology(const Topology& topology, int dim,
     auto [unique_end, range_end] = std::ranges::unique(_entities);
     _entities.erase(unique_end, range_end);
 
-    auto [_submap, _subentities]
+    auto [_submap, _subentities, owners_changed]
         = common::create_sub_index_map(*topology.index_map(dim), _entities);
+#ifndef NDEBUG
+    // `owners_changed` is rank-local, so reduce before throwing:
+    // throwing on only some ranks would leave the others in a later
+    // collective. Developer builds only, as the check needs MPI.
+    {
+      int changed = owners_changed;
+      int changed_any;
+      const MPI_Comm comm = topology.index_map(dim)->comm();
+      const int ierr
+          = MPI_Allreduce(&changed, &changed_any, 1, MPI_INT, MPI_LOR, comm);
+      dolfinx::MPI::check_error(comm, ierr);
+      if (changed_any)
+        throw std::runtime_error("Index owner change detected.");
+    }
+#endif
     submap = std::make_shared<common::IndexMap>(std::move(_submap));
     subentities = std::move(_subentities);
   }
@@ -1574,12 +1589,15 @@ mesh::create_subtopology(const Topology& topology, int dim,
   std::shared_ptr<common::IndexMap> submap0;
   std::vector<int32_t> subvertices0;
   {
-    std::pair<common::IndexMap, std::vector<int32_t>> map_data
+    // An owner change is permitted here: a vertex may be incident to a
+    // sub-topology entity on a ghosting rank but not on its owner.
+    std::tuple<common::IndexMap, std::vector<int32_t>, bool> map_data
         = common::create_sub_index_map(
             *map0, compute_incident_entities(topology, subentities, dim, 0),
-            common::IndexMapOrder::any, true);
-    submap0 = std::make_shared<common::IndexMap>(std::move(map_data.first));
-    subvertices0 = std::move(map_data.second);
+            common::IndexMapOrder::any);
+    submap0
+        = std::make_shared<common::IndexMap>(std::move(std::get<0>(map_data)));
+    subvertices0 = std::move(std::get<1>(map_data));
   }
 
   // Sub-topology entity to vertex connectivity

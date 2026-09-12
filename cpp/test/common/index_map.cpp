@@ -16,6 +16,7 @@
 #include <iostream>
 #include <numeric>
 #include <set>
+#include <stdexcept>
 #include <vector>
 
 using namespace dolfinx;
@@ -257,6 +258,143 @@ void test_rank_weights()
     REQUIRE(weight_dest.empty());
   }
 }
+
+void test_index_map_preconditions()
+{
+  // local_size >= 0 and a ghosts/owners length mismatch are checked
+  // locally and unconditionally (no MPI collective), in both Developer
+  // and Release builds: a mismatch would otherwise be an out-of-bounds
+  // access in internal communication setup. Because the check is local
+  // only, it is not safe to make it inconsistent across ranks (e.g.
+  // valid on rank 0 but not rank 1): that would make the invalid rank
+  // throw and leave before entering compute_layout's collectives, while
+  // the other ranks proceed into them and hang. Every rank below passes
+  // the same (valid or invalid) argument.
+  CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, -1), std::invalid_argument);
+  const std::vector<std::int64_t> mismatched_ghosts = {0, 1};
+  const std::vector<int> mismatched_owners = {0};
+  CHECK_THROWS_AS(
+      common::IndexMap(MPI_COMM_WORLD, 1, mismatched_ghosts, mismatched_owners),
+      std::invalid_argument);
+  const std::array<std::vector<int>, 2> empty_src_dest = {};
+  CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, 1, empty_src_dest,
+                                   mismatched_ghosts, mismatched_owners),
+                  std::invalid_argument);
+
+#ifndef NDEBUG
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int owner = (dolfinx::MPI::rank(MPI_COMM_WORLD) + 1) % mpi_size;
+  const std::vector<std::int64_t> ghosts = {0};
+  const std::vector<int> owners = {owner};
+  const std::array<std::vector<int>, 2> src_dest = {};
+  CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, 1, src_dest, ghosts, owners),
+                  std::invalid_argument);
+
+  if (mpi_size > 1)
+  {
+    const int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+    const std::vector<std::int64_t> ghost_owned_locally = {rank};
+    const std::vector<int> remote_owner = {(rank + 1) % mpi_size};
+    const std::vector<int> destination = {(rank + mpi_size - 1) % mpi_size};
+    const std::array<std::vector<int>, 2> invalid_src_dest
+        = {remote_owner, destination};
+    CHECK_THROWS_AS(
+        common::IndexMap(MPI_COMM_WORLD, 1, ghost_owned_locally, remote_owner),
+        std::invalid_argument);
+    CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, 1, invalid_src_dest,
+                                     ghost_owned_locally, remote_owner),
+                    std::invalid_argument);
+
+    const std::vector<std::int64_t> out_of_range_ghost = {mpi_size};
+    CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, 1, invalid_src_dest,
+                                     out_of_range_ghost, remote_owner),
+                    std::invalid_argument);
+
+    if (mpi_size > 2)
+    {
+      const std::vector<std::int64_t> ghost_owned_remotely = {remote_owner[0]};
+      const std::array<std::vector<int>, 2> mismatched_src_dest
+          = {remote_owner, remote_owner};
+      CHECK_THROWS_AS(common::IndexMap(MPI_COMM_WORLD, 1, mismatched_src_dest,
+                                       ghost_owned_remotely, remote_owner),
+                      std::invalid_argument);
+    }
+  }
+#endif
+
+  const common::IndexMap map(MPI_COMM_WORLD, 1);
+#ifndef NDEBUG
+  const std::vector<std::int32_t> duplicate_indices = {0, 0};
+  const std::vector<std::int32_t> out_of_range_indices = {1};
+  CHECK_THROWS_AS(common::create_sub_index_map(map, duplicate_indices),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(common::compute_owned_indices(duplicate_indices, map),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(common::create_sub_index_map(map, out_of_range_indices),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(common::compute_owned_indices(out_of_range_indices, map),
+                  std::invalid_argument);
+#endif
+
+  const std::vector<std::int32_t> valid_indices = {0};
+  auto [submap, submap_to_map, owners_changed]
+      = common::create_sub_index_map(map, valid_indices);
+  CHECK(submap.size_local() == 1);
+  CHECK(submap_to_map == valid_indices);
+  CHECK_FALSE(owners_changed);
+}
+
+void test_compute_owned_indices()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  if (mpi_size == 1)
+  {
+    const common::IndexMap map(MPI_COMM_WORLD, 1);
+    const std::vector<std::int32_t> selected;
+    CHECK(common::compute_owned_indices(selected, map).empty());
+    return;
+  }
+
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  const int owner = (mpi_rank + 1) % mpi_size;
+  const std::vector<std::int64_t> ghosts = {owner};
+  const std::vector<int> owners = {owner};
+  const common::IndexMap map(MPI_COMM_WORLD, 1, ghosts, owners);
+
+  // Each rank selects its only ghost. Its predecessor therefore selects the
+  // local entry owned by this rank.
+  const std::vector<std::int32_t> selected = {1};
+  const std::vector<std::int32_t> expected = {0};
+  CHECK(common::compute_owned_indices(selected, map) == expected);
+}
+
+void test_local_global_index_conversion()
+{
+  const common::IndexMap map(MPI_COMM_WORLD, 2);
+  std::vector<std::int64_t> global(1);
+  const std::vector<std::int32_t> local_two = {0, 1};
+  const std::vector<std::int32_t> local_negative = {-1};
+  const std::vector<std::int32_t> local_out_of_range = {2};
+  CHECK_THROWS_AS(map.local_to_global(local_two, global),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(map.local_to_global(local_negative, global),
+                  std::out_of_range);
+  CHECK_THROWS_AS(map.local_to_global(local_out_of_range, global),
+                  std::out_of_range);
+
+  // local_to_global accepts a larger output buffer and leaves its tail
+  // unchanged.
+  std::vector<std::int64_t> global_larger(3, -1);
+  map.local_to_global(local_two, global_larger);
+  const std::int64_t offset = map.local_range()[0];
+  CHECK(global_larger == std::vector<std::int64_t>{offset, offset + 1, -1});
+
+  // global_to_local requires exactly matching input and output sizes.
+  std::vector<std::int32_t> local(1);
+  const std::vector<std::int64_t> global_two = {0, 1};
+  CHECK_THROWS_AS(map.global_to_local(global_two, local),
+                  std::invalid_argument);
+}
 } // namespace
 
 TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
@@ -290,4 +428,19 @@ TEST_CASE("Split IndexMap communicator by type", "[index_map_comm_split]")
 TEST_CASE("IndexMap stats", "[index_map_stats]")
 {
   CHECK_NOTHROW(test_rank_weights());
+}
+
+TEST_CASE("IndexMap preconditions", "[index_map_preconditions]")
+{
+  CHECK_NOTHROW(test_index_map_preconditions());
+}
+
+TEST_CASE("Compute owned IndexMap indices", "[index_map_owned_indices]")
+{
+  CHECK_NOTHROW(test_compute_owned_indices());
+}
+
+TEST_CASE("IndexMap local/global conversions", "[index_map_conversions]")
+{
+  CHECK_NOTHROW(test_local_global_index_conversion());
 }
