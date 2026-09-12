@@ -8,6 +8,7 @@
 
 #include "array.h"
 #include "caster_mpi.h"
+#include "marker.h"
 #include "numpy_dtype.h"
 #include <array>
 #include <cstdint>
@@ -71,11 +72,12 @@ auto ptr_to_ref_wrapper_vec(auto& x)
   std::ranges::transform(x, std::back_inserter(y),
                          [](auto ptr)
                          {
-                           assert(ptr);
+                           if (!ptr)
+                             throw std::invalid_argument("List entry is None.");
                            return std::reference_wrapper<T>(*ptr);
                          });
   return y;
-};
+}
 
 template <typename T>
 void declare_function_space(nb::module_& m, std::string type)
@@ -441,7 +443,7 @@ void declare_objects(nb::module_& m, std::string type)
           },
           nb::arg("g").noconvert(), nb::arg("dofs").noconvert(),
           nb::arg("V").noconvert())
-      .def_prop_ro("dtype", [](const dolfinx::fem::Function<T, U>&)
+      .def_prop_ro("dtype", [](const dolfinx::fem::DirichletBC<T, U>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def(
           "dof_indices",
@@ -899,7 +901,7 @@ void declare_form(nb::module_& m, std::string type)
                   _d.data(), {_d.size() / 4, 2, 2});
             }
             default:
-              throw ::std::runtime_error("Integral type unsupported.");
+              throw std::invalid_argument("Integral type unsupported.");
             }
           },
           nb::rv_policy::reference_internal, nb::arg("type"), nb::arg("i"));
@@ -964,7 +966,7 @@ void declare_form(nb::module_& m, std::string type)
                  std::int32_t, nb::ndarray<const std::int32_t, nb::c_contig>>>>&
              subdomains,
          const std::vector<const dolfinx::mesh::EntityMap*>& entity_maps,
-         std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh = nullptr)
+         std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
       {
         std::map<
             dolfinx::fem::IntegralType,
@@ -1076,6 +1078,13 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
             std::size_t num_points = x.shape(0);
             std::size_t gdim = x.shape(1);
             std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
+            if (cell_geometry.shape(1) > 3)
+            {
+              throw std::invalid_argument(
+                  std::format("cell_geometry must have at most 3 columns, "
+                              "got {}.",
+                              cell_geometry.shape(1)));
+            }
 
             using mdspan2_t = md::mdspan<T, md::dextents<std::size_t, 2>>;
             using cmdspan2_t
@@ -1121,7 +1130,7 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
               self.compute_jacobian_inverse(J, K);
               std::array<T, 3> x0{0, 0, 0};
               for (std::size_t i = 0; i < g.extent(1); ++i)
-                x0[i] += g(0, i);
+                x0[i] = g(0, i);
               self.pull_back_affine(X, K, x0, _x);
             }
             else
@@ -1198,7 +1207,7 @@ void declare_real_functions(nb::module_& m)
          bool remote)
       {
         if (V.size() != 2)
-          throw std::runtime_error("Expected two function spaces.");
+          throw std::invalid_argument("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
             = dolfinx::fem::locate_dofs_topological(
                 *V[0].get()->mesh()->topology_mutable(),
@@ -1208,8 +1217,7 @@ void declare_real_functions(nb::module_& m)
             {dolfinx_wrappers::as_nbarray(std::move(dofs[0])),
              dolfinx_wrappers::as_nbarray(std::move(dofs[1]))});
       },
-      nb::arg("V"), nb::arg("dim"), nb::arg("entities"),
-      nb::arg("remote") = true);
+      nb::arg("V"), nb::arg("dim"), nb::arg("entities"), nb::arg("remote"));
   m.def(
       "locate_dofs_topological",
       [](const dolfinx::fem::FunctionSpace<T>& V, int dim,
@@ -1221,30 +1229,19 @@ void declare_real_functions(nb::module_& m)
                 *V.mesh()->topology_mutable(), *V.dofmap(), dim,
                 std::span(entities.data(), entities.size()), remote));
       },
-      nb::arg("V"), nb::arg("dim"), nb::arg("entities"),
-      nb::arg("remote") = true);
+      nb::arg("V"), nb::arg("dim"), nb::arg("entities"), nb::arg("remote"));
   m.def(
       "locate_dofs_geometrical",
       [](const std::vector<
              std::shared_ptr<const dolfinx::fem::FunctionSpace<T>>>& V,
-         std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
-             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
-             marker)
+         const PythonMarkerFunction<T>& marker)
       {
         if (V.size() != 2)
-          throw std::runtime_error("Expected two function spaces.");
-
-        auto _marker = [&marker](auto x)
-        {
-          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)});
-          auto marked = marker(x_view);
-          return std::vector<std::int8_t>(marked.data(),
-                                          marked.data() + marked.size());
-        };
+          throw std::invalid_argument("Expected two function spaces.");
 
         std::array<std::vector<std::int32_t>, 2> dofs
-            = dolfinx::fem::locate_dofs_geometrical<T>({*V[0], *V[1]}, _marker);
+            = dolfinx::fem::locate_dofs_geometrical<T>(
+                {*V[0], *V[1]}, to_cpp_marker<T>(marker));
         return std::array<nb::ndarray<std::int32_t, nb::numpy>, 2>(
             {dolfinx_wrappers::as_nbarray(std::move(dofs[0])),
              dolfinx_wrappers::as_nbarray(std::move(dofs[1]))});
@@ -1253,21 +1250,10 @@ void declare_real_functions(nb::module_& m)
   m.def(
       "locate_dofs_geometrical",
       [](const dolfinx::fem::FunctionSpace<T>& V,
-         std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
-             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
-             marker)
+         const PythonMarkerFunction<T>& marker)
       {
-        auto _marker = [&marker](auto x)
-        {
-          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)});
-          auto marked = marker(x_view);
-          return std::vector<std::int8_t>(marked.data(),
-                                          marked.data() + marked.size());
-        };
-
         return dolfinx_wrappers::as_nbarray(
-            dolfinx::fem::locate_dofs_geometrical(V, _marker));
+            dolfinx::fem::locate_dofs_geometrical(V, to_cpp_marker<T>(marker)));
       },
       nb::arg("V"), nb::arg("marker"));
 

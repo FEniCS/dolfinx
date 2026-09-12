@@ -17,6 +17,7 @@
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <format>
 #include <functional>
 #include <memory>
 #include <nanobind/nanobind.h>
@@ -34,9 +35,11 @@
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 namespace nb = nanobind;
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
@@ -50,7 +53,8 @@ void fem(nb::module_& m)
       [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& layout)
       {
-        assert(topology.entity_types(topology.dim()).size() == 1);
+        if (topology.entity_types(topology.dim()).size() != 1)
+          throw std::invalid_argument("Mixed topology unsupported.");
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
             comm.get(), topology, {layout}, nullptr);
         return std::tuple(std::move(map), bs, std::move(dofmap));
@@ -72,6 +76,7 @@ void fem(nb::module_& m)
             dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         return dolfinx::fem::transpose_dofmap(_dofmap, num_cells);
       },
+      nb::arg("dofmap"), nb::arg("num_cells"),
       "Build the index to (cell, local index) map from a dofmap ((cell, local "
       "index) -> index).");
   m.def(
@@ -124,8 +129,14 @@ void fem(nb::module_& m)
       .def_prop_ro("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
       .def(
           "cell_dofs",
-          [](const dolfinx::fem::DofMap& self, int cell)
+          [](const dolfinx::fem::DofMap& self, std::int32_t cell)
           {
+            if (cell < 0 or std::cmp_greater_equal(cell, self.map().extent(0)))
+            {
+              throw std::out_of_range(std::format(
+                  "Cell index {} is out of range for a dofmap with {} cells.",
+                  cell, self.map().extent(0)));
+            }
             std::span<const std::int32_t> dofs = self.cell_dofs(cell);
             return nb::ndarray<const std::int32_t, nb::numpy>(dofs.data(),
                                                               {dofs.size()});
@@ -147,7 +158,7 @@ void fem(nb::module_& m)
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet,
              "exterior facet integral")
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet,
-             "exterior facet integral")
+             "interior facet integral")
       .value("vertex", dolfinx::fem::IntegralType::vertex, "vertex integral")
       .value("ridge", dolfinx::fem::IntegralType::ridge, "ridge integral");
 

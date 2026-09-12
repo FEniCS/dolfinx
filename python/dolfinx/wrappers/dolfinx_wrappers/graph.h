@@ -8,9 +8,11 @@
 
 #include "MPICommWrapper.h"
 #include "array.h"
+#include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
+#include <format>
 #include <functional>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -21,6 +23,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace dolfinx_wrappers
@@ -114,7 +117,7 @@ void declare_adjacency_list_common(
          "offsets",
          [](const dolfinx::graph::AdjacencyList<T, U>& self)
          {
-           return nb::ndarray<const std::int32_t, nb::numpy>(
+           return nb::ndarray<const std::int32_t, nb::ndim<1>, nb::numpy>(
                self.offsets().data(), {self.offsets().size()});
          },
          nb::rv_policy::reference_internal)
@@ -135,11 +138,9 @@ void declare_adjacency_list_common(
 /// @param m The nanobind module
 /// @param type String representation of the type (e.g., "int32", "int64")
 template <typename T, typename U>
-void declare_adjacency_list_init(nanobind::module_& m, std::string type)
+void declare_adjacency_list_init(nanobind::module_& m, std::string_view type)
 {
-  namespace nb = nanobind;
-
-  std::string pyclass_name = std::string("AdjacencyList_") + type;
+  std::string pyclass_name = std::string("AdjacencyList_").append(type);
   nb::class_<dolfinx::graph::AdjacencyList<T, U>> cls(m, pyclass_name.c_str(),
                                                       "Adjacency List");
   cls.def(
@@ -171,20 +172,20 @@ void declare_adjacency_list_init(nanobind::module_& m, std::string type)
           {
             if (displ.size() == 0 or displ.data()[0] != 0)
             {
-              throw std::runtime_error(
+              throw std::invalid_argument(
                   "offsets must be non-empty and start at 0.");
             }
 
             for (std::size_t i = 1; i < displ.size(); ++i)
             {
               if (displ.data()[i] < displ.data()[i - 1])
-                throw std::runtime_error("offsets must be non-decreasing.");
+                throw std::invalid_argument("offsets must be non-decreasing.");
             }
 
             if (static_cast<std::size_t>(displ.data()[displ.size() - 1])
                 != array.size())
             {
-              throw std::runtime_error(
+              throw std::invalid_argument(
                   "Last entry in offsets must equal the length of data.");
             }
 
@@ -197,8 +198,15 @@ void declare_adjacency_list_init(nanobind::module_& m, std::string type)
           nb::arg("data").noconvert(), nb::arg("offsets"))
       .def(
           "links",
-          [](const dolfinx::graph::AdjacencyList<T, U>& self, int i)
+          [](const dolfinx::graph::AdjacencyList<T, U>& self, std::int32_t i)
           {
+            if (i < 0 or i >= self.num_nodes())
+            {
+              throw std::out_of_range(std::format(
+                  "Node index {} is out of range for an adjacency list with "
+                  "{} nodes.",
+                  i, self.num_nodes()));
+            }
             std::span<const T> link = self.links(i);
             return nb::ndarray<const T, nb::numpy>(link.data(), {link.size()});
           },
@@ -220,9 +228,9 @@ void declare_adjacency_list_init(nanobind::module_& m, std::string type)
 /// @param m The nanobind module
 /// @param type String representation of the type
 template <typename T, typename U>
-void declare_adjacency_list(nanobind::module_& m, std::string type)
+void declare_adjacency_list(nanobind::module_& m, std::string_view type)
 {
-  std::string pyclass_name = std::string("AdjacencyList_") + type;
+  std::string pyclass_name = std::string("AdjacencyList_").append(type);
   nb::class_<dolfinx::graph::AdjacencyList<T, U>> cls(m, pyclass_name.c_str(),
                                                       "Adjacency List");
   declare_adjacency_list_common(cls);

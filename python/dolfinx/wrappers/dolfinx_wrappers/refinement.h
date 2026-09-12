@@ -76,7 +76,7 @@ void declare_refinement(nanobind::module_& m)
           auto index_map = mesh.topology()->index_map(1);
           if (!index_map)
           {
-            throw std::runtime_error(
+            throw std::invalid_argument(
                 "Edge entities have not been created on the mesh topology.");
           }
 
@@ -86,7 +86,7 @@ void declare_refinement(nanobind::module_& m)
           {
             std::int32_t e = edges.value().data()[i];
             if (e < 0 or e >= num_edges)
-              throw std::runtime_error("Index out of range in edges array.");
+              throw std::out_of_range("Index out of range in edges array.");
           }
           cpp_edges.emplace(
               std::span(edges.value().data(), edges.value().size()));
