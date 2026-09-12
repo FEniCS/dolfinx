@@ -54,7 +54,7 @@ sort_unique(const U& indices, const V& values)
 
   std::vector<typename U::value_type> indices_new;
   std::vector<typename V::value_type> values_new;
-  std::size_t n = std::distance(data.begin(), it);
+  std::size_t n = std::ranges::distance(data.begin(), it);
   indices_new.reserve(n);
   values_new.reserve(n);
   std::transform(data.begin(), it, std::back_inserter(indices_new),

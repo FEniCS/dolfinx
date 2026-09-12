@@ -109,8 +109,10 @@ class MatrixFreeOperator:
             form_compiler_options: Options to pass to the form compiler.
             jit_options: Options to pass to the JIT compiler.
         """
-        jit_options = {} if jit_options is None else jit_options
-        form_compiler_options = {} if form_compiler_options is None else form_compiler_options
+        if jit_options is None:
+            jit_options = {}
+        if form_compiler_options is None:
+            form_compiler_options = {}
         diagnal_options = form_compiler_options.copy()
         diagnal_options["part"] = "diagonal"
 

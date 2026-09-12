@@ -107,7 +107,7 @@ std::int32_t _build_from_leaf(
     std::array<T, 3> b_diff;
     std::transform(std::next(b.cbegin(), 3), b.cend(), b.cbegin(),
                    b_diff.begin(), std::minus<T>());
-    const std::size_t axis = std::distance(
+    const std::size_t axis = std::ranges::distance(
         b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
 
     auto middle = std::next(leaf_bboxes.begin(), leaf_bboxes.size() / 2);
@@ -176,7 +176,7 @@ _build_from_point(std::span<std::pair<std::array<T, 3>, std::int32_t>> points,
   std::array<T, 3> b_diff;
   std::ranges::transform(b1, b0, b_diff.begin(), std::minus<T>());
   const std::size_t axis
-      = std::distance(b_diff.begin(), std::ranges::max_element(b_diff));
+      = std::ranges::distance(b_diff.begin(), std::ranges::max_element(b_diff));
 
   auto middle = std::next(points.begin(), points.size() / 2);
   std::nth_element(points.begin(), middle, points.end(),

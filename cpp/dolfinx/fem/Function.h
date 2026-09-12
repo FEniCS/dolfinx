@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2024 Anders Logg, Garth N. Wells and Massimiliano Leoni
+// Copyright (C) 2003-2026 Anders Logg, Garth N. Wells and Massimiliano Leoni
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -24,6 +24,7 @@
 #include <memory>
 #include <numeric>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -61,8 +62,9 @@ public:
   {
     if (!V->component().empty())
     {
-      throw std::runtime_error("Cannot create Function from subspace. Consider "
-                               "collapsing the function space");
+      throw std::invalid_argument(
+          "Cannot create Function from subspace. Consider "
+          "collapsing the function space");
     }
   }
 
@@ -184,23 +186,24 @@ public:
     {
       // Check for scalar-valued functions
       if (fshape.front() != x.size() / 3)
-        throw std::runtime_error("Data returned by callable has wrong length");
+        throw std::invalid_argument(
+            "Data returned by callable has wrong length");
     }
     else
     {
       // Check for vector/tensor value
       if (fshape.size() != 2)
-        throw std::runtime_error("Expected 2D array of data");
+        throw std::invalid_argument("Expected 2D array of data");
 
       if (fshape[0] != vs)
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Data returned by callable has wrong shape(0) size");
       }
 
       if (fshape[1] != x.size() / 3)
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Data returned by callable has wrong shape(1) size");
       }
     }
@@ -310,7 +313,7 @@ public:
         mesh0 = mesh;
       else if (mesh != mesh0)
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Expression coefficient Functions have different meshes.");
       }
     }
@@ -322,17 +325,18 @@ public:
       mesh0 = _function_space->mesh().get();
 
     if (cells0.size() != cells1.size())
-      throw std::runtime_error("Cell lists have different lengths.");
+      throw std::invalid_argument("Cell lists have different lengths.");
 
     // Check that Function and Expression spaces are compatible
     assert(_function_space->element());
     std::size_t value_size = e0.value_size();
     if (e0.argument_space())
-      throw std::runtime_error("Cannot interpolate Expression with Argument.");
+      throw std::invalid_argument(
+          "Cannot interpolate Expression with Argument.");
 
     if (value_size != (std::size_t)_function_space->element()->value_size())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Function value size not equal to Expression value size.");
     }
 
@@ -342,7 +346,7 @@ public:
       auto [X1, shape1] = _function_space->element()->interpolation_points();
       if (shape0 != shape1)
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Function element interpolation points has different shape to "
             "Expression interpolation points");
       }
@@ -351,8 +355,9 @@ public:
       {
         if (std::abs(X0[i] - X1[i]) > 1.0e-10)
         {
-          throw std::runtime_error("Function element interpolation points not "
-                                   "equal to Expression interpolation points");
+          throw std::invalid_argument(
+              "Function element interpolation points not "
+              "equal to Expression interpolation points");
         }
       }
     }
@@ -469,13 +474,13 @@ public:
 
     if (xshape[0] != cells.size())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Number of points and number of cells must be equal.");
     }
 
     if (xshape[0] != ushape[0])
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Length of array for Function values must be the "
           "same as the number of points.");
     }
@@ -511,8 +516,8 @@ public:
     const int num_sub_elements = element->num_sub_elements();
     if (num_sub_elements > 1 and num_sub_elements != bs_element)
     {
-      throw std::runtime_error("Function::eval is not supported for mixed "
-                               "elements. Extract subspaces.");
+      throw std::invalid_argument("Function::eval is not supported for mixed "
+                                  "elements. Extract subspaces.");
     }
 
     // Create work vector for expansion coefficients
@@ -663,10 +668,9 @@ public:
 
     // Size of tensor for symmetric elements, unused in non-symmetric
     // case, but placed outside the loop for pre-computation.
-    int matrix_size;
+    int matrix_size = 0;
     if (element->symmetric())
     {
-      matrix_size = 0;
       while (matrix_size * matrix_size < (int)ushape[1])
         ++matrix_size;
     }
@@ -680,11 +684,14 @@ public:
       // Permute the reference basis function values to account for the
       // cell's orientation
       std::size_t p = std::ranges::distance(cells.begin(), cell_it);
-      apply_dof_transformation(
-          std::span(basis_derivatives_reference_values_b.data()
-                        + p * num_basis_values,
-                    num_basis_values),
-          cell_info, *cell_it, reference_value_size);
+      if (apply_dof_transformation)
+      {
+        apply_dof_transformation(
+            std::span(basis_derivatives_reference_values_b.data()
+                          + p * num_basis_values,
+                      num_basis_values),
+            cell_info, *cell_it, reference_value_size);
+      }
 
       {
         auto _U = md::submdspan(basis_derivatives_reference_values, 0, p,

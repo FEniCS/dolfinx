@@ -319,6 +319,83 @@ MPI_Datatype mpi_datatype()
 template <typename T>
 MPI_Datatype mpi_t = mpi_datatype<T>();
 
+/// @brief An MPI datatype for `count` contiguous values of type `T`, and
+/// manage its lifetime.
+///
+/// Lets a buffer be sent with counts and displacements measured in
+/// groups of `count` values rather than in single values. The group is
+/// an index map block size in common::Scatterer, and the row width of a
+/// row-major buffer elsewhere; it is not required to be either.
+///
+/// For `count == 1` no datatype is created and `mpi_t<T>` is used
+/// directly, so this is cheap to construct in that case.
+///
+/// @note MPI keeps a datatype alive until communication using it has
+/// completed, so this may be destroyed as soon as a non-blocking call
+/// using it has been started.
+///
+/// @tparam T Type of each value.
+template <typename T>
+class Datatype
+{
+public:
+  /// @brief Create a datatype for `count` contiguous values.
+  /// @param[in] count Number of values MPI should treat as one unit.
+  explicit Datatype(int count)
+  {
+    // Not error checked, matching the other datatype creation sites in
+    // the library: these are local calls, and under the default
+    // MPI_ERRORS_ARE_FATAL handler a failure aborts before a return code
+    // is visible. There is also no communicator here to abort on --
+    // MPI_COMM_SELF would abort this rank alone and hang the rest.
+    if (count > 1)
+    {
+      MPI_Type_contiguous(count, mpi_t<T>, &_type);
+      MPI_Type_commit(&_type);
+    }
+  }
+
+  // Copy constructor (deleted)
+  Datatype(const Datatype& type) = delete;
+
+  /// Move constructor
+  Datatype(Datatype&& type) noexcept : _type(type._type)
+  {
+    type._type = MPI_DATATYPE_NULL;
+  }
+
+  /// Destructor (frees the datatype, if one was created)
+  ~Datatype()
+  {
+    if (_type != MPI_DATATYPE_NULL)
+      MPI_Type_free(&_type);
+  }
+
+  // Copy assignment (deleted)
+  Datatype& operator=(const Datatype& type) = delete;
+
+  /// Move assignment
+  Datatype& operator=(Datatype&& type) noexcept
+  {
+    if (_type != MPI_DATATYPE_NULL)
+      MPI_Type_free(&_type);
+    _type = type._type;
+    type._type = MPI_DATATYPE_NULL;
+    return *this;
+  }
+
+  /// @brief The datatype to pass to MPI.
+  /// @return Contiguous type, or `mpi_t<T>` when `count` is one.
+  MPI_Datatype type() const noexcept
+  {
+    return _type == MPI_DATATYPE_NULL ? mpi_t<T> : _type;
+  }
+
+private:
+  // Created contiguous type, or MPI_DATATYPE_NULL if none was created
+  MPI_Datatype _type = MPI_DATATYPE_NULL;
+};
+
 //---------------------------------------------------------------------------
 namespace impl
 {
@@ -565,7 +642,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
       auto it1 = std::ranges::find_if(it, src_to_index.end(),
                                       [r = src.back()](auto& idx)
                                       { return std::get<0>(idx) != r; });
-      num_items_per_src.push_back(std::distance(it, it1));
+      num_items_per_src.push_back(std::ranges::distance(it, it1));
       it = it1;
     }
   }
@@ -738,6 +815,18 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
   assert(x.size() % shape1 == 0);
   const std::int64_t shape0_local = x.size() / shape1;
 
+  // A rank outside comm1 must hold no data. Check this collectively before
+  // the later comm0/comm1 collectives to avoid leaving other ranks blocked.
+  {
+    int invalid_local = (comm1 == MPI_COMM_NULL and !x.empty()) ? 1 : 0;
+    int invalid = 0;
+    int err
+        = MPI_Allreduce(&invalid_local, &invalid, 1, MPI_INT, MPI_MAX, comm0);
+    dolfinx::MPI::check_error(comm0, err);
+    if (invalid)
+      throw std::runtime_error("Non-empty data on null MPI communicator");
+  }
+
   std::int64_t shape0 = 0;
   int err
       = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm0);
@@ -751,8 +840,6 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                      dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM, comm1);
     dolfinx::MPI::check_error(comm1, err);
   }
-  else if (!x.empty())
-    throw std::runtime_error("Non-empty data on null MPI communicator");
 
   return distribute_from_postoffice(comm0, indices, x, {shape0, shape1},
                                     rank_offset);

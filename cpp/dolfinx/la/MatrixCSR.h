@@ -232,7 +232,7 @@ public:
                              A.off_diag_offset().end()),
         _comm(A.comm()), _request(MPI_REQUEST_NULL), _unpack_pos(A._unpack_pos),
         _val_send_disp(A._val_send_disp), _val_recv_disp(A._val_recv_disp),
-        _ghost_row_to_rank(A._ghost_row_to_rank)
+        _ghost_row_to_rank(A._ghost_row_to_rank), _finalized(A._finalized)
   {
   }
 
@@ -243,6 +243,7 @@ public:
   [[deprecated("Use std::ranges::fill(A.values(), v) instead.")]]
   void set(value_type x)
   {
+    check_not_finalized();
     std::ranges::fill(_data, x);
   }
 
@@ -266,6 +267,7 @@ public:
   void set(std::span<const value_type> x, std::span<const std::int32_t> rows,
            std::span<const std::int32_t> cols)
   {
+    check_not_finalized();
     auto set_fn = [](value_type& y, const value_type& x) { y = x; };
 
     std::int32_t num_rows
@@ -311,6 +313,7 @@ public:
   void add(std::span<const value_type> x, std::span<const std::int32_t> rows,
            std::span<const std::int32_t> cols)
   {
+    check_not_finalized();
     auto add_fn = [](value_type& y, const value_type& x) { y += x; };
 
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
@@ -398,6 +401,7 @@ public:
   /// only occurs with `scatter_rev_end()`.
   void scatter_rev_begin()
   {
+    check_not_finalized();
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
     const int bs2 = _bs[0] * _bs[1];
@@ -445,6 +449,7 @@ public:
   /// zeroed.
   void scatter_rev_end()
   {
+    check_not_finalized();
     int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
     dolfinx::MPI::check_error(_comm.comm(), status);
 
@@ -581,6 +586,78 @@ public:
   /// @brief Get 'block mode'.
   BlockMode block_mode() const { return _block_mode; }
 
+  /// @brief Remove any zero entries in the matrix data.
+  ///
+  /// For a blocked matrix (block_size(0) * block_size(1) > 1), a block
+  /// is only removed if *all* of its entries are within tolerance of
+  /// zero. If any entry in the block exceeds the tolerance, the whole
+  /// block is retained unchanged, since a block shares a single column
+  /// index/sparsity entry and cannot be partially removed.
+  ///
+  /// @note This is a terminal, finalizing operation: it reduces the
+  /// matrix's sparsity, which invalidates the precomputed scatter_rev
+  /// communication pattern for ghost rows. After calling this, the
+  /// matrix must not be modified further -- calling `add()`, `set()`,
+  /// `scatter_rev_begin()`, `scatter_rev_end()`, or `scatter_rev()`
+  /// (bound to Python as `scatter_reverse()`) will throw. Only call
+  /// this once, after the matrix is fully assembled (i.e. after the
+  /// final `scatter_rev()`).
+  ///
+  /// @param[in] tol Tolerance for considering a value to be zero.
+  void eliminate_zeros(value_type tol = 0)
+  {
+    // Remove any zero entries (blocks, where all entries in the block
+    // are within tolerance of zero) in data, and update the column
+    // indices and row pointers accordingly.
+    const std::size_t bs2 = _bs[0] * _bs[1];
+
+    // True if every entry of the block starting at block index j is
+    // within tolerance of zero, i.e. the whole block can be dropped.
+    auto is_zero_block = [this, bs2, tol](std::int64_t j)
+    {
+      return std::all_of(std::next(_data.begin(), j * bs2),
+                         std::next(_data.begin(), (j + 1) * bs2),
+                         [tol](value_type x)
+                         { return std::abs(x) <= std::abs(tol); });
+    };
+
+    std::int64_t ptr_out = 0;
+    std::vector<std::int64_t> new_row_ptr = {0};
+    std::vector<std::int64_t> new_off_diagonal_offset;
+    new_row_ptr.reserve(_row_ptr.size());
+    new_off_diagonal_offset.reserve(_off_diagonal_offset.size());
+    for (std::size_t i = 0; i < _row_ptr.size() - 1; ++i)
+    {
+      for (std::int64_t j = _row_ptr[i]; j < _off_diagonal_offset[i]; ++j)
+      {
+        if (!is_zero_block(j))
+        {
+          _cols[ptr_out] = _cols[j];
+          std::copy_n(std::next(_data.begin(), j * bs2), bs2,
+                      std::next(_data.begin(), ptr_out * bs2));
+          ++ptr_out;
+        }
+      }
+      new_off_diagonal_offset.push_back(ptr_out);
+      for (std::int64_t j = _off_diagonal_offset[i]; j < _row_ptr[i + 1]; ++j)
+      {
+        if (!is_zero_block(j))
+        {
+          _cols[ptr_out] = _cols[j];
+          std::copy_n(std::next(_data.begin(), j * bs2), bs2,
+                      std::next(_data.begin(), ptr_out * bs2));
+          ++ptr_out;
+        }
+      }
+      new_row_ptr.push_back(ptr_out);
+    }
+    _data.resize(ptr_out * bs2);
+    _cols.resize(ptr_out);
+    _row_ptr = new_row_ptr;
+    _off_diagonal_offset = new_off_diagonal_offset;
+    _finalized = true;
+  }
+
 private:
   // Parallel distribution of the rows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
@@ -621,6 +698,23 @@ private:
   // Temporary stores for data during non-blocking communication
   container_type _ghost_value_data;
   container_type _ghost_value_data_in;
+
+  // Set by eliminate_zeros(). Once true, the sparsity may have been
+  // reduced and the precomputed scatter_rev communication pattern
+  // (_unpack_pos, _val_send_disp, _val_recv_disp) is no longer valid,
+  // so further modification of the matrix is disallowed.
+  bool _finalized = false;
+
+  // Throw if the matrix has been finalized by eliminate_zeros().
+  void check_not_finalized() const
+  {
+    if (_finalized)
+    {
+      throw std::runtime_error(
+          "MatrixCSR has been finalized by eliminate_zeros() and can no "
+          "longer be modified or scattered.");
+    }
+  }
 };
 //-----------------------------------------------------------------------------
 
@@ -728,7 +822,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityType& p, BlockMode mode)
   {
     auto it = std::ranges::lower_bound(src_ranks, r);
     assert(it != src_ranks.end() and *it == r);
-    std::size_t pos = std::distance(src_ranks.begin(), it);
+    std::size_t pos = std::ranges::distance(src_ranks.begin(), it);
     _ghost_row_to_rank.push_back(pos);
   }
 
@@ -842,7 +936,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityType& p, BlockMode mode)
     auto cit = std::lower_bound(cit0, cit1, local_col);
     assert(cit != cit1);
     assert(*cit == local_col);
-    std::size_t d = std::distance(_cols.begin(), cit);
+    std::size_t d = std::ranges::distance(_cols.begin(), cit);
     _unpack_pos.push_back(d);
   }
 

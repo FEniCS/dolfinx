@@ -416,7 +416,7 @@ navier_stokes_problem = LinearProblem(
 
 # +
 for _ in range(num_time_steps):
-    t += delta_t.value
+    t += float(delta_t.value)
 
     navier_stokes_problem.solve()
     p_h.x.array[:] -= domain_average(msh, p_h)

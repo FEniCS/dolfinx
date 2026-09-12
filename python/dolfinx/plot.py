@@ -34,15 +34,19 @@ _first_order_vtk = {
 @overload
 def vtk_mesh(
     msh: mesh.Mesh, dim: int | None = None, entities: npt.NDArray[np.int32] | None = None
-): ...
+) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.floating]]: ...
 
 
 @overload
-def vtk_mesh(V: fem.FunctionSpace, entities: npt.NDArray[np.int32] | None = None): ...
+def vtk_mesh(
+    V: fem.FunctionSpace, entities: npt.NDArray[np.int32] | None = None
+) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.floating]]: ...
 
 
 @functools.singledispatch
-def vtk_mesh(msh: mesh.Mesh, dim: int | None = None, entities: npt.NDArray[np.int32] | None = None):
+def vtk_mesh(
+    msh: mesh.Mesh, dim: int | None = None, entities: npt.NDArray[np.int32] | None = None
+) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.floating]]:
     """Create VTK mesh topology data for mesh entities.
 
     The vertex indices in the returned topology array are the indices
@@ -87,7 +91,9 @@ def vtk_mesh(msh: mesh.Mesh, dim: int | None = None, entities: npt.NDArray[np.in
 
 
 @vtk_mesh.register  # type: ignore[attr-defined]
-def _(V: fem.FunctionSpace, entities: npt.NDArray[np.int32] | None = None):
+def _(
+    V: fem.FunctionSpace, entities: npt.NDArray[np.int32] | None = None
+) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.floating]]:
     """Create VTK mesh topology based on the degree-of-freedom coordinates.
 
     This function supports visualisation when the degree of the finite

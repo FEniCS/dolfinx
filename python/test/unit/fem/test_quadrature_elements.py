@@ -206,4 +206,9 @@ def test_quadrature_assembly(degree):
     b_ref.scatter_reverse(dolfinx.la.InsertMode.add)
     b_ref.scatter_forward()
 
-    np.testing.assert_allclose(b.array, b_ref.array)
+    # Both forms use the same quadrature rule, so the vectors differ only
+    # by round-off. Set the tolerance from the scalar type: the
+    # assert_allclose default (1e-7) is below the float32 epsilon.
+    np.testing.assert_allclose(
+        b.array, b_ref.array, rtol=100 * np.finfo(dolfinx.default_scalar_type).eps
+    )

@@ -199,14 +199,21 @@ class TestNLSPETSc:
             b.destroy()
             return Anorm, bnorm
 
+        # The blocked, nested and monolithic operators are assembled in
+        # different orders, so their norms differ by a few ulp. In single
+        # precision that exceeds the fixed tolerances below, hence the
+        # precision-dependent floor.
+        eps = float(np.finfo(default_real_type).eps)
+        rtol, rtol_mono = max(1.0e-6, 500 * eps), max(1.0e-5, 500 * eps)
+
         Anorm0, bnorm0 = blocked()
         Anorm1, bnorm1 = nested()
-        assert Anorm1 == pytest.approx(Anorm0, 1.0e-6)
-        assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
+        assert Anorm1 == pytest.approx(Anorm0, rtol)
+        assert bnorm1 == pytest.approx(bnorm0, rtol)
 
         Anorm2, bnorm2 = monolithic()
-        assert Anorm2 == pytest.approx(Anorm0, 1.0e-5)
-        assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
+        assert Anorm2 == pytest.approx(Anorm0, rtol_mono)
+        assert bnorm2 == pytest.approx(bnorm0, rtol)
 
     def test_assembly_solve_block_nl(self):
         """Solve a two-field nonlinear diffusion like problem with block

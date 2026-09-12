@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,6 +10,7 @@
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/pycoeff.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/petsc.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/Form.h>
@@ -19,8 +20,6 @@
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
-#include <dolfinx/nls/NewtonSolver.h>
-#include <iostream>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
@@ -53,6 +52,16 @@ to_index_map_refs(const std::vector<std::pair<U, int>>& maps)
   std::ranges::transform(maps, std::back_inserter(_maps), [](auto& m)
                          { return std::pair{std::cref(*m.first), m.second}; });
   return _maps;
+}
+
+/// @brief Test if A has row and column block size 1, in which case
+/// blocked and non-blocked insertion of dof indices are equivalent.
+bool unit_block_size(Mat A)
+{
+  PetscInt bs0 = -1, bs1 = -1;
+  dolfinx::common::petsc::check(MatGetBlockSizes(A, &bs0, &bs1),
+                                "MatGetBlockSizes");
+  return bs0 == 1 and bs1 == 1;
 }
 
 void petsc_la_module(nb::module_& m)
@@ -185,10 +194,22 @@ void petsc_fem_module(nb::module_& m)
         }
         else
         {
-          dolfinx::fem::assemble_matrix(
-              dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
-              std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+          // Non-blocked insertion is cheaper than the blocked interface,
+          // and equivalent when A has block size 1
+          if (unit_block_size(A))
+          {
+            dolfinx::fem::assemble_matrix(
+                dolfinx::la::petsc::Matrix::set_fn(A, ADD_VALUES), a,
+                std::span(constants.data(), constants.size()),
+                dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+          }
+          else
+          {
+            dolfinx::fem::assemble_matrix(
+                dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
+                std::span(constants.data(), constants.size()),
+                dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+          }
         }
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
@@ -215,6 +236,8 @@ void petsc_fem_module(nb::module_& m)
               A, a.function_spaces()[0]->dofmap()->bs(),
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
         }
+        else if (unit_block_size(A))
+          set_fn = dolfinx::la::petsc::Matrix::set_fn(A, ADD_VALUES);
         else
           set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
 
@@ -250,88 +273,11 @@ void petsc_fem_module(nb::module_& m)
       nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"));
 }
 
-void petsc_nls_module(nb::module_& m)
-{
-  // dolfinx::NewtonSolver
-  nb::class_<dolfinx::nls::petsc::NewtonSolver>(m, "NewtonSolver")
-      .def(
-          "__init__",
-          [](dolfinx::nls::petsc::NewtonSolver* ns,
-             const dolfinx_wrappers::MPICommWrapper comm)
-          {
-            new (ns) dolfinx::nls::petsc::NewtonSolver(comm.get());
-            std::cerr << "NewtonSolver is deprecated, and will be removed in a "
-                         "future release.\n";
-          },
-          nb::arg("comm"))
-      .def_prop_ro(
-          "krylov_solver",
-          [](const dolfinx::nls::petsc::NewtonSolver& self) -> KSP
-          { return self.get_krylov_solver().ksp(); }, nb::rv_policy::reference)
-      .def("setF", &dolfinx::nls::petsc::NewtonSolver::setF, nb::arg("F"),
-           nb::arg("b"))
-      .def("setJ", &dolfinx::nls::petsc::NewtonSolver::setJ, nb::arg("J"),
-           nb::arg("Jmat"))
-      .def("setP", &dolfinx::nls::petsc::NewtonSolver::setP, nb::arg("P"),
-           nb::arg("Pmat"))
-      .def(
-          "set_update",
-          [](dolfinx::nls::petsc::NewtonSolver& self,
-             const std::function<void(
-                 const dolfinx::nls::petsc::NewtonSolver* solver, const Vec,
-                 Vec)>&
-                 update) // See
-                         // https://github.com/wjakob/nanobind/discussions/361
-                         // on why we pass NewtonSolver* rather than
-                         // NewtonSolver&
-          {
-            self.set_update(
-                [update](const dolfinx::nls::petsc::NewtonSolver& solver,
-                         const Vec dx, Vec x) { update(&solver, dx, x); });
-          },
-          nb::arg("update"))
-      .def(
-          "set_convergence_check",
-          [](dolfinx::nls::petsc::NewtonSolver& self,
-             const std::function<std::pair<double, bool>(
-                 const dolfinx::nls::petsc::NewtonSolver* solver, const Vec)>&
-                 convergence_check) // See
-                                    // https://github.com/wjakob/nanobind/discussions/361
-                                    // on why we pass NewtonSolver* rather than
-                                    // NewtonSolver&
-          {
-            self.set_convergence_check(
-                [convergence_check](
-                    const dolfinx::nls::petsc::NewtonSolver& solver,
-                    const Vec r) { return convergence_check(&solver, r); });
-          },
-          nb::arg("convergence_check"))
-      .def("set_form", &dolfinx::nls::petsc::NewtonSolver::set_form,
-           nb::arg("form"))
-      .def("solve", &dolfinx::nls::petsc::NewtonSolver::solve, nb::arg("x"))
-      .def_rw("atol", &dolfinx::nls::petsc::NewtonSolver::atol,
-              "Absolute tolerance")
-      .def_rw("rtol", &dolfinx::nls::petsc::NewtonSolver::rtol,
-              "Relative tolerance")
-      .def_rw("error_on_nonconvergence",
-              &dolfinx::nls::petsc::NewtonSolver::error_on_nonconvergence)
-      .def_rw("report", &dolfinx::nls::petsc::NewtonSolver::report)
-      .def_rw("relaxation_parameter",
-              &dolfinx::nls::petsc::NewtonSolver::relaxation_parameter,
-              "Relaxation parameter")
-      .def_rw("max_it", &dolfinx::nls::petsc::NewtonSolver::max_it,
-              "Maximum number of iterations")
-      .def_rw("convergence_criterion",
-              &dolfinx::nls::petsc::NewtonSolver::convergence_criterion,
-              "Convergence criterion, either 'residual' (default) or "
-              "'incremental'");
-}
-
 } // namespace
 
 namespace dolfinx_wrappers
 {
-void petsc(nb::module_& m_fem, nb::module_& m_la, nb::module_& m_nls)
+void petsc(nb::module_& m_fem, nb::module_& m_la)
 {
   nb::module_ petsc_fem_mod
       = m_fem.def_submodule("petsc", "PETSc-specific finite element module");
@@ -340,10 +286,6 @@ void petsc(nb::module_& m_fem, nb::module_& m_la, nb::module_& m_nls)
   nb::module_ petsc_la_mod
       = m_la.def_submodule("petsc", "PETSc-specific linear algebra module");
   petsc_la_module(petsc_la_mod);
-
-  nb::module_ petsc_nls_mod
-      = m_nls.def_submodule("petsc", "PETSc-specific nonlinear solvers");
-  petsc_nls_module(petsc_nls_mod);
 }
 } // namespace dolfinx_wrappers
 #endif

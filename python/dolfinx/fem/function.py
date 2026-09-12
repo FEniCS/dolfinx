@@ -11,7 +11,7 @@ from __future__ import annotations
 import typing
 from collections.abc import Callable, Sequence
 from functools import cached_property, singledispatch
-from typing import Generic
+from typing import Generic, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -52,7 +52,7 @@ class Constant(ufl.Constant, Generic[Scalar]):
 
     def __init__(
         self,
-        domain,
+        domain: Mesh | ufl.Mesh,
         c: float | np.floating | complex | np.complexfloating | Sequence | np.ndarray,
     ):
         """Create a Constant.
@@ -70,7 +70,7 @@ class Constant(ufl.Constant, Generic[Scalar]):
         self._cpp_object = cpp_type(c)
 
     @property
-    def value(self):
+    def value(self) -> npt.NDArray:
         """The value of the constant."""
         return self._cpp_object.value
 
@@ -122,6 +122,7 @@ class Expression(Generic[Scalar]):
         (np.dtype(np.complex128), np.dtype(np.float64)): _cpp.fem.create_expression_complex128,
     }
     _ufl_expression: ufl.core.expr.Expr
+    _ufcx_expression: typing.Any
     _argument_space: FunctionSpace | None
     _cpp_object: (
         _cpp.fem.Expression_complex64
@@ -336,7 +337,7 @@ class Expression(Generic[Scalar]):
         return self._argument_space
 
     @property
-    def ufcx_expression(self):
+    def ufcx_expression(self) -> typing.Any:
         """The compiled ufcx_expression object."""
         return self._ufcx_expression
 
@@ -534,22 +535,22 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         """
 
         @singledispatch
-        def _interpolate(u0):
+        def _interpolate(u0: typing.Any) -> None:
             """Interpolate a cpp.fem.Function."""
             self._cpp_object.interpolate(u0, cells0, cells1)
 
         @_interpolate.register(Function)
-        def _(u0: Function):
+        def _(u0: Function) -> None:
             """Interpolate a fem.Function."""
             self._cpp_object.interpolate(u0._cpp_object, cells0, cells1)  # type: ignore[arg-type]
 
         @_interpolate.register(int)
-        def _(u0_ptr: int):
+        def _(u0_ptr: int) -> None:
             """Interpolate using a pointer to a function f(x)."""
             self._cpp_object.interpolate_ptr(u0_ptr, cells0)
 
         @_interpolate.register(Expression)
-        def _(e0: Expression):
+        def _(e0: Expression) -> None:
             """Interpolate a fem.Expression."""
             self._cpp_object.interpolate_expr(e0._cpp_object, cells0, cells1)  # type: ignore[arg-type]
 
@@ -596,7 +597,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         return self._cpp_object.name
 
     @name.setter
-    def name(self, name):
+    def name(self, name: str) -> None:
         self._cpp_object.name = name
 
     def __str__(self) -> str:
@@ -810,11 +811,11 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
         cppV_sub = self._cpp_object.sub([i])
         return FunctionSpace(self._mesh, sub_element, cppV_sub)
 
-    def component(self):
+    def component(self) -> list[int]:
         """Return the component relative to the parent space."""
         return self._cpp_object.component()
 
-    def contains(self, V) -> bool:
+    def contains(self, V: FunctionSpace) -> bool:
         """Check if a space is contained in, or is the same as, this space.
 
         Args:
@@ -824,17 +825,21 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
            `` True`` if ``V`` is contained in, or is the same as, this
            space.
         """
-        return self._cpp_object.contains(V._cpp_object)
+        return self._cpp_object.contains(V._cpp_object)  # type: ignore[arg-type]
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """Comparison for equality."""
+        if not isinstance(other, FunctionSpace):
+            return NotImplemented
         return super().__eq__(other) and self._cpp_object == other._cpp_object
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         """Comparison for inequality."""
+        if not isinstance(other, FunctionSpace):
+            return NotImplemented
         return super().__ne__(other) or self._cpp_object != other._cpp_object
 
-    def ufl_function_space(self) -> ufl.FunctionSpace:
+    def ufl_function_space(self) -> Self:
         """UFL function space."""
         return self
 

@@ -113,7 +113,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
   {
     if (layouts.size() != 1)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "DOF transformations not yet supported in mixed topology.");
     }
     std::int32_t num_cells = topology.connectivity(D, 0)->num_nodes();
@@ -176,7 +176,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     dim = tdim - 2;
     break;
   default:
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cannot compute integration domains. Integral type not supported.");
   }
 
@@ -185,7 +185,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     assert(topology.index_map(dim));
     auto it1 = std::ranges::lower_bound(entities,
                                         topology.index_map(dim)->size_local());
-    entities = entities.first(std::distance(entities.begin(), it1));
+    entities = entities.first(std::ranges::distance(entities.begin(), it1));
   }
 
   auto get_connectivities = [tdim, &topology](int entity_dim)
@@ -246,7 +246,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
       }
       else if (interprocess_marker[f])
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Cannot compute interior facet integral over interprocess facet. "
             "Use \"shared facet\"  ghost mode when creating the mesh.");
       }
@@ -267,7 +267,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     break;
   }
   default:
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cannot compute integration domains. Integral type not supported.");
   }
 

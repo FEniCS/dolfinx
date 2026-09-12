@@ -198,6 +198,8 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
                return dolfinx::la::transpose<T, 3, 3>(self);
              return dolfinx::la::transpose(self);
            })
+      .def("eliminate_zeros", &dolfinx::la::MatrixCSR<T>::eliminate_zeros,
+           nb::arg("tol") = T(0))
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {

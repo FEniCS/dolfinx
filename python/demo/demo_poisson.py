@@ -185,8 +185,8 @@ with io.XDMFFile(msh.comm, out_folder / "poisson.xdmf", "w") as file:
 try:
     import pyvista
 
-    cells, types, x = plot.vtk_mesh(V)
-    grid = pyvista.UnstructuredGrid(cells, types, x)
+    cells, types, points = plot.vtk_mesh(V)
+    grid = pyvista.UnstructuredGrid(cells, types, points)
     grid.point_data["u"] = uh.x.array.real
     grid.set_active_scalars("u")
     plotter = pyvista.Plotter()

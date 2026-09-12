@@ -168,7 +168,7 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
 
   // Remove any entities that were not found (these have an index of -1)
   auto it0 = std::ranges::lower_bound(indices_sorted, 0);
-  std::size_t pos0 = std::distance(indices_sorted.begin(), it0);
+  std::size_t pos0 = std::ranges::distance(indices_sorted.begin(), it0);
   indices_sorted.erase(indices_sorted.begin(), it0);
   values_sorted.erase(values_sorted.begin(),
                       std::next(values_sorted.begin(), pos0));

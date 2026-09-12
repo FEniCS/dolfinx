@@ -111,7 +111,7 @@ def test_incorrect_element():
     )
     dolfinx.fem.Form(f, ufcx_form, code)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         f = ftype(
             [int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))],
             [incorrect_space._cpp_object, incorrect_space._cpp_object],

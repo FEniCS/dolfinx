@@ -20,6 +20,11 @@ default_real_type: type[_np.floating]
 
 try:
     from petsc4py import PETSc as _PETSc
+except ImportError:
+    default_scalar_type = _np.float64
+    default_real_type = _np.float64
+else:
+    # Only the petsc4py import is guarded; a failure below is a broken install.
 
     # Additional sanity check that DOLFINx was built with petsc4py support.
     from dolfinx.common import has_petsc4py
@@ -33,15 +38,12 @@ try:
         "type[_np.floating | _np.complexfloating]", _PETSc.ScalarType
     )
     default_real_type = _typing.cast("type[_np.floating]", _PETSc.RealType)
-except ImportError:
-    default_scalar_type = _np.float64
-    default_real_type = _np.float64
 
 del _np
 
 from dolfinx import common
 from dolfinx import cpp as _cpp
-from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, typing
+from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, plot, typing
 
 from dolfinx.common import (
     git_commit_hash,
@@ -67,7 +69,7 @@ _cpp.common.init_logging(sys.argv)
 del _cpp, sys
 
 
-def get_include(user=False):
+def get_include(user: bool = False) -> str:
     import os
 
     d = os.path.dirname(__file__)
@@ -89,7 +91,6 @@ __all__ = [
     "la",
     "log",
     "mesh",
-    "nls",
     "plot",
     "typing",
     "git_commit_hash",

@@ -15,6 +15,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
+#include <stdexcept>
 #include <utility>
 
 using namespace dolfinx;
@@ -31,11 +32,11 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view)
 
   if (dofmap_view.element_dof_layout().block_size() > 1)
   {
-    throw std::runtime_error("Cannot collapse a dofmap view with "
-                             "block size greater "
-                             "than 1 when the parent has a block "
-                             "size of 1. Create new dofmap "
-                             "first.");
+    throw std::invalid_argument("Cannot collapse a dofmap view with "
+                                "block size greater "
+                                "than 1 when the parent has a block "
+                                "size of 1. Create new dofmap "
+                                "first.");
   }
 
   // Build set of dofs that are in the new dofmap (un-blocked)

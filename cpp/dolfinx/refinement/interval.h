@@ -72,7 +72,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
                            auto it = std::lower_bound(ranks.begin(),
                                                       ranks.end(), r);
                            assert(it != ranks.end() and *it == r);
-                           return std::distance(ranks.begin(), it);
+                           return std::ranges::distance(ranks.begin(), it);
                          });
 
   // Create refinement flag for cells

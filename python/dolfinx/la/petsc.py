@@ -33,7 +33,9 @@ if not dolfinx.has_petsc4py:
 __all__ = ["assign", "create_vector", "create_vector_wrap"]
 
 
-def _ghost_update(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode):
+def _ghost_update(
+    x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode
+) -> None:
     """Helper function for ghost updating PETSc vectors."""
     if x.getType() == PETSc.Vec.Type.NEST:
         for x_sub in x.getNestSubVecs():
@@ -43,7 +45,7 @@ def _ghost_update(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PET
         x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
 
 
-def _zero_vector(x: PETSc.Vec):
+def _zero_vector(x: PETSc.Vec) -> None:
     """Helper function for zeroing out PETSc vectors."""
     if x.getType() == PETSc.Vec.Type.NEST:
         for x_sub in x.getNestSubVecs():
@@ -151,7 +153,7 @@ def create_vector(
 def assign(
     x0: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
     x1: PETSc.Vec,
-):
+) -> None:
     """Assign ``x0`` values to a PETSc vector ``x1``.
 
     Values in ``x0``, which is possibly a stacked collection of arrays,
@@ -198,7 +200,7 @@ def assign(
 def _(  # type: ignore[misc]
     x0: PETSc.Vec,
     x1: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
-):
+) -> None:
     """Assign PETSc vector ``x0`` values to (blocked) array(s) ``x1``.
 
     This function performs the reverse of the assignment performed by
@@ -226,7 +228,7 @@ def _(  # type: ignore[misc]
                 x1[:] = _x0.array_r[:]
 
 
-def _assign_block_data(maps: Iterable[tuple[IndexMap, int]], vec: PETSc.Vec):
+def _assign_block_data(maps: Iterable[tuple[IndexMap, int]], vec: PETSc.Vec) -> None:
     """Assign block data to a PETSc vector.
 
     Args:

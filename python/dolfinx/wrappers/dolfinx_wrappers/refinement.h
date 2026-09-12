@@ -1,5 +1,5 @@
-// Copyright (C) 2018-2024 Chris N. Richardson, Garth N. Wells and Paul T.
-// Kühner
+// Copyright (C) 2018-2026 Chris N. Richardson, Garth N. Wells, Paul T.
+// Kühner and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,8 +10,10 @@
 #include "MPICommWrapper.h"
 #include "array.h"
 #include "caster_mpi.h"
+#include "graph.h"
 #include "mesh.h"
 #include <concepts>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/refinement/mark.h>
 #include <dolfinx/refinement/option.h>
@@ -39,25 +41,22 @@ void declare_refinement(nanobind::module_& m)
   m.def(
       "uniform_refine",
       [](const dolfinx::mesh::Mesh<T>& mesh,
-         std::optional<
-             dolfinx_wrappers::part::impl::PythonCellPartitionFunction>
-             partitioner)
+         std::optional<PythonPartitionFunction> partitioner,
+         dolfinx::mesh::GhostMode ghost_mode)
       {
-        dolfinx_wrappers::part::impl::CppCellPartitionFunction cpp_partitioner;
+        dolfinx::graph::partition_fn cpp_partitioner;
         if (partitioner.has_value())
         {
-          cpp_partitioner
-              = dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
-                  partitioner.value());
+          cpp_partitioner = partitioner_wrap_py_to_cpp(partitioner.value());
         }
         else
         {
-          cpp_partitioner
-              = dolfinx_wrappers::part::impl::CppCellPartitionFunction(nullptr);
+          cpp_partitioner = dolfinx::graph::partition_fn(nullptr);
         }
-        return dolfinx::refinement::uniform_refine<T>(mesh, cpp_partitioner);
+        return dolfinx::refinement::uniform_refine<T>(mesh, cpp_partitioner,
+                                                      ghost_mode);
       },
-      nb::arg("mesh"), nb::arg("partitioner").none());
+      nb::arg("mesh"), nb::arg("partitioner").none(), nb::arg("ghost_mode"));
 
   m.def(
       "refine",
@@ -66,10 +65,10 @@ void declare_refinement(nanobind::module_& m)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              edges,
          std::variant<dolfinx::refinement::IdentityPartitionerPlaceholder,
-                      std::optional<dolfinx_wrappers::part::impl::
-                                        PythonCellPartitionFunction>>
+                      std::optional<PythonPartitionFunction>>
              partitioner,
-         dolfinx::refinement::Option option)
+         dolfinx::refinement::Option option,
+         dolfinx::mesh::GhostMode ghost_mode)
       {
         std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
         if (edges.has_value())
@@ -94,30 +93,24 @@ void declare_refinement(nanobind::module_& m)
         }
 
         std::variant<dolfinx::refinement::IdentityPartitionerPlaceholder,
-                     dolfinx_wrappers::part::impl::CppCellPartitionFunction>
+                     dolfinx::graph::partition_fn>
             cpp_partitioner
             = dolfinx::refinement::IdentityPartitionerPlaceholder();
-        if (std::holds_alternative<std::optional<
-                dolfinx_wrappers::part::impl::PythonCellPartitionFunction>>(
+        if (std::holds_alternative<std::optional<PythonPartitionFunction>>(
                 partitioner))
         {
-          auto optional = std::get<std::optional<
-              dolfinx_wrappers::part::impl::PythonCellPartitionFunction>>(
-              partitioner);
+          auto optional
+              = std::get<std::optional<PythonPartitionFunction>>(partitioner);
           if (!optional.has_value())
-            cpp_partitioner
-                = dolfinx_wrappers::part::impl::CppCellPartitionFunction(
-                    nullptr);
+            cpp_partitioner = dolfinx::graph::partition_fn(nullptr);
           else
           {
-            cpp_partitioner
-                = dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
-                    optional.value());
+            cpp_partitioner = partitioner_wrap_py_to_cpp(optional.value());
           }
         }
 
         auto [mesh1, cell, facet] = dolfinx::refinement::refine(
-            mesh, cpp_edges, cpp_partitioner, option);
+            mesh, cpp_edges, cpp_partitioner, option, ghost_mode);
 
         std::optional<nb::ndarray<std::int32_t, nb::numpy>> python_cell(
             std::nullopt);
@@ -139,17 +132,18 @@ void declare_refinement(nanobind::module_& m)
                           std::move(python_facet)};
       },
       nb::arg("mesh"), nb::arg("edges").none(), nb::arg("partitioner").none(),
-      nb::arg("option"));
+      nb::arg("option"), nb::arg("ghost_mode"));
 
   m.def(
       "mark_maximum",
-      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> marker, T theta,
-         MPICommWrapper comm)
+      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values,
+         const dolfinx::common::IndexMap& index_map, T theta)
       {
         return dolfinx_wrappers::as_nbarray(dolfinx::refinement::mark_maximum(
-            std::span(marker.data(), marker.size()), theta, comm.get()));
+            std::span<const T>(values.data(), values.size()), index_map,
+            theta));
       },
-      nb::arg("marker"), nb::arg("theta"), nb::arg("comm"));
+      nb::arg("values"), nb::arg("index_map"), nb::arg("theta"));
 }
 
 } // namespace dolfinx_wrappers

@@ -12,7 +12,6 @@
 #include "dolfinx/mesh/Mesh.h"
 #include "dolfinx/mesh/Topology.h"
 #include "dolfinx/mesh/cell_types.h"
-#include "dolfinx/mesh/graphbuild.h"
 #include "dolfinx/mesh/utils.h"
 #include "interval.h"
 #include "plaza.h"
@@ -40,25 +39,25 @@ namespace dolfinx::refinement
  * @return The created cell partition function.
  */
 template <std::floating_point T>
-mesh::CellPartitionFunction
+graph::partition_fn
 create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
                             std::span<std::int32_t> parent_cell)
 {
   // TODO: optimize for non ghosted mesh?
 
-  return [&parent_mesh,
-          parent_cell](MPI_Comm comm, int /*nparts*/,
-                       std::vector<mesh::CellType> cell_types,
-                       std::vector<std::span<const std::int64_t>> cells)
-             -> graph::AdjacencyList<std::int32_t>
+  return [&parent_mesh, parent_cell](
+             MPI_Comm comm, int /*nparts*/,
+             const graph::AdjacencyList<std::int64_t>& dual_graph,
+             std::optional<std::span<const std::int32_t>> /* cell_weights */,
+             std::optional<std::span<const std::int32_t>> /* edge_weights */,
+             bool /* ghosting */) -> graph::AdjacencyList<std::int32_t>
   {
     auto parent_cell_im
         = parent_mesh.topology()->index_map(parent_mesh.topology()->dim());
     std::int32_t parent_num_cells = parent_cell_im->size_local();
     std::span parent_cell_owners = parent_cell_im->owners();
 
-    std::int32_t num_cells
-        = cells.front().size() / mesh::num_cell_vertices(cell_types.front());
+    std::int32_t num_cells = dual_graph.num_nodes();
     std::vector<std::int32_t> destinations(num_cells);
 
     int rank = dolfinx::MPI::rank(comm);
@@ -74,7 +73,6 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
     if (comm == MPI_COMM_NULL)
       return graph::regular_adjacency_list(std::move(destinations), 1);
 
-    auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells, 2);
     std::vector<std::int32_t> node_disp(MPI::size(comm) + 1, 0);
     std::int32_t local_size = dual_graph.num_nodes();
     MPI_Allgather(&local_size, 1, dolfinx::MPI::mpi_t<std::int32_t>,
@@ -115,6 +113,9 @@ struct IdentityPartitionerPlaceholder
 /// process as the parent cell.
 /// @param[in] option Control the computation of parent facets, parent
 /// cells.
+/// @param[in] ghost_mode Ghost mode of the refined mesh, passed to
+/// `partitioner` when it is a graph::partition_fn; has no effect for
+/// the identity partitioner (see warning above).
 /// @return New mesh, and optional parent cell indices and parent facet
 /// indices.
 template <std::floating_point T>
@@ -122,9 +123,10 @@ std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
            std::optional<std::vector<std::int8_t>>>
 refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges,
-       std::variant<IdentityPartitionerPlaceholder, mesh::CellPartitionFunction>
+       std::variant<IdentityPartitionerPlaceholder, graph::partition_fn>
            partitioner = IdentityPartitionerPlaceholder(),
-       Option option = Option::parent_cell)
+       Option option = Option::parent_cell,
+       mesh::GhostMode ghost_mode = mesh::GhostMode::none)
 {
   auto topology = mesh.topology();
   assert(topology);
@@ -147,12 +149,13 @@ refine(const mesh::Mesh<T>& mesh,
     partitioner = create_identity_partitioner(mesh, parent_cell.value());
   }
 
-  assert(std::holds_alternative<mesh::CellPartitionFunction>(partitioner));
+  assert(std::holds_alternative<graph::partition_fn>(partitioner));
 
   mesh::Mesh<T> mesh1 = mesh::create_mesh(
       mesh.comm(), mesh.comm(), cell_adj.array(),
       mesh.geometry().cmaps().front(), mesh.comm(), new_vertex_coords, xshape,
-      std::get<mesh::CellPartitionFunction>(partitioner), 2, 1);
+      graph::Partitioner{.fn = std::get<graph::partition_fn>(partitioner)},
+      ghost_mode, 2, 1);
 
   // Report the number of refined cells
   const int D = topology->dim();

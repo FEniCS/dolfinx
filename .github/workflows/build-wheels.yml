@@ -201,7 +201,7 @@ jobs:
             cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ \
               -DPython3_EXECUTABLE=$(which python) \
               -DCMAKE_PREFIX_PATH=/usr/lib64/mpich \
-              -DCMAKE_BUILD_TYPE=RelWithDebug \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               -DDOLFINX_ENABLE_SUPERLU_DIST=ON \
               -DDOLFINX_ENABLE_SCOTCH=ON \
               -DDOLFINX_ENABLE_PARMETIS=OFF &&
@@ -240,7 +240,7 @@ jobs:
               -DDOLFINX_ENABLE_SCOTCH=ON \
               -DDOLFINX_ENABLE_PARMETIS=OFF \
               -DDOLFINX_ENABLE_SUPERLU_DIST=ON \
-              -DCMAKE_BUILD_TYPE=RelWithDebug &&
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo &&
             cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
             sudo cmake --install dolfinx-build-dir/
           # As of 6/26 DOLFINx uses std::jthread which is only officially
@@ -271,7 +271,7 @@ jobs:
             wheel pack {dest_dir}/unpacked/* -d {dest_dir} &&
             pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_TEST_REQUIRES: pytest-xdist
-          CIBW_TEST_EXTRAS: test
+          CIBW_TEST_GROUPS: test
           CIBW_TEST_COMMAND_LINUX: >
             . /etc/profile &&
             module load mpi/mpich-$(arch) &&
@@ -313,7 +313,7 @@ jobs:
           sudo git clean -fdx && cd ../ &&
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
             --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple python:3.13 \
-            /bin/bash -l -c "pip install mpich fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
+            /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test mpich fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Test in clean python image with pypi Intel MPI (x86_64 only)
         if: runner.os == 'Linux' && runner.arch == 'X64'
@@ -322,7 +322,7 @@ jobs:
           sudo git clean -fdx && cd ../ &&
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
             --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple python:3.14 \
-            /bin/bash -l -c "pip install impi-rt fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
+            /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Test in clean virtual environment with pypi OpenMPI (macOS)
         if: runner.os == 'macOS'
@@ -330,7 +330,7 @@ jobs:
           cd dolfinx && git clean -fdx && cd ../
           python -m venv venv-test
           source venv-test/bin/activate
-          PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install openmpi fenics-dolfinx[test]
+          PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install --group dolfinx/python/pyproject.toml:test openmpi fenics-dolfinx
           which mpiexec
           mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
 

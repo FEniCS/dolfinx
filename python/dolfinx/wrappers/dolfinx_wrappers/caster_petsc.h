@@ -8,6 +8,7 @@
 
 #if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
 
+#include <dolfinx/common/petsc.h>
 #include <nanobind/nanobind.h>
 #include <petsc4py/petsc4py.h>
 #include <petscis.h>
@@ -60,7 +61,9 @@ namespace nb = nanobind;
       if (policy == rv_policy::take_ownership)                                 \
       {                                                                        \
         PyObject* obj = PyPetsc##P4PYTYPE##_New(src);                          \
-        PetscObjectDereference((PetscObject)src);                              \
+        dolfinx::common::petsc::check(                                         \
+            PetscObjectDereference((PetscObject)src),                          \
+            "PetscObjectDereference");                                         \
         return nb::handle(obj);                                                \
       }                                                                        \
       else if (policy == rv_policy::automatic                                  \

@@ -15,7 +15,7 @@ import ufl
 from basix.ufl import element
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.cpp.mesh import cell_num_vertices
+from dolfinx.fem import coordinate_element
 from dolfinx.graph import partitioner
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (
@@ -23,7 +23,6 @@ from dolfinx.mesh import (
     GhostMode,
     compute_midpoints,
     create_box,
-    create_cell_partitioner,
     create_mesh,
 )
 
@@ -53,19 +52,39 @@ except ImportError:
         pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx built without KaHiP"))
     )
 
+# Graph partitioners that actually honour node/edge weights. KaHIP is
+# deliberately excluded: it does not support weights (they are ignored
+# with a warning), so it is not expected to balance by weight below.
+weighted_partitioners: list = []
+try:
+    from dolfinx.graph import partitioner_scotch
+
+    weighted_partitioners.append(partitioner_scotch())
+except ImportError:
+    weighted_partitioners.append(
+        pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx build without SCOTCH"))
+    )
+try:
+    from dolfinx.graph import partitioner_parmetis
+
+    weighted_partitioners.append(partitioner_parmetis())
+except ImportError:
+    weighted_partitioners.append(
+        pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx built without Parmetis"))
+    )
+
 
 @pytest.mark.parametrize("gpart", partitioners)
 @pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron, CellType.prism])
 def test_partition_box_mesh(gpart, Nx, cell_type):
-    part = create_cell_partitioner(gpart, GhostMode.none, 2)
     mesh = create_box(
         MPI.COMM_WORLD,
         [np.array([0, 0, 0]), np.array([1, 1, 1])],
         [Nx, Nx, Nx],
         cell_type,
         ghost_mode=GhostMode.shared_facet,
-        partitioner=part,
+        partitioner=gpart,
     )
     tdim = mesh.topology.dim
     c = {CellType.tetrahedron: 6, CellType.prism: 2, CellType.hexahedron: 1}[cell_type]
@@ -151,11 +170,11 @@ def test_asymmetric_partitioner():
         x = np.zeros((0, 2), dtype=np.float64)
 
     # Send cells to self, and if on process 1, also send to process 0.
-    def partitioner(comm, n, cell_types, topo):
+    def partitioner(comm, n, dual_graph, cell_weights, edge_weights, ghosting):
         r = comm.Get_rank()
         dests = []
         offsets = [0]
-        num_cells = len(topo[0]) // cell_num_vertices(cell_types[0])
+        num_cells = dual_graph.num_nodes
         for i in range(num_cells):
             dests.append(r)
             if r == 1:
@@ -228,15 +247,111 @@ def test_mixed_topology_partitioning():
         cells_np = [np.zeros(0) for c in cells]
 
     nparts = 4
-    part = create_cell_partitioner(GhostMode.none, 2)
+    cell_types = [CellType.hexahedron, CellType.pyramid, CellType.tetrahedron]
+    dual_graph = _cpp.mesh.build_dual_graph(MPI.COMM_WORLD, cell_types, cells_np, 2, 1)
+    part = partitioner()
     p = part(
         MPI.COMM_WORLD,
         nparts,
-        [CellType.hexahedron, CellType.pyramid, CellType.tetrahedron],
-        cells_np,
+        dual_graph,
+        np.array([], dtype=np.int32),
+        np.array([], dtype=np.int32),
+        False,
     )
 
     counts = np.array([sum(p.array == i) for i in range(nparts)])
     count_mpi = MPI.COMM_WORLD.allreduce(counts)
 
     assert count_mpi.sum() == 14080
+
+
+def _structured_triangle_grid(n):
+    """A unit square, `n` x `n` structured triangle grid, returned as
+    (cells, points), with global vertex numbering `i * (n + 1) + j`.
+    """
+    xs = np.linspace(0.0, 1.0, n + 1)
+    ys = np.linspace(0.0, 1.0, n + 1)
+    xv, yv = np.meshgrid(xs, ys, indexing="ij")
+    points = np.column_stack([xv.ravel(), yv.ravel()]).astype(np.float64)
+
+    def vidx(i, j):
+        return i * (n + 1) + j
+
+    cells = []
+    for i in range(n):
+        for j in range(n):
+            v0, v1 = vidx(i, j), vidx(i + 1, j)
+            v2, v3 = vidx(i, j + 1), vidx(i + 1, j + 1)
+            cells.append([v0, v1, v2])
+            cells.append([v1, v3, v2])
+
+    return np.array(cells, dtype=np.int64), points
+
+
+@pytest.mark.parametrize("gpart", weighted_partitioners)
+def test_partition_respects_cell_weights(gpart):
+    """Weight the cells in the left half of a structured triangle mesh
+    twice as heavily as those in the right half, and check that a
+    weight-aware graph partitioner balances the *sum of cell weights*
+    across ranks (rather than the plain cell count) to within a
+    tolerance.
+
+    Because the two weight classes occupy distinct halves of the
+    domain, a partitioner that ignored the weights would tend to give
+    one rank most of the (heavier) left half and another rank most of
+    the (lighter) right half, producing a badly unbalanced weight sum
+    -- so this is a reasonably sharp check that the weights are having
+    an effect, not just that the code runs.
+    """
+    comm = MPI.COMM_WORLD
+    if comm.size < 2:
+        pytest.skip("Only meaningful with more than one MPI rank")
+
+    n = 24
+    cells, points = _structured_triangle_grid(n)
+
+    # Cells with a midpoint in the left half of the domain are weighted
+    # twice as heavily as those in the right half.
+    cell_midpoints_x = points[cells].mean(axis=1)[:, 0]
+    weights = np.where(cell_midpoints_x < 0.5, 2, 1).astype(np.int32)
+
+    # Give each rank a contiguous slice of the cells (and matching
+    # weights), and a contiguous slice of the points. The two splits
+    # need not align: DOLFINx redistributes geometry data to wherever
+    # it is needed based on global vertex indices.
+    local_cells = np.array_split(cells, comm.size)[comm.rank]
+    local_weights = np.array_split(weights, comm.size)[comm.rank]
+    local_points = np.array_split(points, comm.size)[comm.rank]
+
+    elem = coordinate_element(CellType.triangle, 1)
+
+    new_mesh = create_mesh(
+        comm,
+        local_cells,
+        elem,
+        local_points,
+        partitioner=(gpart, local_weights),
+    )
+
+    tdim = new_mesh.topology.dim
+    new_mesh.topology.create_connectivity(tdim, tdim)
+    num_local = new_mesh.topology.index_map(tdim).size_local
+    if num_local > 0:
+        midpoints = compute_midpoints(new_mesh, tdim, np.arange(num_local))
+        local_weight = float(np.sum(np.where(midpoints[:, 0] < 0.5, 2, 1)))
+    else:
+        local_weight = 0.0
+
+    all_weights = np.array(comm.allgather(local_weight))
+    total_weight = all_weights.sum()
+    assert total_weight == 3 * n * n  # sanity check: no cells lost or duplicated
+
+    expected = total_weight / comm.size
+    # Graph partitioners only balance approximately, and there is a
+    # trade-off against minimizing edge cut, so allow a generous
+    # tolerance -- while still being tight enough that an unweighted
+    # (or incorrectly-weighted) partition of this checkerboard-style
+    # problem would fail it.
+    assert np.all(np.abs(all_weights - expected) <= 0.3 * expected), (
+        f"Per-rank weight sums {all_weights} are not balanced around {expected}"
+    )

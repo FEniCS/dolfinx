@@ -102,11 +102,13 @@
 #include <dolfinx/la/petsc.h>
 #include <map>
 #include <memory>
+#include <petscksp.h>
 #include <petscmat.h>
 #include <petscsys.h>
 #include <petscsystypes.h>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -117,7 +119,8 @@ using U = typename dolfinx::scalar_value_t<T>;
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  common::petsc::check(PetscInitialize(&argc, &argv, nullptr, nullptr),
+                       "PetscInitialize");
 
   {
     mesh::CellType cell_type = mesh::CellType::triangle;
@@ -314,17 +317,21 @@ int main(int argc, char* argv[])
 
     // Assemble the bilinear form into a matrix. The PETSc matrix is
     // 'flushed' so we can set values in it in the subsequent step.
-    MatZeroEntries(A.mat());
+    common::petsc::check(MatZeroEntries(A.mat()), "MatZeroEntries");
     fem::assemble_matrix(la::petsc::Matrix::set_fn(A.mat(), ADD_VALUES), a,
                          {bc});
-    MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyEnd");
 
     // Set '1' on diagonal for Dirichlet dofs
     fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
                          {bc});
-    MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyEnd");
 
     // Assemble the linear form `L` into RHS vector
     std::ranges::fill(b.array(), 0);
@@ -340,19 +347,27 @@ int main(int argc, char* argv[])
 
     // Create PETSc linear solver
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
-    la::petsc::options::set("ksp_type", "preonly");
-    la::petsc::options::set("pc_type", "lu");
+    common::petsc::set_option("ksp_type", "preonly");
+    common::petsc::set_option("pc_type", "lu");
     if (sizeof(PetscInt) == 4)
-      la::petsc::options::set("pc_factor_mat_solver_type", "mumps");
+      common::petsc::set_option("pc_factor_mat_solver_type", "mumps");
     else
-      la::petsc::options::set("pc_factor_mat_solver_type", "superlu_dist");
+      common::petsc::set_option("pc_factor_mat_solver_type", "superlu_dist");
     lu.set_from_options();
 
     // Solve linear system Ax = b
     lu.set_operator(A.mat());
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
-    lu.solve(_u.vec(), _b.vec());
+    if (lu.solve(_u.vec(), _b.vec()) < 0)
+      throw std::runtime_error("Linear solver did not converge.");
+
+    // The KSP object is available for anything the solver does not
+    // wrap, here the number of linear solver iterations
+    PetscInt num_it = 0;
+    common::petsc::check(KSPGetIterationNumber(lu.ksp(), &num_it),
+                         "KSPGetIterationNumber");
+    std::cout << "Number of linear solver iterations: " << num_it << std::endl;
 
     // Update ghost values before output
     u->x()->scatter_fwd();
@@ -372,7 +387,7 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  PetscFinalize();
+  common::petsc::check(PetscFinalize(), "PetscFinalize");
 
   return 0;
 }

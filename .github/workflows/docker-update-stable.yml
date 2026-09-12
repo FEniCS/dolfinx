@@ -48,16 +48,20 @@ jobs:
           chmod +x ./regctl
 
       - name: "Link :end-user-tag to :stable"
+        env:
+          END_USER_TAG: ${{ inputs.end-user-tag }}
         run: |
-           ./regctl image copy dolfinx/dolfinx:${{ inputs.end-user-tag }} dolfinx/dolfinx:stable
-           ./regctl image copy dolfinx/lab:${{ inputs.end-user-tag }} dolfinx/lab:stable
-           ./regctl image copy dolfinx/dolfinx-onbuild:${{ inputs.end-user-tag }} dolfinx/dolfinx-onbuild:stable
+           ./regctl image copy "dolfinx/dolfinx:$END_USER_TAG" dolfinx/dolfinx:stable
+           ./regctl image copy "dolfinx/lab:$END_USER_TAG" dolfinx/lab:stable
+           ./regctl image copy "dolfinx/dolfinx-onbuild:$END_USER_TAG" dolfinx/dolfinx-onbuild:stable
            # ghcr.io
-           ./regctl image copy ghcr.io/fenics/dolfinx/dolfinx:${{ inputs.end-user-tag }} ghcr.io/fenics/dolfinx/dolfinx:stable
-           ./regctl image copy ghcr.io/fenics/dolfinx/lab:${{ inputs.end-user-tag }} ghcr.io/fenics/dolfinx/lab:stable
-           ./regctl image copy ghcr.io/fenics/dolfinx/dolfinx-onbuild:${{ inputs.end-user-tag }} ghcr.io/fenics/dolfinx/dolfinx-onbuild:stable
+           ./regctl image copy "ghcr.io/fenics/dolfinx/dolfinx:$END_USER_TAG" ghcr.io/fenics/dolfinx/dolfinx:stable
+           ./regctl image copy "ghcr.io/fenics/dolfinx/lab:$END_USER_TAG" ghcr.io/fenics/dolfinx/lab:stable
+           ./regctl image copy "ghcr.io/fenics/dolfinx/dolfinx-onbuild:$END_USER_TAG" ghcr.io/fenics/dolfinx/dolfinx-onbuild:stable
 
       - name: "Link :dev-env-tag to :stable"
+        env:
+          DEV_ENV_TAG: ${{ inputs.dev-env-tag }}
         run: |
-           ./regctl image copy dolfinx/dev-env:${{ inputs.dev-env-tag }} dolfinx/dev-env:stable
-           ./regctl image copy ghcr.io/fenics/dolfinx/dev-env:${{ inputs.dev-env-tag }} ghcr.io/fenics/dolfinx/dev-env:stable
+           ./regctl image copy "dolfinx/dev-env:$DEV_ENV_TAG" dolfinx/dev-env:stable
+           ./regctl image copy "ghcr.io/fenics/dolfinx/dev-env:$DEV_ENV_TAG" ghcr.io/fenics/dolfinx/dev-env:stable
