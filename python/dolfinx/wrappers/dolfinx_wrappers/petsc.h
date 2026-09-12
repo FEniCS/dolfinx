@@ -15,6 +15,7 @@
 #include "pycoeff.h"
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/petsc.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
@@ -72,9 +73,10 @@ void declare_petsc_discrete_operators(nb::module_& m)
         }
         catch (...)
         {
-          // Destroy A before rethrowing. MatDestroy is not allowed to
-          // throw here: it would replace the in-flight exception.
-          MatDestroy(&A);
+          // Destroy A before rethrowing. Report rather than throw on
+          // failure: throwing here would replace the in-flight exception.
+          if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
+            spdlog::error("MatDestroy failed with error code {}.", ierr);
           throw;
         }
         return A;
@@ -103,9 +105,10 @@ void declare_petsc_discrete_operators(nb::module_& m)
         }
         catch (...)
         {
-          // Destroy A before rethrowing. MatDestroy is not allowed to
-          // throw here: it would replace the in-flight exception.
-          MatDestroy(&A);
+          // Destroy A before rethrowing. Report rather than throw on
+          // failure: throwing here would replace the in-flight exception.
+          if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
+            spdlog::error("MatDestroy failed with error code {}.", ierr);
           throw;
         }
         return A;
@@ -131,9 +134,10 @@ void declare_petsc_discrete_operators(nb::module_& m)
         }
         catch (...)
         {
-          // Destroy A before rethrowing. MatDestroy is not allowed to
-          // throw here: it would replace the in-flight exception.
-          MatDestroy(&A);
+          // Destroy A before rethrowing. Report rather than throw on
+          // failure: throwing here would replace the in-flight exception.
+          if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
+            spdlog::error("MatDestroy failed with error code {}.", ierr);
           throw;
         }
         return A;

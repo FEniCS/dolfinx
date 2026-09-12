@@ -179,15 +179,19 @@ void common(nb::module_& m)
           nb::arg("local"))
       .def(
           "global_to_local",
+          // Named `global_index` rather than `global`: the argument name
+          // reaches Python through the generated stubs, and `global` is a
+          // keyword there.
           [](const dolfinx::common::IndexMap& self,
-             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> global)
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
+                 global_index)
           {
-            std::vector<std::int32_t> local(global.size());
-            self.global_to_local(std::span(global.data(), global.size()),
-                                 local);
+            std::vector<std::int32_t> local(global_index.size());
+            self.global_to_local(
+                std::span(global_index.data(), global_index.size()), local);
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
-          nb::arg("global"));
+          nb::arg("global_index"));
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
