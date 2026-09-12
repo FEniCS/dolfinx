@@ -450,31 +450,36 @@ public:
   }
 
   /// Get IndexMap
-  std::shared_ptr<const common::IndexMap> index_map() const { return _map; }
+  std::shared_ptr<const common::IndexMap> index_map() const noexcept
+  {
+    return _map;
+  }
 
   /// @brief Get the scatterer used for halo communication.
   /// @return The scatterer.
-  std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer() const
+  std::shared_ptr<const common::Scatterer<ScatterContainer>>
+  scatterer() const noexcept
   {
     return _scatterer;
   }
 
   /// Get block size
-  constexpr int bs() const { return _bs; }
+  constexpr int bs() const noexcept { return _bs; }
 
   /// @brief Get the process-local part of the vector.
   ///
   /// Owned entries appear first, followed by ghosted entries.
-  container_type& array() { return _x; }
+  container_type& array() noexcept { return _x; }
 
   /// @brief Get the process-local part of the vector (const version).
   ///
   /// Owned entries appear first, followed by ghosted entries.
-  const container_type& array() const { return _x; }
+  const container_type& array() const noexcept { return _x; }
 
   /// @deprecated Use ::array instead.
   /// @brief Get local part of the vector
-  [[deprecated("Use array() instead.")]] container_type& mutable_array()
+  [[deprecated("Use array() instead.")]] container_type&
+  mutable_array() noexcept
   {
     return _x;
   }
