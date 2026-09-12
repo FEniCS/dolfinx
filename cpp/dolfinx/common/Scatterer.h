@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2026 Igor Baratta and Garth N. Wells
+// Copyright (C) 2022-2026 Igor Baratta, Garth N. Wells and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <mpi.h>
 #include <numeric>
@@ -597,4 +599,95 @@ private:
   // Displacements of local data for mpi scatter and gather
   std::vector<int> _displs_local;
 };
+
+/// @brief One-shot forward (owner -> ghost) scatter of host data.
+///
+/// Packs `local_data`, communicates, and unpacks into `remote_data`.
+/// The send and receive buffers are allocated for the duration of the
+/// call. For repeated scatters where the allocation matters, use
+/// Scatterer::scatter_fwd_begin and Scatterer::scatter_fwd_end
+/// directly, or la::Vector, which holds persistent buffers.
+///
+/// @note Collective MPI operation.
+/// @note For host data. `Container` is constrained to containers with
+/// raw pointer storage, which excludes the device containers used in
+/// GPU builds, but host residency of `local_data` and `remote_data` is
+/// a caller precondition that is not checked.
+///
+/// @param[in] sc Scatterer describing the communication pattern.
+/// @param[in] local_data Owned values, blocked by local index.
+/// @param[out] remote_data Ghost values, blocked by ghost index, i.e.
+/// indexed from the first ghost.
+/// @param[in] bs Number of values per index (the block size).
+template <typename T, class Container>
+  requires requires(Container c) {
+    { c.data() } -> std::same_as<typename Container::value_type*>;
+  }
+void scatter_fwd(const Scatterer<Container>& sc, std::span<const T> local_data,
+                 std::span<T> remote_data, int bs)
+{
+  const Container& local_inds = sc.local_indices_block();
+  std::vector<T> send_buffer(bs * local_inds.size());
+  for (std::size_t i = 0; i < local_inds.size(); ++i)
+    for (int j = 0; j < bs; ++j)
+      send_buffer[i * bs + j] = local_data[local_inds[i] * bs + j];
+
+  const Container& remote_inds = sc.remote_indices_block();
+  std::vector<T> recv_buffer(bs * remote_inds.size());
+  MPI_Request request = MPI_REQUEST_NULL;
+  sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), bs, request);
+  sc.scatter_fwd_end(request);
+
+  for (std::size_t i = 0; i < remote_inds.size(); ++i)
+    for (int j = 0; j < bs; ++j)
+      remote_data[remote_inds[i] * bs + j] = recv_buffer[i * bs + j];
+}
+
+/// @brief One-shot reverse (ghost -> owner) scatter of host data.
+///
+/// Packs `remote_data`, communicates, and accumulates into `local_data`
+/// using `op`. The send and receive buffers are allocated for the
+/// duration of the call. For repeated scatters where the allocation
+/// matters, use Scatterer::scatter_rev_begin and
+/// Scatterer::scatter_rev_end directly, or la::Vector, which holds
+/// persistent buffers.
+///
+/// @note Collective MPI operation.
+/// @note For host data, see ::scatter_fwd.
+///
+/// @param[in] sc Scatterer describing the communication pattern.
+/// @param[in,out] local_data Owned values, blocked by local index.
+/// @param[in] remote_data Ghost values, blocked by ghost index, i.e.
+/// indexed from the first ghost.
+/// @param[in] bs Number of values per index (the block size).
+/// @param[in] op Binary operation applied as `local_data[i] =
+/// op(received, local_data[i])`, e.g. `std::plus<T>()` to accumulate.
+template <typename T, class Container, typename BinaryOperation>
+  requires requires(Container c) {
+    { c.data() } -> std::same_as<typename Container::value_type*>;
+  }
+void scatter_rev(const Scatterer<Container>& sc, std::span<T> local_data,
+                 std::span<const T> remote_data, int bs, BinaryOperation op)
+{
+  const Container& remote_inds = sc.remote_indices_block();
+  std::vector<T> send_buffer(bs * remote_inds.size());
+  for (std::size_t i = 0; i < remote_inds.size(); ++i)
+    for (int j = 0; j < bs; ++j)
+      send_buffer[i * bs + j] = remote_data[remote_inds[i] * bs + j];
+
+  const Container& local_inds = sc.local_indices_block();
+  std::vector<T> recv_buffer(bs * local_inds.size());
+  MPI_Request request = MPI_REQUEST_NULL;
+  sc.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), bs, request);
+  sc.scatter_rev_end(request);
+
+  for (std::size_t i = 0; i < local_inds.size(); ++i)
+  {
+    for (int j = 0; j < bs; ++j)
+    {
+      T& x = local_data[local_inds[i] * bs + j];
+      x = op(recv_buffer[i * bs + j], x);
+    }
+  }
+}
 } // namespace dolfinx::common

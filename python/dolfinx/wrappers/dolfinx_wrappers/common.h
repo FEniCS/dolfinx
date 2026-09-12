@@ -7,11 +7,11 @@
 #pragma once
 
 #include <dolfinx/common/Scatterer.h>
-#include <mpi.h>
+#include <functional>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <span>
 #include <stdexcept>
-#include <vector>
 
 namespace dolfinx_wrappers
 {
@@ -39,26 +39,9 @@ void declare_scatter_functions(
               "Ghost data buffer too small in forward scatter.");
         }
 
-        std::vector<T> send_buffer(bs * self.local_indices_block().size());
-        {
-          auto _local_data = local_data.view();
-          auto& idx = self.local_indices_block();
-          for (std::size_t i = 0; i < idx.size(); ++i)
-            for (int j = 0; j < bs; ++j)
-              send_buffer[i * bs + j] = _local_data(idx[i] * bs + j);
-        }
-        std::vector<T> recv_buffer(bs * self.remote_indices_block().size());
-        MPI_Request request = MPI_REQUEST_NULL;
-        self.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), bs,
-                               request);
-        self.scatter_fwd_end(request);
-        {
-          auto _remote_data = remote_data.view();
-          auto& idx = self.remote_indices_block();
-          for (std::size_t i = 0; i < idx.size(); ++i)
-            for (int j = 0; j < bs; ++j)
-              _remote_data(idx[i] * bs + j) = recv_buffer[i * bs + j];
-        }
+        dolfinx::common::scatter_fwd<T>(
+            self, std::span<const T>(local_data.data(), local_data.size()),
+            std::span<T>(remote_data.data(), remote_data.size()), bs);
       },
       nb::arg("local_data"), nb::arg("remote_data"), nb::arg("bs"));
 
@@ -79,26 +62,10 @@ void declare_scatter_functions(
               "Ghost data buffer too small in reverse scatter.");
         }
 
-        std::vector<T> send_buffer(bs * self.remote_indices_block().size());
-        {
-          auto _remote_data = remote_data.view();
-          auto& idx = self.remote_indices_block();
-          for (std::size_t i = 0; i < idx.size(); ++i)
-            for (int j = 0; j < bs; ++j)
-              send_buffer[i * bs + j] = _remote_data(idx[i] * bs + j);
-        }
-        std::vector<T> recv_buffer(bs * self.local_indices_block().size());
-        MPI_Request request = MPI_REQUEST_NULL;
-        self.scatter_rev_begin<T>(send_buffer.data(), recv_buffer.data(), bs,
-                                  request);
-        self.scatter_rev_end(request);
-        {
-          auto _local_data = local_data.view();
-          auto& idx = self.local_indices_block();
-          for (std::size_t i = 0; i < idx.size(); ++i)
-            for (int j = 0; j < bs; ++j)
-              _local_data(idx[i] * bs + j) += recv_buffer[i * bs + j];
-        }
+        dolfinx::common::scatter_rev<T>(
+            self, std::span<T>(local_data.data(), local_data.size()),
+            std::span<const T>(remote_data.data(), remote_data.size()), bs,
+            std::plus<T>());
       },
       nb::arg("local_data"), nb::arg("remote_data"), nb::arg("bs"));
 }
