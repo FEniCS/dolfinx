@@ -52,6 +52,7 @@ if _cpp.common.has_adios2:
             output: Mesh | Function | list[Function] | tuple[Function],
             engine: str = "BPFile",
             mesh_policy: VTXMeshPolicy = VTXMeshPolicy.update,
+            mode: str = "w",
         ):
             """Initialize a writer for outputting data in the VTX format.
 
@@ -68,6 +69,8 @@ if _cpp.common.has_adios2:
                     written to file, or is re-written (updated) at each
                     time step. Has an effect only for ``Function``
                     output.
+                mode: The filemode to open the file in, 'a' (append) or 'w'
+                    (write).
 
             Note:
                 All Functions for output must share the same mesh and
@@ -89,14 +92,21 @@ if _cpp.common.has_adios2:
                 raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
             if isinstance(output, Mesh):
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine, mode)  # type: ignore[arg-type]
             else:
                 cpp_objects = (
                     [output._cpp_object]
                     if isinstance(output, Function)
                     else [o._cpp_object for o in output]
                 )
-                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)  # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(
+                    comm,
+                    filename,
+                    cpp_objects,  # type: ignore[arg-type]
+                    engine,
+                    mesh_policy,
+                    mode,
+                )
 
         def __enter__(self) -> Self:
             """Enter context manager."""
