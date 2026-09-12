@@ -168,9 +168,8 @@ public:
   /// the data.
   /// @param[in] bs Number of entries per index map 'index' (block size).
   /// @param[in] scatterer Scatterer compatible with `map`.
-  Vector(
-      std::shared_ptr<const common::IndexMap> map, int bs,
-      std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer)
+  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
+         std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer)
       : _map(std::move(map)), _bs(bs),
         _x(bs * (_map->size_local() + _map->num_ghosts())),
         _scatterer(std::move(scatterer)),
