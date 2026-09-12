@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import functools
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
@@ -52,7 +53,6 @@ class Vector(Generic[_T]):
         | _cpp.la.Vector_int32
         | _cpp.la.Vector_int64
     )
-    _petsc_x: PETSc.Vec | None
 
     def __init__(
         self,
@@ -76,12 +76,11 @@ class Vector(Generic[_T]):
             User code should call :func:`vector` to create a vector object.
         """
         self._cpp_object = x
-        self._petsc_x = None
 
     def __del__(self) -> None:
         """Delete the PETSc vector if it was created."""
-        if self._petsc_x is not None:
-            self._petsc_x.destroy()
+        if (petsc_x := self.__dict__.get("petsc_vec")) is not None:
+            petsc_x.destroy()
 
     @property
     def index_map(self) -> IndexMap:
@@ -93,7 +92,7 @@ class Vector(Generic[_T]):
         """Block size for the vector."""
         return self._cpp_object.bs
 
-    @property
+    @functools.cached_property
     def scatterer(self) -> Scatterer:
         """Scatterer used for ghost communication."""
         return Scatterer(self._cpp_object.scatterer)
@@ -103,13 +102,13 @@ class Vector(Generic[_T]):
         """Local representation of the vector."""
         return self._cpp_object.array  # type: ignore[return-value]
 
-    @property
+    @functools.cached_property
     def petsc_vec(self) -> PETSc.Vec:
         """PETSc vector holding the entries of the vector.
 
-        Upon first call, this function creates a PETSc ``Vec`` object
-        that wraps the degree-of-freedom data. The ``Vec`` object is
-        cached and the cached ``Vec`` is returned upon subsequent calls.
+        Upon first access, this creates a PETSc ``Vec`` object that
+        wraps the degree-of-freedom data. The ``Vec`` object is cached
+        and the cached ``Vec`` is returned on subsequent accesses.
 
         Note:
           When the object is destroyed it will destroy the underlying
@@ -120,9 +119,7 @@ class Vector(Generic[_T]):
 
         from dolfinx.la.petsc import create_vector_wrap
 
-        if self._petsc_x is None:
-            self._petsc_x = create_vector_wrap(self)
-        return self._petsc_x
+        return create_vector_wrap(self)
 
     def scatter_forward(self) -> None:
         """Update ghost entries."""
