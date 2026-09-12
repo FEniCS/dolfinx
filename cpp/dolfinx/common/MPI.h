@@ -319,6 +319,83 @@ MPI_Datatype mpi_datatype()
 template <typename T>
 MPI_Datatype mpi_t = mpi_datatype<T>();
 
+/// @brief An MPI datatype for `count` contiguous values of type `T`, and
+/// manage its lifetime.
+///
+/// Lets a buffer be sent with counts and displacements measured in
+/// groups of `count` values rather than in single values. The group is
+/// an index map block size in common::Scatterer, and the row width of a
+/// row-major buffer elsewhere; it is not required to be either.
+///
+/// For `count == 1` no datatype is created and `mpi_t<T>` is used
+/// directly, so this is cheap to construct in that case.
+///
+/// @note MPI keeps a datatype alive until communication using it has
+/// completed, so this may be destroyed as soon as a non-blocking call
+/// using it has been started.
+///
+/// @tparam T Type of each value.
+template <typename T>
+class Datatype
+{
+public:
+  /// @brief Create a datatype for `count` contiguous values.
+  /// @param[in] count Number of values MPI should treat as one unit.
+  explicit Datatype(int count)
+  {
+    // Not error checked, matching the other datatype creation sites in
+    // the library: these are local calls, and under the default
+    // MPI_ERRORS_ARE_FATAL handler a failure aborts before a return code
+    // is visible. There is also no communicator here to abort on --
+    // MPI_COMM_SELF would abort this rank alone and hang the rest.
+    if (count > 1)
+    {
+      MPI_Type_contiguous(count, mpi_t<T>, &_type);
+      MPI_Type_commit(&_type);
+    }
+  }
+
+  // Copy constructor (deleted)
+  Datatype(const Datatype& type) = delete;
+
+  /// Move constructor
+  Datatype(Datatype&& type) noexcept : _type(type._type)
+  {
+    type._type = MPI_DATATYPE_NULL;
+  }
+
+  /// Destructor (frees the datatype, if one was created)
+  ~Datatype()
+  {
+    if (_type != MPI_DATATYPE_NULL)
+      MPI_Type_free(&_type);
+  }
+
+  // Copy assignment (deleted)
+  Datatype& operator=(const Datatype& type) = delete;
+
+  /// Move assignment
+  Datatype& operator=(Datatype&& type) noexcept
+  {
+    if (_type != MPI_DATATYPE_NULL)
+      MPI_Type_free(&_type);
+    _type = type._type;
+    type._type = MPI_DATATYPE_NULL;
+    return *this;
+  }
+
+  /// @brief The datatype to pass to MPI.
+  /// @return Contiguous type, or `mpi_t<T>` when `count` is one.
+  MPI_Datatype type() const noexcept
+  {
+    return _type == MPI_DATATYPE_NULL ? mpi_t<T> : _type;
+  }
+
+private:
+  // Created contiguous type, or MPI_DATATYPE_NULL if none was created
+  MPI_Datatype _type = MPI_DATATYPE_NULL;
+};
+
 //---------------------------------------------------------------------------
 namespace impl
 {

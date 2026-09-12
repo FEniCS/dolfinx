@@ -22,13 +22,13 @@ def test_scatter_forward(dtype):
     map = IndexMap(comm, local_size, [dest, src], map_ghosts, src)
     assert map.size_global == local_size * comm.size
 
-    sc = _cpp.common.Scatterer(map, 1)
+    sc = _cpp.common.Scatterer(map)
     v = np.zeros((map.size_local + map.num_ghosts), dtype=dtype)
 
     # Fill local part with rank of this process and scatter
     v[: map.size_local] = comm.rank
     assert np.all(v[map.size_local :] == 0)
-    sc.scatter_fwd(v, v[map.size_local :])
+    sc.scatter_fwd(v, v[map.size_local :], 1)
     # Received values should match the owners in the index map
     assert np.all(v[map.size_local :] == map.owners)
 
@@ -47,9 +47,9 @@ def test_scatter_reverse(dtype):
     assert map.size_global == local_size * comm.size
 
     # Fill ghost part with ones and reverse scatter
-    sc = _cpp.common.Scatterer(map, 1)
+    sc = _cpp.common.Scatterer(map)
     v = np.zeros((local_size + map.num_ghosts), dtype=dtype)
     v[local_size:] = 1
 
-    sc.scatter_rev(v, v[local_size:])
+    sc.scatter_rev(v, v[local_size:], 1)
     assert sum(v[:local_size]) == comm.size - 1
