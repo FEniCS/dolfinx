@@ -738,6 +738,18 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
   assert(x.size() % shape1 == 0);
   const std::int64_t shape0_local = x.size() / shape1;
 
+  // A rank outside comm1 must hold no data. Check this collectively before
+  // the later comm0/comm1 collectives to avoid leaving other ranks blocked.
+  {
+    int invalid_local = (comm1 == MPI_COMM_NULL and !x.empty()) ? 1 : 0;
+    int invalid = 0;
+    int err
+        = MPI_Allreduce(&invalid_local, &invalid, 1, MPI_INT, MPI_MAX, comm0);
+    dolfinx::MPI::check_error(comm0, err);
+    if (invalid)
+      throw std::runtime_error("Non-empty data on null MPI communicator");
+  }
+
   std::int64_t shape0 = 0;
   int err
       = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm0);
@@ -751,8 +763,6 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                      dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM, comm1);
     dolfinx::MPI::check_error(comm1, err);
   }
-  else if (!x.empty())
-    throw std::runtime_error("Non-empty data on null MPI communicator");
 
   return distribute_from_postoffice(comm0, indices, x, {shape0, shape1},
                                     rank_offset);
