@@ -977,11 +977,41 @@ def mark_maximum(
     return _mark_maximum(values, index_map, theta)
 
 
-def mark_equidistribution(values: npt.NDArray[Real],
+def mark_equidistribution(
+    values: npt.NDArray[Real],
     index_map: _IndexMap,
     theta: float,
 ) -> npt.NDArray[np.int32]:
+    r"""Return local indices of values exceeding a fraction of the MS.
+
+    Computes the mean square :math:`\frac{||v||_2^2}{N}` of ``values`` over
+    the locally owned entries on every rank of ``index_map``'s
+    communicator, and returns the local indices :math:`i` satisfying
+    :math:`v_i > \theta^2 \frac{||v||_2}{N}`. This is commonly referred to
+    as 'equidistribution marking' in the adaptive finite element
+    literature, for a component wise squared values input.
+
+    Note:
+        Ghost entries of ``values`` must be up to date, i.e.
+        ``scatter_forward`` must have been called since the owned entries
+        were last modified.
+
+        :math:`\theta = 0` is rejected, since the
+        threshold would be 0 and the criterion would degenerate to marking
+        every entry with a positive value.
+
+    Args:
+        values: Values, often with each entry associated with a mesh
+            entity, e.g. an error indicator (squared per entity).
+        index_map: Index map describing the parallel layout of ``values``.
+        theta: Cut-off parameter, :math:`0 < \theta \leq 1`.
+
+    Returns:
+        Local indices, ascending and including ghosts, of the entries
+        satisfying :math:`v_i > \theta^2 \frac{||v||_2}{N}`.
+    """
     return _mark_equidistribution(values, index_map, theta)
+
 
 def _create_mesh_coordinate_element(
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
