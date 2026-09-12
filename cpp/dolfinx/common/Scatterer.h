@@ -11,9 +11,8 @@
 #include "sort.h"
 #include <algorithm>
 #include <array>
-#include <concepts>
+#include <cassert>
 #include <cstdint>
-#include <functional>
 #include <mpi.h>
 #include <numeric>
 #include <span>
@@ -37,6 +36,11 @@ namespace dolfinx::common
 /// requests. Callers of a Scatterer's members are responsible for
 /// managing buffer and MPI request handles.
 ///
+/// Creating, copying and destroying a Scatterer are collective, since
+/// they create, duplicate and free MPI communicators. Move construction
+/// is not collective, but move assignment is, since it frees the
+/// communicators held by the assignment target.
+///
 /// @tparam Container Container type for storing the 'local' and
 /// 'remote' indices. On CPUs this is normally
 /// `std::vector<std::int32_t>`. For GPUs the container should store the
@@ -55,13 +59,13 @@ public:
   using container_type = Container;
 
   /// @brief Create a scatterer for data with a layout described by an
-  /// IndexMap and a block size.
+  /// IndexMap.
+  ///
+  /// @note Collective.
   ///
   /// @param[in] map Index map that describes the parallel layout of
   /// data.
-  /// @param[in] bs Number of values associated with each `map` index
-  /// (the block size).
-  Scatterer(const IndexMap& map, int bs)
+  explicit Scatterer(const IndexMap& map)
       : _sizes_remote(map.src().size(), 0),
         _displs_remote(map.src().size() + 1), _sizes_local(map.dest().size()),
         _displs_local(map.dest().size() + 1)
@@ -121,7 +125,7 @@ public:
     auto begin = owners_sorted.begin();
     for (std::size_t i = 0; i < src.size(); i++)
     {
-      auto upper = std::upper_bound(begin, owners_sorted.end(), src[i]);
+      auto upper = std::ranges::upper_bound(begin, owners_sorted.end(), src[i]);
       std::size_t num_ind = std::ranges::distance(begin, upper);
       _displs_remote[i + 1] = _displs_remote[i] + num_ind;
       _sizes_remote[i] = num_ind;
@@ -137,15 +141,15 @@ public:
     // elements to be sent/received grouped by neighbors)
     assert(_sizes_local.size() == dest.size());
     assert(_displs_local.size() == dest.size() + 1);
-    _sizes_remote.reserve(1);
-    _sizes_local.reserve(1);
-    ierr = MPI_Neighbor_alltoall(_sizes_remote.data(), 1, MPI_INT32_T,
-                                 _sizes_local.data(), 1, MPI_INT32_T,
-                                 _comm1.comm());
+    _sizes_remote.reserve(1); // ensure data is not a nullptr
+    _sizes_local.reserve(1);  // ensure data is not a nullptr
+    ierr
+        = MPI_Neighbor_alltoall(_sizes_remote.data(), 1, MPI_INT,
+                                _sizes_local.data(), 1, MPI_INT, _comm1.comm());
     dolfinx::MPI::check_error(_comm1.comm(), ierr);
 
-    std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
-                     std::next(_displs_local.begin()));
+    std::inclusive_scan(_sizes_local.begin(), _sizes_local.end(),
+                        std::next(_displs_local.begin()));
 
     assert(static_cast<int>(ghosts_sorted.size()) == _displs_remote.back());
 
@@ -165,40 +169,21 @@ public:
                           { assert(idx >= range[0] and idx < range[1]); });
 #endif
 
+    // Sizes, displacements and indices are all in blocks. The block
+    // size enters only through the MPI datatype used to send them, and
+    // through the caller's pack/unpack.
     {
-      // Scale sizes and displacements by block size
-      for (auto& x : {std::ref(_sizes_local), std::ref(_displs_local),
-                      std::ref(_sizes_remote), std::ref(_displs_remote)})
-      {
-        std::ranges::transform(x.get(), x.get().begin(),
-                               [bs](auto e) { return e * bs; });
-      }
-    }
-
-    {
-      // Expand local indices using block size and convert it from
-      // global to local numbering
-      std::vector<typename container_type::value_type> idx(recv_buffer.size()
-                                                           * bs);
-      std::int64_t offset = range[0] * bs;
-      for (std::size_t i = 0; i < recv_buffer.size(); i++)
-        for (int j = 0; j < bs; j++)
-          idx[i * bs + j] = (recv_buffer[i] * bs + j) - offset;
+      // Convert the received indices from global to local numbering
+      std::vector<typename container_type::value_type> idx(recv_buffer.size());
+      std::ranges::transform(recv_buffer, idx.begin(),
+                             [offset = range[0]](auto i) ->
+                             typename container_type::value_type
+                             { return i - offset; });
       _local_inds = std::move(idx);
     }
 
-    {
-      // Expand remote indices using block size
-      std::vector<typename container_type::value_type> idx(perm.size() * bs);
-      for (std::size_t i = 0; i < perm.size(); i++)
-        for (int j = 0; j < bs; j++)
-          idx[i * bs + j] = perm[i] * bs + j;
-      _remote_inds = std::move(idx);
-    }
+    _remote_inds = container_type(perm.begin(), perm.end());
   }
-
-  /// @brief Copy constructor
-  Scatterer(const Scatterer& scatterer) = default;
 
   /// @brief Cast-copy constructor.
   ///
@@ -212,6 +197,9 @@ public:
   /// parallel communication will usually be copied too with a different
   /// storage container.
   ///
+  /// @note Collective. The neighbourhood communicators are duplicated,
+  /// so all ranks must make the copy together.
+  ///
   /// @param s Scatterer to copy
   template <class U>
   Scatterer(const Scatterer<U>& s)
@@ -223,12 +211,46 @@ public:
   {
   }
 
-  /// @brief Start a non-blocking neighbourhood collective exchange of
-  /// owned data with ranks that ghost it.
+  /// Copy constructor
   ///
-  /// The communication is completed by calling Scatterer::scatter_fwd_end.
-  /// See ::local_indices for instructions on packing `send_buffer` and
-  /// ::remote_indices for instructions on unpacking `recv_buffer`.
+  /// @note Collective, as for the cast-copy constructor. Move instead
+  /// where the original is no longer required.
+  Scatterer(const Scatterer& scatterer) = default;
+
+  /// Move constructor
+  ///
+  /// @note Not collective, unlike the copy constructors: the
+  /// communicators are taken over rather than duplicated.
+  Scatterer(Scatterer&& scatterer) = default;
+
+  /// Destructor
+  ///
+  /// @note Collective, since the communicators are freed.
+  ~Scatterer() = default;
+
+  // Copy assignment (deleted). dolfinx::MPI::Comm cannot be copied into
+  // an existing object.
+  Scatterer& operator=(const Scatterer& scatterer) = delete;
+
+  /// Move assignment
+  ///
+  /// @note Collective if this Scatterer holds communicators, since
+  /// assigning to it frees them.
+  Scatterer& operator=(Scatterer&& scatterer) = default;
+
+  /// @brief Start a non-blocking neighbourhood collective exchange of
+  /// owned data with the ranks that ghost it.
+  ///
+  /// The communication is completed by calling
+  /// Scatterer::scatter_fwd_end. See ::local_indices_block for how to
+  /// pack `send_buffer` and ::remote_indices_block for how to unpack
+  /// `recv_buffer`.
+  ///
+  /// This is a differently named function rather than an overload of
+  /// ::scatter_fwd_begin because the underlying type of `MPI_Datatype`
+  /// is implementation-defined, and is an integer type in some MPI
+  /// implementations, so overloading on `int` and `MPI_Datatype` is not
+  /// portably unambiguous.
   ///
   /// @note Collective MPI operation. Every rank in the communicator
   /// must call this function, including ranks without neighbours.
@@ -243,33 +265,109 @@ public:
   ///
   /// @param[in] send_buffer Packed local data associated with each
   /// owned local index to be sent to processes where the data is
-  /// ghosted. See Scatterer::local_indices for the order of the buffer
-  /// and how to pack.
+  /// ghosted. See Scatterer::local_indices_block for the order of the
+  /// buffer and how to pack.
   /// @param[in,out] recv_buffer Buffer for storing received data. See
-  /// Scatterer::remote_indices for the order of the buffer and how to unpack.
-  /// @param[in] request MPI request handle for tracking the status of
-  /// the non-blocking communication. The same request handle should be
-  /// passed to Scatterer::scatter_fwd_end to complete the communication.
+  /// Scatterer::remote_indices_block for the order of the buffer and
+  /// how to unpack.
+  /// @param[in] type MPI datatype for the data associated with one
+  /// index, e.g. `dolfinx::MPI::Datatype<T>(bs).type()`. Buffer counts
+  /// and displacements are in units of `type`, and the same type must
+  /// be used on all ranks. MPI keeps a datatype alive until
+  /// communication using it has completed, so `type` may be freed as
+  /// soon as this function returns.
+  /// @param[out] request Handle for tracking the status of the
+  /// non-blocking communication. Any value passed in is overwritten,
+  /// and `MPI_REQUEST_NULL` is returned when this rank has nothing to
+  /// communicate. The same handle must be passed to
+  /// Scatterer::scatter_fwd_end to complete the communication.
   template <typename T>
-  void scatter_fwd_begin(const T* send_buffer, T* recv_buffer,
-                         MPI_Request& request) const
+  void scatter_fwd_begin_dtype(const T* send_buffer, T* recv_buffer,
+                               MPI_Datatype type, MPI_Request& request) const
   {
     if (!has_neighbours())
+    {
+      request = MPI_REQUEST_NULL;
       return;
+    }
 
     int ierr = MPI_Ineighbor_alltoallv(
-        send_buffer, _sizes_local.data(), _displs_local.data(),
-        dolfinx::MPI::mpi_t<T>, recv_buffer, _sizes_remote.data(),
-        _displs_remote.data(), dolfinx::MPI::mpi_t<T>, _comm0.comm(), &request);
+        send_buffer, _sizes_local.data(), _displs_local.data(), type,
+        recv_buffer, _sizes_remote.data(), _displs_remote.data(), type,
+        _comm0.comm(), &request);
     dolfinx::MPI::check_error(_comm0.comm(), ierr);
   }
 
   /// @brief Start a non-blocking neighbourhood collective exchange of
-  /// ghost data with owning ranks.
+  /// owned data with the ranks that ghost it.
   ///
-  /// The communication is completed by calling Scatterer::scatter_rev_end.
-  /// See ::remote_indices for instructions on packing `send_buffer` and
-  /// ::local_indices  for instructions on unpacking `recv_buffer`.
+  /// As ::scatter_fwd_begin_dtype, but with the MPI datatype built from
+  /// a block size.
+  ///
+  /// @param[in] send_buffer Packed local data associated with each
+  /// owned local index to be sent to processes where the data is
+  /// ghosted. See Scatterer::local_indices_block for the order of the
+  /// buffer and how to pack.
+  /// @param[in,out] recv_buffer Buffer for storing received data. See
+  /// Scatterer::remote_indices_block for the order of the buffer and
+  /// how to unpack.
+  /// @param[in] bs Number of values per index map index (the block
+  /// size). The buffers hold `bs` values for each index in
+  /// ::local_indices_block and ::remote_indices_block respectively.
+  /// @param[out] request Handle for tracking the status of the
+  /// non-blocking communication. Any value passed in is overwritten,
+  /// and `MPI_REQUEST_NULL` is returned when this rank has nothing to
+  /// communicate. The same handle must be passed to
+  /// Scatterer::scatter_fwd_end to complete the communication.
+  template <typename T>
+  void scatter_fwd_begin(const T* send_buffer, T* recv_buffer, int bs,
+                         MPI_Request& request) const
+  {
+    // Checked here too, to avoid building a datatype that will not be
+    // used
+    if (!has_neighbours())
+    {
+      request = MPI_REQUEST_NULL;
+      return;
+    }
+
+    dolfinx::MPI::Datatype<T> type(bs);
+    scatter_fwd_begin_dtype(send_buffer, recv_buffer, type.type(), request);
+  }
+
+  /// @brief Complete a non-blocking MPI neighbourhood collective send.
+  ///
+  /// This function completes the communication started by
+  /// ::scatter_fwd_begin or ::scatter_fwd_begin_dtype.
+  ///
+  /// @note Local completion of the caller's own request, not itself
+  /// collective. Every rank that called ::scatter_fwd_begin must
+  /// still call this before reusing the buffers.
+  ///
+  /// @param[in,out] request Handle returned by the matching begin
+  /// call. Set to `MPI_REQUEST_NULL` once the communication has
+  /// completed.
+  void scatter_fwd_end(MPI_Request& request) const
+  {
+    if (!has_neighbours())
+      return;
+
+    wait(_comm0, request);
+  }
+
+  /// @brief Start a non-blocking neighbourhood collective exchange of
+  /// ghost data with the owning ranks.
+  ///
+  /// The communication is completed by calling
+  /// Scatterer::scatter_rev_end. See ::remote_indices_block for how to
+  /// pack `send_buffer` and ::local_indices_block for how to unpack
+  /// `recv_buffer`.
+  ///
+  /// This is a differently named function rather than an overload of
+  /// ::scatter_rev_begin because the underlying type of `MPI_Datatype`
+  /// is implementation-defined, and is an integer type in some MPI
+  /// implementations, so overloading on `int` and `MPI_Datatype` is not
+  /// portably unambiguous.
   ///
   /// @note Collective MPI operation. Every rank in the communicator
   /// must call this function, including ranks without neighbours.
@@ -284,58 +382,88 @@ public:
   ///
   /// @param[in] send_buffer Data associated with each ghost index. This
   /// data is sent to the process that owns the index. See
-  /// Scatterer::remote_indices for the order of the buffer and how to
-  /// pack.
+  /// Scatterer::remote_indices_block for the order of the buffer and
+  /// how to pack.
   /// @param[in,out] recv_buffer Buffer for storing received data. See
-  /// Scatterer::local_indices for the order of the buffer and how to
-  /// unpack.
-  /// @param[in] request MPI request handle for tracking the status of
-  /// the non-blocking communication. The same request handle should be
-  /// passed to Scatterer::scatter_rev_end to complete the communication.
+  /// Scatterer::local_indices_block for the order of the buffer and how
+  /// to unpack.
+  /// @param[in] type MPI datatype for the data associated with one
+  /// index, e.g. `dolfinx::MPI::Datatype<T>(bs).type()`. Buffer counts
+  /// and displacements are in units of `type`, and the same type must
+  /// be used on all ranks. MPI keeps a datatype alive until
+  /// communication using it has completed, so `type` may be freed as
+  /// soon as this function returns.
+  /// @param[out] request Handle for tracking the status of the
+  /// non-blocking communication. Any value passed in is overwritten,
+  /// and `MPI_REQUEST_NULL` is returned when this rank has nothing to
+  /// communicate. The same handle must be passed to
+  /// Scatterer::scatter_rev_end to complete the communication.
   template <typename T>
-  void scatter_rev_begin(const T* send_buffer, T* recv_buffer,
-                         MPI_Request& request) const
+  void scatter_rev_begin_dtype(const T* send_buffer, T* recv_buffer,
+                               MPI_Datatype type, MPI_Request& request) const
   {
     if (!has_neighbours())
+    {
+      request = MPI_REQUEST_NULL;
       return;
+    }
 
     int ierr = MPI_Ineighbor_alltoallv(
-        send_buffer, _sizes_remote.data(), _displs_remote.data(),
-        dolfinx::MPI::mpi_t<T>, recv_buffer, _sizes_local.data(),
-        _displs_local.data(), dolfinx::MPI::mpi_t<T>, _comm1.comm(), &request);
+        send_buffer, _sizes_remote.data(), _displs_remote.data(), type,
+        recv_buffer, _sizes_local.data(), _displs_local.data(), type,
+        _comm1.comm(), &request);
     dolfinx::MPI::check_error(_comm1.comm(), ierr);
   }
 
-  /// @brief Complete a non-blocking MPI neighbourhood collective send.
+  /// @brief Start a non-blocking neighbourhood collective exchange of
+  /// ghost data with the owning ranks.
   ///
-  /// This function completes the communication started by
-  /// ::scatter_fwd_begin.
+  /// As ::scatter_rev_begin_dtype, but with the MPI datatype built from
+  /// a block size.
   ///
-  /// @note Local completion of the caller's own request, not itself
-  /// collective. Every rank that called ::scatter_fwd_begin must
-  /// still call this before reusing the buffers.
-  ///
-  /// @param[in] request MPI request handle for tracking the status of
-  /// communication.
-  void scatter_fwd_end(MPI_Request& request) const
+  /// @param[in] send_buffer Data associated with each ghost index. This
+  /// data is sent to the process that owns the index. See
+  /// Scatterer::remote_indices_block for the order of the buffer and
+  /// how to pack.
+  /// @param[in,out] recv_buffer Buffer for storing received data. See
+  /// Scatterer::local_indices_block for the order of the buffer and how
+  /// to unpack.
+  /// @param[in] bs Number of values per index map index (the block
+  /// size). The buffers hold `bs` values for each index in
+  /// ::remote_indices_block and ::local_indices_block respectively.
+  /// @param[out] request Handle for tracking the status of the
+  /// non-blocking communication. Any value passed in is overwritten,
+  /// and `MPI_REQUEST_NULL` is returned when this rank has nothing to
+  /// communicate. The same handle must be passed to
+  /// Scatterer::scatter_rev_end to complete the communication.
+  template <typename T>
+  void scatter_rev_begin(const T* send_buffer, T* recv_buffer, int bs,
+                         MPI_Request& request) const
   {
+    // Checked here too, to avoid building a datatype that will not be
+    // used
     if (!has_neighbours())
+    {
+      request = MPI_REQUEST_NULL;
       return;
+    }
 
-    wait(_comm0, request);
+    dolfinx::MPI::Datatype<T> type(bs);
+    scatter_rev_begin_dtype(send_buffer, recv_buffer, type.type(), request);
   }
 
   /// @brief Complete a non-blocking MPI neighbourhood collective send.
   ///
   /// This function completes the communication started by
-  /// ::scatter_rev_begin.
+  /// ::scatter_rev_begin or ::scatter_rev_begin_dtype.
   ///
   /// @note Local completion of the caller's own request, not itself
   /// collective. Every rank that called ::scatter_rev_begin must
   /// still call this before reusing the buffers.
   ///
-  /// @param[in] request MPI request handle for tracking the status of
-  /// communication.
+  /// @param[in,out] request Handle returned by the matching begin
+  /// call. Set to `MPI_REQUEST_NULL` once the communication has
+  /// completed.
   void scatter_rev_end(MPI_Request& request) const
   {
     if (!has_neighbours())
@@ -353,55 +481,73 @@ public:
   /// for assigning (accumulating) the receive buffer values into
   /// the correct position in the owned part of the data array.
   ///
+  /// The indices are in blocks, so for a block size `bs` a buffer holds
+  /// `bs` values per index and must be `bs * local_indices_block().size()`
+  /// long.
+  ///
   /// For a forward scatter, if `x` is the owned part of an array and
   /// `send_buffer` is the send buffer, `send_buffer` is packed such
   /// that:
   ///
-  ///     auto& idx = scatterer.local_indices()
-  ///     std::vector<T> send_buffer(idx.size())
+  ///     auto& idx = scatterer.local_indices_block()
+  ///     std::vector<T> send_buffer(bs * idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
-  ///         send_buffer[i] = x[idx[i]];
+  ///         for (int j = 0; j < bs; ++j)
+  ///             send_buffer[i * bs + j] = x[idx[i] * bs + j];
   ///
   /// For a reverse scatter, if `recv_buffer` is the received buffer,
   /// then `x` is updated by
   ///
-  ///     auto& idx = scatterer.local_indices()
-  ///     std::vector<T> recv_buffer(idx.size())
+  ///     auto& idx = scatterer.local_indices_block()
+  ///     std::vector<T> recv_buffer(bs * idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
-  ///         x[idx[i]] = op(recv_buffer[i], x[idx[i]]);
+  ///         for (int j = 0; j < bs; ++j)
+  ///             x[idx[i] * bs + j]
+  ///                 = op(recv_buffer[i * bs + j], x[idx[i] * bs + j]);
   ///
-  /// where `op` is a binary operation, e.g. `x[idx[i]] = buffer[i]` or
-  /// `x[idx[i]] += buffer[i]`.
+  /// where `op` is a binary operation, e.g. `x[...] = buffer[...]` or
+  /// `x[...] += buffer[...]`.
   ///
   /// @return Indices container.
-  const container_type& local_indices() const noexcept { return _local_inds; }
+  const container_type& local_indices_block() const noexcept
+  {
+    return _local_inds;
+  }
 
   /// @brief Array of indices for packing/unpacking ghost data to/from a
   /// send/receive buffer.
   ///
   /// For a forward scatter, the indices are used to unpack received data
-  /// into ghost entries. For a reverse scatter, indices are used for assigning
-  /// (accumulating) the receive buffer values to the correct position in
-  /// the owned array.
+  /// into ghost entries. For a reverse scatter, indices are used to pack
+  /// ghost entries into the send buffer.
+  ///
+  /// The indices are in blocks, so for a block size `bs` a buffer holds
+  /// `bs` values per index and must be
+  /// `bs * remote_indices_block().size()` long.
   ///
   /// For a forward scatter, if `xg` is the ghost part of the data array
   /// and `recv_buffer` is the receive buffer, `xg` is updated as
   ///
-  ///     auto& idx = scatterer.remote_indices()
-  ///     std::vector<T> recv_buffer(idx.size())
+  ///     auto& idx = scatterer.remote_indices_block()
+  ///     std::vector<T> recv_buffer(bs * idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
-  ///         xg[idx[i]] = recv_buffer[i];
+  ///         for (int j = 0; j < bs; ++j)
+  ///             xg[idx[i] * bs + j] = recv_buffer[i * bs + j];
   ///
   /// For a reverse scatter, if `send_buffer` is the send buffer, then
   /// `send_buffer` is packed such that:
   ///
-  ///     auto& idx = scatterer.remote_indices()
-  ///     std::vector<T> send_buffer(idx.size())
+  ///     auto& idx = scatterer.remote_indices_block()
+  ///     std::vector<T> send_buffer(bs * idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
-  ///         send_buffer[i] = xg[idx[i]];
+  ///         for (int j = 0; j < bs; ++j)
+  ///             send_buffer[i * bs + j] = xg[idx[i] * bs + j];
   ///
-  /// @return Indices container.
-  const container_type& remote_indices() const noexcept { return _remote_inds; }
+  /// @return Block indices container.
+  const container_type& remote_indices_block() const noexcept
+  {
+    return _remote_inds;
+  }
 
 private:
   // False only on a single rank, where _comm0/_comm1 stay MPI_COMM_NULL
