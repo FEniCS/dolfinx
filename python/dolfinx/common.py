@@ -109,7 +109,11 @@ class Scatterer:
         local_buffer = local_data.reshape(-1, bs)[local_idx].reshape(-1)
         remote_buffer = np.empty(bs * remote_idx.size, dtype=local_data.dtype)
 
-        request = self._cpp_object.scatter_fwd_begin(local_buffer, remote_buffer, bs)
+        request = self._cpp_object.scatter_fwd_begin(
+            local_buffer,  # type: ignore[arg-type]
+            remote_buffer,  # type: ignore[arg-type]
+            bs,
+        )
         self._cpp_object.scatter_fwd_end(request)
 
         remote_data.reshape(-1, bs)[remote_idx] = remote_buffer.reshape(-1, bs)
@@ -133,7 +137,11 @@ class Scatterer:
         remote_buffer = remote_data.reshape(-1, bs)[remote_idx].reshape(-1)
         local_buffer = np.empty(bs * local_idx.size, dtype=local_data.dtype)
 
-        request = self._cpp_object.scatter_rev_begin(remote_buffer, local_buffer, bs)
+        request = self._cpp_object.scatter_rev_begin(
+            remote_buffer,  # type: ignore[arg-type]
+            local_buffer,  # type: ignore[arg-type]
+            bs,
+        )
         self._cpp_object.scatter_rev_end(request)
 
         # local_idx may repeat (an owned entry can be ghosted by more
