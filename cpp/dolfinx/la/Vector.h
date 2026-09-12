@@ -159,8 +159,8 @@ public:
       : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
         _scatterer(
             std::make_shared<common::Scatterer<ScatterContainer>>(*_map)),
-        _buffer_local(bs * _scatterer->local_block_indices().size()),
-        _buffer_remote(bs * _scatterer->remote_block_indices().size())
+        _buffer_local(bs * _scatterer->local_indices_block().size()),
+        _buffer_remote(bs * _scatterer->remote_indices_block().size())
   {
   }
 
@@ -208,8 +208,8 @@ public:
   explicit Vector(const Vector<T0, Container0, ScatterContainer0>& x)
       : _map(x.index_map()), _bs(x.bs()), _x(x._x.begin(), x._x.end()),
         _scatterer(scatter_ptr(x._scatterer)), _request(MPI_REQUEST_NULL),
-        _buffer_local(_bs * _scatterer->local_block_indices().size()),
-        _buffer_remote(_bs * _scatterer->remote_block_indices().size())
+        _buffer_local(_bs * _scatterer->local_indices_block().size()),
+        _buffer_remote(_bs * _scatterer->remote_indices_block().size())
   {
   }
 
@@ -249,8 +249,8 @@ public:
              and GetPtrConcept<GetPtr, Container, T>
   void scatter_fwd_begin(U pack, GetPtr get_ptr)
   {
-    pack(_scatterer->local_block_indices().begin(),
-         _scatterer->local_block_indices().end(), _x.begin(),
+    pack(_scatterer->local_indices_block().begin(),
+         _scatterer->local_indices_block().end(), _x.begin(),
          _buffer_local.begin());
     _scatterer->scatter_fwd_begin(get_ptr(_buffer_local),
                                   get_ptr(_buffer_remote), _bs, _request);
@@ -292,8 +292,8 @@ public:
   void scatter_fwd_end(U unpack)
   {
     _scatterer->scatter_fwd_end(_request);
-    unpack(_scatterer->remote_block_indices().begin(),
-           _scatterer->remote_block_indices().end(), _buffer_remote.begin(),
+    unpack(_scatterer->remote_indices_block().begin(),
+           _scatterer->remote_indices_block().end(), _buffer_remote.begin(),
            std::next(_x.begin(), _bs * _map->size_local()));
   }
 
@@ -354,8 +354,8 @@ public:
   void scatter_rev_begin(U pack, GetPtr get_ptr)
   {
     std::int32_t local_size = _bs * _map->size_local();
-    pack(_scatterer->remote_block_indices().begin(),
-         _scatterer->remote_block_indices().end(),
+    pack(_scatterer->remote_indices_block().begin(),
+         _scatterer->remote_indices_block().end(),
          std::next(_x.begin(), local_size), _buffer_remote.begin());
     _scatterer->scatter_rev_begin(get_ptr(_buffer_remote),
                                   get_ptr(_buffer_local), _bs, _request);
@@ -394,8 +394,8 @@ public:
   void scatter_rev_end(U unpack)
   {
     _scatterer->scatter_rev_end(_request);
-    unpack(_scatterer->local_block_indices().begin(),
-           _scatterer->local_block_indices().end(), _buffer_local.begin(),
+    unpack(_scatterer->local_indices_block().begin(),
+           _scatterer->local_indices_block().end(), _buffer_local.begin(),
            _x.begin());
   }
 
