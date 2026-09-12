@@ -90,7 +90,7 @@ class Scatterer:
         """
         self._cpp_object = s
 
-    def scatter_forward(
+    def scatter_fwd(
         self, local_data: _ScatterArray, remote_data: _ScatterArray, bs: int = 1
     ) -> None:
         """Scatter owned data to processes that ghost it.
@@ -103,9 +103,18 @@ class Scatterer:
                 from owning processes, blocked by ``bs``.
             bs: Number of values associated with each index map index.
         """
-        self._cpp_object.scatter_fwd(local_data, remote_data, bs)
+        local_idx = self._cpp_object.local_indices_block
+        remote_idx = self._cpp_object.remote_indices_block
 
-    def scatter_reverse(
+        local_buffer = local_data.reshape(-1, bs)[local_idx].reshape(-1)
+        remote_buffer = np.empty(bs * remote_idx.size, dtype=local_data.dtype)
+
+        request = self._cpp_object.scatter_fwd_begin(local_buffer, remote_buffer, bs)
+        self._cpp_object.scatter_fwd_end(request)
+
+        remote_data.reshape(-1, bs)[remote_idx] = remote_buffer.reshape(-1, bs)
+
+    def scatter_rev(
         self, local_data: _ScatterArray, remote_data: _ScatterArray, bs: int = 1
     ) -> None:
         """Scatter ghost data to owning processes, accumulating.
@@ -118,7 +127,16 @@ class Scatterer:
                 owning processes, blocked by ``bs``.
             bs: Number of values associated with each index map index.
         """
-        self._cpp_object.scatter_rev(local_data, remote_data, bs)
+        local_idx = self._cpp_object.local_indices_block
+        remote_idx = self._cpp_object.remote_indices_block
+
+        remote_buffer = remote_data.reshape(-1, bs)[remote_idx].reshape(-1)
+        local_buffer = np.empty(bs * local_idx.size, dtype=local_data.dtype)
+
+        request = self._cpp_object.scatter_rev_begin(remote_buffer, local_buffer, bs)
+        self._cpp_object.scatter_rev_end(request)
+
+        local_data.reshape(-1, bs)[local_idx] += local_buffer.reshape(-1, bs)
 
 
 def scatterer(index_map: IndexMap) -> Scatterer:

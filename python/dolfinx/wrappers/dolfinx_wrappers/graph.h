@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "MPICommWrapper.h"
 #include "array.h"
+#include "mpi_wrappers.h"
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
