@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dolfinx_wrappers/common.h"
-#include "dolfinx_wrappers/MPICommWrapper.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/mpi_wrappers.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
@@ -74,10 +74,34 @@ void common(nb::module_& m)
 
   auto sc
       = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
-            .def(nb::init<dolfinx::common::IndexMap&>(), nb::arg("index_map"));
+            .def(nb::init<dolfinx::common::IndexMap&>(), nb::arg("index_map"))
+            .def_prop_ro(
+                "local_indices_block",
+                [](const dolfinx::common::Scatterer<>& self)
+                {
+                  std::span idx = self.local_indices_block();
+                  return nb::ndarray<const std::int32_t, nb::numpy>(
+                      idx.data(), {idx.size()});
+                },
+                nb::rv_policy::reference_internal,
+                "Indices of owned data packed/unpacked in a forward/reverse "
+                "scatter, used to size a caller-provided packing buffer.")
+            .def_prop_ro(
+                "remote_indices_block",
+                [](const dolfinx::common::Scatterer<>& self)
+                {
+                  std::span idx = self.remote_indices_block();
+                  return nb::ndarray<const std::int32_t, nb::numpy>(
+                      idx.data(), {idx.size()});
+                },
+                nb::rv_policy::reference_internal,
+                "Indices of ghost data packed/unpacked in a reverse/forward "
+                "scatter, used to size a caller-provided packing buffer.");
   declare_scatter_functions<std::int64_t>(sc);
   declare_scatter_functions<double>(sc);
   declare_scatter_functions<float>(sc);
+  declare_scatter_functions<std::complex<double>>(sc);
+  declare_scatter_functions<std::complex<float>>(sc);
 
   // dolfinx::common::IndexMap
   nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")

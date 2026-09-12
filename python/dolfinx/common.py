@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Michal Habera
+# Copyright (C) 2018-2026 Michal Habera, Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -11,6 +11,9 @@ import typing
 from collections.abc import Callable
 
 from mpi4py import MPI as _MPI
+
+import numpy as np
+import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (
@@ -34,6 +37,7 @@ from dolfinx.cpp.common import (
 __all__ = [
     "IndexMap",
     "Reduction",
+    "Scatterer",
     "Timer",
     "git_commit_hash",
     "hardware_concurrency",
@@ -49,12 +53,115 @@ __all__ = [
     "has_superlu_dist",
     "list_timings",
     "local_range",
+    "scatterer",
     "timed",
     "timing",
     "ufcx_signature",
 ]
 
 Reduction = _cpp.common.Reduction
+
+_ScatterArray: typing.TypeAlias = npt.NDArray[
+    np.int64 | np.float32 | np.float64 | np.complex64 | np.complex128
+]
+
+
+class Scatterer:
+    """Scatter and gather data with a layout described by an ``IndexMap``.
+
+    A scatterer is stateless: it holds only the communication pattern
+    derived from an :class:`IndexMap`, and can be shared between
+    multiple objects (e.g. :class:`dolfinx.la.Vector`) that use the
+    same index map.
+    """
+
+    _cpp_object: _cpp.common.Scatterer
+
+    def __init__(self, s: _cpp.common.Scatterer):
+        """Create a scatterer.
+
+        Note:
+            This initialiser is intended for internal library use only.
+            User code should call :func:`scatterer` to create a
+            scatterer object.
+
+        Args:
+            s: C++ Scatterer object.
+        """
+        self._cpp_object = s
+
+    def scatter_fwd(
+        self, local_data: _ScatterArray, remote_data: _ScatterArray, bs: int = 1
+    ) -> None:
+        """Scatter owned data to processes that ghost it.
+
+        Args:
+            local_data: Array holding the owned data, blocked by
+                ``bs``. Must be at least as long as the number of
+                owned entries that are ghosted elsewhere.
+            remote_data: Array to fill with the ghost values received
+                from owning processes, blocked by ``bs``.
+            bs: Number of values associated with each index map index.
+        """
+        local_idx = self._cpp_object.local_indices_block
+        remote_idx = self._cpp_object.remote_indices_block
+
+        local_buffer = local_data.reshape(-1, bs)[local_idx].reshape(-1)
+        remote_buffer = np.empty(bs * remote_idx.size, dtype=local_data.dtype)
+
+        request = self._cpp_object.scatter_fwd_begin(
+            local_buffer,  # type: ignore[arg-type]
+            remote_buffer,  # type: ignore[arg-type]
+            bs,
+        )
+        self._cpp_object.scatter_fwd_end(request)
+
+        remote_data.reshape(-1, bs)[remote_idx] = remote_buffer.reshape(-1, bs)
+
+    def scatter_rev(
+        self, local_data: _ScatterArray, remote_data: _ScatterArray, bs: int = 1
+    ) -> None:
+        """Scatter ghost data to owning processes, accumulating.
+
+        Args:
+            local_data: Array holding the owned data, blocked by
+                ``bs``. Updated in-place with values accumulated from
+                ``remote_data``.
+            remote_data: Array holding the ghost values to send to
+                owning processes, blocked by ``bs``.
+            bs: Number of values associated with each index map index.
+        """
+        local_idx = self._cpp_object.local_indices_block
+        remote_idx = self._cpp_object.remote_indices_block
+
+        remote_buffer = remote_data.reshape(-1, bs)[remote_idx].reshape(-1)
+        local_buffer = np.empty(bs * local_idx.size, dtype=local_data.dtype)
+
+        request = self._cpp_object.scatter_rev_begin(
+            remote_buffer,  # type: ignore[arg-type]
+            local_buffer,  # type: ignore[arg-type]
+            bs,
+        )
+        self._cpp_object.scatter_rev_end(request)
+
+        # local_idx may repeat (an owned entry can be ghosted by more
+        # than one rank), so plain `local_data[local_idx] += ...` would
+        # silently drop all but one contribution per repeated index;
+        # np.add.at accumulates unbuffered, handling repeats correctly.
+        np.add.at(local_data.reshape(-1, bs), local_idx, local_buffer.reshape(-1, bs))
+
+
+def scatterer(index_map: IndexMap) -> Scatterer:
+    """Create a scatterer for data with a layout described by an index map.
+
+    Args:
+        index_map: Index map that describes the parallel layout of
+            the data.
+
+    Returns:
+        A new scatterer.
+    """
+    return Scatterer(_cpp.common.Scatterer(index_map))
 
 
 def timing(task: str) -> tuple[int, datetime.timedelta]:

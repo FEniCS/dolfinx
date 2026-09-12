@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "MPICommWrapper.h"
 #include "array.h"
 #include "caster_mpi.h"
 #include "graph.h"
 #include "mesh.h"
+#include "mpi_wrappers.h"
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Mesh.h>
