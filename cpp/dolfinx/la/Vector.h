@@ -153,6 +153,13 @@ public:
 
   /// @brief Create a distributed vector.
   ///
+  /// This constructor creates a new Scatterer for the Vector. For
+  /// applications that create many Vectors with the same parallel layout,
+  /// constructing a distinct Scatterer for each Vector can exhaust the
+  /// available MPI communicators. This can be avoided by creating one
+  /// Scatterer and sharing it among those Vectors using the constructor that
+  /// takes a shared pointer to an existing Scatterer.
+  ///
   /// @param map Index map that describes the parallel layout of
   /// the data.
   /// @param bs Number of entries per index map 'index' (block size).
