@@ -37,7 +37,6 @@ from dolfinx.cpp.common import (
 __all__ = [
     "IndexMap",
     "Reduction",
-    "ScatterHandle",
     "Scatterer",
     "Timer",
     "git_commit_hash",
@@ -67,44 +66,44 @@ _ScatterArray: typing.TypeAlias = npt.NDArray[
 ]
 
 
-class ScatterHandle:
-    """Handle for a non-blocking Scatterer exchange.
-
-    Returned by :meth:`Scatterer.scatter_fwd_begin`/
-    :meth:`Scatterer.scatter_rev_begin` and passed to the matching
-    ``scatter_fwd_end``/``scatter_rev_end`` call to complete the
-    exchange. Treat as opaque; do not modify the arrays passed to the
-    ``*_begin`` call until the matching ``*_end`` call returns.
-    """
-
-    def __init__(
-        self,
-        request: _MPI.Request,
-        buffer: _ScatterArray,
-        data: _ScatterArray,
-        idx: npt.NDArray[np.int32],
-        bs: int,
-    ):
-        """Create a scatter handle.
-
-        Note:
-            This initialiser is intended for internal library use
-            only.
-        """
-        self._request = request
-        self._buffer = buffer
-        self._data = data
-        self._idx = idx
-        self._bs = bs
-
-
 class Scatterer:
     """Scatter and gather data with a layout described by an ``IndexMap``.
 
     A scatterer is stateless: it holds only the communication pattern
-    derived from an :class:`IndexMap`, and can be shared between
-    multiple objects (e.g. :class:`dolfinx.la.Vector`) that use the
-    same index map.
+    derived from an :class:`IndexMap`, and does not track buffers or
+    the status of in-flight MPI requests. Callers of ``scatter_fwd_begin``/
+    ``scatter_rev_begin`` are responsible for managing the send/receive
+    buffers and the returned request, and can share one scatterer
+    between multiple objects (e.g. :class:`dolfinx.la.Vector`) that use
+    the same index map.
+
+    A forward scatter sends data associated with owned/local indices
+    to the ranks that ghost them; a reverse scatter sends ghost data
+    back to the owning ranks, to be accumulated into the owned data.
+    Both use the same two-step begin/end pattern, splitting the
+    non-blocking exchange from its completion so that unrelated work
+    can be done while communication is in flight. A round trip for a
+    forward scatter with block size 1, where ``x`` holds the owned
+    data and ``x_ghost`` the ghost data::
+
+        local_idx = sc.local_indices_block
+        remote_idx = sc.remote_indices_block
+
+        send_buffer = x[local_idx]
+        recv_buffer = np.empty(remote_idx.size, dtype=x.dtype)
+        request = sc.scatter_fwd_begin(send_buffer, recv_buffer, 1)
+        # ... unrelated work can be done here while communication is
+        # in flight, but send_buffer/recv_buffer must not be touched ...
+        sc.scatter_fwd_end(request)
+        x_ghost[remote_idx] = recv_buffer
+
+    A reverse scatter follows the same pattern with the roles of
+    ``local_indices_block``/``remote_indices_block`` and of
+    ``send_buffer``/``recv_buffer`` swapped, and accumulating (rather
+    than assigning) into the destination array; see
+    :meth:`scatter_rev_begin` and :meth:`scatter_rev_end`.
+    :meth:`scatter_fwd`/:meth:`scatter_rev` implement this pattern as
+    a single blocking call.
     """
 
     _cpp_object: _cpp.common.Scatterer
@@ -122,50 +121,77 @@ class Scatterer:
         """
         self._cpp_object = s
 
-    def scatter_fwd_begin(
-        self, local_data: _ScatterArray, remote_data: _ScatterArray, bs: int = 1
-    ) -> ScatterHandle:
-        """Start scattering owned data to processes that ghost it.
+    @property
+    def local_indices_block(self) -> npt.NDArray[np.int32]:
+        """Indices for packing/unpacking owned data in a send/recv buffer.
 
-        Complete the exchange by passing the returned handle to
-        :meth:`scatter_fwd_end`. Unrelated work can be done between
-        the two calls to overlap communication with computation, but
-        ``local_data``/``remote_data`` must not be modified until
-        :meth:`scatter_fwd_end` returns.
+        For a forward scatter, used to copy owned entries into a send
+        buffer. For a reverse scatter, used to accumulate received
+        values into the owned entries. Blocked: for block size ``bs``
+        a buffer holds ``bs`` values per index and must be
+        ``bs * local_indices_block.size`` long.
+        """
+        return self._cpp_object.local_indices_block
+
+    @property
+    def remote_indices_block(self) -> npt.NDArray[np.int32]:
+        """Indices for packing/unpacking ghost data in a send/recv buffer.
+
+        For a forward scatter, used to unpack received values into
+        ghost entries. For a reverse scatter, used to pack ghost
+        entries into a send buffer. Blocked: for block size ``bs`` a
+        buffer holds ``bs`` values per index and must be
+        ``bs * remote_indices_block.size`` long.
+        """
+        return self._cpp_object.remote_indices_block
+
+    def scatter_fwd_begin(
+        self, send_buffer: _ScatterArray, recv_buffer: _ScatterArray, bs: int = 1
+    ) -> _MPI.Request:
+        """Start a non-blocking exchange of owned data with ghosting ranks.
+
+        The communication is completed by calling
+        :meth:`scatter_fwd_end`. See :attr:`local_indices_block` for
+        how to pack ``send_buffer`` and :attr:`remote_indices_block`
+        for how to unpack ``recv_buffer``.
+
+        Note:
+            Collective. Every rank in the communicator must call this,
+            including ranks without neighbours.
+
+        Note:
+            ``send_buffer``/``recv_buffer`` must not be changed or
+            accessed until after a call to :meth:`scatter_fwd_end`.
 
         Args:
-            local_data: Array holding the owned data, blocked by
-                ``bs``. Must be at least as long as the number of
-                owned entries that are ghosted elsewhere.
-            remote_data: Array that :meth:`scatter_fwd_end` will fill
-                with the ghost values received from owning processes,
-                blocked by ``bs``.
-            bs: Number of values associated with each index map index.
+            send_buffer: Packed owned data, blocked by ``bs``, sized
+                ``bs * local_indices_block.size``.
+            recv_buffer: Buffer for storing received data, blocked by
+                ``bs``, sized ``bs * remote_indices_block.size``.
+            bs: Number of values per index map index.
 
         Returns:
-            Handle to pass to :meth:`scatter_fwd_end`.
+            Request to pass to :meth:`scatter_fwd_end`.
         """
-        local_idx = self._cpp_object.local_indices_block
-        remote_idx = self._cpp_object.remote_indices_block
-
-        local_buffer = local_data.reshape(-1, bs)[local_idx].reshape(-1)
-        remote_buffer = np.empty(bs * remote_idx.size, dtype=local_data.dtype)
-
-        request = self._cpp_object.scatter_fwd_begin(
-            local_buffer,  # type: ignore[arg-type]
-            remote_buffer,  # type: ignore[arg-type]
+        return self._cpp_object.scatter_fwd_begin(
+            send_buffer,  # type: ignore[arg-type]
+            recv_buffer,  # type: ignore[arg-type]
             bs,
         )
-        return ScatterHandle(request, remote_buffer, remote_data, remote_idx, bs)
 
-    def scatter_fwd_end(self, handle: ScatterHandle) -> None:
-        """Complete a forward scatter started by :meth:`scatter_fwd_begin`.
+    def scatter_fwd_end(self, request: _MPI.Request) -> None:
+        """Complete the exchange started by :meth:`scatter_fwd_begin`.
+
+        Note:
+            Local completion of the caller's own request, not itself
+            collective. Every rank that called
+            :meth:`scatter_fwd_begin` must still call this before
+            reusing the buffers.
 
         Args:
-            handle: Handle returned by :meth:`scatter_fwd_begin`.
+            request: Request returned by :meth:`scatter_fwd_begin`.
         """
-        self._cpp_object.scatter_fwd_end(handle._request)
-        handle._data.reshape(-1, handle._bs)[handle._idx] = handle._buffer.reshape(-1, handle._bs)
+        self._cpp_object.scatter_fwd_end(request)
 
     def scatter_fwd(
         self, local_data: _ScatterArray, remote_data: _ScatterArray, bs: int = 1
@@ -180,60 +206,65 @@ class Scatterer:
                 from owning processes, blocked by ``bs``.
             bs: Number of values associated with each index map index.
         """
-        self.scatter_fwd_end(self.scatter_fwd_begin(local_data, remote_data, bs))
+        local_idx = self.local_indices_block
+        remote_idx = self.remote_indices_block
+
+        send_buffer = local_data.reshape(-1, bs)[local_idx].reshape(-1)
+        recv_buffer = np.empty(bs * remote_idx.size, dtype=local_data.dtype)
+
+        request = self.scatter_fwd_begin(send_buffer, recv_buffer, bs)
+        self.scatter_fwd_end(request)
+
+        remote_data.reshape(-1, bs)[remote_idx] = recv_buffer.reshape(-1, bs)
 
     def scatter_rev_begin(
-        self, local_data: _ScatterArray, remote_data: _ScatterArray, bs: int = 1
-    ) -> ScatterHandle:
-        """Start scattering ghost data to owning processes.
+        self, send_buffer: _ScatterArray, recv_buffer: _ScatterArray, bs: int = 1
+    ) -> _MPI.Request:
+        """Start a non-blocking exchange of ghost data with owning ranks.
 
-        Complete the exchange by passing the returned handle to
-        :meth:`scatter_rev_end`. Unrelated work can be done between
-        the two calls to overlap communication with computation, but
-        ``local_data``/``remote_data`` must not be modified until
-        :meth:`scatter_rev_end` returns.
+        The communication is completed by calling
+        :meth:`scatter_rev_end`. See :attr:`remote_indices_block` for
+        how to pack ``send_buffer`` and :attr:`local_indices_block`
+        for how to unpack (accumulate into) ``recv_buffer``.
+
+        Note:
+            Collective. Every rank in the communicator must call this,
+            including ranks without neighbours.
+
+        Note:
+            ``send_buffer``/``recv_buffer`` must not be changed or
+            accessed until after a call to :meth:`scatter_rev_end`.
 
         Args:
-            local_data: Array holding the owned data, blocked by
-                ``bs``. :meth:`scatter_rev_end` accumulates values
-                received from ``remote_data`` into this array.
-            remote_data: Array holding the ghost values to send to
-                owning processes, blocked by ``bs``.
-            bs: Number of values associated with each index map index.
+            send_buffer: Data associated with each ghost index,
+                blocked by ``bs``, sized ``bs *
+                remote_indices_block.size``.
+            recv_buffer: Buffer for storing received data, blocked by
+                ``bs``, sized ``bs * local_indices_block.size``.
+            bs: Number of values per index map index.
 
         Returns:
-            Handle to pass to :meth:`scatter_rev_end`.
+            Request to pass to :meth:`scatter_rev_end`.
         """
-        local_idx = self._cpp_object.local_indices_block
-        remote_idx = self._cpp_object.remote_indices_block
-
-        remote_buffer = remote_data.reshape(-1, bs)[remote_idx].reshape(-1)
-        local_buffer = np.empty(bs * local_idx.size, dtype=local_data.dtype)
-
-        request = self._cpp_object.scatter_rev_begin(
-            remote_buffer,  # type: ignore[arg-type]
-            local_buffer,  # type: ignore[arg-type]
+        return self._cpp_object.scatter_rev_begin(
+            send_buffer,  # type: ignore[arg-type]
+            recv_buffer,  # type: ignore[arg-type]
             bs,
         )
-        return ScatterHandle(request, local_buffer, local_data, local_idx, bs)
 
-    def scatter_rev_end(self, handle: ScatterHandle) -> None:
-        """Complete a reverse scatter started by :meth:`scatter_rev_begin`.
+    def scatter_rev_end(self, request: _MPI.Request) -> None:
+        """Complete the exchange started by :meth:`scatter_rev_begin`.
+
+        Note:
+            Local completion of the caller's own request, not itself
+            collective. Every rank that called
+            :meth:`scatter_rev_begin` must still call this before
+            reusing the buffers.
 
         Args:
-            handle: Handle returned by :meth:`scatter_rev_begin`.
+            request: Request returned by :meth:`scatter_rev_begin`.
         """
-        self._cpp_object.scatter_rev_end(handle._request)
-
-        # handle._idx may repeat (an owned entry can be ghosted by more
-        # than one rank), so plain `data[idx] += ...` would silently
-        # drop all but one contribution per repeated index; np.add.at
-        # accumulates unbuffered, handling repeats correctly.
-        np.add.at(
-            handle._data.reshape(-1, handle._bs),
-            handle._idx,
-            handle._buffer.reshape(-1, handle._bs),
-        )
+        self._cpp_object.scatter_rev_end(request)
 
     def scatter_rev(
         self, local_data: _ScatterArray, remote_data: _ScatterArray, bs: int = 1
@@ -248,7 +279,20 @@ class Scatterer:
                 owning processes, blocked by ``bs``.
             bs: Number of values associated with each index map index.
         """
-        self.scatter_rev_end(self.scatter_rev_begin(local_data, remote_data, bs))
+        local_idx = self.local_indices_block
+        remote_idx = self.remote_indices_block
+
+        send_buffer = remote_data.reshape(-1, bs)[remote_idx].reshape(-1)
+        recv_buffer = np.empty(bs * local_idx.size, dtype=local_data.dtype)
+
+        request = self.scatter_rev_begin(send_buffer, recv_buffer, bs)
+        self.scatter_rev_end(request)
+
+        # local_idx may repeat (an owned entry can be ghosted by more
+        # than one rank), so plain `local_data[local_idx] += ...` would
+        # silently drop all but one contribution per repeated index;
+        # np.add.at accumulates unbuffered, handling repeats correctly.
+        np.add.at(local_data.reshape(-1, bs), local_idx, recv_buffer.reshape(-1, bs))
 
 
 def scatterer(index_map: IndexMap) -> Scatterer:
