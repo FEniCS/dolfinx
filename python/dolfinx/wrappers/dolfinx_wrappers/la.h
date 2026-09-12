@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -24,6 +24,7 @@
 #include <nanobind/stl/vector.h>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #if defined(HAS_SUPERLU_DIST)
@@ -32,6 +33,7 @@
 
 namespace dolfinx_wrappers
 {
+namespace nb = nanobind;
 
 // InsertMode types for Python bindings
 enum class PyInsertMode : std::uint8_t
@@ -45,13 +47,10 @@ enum class PyInsertMode : std::uint8_t
 /// @param type String representation of the scalar type (e.g., "float64",
 /// "complex128")
 template <typename T>
-void declare_la_objects(nanobind::module_& m, const std::string& type)
+void declare_la_objects(nanobind::module_& m, std::string_view type)
 {
-  namespace nb = nanobind;
-  using namespace nb::literals;
-
   // dolfinx::la::Vector
-  std::string pyclass_vector_name = std::string("Vector_") + type;
+  std::string pyclass_vector_name = std::string("Vector_").append(type);
   nb::class_<dolfinx::la::Vector<T>>(m, pyclass_vector_name.c_str())
       .def(nb::init<std::shared_ptr<const dolfinx::common::IndexMap>, int>(),
            nb::arg("map"), nb::arg("bs"))
@@ -83,109 +82,126 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
               self.scatter_rev([](T /*a*/, T b) { return b; });
               break;
             default:
-              throw std::runtime_error("InsertMode not recognized.");
+              throw std::invalid_argument("InsertMode not recognized.");
               break;
             }
           },
           nb::arg("mode"));
 
   // dolfinx::la::MatrixCSR
-  std::string pyclass_matrix_name = std::string("MatrixCSR_") + type;
+  std::string pyclass_matrix_name = std::string("MatrixCSR_").append(type);
   nb::class_<dolfinx::la::MatrixCSR<
       T, std::vector<T>, std::vector<std::int32_t>, std::vector<std::int64_t>>>(
       m, pyclass_matrix_name.c_str())
       .def(nb::init<const dolfinx::la::SparsityPattern&,
                     dolfinx::la::BlockMode>(),
-           nb::arg("p"),
-           nb::arg("block_mode") = dolfinx::la::BlockMode::compact)
+           nb::arg("p"), nb::arg("block_mode"))
       .def_prop_ro("dtype", [](const dolfinx::la::MatrixCSR<T>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def_prop_ro("bs", &dolfinx::la::MatrixCSR<T>::block_size)
       .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
-      .def("index_map", &dolfinx::la::MatrixCSR<T>::index_map)
-      .def("add",
-           [](dolfinx::la::MatrixCSR<T>& self,
-              nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x,
-              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
-              int bs = 1)
-           {
-             if (x.size() != rows.size() * cols.size() * bs * bs)
-             {
-               throw std::runtime_error(
-                   "x size must equal rows size * cols size * bs * bs.");
-             }
+      .def("index_map", &dolfinx::la::MatrixCSR<T>::index_map, nb::arg("dim"))
+      .def(
+          "add",
+          [](dolfinx::la::MatrixCSR<T>& self,
+             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
+             int bs)
+          {
+            if (x.size() != rows.size() * cols.size() * bs * bs)
+            {
+              throw std::invalid_argument(
+                  "x size must equal rows size * cols size * bs * bs.");
+            }
 
-             const std::int32_t num_rows = self.num_all_rows();
-             const int mat_bs0 = self.block_size()[0];
-             const std::int32_t max_row
-                 = (mat_bs0 == bs) ? num_rows
-                                   : ((mat_bs0 == 1) ? (num_rows / bs)
-                                                     : (num_rows * mat_bs0));
-             for (std::size_t i = 0; i < rows.size(); ++i)
-             {
-               if (rows.data()[i] < 0 or rows.data()[i] >= max_row)
-                 throw std::runtime_error("Index out of range in rows array.");
-             }
-             std::span x_span = std::span(x.data(), x.size());
-             std::span rows_span = std::span(rows.data(), rows.size());
-             std::span cols_span = std::span(cols.data(), cols.size());
-             if (bs == 1)
-               self.template add<1, 1>(x_span, rows_span, cols_span);
-             else if (bs == 2)
-               self.template add<2, 2>(x_span, rows_span, cols_span);
-             else if (bs == 3)
-               self.template add<3, 3>(x_span, rows_span, cols_span);
-             else
-             {
-               throw std::runtime_error(
-                   "Block size not supported in this function");
-             }
-           })
-      .def("set",
-           [](dolfinx::la::MatrixCSR<T>& self,
-              nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x,
-              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
-              int bs = 1)
-           {
-             if (x.size() != rows.size() * cols.size() * bs * bs)
-             {
-               throw std::runtime_error(
-                   "x size must equal rows size * cols size * bs * bs.");
-             }
-             const std::int32_t num_rows = self.num_all_rows();
-             const int mat_bs0 = self.block_size()[0];
-             const std::int32_t max_row
-                 = (mat_bs0 == bs) ? num_rows
-                                   : ((mat_bs0 == 1) ? (num_rows / bs)
-                                                     : (num_rows * mat_bs0));
-             for (std::size_t i = 0; i < rows.size(); ++i)
-             {
-               if (rows.data()[i] < 0 or rows.data()[i] >= max_row)
-                 throw std::runtime_error("Index out of range in rows array.");
-             }
-             std::span x_span = std::span(x.data(), x.size());
-             std::span rows_span = std::span(rows.data(), rows.size());
-             std::span cols_span = std::span(cols.data(), cols.size());
-             if (bs == 1)
-               self.template set<1, 1>(x_span, rows_span, cols_span);
-             else if (bs == 2)
-               self.template set<2, 2>(x_span, rows_span, cols_span);
-             else if (bs == 3)
-               self.template set<3, 3>(x_span, rows_span, cols_span);
-             else
-             {
-               throw std::runtime_error(
-                   "Block size not supported in this function");
-             }
-           })
+            const std::int32_t num_rows = self.num_all_rows();
+            const int mat_bs0 = self.block_size()[0];
+            const std::int32_t max_row
+                = (mat_bs0 == bs) ? num_rows
+                                  : ((mat_bs0 == 1) ? (num_rows / bs)
+                                                    : (num_rows * mat_bs0));
+            for (std::size_t i = 0; i < rows.size(); ++i)
+            {
+              if (rows.data()[i] < 0 or rows.data()[i] >= max_row)
+                throw std::out_of_range("Index out of range in rows array.");
+            }
+            for (std::size_t i = 0; i < cols.size(); ++i)
+            {
+              if (cols.data()[i] < 0)
+                throw std::out_of_range("Index out of range in cols array.");
+            }
+            std::span x_span = std::span(x.data(), x.size());
+            std::span rows_span = std::span(rows.data(), rows.size());
+            std::span cols_span = std::span(cols.data(), cols.size());
+            if (bs == 1)
+              self.template add<1, 1>(x_span, rows_span, cols_span);
+            else if (bs == 2)
+              self.template add<2, 2>(x_span, rows_span, cols_span);
+            else if (bs == 3)
+              self.template add<3, 3>(x_span, rows_span, cols_span);
+            else
+            {
+              throw std::invalid_argument(
+                  "Block size not supported in this function.");
+            }
+          },
+          nb::arg("x"), nb::arg("rows"), nb::arg("cols"), nb::arg("bs"))
+      .def(
+          "set",
+          [](dolfinx::la::MatrixCSR<T>& self,
+             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
+             int bs)
+          {
+            if (x.size() != rows.size() * cols.size() * bs * bs)
+            {
+              throw std::invalid_argument(
+                  "x size must equal rows size * cols size * bs * bs.");
+            }
+            const std::int32_t num_rows = self.num_all_rows();
+            const int mat_bs0 = self.block_size()[0];
+            const std::int32_t max_row
+                = (mat_bs0 == bs) ? num_rows
+                                  : ((mat_bs0 == 1) ? (num_rows / bs)
+                                                    : (num_rows * mat_bs0));
+            for (std::size_t i = 0; i < rows.size(); ++i)
+            {
+              if (rows.data()[i] < 0 or rows.data()[i] >= max_row)
+                throw std::out_of_range("Index out of range in rows array.");
+            }
+            for (std::size_t i = 0; i < cols.size(); ++i)
+            {
+              if (cols.data()[i] < 0)
+                throw std::out_of_range("Index out of range in cols array.");
+            }
+            std::span x_span = std::span(x.data(), x.size());
+            std::span rows_span = std::span(rows.data(), rows.size());
+            std::span cols_span = std::span(cols.data(), cols.size());
+            if (bs == 1)
+              self.template set<1, 1>(x_span, rows_span, cols_span);
+            else if (bs == 2)
+              self.template set<2, 2>(x_span, rows_span, cols_span);
+            else if (bs == 3)
+              self.template set<3, 3>(x_span, rows_span, cols_span);
+            else
+            {
+              throw std::invalid_argument(
+                  "Block size not supported in this function.");
+            }
+          },
+          nb::arg("x"), nb::arg("rows"), nb::arg("cols"), nb::arg("bs"))
       .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
-      .def("mult", &dolfinx::la::MatrixCSR<T>::mult)
-      .def("mult", [](const dolfinx::la::MatrixCSR<T>& self,
-                      const dolfinx::la::MatrixCSR<T>& B)
-           { return dolfinx::la::matmul(self, B); })
-      .def("multT", &dolfinx::la::MatrixCSR<T>::multT)
+      .def("mult", &dolfinx::la::MatrixCSR<T>::mult, nb::arg("x"), nb::arg("y"))
+      .def(
+          "mult",
+          [](const dolfinx::la::MatrixCSR<T>& self,
+             const dolfinx::la::MatrixCSR<T>& B)
+          { return dolfinx::la::matmul(self, B); },
+          nb::arg("B"))
+      .def("multT", &dolfinx::la::MatrixCSR<T>::multT, nb::arg("x"),
+           nb::arg("y"))
       .def("transpose",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
@@ -199,7 +215,7 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
              return dolfinx::la::transpose(self);
            })
       .def("eliminate_zeros", &dolfinx::la::MatrixCSR<T>::eliminate_zeros,
-           nb::arg("tol") = T(0))
+           nb::arg("tol"))
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
@@ -245,12 +261,10 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
 template <typename T>
 void declare_la_functions(nanobind::module_& m)
 {
-  namespace nb = nanobind;
-  using namespace nb::literals;
-
   m.def(
       "norm", [](const dolfinx::la::Vector<T>& x, dolfinx::la::Norm type)
-      { return dolfinx::la::norm(x, type); }, "vector"_a, "type"_a);
+      { return dolfinx::la::norm(x, type); }, nb::arg("vector"),
+      nb::arg("type"));
   m.def(
       "inner_product",
       [](const dolfinx::la::Vector<T>& x, const dolfinx::la::Vector<T>& y)
@@ -261,8 +275,12 @@ void declare_la_functions(nanobind::module_& m)
       {
         std::vector<std::reference_wrapper<dolfinx::la::Vector<T>>> _basis;
         _basis.reserve(basis.size());
-        for (std::size_t i = 0; i < basis.size(); ++i)
-          _basis.push_back(*basis[i]);
+        for (dolfinx::la::Vector<T>* v : basis)
+        {
+          if (!v)
+            throw std::invalid_argument("basis contains None.");
+          _basis.push_back(*v);
+        }
         dolfinx::la::orthonormalize(_basis);
       },
       nb::arg("basis"));
@@ -274,8 +292,12 @@ void declare_la_functions(nanobind::module_& m)
         std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
             _basis;
         _basis.reserve(basis.size());
-        for (std::size_t i = 0; i < basis.size(); ++i)
-          _basis.push_back(*basis[i]);
+        for (const dolfinx::la::Vector<T>* v : basis)
+        {
+          if (!v)
+            throw std::invalid_argument("basis contains None.");
+          _basis.push_back(*v);
+        }
         return dolfinx::la::is_orthonormal(_basis, eps);
       },
       nb::arg("basis"), nb::arg("eps"));
@@ -287,13 +309,10 @@ void declare_la_functions(nanobind::module_& m)
 /// @param type String representation of the scalar type (e.g., "float64",
 /// "complex128")
 template <typename T>
-void declare_superlu_dist_matrix(nanobind::module_& m, const std::string& type)
+void declare_superlu_dist_matrix(nanobind::module_& m, std::string_view type)
 {
-  namespace nb = nanobind;
-  using namespace nb::literals;
-
   // dolfinx::la::SuperLUDistMatrix
-  std::string name = std::string("SuperLUDistMatrix_") + type;
+  std::string name = std::string("SuperLUDistMatrix_").append(type);
   nb::class_<dolfinx::la::SuperLUDistMatrix<T>>(m, name.c_str())
       .def(
           "__init__",
@@ -303,7 +322,6 @@ void declare_superlu_dist_matrix(nanobind::module_& m, const std::string& type)
           nb::arg("A"))
       .def_prop_ro("dtype", [](const dolfinx::la::SuperLUDistMatrix<T>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; });
-  ;
 }
 
 /// Declare SuperLU_DIST solver wrapper for a given scalar type
@@ -311,13 +329,10 @@ void declare_superlu_dist_matrix(nanobind::module_& m, const std::string& type)
 /// @param type String representation of the scalar type (e.g., "float64",
 /// "complex128")
 template <typename T>
-void declare_superlu_dist_solver(nanobind::module_& m, const std::string& type)
+void declare_superlu_dist_solver(nanobind::module_& m, std::string_view type)
 {
-  namespace nb = nanobind;
-  using namespace nb::literals;
-
   // dolfinx::la::SuperLUDistSolver
-  std::string name = std::string("SuperLUDistSolver_") + type;
+  std::string name = std::string("SuperLUDistSolver_").append(type);
   nb::class_<dolfinx::la::SuperLUDistSolver<T>>(m, name.c_str())
       .def(
           "__init__",
@@ -329,9 +344,12 @@ void declare_superlu_dist_solver(nanobind::module_& m, const std::string& type)
                 dolfinx::la::SuperLUDistSolver<T>(std::move(Amat_superlu));
           },
           nb::arg("A"))
-      .def("set_option", &dolfinx::la::SuperLUDistSolver<T>::set_option)
-      .def("set_A", &dolfinx::la::SuperLUDistSolver<T>::set_A)
-      .def("solve", &dolfinx::la::SuperLUDistSolver<T>::solve);
+      .def("set_option", &dolfinx::la::SuperLUDistSolver<T>::set_option,
+           nb::arg("name"), nb::arg("value"))
+      .def("set_A", &dolfinx::la::SuperLUDistSolver<T>::set_A, nb::arg("A"),
+           nb::arg("fact"))
+      .def("solve", &dolfinx::la::SuperLUDistSolver<T>::solve, nb::arg("b"),
+           nb::arg("u"));
 }
 #endif // HAS_SUPERLU_DIST
 

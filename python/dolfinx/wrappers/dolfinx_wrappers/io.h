@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,6 +9,7 @@
 #include "MPICommWrapper.h"
 #include "array.h"
 #include <basix/mdspan.hpp>
+#include <cstdint>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/io/VTKFile.h>
@@ -17,12 +18,16 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <filesystem>
+#include <format>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/filesystem.h>
 #include <span>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #ifdef HAS_ADIOS2
@@ -31,6 +36,7 @@
 
 namespace dolfinx_wrappers
 {
+namespace nb = nanobind;
 
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
@@ -41,13 +47,11 @@ using mdspan_t = md::mdspan<const T, md::dextents<std::size_t, ndim>>;
 template <typename T>
 void declare_xdmf_real_fn(auto&& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "write_mesh",
       [](dolfinx::io::XDMFFile& self, const dolfinx::mesh::Mesh<T>& mesh,
          const std::string& xpath) { self.write_mesh(mesh, xpath); },
-      nb::arg("mesh"), nb::arg("xpath") = "/Xdmf/Domain");
+      nb::arg("mesh"), nb::arg("xpath"));
   m.def(
       "write_meshtags",
       [](dolfinx::io::XDMFFile& self,
@@ -56,43 +60,36 @@ void declare_xdmf_real_fn(auto&& m)
          const std::string& xpath)
       { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
       nb::arg("meshtags"), nb::arg("x"), nb::arg("geometry_xpath"),
-      nb::arg("xpath") = "/Xdmf/Domain");
+      nb::arg("xpath"));
 }
 
 /// Add scalar function write methods to XDMFFile
 template <typename T, typename U>
 void declare_xdmf_scalar_fn(auto&& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "write_function",
       [](dolfinx::io::XDMFFile& self, const dolfinx::fem::Function<T, U>& u,
          double t, const std::string& mesh_xpath)
       { self.write_function(u, t, mesh_xpath); },
-      nb::arg("u"), nb::arg("t"),
-      nb::arg("mesh_xpath") = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
+      nb::arg("u"), nb::arg("t"), nb::arg("mesh_xpath"));
 }
 
 /// Add real-valued mesh write methods to VTKFile
 template <typename T>
 void declare_vtk_real_fn(auto&& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "write",
       [](dolfinx::io::VTKFile& self, const dolfinx::mesh::Mesh<T>& mesh,
          double t) { self.write(mesh, t); },
-      nb::arg("mesh"), nb::arg("t") = 0);
+      nb::arg("mesh"), nb::arg("t"));
 }
 
 /// Add scalar function write methods to VTKFile
 template <typename T, typename U>
 void declare_vtk_scalar_fn(auto&& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "write",
       [](dolfinx::io::VTKFile& self,
@@ -108,7 +105,7 @@ void declare_vtk_scalar_fn(auto&& m)
 
         self.write(u, t);
       },
-      nb::arg("u"), nb::arg("t") = 0);
+      nb::arg("u"), nb::arg("t"));
 }
 
 #ifdef HAS_ADIOS2
@@ -117,11 +114,9 @@ void declare_vtk_scalar_fn(auto&& m)
 /// @param type String representation of the scalar type (e.g., "float64",
 /// "float32")
 template <typename T>
-void declare_vtx_writer(nanobind::module_& m, const std::string& type)
+void declare_vtx_writer(nanobind::module_& m, std::string_view type)
 {
-  namespace nb = nanobind;
-
-  std::string pyclass_name = "VTXWriter_" + type;
+  std::string pyclass_name = std::string("VTXWriter_").append(type);
   auto vtx_writer
       = nb::class_<dolfinx::io::VTXWriter<T>>(m, pyclass_name.c_str());
   vtx_writer.def(
@@ -160,8 +155,7 @@ void declare_vtx_writer(nanobind::module_& m, const std::string& type)
   {
     vtx_writer.def(
         "__init__", init_u, nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
-        nb::arg("engine") = "BPFile",
-        nb::arg("policy") = dolfinx::io::VTXMeshPolicy::update,
+        nb::arg("engine"), nb::arg("policy"),
         nb::sig("def __init__(self, comm: mpi4py.MPI.Comm, filename: str | "
                 "os.PathLike, u: collections.abc.Sequence["
                 "dolfinx.cpp.fem.Function_float32 | "
@@ -173,8 +167,7 @@ void declare_vtx_writer(nanobind::module_& m, const std::string& type)
   {
     vtx_writer.def(
         "__init__", init_u, nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
-        nb::arg("engine") = "BPFile",
-        nb::arg("policy") = dolfinx::io::VTXMeshPolicy::update,
+        nb::arg("engine"), nb::arg("policy"),
         nb::sig("def __init__(self, comm: mpi4py.MPI.Comm, filename: str | "
                 "os.PathLike, u: collections.abc.Sequence["
                 "dolfinx.cpp.fem.Function_float64 | "
@@ -195,8 +188,6 @@ void declare_vtx_writer(nanobind::module_& m, const std::string& type)
 template <typename T>
 void declare_data_types(nanobind::module_& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "distribute_entity_data",
       [](const dolfinx::mesh::Topology& topology,
@@ -209,7 +200,12 @@ void declare_data_types(nanobind::module_& m)
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> entities,
          nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
       {
-        assert(entities.shape(0) == values.size());
+        if (entities.shape(0) != values.size())
+        {
+          throw std::invalid_argument(
+              std::format("entities has {} rows but values has {} entries.",
+                          entities.shape(0), values.size()));
+        }
         mdspan_t<const std::int64_t, 2> entities_span(
             entities.data(), entities.shape(0), entities.shape(1));
         mdspan_t<const std::int32_t, 2> xdofmap_span(

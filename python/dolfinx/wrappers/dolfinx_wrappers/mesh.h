@@ -9,6 +9,7 @@
 #include "MPICommWrapper.h"
 #include "array.h"
 #include "graph.h"
+#include "marker.h"
 #include "numpy_dtype.h"
 #include <cstdint>
 #include <dolfinx/fem/CoordinateElement.h>
@@ -22,6 +23,7 @@
 #include <dolfinx/mesh/types.h>
 #include <dolfinx/mesh/utils.h>
 #include <functional>
+#include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
@@ -33,10 +35,18 @@
 #include <optional>
 #include <ranges>
 #include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
 #include <type_traits>
+#include <utility>
 #include <variant>
+#include <vector>
 
+namespace dolfinx_wrappers
+{
 namespace nb = nanobind;
+}
 
 namespace dolfinx_wrappers::part::impl
 {
@@ -103,29 +113,10 @@ inline std::optional<std::span<const std::int32_t>> to_cell_weights_span(
                                        cell_weights->size());
 }
 
-/// Wrap a Python entity marker (candidate-entity coordinates -> a
-/// boolean array) as the callable dolfinx::mesh::locate_entities and
-/// dolfinx::mesh::locate_entities_boundary expect. The returned
-/// closure holds a reference to `marker`, so it must not outlive it.
 template <typename T>
-auto to_cpp_marker(
-    const std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
-        nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>& marker)
+void declare_meshtags(nb::module_& m, std::string_view type)
 {
-  return [&marker](auto x)
-  {
-    nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-        x.data_handle(), {x.extent(0), x.extent(1)});
-    auto marked = marker(x_view);
-    return std::vector<std::int8_t>(marked.data(),
-                                    marked.data() + marked.size());
-  };
-}
-
-template <typename T>
-void declare_meshtags(nb::module_& m, const std::string& type)
-{
-  std::string pyclass_name = std::string("MeshTags_") + type;
+  std::string pyclass_name = std::string("MeshTags_").append(type);
   nb::class_<dolfinx::mesh::MeshTags<T>>(m, pyclass_name.c_str(),
                                          "MeshTags object")
       .def(
@@ -143,14 +134,16 @@ void declare_meshtags(nb::module_& m, const std::string& type)
             new (self) dolfinx::mesh::MeshTags<T>(
                 topology, dim, std::move(indices_vec), std::move(values_vec),
                 std::move(name));
-          })
+          },
+          nb::arg("topology"), nb::arg("dim"), nb::arg("indices"),
+          nb::arg("values"), nb::arg("name"))
       .def_prop_ro("dtype", [](const dolfinx::mesh::MeshTags<T>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def_prop_rw(
           "name",
           [](const dolfinx::mesh::MeshTags<T>& self) { return self.name(); },
           [](dolfinx::mesh::MeshTags<T>& self, std::string name)
-          { self.name(name); })
+          { self.name(std::move(name)); })
       .def_prop_ro("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_prop_ro("topology", &dolfinx::mesh::MeshTags<T>::topology)
       .def_prop_ro(
@@ -170,20 +163,25 @@ void declare_meshtags(nb::module_& m, const std::string& type)
                                                               {idx.size()});
           },
           nb::rv_policy::reference_internal)
-      .def("find", [](dolfinx::mesh::MeshTags<T>& self, T value)
-           { return as_nbarray(self.find(value)); });
+      .def(
+          "find", [](dolfinx::mesh::MeshTags<T>& self, T value)
+          { return as_nbarray(self.find(value)); }, nb::arg("value"));
 
-  m.def("create_meshtags",
-        [](std::shared_ptr<const dolfinx::mesh::Topology> topology, int dim,
-           const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
-           nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values,
-           std::string name)
-        {
-          return dolfinx::mesh::create_meshtags(
-              topology, dim, entities, std::span(values.data(), values.size()),
-              std::move(name));
-        });
-  std::string pyfunc_name = "transfer_meshtags_to_submesh_" + type;
+  m.def(
+      "create_meshtags",
+      [](std::shared_ptr<const dolfinx::mesh::Topology> topology, int dim,
+         const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values,
+         std::string name)
+      {
+        return dolfinx::mesh::create_meshtags(
+            topology, dim, entities, std::span(values.data(), values.size()),
+            std::move(name));
+      },
+      nb::arg("topology"), nb::arg("dim"), nb::arg("entities"),
+      nb::arg("values"), nb::arg("name"));
+  std::string pyfunc_name
+      = std::string("transfer_meshtags_to_submesh_").append(type);
   m.def(
       pyfunc_name.c_str(),
       [](const dolfinx::mesh::MeshTags<T>& tags,
@@ -194,14 +192,14 @@ void declare_meshtags(nb::module_& m, const std::string& type)
         return dolfinx::mesh::transfer_meshtags_to_submesh<T>(
             tags, submesh_topology, vertex_map, cell_map);
       },
-      nanobind::arg("tags"), nanobind::arg("submesh_topology"),
-      nanobind::arg("vertex_map"), nanobind::arg("cell_map"));
+      nb::arg("tags"), nb::arg("submesh_topology"), nb::arg("vertex_map"),
+      nb::arg("cell_map"));
 }
 
 template <typename T>
-void declare_mesh(nb::module_& m, std::string type)
+void declare_mesh(nb::module_& m, std::string_view type)
 {
-  std::string pyclass_geometry_name = std::string("Geometry_") + type;
+  std::string pyclass_geometry_name = std::string("Geometry_").append(type);
   nb::class_<dolfinx::mesh::Geometry<T>>(m, pyclass_geometry_name.c_str(),
                                          "Geometry object")
       .def(
@@ -217,7 +215,7 @@ void declare_mesh(nb::module_& m, std::string type)
             std::size_t shape1 = x.shape(1);
             if (shape1 == 0 or shape1 > 3)
             {
-              throw std::runtime_error(
+              throw std::invalid_argument(
                   "Geometry point array must have shape (num_points, dim) "
                   "with 0 < dim <= 3.");
             }
@@ -290,7 +288,7 @@ void declare_mesh(nb::module_& m, std::string type)
           },
           nb::rv_policy::reference_internal);
 
-  std::string pyclass_mesh_name = std::string("Mesh_") + type;
+  std::string pyclass_mesh_name = std::string("Mesh_").append(type);
   nb::class_<dolfinx::mesh::Mesh<T>>(m, pyclass_mesh_name.c_str(),
                                      nb::dynamic_attr(), "Mesh object")
       .def(
@@ -314,7 +312,7 @@ void declare_mesh(nb::module_& m, std::string type)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>())
       .def_rw("name", &dolfinx::mesh::Mesh<T>::name);
 
-  std::string create_interval("create_interval_" + type);
+  std::string create_interval = std::string("create_interval_").append(type);
   m.def(
       create_interval.c_str(),
       [](MPICommWrapper comm, std::int64_t n, std::array<T, 2> p,
@@ -328,7 +326,7 @@ void declare_mesh(nb::module_& m, std::string type)
       nb::arg("comm"), nb::arg("n"), nb::arg("p"), nb::arg("ghost_mode"),
       nb::arg("partitioner").none(), nb::arg("gdim"));
 
-  std::string create_rectangle("create_rectangle_" + type);
+  std::string create_rectangle = std::string("create_rectangle_").append(type);
   m.def(
       create_rectangle.c_str(),
       [](MPICommWrapper comm, std::array<std::array<T, 2>, 2> p,
@@ -346,7 +344,7 @@ void declare_mesh(nb::module_& m, std::string type)
       nb::arg("partitioner").none(), nb::arg("diagonal"), nb::arg("gdim"),
       nb::arg("ghost_mode"));
 
-  std::string create_box("create_box_" + type);
+  std::string create_box = std::string("create_box_").append(type);
   m.def(
       create_box.c_str(),
       [](MPICommWrapper comm, std::array<std::array<T, 3>, 2> p,
@@ -354,9 +352,9 @@ void declare_mesh(nb::module_& m, std::string type)
          const part::impl::PythonPartitionFn& part,
          dolfinx::mesh::GhostMode ghost_mode)
       {
-        MPI_Comm _comm = comm.get();
+        MPI_Comm mpi_comm = comm.get();
         return dolfinx::mesh::create_box<T>(
-            _comm, _comm, p, n, celltype,
+            mpi_comm, mpi_comm, p, n, celltype,
             part::impl::to_any_cell_partitioner(part), ghost_mode);
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
@@ -463,7 +461,7 @@ void declare_mesh(nb::module_& m, std::string type)
             mesh, std::span(entities.data(), entities.size()), dim));
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"),
-      "Compute maximum distsance between any two vertices.");
+      "Compute the maximum distance between any two vertices.");
   m.def(
       "compute_midpoints",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
@@ -478,9 +476,7 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "locate_entities",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
-             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
-             marker)
+         const PythonMarkerFunction<T>& marker)
       {
         return as_nbarray(dolfinx::mesh::locate_entities(
             mesh, dim, to_cpp_marker<T>(marker)));
@@ -490,10 +486,7 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "locate_entities",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
-             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
-             marker,
-         int entity_type_idx)
+         const PythonMarkerFunction<T>& marker, int entity_type_idx)
       {
         return as_nbarray(dolfinx::mesh::locate_entities(
             mesh, dim, to_cpp_marker<T>(marker), entity_type_idx));
@@ -504,9 +497,7 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "locate_entities_boundary",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
-             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
-             marker)
+         const PythonMarkerFunction<T>& marker)
       {
         return as_nbarray(dolfinx::mesh::locate_entities_boundary(
             mesh, dim, to_cpp_marker<T>(marker)));
@@ -525,19 +516,22 @@ void declare_mesh(nb::module_& m, std::string type)
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"), nb::arg("permute"));
 
-  m.def("create_geometry",
-        [](const dolfinx::mesh::Topology& topology,
-           const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
-           nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> nodes,
-           nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> xdofs,
-           nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x, int dim)
-        {
-          return dolfinx::mesh::create_geometry(
-              topology, elements,
-              std::span<const std::int64_t>(nodes.data(), nodes.size()),
-              std::span<const std::int64_t>(xdofs.data(), xdofs.size()),
-              std::span<const T>(x.data(), x.size()), dim);
-        });
+  m.def(
+      "create_geometry",
+      [](const dolfinx::mesh::Topology& topology,
+         const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
+         nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> nodes,
+         nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> xdofs,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x, int dim)
+      {
+        return dolfinx::mesh::create_geometry(
+            topology, elements,
+            std::span<const std::int64_t>(nodes.data(), nodes.size()),
+            std::span<const std::int64_t>(xdofs.data(), xdofs.size()),
+            std::span<const T>(x.data(), x.size()), dim);
+      },
+      nb::arg("topology"), nb::arg("elements"), nb::arg("nodes"),
+      nb::arg("xdofs"), nb::arg("x"), nb::arg("dim"));
 }
 
 } // namespace dolfinx_wrappers

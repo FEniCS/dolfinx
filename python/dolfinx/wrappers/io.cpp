@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2021 Chris N. Richardson Garth N. Wells
+// Copyright (C) 2017-2026 Chris N. Richardson Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,6 +8,7 @@
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
 #include <basix/mdspan.hpp>
+#include <cstdint>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/VTKHDF.h>
@@ -28,6 +29,9 @@
 #include <nanobind/stl/string_view.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
+#include <string>
+#include <utility>
+#include <variant>
 #include <vector>
 
 namespace nb = nanobind;
@@ -65,24 +69,36 @@ void io(nb::module_& m)
       "Extract the mesh topology with VTK ordering using "
       "geometry indices");
 
-  m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>)
-      .def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<float>);
-  m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<double>);
-  m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<float>);
-  m.def("read_vtkhdf_mesh_float64",
-        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
-           std::optional<std::int32_t> max_facet_to_cell_links)
-        {
-          return dolfinx::io::VTKHDF::read_mesh<double>(
-              comm.get(), filename, gdim, max_facet_to_cell_links);
-        });
-  m.def("read_vtkhdf_mesh_float32",
-        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
-           std::optional<std::int32_t> max_facet_to_cell_links)
-        {
-          return dolfinx::io::VTKHDF::read_mesh<float>(
-              comm.get(), filename, gdim, max_facet_to_cell_links);
-        });
+  m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>,
+        nb::arg("filename"), nb::arg("mesh"));
+  m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<float>,
+        nb::arg("filename"), nb::arg("mesh"));
+  m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<double>,
+        nb::arg("point_or_cell"), nb::arg("filename"), nb::arg("mesh"),
+        nb::arg("data"), nb::arg("time"));
+  m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<float>,
+        nb::arg("point_or_cell"), nb::arg("filename"), nb::arg("mesh"),
+        nb::arg("data"), nb::arg("time"));
+  m.def(
+      "read_vtkhdf_mesh_float64",
+      [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
+         std::optional<std::int32_t> max_facet_to_cell_links)
+      {
+        return dolfinx::io::VTKHDF::read_mesh<double>(
+            comm.get(), filename, gdim, max_facet_to_cell_links);
+      },
+      nb::arg("comm"), nb::arg("filename"), nb::arg("gdim"),
+      nb::arg("max_facet_to_cell_links").none());
+  m.def(
+      "read_vtkhdf_mesh_float32",
+      [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
+         std::optional<std::int32_t> max_facet_to_cell_links)
+      {
+        return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename, gdim,
+                                                     max_facet_to_cell_links);
+      },
+      nb::arg("comm"), nb::arg("filename"), nb::arg("gdim"),
+      nb::arg("max_facet_to_cell_links").none());
 
   // dolfinx::io::cell permutation functions
   m.def(
@@ -126,11 +142,10 @@ void io(nb::module_& m)
                                           encoding);
           },
           nb::arg("comm"), nb::arg("filename"), nb::arg("file_mode"),
-          nb::arg("encoding") = dolfinx::io::XDMFFile::Encoding::HDF5)
+          nb::arg("encoding"))
       .def("close", &dolfinx::io::XDMFFile::close)
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
-           nb::arg("geometry"), nb::arg("name") = "geometry",
-           nb::arg("xpath") = "/Xdmf/Domain")
+           nb::arg("geometry"), nb::arg("name"), nb::arg("xpath"))
       .def(
           "read_topology_data",
           [](dolfinx::io::XDMFFile& self, const std::string& name,
@@ -139,26 +154,31 @@ void io(nb::module_& m)
             auto [cells, shape] = self.read_topology_data(name, xpath);
             return as_nbarray(std::move(cells), shape);
           },
-          nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
+          nb::arg("name"), nb::arg("xpath"))
       .def(
           "read_geometry_data",
           [](dolfinx::io::XDMFFile& self, const std::string& name,
              const std::string& xpath)
           {
             auto [x, shape] = self.read_geometry_data(name, xpath);
-            std::vector<double>& _x = std::get<std::vector<double>>(x);
-            return as_nbarray(std::move(_x), shape);
+
+            // Geometry may be stored as float or double. Both are
+            // returned as a NumPy array of the matching dtype.
+            return std::visit(
+                [shape](auto&& _x)
+                { return nb::cast(as_nbarray(std::move(_x), shape)); },
+                std::move(x));
           },
-          nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
+          nb::arg("name"), nb::arg("xpath"))
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
-           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
+           nb::arg("name"), nb::arg("xpath"))
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
            nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name").none(),
            nb::arg("xpath"))
       .def("write_information", &dolfinx::io::XDMFFile::write_information,
-           nb::arg("name"), nb::arg("value"), nb::arg("xpath") = "/Xdmf/Domain")
+           nb::arg("name"), nb::arg("value"), nb::arg("xpath"))
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
-           nb::arg("name"), nb::arg("xpath") = "/Xdmf/Domain")
+           nb::arg("name"), nb::arg("xpath"))
       .def("flush", &dolfinx::io::XDMFFile::flush)
       .def_prop_ro(
           "comm", [](dolfinx::io::XDMFFile& self)

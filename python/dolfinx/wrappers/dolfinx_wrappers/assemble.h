@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -12,6 +12,7 @@
 #include <basix/mdspan.hpp>
 #include <cstdint>
 #include <dolfinx/fem/DirichletBC.h>
+#include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/FunctionSpace.h>
@@ -22,6 +23,7 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <format>
 #include <functional>
 #include <memory>
 #include <nanobind/nanobind.h>
@@ -38,11 +40,14 @@
 #include <nanobind/stl/vector.h>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace dolfinx_wrappers
 {
+namespace nb = nanobind;
 
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
@@ -51,20 +56,19 @@ dolfinx::la::SparsityPattern
 create_sparsity(const dolfinx::fem::FunctionSpace<U>& V0,
                 const dolfinx::fem::FunctionSpace<U>& V1)
 {
-  assert(V0.mesh());
-  auto mesh = V0.mesh();
-  assert(V1.mesh());
-  assert(mesh == V1.mesh());
+  std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh = V0.mesh();
+  if (!mesh or mesh != V1.mesh())
+    throw std::invalid_argument("V0 and V1 must share a mesh.");
   MPI_Comm comm = mesh->comm();
 
-  auto dofmap0 = V0.dofmap();
+  std::shared_ptr<const dolfinx::fem::DofMap> dofmap0 = V0.dofmap();
+  std::shared_ptr<const dolfinx::fem::DofMap> dofmap1 = V1.dofmap();
   assert(dofmap0);
-  auto dofmap1 = V1.dofmap();
   assert(dofmap1);
-
-  // Create and build  sparsity pattern
   assert(dofmap0->index_map);
   assert(dofmap1->index_map);
+
+  // Create and build sparsity pattern
   dolfinx::la::SparsityPattern sp(
       comm, {dofmap1->index_map, dofmap0->index_map},
       {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
@@ -72,7 +76,7 @@ create_sparsity(const dolfinx::fem::FunctionSpace<U>& V0,
   int tdim = mesh->topology()->dim();
   auto map = mesh->topology()->index_map(tdim);
   assert(map);
-  auto c = std::ranges::views::iota(0, map->size_local());
+  auto c = std::views::iota(0, map->size_local());
   dolfinx::fem::sparsitybuild::cells(sp, std::pair{c, c}, {*dofmap1, *dofmap0});
   sp.finalize();
 
@@ -83,62 +87,64 @@ create_sparsity(const dolfinx::fem::FunctionSpace<U>& V0,
 template <typename T, typename U>
 void declare_discrete_operators(nanobind::module_& m)
 {
-  namespace nb = nanobind;
-  m.def("interpolation_matrix",
-        [](const dolfinx::fem::FunctionSpace<U>& V0,
-           const dolfinx::fem::FunctionSpace<U>& V1)
+  m.def(
+      "interpolation_matrix",
+      [](const dolfinx::fem::FunctionSpace<U>& V0,
+         const dolfinx::fem::FunctionSpace<U>& V1)
+      {
+        // Create sparsity
+        dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
+
+        // Build operator
+        dolfinx::la::MatrixCSR<T> A(sp);
+
+        auto [bs0, bs1] = A.block_size();
+        if (bs0 == 1 and bs1 == 1)
         {
-          // Create sparsity
-          dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
+          dolfinx::fem::interpolation_matrix<T, U>(
+              V0, V1, A.template mat_add_values<1, 1>());
+        }
+        else if (bs0 == 2 and bs1 == 1)
+        {
+          dolfinx::fem::interpolation_matrix<T, U>(
+              V0, V1, A.template mat_add_values<2, 1>());
+        }
+        else if (bs0 == 1 and bs1 == 2)
+        {
+          dolfinx::fem::interpolation_matrix<T, U>(
+              V0, V1, A.template mat_add_values<1, 2>());
+        }
+        else if (bs0 == 2 and bs1 == 2)
+        {
+          dolfinx::fem::interpolation_matrix<T, U>(
+              V0, V1, A.template mat_add_values<2, 2>());
+        }
+        else if (bs0 == 3 and bs1 == 1)
+        {
+          dolfinx::fem::interpolation_matrix<T, U>(
+              V0, V1, A.template mat_add_values<3, 1>());
+        }
+        else if (bs0 == 1 and bs1 == 3)
+        {
+          dolfinx::fem::interpolation_matrix<T, U>(
+              V0, V1, A.template mat_add_values<1, 3>());
+        }
+        else if (bs0 == 3 and bs1 == 3)
+        {
+          dolfinx::fem::interpolation_matrix<T, U>(
+              V0, V1, A.template mat_add_values<3, 3>());
+        }
+        else
+        {
+          throw std::invalid_argument(std::format(
+              "Interpolation matrix not supported between block sizes "
+              "{} and {}.",
+              bs0, bs1));
+        }
 
-          // Build operator
-          dolfinx::la::MatrixCSR<T> A(sp);
-
-          auto [bs0, bs1] = A.block_size();
-          if (bs0 == 1 and bs1 == 1)
-          {
-            dolfinx::fem::interpolation_matrix<T, U>(
-                V0, V1, A.template mat_add_values<1, 1>());
-          }
-          else if (bs0 == 2 and bs1 == 1)
-          {
-            dolfinx::fem::interpolation_matrix<T, U>(
-                V0, V1, A.template mat_add_values<2, 1>());
-          }
-          else if (bs0 == 1 and bs1 == 2)
-          {
-            dolfinx::fem::interpolation_matrix<T, U>(
-                V0, V1, A.template mat_add_values<1, 2>());
-          }
-          else if (bs0 == 2 and bs1 == 2)
-          {
-            dolfinx::fem::interpolation_matrix<T, U>(
-                V0, V1, A.template mat_add_values<2, 2>());
-          }
-          else if (bs0 == 3 and bs1 == 1)
-          {
-            dolfinx::fem::interpolation_matrix<T, U>(
-                V0, V1, A.template mat_add_values<3, 1>());
-          }
-          else if (bs0 == 1 and bs1 == 3)
-          {
-            dolfinx::fem::interpolation_matrix<T, U>(
-                V0, V1, A.template mat_add_values<1, 3>());
-          }
-          else if (bs0 == 3 and bs1 == 3)
-          {
-            dolfinx::fem::interpolation_matrix<T, U>(
-                V0, V1, A.template mat_add_values<3, 3>());
-          }
-          else
-          {
-            throw std::runtime_error(
-                "Interpolation matrix not supported between block sizes "
-                + std::to_string(bs0) + " and " + std::to_string(bs1));
-          }
-
-          return A;
-        });
+        return A;
+      },
+      nb::arg("V0"), nb::arg("V1"));
 
   m.def(
       "discrete_curl",
@@ -175,7 +181,6 @@ void declare_discrete_operators(nanobind::module_& m)
 template <typename T, typename U>
 void declare_assembly_functions(nanobind::module_& m)
 {
-  namespace nb = nanobind;
   // Coefficient/constant packing
   m.def(
       "pack_coefficients",
@@ -291,7 +296,12 @@ void declare_assembly_functions(nanobind::module_& m)
         }
         else if (entities.ndim() == 2)
         {
-          assert(entities.shape(1) == 2);
+          if (entities.shape(1) != 2)
+          {
+            throw std::invalid_argument(
+                std::format("2D entities array must have 2 columns, got {}.",
+                            entities.shape(1)));
+          }
           dolfinx::fem::tabulate_expression<T>(
               std::span<T>(values.data(), values.size()), e,
               md::mdspan(coeffs.data(), coeffs.shape(0), coeffs.shape(1)),
@@ -303,8 +313,8 @@ void declare_assembly_functions(nanobind::module_& m)
         }
         else
         {
-          throw std::runtime_error(
-              "Unsupported entities rank in tabulate_expression wrapper.");
+          throw std::invalid_argument(std::format(
+              "entities must have rank 1 or 2, got {}.", entities.ndim()));
         }
       },
       nb::arg("values"), nb::arg("expression"), nb::arg("constants"),
@@ -358,7 +368,8 @@ void declare_assembly_functions(nanobind::module_& m)
             _bcs;
         for (auto bc : bcs)
         {
-          assert(bc);
+          if (!bc)
+            throw std::invalid_argument("bcs contains None.");
           _bcs.push_back(*bc);
         }
 
@@ -370,8 +381,8 @@ void declare_assembly_functions(nanobind::module_& m)
 
         if (data_bs[0] != data_bs[1])
         {
-          throw std::runtime_error(
-              "Non-square blocksize unsupported in Python");
+          throw std::invalid_argument(
+              "Non-square blocksize unsupported in Python.");
         }
 
         if (data_bs[0] == 1)
@@ -438,7 +449,7 @@ void declare_assembly_functions(nanobind::module_& m)
               dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else
-          throw std::runtime_error("Block size not supported in Python");
+          throw std::invalid_argument("Block size not supported in Python.");
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
       nb::arg("bcs"), "Experimental.");
@@ -453,7 +464,8 @@ void declare_assembly_functions(nanobind::module_& m)
             _bcs;
         for (auto bc : bcs)
         {
-          assert(bc);
+          if (!bc)
+            throw std::invalid_argument("bcs contains None.");
           _bcs.push_back(*bc);
         }
 
@@ -489,7 +501,8 @@ void declare_assembly_functions(nanobind::module_& m)
             _bcs;
         for (auto bc : bcs)
         {
-          assert(bc);
+          if (!bc)
+            throw std::invalid_argument("bcs contains None.");
           _bcs.push_back(*bc);
         }
 
@@ -533,7 +546,8 @@ void declare_assembly_functions(nanobind::module_& m)
           auto& _bcs0 = _bcs.emplace_back();
           for (auto bc : bc1)
           {
-            assert(bc);
+            if (!bc)
+              throw std::invalid_argument("bcs1 contains None.");
             _bcs0.push_back(*bc);
           }
         }

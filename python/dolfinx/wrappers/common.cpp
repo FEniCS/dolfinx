@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,6 +8,10 @@
 #include "dolfinx_wrappers/MPICommWrapper.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
@@ -150,8 +154,8 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self)
           {
             std::span ghosts = self.ghosts();
-            return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
-                                                              {ghosts.size()});
+            return nb::ndarray<const std::int64_t, nb::ndim<1>, nb::numpy>(
+                ghosts.data(), {ghosts.size()});
           },
           nb::rv_policy::reference_internal, "Return list of ghost indices")
       .def_prop_ro(
@@ -183,7 +187,7 @@ void common(nb::module_& m)
                                  local);
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
-          nb::arg("global_index"));
+          nb::arg("global"));
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
@@ -208,7 +212,7 @@ void common(nb::module_& m)
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::flush,
            "Flush timer");
 
-  m.def("timing", &dolfinx::timing);
+  m.def("timing", &dolfinx::timing, nb::arg("task"));
   m.def("timings", &dolfinx::timings);
 
   m.def("hardware_concurrency",
@@ -252,7 +256,7 @@ void common(nb::module_& m)
         for (std::size_t i = 0; i < indices.size(); ++i)
         {
           if (indices.data()[i] < 0 or indices.data()[i] >= size)
-            throw std::runtime_error("Index out of range in indices array.");
+            throw std::out_of_range("Index out of range in indices array.");
         }
         auto [map, submap_to_map] = dolfinx::common::create_sub_index_map(
             imap, std::span(indices.data(), indices.size()),
