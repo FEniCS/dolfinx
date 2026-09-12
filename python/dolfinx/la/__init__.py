@@ -391,8 +391,9 @@ def matrix_csr(
 def vector(
     map: IndexMap,
     bs: int = 1,
-    scatterer: Scatterer | None = None,
     dtype: npt.DTypeLike = np.float64,
+    *,
+    scatterer: Scatterer | None = None,
 ) -> Vector:
     """Create a distributed vector.
 
@@ -400,9 +401,9 @@ def vector(
         map: Index map the describes the size and distribution of the
             vector.
         bs: Block size.
+        dtype: The scalar type.
         scatterer: Scatterer compatible with ``map``. If ``None``, a
             new scatterer is created.
-        dtype: The scalar type.
 
     Returns:
         A distributed vector.
