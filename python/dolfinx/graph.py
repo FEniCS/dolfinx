@@ -13,7 +13,13 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.graph import partition_hilbert, partition_morton, partitioner
+from dolfinx.cpp.graph import (
+    partition_hilbert,
+    partition_morton,
+    partitioner,
+    reorder_hilbert,
+    reorder_morton,
+)
 from dolfinx.typing import Index
 
 # Import graph partitioners, which may or may not be available
@@ -51,6 +57,8 @@ __all__ = [
     "partition_hilbert",
     "partition_morton",
     "partitioner",
+    "reorder_hilbert",
+    "reorder_morton",
 ]
 
 

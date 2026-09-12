@@ -20,26 +20,27 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <format>
-#include <functional>
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <string>
+#include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-mesh::impl::reorder_cells(const CellReorderFunction& reorder_fn,
-                          std::optional<std::int32_t> max_facet_to_cell_links,
-                          const std::vector<CellType>& celltypes,
-                          const std::vector<fem::ElementDofLayout>& doflayouts,
-                          const std::vector<std::vector<int>>& ghost_owners,
-                          std::vector<std::vector<std::int64_t>>& cells,
-                          std::vector<std::span<std::int64_t>>& cells_v,
-                          std::vector<std::vector<std::int64_t>>& original_idx,
-                          int num_threads)
+std::vector<std::int64_t> mesh::impl::reorder_cells(
+    const graph::Reorder& reorder_fn, std::span<const double> cell_centroids,
+    int gdim, std::optional<std::int32_t> max_facet_to_cell_links,
+    const std::vector<CellType>& celltypes,
+    const std::vector<fem::ElementDofLayout>& doflayouts,
+    const std::vector<std::vector<int>>& ghost_owners,
+    std::vector<std::vector<std::int64_t>>& cells,
+    std::vector<std::span<std::int64_t>>& cells_v,
+    std::vector<std::vector<std::int64_t>>& original_idx, int num_threads)
 {
   // Build local dual graph for owned cells to (i) get list of vertices
   // on the process boundary and (ii) apply re-ordering to cells for
@@ -53,27 +54,46 @@ mesh::impl::reorder_cells(const CellReorderFunction& reorder_fn,
   // vertices per facet), which can differ between cell types.
   std::vector<std::pair<std::vector<std::int64_t>, int>> facets;
 
-  // Build lists of cells (by cell type) that excludes ghosts
-  std::vector<std::span<const std::int64_t>> cells1_v_local;
+  std::size_t cell_offset = 0;
   for (std::size_t i = 0; i < celltypes.size(); ++i)
   {
-    int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
-    std::size_t num_owned_cells
+    const int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
+    const std::size_t num_owned_cells
         = cells_v[i].size() / num_cell_vertices - ghost_owners[i].size();
-    cells1_v_local.emplace_back(cells_v[i].data(),
-                                num_owned_cells * num_cell_vertices);
+    const std::span<const std::int64_t> cells_v_owned(
+        cells_v[i].data(), num_owned_cells * num_cell_vertices);
 
-    // Build local dual graph for cell type
+    // Build local dual graph for cell type, from the owned (non-ghost)
+    // cells only
     auto [graph, unmatched_facets, max_v, _facet_attached_cells]
         = build_local_dual_graph(std::vector{celltypes[i]},
-                                 std::vector{cells1_v_local.back()},
+                                 std::vector{cells_v_owned},
                                  max_facet_to_cell_links, num_threads);
 
     // Store unmatched_facets for current cell type
     facets.emplace_back(std::move(unmatched_facets), max_v);
 
-    // Compute re-ordering of graph
-    const std::vector<std::int32_t> remap = reorder_fn(graph);
+    // Compute graph reordering.
+    const std::vector<std::int32_t> remap = std::visit(
+        [cell_centroids, gdim, cell_offset, num_owned_cells,
+         &graph](const auto& fn) -> std::vector<std::int32_t>
+        {
+          using F = std::decay_t<decltype(fn)>;
+          if constexpr (std::is_same_v<F, graph::reorder_graph_fn>)
+            return fn ? fn(graph) : graph::reorder_rcm(graph);
+          else
+          {
+            if (!fn)
+              throw std::invalid_argument(
+                  "Geometric cell reordering function is empty.");
+            return fn(
+                cell_centroids.subspan(cell_offset, gdim * num_owned_cells),
+                gdim);
+          }
+        },
+        reorder_fn);
+
+    cell_offset += gdim * num_owned_cells;
 
     // Update 'original' indices
     const std::vector<std::int64_t>& orig_idx = original_idx[i];

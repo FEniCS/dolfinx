@@ -1,5 +1,5 @@
-# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells and
-# Jørgen S. Dokken
+# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells, Jørgen S.
+# Dokken, Paul T. Kühner and Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -35,11 +35,9 @@ from dolfinx.cpp.mesh import (
 from dolfinx.cpp.refinement import (
     IdentityPartitionerPlaceholder,
     RefinementOption,
-    mark_maximum,
 )
-from dolfinx.cpp.refinement import (
-    uniform_refine as _uniform_refine,
-)
+from dolfinx.cpp.refinement import mark_maximum as _mark_maximum
+from dolfinx.cpp.refinement import uniform_refine as _uniform_refine
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem.element import _coordinate_element_from_basix
 from dolfinx.graph import AdjacencyList
@@ -941,6 +939,42 @@ def _get_mesh_partitioner(
     return partitioner, None
 
 
+def mark_maximum(
+    values: npt.NDArray[Real],
+    index_map: _IndexMap,
+    theta: float,
+) -> npt.NDArray[np.int32]:
+    r"""Return local indices of values exceeding a fraction of the max.
+
+    Computes the maximum :math:`\max_j v_j` of ``values`` over the locally
+    owned entries on every rank of ``index_map``'s communicator, and
+    returns the local indices :math:`i` satisfying
+    :math:`v_i > \theta \max_j v_j`. This is commonly referred to as
+    'maximum marking' in the adaptive finite element literature.
+
+    Note:
+        Ghost entries of ``values`` must be up to date, i.e.
+        ``scatter_forward`` must have been called since the owned entries
+        were last modified.
+
+        :math:`\theta = 1` marks nothing, since no entry can strictly
+        exceed the true maximum. :math:`\theta = 0` is rejected, since the
+        threshold would be 0 and the criterion would degenerate to marking
+        every entry with a positive value.
+
+    Args:
+        values: Values, often with each entry associated with a mesh
+            entity, e.g. an error indicator.
+        index_map: Index map describing the parallel layout of ``values``.
+        theta: Cut-off parameter, :math:`0 < \theta \le 1`.
+
+    Returns:
+        Local indices, ascending and including ghosts, of the entries
+        satisfying :math:`v_i > \theta \max_j v_j`.
+    """
+    return _mark_maximum(values, index_map, theta)
+
+
 def _create_mesh_coordinate_element(
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     gdim: int,
@@ -995,10 +1029,11 @@ def create_mesh(
             be connected to.
         num_threads: Number of threads to use to build mesh. Must be
             greater than 0.
-        reorder_fn: Function called with the local cell dual graph. It
-            must return an array that maps each cell index to its new
-            index. If ``None`` (default), reverse Cuthill-McKee ordering
-            is used.
+        reorder_fn: A graph reordering callable receives the local cell
+            dual graph. The built-in ``graph.reorder_morton`` and
+            ``graph.reorder_hilbert`` receive local cell centroids. Both
+            return an array mapping each cell index to its new index. If
+            ``None`` (default), reverse Cuthill-McKee ordering is used.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
