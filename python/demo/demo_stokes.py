@@ -573,17 +573,17 @@ def mixed_direct():
 
     # No slip boundary condition
     W0 = W.sub(0)
-    Q, _ = W0.collapse()
-    noslip = Function(Q)
+    V, _ = W0.collapse()
+    noslip = Function(V)
     facets = locate_entities_boundary(msh, 1, noslip_boundary)
-    dofs = locate_dofs_topological((W0, Q), 1, facets)
+    dofs = locate_dofs_topological((W0, V), 1, facets)
     bc0 = dirichletbc(noslip, dofs, W0)
 
     # Driving velocity condition u = (1, 0) on top boundary (y = 1)
-    lid_velocity = Function(Q)
+    lid_velocity = Function(V)
     lid_velocity.interpolate(lid_velocity_expression)
     facets = locate_entities_boundary(msh, 1, lid)
-    dofs = locate_dofs_topological((W0, Q), 1, facets)
+    dofs = locate_dofs_topological((W0, V), 1, facets)
     bc1 = dirichletbc(lid_velocity, dofs, W0)
 
     # Collect Dirichlet boundary conditions
@@ -592,7 +592,7 @@ def mixed_direct():
     # Define variational problem
     (u, p) = ufl.TrialFunctions(W)
     (v, q) = ufl.TestFunctions(W)
-    f = Function(Q)
+    f = Function(V)
     a = form(
         (ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(p, ufl.div(v)) + ufl.inner(ufl.div(u), q))
         * ufl.dx
@@ -641,6 +641,17 @@ def mixed_direct():
         else:
             raise e
 
+    # Create the null vector and set the pressure dofs to 1.0
+    _Q, Q_to_W = W.sub(1).collapse()
+    null_v = Function(W)
+    null_v.x.array[Q_to_W] = 1.0
+    null_v.x.petsc_vec.normalize()
+
+    # Create the nullspace and remove that component from our solution
+    nsp = PETSc.NullSpace().create(vectors=[null_v.x.petsc_vec])
+    nsp.remove(U.x.petsc_vec)
+    U.x.scatter_forward()
+
     # Split the mixed solution and collapse
     u, p = U.sub(0).collapse(), U.sub(1).collapse()
 
@@ -650,7 +661,7 @@ def mixed_direct():
         print(f"(D) Norm of velocity coefficient vector (monolithic, direct): {norm_u}")
         print(f"(D) Norm of pressure coefficient vector (monolithic, direct): {norm_p}")
 
-    return norm_u, norm_u
+    return norm_u, norm_p
 
 
 # Solve using LinearProblem class
@@ -678,5 +689,8 @@ np.testing.assert_allclose(norm_p_3, norm_p_0, rtol=1e-4)
 # Solve using a non-blocked matrix and an LU solver
 
 norm_u_4, norm_p_4 = mixed_direct()
-if PETSc.IntType != np.int64:
+use_superlu = PETSc.IntType == np.int64
+if not use_superlu:
+    # SuperLU does not support finding null-pivots.
     np.testing.assert_allclose(norm_u_4, norm_u_0, rtol=1e-4)
+    np.testing.assert_allclose(norm_p_4, norm_p_0, rtol=1e-4)
