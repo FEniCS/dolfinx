@@ -17,6 +17,7 @@
 #include <iostream>
 #include <numeric>
 #include <set>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -387,6 +388,47 @@ void test_rank_weights()
     REQUIRE(weight_dest.empty());
   }
 }
+
+/// Check the one-shot common::scatter_fwd/scatter_rev helpers. Only
+/// std::int8_t is exercised here: the other host types are covered
+/// through the Python bindings, which delegate to these helpers, but are
+/// instantiated only for int64/float/double.
+void test_scatter_helpers_int8()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+  constexpr int bs = 2;
+
+  const common::IndexMap idx_map
+      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
+  const std::int32_t num_ghosts = idx_map.num_ghosts();
+  const common::Scatterer sct(idx_map);
+
+  // Forward scatter the owning rank (+1, to keep zero distinguishable
+  // from an untouched buffer)
+  const std::vector<std::int8_t> data_local(
+      bs * size_local, static_cast<std::int8_t>(1 + mpi_rank % 5));
+  std::vector<std::int8_t> data_ghost(bs * num_ghosts, 0);
+  common::scatter_fwd<std::int8_t>(sct,
+                                   std::span<const std::int8_t>(data_local),
+                                   std::span<std::int8_t>(data_ghost), bs);
+  const std::int8_t expected
+      = static_cast<std::int8_t>(1 + (mpi_rank + 1) % mpi_size % 5);
+  CHECK(std::ranges::all_of(data_ghost, [expected](std::int8_t v)
+                            { return v == expected; }));
+
+  // Reverse scatter, accumulating each ghost value onto its owner. Every
+  // ghost index is ghosted by exactly one rank, so each contribution
+  // arrives once.
+  std::ranges::fill(data_ghost, std::int8_t(2));
+  std::vector<std::int8_t> data_owned(bs * size_local, 0);
+  common::scatter_rev<std::int8_t>(sct, std::span<std::int8_t>(data_owned),
+                                   std::span<const std::int8_t>(data_ghost), bs,
+                                   std::plus<std::int8_t>());
+  CHECK(std::accumulate(data_owned.begin(), data_owned.end(), std::int64_t(0))
+        == 2 * bs * num_ghosts);
+}
 } // namespace
 
 TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
@@ -432,4 +474,9 @@ TEST_CASE("Split IndexMap communicator by type", "[index_map_comm_split]")
 TEST_CASE("IndexMap stats", "[index_map_stats]")
 {
   CHECK_NOTHROW(test_rank_weights());
+}
+
+TEST_CASE("One-shot scatter helpers", "[index_map_scatter_helpers]")
+{
+  CHECK_NOTHROW(test_scatter_helpers_int8());
 }
