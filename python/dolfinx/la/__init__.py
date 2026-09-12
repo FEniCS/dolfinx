@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2025 Garth N. Wells, Jack S. Hale
+# Copyright (C) 2017-2026 Garth N. Wells, Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -91,6 +91,11 @@ class Vector(Generic[_T]):
     def block_size(self) -> int:
         """Block size for the vector."""
         return self._cpp_object.bs
+
+    @property
+    def scatterer(self) -> _cpp.common.Scatterer:
+        """Scatterer used for ghost communication."""
+        return self._cpp_object.scatterer
 
     @property
     def array(self) -> npt.NDArray[_T]:
@@ -382,13 +387,20 @@ def matrix_csr(
     return MatrixCSR(ftype(sp, block_mode))
 
 
-def vector(map: IndexMap, bs: int = 1, dtype: npt.DTypeLike = np.float64) -> Vector:
+def vector(
+    map: IndexMap,
+    bs: int = 1,
+    scatterer: _cpp.common.Scatterer | None = None,
+    dtype: npt.DTypeLike = np.float64,
+) -> Vector:
     """Create a distributed vector.
 
     Args:
         map: Index map the describes the size and distribution of the
             vector.
         bs: Block size.
+        scatterer: Scatterer compatible with ``map``. If ``None``, a
+            new scatterer is created.
         dtype: The scalar type.
 
     Returns:
@@ -420,7 +432,10 @@ def vector(map: IndexMap, bs: int = 1, dtype: npt.DTypeLike = np.float64) -> Vec
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    return Vector(vtype(map, bs))
+    if scatterer is None:
+        return Vector(vtype(map, bs))
+    else:
+        return Vector(vtype(map, bs, scatterer))
 
 
 def orthonormalize(basis: list[Vector[_T]]) -> None:
