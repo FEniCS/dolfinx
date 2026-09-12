@@ -15,10 +15,7 @@
 #include <format>
 #include <limits>
 #include <mpi.h>
-<<<<<<< HEAD
 #include <numeric>
-=======
->>>>>>> main
 #include <span>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
