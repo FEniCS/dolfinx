@@ -34,7 +34,15 @@ def test_scatter_forward(dtype):
     # Fill local part with rank of this process and scatter
     v[: map.size_local] = comm.rank
     assert np.all(v[map.size_local :] == 0)
-    sc.scatter_fwd(v, v[map.size_local :], 1)
+
+    local_idx = sc.local_indices_block
+    remote_idx = sc.remote_indices_block
+    send_buffer = v[local_idx]
+    recv_buffer = np.empty(remote_idx.size, dtype=dtype)
+    request = sc.scatter_fwd_begin(send_buffer, recv_buffer, 1)
+    sc.scatter_fwd_end(request)
+    v[map.size_local :][remote_idx] = recv_buffer
+
     # Received values should match the owners in the index map
     assert np.all(v[map.size_local :] == map.owners)
 
@@ -57,5 +65,12 @@ def test_scatter_reverse(dtype):
     v = np.zeros((local_size + map.num_ghosts), dtype=dtype)
     v[local_size:] = 1
 
-    sc.scatter_rev(v, v[local_size:], 1)
+    local_idx = sc.local_indices_block
+    remote_idx = sc.remote_indices_block
+    send_buffer = v[local_size:][remote_idx]
+    recv_buffer = np.empty(local_idx.size, dtype=dtype)
+    request = sc.scatter_rev_begin(send_buffer, recv_buffer, 1)
+    sc.scatter_rev_end(request)
+    np.add.at(v, local_idx, recv_buffer)
+
     assert sum(v[:local_size]) == comm.size - 1

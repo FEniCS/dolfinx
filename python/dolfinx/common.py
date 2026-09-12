@@ -102,8 +102,6 @@ class Scatterer:
     ``send_buffer``/``recv_buffer`` swapped, and accumulating (rather
     than assigning) into the destination array; see
     :meth:`scatter_rev_begin` and :meth:`scatter_rev_end`.
-    :meth:`scatter_fwd`/:meth:`scatter_rev` implement this pattern as
-    a single blocking call.
     """
 
     _cpp_object: _cpp.common.Scatterer
@@ -193,30 +191,6 @@ class Scatterer:
         """
         self._cpp_object.scatter_fwd_end(request)
 
-    def scatter_fwd(
-        self, local_data: _ScatterArray, remote_data: _ScatterArray, bs: int = 1
-    ) -> None:
-        """Scatter owned data to processes that ghost it.
-
-        Args:
-            local_data: Array holding the owned data, blocked by
-                ``bs``. Must be at least as long as the number of
-                owned entries that are ghosted elsewhere.
-            remote_data: Array to fill with the ghost values received
-                from owning processes, blocked by ``bs``.
-            bs: Number of values associated with each index map index.
-        """
-        local_idx = self.local_indices_block
-        remote_idx = self.remote_indices_block
-
-        send_buffer = local_data.reshape(-1, bs)[local_idx].reshape(-1)
-        recv_buffer = np.empty(bs * remote_idx.size, dtype=local_data.dtype)
-
-        request = self.scatter_fwd_begin(send_buffer, recv_buffer, bs)
-        self.scatter_fwd_end(request)
-
-        remote_data.reshape(-1, bs)[remote_idx] = recv_buffer.reshape(-1, bs)
-
     def scatter_rev_begin(
         self, send_buffer: _ScatterArray, recv_buffer: _ScatterArray, bs: int = 1
     ) -> _MPI.Request:
@@ -265,34 +239,6 @@ class Scatterer:
             request: Request returned by :meth:`scatter_rev_begin`.
         """
         self._cpp_object.scatter_rev_end(request)
-
-    def scatter_rev(
-        self, local_data: _ScatterArray, remote_data: _ScatterArray, bs: int = 1
-    ) -> None:
-        """Scatter ghost data to owning processes, accumulating.
-
-        Args:
-            local_data: Array holding the owned data, blocked by
-                ``bs``. Updated in-place with values accumulated from
-                ``remote_data``.
-            remote_data: Array holding the ghost values to send to
-                owning processes, blocked by ``bs``.
-            bs: Number of values associated with each index map index.
-        """
-        local_idx = self.local_indices_block
-        remote_idx = self.remote_indices_block
-
-        send_buffer = remote_data.reshape(-1, bs)[remote_idx].reshape(-1)
-        recv_buffer = np.empty(bs * local_idx.size, dtype=local_data.dtype)
-
-        request = self.scatter_rev_begin(send_buffer, recv_buffer, bs)
-        self.scatter_rev_end(request)
-
-        # local_idx may repeat (an owned entry can be ghosted by more
-        # than one rank), so plain `local_data[local_idx] += ...` would
-        # silently drop all but one contribution per repeated index;
-        # np.add.at accumulates unbuffered, handling repeats correctly.
-        np.add.at(local_data.reshape(-1, bs), local_idx, recv_buffer.reshape(-1, bs))
 
 
 def scatterer(index_map: IndexMap) -> Scatterer:
