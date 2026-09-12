@@ -14,6 +14,7 @@ import numpy.typing as npt
 
 import dolfinx
 from dolfinx import cpp as _cpp
+from dolfinx.common import Scatterer
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 from dolfinx.typing import Scalar
@@ -93,9 +94,9 @@ class Vector(Generic[_T]):
         return self._cpp_object.bs
 
     @property
-    def scatterer(self) -> _cpp.common.Scatterer:
+    def scatterer(self) -> Scatterer:
         """Scatterer used for ghost communication."""
-        return self._cpp_object.scatterer
+        return Scatterer(self._cpp_object.scatterer)
 
     @property
     def array(self) -> npt.NDArray[_T]:
@@ -390,7 +391,7 @@ def matrix_csr(
 def vector(
     map: IndexMap,
     bs: int = 1,
-    scatterer: _cpp.common.Scatterer | None = None,
+    scatterer: Scatterer | None = None,
     dtype: npt.DTypeLike = np.float64,
 ) -> Vector:
     """Create a distributed vector.
@@ -435,7 +436,7 @@ def vector(
     if scatterer is None:
         return Vector(vtype(map, bs))
     else:
-        return Vector(vtype(map, bs, scatterer))
+        return Vector(vtype(map, bs, scatterer._cpp_object))
 
 
 def orthonormalize(basis: list[Vector[_T]]) -> None:

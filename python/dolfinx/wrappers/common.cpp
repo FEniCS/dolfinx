@@ -78,6 +78,8 @@ void common(nb::module_& m)
   declare_scatter_functions<std::int64_t>(sc);
   declare_scatter_functions<double>(sc);
   declare_scatter_functions<float>(sc);
+  declare_scatter_functions<std::complex<double>>(sc);
+  declare_scatter_functions<std::complex<float>>(sc);
 
   // dolfinx::common::IndexMap
   nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")

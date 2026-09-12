@@ -121,7 +121,7 @@ def test_vector_from_scatterer():
 
     x = la.vector(index_map)
     y = la.vector(index_map, scatterer=x.scatterer)
-    assert y.scatterer is x.scatterer
+    assert y.scatterer._cpp_object is x.scatterer._cpp_object
 
     y.array[: index_map.size_local] = np.arange(*index_map.local_range)
     y.scatter_forward()
