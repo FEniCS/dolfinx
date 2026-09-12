@@ -36,6 +36,7 @@
 
 namespace dolfinx_wrappers
 {
+namespace nb = nanobind;
 
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
@@ -46,8 +47,6 @@ using mdspan_t = md::mdspan<const T, md::dextents<std::size_t, ndim>>;
 template <typename T>
 void declare_xdmf_real_fn(auto&& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "write_mesh",
       [](dolfinx::io::XDMFFile& self, const dolfinx::mesh::Mesh<T>& mesh,
@@ -68,8 +67,6 @@ void declare_xdmf_real_fn(auto&& m)
 template <typename T, typename U>
 void declare_xdmf_scalar_fn(auto&& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "write_function",
       [](dolfinx::io::XDMFFile& self, const dolfinx::fem::Function<T, U>& u,
@@ -82,8 +79,6 @@ void declare_xdmf_scalar_fn(auto&& m)
 template <typename T>
 void declare_vtk_real_fn(auto&& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "write",
       [](dolfinx::io::VTKFile& self, const dolfinx::mesh::Mesh<T>& mesh,
@@ -95,8 +90,6 @@ void declare_vtk_real_fn(auto&& m)
 template <typename T, typename U>
 void declare_vtk_scalar_fn(auto&& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "write",
       [](dolfinx::io::VTKFile& self,
@@ -123,8 +116,6 @@ void declare_vtk_scalar_fn(auto&& m)
 template <typename T>
 void declare_vtx_writer(nanobind::module_& m, std::string_view type)
 {
-  namespace nb = nanobind;
-
   std::string pyclass_name = std::string("VTXWriter_").append(type);
   auto vtx_writer
       = nb::class_<dolfinx::io::VTXWriter<T>>(m, pyclass_name.c_str());
@@ -197,8 +188,6 @@ void declare_vtx_writer(nanobind::module_& m, std::string_view type)
 template <typename T>
 void declare_data_types(nanobind::module_& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "distribute_entity_data",
       [](const dolfinx::mesh::Topology& topology,

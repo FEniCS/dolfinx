@@ -33,6 +33,7 @@
 
 namespace dolfinx_wrappers
 {
+namespace nb = nanobind;
 
 // InsertMode types for Python bindings
 enum class PyInsertMode : std::uint8_t
@@ -48,8 +49,6 @@ enum class PyInsertMode : std::uint8_t
 template <typename T>
 void declare_la_objects(nanobind::module_& m, std::string_view type)
 {
-  namespace nb = nanobind;
-
   // dolfinx::la::Vector
   std::string pyclass_vector_name = std::string("Vector_").append(type);
   nb::class_<dolfinx::la::Vector<T>>(m, pyclass_vector_name.c_str())
@@ -262,8 +261,6 @@ void declare_la_objects(nanobind::module_& m, std::string_view type)
 template <typename T>
 void declare_la_functions(nanobind::module_& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "norm", [](const dolfinx::la::Vector<T>& x, dolfinx::la::Norm type)
       { return dolfinx::la::norm(x, type); }, nb::arg("vector"),
@@ -314,8 +311,6 @@ void declare_la_functions(nanobind::module_& m)
 template <typename T>
 void declare_superlu_dist_matrix(nanobind::module_& m, std::string_view type)
 {
-  namespace nb = nanobind;
-
   // dolfinx::la::SuperLUDistMatrix
   std::string name = std::string("SuperLUDistMatrix_").append(type);
   nb::class_<dolfinx::la::SuperLUDistMatrix<T>>(m, name.c_str())
@@ -336,8 +331,6 @@ void declare_superlu_dist_matrix(nanobind::module_& m, std::string_view type)
 template <typename T>
 void declare_superlu_dist_solver(nanobind::module_& m, std::string_view type)
 {
-  namespace nb = nanobind;
-
   // dolfinx::la::SuperLUDistSolver
   std::string name = std::string("SuperLUDistSolver_").append(type);
   nb::class_<dolfinx::la::SuperLUDistSolver<T>>(m, name.c_str())

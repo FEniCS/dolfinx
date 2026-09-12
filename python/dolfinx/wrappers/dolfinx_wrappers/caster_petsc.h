@@ -18,8 +18,6 @@
 
 // nanobind casters for PETSc/petsc4py objects
 
-namespace nb = nanobind;
-
 // Import petsc4py on demand
 #define VERIFY_PETSC4PY_FROMPY(func)                                           \
   if (!func)                                                                   \
@@ -64,7 +62,7 @@ namespace nb = nanobind;
         dolfinx::common::petsc::check(                                         \
             PetscObjectDereference((PetscObject)src),                          \
             "PetscObjectDereference");                                         \
-        return nb::handle(obj);                                                \
+        return handle(obj);                                                    \
       }                                                                        \
       else if (policy == rv_policy::automatic                                  \
                or policy == rv_policy::automatic_reference                     \
@@ -72,7 +70,7 @@ namespace nb = nanobind;
                or policy == rv_policy::reference_internal)                     \
       {                                                                        \
         PyObject* obj = PyPetsc##P4PYTYPE##_New(src);                          \
-        return nb::handle(obj);                                                \
+        return handle(obj);                                                    \
       }                                                                        \
       else                                                                     \
       {                                                                        \

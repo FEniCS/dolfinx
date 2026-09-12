@@ -47,6 +47,7 @@
 
 namespace dolfinx_wrappers
 {
+namespace nb = nanobind;
 
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
@@ -86,7 +87,6 @@ create_sparsity(const dolfinx::fem::FunctionSpace<U>& V0,
 template <typename T, typename U>
 void declare_discrete_operators(nanobind::module_& m)
 {
-  namespace nb = nanobind;
   m.def(
       "interpolation_matrix",
       [](const dolfinx::fem::FunctionSpace<U>& V0,
@@ -181,7 +181,6 @@ void declare_discrete_operators(nanobind::module_& m)
 template <typename T, typename U>
 void declare_assembly_functions(nanobind::module_& m)
 {
-  namespace nb = nanobind;
   // Coefficient/constant packing
   m.def(
       "pack_coefficients",

@@ -43,7 +43,10 @@
 #include <variant>
 #include <vector>
 
+namespace dolfinx_wrappers
+{
 namespace nb = nanobind;
+}
 
 namespace dolfinx_wrappers::part::impl
 {

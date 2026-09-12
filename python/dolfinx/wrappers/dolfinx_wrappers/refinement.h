@@ -32,12 +32,11 @@
 
 namespace dolfinx_wrappers
 {
+namespace nb = nanobind;
 
 template <std::floating_point T>
 void declare_refinement(nanobind::module_& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "uniform_refine",
       [](const dolfinx::mesh::Mesh<T>& mesh,

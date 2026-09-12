@@ -21,6 +21,7 @@
 
 namespace dolfinx_wrappers
 {
+namespace nb = nanobind;
 
 /// @brief Check that every entry of `idx` is a valid index into an array
 /// of `size` entries.
@@ -50,8 +51,6 @@ template <typename T>
 void declare_scatter_functions(
     nanobind::class_<dolfinx::common::Scatterer<>>& sc)
 {
-  namespace nb = nanobind;
-
   sc.def(
       "scatter_fwd",
       [](dolfinx::common::Scatterer<>& self,

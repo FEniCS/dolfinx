@@ -35,6 +35,7 @@
 
 namespace dolfinx_wrappers
 {
+namespace nb = nanobind;
 
 /// Number of points in an array assumed to hold 3D point coordinates,
 /// either as a single point (shape (3,)) or a list of points (shape
