@@ -15,6 +15,7 @@
 #include <format>
 #include <limits>
 #include <mpi.h>
+#include <numeric>
 #include <span>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
@@ -93,6 +94,71 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
   spdlog::info("Marking (maximum): marked {} of {} local entries (owned + "
                "ghost).",
                indices.size(), n);
+
+  return indices;
+}
+
+/// @brief Computes equidistribution threshold marking of a squared indicator.
+///
+/// Returns the indices \f$i\f$ of the squared indicators \f$ \eta_i^2 \f$ that
+/// satisfy the equidistribution threshold: \f$ \eta_i^2 > \theta^2
+/// \frac{||\eta||^2}{N} \f$ where \f$ N \f$ is the (global) number of
+/// indicators.
+///
+/// @warning `squared_indicators` must contain owned entities only. Ghost
+/// values cause double-counting in the global sum reductions.
+///
+/// @param[in] values Squared indicators \f$ \eta^2_i \f$, usually associated
+/// with mesh entity \f$ i \f$.
+/// @param[in] index_map Index map describing the parallel layout of @p
+///   values.
+/// @param[in] theta Parameter, \f$ 0 < \theta \leq 1 \f$.
+/// @return Local indices, ascending and including ghosts, of @p values that
+/// satisfy the threshold.
+template <std::floating_point T>
+std::vector<std::int32_t>
+mark_equidistribution(std::span<const T> values,
+                      const common::IndexMap& index_map,
+                      std::type_identity_t<T> theta)
+{
+  if ((theta <= 0) or (theta > 1))
+  {
+    throw std::invalid_argument(
+        std::format("theta must satisfy 0 < theta <= 1, got {}.", theta));
+  }
+
+  std::int32_t n = values.size();
+  std::int32_t size = index_map.size_local() + index_map.num_ghosts();
+  if (n != size)
+  {
+    throw std::invalid_argument(
+        std::format("values must have size index_map.size_local() + "
+                    "index_map.num_ghosts() = {}, got {}.",
+                    size, n));
+  }
+
+  T norm = std::accumulate(values.begin(),
+                           values.begin() + index_map.size_local(), T{0});
+
+  MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM,
+                index_map.comm());
+
+  T threshold = theta * theta * norm / static_cast<T>(index_map.size_global());
+
+  auto mark = [threshold](T e) { return e > threshold; };
+
+  std::vector<std::int32_t> indices;
+  indices.reserve(std::ranges::count_if(values, mark));
+  for (std::int32_t i = 0; i < n; ++i)
+  {
+    if (mark(values[i]))
+      indices.push_back(i);
+  }
+
+  spdlog::info(
+      "Marking (equidistribution): marked {} of {} local entries (owned + "
+      "ghost).",
+      indices.size(), n);
 
   return indices;
 }
