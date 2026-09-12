@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Garth N. Wells, Chris Richardson, Joseph P. Dean and
+// Copyright (C) 2019-2026 Garth N. Wells, Chris Richardson, Joseph P. Dean and
 // Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -13,6 +13,7 @@
 #include <basix/mdspan.hpp>
 #include <cassert>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/EntityMap.h>
@@ -25,6 +26,7 @@
 #include <span>
 #include <stdexcept>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -170,6 +172,26 @@ public:
   {
     if (!_mesh)
       throw std::invalid_argument("Form Mesh is null.");
+    if (std::ranges::any_of(
+            _function_spaces,
+            [](const std::shared_ptr<const FunctionSpace<geometry_type>>& V)
+            { return not V; }))
+    {
+      throw std::invalid_argument("Form argument function space is null.");
+    }
+    for (const auto& [key, integral] : _integrals)
+    {
+      for (int c : integral.coeffs)
+      {
+        if (c < 0 or std::cmp_greater_equal(c, _coefficients.size()))
+        {
+          throw std::invalid_argument(
+              "Form integral references an invalid coefficient index.");
+        }
+        if (not _coefficients[c])
+          throw std::invalid_argument("Form integral coefficient is null.");
+      }
+    }
 
     // `_mesh` is fixed for the remainder of construction, so its
     // topology and dimension are fetched once and reused below rather
@@ -338,11 +360,9 @@ public:
     }
   }
 
-  /// @brief Copy constructor (deleted).
-  ///
-  /// @note Deleted because ::_edata and ::_cdata cache `std::span`s
-  /// aliasing the entity vectors owned by ::_integrals; a shallow copy
-  /// would leave the copy's spans pointing into the original's data.
+  // Copy constructor (deleted)
+  // _edata and _cdata cache spans into _integrals, so a shallow copy would
+  // leave spans pointing into the original Form.
   Form(const Form& form) = delete;
 
   /// @brief Move constructor.
@@ -353,18 +373,26 @@ public:
   Form(Form&& form) = default;
 
   /// Destructor
-  virtual ~Form() = default;
+  ~Form() = default;
+
+  // Copy assignment (deleted)
+  Form& operator=(const Form& form) = delete;
+
+  /// Move assignment
+  ///
+  /// @note Valid for the same reason as the move constructor.
+  Form& operator=(Form&& form) = default;
 
   /// @brief Rank of the form.
   ///
   /// bilinear form = 2, linear form = 1, functional = 0, etc.
   ///
   /// @return The rank of the form.
-  int rank() const { return _function_spaces.size(); }
+  int rank() const noexcept { return _function_spaces.size(); }
 
   /// @brief Common mesh for the form (the 'integration domain').
   /// @return The integration domain mesh.
-  std::shared_ptr<const mesh::Mesh<geometry_type>> mesh() const
+  std::shared_ptr<const mesh::Mesh<geometry_type>> mesh() const noexcept
   {
     return _mesh;
   }
@@ -372,7 +400,7 @@ public:
   /// @brief Function spaces for all arguments.
   /// @return Function spaces.
   const std::vector<std::shared_ptr<const FunctionSpace<geometry_type>>>&
-  function_spaces() const
+  function_spaces() const noexcept
   {
     return _function_spaces;
   }
@@ -574,7 +602,7 @@ public:
   /// @return Coefficients in the form.
   const std::vector<
       std::shared_ptr<const Function<scalar_type, geometry_type>>>&
-  coefficients() const
+  coefficients() const noexcept
   {
     return _coefficients;
   }
@@ -582,7 +610,10 @@ public:
   /// @brief Get bool indicating whether permutation data needs to be
   /// passed into these integrals.
   /// @return True if cell permutation data is required
-  bool needs_facet_permutations() const { return _needs_facet_permutations; }
+  bool needs_facet_permutations() const noexcept
+  {
+    return _needs_facet_permutations;
+  }
 
   /// @brief Offset for each coefficient expansion array on a cell.
   ///
@@ -606,7 +637,7 @@ public:
   /// @brief Access constants.
   /// @return Constants in the form.
   const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
-  constants() const
+  constants() const noexcept
   {
     return _constants;
   }
