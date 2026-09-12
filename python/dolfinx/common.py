@@ -136,7 +136,11 @@ class Scatterer:
         request = self._cpp_object.scatter_rev_begin(remote_buffer, local_buffer, bs)
         self._cpp_object.scatter_rev_end(request)
 
-        local_data.reshape(-1, bs)[local_idx] += local_buffer.reshape(-1, bs)
+        # local_idx may repeat (an owned entry can be ghosted by more
+        # than one rank), so plain `local_data[local_idx] += ...` would
+        # silently drop all but one contribution per repeated index;
+        # np.add.at accumulates unbuffered, handling repeats correctly.
+        np.add.at(local_data.reshape(-1, bs), local_idx, local_buffer.reshape(-1, bs))
 
 
 def scatterer(index_map: IndexMap) -> Scatterer:
