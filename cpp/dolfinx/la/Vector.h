@@ -18,6 +18,7 @@
 #include <numeric>
 #include <span>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::la
@@ -156,9 +157,23 @@ public:
   /// the data.
   /// @param bs Number of entries per index map 'index' (block size).
   Vector(std::shared_ptr<const common::IndexMap> map, int bs)
-      : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
-        _scatterer(
-            std::make_shared<common::Scatterer<ScatterContainer>>(*_map)),
+      : Vector(map, bs,
+               std::make_shared<common::Scatterer<ScatterContainer>>(*map))
+  {
+  }
+
+  /// @brief Create a distributed vector using an existing scatterer.
+  ///
+  /// @param[in] map Index map that describes the parallel layout of
+  /// the data.
+  /// @param[in] bs Number of entries per index map 'index' (block size).
+  /// @param[in] scatterer Scatterer compatible with `map`.
+  Vector(
+      std::shared_ptr<const common::IndexMap> map, int bs,
+      std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer)
+      : _map(std::move(map)), _bs(bs),
+        _x(bs * (_map->size_local() + _map->num_ghosts())),
+        _scatterer(std::move(scatterer)),
         _buffer_local(bs * _scatterer->local_indices_block().size()),
         _buffer_remote(bs * _scatterer->remote_indices_block().size())
   {
@@ -175,8 +190,8 @@ private:
   /// the input Scatterer or (2) to a copy of input Scatterer.
   ///
   /// If the new and old Vectors share the same Scatterer type, the
-  /// Scatter can be shared. If the new Vector uses a different
-  /// Scatterer storage type, then the Scatterer needs to be copied.
+  /// Scatterer is shared. If the new Vector uses a different
+  /// Scatterer storage type, then a new Scatterer is created.
   ///
   /// @param sc Scatter of the Vector being copied.
   /// @return Scatter for use with the new Vector.
@@ -192,18 +207,25 @@ private:
   }
 
 public:
-  /// @brief Copy-convert vector, possibly using different container
-  /// types.
+  /// @brief Create a vector by copying and converting another vector.
   ///
-  /// Examples of use include copying a Vector to a different value
-  /// type, e.g. double to float, or copying a Vector from a CPU to a
-  /// GPU.
+  /// The local vector data, including ghost values, is copied and converted to
+  /// `T` and `Container`. The index map is shared with `x`. If the scatter
+  /// container types are the same, the scatterer is also shared; otherwise, a
+  /// converted copy of the scatterer is created.
+  ///
+  /// This constructor can be used to convert the scalar type, e.g. from
+  /// `double` to `float`, or to transfer a vector between CPU and GPU storage.
+  ///
+  /// @note Construction is collective when `ScatterContainer` and
+  /// `ScatterContainer0` differ because copying the scatterer duplicates its
+  /// MPI neighbourhood communicators.
   ///
   /// @tparam T0 Scalar type of the Vector being copied.
   /// @tparam Container0 Data container type of the Vector being copied.
   /// @tparam ScatterContainer0 Scatterer container type of the Vector
   /// being copied.
-  /// @param x Vector to copy.
+  /// @param[in] x Vector to copy and convert.
   template <typename T0, typename Container0, typename ScatterContainer0>
   explicit Vector(const Vector<T0, Container0, ScatterContainer0>& x)
       : _map(x.index_map()), _bs(x.bs()), _x(x._x.begin(), x._x.end()),
@@ -423,6 +445,13 @@ public:
 
   /// Get IndexMap
   std::shared_ptr<const common::IndexMap> index_map() const { return _map; }
+
+  /// @brief Get the scatterer used for halo communication.
+  /// @return The scatterer.
+  std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer() const
+  {
+    return _scatterer;
+  }
 
   /// Get block size
   constexpr int bs() const { return _bs; }
