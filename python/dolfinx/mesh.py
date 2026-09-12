@@ -36,10 +36,7 @@ from dolfinx.cpp.refinement import (
     IdentityPartitionerPlaceholder,
     RefinementOption,
 )
-<<<<<<< HEAD
 from dolfinx.cpp.refinement import mark_equidistribution as _mark_equidistribution
-=======
->>>>>>> main
 from dolfinx.cpp.refinement import mark_maximum as _mark_maximum
 from dolfinx.cpp.refinement import uniform_refine as _uniform_refine
 from dolfinx.fem import CoordinateElement as _CoordinateElement
