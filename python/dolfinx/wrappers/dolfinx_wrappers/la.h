@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,6 +10,7 @@
 #include "numpy_dtype.h"
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/la/matmul.h>
@@ -55,10 +56,14 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
   nb::class_<dolfinx::la::Vector<T>>(m, pyclass_vector_name.c_str())
       .def(nb::init<std::shared_ptr<const dolfinx::common::IndexMap>, int>(),
            nb::arg("map"), nb::arg("bs"))
+      .def(nb::init<std::shared_ptr<const dolfinx::common::IndexMap>, int,
+                    std::shared_ptr<const dolfinx::common::Scatterer<>>>(),
+           nb::arg("map"), nb::arg("bs"), nb::arg("scatterer"))
       .def(nb::init<const dolfinx::la::Vector<T>&>(), nb::arg("vec"))
       .def_prop_ro("dtype", [](const dolfinx::la::Vector<T>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def_prop_ro("index_map", &dolfinx::la::Vector<T>::index_map)
+      .def_prop_ro("scatterer", &dolfinx::la::Vector<T>::scatterer)
       .def_prop_ro("bs", &dolfinx::la::Vector<T>::bs)
       .def_prop_ro(
           "array",

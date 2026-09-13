@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "MPICommWrapper.h"
 #include "array.h"
+#include "mpi_wrappers.h"
 #include <basix/mdspan.hpp>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Function.h>

@@ -41,6 +41,39 @@ namespace dolfinx::common
 /// is not collective, but move assignment is, since it frees the
 /// communicators held by the assignment target.
 ///
+/// A forward scatter sends data associated with owned/local indices
+/// to the ranks that ghost them; a reverse scatter sends ghost data
+/// back to the owning ranks, to be accumulated into the owned data.
+/// Both use the same two-step begin/end pattern, splitting the
+/// non-blocking MPI call from completion so that unrelated work can
+/// be done while communication is in flight. A round trip for a
+/// forward scatter with block size 1, where `x` holds the owned data
+/// and `x_ghost` the ghost data:
+/// @code
+/// Scatterer sc(map);
+/// std::vector<std::int64_t> send_buffer(sc.local_indices_block().size());
+/// {
+///   auto& idx = sc.local_indices_block();
+///   for (std::size_t i = 0; i < idx.size(); ++i)
+///     send_buffer[i] = x[idx[i]];
+/// }
+/// std::vector<std::int64_t> recv_buffer(sc.remote_indices_block().size());
+/// MPI_Request request = MPI_REQUEST_NULL;
+/// sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), 1, request);
+/// // ... unrelated work can be done here while communication is
+/// // in flight, but send_buffer/recv_buffer must not be touched ...
+/// sc.scatter_fwd_end(request);
+/// {
+///   auto& idx = sc.remote_indices_block();
+///   for (std::size_t i = 0; i < idx.size(); ++i)
+///     x_ghost[idx[i]] = recv_buffer[i];
+/// }
+/// @endcode
+/// A reverse scatter follows the same pattern with the roles of
+/// ::local_indices_block and ::remote_indices_block, and of
+/// `send_buffer` and `recv_buffer`, swapped; see ::scatter_rev_begin
+/// and ::scatter_rev_end.
+///
 /// @tparam Container Container type for storing the 'local' and
 /// 'remote' indices. On CPUs this is normally
 /// `std::vector<std::int32_t>`. For GPUs the container should store the

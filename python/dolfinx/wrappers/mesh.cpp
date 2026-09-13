@@ -6,9 +6,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dolfinx_wrappers/mesh.h"
-#include "dolfinx_wrappers/MPICommWrapper.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/mpi_wrappers.h"
 #include <algorithm>
 #include <cassert>
 #include <dolfinx/common/IndexMap.h>
