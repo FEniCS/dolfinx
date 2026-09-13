@@ -101,22 +101,32 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
 /// @brief Return local indices of a set of values whose entry exceeds a
 /// fraction of the mean square (MS).
 ///
-/// Returns the indices \f$i\f$ of the squared indicators \f$ \eta_i^2 \f$ that
-/// satisfy the equidistribution threshold: \f$ \eta_i^2 > \theta^2
-/// \frac{||\eta||^2}{N} \f$ where \f$ N \f$ is the (global) number of
-/// indicators.
+/// Computes the mean \f$ \frac{1}{N} \sum_j v_j \f$ of @p values \f$ v \f$
+/// over the locally owned entries on every rank of `index_map.comm()`, where
+/// \f$ N \f$ is the global number of entries, and returns the local indices
+/// \f$ i \f$ satisfying \f$ v_i > \frac{\theta^2}{N} \sum_j v_j \f$.
+///
+/// Each entry is expected to hold a squared error indicator, \f$ v_i =
+/// \eta_i^2 \f$, so that \f$ \frac{1}{N} \sum_j v_j \f$ is the mean square
+/// (MS) \f$ \|\eta\|_2^2 / N \f$ of the indicators and the criterion reads
+/// \f$ \eta_i^2 > \theta^2 \|\eta\|_2^2 / N \f$. This is commonly referred to
+/// as 'equidistribution marking' in the adaptive finite element literature.
 ///
 /// @pre @p values has size `index_map.size_local() + index_map.num_ghosts()`.
 /// @pre Ghost entries of @p values are up to date, i.e. `scatter_forward` has
 /// been called since the owned entries were last modified.
 ///
-/// @param[in] values Squared indicators \f$ \eta^2_i \f$, usually associated
-/// with mesh entity \f$ i \f$.
+/// @note \f$ \theta = 0 \f$ is rejected, since the threshold would be 0 and
+/// the criterion would degenerate to marking every entry with a positive
+/// value.
+///
+/// @param[in] values Values, often with each entry associated with a mesh
+///   entity, e.g. a squared error indicator \f$ \eta_i^2 \f$.
 /// @param[in] index_map Index map describing the parallel layout of @p
 ///   values.
-/// @param[in] theta Parameter, \f$ 0 < \theta \leq 1 \f$.
-/// @return Local indices, ascending and including ghosts, of @p values that
-/// satisfy the threshold.
+/// @param[in] theta Cut-off parameter, \f$ 0 < \theta \leq 1 \f$.
+/// @return Local indices, ascending and including ghosts, of @p values
+/// satisfying \f$ v_i > \frac{\theta^2}{N} \sum_j v_j \f$.
 template <std::floating_point T>
 std::vector<std::int32_t>
 mark_equidistribution(std::span<const T> values,

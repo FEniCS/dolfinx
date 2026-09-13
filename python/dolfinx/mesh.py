@@ -982,14 +982,20 @@ def mark_equidistribution(
     index_map: _IndexMap,
     theta: float,
 ) -> npt.NDArray[np.int32]:
-    r"""Return local indices of values exceeding a fraction of the MS.
+    r"""Return local indices of values exceeding a fraction of the mean.
 
-    Computes the mean square (MS) :math:`\frac{||v||_2^2}{N}` of ``values``
-    over the locally owned entries on every rank of ``index_map``'s
-    communicator, and returns the local indices :math:`i` satisfying
-    :math:`v_i > \theta^2 \frac{||v||_2}{N}`. This is commonly referred to
-    as 'equidistribution marking' in the adaptive finite element
-    literature, for a component wise squared values input.
+    Computes the mean :math:`\frac{1}{N} \sum_j v_j` of ``values``
+    :math:`v` over the locally owned entries on every rank of
+    ``index_map``'s communicator, where :math:`N` is the global number of
+    entries, and returns the local indices :math:`i` satisfying
+    :math:`v_i > \frac{\theta^2}{N} \sum_j v_j`.
+
+    Each entry is expected to hold a squared error indicator,
+    :math:`v_i = \eta_i^2`, so that :math:`\frac{1}{N} \sum_j v_j` is the
+    mean square (MS) :math:`\|\eta\|_2^2 / N` of the indicators and the
+    criterion reads :math:`\eta_i^2 > \theta^2 \|\eta\|_2^2 / N`. This is
+    commonly referred to as 'equidistribution marking' in the adaptive
+    finite element literature.
 
     Note:
         Ghost entries of ``values`` must be up to date, i.e.
@@ -1002,13 +1008,13 @@ def mark_equidistribution(
 
     Args:
         values: Values, often with each entry associated with a mesh
-            entity, e.g. an error indicator (squared per entity).
+            entity, e.g. a squared error indicator :math:`\eta_i^2`.
         index_map: Index map describing the parallel layout of ``values``.
         theta: Cut-off parameter, :math:`0 < \theta \leq 1`.
 
     Returns:
         Local indices, ascending and including ghosts, of the entries
-        satisfying :math:`v_i > \theta^2 \frac{||v||_2^2}{N}`.
+        satisfying :math:`v_i > \frac{\theta^2}{N} \sum_j v_j`.
     """
     return _mark_equidistribution(values, index_map, theta)
 
