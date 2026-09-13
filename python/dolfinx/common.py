@@ -62,9 +62,9 @@ __all__ = [
 
 Reduction = _cpp.common.Reduction
 
-# dolfinx::MPI::tag::consensus_nbx, the C++ default tag for the
-# consensus exchange used when building a ghosted index map.
-_CONSENSUS_NBX_TAG = 1202
+# Default MPI tag of the consensus exchange used when building a ghosted
+# index map (dolfinx::MPI::tag::consensus_nbx).
+_CONSENSUS_NBX_TAG = _cpp.common.consensus_nbx_tag
 
 _ScatterArray: typing.TypeAlias = npt.NDArray[
     np.int64 | np.float32 | np.float64 | np.complex64 | np.complex128
@@ -95,6 +95,16 @@ class IndexMap:
             imap: C++ IndexMap object.
         """
         self._cpp_object = imap
+
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same index map."""
+        if not isinstance(other, IndexMap):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped index map."""
+        return hash(self._cpp_object)
 
     @property
     def comm(self) -> _MPI.Comm:
@@ -229,6 +239,16 @@ class Scatterer:
             s: C++ Scatterer object.
         """
         self._cpp_object = s
+
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same scatterer."""
+        if not isinstance(other, Scatterer):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped scatterer."""
+        return hash(self._cpp_object)
 
     @property
     def local_indices_block(self) -> npt.NDArray[np.int32]:

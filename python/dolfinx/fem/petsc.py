@@ -135,10 +135,7 @@ def create_vector(
         A PETSc vector with a layout that is compatible with ``V``. The
         vector is not initialised to zero.
     """
-    if isinstance(
-        V,
-        _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64,
-    ):
+    if isinstance(V, _FunctionSpace):
         V = [V]
     elif any(_V is None for _V in V):
         raise RuntimeError("Can not create vector for None block.")

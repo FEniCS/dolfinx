@@ -7,7 +7,7 @@
 
 from mpi4py import MPI
 
-from dolfinx.common import IndexMap
+from dolfinx.common import index_map as create_index_map
 from dolfinx.fem import functionspace, locate_dofs_topological
 from dolfinx.la import sparsity_pattern, sparsity_pattern_blocked
 from dolfinx.mesh import create_unit_square, exterior_facet_indices
@@ -36,7 +36,7 @@ def test_blocked_pattern_with_empty_blocks():
     # COMM_SELF: the block structure under test is process-local and
     # involves no cross-rank communication, so the test runs unmodified
     # under any number of MPI ranks.
-    index_map = IndexMap(MPI.COMM_SELF, 2)
+    index_map = create_index_map(MPI.COMM_SELF, 2)
     pattern = sparsity_pattern(MPI.COMM_SELF, [index_map, index_map], [1, 1])
     blocked_pattern = sparsity_pattern_blocked(
         MPI.COMM_SELF,

@@ -18,8 +18,7 @@ import numpy.typing as npt
 
 import dolfinx
 from dolfinx import cpp as _cpp
-from dolfinx.common import Scatterer
-from dolfinx.cpp.common import IndexMap
+from dolfinx.common import IndexMap, Scatterer
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 from dolfinx.typing import Scalar
 
@@ -91,7 +90,7 @@ class Vector(Generic[_T]):
     @property
     def index_map(self) -> IndexMap:
         """Index map that describes size and parallel distribution."""
-        return self._cpp_object.index_map
+        return IndexMap(self._cpp_object.index_map)
 
     @property
     def block_size(self) -> int:
@@ -171,7 +170,7 @@ class SparsityPattern:
         Args:
             dim: 0 for the row map, 1 for the column map.
         """
-        return self._cpp_object.index_map(dim)
+        return IndexMap(self._cpp_object.index_map(dim))
 
     @property
     def num_nonzeros(self) -> int:
@@ -257,7 +256,7 @@ class MatrixCSR(Generic[Scalar]):
         Args:
             i: 0 for row map, 1 for column map.
         """
-        return self._cpp_object.index_map(i)
+        return IndexMap(self._cpp_object.index_map(i))
 
     def mult(self, x: Vector[Scalar], y: Vector[Scalar], transpose: bool = False) -> None:
         """Compute ``y += Ax`` or ``y += A^T x``.
@@ -447,7 +446,7 @@ def sparsity_pattern(
         An empty sparsity pattern. Insert entries into it and call
         :meth:`SparsityPattern.finalize` before creating a matrix.
     """
-    return SparsityPattern(_cpp.la.SparsityPattern(comm, list(maps), list(bs)))
+    return SparsityPattern(_cpp.la.SparsityPattern(comm, [m._cpp_object for m in maps], list(bs)))
 
 
 def sparsity_pattern_blocked(
@@ -569,9 +568,9 @@ def vector(
         raise NotImplementedError(f"Type {dtype} not supported.")
 
     if scatterer is None:
-        return Vector(vtype(map, bs))
+        return Vector(vtype(map._cpp_object, bs))
     else:
-        return Vector(vtype(map, bs, scatterer._cpp_object))
+        return Vector(vtype(map._cpp_object, bs, scatterer._cpp_object))
 
 
 def orthonormalize(basis: list[Vector[_T]]) -> None:

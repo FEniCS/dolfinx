@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 from dolfinx.common import create_sub_index_map, index_map, scatterer
+from dolfinx.fem import functionspace
 from dolfinx.mesh import GhostMode, create_unit_square
 
 
@@ -278,3 +279,16 @@ def test_sub_index_map_multiple_possible_owners():
     assert sub_imap.size_global == 3
     assert sub_imap.size_local == submap_size_local_expected
     assert sub_imap.num_ghosts == submap_num_ghosts_expected
+
+
+def test_index_map_equality():
+    """Index maps for the same C++ object compare (and hash) equal."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    V = functionspace(msh, ("Lagrange", 1))
+    imap = V.dofmap.index_map
+    assert imap == V.dofmap.index_map
+    assert len({imap, V.dofmap.index_map}) == 1
+
+    # A distinct C++ index map, even with the same layout, is not equal
+    assert imap != index_map(MPI.COMM_WORLD, imap.size_local)
+    assert imap != msh.topology.index_map(msh.topology.dim)
