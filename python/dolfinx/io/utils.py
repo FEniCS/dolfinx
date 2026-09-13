@@ -271,7 +271,7 @@ class XDMFFile:
 
     def read_geometry_data(
         self, name: str = "mesh", xpath: str = "/Xdmf/Domain"
-    ) -> npt.NDArray[np.float64]:
+    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Read geometry (node coordinates) data for a mesh from file.
 
         Args:
@@ -279,9 +279,10 @@ class XDMFFile:
             xpath: XPath where the Mesh Grid is stored in the file.
 
         Returns:
-            Node coordinates.
+            Node coordinates, as float32 or float64 depending on how
+            the data is stored in the file.
         """
-        return self._cpp_object.read_geometry_data(name, xpath)
+        return self._cpp_object.read_geometry_data(name, xpath)  # type: ignore[return-value]
 
     def read_cell_type(
         self, name: str = "mesh", xpath: str = "/Xdmf/Domain"
@@ -359,7 +360,7 @@ class XDMFFile:
         """
         cell_shape, cell_degree = self.read_cell_type(name, xpath)
         cells = self.read_topology_data(name, xpath)
-        x = self.read_geometry_data(name, xpath)
+        x = np.asarray(self.read_geometry_data(name, xpath), dtype=np.float64)
 
         # Get coordinate element, special handling for second order
         # serendipity.

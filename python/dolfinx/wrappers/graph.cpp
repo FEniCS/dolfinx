@@ -7,6 +7,8 @@
 #include "dolfinx_wrappers/graph.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
+#include <algorithm>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
@@ -15,6 +17,7 @@
 #include <dolfinx/graph/sfc.h>
 #include <dolfinx/graph/utils.h>
 #include <functional>
+#include <map>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
@@ -29,6 +32,9 @@
 #include <optional>
 #include <ranges>
 #include <span>
+#include <stdexcept>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace nb = nanobind;
@@ -179,8 +185,8 @@ void graph(nb::module_& m)
 #ifdef HAS_KAHIP
   m.def(
       "partitioner_kahip",
-      [](int mode = 1, int seed = 1, double imbalance = 0.03,
-         bool suppress_output = true) -> GraphPartitioner
+      [](int mode, int seed, double imbalance,
+         bool suppress_output) -> GraphPartitioner
       {
         return GraphPartitioner{dolfinx::graph::kahip::partitioner(
             mode, seed, imbalance, suppress_output)};
@@ -371,7 +377,7 @@ void graph(nb::module_& m)
   m.def(
       "comm_graph", [](const dolfinx::common::IndexMap& map, int root)
       { return dolfinx::graph::comm_graph(map, root); }, nb::arg("map"),
-      nb::arg("root") = 0,
+      nb::arg("root"),
       "Build a graph representing parallel communication patterns.");
 
   m.def(
@@ -392,13 +398,15 @@ void graph(nb::module_& m)
           }
         }
 
+        if (!g.node_data())
+          throw std::invalid_argument("Graph has no node data.");
+
         std::vector<
             std::pair<std::int32_t, std::map<std::string, std::int32_t>>>
             nodes;
         std::ranges::transform(
-            g.node_data().value(), std::ranges::views::iota(0),
-            std::back_inserter(nodes),
-            [](auto data, auto n)
+            *g.node_data(), std::views::iota(0), std::back_inserter(nodes),
+            [](std::pair<std::int32_t, std::int32_t> data, std::int32_t n)
             {
               return std::pair(
                   n, std::map<std::string, std::int32_t>{
@@ -407,8 +415,9 @@ void graph(nb::module_& m)
 
         return std::pair(std::move(adj), std::move(nodes));
       },
-      "Build a graph edge and node data representing parallel communication "
-      "patterns. Can be used to creat NetworkX graphs.");
+      nb::arg("g"),
+      "Build graph edge and node data representing parallel communication "
+      "patterns. Can be used to create NetworkX graphs.");
 
   m.def(
       "comm_to_json",
@@ -416,7 +425,8 @@ void graph(nb::module_& m)
           std::tuple<int, std::size_t, std::int8_t>,
           std::pair<std::int32_t, std::int32_t>>& g)
       { return dolfinx::graph::comm_to_json(g); },
+      nb::arg("g"),
       "Build a JSON string representation of a parallel communication "
-      "graph that can use used by build a NetworkX graph.");
+      "graph, which can be used to build a NetworkX graph.");
 }
 } // namespace dolfinx_wrappers

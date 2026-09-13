@@ -486,7 +486,7 @@ def apply_lifting(
         ]
 
     if coeffs is None:
-        coeffs = [pack_coefficients(form) for form in a]
+        coeffs = [pack_coefficients(form) if form is not None else {} for form in a]
 
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
