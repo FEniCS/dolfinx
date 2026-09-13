@@ -367,14 +367,14 @@ def index_map(
         comm: MPI communicator to distribute the indices over.
         local_size: Number of indices owned by the calling process.
         ghosts: Global index of each ghost index. If ``None``, the
-            caller has no ghosts. If any process supplies ghost data,
-            ``None`` is treated as empty ghost and owner arrays.
+            index map is non-overlapping and ``ghosts`` must be
+            ``None`` on every process. For an overlapping map, a
+            process with no ghosts must pass an empty array.
         owners: Owning rank of each entry of ``ghosts``. Required if
             ``ghosts`` is given.
         dest_src: Destination and source ranks, if known. Supplying
-            them on every process avoids the consensus exchange that
-            otherwise discovers which ranks ghost the caller's owned
-            indices. Use empty arrays on a process with no neighbours.
+            them avoids the consensus exchange that otherwise discovers
+            which ranks ghost the caller's owned indices.
         tag: MPI tag for the consensus exchange. Ignored if ``dest_src``
             is given. Must be the same on all ranks, and must not clash
             with another in-flight exchange.
@@ -382,28 +382,15 @@ def index_map(
     Returns:
         A new index map.
     """
-    if (ghosts is None) != (owners is None):
-        if ghosts is None:
+    if ghosts is None:
+        if owners is not None:
             raise ValueError("'owners' given without 'ghosts'.")
-        raise ValueError("'ghosts' given without 'owners'.")
-
-    has_ghost_data = comm.allreduce(ghosts is not None, op=_MPI.LOR)
-    any_dest_src = comm.allreduce(dest_src is not None, op=_MPI.LOR)
-    all_dest_src = comm.allreduce(dest_src is not None, op=_MPI.LAND)
-    if any_dest_src != all_dest_src:
-        raise ValueError("'dest_src' must be given on every process or on none.")
-
-    if not has_ghost_data:
-        if any_dest_src:
+        if dest_src is not None:
             raise ValueError("'dest_src' given without 'ghosts'.")
         return IndexMap(_cpp.common.IndexMap(comm, local_size))
-
-    if ghosts is None:
-        ghosts = np.empty(0, dtype=np.int64)
-        owners = np.empty(0, dtype=np.int32)
-    assert owners is not None
-    if any_dest_src:
-        assert dest_src is not None
+    if owners is None:
+        raise ValueError("'ghosts' given without 'owners'.")
+    if dest_src is not None:
         return IndexMap(_cpp.common.IndexMap(comm, local_size, list(dest_src), ghosts, owners))
     return IndexMap(_cpp.common.IndexMap(comm, local_size, ghosts, owners, tag))
 

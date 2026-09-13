@@ -117,24 +117,6 @@ def test_index_map_ghost_lifetime():
     assert np.array_equal(ghosts, map_ghosts)
 
 
-def test_index_map_asymmetric_ghost_data():
-    """Test construction when only one process has a ghost."""
-    comm = MPI.COMM_WORLD
-    if comm.size < 2:
-        pytest.skip("Test requires 2 or more processes")
-
-    if comm.rank == 1:
-        ghosts = np.array([0], dtype=np.int64)
-        owners = np.array([0], dtype=np.int32)
-    else:
-        ghosts = None
-        owners = None
-
-    imap = index_map(comm, 1, ghosts, owners)
-    assert imap.num_ghosts == (1 if comm.rank == 1 else 0)
-    if comm.rank == 1:
-        assert np.array_equal(imap.global_to_local(np.array([0], dtype=np.int64)), [1])
-
 def test_explicit_index_map_dest_src_order():
     """Check the documented order of explicit IndexMap neighbour lists."""
     comm = MPI.COMM_WORLD
