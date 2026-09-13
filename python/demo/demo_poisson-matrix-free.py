@@ -218,12 +218,12 @@ def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int = 200, rtol: fl
         return comm.allreduce(np.vdot(v0[:nr], v1[:nr]), MPI.SUM)
 
     # Get initial y = A.x
-    y = la.vector(b.index_map, 1, dtype)
+    y = la.vector(b.index_map, 1, dtype=dtype)
     action_A(x, y)
 
     # Copy residual to p
     r = b.array - y.array
-    p = la.vector(b.index_map, 1, dtype)
+    p = la.vector(b.index_map, 1, dtype=dtype)
     p.array[:] = r
 
     # Iterations of CG

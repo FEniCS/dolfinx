@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include "MPICommWrapper.h"
 #include "array.h"
 #include "graph.h"
 #include "marker.h"
+#include "mpi_wrappers.h"
 #include "numpy_dtype.h"
 #include <cstdint>
 #include <dolfinx/fem/CoordinateElement.h>

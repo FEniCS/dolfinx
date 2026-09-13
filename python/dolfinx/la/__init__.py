@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2025 Garth N. Wells, Jack S. Hale
+# Copyright (C) 2017-2026 Garth N. Wells, Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import functools
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
@@ -14,6 +15,7 @@ import numpy.typing as npt
 
 import dolfinx
 from dolfinx import cpp as _cpp
+from dolfinx.common import Scatterer
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 from dolfinx.typing import Scalar
@@ -51,7 +53,6 @@ class Vector(Generic[_T]):
         | _cpp.la.Vector_int32
         | _cpp.la.Vector_int64
     )
-    _petsc_x: PETSc.Vec | None
 
     def __init__(
         self,
@@ -75,12 +76,11 @@ class Vector(Generic[_T]):
             User code should call :func:`vector` to create a vector object.
         """
         self._cpp_object = x
-        self._petsc_x = None
 
     def __del__(self) -> None:
         """Delete the PETSc vector if it was created."""
-        if self._petsc_x is not None:
-            self._petsc_x.destroy()
+        if (petsc_x := self.__dict__.get("petsc_vec")) is not None:
+            petsc_x.destroy()
 
     @property
     def index_map(self) -> IndexMap:
@@ -92,18 +92,23 @@ class Vector(Generic[_T]):
         """Block size for the vector."""
         return self._cpp_object.bs
 
+    @functools.cached_property
+    def scatterer(self) -> Scatterer:
+        """Scatterer used for ghost communication."""
+        return Scatterer(self._cpp_object.scatterer)
+
     @property
     def array(self) -> npt.NDArray[_T]:
         """Local representation of the vector."""
         return self._cpp_object.array  # type: ignore[return-value]
 
-    @property
+    @functools.cached_property
     def petsc_vec(self) -> PETSc.Vec:
         """PETSc vector holding the entries of the vector.
 
-        Upon first call, this function creates a PETSc ``Vec`` object
-        that wraps the degree-of-freedom data. The ``Vec`` object is
-        cached and the cached ``Vec`` is returned upon subsequent calls.
+        Upon first access, this creates a PETSc ``Vec`` object that
+        wraps the degree-of-freedom data. The ``Vec`` object is cached
+        and the cached ``Vec`` is returned on subsequent accesses.
 
         Note:
           When the object is destroyed it will destroy the underlying
@@ -114,9 +119,7 @@ class Vector(Generic[_T]):
 
         from dolfinx.la.petsc import create_vector_wrap
 
-        if self._petsc_x is None:
-            self._petsc_x = create_vector_wrap(self)
-        return self._petsc_x
+        return create_vector_wrap(self)
 
     def scatter_forward(self) -> None:
         """Update ghost entries."""
@@ -382,13 +385,21 @@ def matrix_csr(
     return MatrixCSR(ftype(sp, block_mode))
 
 
-def vector(map: IndexMap, bs: int = 1, dtype: npt.DTypeLike = np.float64) -> Vector:
+def vector(
+    map: IndexMap,
+    bs: int = 1,
+    scatterer: Scatterer | None = None,
+    *,
+    dtype: npt.DTypeLike = np.float64,
+) -> Vector:
     """Create a distributed vector.
 
     Args:
         map: Index map the describes the size and distribution of the
             vector.
         bs: Block size.
+        scatterer: Scatterer compatible with ``map``. If ``None``, a
+            new scatterer is created.
         dtype: The scalar type.
 
     Returns:
@@ -420,7 +431,10 @@ def vector(map: IndexMap, bs: int = 1, dtype: npt.DTypeLike = np.float64) -> Vec
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    return Vector(vtype(map, bs))
+    if scatterer is None:
+        return Vector(vtype(map, bs))
+    else:
+        return Vector(vtype(map, bs, scatterer._cpp_object))
 
 
 def orthonormalize(basis: list[Vector[_T]]) -> None:
