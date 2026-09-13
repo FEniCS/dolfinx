@@ -348,14 +348,14 @@ def _assemble_vector_petsc(
             raise ValueError(
                 "Must provide a sequence of coefficients when assembling a nest vector"
             )
-        constants_: Sequence[npt.NDArray | None] = (
+        constants_nest: Sequence[npt.NDArray | None] = (
             [None] * len(L) if constants is None else constants
         )
-        coeffs_: Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray] | None] = (
+        coeffs_nest: Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray] | None] = (
             [None] * len(L) if coeffs is None else coeffs
         )
         for b_sub, L_sub, const, coeff in zip(
-            b.getNestSubVecs(), L, constants_, coeffs_, strict=True
+            b.getNestSubVecs(), L, constants_nest, coeffs_nest, strict=True
         ):
             assert L_sub is not None
             with b_sub.localForm() as b_local:
@@ -367,12 +367,12 @@ def _assemble_vector_petsc(
             raise ValueError(
                 "Must provide a sequence of coefficients when assembling blocked forms"
             )
-        constants_: Sequence[npt.NDArray] = (
+        constants_block: Sequence[npt.NDArray] = (
             pack_constants(L)
             if constants is None
             else typing.cast(Sequence[npt.NDArray], constants)
         )
-        coeffs_: Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]] = (
+        coeffs_block: Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]] = (
             pack_coefficients(L)
             if coeffs is None
             else typing.cast(
@@ -383,8 +383,8 @@ def _assemble_vector_petsc(
         with b.localForm() as b_l:
             for L_, const, coeff, off0, off1, offg0, offg1 in zip(
                 L,
-                constants_,
-                coeffs_,
+                constants_block,
+                coeffs_block,
                 offset0[:-1],
                 offset0[1:],
                 offset1[:-1],

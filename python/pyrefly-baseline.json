@@ -50,24 +50,10 @@
       "severity": "error"
     },
     {
-      "column": 36,
-      "path": "dolfinx/fem/petsc.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Sequence[ndarray[tuple[Any, ...], dtype[Unknown]]] | ndarray[tuple[Any, ...], dtype[Unknown]] | None` is not assignable to parameter `iter3` with type `Iterable[ndarray[tuple[Any, ...], dtype[Unknown]]]` in function `zip.__new__`",
-      "severity": "error"
-    },
-    {
       "column": 40,
       "path": "dolfinx/fem/petsc.py",
       "name": "not-iterable",
       "concise_description": "Type `None` is not iterable",
-      "severity": "error"
-    },
-    {
-      "column": 47,
-      "path": "dolfinx/fem/petsc.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Sequence[dict[tuple[IntegralType, int], ndarray[tuple[Any, ...], dtype[Unknown]]]] | dict[tuple[IntegralType, int], ndarray[tuple[Any, ...], dtype[Unknown]]] | None` is not assignable to parameter `iter4` with type `Iterable[dict[tuple[IntegralType, int], ndarray[tuple[Any, ...], dtype[Unknown]]] | tuple[IntegralType, int]]` in function `zip.__new__`",
       "severity": "error"
     },
     {
