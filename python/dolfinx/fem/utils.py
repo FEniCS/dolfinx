@@ -28,14 +28,18 @@ from dolfinx.fem.element import CoordinateElement
 from dolfinx.fem.function import FunctionSpace
 from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
 from dolfinx.la import MatrixCSR as _MatrixCSR
-from dolfinx.la import SparsityPattern
+from dolfinx.la import SparsityPattern as _SparsityPattern
 
 if typing.TYPE_CHECKING:
+    # 'dolfinx.la.SparsityPattern' is spelled out in the annotations
+    # below because a bare 'SparsityPattern' is ambiguous in the
+    # generated docs, matching 'dolfinx.cpp.la.SparsityPattern' too.
+    import dolfinx.la
     import dolfinx.mesh
     from dolfinx.cpp.fem import IntegralType as IntegralType
 
 
-def create_sparsity_pattern(a: dolfinx.fem.forms.Form) -> SparsityPattern:
+def create_sparsity_pattern(a: dolfinx.fem.forms.Form) -> dolfinx.la.SparsityPattern:
     """Create a sparsity pattern from a bilinear form.
 
     Args:
@@ -49,10 +53,10 @@ def create_sparsity_pattern(a: dolfinx.fem.forms.Form) -> SparsityPattern:
         calling :meth:`SparsityPattern.finalize
         <dolfinx.la.SparsityPattern.finalize>`.
     """
-    return SparsityPattern(_create_sparsity_pattern(a._cpp_object))
+    return _SparsityPattern(_create_sparsity_pattern(a._cpp_object))
 
 
-def build_sparsity_pattern(pattern: SparsityPattern, a: dolfinx.fem.forms.Form) -> None:
+def build_sparsity_pattern(pattern: dolfinx.la.SparsityPattern, a: dolfinx.fem.forms.Form) -> None:
     """Build a sparsity pattern from a bilinear form.
 
     Args:
