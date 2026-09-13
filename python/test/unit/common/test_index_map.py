@@ -133,10 +133,19 @@ def test_explicit_index_map_dest_src_order():
 
     # Exercise the neighbour lists through a forward exchange. Checking
     # `owners` alone cannot detect a swapped `dest_src` binding.
-    scatterer = _cpp.common.Scatterer(index_map, 1)
+    scatterer = _cpp.common.Scatterer(index_map)
+    local_idx = scatterer.local_indices_block
+    remote_idx = scatterer.remote_indices_block
+
     values = np.full(index_map.size_local + index_map.num_ghosts, -1, dtype=np.int64)
     values[: index_map.size_local] = comm.rank
-    scatterer.scatter_fwd(values, values[index_map.size_local :])
+
+    send_buffer = values[local_idx]
+    recv_buffer = np.empty(remote_idx.size, dtype=values.dtype)
+    request = scatterer.scatter_fwd_begin(send_buffer, recv_buffer, 1)
+    scatterer.scatter_fwd_end(request)
+    values[index_map.size_local + remote_idx] = recv_buffer
+
     assert np.array_equal(values[index_map.size_local :], src)
 
 
