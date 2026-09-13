@@ -285,7 +285,7 @@ def assemble_vector(
     Returns:
         An assembled vector.
     """
-    b = create_vector(_extract_function_spaces(L), kind=kind)  # type: ignore
+    b = create_vector(_extract_function_spaces(L), kind=kind)
     dolfinx.la.petsc._zero_vector(b)
     return typing.cast(PETSc.Vec, _assemble_vector_petsc(b, L, constants, coeffs))
 
@@ -357,10 +357,10 @@ def _assemble_vector_petsc(
                 L,
                 constants,
                 coeffs,
-                offset0[:-1],  # type: ignore[has-type]
-                offset0[1:],  # type: ignore[has-type]
-                offset1[:-1],  # type: ignore[has-type]
-                offset1[1:],  # type: ignore[has-type]
+                offset0[:-1],
+                offset0[1:],
+                offset1[:-1],
+                offset1[1:],
                 strict=True,
             ):
                 bx_ = np.zeros((off1 - off0) + (offg1 - offg0), dtype=PETSc.ScalarType)
@@ -521,7 +521,7 @@ def _assemble_matrix_petsc(
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0].contains(bc.function_space._cpp_object):  # type: ignore
+                        if row_forms[0].function_spaces[0].contains(bc.function_space._cpp_object):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
                                 " and have DirichletBC applied."
@@ -563,7 +563,7 @@ def _assemble_matrix_petsc(
                     )
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
                 elif i == j:
-                    for bc in _bcs:  # type: ignore
+                    for bc in _bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
@@ -707,7 +707,7 @@ def apply_lifting(
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
                         zip(a, offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True)
                     ):
-                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore
+                        const = pack_constants(a_) if constants is None else constants[i]
                         coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore
                         const_ = [
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val
@@ -774,7 +774,7 @@ def set_bc(
         offset0, _ = b.getAttr("_blocks")  # type: ignore
         b_array = b.getArray(readonly=False)
         x_array = x0.getArray(readonly=True) if x0 is not None else None
-        for bcs_block, off0, off1 in zip(bcs, offset0[:-1], offset0[1:], strict=True):  # type: ignore[has-type]
+        for bcs_block, off0, off1 in zip(bcs, offset0[:-1], offset0[1:], strict=True):
             x0_sub = x_array[off0:off1] if x0 is not None else None  # type: ignore[index]
             for bc in bcs_block:  # type: ignore[attr-defined]
                 bc.set(b_array[off0:off1], x0_sub, alpha)
@@ -953,8 +953,8 @@ class LinearProblem(typing.Generic[_U]):
         # For nest matrices kind can be a nested list.
         kind = "nest" if self.A.getType() == PETSc.Mat.Type.NEST else kind
         assert kind is None or isinstance(kind, str)
-        self._b = create_vector(_extract_function_spaces(self.L), kind=kind)  # type: ignore
-        self._x = create_vector(_extract_function_spaces(self.L), kind=kind)  # type: ignore
+        self._b = create_vector(_extract_function_spaces(self.L), kind=kind)
+        self._x = create_vector(_extract_function_spaces(self.L), kind=kind)
 
         self._u: _Function | Sequence[_Function]
         if u is None:
@@ -1453,8 +1453,8 @@ class NonlinearProblem(typing.Generic[_U]):
         # Determine the vector kind based on the matrix type
         kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind
         assert kind is None or isinstance(kind, str)
-        self._b = create_vector(_extract_function_spaces(self.F), kind=kind)  # type: ignore
-        self._x = create_vector(_extract_function_spaces(self.F), kind=kind)  # type: ignore
+        self._b = create_vector(_extract_function_spaces(self.F), kind=kind)
+        self._x = create_vector(_extract_function_spaces(self.F), kind=kind)
 
         # Create the SNES solver and attach the corresponding Jacobian and
         # residual computation functions
@@ -1725,7 +1725,7 @@ def _(x: PETSc.Vec, u: _Function | Sequence[_Function]) -> None:  # type: ignore
                 data1.append(v.x.array[bs * n :])
             dolfinx.la.petsc.assign(x, data0 + data1)  # type: ignore
         else:
-            dolfinx.la.petsc.assign(x, u.x.array)  # type: ignore
+            dolfinx.la.petsc.assign(x, u.x.array)
 
 
 def get_petsc_lib() -> pathlib.Path:

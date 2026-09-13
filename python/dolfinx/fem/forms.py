@@ -113,7 +113,7 @@ class Form(typing.Generic[Scalar]):
     @property
     def function_spaces(self) -> list[FunctionSpace]:
         """Function spaces on which this form is defined."""
-        return self._cpp_object.function_spaces  # type: ignore[return-value]
+        return self._cpp_object.function_spaces
 
     @property
     def dtype(self) -> np.dtype:

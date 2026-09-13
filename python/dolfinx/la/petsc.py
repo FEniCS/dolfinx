@@ -197,7 +197,7 @@ def assign(
 
 
 @assign.register
-def _(  # type: ignore[misc]
+def _(
     x0: PETSc.Vec,
     x1: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
 ) -> None:

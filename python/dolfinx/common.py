@@ -172,8 +172,8 @@ class Scatterer:
             Request to pass to :meth:`scatter_fwd_end`.
         """
         return self._cpp_object.scatter_fwd_begin(
-            send_buffer,  # type: ignore[arg-type]
-            recv_buffer,  # type: ignore[arg-type]
+            send_buffer,
+            recv_buffer,
             bs,
         )
 
@@ -221,8 +221,8 @@ class Scatterer:
             Request to pass to :meth:`scatter_rev_end`.
         """
         return self._cpp_object.scatter_rev_begin(
-            send_buffer,  # type: ignore[arg-type]
-            recv_buffer,  # type: ignore[arg-type]
+            send_buffer,
+            recv_buffer,
             bs,
         )
 

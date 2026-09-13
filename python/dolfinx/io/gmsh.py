@@ -447,7 +447,7 @@ def model_to_mesh(
         cpp_mesh = _cpp.mesh.create_mesh(
             comm,
             cell_connectivities,
-            cmaps,  # type: ignore[arg-type]
+            cmaps,
             x[:, :gdim].astype(dtype).copy(),
             partitioner,
             ghost_mode,

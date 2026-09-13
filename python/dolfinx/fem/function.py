@@ -298,16 +298,16 @@ class Expression(Generic[Scalar]):
 
         constants = _cpp.fem.pack_constants(self._cpp_object)
         coeffs = _cpp.fem.pack_coefficients(
-            self._cpp_object,  # type: ignore[arg-type]
-            mesh._cpp_object,  # type: ignore[arg-type]
+            self._cpp_object,
+            mesh._cpp_object,
             _entities,
         )
         _cpp.fem.tabulate_expression(
-            values,  # type: ignore[arg-type]
-            self._cpp_object,  # type: ignore[arg-type]
-            constants,  # type: ignore[arg-type]
+            values,
+            self._cpp_object,
+            constants,
             coeffs,
-            mesh._cpp_object,  # type: ignore[arg-type]
+            mesh._cpp_object,
             _entities,
         )
         return values
@@ -560,8 +560,8 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             _interpolate(u0)
         else:
             x = _cpp.fem.interpolation_coords(
-                self._V.element._cpp_object,  # type: ignore[arg-type]
-                self._V.mesh.geometry._cpp_object,  # type: ignore[arg-type]
+                self._V.element._cpp_object,
+                self._V.mesh.geometry._cpp_object,
                 cells0,
             )
             self._cpp_object.interpolate_f(np.asarray(u0(x), dtype=self.dtype), cells0)
@@ -697,7 +697,7 @@ def functionspace(
             dtype=dtype,
         )
     except TypeError:
-        ufl_e = element  # type: ignore
+        ufl_e = element
 
     # Check that element and mesh cell types match
     if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():

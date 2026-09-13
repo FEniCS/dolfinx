@@ -612,7 +612,7 @@ def mixed_direct():
 
     # Set Dirichlet boundary condition values in the RHS
     for bc in bcs:
-        bc.set(b.array_w)  # type: ignore[arg-type]
+        bc.set(b.array_w)
 
     # Create and configure solver
     ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]

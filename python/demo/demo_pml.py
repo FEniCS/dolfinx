@@ -632,11 +632,11 @@ F = (
 a, L = ufl.lhs(F), ufl.rhs(F)
 
 # For factorisation prefer MUMPS, then superlu_dist, then default
-sys = PETSc.Sys()  # type: ignore
+sys = PETSc.Sys()
 use_superlu = PETSc.IntType == np.int64
-if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
+if sys.hasExternalPackage("mumps") and not use_superlu:
     mat_factor_backend = "mumps"
-elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
+elif sys.hasExternalPackage("superlu_dist"):
     mat_factor_backend = "superlu_dist"
 else:
     if mesh_data.mesh.comm.size > 1:

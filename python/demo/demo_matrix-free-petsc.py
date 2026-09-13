@@ -215,7 +215,7 @@ class MatrixFreeOperator:
                 dolfinx.fem.extract_function_spaces(self._compiled_diagonal), self._bcs
             )
             offset0, _ = self._vector.getAttr("_blocks")  # type: ignore
-            for bcs, off0, off1 in zip(bcs0, offset0[:-1], offset0[1:], strict=True):  # type: ignore[has-type]
+            for bcs, off0, off1 in zip(bcs0, offset0[:-1], offset0[1:], strict=True):
                 v_array = self._vector.array_w[off0:off1]
                 x_array = X.array_r[off0:off1]
                 for bc in bcs:
@@ -257,7 +257,7 @@ class MatrixFreeOperator:
                 dolfinx.fem.extract_function_spaces(self._compiled_diagonal), self._bcs
             )
             offset0, _ = self._diagonal.getAttr("_blocks")  # type: ignore
-            for bcs, off0 in zip(bcs0, offset0[:-1], strict=True):  # type: ignore[has-type]
+            for bcs, off0 in zip(bcs0, offset0[:-1], strict=True):
                 for bc in bcs:
                     di = bc.dof_indices()
                     odi = di[0][: di[1]]
