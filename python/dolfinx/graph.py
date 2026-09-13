@@ -26,7 +26,7 @@ from dolfinx.typing import Index
 # (dependent on build configuration). Looked up via getattr rather than
 # a static "from ... import" since each CI build's generated dolfinx.cpp
 # stub only declares the partitioners enabled in that build, and a plain
-# import would make mypy's attr-defined check build-configuration-specific.
+# import would make type checking build-configuration-specific.
 _partitioner_scotch = getattr(_cpp.graph, "partitioner_scotch", None)
 if _partitioner_scotch is not None:
     partitioner_scotch = _partitioner_scotch

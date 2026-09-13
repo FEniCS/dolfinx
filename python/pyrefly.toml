@@ -1,0 +1,19 @@
+project-includes = ["dolfinx", "demo", "test"]
+infer-return-types = "annotated"
+replace-imports-with-any = [
+    "gmsh", "llvmlite", "llvmlite.*", "pyamg", "slepc4py", "slepc4py.*",
+    "networkx", "pyvista", "pyvista.*", "pyvistaqt", "cffi", "cffi.*",
+    "_cffi_backend",
+]
+ignore-missing-imports = ["ufl", "ufl.*", "ffcx", "ffcx.*", "scipy.*", "_cffi_kernelA"]
+
+[[sub-config]]
+matches = "demo/**"
+[sub-config.errors]
+unbound-name = "ignore"
+
+[[sub-config]]
+matches = "test/**"
+check-unannotated-defs = false
+[sub-config.errors]
+unbound-name = "ignore"
