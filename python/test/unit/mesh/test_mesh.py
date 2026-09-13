@@ -97,7 +97,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
     if len(submesh_to_mesh) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
-        mesh.topology.create_entity_permutations()
+        mesh.topology.create_cell_permutations()
         e_to_g = entities_to_geometry(mesh, entity_dim, np.array(submesh_to_mesh), True)
         for submesh_entity in range(len(submesh_to_mesh)):
             submesh_x_dofs = submesh.geometry.dofmaps[0][submesh_entity]
@@ -117,7 +117,7 @@ def test_empty_entities_to_geometry(cell_type):
     mesh = _mesh.create_unit_square(MPI.COMM_WORLD, 10, 12, cell_type=cell_type)
 
     mesh.topology.create_connectivity(0, mesh.topology.dim)
-    mesh.topology.create_entity_permutations()
+    mesh.topology.create_cell_permutations()
     e_to_g = entities_to_geometry(mesh, 0, np.array([], dtype=np.int32), True)
     assert e_to_g.shape == (0, 1)
     e_to_g = entities_to_geometry(mesh, mesh.topology.dim, np.array([], dtype=np.int32), True)
@@ -639,9 +639,28 @@ def test_empty_rank_mesh(dtype):
         assert e_to_v.num_nodes == 0
 
     # Test creating and getting permutations doesn't throw an error
-    mesh.topology.create_entity_permutations()
+    mesh.topology.create_cell_permutations()
     mesh.topology.get_cell_permutation_info()
-    mesh.topology.get_facet_permutations()
+
+    tdim = mesh.topology.dim
+    for dim in range(tdim):
+        mesh.topology.create_entity_permutations(dim)
+        perms = mesh.topology.get_entity_permutations(dim)
+        num_cells = (
+            mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
+        )
+        num_entities = _cpp.mesh.cell_num_entities(cell_type, dim)
+        # Vertices have no orientation, so their permutations are empty
+        expected = 0 if dim == 0 else num_cells * num_entities
+        assert perms.shape == (expected,)
+
+    # A dimension must be computed before it can be read
+    with pytest.raises(RuntimeError):
+        create_unit_square(MPI.COMM_WORLD, 2, 2).topology.get_entity_permutations(1)
+
+    # A cell is not a sub-entity of itself
+    with pytest.raises(ValueError):
+        mesh.topology.create_entity_permutations(tdim)
 
 
 def test_original_index():
@@ -915,3 +934,144 @@ def test_point_mesh(gdim, dtype):
     assert mesh.geometry.dim == gdim
     assert mesh.topology.index_map(0).size_global == MPI.COMM_WORLD.size * num_points
     assert mesh.topology.index_map(0).size_local == num_points
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        CellType.triangle,
+        CellType.quadrilateral,
+        CellType.tetrahedron,
+        CellType.hexahedron,
+    ],
+)
+def test_cell_permutation_info_matches_entity_permutations(cell_type):
+    """The packed cell permutation info is the per-dimension permutations.
+
+    ``get_cell_permutation_info`` packs three bits per face followed by
+    one bit per edge. Those bits must agree with the permutations
+    returned per entity dimension, which are computed by a separate code
+    path.
+    """
+    if cell_type in (CellType.triangle, CellType.quadrilateral):
+        msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type=cell_type)
+    else:
+        msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
+
+    topology = msh.topology
+    tdim = topology.dim
+
+    # Compute the per-dimension permutations first, so that they and the
+    # packed info are produced by independent code paths: asking for
+    # them after the packed info exists unpacks it instead
+    for dim in range(1, tdim):
+        topology.create_entity_permutations(dim)
+    topology.create_cell_permutations()
+
+    info = topology.get_cell_permutation_info()
+    num_cells = len(info)
+
+    used_bits = 0
+    if tdim > 2:
+        faces = topology.get_entity_permutations(2).reshape(num_cells, -1)
+        for i in range(faces.shape[1]):
+            assert np.array_equal((info >> (3 * i)) & 7, faces[:, i])
+        used_bits += 3 * faces.shape[1]
+
+    edges = topology.get_entity_permutations(1).reshape(num_cells, -1)
+    for i in range(edges.shape[1]):
+        assert np.array_equal((info >> (used_bits + i)) & 1, edges[:, i])
+
+    # A non-trivial mesh really does have permuted entities, so the
+    # comparisons above are not vacuous
+    assert edges.any()
+    if tdim > 2:
+        assert faces.any()
+
+
+def test_entity_permutations_are_computed_per_dimension():
+    """Computing one dimension must not compute any other."""
+    msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    topology = msh.topology
+
+    topology.create_entity_permutations(1)
+    topology.get_entity_permutations(1)
+    with pytest.raises(RuntimeError):
+        topology.get_entity_permutations(2)
+
+    topology.create_entity_permutations(2)
+    topology.get_entity_permutations(2)
+
+
+def test_facet_assembly_computes_only_facet_permutations():
+    """A form pays only for the entities it integrates over.
+
+    An interior facet form needs permutations (it reads
+    ``quadrature_permutation``), so the facets of the tetrahedron --
+    faces, dimension 2 -- must be computed. Its edges must not be.
+    """
+    msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = dolfinx.fem.form(ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS)
+    assert a._cpp_object.needs_facet_permutations
+
+    dolfinx.fem.assemble_matrix(a)
+
+    msh.topology.get_entity_permutations(2)
+    with pytest.raises(RuntimeError):
+        msh.topology.get_entity_permutations(1)
+
+    # A Lagrange element needs no dof transformations, so the packed
+    # cell info is not needed either
+    with pytest.raises(RuntimeError):
+        msh.topology.get_cell_permutation_info()
+
+
+def test_cell_assembly_computes_only_cell_permutations():
+    """Dof transformations need the packed cell info, but no sub-entities.
+
+    The cell permutation info used by non-Lagrange elements is no longer
+    computed as a side effect of, or alongside, the permutations of a
+    cell's sub-entities.
+    """
+    msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.fem.functionspace(msh, ("N1curl", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    assert V.element.needs_dof_transformations
+
+    a = dolfinx.fem.form(ufl.inner(u, v) * ufl.dx)
+    assert not a._cpp_object.needs_facet_permutations
+    dolfinx.fem.assemble_matrix(a)
+
+    msh.topology.get_cell_permutation_info()
+    for dim in (1, 2):
+        with pytest.raises(RuntimeError):
+            msh.topology.get_entity_permutations(dim)
+
+
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+def test_entity_permutations_unpacked_from_cell_info(cell_type):
+    """Asking for permutations after the packed info exists unpacks it.
+
+    The result must equal what the independent per-dimension computation
+    produces, so that the reuse is a pure saving.
+    """
+    if cell_type == CellType.triangle:
+        args = (MPI.COMM_WORLD, 3, 3)
+        make = create_unit_square
+    else:
+        args = (MPI.COMM_WORLD, 2, 2, 2)
+        make = create_unit_cube
+
+    computed = make(*args, cell_type=cell_type)
+    unpacked = make(*args, cell_type=cell_type)
+    unpacked.topology.create_cell_permutations()
+
+    for dim in range(1, computed.topology.dim):
+        computed.topology.create_entity_permutations(dim)
+        unpacked.topology.create_entity_permutations(dim)
+        assert np.array_equal(
+            computed.topology.get_entity_permutations(dim),
+            unpacked.topology.get_entity_permutations(dim),
+        )

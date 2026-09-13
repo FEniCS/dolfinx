@@ -152,36 +152,25 @@ public:
   /// @brief Get the cell permutation information.
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
-  /// @brief Get the numbers that encode the number of permutations to
-  /// apply to facets.
+  /// @brief Get the numbers that encode the permutation to apply to
+  /// each cell-local entity of a given dimension.
   ///
   /// The permutations are encoded so that:
   ///
   ///   - `n % 2` gives the number of reflections to apply
   ///   - `n // 2` gives the number of rotations to apply
   ///
-  /// The data is stored in a flattened 2D array, so that `data[cell_index *
-  /// facets_per_cell + facet_index]` contains the facet with index
-  /// `facet_index` of the cell with index `cell_index`.
-  /// @return The encoded permutation info
-  /// @note An exception is raised if the permutations have not been
-  /// computed
-  const std::vector<std::uint8_t>& get_facet_permutations() const;
-
-  /// @brief Get the numbers that encode the number of permutations to
-  /// apply to ridges.
+  /// The data is stored in a flattened 2D array, so that
+  /// `data[cell_index * entities_per_cell + entity_index]` is the
+  /// permutation of the cell-local entity `entity_index` of cell
+  /// `cell_index`.
   ///
-  /// The permutations are encoded so that:
-  ///
-  /// @todo Matthew needs to document this.
-  ///
-  /// The data is stored in a flattened 2D array, so that `data[cell_index *
-  /// ridges_per_cell + ridge_index]` contains the ridge with index
-  /// `ridge_index` of the cell with index `cell_index`.
-  /// @return The encoded permutation info
-  /// @note An exception is raised if the permutations have not been
-  /// computed
-  const std::vector<std::uint8_t>& get_ridge_permutations() const;
+  /// @param[in] dim Topological dimension of the entities. Vertices
+  /// have no orientation, so their permutations are empty.
+  /// @return The encoded permutation info.
+  /// @note Throws if ::create_entity_permutations has not been called
+  /// for `dim`.
+  const std::vector<std::uint8_t>& get_entity_permutations(int dim) const;
 
   /// @brief Get the types of cells in the topology
   /// @return The cell types
@@ -225,9 +214,25 @@ public:
   /// @param[in] d1 Topological dimension.
   void create_connectivity(int d0, int d1);
 
-  /// @brief Compute entity permutations and reflections.
+  /// @brief Compute the permutations of the cell-local entities of a
+  /// given dimension.
+  ///
+  /// Does nothing if the permutations for `dim` have already been
+  /// computed.
+  ///
+  /// @param[in] dim Topological dimension of the entities, e.g.
+  /// `dim() - 1` for facets. Must satisfy `0 <= dim < dim()`. Vertices
+  /// have no orientation, so their permutations are empty.
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
-  void create_entity_permutations(int num_threads = 1);
+  void create_entity_permutations(int dim, int num_threads = 1);
+
+  /// @brief Compute the cell permutation info used by non-Lagrange
+  /// elements.
+  ///
+  /// Does nothing if the cell permutations have already been computed.
+  ///
+  /// @param[in] num_threads Number of threads to use. Must be >= 1.
+  void create_cell_permutations(int num_threads = 1);
 
   /// Original cell index for each cell type
   std::vector<std::vector<std::int64_t>> original_cell_index;
@@ -254,15 +259,13 @@ private:
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>>
       _connectivity;
 
-  // The facet permutations (local facet, cell)
+  // Entity permutations by entity dimension, each (local entity, cell)
   // [cell0_0, cell0_1, cell0_2, cell1_0, cell1_1, cell1_2, ...,
-  // celln_0, celln_1, celln_2]
-  std::vector<std::uint8_t> _facet_permutations;
-
-  // The ridge permutations (local ridge, cell)
-  // [cell0_0, cell0_1, ,cell0_2, cell1_0, cell1_1, ,cell1_2, ...,
-  // celln_0, celln_1, ,celln_2,]
-  std::vector<std::uint8_t> _ridge_permutations;
+  // celln_0, celln_1, celln_2]. Only sub-entities of a cell are stored,
+  // so the dimension is at most 2. Unset until computed, which an empty
+  // permutation vector (vertices, or a rank with no cells) does not
+  // indicate.
+  std::array<std::optional<std::vector<std::uint8_t>>, 3> _entity_permutations;
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.

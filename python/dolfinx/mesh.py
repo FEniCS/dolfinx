@@ -289,13 +289,23 @@ class Topology:
         """
         return self._cpp_object.create_entities(dim, num_threads)
 
-    def create_entity_permutations(self, num_threads: int = 1) -> None:
-        """Compute entity permutations and reflections.
+    def create_entity_permutations(self, dim: int, num_threads: int = 1) -> None:
+        """Compute permutations of cell-local entities of a dimension.
+
+        Args:
+            dim: Topological dimension of the entities, e.g. ``tdim - 1``
+                for facets. Must satisfy ``0 <= dim < tdim``.
+            num_threads: Number of CPU threads to use. Must be >= 1.
+        """
+        self._cpp_object.create_entity_permutations(dim, num_threads)
+
+    def create_cell_permutations(self, num_threads: int = 1) -> None:
+        """Compute the cell permutation info used by non-Lagrange elements.
 
         Args:
             num_threads: Number of CPU threads to use. Must be >= 1.
         """
-        self._cpp_object.create_entity_permutations(num_threads)
+        self._cpp_object.create_cell_permutations(num_threads)
 
     @property
     def dim(self) -> int:
@@ -317,35 +327,25 @@ class Topology:
         """
         return self._cpp_object.get_cell_permutation_info()
 
-    def get_facet_permutations(self) -> npt.NDArray[np.uint8]:
-        """Get the permutation integer to apply to facets.
+    def get_entity_permutations(self, dim: int) -> npt.NDArray[np.uint8]:
+        """Get the permutation integer for entities of a dimension.
 
-        The bits of each integer describes the number of reflections and
-        rotations that has to be applied to a facet to map between a
-        facet in the mesh (relative to a cell) and the corresponding
-        facet on the reference element. The data has the shape
-        ``(num_cells, num_facets_per_cell)``, flattened row-wise. The
-        number of cells include potential ghost cells.
+        The bits of each integer describe the number of rotations and
+        reflections to apply to an entity to map between the entity as
+        seen by a cell of the mesh and the corresponding entity on the
+        reference element. The data has the shape ``(num_cells,
+        num_entities_per_cell)``, flattened row-wise. The number of
+        cells includes potential ghost cells.
 
-        Note:
-            The data can be unpacked with ``numpy.unpack_bits``.
-        """
-        return self._cpp_object.get_facet_permutations()
-
-    def get_ridge_permutations(self) -> npt.NDArray[np.uint8]:
-        """Get the permutation integer to apply to ridges.
-
-        The bits of each integer describes the number of reflections
-        that has to be applied to a ridge to map between a
-        ridge in the mesh (relative to a cell) and the corresponding
-        ridge on the reference element. The data has the shape
-        ``(num_cells, num_ridges_per_cell)``, flattened row-wise. The
-        number of cells include potential ghost cells.
+        Args:
+            dim: Topological dimension of the entities, e.g. ``tdim - 1``
+                for facets.
 
         Note:
-            The data can be unpacked with ``numpy.unpack_bits``.
+            :func:`create_entity_permutations` must be called with the
+            same ``dim`` first.
         """
-        return self._cpp_object.get_ridge_permutations()
+        return self._cpp_object.get_entity_permutations(dim)
 
     def index_map(self, dim: int) -> _cpp.common.IndexMap:
         """Index map for the parallel distribution of the mesh entities.
@@ -1510,7 +1510,7 @@ def entities_to_geometry(
         entities: Entity indices (local to the process).
         permute: Permute the DOFs such that they are consistent with the
             orientation of `dim`-dimensional mesh entities. This
-            requires `create_entity_permutations` to be called first.
+            requires `create_cell_permutations` to be called first.
 
     Returns:
         The geometric DOFs associated with the closure of the entities
