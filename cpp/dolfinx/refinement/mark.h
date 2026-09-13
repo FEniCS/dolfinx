@@ -28,28 +28,28 @@ namespace dolfinx::refinement
 /// @brief Return local indices of a set of values whose entry exceeds a
 /// fraction of the global maximum value.
 ///
-/// Computes the maximum `max` of @p values over the locally owned entries on
-/// every rank of `index_map.comm()`, and returns the local indices `i`,
-/// satisfying `values[i] > θ max`. This is commonly referred to as 'maximum
-/// marking' in the adaptive finite element literature.
+/// Computes the maximum \f$ \max_j v_j \f$ of @p values \f$ v \f$ over the
+/// locally owned entries on every rank of `index_map.comm()`, and returns the
+/// local indices \f$ i \f$ satisfying \f$ v_i > \theta \max_j v_j \f$. This is
+/// commonly referred to as 'maximum marking' in the adaptive finite element
+/// literature.
 ///
 /// @pre @p values has size `index_map.size_local() + index_map.num_ghosts()`.
 /// @pre Ghost entries of @p values are up to date, i.e. `scatter_forward` has
 /// been called since the owned entries were last modified.
 ///
-/// @note θ = 1 marks nothing, since no entry can strictly exceed the true
-/// maximum. θ = 0 is rejected, since `threshold` would be 0 and the
-/// criterion would degenerate to marking every entry with a positive
-/// value.
-///
+/// @note \f$ \theta = 1 \f$ marks nothing, since no entry can strictly exceed
+/// the true maximum. \f$ \theta = 0 \f$ is rejected, since the threshold would
+/// be 0 and the criterion would degenerate to marking every entry with a
+/// positive value.
 ///
 /// @param[in] values Values, often with each entry associated with a mesh
 ///   entity, e.g. an error indicator.
 /// @param[in] index_map Index map describing the parallel layout of @p
 ///   values.
-/// @param[in] theta Cut-off parameter, 0 < θ ≤ 1.
-/// @return Local indices, ascending and including ghosts, of `values`
-/// that satisfy `values[i] > θ max`.
+/// @param[in] theta Cut-off parameter, \f$ 0 < \theta \leq 1 \f$.
+/// @return Local indices, ascending and including ghosts, of @p values
+/// satisfying \f$ v_i > \theta \max_j v_j \f$.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_maximum(std::span<const T> values,
                                        const common::IndexMap& index_map,
