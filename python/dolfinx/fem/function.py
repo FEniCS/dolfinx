@@ -687,6 +687,7 @@ def functionspace(
     """
     # Create UFL element
     dtype = mesh.geometry.x.dtype
+    ufl_e: ufl.finiteelement.AbstractFiniteElement
     try:
         e = ElementMetaData(*typing.cast(tuple, element))
         ufl_e = basix.ufl.element(
@@ -698,7 +699,7 @@ def functionspace(
             dtype=dtype,
         )
     except TypeError:
-        ufl_e = element
+        ufl_e = typing.cast(ufl.finiteelement.AbstractFiniteElement, element)
 
     # Check that element and mesh cell types match
     if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():

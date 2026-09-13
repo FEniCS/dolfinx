@@ -342,29 +342,39 @@ def _assemble_vector_petsc(
     if b.getType() == PETSc.Vec.Type.NEST:
         if not isinstance(L, Sequence):
             raise ValueError("Must provide a sequence of forms when assembling a nest vector")
+        if isinstance(constants, np.ndarray):
+            raise ValueError("Must provide a sequence of constants when assembling a nest vector")
         if isinstance(coeffs, dict):
             raise ValueError(
                 "Must provide a sequence of coefficients when assembling a nest vector"
             )
-        constants = [None] * len(L) if constants is None else constants  # type: ignore[list-item]
-        coeffs = [None] * len(L) if coeffs is None else coeffs  # type: ignore[list-item]
+        constants_: Sequence[npt.NDArray | None] = (
+            [None] * len(L) if constants is None else constants
+        )
+        coeffs_: Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray] | None] = (
+            [None] * len(L) if coeffs is None else coeffs
+        )
         for b_sub, L_sub, const, coeff in zip(
-            b.getNestSubVecs(), L, constants, coeffs, strict=True
+            b.getNestSubVecs(), L, constants_, coeffs_, strict=True
         ):
             assert L_sub is not None
             with b_sub.localForm() as b_local:
                 _assemble_vector_array(b_local.array_w, L_sub, const, coeff)
     elif isinstance(L, Sequence):
-        if constants is None:
-            constants = pack_constants(L)
-        if coeffs is None:
-            coeffs = pack_coefficients(L)
+        if isinstance(constants, np.ndarray):
+            raise ValueError("Must provide a sequence of constants when assembling blocked forms")
+        if isinstance(coeffs, dict):
+            raise ValueError(
+                "Must provide a sequence of coefficients when assembling blocked forms"
+            )
+        constants_ = pack_constants(L) if constants is None else constants
+        coeffs_ = pack_coefficients(L) if coeffs is None else coeffs
         offset0, offset1 = b.getAttr("_blocks")  # type: ignore
         with b.localForm() as b_l:
             for L_, const, coeff, off0, off1, offg0, offg1 in zip(
                 L,
-                constants,
-                coeffs,
+                constants_,
+                coeffs_,
                 offset0[:-1],
                 offset0[1:],
                 offset1[:-1],
@@ -575,7 +585,7 @@ def _assemble_matrix_petsc(
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0].contains(bc.function_space):
+                        if row_forms[0].function_spaces[0]._cpp_object.contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
                                 " and have DirichletBC applied."
@@ -715,8 +725,18 @@ def apply_lifting(
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
                         zip(a, offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True)
                     ):
-                        const = pack_constants(a_) if constants is None else constants[i]
-                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore
+                        const = (
+                            pack_constants(a_)
+                            if constants is None
+                            else typing.cast(Sequence[npt.NDArray | None], constants[i])
+                        )
+                        coeff = (
+                            pack_coefficients(a_)
+                            if coeffs is None
+                            else typing.cast(
+                                dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray], coeffs[i]
+                            )
+                        )
                         const_ = [
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val
                             for val in const
