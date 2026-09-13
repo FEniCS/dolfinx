@@ -1008,7 +1008,7 @@ def mark_equidistribution(
 
     Returns:
         Local indices, ascending and including ghosts, of the entries
-        satisfying :math:`v_i > \theta^2 \frac{||v||_2}{N}`.
+        satisfying :math:`v_i > \theta^2 \frac{||v||_2^2}{N}`.
     """
     return _mark_equidistribution(values, index_map, theta)
 
