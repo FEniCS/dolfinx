@@ -966,7 +966,7 @@ def mark_maximum(
         values: Values, often with each entry associated with a mesh
             entity, e.g. an error indicator.
         index_map: Index map describing the parallel layout of ``values``.
-        theta: Cut-off parameter, :math:`0 < \theta \le 1`.
+        theta: Cut-off parameter, :math:`0 < \theta \leq 1`.
 
     Returns:
         Local indices, ascending and including ghosts, of the entries
