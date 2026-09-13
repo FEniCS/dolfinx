@@ -8,7 +8,10 @@
 from __future__ import annotations
 
 import functools
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Generic, TypeVar
+
+from mpi4py import MPI as _MPI
 
 import numpy as np
 import numpy.typing as npt
@@ -29,11 +32,14 @@ __all__ = [
     "InsertMode",
     "MatrixCSR",
     "Norm",
+    "SparsityPattern",
     "Vector",
     "is_orthonormal",
     "matrix_csr",
     "norm",
     "orthonormalize",
+    "sparsity_pattern",
+    "sparsity_pattern_blocked",
     "vector",
 ]
 
@@ -133,6 +139,86 @@ class Vector(Generic[_T]):
                 owner.
         """
         self._cpp_object.scatter_reverse(mode)
+
+
+class SparsityPattern:
+    """Sparsity pattern of a distributed sparse matrix.
+
+    A pattern is built by inserting (row, column) index pairs and then
+    finalizing. Once finalized, it defines the nonzero structure and the
+    parallel distribution of a :class:`MatrixCSR`.
+    """
+
+    _cpp_object: _cpp.la.SparsityPattern
+
+    def __init__(self, sp: _cpp.la.SparsityPattern):
+        """Create a sparsity pattern.
+
+        Note:
+            Objects of this type should be created using
+            :func:`sparsity_pattern`, :func:`sparsity_pattern_blocked`
+            or :func:`dolfinx.fem.create_sparsity_pattern`, and not
+            using this initialiser.
+
+        Args:
+            sp: The C++/nanobind sparsity pattern object.
+        """
+        self._cpp_object = sp
+
+    def index_map(self, dim: int) -> IndexMap:
+        """Index map for the rows (``dim=0``) or columns (``dim=1``).
+
+        Args:
+            dim: 0 for the row map, 1 for the column map.
+        """
+        return self._cpp_object.index_map(dim)
+
+    @property
+    def num_nonzeros(self) -> int:
+        """Number of nonzeros in the finalized pattern."""
+        return self._cpp_object.num_nonzeros
+
+    def insert(
+        self,
+        rows: int | npt.NDArray[np.int32],
+        cols: int | npt.NDArray[np.int32],
+    ) -> None:
+        """Insert entries into the pattern.
+
+        Given arrays of rows and columns, an entry is inserted for every
+        (row, column) pair. Given a single row and column, the one entry
+        is inserted.
+
+        Args:
+            rows: Row index/indices.
+            cols: Column index/indices.
+        """
+        self._cpp_object.insert(rows, cols)  # type: ignore[arg-type]
+
+    def insert_diagonal(self, rows: npt.NDArray[np.int32]) -> None:
+        """Insert the diagonal entry for each of ``rows``.
+
+        Args:
+            rows: Rows to insert the diagonal entry for.
+        """
+        self._cpp_object.insert_diagonal(rows)
+
+    def finalize(self) -> None:
+        """Finalize the pattern.
+
+        The pattern cannot be modified after finalizing, and it must be
+        finalized before a matrix can be created from it.
+        """
+        self._cpp_object.finalize()
+
+    @property
+    def graph(self) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int64]]:
+        """Finalized pattern as a (column indices, row offsets) pair.
+
+        Note:
+            The returned arrays are read-only views into the pattern.
+        """
+        return self._cpp_object.graph
 
 
 class MatrixCSR(Generic[Scalar]):
@@ -347,8 +433,56 @@ class MatrixCSR(Generic[Scalar]):
             )
 
 
+def sparsity_pattern(
+    comm: _MPI.Comm, maps: Sequence[IndexMap], bs: Sequence[int]
+) -> SparsityPattern:
+    """Create a sparsity pattern for a matrix.
+
+    Args:
+        comm: MPI communicator that the pattern is distributed over.
+        maps: Row and column index maps.
+        bs: Row and column block sizes.
+
+    Returns:
+        An empty sparsity pattern. Insert entries into it and call
+        :meth:`SparsityPattern.finalize` before creating a matrix.
+    """
+    return SparsityPattern(_cpp.la.SparsityPattern(comm, list(maps), list(bs)))
+
+
+def sparsity_pattern_blocked(
+    comm: _MPI.Comm,
+    patterns: Sequence[Sequence[SparsityPattern]],
+    maps: Sequence[Sequence[tuple[IndexMap, int]]],
+    bs: Sequence[Sequence[int]],
+) -> SparsityPattern:
+    """Create a sparsity pattern from a rectangular array of patterns.
+
+    The blocks are concatenated into a single pattern, as required for a
+    monolithic matrix assembled from a block form.
+
+    Args:
+        comm: MPI communicator that the pattern is distributed over.
+        patterns: Sparsity pattern of each block.
+        maps: Index map and block size of each block row, and of each
+            block column.
+        bs: Row and column block sizes of the assembled pattern.
+
+    Returns:
+        An unfinalized sparsity pattern spanning all blocks.
+    """
+    return SparsityPattern(
+        _cpp.la.SparsityPattern(
+            comm,
+            [[p._cpp_object for p in row] for row in patterns],
+            [list(m) for m in maps],
+            [list(b) for b in bs],
+        )
+    )
+
+
 def matrix_csr(
-    sp: _cpp.la.SparsityPattern,
+    sp: SparsityPattern,
     block_mode: BlockMode = BlockMode.compact,
     dtype: npt.DTypeLike = np.float64,
 ) -> MatrixCSR:
@@ -382,7 +516,7 @@ def matrix_csr(
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    return MatrixCSR(ftype(sp, block_mode))
+    return MatrixCSR(ftype(sp._cpp_object, block_mode))
 
 
 def vector(

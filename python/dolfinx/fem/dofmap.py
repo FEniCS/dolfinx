@@ -16,7 +16,7 @@ import numpy.typing as npt
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.fem import DofMap as _DofMap
 from dolfinx.cpp.fem import create_dofmaps as _create_dofmaps
-from dolfinx.fem.element import FiniteElement
+from dolfinx.fem.element import ElementDofLayout, FiniteElement
 from dolfinx.graph import AdjacencyList
 
 if typing.TYPE_CHECKING:
@@ -54,9 +54,9 @@ class DofMap:
         return self._cpp_object.bs
 
     @property
-    def dof_layout(self) -> _cpp.fem.ElementDofLayout:
+    def dof_layout(self) -> ElementDofLayout:
         """Layout of dofs on an element."""
-        return self._cpp_object.dof_layout
+        return ElementDofLayout(self._cpp_object.dof_layout)
 
     @property
     def index_map(self) -> _cpp.common.IndexMap:

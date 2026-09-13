@@ -10,7 +10,6 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.fem import functionspace
 from dolfinx.mesh import create_unit_square
@@ -23,7 +22,7 @@ def test_create_matrix_csr():
     map = V.dofmap.index_map
     bs = V.dofmap.index_map_bs
 
-    pattern = _cpp.la.SparsityPattern(mesh.comm, [map, map], [bs, bs])
+    pattern = la.sparsity_pattern(mesh.comm, [map, map], [bs, bs])
     rows = np.arange(0, bs * map.size_local)
     cols = np.arange(0, bs * map.size_local)
     pattern.insert(rows, cols)

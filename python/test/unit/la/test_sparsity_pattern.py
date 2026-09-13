@@ -7,8 +7,8 @@
 
 from mpi4py import MPI
 
-from dolfinx.cpp.la import SparsityPattern
 from dolfinx.fem import functionspace, locate_dofs_topological
+from dolfinx.la import sparsity_pattern
 from dolfinx.mesh import create_unit_square, exterior_facet_indices
 
 
@@ -17,7 +17,7 @@ def test_add_diagonal():
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     gdim = mesh.geometry.dim
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
-    pattern = SparsityPattern(
+    pattern = sparsity_pattern(
         mesh.comm,
         [V.dofmap.index_map, V.dofmap.index_map],
         [V.dofmap.index_map_bs, V.dofmap.index_map_bs],
