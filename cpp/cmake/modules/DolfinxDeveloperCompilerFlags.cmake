@@ -15,6 +15,11 @@ if(HAVE_PEDANTIC)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
 endif()
 
+check_cxx_compiler_flag(-Wshadow HAVE_SHADOW)
+if(HAVE_SHADOW)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wshadow)
+endif()
+
 # Debug flags
 check_cxx_compiler_flag(-g HAVE_DEBUG)
 if(HAVE_DEBUG)

@@ -629,18 +629,18 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     std::ranges::sort(global_old_new);
 
     // Build the dimension d part of local_to_global_new vector
-    for (std::size_t i = 0; i < local_new_to_global_old[d].size(); i += 2)
+    for (std::size_t j = 0; j < local_new_to_global_old[d].size(); j += 2)
     {
       std::pair<std::int64_t, std::pair<int64_t, int>> idx_old
-          = {local_new_to_global_old[d][i], {0, 0}};
+          = {local_new_to_global_old[d][j], {0, 0}};
 
       auto it = std::ranges::lower_bound(global_old_new, idx_old,
                                          [](auto& a, auto& b)
                                          { return a.first < b.first; });
       assert(it != global_old_new.end() and it->first == idx_old.first);
 
-      local_to_global_new[local_new_to_global_old[d][i + 1]] = it->second.first;
-      local_to_global_new_owner[local_new_to_global_old[d][i + 1]]
+      local_to_global_new[local_new_to_global_old[d][j + 1]] = it->second.first;
+      local_to_global_new_owner[local_new_to_global_old[d][j + 1]]
           = it->second.second;
     }
   }
@@ -671,7 +671,8 @@ fem::build_dofmap_data(
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
   const auto [node_graphs, local_to_global0, dof_entity0, topo_index_maps,
-              offset] = build_basic_dofmaps(topology, element_dof_layouts);
+              offset]
+      = build_basic_dofmaps(topology, element_dof_layouts);
 
   spdlog::info("Got {} index_maps", topo_index_maps.size());
 

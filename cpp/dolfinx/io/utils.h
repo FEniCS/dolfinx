@@ -316,7 +316,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     return std::tuple(std::move(recv_buffer), std::move(recv_disp),
                       std::move(src), std::move(dest));
   };
-  const auto [nodes_g_p, recv_disp, src, dest]
+  const auto [nodes_g_p, nodes_g_p_disp, post_src, post_dest]
       = indices_to_postoffice(comm, num_nodes_g, nodes_g);
 
   // D. Send entities to possible owners, based on first entity index
@@ -412,8 +412,8 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
   // NOTE: src and dest are transposed here because we're reversing the
   // direction of communication
   const auto [entities_data_b, entities_values, shape_eb]
-      = candidate_ranks(comm, compound_type, nodes_g_p, recv_disp, dest, src,
-                        entitiesp, std::span(entitiesp_v));
+      = candidate_ranks(comm, compound_type, nodes_g_p, nodes_g_p_disp,
+                        post_dest, post_src, entitiesp, std::span(entitiesp_v));
   md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>> entities_data(
       entities_data_b.data(), shape_eb);
 
@@ -424,11 +424,10 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
   //       ranks, so we could use the received data to avoid creating
   //       the std::map for *all* entities and just for candidate
   //       entities.
-  auto select_entities
-      = [](const mesh::Topology& topology, auto xdofmap,
-           std::span<const std::int64_t> nodes_g,
-           std::span<const int> cell_vertex_dofs, auto entities_data,
-           std::span<const T> entities_values)
+  auto select_entities = [](const mesh::Topology& topology, auto xdofmap,
+                            std::span<const std::int64_t> nodes,
+                            std::span<const int> cell_vertex_dofs,
+                            auto entities_data, std::span<const T> values)
   {
     spdlog::info("XDMF build map");
     auto c_to_v = topology.connectivity(topology.dim(), 0);
@@ -442,7 +441,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
       std::span xdofs(xdofmap.data_handle() + c * xdofmap.extent(1),
                       xdofmap.extent(1));
       for (std::size_t v = 0; v < vertices.size(); ++v)
-        input_idx_to_vertex[nodes_g[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
+        input_idx_to_vertex[nodes[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
     }
 
     std::vector<std::int32_t> entities;
@@ -468,7 +467,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
       if (entity_found)
       {
         entities.insert(entities.end(), entity.begin(), entity.end());
-        data.push_back(entities_values[e]);
+        data.push_back(values[e]);
       }
     }
 

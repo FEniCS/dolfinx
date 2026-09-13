@@ -156,7 +156,8 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices,
   // Build {global index, pos, src} list
   std::vector<std::array<std::int64_t, 3>> indices_list;
   {
-    common::Timer timer("Topology: build and sort transposed index list");
+    common::Timer timer_transpose(
+        "Topology: build and sort transposed index list");
     for (std::size_t p = 0; p < recv_disp0.size() - 1; ++p)
       for (std::int32_t i = recv_disp0[p]; i < recv_disp0[p + 1]; ++i)
         indices_list.push_back({recv_buffer0[i], i, static_cast<int>(p)});

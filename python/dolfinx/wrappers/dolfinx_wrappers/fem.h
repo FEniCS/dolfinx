@@ -795,7 +795,7 @@ void declare_form(nb::module_& m, std::string type)
                 _integrals;
 
             // Loop over kernel for each entity type
-            for (auto& [type, kernels] : integrals)
+            for (auto& [itype, kernels] : integrals)
             {
               for (auto& [id, ptr, e, c] : kernels)
               {
@@ -803,7 +803,7 @@ void declare_form(nb::module_& m, std::string type)
                     = (void (*)(T*, const T*, const T*, const U*, const int*,
                                 const std::uint8_t*, void*))ptr;
                 _integrals.insert(
-                    {{type, id, 0},
+                    {{itype, id, 0},
                      {kn_ptr,
                       std::vector<std::int32_t>(e.data(), e.data() + e.size()),
                       std::vector<int>(c.data(), c.data() + c.size())}});

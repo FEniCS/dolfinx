@@ -1207,15 +1207,15 @@ IndexMap::index_to_dest_ranks(int tag) const
                            [](auto x) { return x.second; });
     offsets.reserve(this->size_local() + this->num_ghosts() + 1);
     {
-      auto it = idx_to_rank.begin();
+      auto it_idx = idx_to_rank.begin();
 
       // Loop over owned indices
       for (std::int32_t i = 0; i < this->size_local(); ++i)
       {
-        auto it1 = std::find_if(it, idx_to_rank.end(),
+        auto it1 = std::find_if(it_idx, idx_to_rank.end(),
                                 [i](auto x) { return x.first != i; });
-        offsets.push_back(offsets.back() + std::ranges::distance(it, it1));
-        it = it1;
+        offsets.push_back(offsets.back() + std::ranges::distance(it_idx, it1));
+        it_idx = it1;
       }
     }
   }
@@ -1313,8 +1313,8 @@ IndexMap::index_to_dest_ranks(int tag) const
             [](auto a, auto b) { return a.first < b.first; });
         assert(it != idx_to_pos.end() and it->first == idx);
 
-        int rank = recv_indices[i + 1];
-        idxpos_to_rank.push_back({it->second, rank});
+        int src_rank = recv_indices[i + 1];
+        idxpos_to_rank.push_back({it->second, src_rank});
       }
       std::ranges::sort(idxpos_to_rank);
 

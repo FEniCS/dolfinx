@@ -425,8 +425,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       entity_ranks.clear();
       for (auto v : entity)
       {
-        auto ranks = vertex_ranks.links(v);
-        entity_ranks.insert(entity_ranks.end(), ranks.begin(), ranks.end());
+        auto v_ranks = vertex_ranks.links(v);
+        entity_ranks.insert(entity_ranks.end(), v_ranks.begin(), v_ranks.end());
       }
       if (!entity_ranks.empty())
         std::ranges::sort(entity_ranks);
@@ -480,9 +480,9 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       return std::ranges::subrange(begin, std::next(begin, ncols));
     };
 
-    auto [unique_end, range_end]
-        = std::ranges::unique(perm, std::ranges::equal, range_by_key);
-    perm.erase(unique_end, range_end);
+    perm.erase(
+        std::ranges::unique(perm, std::ranges::equal, range_by_key).begin(),
+        perm.end());
   }
 
   timer_li_cand.stop();
@@ -609,7 +609,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       if (ghost_status[i] == 1)
         continue;
 
-      if (auto ranks = shared_entities.links(i); ranks.empty())
+      if (auto shared_ranks = shared_entities.links(i); shared_ranks.empty())
       {
         // Definitely local, unshared
         local_index[i] = c++;
@@ -848,7 +848,8 @@ compute_entities_by_key_matching(
   std::vector<std::int32_t> entity_index(cell_type_offsets.back());
   std::int32_t entity_count = 0;
   {
-    common::Timer timer("Compute entities by key matching: number entities");
+    common::Timer timer_number(
+        "Compute entities by key matching: number entities");
 
     auto sort_threaded
         = [](std::span<const std::span<std::int32_t>> cols, int num_threads)
