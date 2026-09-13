@@ -984,8 +984,8 @@ def mark_equidistribution(
 ) -> npt.NDArray[np.int32]:
     r"""Return local indices of values exceeding a fraction of the MS.
 
-    Computes the mean square :math:`\frac{||v||_2^2}{N}` of ``values`` over
-    the locally owned entries on every rank of ``index_map``'s
+    Computes the mean square (MS) :math:`\frac{||v||_2^2}{N}` of ``values``
+    over the locally owned entries on every rank of ``index_map``'s
     communicator, and returns the local indices :math:`i` satisfying
     :math:`v_i > \theta^2 \frac{||v||_2}{N}`. This is commonly referred to
     as 'equidistribution marking' in the adaptive finite element
