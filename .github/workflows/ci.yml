@@ -241,6 +241,7 @@ jobs:
           CHECKER_SITE=$(/tmp/pyrefly-venv/bin/python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')
           cd dolfinx-src/python
           /tmp/pyrefly-venv/bin/pyrefly check \
+            --error-stale-baseline \
             --python-interpreter-path "$ENV_PYTHON" \
             --site-package-path "$CHECKER_SITE"
 
