@@ -521,7 +521,7 @@ def _assemble_matrix_petsc(
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0].contains(bc.function_space):  # type: ignore
+                        if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
                                 " and have DirichletBC applied."
@@ -562,13 +562,12 @@ def _assemble_matrix_petsc(
                         True,
                     )
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
-                elif i == j:
-                    for bc in _bcs:  # type: ignore
+                elif i == j and bcs is not None:
+                    for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        V0 = row_forms[0].function_spaces[0]._cpp_object
-                        if V0.contains(bc.function_space):
+                        if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
                                 " and have DirichletBC applied."

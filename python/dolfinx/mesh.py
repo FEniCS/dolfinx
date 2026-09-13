@@ -222,10 +222,25 @@ def build_dual_graph(
     Returns:
         The dual graph, with the local cells as nodes.
     """
-    _cells = cells._cpp_object if isinstance(cells, AdjacencyList) else cells
-    return AdjacencyList(
-        _cpp.mesh.build_dual_graph(comm, cell_types, _cells, max_facet_to_cell_links, num_threads)
-    )
+    # The C++ function is overloaded on the single/mixed cell-type
+    # forms, so dispatch on 'cell_types' rather than passing a union.
+    if isinstance(cell_types, CellType):
+        if not isinstance(cells, AdjacencyList):
+            raise TypeError("'cells' must be an AdjacencyList for a single cell type.")
+        graph = _cpp.mesh.build_dual_graph(
+            comm,
+            cell_types,
+            cells._cpp_object,  # type: ignore[arg-type]
+            max_facet_to_cell_links,
+            num_threads,
+        )
+    else:
+        if isinstance(cells, AdjacencyList):
+            raise TypeError("'cells' must be one array per cell type for a mixed-topology mesh.")
+        graph = _cpp.mesh.build_dual_graph(
+            comm, cell_types, cells, max_facet_to_cell_links, num_threads
+        )
+    return AdjacencyList(graph)
 
 
 def compute_cell_centroids(
@@ -296,7 +311,17 @@ class Topology:
             d0: Dimension of entity one is mapping from.
             d1: Dimension of entity one is mapping to.
         """
-        if (conn := self._cpp_object.connectivity(d0, d1)) is not None:
+        # The C++ method is overloaded on the single/mixed-topology
+        # forms, so dispatch rather than passing a union.
+        if isinstance(d0, int):
+            if not isinstance(d1, int):
+                raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
+            conn = self._cpp_object.connectivity(d0, d1)
+        else:
+            if isinstance(d1, int):
+                raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
+            conn = self._cpp_object.connectivity(d0, d1)
+        if conn is not None:
             return AdjacencyList(conn)
         else:
             raise RuntimeError(
