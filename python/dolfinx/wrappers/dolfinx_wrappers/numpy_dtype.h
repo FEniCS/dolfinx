@@ -1,13 +1,13 @@
-// Copyright (C) 2024 Chris Richardson and Garth N. Wells
+// Copyright (C) 2024-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#pragma once
+
 #include <complex>
 #include <cstdint>
-
-#pragma once
 
 namespace dolfinx_wrappers
 {

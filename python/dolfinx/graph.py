@@ -236,7 +236,7 @@ def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
     Returns:
         An adjacency list representing the communication graph.
     """
-    return AdjacencyList(_cpp.graph.comm_graph(map))
+    return AdjacencyList(_cpp.graph.comm_graph(map, root))
 
 
 def comm_graph_data(
