@@ -744,6 +744,7 @@ def apply_lifting(
                             if constants is None
                             else typing.cast(Sequence[npt.NDArray | None], constants[i])
                         )
+                        assert const is not None
                         coeff = (
                             pack_coefficients(a_)
                             if coeffs is None
@@ -1781,7 +1782,7 @@ def assign(u: _Function | Sequence[_Function], x: PETSc.Vec) -> None: ...
 
 
 @overload
-def assign(x: PETSc.Vec, u: _Function | Sequence[_Function]) -> None: ...
+def assign(u: PETSc.Vec, x: _Function | Sequence[_Function]) -> None: ...
 
 
 def assign(
