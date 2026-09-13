@@ -1,0 +1,277 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index f410480..9a95d1f 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -134,9 +134,12 @@ endif()
+ 
+ # Thread support in Scotch
+ if(THREADS)
+-  find_package(Threads)
+-  if(Threads_FOUND)
++set(USE_PTHREAD OFF)
++if(NOT WIN32)
++  find_package(Threads REQUIRED)
++  if(CMAKE_USE_PTHREADS_INIT)
+     add_definitions(-DCOMMON_PTHREAD -DSCOTCH_PTHREAD)
++    set(USE_PTHREAD ON)
+   endif()
+   if(CMAKE_USE_WIN32_THREADS_INIT)
+     add_definitions(-DCOMMON_THREAD_WIN32)
+@@ -145,6 +148,12 @@ if(THREADS)
+   if(PTHREAD_AFFINITY_LINUX_OK)
+     add_definitions(-DCOMMON_PTHREAD_AFFINITY_LINUX)
+   endif()
++else()
++  find_package(PThreads4W REQUIRED)
++  add_definitions(-DCOMMON_PTHREAD -DSCOTCH_PTHREAD)
++  link_libraries(PThreads4W::PThreads4W)
++  set(USE_PTHREAD ON)
++endif()
+ endif()
+ 
+ # Detect and remove GCC _FORTIFY_SOURCE
+diff --git a/src/libscotch/CMakeLists.txt b/src/libscotch/CMakeLists.txt
+index c142c22..8a19745 100644
+--- a/src/libscotch/CMakeLists.txt
++++ b/src/libscotch/CMakeLists.txt
+@@ -573,9 +573,13 @@ if(LIBLZMA_FOUND)
+ endif()
+ 
+ # Add thread library
+-if(Threads_FOUND)
+-  target_compile_definitions(scotch PRIVATE COMMON_PTHREAD SCOTCH_PTHREAD)
+-  target_link_libraries(scotch PRIVATE Threads::Threads ${THREADS_PTHREADS_WIN32_LIBRARY})
++if(USE_PTHREAD)
++  target_compile_definitions(scotch PUBLIC COMMON_PTHREAD SCOTCH_PTHREAD)
++  if(NOT WIN32)
++    target_link_libraries(scotch PUBLIC Threads::Threads)
++  else()
++    target_link_libraries(scotch PUBLIC PThreads4W::PThreads4W)
++  endif()
+ endif()
+ 
+ # Include files
+@@ -600,6 +604,10 @@ target_include_directories(scotcherr PUBLIC
+ 
+ add_dependencies(scotcherr scotch_h)
+ 
++if(NOT "${LIBSCOTCHERR}" STREQUAL "")
++  add_dependencies(scotch ${LIBSCOTCHERR})
++endif()
++
+ add_library(scotcherrexit library_error_exit.c)
+ add_library(SCOTCH::scotcherrexit ALIAS scotcherrexit)
+ set_target_properties(scotcherrexit PROPERTIES VERSION ${SCOTCH_VERSION_LONG}
+@@ -831,7 +839,15 @@ set(PTSCOTCH_C_SOURCES
+   vdgraph_store.c)
+ 
+ if(BUILD_PTSCOTCH)
++  # ptscotch privately compiles its own copy of ${SCOTCH_C_SOURCES} rather
++  # than only linking against the scotch target. A handful of internal
++  # StratTab/Strat globals (e.g. stratdummy) are referenced directly (not
++  # just via function calls) across that boundary, and on Windows
++  # CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS cannot export data symbols for
++  # cross-DLL use. Compiling everything into ptscotch itself avoids the
++  # need for any such cross-DLL data reference.
+   add_library(ptscotch
++    ${SCOTCH_C_SOURCES}
+     ${PTSCOTCH_C_SOURCES})
+   add_library(SCOTCH::ptscotch ALIAS ptscotch)
+ 
+@@ -848,15 +864,39 @@ if(BUILD_PTSCOTCH)
+     $<BUILD_INTERFACE:${GENERATED_INCLUDE_DIR}>
+     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+ 
+-  add_dependencies(ptscotch ptscotch_h scotch_h)
++  add_dependencies(ptscotch ptscotch_h scotch_h parser_yy_c parser_ll_c)
++
++  # Mirror the (de)compression library setup applied to scotch above,
++  # since ptscotch now compiles its own copy of the same sources.
++  if(ZLIB_FOUND)
++    target_compile_definitions(ptscotch PRIVATE COMMON_FILE_COMPRESS_GZ)
++    target_include_directories(ptscotch PRIVATE ${ZLIB_INCLUDE_DIRS})
++    target_link_libraries(ptscotch PRIVATE ${ZLIB_LIBRARIES})
++  endif()
++
++  if(BZIP2_FOUND)
++    target_compile_definitions(ptscotch PRIVATE COMMON_FILE_COMPRESS_BZ2)
++    target_include_directories(ptscotch PRIVATE ${BZIP2_INCLUDE_DIRS})
++    target_link_libraries(ptscotch PRIVATE ${BZIP2_LIBRARIES})
++  endif()
++
++  if(LIBLZMA_FOUND)
++    target_compile_definitions(ptscotch PRIVATE COMMON_FILE_COMPRESS_LZMA)
++    target_include_directories(ptscotch PRIVATE ${LIBLZMA_INCLUDE_DIRS})
++    target_link_libraries(ptscotch PRIVATE ${LIBLZMA_LIBRARIES})
++  endif()
+ 
+   if(APPLE)
+     set_target_properties(ptscotch PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+   endif()
+ 
+-  if(Threads_FOUND)
+-    target_compile_definitions(ptscotch PRIVATE SCOTCH_PTHREAD COMMON_PTHREAD)
+-    target_link_libraries(ptscotch PRIVATE Threads::Threads ${THREADS_PTHREADS_WIN32_LIBRARY})
++  if(USE_PTHREAD)
++    target_compile_definitions(ptscotch PUBLIC COMMON_PTHREAD SCOTCH_PTHREAD)
++    if(NOT WIN32)
++      target_link_libraries(ptscotch PUBLIC Threads::Threads)
++    else()
++      target_link_libraries(ptscotch PUBLIC PThreads4W::PThreads4W)
++    endif()
+   endif()
+ 
+   add_library(ptscotcherr library_error.c)
+@@ -885,6 +925,7 @@ if(BUILD_PTSCOTCH)
+   add_dependencies(ptscotcherrexit ptscotch_h scotch_h)
+   if(NOT "${LIBPTSCOTCHERR}" STREQUAL "")
+     target_link_libraries(ptscotch PUBLIC ${LIBPTSCOTCHERR})
++    add_dependencies(ptscotch ${LIBPTSCOTCHERR})
+   endif()
+ endif()
+ 
+diff --git a/src/libscotch/common_file_compress.c b/src/libscotch/common_file_compress.c
+index 5255cdc..5f60dc8 100644
+--- a/src/libscotch/common_file_compress.c
++++ b/src/libscotch/common_file_compress.c
+@@ -378,8 +378,11 @@ FileCompress * const        compptr)
+   encodat.avail_out = FILECOMPRESSDATASIZE;
+   do {
+     if ((encodat.avail_in == 0) && (enacval == LZMA_RUN)) {
++#ifdef _MSC_VER
++      int                 bytenbr; //According to MSDN _read only returns int
++#else
+       ssize_t             bytenbr;
+-
++#endif
+       bytenbr = read (compptr->infdnum, compptr->bufftab, FILECOMPRESSDATASIZE); /* Read from pipe */
+       if (bytenbr < 0) {
+         errorPrint ("fileCompressLzma: cannot read");
+diff --git a/src/libscotch/common_file_decompress.c b/src/libscotch/common_file_decompress.c
+index 6e80222..3048d90 100644
+--- a/src/libscotch/common_file_decompress.c
++++ b/src/libscotch/common_file_decompress.c
+@@ -373,7 +373,11 @@ FileCompress * const        compptr)
+   decodat.avail_out = FILECOMPRESSDATASIZE;
+   do {
+     if ((decodat.avail_in == 0) && (deacval == LZMA_RUN)) {
++#ifdef _MSC_VER
++      size_t              bytenbr; //According to MSDN fread returns size_t
++#else
+       ssize_t             bytenbr;
++#endif
+ 
+       bytenbr = fread (compptr->bufftab, 1, FILECOMPRESSDATASIZE, compptr->oustptr); /* Read from pipe */
+       if (ferror (compptr->oustptr)) {
+diff --git a/src/libscotch/common_thread.h b/src/libscotch/common_thread.h
+index a8d3284..2e9ae28 100644
+--- a/src/libscotch/common_thread.h
++++ b/src/libscotch/common_thread.h
+@@ -82,6 +82,8 @@ struct ThreadContext_ {
+     int                         dummval;          /*+ Dummy value if no affinity enabled  +*/
+ #ifdef COMMON_PTHREAD_AFFINITY_LINUX
+     cpu_set_t                   cpusdat;          /*+ Original thread mask of main thread +*/
++#else
++    void*                       dummy;
+ #endif /* COMMON_PTHREAD_AFFINITY_LINUX */
+   }                             savedat;          /*+ Save area for affinity mask         +*/
+ #endif /* COMMON_PTHREAD */
+diff --git a/src/libscotch/context.c b/src/libscotch/context.c
+index acda708..3bf20e5 100644
+--- a/src/libscotch/context.c
++++ b/src/libscotch/context.c
+@@ -70,7 +70,11 @@ static struct ContextValuesData_ {
+ #else /* ((defined SCOTCH_DETERMINISTIC) || (defined COMMON_RANDOM_FIXED_SEED)) */
+                               0
+ #endif /* ((defined SCOTCH_DETERMINISTIC) || (defined COMMON_RANDOM_FIXED_SEED)) */
+-  }, { -1.0 } };                                  /* Temporary hack: dummy value since ISO C does not accept zero-sized arrays */
++  }
++#ifndef _MSC_VER
++  , { }
++#endif
++  };
+ 
+ /***********************************/
+ /*                                 */
+@@ -91,8 +95,8 @@ Context * const             contptr)
+   int                 o;
+ 
+   o = contextValuesInit (contptr, &contextvaluesdat, sizeof (contextvaluesdat),
+-                         CONTEXTOPTIONNUMNBR, (byte *) &contextvaluesdat.vinttab - (byte *) &contextvaluesdat,
+-                         CONTEXTOPTIONDBLNBR, (byte *) &contextvaluesdat.vdbltab - (byte *) &contextvaluesdat);
++                         CONTEXTOPTIONNUMNBR, (char *) &contextvaluesdat.vinttab - (char *) &contextvaluesdat,
++                         CONTEXTOPTIONDBLNBR, (char *) &contextvaluesdat.vdbltab - (char *) &contextvaluesdat);
+ 
+   if (o == 0) {                                   /* If values array allocated, update it with existing environment variables */
+     INT                 deteval;
+diff --git a/src/libscotch/parser_ll.l b/src/libscotch/parser_ll.l
+index 7b690e0..cf9bf20 100644
+--- a/src/libscotch/parser_ll.l
++++ b/src/libscotch/parser_ll.l
+@@ -96,6 +96,10 @@
+ %option noyywrap
+ %option reentrant
+ 
++/* To support build on Windows */
++%option nounistd
++
++
+ IDENT                       [A-Za-z][0-9A-Za-z]*
+ INTEGER                     [0-9]+
+ FLOAT                       [0-9]+(\.[0-9]+)?([Ee][-+]?[0-9]+)?
+diff --git a/src/libscotch/parser_yy.y b/src/libscotch/parser_yy.y
+index ef36169..fcbc1f4 100644
+--- a/src/libscotch/parser_yy.y
++++ b/src/libscotch/parser_yy.y
+@@ -64,6 +64,9 @@
+ 
+ #include "module.h"
+ #include "common.h"
++#ifdef _MSC_VER
++#define YY_NO_UNISTD_H
++#endif
+ #include "parser.h"
+ #include "parser_yy.h"
+ #include "parser_ly.h"
+diff --git a/src/scotch/CMakeLists.txt b/src/scotch/CMakeLists.txt
+index 243e21d..2d62c4b 100644
+--- a/src/scotch/CMakeLists.txt
++++ b/src/scotch/CMakeLists.txt
+@@ -67,10 +67,14 @@ function(add_scotch_exe)
+   add_dependencies(${file_we} scotch_h)
+   target_include_directories(${file_we} PRIVATE ${GENERATED_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+   target_compile_definitions(${file_we} PUBLIC "SCOTCH_CODENAME=\"${SCOTCH_CODENAME}\"")
+-  if(Threads_FOUND)
+-    target_compile_definitions(${file_we} PUBLIC SCOTCH_PTHREAD COMMON_PTHREAD)
+-    target_link_libraries(${file_we} PUBLIC Threads::Threads ${THREADS_PTHREADS_WIN32_LIBRARY})
+-  endif(Threads_FOUND)
++  if(USE_PTHREAD)
++    target_compile_definitions(${file_we} PUBLIC COMMON_PTHREAD SCOTCH_PTHREAD)
++    if(NOT WIN32)
++      target_link_libraries(${file_we} PUBLIC Threads::Threads)
++    else()
++      target_link_libraries(${file_we} PUBLIC PThreads4W::PThreads4W)
++    endif()
++  endif(USE_PTHREAD)
+   target_link_libraries(${file_we} PUBLIC scotch scotcherrexit)
+ endfunction(add_scotch_exe)
+ 
+@@ -145,10 +149,14 @@ if(BUILD_PTSCOTCH)
+       ${GENERATED_INCLUDE_DIR}/ptscotch.h)
+     add_dependencies(${file_we} ptscotch_h)
+     target_compile_definitions(${file_we} PUBLIC "SCOTCH_CODENAME=\"${SCOTCH_CODENAME}\"")
+-    if(Threads_FOUND)
+-      target_compile_definitions(${file_we} PUBLIC SCOTCH_PTHREAD COMMON_PTHREAD)
+-      target_link_libraries(${file_we} PUBLIC Threads::Threads ${THREADS_PTHREADS_WIN32_LIBRARY})
+-    endif(Threads_FOUND)
++    if(USE_PTHREAD)
++      target_compile_definitions(${file_we} PUBLIC COMMON_PTHREAD SCOTCH_PTHREAD)
++      if(NOT WIN32)
++        target_link_libraries(${file_we} PUBLIC Threads::Threads)
++      else()
++        target_link_libraries(${file_we} PUBLIC PThreads4W::PThreads4W)
++      endif()
++    endif(USE_PTHREAD)
+     target_include_directories(${file_we} PRIVATE ${GENERATED_INCLUDE_DIR})
+     target_link_libraries(${file_we} PUBLIC scotch ptscotch ptscotcherrexit)
+   endfunction(add_ptscotch_exe)

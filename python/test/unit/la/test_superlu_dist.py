@@ -29,7 +29,14 @@ from dolfinx.mesh import create_unit_square, exterior_facet_indices
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, as_vector, div, dx, grad, inner
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
 def test_superlu_solver(dtype):
     """Manufactured Poisson and screened problem with exact solution u = x[1]**3.
@@ -133,7 +140,14 @@ def test_superlu_solver(dtype):
     check_error(u_ex, uh_2)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
 def test_superlu_solver_blocked(dtype):
     """Vector Poisson problem on a vector Lagrange space (block size 2)."""
