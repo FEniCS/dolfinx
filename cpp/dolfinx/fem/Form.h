@@ -68,7 +68,8 @@ constexpr int integral_entity_dim(IntegralType type, int tdim)
   case IntegralType::cell:
     return tdim;
   }
-  return tdim;
+
+  throw std::invalid_argument("Unknown integral type.");
 }
 
 namespace impl
@@ -309,34 +310,45 @@ public:
       return e;
     };
 
-    // The integration entity must be a cell of the argument/coefficient
-    // mesh for `compute_entity_domains` to be able to map it, so the
-    // integral's entity dimension and that mesh's dimension must agree.
-    auto entity_domain_codim
-        = [tdim](IntegralType type, const mesh::Mesh<geometry_type>& mesh0)
+    // Map the integration entities of one integral to the
+    // argument/coefficient domain, checking first that the mapping is
+    // expressible: `compute_entity_domains` maps an integration entity
+    // to a *cell* of that mesh, so unless the meshes have equal
+    // dimension the integral's entity dimension must be that mesh's.
+    auto map_entities = [tdim, &topology, &compute_entity_domains](
+                            IntegralType type, const auto& entities,
+                            const mesh::Mesh<geometry_type>& mesh0,
+                            const mesh::EntityMap& emap,
+                            bool inverse) -> std::vector<std::int32_t>
     {
+      if (type == IntegralType::cell)
+        return emap.sub_topology_to_topology(entities, inverse);
+
+      if (type == IntegralType::vertex)
+      {
+        throw std::invalid_argument(
+            "Vertex integrals are not supported for a form with an argument "
+            "or coefficient on another mesh. Supported types are cell, "
+            "exterior facet, interior facet and ridge.");
+      }
+
       const int dim0 = mesh0.topology()->dim();
       const int codim = tdim - dim0;
+      const int edim = integral_entity_dim(type, tdim);
       assert(codim >= 0);
-      if (codim > 0 and integral_entity_dim(type, tdim) != dim0)
+      if (codim > 0 and edim != dim0)
       {
         throw std::invalid_argument(std::format(
             "Cannot map integration entities of dimension {} to cells of a "
             "mesh of dimension {}. An argument or coefficient on another mesh "
             "must live on the entities being integrated over.",
-            integral_entity_dim(type, tdim), dim0));
+            edim, dim0));
       }
 
-      return codim;
-    };
-
-    // Connectivity from cells to the entities being integrated over
-    auto entity_connectivity = [tdim, &topology](IntegralType type)
-    {
-      auto c_to_e
-          = topology.connectivity(tdim, integral_entity_dim(type, tdim));
-      assert(c_to_e);
-      return c_to_e;
+      std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_to_e
+          = topology.connectivity(tdim, edim);
+      assert(codim == 0 or c_to_e);
+      return compute_entity_domains(entities, codim, c_to_e, emap, inverse);
     };
 
     _edata.reserve(_function_spaces.size());
@@ -366,22 +378,8 @@ public:
         {
           auto [type, idx, kernel_idx] = key;
           std::vector<std::int32_t> e;
-          if (type == IntegralType::cell)
-            e = emap.sub_topology_to_topology(itg.entities, inverse);
-          else if (type == IntegralType::exterior_facet
-                   or type == IntegralType::interior_facet
-                   or type == IntegralType::ridge)
-          {
-            assert(mesh0);
-            e = compute_entity_domains(
-                itg.entities, entity_domain_codim(type, *mesh0),
-                entity_connectivity(type), emap, inverse);
-          }
-          else
-            throw std::invalid_argument(
-                "Integral type not supported for a form with an argument or "
-                "coefficient on another mesh. Supported types are cell, "
-                "exterior facet, interior facet and ridge.");
+          assert(mesh0);
+          e = map_entities(type, itg.entities, *mesh0, emap, inverse);
 
           vdata.insert({key, std::move(e)});
         }
@@ -407,22 +405,8 @@ public:
           bool inverse = emap.sub_topology() == mesh0->topology();
 
           std::vector<std::int32_t> e;
-          if (type == IntegralType::cell)
-            e = emap.sub_topology_to_topology(integral.entities, inverse);
-          else if (type == IntegralType::exterior_facet
-                   or type == IntegralType::interior_facet
-                   or type == IntegralType::ridge)
-          {
-            assert(mesh0);
-            e = compute_entity_domains(
-                integral.entities, entity_domain_codim(type, *mesh0),
-                entity_connectivity(type), emap, inverse);
-          }
-          else
-            throw std::invalid_argument(
-                "Integral type not supported for a form with an argument or "
-                "coefficient on another mesh. Supported types are cell, "
-                "exterior facet, interior facet and ridge.");
+          assert(mesh0);
+          e = map_entities(type, integral.entities, *mesh0, emap, inverse);
           _cdata.insert({{type, idx, c}, std::move(e)});
         }
       }
