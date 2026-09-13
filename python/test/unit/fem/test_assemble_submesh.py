@@ -845,7 +845,8 @@ def _ridge_submesh(n, ghost_mode):
     tdim = msh.topology.dim
     msh.topology.create_entities(tdim - 2)
     msh.topology.create_connectivity(tdim - 2, tdim)
-    ridges = locate_entities(msh, tdim - 2, lambda x: np.full(x.shape[1], True))
+    ridge_map = msh.topology.index_map(tdim - 2)
+    ridges = np.arange(ridge_map.size_local + ridge_map.num_ghosts, dtype=np.int32)
     smsh, entity_map = create_submesh(msh, tdim - 2, ridges)[:2]
     return msh, smsh, entity_map
 
