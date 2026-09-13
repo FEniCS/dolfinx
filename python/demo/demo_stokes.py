@@ -201,7 +201,7 @@ a_ufl: list[list[ufl.Form | None]] = [
     [ufl.inner(ufl.div(u), q) * ufl.dx, None],
 ]
 a = typing.cast(list[list[Form | None]], form(a_ufl))
-L_ufl = [ufl.inner(f, v) * ufl.dx, ufl.ZeroBaseForm((q,))]
+L_ufl = typing.cast(list[ufl.Form | None], [ufl.inner(f, v) * ufl.dx, ufl.ZeroBaseForm((q,))])
 L = typing.cast(list[Form], form(L_ufl))
 # -
 
