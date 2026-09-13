@@ -253,6 +253,7 @@ integrals = {IntegralType.cell: [(0, tabulate_A.address, cells, np.array([], dty
 a_cond = Form(
     formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, [], mesh=msh._cpp_object),  # type: ignore
     msh,
+    [U, U],
 )
 
 # Next, we pass the compiled kernel to the standard {py:func}`

@@ -691,7 +691,7 @@ def test_create_mesh_default_cell_reordering():
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
 
     msh_default = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x)
-    msh_rcm = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=_cpp.graph.reorder_rcm)
+    msh_rcm = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=graph.reorder_rcm)
 
     assert np.array_equal(
         msh_default.topology.original_cell_index, msh_rcm.topology.original_cell_index

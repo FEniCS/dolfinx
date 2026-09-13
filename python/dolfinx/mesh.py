@@ -27,8 +27,8 @@ from dolfinx.cpp.mesh import (
     CellType,
     DiagonalType,
     GhostMode,
-    build_dual_graph,
     cell_dim,
+    cell_num_entities,
     to_string,
     to_type,
 )
@@ -57,6 +57,7 @@ __all__ = [
     "Topology",
     "build_dual_graph",
     "cell_dim",
+    "cell_num_entities",
     "compute_cell_centroids",
     "compute_incident_entities",
     "compute_midpoints",
@@ -120,6 +121,10 @@ HybridPartitioningFunc = typing.Callable[
     ],
     _cpp.graph.AdjacencyList_int32,
 ]
+
+# A cell reordering function receives the local cell dual graph and
+# returns the new index of each cell.
+CellReorderFunc = typing.Callable[[AdjacencyList[np.int32]], npt.NDArray[np.int32]]
 
 
 def create_geometric_cell_partitioner(
@@ -191,6 +196,38 @@ def create_hybrid_cell_partitioner(
     return _cpp.graph.create_hybrid_cell_partitioner(part)
 
 
+def build_dual_graph(
+    comm: _MPI.Comm,
+    cell_types: CellType | Sequence[CellType],
+    cells: AdjacencyList[np.int64] | Sequence[npt.NDArray[np.int64]],
+    max_facet_to_cell_links: int | None = None,
+    num_threads: int = 1,
+) -> AdjacencyList[np.int64]:
+    """Build the dual graph of a mesh, i.e. the cell-to-cell graph.
+
+    Two cells are connected in the dual graph if they share a facet.
+
+    Args:
+        comm: MPI communicator that ``cells`` is distributed over.
+        cell_types: Cell type, or the cell types of a mixed-topology
+            mesh.
+        cells: Cells, using global vertex indices. For a single cell
+            type, an adjacency list of the cell vertices; for a
+            mixed-topology mesh, one array of cell vertices per cell
+            type.
+        max_facet_to_cell_links: Maximum number of cells that a facet
+            may connect. If ``None``, no limit is applied.
+        num_threads: Number of CPU threads to use. Must be >= 1.
+
+    Returns:
+        The dual graph, with the local cells as nodes.
+    """
+    _cells = cells._cpp_object if isinstance(cells, AdjacencyList) else cells
+    return AdjacencyList(
+        _cpp.mesh.build_dual_graph(comm, cell_types, _cells, max_facet_to_cell_links, num_threads)
+    )
+
+
 def compute_cell_centroids(
     comm: _MPI.Comm,
     cell_types: Sequence[CellType],
@@ -246,18 +283,21 @@ class Topology:
         """String representation of the cell-type of the topology."""
         return to_string(self._cpp_object.cell_type)
 
-    def connectivity(self, d0: int, d1: int) -> _cpp.graph.AdjacencyList_int32:
+    def connectivity(
+        self, d0: int | tuple[int, int], d1: int | tuple[int, int]
+    ) -> AdjacencyList[np.int32]:
         """Return connectivity.
 
         Connectivity from entities of dimension ``d0`` to entities of
-        dimension ``d1``.
+        dimension ``d1``. For a mixed-topology mesh, a dimension is
+        given as a ``(dimension, entity type index)`` pair.
 
         Args:
             d0: Dimension of entity one is mapping from.
             d1: Dimension of entity one is mapping to.
         """
         if (conn := self._cpp_object.connectivity(d0, d1)) is not None:
-            return conn
+            return AdjacencyList(conn)
         else:
             raise RuntimeError(
                 f"Connectivity between dimension {d0} and {d1} has not been computed.",
@@ -580,15 +620,16 @@ class MeshTags:
             mesh.
         """
         self._cpp_object = meshtags
+        self._topology = Topology(self._cpp_object.topology)
 
     def ufl_id(self) -> int:
         """Identiftying integer used by UFL."""
         return id(self)
 
     @property
-    def topology(self) -> _cpp.mesh.Topology:
+    def topology(self) -> Topology:
         """Mesh topology with which the tags are associated."""
-        return self._cpp_object.topology
+        return self._topology
 
     @property
     def dim(self) -> int:
@@ -1022,6 +1063,26 @@ def mark_equidistribution(
     return _mark_equidistribution(values, index_map, theta)
 
 
+def _wrap_cell_reorder(
+    reorder_fn: CellReorderFunc | _cpp.graph.GeometricReorderer | None,
+) -> Callable | _cpp.graph.GeometricReorderer | None:
+    """Adapt a cell reordering callable to the C++ calling convention.
+
+    C++ calls the reordering function with a C++ adjacency list, so a
+    Python callable is wrapped to receive an
+    :class:`~dolfinx.graph.AdjacencyList`. A geometric reorderer is an
+    opaque C++ handle that is called with cell centroids rather than the
+    dual graph, and is passed through unchanged.
+    """
+    if reorder_fn is None or isinstance(reorder_fn, _cpp.graph.GeometricReorderer):
+        return reorder_fn
+
+    def reorder(dual_graph: _cpp.graph.AdjacencyList_int32) -> npt.NDArray[np.int32]:
+        return reorder_fn(AdjacencyList(dual_graph))
+
+    return reorder
+
+
 def _create_mesh_coordinate_element(
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     gdim: int,
@@ -1055,7 +1116,7 @@ def create_mesh(
     ghost_mode: GhostMode = GhostMode.none,
     max_facet_to_cell_links: int = 2,
     num_threads: int = 1,
-    reorder_fn: Callable | None = None,
+    reorder_fn: CellReorderFunc | _cpp.graph.GeometricReorderer | None = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -1077,7 +1138,8 @@ def create_mesh(
         num_threads: Number of threads to use to build mesh. Must be
             greater than 0.
         reorder_fn: A graph reordering callable receives the local cell
-            dual graph. The built-in ``graph.reorder_morton`` and
+            dual graph as an :class:`~dolfinx.graph.AdjacencyList`. The
+            built-in ``graph.reorder_morton`` and
             ``graph.reorder_hilbert`` receive local cell centroids. Both
             return an array mapping each cell index to its new index. If
             ``None`` (default), reverse Cuthill-McKee ordering is used.
@@ -1113,7 +1175,7 @@ def create_mesh(
         max_facet_to_cell_links=max_facet_to_cell_links,
         num_threads=num_threads,
         cell_weights=cell_weights,
-        reorder_fn=reorder_fn,
+        reorder_fn=_wrap_cell_reorder(reorder_fn),
     )
 
     return Mesh(msh, domain)

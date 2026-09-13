@@ -60,6 +60,7 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_float64
     )
     _mesh: Mesh
+    _spaces: list[FunctionSpace]
     _code: str | list[str] | None
 
     def __init__(
@@ -69,6 +70,7 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_float32
         | _cpp.fem.Form_float64,
         msh: Mesh,
+        spaces: list[FunctionSpace],
         ufcx_form: typing.Any = None,
         code: str | list[str] | None = None,
         module: types.ModuleType | list[types.ModuleType] | None = None,
@@ -84,12 +86,15 @@ class Form(typing.Generic[Scalar]):
         Args:
             form: Compiled form object.
             msh: Mesh that form is defined on.
+            spaces: Function spaces that the form arguments are defined
+                on, one per argument.
             ufcx_form: UFCx form.
             code: Form C++ code.
             module: CFFI module.
         """
         self._cpp_object = form
         self._mesh = msh
+        self._spaces = spaces
         self._code = code
         self._ufcx_form = ufcx_form
         self._module = module
@@ -117,7 +122,7 @@ class Form(typing.Generic[Scalar]):
     @property
     def function_spaces(self) -> list[FunctionSpace]:
         """Function spaces on which this form is defined."""
-        return self._cpp_object.function_spaces  # type: ignore[return-value]
+        return self._spaces
 
     @property
     def dtype(self) -> np.dtype:
@@ -182,25 +187,24 @@ def get_integration_domains(
     else:
         domains = []
         if not isinstance(subdomain, list):
+            topology = subdomain.topology
+            tdim = topology.dim
             if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
-                tdim = subdomain.topology.dim
-                subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
-                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
+                topology.create_connectivity(tdim - 1, tdim)
+                topology.create_connectivity(tdim, tdim - 1)
 
             if integral_type is IntegralType.vertex:
-                tdim = subdomain.topology.dim
-                subdomain._cpp_object.topology.create_connectivity(0, tdim)
-                subdomain._cpp_object.topology.create_connectivity(tdim, 0)
+                topology.create_connectivity(0, tdim)
+                topology.create_connectivity(tdim, 0)
 
             if integral_type is IntegralType.ridge:
-                tdim = subdomain.topology.dim
-                subdomain._cpp_object.topology.create_connectivity(tdim - 2, tdim)
-                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 2)
+                topology.create_connectivity(tdim - 2, tdim)
+                topology.create_connectivity(tdim, tdim - 2)
 
             # Special handling for exterior facets, compared to other
             # one-sided entity integrals
             if integral_type is IntegralType.exterior_facet:
-                exterior_facets = _cpp.mesh.exterior_facet_indices(subdomain.topology)
+                exterior_facets = _cpp.mesh.exterior_facet_indices(topology._cpp_object)
 
             # Compute integration domains only for each subdomain id in
             # the integrals. If a process has no integral entities,
@@ -213,7 +217,7 @@ def get_integration_domains(
 
                 integration_entities = _cpp.fem.compute_integration_domains(
                     integral_type,
-                    subdomain._cpp_object.topology,
+                    topology._cpp_object,
                     entities,
                 )
                 domains.append((id, integration_entities))
@@ -338,9 +342,9 @@ def mixed_topology_form(
         modules.append(module)
         codes.append(code)
 
-    # In a mixed-topology mesh, each form has the same C++ function
-    # space, so we can extract it from any of them
-    V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+    # In a mixed-topology mesh, each form has the same function space,
+    # so we can extract it from any of them
+    spaces = [arg.ufl_function_space() for arg in form.arguments()]
 
     # TODO coeffs, constants, subdomains, entity_maps
     f = ftype(
@@ -348,14 +352,14 @@ def mixed_topology_form(
             int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))
             for ufcx_form in ufcx_forms
         ],
-        V,
+        [V._cpp_object for V in spaces],
         [],
         [],
         {},
         [],
         msh._cpp_object,
     )
-    return Form(f, msh, ufcx_forms, codes, modules)
+    return Form(f, msh, spaces, ufcx_forms, codes, modules)
 
 
 @typing.overload
@@ -466,10 +470,10 @@ def form(
         )
 
         # For each argument in form extract its function space
-        V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+        spaces = [arg.ufl_function_space() for arg in form.arguments()]
         part = form_compiler_options.get("part", "full")
         if part == "diagonal":
-            V = [V[0]]
+            spaces = [spaces[0]]
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
@@ -500,14 +504,14 @@ def form(
 
         f = ftype(
             [int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))],
-            V,
+            [V._cpp_object for V in spaces],
             coeffs,
             constants,
             subdomains,
             _entity_maps,
             msh._cpp_object,
         )
-        return Form(f, msh, ufcx_form, code, module)
+        return Form(f, msh, spaces, ufcx_form, code, module)
 
     def _zero_form(form: ufl.ZeroBaseForm) -> Form:
         """Compile a single 'zero' UFL form.
@@ -530,7 +534,7 @@ def form(
             entity_maps=_entity_maps,
             mesh=msh._cpp_object,
         )
-        return Form(f, msh)
+        return Form(f, msh, spaces)
 
     def _create_form(
         form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
@@ -782,7 +786,7 @@ def create_form(
         _entity_maps,
         msh._cpp_object,
     )
-    return Form(f, msh, form.ufcx_form, form.code)
+    return Form(f, msh, list(V), form.ufcx_form, form.code)
 
 
 def _derive_univariate_residual(

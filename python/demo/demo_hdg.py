@@ -34,7 +34,6 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, has_adios2, mesh
-from dolfinx.cpp.mesh import cell_num_entities
 from dolfinx.fem import extract_function_spaces
 from dolfinx.fem.petsc import (
     apply_lifting,
@@ -83,7 +82,7 @@ def compute_cell_boundary_facets(msh: mesh.Mesh) -> np.ndarray:
     """
     tdim = msh.topology.dim
     fdim = tdim - 1
-    n_f = cell_num_entities(msh.topology.cell_type, fdim)
+    n_f = mesh.cell_num_entities(msh.topology.cell_type, fdim)
     n_c = msh.topology.index_map(tdim).size_local
     return np.vstack((np.repeat(np.arange(n_c), n_f), np.tile(np.arange(n_f), n_c))).T.flatten()
 

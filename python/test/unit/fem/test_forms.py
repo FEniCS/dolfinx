@@ -56,13 +56,13 @@ def test_extract_forms():
     with pytest.raises(ValueError):
         extract_function_spaces(a, 0)
     Vc = extract_function_spaces(a, 1)
-    assert Vc[0] is V0._cpp_object
-    assert Vc[1] is V2._cpp_object
+    assert Vc[0] is V0
+    assert Vc[1] is V2
 
     a = form([[inner(u0, v0) * dx, inner(u1, v0) * dx], [inner(u2, v1) * dx, inner(u3, v1) * dx]])
     Vr = extract_function_spaces(a, 0)
-    assert Vr[0] is V0._cpp_object
-    assert Vr[1] is V1._cpp_object
+    assert Vr[0] is V0
+    assert Vr[1] is V1
     with pytest.raises(ValueError):
         extract_function_spaces(a, 1)
 
