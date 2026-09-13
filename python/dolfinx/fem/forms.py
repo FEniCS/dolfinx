@@ -125,9 +125,9 @@ class Form(typing.Generic[Scalar]):
         return np.dtype(self._cpp_object.dtype)
 
     @property
-    def mesh(self) -> _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64:
+    def mesh(self) -> Mesh:
         """Mesh on which this form is defined."""
-        return self._cpp_object.mesh
+        return self._mesh
 
     @property
     def integral_types(self) -> set[IntegralType]:
@@ -353,7 +353,7 @@ def mixed_topology_form(
         [],
         {},
         [],
-        msh,
+        msh._cpp_object,
     )
     return Form(f, msh, ufcx_forms, codes, modules)
 
@@ -505,7 +505,7 @@ def form(
             constants,
             subdomains,
             _entity_maps,
-            msh,
+            msh._cpp_object,
         )
         return Form(f, msh, ufcx_form, code, module)
 
@@ -514,21 +514,21 @@ def form(
 
         I.e. a form with no integrals.
         """
-        V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
-        assert len(V) > 0
-        msh = V[0].mesh
+        spaces = [arg.ufl_function_space() for arg in form.arguments()]
+        assert len(spaces) > 0
+        msh = spaces[0].mesh
 
         # Geometry type is fixed by the mesh.
         ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
 
         f = ftype(
-            spaces=V,
+            spaces=[V._cpp_object for V in spaces],
             integrals={},
             coefficients=[],
             constants=[],
             need_permutation_data=False,
             entity_maps=_entity_maps,
-            mesh=msh,
+            mesh=msh._cpp_object,
         )
         return Form(f, msh)
 

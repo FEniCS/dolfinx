@@ -480,7 +480,10 @@ class Mesh(typing.Generic[Real]):
         self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
-            self._ufl_domain._ufl_cargo = self._cpp_object
+            # Attach this (Python) Mesh, rather than the C++ mesh, to
+            # the UFL domain so that ufl.Mesh.ufl_cargo returns the
+            # Python object
+            self._ufl_domain._ufl_cargo = self
 
     @property
     def comm(self) -> _MPI.Comm:
