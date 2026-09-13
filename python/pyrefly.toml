@@ -9,11 +9,6 @@ replace-imports-with-any = [
 ignore-missing-imports = ["ufl", "ufl.*", "ffcx", "ffcx.*", "scipy.*", "_cffi_kernelA"]
 
 [[sub-config]]
-matches = "demo/**"
-[sub-config.errors]
-unbound-name = "ignore"
-
-[[sub-config]]
 matches = "test/**"
 check-unannotated-defs = false
 [sub-config.errors]
