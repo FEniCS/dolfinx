@@ -366,6 +366,9 @@ p_h.x.array[:] -= domain_average(msh, p_h)
 # Write initial condition to file
 
 t = 0.0
+u_vis = None
+u_file = None
+p_file = None
 if has_adios2:
     u_vis = fem.Function(W, name="u_init")
     u_vis.interpolate(u_h)
@@ -422,7 +425,7 @@ for _ in range(num_time_steps):
     p_h.x.array[:] -= domain_average(msh, p_h)
 
     # Write to file
-    if has_adios2:
+    if u_vis is not None and u_file is not None and p_file is not None:
         u_vis.interpolate(u_h)
         u_file.write(t)
         p_file.write(t)
@@ -430,12 +433,9 @@ for _ in range(num_time_steps):
     # Update u_n
     u_n.x.array[:] = u_h.x.array
 
-try:
+if u_file is not None and p_file is not None:
     u_file.close()
     p_file.close()
-except NameError:
-    # u_file/p_file are only defined when has_adios2 is True
-    pass
 # -
 
 # Now we compare the computed solution to the exact solution

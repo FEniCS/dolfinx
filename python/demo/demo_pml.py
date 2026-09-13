@@ -44,11 +44,9 @@ except ImportError:
 
 try:
     import pyvista
-
-    have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
-    have_pyvista = False
+    pyvista = None
 # -
 
 # Since we want to solve time-harmonic Maxwell's equation, we require
@@ -398,7 +396,7 @@ MPI.COMM_WORLD.barrier()
 out_folder = Path("output_pml")
 out_folder.mkdir(parents=True, exist_ok=True)
 tdim = mesh_data.mesh.topology.dim
-if have_pyvista:
+if pyvista is not None:
     topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
@@ -680,7 +678,7 @@ with VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
 # discretized with Nedelec elements, check [this](./demo_interpolation-io)
 # DOLFINx demo.
 
-if have_pyvista:
+if pyvista is not None:
     V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)

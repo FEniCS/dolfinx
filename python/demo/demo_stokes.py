@@ -93,6 +93,7 @@
 
 # +
 import sys
+import typing
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -104,6 +105,7 @@ from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, la
 from dolfinx.fem import (
     Constant,
+    Form,
     Function,
     bcs_by_block,
     dirichletbc,
@@ -194,13 +196,13 @@ bcs = [bc0, bc1]
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
 f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore[operator]
 
-a_ufl = [
+a_ufl: list[list[ufl.Form | None]] = [
     [ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, ufl.inner(p, ufl.div(v)) * ufl.dx],
     [ufl.inner(ufl.div(u), q) * ufl.dx, None],
 ]
-a = form(a_ufl)
-L_ufl = [ufl.inner(f, v) * ufl.dx, ufl.ZeroBaseForm((q,))]
-L = form(L_ufl)
+a = typing.cast(list[list[Form | None]], form(a_ufl))
+L_ufl: list[ufl.Form] = [ufl.inner(f, v) * ufl.dx, ufl.ZeroBaseForm((q,))]
+L = typing.cast(list[Form], form(L_ufl))
 # -
 
 # A block-diagonal preconditioner will be used with the iterative

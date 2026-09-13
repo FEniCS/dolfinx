@@ -12,6 +12,7 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
+import basix._basixcpp
 import basix.ufl
 from dolfinx import cpp as _cpp
 from dolfinx.typing import Real

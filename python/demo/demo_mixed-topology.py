@@ -35,6 +35,7 @@ import numpy as np
 from scipy.sparse.linalg import spsolve
 
 import basix
+import basix._basixcpp
 import dolfinx.cpp as _cpp
 import ufl
 from dolfinx.cpp.fem import locate_dofs_geometrical

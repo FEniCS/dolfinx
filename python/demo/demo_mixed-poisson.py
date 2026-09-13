@@ -272,12 +272,13 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
 # next-order cases.
 if has_adios2:
     from dolfinx.io import VTXWriter
-
+else:
+    VTXWriter = None
 
 use_hypre = has_hypre and hypre_ams_compatible
 for k in (1, 2):
     sigma, u = solve(k, use_hypre)
-    if has_adios2:
+    if VTXWriter is not None:
         # VTX supports (discontinuous) Lagrange functions, so
         # interpolate the flux
         V_sigma = fem.functionspace(
