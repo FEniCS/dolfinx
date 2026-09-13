@@ -22,20 +22,6 @@
       "severity": "error"
     },
     {
-      "column": 8,
-      "path": "dolfinx/fem/function.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of type `AbstractFiniteElement | ElementMetaData | _BasixElement | _BlockedElement | tuple[str, int] | tuple[str, int, tuple[Unknown, ...]] | tuple[str, int, tuple[Unknown, ...], bool]` has no attribute `is_real`",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "dolfinx/fem/function.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `AbstractFiniteElement | ElementMetaData | _BasixElement | _BlockedElement | tuple[str, int] | tuple[str, int, tuple[Unknown, ...]] | tuple[str, int, tuple[Unknown, ...], bool]` is not assignable to parameter `element` with type `AbstractFiniteElement` in function `FunctionSpace.__init__`",
-      "severity": "error"
-    },
-    {
       "column": 37,
       "path": "dolfinx/fem/function.py",
       "name": "no-matching-overload",
@@ -54,20 +40,6 @@
       "path": "dolfinx/fem/function.py",
       "name": "no-matching-overload",
       "concise_description": "No matching overload found for function `dolfinx.cpp.fem.interpolation_coords` called with arguments: (FiniteElement_float32 | FiniteElement_float64, Geometry_float32 | Geometry_float64, ndarray[tuple[Any, ...], dtype[signedinteger[_32Bit]]] | None)",
-      "severity": "error"
-    },
-    {
-      "column": 51,
-      "path": "dolfinx/fem/function.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of type `AbstractFiniteElement | ElementMetaData | _BasixElement | _BlockedElement | tuple[str, int] | tuple[str, int, tuple[Unknown, ...]] | tuple[str, int, tuple[Unknown, ...], bool]` has no attribute `cell`",
-      "severity": "error"
-    },
-    {
-      "column": 62,
-      "path": "dolfinx/fem/function.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `AbstractFiniteElement | ElementMetaData | _BasixElement | _BlockedElement | tuple[str, int] | tuple[str, int, tuple[Unknown, ...]] | tuple[str, int, tuple[Unknown, ...], bool]` is not assignable to parameter `ufl_e` with type `_ElementBase` in function `dolfinx.fem.element.finiteelement`",
       "severity": "error"
     },
     {
@@ -110,13 +82,6 @@
       "path": "dolfinx/fem/petsc.py",
       "name": "bad-argument-type",
       "concise_description": "Argument `FunctionSpace_float32 | FunctionSpace_float64 | Unknown` is not assignable to parameter `V` with type `FunctionSpace[Unknown]` in function `dolfinx.fem.function.FunctionSpace.contains`",
-      "severity": "error"
-    },
-    {
-      "column": 71,
-      "path": "dolfinx/fem/petsc.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `dict[tuple[IntegralType, int], ndarray[tuple[Any, ...], dtype[Unknown]]] | tuple[IntegralType, int]` is not assignable to parameter `coeffs` with type `dict[tuple[IntegralType, int], ndarray[tuple[Any, ...], dtype[Unknown]]] | None` in function `dolfinx.fem.assemble._assemble_vector_array`",
       "severity": "error"
     },
     {

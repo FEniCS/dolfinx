@@ -367,8 +367,18 @@ def _assemble_vector_petsc(
             raise ValueError(
                 "Must provide a sequence of coefficients when assembling blocked forms"
             )
-        constants_ = pack_constants(L) if constants is None else constants
-        coeffs_ = pack_coefficients(L) if coeffs is None else coeffs
+        constants_: Sequence[npt.NDArray] = (
+            pack_constants(L)
+            if constants is None
+            else typing.cast(Sequence[npt.NDArray], constants)
+        )
+        coeffs_: Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]] = (
+            pack_coefficients(L)
+            if coeffs is None
+            else typing.cast(
+                Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]], coeffs
+            )
+        )
         offset0, offset1 = b.getAttr("_blocks")  # type: ignore
         with b.localForm() as b_l:
             for L_, const, coeff, off0, off1, offg0, offg1 in zip(
@@ -585,7 +595,7 @@ def _assemble_matrix_petsc(
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0]._cpp_object.contains(bc.function_space):
+                        if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
                                 " and have DirichletBC applied."
@@ -695,11 +705,15 @@ def apply_lifting(
             coeffs = [pack_coefficients(forms) for forms in a]  # type: ignore
         assert coeffs is not None
         assert constants is not None
+        constants_ = typing.cast(Sequence[Sequence[npt.NDArray | None]], constants)
+        coeffs_ = typing.cast(
+            Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]], coeffs
+        )
         for b_sub, a_sub, const, coeff in zip(
             b.getNestSubVecs(),
             a,
-            constants,
-            coeffs,
+            constants_,
+            coeffs_,
             strict=True,
         ):
             const_ = [np.array([], dtype=PETSc.ScalarType) if x is None else x for x in const]
@@ -734,8 +748,9 @@ def apply_lifting(
                             pack_coefficients(a_)
                             if coeffs is None
                             else typing.cast(
-                                dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray], coeffs[i]
-                            )
+                                Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]],
+                                coeffs,
+                            )[i]
                         )
                         const_ = [
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val
