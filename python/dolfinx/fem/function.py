@@ -687,8 +687,8 @@ def functionspace(
     """
     # Create UFL element
     dtype = mesh.geometry.x.dtype
-    if isinstance(element, tuple):
-        e = ElementMetaData(*element)
+    try:
+        e = ElementMetaData(*typing.cast(tuple, element))
         ufl_e = basix.ufl.element(
             e.family,
             mesh.basix_cell(),
@@ -697,7 +697,7 @@ def functionspace(
             symmetry=e.symmetry,
             dtype=dtype,
         )
-    else:
+    except TypeError:
         ufl_e = element
 
     # Check that element and mesh cell types match

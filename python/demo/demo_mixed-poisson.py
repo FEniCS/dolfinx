@@ -185,7 +185,7 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
             + ufl.inner(ufl.div(sigma_trial), v) * dx
         ),
     )
-    L: list[ufl.Form] = [ufl.ZeroBaseForm((tau,)), -ufl.inner(f, v) * dx]
+    L = typing.cast(list[ufl.Form], [ufl.ZeroBaseForm((tau,)), -ufl.inner(f, v) * dx])
     a_p = typing.cast(
         list[list[ufl.Form | None]],
         ufl.extract_blocks(

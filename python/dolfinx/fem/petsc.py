@@ -1725,7 +1725,7 @@ def _(x: PETSc.Vec, u: _Function | Sequence[_Function]) -> None:  # type: ignore
                 data1.append(v.x.array[bs * n :])
             dolfinx.la.petsc.assign(x, data0 + data1)  # type: ignore
         else:
-            dolfinx.la.petsc.assign(x, u.x.array)
+            dolfinx.la.petsc.assign(x, u.x.array)  # type: ignore[bad-argument-type]
 
 
 def get_petsc_lib() -> pathlib.Path:
