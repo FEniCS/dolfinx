@@ -105,9 +105,6 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
 /// \frac{||\eta||^2}{N} \f$ where \f$ N \f$ is the (global) number of
 /// indicators.
 ///
-/// @warning `squared_indicators` must contain owned entities only. Ghost
-/// values cause double-counting in the global sum reductions.
-///
 /// @param[in] values Squared indicators \f$ \eta^2_i \f$, usually associated
 /// with mesh entity \f$ i \f$.
 /// @param[in] index_map Index map describing the parallel layout of @p
@@ -137,13 +134,15 @@ mark_equidistribution(std::span<const T> values,
                     size, n));
   }
 
-  T norm = std::accumulate(values.begin(),
-                           values.begin() + index_map.size_local(), T{0});
+  auto owned = values.first(index_map.size_local());
+  T local_squared_norm = std::accumulate(owned.begin(), owned.end(), T{0});
 
-  MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM,
-                index_map.comm());
+  T squared_norm;
+  MPI_Allreduce(&local_squared_norm, &squared_norm, 1, dolfinx::MPI::mpi_t<T>,
+                MPI_SUM, index_map.comm());
 
-  T threshold = theta * theta * norm / static_cast<T>(index_map.size_global());
+  T threshold
+      = theta * theta * squared_norm / static_cast<T>(index_map.size_global());
 
   auto mark = [threshold](T e) { return e > threshold; };
 
