@@ -98,8 +98,12 @@ if _cpp.common.has_adios2:
                     if isinstance(output, Function)
                     else [o._cpp_object for o in output]
                 )
-                self._cpp_object = _vtxwriter(  # type: ignore[bad-argument-type]
-                    comm, filename, cpp_objects, engine, mesh_policy
+                self._cpp_object = _vtxwriter(
+                    comm,
+                    filename,
+                    cpp_objects,  # type: ignore[bad-argument-type]
+                    engine,
+                    mesh_policy,
                 )
 
         def __enter__(self) -> Self:

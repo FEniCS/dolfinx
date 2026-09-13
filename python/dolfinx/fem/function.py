@@ -484,7 +484,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         self._cpp_object.eval(_x, _cells, u, tol, maxit)  # type: ignore
         if num_points == 1:
             u = np.reshape(u, (-1,))
-        return u
+        return typing.cast(npt.NDArray[Scalar], u)
 
     def interpolate_nonmatching(
         self,

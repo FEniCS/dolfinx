@@ -201,15 +201,17 @@ a_ufl: list[list[ufl.Form | None]] = [
     [ufl.inner(ufl.div(u), q) * ufl.dx, None],
 ]
 a = typing.cast(list[list[Form | None]], form(a_ufl))
-L_ufl = typing.cast(list[ufl.Form | None], [ufl.inner(f, v) * ufl.dx, ufl.ZeroBaseForm((q,))])
+L_ufl = typing.cast(list[ufl.Form], [ufl.inner(f, v) * ufl.dx, ufl.ZeroBaseForm((q,))])
 L = typing.cast(list[Form], form(L_ufl))
 # -
 
 # A block-diagonal preconditioner will be used with the iterative
 # solvers for this problem:
 
-a_p11 = form(ufl.inner(p, q) * ufl.dx)
-a_p = [[a[0][0], None], [None, a_p11]]
+a_p11_ufl = ufl.inner(p, q) * ufl.dx
+a_p_ufl: list[list[ufl.Form | None]] = [[a_ufl[0][0], None], [None, a_p11_ufl]]
+a_p11 = form(a_p11_ufl)
+a_p = typing.cast(list[list[Form | None]], form(a_p_ufl))
 
 
 # ### High-level nested matrix solver
@@ -230,7 +232,7 @@ def nested_iterative_solver_high_level():
         L_ufl,
         kind="nest",
         bcs=bcs,
-        P=a_p,
+        P=a_p_ufl,
         petsc_options_prefix="demo_stokes__nested_iterative_solver_high_level_",
         petsc_options={
             "ksp_type": "minres",

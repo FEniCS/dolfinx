@@ -147,6 +147,14 @@ def create_vector(
     return dolfinx.la.petsc.create_vector(maps, kind=kind)
 
 
+def _create_vector_from_form(L: Form | Sequence[Form], kind: str | None = None) -> PETSc.Vec:
+    """Create a vector from the function spaces of linear forms."""
+    spaces = typing.cast(
+        _FunctionSpace | Sequence[_FunctionSpace | None], _extract_function_spaces(L)
+    )
+    return create_vector(spaces, kind=kind)
+
+
 # -- Matrix instantiation -------------------------------------------------
 
 
@@ -285,7 +293,7 @@ def assemble_vector(
     Returns:
         An assembled vector.
     """
-    b = create_vector(_extract_function_spaces(L), kind=kind)
+    b = _create_vector_from_form(L, kind=kind)
     dolfinx.la.petsc._zero_vector(b)
     return typing.cast(PETSc.Vec, _assemble_vector_petsc(b, L, constants, coeffs))
 
@@ -953,8 +961,8 @@ class LinearProblem(typing.Generic[_U]):
         # For nest matrices kind can be a nested list.
         kind = "nest" if self.A.getType() == PETSc.Mat.Type.NEST else kind
         assert kind is None or isinstance(kind, str)
-        self._b = create_vector(_extract_function_spaces(self.L), kind=kind)
-        self._x = create_vector(_extract_function_spaces(self.L), kind=kind)
+        self._b = _create_vector_from_form(self.L, kind=kind)
+        self._x = _create_vector_from_form(self.L, kind=kind)
 
         self._u: _Function | Sequence[_Function]
         if u is None:
@@ -1453,8 +1461,8 @@ class NonlinearProblem(typing.Generic[_U]):
         # Determine the vector kind based on the matrix type
         kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind
         assert kind is None or isinstance(kind, str)
-        self._b = create_vector(_extract_function_spaces(self.F), kind=kind)
-        self._x = create_vector(_extract_function_spaces(self.F), kind=kind)
+        self._b = _create_vector_from_form(self.F, kind=kind)
+        self._x = _create_vector_from_form(self.F, kind=kind)
 
         # Create the SNES solver and attach the corresponding Jacobian and
         # residual computation functions
