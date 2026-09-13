@@ -36,6 +36,7 @@ from dolfinx.cpp.refinement import (
     IdentityPartitionerPlaceholder,
     RefinementOption,
 )
+from dolfinx.cpp.refinement import mark_equidistribution as _mark_equidistribution
 from dolfinx.cpp.refinement import mark_maximum as _mark_maximum
 from dolfinx.cpp.refinement import uniform_refine as _uniform_refine
 from dolfinx.fem import CoordinateElement as _CoordinateElement
@@ -75,6 +76,7 @@ __all__ = [
     "exterior_facet_indices",
     "locate_entities",
     "locate_entities_boundary",
+    "mark_equidistribution",
     "mark_maximum",
     "meshtags",
     "meshtags_from_entities",
@@ -973,6 +975,48 @@ def mark_maximum(
         satisfying :math:`v_i > \theta \max_j v_j`.
     """
     return _mark_maximum(values, index_map, theta)
+
+
+def mark_equidistribution(
+    values: npt.NDArray[Real],
+    index_map: _IndexMap,
+    theta: float,
+) -> npt.NDArray[np.int32]:
+    r"""Return local indices of values exceeding a fraction of the mean.
+
+    Computes the mean :math:`\frac{1}{N} \sum_j v_j` of ``values``
+    :math:`v` over the locally owned entries on every rank of
+    ``index_map``'s communicator, where :math:`N` is the global number of
+    entries, and returns the local indices :math:`i` satisfying
+    :math:`v_i > \frac{\theta^2}{N} \sum_j v_j`.
+
+    Each entry is expected to hold a squared error indicator,
+    :math:`v_i = \eta_i^2`, so that :math:`\frac{1}{N} \sum_j v_j` is the
+    mean square (MS) :math:`\|\eta\|_2^2 / N` of the indicators and the
+    criterion reads :math:`\eta_i^2 > \theta^2 \|\eta\|_2^2 / N`. This is
+    commonly referred to as 'equidistribution marking' in the adaptive
+    finite element literature.
+
+    Note:
+        Ghost entries of ``values`` must be up to date, i.e.
+        ``scatter_forward`` must have been called since the owned entries
+        were last modified.
+
+        :math:`\theta = 0` is rejected, since the
+        threshold would be 0 and the criterion would degenerate to marking
+        every entry with a positive value.
+
+    Args:
+        values: Values, often with each entry associated with a mesh
+            entity, e.g. a squared error indicator :math:`\eta_i^2`.
+        index_map: Index map describing the parallel layout of ``values``.
+        theta: Cut-off parameter, :math:`0 < \theta \leq 1`.
+
+    Returns:
+        Local indices, ascending and including ghosts, of the entries
+        satisfying :math:`v_i > \frac{\theta^2}{N} \sum_j v_j`.
+    """
+    return _mark_equidistribution(values, index_map, theta)
 
 
 def _create_mesh_coordinate_element(
