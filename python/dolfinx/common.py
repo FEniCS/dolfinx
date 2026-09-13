@@ -370,6 +370,11 @@ def index_map(
             is non-overlapping and ``ghosts`` must be ``None`` on every
             process. For an overlapping map, a process with no ghosts
             must pass empty arrays.
+        dest_src: Pair ``(dest, src)`` of destination and source rank
+            arrays. ``dest`` lists ranks that ghost caller-owned
+            indices; ``src`` lists ranks that own the caller's ghosts
+            and must equal the unique values in ``owners``. Both arrays
+            must be sorted, unique, and contain valid ranks. Supplying
             them avoids the consensus exchange that otherwise discovers
             which ranks ghost the caller's owned indices.
         tag: MPI tag for the consensus exchange. Ignored if ``dest_src``
