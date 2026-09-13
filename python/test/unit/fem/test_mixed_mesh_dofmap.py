@@ -25,12 +25,18 @@ def test_dofmap_mixed_topology():
     tri = [0, 1, 4, 0, 3, 4]
     quad = [1, 4, 2, 5]
     # cells with global indexing
-    cells = [[t + 3 * rank for t in tri], [q + 3 * rank for q in quad]]
-    orig_index = [[3 * rank, 1 + 3 * rank], [2 + 3 * rank]]
+    cells = [
+        np.array([t + 3 * rank for t in tri], dtype=np.int64),
+        np.array([q + 3 * rank for q in quad], dtype=np.int64),
+    ]
+    orig_index = [
+        np.array([3 * rank, 1 + 3 * rank], dtype=np.int64),
+        np.array([2 + 3 * rank], dtype=np.int64),
+    ]
     # No ghosting
-    ghost_owners = [[], []]
+    ghost_owners = [np.array([], dtype=np.int32), np.array([], dtype=np.int32)]
     # All vertices are on boundary
-    boundary_vertices = [3 * rank + i for i in range(6)]
+    boundary_vertices = np.array([3 * rank + i for i in range(6)], dtype=np.int64)
 
     topology = create_topology(
         MPI.COMM_WORLD,
@@ -39,6 +45,7 @@ def test_dofmap_mixed_topology():
         orig_index,
         ghost_owners,
         boundary_vertices,
+        1,
     )
     # Create dofmaps for Geometry
     tri = coordinate_element(CellType.triangle, 1)
@@ -82,16 +89,18 @@ def test_dofmap_mixed_topology():
 
 def test_dofmap_prism_mesh():
     # Prism mesh
-    cells = [[0, 1, 2, 3, 4, 5]]
+    cells = [np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)]
     # cells with global indexing
-    orig_index = [[0, 1, 2, 3, 4, 5]]
+    orig_index = [np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)]
     # No ghosting
-    ghost_owners = [[]]
+    ghost_owners = [np.array([], dtype=np.int32)]
     # All vertices are on boundary
-    boundary_vertices = [0, 1, 2, 3, 4, 5]
+    boundary_vertices = np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)
 
-    topology = create_topology(
-        MPI.COMM_SELF, [CellType.prism], cells, orig_index, ghost_owners, boundary_vertices
+    topology = Topology(
+        create_topology(
+            MPI.COMM_SELF, [CellType.prism], cells, orig_index, ghost_owners, boundary_vertices, 1
+        )
     )
     topology.create_entities(2)
 
@@ -112,8 +121,8 @@ def test_dofmap_prism_mesh():
     )
 
     set_log_level(LogLevel.INFO)
-    geom = create_geometry(topology, [prism._cpp_object], nodes, xdofs, x.flatten(), 3)
-    mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
+    geom = create_geometry(topology._cpp_object, [prism._cpp_object], nodes, xdofs, x.flatten(), 3)
+    mesh = Mesh_float64(MPI.COMM_WORLD, topology._cpp_object, geom)
 
     elements, dofmaps = create_element_dofmap(mesh, [basix.CellType.prism], 2)
     assert len(elements) == 1

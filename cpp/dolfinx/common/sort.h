@@ -15,6 +15,7 @@
 #include <iterator>
 #include <limits>
 #include <numeric>
+#include <optional>
 #include <span>
 #include <type_traits>
 #include <utility>
@@ -22,11 +23,10 @@
 
 namespace dolfinx
 {
-
-struct __unsigned_projection
+struct _unsigned_projection
 {
-  // Transforms the projected value to an unsigned int (if signed), while
-  // maintaining relative order by
+  // Transforms the projected value to an unsigned int (if signed),
+  // while maintaining relative order by
   //    x ↦ x + |std::numeric_limits<I>::min()|
   template <std::signed_integral T>
   constexpr std::make_unsigned_t<T> operator()(T e) const noexcept
@@ -48,139 +48,158 @@ struct __unsigned_projection
 };
 
 /// Projection from signed to signed int
-inline constexpr __unsigned_projection unsigned_projection{};
+inline constexpr _unsigned_projection unsigned_projection{};
 
-struct __radix_sort
+/// @brief Sort a range with radix sorting algorithm. The bucket size is
+/// determined by the number of bits to sort at a time (2^BITS).
+///
+/// This allows usage with standard range containers of integral types,
+/// for example
+/// @code
+/// std::array<std::int16_t, 3> a{2, 3, 1};
+/// dolfinx::radix_sort(a); // a = {1, 2, 3}
+/// @endcode
+/// Additionally the projection based approach of the STL library is
+/// adapted, which allows for versatile usage, for example the easy
+/// realization of an argsort
+/// @code
+/// std::array<std::int16_t, 3> a{2, 3, 1};
+/// std::array<std::int16_t, 3> i{0, 1, 2};
+/// dolfinx::radix_sort(i, [&a](auto i){ return a[i]; }); // yields i = {2, 0,
+/// 1} and a[i] = {1, 2, 3};
+/// @endcode
+/// @tparam BITS The number of bits to sort at a time.
+/// @tparam P Projection type to be applied on range elements to produce
+/// a sorting index.
+/// @tparam R Type of the range to sort.
+/// @param[in, out] range The range to sort.
+/// @param[in] proj Element projection.
+/// @note Stable: elements that compare equal under `proj` retain their
+/// relative order from the input range.
+template <int BITS = 8, typename P = std::identity,
+          std::ranges::random_access_range R>
+constexpr void radix_sort(R&& range, P proj = {})
 {
-  /// @brief Sort a range with radix sorting algorithm. The bucket size
-  /// is determined by the number of bits to sort at a time (2^BITS).
-  ///
-  /// This allows usage with standard range containers of integral
-  /// types, for example
-  /// @code
-  /// std::array<std::int16_t, 3> a{2, 3, 1};
-  /// dolfixn::radix_sort(a); // a = {1, 2, 3}
-  /// @endcode
-  /// Additionally the projection based approach of the STL library is
-  /// adapted, which allows for versatile usage, for example the easy
-  /// realization of an argsort
-  /// @code
-  /// std::array<std::int16_t, 3> a{2, 3, 1};
-  /// std::array<std::int16_t, 3> i{0, 1, 2};
-  /// dolfixn::radix_sort(i, [&](auto i){ return a[i]; }); // yields i = {2, 0,
-  /// 1} and a[i] = {1, 2, 3};
-  /// @endcode
-  /// @tparam R Type of range to be sorted.
-  /// @tparam P Projection type to be applied on range elements to
-  /// produce a sorting index.
-  /// @tparam BITS The number of bits to sort at a time.
-  /// @param[in, out] range The range to sort.
-  /// @param[in] P Element projection.
-  template <std::ranges::random_access_range R, typename P = std::identity,
-            std::make_unsigned_t<std::remove_cvref_t<
-                std::invoke_result_t<P, std::iter_value_t<R>>>>
-                BITS
-            = 8>
-    requires std::integral<decltype(BITS)>
-  constexpr void operator()(R&& range, P proj = {}) const
+  using bits_t = std::make_unsigned_t<
+      std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>>>;
+  constexpr bits_t _BITS = BITS;
+
+  // Value type
+  using T = std::iter_value_t<R>;
+
+  // Index type (if no projection is provided it holds I == T)
+  using I = std::remove_cvref_t<std::invoke_result_t<P, T>>;
+  using uI = std::make_unsigned_t<I>;
+
+  if constexpr (!std::is_same_v<uI, I>)
   {
-    // value type
-    using T = std::iter_value_t<R>;
+    radix_sort<_BITS>(std::forward<R>(range), [&proj](const T& e) -> uI
+                      { return unsigned_projection(proj(e)); });
+    return;
+  }
 
-    // index type (if no projection is provided it holds I == T)
-    using I = std::remove_cvref_t<std::invoke_result_t<P, T>>;
-    using uI = std::make_unsigned_t<I>;
+  if (range.size() <= 1)
+    return;
 
-    if constexpr (!std::is_same_v<uI, I>)
-    {
-      __radix_sort()(std::forward<R>(range), [&](const T& e) -> uI
-                     { return unsigned_projection(proj(e)); });
-      return;
-    }
+  // Sort N bits at a time
+  constexpr uI bucket_size = 1 << _BITS;
+  uI mask = (uI(1) << _BITS) - 1;
+  constexpr uI top_bit = uI(1) << (sizeof(uI) * 8 - 1);
 
-    if (range.size() <= 1)
-      return;
+  // Adjacency list arrays for computing insertion position. counter is
+  // pre-filled below with the first pass's histogram (bucketing on the
+  // low BITS bits, which is always the correct pass-0 bucket regardless
+  // of the top-bit special case), so that pass can skip a second full
+  // traversal to build it.
+  std::array<I, bucket_size> counter{};
+  std::array<I, bucket_size> offset;
 
-    uI max_value = proj(*std::ranges::max_element(range, std::less{}, proj));
+  // Single pass computing the maximum projected value, whether all
+  // elements share the top bit (in which case it carries no ordering
+  // information and can be dropped, reducing the iteration count), and
+  // the first pass's histogram
+  uI max_value = 0;
+  bool all_first_bit = true;
+  for (const auto& e : range)
+  {
+    uI v = proj(e);
+    max_value = std::max(max_value, v);
+    all_first_bit = all_first_bit && (v & top_bit);
+    counter[v & mask]++;
+  }
 
-    // Sort N bits at a time
-    constexpr uI bucket_size = 1 << BITS;
-    uI mask = (uI(1) << BITS) - 1;
+  if (all_first_bit)
+    max_value = max_value & ~top_bit;
 
-    // Compute number of iterations, most significant digit (N bits) of
-    // maxvalue
-    I its = 0;
+  // Compute number of iterations, most significant digit (N bits) of
+  // maxvalue
+  I its = 0;
+  while (max_value)
+  {
+    max_value >>= _BITS;
+    its++;
+  }
 
-    // optimize for case where all first bits are set - then order will not
-    // depend on it
-    bool all_first_bit = std::ranges::all_of(
-        range, [&](const auto& e)
-        { return proj(e) & (uI(1) << (sizeof(uI) * 8 - 1)); });
-    if (all_first_bit)
-      max_value = max_value & ~(uI(1) << (sizeof(uI) * 8 - 1));
-
-    while (max_value)
-    {
-      max_value >>= BITS;
-      its++;
-    }
-
-    // Adjacency list arrays for computing insertion position
-    std::array<I, bucket_size> counter;
-    std::array<I, bucket_size + 1> offset;
-
-    uI mask_offset = 0;
-    std::vector<T> buffer(range.size());
-    std::span<T> current_perm = range;
-    std::span<T> next_perm = buffer;
-    for (I i = 0; i < its; i++)
+  uI mask_offset = 0;
+  std::vector<T> buffer(range.size());
+  std::span<T> current_perm = range;
+  std::span<T> next_perm = buffer;
+  for (I i = 0; i < its; i++)
+  {
+    if (i > 0)
     {
       // Zero counter array
       std::ranges::fill(counter, 0);
 
       // Count number of elements per bucket
-      for (const auto& c : current_perm)
+      for (auto c : current_perm)
         counter[(proj(c) & mask) >> mask_offset]++;
-
-      // Prefix sum to get the inserting position
-      offset[0] = 0;
-      std::partial_sum(counter.begin(), counter.end(),
-                       std::next(offset.begin()));
-      for (const auto& c : current_perm)
-      {
-        uI bucket = (proj(c) & mask) >> mask_offset;
-        uI new_pos = offset[bucket + 1] - counter[bucket];
-        next_perm[new_pos] = c;
-        counter[bucket]--;
-      }
-
-      mask = mask << BITS;
-      mask_offset += BITS;
-
-      std::swap(current_perm, next_perm);
     }
 
-    // Copy data back to array
-    if (its % 2 != 0)
-      std::ranges::copy(buffer, range.begin());
-  }
-};
+    // Exclusive prefix sum, used directly as the insertion cursor for
+    // each bucket
+    std::exclusive_scan(counter.begin(), counter.end(), offset.begin(), I(0));
+    for (auto c : current_perm)
+    {
+      uI bucket = (proj(c) & mask) >> mask_offset;
+      next_perm[offset[bucket]++] = c;
+    }
 
-/// Radix sort
-inline constexpr __radix_sort radix_sort{};
+    mask = mask << _BITS;
+    mask_offset += _BITS;
+
+    std::swap(current_perm, next_perm);
+  }
+
+  // Copy data back to array
+  if (its % 2 != 0)
+    std::ranges::copy(buffer, range.begin());
+}
 
 /// @brief Compute the permutation array that sorts a 2D array by row.
 ///
 /// @param[in] x The flattened 2D array to compute the permutation array
 /// for (row-major storage).
 /// @param[in] shape1 The number of columns of `x`.
+/// @param[in] ncols Number of leading columns of `x` (columns `0` to
+/// `ncols - 1`) to sort by; column `0` is the most significant.
+/// `std::nullopt` (the default) sorts by all `shape1` columns. Pass a
+/// value less than `shape1` to exclude trailing payload columns (e.g.
+/// an attached index carried alongside the sort key) from the
+/// comparison entirely, saving one radix-sort pass per excluded
+/// column.
 /// @return The permutation array such that `x[perm[i]] <= x[perm[i
-/// +1]].
+/// +1]]` when compared on the leading `ncols` columns.
 /// @pre `x.size()` must be a multiple of `shape1`.
+/// @pre `ncols <= shape1`.
+/// @note Stable: rows that compare equal on the leading `ncols` columns
+/// retain their relative order from the input.
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.
 template <typename T, int BITS = 16>
-std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
+std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1,
+                                       std::optional<std::size_t> ncols
+                                       = std::nullopt)
 {
   static_assert(std::is_integral_v<T>, "Integral required.");
 
@@ -189,22 +208,66 @@ std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
 
   assert(shape1 > 0);
   assert(x.size() % shape1 == 0);
+  std::size_t n = ncols.value_or(shape1);
+  assert(n <= shape1);
   const std::size_t shape0 = x.size() / shape1;
   std::vector<std::int32_t> perm(shape0);
   std::iota(perm.begin(), perm.end(), 0);
 
-  // Sort by each column, right to left. Col 0 has the most significant
-  // "digit".
+  // Sort by each of the leading `n` columns, right to left. Col 0 has
+  // the most significant "digit"; any columns from `n` to `shape1 - 1`
+  // are excluded from the key.
   std::vector<T> column(shape0);
+  for (std::size_t i = 0; i < n; ++i)
+  {
+    std::size_t col = n - 1 - i;
+    for (std::size_t j = 0; j < shape0; ++j)
+      column[j] = x[j * shape1 + col];
+    radix_sort<BITS>(perm, [column = std::cref(column)](auto index)
+                     { return column.get()[index]; });
+  }
+
+  return perm;
+}
+
+/// @brief Compute the permutation array that sorts a 2D array, stored
+/// column-major, by row. Overload of the row-major sort_by_perm()
+/// above, selected when `x` is passed as spans of columns rather than
+/// one flattened span.
+///
+/// @param[in] x Columns to sort by, most (`x[0]`) to least
+/// (`x.back()`) significant. To exclude a column from the sort key,
+/// omit it -- there is no separate `ncols` as in the row-major
+/// overload.
+/// @return Permutation array such that `x[k][perm[i]] <=
+/// x[k][perm[i + 1]]` for every column `k`.
+/// @pre All spans in `x` have equal length.
+/// @note Stable: rows that compare equal on every included column
+/// retain their relative order from the input.
+/// @note Columns are already contiguous, so (unlike the row-major
+/// overload) no column needs copying before it is sorted.
+template <typename T, int BITS = 16>
+std::vector<std::int32_t> sort_by_perm(std::span<std::span<const T>> x)
+{
+  static_assert(std::is_integral_v<T>, "Integral required.");
+  if (x.empty())
+    return {};
+
+  std::size_t shape1 = x.size();
+  std::size_t shape0 = x.front().size();
+
+  std::vector<std::int32_t> perm(shape0);
+  std::iota(perm.begin(), perm.end(), 0);
+
+  // Each column is already its own contiguous span -- no copy needed,
+  // just index into `x` for the column itself.
   for (std::size_t i = 0; i < shape1; ++i)
   {
     std::size_t col = shape1 - 1 - i;
-    for (std::size_t j = 0; j < shape0; ++j)
-      column[j] = x[j * shape1 + col];
-
-    radix_sort(perm, [&column](auto index) { return column[index]; });
+    assert(x[col].size() == shape0);
+    std::span<const T> column = x[col];
+    radix_sort<BITS>(perm, [column](auto index) { return column[index]; });
   }
-
   return perm;
 }
 

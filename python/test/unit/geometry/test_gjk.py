@@ -18,12 +18,12 @@ from dolfinx.mesh import create_mesh
 
 
 def distance_point_to_line_3D(P1, P2, point):
-    """Distance from point to line"""
+    """Distance from point to line."""
     return np.linalg.norm(np.cross(P2 - P1, P1 - point)) / np.linalg.norm(P2 - P1)
 
 
 def distance_point_to_plane_3D(P1, P2, P3, point):
-    """Distance from point to plane"""
+    """Distance from point to plane."""
     return np.abs(
         np.dot(np.cross(P2 - P1, P3 - P1) / np.linalg.norm(np.cross(P2 - P1, P3 - P1)), point - P2)
     )

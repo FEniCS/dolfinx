@@ -1,30 +1,50 @@
-# Copyright (C) 2021-2024 Garth N. Wells and Paul T. Kühner
+# Copyright (C) 2021-2026 Garth N. Wells and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Graph representations and operations on graphs."""
 
+from typing import Generic
+
+from mpi4py import MPI as _MPI
+
 import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.graph import partitioner
+from dolfinx.cpp.graph import (
+    partition_hilbert,
+    partition_morton,
+    partitioner,
+    reorder_hilbert,
+    reorder_morton,
+)
+from dolfinx.typing import Index
 
 # Import graph partitioners, which may or may not be available
-# (dependent on build configuration)
-try:
-    from dolfinx.cpp.graph import partitioner_scotch  # noqa
-except ImportError:
-    pass
-try:
-    from dolfinx.cpp.graph import partitioner_parmetis  # noqa
-except ImportError:
-    pass
-try:
-    from dolfinx.cpp.graph import partitioner_kahip  # noqa
-except ImportError:
-    pass
+# (dependent on build configuration). Looked up via getattr rather than
+# a static "from ... import" since each CI build's generated dolfinx.cpp
+# stub only declares the partitioners enabled in that build, and a plain
+# import would make mypy's attr-defined check build-configuration-specific.
+_partitioner_scotch = getattr(_cpp.graph, "partitioner_scotch", None)
+if _partitioner_scotch is not None:
+    partitioner_scotch = _partitioner_scotch
+_partitioner_parmetis = getattr(_cpp.graph, "partitioner_parmetis", None)
+if _partitioner_parmetis is not None:
+    partitioner_parmetis = _partitioner_parmetis
+_partitioner_kahip = getattr(_cpp.graph, "partitioner_kahip", None)
+if _partitioner_kahip is not None:
+    partitioner_kahip = _partitioner_kahip
+
+# Geometric partitioners, i.e. partitioners that use the position of each
+# graph node. As above, availability depends on the build configuration.
+_partitioner_parmetis_geom = getattr(_cpp.graph, "partitioner_parmetis_geom", None)
+if _partitioner_parmetis_geom is not None:
+    partitioner_parmetis_geom = _partitioner_parmetis_geom
+_partitioner_parmetis_hybrid = getattr(_cpp.graph, "partitioner_parmetis_hybrid", None)
+if _partitioner_parmetis_hybrid is not None:
+    partitioner_parmetis_hybrid = _partitioner_parmetis_hybrid
 
 
 __all__ = [
@@ -33,11 +53,18 @@ __all__ = [
     "comm_graph",
     "comm_graph_data",
     "comm_to_json",
+    "distribute",
+    "partition_hilbert",
+    "partition_morton",
     "partitioner",
+    "reorder_hilbert",
+    "reorder_morton",
 ]
 
 
-class AdjacencyList:
+class AdjacencyList(Generic[Index]):
+    """Adjacency list representation of a graph."""
+
     _cpp_object: (
         _cpp.graph.AdjacencyList_int32
         | _cpp.graph.AdjacencyList_int64
@@ -46,7 +73,7 @@ class AdjacencyList:
 
     def __init__(
         self,
-        cpp_object: (
+        g: (
             _cpp.graph.AdjacencyList_int32
             | _cpp.graph.AdjacencyList_int64
             | _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32
@@ -59,14 +86,15 @@ class AdjacencyList:
             :func:`adjacencylist`.
 
         Args:
-            The underlying cpp instance that this object will wrap.
+            g: The underlying cpp instance that this object will wrap.
         """
-        self._cpp_object = cpp_object
+        self._cpp_object = g
 
-    def __repr__(self):
-        return self._cpp_object.__repr__
+    def __repr__(self) -> str:
+        """String representation of the adjacency list."""
+        return self._cpp_object.__repr__()
 
-    def links(self, node: np.int32 | np.int64) -> npt.NDArray[np.int32 | np.int64]:
+    def links(self, node: int) -> npt.NDArray[Index]:
         """Retrieve the links of a node.
 
         Note:
@@ -74,15 +102,15 @@ class AdjacencyList:
             additional link (edge) data.
 
         Args:
-            Node to retrieve the connectivity of.
+            node: Node to retrieve the connectivity of.
 
         Returns:
             Neighbors of the node.
         """
-        return self._cpp_object.links(node)
+        return self._cpp_object.links(node)  # type: ignore[union-attr,return-value]
 
     @property
-    def array(self) -> npt.NDArray[np.int32 | np.int64]:
+    def array(self) -> npt.NDArray[Index]:
         """Array representation of the adjacency list.
 
         Note:
@@ -92,7 +120,7 @@ class AdjacencyList:
         Returns:
             Flattened array representation of the adjacency list.
         """
-        return self._cpp_object.array
+        return self._cpp_object.array  # type: ignore[union-attr,return-value]
 
     @property
     def offsets(self) -> npt.NDArray[np.int32]:
@@ -110,12 +138,12 @@ class AdjacencyList:
         Returns:
             Number of nodes.
         """
-        return self._cpp_object.num_nodes
+        return self._cpp_object.num_nodes  # type: ignore[return-value]
 
 
 def adjacencylist(
-    data: npt.NDArray[np.int32 | np.int64], offsets: npt.NDArray[np.int32] | None = None
-) -> AdjacencyList:
+    data: npt.NDArray[Index], offsets: npt.NDArray[np.int32] | None = None
+) -> AdjacencyList[Index]:
     """Create an :class:`AdjacencyList` for `int32` or `int64` datasets.
 
     Args:
@@ -129,6 +157,7 @@ def adjacencylist(
     """
     # TODO: Switch to np.isdtype(data.dtype, np.int32) once numpy >= 2.0 is
     # enforced
+    cpp_t: type[_cpp.graph.AdjacencyList_int32] | type[_cpp.graph.AdjacencyList_int64]
     if data.dtype == np.int32:
         cpp_t = _cpp.graph.AdjacencyList_int32
     elif data.dtype == np.int64:
@@ -136,8 +165,42 @@ def adjacencylist(
     else:
         raise TypeError("Data type for adjacency list not supported.")
 
-    cpp_object = cpp_t(data, offsets) if offsets is not None else cpp_t(data)
+    cpp_object = cpp_t(data, offsets) if offsets is not None else cpp_t(data)  # type: ignore[arg-type]
     return AdjacencyList(cpp_object)
+
+
+def distribute(
+    comm: _MPI.Comm,
+    list: npt.NDArray[np.int64],
+    destinations: _cpp.graph.AdjacencyList_int32,
+) -> tuple[
+    npt.NDArray[np.int64], npt.NDArray[np.int32], npt.NDArray[np.int64], npt.NDArray[np.int32]
+]:
+    """Distribute rows of a fixed-degree array to destination ranks.
+
+    Uses a scalable neighbourhood exchange: send/receive ranks are
+    discovered via NBX consensus rather than an all-to-all, keeping
+    communication sparse as the communicator grows, at the cost of at
+    least one non-blocking consensus round.
+
+    Args:
+        comm: MPI communicator that ``list``/``destinations`` are
+            distributed across.
+        list: Rows to distribute, with shape ``(num_nodes, degree)``.
+            The global index of row ``i`` is assumed to be ``i`` plus
+            the number of rows owned by lower-ranked processes.
+        destinations: Destination rank(s) for the ith row of ``list``.
+            The first rank is the 'owner' of the row; any further ranks
+            receive it as a ghost.
+
+    Returns:
+        Tuple of (received rows, source rank of each received row,
+        original global index of each received row, owning rank of the
+        ghost rows). The last entry has one entry per ghost row -- the
+        trailing rows of the first entry -- not one entry per received
+        row.
+    """
+    return _cpp.graph.distribute(comm, np.ascontiguousarray(list, dtype=np.int64), destinations)
 
 
 def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
@@ -173,14 +236,13 @@ def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
     Returns:
         An adjacency list representing the communication graph.
     """
-    return AdjacencyList(_cpp.graph.comm_graph(map))
+    return AdjacencyList(_cpp.graph.comm_graph(map, root))
 
 
 def comm_graph_data(
     graph: AdjacencyList,
 ) -> tuple[list[tuple[int, int, dict[str, int]]], list[tuple[int, dict[str, int]]]]:
-    """Build from a communication graph data structures for use with
-    `NetworkX <https://networkx.org/>`_.
+    """Build communication graph data for use with `NetworkX <https://networkx.org/>`_.
 
     Args:
         graph: Communication graph to build data from. Normally created
@@ -192,7 +254,10 @@ def comm_graph_data(
         `dict` holds edge data. The second list hold node data, where a
         node is a `(nodeID, dict)` tuple, where `dict` holds node data.
     """
-    return _cpp.graph.comm_graph_data(graph._cpp_object)
+    cpp_graph = graph._cpp_object
+    if not isinstance(cpp_graph, _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32):
+        raise TypeError("comm_graph_data requires a graph created by comm_graph().")
+    return _cpp.graph.comm_graph_data(cpp_graph)
 
 
 def comm_to_json(graph: AdjacencyList) -> str:
@@ -210,4 +275,7 @@ def comm_to_json(graph: AdjacencyList) -> str:
     Returns:
         A JSON string representing the communication graph.
     """
-    return _cpp.graph.comm_to_json(graph._cpp_object)
+    cpp_graph = graph._cpp_object
+    if not isinstance(cpp_graph, _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32):
+        raise TypeError("comm_to_json requires a graph created by comm_graph().")
+    return _cpp.graph.comm_to_json(cpp_graph)

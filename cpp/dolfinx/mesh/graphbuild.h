@@ -25,14 +25,16 @@ enum class CellType : std::int8_t;
 /// @param[in] cells Lists of cell vertices (stored as flattened lists,
 /// one for each cell type).
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet needs to be connected to to be considered *matched*, i.e. a
+/// facet needs to be connected to be considered *matched*, i.e. a
 /// matched facet is not connected any cells on other processes. All
 /// facets connected to less than `max_facet_to_cell_links` cells are
 /// considered *unmatched* and parallel communication will check for
-/// further connections. Defaults to `2`, which covers non-branching
-/// manifold meshes. Passing std::nullopt (no upper bound) corresponds
+/// further connections. Equal to `2` for non-branching manifold meshes.
+/// Passing std::nullopt (no upper bound) corresponds.
 /// to `max_facet_to_cell_links`=∞, i.e. every facet is considered
 /// unmatched.
+/// @param[in] num_threads Number of threads to use. Must be greater
+/// than 0.
 ///
 /// @return
 /// 1. Local dual graph
@@ -56,11 +58,12 @@ enum class CellType : std::int8_t;
 /// @note Facet (2) and cell (4) data will contain multiple entries for
 /// the same facet for branching meshes with `max_facet_to_cell_links>2`
 /// to account for all facet cell connectivies.
-std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
-           std::size_t, std::vector<std::int32_t>>
+std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>, int,
+           std::vector<std::int32_t>>
 build_local_dual_graph(std::span<const CellType> celltypes,
                        const std::vector<std::span<const std::int64_t>>& cells,
-                       std::optional<std::int32_t> max_facet_to_cell_links = 2);
+                       std::optional<std::int32_t> max_facet_to_cell_links,
+                       int num_threads);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.
@@ -75,7 +78,7 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// from which to build the dual graph, as flattened arrays for each
 /// cell type in `celltypes`.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet needs to be connected to to be considered *matched*, i.e. a
+/// facet needs to be connected to be considered *matched*, i.e. a
 /// matched facet is not connected any cells on other processes. All
 /// facets connected to less than `max_facet_to_cell_links` cells are
 /// considered *unmatched* and parallel communication will check for
@@ -83,6 +86,8 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// manifold meshes. Passing std::nullopt (no upper bound) corresponds
 /// to `max_facet_to_cell_links`=∞, i.e. every facet is considered
 /// unmatched.
+/// @param[in] num_threads Number of threads to use. Must be greater
+/// than 0.
 ///
 /// @return The dual graph.
 ///
@@ -96,6 +101,7 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 graph::AdjacencyList<std::int64_t>
 build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                  const std::vector<std::span<const std::int64_t>>& cells,
-                 std::optional<std::int32_t> max_facet_to_cell_links = 2);
+                 std::optional<std::int32_t> max_facet_to_cell_links,
+                 int num_threads = 1);
 
 } // namespace dolfinx::mesh

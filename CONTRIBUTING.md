@@ -31,3 +31,33 @@ are failing.
 
 We expect all our contributors to follow the [code of
 conduct](CODE_OF_CONDUCT.md).
+
+## Use of AI tools in contributions
+
+DOLFINx follows the same basic principle as the
+[Linux kernel guidance on AI-assisted contributions](https://docs.kernel.org/process/coding-assistants.html):
+AI tools may assist, but the human contributor is fully responsible for the
+submitted work.
+
+If an AI or code-generation tool materially contributed to a pull request,
+please disclose this in the PR description. Trivial autocomplete, formatting,
+spelling fixes, or mechanical editor assistance do not need disclosure.
+
+The contributor must:
+
+- understand every change submitted,
+- verify that the change is correct,
+- ensure that licensing requirements are satisfied,
+- test the change appropriately,
+- respond to review comments without treating the AI tool as an authority.
+
+Do not submit code, tests, documentation, explanations, references, or benchmarks
+that you cannot personally explain and defend. Generated content may be wrong,
+irrelevant, insecure, inefficient, or license-incompatible.
+
+Include a short note such as:
+
+```text
+AI assistance: I used <tool/model> to draft parts of this PR. I reviewed,
+edited, tested, and take responsibility for the final contribution.
+```

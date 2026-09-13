@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2023 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2026 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -20,6 +20,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 namespace dolfinx::fem
@@ -69,18 +70,18 @@ public:
     std::size_t num_cell_types = cell_types.size();
     if (elements.size() != num_cell_types)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Number of elements must match number of cell types");
     }
     if (_dofmaps.size() != num_cell_types)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Number of dofmaps must match number of cell types");
     }
     for (std::size_t i = 0; i < num_cell_types; ++i)
     {
       if (elements.at(i)->cell_type() != cell_types.at(i))
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Element cell types must match mesh cell types");
     }
   }
@@ -111,22 +112,32 @@ public:
   FunctionSpace sub(const std::vector<int>& component) const
   {
     assert(_mesh);
-    assert(_elements.front());
-    assert(_dofmaps.front());
+    assert(_elements.size() > 0);
+    assert(_dofmaps.size() > 0);
 
     // Check that component is valid
     if (component.empty())
-      throw std::runtime_error("Component must be non-empty");
+      throw std::invalid_argument("Component must be non-empty");
 
     // Extract sub-element
-    auto element = this->_elements.front()->extract_sub_element(component);
-
+    std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
+        sub_elements;
+    for (auto e : _elements)
+    {
+      assert(e);
+      sub_elements.push_back(e->extract_sub_element(component));
+    }
     // Extract sub dofmap
-    auto dofmap = std::make_shared<DofMap>(
-        _dofmaps.front()->extract_sub_dofmap(component));
+    std::vector<std::shared_ptr<const DofMap>> sub_dofmaps;
+    for (auto d : _dofmaps)
+    {
+      assert(d);
+      sub_dofmaps.push_back(
+          std::make_shared<const DofMap>(d->extract_sub_dofmap(component)));
+    }
 
     // Create new sub space
-    FunctionSpace sub_space(_mesh, element, dofmap);
+    FunctionSpace sub_space(_mesh, sub_elements, sub_dofmaps);
 
     // Set root space id and component w.r.t. root
     sub_space._root_space_id = _root_space_id;
@@ -165,18 +176,29 @@ public:
   /// Collapse a subspace and return a new function space and a map from
   /// new to old dofs
   /// @return The new function space and a map from new to old dofs
-  std::pair<FunctionSpace, std::vector<std::int32_t>> collapse() const
+  std::pair<FunctionSpace, std::vector<std::vector<std::int32_t>>>
+  collapse() const
   {
+    spdlog::debug("FunctionSpace::collapse");
     if (_component.empty())
-      throw std::runtime_error("Function space is not a subspace");
+      throw std::invalid_argument("Function space is not a subspace");
 
     // Create collapsed DofMap
-    auto [_collapsed_dofmap, collapsed_dofs]
-        = _dofmaps.front()->collapse(_mesh->comm(), *_mesh->topology());
-    auto collapsed_dofmap
-        = std::make_shared<DofMap>(std::move(_collapsed_dofmap));
+    std::vector<std::shared_ptr<const DofMap>> collapsed_dofmaps;
+    std::vector<std::vector<std::int32_t>> collapsed_dofs;
+    for (auto d : _dofmaps)
+    {
+      assert(d);
+      spdlog::debug("Call DofMap::collapse");
+      auto [_collapsed_dofmap, _collapsed_dofs]
+          = d->collapse(_mesh->comm(), *_mesh->topology());
+      spdlog::debug("Got collapsed dofmap");
+      collapsed_dofmaps.push_back(
+          std::make_shared<DofMap>(std::move(_collapsed_dofmap)));
+      collapsed_dofs.push_back(_collapsed_dofs);
+    }
 
-    return {FunctionSpace(_mesh, _elements.front(), collapsed_dofmap),
+    return {FunctionSpace(_mesh, _elements, collapsed_dofmaps),
             std::move(collapsed_dofs)};
   }
 
@@ -209,14 +231,14 @@ public:
   {
     if (!_component.empty())
     {
-      throw std::runtime_error("Cannot tabulate coordinates for a "
-                               "FunctionSpace that is a subspace.");
+      throw std::invalid_argument("Cannot tabulate coordinates for a "
+                                  "FunctionSpace that is a subspace.");
     }
 
     assert(_elements.front());
     if (_elements.front()->is_mixed())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Cannot tabulate coordinates for a mixed FunctionSpace.");
     }
 
@@ -241,91 +263,104 @@ public:
         = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
           / dofmap_bs;
 
-    // Get the dof coordinates on the reference element
-    if (!_elements.front()->interpolation_ident())
-    {
-      throw std::runtime_error("Cannot evaluate dof coordinates - this element "
-                               "does not have pointwise evaluation.");
-    }
-    const auto [X, Xshape] = _elements.front()->interpolation_points();
-
-    // Get coordinate map
-    const CoordinateElement<geometry_type>& cmap = _mesh->geometry().cmap();
-
-    // Prepare cell geometry
-    auto x_dofmap = _mesh->geometry().dofmap();
-    const std::size_t num_dofs_g = cmap.dim();
-    std::span<const geometry_type> x_g = _mesh->geometry().x();
+    std::size_t num_cell_types = _elements.size();
 
     // Array to hold coordinates to return
     const std::size_t shape_c0 = transpose ? 3 : num_dofs;
     const std::size_t shape_c1 = transpose ? num_dofs : 3;
     std::vector<geometry_type> coords(shape_c0 * shape_c1, 0);
-
     using mdspan2_t = md::mdspan<geometry_type, md::dextents<std::size_t, 2>>;
     using cmdspan4_t
         = md::mdspan<const geometry_type, md::dextents<std::size_t, 4>>;
-
-    // Loop over cells and tabulate dofs
+    std::span<const geometry_type> x_g = _mesh->geometry().x();
     std::vector<geometry_type> x_b(scalar_dofs * gdim);
     mdspan2_t x(x_b.data(), scalar_dofs, gdim);
 
-    std::vector<geometry_type> coordinate_dofs_b(num_dofs_g * gdim);
-    mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
-
-    auto map = _mesh->topology()->index_map(tdim);
-    assert(map);
-    const int num_cells = map->size_local() + map->num_ghosts();
-
-    std::span<const std::uint32_t> cell_info;
-    if (_elements.front()->needs_dof_transformations())
+    for (std::size_t i = 0; i < num_cell_types; ++i)
     {
-      _mesh->topology_mutable()->create_entity_permutations();
-      cell_info = std::span(_mesh->topology()->get_cell_permutation_info());
-    }
-
-    const std::array<std::size_t, 4> phi_shape
-        = cmap.tabulate_shape(0, Xshape[0]);
-    std::vector<geometry_type> phi_b(
-        std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-    cmdspan4_t phi_full(phi_b.data(), phi_shape);
-    cmap.tabulate(0, X, Xshape, phi_b);
-    auto phi = md::submdspan(phi_full, 0, md::full_extent, md::full_extent, 0);
-
-    // TODO: Check transform
-    // Basis function reference-to-conforming transformation function
-    auto apply_dof_transformation
-        = _elements.front()->template dof_transformation_fn<geometry_type>(
-            doftransform::standard);
-
-    for (int c = 0; c < num_cells; ++c)
-    {
-      // Extract cell geometry 'dofs'
-      auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
-      for (std::size_t i = 0; i < x_dofs.size(); ++i)
-        for (std::size_t j = 0; j < gdim; ++j)
-          coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];
-
-      // Tabulate dof coordinates on cell
-      cmap.push_forward(x, coordinate_dofs, phi);
-      apply_dof_transformation(
-          x_b, std::span(cell_info.data(), cell_info.size()), c, x.extent(1));
-
-      // Get cell dofmap
-      auto dofs = _dofmaps.front()->cell_dofs(c);
-
-      // Copy dof coordinates into vector
-      if (!transpose)
+      // Get the dof coordinates on the reference element
+      if (!_elements[i]->interpolation_ident())
       {
-        for (std::size_t i = 0; i < dofs.size(); ++i)
-          for (std::size_t j = 0; j < gdim; ++j)
-            coords[dofs[i] * 3 + j] = x(i, j);
+        throw std::runtime_error(
+            "Cannot evaluate dof coordinates - this element "
+            "does not have pointwise evaluation.");
       }
-      else
+      const auto [X, Xshape] = _elements[i]->interpolation_points();
+
+      // Get coordinate map
+      const CoordinateElement<geometry_type>& cmap
+          = _mesh->geometry().cmaps().at(i);
+
+      // Prepare cell geometry
+      auto x_dofmap = _mesh->geometry().dofmaps().at(i);
+      const std::size_t num_dofs_g = cmap.dim();
+      std::vector<geometry_type> coordinate_dofs_b(num_dofs_g * gdim);
+      mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
+
+      auto map = _mesh->topology()->index_maps(tdim)[i];
+      assert(map);
+      const int num_cells = map->size_local() + map->num_ghosts();
+
+      std::span<const std::uint32_t> cell_info;
+      if (_elements[i]->needs_dof_transformations())
       {
-        for (std::size_t i = 0; i < dofs.size(); ++i)
-          for (std::size_t j = 0; j < gdim; ++j)
-            coords[j * num_dofs + dofs[i]] = x(i, j);
+        _mesh->topology_mutable()->create_entity_permutations();
+        cell_info = std::span(_mesh->topology()->get_cell_permutation_info());
+      }
+
+      const std::array<std::size_t, 4> phi_shape
+          = cmap.tabulate_shape(0, Xshape[0]);
+      std::vector<geometry_type> phi_b(std::reduce(
+          phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+      cmdspan4_t phi_full(phi_b.data(), phi_shape);
+      cmap.tabulate(0, X, Xshape, phi_b);
+      auto phi
+          = md::submdspan(phi_full, 0, md::full_extent, md::full_extent, 0);
+
+      // TODO: Check transform
+      //
+      // Basis function reference-to-conforming transformation function.
+      // This function is only reachable for elements with
+      // interpolation_ident() (point evaluation, e.g. Lagrange), which
+      // never need a DOF transformation, so this is always a no-op
+      // (nullptr) closure.
+      auto apply_dof_transformation
+          = _elements[i]->template dof_transformation_fn<geometry_type>(
+              doftransform::standard);
+
+      for (int c = 0; c < num_cells; ++c)
+      {
+        // Extract cell geometry 'dofs'
+        auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
+        for (std::size_t j = 0; j < x_dofs.size(); ++j)
+          for (std::size_t k = 0; k < gdim; ++k)
+            coordinate_dofs(j, k) = x_g[3 * x_dofs[j] + k];
+
+        // Tabulate dof coordinates on cell
+        cmap.push_forward(x, coordinate_dofs, phi);
+        if (apply_dof_transformation)
+        {
+          apply_dof_transformation(
+              x_b, std::span(cell_info.data(), cell_info.size()), c,
+              x.extent(1));
+        }
+
+        // Get cell dofmap
+        auto dofs = _dofmaps[i]->cell_dofs(c);
+
+        // Copy dof coordinates into vector
+        if (!transpose)
+        {
+          for (std::size_t j = 0; j < dofs.size(); ++j)
+            for (std::size_t k = 0; k < gdim; ++k)
+              coords[dofs[j] * 3 + k] = x(j, k);
+        }
+        else
+        {
+          for (std::size_t j = 0; j < dofs.size(); ++j)
+            for (std::size_t k = 0; k < gdim; ++k)
+              coords[k * num_dofs + dofs[j]] = x(j, k);
+        }
       }
     }
 
@@ -343,7 +378,7 @@ public:
   {
     if (_elements.size() > 1)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "FunctionSpace has multiple elements, call `elements` instead.");
     }
 
@@ -362,17 +397,17 @@ public:
   {
     if (_dofmaps.size() > 1)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "FunctionSpace has multiple dofmaps, call `dofmaps` instead.");
     }
 
-    return dofmaps(0);
+    return dofmaps().front();
   }
 
   /// The dofmaps
-  std::shared_ptr<const DofMap> dofmaps(int cell_type_idx) const
+  const std::vector<std::shared_ptr<const DofMap>>& dofmaps() const
   {
-    return _dofmaps.at(cell_type_idx);
+    return _dofmaps;
   }
 
 private:
@@ -430,7 +465,7 @@ common_function_spaces(
         else
         {
           if (spaces0[i] != V0)
-            throw std::runtime_error("Mismatched test space for row.");
+            throw std::invalid_argument("Mismatched test space for row.");
         }
 
         if (!spaces1[j])
@@ -438,7 +473,7 @@ common_function_spaces(
         else
         {
           if (spaces1[j] != V1)
-            throw std::runtime_error("Mismatched trial space for column.");
+            throw std::invalid_argument("Mismatched trial space for column.");
         }
       }
     }
@@ -446,9 +481,9 @@ common_function_spaces(
 
   // Check that there are no null entries
   if (std::find(spaces0.begin(), spaces0.end(), nullptr) != spaces0.end())
-    throw std::runtime_error("Could not deduce all block test spaces.");
+    throw std::invalid_argument("Could not deduce all block test spaces.");
   if (std::find(spaces1.begin(), spaces1.end(), nullptr) != spaces1.end())
-    throw std::runtime_error("Could not deduce all block trial spaces.");
+    throw std::invalid_argument("Could not deduce all block trial spaces.");
 
   return {spaces0, spaces1};
 }

@@ -1,4 +1,4 @@
-"""Unit tests for timing facilities"""
+"""Unit tests for timing facilities."""
 
 # Copyright (C) 2017 Jan Blechta, Jack S. Hale
 #

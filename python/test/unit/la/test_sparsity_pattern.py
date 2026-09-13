@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for sparsity pattern creation"""
+"""Unit tests for sparsity pattern creation."""
 
 from mpi4py import MPI
 
@@ -13,7 +13,7 @@ from dolfinx.mesh import create_unit_square, exterior_facet_indices
 
 
 def test_add_diagonal():
-    """Test adding entries to diagonal of sparsity pattern"""
+    """Test adding entries to diagonal of sparsity pattern."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     gdim = mesh.geometry.dim
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))

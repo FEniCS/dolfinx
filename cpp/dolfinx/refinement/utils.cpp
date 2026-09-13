@@ -143,7 +143,7 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
                  {
                    auto it = std::ranges::lower_bound(src, r);
                    assert(it != src.end() and *it == r);
-                   int rank = std::distance(src.begin(), it);
+                   int rank = std::ranges::distance(src.begin(), it);
                    return idx + offsets[rank];
                  });
 
@@ -250,7 +250,8 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
     std::ranges::sort(pclinks);
     auto it_end = std::ranges::unique(pclinks).begin();
     facet_indices.insert(facet_indices.end(), pclinks.begin(), it_end);
-    tag_values.insert(tag_values.end(), std::distance(pclinks.begin(), it_end),
+    tag_values.insert(tag_values.end(),
+                      std::ranges::distance(pclinks.begin(), it_end),
                       values[i]);
   }
 

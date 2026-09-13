@@ -4,10 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_ADIOS2
-
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/utils.h>
 #include <vector>
@@ -70,5 +69,3 @@ TEST_CASE("IndexMap communication graph", "[index_map_graph]")
 {
   CHECK_NOTHROW(test_comm_graphs());
 }
-
-#endif

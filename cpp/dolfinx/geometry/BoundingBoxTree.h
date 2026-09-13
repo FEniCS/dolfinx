@@ -12,6 +12,8 @@
 #include <cassert>
 #include <cstdint>
 #include <dolfinx/mesh/utils.h>
+#include <format>
+#include <iterator>
 #include <mpi.h>
 #include <optional>
 #include <span>
@@ -105,7 +107,7 @@ std::int32_t _build_from_leaf(
     std::array<T, 3> b_diff;
     std::transform(std::next(b.cbegin(), 3), b.cend(), b.cbegin(),
                    b_diff.begin(), std::minus<T>());
-    const std::size_t axis = std::distance(
+    const std::size_t axis = std::ranges::distance(
         b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
 
     auto middle = std::next(leaf_bboxes.begin(), leaf_bboxes.size() / 2);
@@ -174,7 +176,7 @@ _build_from_point(std::span<std::pair<std::array<T, 3>, std::int32_t>> points,
   std::array<T, 3> b_diff;
   std::ranges::transform(b1, b0, b_diff.begin(), std::minus<T>());
   const std::size_t axis
-      = std::distance(b_diff.begin(), std::ranges::max_element(b_diff));
+      = std::ranges::distance(b_diff.begin(), std::ranges::max_element(b_diff));
 
   auto middle = std::next(points.begin(), points.size() / 2);
   std::nth_element(points.begin(), middle, points.end(),
@@ -226,7 +228,7 @@ public:
   /// @param[in] mesh Mesh for building the bounding box tree.
   /// @param[in] tdim Topological dimension of the mesh entities to
   /// build the bounding box tree for.
-  /// @param[in] padding Value to pad (extend) the the bounding box of
+  /// @param[in] padding Value to pad (extend) the bounding box of
   /// each entity by.
   /// @param[in] entities List of entity indices (local to process) to
   /// compute the bounding box for. If `std::nullopt`, the bounding box tree is
@@ -300,20 +302,20 @@ public:
                  num_bboxes(), points.size());
   }
 
+  // Copy constructor (deleted)
+  BoundingBoxTree(const BoundingBoxTree& tree) = delete;
+
   /// Move constructor
   BoundingBoxTree(BoundingBoxTree&& tree) = default;
 
-  /// Copy constructor
-  BoundingBoxTree(const BoundingBoxTree& tree) = delete;
+  /// Destructor
+  ~BoundingBoxTree() = default;
+
+  // Copy assignment (deleted)
+  BoundingBoxTree& operator=(const BoundingBoxTree& other) = delete;
 
   /// Move assignment
   BoundingBoxTree& operator=(BoundingBoxTree&& other) = default;
-
-  /// Copy assignment
-  BoundingBoxTree& operator=(const BoundingBoxTree& other) = default;
-
-  /// Destructor
-  ~BoundingBoxTree() = default;
 
   /// @brief Return bounding box coordinates for a given node in the
   /// tree,
@@ -390,9 +392,9 @@ public:
   /// Print out for debugging
   std::string str() const
   {
-    std::stringstream s;
+    std::string s;
     tree_print(s, _bboxes.size() / 2 - 1);
-    return s.str();
+    return s;
   }
 
   /// Get bounding box child nodes.
@@ -421,28 +423,33 @@ private:
   int _tdim;
 
   // Print out recursively, for debugging
-  void tree_print(std::stringstream& s, std::int32_t i) const
+  void tree_print(std::string& s, std::int32_t i) const
   {
-    s << "[";
+    s += "[";
     for (std::size_t j = 0; j < 2; ++j)
     {
       for (std::size_t k = 0; k < 3; ++k)
-        s << _bbox_coordinates[6 * i + j * 3 + k] << " ";
+      {
+        std::format_to(std::back_inserter(s), "{:.6} ",
+                       _bbox_coordinates[6 * i + j * 3 + k]);
+      }
       if (j == 0)
-        s << "]->"
-          << "[";
+        s += "]->[";
     }
-    s << "]\n";
+    s += "]\n";
 
     if (_bboxes[2 * i] == _bboxes[2 * i + 1])
-      s << "leaf containing entity (" << _bboxes[2 * i + 1] << ")";
+    {
+      std::format_to(std::back_inserter(s), "leaf containing entity ({})",
+                     _bboxes[2 * i + 1]);
+    }
     else
     {
-      s << "{";
+      s += "{";
       tree_print(s, _bboxes[2 * i]);
-      s << ", \n";
+      s += ", \n";
       tree_print(s, _bboxes[2 * i + 1]);
-      s << "}\n";
+      s += "}\n";
     }
   }
 

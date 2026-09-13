@@ -1,11 +1,12 @@
-# Copyright (C) 2009-2020 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
+# Copyright (C) 2009-2026 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Test that interpolation is done correctly"""
+"""Test that interpolation is done correctly."""
 
 import random
+import sys
 
 from mpi4py import MPI
 
@@ -27,6 +28,7 @@ from dolfinx.fem import (
 from dolfinx.geometry import bb_tree, compute_collisions_points
 from dolfinx.mesh import (
     CellType,
+    GhostMode,
     create_mesh,
     create_rectangle,
     create_submesh,
@@ -51,13 +53,13 @@ parametrize_cell_types = pytest.mark.parametrize(
 
 def random_point_in_reference(cell_type):
     if cell_type == CellType.interval:
-        return (random.random(), 0, 0)
+        return (random.random(),)
     elif cell_type == CellType.triangle:
         x, y = random.random(), random.random()
         # If point is outside cell, move it back inside
         if x + y > 1:
             x, y = 1 - x, 1 - y
-        return (x, y, 0)
+        return (x, y)
     elif cell_type == CellType.tetrahedron:
         x, y, z = random.random(), random.random(), random.random()
         # If point is outside cell, move it back inside
@@ -70,9 +72,11 @@ def random_point_in_reference(cell_type):
         return (x, y, z)
     elif cell_type == CellType.quadrilateral:
         x, y = random.random(), random.random()
-        return (x, y, 0)
+        return (x, y)
     elif cell_type == CellType.hexahedron:
         return (random.random(), random.random(), random.random())
+    else:
+        raise ValueError(f"Unsupported {cell_type=}")
 
 
 def random_point_in_cell(mesh):
@@ -96,7 +100,8 @@ def random_point_in_cell(mesh):
         axes = (mesh.geometry.x[1], mesh.geometry.x[2], mesh.geometry.x[4])
 
     return tuple(
-        origin[i] + sum((axis[i] - origin[i]) * p for axis, p in zip(axes, point)) for i in range(3)
+        origin[i] + sum((axis[i] - origin[i]) * p for axis, p in zip(axes, point, strict=True))
+        for i in range(3)
     )
 
 
@@ -231,7 +236,7 @@ def run_scalar_test(V, poly_order):
     points = np.asarray(points, dtype=default_real_type)
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
-    for p, val in zip(points, values):
+    for p, val in zip(points, values, strict=True):
         assert np.allclose(val, f(p), atol=1.0e-5)
 
 
@@ -262,7 +267,7 @@ def run_vector_test(V, poly_order):
     points = [random_point_in_cell(V.mesh) for count in range(5)]
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
-    for p, val in zip(points, values):
+    for p, val in zip(points, values, strict=True):
         assert np.allclose(val, f(p), atol=1.0e-5)
 
 
@@ -270,7 +275,7 @@ def run_vector_test(V, poly_order):
 @parametrize_cell_types
 @pytest.mark.parametrize("order", range(1, 5))
 def test_Lagrange_interpolation(cell_type, order):
-    """Test that interpolation is correct in a function space"""
+    """Test that interpolation is correct in a function space."""
     mesh = one_cell_mesh(cell_type)
     V = functionspace(mesh, ("Lagrange", order))
     run_scalar_test(V, order)
@@ -282,7 +287,7 @@ def test_Lagrange_interpolation(cell_type, order):
 )
 @pytest.mark.parametrize("order", range(1, 5))
 def test_serendipity_interpolation(cell_type, order):
-    """Test that interpolation is correct in a function space"""
+    """Test that interpolation is correct in a function space."""
     mesh = one_cell_mesh(cell_type)
     V = functionspace(mesh, ("S", order))
     run_scalar_test(V, order)
@@ -339,7 +344,7 @@ def test_NCE_interpolation(cell_type, order):
 
 
 def test_mixed_sub_interpolation():
-    """Test interpolation of sub-functions"""
+    """Test interpolation of sub-functions."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
 
     def f(x):
@@ -389,9 +394,9 @@ def test_mixed_sub_interpolation():
         V0 = functionspace(mesh, P.sub_elements[0])
         V1 = functionspace(mesh, P.sub_elements[1])
         v0, v1 = Function(V0), Function(V1)
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             v0.interpolate(U.sub(1))
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             v1.interpolate(U.sub(0))
 
 
@@ -404,94 +409,226 @@ def test_mixed_interpolation():
         "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
     )
     v = Function(functionspace(mesh, mixed_element([A, B])))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
 
 
 @pytest.mark.parametrize("order1", [2, 3, 4])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
 @pytest.mark.parametrize("order2", [2, 3, 4])
-def test_interpolation_nedelec(order1, order2):
-    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+def test_interpolation_nedelec(order1, order2, dtype):
+    xdtype = dtype(0).real.dtype
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xdtype)
     V = functionspace(mesh, ("N1curl", order1))
     V1 = functionspace(mesh, ("N1curl", order2))
-    u, v = Function(V), Function(V1)
+    u, v = Function(V, dtype=dtype), Function(V1, dtype=dtype)
 
     # The expression "lambda x: x" is contained in the N1curl function
     # space for order > 1
     u.interpolate(lambda x: x)
     v.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0, abs=1.0e-10)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0, abs=1.0e-10
+    )
 
     # The target expression is also contained in N2curl space of any
     # order
     V2 = functionspace(mesh, ("N2curl", 1))
-    w = Function(V2)
+    w = Function(V2, dtype=dtype)
     w.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx)) == pytest.approx(0, abs=1.0e-10)
+    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0, abs=1.0e-10
+    )
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_interpolation_dg_to_n1curl(tdim, order):
+def test_interpolation_dg_to_n1curl(tdim, order, dtype):
+    xdtype = dtype(0).real.dtype
     if tdim == 2:
-        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=xdtype)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xdtype)
     V = functionspace(mesh, ("DG", order, (tdim,)))
     V1 = functionspace(mesh, ("N1curl", order + 1))
-    u, v = Function(V), Function(V1)
+    u, v = Function(V, dtype=dtype), Function(V1, dtype=dtype)
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0, abs=1.0e-8)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0.0, abs=1.0e-8
+    )
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_interpolation_n1curl_to_dg(tdim, order):
+def test_interpolation_n1curl_to_dg(tdim, order, dtype):
+    xdtype = dtype(0).real.dtype
     if tdim == 2:
-        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=xdtype)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xdtype)
     V = functionspace(mesh, ("N1curl", order + 1))
     V1 = functionspace(mesh, ("DG", order, (tdim,)))
-    u, v = Function(V), Function(V1)
+    u, v = Function(V, dtype=dtype), Function(V1, dtype=dtype)
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0, abs=1e-10)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0.0, abs=1.0e-10
+    )
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_interpolation_n2curl_to_bdm(tdim, order):
+def test_interpolation_n2curl_to_bdm(tdim, order, dtype):
+    xdtype = dtype(0).real.dtype
     if tdim == 2:
-        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=xdtype)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xdtype)
     V = functionspace(mesh, ("N2curl", order))
     V1 = functionspace(mesh, ("BDM", order))
-    u, v = Function(V), Function(V1)
+    u, v = Function(V, dtype=dtype), Function(V1, dtype=dtype)
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
         0.0, abs=1.0e-10
     )
 
 
 @pytest.mark.parametrize("order1", [1, 2, 3, 4, 5])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
 @pytest.mark.parametrize("order2", [1, 2, 3])
-def test_interpolation_p2p(order1, order2):
-    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+def test_interpolation_p2p(order1, order2, dtype):
+    xdtype = dtype(0).real.dtype
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xdtype)
     V = functionspace(mesh, ("Lagrange", order1))
     V1 = functionspace(mesh, ("Lagrange", order2))
-    u, v = Function(V), Function(V1)
+    u, v = Function(V, dtype=dtype), Function(V1, dtype=dtype)
     u.interpolate(lambda x: x[0])
     v.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0, abs=1e-10)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0.0, abs=1.0e-10
+    )
 
     DG = functionspace(mesh, ("DG", order2))
-    w = Function(DG)
+    w = Function(DG, dtype=dtype)
     w.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx)) == pytest.approx(0.0, abs=1e-10)
+    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0.0, abs=1.0e-10
+    )
 
 
 @pytest.mark.parametrize("order1", [1, 2, 3])
@@ -732,7 +869,7 @@ def test_interpolate_subset(order, dim, affine, callable_):
 
 
 def test_interpolate_callable():
-    """Test interpolation with callables"""
+    """Test interpolation with callables."""
     numba = pytest.importorskip("numba")
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 1)
     V = functionspace(mesh, ("Lagrange", 2))
@@ -745,13 +882,13 @@ def test_interpolate_callable():
     u0.interpolate(lambda x: x[0])
     u1.interpolate(f)
     assert np.allclose(u0.x.array, u1.x.array)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         u0.interpolate(lambda x: np.vstack([x[0], x[1]]))
 
 
 @pytest.mark.parametrize("bound", [1.5, 0.5])
 def test_interpolate_callable_subset(bound):
-    """Test interpolation on subsets with callables"""
+    """Test interpolation on subsets with callables."""
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 4)
     cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[1] <= bound + 1e-10)
     num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
@@ -795,7 +932,7 @@ def test_interpolate_callable_subset(bound):
 def test_vector_element_interpolation(scalar_element):
     """Test interpolation into a range of vector elements."""
     mesh = create_unit_square(
-        MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell.cellname())
+        MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell.cellname)
     )
     V = functionspace(mesh, blocked_element(scalar_element, shape=(2,)))
     u = Function(V)
@@ -910,7 +1047,15 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     # Interpolate 3D->2D
     u1 = Function(V1, dtype=xtype)
 
-    u1.interpolate_nonmatching(u0, cells, interpolation_data=interpolation_data)
+    # Pass by keyword to check each name binds the parameter it names;
+    # interpolate_nonmatching (used for 2D->3D below) passes positionally.
+    u1._cpp_object.interpolate(
+        u=u0._cpp_object,
+        cells=cells,
+        tol=1e-6,
+        maxit=15,
+        interpolation_data=interpolation_data._cpp_object,
+    )
     u1.x.scatter_forward()
 
     # Exact interpolation on 2D mesh
@@ -946,6 +1091,18 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
         domain=mesh0, subdomain_data=facet_tag, subdomain_id=1
     )
     assert np.isclose(assemble_scalar(form(residual, dtype=xtype)), 0)
+
+
+def test_interpolate_mismatched_dtype_raises():
+    """Test that a Function of incompatible dtype reports the type error,
+    rather than being mistaken for a callable f(x).
+    """
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=np.float64)
+    V = functionspace(mesh, ("Lagrange", 1))
+    u = Function(V, dtype=np.float64)
+    v = Function(V, dtype=np.complex128)
+    with pytest.raises(TypeError):
+        u.interpolate(v)
 
 
 @pytest.mark.parametrize("xtype", [np.float64])
@@ -1088,7 +1245,7 @@ def test_submesh_interpolation():
 
 
 def xtest_submesh_expression_interpolation():
-    """Test interpolation of an expression between a submesh and its parent"""
+    """Test interpolation of an expression between a submesh and its parent."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 8, cell_type=CellType.quadrilateral)
 
     def left_locator(x):
@@ -1149,3 +1306,50 @@ def xtest_submesh_expression_interpolation():
     w_exact.interpolate(modified_grad, cells=cells)
     w_exact.x.scatter_forward()
     np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=atol)
+
+
+@pytest.mark.parametrize("ghost_mode", [GhostMode.shared_facet, GhostMode.none])
+def test_submesh_interpolation_mapped(ghost_mode):
+    """Test interpolation of Piola mapped cells with submeshes."""
+    comm = MPI.COMM_WORLD
+
+    N = 8
+    domain = create_unit_cube(comm, N, N, N, ghost_mode=ghost_mode, dtype=default_real_type)
+    tdim = domain.topology.dim
+
+    eps = 50 * np.finfo(domain.geometry.x.dtype).eps
+    sub_cells = locate_entities(domain, tdim, lambda x: x[0] <= 0.5 + eps)
+
+    submesh, sub_to_parent = create_submesh(domain, tdim, sub_cells)[:2]
+    submesh.topology.create_entity_permutations()
+    domain.topology.create_entity_permutations()
+
+    smsh_cell_imap = submesh.topology.index_map(tdim)
+    smsh_cells = np.arange(smsh_cell_imap.size_local + smsh_cell_imap.num_ghosts)
+    parent_cells = sub_to_parent.sub_topology_to_topology(smsh_cells, inverse=False)
+
+    degree = 1
+    el = element("N1curl", domain.basix_cell(), degree, dtype=default_real_type)
+
+    V = functionspace(domain, el)
+    V_sub = functionspace(submesh, el)
+
+    u_parent = Function(V)
+    u_sub = Function(V_sub)
+
+    def f(x):
+        vals = np.zeros((domain.geometry.dim, x.shape[1]), dtype=default_scalar_type)
+        vals[0, :] = x[0, :] * np.cos(np.pi * x[1, :])
+        return vals
+
+    u_parent.interpolate(f, cells0=parent_cells)
+    u_sub.interpolate(u_parent, cells0=parent_cells, cells1=smsh_cells)
+    u_sub.x.scatter_forward()
+
+    diff = u_parent - u_sub
+    L2_symbolic = ufl.inner(diff, diff) * ufl.dx(domain=submesh)
+    L2_compiled = form(L2_symbolic, entity_maps=[sub_to_parent])
+
+    L2_local = assemble_scalar(L2_compiled)
+    L2_global = np.sqrt(L2_compiled.mesh.comm.allreduce(L2_local, op=MPI.SUM))
+    assert np.isclose(L2_global, 0.0, atol=eps, rtol=eps)

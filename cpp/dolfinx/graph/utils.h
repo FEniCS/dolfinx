@@ -7,10 +7,14 @@
 #pragma once
 
 #include "AdjacencyList.h"
-#include <dolfinx/common/IndexMap.h>
 #include <string>
 #include <tuple>
 #include <utility>
+
+namespace dolfinx::common
+{
+class IndexMap;
+}
 
 namespace dolfinx::graph
 {

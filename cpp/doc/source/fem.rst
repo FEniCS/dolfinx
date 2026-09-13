@@ -1,8 +1,6 @@
 Finite element (``dolfinx::fem``)
 =================================
 
-*Under development*
-
 Finite elements
 ---------------
 

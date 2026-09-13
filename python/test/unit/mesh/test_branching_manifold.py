@@ -11,7 +11,8 @@ import pytest
 
 import basix
 import ufl
-from dolfinx.cpp.mesh import cell_num_vertices, create_cell_partitioner
+from dolfinx.cpp.mesh import cell_num_vertices
+from dolfinx.graph import partitioner
 from dolfinx.mesh import (
     CellType,
     GhostMode,
@@ -39,7 +40,6 @@ def test_edge_skeleton_mesh(dim, cell_type):
     The edge skeleton mesh is the mesh formed by the edges of another mesh (edges -> cell). In
     particular this is a branching mesh.
     """
-
     comm = MPI.COMM_WORLD
     if comm.rank == 0:
         if dim == 2:
@@ -72,7 +72,9 @@ def test_edge_skeleton_mesh(dim, cell_type):
         cells,
         element,
         new_x,
-        create_cell_partitioner(GhostMode.shared_facet, max_facet_to_cell_links),
+        partitioner(),
+        ghost_mode=GhostMode.shared_facet,
+        max_facet_to_cell_links=max_facet_to_cell_links,
     )
 
     skeleton_top = skeleton_mesh.topology
@@ -131,7 +133,8 @@ def test_facet_skeleton_mesh(cell_type):
         cells,
         element,
         new_x,
-        create_cell_partitioner(GhostMode.shared_facet, max_facet_to_cell_links),
+        partitioner(),
+        ghost_mode=GhostMode.shared_facet,
         max_facet_to_cell_links=max_facet_to_cell_links,
     )
 

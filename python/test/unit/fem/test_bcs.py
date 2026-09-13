@@ -32,7 +32,8 @@ from ufl import dx, inner
 
 def test_locate_dofs_geometrical():
     """Test that locate_dofs_geometrical, when passed two function
-    spaces, returns the correct degrees of freedom in each space"""
+    spaces, returns the correct degrees of freedom in each space.
+    """
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
     P0 = element("Lagrange", mesh.basix_cell(), p0, dtype=default_real_type)
@@ -41,7 +42,7 @@ def test_locate_dofs_geometrical():
     W = functionspace(mesh, mixed_element([P0, P1]))
     V = W.sub(0).collapse()[0]
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         locate_dofs_geometrical(W, lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
 
     dofs = locate_dofs_geometrical((W.sub(0), V), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
@@ -68,7 +69,8 @@ def test_locate_dofs_geometrical():
 
 def test_overlapping_bcs():
     """Test that, when boundaries condition overlap, the last provided
-    boundary condition is applied"""
+    boundary condition is applied.
+    """
     n = 23
     mesh = create_unit_square(MPI.COMM_WORLD, n, n)
     V = functionspace(mesh, ("Lagrange", 1))
@@ -112,7 +114,7 @@ def test_overlapping_bcs():
 
 
 def test_constant_bc_constructions():
-    """Test construction from constant values"""
+    """Test construction from constant values."""
     msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=default_real_type)
     gdim = msh.geometry.dim
     V0 = functionspace(msh, ("Lagrange", 1))
@@ -160,7 +162,8 @@ def test_constant_bc_constructions():
 )
 def test_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with a constant yields the same
-    result as setting it with a function"""
+    result as setting it with a function.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     V = functionspace(mesh, ("Lagrange", 1))
@@ -195,7 +198,8 @@ def test_constant_bc(mesh_factory):
 )
 def test_vector_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with a vector valued constant
-    yields the same result as setting it with a function"""
+    yields the same result as setting it with a function.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     tdim = mesh.topology.dim
@@ -243,7 +247,8 @@ def test_vector_constant_bc(mesh_factory):
 def test_sub_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with on a component of a vector
     valued function yields the same result as setting it with a
-    function"""
+    function.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     gdim = mesh.geometry.dim
@@ -281,7 +286,8 @@ def test_sub_constant_bc(mesh_factory):
 )
 def test_mixed_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with on a component of a mixed
-    function yields the same result as setting it with a function"""
+    function yields the same result as setting it with a function.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     tdim = mesh.topology.dim
@@ -323,7 +329,8 @@ def test_mixed_constant_bc(mesh_factory):
 
 def test_mixed_blocked_constant():
     """Check that mixed space with blocked component cannot have
-    Dirichlet BC based on a vector valued Constant."""
+    Dirichlet BC based on a vector valued Constant.
+    """
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim - 1, tdim)
@@ -359,7 +366,7 @@ def test_mixed_blocked_constant():
 
     # Check that vector space throws error
     c1 = default_scalar_type((5, 7))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         dofs1 = locate_dofs_topological(W.sub(1), tdim - 1, boundary_facets)
         dirichletbc(c1, dofs1, W.sub(1))
 
@@ -399,3 +406,16 @@ def test_blocked_dof_ownership(shape):
         owned_sub_dofs = boundary_dofs_V[boundary_dofs_V < num_owned_blocked * bs]
         assert len(owned_sub_dofs) == num_owned_sub
         assert len(unrolled_dofs_sub) == len(boundary_dofs_V)
+
+
+def test_bc_index_out_of_range():
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    facet_map = mesh.topology.index_map(mesh.topology.dim - 1)
+    num_facets_on_proc = facet_map.size_local + facet_map.num_ghosts
+    facets = np.arange(num_facets_on_proc + 1, dtype=np.int32)
+    V = functionspace(mesh, ("Lagrange", 1))
+    with pytest.raises(
+        IndexError, match=r".*is larger than the number of entities on this process.*"
+    ):
+        locate_dofs_topological(V, mesh.topology.dim - 1, facets)

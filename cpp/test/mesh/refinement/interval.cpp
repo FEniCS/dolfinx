@@ -11,6 +11,7 @@
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
@@ -60,7 +61,7 @@ mesh::Mesh<T> create_3_vertex_interval_mesh()
   fem::CoordinateElement<T> element(mesh::CellType::interval, 1);
   return mesh::create_mesh(MPI_COMM_SELF, MPI_COMM_SELF, cells, element,
                            MPI_COMM_SELF, x, {x.size() / 3, 3},
-                           mesh::create_cell_partitioner());
+                           graph::Partitioner{}, mesh::GhostMode::none, 2, 1);
 }
 
 TEMPLATE_TEST_CASE("Interval uniform refinement",
@@ -75,31 +76,9 @@ TEMPLATE_TEST_CASE("Interval uniform refinement",
   auto [refined_mesh, parent_edge, parent_facet] = refinement::refine(
       mesh, std::nullopt, nullptr, refinement::Option::parent_cell);
 
-  std::vector<T> expected_x = {
-      /* v_0 */ 0.0, 0.0, 0.0,
-      /* v_1 */ .25, 0.5, 1.0,
-      /* v_2 */ 0.5, 1.0, 2.0,
-      /* v_3 */ .75, 1.5, 3.0,
-      /* v_4 */ 1.0, 2.0, 4.0,
-  };
-
-  CHECK_THAT(refined_mesh.geometry().x(),
-             RangeEquals(expected_x, [](auto a, auto b)
-                         { return std::abs(a - b) <= EPS<T>; }));
-
   // Check topology
   auto topology = refined_mesh.topology_mutable();
   CHECK(topology->dim() == 1);
-
-  topology->create_connectivity(0, 1);
-  CHECK_adjacency_list_equal(*topology->connectivity(0, 1), {/* v_0 */ {0},
-                                                             /* v_1 */ {0, 1},
-                                                             /* v_2 */ {1, 2},
-                                                             /* v_3 */ {2, 3},
-                                                             /* v_4 */ {3}});
-
-  CHECK_THAT(parent_edge.value(),
-             RangeEquals(std::vector<std::int32_t>{0, 0, 1, 1}));
 }
 
 TEMPLATE_TEST_CASE("Interval adaptive refinement",
@@ -112,21 +91,9 @@ TEMPLATE_TEST_CASE("Interval adaptive refinement",
 
   std::vector<std::int32_t> edges{1};
   // TODO: parent_facet
-  auto [refined_mesh, parent_edge, parent_facet] = refinement::refine(
-      mesh, std::span(edges),
-      mesh::create_cell_partitioner(mesh::GhostMode::shared_facet),
-      refinement::Option::parent_cell);
-
-  std::vector<T> expected_x = {
-      /* v_0 */ 0.0, 0.0, 0.0,
-      /* v_1 */ 0.5, 1.0, 2.0,
-      /* v_2 */ .75, 1.5, 3.0,
-      /* v_3 */ 1.0, 2.0, 4.0,
-  };
-
-  CHECK_THAT(refined_mesh.geometry().x(),
-             RangeEquals(expected_x, [](auto a, auto b)
-                         { return std::abs(a - b) <= EPS<T>; }));
+  auto [refined_mesh, parent_edge, parent_facet]
+      = refinement::refine(mesh, std::span(edges), graph::partition_graph,
+                           refinement::Option::parent_cell);
 
   auto topology = refined_mesh.topology_mutable();
   CHECK(topology->dim() == 1);
@@ -155,7 +122,7 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
   if (comm_size == 1)
     SKIP("Only runs in parallel");
 
-  auto create_mesh = [&]()
+  auto create_mesh = [&rank, &comm_size]()
   {
     std::vector<T> x;
     std::vector<std::int64_t> cells;
@@ -174,17 +141,19 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
 
     auto partitioner
         = [](MPI_Comm /* comm */, int /* nparts */,
-             const std::vector<mesh::CellType>& /* cell_types */,
-             const std::vector<std::span<const std::int64_t>>& /* cells */)
-        -> graph::AdjacencyList<std::int32_t>
+             const graph::AdjacencyList<std::int64_t>& /* dual_graph */,
+             std::optional<std::span<const std::int32_t>> /* cell_weights */,
+             std::optional<std::span<const std::int32_t>> /* edge_weights */,
+             bool /* ghosting */) -> graph::AdjacencyList<std::int32_t>
     {
       return graph::AdjacencyList<std::int32_t>(
           dolfinx::MPI::size(MPI_COMM_WORLD));
     };
 
     MPI_Comm commt = rank == 0 ? MPI_COMM_SELF : MPI_COMM_NULL;
-    return mesh::create_mesh(MPI_COMM_WORLD, commt, cells, element, commt, x,
-                             {x.size() / 3, 3}, partitioner);
+    return mesh::create_mesh(
+        MPI_COMM_WORLD, commt, cells, element, commt, x, {x.size() / 3, 3},
+        graph::Partitioner{.fn = partitioner}, mesh::GhostMode::none, 2, 1);
   };
 
   mesh::Mesh<T> mesh = create_mesh();

@@ -12,10 +12,14 @@
 #
 # Copyright © 2020-2022 Garth N. Wells and Michal Habera
 #
-# This demo ({download}`demo_elasticity.py`) solves the equations of
-# static linear elasticity using a smoothed aggregation algebraic
-# multigrid solver. It illustrates how to:
-#
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_elasticity.py>`
+# * {download}`Jupyter notebook <./demo_elasticity.ipynb>`
+# ```
+# This demo solves the equations of static linear elasticity using
+# a smoothed aggregation algebraic multigrid solver.
+# It illustrates how to:
 # - Use a smoothed aggregation algebraic multigrid solver
 # - Use {py:class}`Expression <dolfinx.fem.Expression>` to compute
 #   derived quantities of a solution
@@ -55,11 +59,19 @@ dtype = PETSc.ScalarType
 # `PETSc.NullSpace` object for a 3D elasticity problem. The nullspace is
 # spanned by six vectors -- three translation modes and three rotation
 # modes.
+#
+# Note, for the pure PETSc use case the nullspace construction can be
+# shortened to
+# ```python
+# coords = V.tabulate_dof_coordinates()[:V.dofmap.index_map.size_local,:]
+# coords = coords.ravel()
+# vec = PETSc.Vec().createWithArray(coords, bsize=gdim, comm=mesh.comm)
+# ns = PETSc.NullSpace().createRigidBody(vec)
+# ```
 
 
 def build_nullspace(V: FunctionSpace):
-    """Build PETSc nullspace for 3D elasticity"""
-
+    """Build PETSc nullspace for 3D elasticity."""
     # Create vectors that will span the nullspace
     bs = V.dofmap.index_map_bs
     length0 = V.dofmap.index_map.size_local
@@ -87,14 +99,15 @@ def build_nullspace(V: FunctionSpace):
     la.orthonormalize(basis)
 
     basis_petsc = [
-        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm) for x in b
+        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm)  # type: ignore[arg-type]
+        for x in b
     ]
     return PETSc.NullSpace().create(vectors=basis_petsc)
 
 
 # ## Problem definition
 
-# Create a box Mesh:
+# Create a {py:func}`box mesh<dolfinx.mesh.create_box>`:
 
 
 msh = create_box(
@@ -122,17 +135,17 @@ E = 1.0e9
 
 
 def σ(v):
-    """Return an expression for the stress σ given a displacement field"""
+    """Return an expression for the stress σ given a displacement field."""
     return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(len(v))
 
 
 # -
 
-# A function space space is created and the elasticity variational
+# A function space is created and the elasticity variational
 # problem defined:
 
-
-V = functionspace(msh, ("Lagrange", 1, (msh.geometry.dim,)))
+gdim = msh.geometry.dim
+V = functionspace(msh, ("Lagrange", 1, (gdim,)))
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 a = form(ufl.inner(σ(u), ufl.grad(v)) * ufl.dx)
 L = form(ufl.inner(f, v) * ufl.dx)
@@ -140,12 +153,13 @@ L = form(ufl.inner(f, v) * ufl.dx)
 # A homogeneous (zero) boundary condition is created on $x_0 = 0$ and
 # $x_1 = 1$ by finding all facets on these boundaries, and then creating
 # a Dirichlet boundary condition object.
-
+tdim = msh.topology.dim
+fdim = tdim - 1
 facets = locate_entities_boundary(
-    msh, dim=2, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
+    msh, dim=fdim, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
 )
 bc = dirichletbc(
-    np.zeros(3, dtype=dtype), locate_dofs_topological(V, entity_dim=2, entities=facets), V=V
+    np.zeros(gdim, dtype=dtype), locate_dofs_topological(V, entity_dim=fdim, entities=facets), V=V
 )
 
 # ## Assemble and solve
@@ -170,7 +184,7 @@ A.assemble()
 # +
 b = assemble_vector(L)
 apply_lifting(b, [a], bcs=[[bc]])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
 bc.set(b.array_w)
 # -
 
@@ -178,7 +192,7 @@ bc.set(b.array_w)
 
 ns = build_nullspace(V)
 A.setNearNullSpace(ns)
-A.setOption(PETSc.Mat.Option.SPD, True)
+A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
 # Set PETSc solver options, create a PETSc Krylov solver, and attach the
 # matrix `A` to the solver:
@@ -186,19 +200,19 @@ A.setOption(PETSc.Mat.Option.SPD, True)
 # +
 # Set solver options
 opts = PETSc.Options()
-opts["ksp_type"] = "cg"
-opts["ksp_rtol"] = 1.0e-8
-opts["pc_type"] = "gamg"
+opts["ksp_type"] = "cg"  # type: ignore[index]
+opts["ksp_rtol"] = 1.0e-8  # type: ignore[index]
+opts["pc_type"] = "gamg"  # type: ignore[index]
 
 # Use Chebyshev smoothing for multigrid
-opts["mg_levels_ksp_type"] = "chebyshev"
-opts["mg_levels_pc_type"] = "jacobi"
+opts["mg_levels_ksp_type"] = "chebyshev"  # type: ignore[index]
+opts["mg_levels_pc_type"] = "jacobi"  # type: ignore[index]
 
 # Improve estimate of eigenvalues for Chebyshev smoothing
-opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10
+opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10  # type: ignore[index]
 
 # Create PETSc Krylov solver and turn convergence monitoring on
-solver = PETSc.KSP().create(msh.comm)
+solver = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
 solver.setFromOptions()
 
 # Set matrix operator
@@ -258,8 +272,9 @@ with XDMFFile(msh.comm, "out_elasticity/von_mises_stress.xdmf", "w") as file:
 # -
 
 # Finally, we compute the $L^2$ norm of the displacement solution
-# vector. This is a collective operation (i.e., the method `norm` must
-# be called from all MPI ranks), but we print the norm only on rank 0.
+# vector. This is a collective operation (i.e., the method
+# {py:func}`norm<dolfinx.la.norm>` must be called from all MPI ranks),
+# but we print the norm only on rank 0.
 
 # +
 unorm = la.norm(uh.x)

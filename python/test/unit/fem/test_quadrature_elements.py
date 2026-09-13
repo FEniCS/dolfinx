@@ -130,7 +130,7 @@ def extract_diagonal(mat):
     assert num_rows == num_cols, "Matrix must be square"
     bs = mat.block_size[0]
     diag = np.empty(num_rows * bs, dtype=mat.data.dtype)
-    for row, (start, end) in enumerate(zip(mat.indptr[:-1], mat.indptr[1:])):
+    for row, (start, end) in enumerate(zip(mat.indptr[:-1], mat.indptr[1:], strict=True)):
         for i in range(start, end):
             if mat.indices[i] == row:
                 for block in range(bs):
@@ -141,8 +141,7 @@ def extract_diagonal(mat):
 @pytest.mark.parametrize("degree", range(1, 4))
 @pytest.mark.parametrize("shape", [(), (1,), (2,), (3,), (4,), (2, 2), (3, 3)])
 def test_vector_element(shape, degree):
-    """
-    Compare assembly into a vector with quadrature elements with the diagonal of
+    """Compare assembly into a vector with quadrature elements with the diagonal of
     an assembled mass matrix with the same quadrature element.
     """
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
@@ -174,9 +173,7 @@ def test_vector_element(shape, degree):
 
 @pytest.mark.parametrize("degree", range(1, 4))
 def test_quadrature_assembly(degree):
-    """
-    Test quadrature element against assembly with spatial coordinate and a fixed quadrature rule
-    """
+    """Test quadrature element against assembly with spatial coord and fixed quadrature rule."""
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 5, 7)
     dx_m = ufl.Measure(
         "dx",
@@ -209,4 +206,9 @@ def test_quadrature_assembly(degree):
     b_ref.scatter_reverse(dolfinx.la.InsertMode.add)
     b_ref.scatter_forward()
 
-    np.testing.assert_allclose(b.array, b_ref.array)
+    # Both forms use the same quadrature rule, so the vectors differ only
+    # by round-off. Set the tolerance from the scalar type: the
+    # assert_allclose default (1e-7) is below the float32 epsilon.
+    np.testing.assert_allclose(
+        b.array, b_ref.array, rtol=100 * np.finfo(dolfinx.default_scalar_type).eps
+    )

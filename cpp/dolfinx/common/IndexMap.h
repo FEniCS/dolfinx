@@ -6,10 +6,8 @@
 
 #pragma once
 
-#include "IndexMap.h"
 #include "MPI.h"
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <span>
 #include <tuple>
@@ -111,7 +109,7 @@ public:
   /// This constructor uses a 'consensus' algorithm to determine the
   /// ranks that ghost indices that are owned by the caller. This
   /// requires non-trivial MPI communication. If the ranks that ghost
-  /// indices owned by the caller are known, it more efficient to use
+  /// indices owned by the caller are known, it is more efficient to use
   /// the constructor that takes these ranks as an argument.
   ///
   /// @note Collective
@@ -222,8 +220,8 @@ public:
 
   /// @todo Aim to remove this function?
   ///
-  /// @brief Compute map from each local (owned) index to the set of
-  /// ranks that have the index as a ghost.
+  /// @brief For each local (owned) index compute the set of ranks that
+  /// have the index as a ghost.
   ///
   /// @note Collective
   ///
@@ -232,7 +230,7 @@ public:
   /// std::int64_t>,std::span<const int>,int) for an explanation of when
   /// `tag` is required.
   /// @return Shared indices.
-  graph::AdjacencyList<int> index_to_dest_ranks(
+  std::pair<std::vector<int>, std::vector<std::int32_t>> index_to_dest_ranks(
       int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx)) const;
 
   /// @brief Build a list of owned indices that are ghosted by another
@@ -245,7 +243,7 @@ public:
   ///
   /// Typically used when creating neighbourhood communicators.
   ///
-  /// @return MPI ranks than own ghost indices.  The ranks are unique
+  /// @return MPI ranks that own ghost indices.  The ranks are unique
   /// and sorted.
   std::span<const int> src() const noexcept;
 
@@ -254,8 +252,8 @@ public:
   ///
   /// Typically used when creating neighbourhood communicators.
   ///
-  /// @return MPI ranks than own ghost indices. The ranks are unique
-  /// and sorted.
+  /// @return MPI ranks that ghost indices owned by this rank.
+  /// The ranks are unique and sorted.
   std::span<const int> dest() const noexcept;
 
   /// @brief Compute the number of ghost indices owned by each rank in
@@ -269,7 +267,7 @@ public:
   /// 2. Received by this rank from other ranks when performing a
   /// forward (owner -> ghost) scatter.
   ///
-  /// @return A weight vector, where `weight[i]` the the number of
+  /// @return A weight vector, where `weight[i]` is the number of
   /// ghost indices owned by rank IndexMap::src()`[i]`.
   std::vector<std::int32_t> weights_src() const;
 
@@ -284,7 +282,7 @@ public:
   /// 2. Received by this rank from other ranks when performing a
   /// reverse forward (owner <- ghost) scatter.
   ///
-  /// @return A weight vector, where `weight[i]` the the number of ghost
+  /// @return A weight vector, where `weight[i]` is the number of ghost
   /// indices owned by rank IndexMap::dest()`[i]`.
   std::vector<std::int32_t> weights_dest() const;
 

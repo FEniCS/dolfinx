@@ -2,10 +2,13 @@
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This demo is implemented in three files: one for the mesh generation
-# with gmsh, one for the calculation of analytical efficiencies, and one
-# for the variational forms and the solver. It illustrates how to:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_axis.py>`
+# * {download}`Jupyter notebook <./demo_axis.ipynb>`
+# ```
 #
+# This demo illustrates how to:
 # - Setup and solve Maxwell's equations for axisymmetric geometries
 # - Implement (axisymmetric) perfectly matched layers
 #
@@ -16,6 +19,7 @@
 # +
 import sys
 from functools import partial
+from pathlib import Path
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -24,10 +28,9 @@ import gmsh
 import numpy as np
 from scipy.special import jv, jvp
 
-import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import fem, io, mesh, plot
+from dolfinx import fem, graph, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 
 try:
@@ -48,9 +51,9 @@ except ModuleNotFoundError:
 
 # The time-harmonic Maxwell equation is complex-valued. PETSc must
 # therefore have been compiled with complex scalars.
-if not np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
+if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo can only be executed when PETSc using complex scalars.")
-    exit(0)
+    sys.exit(0)
 
 # -
 
@@ -69,6 +72,7 @@ def generate_mesh_sphere_axis(
     pml_tag: int,
     scatt_tag: int,
 ):
+    """Generate axisymmetric mesh of a sphere with surrounding PML."""
     gmsh.model.add("geometry")
 
     gmsh.model.occ.addCircle(0, 0, 0, radius_sph * 0.5, angle1=-np.pi / 2, angle2=np.pi / 2, tag=1)
@@ -166,14 +170,14 @@ def generate_mesh_sphere_axis(
 # cylindrical harmonics:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # \mathbf{E}_s(\rho, z, \phi) &= \sum_m\mathbf{E}^{(m)}_s(\rho, z)
 #   e^{-jm\phi} \\
 # \mathbf{E}_b(\rho, z, \phi) &= \sum_m\mathbf{E}^{(m)}_b(\rho, z)
 #   e^{-jm\phi} \\
 # \bar{\mathbf{v}}(\rho, z, \phi) &=
 # \sum_m\bar{\mathbf{v}}^{(m)}(\rho, z)e^{+jm\phi}
-# \end{align}
+# \end{aligned}
 # $$
 #
 # The curl operator $\nabla\times$ in cylindrical coordinates becomes:
@@ -247,6 +251,7 @@ def generate_mesh_sphere_axis(
 
 
 def curl_axis(a, m: int, rho):
+    """Curl operator in cylindrical coordinates."""
     curl_r = -a[2].dx(1) - 1j * m / rho * a[1]
     curl_z = a[2] / rho + a[2].dx(0) + 1j * m / rho * a[0]
     curl_p = a[0].dx(1) - a[1].dx(0)
@@ -281,6 +286,7 @@ def curl_axis(a, m: int, rho):
 
 # +
 def background_field_rz(theta: float, n_bkg: float, k0: float, m: int, x):
+    """Cylindrical harmonics of background field (ρ and z components)."""
     k = k0 * n_bkg
     a_r = (
         np.cos(theta)
@@ -298,6 +304,7 @@ def background_field_rz(theta: float, n_bkg: float, k0: float, m: int, x):
 
 
 def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
+    """Cylindrical harmonics of background field (φ component)."""
     k = k0 * n_bkg
     a_p = (
         np.cos(theta)
@@ -317,13 +324,13 @@ def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
 # PML:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # &\rho^{\prime} = \rho\left[1 +j \alpha/k_0 \left(\frac{r
 # - r_{dom}}{r~r_{pml}}\right)\right] \\
 # &z^{\prime} = z\left[1 +j \alpha/k_0 \left(\frac{r
 # - r_{dom}}{r~r_{pml}}\right)\right] \\
 # &\phi^{\prime} = \phi
-# \end{align}
+# \end{aligned}
 # $$
 #
 # with $\alpha$ tuning the absorption inside the PML, and $r =
@@ -354,12 +361,12 @@ def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
 # ${\boldsymbol{\mu}_{pml}}$:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # & {\boldsymbol{\varepsilon}_{pml}} =
 # A^{-1} \mathbf{A} {\boldsymbol{\varepsilon}_b}\mathbf{A}^{T}\\
 # & {\boldsymbol{\mu}_{pml}} =
 # A^{-1} \mathbf{A} {\boldsymbol{\mu}_b}\mathbf{A}^{T}
-# \end{align}
+# \end{aligned}
 # $$
 #
 # For doing these calculations, we define the `pml_coordinate` and
@@ -369,10 +376,12 @@ def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
 
 
 def pml_coordinate(x, r, alpha: float, k0: float, radius_dom: float, radius_pml: float):
+    """Coordinate transformation for PML in cylindrical coordinates."""
     return x + 1j * alpha / k0 * x * (r - radius_dom) / (radius_pml * r)
 
 
 def create_eps_mu(pml, rho, eps_bkg, mu_bkg):
+    """Create PML permittivity and permeability tensors."""
     J = ufl.grad(pml)
 
     # Transform the 2x2 Jacobian into a 3x3 matrix.
@@ -388,7 +397,7 @@ def create_eps_mu(pml, rho, eps_bkg, mu_bkg):
 
 # We can now define some constants and geometrical parameters, and then
 # we can generate the mesh with Gmsh, by using the function
-# `generate_mesh_sphere_axis` in `mesh_sphere_axis.py`:
+# `generate_mesh_sphere_axis`:
 
 
 # +
@@ -442,8 +451,15 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = dolfinx.cpp.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet)
-mesh_data = io.gmsh.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
+partitioner = graph.partitioner()
+mesh_data = io.gmsh.model_to_mesh(
+    model,
+    MPI.COMM_WORLD,
+    0,
+    gdim=2,
+    partitioner=partitioner,
+    ghost_mode=mesh.GhostMode.shared_facet,
+)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
 
@@ -453,6 +469,8 @@ MPI.COMM_WORLD.barrier()
 
 # Visually check of the mesh and of the subdomains using PyVista:
 
+out_folder = Path("out_axis")
+out_folder.mkdir(parents=True, exist_ok=True)
 tdim = mesh_data.mesh.topology.dim
 if have_pyvista:
     topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
@@ -468,8 +486,7 @@ if have_pyvista:
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:
-        pyvista.start_xvfb()
-        figure = plotter.screenshot("sphere_axis_mesh.png", window_size=[500, 500])
+        figure = plotter.screenshot(out_folder / "sphere_axis_mesh.png", window_size=[500, 500])
 
 # For the $\hat{\rho}$ and $\hat{z}$ components of the electric field,
 # we will use Nedelec elements, while for the $\hat{\phi}$ components we
@@ -523,26 +540,26 @@ I0 = 0.5 * n_bkg / Z0  # Intensity
 # to few harmonic numbers, e.g., $m = -1, 0, 1$. Besides, we have that:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # &J_{-m}=(-1)^m J_m \\
 # &J_{-m}^{\prime}=(-1)^m J_m^{\prime} \\
 # &j^{-m}=(-1)^m j^m
-# \end{align}
+# \end{aligned}
 # $$
 #
 # and therefore:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # &E_{b, \rho}^{(m)}=E_{b, \rho}^{(-m)} \\
 # &E_{b, \phi}^{(m)}=-E_{b, \phi}^{(-m)} \\
 # &E_{b, z}^{(m)}=E_{b, z}^{(-m)}
-# \end{align}
+# \end{aligned}
 # $$
 #
 # In light of this, we can solve the problem for $m\geq 0$.
 #
-# We now now define `eps_pml` and `mu_pml`:
+# We now define `eps_pml` and `mu_pml`:
 
 # +
 rho, z = ufl.SpatialCoordinate(mesh_data.mesh)
@@ -597,11 +614,11 @@ dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
 # following way:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # &E_{s, \rho}^{(m)}(\phi)=E_{s, \rho}^{(m)}(e^{-jm\phi}+e^{jm\phi}) \\
 # &E_{s, \phi}^{(m)}(\phi)=E_{s, \phi}^{(m)}(e^{-jm\phi}-e^{jm\phi}) \\
 # &E_{s, z}^{(m)}(\phi)=E_{s, z}^{(m)}(e^{-jm\phi}+e^{jm\phi})
-# \end{align}
+# \end{aligned}
 # $$
 #
 # For this reason, we also add a `phase` constant for the above phase
@@ -611,7 +628,7 @@ dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
 phi = np.pi / 4
 
 # Initialize phase term
-phase = fem.Constant(mesh_data.mesh, PETSc.ScalarType(np.exp(1j * 0 * phi)))
+phase = fem.Constant(mesh_data.mesh, PETSc.ScalarType(np.exp(1j * 0 * phi)))  # type: ignore[operator]
 # -
 
 # We now solve the problem:
@@ -639,11 +656,11 @@ for m in m_list:
         + k0**2 * ufl.inner(eps_pml * Es_m, v_m) * rho * dPml
     )
     a, L = ufl.lhs(F), ufl.rhs(F)
-    sys = PETSc.Sys()  # type: ignore
+    petsc_sys = PETSc.Sys()
     use_superlu = PETSc.IntType == np.int64
-    if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
+    if petsc_sys.hasExternalPackage("mumps") and not use_superlu:
         mat_factor_backend = "mumps"
-    elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
+    elif petsc_sys.hasExternalPackage("superlu_dist"):
         mat_factor_backend = "superlu_dist"
     else:
         if mesh_data.mesh.comm.size > 1:
@@ -663,7 +680,7 @@ for m in m_list:
     )
     Esh_m = problem.solve()
     assert isinstance(Esh_m, fem.Function)
-    assert problem.solver.getConvergedReason() > 0
+    assert problem.solver.getConvergedReason() > 0  # type: ignore[operator]
 
     # Scattered magnetic field
     Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)
@@ -783,6 +800,6 @@ if has_vtx:
     Es_dg = fem.Function(W)
     Es_expr = fem.Expression(Esh, W.element.interpolation_points)
     Es_dg.interpolate(Es_expr)
-    with VTXWriter(mesh_data.mesh.comm, "sols/Es.bp", Es_dg) as f:
+    with VTXWriter(mesh_data.mesh.comm, out_folder / "Es.bp", Es_dg) as f:
         f.write(0.0)
 # -

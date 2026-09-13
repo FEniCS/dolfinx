@@ -10,10 +10,15 @@
 
 # # Parallel communication pattern analysis
 #
-# This demo is implemented in {download}`demo_comm-pattern.py`. It
-# illustrates how build a graph that represents a parallel communication
-# pattern and how to analyse the parallel communication pattern using
-# [NetworkX](https://networkx.org/).
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_comm-pattern.py>`
+# * {download}`Jupyter notebook <./demo_comm-pattern.ipynb>`
+# ```
+# This demo illustrates how to:
+# - Build a graph that represents a parallel communication pattern
+# - Analyse the parallel communication pattern using
+#   [NetworkX](https://networkx.org/).
 #
 # The layout of a distributed array across processes (MPI ranks) is
 # described in DOLFINx by an {py:class}`IndexMap
@@ -46,7 +51,7 @@ from dolfinx import fem, graph, mesh
 
 
 # +
-def plot_graph(G: nx.MultiGraph, egde_labels=False):
+def plot_graph(G: nx.DiGraph, egde_labels=False):  # type: ignore[no-any-unimported]
     """Plot the communication graph."""
     pos = nx.circular_layout(G)
     nx.draw_networkx_nodes(G, pos, alpha=0.75)
@@ -86,11 +91,12 @@ def plot_graph(G: nx.MultiGraph, egde_labels=False):
 
 
 # +
-def plot_bar(G: nx.MultiGraph):
-    """Plot bars charts with the degree (number of 'out-edges') and the
-    outward data volume for each rank.
-    """
+def plot_bar(G: nx.DiGraph):  # type: ignore[no-any-unimported]
+    """Plot bars charts with the degree and weights.
 
+    Degree is the number of 'out-edges' and the weights are the outward
+    data volume for each rank.
+    """
     ranks = range(G.order())
     num_edges = [len(nbrs) for _, nbrs in G.adj.items()]
     weights = [sum(data["weight"] for nbr, data in nbrs.items()) for _, nbrs in G.adj.items()]
@@ -145,6 +151,7 @@ comm_graph = graph.comm_graph(V.dofmap.index_map)
 
 # +
 def print_stats(G):
+    """Print communication graph statistics."""
     print("Communication graph data:")
     print(f"  Num edges: {G.size()}")
     print(f"  Num local: {G.size('local')}")
@@ -178,13 +185,13 @@ if msh.comm.rank == 0:
     print("Test:", graph.comm_graph_data(comm_graph))
 
     # Create a NetworkX directed graph.
-    H = nx.DiGraph()
+    H: nx.DiGraph = nx.DiGraph()  # type: ignore[no-any-unimported]
     H.add_edges_from(adj_data)
     H.add_nodes_from(node_data)
 
     # Create graph with sorted nodes. This can be helpful for
     # visualisations.
-    G = nx.DiGraph()
+    G: nx.DiGraph = nx.DiGraph()  # type: ignore[no-any-unimported]
     G.add_nodes_from(sorted(H.nodes(data=True)))
     G.add_edges_from(H.edges(data=True))
 
@@ -203,7 +210,7 @@ if msh.comm.rank == 0:
 
     # Create graph with sorted nodes. This can be helpful for
     # visualisations.
-    G1 = nx.DiGraph()
+    G1: nx.DiGraph = nx.DiGraph()  # type: ignore[no-any-unimported]
     G1.add_nodes_from(sorted(H1.nodes(data=True)))
     G1.add_edges_from(H1.edges(data=True))
     print_stats(G1)

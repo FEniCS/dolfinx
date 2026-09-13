@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 Garth N. Wells, Jørgen S. Dokken
+// Copyright (C) 2015-2026 Garth N. Wells, Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -18,6 +18,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <span>
+#include <stdexcept>
 #include <vector>
 
 namespace dolfinx::fem
@@ -91,13 +92,13 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   assert(mesh);
   assert(V1.mesh());
   if (mesh != V1.mesh())
-    throw std::runtime_error("Meshes must be the same.");
+    throw std::invalid_argument("Meshes must be the same.");
 
   if (mesh->geometry().dim() != 3)
-    throw std::runtime_error("Geometric must be equal to 3..");
+    throw std::invalid_argument("Geometric must be equal to 3..");
   if (mesh->geometry().dim() != mesh->topology()->dim())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Geometric and topological dimensions must be equal.");
   }
   constexpr int gdim = 3;
@@ -107,7 +108,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   assert(e0);
   if (e0->map_type() != basix::maps::type::covariantPiola)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Finite element for parent space must be covariant Piola.");
   }
 
@@ -115,7 +116,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   assert(e1);
   if (e1->map_type() != basix::maps::type::contravariantPiola)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Finite element for target space must be contracovariant Piola.");
   }
 
@@ -143,38 +144,12 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   const std::size_t space_dim0 = e0->space_dimension();
   const std::size_t space_dim1 = e1->space_dimension();
   if (e0->reference_value_size() != 3)
-    throw std::runtime_error("Value size for parent space should be 3.");
+    throw std::invalid_argument("Value size for parent space should be 3.");
   if (e1->reference_value_size() != 3)
-    throw std::runtime_error("Value size for target space should be 3.");
+    throw std::invalid_argument("Value size for target space should be 3.");
 
   // Get the V1 reference interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
-
-  // Get/compute geometry map and evaluate at interpolation points
-  const CoordinateElement<T>& cmap = mesh->geometry().cmap();
-  auto x_dofmap = mesh->geometry().dofmap();
-  const std::size_t num_dofs_g = cmap.dim();
-  std::span<const T> x_g = mesh->geometry().x();
-  std::array<std::size_t, 4> Phi_g_shape = cmap.tabulate_shape(1, Xshape[0]);
-  std::vector<T> Phi_g_b(std::reduce(Phi_g_shape.begin(), Phi_g_shape.end(), 1,
-                                     std::multiplies{}));
-  // (derivative,  point index, phi, component)
-  md::mdspan<const T, md::extents<std::size_t, gdim + 1, md::dynamic_extent,
-                                  md::dynamic_extent, 1>>
-      Phi_g(Phi_g_b.data(), Phi_g_shape);
-  cmap.tabulate(1, X, Xshape, Phi_g_b);
-
-  // Geometry data structures
-  std::vector<T> coord_dofs_b(num_dofs_g * gdim);
-  md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 3>> coord_dofs(
-      coord_dofs_b.data(), num_dofs_g, gdim);
-  std::vector<T> J_b(Xshape[0] * gdim * gdim);
-  md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 3, 3>> J(
-      J_b.data(), Xshape[0], gdim, gdim);
-  std::vector<T> K_b(Xshape[0] * gdim * gdim);
-  md::mdspan<T, typename decltype(J)::extents_type> K(K_b.data(), J.extents());
-  std::vector<T> detJ(Xshape[0]);
-  std::vector<T> det_scratch(2 * gdim * gdim);
 
   // Evaluate V0 basis function derivatives at reference interpolation
   // points for V1, (deriv, pt_idx, phi (dof), comp)
@@ -205,32 +180,12 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
       curl(curl_b.data(), dPhi0.extent(0), dPhi0.extent(1), dPhi0.extent(3));
 
   std::vector<U> Ab(space_dim0 * space_dim1);
-  std::vector<U> local1(space_dim1);
 
   // Iterate over mesh and interpolate on each cell
   assert(mesh->topology()->index_map(gdim));
   for (std::int32_t c = 0; c < mesh->topology()->index_map(gdim)->size_local();
        ++c)
   {
-    // Get cell geometry (coordinate dofs)
-    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      for (std::size_t j = 0; j < gdim; ++j)
-        coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
-
-    // Compute Jacobians at reference points for current cell
-    std::ranges::fill(J_b, 0);
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
-    {
-      auto dPhi_g
-          = md::submdspan(Phi_g, std::pair(1, gdim + 1), p, md::full_extent, 0);
-      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-      cmap.compute_jacobian(dPhi_g, coord_dofs, _J);
-      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-      cmap.compute_jacobian_inverse(_J, _K);
-      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
-    }
-
     // TODO: re-order loops and/or re-pack Phi0 to allow a simple flat
     // copy?
 
@@ -250,9 +205,12 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
       std::size_t offset = p * size; // Offset for point p
 
       // Shape: (num_phi , (value_size * num_derivs))
-      apply_dof_transformation0(std::span(dPhi0.data_handle() + offset, size),
-                                cell_info, c,
-                                dPhi0.extent(2) * dPhi0.extent(3));
+      if (apply_dof_transformation0)
+      {
+        apply_dof_transformation0(std::span(dPhi0.data_handle() + offset, size),
+                                  cell_info, c,
+                                  dPhi0.extent(2) * dPhi0.extent(3));
+      }
     }
 
     // Compute curl
@@ -268,17 +226,24 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
       }
     }
 
-    // Apply interpolation matrix to basis derivatives values of V0 at
-    // the interpolation points of V1
-    for (std::size_t i = 0; i < curl.extent(1); ++i)
-    {
-      auto values = md::submdspan(curl, md::full_extent, i, md::full_extent);
-      impl::interpolation_apply(Pi_1, values, std::span(local1), 1);
-      for (std::size_t j = 0; j < local1.size(); ++j)
-        Ab[space_dim0 * j + i] = local1[j];
-    }
+    // Apply interpolation matrix to basis derivative values of V0 at
+    // the interpolation points of V1. Pi_1 does not depend on the
+    // basis function index i, so all space_dim0 applications are
+    // combined into a single loop nest (rather than calling
+    // interpolation_apply once per basis function) so that each row
+    // of Pi_1 is read from memory once instead of space_dim0 times.
+    std::ranges::fill(Ab, U(0));
+    for (std::size_t j = 0; j < space_dim1; ++j)         // V1 dof
+      for (std::size_t k = 0; k < curl.extent(2); ++k)   // component
+        for (std::size_t p = 0; p < curl.extent(0); ++p) // point
+        {
+          T pi_val = Pi_1(j, k * curl.extent(0) + p);
+          for (std::size_t i = 0; i < space_dim0; ++i) // V0 basis function
+            Ab[space_dim0 * j + i] += static_cast<U>(pi_val * curl(p, i, k));
+        }
 
-    apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
+    if (apply_inverse_dof_transform1)
+      apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
     mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
   }
 }
@@ -329,16 +294,16 @@ void discrete_gradient(mesh::Topology& topology,
 
   // Check elements
   if (e0.map_type() != basix::maps::type::identity)
-    throw std::runtime_error("Wrong finite element space for V0.");
+    throw std::invalid_argument("Wrong finite element space for V0.");
   if (e0.block_size() != 1)
-    throw std::runtime_error("Block size is greater than 1 for V0.");
+    throw std::invalid_argument("Block size is greater than 1 for V0.");
   if (e0.reference_value_size() != 1)
-    throw std::runtime_error("Wrong value size for V0.");
+    throw std::invalid_argument("Wrong value size for V0.");
 
   if (e1.map_type() != basix::maps::type::covariantPiola)
-    throw std::runtime_error("Wrong finite element space for V1.");
+    throw std::invalid_argument("Wrong finite element space for V1.");
   if (e1.block_size() != 1)
-    throw std::runtime_error("Block size is greater than 1 for V1.");
+    throw std::invalid_argument("Block size is greater than 1 for V1.");
 
   // Get V1 (H(curl)) space interpolation points
   const auto [X, Xshape] = e1.interpolation_points();
@@ -386,7 +351,8 @@ void discrete_gradient(mesh::Topology& topology,
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     std::ranges::copy(Ab, Ae.begin());
-    apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
+    if (apply_inverse_dof_transform)
+      apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
     mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
   }
 }
@@ -405,10 +371,10 @@ void discrete_gradient(mesh::Topology& topology,
 ///
 /// @param[in] V0 Space to interpolate from.
 /// @param[in] V1 Space to interpolate to.
-/// @param[in] mat_set Functor that sets values in a matrix.
+/// @param[in] mat_add Functor that adds values to a matrix.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolation_matrix(const FunctionSpace<U>& V0,
-                          const FunctionSpace<U>& V1, auto&& mat_set)
+                          const FunctionSpace<U>& V1, auto&& mat_add)
 {
   // Get mesh
   auto mesh = V0.mesh();
@@ -453,8 +419,8 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const std::size_t value_size0 = V0.element()->reference_value_size();
 
   // Get geometry data
-  const CoordinateElement<U>& cmap = mesh->geometry().cmap();
-  auto x_dofmap = mesh->geometry().dofmap();
+  const CoordinateElement<U>& cmap = mesh->geometry().cmaps().front();
+  auto x_dofmap = mesh->geometry().dofmaps().front();
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();
 
@@ -530,12 +496,18 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 
   // Buffers
   std::vector<T> Ab(space_dim0 * space_dim1);
-  std::vector<T> local1(space_dim1);
 
   // Iterate over mesh and interpolate on each cell
   auto cell_map = mesh->topology()->index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
+  int row_bs = dofmap1->bs();
+  std::int32_t num_owned_rows
+      = dofmap1->index_map->size_local() * dofmap1->index_map_bs() / row_bs;
+  std::int32_t num_ghosted_rows
+      = dofmap1->index_map->num_ghosts() * dofmap1->index_map_bs() / row_bs;
+  std::vector<std::int8_t> row_added(num_owned_rows + num_ghosted_rows, 0);
+
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get cell geometry (coordinate dofs)
@@ -546,32 +518,60 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
         coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
     }
 
-    // Compute Jacobians and reference points for current cell
+    // Compute Jacobians and reference points for current cell. For an
+    // affine map the Jacobian (and hence its inverse and determinant)
+    // is constant over the cell, so it is computed once and broadcast
+    // to the remaining interpolation points rather than being
+    // recomputed Xshape[0] times.
     std::ranges::fill(J_b, 0);
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    if (cmap.is_affine() and Xshape[0] > 0)
     {
       auto dphi
-          = md::submdspan(phi, std::pair(1, tdim + 1), p, md::full_extent, 0);
-      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+          = md::submdspan(phi, std::pair(1, tdim + 1), 0, md::full_extent, 0);
+      auto _J = md::submdspan(J, 0, md::full_extent, md::full_extent);
       cmap.compute_jacobian(dphi, coord_dofs, _J);
-      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+      auto _K = md::submdspan(K, 0, md::full_extent, md::full_extent);
       cmap.compute_jacobian_inverse(_J, _K);
-      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
+      detJ[0] = cmap.compute_jacobian_determinant(_J, det_scratch);
+      for (std::size_t p = 1; p < Xshape[0]; ++p)
+      {
+        std::copy_n(J_b.begin(), gdim * tdim, J_b.begin() + p * gdim * tdim);
+        std::copy_n(K_b.begin(), tdim * gdim, K_b.begin() + p * tdim * gdim);
+        detJ[p] = detJ[0];
+      }
+    }
+    else
+    {
+      for (std::size_t p = 0; p < Xshape[0]; ++p)
+      {
+        auto dphi
+            = md::submdspan(phi, std::pair(1, tdim + 1), p, md::full_extent, 0);
+        auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+        cmap.compute_jacobian(dphi, coord_dofs, _J);
+        auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+        cmap.compute_jacobian_inverse(_J, _K);
+        detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
+      }
     }
 
-    // Copy evaluated basis on reference, apply DOF transformations, and
-    // push forward to physical element
-    for (std::size_t k0 = 0; k0 < basis_reference0.extent(0); ++k0)
-      for (std::size_t k1 = 0; k1 < basis_reference0.extent(1); ++k1)
-        for (std::size_t k2 = 0; k2 < basis_reference0.extent(2); ++k2)
-          basis_reference0(k0, k1, k2)
-              = basis_derivatives_reference0(0, k0, k1, k2);
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    // Copy evaluated basis on reference (a fresh copy is needed each
+    // cell as DOF transformations below are applied in place), and
+    // push forward to physical element. The source and destination
+    // have identical memory layout (the leading, unit-length
+    // derivative axis of basis_derivatives_reference0 is a no-op for
+    // indexing purposes), so a flat copy is used instead of an
+    // element-by-element mdspan loop.
+    std::ranges::copy(basis_derivatives_reference0_b,
+                      basis_reference0_b.begin());
+    if (apply_dof_transformation0)
     {
-      apply_dof_transformation0(
-          std::span(basis_reference0.data_handle() + p * dim0 * value_size_ref0,
-                    dim0 * value_size_ref0),
-          cell_info, c, value_size_ref0);
+      for (std::size_t p = 0; p < Xshape[0]; ++p)
+      {
+        apply_dof_transformation0(std::span(basis_reference0.data_handle()
+                                                + p * dim0 * value_size_ref0,
+                                            dim0 * value_size_ref0),
+                                  cell_info, c, value_size_ref0);
+      }
     }
 
     for (std::size_t p = 0; p < basis0.extent(0); ++p)
@@ -616,18 +616,67 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     }
     else
     {
-      for (std::size_t i = 0; i < mapped_values.extent(1); ++i)
+      // Apply interpolation matrix to basis values of V0 at the
+      // interpolation points of V1. Pi_1 does not depend on the basis
+      // function index i, so all space_dim0 applications are combined
+      // into a single loop nest (rather than calling
+      // interpolation_apply once per basis function) so that each row
+      // of Pi_1 is read from memory once instead of space_dim0 times.
+      // This mirrors the two cases handled by interpolation_apply
+      // (interpolate.h): bs1 == 1 (columns of Pi_1 fold the point and
+      // component indices together) and bs1 != 1 (each block/component
+      // is handled by a separate outer loop, columns of Pi_1 index
+      // points only).
+      std::ranges::fill(Ab, T(0));
+      std::size_t num_pts = mapped_values.extent(0);
+      if (bs1 == 1)
       {
-        auto values
-            = md::submdspan(mapped_values, md::full_extent, i, md::full_extent);
-        impl::interpolation_apply(Pi_1, values, std::span(local1), bs1);
-        for (std::size_t j = 0; j < local1.size(); j++)
-          Ab[space_dim0 * j + i] = local1[j];
+        for (std::size_t idof = 0; idof < Pi_1.extent(0); ++idof)
+          for (std::size_t k = 0; k < mapped_values.extent(2); ++k)
+            for (std::size_t p = 0; p < num_pts; ++p)
+            {
+              U pi_val = Pi_1(idof, k * num_pts + p);
+              for (std::size_t i = 0; i < space_dim0; ++i) // V0 basis fn
+                Ab[space_dim0 * idof + i]
+                    += static_cast<T>(pi_val * mapped_values(p, i, k));
+            }
+      }
+      else
+      {
+        for (std::size_t idof = 0; idof < Pi_1.extent(0); ++idof)
+          for (int k = 0; k < bs1; ++k)
+            for (std::size_t p = 0; p < num_pts; ++p)
+            {
+              U pi_val = Pi_1(idof, p);
+              for (std::size_t i = 0; i < space_dim0; ++i) // V0 basis fn
+                Ab[space_dim0 * (bs1 * idof + k) + i]
+                    += static_cast<T>(pi_val * mapped_values(p, i, k));
+            }
       }
     }
 
-    apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
-    mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
+    if (apply_inverse_dof_transform1)
+      apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
+
+    // Zero out all rows that have already been added on this process
+    // and only add owned rows
+    {
+      md::mdspan<T, md::dextents<std::size_t, 2>> A(Ab.data(), space_dim1,
+                                                    space_dim0);
+      auto row_dofs = dofmap1->cell_dofs(c);
+      for (std::size_t i = 0; i < row_dofs.size(); ++i)
+      {
+        std::int32_t r = row_dofs[i];
+        if (r >= num_owned_rows || row_added[r])
+        {
+          for (std::size_t j = 0; j < space_dim0; ++j)
+            for (int k = 0; k < row_bs; ++k)
+              A(i * row_bs + k, j) = 0.0;
+        }
+        row_added[r] = 1;
+      }
+    }
+    mat_add(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
   }
 }
 

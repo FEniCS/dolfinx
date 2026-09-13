@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for assembly in complex mode"""
+"""Unit tests for assembly in complex mode."""
 
 import sys
 
@@ -25,8 +25,7 @@ if sys.platform.startswith("win32"):
 
 @pytest.mark.parametrize("complex_dtype", [np.complex64, np.complex128])
 def test_complex_assembly(complex_dtype):
-    """Test assembly of complex matrices and vectors"""
-
+    """Test assembly of complex matrices and vectors."""
     real_dtype = np.real(complex_dtype(1.0)).dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=real_dtype)
     P2 = element("Lagrange", mesh.basix_cell(), 2, dtype=real_dtype)
@@ -78,8 +77,8 @@ def test_complex_assembly(complex_dtype):
 @pytest.mark.parametrize("complex_dtype", [np.complex64, np.complex128])
 def test_complex_assembly_solve(complex_dtype, cg_solver):
     """Solve a positive definite helmholtz problem and verify solution
-    with the method of manufactured solutions"""
-
+    with the method of manufactured solutions.
+    """
     degree = 3
     real_dtype = np.real(complex_dtype(1.0)).dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 20, 20, dtype=real_dtype)

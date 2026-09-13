@@ -86,9 +86,11 @@
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/petsc.h>
+#include <petscksp.h>
 #include <petscmat.h>
 #include <petscsys.h>
 #include <petscsystypes.h>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -96,28 +98,26 @@ using namespace dolfinx;
 using T = PetscScalar;
 using U = typename dolfinx::scalar_value_t<T>;
 
-// Then follows the definition of the coefficient functions (for $f$ and
-// $g$), which are derived from the {cpp:class}`Expression` class in
-// DOLFINx
-
 // Inside the `main` function, we begin by defining a mesh of the
 // domain. As the unit square is a very standard domain, we can use a
-// built-in mesh provided by the {cpp:class}`UnitSquareMesh` factory. In
-// order to create a mesh consisting of 32 x 32 squares with each square
+// built-in mesh generator provided by the
+// {cpp:func}`dolfinx::mesh::create_rectangle()` function.
+// In order to create a mesh consisting of 32 x 32 squares with each square
 // divided into two triangles, and the finite element space (specified
 // in the form file) defined relative to this mesh, we do as follows:
 
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  common::petsc::check(PetscInitialize(&argc, &argv, nullptr, nullptr),
+                       "PetscInitialize");
 
   {
     // Create mesh and function space
-    auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
-    auto mesh = std::make_shared<mesh::Mesh<U>>(
-        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
-                                  {32, 16}, mesh::CellType::triangle, part));
+    auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
+        MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}}, {32, 16},
+        mesh::CellType::triangle, graph::partition_graph,
+        mesh::DiagonalType::right, 2, mesh::GhostMode::shared_facet));
 
     auto element = basix::create_element<U>(
         basix::element::family::P, basix::cell::type::triangle, 1,
@@ -130,9 +130,9 @@ int main(int argc, char* argv[])
 
     //  Next, we define the variational formulation by initializing the
     //  bilinear and linear forms ($a$, $L$) using the previously
-    //  defined {cpp:class}`FunctionSpace` `V`.  Then we can create the
-    //  source and boundary flux term ($f$, $g$) and attach these to the
-    //  linear form.
+    //  defined {cpp:class}`dolfinx::fem::FunctionSpace` `V`.
+    //  Then we can create the source and boundary flux term ($f$, $g$)
+    //  and attach these to the linear form.
 
     // Prepare and set Constants for the bilinear form
     auto kappa = std::make_shared<fem::Constant<T>>(2.0);
@@ -146,15 +146,15 @@ int main(int argc, char* argv[])
                                          {{"f", f}, {"g", g}}, {}, {}, {});
 
     //  Now, the Dirichlet boundary condition ($u = 0$) can be created
-    //  using the class {cpp:class}`DirichletBC`. A
-    //  {cpp:class}`DirichletBC` takes two arguments: the value of the
-    //  boundary condition, and the part of the boundary on which the
-    //  condition applies. In our example, the value of the boundary
-    //  condition (0) can represented using a {cpp:class}`Function`,
-    //  and the Dirichlet boundary is defined by the indices of degrees
-    //  of freedom to which the boundary condition applies. The
-    //  definition of the Dirichlet boundary condition then looks as
-    //  follows:
+    //  using the class {cpp:class}`dolfinx::fem::DirichletBC`. A
+    //  {cpp:class}`dolfinx::fem::DirichletBC` takes two arguments:
+    //  the value of the boundary condition, and the part of the boundary
+    //  on which the condition applies. In our example, the value of the
+    //  boundary condition (0) can represented using a
+    //  {cpp:class}`dolfinx::fem::Function`, and the Dirichlet boundary is
+    //  defined by the indices of degrees of freedom to which the boundary
+    //  condition applies. The definition of the Dirichlet boundary condition
+    //  then looks as follows:
 
     // Define boundary condition
 
@@ -212,15 +212,19 @@ int main(int argc, char* argv[])
     la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
                     L.function_spaces()[0]->dofmap()->index_map_bs());
 
-    MatZeroEntries(A.mat());
+    common::petsc::check(MatZeroEntries(A.mat()), "MatZeroEntries");
     fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
                          a, {bc});
-    MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyEnd");
     fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
                          {bc});
-    MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyEnd");
 
     std::ranges::fill(b.array(), 0);
     fem::assemble_vector(b.array(), L);
@@ -229,22 +233,31 @@ int main(int argc, char* argv[])
     bc.set(b.array(), std::nullopt);
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
-    la::petsc::options::set("ksp_type", "preonly");
-    la::petsc::options::set("pc_type", "lu");
+    common::petsc::set_option("ksp_type", "preonly");
+    common::petsc::set_option("pc_type", "lu");
     lu.set_from_options();
 
     lu.set_operator(A.mat());
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
-    lu.solve(_u.vec(), _b.vec());
+    if (lu.solve(_u.vec(), _b.vec()) < 0)
+      throw std::runtime_error("Linear solver did not converge.");
+
+    // The KSP object is available for anything the solver does not
+    // wrap, here the number of linear solver iterations
+    PetscInt num_it = 0;
+    common::petsc::check(KSPGetIterationNumber(lu.ksp(), &num_it),
+                         "KSPGetIterationNumber");
+    std::cout << "Number of linear solver iterations: " << num_it << std::endl;
 
     // Update ghost values before output
     u->x()->scatter_fwd();
 
     //  The function `u` will be modified during the call to solve. A
-    //  {cpp:class}`Function` can be saved to a file. Here, we output
-    //  the solution to a `VTK` file (specified using the suffix `.pvd`)
-    //  for visualisation in an external program such as Paraview.
+    //  {cpp:class}`dolfinx::fem::Function` can be saved to a file.
+    //  Here, we output the solution to a `VTK` file (specified using
+    //  the suffix `.pvd`) for visualisation in an external program such
+    //  as Paraview.
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
@@ -257,7 +270,6 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  PetscFinalize();
-
+  common::petsc::check(PetscFinalize(), "PetscFinalize");
   return 0;
 }

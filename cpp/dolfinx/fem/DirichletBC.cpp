@@ -14,8 +14,10 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <map>
 #include <numeric>
+#include <stdexcept>
 #include <utility>
 
 using namespace dolfinx;
@@ -23,13 +25,13 @@ using namespace dolfinx::fem;
 
 namespace
 {
-
 /// @brief Find the cell (local to process) and index of an entity
 /// (local to cell) for a list of entities.
+///
 /// @param[in] mesh The mesh
 /// @param[in] entities The list of entities
 /// @param[in] dim The dimension of the entities
-/// @returns A list of (cell_index, entity_index) pairs for each input
+/// @returns A list of `(cell_index, entity_index)` pairs for each input
 /// entity.
 std::vector<std::pair<std::int32_t, int>>
 find_local_entity_index(const mesh::Topology& topology,
@@ -40,32 +42,41 @@ find_local_entity_index(const mesh::Topology& topology,
   auto e_to_c = topology.connectivity(dim, tdim);
   if (!e_to_c)
   {
-    throw std::runtime_error(
-        "Entity-to-cell connectivity has not been computed. Missing dims "
-        + std::to_string(dim) + "->" + std::to_string(tdim));
+    throw std::runtime_error(std::format("Entity-to-cell connectivity has not "
+                                         "been computed. Missing dims {}->{}",
+                                         dim, tdim));
   }
 
   auto c_to_e = topology.connectivity(tdim, dim);
   if (!c_to_e)
   {
-    throw std::runtime_error(
-        "Cell-to-entity connectivity has not been computed. Missing dims "
-        + std::to_string(tdim) + "->" + std::to_string(dim));
+    throw std::runtime_error(std::format("Cell-to-entity connectivity has not "
+                                         "been computed. Missing dims {}->{}",
+                                         tdim, dim));
   }
 
   std::vector<std::pair<std::int32_t, int>> entity_indices;
   entity_indices.reserve(entities.size());
+  std::int32_t num_entities_local = e_to_c->num_nodes();
   for (std::int32_t e : entities)
   {
     // Get first attached cell
+    if (e >= num_entities_local)
+    {
+      throw std::out_of_range(
+          std::format("Input entity {} is larger than the number of entities "
+                      "on this process ({}).",
+                      e, num_entities_local));
+    }
     assert(e_to_c->num_links(e) > 0);
-    const int cell = e_to_c->links(e).front();
 
     // Get local index of facet with respect to the cell
+    std::int32_t cell = e_to_c->links(e).front();
     auto entities_d = c_to_e->links(cell);
-    auto it = std::find(entities_d.begin(), entities_d.end(), e);
+    auto it = std::ranges::find(entities_d, e);
     assert(it != entities_d.end());
-    std::size_t entity_local_index = std::distance(entities_d.begin(), it);
+    std::size_t entity_local_index
+        = std::ranges::distance(entities_d.begin(), it);
     entity_indices.emplace_back(cell, entity_local_index);
   }
 
@@ -74,7 +85,7 @@ find_local_entity_index(const mesh::Topology& topology,
 //-----------------------------------------------------------------------------
 
 /// Find all DOFs on this process that have been detected on another
-/// process
+/// process.
 /// @param[in] comm A symmetric communicator
 /// @param[in] map The index map with the dof layout
 /// @param[in] bs_map The block size of the index map, i.e. the dof
@@ -152,12 +163,15 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 
   // Build map from ghost global index to local position
   // NOTE: Should we use map here or just one vector with ghosts and
-  // std::distance?
+  // std::ranges::distance?
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
   global_local_ghosts.reserve(ghosts.size());
   const std::int32_t local_size = range[1] - range[0];
   for (std::size_t i = 0; i < ghosts.size(); ++i)
-    global_local_ghosts.emplace_back(ghosts[i], i + local_size);
+  {
+    global_local_ghosts.emplace_back(ghosts[i],
+                                     static_cast<std::int32_t>(i + local_size));
+  }
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
 
@@ -207,8 +221,9 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       = find_local_entity_index(topology, entities, dim);
 
   std::vector<std::int32_t> dofs;
-  dofs.reserve(entities.size()
-               * dofmap.element_dof_layout().num_entity_closure_dofs(dim));
+  dofs.reserve(
+      entities.size()
+      * dofmap.element_dof_layout().entity_closure_dofs(dim, 0).size());
 
   // V is a sub space we need to take the block size of the dofmap and
   // the index map into account as they can differ
@@ -246,7 +261,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     }
   }
   else
-    throw std::runtime_error("Block size combination not supported");
+    throw std::invalid_argument("Block size combination not supported");
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
@@ -328,12 +343,14 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // Iterate over marked facets
   const int element_bs = dofmap0.element_dof_layout().block_size();
   std::array<std::vector<std::int32_t>, 2> bc_dofs;
-  bc_dofs[0].reserve(entities.size()
-                     * dofmap0.element_dof_layout().num_entity_closure_dofs(dim)
-                     * element_bs);
-  bc_dofs[1].reserve(entities.size()
-                     * dofmap0.element_dof_layout().num_entity_closure_dofs(dim)
-                     * element_bs);
+  bc_dofs[0].reserve(
+      entities.size()
+      * dofmap0.element_dof_layout().entity_closure_dofs(dim, 0).size()
+      * element_bs);
+  bc_dofs[1].reserve(
+      entities.size()
+      * dofmap0.element_dof_layout().entity_closure_dofs(dim, 0).size()
+      * element_bs);
   for (auto [cell, entity_local_index] : entity_indices)
   {
     // Get cell dofmap

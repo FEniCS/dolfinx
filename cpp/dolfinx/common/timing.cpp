@@ -21,13 +21,14 @@ void dolfinx::list_timings(MPI_Comm comm, Table::Reduction reduction)
 }
 //-----------------------------------------------------------------------------
 std::pair<int, std::chrono::duration<double, std::ratio<1>>>
-dolfinx::timing(const std::string& task)
+dolfinx::timing(std::string_view task)
 {
   return dolfinx::common::TimeLogger::instance().timing(task);
 }
 //-----------------------------------------------------------------------------
 std::map<std::string,
-         std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+         std::pair<int, std::chrono::duration<double, std::ratio<1>>>,
+         std::less<>>
 dolfinx::timings()
 {
   return dolfinx::common::TimeLogger::instance().timings();

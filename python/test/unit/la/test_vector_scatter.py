@@ -1,9 +1,9 @@
-# Copyright (C) 2021 Chris Richardson and Igor Baratta
+# Copyright (C) 2021-2026 Chris Richardson, Igor Baratta and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for the KrylovSolver interface"""
+"""Unit tests for the KrylovSolver interface."""
 
 from mpi4py import MPI
 
@@ -38,7 +38,6 @@ def test_scatter_forward(e):
 
     # Fill local array with the mpi rank
     u.x.array.fill(MPI.COMM_WORLD.rank)
-    w0 = u.x.array.copy()
     u.x.scatter_forward()
 
     # Now the ghosts should have the value of the rank of the owning
@@ -112,3 +111,21 @@ def test_vector_from_index_map_scatter_forward(dtype):
         global_idxs = np.asarray(global_idxs, dtype)
 
         assert np.all(vector.array == global_idxs)
+
+
+def test_vector_from_scatterer():
+    """Test creating vectors that share a scatterer."""
+    comm = MPI.COMM_WORLD
+    mesh = create_unit_square(comm, 5, 5)
+    index_map = mesh.topology.index_map(mesh.topology.dim)
+
+    x = la.vector(index_map)
+    y = la.vector(index_map, scatterer=x.scatterer)
+    assert y.scatterer._cpp_object is x.scatterer._cpp_object
+
+    y.array[: index_map.size_local] = np.arange(*index_map.local_range)
+    y.scatter_forward()
+    global_indices = index_map.local_to_global(
+        np.arange(index_map.size_local + index_map.num_ghosts, dtype=np.int32)
+    )
+    assert np.array_equal(y.array, global_indices)

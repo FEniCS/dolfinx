@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2024 Joseph P. Dean, Jørgen S. Dokken
+# Copyright (C) 2022-2026 Joseph P. Dean, Jørgen S. Dokken and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -74,7 +74,8 @@ def assemble(mesh, space, k):
 def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     """Check that assembling a form over a unit square gives the same
     result as assembling over half of a 2x1 rectangle with the same
-    triangulation."""
+    triangulation.
+    """
     if d == 2:
         mesh_0 = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
         mesh_1 = create_rectangle(
@@ -106,7 +107,8 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_submesh_facet_assembly(n, k, space, ghost_mode):
     """Test that assembling a form over the face of a unit cube gives
-    the same result as assembling it over a unit square."""
+    the same result as assembling it over a unit square.
+    """
     cube_mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
     edim = cube_mesh.topology.dim - 1
     entities = locate_entities_boundary(cube_mesh, edim, lambda x: np.isclose(x[2], 0.0))
@@ -126,7 +128,8 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
 
 def create_measure(msh, integral_type):
     """Helper function to create an integration measure of type `integral_type`
-    over domain `msh`"""
+    over domain `msh`.
+    """
 
     def create_meshtags(msh, dim, entities):
         values = np.full_like(entities, 1, dtype=np.intc)
@@ -157,7 +160,7 @@ def create_measure(msh, integral_type):
 
 
 def a_ufl(u, v, f, g, measure):
-    "Helper function to create a UFL bilinear form. The form depends on the integral type"
+    """Helper function to create a UFL bilinear form. The form depends on the integral type."""
     if measure.integral_type() == "cell" or measure.integral_type() == "exterior_facet":
         return ufl.inner(f * g * u, v) * measure
     else:
@@ -166,7 +169,7 @@ def a_ufl(u, v, f, g, measure):
 
 
 def L_ufl(v, f, g, measure):
-    "Helper function to create a UFL linear form. The form depends on the integral type"
+    """Helper function to create a UFL linear form. The form depends on the integral type."""
     if measure.integral_type() == "cell" or measure.integral_type() == "exterior_facet":
         return ufl.inner(f * g, v) * measure
     else:
@@ -188,8 +191,8 @@ def M_ufl(f, g, measure):
 @pytest.mark.parametrize("integral_type", ["dx", "ds", "dS"])
 def test_mixed_dom_codim_0(n, k, space, integral_type):
     """Test assembling forms where the trial and test functions
-    are defined over different meshes"""
-
+    are defined over different meshes.
+    """
     # Create a mesh
     msh = create_rectangle(
         MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=GhostMode.shared_facet
@@ -293,7 +296,8 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
 def test_mixed_dom_codim_1(n, k):
     """Test assembling forms where the trial functions, test functions
     and coefficients are defined over different meshes of different topological
-    dimension."""
+    dimension.
+    """
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
 
     # Create a submesh of the boundary
@@ -375,7 +379,7 @@ def test_mixed_dom_codim_1(n, k):
 
 def test_disjoint_submeshes():
     # FIXME Simplify this test
-    """Test assembly with multiple disjoint submeshes in same variational form"""
+    """Test assembly with multiple disjoint submeshes in same variational form."""
     N = 10
     tol = 1e-14
     mesh = create_unit_interval(MPI.COMM_WORLD, N, ghost_mode=GhostMode.shared_facet)
@@ -449,7 +453,7 @@ def test_disjoint_submeshes():
         switch = mapped_cell_1 > mapped_cell_0
         # Order restriction on one side
         ordered_integration_data = integration_data.reshape(-1, 4).copy()
-        if True in switch:
+        if switch.any():
             ordered_integration_data[switch, [0, 1, 2, 3]] = ordered_integration_data[
                 switch, [2, 3, 0, 1]
             ]
@@ -528,7 +532,8 @@ def test_disjoint_submeshes():
 @pytest.mark.petsc4py
 def test_mixed_measures():
     """Test block assembly of forms where the integration measure in each
-    block may be different"""
+    block may be different.
+    """
     from petsc4py import PETSc
 
     from dolfinx.fem.petsc import assemble_vector
@@ -595,8 +600,7 @@ def test_mixed_measures():
     ],
 )
 def test_interior_facet_codim_1(msh):
-    """
-    Check that assembly on an interior facet with coefficients defined on a co-dim 1
+    """Check that assembly on an interior facet with coefficients defined on a co-dim 1
     mesh gives the correct result.
     """
     # Collect mesh properties
@@ -807,3 +811,29 @@ def test_interior_interface():
     b_ref.scatter_reverse(la.InsertMode.add)
 
     assert np.isclose(la.norm(b), la.norm(b_ref))
+
+
+def test_mixed_zero_form_compile() -> None:
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    tdim = msh.topology.dim
+    submesh, entity_map, _, _ = create_submesh(
+        msh,
+        tdim,
+        np.arange(msh.topology.index_map(tdim).size_local, dtype=np.int32)[:-2],
+    )
+
+    V = fem.functionspace(msh, ("Lagrange", 1))
+    Q = fem.functionspace(submesh, ("Lagrange", 2))
+
+    u = ufl.TrialFunction(V)
+    v = ufl.TestFunction(Q)
+    a = ufl.ZeroBaseForm((u, v))
+    a_compiled = fem.form(a, entity_maps=[entity_map])  # type: ignore
+    for itg in fem.IntegralType.__members__.values():
+        assert a_compiled.num_integrals(itg, 0) == 0
+    A = fem.assemble_matrix(a_compiled)
+    A.scatter_reverse()
+
+    assert np.isclose(A.squared_norm(), 0.0)
+    assert A.index_map(0).size_global == V.dofmap.index_map.size_global
+    assert A.index_map(1).size_global == Q.dofmap.index_map.size_global

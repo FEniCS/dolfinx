@@ -3,12 +3,17 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Degree-of-freedom maps."""
 
 import typing
 from collections.abc import Sequence
 
 from mpi4py.MPI import Comm
 
+import numpy as np
+import numpy.typing as npt
+
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.fem import DofMap as _DofMap
 from dolfinx.cpp.fem import create_dofmaps as _create_dofmaps
 from dolfinx.fem.element import FiniteElement
@@ -27,13 +32,14 @@ class DofMap:
     _cpp_object: _DofMap
 
     def __init__(self, dofmap: _DofMap):
+        """Initialise a degree-of-freedom map."""
         self._cpp_object = dofmap
 
-    def cell_dofs(self, cell_index: int):
-        """Cell local-global dof map
+    def cell_dofs(self, cell_index: int) -> npt.NDArray[np.int32]:
+        """Cell local-global dof map.
 
         Args:
-            cell: The cell index.
+            cell_index: The cell index.
 
         Returns:
             Local-global dof map for the cell (using process-local
@@ -42,28 +48,27 @@ class DofMap:
         return self._cpp_object.cell_dofs(cell_index)
 
     @property
-    def bs(self):
+    def bs(self) -> int:
         """Block size of the dofmap."""
         return self._cpp_object.bs
 
     @property
-    def dof_layout(self):
+    def dof_layout(self) -> _cpp.fem.ElementDofLayout:
         """Layout of dofs on an element."""
         return self._cpp_object.dof_layout
 
     @property
-    def index_map(self):
-        """Index map that described the parallel distribution of the
-        dofmap."""
+    def index_map(self) -> _cpp.common.IndexMap:
+        """Index map describing parallel distribution of the dofmap."""
         return self._cpp_object.index_map
 
     @property
-    def index_map_bs(self):
+    def index_map_bs(self) -> int:
         """Block size of the index map."""
         return self._cpp_object.index_map_bs
 
     @property
-    def list(self):
+    def list(self) -> npt.NDArray[np.int32]:
         """Adjacency list with dof indices for each cell."""
         return self._cpp_object.map()
 
@@ -83,5 +88,5 @@ def create_dofmaps(
         for ``elements[i]``.
     """
     elements_cpp = [e._cpp_object for e in elements]
-    cpp_dofmaps = _create_dofmaps(comm, topology._cpp_object, elements_cpp)
+    cpp_dofmaps = _create_dofmaps(comm, topology._cpp_object, elements_cpp)  # type: ignore[arg-type]
     return [DofMap(cpp_object) for cpp_object in cpp_dofmaps]

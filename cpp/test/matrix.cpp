@@ -30,7 +30,7 @@ namespace
 template <std::floating_point T>
 la::MatrixCSR<T> create_operator(MPI_Comm comm)
 {
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
+  auto part = graph::partition_graph;
   auto mesh = std::make_shared<mesh::Mesh<T>>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
@@ -66,7 +66,7 @@ void test_matrix_norm()
 void test_matrix_apply()
 {
   MPI_Comm comm = MPI_COMM_WORLD;
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
+  auto part = graph::partition_graph;
   auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
@@ -154,7 +154,7 @@ void test_matrix()
   md::mdspan<T, md::extents<std::size_t, 8, md::dynamic_extent>> Aref(
       Aref_data.data(), 8, A.index_map(1)->size_global());
 
-  auto to_global_col = [&](auto col)
+  auto to_global_col = [&A](auto col)
   {
     std::array<std::int64_t, 1> tmp;
     A.index_map(1)->local_to_global(std::vector<std::int32_t>{col}, tmp);

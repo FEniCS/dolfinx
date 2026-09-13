@@ -43,6 +43,8 @@ def mesh_factory(tdim, n, ghost_mode=GhostMode.shared_facet, dtype=default_real_
         return create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode, dtype=dtype)
     elif tdim == 3:
         return create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode, dtype=dtype)
+    else:
+        raise ValueError(f"Unsupported {tdim=}")
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")

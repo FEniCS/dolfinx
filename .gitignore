@@ -83,17 +83,6 @@ cpp/demo/**/**/*.h
 *.bp
 *.png
 
-# CMake files
-CMakeLists.txt
-!/CMakeLists.txt
-!dolfinx/CMakeLists.txt
-!dolfinx/*/CMakeLists.txt
-!doc/CMakeLists.txt
-!demo/CMakeLists.txt
-!test/unit/CMakeLists.txt
-!test/unit/cpp/CMakeLists.txt
-
-
 CMakeCache.txt
 CMakeFiles
 cmake_install.cmake

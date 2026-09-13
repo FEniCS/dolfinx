@@ -3,9 +3,10 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for dofmap construction"""
+"""Unit tests for dofmap construction."""
 
 import random
+import sys
 
 from mpi4py import MPI
 
@@ -27,6 +28,8 @@ def randomly_ordered_mesh(cell_type):
         gdim = 2
     elif cell_type == "tetrahedron" or cell_type == "hexahedron":
         gdim = 3
+    else:
+        raise ValueError(f"Unsupported {cell_type=}")
 
     domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,), dtype=default_real_type))
     # Create a mesh
@@ -138,12 +141,14 @@ def randomly_ordered_mesh(cell_type):
                 domain,
                 np.ndarray((0, 3), dtype=default_real_type),
             )
+        else:
+            raise ValueError(f"Unsupported {cell_type=}")
 
 
 @pytest.mark.parametrize("space_type", [("P", 1), ("P", 2), ("P", 3), ("P", 4)])
 @pytest.mark.parametrize("cell_type", ["triangle", "tetrahedron", "quadrilateral", "hexahedron"])
 def test_dof_positions(cell_type, space_type):
-    """Checks that dofs on shared triangle edges match up"""
+    """Checks that dofs on shared triangle edges match up."""
     mesh = randomly_ordered_mesh(cell_type)
 
     if cell_type == "triangle":
@@ -157,9 +162,9 @@ def test_dof_positions(cell_type, space_type):
 
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
-    coord_dofs = mesh.geometry.dofmap
+    coord_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
-    cmap = mesh.geometry.cmap
+    cmap = mesh.geometry.cmaps[0]
     tdim = mesh.topology.dim
 
     V = functionspace(mesh, space_type)
@@ -177,14 +182,14 @@ def test_dof_positions(cell_type, space_type):
             for i in range(entities_per_cell[entity_dim]):
                 entity_dofs_local += list(V.dofmap.dof_layout.entity_dofs(entity_dim, i))
             entity_dofs = [dofs[i] for i in entity_dofs_local]
-            for i, j in zip(entity_dofs, x[entity_dofs_local]):
+            for i, j in zip(entity_dofs, x[entity_dofs_local], strict=True):
                 if i in entities[entity_dim]:
                     assert np.allclose(j, entities[entity_dim][i], atol=1e-06)
                 else:
                     entities[entity_dim][i] = j
 
 
-def random_evaluation_mesh(cell_type):
+def random_evaluation_mesh(cell_type, dtype=default_real_type):
     random.seed(6)
 
     if cell_type == "triangle" or cell_type == "quadrilateral":
@@ -192,22 +197,20 @@ def random_evaluation_mesh(cell_type):
     elif cell_type == "tetrahedron" or cell_type == "hexahedron":
         gdim = 3
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,), dtype=default_real_type))
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,), dtype=dtype))
     if cell_type == "triangle":
-        temp_points = np.array(
-            [[-1.0, -1.0], [0.0, 0.0], [1.0, 0.0], [0.0, 1.0]], dtype=default_real_type
-        )
+        temp_points = np.array([[-1.0, -1.0], [0.0, 0.0], [1.0, 0.0], [0.0, 1.0]], dtype=dtype)
         temp_cells = [[0, 1, 3], [1, 2, 3]]
     elif cell_type == "quadrilateral":
         temp_points = np.array(
             [[-1.0, -1.0], [0.0, 0.0], [1.0, 0.0], [-1.0, 1.0], [0.0, 1.0], [2.0, 2.0]],
-            dtype=default_real_type,
+            dtype=dtype,
         )
         temp_cells = [[0, 1, 3, 4], [1, 2, 4, 5]]
     elif cell_type == "tetrahedron":
         temp_points = np.array(
             [[-1.0, 0.0, -1.0], [0.0, 0.0, 0.0], [1.0, 0.0, 1.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
-            dtype=default_real_type,
+            dtype=dtype,
         )
         temp_cells = [[0, 1, 3, 4], [1, 2, 3, 4]]
     elif cell_type == "hexahedron":
@@ -226,13 +229,13 @@ def random_evaluation_mesh(cell_type):
                 [0.0, 1.0, 1.0],
                 [1.0, 1.0, 2.0],
             ],
-            dtype=default_real_type,
+            dtype=dtype,
         )
         temp_cells = [[0, 1, 3, 4, 6, 7, 9, 10], [1, 2, 4, 5, 7, 8, 10, 11]]
 
     order = [i for i, j in enumerate(temp_points)]
     random.shuffle(order)
-    points = np.zeros(temp_points.shape, dtype=default_real_type)
+    points = np.zeros(temp_points.shape, dtype=dtype)
     for i, j in enumerate(order):
         points[j] = temp_points[i]
 
@@ -316,18 +319,18 @@ def test_evaluation(cell_type, space_type, space_order):
         for d in dofs:
             v = Function(V)
             v.x.array[:] = [1 if i == d else 0 for i in range(v.x.index_map.size_local)]
-            values0 = v.eval(eval_points, [0 for i in eval_points])
-            values1 = v.eval(eval_points, [1 for i in eval_points])
+            values0 = v.eval(eval_points, np.full(eval_points.shape[0], 0, dtype=np.int32))
+            values1 = v.eval(eval_points, np.full(eval_points.shape[0], 1, dtype=np.int32))
             if len(eval_points) == 1:
                 values0 = [values0]
                 values1 = [values1]
             if space_type in ["RT", "BDM", "RTCF", "NCF", "BDMCF", "AAF"]:
                 # Hdiv
-                for i, j in zip(values0, values1):
+                for i, j in zip(values0, values1, strict=True):
                     assert np.isclose(i[0], j[0], rtol=1.0e-5, atol=1.0e-3)
             elif space_type in ["N1curl", "N2curl", "RTCE", "NCE", "BDMCE", "AAE"]:
                 # Hcurl
-                for i, j in zip(values0, values1):
+                for i, j in zip(values0, values1, strict=True):
                     assert np.allclose(i[1:], j[1:], rtol=1.0e-4, atol=1.0e-2)
             else:
                 assert np.allclose(values0, values1, rtol=1.0e-6, atol=1.0e-4)
@@ -341,13 +344,40 @@ def test_evaluation(cell_type, space_type, space_order):
     + [("hexahedron", s) for s in ["Q", "S", "NCE", "NCF", "AAE", "AAF"]],
 )
 @pytest.mark.parametrize("space_order", range(1, 4))
-def test_integral(cell_type, space_type, space_order):
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
+def test_integral(cell_type, space_type, space_order, dtype):
     if cell_type == "hexahedron" and space_order >= 3:
         pytest.skip("Skipping expensive test on hexahedron")
 
+    xdtype = dtype(0).real.dtype
+    # Compared against an exact zero, so atol carries the check.
+    atol = max(1.0e-6, 500 * np.finfo(dtype).eps)
+
     random.seed(4)
     for repeat in range(10):
-        mesh = random_evaluation_mesh(cell_type)
+        mesh = random_evaluation_mesh(cell_type, dtype=xdtype)
         V = functionspace(mesh, (space_type, space_order))
         gdim = mesh.geometry.dim
         Vvec = functionspace(mesh, ("P", 1, (gdim,)))
@@ -355,7 +385,7 @@ def test_integral(cell_type, space_type, space_order):
 
         tdim = mesh.topology.dim
         for d in dofs:
-            v = Function(V)
+            v = Function(V, dtype=dtype)
             v.x.array[:] = [1 if i == d else 0 for i, _ in enumerate(v.x.array[:])]
             if space_type in ["RT", "BDM", "RTCF", "NCF", "BDMCF", "AAF"]:
                 # Hdiv
@@ -364,7 +394,7 @@ def test_integral(cell_type, space_type, space_order):
                     values[0] = [1 for i in values[0]]
                     return values
 
-                n = Function(Vvec)
+                n = Function(Vvec, dtype=dtype)
                 n.interpolate(normal)
                 _form = ufl.inner(ufl.jump(v), n) * ufl.dS
             elif space_type in ["N1curl", "N2curl", "RTCE", "NCE", "BDMCE", "AAE"]:
@@ -374,7 +404,7 @@ def test_integral(cell_type, space_type, space_order):
                     values[1] = [1 for i in values[1]]
                     return values
 
-                t = Function(Vvec)
+                t = Function(Vvec, dtype=dtype)
                 t.interpolate(tangent)
                 _form = ufl.inner(ufl.jump(v), t) * ufl.dS
                 if tdim == 3:
@@ -384,14 +414,14 @@ def test_integral(cell_type, space_type, space_order):
                         values[2] = [1 for i in values[2]]
                         return values
 
-                    t2 = Function(Vvec)
+                    t2 = Function(Vvec, dtype=dtype)
                     t2.interpolate(tangent2)
                     _form += ufl.inner(ufl.jump(v), t2) * ufl.dS
             else:
                 _form = ufl.jump(v) * ufl.dS
 
-            value = assemble_scalar(form(_form))
-            assert np.isclose(value, 0.0, rtol=1.0e-6, atol=1.0e-6)
+            value = assemble_scalar(form(_form, dtype=dtype))
+            assert np.isclose(value, 0.0, rtol=1.0e-6, atol=atol)
 
 
 @pytest.mark.parametrize(

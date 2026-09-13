@@ -4,25 +4,24 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <cstddef>
-#include <limits>
-#include <optional>
-
-#include <mpi.h>
-
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
-
+#include <cstddef>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
 #include <dolfinx/refinement/interval.h>
 #include <dolfinx/refinement/refine.h>
+#include <limits>
+#include <mpi.h>
+#include <optional>
+#include <thread>
 
 using namespace dolfinx;
 using namespace Catch::Matchers;
@@ -97,11 +96,12 @@ plotter.show()
       MPI_COMM_SELF, {{{0, 0}, {1, 1}}}, {1, 1}, mesh::CellType::triangle);
 
   // plaza requires the edges to be pre initialized!
-  mesh.topology()->create_entities(1);
+  mesh.topology()->create_entities(
+      1, std::max(1, static_cast<int>(std::thread::hardware_concurrency())));
 
-  auto [mesh_fine, parent_cell, parent_facet] = refinement::refine(
-      mesh, std::nullopt, mesh::create_cell_partitioner(mesh::GhostMode::none),
-      refinement::Option::parent_cell_and_facet);
+  auto [mesh_fine, parent_cell, parent_facet]
+      = refinement::refine(mesh, std::nullopt, graph::partition_graph,
+                           refinement::Option::parent_cell_and_facet);
 
   // vertex layout:
   // 8---7---5

@@ -1,17 +1,29 @@
-# Copyright (C) 2017-2025 Garth N. Wells, Jack S. Hale
+# Copyright (C) 2017-2026 Garth N. Wells, Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Linear algebra functionality"""
+"""Linear algebra functionality."""
+
+from __future__ import annotations
+
+import functools
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 import numpy.typing as npt
 
 import dolfinx
 from dolfinx import cpp as _cpp
+from dolfinx.common import Scatterer
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
+from dolfinx.typing import Scalar
+
+if TYPE_CHECKING:
+    from petsc4py import PETSc
+
+    from scipy import sparse as _sparse
 
 __all__ = [
     "InsertMode",
@@ -26,7 +38,12 @@ __all__ = [
 ]
 
 
-class Vector:
+_T = TypeVar("_T", np.float32, np.float64, np.complex64, np.complex128, np.int8, np.int32, np.int64)
+
+
+class Vector(Generic[_T]):
+    """Distributed vector object."""
+
     _cpp_object: (
         _cpp.la.Vector_float32
         | _cpp.la.Vector_float64
@@ -49,7 +66,7 @@ class Vector:
             | _cpp.la.Vector_int64
         ),
     ):
-        """A distributed vector object.
+        """Create a distributed vector.
 
         Args:
             x: C++ Vector object.
@@ -59,11 +76,11 @@ class Vector:
             User code should call :func:`vector` to create a vector object.
         """
         self._cpp_object = x
-        self._petsc_x = None
 
-    def __del__(self):
-        if self._petsc_x is not None:
-            self._petsc_x.destroy()
+    def __del__(self) -> None:
+        """Delete the PETSc vector if it was created."""
+        if (petsc_x := self.__dict__.get("petsc_vec")) is not None:
+            petsc_x.destroy()
 
     @property
     def index_map(self) -> IndexMap:
@@ -75,30 +92,34 @@ class Vector:
         """Block size for the vector."""
         return self._cpp_object.bs
 
-    @property
-    def array(self) -> np.ndarray:
-        """Local representation of the vector."""
-        return self._cpp_object.array
+    @functools.cached_property
+    def scatterer(self) -> Scatterer:
+        """Scatterer used for ghost communication."""
+        return Scatterer(self._cpp_object.scatterer)
 
     @property
-    def petsc_vec(self):
+    def array(self) -> npt.NDArray[_T]:
+        """Local representation of the vector."""
+        return self._cpp_object.array  # type: ignore[return-value]
+
+    @functools.cached_property
+    def petsc_vec(self) -> PETSc.Vec:
         """PETSc vector holding the entries of the vector.
 
-        Upon first call, this function creates a PETSc ``Vec`` object
-        that wraps the degree-of-freedom data. The ``Vec`` object is
-        cached and the cached ``Vec`` is returned upon subsequent calls.
+        Upon first access, this creates a PETSc ``Vec`` object that
+        wraps the degree-of-freedom data. The ``Vec`` object is cached
+        and the cached ``Vec`` is returned on subsequent accesses.
 
         Note:
           When the object is destroyed it will destroy the underlying
           petsc4py vector automatically.
         """
-        assert dolfinx.has_petsc4py
+        if not dolfinx.has_petsc4py:
+            raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
         from dolfinx.la.petsc import create_vector_wrap
 
-        if self._petsc_x is None:
-            self._petsc_x = create_vector_wrap(self)
-        return self._petsc_x
+        return create_vector_wrap(self)
 
     def scatter_forward(self) -> None:
         """Update ghost entries."""
@@ -114,7 +135,9 @@ class Vector:
         self._cpp_object.scatter_reverse(mode)
 
 
-class MatrixCSR:
+class MatrixCSR(Generic[Scalar]):
+    """Distributed compressed sparse row matrix."""
+
     _cpp_object: (
         _cpp.la.MatrixCSR_float32
         | _cpp.la.MatrixCSR_float64
@@ -131,8 +154,7 @@ class MatrixCSR:
             | _cpp.la.MatrixCSR_complex128
         ),
     ):
-        """A distributed sparse matrix that uses compressed sparse row
-        storage.
+        """Create a distributed compressed sparse row matrix.
 
         Note:
             Objects of this type should be created using
@@ -151,14 +173,43 @@ class MatrixCSR:
         """
         return self._cpp_object.index_map(i)
 
-    def mult(self, x: Vector, y: Vector) -> None:
-        """Compute ``y += Ax``.
+    def mult(self, x: Vector[Scalar], y: Vector[Scalar], transpose: bool = False) -> None:
+        """Compute ``y += Ax`` or ``y += A^T x``.
 
         Args:
             x: Input Vector
             y: Output Vector
+            transpose: if True, compute y += A^T x
         """
-        self._cpp_object.mult(x._cpp_object, y._cpp_object)
+        if transpose:
+            self._cpp_object.multT(x._cpp_object, y._cpp_object)  # type: ignore[arg-type]
+        else:
+            self._cpp_object.mult(x._cpp_object, y._cpp_object)  # type: ignore[arg-type]
+
+    def matmul(self, B: MatrixCSR[Scalar]) -> MatrixCSR[Scalar]:
+        """Compute matrix product ``A * B``, where `A` is this matrix.
+
+        Args:
+            B: Input Matrix to multiply by
+        """
+        if (
+            self.index_map(1).size_local != B.index_map(0).size_local
+            or self.index_map(1).size_global != B.index_map(0).size_global
+        ):
+            raise RuntimeError("Invalid matrix sizes for matmul.")
+        if (
+            self.block_size[0] != 1
+            or self.block_size[1] != 1
+            or B.block_size[0] != 1
+            or B.block_size[1] != 1
+        ):
+            raise RuntimeError("Block size not supported in matmul.")
+
+        return MatrixCSR(self._cpp_object.mult(B._cpp_object))  # type: ignore[arg-type]
+
+    def transpose(self) -> MatrixCSR[Scalar]:
+        """Compute transpose matrix."""
+        return MatrixCSR(self._cpp_object.transpose())
 
     @property
     def block_size(self) -> list:
@@ -167,25 +218,25 @@ class MatrixCSR:
 
     def add(
         self,
-        x: npt.NDArray[np.floating],
+        x: npt.NDArray[Scalar],
         rows: npt.NDArray[np.int32],
         cols: npt.NDArray[np.int32],
         bs: int = 1,
     ) -> None:
         """Add a block of values in the matrix."""
-        self._cpp_object.add(x, rows, cols, bs)
+        self._cpp_object.add(x, rows, cols, bs)  # type: ignore[arg-type]
 
     def set(
         self,
-        x: npt.NDArray[np.floating],
+        x: npt.NDArray[Scalar],
         rows: npt.NDArray[np.int32],
         cols: npt.NDArray[np.int32],
         bs: int = 1,
     ) -> None:
         """Set a block of values in the matrix."""
-        self._cpp_object.set(x, rows, cols, bs)
+        self._cpp_object.set(x, rows, cols, bs)  # type: ignore[arg-type]
 
-    def set_value(self, x: np.floating) -> None:
+    def set_value(self, x: Scalar) -> None:
         """Set all non-zero entries to a value.
 
         Args:
@@ -197,7 +248,32 @@ class MatrixCSR:
         """Scatter and accumulate ghost values."""
         self._cpp_object.scatter_reverse()
 
-    def squared_norm(self) -> np.floating:
+    def eliminate_zeros(self, tol: float = 0) -> None:
+        """Remove explicitly-stored entries that are within a tolerance.
+
+        This compacts the underlying storage: entries with
+        ``abs(value) <= tol`` are dropped, and the column indices and
+        row pointers are updated accordingly. Entries with
+        ``abs(value) > tol`` are left untouched.
+
+        Note:
+            This is a terminal, finalizing operation. It can reduce the
+            matrix's sparsity, which invalidates the precomputed
+            communication pattern used to accumulate ghost row
+            contributions. After calling this, the matrix can no longer
+            be modified: further calls to :meth:`add`, :meth:`set`, or
+            :meth:`scatter_reverse` will raise a ``RuntimeError``. Only
+            call this once, after the matrix is fully assembled (i.e.
+            after the final :meth:`scatter_reverse`).
+
+        Args:
+            tol: Entries with magnitude less than or equal to ``tol``
+                are removed from storage. Defaults to removing only
+                exact zeros.
+        """
+        self._cpp_object.eliminate_zeros(self.data.dtype.type(tol))  # type: ignore[arg-type]
+
+    def squared_norm(self) -> float:
         """Compute the squared Frobenius norm.
 
         Note:
@@ -206,9 +282,9 @@ class MatrixCSR:
         return self._cpp_object.squared_norm()
 
     @property
-    def data(self) -> npt.NDArray[np.floating]:
+    def data(self) -> npt.NDArray[Scalar]:
         """Underlying matrix entry data."""
-        return self._cpp_object.data
+        return self._cpp_object.data  # type: ignore[return-value]
 
     @property
     def indices(self) -> npt.NDArray[np.int32]:
@@ -220,15 +296,17 @@ class MatrixCSR:
         """Local row pointers."""
         return self._cpp_object.indptr
 
-    def to_dense(self) -> npt.NDArray[np.floating]:
+    def to_dense(self) -> npt.NDArray[Scalar]:
         """Copy to a dense 2D array.
 
         Note:
             Typically used for debugging.
         """
-        return self._cpp_object.to_dense()
+        return self._cpp_object.to_dense()  # type: ignore[return-value]
 
-    def to_scipy(self, ghosted: bool = False):
+    def to_scipy(  # type: ignore[no-any-unimported]
+        self, ghosted: bool = False
+    ) -> _sparse.csr_matrix | _sparse.bsr_matrix:
         """Convert to a SciPy CSR/BSR matrix. Data is shared.
 
         Note:
@@ -270,7 +348,9 @@ class MatrixCSR:
 
 
 def matrix_csr(
-    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype: npt.DTypeLike = np.float64
+    sp: _cpp.la.SparsityPattern,
+    block_mode: BlockMode = BlockMode.compact,
+    dtype: npt.DTypeLike = np.float64,
 ) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
@@ -279,11 +359,18 @@ def matrix_csr(
     Args:
         sp: The sparsity pattern that defines the nonzero structure of
             the matrix the parallel distribution of the matrix.
-        dtype: The scalar type.
+        block_mode: Block mode to use.
+        dtype: Scalar type.
 
     Returns:
         A sparse matrix.
     """
+    ftype: (
+        type[_cpp.la.MatrixCSR_float32]
+        | type[_cpp.la.MatrixCSR_float64]
+        | type[_cpp.la.MatrixCSR_complex64]
+        | type[_cpp.la.MatrixCSR_complex128]
+    )
     if np.issubdtype(dtype, np.float32):
         ftype = _cpp.la.MatrixCSR_float32
     elif np.issubdtype(dtype, np.float64):
@@ -298,18 +385,35 @@ def matrix_csr(
     return MatrixCSR(ftype(sp, block_mode))
 
 
-def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
+def vector(
+    map: IndexMap,
+    bs: int = 1,
+    scatterer: Scatterer | None = None,
+    *,
+    dtype: npt.DTypeLike = np.float64,
+) -> Vector:
     """Create a distributed vector.
 
     Args:
         map: Index map the describes the size and distribution of the
             vector.
         bs: Block size.
+        scatterer: Scatterer compatible with ``map``. If ``None``, a
+            new scatterer is created.
         dtype: The scalar type.
 
     Returns:
         A distributed vector.
     """
+    vtype: (
+        type[_cpp.la.Vector_float32]
+        | type[_cpp.la.Vector_float64]
+        | type[_cpp.la.Vector_complex64]
+        | type[_cpp.la.Vector_complex128]
+        | type[_cpp.la.Vector_int8]
+        | type[_cpp.la.Vector_int32]
+        | type[_cpp.la.Vector_int64]
+    )
     if np.issubdtype(dtype, np.float32):
         vtype = _cpp.la.Vector_float32
     elif np.issubdtype(dtype, np.float64):
@@ -327,20 +431,23 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    return Vector(vtype(map, bs))
+    if scatterer is None:
+        return Vector(vtype(map, bs))
+    else:
+        return Vector(vtype(map, bs, scatterer._cpp_object))
 
 
-def orthonormalize(basis: list[Vector]):
+def orthonormalize(basis: list[Vector[_T]]) -> None:
     """Orthogonalise set of vectors in-place."""
-    _cpp.la.orthonormalize([x._cpp_object for x in basis])
+    _cpp.la.orthonormalize([x._cpp_object for x in basis])  # type: ignore[misc]
 
 
-def is_orthonormal(basis: list[Vector], eps: float = 1.0e-12) -> bool:
+def is_orthonormal(basis: list[Vector[_T]], eps: float = 1.0e-12) -> bool:
     """Check that list of vectors are orthonormal."""
-    return _cpp.la.is_orthonormal([x._cpp_object for x in basis], eps)
+    return _cpp.la.is_orthonormal([x._cpp_object for x in basis], eps)  # type: ignore[misc]
 
 
-def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
+def norm(x: Vector[_T], type: _cpp.la.Norm = _cpp.la.Norm.l2) -> float:
     """Compute a norm of the vector.
 
     Args:
@@ -350,4 +457,4 @@ def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
     Returns:
         Computed norm.
     """
-    return _cpp.la.norm(x._cpp_object, type)
+    return _cpp.la.norm(x._cpp_object, type)  # type: ignore[arg-type]

@@ -1,5 +1,8 @@
-# This demo aims to illustrate how to assemble a matrix with a trial function
-# defined on a submesh of co-dimension 0, and a test function defined on the parent mesh
+"""Trial function on submesh of codim 0 and test function on parent mesh."""
+
+# This demo aims to illustrate how to assemble a matrix with a trial
+# function defined on a submesh of co-dimension 0, and a test function
+# defined on the parent mesh.
 from basix.ufl import element
 from ufl import (
     FunctionSpace,
@@ -24,10 +27,11 @@ submesh = Mesh(coord_element)
 W = FunctionSpace(submesh, e)
 p = TrialFunction(W)
 
-# And finally we define a "mass matrix" on the submesh, with the test function
-# of the parent mesh. The integration domain is the parent mesh, but we restrict integration
-# to all cells marked with subdomain_id=3, which will indicate what cells of our mesh is part
-# of the submesh
+# And finally we define a "mass matrix" on the submesh, with the test
+# function of the parent mesh. The integration domain is the parent
+# mesh, but we restrict integration to all cells marked with
+# subdomain_id=3, which will indicate what cells of our mesh is part of
+# the submesh.
 a_mixed = inner(p, v) * dx(domain=mesh, subdomain_id=3)
 
 q = TestFunction(W)

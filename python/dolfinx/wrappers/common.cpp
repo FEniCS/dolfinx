@@ -1,34 +1,40 @@
-// Copyright (C) 2017-2019 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "dolfinx_wrappers/MPICommWrapper.h"
+#include "dolfinx_wrappers/common.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
-#include <complex>
+#include "dolfinx_wrappers/mpi_wrappers.h"
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/defines.h>
+#include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
-#include <dolfinx/common/utils.h>
-#include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/chrono.h>
+#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/string_view.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <string>
-#include <tuple>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -47,85 +53,6 @@ consteval bool has_petsc4py()
 #endif
 }
 
-template <typename T>
-void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
-{
-  sc.def(
-      "scatter_fwd",
-      [](dolfinx::common::Scatterer<>& self,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> local_data,
-         nb::ndarray<T, nb::ndim<1>, nb::c_contig> remote_data)
-      {
-        if (local_data.size() < self.remote_indices().size())
-        {
-          throw std::runtime_error(
-              "Local data buffer too small in forward scatter.");
-        }
-        if (remote_data.size() < self.remote_indices().size())
-        {
-          throw std::runtime_error(
-              "Ghost data buffer too small in forward scatter.");
-        }
-
-        std::vector<T> send_buffer(self.local_indices().size());
-        {
-          auto _local_data = local_data.view();
-          auto& idx = self.local_indices();
-          for (std::size_t i = 0; i < idx.size(); ++i)
-            send_buffer[i] = _local_data(idx[i]);
-        }
-        std::vector<T> recv_buffer(self.remote_indices().size());
-        MPI_Request request = MPI_REQUEST_NULL;
-        self.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
-        self.scatter_end(request);
-        {
-          auto _remote_data = remote_data.view();
-          auto& idx = self.remote_indices();
-          for (std::size_t i = 0; i < idx.size(); ++i)
-            _remote_data(idx[i]) = recv_buffer[i];
-        }
-      },
-      nb::arg("local_data"), nb::arg("remote_data"));
-
-  sc.def(
-      "scatter_rev",
-      [](dolfinx::common::Scatterer<>& self,
-         nb::ndarray<T, nb::ndim<1>, nb::c_contig> local_data,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> remote_data)
-      {
-        if (local_data.size() < self.local_indices().size())
-        {
-          throw std::runtime_error(
-              "Local data buffer too small in reverse scatter.");
-        }
-        if (remote_data.size() < self.remote_indices().size())
-        {
-          throw std::runtime_error(
-              "Ghost data buffer too small in reverse scatter.");
-        }
-
-        std::vector<T> send_buffer(self.remote_indices().size());
-        {
-          auto _remote_data = remote_data.view();
-          auto& idx = self.remote_indices();
-          for (std::size_t i = 0; i < idx.size(); ++i)
-            send_buffer[i] = _remote_data(idx[i]);
-        }
-        std::vector<T> recv_buffer(self.local_indices().size());
-        MPI_Request request = MPI_REQUEST_NULL;
-        self.scatter_rev_begin<T>(send_buffer.data(), recv_buffer.data(),
-                                  request);
-        self.scatter_end(request);
-        {
-          auto _local_data = local_data.view();
-          auto& idx = self.local_indices();
-          for (std::size_t i = 0; i < idx.size(); ++i)
-            _local_data(idx[i]) += recv_buffer[i];
-        }
-      },
-      nb::arg("local_data"), nb::arg("remote_data"));
-}
-
 // Interface for dolfinx/common
 void common(nb::module_& m)
 {
@@ -139,6 +66,7 @@ void common(nb::module_& m)
   m.attr("has_petsc") = dolfinx::has_petsc();
   m.attr("has_petsc4py") = has_petsc4py();
   m.attr("has_ptscotch") = dolfinx::has_ptscotch();
+  m.attr("has_superlu_dist") = dolfinx::has_superlu_dist();
   m.attr("has_slepc") = dolfinx::has_slepc();
   m.attr("ufcx_signature") = dolfinx::ufcx_signature();
   m.attr("version") = dolfinx::version();
@@ -148,12 +76,36 @@ void common(nb::module_& m)
       .value("min", dolfinx::Table::Reduction::min)
       .value("average", dolfinx::Table::Reduction::average);
 
-  auto sc = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
-                .def(nb::init<dolfinx::common::IndexMap&, int>(),
-                     nb::arg("index_map"), nb::arg("block_size"));
-  add_scatter_functions<std::int64_t>(sc);
-  add_scatter_functions<double>(sc);
-  add_scatter_functions<float>(sc);
+  auto sc
+      = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
+            .def(nb::init<dolfinx::common::IndexMap&>(), nb::arg("index_map"))
+            .def_prop_ro(
+                "local_indices_block",
+                [](const dolfinx::common::Scatterer<>& self)
+                {
+                  std::span idx = self.local_indices_block();
+                  return nb::ndarray<const std::int32_t, nb::numpy>(
+                      idx.data(), {idx.size()});
+                },
+                nb::rv_policy::reference_internal,
+                "Indices of owned data packed/unpacked in a forward/reverse "
+                "scatter, used to size a caller-provided packing buffer.")
+            .def_prop_ro(
+                "remote_indices_block",
+                [](const dolfinx::common::Scatterer<>& self)
+                {
+                  std::span idx = self.remote_indices_block();
+                  return nb::ndarray<const std::int32_t, nb::numpy>(
+                      idx.data(), {idx.size()});
+                },
+                nb::rv_policy::reference_internal,
+                "Indices of ghost data packed/unpacked in a reverse/forward "
+                "scatter, used to size a caller-provided packing buffer.");
+  declare_scatter_functions<std::int64_t>(sc);
+  declare_scatter_functions<double>(sc);
+  declare_scatter_functions<float>(sc);
+  declare_scatter_functions<std::complex<double>>(sc);
+  declare_scatter_functions<std::complex<float>>(sc);
 
   // dolfinx::common::IndexMap
   nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")
@@ -204,17 +156,30 @@ void common(nb::module_& m)
       .def_prop_ro("size_local", &dolfinx::common::IndexMap::size_local)
       .def_prop_ro("size_global", &dolfinx::common::IndexMap::size_global)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
-      .def_prop_ro("local_range", &dolfinx::common::IndexMap::local_range,
-                   "Range of indices owned by this map")
-      .def("index_to_dest_ranks",
-           &dolfinx::common::IndexMap::index_to_dest_ranks)
+      .def_prop_ro(
+          "local_range",
+          [](const dolfinx::common::IndexMap& self)
+          {
+            std::array<std::int64_t, 2> range = self.local_range();
+            return std::make_pair(range[0], range[1]);
+          },
+          "Range of indices owned by this map")
+      .def(
+          "index_to_dest_ranks",
+          [](const dolfinx::common::IndexMap& self, int tag)
+          {
+            auto [data, offsets] = self.index_to_dest_ranks(tag);
+            return std::pair{dolfinx_wrappers::as_nbarray(std::move(data)),
+                             dolfinx_wrappers::as_nbarray(std::move(offsets))};
+          },
+          nb::arg("tag"))
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
           {
             std::span ghosts = self.ghosts();
-            return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
-                                                              {ghosts.size()});
+            return nb::ndarray<const std::int64_t, nb::ndim<1>, nb::numpy>(
+                ghosts.data(), {ghosts.size()});
           },
           nb::rv_policy::reference_internal, "Return list of ghost indices")
       .def_prop_ro(
@@ -238,20 +203,26 @@ void common(nb::module_& m)
           nb::arg("local"))
       .def(
           "global_to_local",
+          // Named `global_index` rather than `global`: the argument name
+          // reaches Python through the generated stubs, and `global` is a
+          // keyword there.
           [](const dolfinx::common::IndexMap& self,
-             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> global)
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
+                 global_index)
           {
-            std::vector<std::int32_t> local(global.size());
-            self.global_to_local(std::span(global.data(), global.size()),
-                                 local);
+            std::vector<std::int32_t> local(global_index.size());
+            self.global_to_local(
+                std::span(global_index.data(), global_index.size()), local);
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
-          nb::arg("global"));
+          nb::arg("global_index"));
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
       m, "Timer", "Timer class")
-      .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
+      .def(nb::init<std::optional<std::string>>(), nb::arg("task").none(),
+           "Create and start timer. Elapsed time is optionally registered in "
+           "the logger when the Timer destructor is called.")
       .def("start",
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::start,
            "Start timer")
@@ -269,8 +240,22 @@ void common(nb::module_& m)
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::flush,
            "Flush timer");
 
-  m.def("timing", &dolfinx::timing);
+  m.def("timing", &dolfinx::timing, nb::arg("task"));
   m.def("timings", &dolfinx::timings);
+
+  m.def("hardware_concurrency",
+        []() { return std::max<int>(1, std::thread::hardware_concurrency()); });
+
+  m.def(
+      "local_range",
+      [](int index, std::int64_t N, int size)
+      {
+        std::array<std::int64_t, 2> range
+            = dolfinx::common::local_range(index, N, size);
+        return std::make_pair(range[0], range[1]);
+      },
+      nb::arg("index"), nb::arg("N"), nb::arg("size"),
+      "Local range for partitioning [0, N) into size almost-equal blocks");
 
   m.def(
       "list_timings",
@@ -295,6 +280,12 @@ void common(nb::module_& m)
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
          bool allow_owner_change)
       {
+        const std::int32_t size = imap.size_local() + imap.num_ghosts();
+        for (std::size_t i = 0; i < indices.size(); ++i)
+        {
+          if (indices.data()[i] < 0 or indices.data()[i] >= size)
+            throw std::out_of_range("Index out of range in indices array.");
+        }
         auto [map, submap_to_map] = dolfinx::common::create_sub_index_map(
             imap, std::span(indices.data(), indices.size()),
             dolfinx::common::IndexMapOrder::any, allow_owner_change);

@@ -10,6 +10,11 @@
 
 # # Creating TNT elements using Basix's custom element interface
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_tnt-elements.py>`
+# * {download}`Jupyter notebook <./demo_tnt-elements.ipynb>`
+# ```
 # Basix provides numerous finite elements, but there are many other
 # possible elements a user may want to use. This demo
 # ({download}`demo_tnt-elements.py`) shows how the Basix custom element
@@ -97,8 +102,8 @@ for j, v in enumerate(evals):
 # +
 geometry = basix.geometry(basix.CellType.quadrilateral)
 topology = basix.topology(basix.CellType.quadrilateral)
-x = [[], [], [], []]  # type: ignore [var-annotated]
-M = [[], [], [], []]  # type: ignore [var-annotated]
+x: list[list[np.ndarray]] = [[], [], [], []]
+M: list[list[np.ndarray]] = [[], [], [], []]
 
 for v in topology[0]:
     x[0].append(np.array(geometry[v]))
@@ -157,6 +162,7 @@ tnt_degree1 = basix.ufl.custom_element(
 
 
 def create_tnt_quad(degree):
+    """Create a TNT element of given degree on quadrilaterals."""
     assert degree > 1
     # Polyset
     ndofs = (degree + 1) ** 2 + 4
@@ -177,8 +183,8 @@ def create_tnt_quad(degree):
     # Interpolation
     geometry = basix.geometry(basix.CellType.quadrilateral)
     topology = basix.topology(basix.CellType.quadrilateral)
-    x = [[], [], [], []]
-    M = [[], [], [], []]
+    x: list[list[np.ndarray]] = [[], [], [], []]
+    M: list[list[np.ndarray]] = [[], [], [], []]
 
     # Vertices
     for v in topology[0]:
@@ -244,6 +250,7 @@ def create_tnt_quad(degree):
 
 
 def poisson_error(V: fem.FunctionSpace):
+    """Compute the L2 error of the Poisson problem solution in V."""
     msh = V.mesh
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -275,7 +282,7 @@ def poisson_error(V: fem.FunctionSpace):
     uh = problem.solve()
     converged_reason = problem.solver.getConvergedReason()
     num_its = problem.solver.getIterationNumber()
-    assert converged_reason > 0, (
+    assert converged_reason > 0, (  # type: ignore[operator]
         f"Failed to converge, reason: {converged_reason}, iterations: {num_its}"
     )
 

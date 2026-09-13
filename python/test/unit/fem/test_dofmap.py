@@ -1,9 +1,9 @@
-# Copyright (C) 2009-2019 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
+# Copyright (C) 2009-2026 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for the fem interface"""
+"""Unit tests for the fem interface."""
 
 import sys
 
@@ -12,11 +12,12 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-import dolfinx
 import ufl
+from basix import LatticeType, create_lattice
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import functionspace
+from dolfinx.fem import functionspace, transpose_dofmap
+from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (
     CellType,
     create_mesh,
@@ -65,49 +66,50 @@ def test_tabulate_dofs(mesh_factory):
         assert len(np.intersect1d(dofs0, dofs1)) == 0
         assert len(np.intersect1d(dofs0, dofs2)) == 0
         assert len(np.intersect1d(dofs1, dofs2)) == 0
-        assert np.array_equal(np.append(dofs1, dofs2), dofs3)
+        combined_dofs = np.append(dofs1, dofs2)
+        assert np.array_equal(combined_dofs, dofs3)
 
 
 def test_entity_dofs(mesh):
-    """Test that num entity dofs is correctly wrapped to dolfinx::DofMap"""
+    """Test that num entity dofs is correctly wrapped to dolfinx::DofMap."""
     gdim = mesh.geometry.dim
 
     V = functionspace(mesh, ("Lagrange", 1))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 0
 
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     bs = V.dofmap.dof_layout.block_size
-    assert V.dofmap.dof_layout.num_entity_dofs(0) * bs == 2
-    assert V.dofmap.dof_layout.num_entity_dofs(1) * bs == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) * bs == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) * bs == 2
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) * bs == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) * bs == 0
 
     V = functionspace(mesh, ("Lagrange", 2))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 1
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 0
 
     V = functionspace(mesh, ("Lagrange", 3))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 2
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 2
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 1
 
     V = functionspace(mesh, ("DG", 0))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 1
 
     V = functionspace(mesh, ("DG", 1))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 3
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 3
 
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     bs = V.dofmap.dof_layout.block_size
     for i, cdofs in enumerate([[0, 1], [2, 3], [4, 5]]):
         dofs = [bs * d + b for d in V.dofmap.dof_layout.entity_dofs(0, i) for b in range(bs)]
-        assert all(d == cd for d, cd in zip(dofs, cdofs))
+        assert all(d == cd for d, cd in zip(dofs, cdofs, strict=True))
 
 
 @pytest.mark.skip
@@ -136,14 +138,15 @@ def test_entity_closure_dofs(mesh_factory):
                 entities = np.array([entity], dtype=np.uintp)
                 dofs_on_this_entity = V.dofmap.entity_dofs(mesh, d, entities)
                 closure_dofs = V.dofmap.entity_closure_dofs(mesh, d, entities)
-                assert len(dofs_on_this_entity) == V.dofmap.dof_layout.num_entity_dofs(d)
+                assert len(dofs_on_this_entity) == len(V.dofmap.dof_layout.entity_dofs(d, 0))
                 assert len(dofs_on_this_entity) <= len(closure_dofs)
                 covered.update(dofs_on_this_entity)
                 covered2.update(closure_dofs)
             dofs_on_all_entities = V.dofmap.entity_dofs(mesh, d, all_entities)
             closure_dofs_on_all_entities = V.dofmap.entity_closure_dofs(mesh, d, all_entities)
             assert (
-                len(dofs_on_all_entities) == V.dofmap.dof_layout.num_entity_dofs(d) * num_entities
+                len(dofs_on_all_entities)
+                == len(V.dofmap.dof_layout.entity_dofs(d, 0)) * num_entities
             )
             assert covered == set(dofs_on_all_entities)
             assert covered2 == set(closure_dofs_on_all_entities)
@@ -223,8 +226,9 @@ def test_local_dimension(mesh_factory):
 @pytest.mark.skip
 def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
-    view into the data; in particular test lifetime of data owner"""
-    V = functionspace(mesh, "P", 1)
+    view into the data; in particular test lifetime of data owner.
+    """
+    V = functionspace(mesh, ("P", 1))
     dofmap = V.dofmap
     index_map = dofmap().index_map
 
@@ -328,9 +332,9 @@ def test_higher_order_coordinate_map(points, celltype, order):
 
     V = functionspace(mesh, ("Lagrange", 2))
     X = V.element.interpolation_points
-    coord_dofs = mesh.geometry.dofmap
+    coord_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
-    cmap = mesh.geometry.cmap
+    cmap = mesh.geometry.cmaps[0]
 
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
@@ -403,14 +407,14 @@ def test_higher_order_tetra_coordinate_map(order):
     mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     V = functionspace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points
-    x_dofs = mesh.geometry.dofmap
+    x_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
 
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
     for node in range(points.shape[0]):
         x_coord_new[node] = x_g[x_dofs[0, node], : mesh.geometry.dim]
 
-    x = mesh.geometry.cmap.push_forward(X, x_coord_new)
+    x = mesh.geometry.cmaps[0].push_forward(X, x_coord_new)
     assert np.allclose(x[:, 0], X[:, 0], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
     assert np.allclose(x[:, 1], 2 * X[:, 1], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
     assert np.allclose(x[:, 2], 3 * X[:, 2], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
@@ -419,12 +423,12 @@ def test_higher_order_tetra_coordinate_map(order):
 @pytest.mark.skip_in_parallel
 def test_transpose_dofmap():
     dofmap = np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]], dtype=np.int32)
-    transpose = dolfinx.fem.transpose_dofmap(dofmap, 3)
+    transpose = transpose_dofmap(dofmap, 3)
     assert np.array_equal(transpose.array, [0, 2, 5, 8, 1, 4, 3, 7, 6])
 
 
 def test_empty_rank_collapse():
-    """Test that dofmap with no dofs on a rank can be collapsed"""
+    """Test that dofmap with no dofs on a rank can be collapsed."""
     if MPI.COMM_WORLD.rank == 0:
         nodes = np.array([[0.0], [1.0], [2.0]], dtype=np.float64)
         cells = np.array([[0, 1], [1, 2]], dtype=np.int64)
@@ -433,11 +437,11 @@ def test_empty_rank_collapse():
         cells = np.empty((0, 2), dtype=np.int64)
     c_el = element("Lagrange", "interval", 1, shape=(1,))
 
-    def self_partitioner(comm: MPI.Intracomm, n, m, topo):
-        dests = np.full(len(topo[0]) // 2, comm.rank, dtype=np.int32)
-        offsets = np.arange(len(topo[0]) // 2 + 1, dtype=np.int32)
+    def self_partitioner(comm: MPI.Intracomm, n, dual_graph, cell_weights, edge_weights, ghosting):
+        dests = np.full(dual_graph.num_nodes, comm.rank, dtype=np.int32)
+        offsets = np.arange(dual_graph.num_nodes + 1, dtype=np.int32)
         # TODO: can we improve on this interface? I.e. warp to do cpp type conversion automatically
-        return dolfinx.graph.adjacencylist(dests, offsets)._cpp_object
+        return adjacencylist(dests, offsets)._cpp_object
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, c_el, nodes, partitioner=self_partitioner)
 
@@ -445,3 +449,68 @@ def test_empty_rank_collapse():
     V = functionspace(mesh, el)
     V_0, _ = V.sub(0).collapse()
     assert V.dofmap.index_map.size_local == V_0.dofmap.index_map.size_local
+
+
+@pytest.mark.parametrize("gdim", [2, 3])
+@pytest.mark.parametrize("is_affine", [True, False])
+def test_push_forward_pull_back(gdim: int, is_affine: bool):
+    if gdim == 2:
+        ct = CellType.triangle if is_affine else CellType.quadrilateral
+        mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, ct)
+    else:
+        ct = CellType.tetrahedron if is_affine else CellType.hexahedron
+        mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, ct)
+    dtype = mesh.geometry.x.dtype
+    basix_cell = mesh.basix_cell()
+    ref_point = create_lattice(basix_cell, 9, LatticeType.equispaced, exterior=True).astype(dtype)
+
+    def warp(x):
+        return np.array(
+            [x[0] + 0.5 * x[1] * x[0], 2 * (x[0] + x[1]), 1.5 * x[2] + 0.8 * x[1] * x[0] * x[2]]
+        )
+
+    # Warp mesh to make it truly non-affine
+    mesh.geometry.x[:] = warp(mesh.geometry.x.T).T
+
+    # Push point forward
+    num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
+    scratch_size = mesh.geometry.cmaps[0].pull_back_working_size(gdim)
+    working_array = np.zeros(scratch_size, dtype=dtype)
+
+    for cell in range(num_cells_local):
+        # Push forward
+        cell_geometry = mesh.geometry.x[mesh.geometry.dofmaps[0][cell], :gdim]
+        x = mesh.geometry.cmaps[0].push_forward(
+            ref_point.reshape(ref_point.shape[0], gdim), cell_geometry
+        )
+        # Pull back
+        x_pullback = mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)
+        tol = np.sqrt(np.finfo(dtype).eps)
+        assert np.allclose(x_pullback, ref_point, rtol=tol, atol=tol)
+
+
+@pytest.mark.parametrize("gdim", [2, 3])
+@pytest.mark.parametrize("is_affine", [True, False])
+def test_undersized_working_array(gdim: int, is_affine: bool):
+    """Test that an error is raised when the working memory is too small."""
+    if gdim == 2:
+        ct = CellType.triangle if is_affine else CellType.quadrilateral
+        mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, ct)
+    else:
+        ct = CellType.tetrahedron if is_affine else CellType.hexahedron
+        mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, ct)
+
+    # Create a small working memory array
+    dtype = mesh.geometry.x.dtype
+    working_array = np.zeros(1, dtype=dtype)
+
+    # Try to pull back with insufficient working memory
+    ref_point = np.full((1, mesh.topology.dim), 0.0, dtype=dtype)
+    if mesh.topology.index_map(mesh.topology.dim).size_local > 0:
+        cell_geometry = mesh.geometry.x[mesh.geometry.dofmaps[0][0], :gdim]
+        x = mesh.geometry.cmaps[0].push_forward(
+            ref_point.reshape(ref_point.shape[0], gdim), cell_geometry
+        )
+        # Pull back
+        with pytest.raises(RuntimeError):
+            mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)

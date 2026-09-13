@@ -2,19 +2,26 @@
 #
 # python cmake/scripts/generate-cmakefiles from dolfinx/cpp
 #
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.26)
 
 set(PROJECT_NAME demo_mixed_poisson)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
-if(NOT TARGET dolfinx)
+if(NOT TARGET dolfinx::dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
+if(PROJECT_IS_TOP_LEVEL)
+  include(CTest) # enables testing
+endif()
+
 include(CheckSymbolExists)
+include(CMakePushCheckState)
+cmake_push_check_state(RESET)
 set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
 check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h PETSC_SCALAR_COMPLEX)
 check_symbol_exists(PETSC_USE_REAL_DOUBLE petscsystypes.h PETSC_REAL_DOUBLE)
+cmake_pop_check_state()
 
 # Add target to compile UFL files
 if(PETSC_SCALAR_COMPLEX EQUAL 1)
@@ -38,29 +45,63 @@ add_custom_command(
   COMMENT "Compile mixed_poisson.py using FFCx"
 )
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/mixed_poisson.c)
-target_link_libraries(${PROJECT_NAME} dolfinx)
+add_executable(
+  ${PROJECT_NAME}
+  main.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/mixed_poisson.c
+)
+target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx::dolfinx)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 # Set C++20 standard
-set(CMAKE_CXX_EXTENSIONS OFF)
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
+
+# Use the DOLFINx Developer compiler flags for Developer build types. Included
+# by path, as putting DOLFINX_DIR on CMAKE_MODULE_PATH lets the installed
+# FindUFCx.cmake shadow the ufcx CONFIG package on case-insensitive filesystems.
+if(DOLFINX_DIR)
+  include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
+else()
+  include(DolfinxDeveloperCompilerFlags)
+endif()
+target_compile_options(
+  ${PROJECT_NAME}
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+)
+target_compile_definitions(
+  ${PROJECT_NAME}
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which
-# includes LaTeX)
+# includes LaTeX). Appended last so that it overrides -Wcomment set above.
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
+target_compile_options(
+  ${PROJECT_NAME}
+  PRIVATE $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment>
+)
+
+# FFCx-generated C kernels have unused parameters fixed by the UFL ABI
 set_source_files_properties(
-  main.cpp
-  PROPERTIES
-    COMPILE_FLAGS
-    "$<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>"
+  ${CMAKE_CURRENT_BINARY_DIR}/mixed_poisson.c
+  PROPERTIES COMPILE_OPTIONS "-Wno-unused-parameter"
 )
 
 # Test targets (used by DOLFINx testing system)
-set(TEST_PARAMETERS2 -np 2 "./${PROJECT_NAME}")
-set(TEST_PARAMETERS3 -np 3 "./${PROJECT_NAME}")
-add_test(NAME ${PROJECT_NAME}_mpi_2 COMMAND "mpirun" ${TEST_PARAMETERS2})
-add_test(NAME ${PROJECT_NAME}_mpi_3 COMMAND "mpirun" ${TEST_PARAMETERS3})
-add_test(NAME ${PROJECT_NAME}_serial COMMAND ${PROJECT_NAME})
+# To select one np use, e.g.:
+# ctest -R demo_mixed_poisson_np_3
+foreach(N 1 2 3)
+  add_test(
+    NAME ${PROJECT_NAME}_np_${N}
+    COMMAND
+      ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${N} ${MPIEXEC_PREFLAGS}
+      $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS}
+  )
+  # This tells ctest how many physical cores (i.e., ${N}) are needed for each
+  # test, preventing oversubscription when using e.g. `ctest -j2`.
+  set_tests_properties(${PROJECT_NAME}_np_${N} PROPERTIES PROCESSORS ${N})
+endforeach()

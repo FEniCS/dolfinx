@@ -24,9 +24,7 @@ import ufl
     ],
 )
 def test_compiled_form(dtype):
-    """
-    Compile a form without an associated mesh and assemble a form over a sequence of meshes
-    """
+    """Compile a form without an associated mesh and assemble a form over a sequence of meshes."""
     real_type = dtype(0).real.dtype
     c_el = basix.ufl.element("Lagrange", "triangle", 1, shape=(2,), dtype=real_type)
     domain = ufl.Mesh(c_el)
@@ -72,9 +70,7 @@ def test_compiled_form(dtype):
     ],
 )
 def test_submesh_assembly(dtype):
-    """
-    Compile a form without an associated mesh and assemble a form over a sequence of meshes
-    """
+    """Compile a form without an associated mesh and assemble a form over a sequence of meshes."""
     real_type = dtype(0).real.dtype
     c_el = basix.ufl.element("Lagrange", "triangle", 1, shape=(2,), dtype=real_type)
     domain = ufl.Mesh(c_el)
@@ -165,11 +161,9 @@ def test_submesh_assembly(dtype):
     ],
 )
 def test_eliminated_data(dtype):
+    """Test that mesh independent compilation handles the re-ordering of coefficients and constants
+    when removed through differentiation.
     """
-    Test that mesh independent compilation handles the re-ordering of coefficients and constants
-    when removed through differentiation
-    """
-
     cell_name = "triangle"
     real_type = dtype(0).real.dtype
     c_el = basix.ufl.element("Lagrange", cell_name, 1, shape=(2,), dtype=real_type)

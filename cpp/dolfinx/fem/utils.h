@@ -31,6 +31,7 @@
 #include <format>
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <ranges>
 #include <set>
@@ -63,7 +64,7 @@ class Expression;
 
 namespace impl
 {
-/// Helper function to get an array of of (cell, local_facet) pairs
+/// Helper function to get an array of (cell, local_facet) pairs
 /// corresponding to a given facet index.
 /// @param[in] f Facet index
 /// @param[in] cells List of cells incident to the facet
@@ -84,7 +85,7 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
     auto cell_facets = c_to_f.links(cell);
     auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
     assert(facet_it != cell_facets.end());
-    int local_f = std::distance(cell_facets.begin(), facet_it);
+    int local_f = std::ranges::distance(cell_facets.begin(), facet_it);
     cell_local_facet_pairs[2 * c] = cell;
     cell_local_facet_pairs[2 * c + 1] = local_f;
   }
@@ -92,17 +93,17 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
   return cell_local_facet_pairs;
 }
 
-/// Helper function to get an array of of (cell, local_vertex) pairs
-/// corresponding to a given vertex index.
-/// @note If the vertex is connected to multiple cells, the first one is picked.
-/// @param[in] v vertex index
-/// @param[in] cells List of cells incident to the vertex
-/// @param[in] c_to_v Cell to vertex connectivity
-/// @return Vector of (cell, local_vertex) pairs
+/// Helper function to get an array of of (cell, local_entity) pairs
+/// corresponding to a given entity index.
+/// @note If the entity is connected to multiple cells, the first one is picked.
+/// @param[in] e entity index
+/// @param[in] cells List of cells incident to the entity
+/// @param[in] c_to_e Cell to entity connectivity
+/// @return Vector of (cell, local_entity) pairs
 template <int num_cells>
 std::array<std::int32_t, 2 * num_cells>
-get_cell_vertex_pairs(std::int32_t v, std::span<const std::int32_t> cells,
-                      const graph::AdjacencyList<std::int32_t>& c_to_v)
+get_cell_entity_pairs(std::int32_t e, std::span<const std::int32_t> cells,
+                      const graph::AdjacencyList<std::int32_t>& c_to_e)
 {
   static_assert(num_cells == 1); // Patch assembly not supported.
 
@@ -111,11 +112,11 @@ get_cell_vertex_pairs(std::int32_t v, std::span<const std::int32_t> cells,
   // Use first cell for assembly over by default
   std::int32_t cell = cells[0];
 
-  // Find local index of vertex within cell
-  auto cell_vertices = c_to_v.links(cell);
-  auto it = std::ranges::find(cell_vertices, v);
-  assert(it != cell_vertices.end());
-  std::int32_t local_index = std::distance(cell_vertices.begin(), it);
+  // Find local index of entity within cell
+  auto cell_entities = c_to_e.links(cell);
+  auto it = std::ranges::find(cell_entities, e);
+  assert(it != cell_entities.end());
+  std::int32_t local_index = std::ranges::distance(cell_entities.begin(), it);
 
   return {cell, local_index};
 }
@@ -146,7 +147,7 @@ get_cell_vertex_pairs(std::int32_t v, std::span<const std::int32_t> cells,
 /// @param[in] entities List of mesh entities. Depending on the `IntegralType`
 /// these are associated with different entities:
 ///     `IntegralType::cell`:             cells
-///     `IntegralType::exterior_facet`:   facets
+///     `IntegralType::exterior_facet`: facets
 ///     `IntegralType::interior_facet`:   facets
 ///     `IntegralType::vertex`:           vertices
 /// @return List of integration entity data, depending on the `IntegralType` the
@@ -203,8 +204,8 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   // mixed-topology meshes, despite there being multiple DOF maps, the
   // index maps and block sizes are the same.
   std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
-      *a.function_spaces().at(0)->dofmaps(0),
-      *a.function_spaces().at(1)->dofmaps(0)};
+      *a.function_spaces().at(0)->dofmaps().front(),
+      *a.function_spaces().at(1)->dofmaps().front()};
 
   const std::array index_maps{dofmaps[0].get().index_map,
                               dofmaps[1].get().index_map};
@@ -226,7 +227,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
 {
   if (a.rank() != 2)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cannot create sparsity pattern. Form is not a bilinear.");
   }
 
@@ -263,8 +264,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
   for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
-        *a.function_spaces().at(0)->dofmaps(cell_type_idx),
-        *a.function_spaces().at(1)->dofmaps(cell_type_idx)};
+        *a.function_spaces().at(0)->dofmaps().at(cell_type_idx),
+        *a.function_spaces().at(1)->dofmaps().at(cell_type_idx)};
 
     // Create and build sparsity pattern
     for (auto type : types)
@@ -274,10 +275,11 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
       case IntegralType::cell:
         for (int i = 0; i < a.num_integrals(type, cell_type_idx); ++i)
         {
-          sparsitybuild::cells(pattern,
-                               {a.domain_arg(type, 0, i, cell_type_idx),
-                                a.domain_arg(type, 1, i, cell_type_idx)},
-                               {{dofmaps[0], dofmaps[1]}});
+          sparsitybuild::cells(
+              pattern,
+              std::pair{a.domain_arg(type, 0, i, cell_type_idx),
+                        a.domain_arg(type, 1, i, cell_type_idx)},
+              {{dofmaps[0], dofmaps[1]}});
         }
         break;
       case IntegralType::interior_facet:
@@ -291,16 +293,19 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         }
         break;
       case IntegralType::exterior_facet:
+      case IntegralType::ridge:
+      case IntegralType::vertex:
         for (int i = 0; i < a.num_integrals(type, cell_type_idx); ++i)
         {
-          sparsitybuild::cells(pattern,
-                               {extract_cells(a.domain_arg(type, 0, i, 0)),
-                                extract_cells(a.domain_arg(type, 1, i, 0))},
-                               {{dofmaps[0], dofmaps[1]}});
+          sparsitybuild::cells(
+              pattern,
+              std::pair{extract_cells(a.domain_arg(type, 0, i, 0)),
+                        extract_cells(a.domain_arg(type, 1, i, 0))},
+              {{dofmaps[0], dofmaps[1]}});
         }
         break;
       default:
-        throw std::runtime_error("Unsupported integral type");
+        throw std::invalid_argument("Unsupported integral type");
       }
     }
   }
@@ -422,17 +427,17 @@ Form<T, U> create_form_factory(
   for (const ufcx_form& ufcx_form : ufcx_forms)
   {
     if (ufcx_form.rank != (int)spaces.size())
-      throw std::runtime_error("Wrong number of argument spaces for Form.");
+      throw std::invalid_argument("Wrong number of argument spaces for Form.");
     if (ufcx_form.num_coefficients != (int)coefficients.size())
     {
-      throw std::runtime_error("Mismatch between number of expected and "
-                               "provided Form coefficients.");
+      throw std::invalid_argument("Mismatch between number of expected and "
+                                  "provided Form coefficients.");
     }
 
     // Check Constants for rank and size consistency
     if (ufcx_form.num_constants != (int)constants.size())
     {
-      throw std::runtime_error(std::format(
+      throw std::invalid_argument(std::format(
           "Mismatch between number of expected and "
           "provided Form Constants. Expected {} constants, but got {}.",
           ufcx_form.num_constants, constants.size()));
@@ -441,7 +446,7 @@ Form<T, U> create_form_factory(
     {
       if (ufcx_form.constant_ranks[c] != (int)constants[c]->shape.size())
       {
-        throw std::runtime_error(std::format(
+        throw std::invalid_argument(std::format(
             "Mismatch between expected and actual rank of "
             "Form Constant. Rank of Constant {} should be {}, but got rank {}.",
             c, ufcx_form.constant_ranks[c], constants[c]->shape.size()));
@@ -449,7 +454,7 @@ Form<T, U> create_form_factory(
       if (!std::equal(constants[c]->shape.begin(), constants[c]->shape.end(),
                       ufcx_form.constant_shapes[c]))
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             std::format("Mismatch between expected and actual shape of Form "
                         "Constant for Constant {}.",
                         c));
@@ -469,7 +474,7 @@ Form<T, U> create_form_factory(
           and element_hash
                   != spaces[i]->elements(form_idx)->basix_element().hash())
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Cannot create form. Elements are different to "
             "those used to compile the form.");
       }
@@ -480,7 +485,7 @@ Form<T, U> create_form_factory(
   if (!mesh and !spaces.empty())
     mesh = spaces.front()->mesh();
   if (!mesh)
-    throw std::runtime_error("No mesh could be associated with the Form.");
+    throw std::invalid_argument("No mesh could be associated with the Form.");
 
   auto topology = mesh->topology();
   assert(topology);
@@ -490,7 +495,7 @@ Form<T, U> create_form_factory(
   // integral offsets. Since the UFL forms for each type of cell should be
   // the same, I think this assumption is OK.
   const int* integral_offsets = ufcx_forms[0].get().form_integral_offsets;
-  std::array<int, 4> num_integrals_type;
+  std::array<int, 5> num_integrals_type;
   for (std::size_t i = 0; i < num_integrals_type.size(); ++i)
     num_integrals_type[i] = integral_offsets[i + 1] - integral_offsets[i];
 
@@ -502,12 +507,21 @@ Form<T, U> create_form_factory(
   }
 
   // Create facets, if required
+  // NOTE: exterior_facet and interior_facet is declared in ufcx.h
   if (num_integrals_type[exterior_facet] > 0
       or num_integrals_type[interior_facet] > 0)
   {
     mesh->topology_mutable()->create_entities(tdim - 1);
     mesh->topology_mutable()->create_connectivity(tdim - 1, tdim);
     mesh->topology_mutable()->create_connectivity(tdim, tdim - 1);
+  }
+
+  // Create ridges, if required
+  if (num_integrals_type[ridge] > 0)
+  {
+    mesh->topology_mutable()->create_entities(tdim - 2);
+    mesh->topology_mutable()->create_connectivity(tdim - 2, tdim);
+    mesh->topology_mutable()->create_connectivity(tdim, tdim - 2);
   }
 
   // Get list of integral IDs, and load tabulate tensor into memory for
@@ -520,10 +534,10 @@ Form<T, U> create_form_factory(
   {
     if (integral.coordinate_element_hash != geo.cmaps().at(cell_idx).hash())
     {
-      throw std::runtime_error(
+      throw std::runtime_error(std::format(
           "Generated integral geometry element does not match mesh geometry: "
-          + std::to_string(integral.coordinate_element_hash) + ", "
-          + std::to_string(geo.cmaps().at(cell_idx).hash()));
+          "{}, {}",
+          integral.coordinate_element_hash, geo.cmaps().at(cell_idx).hash()));
     }
   };
 
@@ -554,10 +568,10 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+        impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
         if (!k)
         {
-          throw std::runtime_error(
+          throw std::invalid_argument(
               "UFCx kernel function is NULL. Check requested types.");
         }
 
@@ -593,78 +607,9 @@ Form<T, U> create_form_factory(
     }
   }
 
-  // Attach exterior facet kernels
-  std::vector<std::int32_t> default_facets_ext;
-  {
-    std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
-                                 + integral_offsets[exterior_facet],
-                             num_integrals_type[exterior_facet]);
-    auto sd = subdomains.find(IntegralType::exterior_facet);
-    for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
-    {
-      const ufcx_form& ufcx_form = ufcx_forms[form_idx];
-      for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
-      {
-        const int id = ids[i];
-        ufcx_integral* integral
-            = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
-        assert(integral);
-        check_geometry_hash(*integral, form_idx);
-
-        std::vector<int> active_coeffs;
-        for (int j = 0; j < ufcx_form.num_coefficients; ++j)
-        {
-          if (integral->enabled_coefficients[j])
-            active_coeffs.push_back(j);
-        }
-
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
-
-        // Build list of entities to assembler over
-        const std::vector bfacets = mesh::exterior_facet_indices(*topology);
-        auto f_to_c = topology->connectivity(tdim - 1, tdim);
-        assert(f_to_c);
-        auto c_to_f = topology->connectivity(tdim, tdim - 1);
-        assert(c_to_f);
-        if (id == -1)
-        {
-          // Default kernel, operates on all (owned) exterior facets
-          default_facets_ext.reserve(2 * bfacets.size());
-          for (std::int32_t f : bfacets)
-          {
-            // There will only be one pair for an exterior facet integral
-            std::array<std::int32_t, 2> pair
-                = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
-            default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
-                                      pair.end());
-          }
-          integrals.insert({{IntegralType::exterior_facet, i, form_idx},
-                            {k, default_facets_ext, active_coeffs}});
-        }
-        else if (sd != subdomains.end())
-        {
-          // NOTE: This requires that pairs are sorted
-          auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
-                                             [](auto& a) { return a.first; });
-          if (it != sd->second.end() and it->first == id)
-          {
-            integrals.insert({{IntegralType::exterior_facet, i, form_idx},
-                              {k,
-                               std::vector<std::int32_t>(it->second.begin(),
-                                                         it->second.end()),
-                               active_coeffs}});
-          }
-        }
-
-        if (integral->needs_facet_permutations)
-          needs_facet_permutations = true;
-      }
-    }
-  }
-
   // Attach interior facet kernels
-  std::vector<std::int32_t> default_facets_int;
   {
+    std::vector<std::int32_t> default_facets_int;
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[interior_facet],
                              num_integrals_type[interior_facet]);
@@ -703,7 +648,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+        impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
         assert(k);
 
         // Build list of entities to assembler over
@@ -757,82 +702,119 @@ Form<T, U> create_form_factory(
     }
   }
 
-  // Attach vertex kernels
+  // Attach exterior entity integrals
   {
-    for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
+    for (IntegralType itg_type : {IntegralType::exterior_facet,
+                                  IntegralType::vertex, IntegralType::ridge})
     {
-      const ufcx_form& form = ufcx_forms[form_idx];
-
-      std::span<const int> ids(form.form_integral_ids
-                                   + integral_offsets[vertex],
-                               num_integrals_type[vertex]);
-      auto sd = subdomains.find(IntegralType::vertex);
-      for (int i = 0; i < num_integrals_type[vertex]; ++i)
+      std::size_t dim;
+      switch (itg_type)
       {
-        const int id = ids[i];
-        ufcx_integral* integral
-            = form.form_integrals[integral_offsets[vertex] + i];
-        assert(integral);
-        check_geometry_hash(*integral, form_idx);
+      case IntegralType::exterior_facet:
+      {
+        dim = tdim - 1;
+        break;
+      }
+      case IntegralType::ridge:
+      {
+        dim = tdim - 2;
+        break;
+      }
+      case IntegralType::vertex:
+      {
+        dim = 0;
+        break;
+      }
+      default:
+        throw std::invalid_argument("Unsupported integral type");
+      }
 
-        std::vector<int> active_coeffs;
-        for (int j = 0; j < form.num_coefficients; ++j)
+      const std::function<std::vector<std::int32_t>(const mesh::Topology&,
+                                                    IntegralType)>
+          get_default_integration_entities
+          = [dim](const mesh::Topology& topology, IntegralType itg_type)
+      {
+        if (itg_type == IntegralType::exterior_facet)
         {
-          if (integral->enabled_coefficients[j])
-            active_coeffs.push_back(j);
+          // Integrate over all owned exterior facets
+          return mesh::exterior_facet_indices(topology);
         }
-
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
-        assert(k);
-
-        // Build list of entities to assembler over
-        auto v_to_c = topology->connectivity(0, tdim);
-        assert(v_to_c);
-        auto c_to_v = topology->connectivity(tdim, 0);
-        assert(c_to_v);
-
-        // pack for a range of vertices a flattened list of cell index c_i and
-        // local vertex index l_i:
-        //  [c_0, l_0, ..., c_n, l_n]
-        auto get_cells_and_vertices = [v_to_c, c_to_v](auto vertices_range)
+        else
         {
-          std::vector<std::int32_t> cell_and_vertex;
-          cell_and_vertex.reserve(2 * vertices_range.size());
-          for (std::int32_t vertex : vertices_range)
-          {
-            std::array<std::int32_t, 2> pair = impl::get_cell_vertex_pairs<1>(
-                vertex, v_to_c->links(vertex), *c_to_v);
-
-            cell_and_vertex.insert(cell_and_vertex.end(), pair.begin(),
-                                   pair.end());
-          }
-          assert(cell_and_vertex.size() == 2 * vertices_range.size());
-          return cell_and_vertex;
-        };
-
-        if (id == -1)
-        {
-          // Default vertex kernel operates on all (owned) vertices
-          std::int32_t num_vertices = topology->index_map(0)->size_local();
-          std::vector<std::int32_t> cells_and_vertices = get_cells_and_vertices(
-              std::ranges::views::iota(0, num_vertices));
-
-          integrals.insert({{IntegralType::vertex, i, form_idx},
-                            {k, cells_and_vertices, active_coeffs}});
+          // Integrate over all owned entities
+          std::int32_t num_entities = topology.index_map(dim)->size_local();
+          std::vector<std::int32_t> entities(num_entities);
+          std::iota(entities.begin(), entities.end(), 0);
+          return entities;
         }
-        else if (sd != subdomains.end())
+      };
+
+      std::vector<std::int32_t> default_entities_ext;
+
+      std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
+                                   + integral_offsets[(std::int8_t)itg_type],
+                               num_integrals_type[(std::int8_t)itg_type]);
+      auto sd = subdomains.find(itg_type);
+      for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
+      {
+        const ufcx_form& ufcx_form = ufcx_forms[form_idx];
+        for (int i = 0; i < num_integrals_type[(std::int8_t)itg_type]; ++i)
         {
-          // NOTE: This requires that pairs are sorted
-          auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
-                                             [](auto& a) { return a.first; });
-          if (it != sd->second.end() and it->first == id)
+          const int id = ids[i];
+          ufcx_integral* integral
+              = ufcx_form.form_integrals[integral_offsets[(std::int8_t)itg_type]
+                                         + i];
+          assert(integral);
+          check_geometry_hash(*integral, form_idx);
+
+          std::vector<int> active_coeffs;
+          for (int j = 0; j < ufcx_form.num_coefficients; ++j)
           {
-            integrals.insert({{IntegralType::vertex, i, form_idx},
-                              {k,
-                               std::vector<std::int32_t>(it->second.begin(),
-                                                         it->second.end()),
-                               active_coeffs}});
+            if (integral->enabled_coefficients[j])
+              active_coeffs.push_back(j);
           }
+
+          impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
+
+          // Build list of entities to assembler over
+          auto e_to_c = topology->connectivity(dim, tdim);
+          assert(e_to_c);
+          auto c_to_e = topology->connectivity(tdim, dim);
+          assert(c_to_e);
+          if (id == -1)
+          {
+            std::vector default_entities
+                = get_default_integration_entities(*topology, itg_type);
+            // Default kernel
+            default_entities_ext.reserve(2 * default_entities.size());
+            for (std::int32_t e : default_entities)
+            {
+              // There will only be one pair for an exterior facet integral
+              std::array<std::int32_t, 2> pair = impl::get_cell_entity_pairs<1>(
+                  e, e_to_c->links(e), *c_to_e);
+              default_entities_ext.insert(default_entities_ext.end(),
+                                          pair.begin(), pair.end());
+            }
+            integrals.insert({{itg_type, i, form_idx},
+                              {k, default_entities_ext, active_coeffs}});
+          }
+          else if (sd != subdomains.end())
+          {
+            // NOTE: This requires that pairs are sorted
+            auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
+                                               [](auto& a) { return a.first; });
+            if (it != sd->second.end() and it->first == id)
+            {
+              integrals.insert({{itg_type, i, form_idx},
+                                {k,
+                                 std::vector<std::int32_t>(it->second.begin(),
+                                                           it->second.end()),
+                                 active_coeffs}});
+            }
+          }
+
+          if (integral->needs_facet_permutations)
+            needs_facet_permutations = true;
         }
       }
     }
@@ -879,8 +861,8 @@ Form<T, U> create_form(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Form coefficient \"" + name
-                               + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Form coefficient \"{}\" not provided.", name));
     }
   }
 
@@ -891,7 +873,8 @@ Form<T, U> create_form(
     if (auto it = constants.find(name); it != constants.end())
       const_map.push_back(it->second);
     else
-      throw std::runtime_error("Form constant \"" + name + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Form constant \"{}\" not provided.", name));
   }
 
   return create_form_factory({ufcx_form}, spaces, coeff_map, const_map,
@@ -944,15 +927,14 @@ FunctionSpace<T> create_functionspace(
     std::shared_ptr<mesh::Mesh<T>> mesh,
     std::shared_ptr<const fem::FiniteElement<T>> e,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn
-    = nullptr)
+        reorder_fn = nullptr)
 {
   // TODO: check cell type of e (need to add method to fem::FiniteElement)
   assert(e);
   assert(mesh);
   assert(mesh->topology());
   if (e->cell_type() != mesh->topology()->cell_type())
-    throw std::runtime_error("Cell type of element and mesh must match.");
+    throw std::invalid_argument("Cell type of element and mesh must match.");
 
   // Create element dof layout
   fem::ElementDofLayout layout = fem::create_element_dof_layout(*e);
@@ -973,25 +955,14 @@ Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+    const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+        entity_maps,
     std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
 {
-  if (!coefficients.empty())
-  {
-    assert(coefficients.front());
-    assert(coefficients.front()->function_space());
-    std::shared_ptr<const mesh::Mesh<U>> mesh
-        = coefficients.front()->function_space()->mesh();
-    if (mesh->geometry().cmap().hash() != e.coordinate_element_hash)
-    {
-      throw std::runtime_error(
-          "Expression and mesh geometric maps do not match.");
-    }
-  }
-
   if (e.rank > 0 and !argument_space)
   {
-    throw std::runtime_error("Expression has Argument but no Argument "
-                             "function space was provided.");
+    throw std::invalid_argument("Expression has Argument but no Argument "
+                                "function space was provided.");
   }
 
   std::vector<U> X(e.points, e.points + e.num_points * e.entity_dimension);
@@ -1000,35 +971,33 @@ Expression<T, U> create_expression(
          static_cast<std::size_t>(e.entity_dimension)};
   std::vector<std::size_t> value_shape(e.value_shape,
                                        e.value_shape + e.num_components);
-  std::function<void(T*, const T*, const T*, const scalar_value_t<T>*,
-                     const int*, const std::uint8_t*, void*)>
+
+  static_assert(std::is_same_v<U, scalar_value_t<T>>,
+                "UFCx kernels require geometry type U == scalar_value_t<T>.");
+
+  using kptr_t = void (*)(T*, const T*, const T*, const U*, const int*,
+                          const std::uint8_t*, void*);
+  std::function<void(T*, const T*, const T*, const U*, const int*,
+                     const std::uint8_t*, void*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
-    tabulate_tensor = e.tabulate_tensor_float32;
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_float32);
+  else if constexpr (std::is_same_v<T, double>)
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_float64);
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, std::complex<float>>)
-  {
-    tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-        const unsigned char*, void*)>(e.tabulate_tensor_complex64);
-  }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-  else if constexpr (std::is_same_v<T, double>)
-    tabulate_tensor = e.tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_complex64);
   else if constexpr (std::is_same_v<T, std::complex<double>>)
-  {
-    tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-        const unsigned char*, void*)>(e.tabulate_tensor_complex128);
-  }
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_complex128);
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else
-    throw std::runtime_error("Type not supported.");
+    throw std::invalid_argument("Type not supported.");
 
   assert(tabulate_tensor);
+  std::uint64_t e_hash = e.coordinate_element_hash;
   return Expression(coefficients, constants, std::span<const U>(X), Xshape,
-                    tabulate_tensor, value_shape, argument_space);
+                    tabulate_tensor, value_shape, entity_maps, e_hash,
+                    argument_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and
@@ -1039,6 +1008,8 @@ Expression<T, U> create_expression(
     const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
+    const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+        entity_maps,
     std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
 {
   // Place coefficients in appropriate order
@@ -1054,8 +1025,8 @@ Expression<T, U> create_expression(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Expression coefficient \"" + name
-                               + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Expression coefficient \"{}\" not provided.", name));
     }
   }
 
@@ -1072,12 +1043,83 @@ Expression<T, U> create_expression(
       const_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Expression constant \"" + name
-                               + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Expression constant \"{}\" not provided.", name));
     }
   }
 
-  return create_expression(e, coeff_map, const_map, argument_space);
+  return create_expression(e, coeff_map, const_map, entity_maps,
+                           argument_space);
+}
+
+/// @brief Take an existing mesh and create a new mesh with its geometry
+/// interpolated into a new coordinate element.
+///
+/// The topology is shared between `mesh` and the returned mesh.
+///
+/// Useful for creating a higher-order mesh from a lower-order one for
+/// computation, or vice-versa, for IO.
+///
+/// @param[in] mesh Input mesh.
+/// @param[in] new_cmap Coordinate element for the new geometry.
+/// @param[in] reorder_fn Optional graph reordering function applied to
+/// the new geometry dofmap.
+/// @return A new mesh sharing the topology of `mesh` and with a
+/// geometry described by `new_cmap`.
+template <std::floating_point T>
+mesh::Mesh<T> interpolate_geometry(
+    std::shared_ptr<mesh::Mesh<T>> mesh, const CoordinateElement<T>& new_cmap,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn = nullptr)
+{
+  assert(mesh);
+  const CoordinateElement<T>& old_cmap = mesh->geometry().cmaps().front();
+  if (new_cmap.cell_shape() != old_cmap.cell_shape())
+  {
+    throw std::invalid_argument(
+        "Cell shape of new coordinate element must match input mesh.");
+  }
+
+  const int gdim = mesh->geometry().dim();
+
+  // Build a vector-valued Lagrange FiniteElement from the coordinate element.
+  basix::FiniteElement<T> b_element = basix::create_element<T>(
+      basix::element::family::P,
+      mesh::cell_type_to_basix_type(new_cmap.cell_shape()), new_cmap.degree(),
+      new_cmap.variant(), basix::element::dpc_variant::unset, false);
+  auto element = std::make_shared<const FiniteElement<T>>(
+      b_element, std::vector<std::size_t>{static_cast<std::size_t>(gdim)});
+
+  FunctionSpace<T> V = create_functionspace(mesh, element, reorder_fn);
+
+  // Tabulate physical coordinates of the new geometry dofs.
+  std::vector<T> x_new = V.tabulate_dof_coordinates(false);
+
+  // Pull the geometry dofmap and index map from V.
+  std::shared_ptr<const DofMap> dm = V.dofmap();
+  assert(dm);
+  std::shared_ptr<const common::IndexMap> new_imap = dm->index_map;
+  assert(new_imap);
+
+  auto map_view = dm->map();
+  std::vector<std::int32_t> dofmap_flat(
+      map_view.data_handle(), map_view.data_handle() + map_view.size());
+
+  // Build input_global_indices as the local-to-global of the new geometry
+  // dofs.
+  const std::int32_t num_nodes
+      = new_imap->size_local() + new_imap->num_ghosts();
+  std::vector<std::int32_t> local(num_nodes);
+  std::iota(local.begin(), local.end(), 0);
+  std::vector<std::int64_t> igi(num_nodes);
+  new_imap->local_to_global(local, igi);
+
+  mesh::Geometry<T> geometry(
+      new_imap, std::vector<std::vector<std::int32_t>>{std::move(dofmap_flat)},
+      std::vector<CoordinateElement<T>>{new_cmap}, std::move(x_new), gdim,
+      std::move(igi));
+
+  return mesh::Mesh<T>(mesh->comm(), mesh->topology(), std::move(geometry));
 }
 
 } // namespace dolfinx::fem

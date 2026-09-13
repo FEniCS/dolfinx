@@ -67,8 +67,10 @@ class Topology;
 ///    on permuted facets.
 ///
 /// @param[in] topology The mesh topology.
+/// @param[in] num_threads Number of threads to use.
+/// @return Facet permutation and cells permutations
 std::tuple<std::vector<std::uint8_t>, std::vector<std::uint8_t>,
            std::vector<std::uint32_t>>
-compute_entity_permutations(const Topology& topology);
+compute_entity_permutations(const Topology& topology, int num_threads);
 
 } // namespace dolfinx::mesh

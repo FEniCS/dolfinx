@@ -11,6 +11,7 @@
 #include <map>
 #include <mpi.h>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace dolfinx
@@ -32,12 +33,13 @@ void list_timings(MPI_Comm comm,
 /// @param[in] task Name of a task
 /// @return The (count, total wall time) for the task.
 std::pair<int, std::chrono::duration<double, std::ratio<1>>>
-timing(const std::string& task);
+timing(std::string_view task);
 
 /// @brief Logged elapsed times.
 /// @return Elapsed [task id: (count, total wall time)].
 std::map<std::string,
-         std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+         std::pair<int, std::chrono::duration<double, std::ratio<1>>>,
+         std::less<>>
 timings();
 
 } // namespace dolfinx

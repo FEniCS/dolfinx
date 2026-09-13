@@ -7,6 +7,8 @@
 """IO module for input data and post-processing file output."""
 
 from pathlib import Path
+from types import TracebackType
+from typing import Self
 
 from mpi4py import MPI as _MPI
 
@@ -27,7 +29,7 @@ __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute
 
 # VTXWriter requires ADIOS2
 if _cpp.common.has_adios2:
-    from dolfinx.cpp.io import VTXMeshPolicy  # F401
+    from dolfinx.cpp.io import VTXMeshPolicy
 
     __all__ = [*__all__, "VTXWriter", "VTXMeshPolicy"]
 
@@ -82,34 +84,43 @@ if _cpp.common.has_adios2:
             if np.issubdtype(dtype, np.float32):
                 _vtxwriter = _cpp.io.VTXWriter_float32
             elif np.issubdtype(dtype, np.float64):
-                _vtxwriter = _cpp.io.VTXWriter_float64
+                _vtxwriter = _cpp.io.VTXWriter_float64  # type: ignore[assignment]
             else:
                 raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
             if isinstance(output, Mesh):
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
+                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[arg-type]
             else:
                 cpp_objects = (
                     [output._cpp_object]
                     if isinstance(output, Function)
                     else [o._cpp_object for o in output]
                 )
-                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)
+                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)  # type: ignore[arg-type]
 
-        def __enter__(self):
+        def __enter__(self) -> Self:
+            """Enter context manager."""
             return self
 
-        def __exit__(self, exception_type, exception_value, traceback):
+        def __exit__(
+            self,
+            exception_type: type[BaseException] | None,
+            exception_value: BaseException | None,
+            traceback: TracebackType | None,
+        ) -> None:
+            """Exit context manager and close file."""
             self.close()
 
-        def write(self, t: float):
+        def write(self, t: float) -> None:
+            """Write data to file for a given time."""
             self._cpp_object.write(t)
 
-        def close(self):
+        def close(self) -> None:
+            """Close the VTX file."""
             self._cpp_object.close()
 
 
-class VTKFile(_cpp.io.VTKFile):
+class VTKFile:
     """Interface to VTK files.
 
     VTK supports arbitrary order Lagrange finite elements for the
@@ -117,33 +128,179 @@ class VTKFile(_cpp.io.VTKFile):
     order <= 2.
     """
 
-    def __enter__(self):
+    _cpp_object: _cpp.io.VTKFile
+
+    def __init__(self, comm: _MPI.Comm, filename: str | Path, mode: str):
+        """Open a VTK file.
+
+        Args:
+            comm: MPI communicator used when opening the file.
+            filename: Name of the file to open.
+            mode: File opening mode, e.g. ``"w"`` for writing.
+        """
+        self._cpp_object = _cpp.io.VTKFile(comm, filename, mode)
+
+    def __enter__(self) -> Self:
+        """Enter context manager."""
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(
+        self,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        """Exit context manager and close file."""
         self.close()
+
+    def close(self) -> None:
+        """Close the VTK file."""
+        self._cpp_object.close()
 
     def write_mesh(self, mesh: Mesh, t: float = 0.0) -> None:
-        """Write mesh to file for a given time (default 0.0)"""
-        self.write(mesh._cpp_object, t)
+        """Write mesh to file for a given time."""
+        self._cpp_object.write(mesh._cpp_object, t)
 
     def write_function(self, u: list[Function] | Function, t: float = 0.0) -> None:
-        """Write a single function or a list of functions to file for a
-        given time (default 0.0)"""
+        """Write a functions to file with a given time."""
         cpp_objects = [u._cpp_object] if isinstance(u, Function) else [_u._cpp_object for _u in u]
-        super().write(cpp_objects, t)
+        self._cpp_object.write(cpp_objects, t)  # type: ignore[arg-type]
 
 
-class XDMFFile(_cpp.io.XDMFFile):
-    def __enter__(self):
+class XDMFFile:
+    """Interface to manage XDMF files."""
+
+    Encoding = _cpp.io.XDMFFile.Encoding
+
+    _cpp_object: _cpp.io.XDMFFile
+
+    def __init__(
+        self,
+        comm: _MPI.Comm,
+        filename: str | Path,
+        file_mode: str,
+        encoding: _cpp.io.XDMFFile.Encoding = Encoding.HDF5,
+    ):
+        """Open an XDMF file.
+
+        Args:
+            comm: MPI communicator used when opening the file.
+            filename: Name of the file to open.
+            file_mode: File opening mode, e.g. ``"r"`` for reading or
+                ``"w"`` for writing.
+            encoding: File encoding.
+        """
+        self._cpp_object = _cpp.io.XDMFFile(comm, filename, file_mode, encoding)
+
+    def __enter__(self) -> Self:
+        """Enter context manager."""
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(
+        self,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        """Exit context manager and close file."""
         self.close()
 
+    def close(self) -> None:
+        """Close the XDMF file."""
+        self._cpp_object.close()
+
+    @property
+    def comm(self) -> _MPI.Comm:
+        """MPI communicator that the file was opened with."""
+        return self._cpp_object.comm
+
+    def flush(self) -> None:
+        """Flush any buffered data to file."""
+        self._cpp_object.flush()
+
+    def write_information(self, name: str, value: str, xpath: str = "/Xdmf/Domain") -> None:
+        """Write information key-value pair to file.
+
+        Args:
+            name: Name of the key.
+            value: Value of the key.
+            xpath: XPath where the information is stored in the file.
+        """
+        self._cpp_object.write_information(name, value, xpath)
+
+    def read_information(self, name: str, xpath: str = "/Xdmf/Domain") -> str:
+        """Read information from file.
+
+        Args:
+            name: Name of the key to read.
+            xpath: XPath where the information is stored in the file.
+
+        Returns:
+            Value associated with ``name``.
+        """
+        return self._cpp_object.read_information(name, xpath)
+
+    def write_geometry(
+        self, geometry: Geometry, name: str = "geometry", xpath: str = "/Xdmf/Domain"
+    ) -> None:
+        """Write mesh geometry to file.
+
+        Args:
+            geometry: Mesh geometry to write.
+            name: Name of the grid node in the xml-scheme in the file.
+            xpath: XPath where the Geometry Grid is stored in the file.
+        """
+        cpp_geometry = geometry._cpp_object
+        if not isinstance(cpp_geometry, _cpp.mesh.Geometry_float64):
+            raise TypeError("write_geometry currently only supports float64 geometry.")
+        self._cpp_object.write_geometry(cpp_geometry, name, xpath)
+
+    def read_topology_data(
+        self, name: str = "mesh", xpath: str = "/Xdmf/Domain"
+    ) -> npt.NDArray[np.int64]:
+        """Read topology (cell connectivity) data for a mesh from file.
+
+        Args:
+            name: Name of the grid node in the xml-scheme in the file.
+            xpath: XPath where the Mesh Grid is stored in the file.
+
+        Returns:
+            Cell connectivity data.
+        """
+        return self._cpp_object.read_topology_data(name, xpath)
+
+    def read_geometry_data(
+        self, name: str = "mesh", xpath: str = "/Xdmf/Domain"
+    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+        """Read geometry (node coordinates) data for a mesh from file.
+
+        Args:
+            name: Name of the grid node in the xml-scheme in the file.
+            xpath: XPath where the Mesh Grid is stored in the file.
+
+        Returns:
+            Node coordinates, as float32 or float64 depending on how
+            the data is stored in the file.
+        """
+        return self._cpp_object.read_geometry_data(name, xpath)  # type: ignore[return-value]
+
+    def read_cell_type(
+        self, name: str = "mesh", xpath: str = "/Xdmf/Domain"
+    ) -> tuple[CellType, int]:
+        """Read the cell type and polynomial degree for a mesh from file.
+
+        Args:
+            name: Name of the grid node in the xml-scheme in the file.
+            xpath: XPath where the Mesh Grid is stored in the file.
+
+        Returns:
+            Cell type and polynomial degree.
+        """
+        return self._cpp_object.read_cell_type(name, xpath)
+
     def write_mesh(self, mesh: Mesh, xpath: str = "/Xdmf/Domain") -> None:
-        """Write mesh to file"""
-        super().write_mesh(mesh._cpp_object, xpath)
+        """Write mesh to file."""
+        self._cpp_object.write_mesh(mesh._cpp_object, xpath)
 
     def write_meshtags(
         self,
@@ -152,12 +309,17 @@ class XDMFFile(_cpp.io.XDMFFile):
         geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
         xpath: str = "/Xdmf/Domain",
     ) -> None:
-        """Write mesh tags to file"""
-        super().write_meshtags(tags._cpp_object, x._cpp_object, geometry_xpath, xpath)
+        """Write mesh tags to file."""
+        if not isinstance(tags._cpp_object, _cpp.mesh.MeshTags_int32):
+            raise TypeError("XDMF meshtags can only be written for int32-valued MeshTags.")
+        self._cpp_object.write_meshtags(tags._cpp_object, x._cpp_object, geometry_xpath, xpath)
 
     def write_function(
-        self, u: Function, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"
-    ):
+        self,
+        u: Function,
+        t: float = 0.0,
+        mesh_xpath: str = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]",
+    ) -> None:
         """Write function to file for a given time.
 
         Note:
@@ -172,13 +334,13 @@ class XDMFFile(_cpp.io.XDMFFile):
             mesh_xpath: Path to mesh associated with the Function in the
                 XDMFFile.
         """
-        super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
+        self._cpp_object.write_function(u._cpp_object, t, mesh_xpath)
 
     def read_mesh(
         self,
-        ghost_mode=GhostMode.shared_facet,
-        name="mesh",
-        xpath="/Xdmf/Domain",
+        ghost_mode: GhostMode = GhostMode.shared_facet,
+        name: str = "mesh",
+        xpath: str = "/Xdmf/Domain",
         max_facet_to_cell_links: int = 2,
     ) -> Mesh:
         """Read mesh data from file.
@@ -196,12 +358,13 @@ class XDMFFile(_cpp.io.XDMFFile):
             max_facet_to_cell_links: Maximum number of cells that a facet
                 can be linked to.
         """
-        cell_shape, cell_degree = super().read_cell_type(name, xpath)
-        cells = super().read_topology_data(name, xpath)
-        x = super().read_geometry_data(name, xpath)
+        cell_shape, cell_degree = self.read_cell_type(name, xpath)
+        cells = self.read_topology_data(name, xpath)
+        x = np.asarray(self.read_geometry_data(name, xpath), dtype=np.float64)
 
         # Get coordinate element, special handling for second order
         # serendipity.
+        basix_el: basix.ufl._BasixElement | basix.ufl._BlockedElement
         num_nodes_per_cell = cells.shape[1]
         if (cell_shape == CellType.quadrilateral and num_nodes_per_cell == 8) or (
             cell_shape == CellType.hexahedron and num_nodes_per_cell == 20
@@ -260,8 +423,12 @@ class XDMFFile(_cpp.io.XDMFFile):
             cells,
             cmap,
             x,
-            _cpp.mesh.create_cell_partitioner(ghost_mode),
+            _cpp.graph.partitioner(),
+            ghost_mode,
             max_facet_to_cell_links,
+            1,
+            cell_weights=None,
+            reorder_fn=None,
         )
         msh.name = name
         domain = ufl.Mesh(basix_el)
@@ -274,8 +441,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         attribute_name: str | None = None,
         xpath: str = "/Xdmf/Domain",
     ) -> MeshTags:
-        """Read MeshTags with a specific name as specified in the XMDF
-        file.
+        """Read mesh tags with name given in the XMDF file.
 
         Args:
             mesh: Mesh that the input data is defined on.
@@ -293,15 +459,17 @@ class XDMFFile(_cpp.io.XDMFFile):
             A MeshTags object containing the requested data read from
             file.
         """
-        mt = super().read_meshtags(mesh._cpp_object, name, attribute_name, xpath)
+        cpp_mesh = mesh._cpp_object
+        if not isinstance(cpp_mesh, _cpp.mesh.Mesh_float64):
+            raise TypeError("read_meshtags currently only supports float64 meshes.")
+        mt = self._cpp_object.read_meshtags(cpp_mesh, name, attribute_name, xpath)
         return MeshTags(mt)
 
 
 def distribute_entity_data(
     mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: np.ndarray
 ) -> tuple[npt.NDArray[np.int64], np.ndarray]:
-    """Given a set of mesh entities and values, distribute them to the
-    process that owns the entity.
+    """Distribute  mesh entities and values to owning process.
 
     The entities are described by the global vertex indices of the mesh.
     These entity indices are using the original input ordering.
@@ -314,8 +482,8 @@ def distribute_entity_data(
         mesh.topology._cpp_object,
         mesh.geometry.input_global_indices,
         mesh.geometry.index_map().size_global,
-        mesh.geometry.cmap.create_dof_layout(),
-        mesh.geometry.dofmap,
+        mesh.geometry.cmaps[0].create_dof_layout(),
+        mesh.geometry.dofmaps[0],
         entity_dim,
         entities,
         values,

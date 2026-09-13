@@ -1,0 +1,148 @@
+// Copyright (C) 2018-2026 Chris N. Richardson, Garth N. Wells, Paul T.
+// Kühner and Jack S. Hale
+//
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+
+#pragma once
+
+#include "array.h"
+#include "caster_mpi.h"
+#include "graph.h"
+#include "mesh.h"
+#include "mpi_wrappers.h"
+#include <concepts>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/refinement/mark.h>
+#include <dolfinx/refinement/option.h>
+#include <dolfinx/refinement/refine.h>
+#include <dolfinx/refinement/uniform.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/function.h>
+#include <nanobind/stl/optional.h>
+#include <nanobind/stl/tuple.h>
+#include <nanobind/stl/variant.h>
+#include <optional>
+#include <span>
+#include <stdexcept>
+#include <variant>
+
+namespace dolfinx_wrappers
+{
+namespace nb = nanobind;
+
+template <std::floating_point T>
+void declare_refinement(nanobind::module_& m)
+{
+  m.def(
+      "uniform_refine",
+      [](const dolfinx::mesh::Mesh<T>& mesh,
+         std::optional<PythonPartitionFunction> partitioner,
+         dolfinx::mesh::GhostMode ghost_mode)
+      {
+        dolfinx::graph::partition_fn cpp_partitioner;
+        if (partitioner.has_value())
+        {
+          cpp_partitioner = partitioner_wrap_py_to_cpp(partitioner.value());
+        }
+        else
+        {
+          cpp_partitioner = dolfinx::graph::partition_fn(nullptr);
+        }
+        return dolfinx::refinement::uniform_refine<T>(mesh, cpp_partitioner,
+                                                      ghost_mode);
+      },
+      nb::arg("mesh"), nb::arg("partitioner").none(), nb::arg("ghost_mode"));
+
+  m.def(
+      "refine",
+      [](const dolfinx::mesh::Mesh<T>& mesh,
+         std::optional<
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+             edges,
+         std::variant<dolfinx::refinement::IdentityPartitionerPlaceholder,
+                      std::optional<PythonPartitionFunction>>
+             partitioner,
+         dolfinx::refinement::Option option,
+         dolfinx::mesh::GhostMode ghost_mode)
+      {
+        std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
+        if (edges.has_value())
+        {
+          auto index_map = mesh.topology()->index_map(1);
+          if (!index_map)
+          {
+            throw std::invalid_argument(
+                "Edge entities have not been created on the mesh topology.");
+          }
+
+          const std::int32_t num_edges
+              = index_map->size_local() + index_map->num_ghosts();
+          for (std::size_t i = 0; i < edges.value().size(); ++i)
+          {
+            std::int32_t e = edges.value().data()[i];
+            if (e < 0 or e >= num_edges)
+              throw std::out_of_range("Index out of range in edges array.");
+          }
+          cpp_edges.emplace(
+              std::span(edges.value().data(), edges.value().size()));
+        }
+
+        std::variant<dolfinx::refinement::IdentityPartitionerPlaceholder,
+                     dolfinx::graph::partition_fn>
+            cpp_partitioner
+            = dolfinx::refinement::IdentityPartitionerPlaceholder();
+        if (std::holds_alternative<std::optional<PythonPartitionFunction>>(
+                partitioner))
+        {
+          auto optional
+              = std::get<std::optional<PythonPartitionFunction>>(partitioner);
+          if (!optional.has_value())
+            cpp_partitioner = dolfinx::graph::partition_fn(nullptr);
+          else
+          {
+            cpp_partitioner = partitioner_wrap_py_to_cpp(optional.value());
+          }
+        }
+
+        auto [mesh1, cell, facet] = dolfinx::refinement::refine(
+            mesh, cpp_edges, cpp_partitioner, option, ghost_mode);
+
+        std::optional<nb::ndarray<std::int32_t, nb::numpy>> python_cell(
+            std::nullopt);
+        if (cell.has_value())
+        {
+          python_cell.emplace(
+              dolfinx_wrappers::as_nbarray(std::move(cell.value())));
+        }
+
+        std::optional<nb::ndarray<std::int8_t, nb::numpy>> python_facet(
+            std::nullopt);
+        if (facet.has_value())
+        {
+          python_facet.emplace(
+              dolfinx_wrappers::as_nbarray(std::move(facet.value())));
+        }
+
+        return std::tuple{std::move(mesh1), std::move(python_cell),
+                          std::move(python_facet)};
+      },
+      nb::arg("mesh"), nb::arg("edges").none(), nb::arg("partitioner").none(),
+      nb::arg("option"), nb::arg("ghost_mode"));
+
+  m.def(
+      "mark_maximum",
+      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values,
+         const dolfinx::common::IndexMap& index_map, T theta)
+      {
+        return dolfinx_wrappers::as_nbarray(dolfinx::refinement::mark_maximum(
+            std::span<const T>(values.data(), values.size()), index_map,
+            theta));
+      },
+      nb::arg("values"), nb::arg("index_map"), nb::arg("theta"));
+}
+
+} // namespace dolfinx_wrappers

@@ -2,28 +2,38 @@ name: SonarCloud
 on:
   push:
     branches:
+      - release
       - main
+    tags:
+      - "v*"
   pull_request:
     branches:
       - main
   workflow_dispatch:
 
 
+# Cancel superseded runs: a new commit on a pull request makes the
+# previous run's result irrelevant. Pushes to 'main' and 'release' are
+# left to finish, since they populate caches and publish artefacts.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   sonarcloud-build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     if: (github.event.pull_request.head.repo.full_name == github.repository) || github.ref_name == 'main'
-    container: fenicsproject/test-env:current-mpich
+    container: fenicsproject/test-env:current
     env:
       SONAR_SCANNER_VERSION:
-        6.1.0.4477 # Find the latest version at:
+        7.2.0.5079 # Find the latest version at:
         # https://github.com/SonarSource/sonar-scanner-cli/tags
       SONAR_SERVER_URL: "https://sonarcloud.io"
       BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
       PETSC_ARCH: linux-gnu-real64-32
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
@@ -40,7 +50,7 @@ jobs:
           distribution: 'zulu'
           java-version: 17
       - name: Cache SonarCloud packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar

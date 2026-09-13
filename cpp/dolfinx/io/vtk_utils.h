@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2022 Garth N. Wells and Jørgen S. Dokken
+// Copyright (C) 2020-2026 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -86,10 +86,10 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   // Get the dof coordinates on the reference element and the  mesh
   // coordinate map
   const auto [X, Xshape] = element->interpolation_points();
-  const fem::CoordinateElement<T>& cmap = mesh->geometry().cmap();
+  const fem::CoordinateElement<T>& cmap = mesh->geometry().cmaps().front();
 
   // Prepare cell geometry
-  auto dofmap_x = mesh->geometry().dofmap();
+  auto dofmap_x = mesh->geometry().dofmaps().front();
   std::span<const T> x_g = mesh->geometry().x();
   const std::size_t num_dofs_g = cmap.dim();
 
@@ -99,11 +99,6 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
     mesh->topology_mutable()->create_entity_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
-
-  // Transformation from reference element basis function data to
-  // conforming element basis function function
-  auto apply_dof_transformation
-      = element->template dof_transformation_fn<T>(fem::doftransform::standard);
 
   using mdspan2_t = md::mdspan<T, md::dextents<std::size_t, 2>>;
   using cmdspan4_t = md::mdspan<T, md::dextents<std::size_t, 4>>;
@@ -128,6 +123,12 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
 
   std::vector<T> coords(num_nodes * 3, 0.0);
   std::array<std::size_t, 2> cshape = {num_nodes, 3};
+  // Transformation from reference element basis function data to
+  // conforming element basis function. This function tabulates Lagrange
+  // (point-evaluation) dof coordinates, which never need a DOF
+  // transformation, so this is always a no-op (nullptr) closure.
+  auto apply_dof_transformation
+      = element->template dof_transformation_fn<T>(fem::doftransform::standard);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Extract cell geometry
@@ -137,8 +138,11 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
-    apply_dof_transformation(x_b, std::span(cell_info.data(), cell_info.size()),
-                             c, x.extent(1));
+    if (apply_dof_transformation)
+    {
+      apply_dof_transformation(
+          x_b, std::span(cell_info.data(), cell_info.size()), c, x.extent(1));
+    }
 
     // Copy dof coordinates into vector
     auto dofs = dofmap->cell_dofs(c);
