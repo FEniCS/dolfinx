@@ -149,11 +149,22 @@ def create_vector(
         )
 
 
-@functools.singledispatch
+@typing.overload
 def assign(
     x0: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
     x1: PETSc.Vec,
-) -> None:
+) -> None: ...
+
+
+@typing.overload
+def assign(
+    x0: PETSc.Vec,
+    x1: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
+) -> None: ...
+
+
+@functools.singledispatch
+def assign(x0: object, x1: object) -> None:
     """Assign ``x0`` values to a PETSc vector ``x1``.
 
     Values in ``x0``, which is possibly a stacked collection of arrays,
@@ -179,21 +190,24 @@ def assign(
         x0: An array or list of arrays that will be assigned to ``x1``.
         x1: Vector to assign values to.
     """
+    if not isinstance(x1, PETSc.Vec):
+        raise TypeError("Second argument must be a PETSc vector.")
+    arrays = typing.cast(npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]], x0)
     if x1.getType() == PETSc.Vec.Type().NEST:
         x1_nest = x1.getNestSubVecs()
-        for _x0, _x1 in zip(x0, x1_nest, strict=True):
+        for _x0, _x1 in zip(arrays, x1_nest, strict=True):
             with _x1.localForm() as x:
                 x.array_w[:] = _x0
     else:
         with x1.localForm() as _x:
-            if isinstance(x0, Sequence):
+            if isinstance(arrays, Sequence):
                 start = 0
-                for _x0 in x0:
+                for _x0 in arrays:
                     end = start + _x0.shape[0]
                     _x.array_w[start:end] = _x0
                     start = end
             else:
-                _x.array_w[:] = x0
+                _x.array_w[:] = arrays
 
 
 @assign.register

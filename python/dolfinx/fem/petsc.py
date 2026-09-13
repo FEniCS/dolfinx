@@ -1713,8 +1713,16 @@ def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:
     return _interpolation_matrix(V0._cpp_object, V1._cpp_object)  # type: ignore[arg-type]
 
 
+@overload
+def assign(u: _Function | Sequence[_Function], x: PETSc.Vec) -> None: ...
+
+
+@overload
+def assign(x: PETSc.Vec, u: _Function | Sequence[_Function]) -> None: ...
+
+
 @functools.singledispatch
-def assign(u: _Function | Sequence[_Function], x: PETSc.Vec) -> None:
+def assign(u: object, x: object) -> None:
     """Assign :class:`Function` degrees-of-freedom to a vector.
 
     Assigns degree-of-freedom values in ``u``, which is possibly a
@@ -1727,19 +1735,24 @@ def assign(u: _Function | Sequence[_Function], x: PETSc.Vec) -> None:
         u: ``Function`` (s) to assign degree-of-freedom value from.
         x: Vector to assign degree-of-freedom values in ``u`` to.
     """
+    if not isinstance(x, PETSc.Vec):
+        raise TypeError("Second argument must be a PETSc vector.")
+    functions = typing.cast(_Function | Sequence[_Function], u)
     if x.getType() == PETSc.Vec.Type().NEST:
-        dolfinx.la.petsc.assign([v.x.array for v in u], x)
+        if not isinstance(functions, Sequence):
+            raise ValueError("A sequence of functions is required for a nested PETSc vector.")
+        dolfinx.la.petsc.assign([v.x.array for v in functions], x)
     else:
-        if isinstance(u, Sequence):
+        if isinstance(functions, Sequence):
             data0, data1 = [], []
-            for v in u:
+            for v in functions:
                 bs = v.function_space.dofmap.bs
                 n = v.function_space.dofmap.index_map.size_local
                 data0.append(v.x.array[: bs * n])
                 data1.append(v.x.array[bs * n :])
             dolfinx.la.petsc.assign(data0 + data1, x)
         else:
-            dolfinx.la.petsc.assign(u.x.array, x)
+            dolfinx.la.petsc.assign(functions.x.array, x)
 
 
 @assign.register
