@@ -812,8 +812,13 @@ std::vector<std::ranges::range_value_t<U>>
 distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                 MPI_Comm comm1, const U& x, int shape1)
 {
-  assert(shape1 > 0);
-  assert(x.size() % shape1 == 0);
+  if (shape1 <= 0)
+    throw std::invalid_argument("distribute_data: shape1 must be positive");
+  if (x.size() % shape1 != 0)
+  {
+    throw std::invalid_argument(
+        "distribute_data: x.size() must be a multiple of shape1");
+  }
   const std::int64_t shape0_local = x.size() / shape1;
 
   // A rank outside comm1 must hold no data. Check this collectively before

@@ -17,6 +17,7 @@
 #include <limits>
 #include <numeric>
 #include <random>
+#include <stdexcept>
 #include <type_traits>
 #include <vector>
 
@@ -131,4 +132,15 @@ TEST_CASE("Test argsort bitset")
                        arr.data() + shape1 * perm[i] + shape1,
                        arr.data() + shape1 * index[i]));
   }
+}
+
+TEST_CASE("sort_by_perm bad arguments")
+{
+  std::vector<std::int32_t> arr(6, 0);
+  CHECK_THROWS_AS(dolfinx::sort_by_perm<std::int32_t>(arr, 0),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(dolfinx::sort_by_perm<std::int32_t>(arr, 4),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(dolfinx::sort_by_perm<std::int32_t>(arr, 2, 3),
+                  std::invalid_argument);
 }

@@ -17,6 +17,7 @@
 #include <numeric>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -206,10 +207,16 @@ std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1,
   if (x.empty())
     return std::vector<std::int32_t>{};
 
-  assert(shape1 > 0);
-  assert(x.size() % shape1 == 0);
+  if (shape1 == 0)
+    throw std::invalid_argument("sort_by_perm: shape1 must be positive");
+  if (x.size() % shape1 != 0)
+  {
+    throw std::invalid_argument(
+        "sort_by_perm: x.size() must be a multiple of shape1");
+  }
   std::size_t n = ncols.value_or(shape1);
-  assert(n <= shape1);
+  if (n > shape1)
+    throw std::invalid_argument("sort_by_perm: ncols must not exceed shape1");
   const std::size_t shape0 = x.size() / shape1;
   std::vector<std::int32_t> perm(shape0);
   std::iota(perm.begin(), perm.end(), 0);
