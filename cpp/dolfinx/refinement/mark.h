@@ -105,6 +105,10 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
 /// \frac{||\eta||^2}{N} \f$ where \f$ N \f$ is the (global) number of
 /// indicators.
 ///
+/// @pre @p values has size `index_map.size_local() + index_map.num_ghosts()`.
+/// @pre Ghost entries of @p values are up to date, i.e. `scatter_forward` has
+/// been called since the owned entries were last modified.
+///
 /// @param[in] values Squared indicators \f$ \eta^2_i \f$, usually associated
 /// with mesh entity \f$ i \f$.
 /// @param[in] index_map Index map describing the parallel layout of @p
