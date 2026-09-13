@@ -480,6 +480,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             value_size = self._V.value_size
             u = np.empty((num_points, value_size), self.dtype)
 
+        assert u is not None
         self._cpp_object.eval(_x, _cells, u, tol, maxit)  # type: ignore
         if num_points == 1:
             u = np.reshape(u, (-1,))
@@ -686,8 +687,8 @@ def functionspace(
     """
     # Create UFL element
     dtype = mesh.geometry.x.dtype
-    try:
-        e = ElementMetaData(*typing.cast(tuple, element))
+    if isinstance(element, tuple):
+        e = ElementMetaData(*element)
         ufl_e = basix.ufl.element(
             e.family,
             mesh.basix_cell(),
@@ -696,7 +697,7 @@ def functionspace(
             symmetry=e.symmetry,
             dtype=dtype,
         )
-    except TypeError:
+    else:
         ufl_e = element
 
     # Check that element and mesh cell types match

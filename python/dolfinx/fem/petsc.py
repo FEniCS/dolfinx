@@ -820,13 +820,13 @@ class LinearProblem(typing.Generic[_U]):
     @typing.overload
     def __init__(
         self: LinearProblem[Sequence[_Function]],
-        a: Sequence[Sequence[ufl.Form]],
+        a: Sequence[Sequence[ufl.Form | None]],
         L: Sequence[ufl.Form],
         *,
         petsc_options_prefix: str,
         bcs: Sequence[DirichletBC] | None = None,
         u: Sequence[_Function] | None = None,
-        P: Sequence[Sequence[ufl.Form]] | None = None,
+        P: Sequence[Sequence[ufl.Form | None]] | None = None,
         kind: str | Sequence[Sequence[str]] | None = None,
         petsc_options: dict | None = None,
         form_compiler_options: dict | None = None,
@@ -835,13 +835,13 @@ class LinearProblem(typing.Generic[_U]):
     ) -> None: ...
     def __init__(
         self,
-        a: ufl.Form | Sequence[Sequence[ufl.Form]],
+        a: ufl.Form | Sequence[Sequence[ufl.Form | None]],
         L: ufl.Form | Sequence[ufl.Form],
         *,
         petsc_options_prefix: str,
         bcs: Sequence[DirichletBC] | None = None,
         u: _Function | Sequence[_Function] | None = None,
-        P: ufl.Form | Sequence[Sequence[ufl.Form]] | None = None,
+        P: ufl.Form | Sequence[Sequence[ufl.Form | None]] | None = None,
         kind: str | Sequence[Sequence[str]] | None = None,
         petsc_options: dict | None = None,
         form_compiler_options: dict | None = None,

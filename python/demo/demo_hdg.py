@@ -200,8 +200,16 @@ entity_maps = [facet_mesh_emap]
 # Compile forms for the blocked system, using {py:func}`ufl.extract_blocks`
 # for the bilinear and linear forms.
 
-a_blocked = fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
-L_blocked = fem.form(ufl.extract_blocks(L))
+a_blocked = typing.cast(
+    list[list[fem.Form | None]],
+    fem.form(
+        typing.cast(list[list[ufl.Form | None]], ufl.extract_blocks(a)),
+        entity_maps=entity_maps,
+    ),
+)
+L_blocked = typing.cast(
+    list[fem.Form], fem.form(typing.cast(list[ufl.Form], ufl.extract_blocks(L)))
+)
 
 # Apply Dirichlet boundary conditions. We begin by locating the boundary
 # facets of msh.

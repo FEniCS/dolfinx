@@ -92,6 +92,8 @@
 # Import the required modules:
 
 # +
+import typing
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -175,16 +177,22 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
     x = ufl.SpatialCoordinate(msh)
     f = 10 * ufl.exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
     dx = ufl.Measure("dx", msh)
-    a = ufl.extract_blocks(
-        ufl.inner(sigma_trial, tau) * dx
-        + ufl.inner(u_trial, ufl.div(tau)) * dx
-        + ufl.inner(ufl.div(sigma_trial), v) * dx
+    a = typing.cast(
+        list[list[ufl.Form | None]],
+        ufl.extract_blocks(
+            ufl.inner(sigma_trial, tau) * dx
+            + ufl.inner(u_trial, ufl.div(tau)) * dx
+            + ufl.inner(ufl.div(sigma_trial), v) * dx
+        ),
     )
-    L = [ufl.ZeroBaseForm((tau,)), -ufl.inner(f, v) * dx]
-    a_p = ufl.extract_blocks(
-        ufl.inner(sigma_trial, tau) * dx
-        + ufl.inner(ufl.div(sigma_trial), ufl.div(tau)) * dx
-        + ufl.inner(u_trial, v) * dx
+    L: list[ufl.Form] = [ufl.ZeroBaseForm((tau,)), -ufl.inner(f, v) * dx]
+    a_p = typing.cast(
+        list[list[ufl.Form | None]],
+        ufl.extract_blocks(
+            ufl.inner(sigma_trial, tau) * dx
+            + ufl.inner(ufl.div(sigma_trial), ufl.div(tau)) * dx
+            + ufl.inner(u_trial, v) * dx
+        ),
     )
 
     dofs_top = fem.locate_dofs_topological(V, fdim, facets_top)

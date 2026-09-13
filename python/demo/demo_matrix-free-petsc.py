@@ -126,22 +126,36 @@ class MatrixFreeOperator:
             # Handle MixedFunctionSpace forms
             size = max(arg.part() for arg in arguments) + 1
             assert max(arg.number() for arg in arguments) == 1
-            a_blocked = ufl.extract_blocks(bilinear_form)
+            a_blocked = typing.cast(list[list[ufl.Form | None]], ufl.extract_blocks(bilinear_form))
             assert len(a_blocked) == size
-            spaces = [a_blocked[i][i].arguments()[0].ufl_function_space() for i in range(size)]
+            a_diagonal: list[ufl.Form] = []
+            spaces = []
+            for i in range(size):
+                a_ii = a_blocked[i][i]
+                assert a_ii is not None
+                a_diagonal.append(a_ii)
+                spaces.append(a_ii.arguments()[0].ufl_function_space())
 
             self._w = [dolfinx.fem.Function(space) for space in spaces]
             self._diagonal = dolfinx.fem.petsc.create_vector(spaces)
             self._vector = dolfinx.fem.petsc.create_vector(spaces)
-            self._vector_product = dolfinx.fem.form(
-                ufl.extract_blocks(ufl.action(bilinear_form, self._w)),
-                form_compiler_options=form_compiler_options,
-                jit_options=jit_options,
+            self._vector_product = typing.cast(
+                list[dolfinx.fem.Form],
+                dolfinx.fem.form(
+                    typing.cast(
+                        list[ufl.Form], ufl.extract_blocks(ufl.action(bilinear_form, self._w))
+                    ),
+                    form_compiler_options=form_compiler_options,
+                    jit_options=jit_options,
+                ),
             )
-            self._compiled_diagonal = dolfinx.fem.form(
-                [a_blocked[i][i] for i in range(size)],
-                form_compiler_options=diagnal_options,
-                jit_options=jit_options,
+            self._compiled_diagonal = typing.cast(
+                list[dolfinx.fem.Form],
+                dolfinx.fem.form(
+                    a_diagonal,
+                    form_compiler_options=diagnal_options,
+                    jit_options=jit_options,
+                ),
             )
         else:
             # Handle "standard" bilinear forms
@@ -455,8 +469,14 @@ def mixed_function_space(
     # assemble the local product A_local g_local, where g_local is the
     # local representation of the Dirichlet data.
 
-    L_compiled = dolfinx.fem.form(ufl.extract_blocks(L))
-    a_compiled = dolfinx.fem.form(ufl.extract_blocks(a))
+    L_compiled = typing.cast(
+        list[dolfinx.fem.Form],
+        dolfinx.fem.form(typing.cast(list[ufl.Form], ufl.extract_blocks(L))),
+    )
+    a_compiled = typing.cast(
+        list[list[dolfinx.fem.Form | None]],
+        dolfinx.fem.form(typing.cast(list[list[ufl.Form | None]], ufl.extract_blocks(a))),
+    )
     b = dolfinx.fem.petsc.assemble_vector(L_compiled)
     bcs0 = dolfinx.fem.bcs_by_block(dolfinx.fem.extract_function_spaces(L_compiled), bcs)
     dolfinx.fem.petsc.apply_lifting(b, a_compiled, bcs0)
