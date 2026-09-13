@@ -1713,16 +1713,8 @@ def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:
     return _interpolation_matrix(V0._cpp_object, V1._cpp_object)  # type: ignore[arg-type]
 
 
-@overload
-def assign(u: _Function | Sequence[_Function], x: PETSc.Vec) -> None: ...
-
-
-@overload
-def assign(x: PETSc.Vec, u: _Function | Sequence[_Function]) -> None: ...
-
-
 @functools.singledispatch
-def assign(u: object, x: object) -> None:
+def _assign(u: object, x: object) -> None:
     """Assign :class:`Function` degrees-of-freedom to a vector.
 
     Assigns degree-of-freedom values in ``u``, which is possibly a
@@ -1755,7 +1747,7 @@ def assign(u: object, x: object) -> None:
             dolfinx.la.petsc.assign(functions.x.array, x)
 
 
-@assign.register
+@_assign.register
 def _(x: PETSc.Vec, u: _Function | Sequence[_Function]) -> None:  # type: ignore[misc]
     """Assign vector entries to :class:`Function` degrees-of-freedom.
 
@@ -1782,6 +1774,22 @@ def _(x: PETSc.Vec, u: _Function | Sequence[_Function]) -> None:  # type: ignore
             dolfinx.la.petsc.assign(x, data0 + data1)  # type: ignore
         else:
             dolfinx.la.petsc.assign(x, u.x.array)  # type: ignore[bad-argument-type]
+
+
+@overload
+def assign(u: _Function | Sequence[_Function], x: PETSc.Vec) -> None: ...
+
+
+@overload
+def assign(x: PETSc.Vec, u: _Function | Sequence[_Function]) -> None: ...
+
+
+def assign(
+    u: _Function | Sequence[_Function] | PETSc.Vec,
+    x: PETSc.Vec | _Function | Sequence[_Function],
+) -> None:
+    """Assign between function degrees-of-freedom and a PETSc vector."""
+    _assign(u, x)
 
 
 def get_petsc_lib() -> pathlib.Path:

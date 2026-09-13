@@ -149,22 +149,8 @@ def create_vector(
         )
 
 
-@typing.overload
-def assign(
-    x0: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
-    x1: PETSc.Vec,
-) -> None: ...
-
-
-@typing.overload
-def assign(
-    x0: PETSc.Vec,
-    x1: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
-) -> None: ...
-
-
 @functools.singledispatch
-def assign(x0: object, x1: object) -> None:
+def _assign(x0: object, x1: object) -> None:
     """Assign ``x0`` values to a PETSc vector ``x1``.
 
     Values in ``x0``, which is possibly a stacked collection of arrays,
@@ -195,6 +181,7 @@ def assign(x0: object, x1: object) -> None:
     arrays = typing.cast(npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]], x0)
     if x1.getType() == PETSc.Vec.Type().NEST:
         x1_nest = x1.getNestSubVecs()
+        assert x1_nest is not None
         for _x0, _x1 in zip(arrays, x1_nest, strict=True):
             with _x1.localForm() as x:
                 x.array_w[:] = _x0
@@ -210,7 +197,7 @@ def assign(x0: object, x1: object) -> None:
                 _x.array_w[:] = arrays
 
 
-@assign.register
+@_assign.register
 def _(
     x0: PETSc.Vec,
     x1: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
@@ -227,6 +214,7 @@ def _(
     """
     if x0.getType() == PETSc.Vec.Type().NEST:
         x0_nest = x0.getNestSubVecs()
+        assert x0_nest is not None
         for _x0, _x1 in zip(x0_nest, x1, strict=True):
             with _x0.localForm() as x:
                 _x1[:] = x.array_r[:]
@@ -240,6 +228,28 @@ def _(
                     start = end
             else:
                 x1[:] = _x0.array_r[:]
+
+
+@typing.overload
+def assign(
+    x0: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
+    x1: PETSc.Vec,
+) -> None: ...
+
+
+@typing.overload
+def assign(
+    x0: PETSc.Vec,
+    x1: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
+) -> None: ...
+
+
+def assign(
+    x0: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]] | PETSc.Vec,
+    x1: PETSc.Vec | npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
+) -> None:
+    """Assign values between arrays and a PETSc vector."""
+    _assign(x0, x1)
 
 
 def _assign_block_data(maps: Iterable[tuple[IndexMap, int]], vec: PETSc.Vec) -> None:
