@@ -463,7 +463,8 @@ def sparsity_pattern_blocked(
 
     Args:
         comm: MPI communicator that the pattern is distributed over.
-        patterns: Sparsity pattern of each block.
+        patterns: Sparsity pattern of each block. ``None`` marks a
+            structurally zero block.
         maps: Index map and block size of each block row, and of each
             block column.
         bs: Row and column block sizes of the assembled pattern.
@@ -474,7 +475,9 @@ def sparsity_pattern_blocked(
     return SparsityPattern(
         _cpp.la.SparsityPattern(
             comm,
-            [[p._cpp_object if p is not None else None for p in row] for row in patterns],
+            # The C++ constructor permits null blocks, but the generated
+            # stub renders the nested pointer as non-optional.
+            [[p._cpp_object if p is not None else None for p in row] for row in patterns],  # type: ignore[misc]
             [list(m) for m in maps],
             [list(b) for b in bs],
         )
