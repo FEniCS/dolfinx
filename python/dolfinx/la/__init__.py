@@ -452,7 +452,7 @@ def sparsity_pattern(
 
 def sparsity_pattern_blocked(
     comm: _MPI.Comm,
-    patterns: Sequence[Sequence[SparsityPattern]],
+    patterns: Sequence[Sequence[SparsityPattern | None]],
     maps: Sequence[Sequence[tuple[IndexMap, int]]],
     bs: Sequence[Sequence[int]],
 ) -> SparsityPattern:
@@ -474,7 +474,7 @@ def sparsity_pattern_blocked(
     return SparsityPattern(
         _cpp.la.SparsityPattern(
             comm,
-            [[p._cpp_object for p in row] for row in patterns],
+            [[p._cpp_object if p is not None else None for p in row] for row in patterns],
             [list(m) for m in maps],
             [list(b) for b in bs],
         )

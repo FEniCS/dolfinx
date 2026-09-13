@@ -58,6 +58,11 @@ def test_extract_forms():
     Vc = extract_function_spaces(a, 1)
     assert Vc[0] is V0
     assert Vc[1] is V2
+    a00 = a[0][0]
+    assert a00 is not None
+    spaces = a00.function_spaces
+    spaces.clear()
+    assert a00.function_spaces == [V0, V0]
 
     a = form([[inner(u0, v0) * dx, inner(u1, v0) * dx], [inner(u2, v1) * dx, inner(u3, v1) * dx]])
     Vr = extract_function_spaces(a, 0)
@@ -109,7 +114,7 @@ def test_incorrect_element():
         [],
         msh._cpp_object,
     )
-    dolfinx.fem.Form(f, msh, ufcx_form, code)
+    dolfinx.fem.Form(f, msh, [space, space], ufcx_form, code)
 
     with pytest.raises(ValueError):
         f = ftype(
@@ -121,7 +126,7 @@ def test_incorrect_element():
             [],
             msh._cpp_object,
         )
-        dolfinx.fem.Form(f, msh, ufcx_form, code)
+        dolfinx.fem.Form(f, msh, [incorrect_space, incorrect_space], ufcx_form, code)
 
 
 def test_multiple_measures_one_subdomain_data():

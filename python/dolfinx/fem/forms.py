@@ -60,7 +60,7 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_float64
     )
     _mesh: Mesh
-    _spaces: list[FunctionSpace]
+    _spaces: tuple[FunctionSpace, ...]
     _code: str | list[str] | None
 
     def __init__(
@@ -94,7 +94,7 @@ class Form(typing.Generic[Scalar]):
         """
         self._cpp_object = form
         self._mesh = msh
-        self._spaces = spaces
+        self._spaces = tuple(spaces)
         self._code = code
         self._ufcx_form = ufcx_form
         self._module = module
@@ -122,7 +122,7 @@ class Form(typing.Generic[Scalar]):
     @property
     def function_spaces(self) -> list[FunctionSpace]:
         """Function spaces on which this form is defined."""
-        return self._spaces
+        return list(self._spaces)
 
     @property
     def dtype(self) -> np.dtype:
