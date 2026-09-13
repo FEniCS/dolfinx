@@ -178,6 +178,7 @@ def get_integration_domains(
     else:
         domains = []
         if not isinstance(subdomain, list):
+            exterior_facets = np.empty(0, dtype=np.int32)
             if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
                 tdim = subdomain.topology.dim
                 subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)

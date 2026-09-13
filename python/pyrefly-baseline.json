@@ -1,139 +1,6 @@
 {
   "errors": [
     {
-      "column": 18,
-      "path": "demo/demo_hdg.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Form[Unknown] | list[Form[Unknown] | None] | list[list[Form[Unknown] | None]]` is not assignable to parameter `a` with type `Sequence[Form[Unknown] | None] | Sequence[Sequence[Form[Unknown] | None]]` in function `dolfinx.fem.petsc.apply_lifting`",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "demo/demo_hdg.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `dolfinx.fem.petsc.assemble_matrix` called with arguments: (Form[Unknown] | list[Form[Unknown] | None] | list[list[Form[Unknown] | None]], bcs=list[DirichletBC[Unknown]])",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "demo/demo_hdg.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Form[Unknown] | list[Form[Unknown] | None] | list[list[Form[Unknown] | None]]` is not assignable to parameter `L` with type `Form[Unknown] | Sequence[Form[Unknown]]` in function `dolfinx.fem.petsc.assemble_vector`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "demo/demo_hdg.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `FunctionSpace[Unknown] | list[FunctionSpace[Unknown] | None] | None` is not assignable to parameter `spaces` with type `Iterable[FunctionSpace[Unknown] | None]` in function `dolfinx.fem.bcs.bcs_by_block`",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "demo/demo_hdg.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `dolfinx.fem.forms.extract_function_spaces` called with arguments: (Form[Unknown] | list[Form[Unknown] | None] | list[list[Form[Unknown] | None]], Literal[1])",
-      "severity": "error"
-    },
-    {
-      "column": 18,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "bad-index",
-      "concise_description": "Cannot index into `Form`",
-      "severity": "error"
-    },
-    {
-      "column": 18,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "bad-index",
-      "concise_description": "Cannot index into `Form`",
-      "severity": "error"
-    },
-    {
-      "column": 18,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "bad-index",
-      "concise_description": "Cannot index into `Form`",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "bad-index",
-      "concise_description": "Cannot index into `Form`",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `arguments`",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Form | tuple[Form | None, ...] | tuple[tuple[Form | None, ...], ...]` is not assignable to parameter `obj` with type `Sized` in function `len`",
-      "severity": "error"
-    },
-    {
-      "column": 36,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "bad-assignment",
-      "concise_description": "`Form[Unknown] | list[Form[Unknown] | None] | list[list[Form[Unknown] | None]]` is not assignable to attribute `_vector_product` with type `Form[Unknown] | list[Form[Unknown]]`",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `FunctionSpace[Unknown] | list[FunctionSpace[Unknown] | None] | None` is not assignable to parameter `spaces` with type `Iterable[FunctionSpace[Unknown] | None]` in function `dolfinx.fem.bcs.bcs_by_block`",
-      "severity": "error"
-    },
-    {
-      "column": 39,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "bad-assignment",
-      "concise_description": "`list[Form[Unknown] | None]` is not assignable to attribute `_compiled_diagonal` with type `Form[Unknown] | list[Form[Unknown]]`",
-      "severity": "error"
-    },
-    {
-      "column": 40,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Form[Unknown] | list[Form[Unknown] | None] | list[list[Form[Unknown] | None]]` is not assignable to parameter `a` with type `Sequence[Form[Unknown] | None] | Sequence[Sequence[Form[Unknown] | None]]` in function `dolfinx.fem.petsc.apply_lifting`",
-      "severity": "error"
-    },
-    {
-      "column": 43,
-      "path": "demo/demo_matrix-free-petsc.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Form[Unknown] | list[Form[Unknown] | None] | list[list[Form[Unknown] | None]]` is not assignable to parameter `L` with type `Form[Unknown] | Sequence[Form[Unknown]]` in function `dolfinx.fem.petsc.assemble_vector`",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "demo/demo_mixed-poisson.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `dolfinx.fem.petsc.LinearProblem.__init__` called with arguments: (Form | tuple[Form | None, ...] | tuple[tuple[Form | None, ...], ...], list[ZeroBaseForm | Unknown], u=list[Function[Unknown]], P=Form | tuple[Form | None, ...] | tuple[tuple[Form | None, ...], ...], kind=Literal['nest'], bcs=list[DirichletBC[Unknown]], petsc_options_prefix=str, petsc_options=dict[str, bool | float | str])",
-      "severity": "error"
-    },
-    {
       "column": 39,
       "path": "demo/demo_mixed-topology.py",
       "name": "no-matching-overload",
@@ -141,20 +8,6 @@
       "severity": "error"
     },
     {
-      "column": 31,
-      "path": "demo/demo_navier-stokes.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `dolfinx.fem.petsc.LinearProblem.__init__` called with arguments: (Form | tuple[Form | None, ...] | tuple[tuple[Form | None, ...], ...], Form | tuple[Form | None, ...] | tuple[tuple[Form | None, ...], ...], u=list[Function[Unknown]], bcs=list[DirichletBC[Unknown]], kind=Literal['mpi'], petsc_options_prefix=Literal['demo_stokes__stokes_problem_'], petsc_options=dict[str, int | str])",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "demo/demo_navier-stokes.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `dolfinx.fem.petsc.LinearProblem.__init__` called with arguments: (Form | tuple[Form | None, ...] | tuple[tuple[Form | None, ...], ...], Form | tuple[Form | None, ...] | tuple[tuple[Form | None, ...], ...], u=list[Function[Unknown]], bcs=list[DirichletBC[Unknown]], kind=Literal['mpi'], petsc_options_prefix=Literal['demo_stokes__navier_stokes_problem_'], petsc_options=dict[str, int | str])",
-      "severity": "error"
-    },
-    {
       "column": 21,
       "path": "demo/demo_poisson-matrix-free.py",
       "name": "not-callable",
@@ -166,20 +19,6 @@
       "path": "demo/demo_poisson-matrix-free.py",
       "name": "not-callable",
       "concise_description": "Expected a callable, got `type[complexfloating | floating]`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "demo/demo_stokes.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `dolfinx.fem.forms.form` called with arguments: (list[ZeroBaseForm | Unknown])",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "demo/demo_stokes.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `dolfinx.fem.petsc.LinearProblem.__init__` called with arguments: (list[list[Unknown | None] | list[Unknown]], list[ZeroBaseForm | Unknown], kind=Literal['nest'], bcs=list[DirichletBC[Any] | DirichletBC[Unknown]], P=list[list[Form[Unknown] | None] | list[Unknown | None]], petsc_options_prefix=Literal['demo_stokes__nested_iterative_solver_high_level_'], petsc_options=dict[str, float | str])",
       "severity": "error"
     },
     {
@@ -197,31 +36,10 @@
       "severity": "error"
     },
     {
-      "column": 57,
-      "path": "dolfinx/fem/forms.py",
-      "name": "unbound-name",
-      "concise_description": "`exterior_facets` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 8,
-      "path": "dolfinx/fem/function.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of type `AbstractFiniteElement | ElementMetaData | _BasixElement | _BlockedElement | tuple[str, int] | tuple[str, int, tuple[Unknown, ...]] | tuple[str, int, tuple[Unknown, ...], bool]` has no attribute `is_real`",
-      "severity": "error"
-    },
-    {
       "column": 16,
       "path": "dolfinx/fem/function.py",
       "name": "bad-return",
       "concise_description": "Returned type `ndarray[tuple[Any, ...], dtype[Scalar]] | ndarray | None` is not assignable to declared return type `ndarray[tuple[Any, ...], dtype[Scalar]]`",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "dolfinx/fem/function.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `AbstractFiniteElement | ElementMetaData | _BasixElement | _BlockedElement | tuple[str, int] | tuple[str, int, tuple[Unknown, ...]] | tuple[str, int, tuple[Unknown, ...], bool]` is not assignable to parameter `element` with type `AbstractFiniteElement` in function `FunctionSpace.__init__`",
       "severity": "error"
     },
     {
@@ -243,27 +61,6 @@
       "path": "dolfinx/fem/function.py",
       "name": "no-matching-overload",
       "concise_description": "No matching overload found for function `dolfinx.cpp.fem.interpolation_coords` called with arguments: (FiniteElement_float32 | FiniteElement_float64, Geometry_float32 | Geometry_float64, ndarray[tuple[Any, ...], dtype[signedinteger[_32Bit]]] | None)",
-      "severity": "error"
-    },
-    {
-      "column": 51,
-      "path": "dolfinx/fem/function.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of type `AbstractFiniteElement | ElementMetaData | _BasixElement | _BlockedElement | tuple[str, int] | tuple[str, int, tuple[Unknown, ...]] | tuple[str, int, tuple[Unknown, ...], bool]` has no attribute `cell`",
-      "severity": "error"
-    },
-    {
-      "column": 62,
-      "path": "dolfinx/fem/function.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `AbstractFiniteElement | ElementMetaData | _BasixElement | _BlockedElement | tuple[str, int] | tuple[str, int, tuple[Unknown, ...]] | tuple[str, int, tuple[Unknown, ...], bool]` is not assignable to parameter `ufl_e` with type `_ElementBase` in function `dolfinx.fem.element.finiteelement`",
-      "severity": "error"
-    },
-    {
-      "column": 1,
-      "path": "dolfinx/fem/petsc.py",
-      "name": "bad-singledispatch-register",
-      "concise_description": "Dispatch type `Vec` is not a subtype of fallback first argument type `Function[Unknown] | Sequence[Function[Unknown]]`",
       "severity": "error"
     },
     {
@@ -295,13 +92,6 @@
       "severity": "error"
     },
     {
-      "column": 69,
-      "path": "dolfinx/fem/petsc.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `FunctionSpace_float32 | FunctionSpace_float64 | Unknown` is not assignable to parameter `V` with type `FunctionSpace[Unknown]` in function `dolfinx.fem.function.FunctionSpace.contains`",
-      "severity": "error"
-    },
-    {
       "column": 71,
       "path": "dolfinx/fem/petsc.py",
       "name": "bad-argument-type",
@@ -330,45 +120,10 @@
       "severity": "error"
     },
     {
-      "column": 13,
-      "path": "dolfinx/io/gmsh.py",
-      "name": "unbound-name",
-      "concise_description": "`x` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "dolfinx/io/gmsh.py",
-      "name": "unbound-name",
-      "concise_description": "`x` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "dolfinx/io/gmsh.py",
-      "name": "unbound-name",
-      "concise_description": "`topologies` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "dolfinx/io/gmsh.py",
-      "name": "unbound-name",
-      "concise_description": "`physical_groups` may be uninitialized",
-      "severity": "error"
-    },
-    {
       "column": 41,
       "path": "dolfinx/io/gmsh.py",
       "name": "no-matching-overload",
       "concise_description": "No matching overload found for function `dolfinx.cpp.mesh.create_mesh` called with arguments: (Comm, list[ndarray[tuple[int], dtype[signedinteger[_64Bit]]]], list[CoordinateElement_float32 | CoordinateElement_float64], ndarray, ((Comm, int, AdjacencyList_int64, ndarray[tuple[Any, ...], dtype[signedinteger[_32Bit]]] | None, ndarray[tuple[Any, ...], dtype[signedinteger[_32Bit]]] | None, bool) -> AdjacencyList_int32) | None, GhostMode, int, Literal[1], cell_weights=None, reorder_fn=None)",
-      "severity": "error"
-    },
-    {
-      "column": 18,
-      "path": "dolfinx/io/vtkhdf.py",
-      "name": "unbound-name",
-      "concise_description": "`mesh_cpp` may be uninitialized",
       "severity": "error"
     },
     {
@@ -390,13 +145,6 @@
       "path": "dolfinx/mesh.py",
       "name": "no-matching-overload",
       "concise_description": "No matching overload found for function `dolfinx.cpp.refinement.mark_maximum` called with arguments: (ndarray[tuple[Any, ...], dtype[Real]], IndexMap, float)",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "dolfinx/mesh.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `dolfinx.cpp.refinement.mark_equidistribution` called with arguments: (ndarray[tuple[Any, ...], dtype[Real]], IndexMap, float)",
       "severity": "error"
     },
     {
