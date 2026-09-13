@@ -12,6 +12,7 @@
 #include <iterator>
 #include <map>
 #include <sstream>
+#include <stdexcept>
 #include <variant>
 
 namespace
@@ -61,7 +62,7 @@ std::variant<std::string, int, double> Table::get(std::string_view row,
   auto it = _values.find(key);
   if (it == _values.end())
   {
-    throw std::runtime_error(
+    throw std::out_of_range(
         std::format(R"(Missing table value for entry ("{}", "{}"))", row, col));
   }
 
@@ -89,8 +90,8 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
     op_impl = [](double y, double x) { return std::max(y, x); };
     break;
   default:
-    throw std::runtime_error("Cannot perform reduction of Table. Requested "
-                             "reduction not implemented");
+    throw std::invalid_argument("Cannot perform reduction of Table. Requested "
+                                "reduction not implemented");
   }
   new_title += name;
 
