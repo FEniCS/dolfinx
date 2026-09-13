@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Jørgen S. Dokken and Garth N. Wells
+// Copyright (C) 2021-2026 Jørgen S. Dokken, Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -10,12 +10,15 @@
 
 #include "vtk_utils.h"
 #include <adios2.h>
+#include <adios2/common/ADIOSTypes.h>
 #include <algorithm>
 #include <basix/mdspan.hpp>
 #include <cassert>
 #include <complex>
 #include <concepts>
+#include <cstddef>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
@@ -26,6 +29,7 @@
 #include <mpi.h>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <variant>
 #include <vector>
@@ -61,9 +65,10 @@ protected:
   /// @param[in] filename Name of output file
   /// @param[in] tag The ADIOS2 object name
   /// @param[in] engine ADIOS2 engine type. See
+  /// @param[in] mode Mode to open file with
   /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               std::string tag, std::string engine);
+               std::string tag, std::string engine, adios2::Mode mode);
 
   // Copy constructor (deleted)
   ADIOS2Writer(const ADIOS2Writer&) = delete;
@@ -156,6 +161,11 @@ extract_common_mesh(const typename adios2_writer::U<T>& u)
 
   return mesh;
 }
+
+/// Convert string to corresponding adios2 mode.
+/// @param[in] mode Mode in string representation, either "w" or "a".
+/// @returns Adios2 mode.
+adios2::Mode mode(std::string_view mode);
 
 } // namespace impl_adios2
 
@@ -463,19 +473,24 @@ public:
   /// @param[in] filename Name of output file.
   /// @param[in] mesh Mesh to write.
   /// @param[in] engine ADIOS2 engine type.
+  /// @param[in] mode Mode to open file with
   /// @note This format supports arbitrary degree meshes.
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             std::shared_ptr<const mesh::Mesh<T>> mesh,
-            std::string engine = "BPFile")
-      : ADIOS2Writer(comm, filename, "VTX mesh writer", engine), _mesh(mesh),
-        _mesh_reuse_policy(VTXMeshPolicy::update),
+            std::string engine = "BPFile", std::string mode = "w")
+      : ADIOS2Writer(comm, filename, "VTX mesh writer", engine,
+                     impl_adios2::mode(mode)),
+        _mesh(mesh), _mesh_reuse_policy(VTXMeshPolicy::update),
         _has_piecewise_constant(false)
   {
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {});
-    impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
+    if (mode == "a")
+      check_appendable(filename, vtk_scheme);
+    else
+      impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
   /// @brief Create a VTX writer for a list of fem::Functions.
@@ -492,11 +507,14 @@ public:
   /// @param[in] mesh_policy Controls if the mesh is written to file at
   /// the first time step only or is re-written (updated) at each time
   /// step.
+  /// @param[in] mode Mode to open file with
   /// @note This format supports arbitrary degree meshes.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             const typename adios2_writer::U<T>& u, std::string engine,
-            VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
-      : ADIOS2Writer(comm, filename, "VTX function writer", engine),
+            VTXMeshPolicy mesh_policy = VTXMeshPolicy::update,
+            std::string mode = "w")
+      : ADIOS2Writer(comm, filename, "VTX function writer", engine,
+                     impl_adios2::mode(mode)),
         _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u),
         _mesh_reuse_policy(mesh_policy), _has_piecewise_constant(false)
   {
@@ -582,10 +600,12 @@ public:
 
     // Define VTK scheme attribute for set of functions
     auto [names, dg0_names] = impl_vtx::extract_function_names<T>(u);
-    std::string vtk_scheme;
-    vtk_scheme = impl_vtx::create_vtk_schema(names, dg0_names);
+    std::string vtk_scheme = impl_vtx::create_vtk_schema(names, dg0_names);
 
-    impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
+    if (mode == "a")
+      check_appendable(filename, vtk_scheme);
+    else
+      impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
   /// @brief Create a VTX writer for a list of fem::Functions using
@@ -601,11 +621,13 @@ public:
   /// @param[in] mesh_policy Controls if the mesh is written to file at
   /// the first time step only or is re-written (updated) at each time
   /// step.
+  /// @param[in] mode Mode to open file with
   /// @note This format supports arbitrary degree meshes.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             const typename adios2_writer::U<T>& u,
-            VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
-      : VTXWriter(comm, filename, u, "BPFile", mesh_policy)
+            VTXMeshPolicy mesh_policy = VTXMeshPolicy::update,
+            std::string mode = "w")
+      : VTXWriter(comm, filename, u, "BPFile", mesh_policy, mode)
   {
   }
 
@@ -682,6 +704,102 @@ public:
     }
 
     _engine->EndStep();
+  }
+
+protected:
+  /// @brief Check wether the current file is compatible to be appended on.
+  /// @param[in] filename file
+  /// @param[in] vtk_scheme vtk scheme to be check against
+  void check_appendable(const std::filesystem::path& filename,
+                        std::string_view vtk_scheme)
+  {
+    // to read the previous steps we need to reopen with another file mode
+    _engine->Close();
+
+    adios2::Engine reader = _io->Open(filename, adios2::Mode::ReadRandomAccess);
+
+    // chekc vtk_scheme aligns
+    std::string read_vtk_schema;
+    {
+      // read vtk schema
+      adios2::Attribute<std::string> attr
+          = _io->InquireAttribute<std::string>("vtk.xml");
+      if (!attr)
+      {
+        reader.Close();
+        throw std::runtime_error("Could not find vtk.xml attribute.");
+      }
+
+      std::vector<std::string> values = attr.Data();
+      if (values.size() != 1)
+      {
+        reader.Close();
+        throw std::runtime_error("Attribute vtk.xml not unique.");
+      }
+      read_vtk_schema = values.front();
+    }
+
+    if (read_vtk_schema != vtk_scheme)
+    {
+      throw std::runtime_error("VTK scheme not compatible.");
+      reader.Close();
+    }
+
+    // check mesh aligns if reusing
+    if (_mesh_reuse_policy == VTXMeshPolicy::reuse)
+    {
+      auto read_var = [&](const std::string& name) -> std::uint32_t
+      {
+        adios2::Variable<std::uint32_t> var
+            = _io->template InquireVariable<std::uint32_t>(name);
+        if (!var)
+        {
+          reader.Close();
+          throw std::runtime_error("Could not find " + name + " variable.");
+        }
+
+        std::size_t steps = var.Steps();
+        if (steps == 0)
+        {
+          reader.Close();
+          throw std::runtime_error("Could not find " + name + " variable.");
+        }
+
+        var.SetStepSelection({steps - 1, 1});
+        int rank = 0;
+        MPI_Comm_rank(_mesh->comm(), &rank);
+        var.SetBlockSelection(static_cast<std::size_t>(rank));
+
+        std::uint32_t val = 0;
+        reader.Get(var, &val, adios2::Mode::Sync);
+        return val;
+      };
+
+      auto x_map = _mesh->geometry().index_map();
+      std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
+
+      auto tdim = _mesh->topology()->dim();
+      std::uint32_t num_cells
+          = _mesh->topology()->index_map(tdim)->size_local()
+            + _mesh->topology()->index_map(tdim)->num_ghosts();
+
+      bool reusable = read_var("NumberOfNodes") == num_vertices
+                      and read_var("NumberOfCells") == num_cells;
+      MPI_Allreduce(&reusable, MPI_IN_PLACE, 1, dolfinx::MPI::mpi_t<bool>,
+                    MPI_LAND, _mesh->comm());
+
+      if (!reusable)
+      {
+        reader.Close();
+        throw std::runtime_error("Mesh has changed, can not be reused.");
+      }
+    }
+
+    reader.Close();
+
+    // reopen file in append mode
+    _engine = std::make_unique<adios2::Engine>(
+        _io->Open(filename, impl_adios2::mode("a")));
   }
 
 private:

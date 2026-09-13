@@ -128,12 +128,14 @@ void declare_vtx_writer(nanobind::module_& m, const std::string& type)
       "__init__",
       [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
          std::filesystem::path filename,
-         std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh, std::string engine)
+         std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh, std::string engine,
+         const std::string& mode)
       {
         new (self)
-            dolfinx::io::VTXWriter<T>(comm.get(), filename, mesh, engine);
+            dolfinx::io::VTXWriter<T>(comm.get(), filename, mesh, engine, mode);
       },
-      nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"), nb::arg("engine"));
+      nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"), nb::arg("engine"),
+      nb::arg("mode"));
 
   // Of the four scalar/geometry combinations in the variant below, only
   // the two matched-precision ones (float/float and complex<float>/float
@@ -151,10 +153,11 @@ void declare_vtx_writer(nanobind::module_& m, const std::string& type)
                    const dolfinx::fem::Function<std::complex<float>, T>>,
                std::shared_ptr<
                    const dolfinx::fem::Function<std::complex<double>, T>>>>& u,
-           const std::string& engine, dolfinx::io::VTXMeshPolicy policy)
+           const std::string& engine, dolfinx::io::VTXMeshPolicy policy,
+           const std::string& mode)
   {
-    new (self)
-        dolfinx::io::VTXWriter<T>(comm.get(), filename, u, engine, policy);
+    new (self) dolfinx::io::VTXWriter<T>(comm.get(), filename, u, engine,
+                                         policy, mode);
   };
   if constexpr (std::is_same_v<T, float>)
   {
@@ -162,12 +165,14 @@ void declare_vtx_writer(nanobind::module_& m, const std::string& type)
         "__init__", init_u, nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
         nb::arg("engine") = "BPFile",
         nb::arg("policy") = dolfinx::io::VTXMeshPolicy::update,
-        nb::sig("def __init__(self, comm: mpi4py.MPI.Comm, filename: str | "
-                "os.PathLike, u: collections.abc.Sequence["
-                "dolfinx.cpp.fem.Function_float32 | "
-                "dolfinx.cpp.fem.Function_complex64], engine: str = "
-                "'BPFile', policy: dolfinx.cpp.io.VTXMeshPolicy = "
-                "dolfinx.cpp.io.VTXMeshPolicy.update) -> None"));
+        nb::arg("mode") = "w",
+        nb::sig(
+            "def __init__(self, comm: mpi4py.MPI.Comm, filename: str | "
+            "os.PathLike, u: collections.abc.Sequence["
+            "dolfinx.cpp.fem.Function_float32 | "
+            "dolfinx.cpp.fem.Function_complex64], engine: str = "
+            "'BPFile', policy: dolfinx.cpp.io.VTXMeshPolicy = "
+            "dolfinx.cpp.io.VTXMeshPolicy.update, mode: str = \"w\") -> None"));
   }
   else
   {
@@ -175,12 +180,14 @@ void declare_vtx_writer(nanobind::module_& m, const std::string& type)
         "__init__", init_u, nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
         nb::arg("engine") = "BPFile",
         nb::arg("policy") = dolfinx::io::VTXMeshPolicy::update,
+        nb::arg("mode") = "w",
         nb::sig("def __init__(self, comm: mpi4py.MPI.Comm, filename: str | "
                 "os.PathLike, u: collections.abc.Sequence["
                 "dolfinx.cpp.fem.Function_float64 | "
                 "dolfinx.cpp.fem.Function_complex128], engine: str = "
                 "'BPFile', policy: dolfinx.cpp.io.VTXMeshPolicy = "
-                "dolfinx.cpp.io.VTXMeshPolicy.update) -> None"));
+                "dolfinx.cpp.io.VTXMeshPolicy.update,  mode: str = \"w\") -> "
+                "None"));
   }
 
   vtx_writer.def("close", [](dolfinx::io::VTXWriter<T>& self) { self.close(); })
