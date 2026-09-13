@@ -25,7 +25,7 @@ def test_scatter_forward(dtype):
         [local_size * dest[r] + r % local_size for r in range(len(dest))], dtype=np.int64
     )
     src = dest
-    map = index_map(comm, local_size, map_ghosts, src, dest_src=[dest, src])
+    map = index_map(comm, local_size, (map_ghosts, src), dest_src=[dest, src])
     assert map.size_global == local_size * comm.size
 
     sc = scatterer(map)
@@ -57,7 +57,7 @@ def test_scatter_reverse(dtype):
     dest = np.delete(np.arange(0, comm.size, dtype=np.int32), comm.rank)
     map_ghosts = np.array([local_size * dest[r] for r in range(len(dest))], dtype=np.int64)
     src = dest
-    map = index_map(comm, local_size, map_ghosts, src, dest_src=[dest, src])
+    map = index_map(comm, local_size, (map_ghosts, src), dest_src=[dest, src])
     assert map.size_global == local_size * comm.size
 
     # Fill ghost part with ones and reverse scatter

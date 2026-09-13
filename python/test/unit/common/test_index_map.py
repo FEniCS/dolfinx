@@ -37,7 +37,7 @@ def test_sub_index_map():
     src_ranks = dest_ranks
 
     # Create index map
-    map = index_map(comm, map_local_size, map_ghosts, src_ranks, dest_src=[dest_ranks, src_ranks])
+    map = index_map(comm, map_local_size, (map_ghosts, src_ranks), dest_src=[dest_ranks, src_ranks])
     assert map.size_global == map_local_size * comm.size
 
     # Build list for each rank of the first (myrank + myrank % 2) local
@@ -94,7 +94,7 @@ def test_index_map_ghost_lifetime():
         [local_size * dest[r] + r % local_size for r in range(len(dest))], dtype=np.int64
     )
     src = dest
-    map = index_map(comm, local_size, map_ghosts, src, dest_src=[dest, src])
+    map = index_map(comm, local_size, (map_ghosts, src), dest_src=[dest, src])
     assert map.size_global == local_size * comm.size
 
     # Test global to local map
@@ -127,7 +127,7 @@ def test_explicit_index_map_dest_src_order():
     dest = np.array([(comm.rank - 1) % comm.size], dtype=np.int32)
     ghosts = np.array([src[0]], dtype=np.int64)
 
-    imap = index_map(comm, 1, ghosts, src, dest_src=[dest, src])
+    imap = index_map(comm, 1, (ghosts, src), dest_src=[dest, src])
     assert np.array_equal(imap.owners, src)
 
     # Exercise the neighbour lists through a forward exchange. Checking
@@ -199,7 +199,7 @@ def test_create_submap_owner_change():
         owners = np.array([comm.rank - 1, comm.rank + 1], dtype=np.int32)
         submap_indices = np.array([0, 2, 3], dtype=np.int32)
 
-    imap = index_map(comm, local_size, ghosts, owners, tag=1)
+    imap = index_map(comm, local_size, (ghosts, owners), tag=1)
     sub_imap, sub_imap_to_imap, owners_changed = create_sub_index_map(imap, submap_indices)
     # Ownership changes in this submap. `owners_changed` is rank-local, so
     # reduce it the way a caller is expected to.
@@ -267,7 +267,7 @@ def test_sub_index_map_multiple_possible_owners():
         submap_size_local_expected = 0
         submap_num_ghosts_expected = 0
 
-    imap = index_map(comm, local_size, ghosts, owners, tag=0)
+    imap = index_map(comm, local_size, (ghosts, owners), tag=0)
 
     # Create a submap where both processes 0 and 1 include the index on process 2,
     # but process 2 does not include it

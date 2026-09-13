@@ -355,8 +355,7 @@ class Scatterer:
 def index_map(
     comm: _MPI.Comm,
     local_size: int,
-    ghosts: npt.NDArray[np.int64] | None = None,
-    owners: npt.NDArray[np.int32] | None = None,
+    ghosts: tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]] | None = None,
     *,
     dest_src: Sequence[npt.NDArray[np.int32]] | None = None,
     tag: int = _CONSENSUS_NBX_TAG,
@@ -366,13 +365,11 @@ def index_map(
     Args:
         comm: MPI communicator to distribute the indices over.
         local_size: Number of indices owned by the calling process.
-        ghosts: Global index of each ghost index. If ``None``, the
-            index map is non-overlapping and ``ghosts`` must be
-            ``None`` on every process. For an overlapping map, a
-            process with no ghosts must pass an empty array.
-        owners: Owning rank of each entry of ``ghosts``. Required if
-            ``ghosts`` is given.
-        dest_src: Destination and source ranks, if known. Supplying
+        ghosts: Tuple ``(ghost_indices, owners)`` of global ghost
+            indices and their owning ranks. If ``None``, the index map
+            is non-overlapping and ``ghosts`` must be ``None`` on every
+            process. For an overlapping map, a process with no ghosts
+            must pass empty arrays.
             them avoids the consensus exchange that otherwise discovers
             which ranks ghost the caller's owned indices.
         tag: MPI tag for the consensus exchange. Ignored if ``dest_src``
@@ -383,16 +380,16 @@ def index_map(
         A new index map.
     """
     if ghosts is None:
-        if owners is not None:
-            raise ValueError("'owners' given without 'ghosts'.")
         if dest_src is not None:
             raise ValueError("'dest_src' given without 'ghosts'.")
         return IndexMap(_cpp.common.IndexMap(comm, local_size))
-    if owners is None:
-        raise ValueError("'ghosts' given without 'owners'.")
+
+    ghost_indices, owners = ghosts
     if dest_src is not None:
-        return IndexMap(_cpp.common.IndexMap(comm, local_size, list(dest_src), ghosts, owners))
-    return IndexMap(_cpp.common.IndexMap(comm, local_size, ghosts, owners, tag))
+        return IndexMap(
+            _cpp.common.IndexMap(comm, local_size, list(dest_src), ghost_indices, owners)
+        )
+    return IndexMap(_cpp.common.IndexMap(comm, local_size, ghost_indices, owners, tag))
 
 
 def create_sub_index_map(

@@ -85,7 +85,7 @@ def test_mark_equidistribution_ignores_ghosts(dtype: np.dtype) -> None:
     local_size = size if rank == 0 else 0
     ghosts = np.zeros(0, dtype=np.int64) if rank == 0 else np.array([rank], dtype=np.int64)
     owners = np.zeros(0, dtype=np.int32) if rank == 0 else np.array([0], dtype=np.int32)
-    im = index_map(comm, local_size, ghosts, owners, tag=0)
+    im = index_map(comm, local_size, (ghosts, owners), tag=0)
 
     ghost_value = 100 * size
     v = np.empty(im.size_local + im.num_ghosts, dtype=dtype)
