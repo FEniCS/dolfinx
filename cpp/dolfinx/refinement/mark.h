@@ -98,7 +98,8 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
   return indices;
 }
 
-/// @brief Computes equidistribution threshold marking of a squared indicator.
+/// @brief Return local indices of a set of values whose entry exceeds a
+/// fraction of the mean square (MS).
 ///
 /// Returns the indices \f$i\f$ of the squared indicators \f$ \eta_i^2 \f$ that
 /// satisfy the equidistribution threshold: \f$ \eta_i^2 > \theta^2
