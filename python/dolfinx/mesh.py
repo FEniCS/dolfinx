@@ -294,6 +294,16 @@ class Topology:
         """
         self._cpp_object = topology
 
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same topology."""
+        if not isinstance(other, Topology):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped topology."""
+        return hash(self._cpp_object)
+
     def cell_name(self) -> str:
         """String representation of the cell-type of the topology."""
         return to_string(self._cpp_object.cell_type)
@@ -312,13 +322,17 @@ class Topology:
             d1: Dimension of entity one is mapping to.
         """
         # The C++ method is overloaded on the single/mixed-topology
-        # forms, so dispatch rather than passing a union.
-        if isinstance(d0, int):
-            if not isinstance(d1, int):
+        # forms. The two calls below are identical at runtime, but the
+        # isinstance test narrows the argument types so that each picks
+        # the matching overload of the generated stub. Test for a pair
+        # rather than for an int, so that a dimension given as e.g. a
+        # NumPy integer is still treated as a dimension.
+        if isinstance(d0, tuple):
+            if not isinstance(d1, tuple):
                 raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
             conn = self._cpp_object.connectivity(d0, d1)
         else:
-            if isinstance(d1, int):
+            if isinstance(d1, tuple):
                 raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
             conn = self._cpp_object.connectivity(d0, d1)
         if conn is not None:
@@ -459,6 +473,16 @@ class Geometry(typing.Generic[Real]):
         """
         self._cpp_object = geometry
 
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same geometry."""
+        if not isinstance(other, Geometry):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped geometry."""
+        return hash(self._cpp_object)
+
     @property
     def cmaps(self) -> list[_CoordinateElement]:
         """The coordinate maps."""
@@ -547,7 +571,14 @@ class Mesh(typing.Generic[Real]):
         if self._ufl_domain is not None:
             # Attach this (Python) Mesh, rather than the C++ mesh, to
             # the UFL domain so that ufl.Mesh.ufl_cargo returns the
-            # Python object
+            # Python object. Callers (e.g. dolfinx.fem.form) rely on
+            # getting back this exact Mesh, so the link must keep the
+            # Mesh alive and cannot be a weak reference. It therefore
+            # forms a Mesh <-> ufl.Mesh reference cycle, which is
+            # reclaimed by the cyclic garbage collector rather than by
+            # reference counting. Call gc.collect() where a mesh (and
+            # the MPI communicator it holds) must be released at a
+            # known point, e.g. in the same order on all ranks.
             self._ufl_domain._ufl_cargo = self
 
     @property

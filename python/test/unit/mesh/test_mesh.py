@@ -21,7 +21,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import graph
 from dolfinx import mesh as _mesh
 from dolfinx.cpp.mesh import is_simplex
-from dolfinx.fem import assemble_scalar, coordinate_element, form
+from dolfinx.fem import assemble_scalar, coordinate_element, form, functionspace
 from dolfinx.mesh import (
     CellType,
     DiagonalType,
@@ -684,6 +684,36 @@ def test_create_mesh_cell_reordering_exception():
 
 
 @pytest.mark.skip_in_parallel
+def test_topology_connectivity_dimension_types():
+    """Dimensions may be any integer type, but the forms cannot be mixed."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    msh.topology.create_connectivity(2, 0)
+    c = msh.topology.connectivity(2, 0)
+    for d0, d1 in [(np.int32(2), 0), (2, np.int64(0)), (np.int32(2), np.int64(0))]:
+        assert np.array_equal(msh.topology.connectivity(d0, d1).array, c.array)
+    with pytest.raises(TypeError):
+        msh.topology.connectivity((2, 0), 0)
+    with pytest.raises(TypeError):
+        msh.topology.connectivity(2, (0, 0))
+
+
+def test_wrappers_compare_equal():
+    """Wrappers built around the same C++ object compare equal."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    msh.topology.create_connectivity(2, 0)
+    assert msh.topology.connectivity(2, 0) == msh.topology.connectivity(2, 0)
+    assert msh.geometry == msh.geometry
+
+    # A MeshTags wraps the mesh topology in a separate Topology object
+    tdim = msh.topology.dim
+    entities = np.arange(msh.topology.index_map(tdim).size_local, dtype=np.int32)
+    mt = _mesh.meshtags(msh, tdim, entities, np.ones_like(entities))
+    assert mt.topology == msh.topology
+
+    V = functionspace(msh, ("Lagrange", 1))
+    assert V.dofmap.dof_layout == V.dofmap.dof_layout
+
+
 def test_create_mesh_default_cell_reordering():
     """Test default reverse Cuthill-McKee cell reordering."""
     cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)

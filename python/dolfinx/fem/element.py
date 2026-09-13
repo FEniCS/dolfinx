@@ -40,6 +40,16 @@ class ElementDofLayout:
         """
         self._cpp_object = dof_layout
 
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same dof layout."""
+        if not isinstance(other, ElementDofLayout):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped dof layout."""
+        return hash(self._cpp_object)
+
     @property
     def num_dofs(self) -> int:
         """Number of degrees-of-freedom on the cell."""

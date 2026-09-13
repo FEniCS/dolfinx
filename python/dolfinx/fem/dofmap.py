@@ -36,6 +36,16 @@ class DofMap:
         """Initialise a degree-of-freedom map."""
         self._cpp_object = dofmap
 
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same dofmap."""
+        if not isinstance(other, DofMap):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped dofmap."""
+        return hash(self._cpp_object)
+
     def cell_dofs(self, cell_index: int) -> npt.NDArray[np.int32]:
         """Cell local-global dof map.
 
