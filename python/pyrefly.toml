@@ -1,4 +1,5 @@
 project-includes = ["dolfinx", "demo", "test"]
+baseline = "pyrefly-baseline.json"
 infer-return-types = "annotated"
 replace-imports-with-any = [
     "gmsh", "llvmlite", "llvmlite.*", "pyamg", "slepc4py", "slepc4py.*",
