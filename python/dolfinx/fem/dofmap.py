@@ -15,6 +15,7 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
+from dolfinx.common import IndexMap
 from dolfinx.cpp.fem import DofMap as _DofMap
 from dolfinx.cpp.fem import create_dofmaps as _create_dofmaps
 from dolfinx.fem.element import ElementDofLayout, FiniteElement
@@ -70,9 +71,9 @@ class DofMap:
         return ElementDofLayout(self._cpp_object.dof_layout)
 
     @property
-    def index_map(self) -> _cpp.common.IndexMap:
+    def index_map(self) -> IndexMap:
         """Index map describing parallel distribution of the dofmap."""
-        return self._cpp_object.index_map
+        return IndexMap(self._cpp_object.index_map)
 
     @property
     def index_map_bs(self) -> int:

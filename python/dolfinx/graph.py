@@ -13,6 +13,7 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
+from dolfinx.common import IndexMap
 from dolfinx.cpp.graph import (
     partition_hilbert,
     partition_morton,
@@ -234,7 +235,7 @@ def distribute(
     )
 
 
-def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
+def comm_graph(map: IndexMap, root: int = 0) -> AdjacencyList:
     """Build a parallel communication graph from an index map.
 
     The communication graph is a directed graph that represents the
@@ -267,7 +268,7 @@ def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
     Returns:
         An adjacency list representing the communication graph.
     """
-    return AdjacencyList(_cpp.graph.comm_graph(map, root))
+    return AdjacencyList(_cpp.graph.comm_graph(map._cpp_object, root))
 
 
 def comm_graph_data(

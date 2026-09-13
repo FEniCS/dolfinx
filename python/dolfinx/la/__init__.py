@@ -478,7 +478,7 @@ def sparsity_pattern_blocked(
             # The C++ constructor permits null blocks, but the generated
             # stub renders the nested pointer as non-optional.
             [[p._cpp_object if p is not None else None for p in row] for row in patterns],  # type: ignore[misc]
-            [list(m) for m in maps],
+            [[(m._cpp_object, mbs) for m, mbs in row] for row in maps],
             [list(b) for b in bs],
         )
     )
