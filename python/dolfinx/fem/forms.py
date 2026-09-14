@@ -323,9 +323,9 @@ def mixed_topology_form(
         if not all(d is data[0] for d in data if d is not None):
             raise ValueError("Subdomain data must be the same for each integral type.")
 
-    msh = domain.ufl_cargo()
-    if msh is None:
-        raise RuntimeError("Expecting to find a Mesh in the form.")
+    from dolfinx.mesh import _mesh_from_ufl_domain
+
+    msh = _mesh_from_ufl_domain(domain)
     comm = msh.comm if jit_comm is None else jit_comm
 
     # Geometry type is fixed by the mesh.
@@ -460,9 +460,9 @@ def form(
             if not all(d is data[0] for d in data if d is not None):
                 raise ValueError("Subdomain data must be the same for each integral type.")
 
-        msh = domain.ufl_cargo()
-        if msh is None:
-            raise RuntimeError("Expecting to find a Mesh in the form.")
+        from dolfinx.mesh import _mesh_from_ufl_domain
+
+        msh = _mesh_from_ufl_domain(domain)
         comm = msh.comm if jit_comm is None else jit_comm
 
         # Geometry type is fixed by the mesh

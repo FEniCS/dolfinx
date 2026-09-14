@@ -1,4 +1,4 @@
-# Copyright (C) 2006 Anders Logg
+# Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -7,6 +7,7 @@
 import math
 import sys
 import typing
+import weakref
 
 from mpi4py import MPI
 
@@ -40,6 +41,24 @@ from dolfinx.mesh import (
     locate_entities_boundary,
     transfer_meshtags_to_submesh,
 )
+
+
+def test_ufl_cargo_does_not_keep_mesh_wrapper_alive():
+    """Test that UFL cargo does not create a reference cycle."""
+    msh = create_unit_square(MPI.COMM_SELF, 2, 2)
+    domain = msh.ufl_domain()
+    assert domain is not None
+
+    mesh_ref = weakref.ref(msh)
+    assert _mesh._mesh_from_ufl_domain(domain) is msh
+
+    del msh
+    assert mesh_ref() is None
+
+    recovered_mesh = _mesh._mesh_from_ufl_domain(domain)
+    assert recovered_mesh.ufl_domain() is domain
+    assert _mesh._mesh_from_ufl_domain(domain) is recovered_mesh
+    assert recovered_mesh.topology.index_map(recovered_mesh.topology.dim).size_local == 8
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):

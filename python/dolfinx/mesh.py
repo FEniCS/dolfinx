@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells, Jørgen S.
+# Copyright (C) 2017-2026 Chris N. Richardson, Garth N. Wells, Jørgen S.
 # Dokken, Paul T. Kühner and Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import typing
 import warnings
+import weakref
 from collections.abc import Callable, Sequence
 from functools import cached_property
 
@@ -541,6 +542,28 @@ class Geometry(typing.Generic[Real]):
         return self._cpp_object.x  # type: ignore[return-value]
 
 
+class _MeshCargo:
+    """Cycle-free UFL cargo for a Python mesh."""
+
+    def __init__(self, mesh: Mesh, domain: ufl.Mesh):
+        self._cpp_object = mesh._cpp_object
+        self._mesh_ref = weakref.ref(mesh)
+        self._domain_ref = weakref.ref(domain)
+
+    def get_mesh(self) -> Mesh:
+        """Return the Python mesh, rebuilding its wrapper if needed."""
+        if (mesh := self._mesh_ref()) is not None:
+            return mesh
+
+        if (domain := self._domain_ref()) is None:
+            raise RuntimeError("The UFL domain associated with the mesh no longer exists.")
+        return Mesh(self._cpp_object, domain)
+
+    def __getattr__(self, name: str) -> typing.Any:
+        """Forward legacy UFL cargo access to the Python mesh."""
+        return getattr(self.get_mesh(), name)
+
+
 class Mesh(typing.Generic[Real]):
     """A mesh."""
 
@@ -571,17 +594,11 @@ class Mesh(typing.Generic[Real]):
         self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
-            # Attach this (Python) Mesh, rather than the C++ mesh, to
-            # the UFL domain so that ufl.Mesh.ufl_cargo returns the
-            # Python object. Callers (e.g. dolfinx.fem.form) rely on
-            # getting back this exact Mesh, so the link must keep the
-            # Mesh alive and cannot be a weak reference. It therefore
-            # forms a Mesh <-> ufl.Mesh reference cycle, which is
-            # reclaimed by the cyclic garbage collector rather than by
-            # reference counting. Call gc.collect() where a mesh (and
-            # the MPI communicator it holds) must be released at a
-            # known point, e.g. in the same order on all ranks.
-            self._ufl_domain._ufl_cargo = self
+            cargo = self._ufl_domain.ufl_cargo()
+            if isinstance(cargo, _MeshCargo) and cargo._cpp_object is msh:
+                cargo._mesh_ref = weakref.ref(self)
+            else:
+                self._ufl_domain._ufl_cargo = _MeshCargo(self, self._ufl_domain)
 
     @property
     def comm(self) -> _MPI.Comm:
@@ -643,6 +660,18 @@ class Mesh(typing.Generic[Real]):
     def geometry(self) -> Geometry[Real]:
         """Mesh geometry."""
         return self._geometry
+
+
+def _mesh_from_ufl_domain(domain: ufl.Mesh) -> Mesh:
+    """Return the Python mesh associated with a UFL domain."""
+    cargo = domain.ufl_cargo()
+    if isinstance(cargo, Mesh):
+        return cargo
+    if isinstance(cargo, _MeshCargo):
+        return cargo.get_mesh()
+    if isinstance(cargo, _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64):
+        return Mesh(cargo, domain)
+    raise RuntimeError("Expecting to find a Mesh in the UFL domain.")
 
 
 class MeshTags:
@@ -966,8 +995,7 @@ def uniform_refine(
     _cpp_mesh = _uniform_refine(msh._cpp_object, partitioner, ghost_mode)
     if msh._ufl_domain is None:
         raise ValueError("Cannot refine a mesh without a UFL domain.")
-    # Create new ufl domain as it will carry a reference to the C++ mesh
-    # in the ufl_cargo
+    # Create a new UFL domain to associate with the refined mesh.
     ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())
     return Mesh(_cpp_mesh, ufl_domain)
 
@@ -1016,8 +1044,7 @@ def refine(
     )
     if msh._ufl_domain is None:
         raise ValueError("Cannot refine a mesh without a UFL domain.")
-    # Create new ufl domain as it will carry a reference to the C++ mesh
-    # in the ufl_cargo
+    # Create a new UFL domain to associate with the refined mesh.
     ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())
     return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
 
