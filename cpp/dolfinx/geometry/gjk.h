@@ -529,7 +529,7 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
 
   std::vector<T> results(total_size * 3);
   auto compute_chunk
-      = [](std::vector<T>& out,
+      = [](std::vector<T>& chunk_results,
            const std::vector<std::span<const T>>& chunk_bodies, std::size_t c0,
            std::size_t c1, std::span<const T> q_ref)
   {
@@ -538,9 +538,9 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
       // Using U explicitly as the internal precision type
       std::array<T, 3> dist
           = compute_distance_gjk<T, U>(chunk_bodies[i], q_ref);
-      out[3 * i + 0] = dist[0];
-      out[3 * i + 1] = dist[1];
-      out[3 * i + 2] = dist[2];
+      chunk_results[3 * i + 0] = dist[0];
+      chunk_results[3 * i + 1] = dist[1];
+      chunk_results[3 * i + 2] = dist[2];
     }
   };
 

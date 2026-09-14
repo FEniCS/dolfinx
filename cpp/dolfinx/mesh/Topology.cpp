@@ -759,16 +759,16 @@ std::vector<std::int32_t> convert_to_local_indexing(
 
   auto transform
       = [is_identity, &global_to_local_map](
-            std::span<std::int32_t> data, std::span<const std::int64_t> gidx,
+            std::span<std::int32_t> data, std::span<const std::int64_t> g_chunk,
             std::span<const std::pair<std::int64_t, std::int32_t>> g2l)
   {
     if (is_identity)
     {
-      // Every value in gidx is guaranteed present in g2l by this
+      // Every value in g_chunk is guaranteed present in g2l by this
       // function's precondition, so - given is_identity - always
       // within bounds; the check is a defensive no-op fallback rather
       // than something expected to trigger.
-      std::ranges::transform(gidx, data.begin(),
+      std::ranges::transform(g_chunk, data.begin(),
                              [&g2l](auto i) -> std::int32_t
                              {
                                if (static_cast<std::size_t>(i) < g2l.size())
@@ -783,7 +783,7 @@ std::vector<std::int32_t> convert_to_local_indexing(
     }
     else
     {
-      std::ranges::transform(gidx, data.begin(),
+      std::ranges::transform(g_chunk, data.begin(),
                              [&global_to_local_map](auto i)
                              {
                                auto it = global_to_local_map.find(i);

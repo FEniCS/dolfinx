@@ -241,8 +241,9 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
   if (!reorder_fn)
     reorder_fn = graph::reorder_rcm;
   // Create new dofmap
-  auto create_subdofmap = [](MPI_Comm subcomm, auto index_map_bs, auto& layout,
-                             auto& topology, auto& reorder_fn, auto& dmap)
+  auto create_subdofmap
+      = [](MPI_Comm dofmap_comm, auto index_map_bs, auto& layout,
+           auto& topology, auto& reorder_fn, auto& dmap)
   {
     if (index_map_bs == 1 and layout.block_size() > 1)
     {
@@ -252,7 +253,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
       // Create new element dof layout and reset parent
       ElementDofLayout collapsed_dof_layout = layout.copy();
       auto [_index_map, bs, dofmaps] = build_dofmap_data(
-          subcomm, topology, {collapsed_dof_layout}, reorder_fn);
+          dofmap_comm, topology, {collapsed_dof_layout}, reorder_fn);
       auto index_map
           = std::make_shared<common::IndexMap>(std::move(_index_map));
       return DofMap(layout, index_map, bs, std::move(dofmaps.front()), bs);

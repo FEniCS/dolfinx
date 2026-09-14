@@ -362,22 +362,23 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   graph::AdjacencyList<int> vertex_ranks(std::move(data), std::move(offsets));
 
   // Create unique list of ranks that share vertices (owners of)
-  std::vector<int> ranks(vertex_ranks.array().begin(),
-                         vertex_ranks.array().end());
-  std::ranges::sort(ranks);
-  auto [unique_end, range_end] = std::ranges::unique(ranks);
-  ranks.erase(unique_end, range_end);
+  std::vector<int> all_ranks(vertex_ranks.array().begin(),
+                             vertex_ranks.array().end());
+  std::ranges::sort(all_ranks);
+  auto [unique_end, range_end] = std::ranges::unique(all_ranks);
+  all_ranks.erase(unique_end, range_end);
 
   MPI_Comm neighbor_comm;
-  MPI_Dist_graph_create_adjacent(
-      comm, ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
-      ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
+  MPI_Dist_graph_create_adjacent(comm, all_ranks.size(), all_ranks.data(),
+                                 MPI_UNWEIGHTED, all_ranks.size(),
+                                 all_ranks.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neighbor_comm);
 
   timer_li_nc.stop();
   timer_li_nc.flush();
 
-  std::vector<std::vector<std::int64_t>> send_entities(ranks.size());
-  std::vector<std::vector<std::int32_t>> send_index(ranks.size());
+  std::vector<std::vector<std::int64_t>> send_entities(all_ranks.size());
+  std::vector<std::vector<std::int32_t>> send_index(all_ranks.size());
 
   // Get all "possibly shared" entities, based on vertex sharing. Send
   // to other processes, and see if we get the same back.
@@ -449,9 +450,9 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           // Only send entities that are not known to be ghosts
           if (ghost_status[id] != 1)
           {
-            auto itr_local = std::ranges::lower_bound(ranks, *it);
-            assert(itr_local != ranks.end() and *itr_local == *it);
-            std::size_t r = std::ranges::distance(ranks.begin(), itr_local);
+            auto itr_local = std::ranges::lower_bound(all_ranks, *it);
+            assert(itr_local != all_ranks.end() and *itr_local == *it);
+            std::size_t r = std::ranges::distance(all_ranks.begin(), itr_local);
 
             // Entity id may be shared with rank r
             send_entities[r].insert(send_entities[r].end(), vglobal.begin(),
@@ -503,14 +504,14 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       send_sizes.push_back(x.size());
       send_buffer.insert(send_buffer.end(), x.begin(), x.end());
     }
-    assert(send_sizes.size() == ranks.size());
+    assert(send_sizes.size() == all_ranks.size());
 
     // Build send displacements
     send_disp = {0};
     std::partial_sum(send_sizes.begin(), send_sizes.end(),
                      std::back_inserter(send_disp));
 
-    recv_sizes.resize(ranks.size());
+    recv_sizes.resize(all_ranks.size());
     send_sizes.reserve(1);
     recv_sizes.reserve(1);
     MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
@@ -566,7 +567,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
         if (std::equal(e.begin(), std::prev(e.end()), entity.begin()))
         {
           auto idx = e.back();
-          shared_entities_data.push_back({idx, ranks[r]});
+          shared_entities_data.push_back({idx, all_ranks[r]});
           shared_entities_data.push_back({idx, mpi_rank});
           recv_index.push_back(idx);
           std::ranges::transform(
@@ -694,7 +695,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           assert(local_index[idx] >= num_local);
           std::int32_t p = local_index[idx] - num_local;
           ghost_indices[p] = gi;
-          ghost_owners[p] = ranks[r];
+          ghost_owners[p] = all_ranks[r];
         }
       }
     }

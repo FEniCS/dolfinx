@@ -406,9 +406,9 @@ std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
   for (std::int64_t v = range_begin; v < range_end; ++v)
   {
     // lexiographic index to spatial index
-    const std::int64_t lin = v % sqxy;
+    const std::int64_t xy_idx = v % sqxy;
     std::array<std::int64_t, 3> idx
-        = {lin % (nx + 1), lin / (nx + 1), v / sqxy};
+        = {xy_idx % (nx + 1), xy_idx / (nx + 1), v / sqxy};
 
     // vertex = p0 + idx * extents (elementwise)
     for (std::size_t i = 0; i < idx.size(); i++)
