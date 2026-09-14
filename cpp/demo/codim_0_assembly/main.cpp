@@ -83,10 +83,10 @@ int main(int argc, char* argv[])
     // `EntityMap` object, which relates entities in the submesh to
     // entities in the original mesh. We will need this to assemble our
     // mixed-domain form.
-    auto submesh_data = [](auto& mesh, int tdim, auto&& subcells)
+    auto submesh_data = [](auto& mesh, int dim, auto&& subcells)
     {
       auto [submesh, emap, v_map, g_map]
-          = mesh::create_submesh(mesh, tdim, subcells);
+          = mesh::create_submesh(mesh, dim, subcells);
       return std::pair(std::make_shared<mesh::Mesh<U>>(std::move(submesh)),
                        std::move(emap));
     };

@@ -216,10 +216,10 @@ int main(int argc, char* argv[])
     int tdim = mesh->topology()->dim();
     int fdim = tdim - 1;
 
-    auto submesh_data = [](auto& mesh, int tdim, auto&& dfacets)
+    auto submesh_data = [](auto& mesh, int dim, auto&& dfacets)
     {
       auto [submesh, e_map, v_map, g_map]
-          = mesh::create_submesh(mesh, tdim, dfacets);
+          = mesh::create_submesh(mesh, dim, dfacets);
       return std::pair(std::make_shared<mesh::Mesh<U>>(std::move(submesh)),
                        std::move(e_map));
     };

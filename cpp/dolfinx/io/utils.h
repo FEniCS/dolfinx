@@ -444,8 +444,8 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
         input_idx_to_vertex[nodes[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
     }
 
-    std::vector<std::int32_t> entities;
-    std::vector<T> data;
+    std::vector<std::int32_t> local_entities;
+    std::vector<T> local_data;
     std::vector<std::int32_t> entity(entities_data.extent(1));
     for (std::size_t e = 0; e < entities_data.extent(0); ++e)
     {
@@ -466,12 +466,13 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
 
       if (entity_found)
       {
-        entities.insert(entities.end(), entity.begin(), entity.end());
-        data.push_back(values[e]);
+        local_entities.insert(local_entities.end(), entity.begin(),
+                              entity.end());
+        local_data.push_back(values[e]);
       }
     }
 
-    return std::pair(std::move(entities), std::move(data));
+    return std::pair(std::move(local_entities), std::move(local_data));
   };
 
   MPI_Type_free(&compound_type);
