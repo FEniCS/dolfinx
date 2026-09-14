@@ -70,7 +70,7 @@ class DofMap:
         """Layout of dofs on an element."""
         return ElementDofLayout(self._cpp_object.dof_layout)
 
-    @property
+    @cached_property
     def index_map(self) -> IndexMap:
         """Index map describing parallel distribution of the dofmap."""
         return IndexMap(self._cpp_object.index_map)

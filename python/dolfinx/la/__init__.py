@@ -87,7 +87,7 @@ class Vector(Generic[_T]):
         if (petsc_x := self.__dict__.get("petsc_vec")) is not None:
             petsc_x.destroy()
 
-    @property
+    @functools.cached_property
     def index_map(self) -> IndexMap:
         """Index map that describes size and parallel distribution."""
         return IndexMap(self._cpp_object.index_map)
