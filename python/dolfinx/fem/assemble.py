@@ -23,6 +23,7 @@ from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.forms import Form
 from dolfinx.fem.function import FunctionSpace
 from dolfinx.fem.utils import create_sparsity_pattern
+from dolfinx.typing import Scalar
 
 
 @typing.overload
@@ -370,7 +371,11 @@ def _assemble_matrix_csr(
     return A
 
 
-def set_diagonal(A: la.MatrixCSR, rows: npt.NDArray[np.int32], diagonal: float = 1.0) -> None:
+def set_diagonal(
+    A: la.MatrixCSR[Scalar],
+    rows: npt.NDArray[np.int32],
+    diagonal: Scalar | float | complex = 1.0,
+) -> None:
     """Set a value on the diagonal for given rows of a matrix.
 
     Args:
@@ -382,10 +387,10 @@ def set_diagonal(A: la.MatrixCSR, rows: npt.NDArray[np.int32], diagonal: float =
 
 
 def set_bc_diagonal(
-    A: la.MatrixCSR,
+    A: la.MatrixCSR[Scalar],
     V: FunctionSpace,
-    bcs: Sequence[DirichletBC] | None,
-    diagonal: float = 1.0,
+    bcs: Sequence[DirichletBC[Scalar]] | None,
+    diagonal: Scalar | float | complex = 1.0,
 ) -> None:
     """Set a value on the diagonal for Dirichlet boundary condition rows.
 

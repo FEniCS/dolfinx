@@ -1724,7 +1724,7 @@ def entities_to_geometry(
     return _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, permute)
 
 
-def cell_normals(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[np.floating]:
+def cell_normals(msh: Mesh[Real], dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[Real]:
     """Compute the normal to a set of mesh entities.
 
     Args:
@@ -1735,7 +1735,7 @@ def cell_normals(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]) -> npt.ND
     Returns:
         Normal vectors, ``shape=(len(entities), 3)``.
     """
-    return _cpp.mesh.cell_normals(msh._cpp_object, dim, entities)
+    return _cpp.mesh.cell_normals(msh._cpp_object, dim, entities)  # type: ignore[return-value]
 
 
 def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:
