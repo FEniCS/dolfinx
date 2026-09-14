@@ -120,9 +120,9 @@ class Form(typing.Generic[Scalar]):
         return self._cpp_object.rank
 
     @property
-    def function_spaces(self) -> list[FunctionSpace]:
+    def function_spaces(self) -> tuple[FunctionSpace, ...]:
         """Function spaces on which this form is defined."""
-        return list(self._spaces)
+        return self._spaces
 
     @property
     def dtype(self) -> np.dtype:

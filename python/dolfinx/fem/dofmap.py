@@ -7,6 +7,7 @@
 
 import typing
 from collections.abc import Sequence
+from functools import cached_property
 
 from mpi4py.MPI import Comm
 
@@ -63,7 +64,7 @@ class DofMap:
         """Block size of the dofmap."""
         return self._cpp_object.bs
 
-    @property
+    @cached_property
     def dof_layout(self) -> ElementDofLayout:
         """Layout of dofs on an element."""
         return ElementDofLayout(self._cpp_object.dof_layout)

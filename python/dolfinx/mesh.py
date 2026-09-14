@@ -11,6 +11,7 @@ from __future__ import annotations
 import typing
 import warnings
 from collections.abc import Callable, Sequence
+from functools import cached_property
 
 from mpi4py import MPI as _MPI
 
@@ -483,10 +484,10 @@ class Geometry(typing.Generic[Real]):
         """Hash of the wrapped geometry."""
         return hash(self._cpp_object)
 
-    @property
-    def cmaps(self) -> list[_CoordinateElement]:
-        """The coordinate maps."""
-        return [_CoordinateElement(cm) for cm in self._cpp_object.cmaps]
+    @cached_property
+    def cmaps(self) -> tuple[_CoordinateElement, ...]:
+        """The coordinate maps, one per cell type."""
+        return tuple(_CoordinateElement(cm) for cm in self._cpp_object.cmaps)
 
     @property
     def cmap(self) -> _CoordinateElement:

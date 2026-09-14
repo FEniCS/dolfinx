@@ -61,8 +61,8 @@ def test_extract_forms():
     a00 = a[0][0]
     assert a00 is not None
     spaces = a00.function_spaces
-    spaces.clear()
-    assert a00.function_spaces == [V0, V0]
+    assert isinstance(spaces, tuple)
+    assert spaces == (V0, V0)
 
     a = form([[inner(u0, v0) * dx, inner(u1, v0) * dx], [inner(u2, v1) * dx, inner(u3, v1) * dx]])
     Vr = extract_function_spaces(a, 0)
