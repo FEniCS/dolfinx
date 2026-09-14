@@ -29,6 +29,6 @@ Note that Developer mode is significantly stricter than CMake's default Debug mo
 
        pyrefly check
 
-   Run this command from the `python` directory. The `pyrefly.toml` configuration
+   Run this command from the `python` directory. The `pyproject.toml` configuration
    checks `dolfinx`, `demo`, and `test`, using the built/installed package to resolve
    the C++ bindings.

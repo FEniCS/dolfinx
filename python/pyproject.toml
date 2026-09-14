@@ -94,6 +94,35 @@ cmake.build-type = "Release"
 # Set to FALSE to disable automatic RPATH adjustments
 DOLFINX_INSTALL_RPATH_USE_LINK_PATH = "TRUE"
 
+[tool.pyrefly]
+project-includes = ["dolfinx", "demo", "test"]
+baseline = "pyrefly-baseline.json"
+infer-return-types = "annotated"
+replace-imports-with-any = [
+      "basix._basixcpp",
+      "gmsh",
+      "llvmlite",
+      "llvmlite.*",
+      "pyamg",
+      "slepc4py",
+      "slepc4py.*",
+      "networkx",
+      "pyvista",
+      "pyvista.*",
+      "pyvistaqt",
+      "cffi",
+      "cffi.*",
+      "_cffi_backend",
+]
+ignore-missing-imports = ["ufl", "ufl.*", "ffcx", "ffcx.*", "scipy.*", "_cffi_kernelA"]
+
+[[tool.pyrefly.sub-config]]
+matches = "test/**"
+check-unannotated-defs = false
+
+[tool.pyrefly.sub-config.errors]
+unbound-name = "ignore"
+
 [tool.pytest]
 junit_family = "xunit2"
 markers = [
