@@ -855,13 +855,9 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
         return DofMap(self._cpp_object.dofmap)
 
     @cached_property
-    def _dofmaps(self) -> tuple[DofMap, ...]:
-        return tuple(DofMap(map) for map in self._cpp_object.dofmaps)
-
-    @property
-    def dofmaps(self) -> list[DofMap]:
+    def dofmaps(self) -> tuple[DofMap, ...]:
         """The geometry dofmaps, one per cell type."""
-        return list(self._dofmaps)
+        return tuple(DofMap(map) for map in self._cpp_object.dofmaps)
 
     @property
     def mesh(self) -> Mesh[Real]:

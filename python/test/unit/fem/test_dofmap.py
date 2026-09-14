@@ -112,13 +112,12 @@ def test_entity_dofs(mesh):
         assert all(d == cd for d, cd in zip(dofs, cdofs, strict=True))
 
 
-def test_dofmaps_list_is_independent(mesh):
-    """Test that mutating a returned dofmap list does not modify the space."""
+def test_dofmaps_is_immutable(mesh):
+    """Test that the returned dofmaps cannot be used to modify the space."""
     V = functionspace(mesh, ("Lagrange", 1))
     dofmaps = V.dofmaps
-    dofmap = dofmaps[0]
-    dofmaps.clear()
-    assert V.dofmaps[0] is dofmap
+    assert isinstance(dofmaps, tuple)
+    assert V.dofmaps[0] is dofmaps[0]
 
 
 @pytest.mark.skip
