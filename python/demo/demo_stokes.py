@@ -104,6 +104,7 @@ from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, la
 from dolfinx.fem import (
     Constant,
+    Form,
     Function,
     bcs_by_block,
     dirichletbc,
@@ -194,20 +195,25 @@ bcs = [bc0, bc1]
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
 f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore[operator]
 
-a_ufl = [
+a_ufl: list[list[ufl.Form | None]] = [
     [ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, ufl.inner(p, ufl.div(v)) * ufl.dx],
     [ufl.inner(ufl.div(u), q) * ufl.dx, None],
 ]
-a = form(a_ufl)
-L_ufl = [ufl.inner(f, v) * ufl.dx, ufl.ZeroBaseForm((q,))]
-L = form(L_ufl)
+a: list[list[Form | None]] = form(a_ufl)  # type: ignore[assignment]
+L_ufl: list[ufl.Form] = [  # type: ignore[list-item]
+    ufl.inner(f, v) * ufl.dx,
+    ufl.ZeroBaseForm((q,)),
+]
+L: list[Form] = form(L_ufl)  # type: ignore[assignment]
 # -
 
 # A block-diagonal preconditioner will be used with the iterative
 # solvers for this problem:
 
-a_p11 = form(ufl.inner(p, q) * ufl.dx)
-a_p = [[a[0][0], None], [None, a_p11]]
+a_p11_ufl = ufl.inner(p, q) * ufl.dx
+a_p_ufl: list[list[ufl.Form | None]] = [[a_ufl[0][0], None], [None, a_p11_ufl]]
+a_p11 = form(a_p11_ufl)
+a_p: list[list[Form | None]] = form(a_p_ufl)  # type: ignore[assignment]
 
 
 # ### High-level nested matrix solver
@@ -228,7 +234,7 @@ def nested_iterative_solver_high_level():
         L_ufl,
         kind="nest",
         bcs=bcs,
-        P=a_p,
+        P=a_p_ufl,
         petsc_options_prefix="demo_stokes__nested_iterative_solver_high_level_",
         petsc_options={
             "ksp_type": "minres",
@@ -610,7 +616,7 @@ def mixed_direct():
 
     # Set Dirichlet boundary condition values in the RHS
     for bc in bcs:
-        bc.set(b.array_w)  # type: ignore[arg-type]
+        bc.set(b.array_w)
 
     # Create and configure solver
     ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]

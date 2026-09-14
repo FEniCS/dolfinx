@@ -273,7 +273,7 @@ def test_cffi_assembly():
         ffibuilder.compile(verbose=True)
 
     mesh.comm.Barrier()
-    from _cffi_kernelA import ffi, lib  # type: ignore[import-not-found]
+    from _cffi_kernelA import ffi, lib
 
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
 

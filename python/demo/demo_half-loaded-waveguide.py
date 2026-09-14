@@ -41,7 +41,6 @@
 
 # +
 import sys
-import typing
 from pathlib import Path
 
 from mpi4py import MPI
@@ -63,11 +62,9 @@ from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices, loc
 
 try:
     import pyvista
-
-    have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
-    have_pyvista = False
+    pyvista = None
 
 if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
     print("This solver fails with PETSc and 64-bit integers because of memory errors in MUMPS.")
@@ -77,11 +74,9 @@ if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
 
 try:
     from dolfinx.io import VTXWriter
-
-    has_vtx = True
 except ImportError:
     print("VTXWriter not available, solution will not be saved.")
-    has_vtx = False
+    VTXWriter = None
 # -
 
 # ## Analytical solutions for the half-loaded waveguide
@@ -136,14 +131,12 @@ def TMx_condition(
     kx_d: complex, kx_v: complex, eps_d: complex, eps_v: complex, d: float, h: float
 ) -> complex:
     """Transcendental equation for TMx modes."""
-    return typing.cast(
-        complex, kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d))
-    )
+    return complex(kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d)))
 
 
 def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> complex:
     """Transcendental equation for TEx modes."""
-    return typing.cast(complex, kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d)))
+    return complex(kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d)))
 
 
 # Then, we can define the `verify_mode` function, to check whether a
@@ -476,7 +469,7 @@ for i, kz in vals:
         Et_dg = fem.Function(V_dg)
         Et_dg.interpolate(eth)
 
-        if has_vtx:
+        if VTXWriter is not None:
             # Save solutions
             with VTXWriter(msh.comm, out_folder / f"Et_{i}.bp", Et_dg) as f:
                 f.write(0.0)
@@ -485,7 +478,7 @@ for i, kz in vals:
                 f.write(0.0)
 
         # Visualize solutions with Pyvista
-        if have_pyvista:
+        if pyvista is not None:
             V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
             Et_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
@@ -504,7 +497,7 @@ for i, kz in vals:
             else:
                 plotter.show()
 
-        if have_pyvista:
+        if pyvista is not None:
             V_lagr, lagr_dofs = V.sub(1).collapse()
             V_cells, V_types, V_x = plot.vtk_mesh(V_lagr)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)

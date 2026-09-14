@@ -52,11 +52,9 @@ from dolfinx.fem.petsc import LinearProblem
 
 try:
     import pyvista
-
-    have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
-    have_pyvista = False
+    pyvista = None
 
 if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
     print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
@@ -454,7 +452,7 @@ MPI.COMM_WORLD.barrier()
 # The mesh is visualized with [PyVista](https://docs.pyvista.org/)
 out_folder = Path("out_scattering_boundary_conditions")
 out_folder.mkdir(parents=True, exist_ok=True)
-if have_pyvista:
+if pyvista is not None:
     topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
@@ -668,7 +666,7 @@ else:
 # https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_interpolation-io.html)
 # DOLFINx demo.
 
-if have_pyvista:
+if pyvista is not None:
     V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)

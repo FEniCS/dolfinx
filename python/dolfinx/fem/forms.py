@@ -189,6 +189,9 @@ def get_integration_domains(
         if not isinstance(subdomain, list):
             topology = subdomain.topology
             tdim = topology.dim
+            # Only assigned when needed below, but declared unconditionally
+            # so the type checker can see it is always bound.
+            exterior_facets = np.empty(0, dtype=np.int32)
             if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
                 topology.create_connectivity(tdim - 1, tdim)
                 topology.create_connectivity(tdim, tdim - 1)
