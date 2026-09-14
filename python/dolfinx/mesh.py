@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import typing
 import warnings
-import weakref
 from collections.abc import Callable, Sequence
 from functools import cached_property
 
@@ -542,33 +541,6 @@ class Geometry(typing.Generic[Real]):
         return self._cpp_object.x  # type: ignore[return-value]
 
 
-class _MeshCargo:
-    """Cycle-free UFL cargo for a Python mesh."""
-
-    def __init__(self, mesh: Mesh, domain: ufl.Mesh):
-        self._cpp_object = mesh._cpp_object
-        self._mesh_ref = weakref.ref(mesh)
-        self._domain_ref = weakref.ref(domain)
-
-    def get_mesh(self) -> Mesh:
-        """Return the Python mesh, rebuilding its wrapper if needed."""
-        if (mesh := self._mesh_ref()) is not None:
-            return mesh
-
-        # The cargo holds the C++ mesh, so a wrapper can always be
-        # rebuilt. Re-attach it to the UFL domain if that is still alive.
-        return Mesh(self._cpp_object, self._domain_ref())
-
-    def __getattr__(self, name: str) -> typing.Any:
-        """Forward legacy UFL cargo access to the Python mesh."""
-        # Private and dunder lookups are not forwarded: __getattr__ is
-        # called before __init__ has set _mesh_ref (copy, pickle), and
-        # get_mesh would then recurse on the missing attribute.
-        if name.startswith("_"):
-            raise AttributeError(name)
-        return getattr(self.get_mesh(), name)
-
-
 class Mesh(typing.Generic[Real]):
     """A mesh."""
 
@@ -599,11 +571,7 @@ class Mesh(typing.Generic[Real]):
         self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
-            cargo = self._ufl_domain.ufl_cargo()
-            if isinstance(cargo, _MeshCargo) and cargo._cpp_object is msh:
-                cargo._mesh_ref = weakref.ref(self)
-            else:
-                self._ufl_domain._ufl_cargo = _MeshCargo(self, self._ufl_domain)
+            self._ufl_domain._ufl_cargo = self._cpp_object
 
     @property
     def comm(self) -> _MPI.Comm:
@@ -672,8 +640,6 @@ def _mesh_from_ufl_domain(domain: ufl.Mesh) -> Mesh:
     cargo = domain.ufl_cargo()
     if isinstance(cargo, Mesh):
         return cargo
-    if isinstance(cargo, _MeshCargo):
-        return cargo.get_mesh()
     if isinstance(cargo, _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64):
         return Mesh(cargo, domain)
     raise RuntimeError("Expecting to find a Mesh in the UFL domain.")

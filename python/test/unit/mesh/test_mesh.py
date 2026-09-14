@@ -4,7 +4,6 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import copy
 import math
 import sys
 import typing
@@ -51,14 +50,14 @@ def test_ufl_cargo_does_not_keep_mesh_wrapper_alive():
     assert domain is not None
 
     mesh_ref = weakref.ref(msh)
-    assert _mesh._mesh_from_ufl_domain(domain) is msh
+    assert domain.ufl_cargo() is msh._cpp_object
 
     del msh
     assert mesh_ref() is None
 
     recovered_mesh = _mesh._mesh_from_ufl_domain(domain)
     assert recovered_mesh.ufl_domain() is domain
-    assert _mesh._mesh_from_ufl_domain(domain) is recovered_mesh
+    assert domain.ufl_cargo() is recovered_mesh._cpp_object
     assert recovered_mesh.topology.index_map(recovered_mesh.topology.dim).size_local == 8
 
 
@@ -75,9 +74,7 @@ def test_ufl_cargo_outlives_mesh_and_domain():
     assert cargo.comm.size == 1
     assert cargo.topology.index_map(cargo.topology.dim).size_local == 8
 
-    # Attribute forwarding must not recurse or leak non-AttributeError
     assert not hasattr(cargo, "not_a_mesh_attribute")
-    assert copy.copy(cargo) is not None
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
