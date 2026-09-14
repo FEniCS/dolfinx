@@ -97,7 +97,13 @@ class IndexMap:
         self._cpp_object = imap
 
     def __eq__(self, other: object) -> bool:
-        """Check that two wrappers hold the same index map."""
+        """Check that two wrappers hold the same underlying C++ index map.
+
+        Note:
+            This is identity of the wrapped object, not equivalence of
+            the distribution it describes. Two separately constructed
+            index maps do not compare equal, even if identical.
+        """
         if not isinstance(other, IndexMap):
             return NotImplemented
         return self._cpp_object == other._cpp_object
@@ -381,6 +387,12 @@ def index_map(
     tag: int = _CONSENSUS_NBX_TAG,
 ) -> IndexMap:
     """Create an index map.
+
+    Note:
+        Collective. ``ghosts`` must be ``None`` on every process or
+        given on every process, and likewise for ``dest_src``. This is
+        a precondition and is not checked, since checking it would
+        require communication on every call.
 
     Args:
         comm: MPI communicator to distribute the indices over.

@@ -89,7 +89,12 @@ class Vector(Generic[_T]):
 
     @functools.cached_property
     def index_map(self) -> IndexMap:
-        """Index map that describes size and parallel distribution."""
+        """Index map that describes size and parallel distribution.
+
+        Note:
+            This is a cached property. The wrapper is built on first
+            access and the same object is returned thereafter.
+        """
         return IndexMap(self._cpp_object.index_map)
 
     @property
@@ -99,7 +104,12 @@ class Vector(Generic[_T]):
 
     @functools.cached_property
     def scatterer(self) -> Scatterer:
-        """Scatterer used for ghost communication."""
+        """Scatterer used for ghost communication.
+
+        Note:
+            This is a cached property. The wrapper is built on first
+            access and the same object is returned thereafter.
+        """
         return Scatterer(self._cpp_object.scatterer)
 
     @property

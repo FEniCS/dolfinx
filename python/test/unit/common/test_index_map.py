@@ -287,6 +287,9 @@ def test_index_map_equality():
     V = functionspace(msh, ("Lagrange", 1))
     imap = V.dofmap.index_map
     assert imap == V.dofmap.index_map
+
+    # Building a set exercises __hash__: equal wrappers must hash equal
+    # and collapse to a single entry.
     assert len({imap, V.dofmap.index_map}) == 1
 
     # A distinct C++ index map, even with the same layout, is not equal
