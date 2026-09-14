@@ -38,3 +38,9 @@ def test_equality_is_unhashable(dtype):
     assert adj0 == adj1
     with pytest.raises(TypeError):
         hash(adj0)
+
+    # The wrapped C++ class also compares structurally, so it must be
+    # unhashable too
+    assert adj0._cpp_object == adj1._cpp_object
+    with pytest.raises(TypeError):
+        hash(adj0._cpp_object)

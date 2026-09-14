@@ -132,6 +132,11 @@ void declare_adjacency_list_common(
                                 other);
            })
       .def("__len__", &dolfinx::graph::AdjacencyList<T, U>::num_nodes);
+
+  // __eq__ is structural, so the inherited identity hash would break the
+  // hash invariant. Make the type unhashable, as Python does for a class
+  // that defines __eq__ without __hash__.
+  cls.attr("__hash__") = nb::none();
 }
 
 /// Declare AdjacencyList class with __init__ methods for a given type

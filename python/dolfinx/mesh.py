@@ -555,12 +555,17 @@ class _MeshCargo:
         if (mesh := self._mesh_ref()) is not None:
             return mesh
 
-        if (domain := self._domain_ref()) is None:
-            raise RuntimeError("The UFL domain associated with the mesh no longer exists.")
-        return Mesh(self._cpp_object, domain)
+        # The cargo holds the C++ mesh, so a wrapper can always be
+        # rebuilt. Re-attach it to the UFL domain if that is still alive.
+        return Mesh(self._cpp_object, self._domain_ref())
 
     def __getattr__(self, name: str) -> typing.Any:
         """Forward legacy UFL cargo access to the Python mesh."""
+        # Private and dunder lookups are not forwarded: __getattr__ is
+        # called before __init__ has set _mesh_ref (copy, pickle), and
+        # get_mesh would then recurse on the missing attribute.
+        if name.startswith("_"):
+            raise AttributeError(name)
         return getattr(self.get_mesh(), name)
 
 

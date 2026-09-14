@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import copy
 import math
 import sys
 import typing
@@ -59,6 +60,24 @@ def test_ufl_cargo_does_not_keep_mesh_wrapper_alive():
     assert recovered_mesh.ufl_domain() is domain
     assert _mesh._mesh_from_ufl_domain(domain) is recovered_mesh
     assert recovered_mesh.topology.index_map(recovered_mesh.topology.dim).size_local == 8
+
+
+def test_ufl_cargo_outlives_mesh_and_domain():
+    """Test that cargo attribute access works once the wrappers are gone."""
+    msh = create_unit_square(MPI.COMM_SELF, 2, 2)
+    domain = msh.ufl_domain()
+    assert domain is not None
+    cargo = domain.ufl_cargo()
+
+    # The cargo holds the C++ mesh, so it stays usable after both the
+    # Python mesh wrapper and the UFL domain are released
+    del msh, domain
+    assert cargo.comm.size == 1
+    assert cargo.topology.index_map(cargo.topology.dim).size_local == 8
+
+    # Attribute forwarding must not recurse or leak non-AttributeError
+    assert not hasattr(cargo, "not_a_mesh_attribute")
+    assert copy.copy(cargo) is not None
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
