@@ -112,15 +112,16 @@ cells_np = [np.array(c) for c in cells]
 geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
+hexahedron_cpp: _cpp.fem.CoordinateElement_float64 = (  # type: ignore[assignment]
+    hexahedron._cpp_object
+)
+prism_cpp: _cpp.fem.CoordinateElement_float64 = prism._cpp_object  # type: ignore[assignment]
 
 part = _cpp.graph.partitioner()
 mesh = create_mesh(
     MPI.COMM_WORLD,
     cells_np,
-    [
-        hexahedron._cpp_object,  # type: ignore[list-item]
-        prism._cpp_object,  # type: ignore[list-item]
-    ],
+    [hexahedron_cpp, prism_cpp],
     geomx,
     part,
     GhostMode.none,

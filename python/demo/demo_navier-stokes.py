@@ -337,9 +337,11 @@ solver_options = {
 u_h = fem.Function(V)
 p_h = fem.Function(Q)
 p_h.name = "p"
+a_blocks: list[list[ufl.Form | None]] = ufl.extract_blocks(a)  # type: ignore[assignment]
+L_blocks: list[ufl.Form] = ufl.extract_blocks(L)  # type: ignore[assignment]
 stokes_problem = LinearProblem(
-    ufl.extract_blocks(a),  # type: ignore[arg-type]
-    ufl.extract_blocks(L),  # type: ignore[arg-type]
+    a_blocks,
+    L_blocks,
     u=[u_h, p_h],
     bcs=bcs,
     kind="mpi",
@@ -404,9 +406,11 @@ L += (
     - ufl.inner(ufl.dot(u_n, n) * (1 - lmbda) * u_D, v) * ufl.ds
 )
 
+a_blocks = ufl.extract_blocks(a)  # type: ignore[assignment]
+L_blocks = ufl.extract_blocks(L)  # type: ignore[assignment]
 navier_stokes_problem = LinearProblem(
-    ufl.extract_blocks(a),  # type: ignore[arg-type]
-    ufl.extract_blocks(L),  # type: ignore[arg-type]
+    a_blocks,
+    L_blocks,
     u=[u_h, p_h],
     bcs=bcs,
     kind="mpi",
