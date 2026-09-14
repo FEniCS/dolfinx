@@ -338,6 +338,91 @@ void declare_function_space(nb::module_& m, std::string type)
               }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
+        .def(
+            "dof_transformation_apply",
+            [](const dolfinx::fem::FiniteElement<T>& self, int ttype,
+               nb::ndarray<T, nb::ndim<1>, nb::c_contig> data,
+               nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
+                   cell_info,
+               std::int32_t cell, int block_size, bool scalar_element)
+            {
+              auto fn = self.template dof_transformation_fn<T>(
+                  static_cast<dolfinx::fem::doftransform>(ttype),
+                  scalar_element);
+              if (fn)
+              {
+                fn(std::span<T>(data.data(), data.size()),
+                   std::span<const std::uint32_t>(cell_info.data(),
+                                                  cell_info.size()),
+                   cell, block_size);
+              }
+            },
+            nb::arg("ttype"), nb::arg("data"), nb::arg("cell_info"),
+            nb::arg("cell"), nb::arg("block_size"), nb::arg("scalar_element"))
+        .def(
+            "dof_transformation_apply",
+            [](const dolfinx::fem::FiniteElement<T>& self, int ttype,
+               nb::ndarray<std::complex<T>, nb::ndim<1>, nb::c_contig> data,
+               nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
+                   cell_info,
+               std::int32_t cell, int block_size, bool scalar_element)
+            {
+              auto fn = self.template dof_transformation_fn<std::complex<T>>(
+                  static_cast<dolfinx::fem::doftransform>(ttype),
+                  scalar_element);
+              if (fn)
+              {
+                fn(std::span<std::complex<T>>(data.data(), data.size()),
+                   std::span<const std::uint32_t>(cell_info.data(),
+                                                  cell_info.size()),
+                   cell, block_size);
+              }
+            },
+            nb::arg("ttype"), nb::arg("data"), nb::arg("cell_info"),
+            nb::arg("cell"), nb::arg("block_size"), nb::arg("scalar_element"))
+        .def(
+            "dof_transformation_right_apply",
+            [](const dolfinx::fem::FiniteElement<T>& self, int ttype,
+               nb::ndarray<T, nb::ndim<1>, nb::c_contig> data,
+               nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
+                   cell_info,
+               std::int32_t cell, int block_size, bool scalar_element)
+            {
+              auto fn = self.template dof_transformation_right_fn<T>(
+                  static_cast<dolfinx::fem::doftransform>(ttype),
+                  scalar_element);
+              if (fn)
+              {
+                fn(std::span<T>(data.data(), data.size()),
+                   std::span<const std::uint32_t>(cell_info.data(),
+                                                  cell_info.size()),
+                   cell, block_size);
+              }
+            },
+            nb::arg("ttype"), nb::arg("data"), nb::arg("cell_info"),
+            nb::arg("cell"), nb::arg("block_size"), nb::arg("scalar_element"))
+        .def(
+            "dof_transformation_right_apply",
+            [](const dolfinx::fem::FiniteElement<T>& self, int ttype,
+               nb::ndarray<std::complex<T>, nb::ndim<1>, nb::c_contig> data,
+               nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
+                   cell_info,
+               std::int32_t cell, int block_size, bool scalar_element)
+            {
+              auto fn
+                  = self.template dof_transformation_right_fn<std::complex<T>>(
+                      static_cast<dolfinx::fem::doftransform>(ttype),
+                      scalar_element);
+              if (fn)
+              {
+                fn(std::span<std::complex<T>>(data.data(), data.size()),
+                   std::span<const std::uint32_t>(cell_info.data(),
+                                                  cell_info.size()),
+                   cell, block_size);
+              }
+            },
+            nb::arg("ttype"), nb::arg("data"), nb::arg("cell_info"),
+            nb::arg("cell"), nb::arg("block_size"), nb::arg("scalar_element"))
         .def_prop_ro("needs_dof_transformations",
                      &dolfinx::fem::FiniteElement<T>::needs_dof_transformations)
         .def_prop_ro("signature", &dolfinx::fem::FiniteElement<T>::signature);

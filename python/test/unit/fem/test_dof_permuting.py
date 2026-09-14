@@ -13,8 +13,10 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import basix
 import ufl
 from basix.ufl import element
+from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.fem import Function, assemble_scalar, form, functionspace
 from dolfinx.mesh import create_mesh, create_unit_cube
@@ -450,3 +452,60 @@ def test_permutation_wrappers(space_order, data_types):
     V.element.Tt_inv_apply(arr.reshape(-1), cell_perm, 1)
     eps = 100 * np.finfo(s_type).eps
     np.testing.assert_allclose(org_data.reshape(-1), arr.reshape(-1), atol=eps)
+
+
+@pytest.mark.parametrize("ttype", [0, 1, 2, 3])  # doftransform: standard/transpose/inverse/...
+def test_mixed_element_dof_transformation_right(ttype):
+    """Check a mixed element's right (post-)transformation is row-consistent.
+
+    Each row of (block_size, ndofs) data must be transformed over its own
+    column range, not a single contiguous span truncated by an earlier
+    sub-element's offset. See
+    ``dolfinx::fem::FiniteElement::dof_transformation_right_fn``.
+    """
+    # P1 Lagrange, DOF transformations are the identity: its only role
+    # here is to shift the N1curl sub-element to a non-zero offset.
+    lagrange = basix.create_element(
+        basix.ElementFamily.P,
+        basix.CellType.triangle,
+        1,
+        basix.LagrangeVariant.gll_isaac,
+        discontinuous=False,
+    )
+    # Nedelec (first kind), degree 2: two DOFs per edge, so the DOF
+    # transformation is non-trivial (not merely a permutation).
+    nedelec = basix.create_element(
+        basix.ElementFamily.N1E,
+        basix.CellType.triangle,
+        2,
+        basix.LagrangeVariant.legendre,
+        discontinuous=False,
+    )
+
+    sub_lagrange = _cpp.fem.FiniteElement_float64(lagrange._e, None, False)
+    sub_nedelec = _cpp.fem.FiniteElement_float64(nedelec._e, None, False)
+
+    # The transforming sub-element is placed second, so it sits at a
+    # non-zero DOF offset within the mixed element.
+    e = _cpp.fem.FiniteElement_float64([sub_lagrange, sub_nedelec])
+    assert e.needs_dof_transformations
+
+    ncols = e.space_dimension
+    nrows = 3
+    # Cell permutation with edges 0 and 1 reflected.
+    cell_info = np.array([0b011], dtype=np.uint32)
+
+    A = np.arange(1.0, nrows * ncols + 1.0, dtype=np.float64)
+
+    # Reference: apply row-by-row, exclusively through the block_size == 1
+    # path.
+    expected = A.copy()
+    for i in range(nrows):
+        e.dof_transformation_right_apply(
+            ttype, expected[i * ncols : (i + 1) * ncols], cell_info, 0, 1, False
+        )
+
+    B = A.copy()
+    e.dof_transformation_right_apply(ttype, B, cell_info, 0, nrows, False)
+
+    np.testing.assert_array_equal(B, expected)

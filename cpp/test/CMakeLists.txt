@@ -43,7 +43,6 @@ add_executable(
   common/sub_systems_manager.cpp
   common/index_map.cpp
   common/sort.cpp
-  fem/finite_element.cpp
   fem/form.cpp
   fem/functionspace.cpp
   mesh/branching_manifold.cpp
