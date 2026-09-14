@@ -186,7 +186,8 @@ convention = "google"
       "D103", # undocumented-public-function
       "D205", # missing-blank-line-after-summary
 ]
-"conf.py" = ["D100", "D103", "D205"]
+# cpp/doc/source/conf.py reads dolfinx.cpp.__version__ for the C++ docs version.
+"conf.py" = ["D100", "D103", "D205", "TID251"]
 
 # dolfinx.cpp is the nanobind wrapping layer itself.
 "dolfinx/**/*.py" = ["TID251"]
