@@ -1226,7 +1226,7 @@ def create_mesh(
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
         comm=comm,
         cells=cells,
-        element=cmap._cpp_object,  # type: ignore[arg-type]
+        element=cmap._cpp_object,
         x=x,
         partitioner=partitioner_fn,
         ghost_mode=ghost_mode,

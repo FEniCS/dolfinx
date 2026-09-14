@@ -333,6 +333,9 @@ def model_to_mesh(
         creation for efficient access.
     """
     valid_mesh = None
+    x = np.empty((0, gdim), dtype=dtype)
+    topologies: dict[int, TopologyDict] = {}
+    physical_groups: dict[str, PhysicalGroup] = {}
     if comm.rank == rank:
         if model is None:
             raise ValueError("Gmsh model is None on rank responsible for mesh creation.")
@@ -428,8 +431,6 @@ def model_to_mesh(
 
     # Create a distributed mesh, where mesh nodes are only distributed from
     # the input rank
-    if comm.rank != rank:
-        x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
     if len(ufl_domains) > 1:
         cmaps = []
         for ufl_domain in ufl_domains:
@@ -447,7 +448,7 @@ def model_to_mesh(
         cpp_mesh = _cpp.mesh.create_mesh(
             comm,
             cell_connectivities,
-            cmaps,  # type: ignore[arg-type]
+            cmaps,
             x[:, :gdim].astype(dtype).copy(),
             partitioner,
             ghost_mode,

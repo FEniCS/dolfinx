@@ -35,8 +35,9 @@
 
 # +
 import sys
-import typing
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -70,7 +71,7 @@ from ffcx.codegeneration.numba.utils import ufcx_kernel_signature as ufcx_signat
 
 # `empty_void_pointer`'s stub signature is numba's `@intrinsic`
 # `typingctx`/`context` arguments, not its real, zero-argument call.
-empty_void_pointer = typing.cast(typing.Callable[[], typing.Any], _empty_void_pointer)
+empty_void_pointer: Callable[[], Any] = _empty_void_pointer  # type: ignore[assignment]
 
 rtype = default_real_type
 dtype = default_scalar_type
@@ -269,7 +270,7 @@ A_cond.assemble()
 b = assemble_vector(b1)
 apply_lifting(b, [a_cond], bcs=[[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
-bc.set(b.array_w)  # type: ignore[arg-type]
+bc.set(b.array_w)
 
 # We use a {py:class}`PETSc.KSP <petsc4py.PETSc.KSP>` solver to solve the
 # condensed linear system. The solution is stored in a

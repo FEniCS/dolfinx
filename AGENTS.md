@@ -224,9 +224,9 @@ disclosure process.
 - **Docstrings**: Google style (`Args:`, `Returns:`, etc.), module and
   public API documented; test/demo files are exempt from some
   pydocstyle rules (see `per-file-ignores`).
-- **Type hints**: required on the public API; checked with `mypy`
-  (`python/pyproject.toml` `[tool.mypy]` config, run over `dolfinx`,
-  `test`, and `demo`). PETSc-related type checking is disabled on a
+- **Type hints**: required on the public API; checked with `pyrefly`
+  (`python/pyrefly.toml`, run over `dolfinx`, `test`, and `demo`).
+  PETSc-related type checking is disabled on a
   per-line basis until upstream petsc4py type work is finished.
 - **File header**: same SPDX/copyright block as C++, adapted to `#`
   comments, followed by a module docstring.

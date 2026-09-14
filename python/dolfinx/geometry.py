@@ -216,10 +216,10 @@ def compute_closest_entity(
 
     """
     return _cpp.geometry.compute_closest_entity(
-        tree._cpp_object,  # type: ignore[arg-type]
-        midpoint_tree._cpp_object,  # type: ignore[arg-type]
-        mesh._cpp_object,  # type: ignore[arg-type]
-        points,  # type: ignore[arg-type]
+        tree._cpp_object,
+        midpoint_tree._cpp_object,
+        mesh._cpp_object,
+        points,
     )
 
 
@@ -384,8 +384,8 @@ def determine_point_ownership(
     """
     return PointOwnershipData(
         _cpp.geometry.determine_point_ownership(
-            mesh._cpp_object,  # type: ignore[arg-type]
-            points,  # type: ignore[arg-type]
+            mesh._cpp_object,
+            points,
             padding,
             cells,
             find_closest_cell,

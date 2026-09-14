@@ -27,7 +27,6 @@
 
 # +
 import sys
-import typing
 
 from mpi4py import MPI
 
@@ -35,6 +34,7 @@ import numpy as np
 from scipy.sparse.linalg import spsolve
 
 import basix
+import basix._basixcpp
 import dolfinx.cpp as _cpp
 import ufl
 from dolfinx.cpp.mesh import create_mesh
@@ -113,15 +113,16 @@ cells_np = [np.array(c) for c in cells]
 geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
+hexahedron_cpp: _cpp.fem.CoordinateElement_float64 = (
+    hexahedron._cpp_object  # type: ignore[assignment]
+)
+prism_cpp: _cpp.fem.CoordinateElement_float64 = prism._cpp_object  # type: ignore[assignment]
 
 part = partitioner()
 mesh = create_mesh(
     MPI.COMM_WORLD,
     cells_np,
-    [
-        typing.cast(_cpp.fem.CoordinateElement_float64, hexahedron._cpp_object),
-        typing.cast(_cpp.fem.CoordinateElement_float64, prism._cpp_object),
-    ],
+    [hexahedron_cpp, prism_cpp],
     geomx,
     part,
     GhostMode.none,
@@ -154,7 +155,7 @@ dofmaps = create_dofmaps(
 # Create C++ function space
 V_cpp = _cpp.fem.FunctionSpace_float64(
     mesh,
-    [e._cpp_object for e in dolfinx_elements],  # type: ignore[misc]
+    [e._cpp_object for e in dolfinx_elements],
     [dofmap._cpp_object for dofmap in dofmaps],
 )
 
