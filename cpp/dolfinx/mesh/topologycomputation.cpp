@@ -852,7 +852,7 @@ compute_entities_by_key_matching(
         "Compute entities by key matching: number entities");
 
     auto sort_threaded
-        = [](std::span<const std::span<std::int32_t>> cols, int num_threads)
+        = [](std::span<const std::span<std::int32_t>> cols, int nthreads)
     {
       std::size_t shape0 = cols.empty() ? 0 : cols.front().size();
       std::vector<std::int32_t> sort_order(shape0, 0);
@@ -868,7 +868,7 @@ compute_entities_by_key_matching(
             }
             return false;
           },
-          num_threads);
+          nthreads);
 
       return sort_order;
     };

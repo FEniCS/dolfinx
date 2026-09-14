@@ -759,33 +759,31 @@ std::vector<std::int32_t> convert_to_local_indexing(
 
   auto transform
       = [is_identity, &global_to_local_map](
-            std::span<std::int32_t> data, std::span<const std::int64_t> g,
-            std::span<const std::pair<std::int64_t, std::int32_t>>
-                global_to_local)
+            std::span<std::int32_t> data, std::span<const std::int64_t> gidx,
+            std::span<const std::pair<std::int64_t, std::int32_t>> g2l)
   {
     if (is_identity)
     {
-      // Every value in g is guaranteed present in global_to_local by
-      // this function's precondition, so - given is_identity - always
+      // Every value in gidx is guaranteed present in g2l by this
+      // function's precondition, so - given is_identity - always
       // within bounds; the check is a defensive no-op fallback rather
       // than something expected to trigger.
-      std::ranges::transform(
-          g, data.begin(),
-          [&global_to_local](auto i) -> std::int32_t
-          {
-            if (static_cast<std::size_t>(i) < global_to_local.size())
-              return global_to_local[i].second;
-            auto it = std::ranges::lower_bound(global_to_local, i,
-                                               std::ranges::less(),
-                                               [](auto& e) { return e.first; });
-            assert(it != global_to_local.end());
-            assert(it->first == i);
-            return it->second;
-          });
+      std::ranges::transform(gidx, data.begin(),
+                             [&g2l](auto i) -> std::int32_t
+                             {
+                               if (static_cast<std::size_t>(i) < g2l.size())
+                                 return g2l[i].second;
+                               auto it = std::ranges::lower_bound(
+                                   g2l, i, std::ranges::less(),
+                                   [](auto& e) { return e.first; });
+                               assert(it != g2l.end());
+                               assert(it->first == i);
+                               return it->second;
+                             });
     }
     else
     {
-      std::ranges::transform(g, data.begin(),
+      std::ranges::transform(gidx, data.begin(),
                              [&global_to_local_map](auto i)
                              {
                                auto it = global_to_local_map.find(i);
