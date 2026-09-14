@@ -15,11 +15,11 @@ import pytest
 
 import basix
 import ufl
-from basix.ufl import element
-from dolfinx import cpp as _cpp
+from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
 from dolfinx.fem import Function, assemble_scalar, form, functionspace
-from dolfinx.mesh import create_mesh, create_unit_cube
+from dolfinx.fem.element import finiteelement
+from dolfinx.mesh import CellType, create_mesh, create_unit_cube
 
 
 def randomly_ordered_mesh(cell_type):
@@ -455,35 +455,42 @@ def test_permutation_wrappers(space_order, data_types):
 
 
 def _lagrange_element():
-    """P1 Lagrange on a triangle.
+    """P1 Lagrange on a triangle, as a UFL (basix.ufl) element.
 
     DOF transformations are the identity, so the only role of this
     sub-element is to shift the offset of the element it is mixed with.
     """
-    e = basix.create_element(
+    return element(
         basix.ElementFamily.P,
         basix.CellType.triangle,
         1,
-        basix.LagrangeVariant.gll_isaac,
-        discontinuous=False,
+        lagrange_variant=basix.LagrangeVariant.gll_isaac,
     )
-    return _cpp.fem.FiniteElement_float64(e._e, None, False)
 
 
 def _nedelec_element():
-    """Nedelec (first kind), degree 2, on a triangle.
+    """Nedelec (first kind), degree 2, on a triangle, as a UFL element.
 
     Two DOFs per edge, so the DOF transformation is non-trivial (not
     merely a permutation).
     """
-    e = basix.create_element(
+    return element(
         basix.ElementFamily.N1E,
         basix.CellType.triangle,
         2,
-        basix.LagrangeVariant.legendre,
-        discontinuous=False,
+        lagrange_variant=basix.LagrangeVariant.legendre,
     )
-    return _cpp.fem.FiniteElement_float64(e._e, None, False)
+
+
+def _cpp_element(ufl_e):
+    """Build the cpp FiniteElement backing a UFL element, via the public factory.
+
+    ``dof_transformation_apply``/``dof_transformation_right_apply`` are
+    deliberately not exposed on the pure-Python ``dolfinx.fem.FiniteElement``
+    wrapper, so exercising them still requires the underlying cpp object;
+    only its construction goes through the public API.
+    """
+    return finiteelement(CellType.triangle, ufl_e, np.float64)._cpp_object
 
 
 # Cell permutation with edges 0 and 1 reflected.
@@ -516,7 +523,7 @@ def test_mixed_element_dof_transformation_right(ttype, dtype):
     """
     # The transforming (Nedelec) sub-element is placed second, so it
     # sits at a non-zero DOF offset within the mixed element.
-    e = _cpp.fem.FiniteElement_float64([_lagrange_element(), _nedelec_element()])
+    e = _cpp_element(mixed_element([_lagrange_element(), _nedelec_element()]))
     assert e.needs_dof_transformations
 
     ncols = e.space_dimension
@@ -542,7 +549,7 @@ def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype):
     This is the case that the pre-fix sub-span slicing got right, so it
     serves as a control alongside the non-zero-offset case above.
     """
-    e = _cpp.fem.FiniteElement_float64([_nedelec_element(), _lagrange_element()])
+    e = _cpp_element(mixed_element([_nedelec_element(), _lagrange_element()]))
     assert e.needs_dof_transformations
 
     ncols = e.space_dimension
@@ -561,7 +568,7 @@ def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype):
 @pytest.mark.parametrize("ttype", [0, 1, 2, 3])
 def test_non_mixed_element_dof_transformation_right(ttype, dtype):
     """As above, but for the leaf (non-mixed) code path, for contrast."""
-    e = _nedelec_element()
+    e = _cpp_element(_nedelec_element())
     assert e.needs_dof_transformations
 
     ncols = e.space_dimension
