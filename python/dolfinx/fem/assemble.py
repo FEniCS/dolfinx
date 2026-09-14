@@ -424,7 +424,7 @@ def assemble_matrix_fn(
             and columns constrained by a boundary condition are zeroed.
     """
     _bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
-    _cpp.fem.assemble_matrix(fn, a._cpp_object, _bcs)
+    typing.cast(typing.Any, _cpp.fem.assemble_matrix)(fn, a._cpp_object, _bcs)
 
 
 # -- Modifiers for Dirichlet conditions -----------------------------------

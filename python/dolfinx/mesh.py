@@ -1033,7 +1033,21 @@ def refine(
 _MeshPartitioner = Callable | tuple[Callable, npt.NDArray[np.int32] | None] | None
 
 
-def _wrap_partitioner(fn: Callable | None) -> Callable | None:
+@typing.overload
+def _wrap_partitioner(fn: None) -> None: ...
+
+
+@typing.overload
+def _wrap_partitioner(fn: Callable) -> Callable: ...
+
+
+@typing.overload
+def _wrap_partitioner(fn: IdentityPartitionerPlaceholder) -> IdentityPartitionerPlaceholder: ...
+
+
+def _wrap_partitioner(
+    fn: Callable | IdentityPartitionerPlaceholder | None,
+) -> Callable | IdentityPartitionerPlaceholder | None:
     """Adapt a partitioner so it may return a graph.AdjacencyList.
 
     Opaque C++ partitioner handles (e.g. as returned by
