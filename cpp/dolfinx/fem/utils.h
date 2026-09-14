@@ -732,9 +732,9 @@ Form<T, U> create_form_factory(
       const std::function<std::vector<std::int32_t>(const mesh::Topology&,
                                                     IntegralType)>
           get_default_integration_entities
-          = [dim](const mesh::Topology& topology, IntegralType itg_type)
+          = [dim](const mesh::Topology& topology, IntegralType itype)
       {
-        if (itg_type == IntegralType::exterior_facet)
+        if (itype == IntegralType::exterior_facet)
         {
           // Integrate over all owned exterior facets
           return mesh::exterior_facet_indices(topology);

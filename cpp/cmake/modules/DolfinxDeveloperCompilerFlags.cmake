@@ -15,6 +15,24 @@ if(HAVE_PEDANTIC)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
 endif()
 
+# GCC's plain -Wshadow also flags constructor parameters and lambda
+# parameters that intentionally reuse a member or enclosing-scope name,
+# an idiom used throughout this library's public headers. Use the
+# narrower -Wshadow=compatible-local on GCC, which is restricted to
+# local variable/parameter shadowing of a compatible type; Clang's
+# single -Wshadow is already scoped that way.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  check_cxx_compiler_flag(-Wshadow=compatible-local HAVE_SHADOW)
+  if(HAVE_SHADOW)
+    list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wshadow=compatible-local)
+  endif()
+else()
+  check_cxx_compiler_flag(-Wshadow HAVE_SHADOW)
+  if(HAVE_SHADOW)
+    list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wshadow)
+  endif()
+endif()
+
 # Debug flags
 check_cxx_compiler_flag(-g HAVE_DEBUG)
 if(HAVE_DEBUG)
