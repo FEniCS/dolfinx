@@ -212,7 +212,7 @@ class Expression(Generic[Scalar]):
         if len(arguments) == 0:
             self._argument_space = None
         elif len(arguments) == 1:
-            self._argument_space = arguments[0].ufl_function_space()._cpp_object
+            self._argument_space = arguments[0].ufl_function_space()
         else:
             raise RuntimeError("Expressions with more that one Argument not allowed.")
 
@@ -237,7 +237,7 @@ class Expression(Generic[Scalar]):
             coeffs,
             constants,
             _entity_maps,
-            self.argument_space,
+            self._argument_space._cpp_object if self._argument_space is not None else None,
         )
 
     def eval(
