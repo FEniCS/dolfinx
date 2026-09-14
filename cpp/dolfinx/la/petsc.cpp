@@ -265,10 +265,10 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   else
   {
     // Expand for block size 1
-    const std::int32_t n = maps[0]->size_local() * bs[0];
-    _nnz_diag.resize(n);
-    _nnz_offdiag.resize(n);
-    auto rows = std::views::iota(std::int32_t(0), n);
+    const std::int32_t n_expanded = maps[0]->size_local() * bs[0];
+    _nnz_diag.resize(n_expanded);
+    _nnz_offdiag.resize(n_expanded);
+    auto rows = std::views::iota(std::int32_t(0), n_expanded);
     std::ranges::transform(rows, _nnz_diag.begin(), [&sp, &bs](std::int32_t i)
                            { return bs[1] * sp.nnz_diag(i / bs[0]); });
     std::ranges::transform(rows, _nnz_offdiag.begin(),

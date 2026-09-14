@@ -296,9 +296,9 @@ void write_data(std::string_view point_or_cell,
       hid_t dset_id = hdf5::open_dataset(h5file, dataset_name);
       hdf5::set_attribute(dset_id, "NumberOfComponents", data_width);
       H5Dclose(dset_id);
-      hid_t vtk_group = H5Gopen(h5file, group_name.c_str(), H5P_DEFAULT);
-      hdf5::set_attribute(vtk_group, "Vectors", "u");
-      H5Gclose(vtk_group);
+      hid_t vec_group = H5Gopen(h5file, group_name.c_str(), H5P_DEFAULT);
+      hdf5::set_attribute(vec_group, "Vectors", "u");
+      H5Gclose(vec_group);
     }
   }
 

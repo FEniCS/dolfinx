@@ -1147,14 +1147,15 @@ IndexMap::index_to_dest_ranks(int tag) const
 
     // Compute send sizes and displacements
     std::vector<int> send_sizes, send_disp{0};
-    auto it = owner_to_ghost.begin();
-    while (it != owner_to_ghost.end())
+    auto it_own = owner_to_ghost.begin();
+    while (it_own != owner_to_ghost.end())
     {
-      auto it1 = std::find_if(it, owner_to_ghost.end(),
-                              [r = it->first](auto x) { return x.first != r; });
-      send_sizes.push_back(std::ranges::distance(it, it1));
+      auto it1
+          = std::find_if(it_own, owner_to_ghost.end(),
+                         [r = it_own->first](auto x) { return x.first != r; });
+      send_sizes.push_back(std::ranges::distance(it_own, it1));
       send_disp.push_back(send_disp.back() + send_sizes.back());
-      it = it1;
+      it_own = it1;
     }
 
     // Create ghost -> owner comm
@@ -1207,15 +1208,15 @@ IndexMap::index_to_dest_ranks(int tag) const
                            [](auto x) { return x.second; });
     offsets.reserve(this->size_local() + this->num_ghosts() + 1);
     {
-      auto it = idx_to_rank.begin();
+      auto it_idx = idx_to_rank.begin();
 
       // Loop over owned indices
       for (std::int32_t i = 0; i < this->size_local(); ++i)
       {
-        auto it1 = std::find_if(it, idx_to_rank.end(),
+        auto it1 = std::find_if(it_idx, idx_to_rank.end(),
                                 [i](auto x) { return x.first != i; });
-        offsets.push_back(offsets.back() + std::ranges::distance(it, it1));
-        it = it1;
+        offsets.push_back(offsets.back() + std::ranges::distance(it_idx, it1));
+        it_idx = it1;
       }
     }
   }
@@ -1230,7 +1231,7 @@ IndexMap::index_to_dest_ranks(int tag) const
     std::vector<std::int64_t> send_buffer;
     std::vector<int> send_sizes;
     {
-      const int rank = dolfinx::MPI::rank(_comm.comm());
+      const int mpi_rank = dolfinx::MPI::rank(_comm.comm());
       std::vector<std::vector<std::int64_t>> dest_idx_to_rank(dest.size());
       for (std::size_t n = 0; n < offsets.size() - 1; ++n)
       {
@@ -1248,7 +1249,7 @@ IndexMap::index_to_dest_ranks(int tag) const
             }
           }
           dest_idx_to_rank[r0].push_back(n + offset);
-          dest_idx_to_rank[r0].push_back(rank);
+          dest_idx_to_rank[r0].push_back(mpi_rank);
         }
       }
 
@@ -1313,8 +1314,8 @@ IndexMap::index_to_dest_ranks(int tag) const
             [](auto a, auto b) { return a.first < b.first; });
         assert(it != idx_to_pos.end() and it->first == idx);
 
-        int rank = recv_indices[i + 1];
-        idxpos_to_rank.push_back({it->second, rank});
+        int sharing_rank = recv_indices[i + 1];
+        idxpos_to_rank.push_back({it->second, sharing_rank});
       }
       std::ranges::sort(idxpos_to_rank);
 
