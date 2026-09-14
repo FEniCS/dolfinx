@@ -193,6 +193,14 @@ intersphinx_mapping = {
         f"https://mpi4py.readthedocs.io/en/{mpi4py.__version__}",
         None,
     ),
+    "scipy": (
+        "https://docs.scipy.org/doc/scipy",
+        None,
+    ),
+    "numba": (
+        "https://numba.readthedocs.io/en/stable",
+        None,
+    ),
     "basix": (
         f"https://docs.fenicsproject.org/basix/{basix_version}/python",
         None,

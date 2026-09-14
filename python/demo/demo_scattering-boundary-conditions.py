@@ -421,7 +421,7 @@ boundary_tag = 3  # boundary
 # -
 
 # We generate the mesh using GMSH and convert it to a
-# {py:class}`Mesh<dolfinx.mesh.Mesh>` using
+# {py:class}`Mesh <dolfinx.mesh.Mesh>` using
 # {py:func}`model_to_mesh <dolfinx.io.gmsh.model_to_mesh>`.
 
 # +
@@ -662,9 +662,8 @@ else:
 
 # We visualize the solution using PyVista. For more information about
 # saving and visualizing vector fields discretized with Nedelec
-# elements, check [this](
-# https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_interpolation-io.html)
-# DOLFINx demo.
+# elements, see the {doc}`Interpolation and IO <./demo_interpolation-io>`
+# demo.
 
 if pyvista is not None:
     V_cells, V_types, V_x = plot.vtk_mesh(V_dg)

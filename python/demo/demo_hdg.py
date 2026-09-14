@@ -186,7 +186,7 @@ L += ufl.inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f  # type: ignor
 # Our bilinear form involves two domains (`msh` and `facet_mesh`). The
 # mesh passed to the measure is called the "integration domain". For
 # each additional mesh in our form, we must pass an
-# {py:class}`EntityMap<dolfinx.mesh.EntityMap` object
+# {py:class}`EntityMap <dolfinx.mesh.EntityMap>` object
 # that relates entities in that mesh to entities in the integration
 # domain. In this case, the only other mesh is `facet_mesh`, so we pass
 # `facet_mesh_emap`.
