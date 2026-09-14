@@ -37,20 +37,21 @@ import basix
 import basix._basixcpp
 import dolfinx.cpp as _cpp
 import ufl
-from dolfinx.cpp.fem import locate_dofs_geometrical
-from dolfinx.cpp.mesh import GhostMode, create_mesh
+from dolfinx.cpp.mesh import create_mesh
 from dolfinx.fem import (
-    FiniteElement,
     FunctionSpace,
     assemble_matrix,
     assemble_vector,
     coordinate_element,
     create_dofmaps,
     dirichletbc,
+    finiteelement,
+    locate_dofs_geometrical,
     mixed_topology_form,
 )
+from dolfinx.graph import partitioner
 from dolfinx.io.utils import cell_perm_vtk
-from dolfinx.mesh import CellType, Mesh, Topology
+from dolfinx.mesh import CellType, GhostMode, Mesh, Topology
 
 # -
 
@@ -117,7 +118,7 @@ hexahedron_cpp: _cpp.fem.CoordinateElement_float64 = (
 )
 prism_cpp: _cpp.fem.CoordinateElement_float64 = prism._cpp_object  # type: ignore[assignment]
 
-part = _cpp.graph.partitioner()
+part = partitioner()
 mesh = create_mesh(
     MPI.COMM_WORLD,
     cells_np,
@@ -141,8 +142,8 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 dolfinx_elements = [
-    FiniteElement(_cpp.fem.FiniteElement_float64(e._e, None, False))  # type: ignore[arg-type]
-    for e in elements
+    finiteelement(cell_type, basix.ufl.wrap_element(e), np.float64)
+    for cell_type, e in zip([CellType.hexahedron, CellType.prism], elements, strict=True)
 ]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
 dofmaps = create_dofmaps(
@@ -174,7 +175,7 @@ domain = ufl.Mesh(basix.ufl.element("Lagrange", "hexahedron", 1, shape=(3,)))
 element = basix.ufl.wrap_element(elements[0])
 V = FunctionSpace(Mesh(mesh, domain), element, V_cpp)
 
-bcdofs = locate_dofs_geometrical(V_cpp, marker)
+bcdofs = locate_dofs_geometrical(V, marker)
 bc = dirichletbc(value=0.0, dofs=bcdofs, V=V)
 
 # -

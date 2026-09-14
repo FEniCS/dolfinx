@@ -8,7 +8,7 @@
 import datetime
 import functools
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 from mpi4py import MPI as _MPI
 
@@ -17,7 +17,6 @@ import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (
-    IndexMap,
     git_commit_hash,
     hardware_concurrency,
     has_adios2,
@@ -39,6 +38,7 @@ __all__ = [
     "Reduction",
     "Scatterer",
     "Timer",
+    "create_sub_index_map",
     "git_commit_hash",
     "hardware_concurrency",
     "has_adios2",
@@ -51,6 +51,7 @@ __all__ = [
     "has_ptscotch",
     "has_slepc",
     "has_superlu_dist",
+    "index_map",
     "list_timings",
     "local_range",
     "scatterer",
@@ -61,9 +62,135 @@ __all__ = [
 
 Reduction = _cpp.common.Reduction
 
+# Default MPI tag of the consensus exchange used when building a ghosted
+# index map (dolfinx::MPI::tag::consensus_nbx).
+_CONSENSUS_NBX_TAG = _cpp.common.consensus_nbx_tag
+
 _ScatterArray: typing.TypeAlias = npt.NDArray[
     np.int64 | np.float32 | np.float64 | np.complex64 | np.complex128
 ]
+
+
+class IndexMap:
+    """Map indices across processes.
+
+    An index map describes the parallel distribution of a range of
+    indices. Each index is owned by exactly one process. A process holds
+    the indices it owns, numbered ``[0, size_local)`` locally, followed
+    by the 'ghost' indices it holds but does not own, numbered
+    ``[size_local, size_local + num_ghosts)``.
+    """
+
+    _cpp_object: _cpp.common.IndexMap
+
+    def __init__(self, imap: _cpp.common.IndexMap):
+        """Create an index map.
+
+        Note:
+            This initialiser is intended for internal library use only.
+            User code should call :func:`index_map` to create an index
+            map.
+
+        Args:
+            imap: C++ IndexMap object.
+        """
+        self._cpp_object = imap
+
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same underlying C++ index map.
+
+        Note:
+            This is identity of the wrapped object, not equivalence of
+            the distribution it describes. Two separately constructed
+            index maps do not compare equal, even if identical.
+        """
+        if not isinstance(other, IndexMap):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped index map."""
+        return hash(self._cpp_object)
+
+    @property
+    def comm(self) -> _MPI.Comm:
+        """MPI communicator that the index map is distributed over."""
+        return self._cpp_object.comm
+
+    @property
+    def size_local(self) -> int:
+        """Number of indices owned by the calling process."""
+        return self._cpp_object.size_local
+
+    @property
+    def size_global(self) -> int:
+        """Number of indices across all processes."""
+        return self._cpp_object.size_global
+
+    @property
+    def num_ghosts(self) -> int:
+        """Number of ghost indices on the calling process."""
+        return self._cpp_object.num_ghosts
+
+    @property
+    def local_range(self) -> tuple[int, int]:
+        """Range of global indices owned by the calling process."""
+        return self._cpp_object.local_range
+
+    @property
+    def ghosts(self) -> npt.NDArray[np.int64]:
+        """Global index of each ghost index.
+
+        Note:
+            The returned array is a read-only view.
+        """
+        return self._cpp_object.ghosts
+
+    @property
+    def owners(self) -> npt.NDArray[np.int32]:
+        """Owning rank of each ghost index.
+
+        Note:
+            The returned array is a read-only view.
+        """
+        return self._cpp_object.owners
+
+    def index_to_dest_ranks(self, tag: int) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32]]:
+        """Ranks that ghost each owned index, as an adjacency list.
+
+        Args:
+            tag: MPI tag used by the consensus exchange. Must be the
+                same on all ranks, and must not clash with another
+                in-flight exchange.
+
+        Returns:
+            Ghosting ranks of each owned index, as a (data, offsets)
+            pair.
+        """
+        return self._cpp_object.index_to_dest_ranks(tag)
+
+    def local_to_global(self, local: npt.NDArray[np.int32]) -> npt.NDArray[np.int64]:
+        """Map local indices to global indices.
+
+        Args:
+            local: Local indices.
+
+        Returns:
+            Global index of each entry of ``local``.
+        """
+        return self._cpp_object.local_to_global(local)
+
+    def global_to_local(self, global_index: npt.NDArray[np.int64]) -> npt.NDArray[np.int32]:
+        """Map global indices to local indices.
+
+        Args:
+            global_index: Global indices.
+
+        Returns:
+            Local index of each entry of ``global_index``, with ``-1``
+            for indices that are not owned or ghosted by the caller.
+        """
+        return self._cpp_object.global_to_local(global_index)
 
 
 class Scatterer:
@@ -118,6 +245,16 @@ class Scatterer:
             s: C++ Scatterer object.
         """
         self._cpp_object = s
+
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same scatterer."""
+        if not isinstance(other, Scatterer):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped scatterer."""
+        return hash(self._cpp_object)
 
     @property
     def local_indices_block(self) -> npt.NDArray[np.int32]:
@@ -241,6 +378,91 @@ class Scatterer:
         self._cpp_object.scatter_rev_end(request)
 
 
+def index_map(
+    comm: _MPI.Comm,
+    local_size: int,
+    ghosts: tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]] | None = None,
+    *,
+    dest_src: Sequence[npt.NDArray[np.int32]] | None = None,
+    tag: int = _CONSENSUS_NBX_TAG,
+) -> IndexMap:
+    """Create an index map.
+
+    Note:
+        Collective. ``ghosts`` must be ``None`` on every process or
+        given on every process, and likewise for ``dest_src``. This is
+        a precondition and is not checked, since checking it would
+        require communication on every call.
+
+    Args:
+        comm: MPI communicator to distribute the indices over.
+        local_size: Number of indices owned by the calling process.
+        ghosts: Tuple ``(ghost_indices, owners)`` of global ghost
+            indices and their owning ranks. If ``None``, the index map
+            is non-overlapping and ``ghosts`` must be ``None`` on every
+            process. For an overlapping map, a process with no ghosts
+            must pass empty arrays.
+        dest_src: Pair ``(dest, src)`` of destination and source rank
+            arrays. ``dest`` lists ranks that ghost caller-owned
+            indices; ``src`` lists ranks that own the caller's ghosts
+            and must equal the unique values in ``owners``. Both arrays
+            must be sorted, unique, and contain valid ranks. Supplying
+            them avoids the consensus exchange that otherwise discovers
+            which ranks ghost the caller's owned indices.
+        tag: MPI tag for the consensus exchange. Ignored if ``dest_src``
+            is given. Must be the same on all ranks, and must not clash
+            with another in-flight exchange.
+
+    Returns:
+        A new index map.
+    """
+    if ghosts is None:
+        if dest_src is not None:
+            raise ValueError("'dest_src' given without 'ghosts'.")
+        return IndexMap(_cpp.common.IndexMap(comm, local_size))
+
+    ghost_indices, owners = ghosts
+    if dest_src is not None:
+        return IndexMap(
+            _cpp.common.IndexMap(comm, local_size, list(dest_src), ghost_indices, owners)
+        )
+    return IndexMap(_cpp.common.IndexMap(comm, local_size, ghost_indices, owners, tag))
+
+
+def create_sub_index_map(
+    imap: IndexMap,
+    indices: npt.NDArray[np.int32],
+) -> tuple[IndexMap, npt.NDArray[np.int32], bool]:
+    """Create an index map for a subset of the indices of an index map.
+
+    An index that is included by a process that ghosts it, but not by
+    its owner, is re-assigned to one of the including processes.
+
+    Note:
+        Collective.
+
+    Args:
+        imap: Index map to build a sub-map of.
+        indices: Local indices of ``imap``, unique and in range, to
+            include in the sub-map.
+
+    Returns:
+        The sub-map, the index in ``imap`` of each of its indices, and
+        whether any index acquired a new owner.
+
+    Note:
+        The owner-change flag is rank-local and is not reduced, so it
+        can differ across ranks. Reduce it (e.g. ``comm.allreduce(...,
+        op=MPI.LOR)``) before using it in a collective decision;
+        branching on the unreduced value can leave some ranks in a
+        collective that others have skipped.
+    """
+    submap, submap_to_map, owners_changed = _cpp.common.create_sub_index_map(
+        imap._cpp_object, indices
+    )
+    return IndexMap(submap), submap_to_map, owners_changed
+
+
 def scatterer(index_map: IndexMap) -> Scatterer:
     """Create a scatterer for data with a layout described by an index map.
 
@@ -251,7 +473,7 @@ def scatterer(index_map: IndexMap) -> Scatterer:
     Returns:
         A new scatterer.
     """
-    return Scatterer(_cpp.common.Scatterer(index_map))
+    return Scatterer(_cpp.common.Scatterer(index_map._cpp_object))
 
 
 def timing(task: str) -> tuple[int, datetime.timedelta]:

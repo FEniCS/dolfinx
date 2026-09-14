@@ -260,6 +260,11 @@ disclosure process.
   postprocessing with jupytext and sphinx.
 - Python demos are written with light format and Markdown for
   subsequent postprocessing with jupytext and sphinx.
+- Python demos must not import anything from `dolfinx.cpp`, directly or
+  via `dolfinx.cpp`-qualified attribute access. Demos show the intended
+  user-facing API, so everything a demo needs must be reachable from the
+  pure-Python interface; if it is not, extend that interface rather than
+  reaching into the nanobind layer.
 - Demo text should be checked for clarity, brevity, mathematical
   correctness (e.g. missing definitions) and misalignment with the
   presented solver code.
@@ -275,6 +280,11 @@ disclosure process.
   as part of the test build (see `cpp/test/CMakeLists.txt`).
 - **Python**: `pytest`, in `python/test/`. Use `mpi4py.MPI` fixtures
   for parallel-aware tests where relevant.
+- **Python tests that need PETSc**: any test requiring PETSc/petsc4py
+  must live in a file with `petsc` in its name (e.g.
+  `test_petsc_assembler.py`), so that PETSc-free builds can deselect
+  them by filename. Do not add a PETSc-dependent test to a file without
+  `petsc` in the name — move it to (or create) a `petsc` file instead.
 - Run the relevant formatter/linter and the affected test suite before
   calling a change done — don't rely on CI to catch formatting.
 - Dependency groups (`build`, `docs`, `lint`, `test`, `ci` in

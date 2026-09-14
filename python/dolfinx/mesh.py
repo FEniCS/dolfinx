@@ -11,6 +11,7 @@ from __future__ import annotations
 import typing
 import warnings
 from collections.abc import Callable, Sequence
+from functools import cached_property
 
 from mpi4py import MPI as _MPI
 
@@ -23,12 +24,13 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.common import IndexMap as _IndexMap
+from dolfinx.common import index_map as _index_map
 from dolfinx.cpp.mesh import (
     CellType,
     DiagonalType,
     GhostMode,
-    build_dual_graph,
     cell_dim,
+    cell_num_entities,
     to_string,
     to_type,
 )
@@ -57,6 +59,7 @@ __all__ = [
     "Topology",
     "build_dual_graph",
     "cell_dim",
+    "cell_num_entities",
     "compute_cell_centroids",
     "compute_incident_entities",
     "compute_midpoints",
@@ -120,6 +123,10 @@ HybridPartitioningFunc = typing.Callable[
     ],
     _cpp.graph.AdjacencyList_int32,
 ]
+
+# A cell reordering function receives the local cell dual graph and
+# returns the new index of each cell.
+CellReorderFunc = typing.Callable[[AdjacencyList[np.int32]], npt.NDArray[np.int32]]
 
 
 def create_geometric_cell_partitioner(
@@ -191,6 +198,53 @@ def create_hybrid_cell_partitioner(
     return _cpp.graph.create_hybrid_cell_partitioner(part)
 
 
+def build_dual_graph(
+    comm: _MPI.Comm,
+    cell_types: CellType | Sequence[CellType],
+    cells: AdjacencyList[np.int64] | Sequence[npt.NDArray[np.int64]],
+    max_facet_to_cell_links: int | None = None,
+    num_threads: int = 1,
+) -> AdjacencyList[np.int64]:
+    """Build the dual graph of a mesh, i.e. the cell-to-cell graph.
+
+    Two cells are connected in the dual graph if they share a facet.
+
+    Args:
+        comm: MPI communicator that ``cells`` is distributed over.
+        cell_types: Cell type, or the cell types of a mixed-topology
+            mesh.
+        cells: Cells, using global vertex indices. For a single cell
+            type, an adjacency list of the cell vertices; for a
+            mixed-topology mesh, one array of cell vertices per cell
+            type.
+        max_facet_to_cell_links: Maximum number of cells that a facet
+            may connect. If ``None``, no limit is applied.
+        num_threads: Number of CPU threads to use. Must be >= 1.
+
+    Returns:
+        The dual graph, with the local cells as nodes.
+    """
+    # The C++ function is overloaded on the single/mixed cell-type
+    # forms, so dispatch on 'cell_types' rather than passing a union.
+    if isinstance(cell_types, CellType):
+        if not isinstance(cells, AdjacencyList):
+            raise TypeError("'cells' must be an AdjacencyList for a single cell type.")
+        graph = _cpp.mesh.build_dual_graph(
+            comm,
+            cell_types,
+            cells._cpp_object,  # type: ignore[arg-type]
+            max_facet_to_cell_links,
+            num_threads,
+        )
+    else:
+        if isinstance(cells, AdjacencyList):
+            raise TypeError("'cells' must be one array per cell type for a mixed-topology mesh.")
+        graph = _cpp.mesh.build_dual_graph(
+            comm, cell_types, cells, max_facet_to_cell_links, num_threads
+        )
+    return AdjacencyList(graph)
+
+
 def compute_cell_centroids(
     comm: _MPI.Comm,
     cell_types: Sequence[CellType],
@@ -242,22 +296,49 @@ class Topology:
         """
         self._cpp_object = topology
 
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same topology."""
+        if not isinstance(other, Topology):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped topology."""
+        return hash(self._cpp_object)
+
     def cell_name(self) -> str:
         """String representation of the cell-type of the topology."""
         return to_string(self._cpp_object.cell_type)
 
-    def connectivity(self, d0: int, d1: int) -> _cpp.graph.AdjacencyList_int32:
+    def connectivity(
+        self, d0: int | tuple[int, int], d1: int | tuple[int, int]
+    ) -> AdjacencyList[np.int32]:
         """Return connectivity.
 
         Connectivity from entities of dimension ``d0`` to entities of
-        dimension ``d1``.
+        dimension ``d1``. For a mixed-topology mesh, a dimension is
+        given as a ``(dimension, entity type index)`` pair.
 
         Args:
             d0: Dimension of entity one is mapping from.
             d1: Dimension of entity one is mapping to.
         """
-        if (conn := self._cpp_object.connectivity(d0, d1)) is not None:
-            return conn
+        # The C++ method is overloaded on the single/mixed-topology
+        # forms. The two calls below are identical at runtime, but the
+        # isinstance test narrows the argument types so that each picks
+        # the matching overload of the generated stub. Test for a pair
+        # rather than for an int, so that a dimension given as e.g. a
+        # NumPy integer is still treated as a dimension.
+        if isinstance(d0, tuple):
+            if not isinstance(d1, tuple):
+                raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
+            conn = self._cpp_object.connectivity(d0, d1)
+        else:
+            if isinstance(d1, tuple):
+                raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
+            conn = self._cpp_object.connectivity(d0, d1)
+        if conn is not None:
+            return AdjacencyList(conn)
         else:
             raise RuntimeError(
                 f"Connectivity between dimension {d0} and {d1} has not been computed.",
@@ -334,7 +415,7 @@ class Topology:
         """
         return self._cpp_object.get_facet_permutations()
 
-    def index_map(self, dim: int) -> _cpp.common.IndexMap:
+    def index_map(self, dim: int) -> _IndexMap:
         """Index map for the parallel distribution of the mesh entities.
 
         Args:
@@ -343,9 +424,9 @@ class Topology:
         Returns:
             Index map for the entities of dimension ``dim``.
         """
-        return self._cpp_object.index_map(dim)
+        return _IndexMap(self._cpp_object.index_map(dim))
 
-    def index_maps(self, dim: int) -> list[_cpp.common.IndexMap]:
+    def index_maps(self, dim: int) -> list[_IndexMap]:
         """Index maps for parallel distribution of the mesh entities.
 
         Args:
@@ -355,7 +436,7 @@ class Topology:
             Index maps for the entities of dimension ``dim``. May be
             empty if not yet computed.
         """
-        return self._cpp_object.index_maps(dim)
+        return [_IndexMap(m) for m in self._cpp_object.index_maps(dim)]
 
     def interprocess_facets(self) -> npt.NDArray[np.int32]:
         """List of inter-process facets.
@@ -394,10 +475,20 @@ class Geometry(typing.Generic[Real]):
         """
         self._cpp_object = geometry
 
-    @property
-    def cmaps(self) -> list[_CoordinateElement]:
-        """The coordinate maps."""
-        return [_CoordinateElement(cm) for cm in self._cpp_object.cmaps]
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same geometry."""
+        if not isinstance(other, Geometry):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped geometry."""
+        return hash(self._cpp_object)
+
+    @cached_property
+    def cmaps(self) -> tuple[_CoordinateElement, ...]:
+        """The coordinate maps, one per cell type."""
+        return tuple(_CoordinateElement(cm) for cm in self._cpp_object.cmaps)
 
     @property
     def cmap(self) -> _CoordinateElement:
@@ -434,7 +525,7 @@ class Geometry(typing.Generic[Real]):
 
     def index_map(self) -> _IndexMap:
         """Index map for the geometry points (nodes) distribution."""
-        return self._cpp_object.index_map()
+        return _IndexMap(self._cpp_object.index_map())
 
     @property
     def input_global_indices(self) -> npt.NDArray[np.int64]:
@@ -480,7 +571,17 @@ class Mesh(typing.Generic[Real]):
         self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
-            self._ufl_domain._ufl_cargo = self._cpp_object
+            # Attach this (Python) Mesh, rather than the C++ mesh, to
+            # the UFL domain so that ufl.Mesh.ufl_cargo returns the
+            # Python object. Callers (e.g. dolfinx.fem.form) rely on
+            # getting back this exact Mesh, so the link must keep the
+            # Mesh alive and cannot be a weak reference. It therefore
+            # forms a Mesh <-> ufl.Mesh reference cycle, which is
+            # reclaimed by the cyclic garbage collector rather than by
+            # reference counting. Call gc.collect() where a mesh (and
+            # the MPI communicator it holds) must be released at a
+            # known point, e.g. in the same order on all ranks.
+            self._ufl_domain._ufl_cargo = self
 
     @property
     def comm(self) -> _MPI.Comm:
@@ -577,15 +678,16 @@ class MeshTags:
             mesh.
         """
         self._cpp_object = meshtags
+        self._topology = Topology(self._cpp_object.topology)
 
     def ufl_id(self) -> int:
         """Identiftying integer used by UFL."""
         return id(self)
 
     @property
-    def topology(self) -> _cpp.mesh.Topology:
+    def topology(self) -> Topology:
         """Mesh topology with which the tags are associated."""
-        return self._cpp_object.topology
+        return self._topology
 
     @property
     def dim(self) -> int:
@@ -974,7 +1076,7 @@ def mark_maximum(
         Local indices, ascending and including ghosts, of the entries
         satisfying :math:`v_i > \theta \max_j v_j`.
     """
-    return _mark_maximum(values, index_map, theta)
+    return _mark_maximum(values, index_map._cpp_object, theta)
 
 
 def mark_equidistribution(
@@ -1016,7 +1118,27 @@ def mark_equidistribution(
         Local indices, ascending and including ghosts, of the entries
         satisfying :math:`v_i > \frac{\theta^2}{N} \sum_j v_j`.
     """
-    return _mark_equidistribution(values, index_map, theta)
+    return _mark_equidistribution(values, index_map._cpp_object, theta)
+
+
+def _wrap_cell_reorder(
+    reorder_fn: CellReorderFunc | _cpp.graph.GeometricReorderer | None,
+) -> Callable | _cpp.graph.GeometricReorderer | None:
+    """Adapt a cell reordering callable to the C++ calling convention.
+
+    C++ calls the reordering function with a C++ adjacency list, so a
+    Python callable is wrapped to receive an
+    :class:`~dolfinx.graph.AdjacencyList`. A geometric reorderer is an
+    opaque C++ handle that is called with cell centroids rather than the
+    dual graph, and is passed through unchanged.
+    """
+    if reorder_fn is None or isinstance(reorder_fn, _cpp.graph.GeometricReorderer):
+        return reorder_fn
+
+    def reorder(dual_graph: _cpp.graph.AdjacencyList_int32) -> npt.NDArray[np.int32]:
+        return reorder_fn(AdjacencyList(dual_graph))
+
+    return reorder
 
 
 def _create_mesh_coordinate_element(
@@ -1052,7 +1174,7 @@ def create_mesh(
     ghost_mode: GhostMode = GhostMode.none,
     max_facet_to_cell_links: int = 2,
     num_threads: int = 1,
-    reorder_fn: Callable | None = None,
+    reorder_fn: CellReorderFunc | _cpp.graph.GeometricReorderer | None = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -1074,7 +1196,8 @@ def create_mesh(
         num_threads: Number of threads to use to build mesh. Must be
             greater than 0.
         reorder_fn: A graph reordering callable receives the local cell
-            dual graph. The built-in ``graph.reorder_morton`` and
+            dual graph as an :class:`~dolfinx.graph.AdjacencyList`. The
+            built-in ``graph.reorder_morton`` and
             ``graph.reorder_hilbert`` receive local cell centroids. Both
             return an array mapping each cell index to its new index. If
             ``None`` (default), reverse Cuthill-McKee ordering is used.
@@ -1110,7 +1233,7 @@ def create_mesh(
         max_facet_to_cell_links=max_facet_to_cell_links,
         num_threads=num_threads,
         cell_weights=cell_weights,
-        reorder_fn=reorder_fn,
+        reorder_fn=_wrap_cell_reorder(reorder_fn),
     )
 
     return Mesh(msh, domain)
@@ -1597,11 +1720,15 @@ def create_geometry(
     cpp_element = element._cpp_object
     if isinstance(cpp_element, _cpp.fem.CoordinateElement_float64):
         return Geometry(
-            _cpp.mesh.Geometry_float64(index_map, dofmap, cpp_element, x, input_global_indices)
+            _cpp.mesh.Geometry_float64(
+                index_map._cpp_object, dofmap, cpp_element, x, input_global_indices
+            )
         )
     elif isinstance(cpp_element, _cpp.fem.CoordinateElement_float32):
         return Geometry(
-            _cpp.mesh.Geometry_float32(index_map, dofmap, cpp_element, x, input_global_indices)
+            _cpp.mesh.Geometry_float32(
+                index_map._cpp_object, dofmap, cpp_element, x, input_global_indices
+            )
         )
     else:
         raise ValueError(f"Unknown floating type for coordinate element, got: {dtype}")
@@ -1670,13 +1797,13 @@ def create_point_mesh(comm: _MPI.Comm, points: npt.NDArray[np.float32 | np.float
     # Create topology which only has a 0->0 connectivity and dim 0 entities
     cells = np.arange(points.shape[0], dtype=np.int32).reshape(-1, 1)
     num_nodes_local = cells.shape[0]
-    imap = _cpp.common.IndexMap(comm, num_nodes_local)
+    imap = _index_map(comm, num_nodes_local)
     local_range = imap.local_range[0]
     igi = np.arange(num_nodes_local, dtype=np.int64) + local_range
     topology = _cpp.mesh.Topology(
         cell_type=_cpp.mesh.CellType.point,
-        vertex_map=imap,
-        cell_map=imap,
+        vertex_map=imap._cpp_object,
+        cell_map=imap._cpp_object,
         cells=_cpp.graph.AdjacencyList_int32(cells),
         original_index=igi,
     )

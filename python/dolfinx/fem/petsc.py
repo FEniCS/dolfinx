@@ -135,10 +135,7 @@ def create_vector(
         A PETSc vector with a layout that is compatible with ``V``. The
         vector is not initialised to zero.
     """
-    if isinstance(
-        V,
-        _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64,
-    ):
+    if isinstance(V, _FunctionSpace):
         V = [V]
     elif any(_V is None for _V in V):
         raise RuntimeError("Can not create vector for None block.")
@@ -549,7 +546,7 @@ def _assemble_matrix_petsc(
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0].contains(bc.function_space._cpp_object):
+                        if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
                                 " and have DirichletBC applied."
@@ -570,10 +567,16 @@ def _assemble_matrix_petsc(
                     "Cannot have a entire {'row' if index == 0 else 'column'} of a full of None"
                 )
         is0 = _cpp.la.petsc.create_index_sets(
-            [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[0]]  # type: ignore
+            [
+                (Vsub.dofmaps[0].index_map._cpp_object, Vsub.dofmaps[0].index_map_bs)  # type: ignore
+                for Vsub in V[0]
+            ]
         )
         is1 = _cpp.la.petsc.create_index_sets(
-            [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[1]]  # type: ignore
+            [
+                (Vsub.dofmaps[0].index_map._cpp_object, Vsub.dofmaps[0].index_map_bs)  # type: ignore
+                for Vsub in V[1]
+            ]
         )
 
         _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
@@ -590,8 +593,8 @@ def _assemble_matrix_petsc(
                         True,
                     )
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
-                elif i == j:
-                    for bc in _bcs:
+                elif i == j and bcs is not None:
+                    for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
@@ -610,8 +613,9 @@ def _assemble_matrix_petsc(
             for j, a_sub in enumerate(a_row):
                 if a_sub is not None:
                     Asub = A.getLocalSubMatrix(is0[i], is1[j])
-                    if a_sub.function_spaces[0] is a_sub.function_spaces[1]:
-                        _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], _bcs, diag)  # type: ignore[arg-type]
+                    V0, V1 = (V._cpp_object for V in a_sub.function_spaces)
+                    if V0 is V1:
+                        _cpp.fem.petsc.insert_diagonal(Asub, V0, _bcs, diag)  # type: ignore[arg-type]
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
     else:  # Non-blocked
         if constants is None:
@@ -620,10 +624,11 @@ def _assemble_matrix_petsc(
             coeffs = pack_coefficients(a)
         _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
         _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs, False)  # type: ignore
-        if a.function_spaces[0] is a.function_spaces[1]:
+        V0, V1 = (V._cpp_object for V in a.function_spaces)
+        if V0 is V1:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
-            _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _bcs, diag)  # type: ignore[arg-type]
+            _cpp.fem.petsc.insert_diagonal(A, V0, _bcs, diag)  # type: ignore[arg-type]
 
     return A
 
