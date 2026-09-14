@@ -454,59 +454,6 @@ def test_permutation_wrappers(space_order, data_types):
     np.testing.assert_allclose(org_data.reshape(-1), arr.reshape(-1), atol=eps)
 
 
-def _lagrange_element():
-    """P1 Lagrange on a triangle, as a UFL (basix.ufl) element.
-
-    DOF transformations are the identity, so the only role of this
-    sub-element is to shift the offset of the element it is mixed with.
-    """
-    return element(
-        basix.ElementFamily.P,
-        basix.CellType.triangle,
-        1,
-        lagrange_variant=basix.LagrangeVariant.gll_isaac,
-    )
-
-
-def _nedelec_element():
-    """Nedelec (first kind), degree 2, on a triangle, as a UFL element.
-
-    Two DOFs per edge, so the DOF transformation is non-trivial (not
-    merely a permutation).
-    """
-    return element(
-        basix.ElementFamily.N1E,
-        basix.CellType.triangle,
-        2,
-        lagrange_variant=basix.LagrangeVariant.legendre,
-    )
-
-
-def _cpp_element(ufl_e):
-    """Build the cpp FiniteElement backing a UFL element, via the public factory.
-
-    ``dof_transformation_apply``/``dof_transformation_right_apply`` are
-    deliberately not exposed on the pure-Python ``dolfinx.fem.FiniteElement``
-    wrapper, so exercising them still requires the underlying cpp object;
-    only its construction goes through the public API.
-    """
-    return finiteelement(CellType.triangle, ufl_e, np.float64)._cpp_object
-
-
-def _apply_row_by_row(e, ttype, A, ncols, nrows, cell_info):
-    """Apply e.dof_transformation_right_apply row-by-row.
-
-    Exclusively through the block_size == 1 path, one row of A (shape
-    (nrows, ncols), flattened) at a time.
-    """
-    out = A.copy()
-    for i in range(nrows):
-        e.dof_transformation_right_apply(
-            ttype, out[i * ncols : (i + 1) * ncols], cell_info, 0, 1, False
-        )
-    return out
-
-
 @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
 @pytest.mark.parametrize("ttype", [0, 1, 2, 3])  # doftransform: standard/transpose/inverse/...
 def test_mixed_element_dof_transformation_right(ttype, dtype):
@@ -517,9 +464,26 @@ def test_mixed_element_dof_transformation_right(ttype, dtype):
     sub-element's offset. See
     ``dolfinx::fem::FiniteElement::dof_transformation_right_fn``.
     """
+    # P1 Lagrange: DOF transformations are the identity, so its only role
+    # here is to shift the Nedelec sub-element to a non-zero offset.
+    lagrange = element(
+        basix.ElementFamily.P,
+        basix.CellType.triangle,
+        1,
+        lagrange_variant=basix.LagrangeVariant.gll_isaac,
+    )
+    # Nedelec (first kind), degree 2: two DOFs per edge, so the DOF
+    # transformation is non-trivial (not merely a permutation).
+    nedelec = element(
+        basix.ElementFamily.N1E,
+        basix.CellType.triangle,
+        2,
+        lagrange_variant=basix.LagrangeVariant.legendre,
+    )
     # The transforming (Nedelec) sub-element is placed second, so it
     # sits at a non-zero DOF offset within the mixed element.
-    e = _cpp_element(mixed_element([_lagrange_element(), _nedelec_element()]))
+    ufl_e = mixed_element([lagrange, nedelec])
+    e = finiteelement(CellType.triangle, ufl_e, np.float64)._cpp_object
     assert e.needs_dof_transformations
 
     ncols = e.space_dimension
@@ -528,7 +492,13 @@ def test_mixed_element_dof_transformation_right(ttype, dtype):
     # Cell permutation with edges 0 and 1 reflected.
     cell_info = np.array([0b011], dtype=np.uint32)
 
-    expected = _apply_row_by_row(e, ttype, A, ncols, nrows, cell_info)
+    # Reference: apply row-by-row, exclusively through the block_size == 1
+    # path.
+    expected = A.copy()
+    for i in range(nrows):
+        e.dof_transformation_right_apply(
+            ttype, expected[i * ncols : (i + 1) * ncols], cell_info, 0, 1, False
+        )
 
     B = A.copy()
     e.dof_transformation_right_apply(ttype, B, cell_info, 0, nrows, False)
@@ -547,16 +517,32 @@ def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype):
     This is the case that the pre-fix sub-span slicing got right, so it
     serves as a control alongside the non-zero-offset case above.
     """
-    e = _cpp_element(mixed_element([_nedelec_element(), _lagrange_element()]))
+    lagrange = element(
+        basix.ElementFamily.P,
+        basix.CellType.triangle,
+        1,
+        lagrange_variant=basix.LagrangeVariant.gll_isaac,
+    )
+    nedelec = element(
+        basix.ElementFamily.N1E,
+        basix.CellType.triangle,
+        2,
+        lagrange_variant=basix.LagrangeVariant.legendre,
+    )
+    ufl_e = mixed_element([nedelec, lagrange])
+    e = finiteelement(CellType.triangle, ufl_e, np.float64)._cpp_object
     assert e.needs_dof_transformations
 
     ncols = e.space_dimension
     nrows = 3
     A = np.arange(1.0, nrows * ncols + 1.0, dtype=dtype)
-    # Cell permutation with edges 0 and 1 reflected.
     cell_info = np.array([0b011], dtype=np.uint32)
 
-    expected = _apply_row_by_row(e, ttype, A, ncols, nrows, cell_info)
+    expected = A.copy()
+    for i in range(nrows):
+        e.dof_transformation_right_apply(
+            ttype, expected[i * ncols : (i + 1) * ncols], cell_info, 0, 1, False
+        )
 
     B = A.copy()
     e.dof_transformation_right_apply(ttype, B, cell_info, 0, nrows, False)
@@ -568,16 +554,25 @@ def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype):
 @pytest.mark.parametrize("ttype", [0, 1, 2, 3])
 def test_non_mixed_element_dof_transformation_right(ttype, dtype):
     """As above, but for the leaf (non-mixed) code path, for contrast."""
-    e = _cpp_element(_nedelec_element())
+    ufl_e = element(
+        basix.ElementFamily.N1E,
+        basix.CellType.triangle,
+        2,
+        lagrange_variant=basix.LagrangeVariant.legendre,
+    )
+    e = finiteelement(CellType.triangle, ufl_e, np.float64)._cpp_object
     assert e.needs_dof_transformations
 
     ncols = e.space_dimension
     nrows = 3
     A = np.arange(1.0, nrows * ncols + 1.0, dtype=dtype)
-    # Cell permutation with edges 0 and 1 reflected.
     cell_info = np.array([0b011], dtype=np.uint32)
 
-    expected = _apply_row_by_row(e, ttype, A, ncols, nrows, cell_info)
+    expected = A.copy()
+    for i in range(nrows):
+        e.dof_transformation_right_apply(
+            ttype, expected[i * ncols : (i + 1) * ncols], cell_info, 0, 1, False
+        )
 
     B = A.copy()
     e.dof_transformation_right_apply(ttype, B, cell_info, 0, nrows, False)
