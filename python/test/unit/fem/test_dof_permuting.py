@@ -493,11 +493,7 @@ def _cpp_element(ufl_e):
     return finiteelement(CellType.triangle, ufl_e, np.float64)._cpp_object
 
 
-# Cell permutation with edges 0 and 1 reflected.
-_CELL_INFO = np.array([0b011], dtype=np.uint32)
-
-
-def _apply_row_by_row(e, ttype, A, ncols, nrows):
+def _apply_row_by_row(e, ttype, A, ncols, nrows, cell_info):
     """Apply e.dof_transformation_right_apply row-by-row.
 
     Exclusively through the block_size == 1 path, one row of A (shape
@@ -506,7 +502,7 @@ def _apply_row_by_row(e, ttype, A, ncols, nrows):
     out = A.copy()
     for i in range(nrows):
         e.dof_transformation_right_apply(
-            ttype, out[i * ncols : (i + 1) * ncols], _CELL_INFO, 0, 1, False
+            ttype, out[i * ncols : (i + 1) * ncols], cell_info, 0, 1, False
         )
     return out
 
@@ -529,11 +525,13 @@ def test_mixed_element_dof_transformation_right(ttype, dtype):
     ncols = e.space_dimension
     nrows = 3
     A = np.arange(1.0, nrows * ncols + 1.0, dtype=dtype)
+    # Cell permutation with edges 0 and 1 reflected.
+    cell_info = np.array([0b011], dtype=np.uint32)
 
-    expected = _apply_row_by_row(e, ttype, A, ncols, nrows)
+    expected = _apply_row_by_row(e, ttype, A, ncols, nrows, cell_info)
 
     B = A.copy()
-    e.dof_transformation_right_apply(ttype, B, _CELL_INFO, 0, nrows, False)
+    e.dof_transformation_right_apply(ttype, B, cell_info, 0, nrows, False)
 
     np.testing.assert_array_equal(B, expected)
     # The transformation is not a no-op for this cell permutation, so the
@@ -555,11 +553,13 @@ def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype):
     ncols = e.space_dimension
     nrows = 3
     A = np.arange(1.0, nrows * ncols + 1.0, dtype=dtype)
+    # Cell permutation with edges 0 and 1 reflected.
+    cell_info = np.array([0b011], dtype=np.uint32)
 
-    expected = _apply_row_by_row(e, ttype, A, ncols, nrows)
+    expected = _apply_row_by_row(e, ttype, A, ncols, nrows, cell_info)
 
     B = A.copy()
-    e.dof_transformation_right_apply(ttype, B, _CELL_INFO, 0, nrows, False)
+    e.dof_transformation_right_apply(ttype, B, cell_info, 0, nrows, False)
 
     np.testing.assert_array_equal(B, expected)
 
@@ -574,10 +574,12 @@ def test_non_mixed_element_dof_transformation_right(ttype, dtype):
     ncols = e.space_dimension
     nrows = 3
     A = np.arange(1.0, nrows * ncols + 1.0, dtype=dtype)
+    # Cell permutation with edges 0 and 1 reflected.
+    cell_info = np.array([0b011], dtype=np.uint32)
 
-    expected = _apply_row_by_row(e, ttype, A, ncols, nrows)
+    expected = _apply_row_by_row(e, ttype, A, ncols, nrows, cell_info)
 
     B = A.copy()
-    e.dof_transformation_right_apply(ttype, B, _CELL_INFO, 0, nrows, False)
+    e.dof_transformation_right_apply(ttype, B, cell_info, 0, nrows, False)
 
     np.testing.assert_array_equal(B, expected)
