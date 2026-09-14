@@ -34,7 +34,10 @@ if typing.TYPE_CHECKING:
     # 'dolfinx.la.SparsityPattern' is spelled out in the annotations
     # below because a bare 'SparsityPattern' is ambiguous in the
     # generated docs, matching 'dolfinx.cpp.la.SparsityPattern' too.
-    import dolfinx.la
+    # 'dolfinx.la' itself is not imported here: 'dolfinx.mesh' below
+    # already binds the 'dolfinx' package name, and 'dolfinx/__init__.py'
+    # imports 'la', so 'dolfinx.la.SparsityPattern' resolves without a
+    # second, conflicting import style for the same module.
     import dolfinx.mesh
     from dolfinx.cpp.fem import IntegralType as IntegralType
 

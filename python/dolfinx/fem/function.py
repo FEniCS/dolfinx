@@ -856,7 +856,7 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
 
     @cached_property
     def dofmaps(self) -> tuple[DofMap, ...]:
-        """The geometry dofmaps, one per cell type."""
+        """The function space dofmaps, one per cell type."""
         return tuple(DofMap(map) for map in self._cpp_object.dofmaps)
 
     @property

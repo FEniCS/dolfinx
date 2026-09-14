@@ -701,8 +701,13 @@ def test_wrappers_compare_equal():
     """Wrappers built around the same C++ object compare equal."""
     msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
     msh.topology.create_connectivity(2, 0)
-    assert msh.topology.connectivity(2, 0) == msh.topology.connectivity(2, 0)
-    assert msh.geometry == msh.geometry
+
+    # Each access rebuilds the wrapper, so these are independent objects
+    # around the same underlying C++ object.
+    c0, c1 = msh.topology.connectivity(2, 0), msh.topology.connectivity(2, 0)
+    assert c0 == c1
+    geom0, geom1 = msh.geometry, msh.geometry
+    assert geom0 == geom1
 
     # A MeshTags wraps the mesh topology in a separate Topology object
     tdim = msh.topology.dim
@@ -711,7 +716,8 @@ def test_wrappers_compare_equal():
     assert mt.topology == msh.topology
 
     V = functionspace(msh, ("Lagrange", 1))
-    assert V.dofmap.dof_layout == V.dofmap.dof_layout
+    dof_layout0, dof_layout1 = V.dofmap.dof_layout, V.dofmap.dof_layout
+    assert dof_layout0 == dof_layout1
 
 
 def test_create_mesh_default_cell_reordering():
