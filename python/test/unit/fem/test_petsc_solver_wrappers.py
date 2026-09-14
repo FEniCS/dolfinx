@@ -104,6 +104,9 @@ class TestPETScSolverWrappers:
 
         import dolfinx.fem.petsc
 
+        if not PETSc.Sys().hasExternalPackage("mumps"):
+            pytest.skip("MUMPS is required to factor this system")
+
         msh = dolfinx.mesh.create_unit_square(
             MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=PETSc.RealType
         )
