@@ -112,8 +112,8 @@ cells_np = [np.array(c) for c in cells]
 geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
-hexahedron_cpp: _cpp.fem.CoordinateElement_float64 = (  # type: ignore[assignment]
-    hexahedron._cpp_object
+hexahedron_cpp: _cpp.fem.CoordinateElement_float64 = (
+    hexahedron._cpp_object  # type: ignore[assignment]
 )
 prism_cpp: _cpp.fem.CoordinateElement_float64 = prism._cpp_object  # type: ignore[assignment]
 
