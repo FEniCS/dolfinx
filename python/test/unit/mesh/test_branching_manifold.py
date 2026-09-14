@@ -11,11 +11,11 @@ import pytest
 
 import basix
 import ufl
-from dolfinx.cpp.mesh import cell_num_vertices
 from dolfinx.graph import partitioner
 from dolfinx.mesh import (
     CellType,
     GhostMode,
+    cell_num_vertices,
     compute_midpoints,
     create_mesh,
     create_unit_cube,

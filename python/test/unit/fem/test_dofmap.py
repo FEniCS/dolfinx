@@ -451,8 +451,7 @@ def test_empty_rank_collapse():
     def self_partitioner(comm: MPI.Intracomm, n, dual_graph, cell_weights, edge_weights, ghosting):
         dests = np.full(dual_graph.num_nodes, comm.rank, dtype=np.int32)
         offsets = np.arange(dual_graph.num_nodes + 1, dtype=np.int32)
-        # TODO: can we improve on this interface? I.e. warp to do cpp type conversion automatically
-        return adjacencylist(dests, offsets)._cpp_object
+        return adjacencylist(dests, offsets)
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, c_el, nodes, partitioner=self_partitioner)
 
