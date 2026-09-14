@@ -483,14 +483,19 @@ def test_mixed_element_dof_transformation_right(ttype, dtype):
     # The transforming (Nedelec) sub-element is placed second, so it
     # sits at a non-zero DOF offset within the mixed element.
     ufl_e = mixed_element([lagrange, nedelec])
-    e = finiteelement(CellType.triangle, ufl_e, np.float64)._cpp_object
-    assert e.needs_dof_transformations
+    elem = finiteelement(CellType.triangle, ufl_e, np.float64)
+    assert elem.needs_dof_transformations
 
-    ncols = e.space_dimension
+    ncols = elem.space_dimension
     nrows = 3
     A = np.arange(1, nrows * ncols + 1).astype(dtype)
     # Cell permutation with edges 0 and 1 reflected.
     cell_info = np.array([0b011], dtype=np.uint32)
+
+    # dof_transformation_right_apply is deliberately not exposed on the
+    # pure-Python FiniteElement wrapper, so it is called on the
+    # underlying cpp object.
+    e = elem._cpp_object
 
     # Reference: apply row-by-row, exclusively through the block_size == 1
     # path.
@@ -530,13 +535,14 @@ def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype):
         lagrange_variant=basix.LagrangeVariant.legendre,
     )
     ufl_e = mixed_element([nedelec, lagrange])
-    e = finiteelement(CellType.triangle, ufl_e, np.float64)._cpp_object
-    assert e.needs_dof_transformations
+    elem = finiteelement(CellType.triangle, ufl_e, np.float64)
+    assert elem.needs_dof_transformations
 
-    ncols = e.space_dimension
+    ncols = elem.space_dimension
     nrows = 3
     A = np.arange(1, nrows * ncols + 1).astype(dtype)
     cell_info = np.array([0b011], dtype=np.uint32)
+    e = elem._cpp_object
 
     expected = A.copy()
     for i in range(nrows):
@@ -560,13 +566,14 @@ def test_non_mixed_element_dof_transformation_right(ttype, dtype):
         2,
         lagrange_variant=basix.LagrangeVariant.legendre,
     )
-    e = finiteelement(CellType.triangle, ufl_e, np.float64)._cpp_object
-    assert e.needs_dof_transformations
+    elem = finiteelement(CellType.triangle, ufl_e, np.float64)
+    assert elem.needs_dof_transformations
 
-    ncols = e.space_dimension
+    ncols = elem.space_dimension
     nrows = 3
     A = np.arange(1, nrows * ncols + 1).astype(dtype)
     cell_info = np.array([0b011], dtype=np.uint32)
+    e = elem._cpp_object
 
     expected = A.copy()
     for i in range(nrows):
