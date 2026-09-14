@@ -11,6 +11,7 @@ from __future__ import annotations
 import typing
 import warnings
 from collections.abc import Callable, Sequence
+from functools import cached_property
 
 from mpi4py import MPI as _MPI
 
@@ -27,8 +28,8 @@ from dolfinx.cpp.mesh import (
     CellType,
     DiagonalType,
     GhostMode,
-    build_dual_graph,
     cell_dim,
+    cell_num_entities,
     to_string,
     to_type,
 )
@@ -57,6 +58,7 @@ __all__ = [
     "Topology",
     "build_dual_graph",
     "cell_dim",
+    "cell_num_entities",
     "compute_cell_centroids",
     "compute_incident_entities",
     "compute_midpoints",
@@ -120,6 +122,10 @@ HybridPartitioningFunc = typing.Callable[
     ],
     _cpp.graph.AdjacencyList_int32,
 ]
+
+# A cell reordering function receives the local cell dual graph and
+# returns the new index of each cell.
+CellReorderFunc = typing.Callable[[AdjacencyList[np.int32]], npt.NDArray[np.int32]]
 
 
 def create_geometric_cell_partitioner(
@@ -191,6 +197,53 @@ def create_hybrid_cell_partitioner(
     return _cpp.graph.create_hybrid_cell_partitioner(part)
 
 
+def build_dual_graph(
+    comm: _MPI.Comm,
+    cell_types: CellType | Sequence[CellType],
+    cells: AdjacencyList[np.int64] | Sequence[npt.NDArray[np.int64]],
+    max_facet_to_cell_links: int | None = None,
+    num_threads: int = 1,
+) -> AdjacencyList[np.int64]:
+    """Build the dual graph of a mesh, i.e. the cell-to-cell graph.
+
+    Two cells are connected in the dual graph if they share a facet.
+
+    Args:
+        comm: MPI communicator that ``cells`` is distributed over.
+        cell_types: Cell type, or the cell types of a mixed-topology
+            mesh.
+        cells: Cells, using global vertex indices. For a single cell
+            type, an adjacency list of the cell vertices; for a
+            mixed-topology mesh, one array of cell vertices per cell
+            type.
+        max_facet_to_cell_links: Maximum number of cells that a facet
+            may connect. If ``None``, no limit is applied.
+        num_threads: Number of CPU threads to use. Must be >= 1.
+
+    Returns:
+        The dual graph, with the local cells as nodes.
+    """
+    # The C++ function is overloaded on the single/mixed cell-type
+    # forms, so dispatch on 'cell_types' rather than passing a union.
+    if isinstance(cell_types, CellType):
+        if not isinstance(cells, AdjacencyList):
+            raise TypeError("'cells' must be an AdjacencyList for a single cell type.")
+        graph = _cpp.mesh.build_dual_graph(
+            comm,
+            cell_types,
+            cells._cpp_object,  # type: ignore[arg-type]
+            max_facet_to_cell_links,
+            num_threads,
+        )
+    else:
+        if isinstance(cells, AdjacencyList):
+            raise TypeError("'cells' must be one array per cell type for a mixed-topology mesh.")
+        graph = _cpp.mesh.build_dual_graph(
+            comm, cell_types, cells, max_facet_to_cell_links, num_threads
+        )
+    return AdjacencyList(graph)
+
+
 def compute_cell_centroids(
     comm: _MPI.Comm,
     cell_types: Sequence[CellType],
@@ -242,22 +295,49 @@ class Topology:
         """
         self._cpp_object = topology
 
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same topology."""
+        if not isinstance(other, Topology):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped topology."""
+        return hash(self._cpp_object)
+
     def cell_name(self) -> str:
         """String representation of the cell-type of the topology."""
         return to_string(self._cpp_object.cell_type)
 
-    def connectivity(self, d0: int, d1: int) -> _cpp.graph.AdjacencyList_int32:
+    def connectivity(
+        self, d0: int | tuple[int, int], d1: int | tuple[int, int]
+    ) -> AdjacencyList[np.int32]:
         """Return connectivity.
 
         Connectivity from entities of dimension ``d0`` to entities of
-        dimension ``d1``.
+        dimension ``d1``. For a mixed-topology mesh, a dimension is
+        given as a ``(dimension, entity type index)`` pair.
 
         Args:
             d0: Dimension of entity one is mapping from.
             d1: Dimension of entity one is mapping to.
         """
-        if (conn := self._cpp_object.connectivity(d0, d1)) is not None:
-            return conn
+        # The C++ method is overloaded on the single/mixed-topology
+        # forms. The two calls below are identical at runtime, but the
+        # isinstance test narrows the argument types so that each picks
+        # the matching overload of the generated stub. Test for a pair
+        # rather than for an int, so that a dimension given as e.g. a
+        # NumPy integer is still treated as a dimension.
+        if isinstance(d0, tuple):
+            if not isinstance(d1, tuple):
+                raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
+            conn = self._cpp_object.connectivity(d0, d1)
+        else:
+            if isinstance(d1, tuple):
+                raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
+            conn = self._cpp_object.connectivity(d0, d1)
+        if conn is not None:
+            return AdjacencyList(conn)
         else:
             raise RuntimeError(
                 f"Connectivity between dimension {d0} and {d1} has not been computed.",
@@ -394,10 +474,20 @@ class Geometry(typing.Generic[Real]):
         """
         self._cpp_object = geometry
 
-    @property
-    def cmaps(self) -> list[_CoordinateElement]:
-        """The coordinate maps."""
-        return [_CoordinateElement(cm) for cm in self._cpp_object.cmaps]
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same geometry."""
+        if not isinstance(other, Geometry):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped geometry."""
+        return hash(self._cpp_object)
+
+    @cached_property
+    def cmaps(self) -> tuple[_CoordinateElement, ...]:
+        """The coordinate maps, one per cell type."""
+        return tuple(_CoordinateElement(cm) for cm in self._cpp_object.cmaps)
 
     @property
     def cmap(self) -> _CoordinateElement:
@@ -480,7 +570,17 @@ class Mesh(typing.Generic[Real]):
         self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
-            self._ufl_domain._ufl_cargo = self._cpp_object
+            # Attach this (Python) Mesh, rather than the C++ mesh, to
+            # the UFL domain so that ufl.Mesh.ufl_cargo returns the
+            # Python object. Callers (e.g. dolfinx.fem.form) rely on
+            # getting back this exact Mesh, so the link must keep the
+            # Mesh alive and cannot be a weak reference. It therefore
+            # forms a Mesh <-> ufl.Mesh reference cycle, which is
+            # reclaimed by the cyclic garbage collector rather than by
+            # reference counting. Call gc.collect() where a mesh (and
+            # the MPI communicator it holds) must be released at a
+            # known point, e.g. in the same order on all ranks.
+            self._ufl_domain._ufl_cargo = self
 
     @property
     def comm(self) -> _MPI.Comm:
@@ -577,15 +677,16 @@ class MeshTags:
             mesh.
         """
         self._cpp_object = meshtags
+        self._topology = Topology(self._cpp_object.topology)
 
     def ufl_id(self) -> int:
         """Identiftying integer used by UFL."""
         return id(self)
 
     @property
-    def topology(self) -> _cpp.mesh.Topology:
+    def topology(self) -> Topology:
         """Mesh topology with which the tags are associated."""
-        return self._cpp_object.topology
+        return self._topology
 
     @property
     def dim(self) -> int:
@@ -1019,6 +1120,26 @@ def mark_equidistribution(
     return _mark_equidistribution(values, index_map, theta)
 
 
+def _wrap_cell_reorder(
+    reorder_fn: CellReorderFunc | _cpp.graph.GeometricReorderer | None,
+) -> Callable | _cpp.graph.GeometricReorderer | None:
+    """Adapt a cell reordering callable to the C++ calling convention.
+
+    C++ calls the reordering function with a C++ adjacency list, so a
+    Python callable is wrapped to receive an
+    :class:`~dolfinx.graph.AdjacencyList`. A geometric reorderer is an
+    opaque C++ handle that is called with cell centroids rather than the
+    dual graph, and is passed through unchanged.
+    """
+    if reorder_fn is None or isinstance(reorder_fn, _cpp.graph.GeometricReorderer):
+        return reorder_fn
+
+    def reorder(dual_graph: _cpp.graph.AdjacencyList_int32) -> npt.NDArray[np.int32]:
+        return reorder_fn(AdjacencyList(dual_graph))
+
+    return reorder
+
+
 def _create_mesh_coordinate_element(
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     gdim: int,
@@ -1052,7 +1173,7 @@ def create_mesh(
     ghost_mode: GhostMode = GhostMode.none,
     max_facet_to_cell_links: int = 2,
     num_threads: int = 1,
-    reorder_fn: Callable | None = None,
+    reorder_fn: CellReorderFunc | _cpp.graph.GeometricReorderer | None = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -1074,7 +1195,8 @@ def create_mesh(
         num_threads: Number of threads to use to build mesh. Must be
             greater than 0.
         reorder_fn: A graph reordering callable receives the local cell
-            dual graph. The built-in ``graph.reorder_morton`` and
+            dual graph as an :class:`~dolfinx.graph.AdjacencyList`. The
+            built-in ``graph.reorder_morton`` and
             ``graph.reorder_hilbert`` receive local cell centroids. Both
             return an array mapping each cell index to its new index. If
             ``None`` (default), reverse Cuthill-McKee ordering is used.
@@ -1110,7 +1232,7 @@ def create_mesh(
         max_facet_to_cell_links=max_facet_to_cell_links,
         num_threads=num_threads,
         cell_weights=cell_weights,
-        reorder_fn=reorder_fn,
+        reorder_fn=_wrap_cell_reorder(reorder_fn),
     )
 
     return Mesh(msh, domain)

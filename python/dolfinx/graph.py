@@ -59,6 +59,7 @@ __all__ = [
     "partitioner",
     "reorder_hilbert",
     "reorder_morton",
+    "reorder_rcm",
 ]
 
 
@@ -89,6 +90,16 @@ class AdjacencyList(Generic[Index]):
             g: The underlying cpp instance that this object will wrap.
         """
         self._cpp_object = g
+
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same adjacency list."""
+        if not isinstance(other, AdjacencyList):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped adjacency list."""
+        return hash(self._cpp_object)
 
     def __repr__(self) -> str:
         """String representation of the adjacency list."""
@@ -169,10 +180,26 @@ def adjacencylist(
     return AdjacencyList(cpp_object)
 
 
+def reorder_rcm(graph: AdjacencyList[np.int32]) -> npt.NDArray[np.int32]:
+    """Re-order a graph using the reverse Cuthill-McKee algorithm.
+
+    Pass it as :func:`create_mesh <dolfinx.mesh.create_mesh>`'s
+    ``reorder_fn`` argument; it is also the default cell reordering.
+
+    Args:
+        graph: Graph to re-order.
+
+    Returns:
+        New index of each node, i.e. entry ``i`` is the new index of
+        node ``i``.
+    """
+    return np.asarray(_cpp.graph.reorder_rcm(graph._cpp_object), dtype=np.int32)  # type: ignore[arg-type]
+
+
 def distribute(
     comm: _MPI.Comm,
     list: npt.NDArray[np.int64],
-    destinations: _cpp.graph.AdjacencyList_int32,
+    destinations: AdjacencyList[np.int32],
 ) -> tuple[
     npt.NDArray[np.int64], npt.NDArray[np.int32], npt.NDArray[np.int64], npt.NDArray[np.int32]
 ]:
@@ -200,7 +227,11 @@ def distribute(
         trailing rows of the first entry -- not one entry per received
         row.
     """
-    return _cpp.graph.distribute(comm, np.ascontiguousarray(list, dtype=np.int64), destinations)
+    return _cpp.graph.distribute(
+        comm,
+        np.ascontiguousarray(list, dtype=np.int64),
+        destinations._cpp_object,  # type: ignore[arg-type]
+    )
 
 
 def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
