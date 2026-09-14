@@ -135,10 +135,7 @@ def create_vector(
         A PETSc vector with a layout that is compatible with ``V``. The
         vector is not initialised to zero.
     """
-    if isinstance(
-        V,
-        _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64,
-    ):
+    if isinstance(V, _FunctionSpace):
         V = [V]
     elif any(_V is None for _V in V):
         raise RuntimeError("Can not create vector for None block.")
@@ -542,10 +539,16 @@ def _assemble_matrix_petsc(
                     "Cannot have a entire {'row' if index == 0 else 'column'} of a full of None"
                 )
         is0 = _cpp.la.petsc.create_index_sets(
-            [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[0]]  # type: ignore
+            [
+                (Vsub.dofmaps[0].index_map._cpp_object, Vsub.dofmaps[0].index_map_bs)  # type: ignore
+                for Vsub in V[0]
+            ]
         )
         is1 = _cpp.la.petsc.create_index_sets(
-            [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[1]]  # type: ignore
+            [
+                (Vsub.dofmaps[0].index_map._cpp_object, Vsub.dofmaps[0].index_map_bs)  # type: ignore
+                for Vsub in V[1]
+            ]
         )
 
         _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []

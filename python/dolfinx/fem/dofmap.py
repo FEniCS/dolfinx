@@ -5,9 +5,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Degree-of-freedom maps."""
 
+import functools
 import typing
 from collections.abc import Sequence
-from functools import cached_property
 
 from mpi4py.MPI import Comm
 
@@ -15,6 +15,7 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
+from dolfinx.common import IndexMap
 from dolfinx.cpp.fem import DofMap as _DofMap
 from dolfinx.cpp.fem import create_dofmaps as _create_dofmaps
 from dolfinx.fem.element import ElementDofLayout, FiniteElement
@@ -64,15 +65,25 @@ class DofMap:
         """Block size of the dofmap."""
         return self._cpp_object.bs
 
-    @cached_property
+    @functools.cached_property
     def dof_layout(self) -> ElementDofLayout:
-        """Layout of dofs on an element."""
+        """Layout of dofs on an element.
+
+        Note:
+            This is a cached property. The wrapper is built on first
+            access and the same object is returned thereafter.
+        """
         return ElementDofLayout(self._cpp_object.dof_layout)
 
-    @property
-    def index_map(self) -> _cpp.common.IndexMap:
-        """Index map describing parallel distribution of the dofmap."""
-        return self._cpp_object.index_map
+    @functools.cached_property
+    def index_map(self) -> IndexMap:
+        """Index map describing parallel distribution of the dofmap.
+
+        Note:
+            This is a cached property. The wrapper is built on first
+            access and the same object is returned thereafter.
+        """
+        return IndexMap(self._cpp_object.index_map)
 
     @property
     def index_map_bs(self) -> int:

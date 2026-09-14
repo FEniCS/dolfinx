@@ -24,6 +24,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.common import IndexMap as _IndexMap
+from dolfinx.common import index_map as _index_map
 from dolfinx.cpp.mesh import (
     CellType,
     DiagonalType,
@@ -414,7 +415,7 @@ class Topology:
         """
         return self._cpp_object.get_facet_permutations()
 
-    def index_map(self, dim: int) -> _cpp.common.IndexMap:
+    def index_map(self, dim: int) -> _IndexMap:
         """Index map for the parallel distribution of the mesh entities.
 
         Args:
@@ -423,9 +424,9 @@ class Topology:
         Returns:
             Index map for the entities of dimension ``dim``.
         """
-        return self._cpp_object.index_map(dim)
+        return _IndexMap(self._cpp_object.index_map(dim))
 
-    def index_maps(self, dim: int) -> list[_cpp.common.IndexMap]:
+    def index_maps(self, dim: int) -> list[_IndexMap]:
         """Index maps for parallel distribution of the mesh entities.
 
         Args:
@@ -435,7 +436,7 @@ class Topology:
             Index maps for the entities of dimension ``dim``. May be
             empty if not yet computed.
         """
-        return self._cpp_object.index_maps(dim)
+        return [_IndexMap(m) for m in self._cpp_object.index_maps(dim)]
 
     def interprocess_facets(self) -> npt.NDArray[np.int32]:
         """List of inter-process facets.
@@ -524,7 +525,7 @@ class Geometry(typing.Generic[Real]):
 
     def index_map(self) -> _IndexMap:
         """Index map for the geometry points (nodes) distribution."""
-        return self._cpp_object.index_map()
+        return _IndexMap(self._cpp_object.index_map())
 
     @property
     def input_global_indices(self) -> npt.NDArray[np.int64]:
@@ -1075,7 +1076,7 @@ def mark_maximum(
         Local indices, ascending and including ghosts, of the entries
         satisfying :math:`v_i > \theta \max_j v_j`.
     """
-    return _mark_maximum(values, index_map, theta)
+    return _mark_maximum(values, index_map._cpp_object, theta)
 
 
 def mark_equidistribution(
@@ -1117,7 +1118,7 @@ def mark_equidistribution(
         Local indices, ascending and including ghosts, of the entries
         satisfying :math:`v_i > \frac{\theta^2}{N} \sum_j v_j`.
     """
-    return _mark_equidistribution(values, index_map, theta)
+    return _mark_equidistribution(values, index_map._cpp_object, theta)
 
 
 def _wrap_cell_reorder(
@@ -1719,11 +1720,15 @@ def create_geometry(
     cpp_element = element._cpp_object
     if isinstance(cpp_element, _cpp.fem.CoordinateElement_float64):
         return Geometry(
-            _cpp.mesh.Geometry_float64(index_map, dofmap, cpp_element, x, input_global_indices)
+            _cpp.mesh.Geometry_float64(
+                index_map._cpp_object, dofmap, cpp_element, x, input_global_indices
+            )
         )
     elif isinstance(cpp_element, _cpp.fem.CoordinateElement_float32):
         return Geometry(
-            _cpp.mesh.Geometry_float32(index_map, dofmap, cpp_element, x, input_global_indices)
+            _cpp.mesh.Geometry_float32(
+                index_map._cpp_object, dofmap, cpp_element, x, input_global_indices
+            )
         )
     else:
         raise ValueError(f"Unknown floating type for coordinate element, got: {dtype}")
@@ -1792,13 +1797,13 @@ def create_point_mesh(comm: _MPI.Comm, points: npt.NDArray[np.float32 | np.float
     # Create topology which only has a 0->0 connectivity and dim 0 entities
     cells = np.arange(points.shape[0], dtype=np.int32).reshape(-1, 1)
     num_nodes_local = cells.shape[0]
-    imap = _cpp.common.IndexMap(comm, num_nodes_local)
+    imap = _index_map(comm, num_nodes_local)
     local_range = imap.local_range[0]
     igi = np.arange(num_nodes_local, dtype=np.int64) + local_range
     topology = _cpp.mesh.Topology(
         cell_type=_cpp.mesh.CellType.point,
-        vertex_map=imap,
-        cell_map=imap,
+        vertex_map=imap._cpp_object,
+        cell_map=imap._cpp_object,
         cells=_cpp.graph.AdjacencyList_int32(cells),
         original_index=igi,
     )

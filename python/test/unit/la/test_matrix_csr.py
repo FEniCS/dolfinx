@@ -13,14 +13,14 @@ import pytest
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.common import IndexMap
+from dolfinx.common import index_map
 from dolfinx.cpp.la import BlockMode
 from dolfinx.la import matrix_csr, sparsity_pattern
 from dolfinx.mesh import GhostMode, create_unit_square
 
 
 def create_test_sparsity(n, bs):
-    im = IndexMap(MPI.COMM_WORLD, n)
+    im = index_map(MPI.COMM_WORLD, n)
     sp = sparsity_pattern(MPI.COMM_WORLD, [im, im], [bs, bs])
     if bs == 1:
         for i in range(2):
@@ -122,7 +122,7 @@ def test_distributed_csr(dtype):
     ghosts = np.array(range(n * nbr, n * nbr + nghost), dtype=np.int64)
     owner = np.ones_like(ghosts, dtype=np.int32) * nbr
 
-    im = IndexMap(MPI.COMM_WORLD, n, ghosts, owner, 0)
+    im = index_map(MPI.COMM_WORLD, n, (ghosts, owner), tag=0)
     sp = sparsity_pattern(MPI.COMM_WORLD, [im, im], [1, 1])
     for i in range(n):
         for j in range(n + nghost):
@@ -392,7 +392,7 @@ def test_eliminate_zeros_blocked_whole_block(dtype):
     bs0*bs1 entries is within tolerance; a block with even one entry
     above tolerance is kept in full, byte-for-byte.
     """
-    im = IndexMap(MPI.COMM_WORLD, 4)
+    im = index_map(MPI.COMM_WORLD, 4)
     sp = sparsity_pattern(MPI.COMM_WORLD, [im, im], [2, 2])
     sp.insert(0, 1)
     sp.insert(2, 3)
