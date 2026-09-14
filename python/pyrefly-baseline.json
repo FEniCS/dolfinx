@@ -50,13 +50,6 @@
       "severity": "error"
     },
     {
-      "column": 69,
-      "path": "dolfinx/fem/petsc.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `FunctionSpace_float32 | FunctionSpace_float64 | Unknown` is not assignable to parameter `V` with type `FunctionSpace[Unknown]` in function `dolfinx.fem.function.FunctionSpace.contains`",
-      "severity": "error"
-    },
-    {
       "column": 74,
       "path": "dolfinx/fem/petsc.py",
       "name": "bad-argument-type",
@@ -96,6 +89,13 @@
       "path": "dolfinx/mesh.py",
       "name": "no-matching-overload",
       "concise_description": "No matching overload found for function `dolfinx.cpp.refinement.mark_equidistribution` called with arguments: (ndarray[tuple[Any, ...], dtype[Real]], IndexMap, float)",
+      "severity": "error"
+    },
+    {
+      "column": 43,
+      "path": "dolfinx/mesh.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.mesh.build_dual_graph` called with arguments: (Comm, CellType, AdjacencyList_int32 | AdjacencyList_int64 | AdjacencyList_int_sizet_int8__int32_int32, int | None, int)",
       "severity": "error"
     },
     {
