@@ -620,7 +620,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
         interprocess_entities.push_back(i);
         auto vertices = shared_entities_v.links(i);
         assert(!vertices.empty());
-        int owner_rank = get_ownership(ranks, vertices);
+        int owner_rank = get_ownership(shared_ranks, vertices);
         if (owner_rank == mpi_rank)
         {
           // Take ownership

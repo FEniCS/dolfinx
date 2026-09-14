@@ -569,7 +569,7 @@ void write_function(
             for (int k = 0; k < bs; ++k)
             {
               assert(i < dofs0.size());
-              assert(bs * dofs0[i] + k < (int)u.size());
+              assert(bs * dofs0[i] + k < (int)u_data.size());
               u_data[bs * dofs0[i] + k] = u_vector[bs * dofs[i] + k];
             }
           }
