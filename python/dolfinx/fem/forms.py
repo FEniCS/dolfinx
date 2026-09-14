@@ -360,7 +360,7 @@ def mixed_topology_form(
         [],
         {},
         [],
-        msh._cpp_object,
+        typing.cast(typing.Any, msh._cpp_object),
     )
     return Form(f, msh, spaces, ufcx_forms, codes, modules)
 
@@ -512,7 +512,7 @@ def form(
             constants,
             subdomains,
             _entity_maps,
-            msh._cpp_object,
+            typing.cast(typing.Any, msh._cpp_object),
         )
         return Form(f, msh, spaces, ufcx_form, code, module)
 
