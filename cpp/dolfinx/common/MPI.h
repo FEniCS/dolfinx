@@ -21,6 +21,7 @@
 #include <numeric>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -824,7 +825,7 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
         = MPI_Allreduce(&invalid_local, &invalid, 1, MPI_INT, MPI_MAX, comm0);
     dolfinx::MPI::check_error(comm0, err);
     if (invalid)
-      throw std::runtime_error("Non-empty data on null MPI communicator");
+      throw std::invalid_argument("Non-empty data on null MPI communicator");
   }
 
   std::int64_t shape0 = 0;
