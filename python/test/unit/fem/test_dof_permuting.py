@@ -488,7 +488,7 @@ def test_mixed_element_dof_transformation_right(ttype, dtype):
 
     ncols = e.space_dimension
     nrows = 3
-    A = np.arange(1.0, nrows * ncols + 1.0, dtype=dtype)
+    A = np.arange(1, nrows * ncols + 1).astype(dtype)
     # Cell permutation with edges 0 and 1 reflected.
     cell_info = np.array([0b011], dtype=np.uint32)
 
@@ -535,7 +535,7 @@ def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype):
 
     ncols = e.space_dimension
     nrows = 3
-    A = np.arange(1.0, nrows * ncols + 1.0, dtype=dtype)
+    A = np.arange(1, nrows * ncols + 1).astype(dtype)
     cell_info = np.array([0b011], dtype=np.uint32)
 
     expected = A.copy()
@@ -565,7 +565,7 @@ def test_non_mixed_element_dof_transformation_right(ttype, dtype):
 
     ncols = e.space_dimension
     nrows = 3
-    A = np.arange(1.0, nrows * ncols + 1.0, dtype=dtype)
+    A = np.arange(1, nrows * ncols + 1).astype(dtype)
     cell_info = np.array([0b011], dtype=np.uint32)
 
     expected = A.copy()
