@@ -454,8 +454,59 @@ def test_permutation_wrappers(space_order, data_types):
     np.testing.assert_allclose(org_data.reshape(-1), arr.reshape(-1), atol=eps)
 
 
+def _lagrange_element():
+    """P1 Lagrange on a triangle.
+
+    DOF transformations are the identity, so the only role of this
+    sub-element is to shift the offset of the element it is mixed with.
+    """
+    e = basix.create_element(
+        basix.ElementFamily.P,
+        basix.CellType.triangle,
+        1,
+        basix.LagrangeVariant.gll_isaac,
+        discontinuous=False,
+    )
+    return _cpp.fem.FiniteElement_float64(e._e, None, False)
+
+
+def _nedelec_element():
+    """Nedelec (first kind), degree 2, on a triangle.
+
+    Two DOFs per edge, so the DOF transformation is non-trivial (not
+    merely a permutation).
+    """
+    e = basix.create_element(
+        basix.ElementFamily.N1E,
+        basix.CellType.triangle,
+        2,
+        basix.LagrangeVariant.legendre,
+        discontinuous=False,
+    )
+    return _cpp.fem.FiniteElement_float64(e._e, None, False)
+
+
+# Cell permutation with edges 0 and 1 reflected.
+_CELL_INFO = np.array([0b011], dtype=np.uint32)
+
+
+def _apply_row_by_row(e, ttype, A, ncols, nrows):
+    """Apply e.dof_transformation_right_apply row-by-row.
+
+    Exclusively through the block_size == 1 path, one row of A (shape
+    (nrows, ncols), flattened) at a time.
+    """
+    out = A.copy()
+    for i in range(nrows):
+        e.dof_transformation_right_apply(
+            ttype, out[i * ncols : (i + 1) * ncols], _CELL_INFO, 0, 1, False
+        )
+    return out
+
+
+@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
 @pytest.mark.parametrize("ttype", [0, 1, 2, 3])  # doftransform: standard/transpose/inverse/...
-def test_mixed_element_dof_transformation_right(ttype):
+def test_mixed_element_dof_transformation_right(ttype, dtype):
     """Check a mixed element's right (post-)transformation is row-consistent.
 
     Each row of (block_size, ndofs) data must be transformed over its own
@@ -463,49 +514,63 @@ def test_mixed_element_dof_transformation_right(ttype):
     sub-element's offset. See
     ``dolfinx::fem::FiniteElement::dof_transformation_right_fn``.
     """
-    # P1 Lagrange, DOF transformations are the identity: its only role
-    # here is to shift the N1curl sub-element to a non-zero offset.
-    lagrange = basix.create_element(
-        basix.ElementFamily.P,
-        basix.CellType.triangle,
-        1,
-        basix.LagrangeVariant.gll_isaac,
-        discontinuous=False,
-    )
-    # Nedelec (first kind), degree 2: two DOFs per edge, so the DOF
-    # transformation is non-trivial (not merely a permutation).
-    nedelec = basix.create_element(
-        basix.ElementFamily.N1E,
-        basix.CellType.triangle,
-        2,
-        basix.LagrangeVariant.legendre,
-        discontinuous=False,
-    )
-
-    sub_lagrange = _cpp.fem.FiniteElement_float64(lagrange._e, None, False)
-    sub_nedelec = _cpp.fem.FiniteElement_float64(nedelec._e, None, False)
-
-    # The transforming sub-element is placed second, so it sits at a
-    # non-zero DOF offset within the mixed element.
-    e = _cpp.fem.FiniteElement_float64([sub_lagrange, sub_nedelec])
+    # The transforming (Nedelec) sub-element is placed second, so it
+    # sits at a non-zero DOF offset within the mixed element.
+    e = _cpp.fem.FiniteElement_float64([_lagrange_element(), _nedelec_element()])
     assert e.needs_dof_transformations
 
     ncols = e.space_dimension
     nrows = 3
-    # Cell permutation with edges 0 and 1 reflected.
-    cell_info = np.array([0b011], dtype=np.uint32)
+    A = np.arange(1.0, nrows * ncols + 1.0, dtype=dtype)
 
-    A = np.arange(1.0, nrows * ncols + 1.0, dtype=np.float64)
-
-    # Reference: apply row-by-row, exclusively through the block_size == 1
-    # path.
-    expected = A.copy()
-    for i in range(nrows):
-        e.dof_transformation_right_apply(
-            ttype, expected[i * ncols : (i + 1) * ncols], cell_info, 0, 1, False
-        )
+    expected = _apply_row_by_row(e, ttype, A, ncols, nrows)
 
     B = A.copy()
-    e.dof_transformation_right_apply(ttype, B, cell_info, 0, nrows, False)
+    e.dof_transformation_right_apply(ttype, B, _CELL_INFO, 0, nrows, False)
+
+    np.testing.assert_array_equal(B, expected)
+    # The transformation is not a no-op for this cell permutation, so the
+    # row-by-row/single-call agreement above isn't trivially satisfied.
+    assert not np.array_equal(A, B)
+
+
+@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+@pytest.mark.parametrize("ttype", [0, 1, 2, 3])
+def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype):
+    """As above, but with the transforming sub-element first, at offset 0.
+
+    This is the case that the pre-fix sub-span slicing got right, so it
+    serves as a control alongside the non-zero-offset case above.
+    """
+    e = _cpp.fem.FiniteElement_float64([_nedelec_element(), _lagrange_element()])
+    assert e.needs_dof_transformations
+
+    ncols = e.space_dimension
+    nrows = 3
+    A = np.arange(1.0, nrows * ncols + 1.0, dtype=dtype)
+
+    expected = _apply_row_by_row(e, ttype, A, ncols, nrows)
+
+    B = A.copy()
+    e.dof_transformation_right_apply(ttype, B, _CELL_INFO, 0, nrows, False)
+
+    np.testing.assert_array_equal(B, expected)
+
+
+@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+@pytest.mark.parametrize("ttype", [0, 1, 2, 3])
+def test_non_mixed_element_dof_transformation_right(ttype, dtype):
+    """As above, but for the leaf (non-mixed) code path, for contrast."""
+    e = _nedelec_element()
+    assert e.needs_dof_transformations
+
+    ncols = e.space_dimension
+    nrows = 3
+    A = np.arange(1.0, nrows * ncols + 1.0, dtype=dtype)
+
+    expected = _apply_row_by_row(e, ttype, A, ncols, nrows)
+
+    B = A.copy()
+    e.dof_transformation_right_apply(ttype, B, _CELL_INFO, 0, nrows, False)
 
     np.testing.assert_array_equal(B, expected)
