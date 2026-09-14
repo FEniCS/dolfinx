@@ -597,10 +597,10 @@ void declare_objects(nb::module_& m, std::string type)
                  nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
                  cells)
           {
-            auto interp_pr = [](dolfinx::fem::Function<T, U>& self,
-                                std::uintptr_t addr, auto&& cells)
+            auto interp_pr = [](dolfinx::fem::Function<T, U>& fn,
+                                std::uintptr_t fptr, auto&& cells)
             {
-              auto V = self.function_space();
+              auto V = fn.function_space();
               assert(V);
               auto element = V->element();
               assert(element);
@@ -612,13 +612,13 @@ void declare_objects(nb::module_& m, std::string type)
                                                    1, std::multiplies{});
               std::function<void(T*, int, int, const U*, void*)> f
                   = reinterpret_cast<void (*)(T*, int, int, const U*, void*)>(
-                      addr);
+                      fptr);
               std::vector<U> x = dolfinx::fem::interpolation_coords(
                   *element, mesh->geometry(), cells);
               std::array<std::size_t, 2> shape{value_size, x.size() / 3};
               std::vector<T> values(shape[0] * shape[1]);
               f(values.data(), shape[1], shape[0], x.data(), nullptr);
-              dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
+              dolfinx::fem::interpolate(fn, std::span<const T>(values), shape,
                                         cells);
             };
 
