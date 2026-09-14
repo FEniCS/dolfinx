@@ -41,7 +41,6 @@
 
 # +
 import sys
-import typing
 from pathlib import Path
 
 from mpi4py import MPI
@@ -132,14 +131,12 @@ def TMx_condition(
     kx_d: complex, kx_v: complex, eps_d: complex, eps_v: complex, d: float, h: float
 ) -> complex:
     """Transcendental equation for TMx modes."""
-    return typing.cast(
-        complex, kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d))
-    )
+    return complex(kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d)))
 
 
 def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> complex:
     """Transcendental equation for TEx modes."""
-    return typing.cast(complex, kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d)))
+    return complex(kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d)))
 
 
 # Then, we can define the `verify_mode` function, to check whether a

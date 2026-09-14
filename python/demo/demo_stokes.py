@@ -93,7 +93,6 @@
 
 # +
 import sys
-import typing
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -200,9 +199,12 @@ a_ufl: list[list[ufl.Form | None]] = [
     [ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, ufl.inner(p, ufl.div(v)) * ufl.dx],
     [ufl.inner(ufl.div(u), q) * ufl.dx, None],
 ]
-a = typing.cast(list[list[Form | None]], form(a_ufl))
-L_ufl = typing.cast(list[ufl.Form], [ufl.inner(f, v) * ufl.dx, ufl.ZeroBaseForm((q,))])
-L = typing.cast(list[Form], form(L_ufl))
+a: list[list[Form | None]] = form(a_ufl)  # type: ignore[assignment]
+L_ufl: list[ufl.Form] = [  # type: ignore[list-item]
+    ufl.inner(f, v) * ufl.dx,
+    ufl.ZeroBaseForm((q,)),
+]
+L: list[Form] = form(L_ufl)  # type: ignore[assignment]
 # -
 
 # A block-diagonal preconditioner will be used with the iterative
@@ -211,7 +213,7 @@ L = typing.cast(list[Form], form(L_ufl))
 a_p11_ufl = ufl.inner(p, q) * ufl.dx
 a_p_ufl: list[list[ufl.Form | None]] = [[a_ufl[0][0], None], [None, a_p11_ufl]]
 a_p11 = form(a_p11_ufl)
-a_p = typing.cast(list[list[Form | None]], form(a_p_ufl))
+a_p: list[list[Form | None]] = form(a_p_ufl)  # type: ignore[assignment]
 
 
 # ### High-level nested matrix solver

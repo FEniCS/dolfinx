@@ -25,7 +25,6 @@
 
 # +
 import sys
-import typing
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -57,9 +56,7 @@ def norm_L2(v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx) -> np.inexact:
     """Convenience function to compute the L2 norm of a UFL expression."""
     compiled_form = fem.form(ufl.inner(v, v) * measure)
     comm = compiled_form.mesh.comm
-    return typing.cast(
-        np.inexact, np.sqrt(comm.allreduce(fem.assemble_scalar(compiled_form), op=MPI.SUM))
-    )
+    return np.sqrt(comm.allreduce(fem.assemble_scalar(compiled_form), op=MPI.SUM))  # type: ignore[return-value]
 
 
 # In DOLFINx, we represent integration domains over entities of
@@ -200,16 +197,13 @@ entity_maps = [facet_mesh_emap]
 # Compile forms for the blocked system, using {py:func}`ufl.extract_blocks`
 # for the bilinear and linear forms.
 
-a_blocked = typing.cast(
-    list[list[fem.Form | None]],
-    fem.form(
-        typing.cast(list[list[ufl.Form | None]], ufl.extract_blocks(a)),
-        entity_maps=entity_maps,
-    ),
+a_ufl: list[list[ufl.Form | None]] = ufl.extract_blocks(a)  # type: ignore[assignment]
+a_blocked: list[list[fem.Form | None]] = fem.form(  # type: ignore[assignment]
+    a_ufl,
+    entity_maps=entity_maps,
 )
-L_blocked = typing.cast(
-    list[fem.Form], fem.form(typing.cast(list[ufl.Form], ufl.extract_blocks(L)))
-)
+L_ufl: list[ufl.Form] = ufl.extract_blocks(L)  # type: ignore[assignment]
+L_blocked: list[fem.Form] = fem.form(L_ufl)  # type: ignore[assignment]
 
 # Apply Dirichlet boundary conditions. We begin by locating the boundary
 # facets of msh.

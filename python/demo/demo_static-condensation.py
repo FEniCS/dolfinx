@@ -35,8 +35,9 @@
 
 # +
 import sys
-import typing
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -70,7 +71,7 @@ from ffcx.codegeneration.numba.utils import ufcx_kernel_signature as ufcx_signat
 
 # `empty_void_pointer`'s stub signature is numba's `@intrinsic`
 # `typingctx`/`context` arguments, not its real, zero-argument call.
-empty_void_pointer = typing.cast(typing.Callable[[], typing.Any], _empty_void_pointer)
+empty_void_pointer: Callable[[], Any] = _empty_void_pointer  # type: ignore[assignment]
 
 rtype = default_real_type
 dtype = default_scalar_type

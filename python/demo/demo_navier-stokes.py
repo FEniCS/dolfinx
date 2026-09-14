@@ -178,7 +178,6 @@
 
 # +
 import sys
-import typing
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -339,8 +338,8 @@ u_h = fem.Function(V)
 p_h = fem.Function(Q)
 p_h.name = "p"
 stokes_problem = LinearProblem(
-    typing.cast(list[list[ufl.Form | None]], ufl.extract_blocks(a)),
-    typing.cast(list[ufl.Form], ufl.extract_blocks(L)),
+    ufl.extract_blocks(a),  # type: ignore[arg-type]
+    ufl.extract_blocks(L),  # type: ignore[arg-type]
     u=[u_h, p_h],
     bcs=bcs,
     kind="mpi",
@@ -406,8 +405,8 @@ L += (
 )
 
 navier_stokes_problem = LinearProblem(
-    typing.cast(list[list[ufl.Form | None]], ufl.extract_blocks(a)),
-    typing.cast(list[ufl.Form], ufl.extract_blocks(L)),
+    ufl.extract_blocks(a),  # type: ignore[arg-type]
+    ufl.extract_blocks(L),  # type: ignore[arg-type]
     u=[u_h, p_h],
     bcs=bcs,
     kind="mpi",

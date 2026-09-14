@@ -27,7 +27,6 @@
 
 # +
 import sys
-import typing
 
 from mpi4py import MPI
 
@@ -119,8 +118,8 @@ mesh = create_mesh(
     MPI.COMM_WORLD,
     cells_np,
     [
-        typing.cast(_cpp.fem.CoordinateElement_float64, hexahedron._cpp_object),
-        typing.cast(_cpp.fem.CoordinateElement_float64, prism._cpp_object),
+        hexahedron._cpp_object,  # type: ignore[list-item]
+        prism._cpp_object,  # type: ignore[list-item]
     ],
     geomx,
     part,
@@ -141,11 +140,7 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 dolfinx_elements = [
-    FiniteElement(
-        _cpp.fem.FiniteElement_float64(
-            typing.cast(basix._basixcpp.FiniteElement_float64, e._e), None, False
-        )
-    )
+    FiniteElement(_cpp.fem.FiniteElement_float64(e._e, None, False))  # type: ignore[arg-type]
     for e in elements
 ]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs

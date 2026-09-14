@@ -47,8 +47,6 @@
 # We start by importing the necessary modules
 
 # +
-import typing
-
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -126,7 +124,9 @@ class MatrixFreeOperator:
             # Handle MixedFunctionSpace forms
             size = max(arg.part() for arg in arguments) + 1
             assert max(arg.number() for arg in arguments) == 1
-            a_blocked = typing.cast(list[list[ufl.Form | None]], ufl.extract_blocks(bilinear_form))
+            a_blocked: list[list[ufl.Form | None]] = ufl.extract_blocks(  # type: ignore[assignment]
+                bilinear_form
+            )
             assert len(a_blocked) == size
             a_diagonal: list[ufl.Form] = []
             spaces = []
@@ -139,23 +139,18 @@ class MatrixFreeOperator:
             self._w = [dolfinx.fem.Function(space) for space in spaces]
             self._diagonal = dolfinx.fem.petsc.create_vector(spaces)
             self._vector = dolfinx.fem.petsc.create_vector(spaces)
-            self._vector_product = typing.cast(
-                list[dolfinx.fem.Form],
-                dolfinx.fem.form(
-                    typing.cast(
-                        list[ufl.Form], ufl.extract_blocks(ufl.action(bilinear_form, self._w))
-                    ),
-                    form_compiler_options=form_compiler_options,
-                    jit_options=jit_options,
-                ),
+            action_blocks: list[ufl.Form] = ufl.extract_blocks(  # type: ignore[assignment]
+                ufl.action(bilinear_form, self._w)
             )
-            self._compiled_diagonal = typing.cast(
-                list[dolfinx.fem.Form],
-                dolfinx.fem.form(
-                    a_diagonal,
-                    form_compiler_options=diagnal_options,
-                    jit_options=jit_options,
-                ),
+            self._vector_product = dolfinx.fem.form(  # type: ignore[assignment]
+                action_blocks,
+                form_compiler_options=form_compiler_options,
+                jit_options=jit_options,
+            )
+            self._compiled_diagonal = dolfinx.fem.form(  # type: ignore[assignment]
+                a_diagonal,
+                form_compiler_options=diagnal_options,
+                jit_options=jit_options,
             )
         else:
             # Handle "standard" bilinear forms
@@ -345,7 +340,7 @@ def extract_system(
     u_h, p_h = ufl.TrialFunctions(W)
     v, q = ufl.TestFunctions(W)
     residual = ufl.inner(u_h - f, v) * ufl.dx + ufl.inner(p_h - g, q) * ufl.dx
-    return typing.cast(tuple[ufl.Form, ufl.Form], ufl.system(residual))
+    return ufl.system(residual)  # type: ignore[return-value]
 
 
 # We also define a convenience function for creating the Krylov subspace
@@ -469,13 +464,13 @@ def mixed_function_space(
     # assemble the local product A_local g_local, where g_local is the
     # local representation of the Dirichlet data.
 
-    L_compiled = typing.cast(
-        list[dolfinx.fem.Form],
-        dolfinx.fem.form(typing.cast(list[ufl.Form], ufl.extract_blocks(L))),
+    L_blocks: list[ufl.Form] = ufl.extract_blocks(L)  # type: ignore[assignment]
+    L_compiled: list[dolfinx.fem.Form] = dolfinx.fem.form(  # type: ignore[assignment]
+        L_blocks
     )
-    a_compiled = typing.cast(
-        list[list[dolfinx.fem.Form | None]],
-        dolfinx.fem.form(typing.cast(list[list[ufl.Form | None]], ufl.extract_blocks(a))),
+    a_blocks: list[list[ufl.Form | None]] = ufl.extract_blocks(a)  # type: ignore[assignment]
+    a_compiled: list[list[dolfinx.fem.Form | None]] = dolfinx.fem.form(  # type: ignore[assignment]
+        a_blocks
     )
     b = dolfinx.fem.petsc.assemble_vector(L_compiled)
     bcs0 = dolfinx.fem.bcs_by_block(dolfinx.fem.extract_function_spaces(L_compiled), bcs)
@@ -518,7 +513,7 @@ def compute_L2_error(uh: ufl.core.expr.Expr, u_ex: ufl.core.expr.Expr) -> float:
     """
     error = ufl.inner(uh - u_ex, uh - u_ex) * ufl.dx
     error = dolfinx.fem.assemble_scalar(dolfinx.fem.form(error))
-    return typing.cast(float, np.sqrt(mesh.comm.allreduce(error, op=MPI.SUM)))
+    return float(np.sqrt(mesh.comm.allreduce(error, op=MPI.SUM)))
 
 
 error_u_me = compute_L2_error(u_me, f)
