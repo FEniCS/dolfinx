@@ -80,9 +80,12 @@ int size(MPI_Comm comm);
 
 /// @brief Check MPI error code. If the error code is not equal to
 /// MPI_SUCCESS, then std::abort is called.
+/// @note Aborts rather than throwing: MPI's state is undefined after an
+/// error, so there is nothing to recover into. Being `noexcept` makes
+/// this safe to call from a destructor.
 /// @param[in] comm MPI communicator.
 /// @param[in] code Error code returned by an MPI function call.
-void check_error(MPI_Comm comm, int code);
+void check_error(MPI_Comm comm, int code) noexcept;
 
 /// @brief Return which rank owns index in global range [0, N - 1]
 /// (inverse of MPI::local_range).
