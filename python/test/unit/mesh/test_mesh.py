@@ -807,6 +807,18 @@ def test_boundary_facets(n, d, ghost_mode, dtype):
     assert compute_num_boundary_facets(mesh) == exd_num_boundary_facets
 
 
+@pytest.mark.parametrize("n", [5, 10])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_boundary_facets_interval(n, ghost_mode, dtype):
+    """Test that a rank-boundary vertex of a distributed interval mesh is
+    not misclassified as an exterior facet (regression test for
+    Topology's tdim == 1 inter-process facet computation).
+    """
+    mesh = create_interval(MPI.COMM_WORLD, n, [0.0, 1.0], ghost_mode=ghost_mode, dtype=dtype)
+    assert compute_num_boundary_facets(mesh) == 2
+
+
 @pytest.mark.parametrize("n", [3, 5])
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
