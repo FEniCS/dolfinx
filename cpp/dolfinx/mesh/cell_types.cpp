@@ -65,6 +65,8 @@ mesh::CellType mesh::to_type(std::string_view cell)
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> mesh::get_entity_vertices(CellType type, int dim)
 {
+  if (dim < 0 or dim > cell_dim(type))
+    throw std::out_of_range("dim out of range for get_entity_vertices.");
   std::vector<std::vector<int>> topology
       = basix::cell::topology(cell_type_to_basix_type(type))[dim];
   return graph::AdjacencyList<int>(topology);
@@ -78,6 +80,11 @@ graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
     return graph::AdjacencyList<int>(0);
   else if (type == CellType::point)
     return graph::AdjacencyList<int>(0);
+
+  if (dim0 < 0 or dim0 > cell_dim(type))
+    throw std::out_of_range("dim0 out of range for get_sub_entities.");
+  if (dim1 < 0 or dim1 > dim0)
+    throw std::out_of_range("dim1 out of range for get_sub_entities.");
 
   std::vector<std::vector<std::vector<int>>> connectivity
       = basix::cell::sub_entity_connectivity(

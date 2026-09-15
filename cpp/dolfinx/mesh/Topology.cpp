@@ -902,7 +902,7 @@ std::vector<std::shared_ptr<const common::IndexMap>>
 Topology::index_maps(int dim) const
 {
   std::vector<std::shared_ptr<const common::IndexMap>> maps;
-  for (std::size_t i = 0; i < _entity_types[dim].size(); ++i)
+  for (std::size_t i = 0; i < _entity_types.at(dim).size(); ++i)
   {
     auto it = _index_maps.find({dim, int(i)});
     if (it != _index_maps.end())
@@ -913,7 +913,7 @@ Topology::index_maps(int dim) const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
-  if (_entity_types[dim].size() > 1)
+  if (_entity_types.at(dim).size() > 1)
   {
     throw std::runtime_error(
         "Multiple index maps of this dimension. Call index_maps instead.");
