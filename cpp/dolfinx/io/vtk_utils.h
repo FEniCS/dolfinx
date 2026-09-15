@@ -96,7 +96,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
-    mesh->topology_mutable()->create_entity_permutations();
+    mesh->topology_mutable()->create_cell_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 

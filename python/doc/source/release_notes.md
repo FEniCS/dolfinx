@@ -2,6 +2,53 @@
 
 ## v0.12.0 (draft)
 
+### Entity permutations are computed per dimension
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
+
+Permutations of a cell's sub-entities are now computed for one entity
+dimension at a time, rather than for every dimension at once.
+
+The single `create_entity_permutations()` call has been split in two, along
+the line of what the two kinds of permutation data are for:
+
+- {py:meth}`Topology.create_entity_permutations
+  <dolfinx.mesh.Topology.create_entity_permutations>` now takes a `dim`
+  argument, matching {py:meth}`Topology.create_entities
+  <dolfinx.mesh.Topology.create_entities>`, and computes only that dimension.
+  These permutations are passed to FFCx kernels as `quadrature_permutation`,
+  so that cells sharing an entity agree on the order of the quadrature points
+  on it. Which dimension is needed follows from the integral, not from the
+  element: an interior facet integral needs `tdim - 1`, a ridge integral
+  `tdim - 2`. Vertices have no orientation, so `dim` 0 gives an empty array.
+- {py:meth}`Topology.create_cell_permutations
+  <dolfinx.mesh.Topology.create_cell_permutations>` computes the packed
+  per-cell permutation info, previously a side effect of
+  `create_entity_permutations()`. It describes the orientation of all of a
+  cell's sub-entities at once, and is required by elements whose DOF
+  transformations are not the identity: applied once to the dofmap when it is
+  built where those transformations are permutations (higher-order Lagrange),
+  and to the element tensor on each cell at assembly time where they are not
+  (N1curl, Raviart-Thomas).
+
+Code that called `create_entity_permutations()` in order to use
+{py:meth}`Topology.get_cell_permutation_info
+<dolfinx.mesh.Topology.get_cell_permutation_info>` should now call
+`create_cell_permutations()`.
+
+`Topology.get_facet_permutations` has been removed. Use the new
+{py:meth}`Topology.get_entity_permutations
+<dolfinx.mesh.Topology.get_entity_permutations>`, which takes the entity
+dimension, after calling `create_entity_permutations(dim)` for it:
+`get_facet_permutations()` becomes `get_entity_permutations(tdim - 1)`.
+
+
+In C++, `mesh::compute_entity_permutations` now takes an entity dimension and
+returns only that dimension's permutations, the cell permutation info is
+returned by the new `mesh::compute_cell_permutations`, and
+`Topology::get_facet_permutations` has been removed in favour of
+`Topology::get_entity_permutations(dim)`.
+
 ### A first-class SNES interface for C++
 
 **Authors**: [Jack Hale](https://github.com/jhale)

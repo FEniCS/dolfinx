@@ -17,6 +17,7 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -45,6 +46,51 @@ enum class IntegralType : std::int8_t
   vertex = 3,         ///< Vertex
   ridge = 4           ///< Ridge
 };
+
+namespace impl
+{
+/// @brief Permutations of the cell-local entities that an integral of
+/// the given type is over.
+///
+/// Computes the permutations on `topology` if they are not already
+/// available. Returns an empty mdspan when the integration entity has
+/// no orientation to permute: cell integrals, and integrals over
+/// entities that are vertices.
+///
+/// @param[in,out] topology Mesh topology of the integration domain.
+/// @param[in] type Integral type.
+/// @param[in] cell_type Cell type of the integration domain.
+/// @return Permutation of each cell-local entity, shape
+/// `(num_cells, entities_per_cell)`.
+inline md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
+entity_permutations(mesh::Topology& topology, IntegralType type,
+                    mesh::CellType cell_type)
+{
+  const int tdim = topology.dim();
+  int dim = tdim;
+  switch (type)
+  {
+  case IntegralType::exterior_facet:
+  case IntegralType::interior_facet:
+    dim = tdim - 1;
+    break;
+  case IntegralType::ridge:
+    dim = tdim - 2;
+    break;
+  case IntegralType::vertex:
+    dim = 0;
+    break;
+  case IntegralType::cell:
+    return {};
+  }
+
+  topology.create_entity_permutations(dim);
+  const std::vector<std::uint8_t>& p = topology.get_entity_permutations(dim);
+  const int num_entities_per_cell = mesh::cell_num_entities(cell_type, dim);
+  return md::mdspan(p.data(), p.size() / num_entities_per_cell,
+                    num_entities_per_cell);
+}
+} // namespace impl
 
 /// @brief Represents integral data, containing the kernel, and a list
 /// of entities to integrate over and the indices of the coefficient
