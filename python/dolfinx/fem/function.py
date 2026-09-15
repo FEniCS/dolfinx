@@ -710,7 +710,7 @@ def functionspace(
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
     # Create DOLFINx objects
-    dolfinx_element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
+    dolfinx_element = finiteelement(mesh.topology.cell_type, ufl_e, dtype, mesh.geometry.dim)
 
     if ufl_e.is_real:
         dof_layout = _cpp.fem.create_element_dof_layout(dolfinx_element._cpp_object, [])

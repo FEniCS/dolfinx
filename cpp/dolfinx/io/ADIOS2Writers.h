@@ -558,7 +558,8 @@ public:
             bool is_piecewise_constant = impl::is_cellwise(*element);
             _has_piecewise_constant
                 = _has_piecewise_constant || is_piecewise_constant;
-            if (*element != *V0->element().get() and !is_piecewise_constant)
+            if (!impl::same_base_element(*element, *V0->element().get())
+                and !is_piecewise_constant)
             {
               throw std::runtime_error("All functions in VTXWriter must have "
                                        "the same element type.");

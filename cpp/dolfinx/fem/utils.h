@@ -1088,7 +1088,8 @@ mesh::Mesh<T> interpolate_geometry(
       mesh::cell_type_to_basix_type(new_cmap.cell_shape()), new_cmap.degree(),
       new_cmap.variant(), basix::element::dpc_variant::unset, false);
   auto element = std::make_shared<const FiniteElement<T>>(
-      b_element, std::vector<std::size_t>{static_cast<std::size_t>(gdim)});
+      b_element, gdim,
+      std::vector<std::size_t>{static_cast<std::size_t>(gdim)});
 
   FunctionSpace<T> V = create_functionspace(mesh, element, reorder_fn);
 
