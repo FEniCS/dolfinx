@@ -193,6 +193,10 @@ intersphinx_mapping = {
         f"https://mpi4py.readthedocs.io/en/{mpi4py.__version__}",
         None,
     ),
+    "python": (
+        "https://docs.python.org/3",
+        None,
+    ),
     "scipy": (
         "https://docs.scipy.org/doc/scipy",
         None,
@@ -223,19 +227,15 @@ myst_enable_extensions = [
 ]
 
 # Fail the build on an unresolvable :doc:/{py:*} target, e.g. a typo or a
-# renamed API, rather than silently rendering it as plain text. The
-# autodoc-generated API reference (generated/*) is exempted below, since
-# it is dominated by type-hint cross-references Sphinx cannot resolve
-# (private numpy typing internals, nanobind stub types, ...); genuine
-# broken links there would still be caught by pyrefly/mypy on the
-# underlying annotations.
+# renamed API, rather than silently rendering it as plain text.
 nitpicky = True
 
-# Targets that are real but that we cannot make resolve: real, live
-# attributes of an external project (ufl) that project's own docs do not
-# publish, and dolfinx module attributes bound directly at the nanobind
-# layer (plain values, not introspectable Python descriptors), which
-# autodoc cannot discover as documented py:data targets.
+# Targets that are real but that cannot be made to resolve: live
+# attributes/methods of an external project (ufl) that project's own
+# docs do not publish, and dolfinx module attributes bound directly at
+# the nanobind layer (plain values, not introspectable Python
+# descriptors), which autodoc cannot discover as documented py:data
+# targets.
 nitpick_ignore = [
     ("py:attr", "ufl.Mesh.geometric_dimension"),
     ("py:obj", "ufl.dP"),
@@ -247,6 +247,67 @@ nitpick_ignore = [
     ("py:data", "dolfinx.has_kahip"),
 ]
 
+# Categories of target that can never resolve, matched by pattern. The
+# role autodoc picks for the same annotation atom is not always stable
+# (observed both py:class and py:obj for the same TypeVar depending on
+# where in a docstring/signature it is rendered), so most patterns match
+# any role rather than hard-coding one.
+#
+# - numpy scalar types (numpy.int32, ...) are documented upstream as an
+#   'attribute', and numpy.typing.NDArray/DTypeLike/ArrayLike as 'data',
+#   so an annotation-derived py:class xref never matches either -- in
+#   both their canonical form and the private path
+#   (numpy._typing._array_like.NDArray, ...) that typing.get_type_hints
+#   resolves them to, or the bare `np.`/`npt.` import-alias form that
+#   autodoc renders when it cannot fully evaluate a surrounding
+#   self-referential generic annotation (observed for mpi4py, scipy and
+#   petsc4py aliases too: `_MPI.Comm`, `_sparse.csr_matrix`,
+#   `PETSc.Vec`/`Mat`, all real, resolvable public names once qualified,
+#   which Sphinx never does automatically);
+# - nanobind renders a bound C++ function's array/tuple parameters as a
+#   literal structural type string (e.g. `numpy.ndarray[dtype=int32,
+#   writable=False]`), not a nominal dotted path, which can never
+#   resolve as a cross-reference;
+# - basix's own element class hierarchy (basix.ufl._BasixElement and
+#   siblings) and the concrete, per-dtype nanobind classes bound at
+#   dolfinx's and basix's C++ layer are real types that legitimately
+#   appear in public type signatures, but have no public class name to
+#   document;
+# - dolfinx's own internal TypeVars/type aliases (dolfinx/typing.py,
+#   mesh.py, fem/petsc.py, la.py, la/superlu_dist.py) and
+#   dolfinx.fem.forms.CompiledForm/dolfinx.plot's singledispatch
+#   overload (conventionally named `_`): real objects that are either
+#   not classes at all (a TypeVar is not a class) or have no page in
+#   the generated API reference (neither is re-exported from a
+#   documented module).
+_any_role = r"py:(attr|class|data|func|meth|obj)"
+nitpick_ignore_regex = [
+    (_any_role, r"^numpy\.(u?int(8|16|32|64)|float(16|32|64)|complex(64|128))$"),
+    (_any_role, r"^(numpy\.typing\.|npt\.)(NDArray|DTypeLike|ArrayLike)$"),
+    (_any_role, r"^numpy\._typing\.[\w.]+\.(NDArray|DTypeLike|ArrayLike)$"),
+    (_any_role, r"^np\.\w+$"),
+    (_any_role, r"^_MPI\.\w+$"),
+    (_any_role, r"^_sparse\.\w+$"),
+    (_any_role, r"^PETSc\.(Vec|Mat)$"),
+    # Sometimes split into a dangling prefix fragment by Sphinx's
+    # signature parser when the bracketed dtype itself looks like an
+    # identifier (e.g. `ndarray[dtype` on its own, `int32` separately).
+    # nitpick_ignore_regex uses re.fullmatch, so the trailing `.*` must
+    # be able to match zero characters too (no closing bracket).
+    (_any_role, r"^(numpy\.)?ndarray\[.*"),
+    (_any_role, r"^tuple\[.*\]$"),
+    (_any_role, r"^(_cpp\.|dolfinx\.cpp\.)(fem|mesh|graph)\.\w+$"),
+    (_any_role, r"^basix\._basixcpp\.FiniteElement_\w+$"),
+    (_any_role, r"^basix\.ufl\._\w+$"),
+    (_any_role, r"^dolfinx\.typing\.(Real|Scalar|Index)$"),
+    (_any_role, r"^(Real|Scalar)$"),
+    (_any_role, r"^PartitioningFunc$"),
+    (_any_role, r"^dolfinx\.(la\._T|la\.superlu_dist\._T|fem\.petsc\._U)$"),
+    (_any_role, r"^_EntityMap$"),
+    (_any_role, r"^(dolfinx\.fem\.forms\.)?CompiledForm$"),
+    (_any_role, r"^dolfinx\.plot\._$"),
+]
+
 
 def skip_member(app, what, name, obj, skip, opts):
     # Skip @entries from nanobind enums
@@ -256,19 +317,5 @@ def skip_member(app, what, name, obj, skip, opts):
         return skip
 
 
-def suppress_generated_api_nitpicks(app, env, node, contnode):
-    """Silence nitpicky warnings inside the autodoc-generated API
-    reference (generated/*): they are overwhelmingly type-hint
-    annotations Sphinx cannot resolve to a documented class, not
-    genuine broken documentation links. Hand-written pages (demos,
-    release notes, ...) are unaffected and still fail the build.
-    """
-    docname = env.docname or node.get("refdoc", "")
-    if docname.startswith("generated/"):
-        return contnode
-    return None
-
-
 def setup(app):
     app.connect("autodoc-skip-member", skip_member)
-    app.connect("missing-reference", suppress_generated_api_nitpicks)
