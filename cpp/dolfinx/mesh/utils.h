@@ -1747,6 +1747,9 @@ std::tuple<Mesh<T>, EntityMap, EntityMap, std::vector<std::int32_t>>
 create_submesh(const Mesh<T>& mesh, int dim,
                std::span<const std::int32_t> entities)
 {
+  if (dim < 0 or dim > mesh.topology()->dim())
+    throw std::invalid_argument("dim out of range for mesh topology.");
+
   // Create sub-topology
   mesh.topology_mutable()->create_connectivity(dim, 0);
   auto [topology, subentity_to_entity, subvertex_to_vertex]
@@ -1792,6 +1795,35 @@ MeshTags<T> transfer_meshtags_to_submesh(
   {
     throw std::runtime_error("Tag dimension must be less than or equal to "
                              "submesh dimension");
+  }
+
+  // Validate that cell_map/vertex_map relate `topology` (the tags'
+  // parent topology) to `submesh_topology`, and have the dimension
+  // this function assumes. Passing the two maps in create_submesh's own
+  // return order (entity_map, vertex_map) rather than this function's
+  // (vertex_map, cell_map) is the natural mistake to make here.
+  if (cell_map.dim() != static_cast<std::size_t>(submesh_tdim))
+  {
+    throw std::invalid_argument(
+        "cell_map dimension must equal the submesh topology dimension.");
+  }
+  if (cell_map.topology() != topology)
+    throw std::invalid_argument(
+        "cell_map topology must match tags.topology().");
+  if (cell_map.sub_topology() != submesh_topology)
+    throw std::invalid_argument(
+        "cell_map sub_topology must match submesh_topology.");
+  if (vertex_map.dim() != 0)
+    throw std::invalid_argument("vertex_map dimension must be 0.");
+  if (vertex_map.topology() != topology)
+  {
+    throw std::invalid_argument(
+        "vertex_map topology must match tags.topology().");
+  }
+  if (vertex_map.sub_topology() != submesh_topology)
+  {
+    throw std::invalid_argument(
+        "vertex_map sub_topology must match submesh_topology.");
   }
   std::shared_ptr<const dolfinx::common::IndexMap> sub_cell_imap
       = submesh_topology->index_map(submesh_tdim);
