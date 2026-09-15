@@ -915,7 +915,7 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   if (_entity_types.at(dim).size() > 1)
   {
-    throw std::runtime_error(
+    throw std::out_of_range(
         "Multiple index maps of this dimension. Call index_maps instead.");
   }
 
@@ -923,7 +923,7 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
       = this->index_maps(dim);
   if (im.empty())
   {
-    throw std::runtime_error(
+    throw std::out_of_range(
         std::format("Missing IndexMap in Topology. Maybe you need to "
                     "create_entities({}).",
                     dim));
@@ -1126,7 +1126,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
     std::span<const std::int64_t> boundary_vertices, int num_threads)
 {
   if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   common::Timer timer("Topology: create");
 
@@ -1146,7 +1146,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
     int num_vertices = num_cell_vertices(cell_types[i]);
     if (cells[i].size() % num_vertices != 0)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           std::format("Inconsistent number of cell vertices. Got {}, expected "
                       "multiple of {}.",
                       cells[i].size(), num_vertices));
@@ -1183,7 +1183,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
     dolfinx::MPI::check_error(comm, ierr);
     if (failed_any)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Adding boundary vertices in ghost cells not allowed.");
     }
   }
@@ -1724,7 +1724,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology, CellType facet_type)
     }
   }
   if (facet_index == -1)
-    throw std::runtime_error("Cannot find facet type in topology");
+    throw std::invalid_argument("Cannot find facet type in topology");
 
   std::vector<std::vector<std::int32_t>> facet_pair_lists;
   for (std::size_t i = 0; i < cell_types.size(); ++i)

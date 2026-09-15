@@ -1083,7 +1083,7 @@ mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
                        int num_threads)
 {
   if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   spdlog::info("Computing mesh entities of dimension {}", dim);
 
@@ -1253,6 +1253,7 @@ mesh::compute_connectivity(const Topology& topology, std::array<int, 2> d0,
     return {c_d0_d1, nullptr};
   }
   else
-    throw std::runtime_error("Entity dimension error when computing topology.");
+    throw std::invalid_argument(
+        "Entity dimension error when computing topology.");
 }
 //--------------------------------------------------------------------------
