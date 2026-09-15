@@ -33,6 +33,40 @@ def test_read_write_vtkhdf_mesh3d():
     assert mesh.topology.index_map(3).size_global == mesh2.topology.index_map(3).size_global
 
 
+@pytest.mark.parametrize("num_threads", [1, 4])
+def test_read_write_vtkhdf_num_threads(num_threads):
+    filename = "example_num_threads.vtkhdf"
+    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5)
+    write_mesh(filename, mesh)
+
+    mesh_1 = read_mesh(MPI.COMM_WORLD, filename, num_threads=1)
+    mesh_n = read_mesh(MPI.COMM_WORLD, filename, num_threads=num_threads)
+
+    for m in (mesh_1, mesh_n):
+        assert (
+            m.topology.index_map(m.topology.dim).size_global
+            == mesh.topology.index_map(mesh.topology.dim).size_global
+        )
+        assert m.topology.index_map(0).size_global == mesh.topology.index_map(0).size_global
+
+    vol_1 = mesh_1.comm.allreduce(
+        dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=mesh_1))), op=MPI.SUM
+    )
+    vol_n = mesh_n.comm.allreduce(
+        dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=mesh_n))), op=MPI.SUM
+    )
+    assert np.isclose(vol_1, vol_n)
+
+
+def test_read_vtkhdf_num_threads_invalid():
+    filename = "example_num_threads_invalid.vtkhdf"
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    write_mesh(filename, mesh)
+
+    with pytest.raises(RuntimeError):
+        read_mesh(MPI.COMM_WORLD, filename, num_threads=0)
+
+
 def test_read_write_mixed_topology(mixed_topology_mesh):
     mesh = Mesh(mixed_topology_mesh, None)
     write_mesh("mixed_mesh.vtkhdf", mesh)
@@ -162,8 +196,22 @@ def test_read_write_higher_order_mesh(order):
     write_mesh(filename, ref_mesh)
     del ref_mesh, ref_volume_form
 
-    # Read mesh
-    mesh = read_mesh(comm, filename)
+    # Read mesh, once single-threaded and once multi-threaded, and check
+    # the two agree (global cell/vertex counts, and geometry up to local
+    # ordering via assembled volume/surface)
+    mesh = read_mesh(comm, filename, num_threads=1)
+    mesh_mt = read_mesh(comm, filename, num_threads=4)
+
+    assert (
+        mesh.topology.index_map(mesh.topology.dim).size_global
+        == mesh_mt.topology.index_map(mesh_mt.topology.dim).size_global
+    )
+    assert mesh.topology.index_map(0).size_global == mesh_mt.topology.index_map(0).size_global
+
+    volume_mt_form = dolfinx.fem.form(1 * ufl.dx(domain=mesh_mt), dtype=mesh_mt.geometry.x.dtype)
+    volume_mt = comm.allreduce(dolfinx.fem.assemble_scalar(volume_mt_form), op=MPI.SUM)
+    surface_mt_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh_mt), dtype=mesh_mt.geometry.x.dtype)
+    surface_mt = comm.allreduce(dolfinx.fem.assemble_scalar(surface_mt_form), op=MPI.SUM)
 
     # Compare surface and volume metrics
     # The degree-3 round-trip is not exact, see issue #4415.
@@ -176,6 +224,9 @@ def test_read_write_higher_order_mesh(order):
     surface_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh), dtype=mesh.geometry.x.dtype)
     surface = comm.allreduce(dolfinx.fem.assemble_scalar(surface_form), op=MPI.SUM)
     assert np.isclose(ref_surface, surface, rtol=rtol)
+
+    assert np.isclose(volume, volume_mt, rtol=rtol)
+    assert np.isclose(surface, surface_mt, rtol=rtol)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
