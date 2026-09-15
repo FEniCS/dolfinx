@@ -13,7 +13,7 @@ import pytest
 
 import ufl
 from basix import LagrangeVariant
-from dolfinx import default_scalar_type, fem, la
+from dolfinx import default_real_type, default_scalar_type, fem, la
 from dolfinx.fem import compute_integration_domains
 from dolfinx.mesh import (
     CellType,
@@ -401,14 +401,22 @@ def _ellipsoid_mesh(cell_type, degree):
     """`[-1, 1]^d` mapped onto an ellipse/ellipsoid, with degree-`degree` geometry."""
     if cell_type in (CellType.triangle, CellType.quadrilateral):
         msh = create_rectangle(
-            MPI.COMM_WORLD, ((-1.0, -1.0), (1.0, 1.0)), (6, 6), cell_type=cell_type
+            MPI.COMM_WORLD,
+            ((-1.0, -1.0), (1.0, 1.0)),
+            (6, 6),
+            cell_type=cell_type,
+            dtype=default_real_type,
         )
     else:
         msh = create_box(
-            MPI.COMM_WORLD, ((-1.0, -1.0, -1.0), (1.0, 1.0, 1.0)), (3, 3, 3), cell_type=cell_type
+            MPI.COMM_WORLD,
+            ((-1.0, -1.0, -1.0), (1.0, 1.0, 1.0)),
+            (3, 3, 3),
+            cell_type=cell_type,
+            dtype=default_real_type,
         )
     cmap = fem.coordinate_element(
-        cell_type, degree, variant=LagrangeVariant.gll_isaac, dtype=default_scalar_type
+        cell_type, degree, variant=LagrangeVariant.gll_isaac, dtype=default_real_type
     )
     msh = fem.interpolate_geometry(msh, cmap)
 
