@@ -94,9 +94,8 @@ void io(nb::module_& m)
       [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
          std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
       {
-        return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename, gdim,
-                                                     max_facet_to_cell_links,
-                                                     num_threads);
+        return dolfinx::io::VTKHDF::read_mesh<float>(
+            comm.get(), filename, gdim, max_facet_to_cell_links, num_threads);
       },
       nb::arg("comm"), nb::arg("filename"), nb::arg("gdim"),
       nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"));

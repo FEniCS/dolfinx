@@ -184,12 +184,10 @@ void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh<double>
-XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
-                    mesh::GhostMode mode, std::string_view name,
-                    std::string_view xpath,
-                    std::optional<std::int32_t> max_facet_to_cell_links,
-                    int num_threads) const
+mesh::Mesh<double> XDMFFile::read_mesh(
+    const fem::CoordinateElement<double>& element, mesh::GhostMode mode,
+    std::string_view name, std::string_view xpath,
+    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads) const
 {
   // Read mesh data
   auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);
