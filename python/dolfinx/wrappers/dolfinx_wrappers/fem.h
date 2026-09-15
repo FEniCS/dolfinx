@@ -340,6 +340,91 @@ void declare_function_space(nb::module_& m, std::string type)
               }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
+        .def(
+            "dof_transformation_apply",
+            [](const dolfinx::fem::FiniteElement<T>& self, int ttype,
+               nb::ndarray<T, nb::ndim<1>, nb::c_contig> data,
+               nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
+                   cell_info,
+               std::int32_t cell, int block_size, bool scalar_element)
+            {
+              auto fn = self.template dof_transformation_fn<T>(
+                  static_cast<dolfinx::fem::doftransform>(ttype),
+                  scalar_element);
+              if (fn)
+              {
+                fn(std::span<T>(data.data(), data.size()),
+                   std::span<const std::uint32_t>(cell_info.data(),
+                                                  cell_info.size()),
+                   cell, block_size);
+              }
+            },
+            nb::arg("ttype"), nb::arg("data"), nb::arg("cell_info"),
+            nb::arg("cell"), nb::arg("block_size"), nb::arg("scalar_element"))
+        .def(
+            "dof_transformation_apply",
+            [](const dolfinx::fem::FiniteElement<T>& self, int ttype,
+               nb::ndarray<std::complex<T>, nb::ndim<1>, nb::c_contig> data,
+               nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
+                   cell_info,
+               std::int32_t cell, int block_size, bool scalar_element)
+            {
+              auto fn = self.template dof_transformation_fn<std::complex<T>>(
+                  static_cast<dolfinx::fem::doftransform>(ttype),
+                  scalar_element);
+              if (fn)
+              {
+                fn(std::span<std::complex<T>>(data.data(), data.size()),
+                   std::span<const std::uint32_t>(cell_info.data(),
+                                                  cell_info.size()),
+                   cell, block_size);
+              }
+            },
+            nb::arg("ttype"), nb::arg("data"), nb::arg("cell_info"),
+            nb::arg("cell"), nb::arg("block_size"), nb::arg("scalar_element"))
+        .def(
+            "dof_transformation_right_apply",
+            [](const dolfinx::fem::FiniteElement<T>& self, int ttype,
+               nb::ndarray<T, nb::ndim<1>, nb::c_contig> data,
+               nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
+                   cell_info,
+               std::int32_t cell, int block_size, bool scalar_element)
+            {
+              auto fn = self.template dof_transformation_right_fn<T>(
+                  static_cast<dolfinx::fem::doftransform>(ttype),
+                  scalar_element);
+              if (fn)
+              {
+                fn(std::span<T>(data.data(), data.size()),
+                   std::span<const std::uint32_t>(cell_info.data(),
+                                                  cell_info.size()),
+                   cell, block_size);
+              }
+            },
+            nb::arg("ttype"), nb::arg("data"), nb::arg("cell_info"),
+            nb::arg("cell"), nb::arg("block_size"), nb::arg("scalar_element"))
+        .def(
+            "dof_transformation_right_apply",
+            [](const dolfinx::fem::FiniteElement<T>& self, int ttype,
+               nb::ndarray<std::complex<T>, nb::ndim<1>, nb::c_contig> data,
+               nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
+                   cell_info,
+               std::int32_t cell, int block_size, bool scalar_element)
+            {
+              auto fn
+                  = self.template dof_transformation_right_fn<std::complex<T>>(
+                      static_cast<dolfinx::fem::doftransform>(ttype),
+                      scalar_element);
+              if (fn)
+              {
+                fn(std::span<std::complex<T>>(data.data(), data.size()),
+                   std::span<const std::uint32_t>(cell_info.data(),
+                                                  cell_info.size()),
+                   cell, block_size);
+              }
+            },
+            nb::arg("ttype"), nb::arg("data"), nb::arg("cell_info"),
+            nb::arg("cell"), nb::arg("block_size"), nb::arg("scalar_element"))
         .def_prop_ro("needs_dof_transformations",
                      &dolfinx::fem::FiniteElement<T>::needs_dof_transformations)
         .def_prop_ro("signature", &dolfinx::fem::FiniteElement<T>::signature);
@@ -597,10 +682,10 @@ void declare_objects(nb::module_& m, std::string type)
                  nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
                  cells)
           {
-            auto interp_pr = [](dolfinx::fem::Function<T, U>& self,
-                                std::uintptr_t addr, auto&& cells)
+            auto interp_pr = [](dolfinx::fem::Function<T, U>& fn,
+                                std::uintptr_t fptr, auto&& cells)
             {
-              auto V = self.function_space();
+              auto V = fn.function_space();
               assert(V);
               auto element = V->element();
               assert(element);
@@ -612,13 +697,13 @@ void declare_objects(nb::module_& m, std::string type)
                                                    1, std::multiplies{});
               std::function<void(T*, int, int, const U*, void*)> f
                   = reinterpret_cast<void (*)(T*, int, int, const U*, void*)>(
-                      addr);
+                      fptr);
               std::vector<U> x = dolfinx::fem::interpolation_coords(
                   *element, mesh->geometry(), cells);
               std::array<std::size_t, 2> shape{value_size, x.size() / 3};
               std::vector<T> values(shape[0] * shape[1]);
               f(values.data(), shape[1], shape[0], x.data(), nullptr);
-              dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
+              dolfinx::fem::interpolate(fn, std::span<const T>(values), shape,
                                         cells);
             };
 
@@ -795,7 +880,7 @@ void declare_form(nb::module_& m, std::string type)
                 _integrals;
 
             // Loop over kernel for each entity type
-            for (auto& [type, kernels] : integrals)
+            for (auto& [itype, kernels] : integrals)
             {
               for (auto& [id, ptr, e, c] : kernels)
               {
@@ -803,7 +888,7 @@ void declare_form(nb::module_& m, std::string type)
                     = (void (*)(T*, const T*, const T*, const U*, const int*,
                                 const std::uint8_t*, void*))ptr;
                 _integrals.insert(
-                    {{type, id, 0},
+                    {{itype, id, 0},
                      {kn_ptr,
                       std::vector<std::int32_t>(e.data(), e.data() + e.size()),
                       std::vector<int>(c.data(), c.data() + c.size())}});

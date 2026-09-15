@@ -89,14 +89,22 @@ if _cpp.common.has_adios2:
                 raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
             if isinstance(output, Mesh):
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(  # type: ignore[no-matching-overload]
+                    comm, filename, output._cpp_object, engine
+                )
             else:
                 cpp_objects = (
                     [output._cpp_object]
                     if isinstance(output, Function)
                     else [o._cpp_object for o in output]
                 )
-                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)  # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(
+                    comm,
+                    filename,
+                    cpp_objects,  # type: ignore[bad-argument-type]
+                    engine,
+                    mesh_policy,
+                )
 
         def __enter__(self) -> Self:
             """Enter context manager."""
@@ -482,7 +490,7 @@ def distribute_entity_data(
         mesh.topology._cpp_object,
         mesh.geometry.input_global_indices,
         mesh.geometry.index_map().size_global,
-        mesh.geometry.cmaps[0].create_dof_layout(),
+        mesh.geometry.cmaps[0].create_dof_layout()._cpp_object,
         mesh.geometry.dofmaps[0],
         entity_dim,
         entities,

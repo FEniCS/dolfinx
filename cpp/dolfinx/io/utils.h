@@ -82,39 +82,37 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
   // -- A. Convert from list of entities by 'nodes' to list of entities
   // by 'vertex nodes'
   auto to_vertex_entities
-      = [](const fem::ElementDofLayout& cmap_dof_layout, int entity_dim,
-           std::span<const int> cell_vertex_dofs, mesh::CellType cell_type,
-           auto entities)
+      = [](const fem::ElementDofLayout& layout, int dim,
+           std::span<const int> vertex_dofs, mesh::CellType type, auto ents)
   {
     // Use ElementDofLayout of the cell to get vertex dof indices (local
     // to a cell), i.e. build a map from local vertex index to associated
     // local dof index
-    const std::vector<int>& entity_layout
-        = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
+    const std::vector<int>& entity_layout = layout.entity_closure_dofs(dim, 0);
     std::vector<int> entity_vertex_dofs;
-    for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
+    for (std::size_t i = 0; i < vertex_dofs.size(); ++i)
     {
       auto it = std::find(entity_layout.begin(), entity_layout.end(),
-                          cell_vertex_dofs[i]);
+                          vertex_dofs[i]);
       if (it != entity_layout.end())
         entity_vertex_dofs.push_back(
             std::ranges::distance(entity_layout.begin(), it));
     }
 
-    const std::size_t num_vert_per_e = mesh::cell_num_entities(
-        mesh::cell_entity_type(cell_type, entity_dim, 0), 0);
+    const std::size_t num_vert_per_e
+        = mesh::cell_num_entities(mesh::cell_entity_type(type, dim, 0), 0);
 
-    assert(entities.extent(1) == entity_layout.size());
-    std::vector<std::int64_t> entities_v(entities.extent(0) * num_vert_per_e);
-    for (std::size_t e = 0; e < entities.extent(0); ++e)
+    assert(ents.extent(1) == entity_layout.size());
+    std::vector<std::int64_t> entities_v(ents.extent(0) * num_vert_per_e);
+    for (std::size_t e = 0; e < ents.extent(0); ++e)
     {
       std::span entity(entities_v.data() + e * num_vert_per_e, num_vert_per_e);
       for (std::size_t i = 0; i < num_vert_per_e; ++i)
-        entity[i] = entities(e, entity_vertex_dofs[i]);
+        entity[i] = ents(e, entity_vertex_dofs[i]);
       std::ranges::sort(entity);
     }
 
-    std::array shape{entities.extent(0), num_vert_per_e};
+    std::array shape{ents.extent(0), num_vert_per_e};
     return std::pair(std::move(entities_v), shape);
   };
   const auto [entities_v_b, shapev] = to_vertex_entities(
@@ -130,18 +128,19 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
 
   // -- B. Send entities and entity data to postmaster
   auto send_entities_to_postmaster
-      = [](MPI_Comm comm, MPI_Datatype compound_type, std::int64_t num_nodes_g,
-           auto entities, std::span<const T> data)
+      = [](MPI_Comm pm_comm, MPI_Datatype pm_compound_type,
+           std::int64_t pm_num_nodes_g, auto pm_entities,
+           std::span<const T> pm_data)
   {
-    const int size = dolfinx::MPI::size(comm);
+    const int size = dolfinx::MPI::size(pm_comm);
 
     // Determine destination by index of first vertex
     std::vector<int> dest0;
-    dest0.reserve(entities.extent(0));
-    for (std::size_t e = 0; e < entities.extent(0); ++e)
+    dest0.reserve(pm_entities.extent(0));
+    for (std::size_t e = 0; e < pm_entities.extent(0); ++e)
     {
       dest0.push_back(
-          dolfinx::MPI::index_owner(size, entities(e, 0), num_nodes_g));
+          dolfinx::MPI::index_owner(size, pm_entities(e, 0), pm_num_nodes_g));
     }
     std::vector<int> perm(dest0.size());
     std::iota(perm.begin(), perm.end(), 0);
@@ -173,16 +172,16 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
 
     // Determine src ranks. Sort ranks so that ownership determination is
     // deterministic for a given number of ranks.
-    std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+    std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(pm_comm, dest);
     std::ranges::sort(src);
 
     // Create neighbourhood communicator for sending data to post
     // offices
     MPI_Comm comm0;
     int err = MPI_Dist_graph_create_adjacent(
-        comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
-        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-    dolfinx::MPI::check_error(comm, err);
+        pm_comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
+        dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+    dolfinx::MPI::check_error(pm_comm, err);
 
     // Send number of items to post offices (destinations)
     std::vector<int> num_items_recv(src.size());
@@ -190,7 +189,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     num_items_recv.reserve(1);
     MPI_Neighbor_alltoall(num_items_send.data(), 1, MPI_INT,
                           num_items_recv.data(), 1, MPI_INT, comm0);
-    dolfinx::MPI::check_error(comm, err);
+    dolfinx::MPI::check_error(pm_comm, err);
 
     // Compute receive displacements
     std::vector<int> recv_disp(num_items_recv.size() + 1, 0);
@@ -200,34 +199,35 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     // Prepare send buffer
     std::vector<std::int64_t> send_buffer;
     std::vector<T> send_values_buffer;
-    send_buffer.reserve(entities.size());
-    send_values_buffer.reserve(data.size());
-    for (std::size_t e = 0; e < entities.extent(0); ++e)
+    send_buffer.reserve(pm_entities.size());
+    send_values_buffer.reserve(pm_data.size());
+    for (std::size_t e = 0; e < pm_entities.extent(0); ++e)
     {
       auto idx = perm[e];
-      auto it = std::next(entities.data_handle(), idx * entities.extent(1));
-      send_buffer.insert(send_buffer.end(), it, it + entities.extent(1));
-      send_values_buffer.push_back(data[idx]);
+      auto it
+          = std::next(pm_entities.data_handle(), idx * pm_entities.extent(1));
+      send_buffer.insert(send_buffer.end(), it, it + pm_entities.extent(1));
+      send_values_buffer.push_back(pm_data[idx]);
     }
 
     std::vector<std::int64_t> recv_buffer(recv_disp.back()
-                                          * entities.extent(1));
+                                          * pm_entities.extent(1));
     err = MPI_Neighbor_alltoallv(send_buffer.data(), num_items_send.data(),
-                                 send_disp.data(), compound_type,
+                                 send_disp.data(), pm_compound_type,
                                  recv_buffer.data(), num_items_recv.data(),
-                                 recv_disp.data(), compound_type, comm0);
-    dolfinx::MPI::check_error(comm, err);
+                                 recv_disp.data(), pm_compound_type, comm0);
+    dolfinx::MPI::check_error(pm_comm, err);
     std::vector<T> recv_values_buffer(recv_disp.back());
     err = MPI_Neighbor_alltoallv(
         send_values_buffer.data(), num_items_send.data(), send_disp.data(),
         dolfinx::MPI::mpi_t<T>, recv_values_buffer.data(),
         num_items_recv.data(), recv_disp.data(), dolfinx::MPI::mpi_t<T>, comm0);
-    dolfinx::MPI::check_error(comm, err);
+    dolfinx::MPI::check_error(pm_comm, err);
     err = MPI_Comm_free(&comm0);
-    dolfinx::MPI::check_error(comm, err);
+    dolfinx::MPI::check_error(pm_comm, err);
 
-    std::array shape{recv_buffer.size() / (entities.extent(1)),
-                     (entities.extent(1))};
+    std::array shape{recv_buffer.size() / (pm_entities.extent(1)),
+                     (pm_entities.extent(1))};
     return std::tuple<std::vector<std::int64_t>, std::vector<T>,
                       std::array<std::size_t, 2>>(
         std::move(recv_buffer), std::move(recv_values_buffer), shape);
@@ -238,10 +238,10 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
       entitiesp_b.data(), shapep);
 
   // -- C. Send mesh global indices to postmaster
-  auto indices_to_postoffice = [](MPI_Comm comm, std::int64_t num_nodes,
+  auto indices_to_postoffice = [](MPI_Comm po_comm, std::int64_t num_nodes,
                                   std::span<const std::int64_t> indices)
   {
-    int size = dolfinx::MPI::size(comm);
+    int size = dolfinx::MPI::size(po_comm);
     std::vector<std::pair<int, std::int64_t>> dest_to_index;
     std::ranges::transform(
         indices, std::back_inserter(dest_to_index),
@@ -275,15 +275,15 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
 
     // Determine src ranks. Sort ranks so that ownership determination is
     // deterministic for a given number of ranks.
-    std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+    std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(po_comm, dest);
     std::ranges::sort(src);
 
     // Create neighbourhood communicator for sending data to post offices
     MPI_Comm comm0;
     int err = MPI_Dist_graph_create_adjacent(
-        comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
-        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-    dolfinx::MPI::check_error(comm, err);
+        po_comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
+        dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+    dolfinx::MPI::check_error(po_comm, err);
 
     // Send number of items to post offices (destination) that I will be
     // sending
@@ -292,7 +292,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     num_items_recv.reserve(1);
     MPI_Neighbor_alltoall(num_items_send.data(), 1, MPI_INT,
                           num_items_recv.data(), 1, MPI_INT, comm0);
-    dolfinx::MPI::check_error(comm, err);
+    dolfinx::MPI::check_error(po_comm, err);
 
     // Compute receive displacements
     std::vector<int> recv_disp(num_items_recv.size() + 1, 0);
@@ -310,21 +310,21 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
                                  send_disp.data(), MPI_INT64_T,
                                  recv_buffer.data(), num_items_recv.data(),
                                  recv_disp.data(), MPI_INT64_T, comm0);
-    dolfinx::MPI::check_error(comm, err);
+    dolfinx::MPI::check_error(po_comm, err);
     err = MPI_Comm_free(&comm0);
-    dolfinx::MPI::check_error(comm, err);
+    dolfinx::MPI::check_error(po_comm, err);
     return std::tuple(std::move(recv_buffer), std::move(recv_disp),
                       std::move(src), std::move(dest));
   };
-  const auto [nodes_g_p, recv_disp, src, dest]
+  const auto [nodes_g_p, nodes_g_p_disp, post_src, post_dest]
       = indices_to_postoffice(comm, num_nodes_g, nodes_g);
 
   // D. Send entities to possible owners, based on first entity index
   auto candidate_ranks
-      = [](MPI_Comm comm, MPI_Datatype compound_type,
+      = [](MPI_Comm cr_comm, MPI_Datatype cr_compound_type,
            std::span<const std::int64_t> indices_recv,
            std::span<const int> indices_recv_disp, std::span<const int> src,
-           std::span<const int> dest, auto entities, std::span<const T> data)
+           std::span<const int> dest, auto entities, std::span<const T> cr_data)
   {
     // Build map from received global node indices to neighbourhood
     // ranks that have the node
@@ -344,15 +344,15 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
       {
         int p = it->second;
         send_data[p].insert(send_data[p].end(), e_recv.begin(), e_recv.end());
-        send_values[p].push_back(data[e]);
+        send_values[p].push_back(cr_data[e]);
       }
     }
 
     MPI_Comm comm0;
     int err = MPI_Dist_graph_create_adjacent(
-        comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
-        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-    dolfinx::MPI::check_error(comm, err);
+        cr_comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
+        dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+    dolfinx::MPI::check_error(cr_comm, err);
 
     std::vector<int> num_items_send;
     num_items_send.reserve(send_data.size());
@@ -364,7 +364,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     num_items_recv.reserve(1);
     err = MPI_Neighbor_alltoall(num_items_send.data(), 1, MPI_INT,
                                 num_items_recv.data(), 1, MPI_INT, comm0);
-    dolfinx::MPI::check_error(comm, err);
+    dolfinx::MPI::check_error(cr_comm, err);
 
     // Compute send displacements
     std::vector<std::int32_t> send_disp(num_items_send.size() + 1, 0);
@@ -386,11 +386,11 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     std::vector<std::int64_t> recv_buffer(entities.extent(1)
                                           * recv_disp.back());
     err = MPI_Neighbor_alltoallv(send_buffer.data(), num_items_send.data(),
-                                 send_disp.data(), compound_type,
+                                 send_disp.data(), cr_compound_type,
                                  recv_buffer.data(), num_items_recv.data(),
-                                 recv_disp.data(), compound_type, comm0);
+                                 recv_disp.data(), cr_compound_type, comm0);
 
-    dolfinx::MPI::check_error(comm, err);
+    dolfinx::MPI::check_error(cr_comm, err);
 
     std::vector<T> recv_values_buffer(recv_disp.back());
     err = MPI_Neighbor_alltoallv(
@@ -398,10 +398,10 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
         dolfinx::MPI::mpi_t<T>, recv_values_buffer.data(),
         num_items_recv.data(), recv_disp.data(), dolfinx::MPI::mpi_t<T>, comm0);
 
-    dolfinx::MPI::check_error(comm, err);
+    dolfinx::MPI::check_error(cr_comm, err);
 
     err = MPI_Comm_free(&comm0);
-    dolfinx::MPI::check_error(comm, err);
+    dolfinx::MPI::check_error(cr_comm, err);
 
     std::array shape{recv_buffer.size() / entities.extent(1),
                      entities.extent(1)};
@@ -412,8 +412,8 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
   // NOTE: src and dest are transposed here because we're reversing the
   // direction of communication
   const auto [entities_data_b, entities_values, shape_eb]
-      = candidate_ranks(comm, compound_type, nodes_g_p, recv_disp, dest, src,
-                        entitiesp, std::span(entitiesp_v));
+      = candidate_ranks(comm, compound_type, nodes_g_p, nodes_g_p_disp,
+                        post_dest, post_src, entitiesp, std::span(entitiesp_v));
   md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>> entities_data(
       entities_data_b.data(), shape_eb);
 
@@ -424,14 +424,13 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
   //       ranks, so we could use the received data to avoid creating
   //       the std::map for *all* entities and just for candidate
   //       entities.
-  auto select_entities
-      = [](const mesh::Topology& topology, auto xdofmap,
-           std::span<const std::int64_t> nodes_g,
-           std::span<const int> cell_vertex_dofs, auto entities_data,
-           std::span<const T> entities_values)
+  auto select_entities = [](const mesh::Topology& topo, auto xdofmap,
+                            std::span<const std::int64_t> nodes,
+                            std::span<const int> cell_vertex_dofs,
+                            auto entities_data, std::span<const T> values)
   {
     spdlog::info("XDMF build map");
-    auto c_to_v = topology.connectivity(topology.dim(), 0);
+    auto c_to_v = topo.connectivity(topo.dim(), 0);
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
 
@@ -442,11 +441,11 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
       std::span xdofs(xdofmap.data_handle() + c * xdofmap.extent(1),
                       xdofmap.extent(1));
       for (std::size_t v = 0; v < vertices.size(); ++v)
-        input_idx_to_vertex[nodes_g[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
+        input_idx_to_vertex[nodes[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
     }
 
-    std::vector<std::int32_t> entities;
-    std::vector<T> data;
+    std::vector<std::int32_t> local_entities;
+    std::vector<T> local_data;
     std::vector<std::int32_t> entity(entities_data.extent(1));
     for (std::size_t e = 0; e < entities_data.extent(0); ++e)
     {
@@ -467,12 +466,13 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
 
       if (entity_found)
       {
-        entities.insert(entities.end(), entity.begin(), entity.end());
-        data.push_back(entities_values[e]);
+        local_entities.insert(local_entities.end(), entity.begin(),
+                              entity.end());
+        local_data.push_back(values[e]);
       }
     }
 
-    return std::pair(std::move(entities), std::move(data));
+    return std::pair(std::move(local_entities), std::move(local_data));
   };
 
   MPI_Type_free(&compound_type);

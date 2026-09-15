@@ -11,7 +11,6 @@ Note:
 """
 
 from dolfinx.cpp.fem import IntegralType as IntegralType
-from dolfinx.cpp.fem import transpose_dofmap
 from dolfinx.fem.assemble import (
     apply_lifting,
     assemble_matrix,
@@ -29,8 +28,14 @@ from dolfinx.fem.bcs import (
     locate_dofs_geometrical,
     locate_dofs_topological,
 )
-from dolfinx.fem.dofmap import DofMap, create_dofmaps
-from dolfinx.fem.element import CoordinateElement, FiniteElement, coordinate_element, finiteelement
+from dolfinx.fem.dofmap import DofMap, create_dofmaps, transpose_dofmap
+from dolfinx.fem.element import (
+    CoordinateElement,
+    ElementDofLayout,
+    FiniteElement,
+    coordinate_element,
+    finiteelement,
+)
 from dolfinx.fem.forms import (
     Form,
     compile_form,
@@ -64,6 +69,7 @@ __all__ = [
     "CoordinateElement",
     "DirichletBC",
     "DofMap",
+    "ElementDofLayout",
     "ElementMetaData",
     "Expression",
     "FiniteElement",

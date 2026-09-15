@@ -266,8 +266,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
   std::ranges::sort(dofs);
-  auto [unique_end, range_end] = std::ranges::unique(dofs);
-  dofs.erase(unique_end, range_end);
+  dofs.erase(std::ranges::unique(dofs).begin(), dofs.end());
 
   if (remote)
   {
@@ -284,8 +283,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       std::span dest = map->dest();
       std::vector<int> ranks;
       std::ranges::set_union(src, dest, std::back_inserter(ranks));
-      auto [unique_end, range_end] = std::ranges::unique(ranks);
-      ranks.erase(unique_end, range_end);
+      ranks.erase(std::ranges::unique(ranks).begin(), ranks.end());
       MPI_Dist_graph_create_adjacent(
           map->comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
           ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
@@ -303,8 +301,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     // duplicates
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
     std::ranges::sort(dofs);
-    auto [unique_end, range_end] = std::ranges::unique(dofs);
-    dofs.erase(unique_end, range_end);
+    dofs.erase(std::ranges::unique(dofs).begin(), dofs.end());
   }
 
   return dofs;

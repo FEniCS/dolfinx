@@ -156,7 +156,8 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices,
   // Build {global index, pos, src} list
   std::vector<std::array<std::int64_t, 3>> indices_list;
   {
-    common::Timer timer("Topology: build and sort transposed index list");
+    common::Timer timer_transpose(
+        "Topology: build and sort transposed index list");
     for (std::size_t p = 0; p < recv_disp0.size() - 1; ++p)
       for (std::int32_t i = recv_disp0[p]; i < recv_disp0[p + 1]; ++i)
         indices_list.push_back({recv_buffer0[i], i, static_cast<int>(p)});
@@ -758,33 +759,31 @@ std::vector<std::int32_t> convert_to_local_indexing(
 
   auto transform
       = [is_identity, &global_to_local_map](
-            std::span<std::int32_t> data, std::span<const std::int64_t> g,
-            std::span<const std::pair<std::int64_t, std::int32_t>>
-                global_to_local)
+            std::span<std::int32_t> data, std::span<const std::int64_t> g_chunk,
+            std::span<const std::pair<std::int64_t, std::int32_t>> g2l)
   {
     if (is_identity)
     {
-      // Every value in g is guaranteed present in global_to_local by
-      // this function's precondition, so - given is_identity - always
+      // Every value in g_chunk is guaranteed present in g2l by this
+      // function's precondition, so - given is_identity - always
       // within bounds; the check is a defensive no-op fallback rather
       // than something expected to trigger.
-      std::ranges::transform(
-          g, data.begin(),
-          [&global_to_local](auto i) -> std::int32_t
-          {
-            if (static_cast<std::size_t>(i) < global_to_local.size())
-              return global_to_local[i].second;
-            auto it = std::ranges::lower_bound(global_to_local, i,
-                                               std::ranges::less(),
-                                               [](auto& e) { return e.first; });
-            assert(it != global_to_local.end());
-            assert(it->first == i);
-            return it->second;
-          });
+      std::ranges::transform(g_chunk, data.begin(),
+                             [&g2l](auto i) -> std::int32_t
+                             {
+                               if (static_cast<std::size_t>(i) < g2l.size())
+                                 return g2l[i].second;
+                               auto it = std::ranges::lower_bound(
+                                   g2l, i, std::ranges::less(),
+                                   [](auto& e) { return e.first; });
+                               assert(it != g2l.end());
+                               assert(it->first == i);
+                               return it->second;
+                             });
     }
     else
     {
-      std::ranges::transform(g, data.begin(),
+      std::ranges::transform(g_chunk, data.begin(),
                              [&global_to_local_map](auto i)
                              {
                                auto it = global_to_local_map.find(i);

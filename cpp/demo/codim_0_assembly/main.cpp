@@ -53,8 +53,8 @@ int main(int argc, char* argv[])
         *mesh, tdim,
         [](auto x)
         {
-          using U = typename decltype(x)::value_type;
-          constexpr U eps = 1.0e-8;
+          using coord_t = typename decltype(x)::value_type;
+          constexpr coord_t eps = 1.0e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -83,10 +83,10 @@ int main(int argc, char* argv[])
     // `EntityMap` object, which relates entities in the submesh to
     // entities in the original mesh. We will need this to assemble our
     // mixed-domain form.
-    auto submesh_data = [](auto& mesh, int tdim, auto&& subcells)
+    auto submesh_data = [](auto& mesh, int dim, auto&& subcells)
     {
       auto [submesh, emap, v_map, g_map]
-          = mesh::create_submesh(mesh, tdim, subcells);
+          = mesh::create_submesh(mesh, dim, subcells);
       return std::pair(std::make_shared<mesh::Mesh<U>>(std::move(submesh)),
                        std::move(emap));
     };

@@ -365,9 +365,9 @@ def _assemble_matrix_csr(
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
-    if a.function_spaces[0] is a.function_spaces[1]:
+    if a.function_spaces[0]._cpp_object is a.function_spaces[1]._cpp_object:
         typing.cast(typing.Any, _cpp.fem.insert_diagonal)(
-            A._cpp_object, a.function_spaces[0], _bcs, diag
+            A._cpp_object, a.function_spaces[0]._cpp_object, _bcs, diag
         )
     return A
 

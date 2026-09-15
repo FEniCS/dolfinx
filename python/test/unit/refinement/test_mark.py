@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from dolfinx import mesh
-from dolfinx.common import IndexMap
+from dolfinx.common import index_map
 
 
 @pytest.mark.parametrize("theta", [0.2, 0.4, 0.6, 0.8])
@@ -62,7 +62,7 @@ def test_mark_equidistribution(theta: float, dtype: np.dtype, ghost_mode: mesh.G
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_mark_equidistribution_empty(dtype: np.dtype) -> None:
     """An index map with no entries marks nothing."""
-    im = IndexMap(MPI.COMM_WORLD, 0)
+    im = index_map(MPI.COMM_WORLD, 0)
     marked = mesh.mark_equidistribution(np.zeros(0, dtype=dtype), im, 0.5)
     assert marked.size == 0
 
@@ -85,7 +85,7 @@ def test_mark_equidistribution_ignores_ghosts(dtype: np.dtype) -> None:
     local_size = size if rank == 0 else 0
     ghosts = np.zeros(0, dtype=np.int64) if rank == 0 else np.array([rank], dtype=np.int64)
     owners = np.zeros(0, dtype=np.int32) if rank == 0 else np.array([0], dtype=np.int32)
-    im = IndexMap(comm, local_size, ghosts, owners, 0)
+    im = index_map(comm, local_size, (ghosts, owners), tag=0)
 
     ghost_value = 100 * size
     v = np.empty(im.size_local + im.num_ghosts, dtype=dtype)

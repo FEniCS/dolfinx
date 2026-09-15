@@ -13,6 +13,7 @@
 #include <chrono>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
@@ -71,6 +72,11 @@ void common(nb::module_& m)
   m.attr("has_slepc") = dolfinx::has_slepc();
   m.attr("ufcx_signature") = dolfinx::ufcx_signature();
   m.attr("version") = dolfinx::version();
+
+  // From dolfinx/common/MPI.h. Default MPI tag of the consensus
+  // exchange used when building a ghosted index map.
+  m.attr("consensus_nbx_tag")
+      = static_cast<int>(dolfinx::MPI::tag::consensus_nbx);
 
   nb::enum_<dolfinx::Table::Reduction>(m, "Reduction")
       .value("max", dolfinx::Table::Reduction::max)

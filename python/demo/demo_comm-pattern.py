@@ -185,13 +185,13 @@ if msh.comm.rank == 0:
     print("Test:", graph.comm_graph_data(comm_graph))
 
     # Create a NetworkX directed graph.
-    H: nx.DiGraph = nx.DiGraph()  # type: ignore[no-any-unimported]
+    H: nx.DiGraph = nx.DiGraph()
     H.add_edges_from(adj_data)
     H.add_nodes_from(node_data)
 
     # Create graph with sorted nodes. This can be helpful for
     # visualisations.
-    G: nx.DiGraph = nx.DiGraph()  # type: ignore[no-any-unimported]
+    G: nx.DiGraph = nx.DiGraph()
     G.add_nodes_from(sorted(H.nodes(data=True)))
     G.add_edges_from(H.edges(data=True))
 
@@ -210,7 +210,7 @@ if msh.comm.rank == 0:
 
     # Create graph with sorted nodes. This can be helpful for
     # visualisations.
-    G1: nx.DiGraph = nx.DiGraph()  # type: ignore[no-any-unimported]
+    G1: nx.DiGraph = nx.DiGraph()
     G1.add_nodes_from(sorted(H1.nodes(data=True)))
     G1.add_edges_from(H1.edges(data=True))
     print_stats(G1)

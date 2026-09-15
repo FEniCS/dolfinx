@@ -25,7 +25,6 @@
 
 # +
 import sys
-import typing
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -34,7 +33,6 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, has_adios2, mesh
-from dolfinx.cpp.mesh import cell_num_entities
 from dolfinx.fem import extract_function_spaces
 from dolfinx.fem.petsc import (
     apply_lifting,
@@ -57,9 +55,7 @@ def norm_L2(v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx) -> np.inexact:
     """Convenience function to compute the L2 norm of a UFL expression."""
     compiled_form = fem.form(ufl.inner(v, v) * measure)
     comm = compiled_form.mesh.comm
-    return typing.cast(
-        np.inexact, np.sqrt(comm.allreduce(fem.assemble_scalar(compiled_form), op=MPI.SUM))
-    )
+    return np.sqrt(comm.allreduce(fem.assemble_scalar(compiled_form), op=MPI.SUM))  # type: ignore[return-value]
 
 
 # In DOLFINx, we represent integration domains over entities of
@@ -83,7 +79,7 @@ def compute_cell_boundary_facets(msh: mesh.Mesh) -> np.ndarray:
     """
     tdim = msh.topology.dim
     fdim = tdim - 1
-    n_f = cell_num_entities(msh.topology.cell_type, fdim)
+    n_f = mesh.cell_num_entities(msh.topology.cell_type, fdim)
     n_c = msh.topology.index_map(tdim).size_local
     return np.vstack((np.repeat(np.arange(n_c), n_f), np.tile(np.arange(n_f), n_c))).T.flatten()
 
@@ -200,8 +196,13 @@ entity_maps = [facet_mesh_emap]
 # Compile forms for the blocked system, using {py:func}`ufl.extract_blocks`
 # for the bilinear and linear forms.
 
-a_blocked = fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
-L_blocked = fem.form(ufl.extract_blocks(L))
+a_ufl: list[list[ufl.Form | None]] = ufl.extract_blocks(a)  # type: ignore[assignment]
+a_blocked: list[list[fem.Form | None]] = fem.form(  # type: ignore[assignment]
+    a_ufl,
+    entity_maps=entity_maps,
+)
+L_ufl: list[ufl.Form] = ufl.extract_blocks(L)  # type: ignore[assignment]
+L_blocked: list[fem.Form] = fem.form(L_ufl)  # type: ignore[assignment]
 
 # Apply Dirichlet boundary conditions. We begin by locating the boundary
 # facets of msh.

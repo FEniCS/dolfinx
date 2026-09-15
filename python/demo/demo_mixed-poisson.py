@@ -175,13 +175,16 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
     x = ufl.SpatialCoordinate(msh)
     f = 10 * ufl.exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
     dx = ufl.Measure("dx", msh)
-    a = ufl.extract_blocks(
+    a: list[list[ufl.Form | None]] = ufl.extract_blocks(  # type: ignore[assignment]
         ufl.inner(sigma_trial, tau) * dx
         + ufl.inner(u_trial, ufl.div(tau)) * dx
         + ufl.inner(ufl.div(sigma_trial), v) * dx
     )
-    L = [ufl.ZeroBaseForm((tau,)), -ufl.inner(f, v) * dx]
-    a_p = ufl.extract_blocks(
+    L: list[ufl.Form] = [  # type: ignore[list-item]
+        ufl.ZeroBaseForm((tau,)),
+        -ufl.inner(f, v) * dx,
+    ]
+    a_p: list[list[ufl.Form | None]] = ufl.extract_blocks(  # type: ignore[assignment]
         ufl.inner(sigma_trial, tau) * dx
         + ufl.inner(ufl.div(sigma_trial), ufl.div(tau)) * dx
         + ufl.inner(u_trial, v) * dx
@@ -272,12 +275,13 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
 # next-order cases.
 if has_adios2:
     from dolfinx.io import VTXWriter
-
+else:
+    VTXWriter = None
 
 use_hypre = has_hypre and hypre_ams_compatible
 for k in (1, 2):
     sigma, u = solve(k, use_hypre)
-    if has_adios2:
+    if VTXWriter is not None:
         # VTX supports (discontinuous) Lagrange functions, so
         # interpolate the flux
         V_sigma = fem.functionspace(

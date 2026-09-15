@@ -177,9 +177,9 @@ public:
             cells);
     md::mdspan<const geometry_type,
                md::extents<std::size_t, 3, md::dynamic_extent>>
-        _x(x.data(), 3, x.size() / 3);
+        x_view(x.data(), 3, x.size() / 3);
 
-    const auto [fx, fshape] = f(_x);
+    const auto [fx, fshape] = f(x_view);
     assert(fshape.size() <= 2);
     if (std::size_t vs = _function_space->element()->value_size();
         vs == 1 and fshape.size() == 1)

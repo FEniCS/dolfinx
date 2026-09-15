@@ -129,9 +129,9 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
   std::byte send_buffer{0};
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    int err = MPI_Isend(&send_buffer, 1, MPI_BYTE, edges[e],
-                        static_cast<int>(tag::consensus_pcx), comm,
-                        &send_requests[e]);
+    err = MPI_Isend(&send_buffer, 1, MPI_BYTE, edges[e],
+                    static_cast<int>(tag::consensus_pcx), comm,
+                    &send_requests[e]);
     dolfinx::MPI::check_error(comm, err);
   }
 
@@ -146,8 +146,8 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
   {
     MPI_Status status;
     std::byte buffer_recv;
-    int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE,
-                       static_cast<int>(tag::consensus_pcx), comm, &status);
+    err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE,
+                   static_cast<int>(tag::consensus_pcx), comm, &status);
     dolfinx::MPI::check_error(comm, err);
     other_ranks.push_back(status.MPI_SOURCE);
   }
@@ -230,8 +230,8 @@ nbx_consensus_rounds(MPI_Comm comm, std::array<std::span<const int>, K> edges,
       while (flag_recv)
       {
         src_ranks[i].push_back(status.MPI_SOURCE);
-        int err = MPI_Irecv(&buffer_recv[i], 1, MPI_BYTE, MPI_ANY_SOURCE,
-                            tags[i], comm, &recv_request[i]);
+        err = MPI_Irecv(&buffer_recv[i], 1, MPI_BYTE, MPI_ANY_SOURCE, tags[i],
+                        comm, &recv_request[i]);
         dolfinx::MPI::check_error(comm, err);
 
         err = MPI_Test(&recv_request[i], &flag_recv, &status);
@@ -258,7 +258,7 @@ nbx_consensus_rounds(MPI_Comm comm, std::array<std::span<const int>, K> edges,
       if (flag)
       {
         // All sends have completed, start non-blocking barrier
-        int err = MPI_Ibarrier(comm, &barrier_request);
+        err = MPI_Ibarrier(comm, &barrier_request);
         dolfinx::MPI::check_error(comm, err);
         barrier_active = true;
       }
