@@ -824,6 +824,60 @@ build_entity_types(const std::vector<CellType>& cell_types)
   }
   return entity_types;
 }
+
+/// @brief Compute inter-process vertices for a topology of tdim == 1,
+/// where facets are vertices.
+///
+/// Derived from the vertex IndexMap's ownership/ghosting data rather
+/// than mesh::compute_entities, which returns immediately for dim == 0.
+///
+/// @param[in] topology Topology with tdim == 1, whose vertex index map
+/// and cell-vertex connectivity have already been set.
+/// @return Sorted, local indices of the inter-process vertices.
+std::vector<std::int32_t>
+compute_interprocess_vertices(const Topology& topology)
+{
+  assert(topology.dim() == 1);
+  const int tdim = 1;
+
+  auto vertex_map = topology.index_map(0);
+  assert(vertex_map);
+  const std::int32_t num_local_vertices = vertex_map->size_local();
+
+  // A vertex is inter-process if it is touched by a locally owned cell
+  // and is shared with another rank (owned here and ghosted elsewhere,
+  // or ghosted here).
+  std::vector<std::int8_t> touched_by_owned_cell(
+      num_local_vertices + vertex_map->num_ghosts(), 0);
+  auto cell_maps = topology.index_maps(tdim);
+  for (std::size_t i = 0; i < cell_maps.size(); ++i)
+  {
+    auto cells = topology.connectivity({tdim, int(i)}, {0, 0});
+    assert(cells);
+    std::int32_t num_owned_cells = cell_maps[i]->size_local();
+    for (std::int32_t c = 0; c < num_owned_cells; ++c)
+      for (std::int32_t v : cells->links(c))
+        touched_by_owned_cell[v] = 1;
+  }
+
+  std::vector<std::int32_t> interprocess_vertices;
+
+  // Owned vertices ghosted by another rank (collective).
+  for (std::int32_t v : vertex_map->shared_indices())
+    if (touched_by_owned_cell[v])
+      interprocess_vertices.push_back(v);
+
+  // Local ghost vertices.
+  for (std::int32_t g = 0; g < vertex_map->num_ghosts(); ++g)
+  {
+    std::int32_t v = num_local_vertices + g;
+    if (touched_by_owned_cell[v])
+      interprocess_vertices.push_back(v);
+  }
+
+  std::ranges::sort(interprocess_vertices);
+  return interprocess_vertices;
+}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -832,8 +886,7 @@ Topology::Topology(
     std::shared_ptr<const common::IndexMap> vertex_map,
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
     std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
-    const std::optional<std::vector<std::vector<std::int64_t>>>& original_index,
-    int num_threads)
+    const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
     : original_cell_index(original_index
                               ? *original_index
                               : std::vector<std::vector<std::int64_t>>()),
@@ -860,15 +913,10 @@ Topology::Topology(
     }
   }
 
-  // FIXME: This is a hack for setting _interprocess_facets when
-  // tdim==1, i.e. the 'facets' are vertices
+  // For tdim == 1, facets are vertices; compute inter-process facets
+  // directly from the vertex IndexMap (see compute_interprocess_vertices).
   if (tdim == 1)
-  {
-    auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(*this, 0, CellType::point, num_threads);
-    std::ranges::sort(interprocess_entities);
-    _interprocess_facets.push_back(std::move(interprocess_entities));
-  }
+    _interprocess_facets.push_back(compute_interprocess_vertices(*this));
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept
