@@ -31,6 +31,17 @@ add_feature_info(
 	to set FALSE."
 )
 
+option(
+  DOLFINX_BUNDLE_CPP_LIBRARY
+  "Bundle the DOLFINx C++ library in the Python package."
+  OFF
+)
+add_feature_info(
+  DOLFINX_BUNDLE_CPP_LIBRARY
+  DOLFINX_BUNDLE_CPP_LIBRARY
+  "Bundle the DOLFINx C++ library in the Python package."
+)
+
 feature_summary(WHAT ALL)
 
 # Detect the installed nanobind package and import it into CMake
@@ -189,6 +200,14 @@ set_target_properties(
     INSTALL_RPATH_USE_LINK_PATH ${DOLFINX_INSTALL_RPATH_USE_LINK_PATH}
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
+
+if(DOLFINX_BUNDLE_CPP_LIBRARY)
+  set_property(TARGET cpp APPEND PROPERTY INSTALL_RPATH "$ORIGIN/lib")
+  install(
+    IMPORTED_RUNTIME_ARTIFACTS dolfinx::dolfinx
+    LIBRARY DESTINATION dolfinx/lib
+  )
+endif()
 
 install(TARGETS cpp LIBRARY DESTINATION dolfinx)
 
