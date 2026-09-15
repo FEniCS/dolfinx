@@ -921,10 +921,7 @@ def test_mesh_single_process_distribution(partitioner):
 
 
 def test_create_submesh_empty_on_some_ranks():
-    """create_submesh must not deadlock when some ranks select zero entities.
-
-    Regression test for an untested path: the original review traced this
-    by hand and found no deadlock, but it was never verified by execution.
+    """create_submesh must not deadlock when some ranks have zero entities.
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 8, 8)
     tdim = mesh.topology.dim
