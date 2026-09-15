@@ -355,6 +355,19 @@ public:
   /// Destructor
   virtual ~Form() = default;
 
+  /// @brief Copy assignment (deleted).
+  ///
+  /// @note Deleted for the same reason as the copy constructor.
+  Form& operator=(const Form& form) = delete;
+
+  /// @brief Move assignment.
+  ///
+  /// @note Valid for the same reason as the move constructor: move
+  /// assigning a `std::map` transfers its nodes, so the entity vectors
+  /// aliased by the `std::span`s cached in ::_edata and ::_cdata keep
+  /// their addresses.
+  Form& operator=(Form&& form) = default;
+
   /// @brief Rank of the form.
   ///
   /// bilinear form = 2, linear form = 1, functional = 0, etc.
