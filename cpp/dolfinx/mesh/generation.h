@@ -144,6 +144,16 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
       throw std::runtime_error("It must hold p[0] < p[1].");
   }
 
+  for (int32_t i = 0; i < 3; i++)
+  {
+    if (std::abs(p[1][i] - p[0][i]) / static_cast<T>(n[i])
+        < 2.0 * std::numeric_limits<T>::epsilon())
+    {
+      throw std::runtime_error(
+          "Box seems to have zero width, height or depth. Check dimensions");
+    }
+  }
+
   if (!graph::has_partitioner(partitioner) and dolfinx::MPI::size(comm) > 1)
     partitioner = graph::partition_graph;
 
@@ -232,6 +242,14 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
   {
     if (p[0][i] >= p[1][i])
       throw std::runtime_error("It must hold p[0] < p[1].");
+  }
+
+  if (std::abs(p[1][0] - p[0][0]) < std::numeric_limits<T>::epsilon()
+      or std::abs(p[1][1] - p[0][1]) < std::numeric_limits<T>::epsilon())
+  {
+    throw std::runtime_error(
+        "Rectangle seems to have zero width, height or depth. Check "
+        "dimensions");
   }
 
   if (!graph::has_partitioner(partitioner) and dolfinx::MPI::size(comm) > 1)
@@ -388,14 +406,6 @@ std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
       (p1[2] - p0[2]) / static_cast<T>(nz),
   };
 
-  if (std::ranges::any_of(
-          extents, [](auto e)
-          { return std::abs(e) < 2.0 * std::numeric_limits<T>::epsilon(); }))
-  {
-    throw std::runtime_error(
-        "Box seems to have zero width, height or depth. Check dimensions");
-  }
-
   const std::int64_t n_points = (nx + 1) * (ny + 1) * (nz + 1);
   const auto [range_begin, range_end] = common::local_range(
       dolfinx::MPI::rank(comm), n_points, dolfinx::MPI::size(comm));
@@ -529,8 +539,8 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
     const std::int64_t ny = n[1];
     const std::int64_t nz = n[2];
     const std::int64_t n_cells = nx * ny * nz;
-    std::array range_c = common::local_range(dolfinx::MPI::rank(comm), n_cells,
-                                             dolfinx::MPI::size(comm));
+    std::array range_c = common::local_range(
+        dolfinx::MPI::rank(subcomm), n_cells, dolfinx::MPI::size(subcomm));
     const std::int64_t cell_range = range_c[1] - range_c[0];
 
     // Create cuboids
@@ -580,12 +590,6 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 
     const T ab = (b - a) / static_cast<T>(nx);
     const T cd = (d - c) / static_cast<T>(ny);
-    if (std::abs(b - a) < std::numeric_limits<T>::epsilon()
-        or std::abs(d - c) < std::numeric_limits<T>::epsilon())
-    {
-      throw std::runtime_error("Rectangle seems to have zero width, height or "
-                               "depth. Check dimensions");
-    }
 
     // Create vertices and cells
     std::int64_t nv, nc;
