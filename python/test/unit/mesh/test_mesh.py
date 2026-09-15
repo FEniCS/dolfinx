@@ -931,6 +931,24 @@ def test_mesh_single_process_distribution(partitioner):
             assert adj.links(i).size == 2
 
 
+def test_create_submesh_empty_on_some_ranks():
+    """create_submesh must not deadlock when some ranks select zero entities.
+
+    Regression test for an untested path: the original review traced this
+    by hand and found no deadlock, but it was never verified by execution.
+    """
+    mesh = create_unit_square(MPI.COMM_WORLD, 8, 8)
+    tdim = mesh.topology.dim
+    if MPI.COMM_WORLD.rank == 0:
+        num_local = mesh.topology.index_map(tdim).size_local
+        entities = np.arange(num_local, dtype=np.int32)
+    else:
+        entities = np.empty(0, dtype=np.int32)
+    submesh, _entity_map, _vertex_map, _node_map = create_submesh(mesh, tdim, entities)
+    if MPI.COMM_WORLD.rank != 0:
+        assert submesh.topology.index_map(tdim).size_local == 0
+
+
 def test_compute_incident_entities_out_of_range_index():
     """compute_incident_entities must reject an out-of-range entity index.
 
@@ -946,6 +964,28 @@ def test_compute_incident_entities_out_of_range_index():
         dolfinx.mesh.compute_incident_entities(
             msh.topology, np.array([num_vertices], dtype=np.int32), 0, tdim
         )
+
+
+@pytest.mark.skip_in_parallel
+def test_transfer_meshtags_to_submesh_max_value_survives():
+    """A tag value equal to numeric_limits<T>::max() must survive the transfer.
+
+    Regression test: transfer_meshtags_to_submesh used
+    numeric_limits<T>::max() internally as an "unmapped" sentinel, which
+    collided with a legitimate tag value of exactly that value and
+    silently dropped it from the result.
+    """
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    tdim = mesh.topology.dim
+    submesh, entity_map, vertex_map, _node_map = create_submesh(
+        mesh, tdim, np.arange(2, dtype=np.int32)
+    )
+    max_val = np.iinfo(np.int32).max
+    et = dolfinx.mesh.meshtags(
+        mesh, tdim, np.array([0], dtype=np.int32), np.array([max_val], dtype=np.int32)
+    )
+    sub_et = transfer_meshtags_to_submesh(et, submesh, entity_map, vertex_map)
+    assert max_val in sub_et.values
 
 
 @pytest.mark.parametrize("codim", [0, 1, 2, 3])
