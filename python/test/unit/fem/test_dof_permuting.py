@@ -13,11 +13,13 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import basix
 import ufl
-from basix.ufl import element
+from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
 from dolfinx.fem import Function, assemble_scalar, form, functionspace
-from dolfinx.mesh import create_mesh, create_unit_cube
+from dolfinx.fem.element import finiteelement
+from dolfinx.mesh import CellType, create_mesh, create_unit_cube
 
 
 def randomly_ordered_mesh(cell_type):
@@ -450,3 +452,136 @@ def test_permutation_wrappers(space_order, data_types):
     V.element.Tt_inv_apply(arr.reshape(-1), cell_perm, 1)
     eps = 100 * np.finfo(s_type).eps
     np.testing.assert_allclose(org_data.reshape(-1), arr.reshape(-1), atol=eps)
+
+
+@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+@pytest.mark.parametrize("ttype", [0, 1, 2, 3])  # doftransform: standard/transpose/inverse/...
+def test_mixed_element_dof_transformation_right(ttype, dtype):
+    """Check a mixed element's right (post-)transformation is row-consistent.
+
+    Each row of (block_size, ndofs) data must be transformed over its own
+    column range, not a single contiguous span truncated by an earlier
+    sub-element's offset. See
+    ``dolfinx::fem::FiniteElement::dof_transformation_right_fn``.
+    """
+    # P1 Lagrange: DOF transformations are the identity, so its only role
+    # here is to shift the Nedelec sub-element to a non-zero offset.
+    lagrange = element(
+        basix.ElementFamily.P,
+        basix.CellType.triangle,
+        1,
+        lagrange_variant=basix.LagrangeVariant.gll_isaac,
+    )
+    # Nedelec (first kind), degree 2: two DOFs per edge, so the DOF
+    # transformation is non-trivial (not merely a permutation).
+    nedelec = element(
+        basix.ElementFamily.N1E,
+        basix.CellType.triangle,
+        2,
+        lagrange_variant=basix.LagrangeVariant.legendre,
+    )
+    # The transforming (Nedelec) sub-element is placed second, so it
+    # sits at a non-zero DOF offset within the mixed element.
+    ufl_e = mixed_element([lagrange, nedelec])
+    elem = finiteelement(CellType.triangle, ufl_e, np.float64)
+    assert elem.needs_dof_transformations
+
+    ncols = elem.space_dimension
+    nrows = 3
+    A = np.arange(1, nrows * ncols + 1).astype(dtype)
+    # Cell permutation with edges 0 and 1 reflected.
+    cell_info = np.array([0b011], dtype=np.uint32)
+
+    # dof_transformation_right_apply is deliberately not exposed on the
+    # pure-Python FiniteElement wrapper, so it is called on the
+    # underlying cpp object.
+    e = elem._cpp_object
+
+    # Reference: apply row-by-row, exclusively through the block_size == 1
+    # path.
+    expected = A.copy()
+    for i in range(nrows):
+        e.dof_transformation_right_apply(
+            ttype, expected[i * ncols : (i + 1) * ncols], cell_info, 0, 1, False
+        )
+
+    B = A.copy()
+    e.dof_transformation_right_apply(ttype, B, cell_info, 0, nrows, False)
+
+    np.testing.assert_array_equal(B, expected)
+    # The transformation is not a no-op for this cell permutation, so the
+    # row-by-row/single-call agreement above isn't trivially satisfied.
+    assert not np.array_equal(A, B)
+
+
+@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+@pytest.mark.parametrize("ttype", [0, 1, 2, 3])
+def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype):
+    """As above, but with the transforming sub-element first, at offset 0.
+
+    This is the case that the pre-fix sub-span slicing got right, so it
+    serves as a control alongside the non-zero-offset case above.
+    """
+    lagrange = element(
+        basix.ElementFamily.P,
+        basix.CellType.triangle,
+        1,
+        lagrange_variant=basix.LagrangeVariant.gll_isaac,
+    )
+    nedelec = element(
+        basix.ElementFamily.N1E,
+        basix.CellType.triangle,
+        2,
+        lagrange_variant=basix.LagrangeVariant.legendre,
+    )
+    ufl_e = mixed_element([nedelec, lagrange])
+    elem = finiteelement(CellType.triangle, ufl_e, np.float64)
+    assert elem.needs_dof_transformations
+
+    ncols = elem.space_dimension
+    nrows = 3
+    A = np.arange(1, nrows * ncols + 1).astype(dtype)
+    cell_info = np.array([0b011], dtype=np.uint32)
+    e = elem._cpp_object
+
+    expected = A.copy()
+    for i in range(nrows):
+        e.dof_transformation_right_apply(
+            ttype, expected[i * ncols : (i + 1) * ncols], cell_info, 0, 1, False
+        )
+
+    B = A.copy()
+    e.dof_transformation_right_apply(ttype, B, cell_info, 0, nrows, False)
+
+    np.testing.assert_array_equal(B, expected)
+
+
+@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+@pytest.mark.parametrize("ttype", [0, 1, 2, 3])
+def test_non_mixed_element_dof_transformation_right(ttype, dtype):
+    """As above, but for the leaf (non-mixed) code path, for contrast."""
+    ufl_e = element(
+        basix.ElementFamily.N1E,
+        basix.CellType.triangle,
+        2,
+        lagrange_variant=basix.LagrangeVariant.legendre,
+    )
+    elem = finiteelement(CellType.triangle, ufl_e, np.float64)
+    assert elem.needs_dof_transformations
+
+    ncols = elem.space_dimension
+    nrows = 3
+    A = np.arange(1, nrows * ncols + 1).astype(dtype)
+    cell_info = np.array([0b011], dtype=np.uint32)
+    e = elem._cpp_object
+
+    expected = A.copy()
+    for i in range(nrows):
+        e.dof_transformation_right_apply(
+            ttype, expected[i * ncols : (i + 1) * ncols], cell_info, 0, 1, False
+        )
+
+    B = A.copy()
+    e.dof_transformation_right_apply(ttype, B, cell_info, 0, nrows, False)
+
+    np.testing.assert_array_equal(B, expected)

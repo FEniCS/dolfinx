@@ -38,9 +38,7 @@ from dolfinx.io import gmsh as gmshio
 
 
 # +
-def gmsh_sphere(  # type: ignore[no-any-unimported]
-    model: gmsh.model, name: str
-) -> gmsh.model:
+def gmsh_sphere(model: gmsh.model, name: str) -> gmsh.model:
     """Create a Gmsh model of a sphere.
 
     Tags sub entities for all co-dimensions (peaks, ridges, facets and
@@ -76,9 +74,7 @@ def gmsh_sphere(  # type: ignore[no-any-unimported]
     return model
 
 
-def gmsh_sphere_minus_box(  # type: ignore[no-any-unimported]
-    model: gmsh.model, name: str
-) -> gmsh.model:
+def gmsh_sphere_minus_box(model: gmsh.model, name: str) -> gmsh.model:
     """Create a Gmsh model of a sphere with a box from the sphere removed.
 
     Args:
@@ -111,9 +107,7 @@ def gmsh_sphere_minus_box(  # type: ignore[no-any-unimported]
     return model
 
 
-def gmsh_ring(  # type: ignore[no-any-unimported]
-    model: gmsh.model, name: str
-) -> gmsh.model:
+def gmsh_ring(model: gmsh.model, name: str) -> gmsh.model:
     """Create a Gmsh model of a ring-type geometry using hexahedral cells.
 
     Args:

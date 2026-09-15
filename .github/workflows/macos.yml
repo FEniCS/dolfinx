@@ -30,7 +30,7 @@ jobs:
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
-      PETSC_VERSION: 3.25.4
+      PETSC_VERSION: 3.25.5
       PYTEST_ADDOPTS: "-W error"
 
     steps:
@@ -76,6 +76,7 @@ jobs:
           ./configure \
             --with-64-bit-indices=no \
             --with-debugging=no \
+            --with-strict-petscerrorcode \
             --with-fortran-bindings=no \
             --with-scalar-type=real \
             --with-shared-libraries \
@@ -112,6 +113,7 @@ jobs:
           cmake -B build -S . -Werror=dev --warn-uninitialized -G Ninja \
             -DCMAKE_BUILD_TYPE=Developer \
             -DBUILD_TESTING=true \
+            -DDOLFINX_BUILD_DEMOS=true \
             -DDOLFINX_ENABLE_SCOTCH=true \
             -DDOLFINX_ENABLE_PARMETIS=true \
             -DDOLFINX_ENABLE_KAHIP=true \
@@ -129,6 +131,12 @@ jobs:
         run: |
           ctest -V --output-on-failure -R unittests_np_1
           ctest -V --output-on-failure -R unittests_np_3
+
+      - name: Run demos (C++)
+        working-directory: cpp/build
+        run: |
+          ctest --output-on-failure -R "demo_.*_np_1"
+          ctest --output-on-failure -R "demo_.*_np_2"
 
       - name: Build and install DOLFINx Python interface
         working-directory: python

@@ -21,17 +21,17 @@ Note that Developer mode is significantly stricter than CMake's default Debug mo
 To build with sanitizers for finding bugs rather than performance, see the
 [sanitizer info](../cpp/cmake/sanitizers/README.md).
 
-# Type checking with mypy
+# Type checking with Pyrefly
 
-1. Install DOLFINx Python with the `typing` extra, plus `mypy` itself
+1. Install DOLFINx Python with the `typing` extra, plus Pyrefly itself
    (or any other type checker), e.g.:
 
-       pip install mypy '.[typing]'
+       pip install pyrefly '.[typing]'
 
-2. Check with mypy, e.g.:
+2. Check with Pyrefly:
 
-       mypy --config-file pyproject.toml -p dolfinx
+       pyrefly check
 
-   The `--config-file pyproject.toml` is mandatory to run mypy with the correct options.
-   The `-p` flag checks the built/installed package `dolfinx`, containing the C++
-   bindings and Python interface.
+   Run this command from the `python` directory. The `pyproject.toml` configuration
+   checks `dolfinx`, `demo`, and `test`, using the built/installed package to resolve
+   the C++ bindings.

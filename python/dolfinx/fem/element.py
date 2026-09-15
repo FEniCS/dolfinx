@@ -12,9 +12,80 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
+import basix._basixcpp
 import basix.ufl
 from dolfinx import cpp as _cpp
 from dolfinx.typing import Real
+
+
+class ElementDofLayout:
+    """Layout of the degrees-of-freedom on a cell.
+
+    Describes which degrees-of-freedom of a cell are associated with
+    each sub-entity (vertex, edge, face, cell) of the cell.
+    """
+
+    _cpp_object: _cpp.fem.ElementDofLayout
+
+    def __init__(self, dof_layout: _cpp.fem.ElementDofLayout):
+        """Initialize a dof layout from a C++ ElementDofLayout.
+
+        Note:
+            Dof layouts are obtained from
+            :attr:`DofMap.dof_layout <dolfinx.fem.DofMap.dof_layout>` or
+            :meth:`CoordinateElement.create_dof_layout`, and not created
+            using this initialiser.
+
+        Args:
+            dof_layout: The C++ dof layout object.
+        """
+        self._cpp_object = dof_layout
+
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same dof layout."""
+        if not isinstance(other, ElementDofLayout):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped dof layout."""
+        return hash(self._cpp_object)
+
+    @property
+    def num_dofs(self) -> int:
+        """Number of degrees-of-freedom on the cell."""
+        return self._cpp_object.num_dofs
+
+    @property
+    def block_size(self) -> int:
+        """Block size of the layout."""
+        return self._cpp_object.block_size
+
+    def entity_dofs(self, dim: int, entity_index: int) -> list[int]:
+        """Degrees-of-freedom associated with a sub-entity of the cell.
+
+        Args:
+            dim: Topological dimension of the sub-entity.
+            entity_index: Local index of the sub-entity.
+
+        Returns:
+            Cell-local degrees-of-freedom on the sub-entity, excluding
+            those on its boundary.
+        """
+        return self._cpp_object.entity_dofs(dim, entity_index)
+
+    def entity_closure_dofs(self, dim: int, entity_index: int) -> list[int]:
+        """Degrees-of-freedom on the closure of a sub-entity.
+
+        Args:
+            dim: Topological dimension of the sub-entity.
+            entity_index: Local index of the sub-entity.
+
+        Returns:
+            Cell-local degrees-of-freedom on the sub-entity and on its
+            boundary.
+        """
+        return self._cpp_object.entity_closure_dofs(dim, entity_index)
 
 
 class CoordinateElement(Generic[Real]):
@@ -64,9 +135,9 @@ class CoordinateElement(Generic[Real]):
         """Hash identifier of the coordinate element."""
         return self._cpp_object.hash()
 
-    def create_dof_layout(self) -> _cpp.fem.ElementDofLayout:
+    def create_dof_layout(self) -> ElementDofLayout:
         """Compute and return the dof layout."""
-        return self._cpp_object.create_dof_layout()
+        return ElementDofLayout(self._cpp_object.create_dof_layout())
 
     def push_forward(
         self, X: npt.NDArray[Real], cell_geometry: npt.NDArray[Real]

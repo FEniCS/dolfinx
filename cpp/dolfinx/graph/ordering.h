@@ -9,6 +9,9 @@
 #include "AdjacencyList.h"
 #include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <span>
+#include <variant>
 #include <vector>
 
 namespace dolfinx::graph
@@ -36,4 +39,22 @@ namespace dolfinx::graph
 std::vector<std::int32_t>
 reorder_rcm(const graph::AdjacencyList<std::int32_t>& graph);
 
+/// @brief Signature of functions that reorder the nodes of a graph.
+using reorder_graph_fn = std::function<std::vector<std::int32_t>(
+    const graph::AdjacencyList<std::int32_t>&)>;
+
+/// @brief Signature of functions that reorder points from their positions.
+///
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @return Reordering array `map`, where `map[i]` is the new index of point
+/// `i`.
+using reorder_geom_fn = std::function<std::vector<std::int32_t>(
+    std::span<const double> x, int gdim)>;
+
+/// @brief A graph or geometric reordering function for mesh cells.
+///
+/// An empty ::reorder_graph_fn selects ::reorder_rcm for mesh construction. A
+/// ::reorder_geom_fn is called with locally owned cell centroids.
+using Reorder = std::variant<reorder_graph_fn, reorder_geom_fn>;
 } // namespace dolfinx::graph

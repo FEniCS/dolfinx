@@ -1,4 +1,4 @@
-# Copyright (C) 2006 Anders Logg
+# Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -7,6 +7,7 @@
 import math
 import sys
 import typing
+import weakref
 
 from mpi4py import MPI
 
@@ -20,8 +21,8 @@ from basix.ufl import element
 from dolfinx import cpp as _cpp
 from dolfinx import graph
 from dolfinx import mesh as _mesh
-from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
-from dolfinx.fem import assemble_scalar, coordinate_element, form
+from dolfinx.cpp.mesh import is_simplex
+from dolfinx.fem import assemble_scalar, coordinate_element, form, functionspace
 from dolfinx.mesh import (
     CellType,
     DiagonalType,
@@ -40,6 +41,40 @@ from dolfinx.mesh import (
     locate_entities_boundary,
     transfer_meshtags_to_submesh,
 )
+
+
+def test_ufl_cargo_does_not_keep_mesh_wrapper_alive():
+    """Test that UFL cargo does not create a reference cycle."""
+    msh = create_unit_square(MPI.COMM_SELF, 2, 2)
+    domain = msh.ufl_domain()
+    assert domain is not None
+
+    mesh_ref = weakref.ref(msh)
+    assert domain.ufl_cargo() is msh._cpp_object
+
+    del msh
+    assert mesh_ref() is None
+
+    recovered_mesh = _mesh._mesh_from_ufl_domain(domain)
+    assert recovered_mesh.ufl_domain() is domain
+    assert domain.ufl_cargo() is recovered_mesh._cpp_object
+    assert recovered_mesh.topology.index_map(recovered_mesh.topology.dim).size_local == 8
+
+
+def test_ufl_cargo_outlives_mesh_and_domain():
+    """Test that cargo attribute access works once the wrappers are gone."""
+    msh = create_unit_square(MPI.COMM_SELF, 2, 2)
+    domain = msh.ufl_domain()
+    assert domain is not None
+    cargo = domain.ufl_cargo()
+
+    # The cargo holds the C++ mesh, so it stays usable after both the
+    # Python mesh wrapper and the UFL domain are released
+    del msh, domain
+    assert cargo.comm.size == 1
+    assert cargo.topology.index_map(cargo.topology.dim).size_local == 8
+
+    assert not hasattr(cargo, "not_a_mesh_attribute")
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
@@ -142,7 +177,7 @@ def mesh_2d(dtype):
         CellType.triangle,
         dtype,
         GhostMode.none,
-        create_cell_partitioner(GhostMode.none, 2),
+        graph.partitioner(),
         DiagonalType.left,
     )
     i1 = np.where((np.isclose(mesh2d.geometry.x, (1.0, 1.0, 0.0))).all(axis=1))[0][0]
@@ -596,7 +631,7 @@ def test_empty_rank_mesh(dtype):
     tdim = 2
     domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,), dtype=dtype))
 
-    def partitioner(comm, nparts, cell_types, cell_topology, cell_weights, edge_weights):
+    def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
         """Leave cells on the current rank,."""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
         return graph.adjacencylist(dest)._cpp_object
@@ -650,6 +685,100 @@ def test_original_index():
     s = sum(mesh.topology.original_cell_index)
     s = MPI.COMM_WORLD.allreduce(s, MPI.SUM)
     assert s == (nx**3 * 6 * (nx**3 * 6 - 1) // 2)
+
+
+@pytest.mark.skip_in_parallel
+def test_create_mesh_cell_reordering():
+    """Test a Python callback for cell reordering."""
+    cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)
+    x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
+    graph_sizes = []
+
+    def reorder(dual_graph):
+        graph_sizes.append(dual_graph.num_nodes)
+        return np.arange(dual_graph.num_nodes - 1, -1, -1, dtype=np.int32)
+
+    msh = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=reorder)
+    assert graph_sizes == [2]
+    assert np.array_equal(msh.topology.original_cell_index, [1, 0])
+
+
+@pytest.mark.skip_in_parallel
+def test_create_mesh_cell_reordering_exception():
+    """Test that an exception from a cell reordering callback keeps its type."""
+    cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)
+    x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
+
+    def reorder(dual_graph):
+        raise ValueError("reordering callback failed")
+
+    with pytest.raises(ValueError, match="reordering callback failed"):
+        _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=reorder)
+
+
+@pytest.mark.skip_in_parallel
+def test_topology_connectivity_dimension_types():
+    """Dimensions may be any integer type, but the forms cannot be mixed."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    msh.topology.create_connectivity(2, 0)
+    c = msh.topology.connectivity(2, 0)
+    for d0, d1 in [(np.int32(2), 0), (2, np.int64(0)), (np.int32(2), np.int64(0))]:
+        assert np.array_equal(msh.topology.connectivity(d0, d1).array, c.array)
+    with pytest.raises(TypeError):
+        msh.topology.connectivity((2, 0), 0)
+    with pytest.raises(TypeError):
+        msh.topology.connectivity(2, (0, 0))
+
+
+def test_wrappers_compare_equal():
+    """Wrappers built around the same C++ object compare equal."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    msh.topology.create_connectivity(2, 0)
+
+    # Each access rebuilds the wrapper, so these are independent objects
+    # around the same underlying C++ object.
+    c0, c1 = msh.topology.connectivity(2, 0), msh.topology.connectivity(2, 0)
+    assert c0 == c1
+    geom0, geom1 = msh.geometry, msh.geometry
+    assert geom0 == geom1
+
+    # A MeshTags wraps the mesh topology in a separate Topology object
+    tdim = msh.topology.dim
+    entities = np.arange(msh.topology.index_map(tdim).size_local, dtype=np.int32)
+    mt = _mesh.meshtags(msh, tdim, entities, np.ones_like(entities))
+    assert mt.topology == msh.topology
+
+    V = functionspace(msh, ("Lagrange", 1))
+    dof_layout0, dof_layout1 = V.dofmap.dof_layout, V.dofmap.dof_layout
+    assert dof_layout0 == dof_layout1
+
+
+def test_create_mesh_default_cell_reordering():
+    """Test default reverse Cuthill-McKee cell reordering."""
+    cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)
+    x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
+
+    msh_default = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x)
+    msh_rcm = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=graph.reorder_rcm)
+
+    assert np.array_equal(
+        msh_default.topology.original_cell_index, msh_rcm.topology.original_cell_index
+    )
+
+
+@pytest.mark.skip_in_parallel
+def test_create_mesh_sfc_reordering():
+    """Test a built-in space-filling-curve cell reordering."""
+    cells = np.array([[1, 3, 2], [0, 1, 2]], dtype=np.int64)
+    x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
+
+    for reorder_sfc in (graph.reorder_morton, graph.reorder_hilbert):
+        msh = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=reorder_sfc)
+        assert np.array_equal(msh.topology.original_cell_index, [1, 0])
 
 
 def compute_num_boundary_facets(mesh):
@@ -795,9 +924,8 @@ def test_mesh_single_process_distribution(partitioner):
         cells,
         element,
         x,
-        partitioner=dolfinx.mesh.create_cell_partitioner(
-            partitioner(), dolfinx.mesh.GhostMode.shared_facet, 2
-        ),
+        partitioner=partitioner(),
+        ghost_mode=dolfinx.mesh.GhostMode.shared_facet,
     )
 
     assert mesh.topology.index_map(0).size_global == 3

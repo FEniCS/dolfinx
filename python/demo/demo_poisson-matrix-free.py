@@ -96,7 +96,7 @@ from dolfinx.mesh import create_rectangle, exterior_facet_indices
 # on the mesh.
 
 dtype = default_scalar_type
-real_type = np.real(dtype(0.0)).dtype
+real_type = np.empty(0, dtype=dtype).real.dtype
 comm = MPI.COMM_WORLD
 mesh = create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], (10, 10), dtype=real_type)
 degree = 2
@@ -140,7 +140,7 @@ bc = fem.dirichletbc(value=uD, dofs=dofs)
 x = ufl.SpatialCoordinate(mesh)
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
-f = fem.Constant(mesh, dtype(-6.0))
+f = fem.Constant(mesh, np.asarray(-6.0, dtype=dtype)[()])
 a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
 L = ufl.inner(f, v) * ufl.dx
 L_fem = fem.form(L, dtype=dtype)
@@ -218,12 +218,12 @@ def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int = 200, rtol: fl
         return comm.allreduce(np.vdot(v0[:nr], v1[:nr]), MPI.SUM)
 
     # Get initial y = A.x
-    y = la.vector(b.index_map, 1, dtype)
+    y = la.vector(b.index_map, 1, dtype=dtype)
     action_A(x, y)
 
     # Copy residual to p
     r = b.array - y.array
-    p = la.vector(b.index_map, 1, dtype)
+    p = la.vector(b.index_map, 1, dtype=dtype)
     p.array[:] = r
 
     # Iterations of CG

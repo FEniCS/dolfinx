@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Garth N. Wells
+// Copyright (C) 2025-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -17,6 +17,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -190,9 +191,10 @@ void tabulate_expression(
               doftransform::transpose);
     }
   }
+
   // An expression has no notion of requiring a facet permutation.
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
-  if constexpr (entities.rank() == 2)
+  if constexpr (std::remove_cvref_t<decltype(entities)>::rank() == 2)
   {
     mesh::CellType cell_type = mesh.topology()->cell_types()[0];
     int num_facets_per_cell

@@ -365,9 +365,9 @@ def _assemble_matrix_csr(
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
-    if a.function_spaces[0] is a.function_spaces[1]:
+    if a.function_spaces[0]._cpp_object is a.function_spaces[1]._cpp_object:
         typing.cast(typing.Any, _cpp.fem.insert_diagonal)(
-            A._cpp_object, a.function_spaces[0], _bcs, diag
+            A._cpp_object, a.function_spaces[0]._cpp_object, _bcs, diag
         )
     return A
 
@@ -486,7 +486,7 @@ def apply_lifting(
         ]
 
     if coeffs is None:
-        coeffs = [pack_coefficients(form) for form in a]
+        coeffs = [pack_coefficients(form) if form is not None else {} for form in a]
 
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]

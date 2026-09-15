@@ -30,25 +30,20 @@ from scipy.special import jv, jvp
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import fem, io, mesh, plot
+from dolfinx import fem, graph, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
-from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
 
 try:
     from dolfinx.io import VTXWriter
-
-    has_vtx = True
 except ImportError:
     print("VTXWriter not available, solution will not be saved.")
-    has_vtx = False
+    VTXWriter = None
 
 try:
     import pyvista
-
-    have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
-    have_pyvista = False
+    pyvista = None
 
 # The time-harmonic Maxwell equation is complex-valued. PETSc must
 # therefore have been compiled with complex scalars.
@@ -452,8 +447,15 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = _cell_partitioner(mesh.GhostMode.shared_facet, 2)
-mesh_data = io.gmsh.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
+partitioner = graph.partitioner()
+mesh_data = io.gmsh.model_to_mesh(
+    model,
+    MPI.COMM_WORLD,
+    0,
+    gdim=2,
+    partitioner=partitioner,
+    ghost_mode=mesh.GhostMode.shared_facet,
+)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
 
@@ -466,7 +468,7 @@ MPI.COMM_WORLD.barrier()
 out_folder = Path("out_axis")
 out_folder.mkdir(parents=True, exist_ok=True)
 tdim = mesh_data.mesh.topology.dim
-if have_pyvista:
+if pyvista is not None:
     topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
@@ -627,6 +629,8 @@ phase = fem.Constant(mesh_data.mesh, PETSc.ScalarType(np.exp(1j * 0 * phi)))  # 
 
 # We now solve the problem:
 
+q_abs_fenics = 0.0
+q_sca_fenics = 0.0
 for m in m_list:
     # Definition of Trial and Test functions
     Es_m = ufl.TrialFunction(V)
@@ -788,7 +792,7 @@ if MPI.COMM_WORLD.rank == 0:
 # assert err_sca < 0.01
 # assert err_ext < 0.01
 
-if has_vtx:
+if VTXWriter is not None:
     v_dg_el = element("DG", mesh_data.mesh.basix_cell(), degree, shape=(3,), dtype=PETSc.RealType)
     W = fem.functionspace(mesh_data.mesh, v_dg_el)
     Es_dg = fem.Function(W)

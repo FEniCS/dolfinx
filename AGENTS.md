@@ -20,7 +20,7 @@ disclosure process.
 - **Standard**: Modern C++20. Use concepts (`std::floating_point T`,
   `std::integral`, `std::ranges` etc.) to constrain templates rather
   than SFINAE. Don't use C-style casts. `const`-correctness is
-  encouraged. Consider using `constexpr` and `consteval`.
+  encouraged. Use `constexpr` and `consteval` where possible.
 - **Avoid overusing the `auto` keyword**: The `auto` keyword should not be
   used on simple-to-reason-about types, e.g. `std::int32_t` and
   `std::vector<T>` as it reduces code readability.
@@ -65,17 +65,18 @@ disclosure process.
   array memory traffic — so local indices must not be silently widened
   in storage or interfaces. Type a variable by the role of its value,
   not by the expression that initialises it.
-- **PETSc/SLEPc index types**: in the thin `la::petsc`/`la::slepc`
-  wrappers, an index or count passed straight through to a PETSc/SLEPc
-  call is `PetscInt`, matching the `PetscScalar`/`Mat`/`Vec` already in
-  those signatures. The fixed-width types above are for
-  DOLFINx-meaningful quantities, such as the sizes and ranges returned
-  by `petsc::Vector`.
-- **Iterator distances**: store `std::distance` results, a signed
-  `difference_type`, in `std::size_t` when used as a container offset.
-  They are non-negative by construction here, and `-Wsign-compare` is
-  `-Werror`, so `std::ptrdiff_t` would force a cast at every
-  comparison against `.size()`.
+- **PETSc/SLEPc index types**: in the thin PETSc/SLEPc wrappers
+  (`la::petsc`, `la::slepc`, `nls::petsc`), an index or count passed to
+  or obtained from a PETSc/SLEPc call is `PetscInt`, including where it
+  is returned to the caller or passed on to a callback, matching the
+  `PetscScalar`/`Mat`/`Vec` already in those signatures. The fixed-width
+  types above are for DOLFINx-meaningful quantities, such as the sizes
+  and ranges returned by `petsc::Vector`.
+- **Iterator distances**: store `std::ranges::distance` results, a
+  signed `difference_type`, in `std::size_t` when used as a container
+  offset. They are non-negative by construction here, and
+  `-Wsign-compare` is `-Werror`, so `std::ptrdiff_t` would force a cast
+  at every comparison against `.size()`.
 - **Narrowing conversions**: neither `-Wconversion` nor
   `-Wshorten-64-to-32` is enabled, so implicit 64-to-32 narrowing is
   legal and widespread. `static_cast` only where the narrowing is the
@@ -96,21 +97,30 @@ disclosure process.
   the first comment draft, compress comments to their essence using
   concise technical language.
 - **Errors and invariants**: For user-facing/API-boundary errors, throw
-  `std::runtime_error` with a descriptive message — unconditionally when
-  the check is O(1), or guarded behind `#ifndef NDEBUG` when the check is
-  more expensive, so it's skipped in release builds. For internal
-  invariants that indicate a library bug rather than bad user input, use
-  `assert` when the check fits in a single expression, or a
-  `#ifndef NDEBUG`-guarded block with an explicit throw/abort when it
-  needs multiple statements. Do not add exceptions inside hot loops.
-  Prefer `spdlog::debug`/`info`/`warn` for logging over
+  `std::invalid_argument` for a bad argument or violated parameter
+  precondition, `std::out_of_range` for an index/lookup-key failure, and
+  `std::runtime_error` for other runtime/state/IO/MPI failures. Do not
+  introduce a custom exception hierarchy. Use descriptive messages.
+  Unconditionally perform checks when cost is O(1) and no collective MPI
+  operations are used in the check, except in hot loops. Do not add
+  exceptions inside hot loops. Guard behind `#ifndef NDEBUG` when the
+  check is more expensive or requires MPI communication, so it's skipped
+  in release builds. For internal invariants that indicate a library bug
+  rather than bad user input, use `assert` when the check fits in a
+  single expression, or a `#ifndef NDEBUG`-guarded block with an
+  explicit throw/abort when it needs multiple statements. Prefer
+  `spdlog::debug`/`info`/`warn` for logging over
   `std::cout`/`std::cerr`.
-- **MPI collectives**: collective operations (`MPI_Allreduce`,
-  neighbourhood collectives, etc.) must be reached by every rank in the
-  communicator — an error path, early return, or exception on one rank
-  must not skip a collective that other ranks still call, or the
-  mismatch deadlocks. Validate/throw before entering a code path with
-  collectives, not conditionally partway through it.
+- **MPI collectives**: every rank in a communicator must reach matching
+  collective operations (`MPI_Allreduce`, neighbourhood collectives,
+  etc.) in the same order. An early return or exception on one rank must
+  not skip a collective that peers still call, or they will deadlock. In
+  Release builds, validation must be local: it must not call MPI
+  functions that communicate. Consequently, a collective interface
+  requires locally valid arguments and consistent participation on every
+  rank; invalid input on only some ranks violates this precondition and
+  may deadlock. Validate/throw before entering collective code, never
+  conditionally between collective operations.
 - **Move/copy semantics**: Moving is preferred over copying, unless
   the object is very lightweight. Many DOLFINx classes disable
   copying; none disable moving. `std::move` is used systematically on
@@ -157,21 +167,20 @@ disclosure process.
   already matches a callback/`std::function` parameter exactly, pass
   the function directly (e.g. `graph::reorder_rcm`) rather than
   wrapping it in a trivial forwarding lambda.
-- **Lambdas**: no `[=]`/`[&]` — list captures explicitly, e.g.
-  `[&v]`. Capture by reference for lambdas invoked in
-  place; by value (cheap scalars, or
-  `[v = std::move(v)]` to move a container) for lambdas that escape the
-  scope, where a captured reference or `span` into a local dangles
-  silently. `[this]` only if the lambda cannot outlive the object.
-  Never capture a container or `shared_ptr` by value for convenience:
-  the copy happens at capture and again whenever the lambda or its
-  `std::function` is copied.
-  Prefer explicit parameter types over `auto` (`auto&&` in generic
-  code); add an explicit return type when the deduced one is non-obvious
-  or must not decay. Avoid `mutable`. Promote long or reused lambdas to
-  a free function in an anonymous namespace. A by-reference capture is
-  `const` only if the captured variable is, so declare read-only locals
-  `const`.
+- **Lambdas**: no `[=]`/`[&]` — list captures explicitly, e.g. `[&v]`.
+  Capture by reference for lambdas invoked in place; by value (cheap
+  scalars, or `[v = std::move(v)]` to move a container) for lambdas that
+  escape the scope, where a captured reference or `span` into a local
+  dangles silently. `[this]` only if the lambda cannot outlive the
+  object. Never capture a container or `shared_ptr` by value for
+  convenience: the copy happens at capture and again whenever the lambda
+  or its `std::function` is copied.
+  Prefer explicit parameter types over `auto` (`auto&&` in generic code)
+  in non-generic code; add an explicit return type when the deduced one
+  is non-obvious or must not decay. Avoid `mutable`. Promote long or
+  reused lambdas to a free function in an anonymous namespace. A
+  by-reference capture is `const` only if the captured variable is, so
+  declare read-only locals `const`.
 - **Algorithms**: prefer `std::ranges` algorithms (`std::ranges::...`)
   over both hand-written loops and their pre-ranges `<algorithm>`
   equivalents, where it doesn't hurt clarity or performance. Flattened
@@ -215,9 +224,9 @@ disclosure process.
 - **Docstrings**: Google style (`Args:`, `Returns:`, etc.), module and
   public API documented; test/demo files are exempt from some
   pydocstyle rules (see `per-file-ignores`).
-- **Type hints**: required on the public API; checked with `mypy`
-  (`python/pyproject.toml` `[tool.mypy]` config, run over `dolfinx`,
-  `test`, and `demo`). PETSc-related type checking is disabled on a
+- **Type hints**: required on the public API; checked with `pyrefly`
+  (`python/pyrefly.toml`, run over `dolfinx`, `test`, and `demo`).
+  PETSc-related type checking is disabled on a
   per-line basis until upstream petsc4py type work is finished.
 - **File header**: same SPDX/copyright block as C++, adapted to `#`
   comments, followed by a module docstring.
@@ -251,6 +260,11 @@ disclosure process.
   postprocessing with jupytext and sphinx.
 - Python demos are written with light format and Markdown for
   subsequent postprocessing with jupytext and sphinx.
+- Python demos must not import anything from `dolfinx.cpp`, directly or
+  via `dolfinx.cpp`-qualified attribute access. Demos show the intended
+  user-facing API, so everything a demo needs must be reachable from the
+  pure-Python interface; if it is not, extend that interface rather than
+  reaching into the nanobind layer.
 - Demo text should be checked for clarity, brevity, mathematical
   correctness (e.g. missing definitions) and misalignment with the
   presented solver code.
@@ -268,6 +282,11 @@ disclosure process.
   as part of the test build (see `cpp/test/CMakeLists.txt`).
 - **Python**: `pytest`, in `python/test/`. Use `mpi4py.MPI` fixtures
   for parallel-aware tests where relevant.
+- **Python tests that need PETSc**: any test requiring PETSc/petsc4py
+  must live in a file with `petsc` in its name (e.g.
+  `test_petsc_assembler.py`), so that PETSc-free builds can deselect
+  them by filename. Do not add a PETSc-dependent test to a file without
+  `petsc` in the name — move it to (or create) a `petsc` file instead.
 - Run the relevant formatter/linter and the affected test suite before
   calling a change done — don't rely on CI to catch formatting.
 - Dependency groups (`build`, `docs`, `lint`, `test`, `ci` in
