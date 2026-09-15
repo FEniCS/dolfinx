@@ -92,9 +92,15 @@ def constant_callable(c):
     return lambda x: np.tile(np.asarray(c).reshape(-1, 1), (1, x.shape[1]))
 
 
-def l2_norm2(mesh, e):
-    """Global ``||e||^2`` of a UFL expression over ``mesh``."""
-    return mesh.comm.allreduce(assemble_scalar(form(ufl.inner(e, e) * ufl.dx)), op=MPI.SUM)
+def l2_error(mesh, e):
+    """Global ``||e||`` of a UFL expression over ``mesh``."""
+    norm2 = mesh.comm.allreduce(assemble_scalar(form(ufl.inner(e, e) * ufl.dx)), op=MPI.SUM)
+    return np.sqrt(abs(norm2))
+
+
+def tol(mesh):
+    """Tolerance for a quantity that is exact up to rounding."""
+    return 1.0e3 * np.finfo(mesh.geometry.x.dtype).eps
 
 
 # Piola-mapped elements on a triangle: (family, degree, value rank). The
@@ -190,7 +196,7 @@ def test_interpolate_callable(gdim, spec):
     w = Function(V)
     w.interpolate(constant_callable(c))
 
-    assert l2_norm2(mesh, w - ufl.as_vector(c)) < 1e-20
+    assert l2_error(mesh, w - ufl.as_vector(c)) < tol(mesh)
 
 
 @pytest.mark.parametrize("gdim", [2, 3])
@@ -216,7 +222,7 @@ def test_interpolate_piola_to_dg(gdim, spec):
     q = Function(Q)
     q.interpolate(w)
 
-    assert l2_norm2(mesh, w - q) < 1e-20
+    assert l2_error(mesh, w - q) < tol(mesh)
 
 
 @pytest.mark.parametrize("gdim", [2, 3])
@@ -236,7 +242,7 @@ def test_interpolate_same_map(gdim, families):
     v = Function(W)
     v.interpolate(w)
 
-    assert l2_norm2(mesh, w - v) < 1e-20
+    assert l2_error(mesh, w - v) < tol(mesh)
 
 
 @pytest.mark.parametrize("gdim", [2, 3])
@@ -260,7 +266,7 @@ def test_interpolate_expression(gdim, spec):
     w = Function(V)
     w.interpolate(Expression(2 * g, V.element.interpolation_points))
 
-    assert l2_norm2(mesh, w - 2 * ufl.as_vector(c)) < 1e-20
+    assert l2_error(mesh, w - 2 * ufl.as_vector(c)) < tol(mesh)
 
 
 @pytest.mark.parametrize("gdim", [2, 3])
@@ -286,7 +292,7 @@ def test_interpolate_nonmatching_meshes(gdim):
     u1 = Function(V1)
     u1.interpolate_nonmatching(u0, cells, data)
 
-    assert l2_norm2(mesh1, u1 - ufl.as_vector(c)) < 1e-20
+    assert l2_error(mesh1, u1 - ufl.as_vector(c)) < tol(mesh1)
 
 
 # -----------------------------------------------------------------------
@@ -317,7 +323,7 @@ def test_eval_piola(gdim, spec):
     values = np.ravel(w.eval(x, np.array([0], dtype=np.int32)))
 
     assert values.shape == (gdim,)
-    np.testing.assert_allclose(values, c, atol=1e-12)
+    np.testing.assert_allclose(values, c, atol=tol(mesh))
 
 
 @pytest.mark.skip_in_parallel
@@ -346,7 +352,7 @@ def test_eval_piola_is_tangential(gdim, spec):
     if gdim == 3:
         normal = np.cross(*TANGENTS[3])
         normal /= np.linalg.norm(normal)
-        assert abs(np.dot(values, normal)) < 1e-12
+        assert abs(np.dot(values, normal)) < tol(mesh)
 
 
 # -----------------------------------------------------------------------
@@ -375,7 +381,7 @@ def test_interpolation_matrix(gdim):
     w = Function(V)
     w.x.array[:] = interpolation_matrix(Q, V).to_dense() @ g.x.array
 
-    assert l2_norm2(mesh, w - ufl.as_vector(c)) < 1e-20
+    assert l2_error(mesh, w - ufl.as_vector(c)) < tol(mesh)
 
 
 @pytest.mark.skip_in_parallel
@@ -396,4 +402,4 @@ def test_discrete_gradient(gdim):
     w = Function(V)
     w.x.array[:] = discrete_gradient(W, V).to_dense() @ u.x.array
 
-    assert l2_norm2(mesh, w - ufl.grad(u)) < 1e-20
+    assert l2_error(mesh, w - ufl.grad(u)) < tol(mesh)
