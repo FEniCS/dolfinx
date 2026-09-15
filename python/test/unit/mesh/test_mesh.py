@@ -358,13 +358,7 @@ def test_create_box_prism():
 
 
 def test_create_rectangle_degenerate_raises_on_every_rank():
-    """A degenerate rectangle must raise on every rank.
-
-    Regression test: the degeneracy check used to run inside a
-    ``rank == 0`` block, so under multiple ranks rank 0 would raise while
-    the others entered the collective ``create_mesh`` and hung, instead of
-    every rank reporting the error.
-    """
+    """A degenerate rectangle must raise on every rank."""
     with pytest.raises(ValueError):
         create_rectangle(
             MPI.COMM_WORLD,
@@ -376,12 +370,7 @@ def test_create_rectangle_degenerate_raises_on_every_rank():
 
 
 def test_create_box_degenerate_raises_on_every_rank():
-    """A degenerate box must raise on every rank.
-
-    Regression test: the degeneracy check used to run only on
-    ``subcomm``-participating ranks, so with a strict-subset ``subcomm``
-    the other ranks entered the collective ``create_mesh`` and hung.
-    """
+    """A degenerate box must raise on every rank."""
     with pytest.raises(ValueError):
         create_box(
             MPI.COMM_WORLD,
