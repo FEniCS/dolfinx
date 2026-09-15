@@ -216,6 +216,4 @@ def setup(app):
     # sphinx.util.logging.getLogger prepends its own "sphinx." namespace
     # onto a module's __name__, so the real stdlib logger name here is
     # "sphinx.sphinx.domains.cpp", not "sphinx.domains.cpp".
-    logging.getLogger("sphinx.sphinx.domains.cpp").addFilter(
-        _SuppressKnownUnparseableCppXrefs()
-    )
+    logging.getLogger("sphinx.sphinx.domains.cpp").addFilter(_SuppressKnownUnparseableCppXrefs())
