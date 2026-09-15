@@ -931,6 +931,44 @@ def test_mesh_single_process_distribution(partitioner):
             assert adj.links(i).size == 2
 
 
+def test_compute_incident_entities_out_of_range_index():
+    """compute_incident_entities must reject an out-of-range entity index.
+
+    Regression test: the entity index used to be passed straight into
+    AdjacencyList::links with no bounds check, so an out-of-range index
+    caused an out-of-bounds read instead of raising.
+    """
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    tdim = msh.topology.dim
+    msh.topology.create_connectivity(0, tdim)
+    num_vertices = msh.topology.index_map(0).size_local + msh.topology.index_map(0).num_ghosts
+    with pytest.raises(IndexError):
+        dolfinx.mesh.compute_incident_entities(
+            msh.topology, np.array([num_vertices], dtype=np.int32), 0, tdim
+        )
+
+
+def test_transfer_meshtags_to_submesh_swapped_maps_raises():
+    """transfer_meshtags_to_submesh must reject the maps in the wrong order.
+
+    Passing them in create_submesh's own return order (entity_map before
+    vertex_map) is the natural mistake, since that's the order
+    create_submesh returns them in. Regression test: this used to be an
+    unchecked out-of-bounds read and write with no exception.
+    """
+    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4)
+    tdim = mesh.topology.dim
+    entities = locate_entities(mesh, tdim, lambda x: x[0] >= 0.5)
+    submesh, entity_map, vertex_map, _node_map = create_submesh(mesh, tdim, entities)
+    mesh.topology.create_entities(0)
+    pe_map = mesh.topology.index_map(0)
+    num_parent = pe_map.size_local + pe_map.num_ghosts
+    values = np.ones(num_parent, dtype=np.int32)
+    et = dolfinx.mesh.meshtags(mesh, 0, np.arange(num_parent, dtype=np.int32), values)
+    with pytest.raises(ValueError):
+        transfer_meshtags_to_submesh(et, submesh, entity_map, vertex_map)
+
+
 @pytest.mark.parametrize("codim", [0, 1, 2, 3])
 def test_transfer_to_submesh(codim):
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 4, 5)

@@ -43,6 +43,14 @@ public:
         _sub_topology_to_topology(std::forward<U>(sub_topology_to_topology)),
         _sub_topology(sub_topology)
   {
+    if (!topology)
+      throw std::invalid_argument("topology must not be null.");
+    if (!sub_topology)
+      throw std::invalid_argument("sub_topology must not be null.");
+    if (dim < 0 or dim > topology->dim() or dim > sub_topology->dim())
+      throw std::invalid_argument(
+          "dim out of range for topology/sub_topology.");
+
     auto e_imap = sub_topology->index_map(_dim);
     if (!e_imap)
     {

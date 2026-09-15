@@ -54,6 +54,10 @@ public:
         _indices(std::forward<U>(indices)), _values(std::forward<V>(values)),
         _name(name)
   {
+    if (!_topology)
+      throw std::invalid_argument("topology must not be null.");
+    if (_dim < 0 or _dim > _topology->dim())
+      throw std::invalid_argument("dim out of range for topology.");
     if (_indices.size() != _values.size())
     {
       throw std::runtime_error(
