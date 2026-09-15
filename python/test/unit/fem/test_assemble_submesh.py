@@ -498,7 +498,7 @@ def test_codim_1_gradient(cell_type, expected, k):
     [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
 )
 @pytest.mark.parametrize("degree", [2, 3])
-def test_mixed_dom_codim_1_gradient_higher_order_geometry(cell_type, degree):
+def test_codim_1_gradient_higher_order_geometry(cell_type, degree):
     """Same test as `test_codim_1_gradient`, on curved parent geometry.
 
     Does not have a closed form solution.
@@ -518,7 +518,7 @@ def test_mixed_dom_codim_1_gradient_higher_order_geometry(cell_type, degree):
         (CellType.hexahedron, 72.0),
     ],
 )
-def test_mixed_dom_codim_1_spatial_coordinate(cell_type, expected):
+def test_codim_1_spatial_coordinate(cell_type, expected):
     """`SpatialCoordinate` of a codimension-1 submesh under the parent's
     exterior facet measure.
 
@@ -537,7 +537,7 @@ def test_mixed_dom_codim_1_spatial_coordinate(cell_type, expected):
     "cell_type",
     [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
 )
-def test_mixed_dom_codim_1_gradient_interior_facet(cell_type):
+def test_codim_1_gradient_interior_facet(cell_type):
     """Grad of a codimension-1 submesh coefficient under `dS`, on both
     restrictions.
 
