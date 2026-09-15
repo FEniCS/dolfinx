@@ -137,11 +137,10 @@ from dolfinx.mesh import CellType, create_unit_square
 try:
     import pyvista as pv
     import pyvistaqt as pvqt
-
-    have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
-    have_pyvista = False
+    pv = None
+    pvqt = None
 
 
 # Save all logging to file
@@ -301,7 +300,9 @@ V0, dofs = ME.sub(0).collapse()
 
 # Prepare viewer for plotting the solution during the computation
 
-if have_pyvista:
+grid = None
+p = None
+if pv is not None and pvqt is not None:
     # Create a VTK 'mesh' with 'nodes' at the function dofs
     topology, cell_types, x = plot.vtk_mesh(V0)
     grid = pv.UnstructuredGrid(topology, cell_types, x)
@@ -345,7 +346,7 @@ while t < T:
     step += 1
 
     # Update the plot window
-    if have_pyvista:
+    if grid is not None and p is not None:
         p.add_text(f"time: {t:.2e}", font_size=12, name="timelabel")
         grid.point_data["c"] = u.x.array[dofs].real
         p.app.processEvents()
@@ -355,7 +356,7 @@ file.close()
 
 # Update plot
 
-if have_pyvista:
+if grid is not None and pv is not None:
     grid.point_data["c"] = u.x.array[dofs].real
     screenshot = str(out_folder / "ch.png") if pv.OFF_SCREEN else None
     pv.plot(grid, show_edges=True, screenshot=screenshot)

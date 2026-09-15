@@ -313,14 +313,6 @@ def bcs_by_block(
         V: FunctionSpace, bcs: Iterable[DirichletBC[Scalar]]
     ) -> list[DirichletBC[Scalar]]:
         """Return list of bcs that have the same space as V."""
-        # V may be a wrapped FunctionSpace or a raw cpp FunctionSpace
-        # (Form.function_spaces returns the latter), so normalise both
-        # sides to cpp objects before calling the cpp-level contains().
-        V_cpp = V._cpp_object if isinstance(V, FunctionSpace) else V
-        return [
-            bc
-            for bc in bcs
-            if V_cpp.contains(bc.function_space._cpp_object)  # type: ignore[arg-type]
-        ]
+        return [bc for bc in bcs if V.contains(bc.function_space)]
 
     return [_bc_space(V, bcs) if V is not None else [] for V in spaces]

@@ -100,22 +100,27 @@ disclosure process.
   `std::invalid_argument` for a bad argument or violated parameter
   precondition, `std::out_of_range` for an index/lookup-key failure, and
   `std::runtime_error` for other runtime/state/IO/MPI failures. Do not
-  introduce a custom exception hierarchy. Use a descriptive message —
-  unconditionally when the check is O(1), or guarded behind
-  `#ifndef NDEBUG` when the check is more expensive, so it's skipped in
-  release builds. For internal
-  invariants that indicate a library bug rather than bad user input, use
-  `assert` when the check fits in a single expression, or a
-  `#ifndef NDEBUG`-guarded block with an explicit throw/abort when it
-  needs multiple statements. Do not add exceptions inside hot loops.
-  Prefer `spdlog::debug`/`info`/`warn` for logging over
+  introduce a custom exception hierarchy. Use descriptive messages.
+  Unconditionally perform checks when cost is O(1) and no collective MPI
+  operations are used in the check, except in hot loops. Do not add
+  exceptions inside hot loops. Guard behind `#ifndef NDEBUG` when the
+  check is more expensive or requires MPI communication, so it's skipped
+  in release builds. For internal invariants that indicate a library bug
+  rather than bad user input, use `assert` when the check fits in a
+  single expression, or a `#ifndef NDEBUG`-guarded block with an
+  explicit throw/abort when it needs multiple statements. Prefer
+  `spdlog::debug`/`info`/`warn` for logging over
   `std::cout`/`std::cerr`.
-- **MPI collectives**: collective operations (`MPI_Allreduce`,
-  neighbourhood collectives, etc.) must be reached by every rank in the
-  communicator — an error path, early return, or exception on one rank
-  must not skip a collective that other ranks still call, or the
-  mismatch deadlocks. Validate/throw before entering a code path with
-  collectives, not conditionally partway through it.
+- **MPI collectives**: every rank in a communicator must reach matching
+  collective operations (`MPI_Allreduce`, neighbourhood collectives,
+  etc.) in the same order. An early return or exception on one rank must
+  not skip a collective that peers still call, or they will deadlock. In
+  Release builds, validation must be local: it must not call MPI
+  functions that communicate. Consequently, a collective interface
+  requires locally valid arguments and consistent participation on every
+  rank; invalid input on only some ranks violates this precondition and
+  may deadlock. Validate/throw before entering collective code, never
+  conditionally between collective operations.
 - **Move/copy semantics**: Moving is preferred over copying, unless
   the object is very lightweight. Many DOLFINx classes disable
   copying; none disable moving. `std::move` is used systematically on
@@ -219,9 +224,9 @@ disclosure process.
 - **Docstrings**: Google style (`Args:`, `Returns:`, etc.), module and
   public API documented; test/demo files are exempt from some
   pydocstyle rules (see `per-file-ignores`).
-- **Type hints**: required on the public API; checked with `mypy`
-  (`python/pyproject.toml` `[tool.mypy]` config, run over `dolfinx`,
-  `test`, and `demo`). PETSc-related type checking is disabled on a
+- **Type hints**: required on the public API; checked with `pyrefly`
+  (`python/pyrefly.toml`, run over `dolfinx`, `test`, and `demo`).
+  PETSc-related type checking is disabled on a
   per-line basis until upstream petsc4py type work is finished.
 - **File header**: same SPDX/copyright block as C++, adapted to `#`
   comments, followed by a module docstring.
@@ -255,6 +260,11 @@ disclosure process.
   postprocessing with jupytext and sphinx.
 - Python demos are written with light format and Markdown for
   subsequent postprocessing with jupytext and sphinx.
+- Python demos must not import anything from `dolfinx.cpp`, directly or
+  via `dolfinx.cpp`-qualified attribute access. Demos show the intended
+  user-facing API, so everything a demo needs must be reachable from the
+  pure-Python interface; if it is not, extend that interface rather than
+  reaching into the nanobind layer.
 - Demo text should be checked for clarity, brevity, mathematical
   correctness (e.g. missing definitions) and misalignment with the
   presented solver code.
@@ -270,6 +280,11 @@ disclosure process.
   as part of the test build (see `cpp/test/CMakeLists.txt`).
 - **Python**: `pytest`, in `python/test/`. Use `mpi4py.MPI` fixtures
   for parallel-aware tests where relevant.
+- **Python tests that need PETSc**: any test requiring PETSc/petsc4py
+  must live in a file with `petsc` in its name (e.g.
+  `test_petsc_assembler.py`), so that PETSc-free builds can deselect
+  them by filename. Do not add a PETSc-dependent test to a file without
+  `petsc` in the name — move it to (or create) a `petsc` file instead.
 - Run the relevant formatter/linter and the affected test suite before
   calling a change done — don't rely on CI to catch formatting.
 - Dependency groups (`build`, `docs`, `lint`, `test`, `ci` in

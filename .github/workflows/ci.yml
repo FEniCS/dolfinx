@@ -76,9 +76,9 @@ jobs:
         uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
         with:
           spack_ref: v1.2.2
-          # spack-packages 'develop' at 2026-08-17. Bumping re-solves the
+          # spack-packages 'develop' at 2026-09-14. Bumping re-solves the
           # graph and can invalidate cached binaries; warm the cache first.
-          packages_ref: 1ccf95574922e2a7f7ef0351bd67758ad4634b7a
+          packages_ref: 43144421c9973da2bfc47c56b30ecaec45d6fc6c
 
       # Pinned, like spack itself and its packages repo above: an unpinned
       # 'main' changes what CI builds with no commit here, which makes a
@@ -218,35 +218,32 @@ jobs:
           spack env activate ci
           python -c "import dolfinx; assert dolfinx.has_petsc is ${{ matrix.petsc && 'True' || 'False' }}, dolfinx.has_petsc"
 
-      # ccpp.yml runs mypy only in a build without PETSc, which excludes
-      # the modules needing petsc4py. This leg has petsc4py, gmsh and
-      # pyvista, so it checks them, on the project config alone. One leg
-      # only: the result does not vary with the scalar type.
-      - name: mypy checks (with petsc4py)
+      # This leg has the dependencies needed to check PETSc-enabled modules,
+      # as well as the package, demos and tests. One leg only: the result does
+      # not vary with the scalar type.
+      - name: Pyrefly checks (with petsc4py)
         if: ${{ matrix.petsc && matrix.mpi == 'openmpi' && matrix.scalar == 'float64' && matrix.index == 'int32' }}
         shell: spack-bash {0}
         run: |
           spack env activate ci
-          # mypy checks the sources, so keep it out of the environment and
-          # the build cache. The environment's python has no pip, hence the
-          # venv; '--python-executable' points mypy back at it to resolve
-          # dolfinx, petsc4py and the rest.
+          # Keep Pyrefly out of the environment and build cache. The
+          # environment's Python has no pip, hence the venv; Pyrefly is
+          # pointed back at it to resolve dolfinx, petsc4py and the rest.
           apt-get install -y --no-install-recommends python3-venv
-          python3 -m venv /tmp/mypy-venv
+          python3 -m venv /tmp/pyrefly-venv
           # types-cffi, types-setuptools and scipy-stubs mirror the `typing`
           # extra in python/pyproject.toml; installed by name rather than via
           # '.[typing]' to avoid triggering a full DOLFINx build in this venv.
-          /tmp/mypy-venv/bin/pip install --quiet mypy types-cffi types-setuptools scipy-stubs
-          # Distinguishes a broken install from mypy reporting errors.
-          /tmp/mypy-venv/bin/mypy --version
+          /tmp/pyrefly-venv/bin/pip install --quiet pyrefly types-cffi types-setuptools scipy-stubs
+          # Distinguishes a broken install from Pyrefly reporting errors.
+          /tmp/pyrefly-venv/bin/pyrefly --version
           ENV_PYTHON=$(command -v python)
-          MYPY="/tmp/mypy-venv/bin/mypy --python-executable $ENV_PYTHON"
-          # No --disable-error-code: unlike the other mypy invocations in
-          # CI, this one can import everything it checks.
+          CHECKER_SITE=$(/tmp/pyrefly-venv/bin/python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')
           cd dolfinx-src/python
-          $MYPY --config-file pyproject.toml -p dolfinx
-          $MYPY demo
-          $MYPY test
+          /tmp/pyrefly-venv/bin/pyrefly check \
+            --error-stale-baseline \
+            --python-interpreter-path "$ENV_PYTHON" \
+            --site-package-path "$CHECKER_SITE"
 
       - name: Set default DOLFINx JIT options
         run: |

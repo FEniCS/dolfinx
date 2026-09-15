@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2023 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,12 +8,18 @@
 
 #include <algorithm>
 #include <dolfinx/fem/Form.h>
+#include <iterator>
 #include <map>
+#include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <span>
+#include <type_traits>
+#include <utility>
 
 namespace dolfinx_wrappers
 {
+namespace nb = nanobind;
+
 template <typename T>
 std::map<std::pair<dolfinx::fem::IntegralType, int>,
          std::pair<std::span<const T>, int>>

@@ -11,8 +11,8 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx import cpp as _cpp
-from dolfinx.common import IndexMap
+from dolfinx.common import create_sub_index_map, index_map, scatterer
+from dolfinx.fem import functionspace
 from dolfinx.mesh import GhostMode, create_unit_square
 
 
@@ -38,7 +38,7 @@ def test_sub_index_map():
     src_ranks = dest_ranks
 
     # Create index map
-    map = IndexMap(comm, map_local_size, [dest_ranks, src_ranks], map_ghosts, src_ranks)
+    map = index_map(comm, map_local_size, (map_ghosts, src_ranks), dest_src=[dest_ranks, src_ranks])
     assert map.size_global == map_local_size * comm.size
 
     # Build list for each rank of the first (myrank + myrank % 2) local
@@ -50,7 +50,7 @@ def test_sub_index_map():
 
     # Create sub index map and a map from the ghost position in new map
     # to the position in old map
-    submap, submap_to_map = _cpp.common.create_sub_index_map(map, local_indices[my_rank], False)
+    submap, submap_to_map, _ = create_sub_index_map(map, local_indices[my_rank])
     ghosts_pos_sub = submap_to_map[map_local_size:] - map_local_size
 
     # Check local and global sizes
@@ -75,7 +75,7 @@ def test_sub_index_map_ghost_mode_none():
     tdim = mesh.topology.dim
     map = mesh.topology.index_map(tdim)
     submap_indices = np.arange(0, min(2, map.size_local), dtype=np.int32)
-    _cpp.common.create_sub_index_map(map, submap_indices, False)
+    create_sub_index_map(map, submap_indices)
 
 
 def test_index_map_ghost_lifetime():
@@ -95,7 +95,7 @@ def test_index_map_ghost_lifetime():
         [local_size * dest[r] + r % local_size for r in range(len(dest))], dtype=np.int64
     )
     src = dest
-    map = IndexMap(comm, local_size, [dest, src], map_ghosts, src)
+    map = index_map(comm, local_size, (map_ghosts, src), dest_src=[dest, src])
     assert map.size_global == local_size * comm.size
 
     # Test global to local map
@@ -116,6 +116,37 @@ def test_index_map_ghost_lifetime():
     assert np.array_equal(ghosts, map_ghosts)
     del map
     assert np.array_equal(ghosts, map_ghosts)
+
+
+def test_explicit_index_map_dest_src_order():
+    """Check the documented order of explicit IndexMap neighbour lists."""
+    comm = MPI.COMM_WORLD
+    if comm.size < 3:
+        pytest.skip("Test requires 3 or more processes")
+
+    src = np.array([(comm.rank + 1) % comm.size], dtype=np.int32)
+    dest = np.array([(comm.rank - 1) % comm.size], dtype=np.int32)
+    ghosts = np.array([src[0]], dtype=np.int64)
+
+    imap = index_map(comm, 1, (ghosts, src), dest_src=[dest, src])
+    assert np.array_equal(imap.owners, src)
+
+    # Exercise the neighbour lists through a forward exchange. Checking
+    # `owners` alone cannot detect a swapped `dest_src` binding.
+    sc = scatterer(imap)
+    local_idx = sc.local_indices_block
+    remote_idx = sc.remote_indices_block
+
+    values = np.full(imap.size_local + imap.num_ghosts, -1, dtype=np.int64)
+    values[: imap.size_local] = comm.rank
+
+    send_buffer = values[local_idx]
+    recv_buffer = np.empty(remote_idx.size, dtype=values.dtype)
+    request = sc.scatter_fwd_begin(send_buffer, recv_buffer, 1)
+    sc.scatter_fwd_end(request)
+    values[imap.size_local + remote_idx] = recv_buffer
+
+    assert np.array_equal(values[imap.size_local :], src)
 
 
 # TODO: Add test for case where more than one two process shares an index
@@ -169,8 +200,11 @@ def test_create_submap_owner_change():
         owners = np.array([comm.rank - 1, comm.rank + 1], dtype=np.int32)
         submap_indices = np.array([0, 2, 3], dtype=np.int32)
 
-    imap = IndexMap(comm, local_size, ghosts, owners, 1)
-    sub_imap, sub_imap_to_imap = _cpp.common.create_sub_index_map(imap, submap_indices, True)
+    imap = index_map(comm, local_size, (ghosts, owners), tag=1)
+    sub_imap, sub_imap_to_imap, owners_changed = create_sub_index_map(imap, submap_indices)
+    # Ownership changes in this submap. `owners_changed` is rank-local, so
+    # reduce it the way a caller is expected to.
+    assert comm.allreduce(owners_changed, op=MPI.LOR)
 
     if comm.rank == 0:
         assert sub_imap.size_local == 2
@@ -234,12 +268,30 @@ def test_sub_index_map_multiple_possible_owners():
         submap_size_local_expected = 0
         submap_num_ghosts_expected = 0
 
-    imap = IndexMap(comm, local_size, ghosts, owners, 0)
+    imap = index_map(comm, local_size, (ghosts, owners), tag=0)
 
     # Create a submap where both processes 0 and 1 include the index on process 2,
     # but process 2 does not include it
-    sub_imap = _cpp.common.create_sub_index_map(imap, submap_indices, True)[0]
+    sub_imap, _, owners_changed = create_sub_index_map(imap, submap_indices)
+    # `owners_changed` is rank-local; reduce as a caller would.
+    assert comm.allreduce(owners_changed, op=MPI.LOR)
 
     assert sub_imap.size_global == 3
     assert sub_imap.size_local == submap_size_local_expected
     assert sub_imap.num_ghosts == submap_num_ghosts_expected
+
+
+def test_index_map_equality():
+    """Index maps for the same C++ object compare (and hash) equal."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    V = functionspace(msh, ("Lagrange", 1))
+    imap = V.dofmap.index_map
+    assert imap == V.dofmap.index_map
+
+    # Building a set exercises __hash__: equal wrappers must hash equal
+    # and collapse to a single entry.
+    assert len({imap, V.dofmap.index_map}) == 1
+
+    # A distinct C++ index map, even with the same layout, is not equal
+    assert imap != index_map(MPI.COMM_WORLD, imap.size_local)
+    assert imap != msh.topology.index_map(msh.topology.dim)

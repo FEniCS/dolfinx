@@ -24,18 +24,25 @@ from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
-from dolfinx.cpp.la import SparsityPattern
 from dolfinx.fem.element import CoordinateElement
 from dolfinx.fem.function import FunctionSpace
 from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
 from dolfinx.la import MatrixCSR as _MatrixCSR
+from dolfinx.la import SparsityPattern as _SparsityPattern
 
 if typing.TYPE_CHECKING:
+    # 'dolfinx.la.SparsityPattern' is spelled out in the annotations
+    # below because a bare 'SparsityPattern' is ambiguous in the
+    # generated docs, matching 'dolfinx.cpp.la.SparsityPattern' too.
+    # 'dolfinx.la' itself is not imported here: 'dolfinx.mesh' below
+    # already binds the 'dolfinx' package name, and 'dolfinx/__init__.py'
+    # imports 'la', so 'dolfinx.la.SparsityPattern' resolves without a
+    # second, conflicting import style for the same module.
     import dolfinx.mesh
     from dolfinx.cpp.fem import IntegralType as IntegralType
 
 
-def create_sparsity_pattern(a: dolfinx.fem.forms.Form) -> SparsityPattern:
+def create_sparsity_pattern(a: dolfinx.fem.forms.Form) -> dolfinx.la.SparsityPattern:
     """Create a sparsity pattern from a bilinear form.
 
     Args:
@@ -46,26 +53,25 @@ def create_sparsity_pattern(a: dolfinx.fem.forms.Form) -> SparsityPattern:
 
     Note:
         The pattern is not finalised, i.e. the caller is responsible for
-        calling ``assemble`` on the sparsity pattern.
+        calling :meth:`SparsityPattern.finalize
+        <dolfinx.la.SparsityPattern.finalize>`.
     """
-    return _create_sparsity_pattern(a._cpp_object)
+    return _SparsityPattern(_create_sparsity_pattern(a._cpp_object))
 
 
-def build_sparsity_pattern(pattern: SparsityPattern, a: dolfinx.fem.forms.Form) -> None:
+def build_sparsity_pattern(pattern: dolfinx.la.SparsityPattern, a: dolfinx.fem.forms.Form) -> None:
     """Build a sparsity pattern from a bilinear form.
 
     Args:
         pattern: The sparsity pattern to add to
         a: Bilinear form to build a sparsity pattern for.
 
-    Returns:
-        Sparsity pattern for the form ``a``.
-
     Note:
         The pattern is not finalised, i.e. the caller is responsible for
-        calling ``assemble`` on the sparsity pattern.
+        calling :meth:`SparsityPattern.finalize
+        <dolfinx.la.SparsityPattern.finalize>`.
     """
-    return _build_sparsity_pattern(pattern, a._cpp_object)
+    _build_sparsity_pattern(pattern._cpp_object, a._cpp_object)
 
 
 def create_interpolation_data(

@@ -156,7 +156,8 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices,
   // Build {global index, pos, src} list
   std::vector<std::array<std::int64_t, 3>> indices_list;
   {
-    common::Timer timer("Topology: build and sort transposed index list");
+    common::Timer timer_transpose(
+        "Topology: build and sort transposed index list");
     for (std::size_t p = 0; p < recv_disp0.size() - 1; ++p)
       for (std::int32_t i = recv_disp0[p]; i < recv_disp0[p + 1]; ++i)
         indices_list.push_back({recv_buffer0[i], i, static_cast<int>(p)});
@@ -758,33 +759,31 @@ std::vector<std::int32_t> convert_to_local_indexing(
 
   auto transform
       = [is_identity, &global_to_local_map](
-            std::span<std::int32_t> data, std::span<const std::int64_t> g,
-            std::span<const std::pair<std::int64_t, std::int32_t>>
-                global_to_local)
+            std::span<std::int32_t> data, std::span<const std::int64_t> g_chunk,
+            std::span<const std::pair<std::int64_t, std::int32_t>> g2l)
   {
     if (is_identity)
     {
-      // Every value in g is guaranteed present in global_to_local by
-      // this function's precondition, so - given is_identity - always
+      // Every value in g_chunk is guaranteed present in g2l by this
+      // function's precondition, so - given is_identity - always
       // within bounds; the check is a defensive no-op fallback rather
       // than something expected to trigger.
-      std::ranges::transform(
-          g, data.begin(),
-          [&global_to_local](auto i) -> std::int32_t
-          {
-            if (static_cast<std::size_t>(i) < global_to_local.size())
-              return global_to_local[i].second;
-            auto it = std::ranges::lower_bound(global_to_local, i,
-                                               std::ranges::less(),
-                                               [](auto& e) { return e.first; });
-            assert(it != global_to_local.end());
-            assert(it->first == i);
-            return it->second;
-          });
+      std::ranges::transform(g_chunk, data.begin(),
+                             [&g2l](auto i) -> std::int32_t
+                             {
+                               if (static_cast<std::size_t>(i) < g2l.size())
+                                 return g2l[i].second;
+                               auto it = std::ranges::lower_bound(
+                                   g2l, i, std::ranges::less(),
+                                   [](auto& e) { return e.first; });
+                               assert(it != g2l.end());
+                               assert(it->first == i);
+                               return it->second;
+                             });
     }
     else
     {
-      std::ranges::transform(g, data.begin(),
+      std::ranges::transform(g_chunk, data.begin(),
                              [&global_to_local_map](auto i)
                              {
                                auto it = global_to_local_map.find(i);
@@ -1556,8 +1555,23 @@ mesh::create_subtopology(const Topology& topology, int dim,
     auto [unique_end, range_end] = std::ranges::unique(_entities);
     _entities.erase(unique_end, range_end);
 
-    auto [_submap, _subentities]
+    auto [_submap, _subentities, owners_changed]
         = common::create_sub_index_map(*topology.index_map(dim), _entities);
+#ifndef NDEBUG
+    // `owners_changed` is rank-local, so reduce before throwing:
+    // throwing on only some ranks would leave the others in a later
+    // collective. Developer builds only, as the check needs MPI.
+    {
+      int changed = owners_changed;
+      int changed_any;
+      const MPI_Comm comm = topology.index_map(dim)->comm();
+      const int ierr
+          = MPI_Allreduce(&changed, &changed_any, 1, MPI_INT, MPI_LOR, comm);
+      dolfinx::MPI::check_error(comm, ierr);
+      if (changed_any)
+        throw std::runtime_error("Index owner change detected.");
+    }
+#endif
     submap = std::make_shared<common::IndexMap>(std::move(_submap));
     subentities = std::move(_subentities);
   }
@@ -1574,12 +1588,15 @@ mesh::create_subtopology(const Topology& topology, int dim,
   std::shared_ptr<common::IndexMap> submap0;
   std::vector<int32_t> subvertices0;
   {
-    std::pair<common::IndexMap, std::vector<int32_t>> map_data
+    // An owner change is permitted here: a vertex may be incident to a
+    // sub-topology entity on a ghosting rank but not on its owner.
+    std::tuple<common::IndexMap, std::vector<int32_t>, bool> map_data
         = common::create_sub_index_map(
             *map0, compute_incident_entities(topology, subentities, dim, 0),
-            common::IndexMapOrder::any, true);
-    submap0 = std::make_shared<common::IndexMap>(std::move(map_data.first));
-    subvertices0 = std::move(map_data.second);
+            common::IndexMapOrder::any);
+    submap0
+        = std::make_shared<common::IndexMap>(std::move(std::get<0>(map_data)));
+    subvertices0 = std::move(std::get<1>(map_data));
   }
 
   // Sub-topology entity to vertex connectivity

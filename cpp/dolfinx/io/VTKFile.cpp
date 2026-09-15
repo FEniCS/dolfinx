@@ -559,7 +559,7 @@ void write_function(
 
         // Get data on each cell
         auto u_vector = _u.get().x()->array();
-        std::vector<T> u(u_vector.size());
+        std::vector<T> u_data(u_vector.size());
         for (std::size_t c = 0; c < cshape[0]; ++c)
         {
           std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
@@ -569,8 +569,8 @@ void write_function(
             for (int k = 0; k < bs; ++k)
             {
               assert(i < dofs0.size());
-              assert(bs * dofs0[i] + k < (int)u.size());
-              u[bs * dofs0[i] + k] = u_vector[bs * dofs[i] + k];
+              assert(bs * dofs0[i] + k < (int)u_data.size());
+              u_data[bs * dofs0[i] + k] = u_vector[bs * dofs[i] + k];
             }
           }
         }
@@ -579,7 +579,7 @@ void write_function(
         if (mesh0->geometry().dim() == 3)
           add_data(_u.get().name,
                    std::span<const std::size_t>(component_vector),
-                   std::span<const T>(u), data_node);
+                   std::span<const T>(u_data), data_node);
         else
         {
           // Pad with zeros and then add
@@ -689,9 +689,9 @@ void write_function(
     // Add data for each process to the PVTU object
     for (int r = 0; r < mpi_size; ++r)
     {
-      std::filesystem::path vtu = create_vtu_path(r);
-      pugi::xml_node piece_node = grid_node.append_child("Piece");
-      piece_node.append_attribute("Source") = vtu.filename().c_str();
+      std::filesystem::path vtu_r = create_vtu_path(r);
+      pugi::xml_node piece_node_r = grid_node.append_child("Piece");
+      piece_node_r.append_attribute("Source") = vtu_r.filename().c_str();
     }
 
     // Write PVTU file
@@ -850,9 +850,9 @@ void io::VTKFile::write(const mesh::Mesh<U>& mesh, double t)
     const int mpi_size = dolfinx::MPI::size(_comm.comm());
     for (int r = 0; r < mpi_size; ++r)
     {
-      std::filesystem::path vtu = create_vtu_path(r);
-      pugi::xml_node piece_node = grid_node.append_child("Piece");
-      piece_node.append_attribute("Source") = vtu.filename().c_str();
+      std::filesystem::path vtu_r = create_vtu_path(r);
+      pugi::xml_node piece_node_r = grid_node.append_child("Piece");
+      piece_node_r.append_attribute("Source") = vtu_r.filename().c_str();
     }
 
     // Write PVTU file

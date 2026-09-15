@@ -12,7 +12,6 @@ import numpy as np
 import pytest
 
 import dolfinx
-from dolfinx.cpp.log import set_thread_name
 from dolfinx.cpp.mesh import (
     Mesh_float32,
     Mesh_float64,
@@ -24,7 +23,7 @@ from dolfinx.cpp.mesh import (
 )
 from dolfinx.fem import coordinate_element
 from dolfinx.graph import partitioner
-from dolfinx.log import LogLevel, set_log_level
+from dolfinx.log import LogLevel, set_log_level, set_thread_name
 from dolfinx.mesh import (
     CellType,
     GhostMode,

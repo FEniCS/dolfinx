@@ -13,14 +13,21 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.graph import partition_hilbert, partition_morton, partitioner
+from dolfinx.common import IndexMap
+from dolfinx.cpp.graph import (
+    partition_hilbert,
+    partition_morton,
+    partitioner,
+    reorder_hilbert,
+    reorder_morton,
+)
 from dolfinx.typing import Index
 
 # Import graph partitioners, which may or may not be available
 # (dependent on build configuration). Looked up via getattr rather than
 # a static "from ... import" since each CI build's generated dolfinx.cpp
 # stub only declares the partitioners enabled in that build, and a plain
-# import would make mypy's attr-defined check build-configuration-specific.
+# import would make type checking build-configuration-specific.
 _partitioner_scotch = getattr(_cpp.graph, "partitioner_scotch", None)
 if _partitioner_scotch is not None:
     partitioner_scotch = _partitioner_scotch
@@ -51,6 +58,9 @@ __all__ = [
     "partition_hilbert",
     "partition_morton",
     "partitioner",
+    "reorder_hilbert",
+    "reorder_morton",
+    "reorder_rcm",
 ]
 
 
@@ -81,6 +91,12 @@ class AdjacencyList(Generic[Index]):
             g: The underlying cpp instance that this object will wrap.
         """
         self._cpp_object = g
+
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same adjacency list."""
+        if not isinstance(other, AdjacencyList):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
 
     def __repr__(self) -> str:
         """String representation of the adjacency list."""
@@ -161,10 +177,26 @@ def adjacencylist(
     return AdjacencyList(cpp_object)
 
 
+def reorder_rcm(graph: AdjacencyList[np.int32]) -> npt.NDArray[np.int32]:
+    """Re-order a graph using the reverse Cuthill-McKee algorithm.
+
+    Pass it as :func:`create_mesh <dolfinx.mesh.create_mesh>`'s
+    ``reorder_fn`` argument; it is also the default cell reordering.
+
+    Args:
+        graph: Graph to re-order.
+
+    Returns:
+        New index of each node, i.e. entry ``i`` is the new index of
+        node ``i``.
+    """
+    return np.asarray(_cpp.graph.reorder_rcm(graph._cpp_object), dtype=np.int32)  # type: ignore[arg-type]
+
+
 def distribute(
     comm: _MPI.Comm,
     list: npt.NDArray[np.int64],
-    destinations: _cpp.graph.AdjacencyList_int32,
+    destinations: AdjacencyList[np.int32],
 ) -> tuple[
     npt.NDArray[np.int64], npt.NDArray[np.int32], npt.NDArray[np.int64], npt.NDArray[np.int32]
 ]:
@@ -192,10 +224,14 @@ def distribute(
         trailing rows of the first entry -- not one entry per received
         row.
     """
-    return _cpp.graph.distribute(comm, np.ascontiguousarray(list, dtype=np.int64), destinations)
+    return _cpp.graph.distribute(
+        comm,
+        np.ascontiguousarray(list, dtype=np.int64),
+        destinations._cpp_object,  # type: ignore[arg-type]
+    )
 
 
-def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
+def comm_graph(map: IndexMap, root: int = 0) -> AdjacencyList:
     """Build a parallel communication graph from an index map.
 
     The communication graph is a directed graph that represents the
@@ -228,7 +264,7 @@ def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
     Returns:
         An adjacency list representing the communication graph.
     """
-    return AdjacencyList(_cpp.graph.comm_graph(map))
+    return AdjacencyList(_cpp.graph.comm_graph(map._cpp_object, root))
 
 
 def comm_graph_data(

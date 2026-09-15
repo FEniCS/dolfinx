@@ -162,8 +162,8 @@ int main(int argc, char* argv[])
         *mesh, 1,
         [](auto x)
         {
-          using U = typename decltype(x)::value_type;
-          constexpr U eps = 1.0e-8;
+          using coord_t = typename decltype(x)::value_type;
+          constexpr coord_t eps = 1.0e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {

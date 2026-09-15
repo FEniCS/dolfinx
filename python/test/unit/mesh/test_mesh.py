@@ -1,4 +1,4 @@
-# Copyright (C) 2006 Anders Logg
+# Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -7,6 +7,7 @@
 import math
 import sys
 import typing
+import weakref
 
 from mpi4py import MPI
 
@@ -14,18 +15,17 @@ import numpy as np
 import pytest
 
 import basix
-import dolfinx.cpp.graph
+import dolfinx
 import ufl
 from basix.ufl import element
-from dolfinx import cpp as _cpp
 from dolfinx import graph
 from dolfinx import mesh as _mesh
-from dolfinx.cpp.mesh import is_simplex
-from dolfinx.fem import assemble_scalar, coordinate_element, form
+from dolfinx.fem import assemble_scalar, coordinate_element, form, functionspace
 from dolfinx.mesh import (
     CellType,
     DiagonalType,
     GhostMode,
+    cell_num_vertices,
     create_box,
     create_interval,
     create_point_mesh,
@@ -36,10 +36,45 @@ from dolfinx.mesh import (
     create_unit_square,
     entities_to_geometry,
     exterior_facet_indices,
+    is_simplex,
     locate_entities,
     locate_entities_boundary,
     transfer_meshtags_to_submesh,
 )
+
+
+def test_ufl_cargo_does_not_keep_mesh_wrapper_alive():
+    """Test that UFL cargo does not create a reference cycle."""
+    msh = create_unit_square(MPI.COMM_SELF, 2, 2)
+    domain = msh.ufl_domain()
+    assert domain is not None
+
+    mesh_ref = weakref.ref(msh)
+    assert domain.ufl_cargo() is msh._cpp_object
+
+    del msh
+    assert mesh_ref() is None
+
+    recovered_mesh = _mesh._mesh_from_ufl_domain(domain)
+    assert recovered_mesh.ufl_domain() is domain
+    assert domain.ufl_cargo() is recovered_mesh._cpp_object
+    assert recovered_mesh.topology.index_map(recovered_mesh.topology.dim).size_local == 8
+
+
+def test_ufl_cargo_outlives_mesh_and_domain():
+    """Test that cargo attribute access works once the wrappers are gone."""
+    msh = create_unit_square(MPI.COMM_SELF, 2, 2)
+    domain = msh.ufl_domain()
+    assert domain is not None
+    cargo = domain.ufl_cargo()
+
+    # The cargo holds the C++ mesh, so it stays usable after both the
+    # Python mesh wrapper and the UFL domain are released
+    del msh, domain
+    assert cargo.comm.size == 1
+    assert cargo.topology.index_map(cargo.topology.dim).size_local == 8
+
+    assert not hasattr(cargo, "not_a_mesh_attribute")
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
@@ -121,7 +156,7 @@ def test_empty_entities_to_geometry(cell_type):
     e_to_g = entities_to_geometry(mesh, 0, np.array([], dtype=np.int32), True)
     assert e_to_g.shape == (0, 1)
     e_to_g = entities_to_geometry(mesh, mesh.topology.dim, np.array([], dtype=np.int32), True)
-    assert e_to_g.shape == (0, _cpp.mesh.cell_num_vertices(cell_type))
+    assert e_to_g.shape == (0, cell_num_vertices(cell_type))
 
 
 def mesh_1d(dtype):
@@ -352,25 +387,6 @@ def test_get_coordinates():
     assert len(mesh.geometry.x) == 36
 
 
-@pytest.mark.skip("Needs to be re-implemented")
-@pytest.mark.skip_in_parallel
-def test_cell_inradius(c0, c1, c5):
-    assert _cpp.mesh.inradius(c0[0], [c0[2]]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
-    assert _cpp.mesh.inradius(c1[0], [c1[2]]) == pytest.approx(0.0)
-    assert _cpp.mesh.inradius(c5[0], [c5[2]]) == pytest.approx(math.sqrt(3.0) / 6.0)
-
-
-@pytest.mark.skip("Needs to be re-implemented")
-@pytest.mark.skip_in_parallel
-def test_cell_circumradius(c0, c1, c5):
-    assert _cpp.mesh.circumradius(c0[0], [c0[2]], c0[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
-    # Implementation of diameter() does not work accurately
-    # for degenerate cells - sometimes yields NaN
-    r_c1 = _cpp.mesh.circumradius(c1[0], [c1[2]], c1[1])
-    assert math.isnan(r_c1)
-    assert _cpp.mesh.circumradius(c5[0], [c5[2]], c5[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
-
-
 @pytest.mark.skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
@@ -385,7 +401,7 @@ def test_cell_h_prism():
     mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
     cells = np.arange(num_cells, dtype=np.int32)
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, cells)
+    h = mesh.h(tdim, cells)
     assert np.allclose(h, np.sqrt(3 / (N**2)))
 
 
@@ -396,16 +412,8 @@ def test_facet_h(ct):
     left_facets = locate_entities_boundary(
         mesh, mesh.topology.dim - 1, lambda x: np.isclose(x[0], 0)
     )
-    h = _cpp.mesh.h(mesh._cpp_object, mesh.topology.dim - 1, left_facets)
+    h = mesh.h(mesh.topology.dim - 1, left_facets)
     assert np.allclose(h, np.sqrt(2 / (N**2)))
-
-
-@pytest.mark.skip("Needs to be re-implemented")
-@pytest.mark.skip_in_parallel
-def test_cell_radius_ratio(c0, c1, c5):
-    assert _cpp.mesh.radius_ratio(c0[0], c0[2]) == pytest.approx(math.sqrt(3.0) - 1.0)
-    assert np.isnan(_cpp.mesh.radius_ratio(c1[0], c1[2]))
-    assert _cpp.mesh.radius_ratio(c5[0], c5[2]) == pytest.approx(1.0)
 
 
 @pytest.fixture(params=["dir1_fixture", "dir2_fixture"])
@@ -428,25 +436,10 @@ def test_hmin_hmax(_mesh, dtype, hmin, hmax):
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells))
+    h = mesh.h(tdim, np.arange(num_cells))
     assert h.min() == pytest.approx(hmin)
     assert h.max() == pytest.approx(hmax)
 
-
-# @pytest.mark.skip_in_parallel
-# @pytest.mark.skip("Needs to be re-implemented")
-# @pytest.mark.parametrize("mesh,rmin,rmax",
-#                          [
-#                              (mesh_1d(), 0.0, 0.125),
-#                              (mesh_2d(), 1.0 / (2.0 + math.sqrt(2.0)), math.sqrt(6.0) / 6.0),
-#                              (mesh_3d(), 0.0, math.sqrt(3.0) / 6.0),
-#                          ])
-# def test_rmin_rmax(mesh, rmin, rmax):
-#     tdim = mesh.topology.dim
-#     num_cells = mesh.topology.index_map(tdim).size_local
-#     inradius = cpp.mesh.inradius(mesh, range(num_cells))
-#     assert inradius.min() == pytest.approx(rmin)
-#     assert inradius.max() == pytest.approx(rmax)
 
 # - Facilities to run tests on combination of meshes
 
@@ -599,7 +592,7 @@ def test_empty_rank_mesh(dtype):
     def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
         """Leave cells on the current rank,."""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
-        return graph.adjacencylist(dest)._cpp_object
+        return graph.adjacencylist(dest)
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
@@ -667,6 +660,83 @@ def test_create_mesh_cell_reordering():
     msh = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=reorder)
     assert graph_sizes == [2]
     assert np.array_equal(msh.topology.original_cell_index, [1, 0])
+
+
+@pytest.mark.skip_in_parallel
+def test_create_mesh_cell_reordering_exception():
+    """Test that an exception from a cell reordering callback keeps its type."""
+    cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)
+    x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
+
+    def reorder(dual_graph):
+        raise ValueError("reordering callback failed")
+
+    with pytest.raises(ValueError, match="reordering callback failed"):
+        _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=reorder)
+
+
+@pytest.mark.skip_in_parallel
+def test_topology_connectivity_dimension_types():
+    """Dimensions may be any integer type, but the forms cannot be mixed."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    msh.topology.create_connectivity(2, 0)
+    c = msh.topology.connectivity(2, 0)
+    for d0, d1 in [(np.int32(2), 0), (2, np.int64(0)), (np.int32(2), np.int64(0))]:
+        assert np.array_equal(msh.topology.connectivity(d0, d1).array, c.array)
+    with pytest.raises(TypeError):
+        msh.topology.connectivity((2, 0), 0)
+    with pytest.raises(TypeError):
+        msh.topology.connectivity(2, (0, 0))
+
+
+def test_wrappers_compare_equal():
+    """Wrappers built around the same C++ object compare equal."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    msh.topology.create_connectivity(2, 0)
+
+    # Each access rebuilds the wrapper, so these are independent objects
+    # around the same underlying C++ object.
+    c0, c1 = msh.topology.connectivity(2, 0), msh.topology.connectivity(2, 0)
+    assert c0 == c1
+    geom0, geom1 = msh.geometry, msh.geometry
+    assert geom0 == geom1
+
+    # A MeshTags wraps the mesh topology in a separate Topology object
+    tdim = msh.topology.dim
+    entities = np.arange(msh.topology.index_map(tdim).size_local, dtype=np.int32)
+    mt = _mesh.meshtags(msh, tdim, entities, np.ones_like(entities))
+    assert mt.topology == msh.topology
+
+    V = functionspace(msh, ("Lagrange", 1))
+    dof_layout0, dof_layout1 = V.dofmap.dof_layout, V.dofmap.dof_layout
+    assert dof_layout0 == dof_layout1
+
+
+def test_create_mesh_default_cell_reordering():
+    """Test default reverse Cuthill-McKee cell reordering."""
+    cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)
+    x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
+
+    msh_default = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x)
+    msh_rcm = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=graph.reorder_rcm)
+
+    assert np.array_equal(
+        msh_default.topology.original_cell_index, msh_rcm.topology.original_cell_index
+    )
+
+
+@pytest.mark.skip_in_parallel
+def test_create_mesh_sfc_reordering():
+    """Test a built-in space-filling-curve cell reordering."""
+    cells = np.array([[1, 3, 2], [0, 1, 2]], dtype=np.int64)
+    x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
+
+    for reorder_sfc in (graph.reorder_morton, graph.reorder_hilbert):
+        msh = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=reorder_sfc)
+        assert np.array_equal(msh.topology.original_cell_index, [1, 0])
 
 
 def compute_num_boundary_facets(mesh):
@@ -785,11 +855,11 @@ def test_mesh_create_cmap(dtype):
 
 avail_partitioners: list[typing.Callable[..., dolfinx.mesh.PartitioningFunc]] = []
 if dolfinx.has_ptscotch:
-    avail_partitioners.append(getattr(dolfinx.cpp.graph, "partitioner_scotch"))
+    avail_partitioners.append(graph.partitioner_scotch)
 if dolfinx.has_kahip:
-    avail_partitioners.append(getattr(dolfinx.cpp.graph, "partitioner_kahip"))
+    avail_partitioners.append(graph.partitioner_kahip)
 if dolfinx.has_parmetis:
-    avail_partitioners.append(getattr(dolfinx.cpp.graph, "partitioner_parmetis"))
+    avail_partitioners.append(graph.partitioner_parmetis)
 
 
 @pytest.mark.parametrize("partitioner", avail_partitioners)

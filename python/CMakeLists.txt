@@ -239,7 +239,7 @@ else()
   # nanobind's stubgen resolves submodule cross-references (e.g.
   # dolfinx.cpp.la) against the bare top-level name "cpp", producing
   # "import cpp.la" in the generated stubs, which does not exist as an
-  # importable module and silently resolves to Any under mypy. stubgen
+  # importable module and silently resolves to Any during type checking. stubgen
   # infers its output location from the imported module's __file__, so
   # placing the build output under CMAKE_CURRENT_BINARY_DIR/dolfinx
   # keeps that location matching the OUTPUT paths below (relative to

@@ -189,7 +189,7 @@ std::vector<T> squared_distance(const mesh::Mesh<T>& mesh, int dim,
 namespace impl
 {
 /// Check whether bounding box is a leaf node
-constexpr bool is_leaf(std::array<int, 2> bbox)
+constexpr bool is_leaf(std::array<std::int32_t, 2> bbox)
 {
   // Leaf nodes are marked by setting child_0 equal to child_1
   return bbox[0] == bbox[1];
@@ -248,7 +248,7 @@ _compute_closest_entity(const geometry::BoundingBoxTree<T>& tree,
 {
   // Get children of current bounding box node (child_1 denotes entity
   // index for leaves)
-  const std::array<int, 2> bbox = tree.bbox(node);
+  const std::array<std::int32_t, 2> bbox = tree.bbox(node);
   T r2;
   if (is_leaf(bbox))
   {
@@ -293,10 +293,10 @@ _compute_closest_entity(const geometry::BoundingBoxTree<T>& tree,
 
     // Check both children. We use R2 (as opposed to r2), as a bounding
     // box can be closer than the actual entity.
-    std::pair<int, T> p0 = _compute_closest_entity(tree, point, bbox.front(),
-                                                   mesh, closest_entity, R2);
-    std::pair<int, T> p1 = _compute_closest_entity(tree, point, bbox.back(),
-                                                   mesh, p0.first, p0.second);
+    std::pair<std::int32_t, T> p0 = _compute_closest_entity(
+        tree, point, bbox.front(), mesh, closest_entity, R2);
+    std::pair<std::int32_t, T> p1 = _compute_closest_entity(
+        tree, point, bbox.back(), mesh, p0.first, p0.second);
     return p1;
   }
 }
@@ -314,7 +314,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
   std::deque<std::int32_t> stack;
   std::int32_t next = tree.num_bboxes() - 1;
   std::span<const T> coords = tree.bbox_coordinates();
-  auto view_bbox = [&coords](std::size_t node)
+  auto view_bbox = [&coords](std::int32_t node)
   { return std::span<const T, 6>(coords.data() + 6 * node, 6); };
   while (next != -1)
   {
@@ -593,7 +593,7 @@ compute_closest_entity(const BoundingBoxTree<T>& tree,
     // Use midpoint tree to find initial closest entity to the point.
     // Start by using a leaf node as the initial guess for the input
     // entity
-    std::array<int, 2> leaf0 = midpoint_tree.bbox(0);
+    std::array<std::int32_t, 2> leaf0 = midpoint_tree.bbox(0);
     assert(impl::is_leaf(leaf0));
     std::array<T, 6> diff = midpoint_tree.get_bbox(0);
     for (std::size_t k = 0; k < 3; ++k)
@@ -788,8 +788,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   {
     for (std::int32_t p : collisions.links(i / 3))
     {
-      int neighbor = rank_to_neighbor[p];
-      int pos = send_offsets[neighbor] + counter[neighbor];
+      std::int32_t neighbor = rank_to_neighbor[p];
+      std::int32_t pos = send_offsets[neighbor] + counter[neighbor];
       auto it = std::next(send_data.begin(), pos);
       std::copy_n(std::next(points.begin(), i), 3, it);
       unpack_map[pos / 3] = i / 3;
@@ -832,7 +832,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
     std::array<T, 3> point;
     std::copy_n(std::next(received_points.begin(), p), 3, point.begin());
     // Find first colliding cell among the cells with colliding bounding boxes
-    const int colliding_cell = geometry::compute_first_colliding_cell(
+    const std::int32_t colliding_cell = geometry::compute_first_colliding_cell(
         mesh, candidate_collisions.links(p / 3), point,
         10 * std::numeric_limits<T>::epsilon(), std::span<T>(coordinate_dofs));
     // If a collding cell is found, store the rank of the current process
@@ -982,7 +982,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   {
     for (std::int32_t p : collisions.links(i))
     {
-      int neighbor = rank_to_neighbor[p];
+      std::int32_t neighbor = rank_to_neighbor[p];
       send_owners[send_offsets[neighbor] + counter[neighbor]++]
           = point_owners[i];
     }

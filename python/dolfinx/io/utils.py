@@ -89,14 +89,22 @@ if _cpp.common.has_adios2:
                 raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
             if isinstance(output, Mesh):
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(  # type: ignore[no-matching-overload]
+                    comm, filename, output._cpp_object, engine
+                )
             else:
                 cpp_objects = (
                     [output._cpp_object]
                     if isinstance(output, Function)
                     else [o._cpp_object for o in output]
                 )
-                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)  # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(
+                    comm,
+                    filename,
+                    cpp_objects,  # type: ignore[bad-argument-type]
+                    engine,
+                    mesh_policy,
+                )
 
         def __enter__(self) -> Self:
             """Enter context manager."""
@@ -271,7 +279,7 @@ class XDMFFile:
 
     def read_geometry_data(
         self, name: str = "mesh", xpath: str = "/Xdmf/Domain"
-    ) -> npt.NDArray[np.float64]:
+    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Read geometry (node coordinates) data for a mesh from file.
 
         Args:
@@ -279,9 +287,10 @@ class XDMFFile:
             xpath: XPath where the Mesh Grid is stored in the file.
 
         Returns:
-            Node coordinates.
+            Node coordinates, as float32 or float64 depending on how
+            the data is stored in the file.
         """
-        return self._cpp_object.read_geometry_data(name, xpath)
+        return self._cpp_object.read_geometry_data(name, xpath)  # type: ignore[return-value]
 
     def read_cell_type(
         self, name: str = "mesh", xpath: str = "/Xdmf/Domain"
@@ -359,7 +368,7 @@ class XDMFFile:
         """
         cell_shape, cell_degree = self.read_cell_type(name, xpath)
         cells = self.read_topology_data(name, xpath)
-        x = self.read_geometry_data(name, xpath)
+        x = np.asarray(self.read_geometry_data(name, xpath), dtype=np.float64)
 
         # Get coordinate element, special handling for second order
         # serendipity.
@@ -481,7 +490,7 @@ def distribute_entity_data(
         mesh.topology._cpp_object,
         mesh.geometry.input_global_indices,
         mesh.geometry.index_map().size_global,
-        mesh.geometry.cmaps[0].create_dof_layout(),
+        mesh.geometry.cmaps[0].create_dof_layout()._cpp_object,
         mesh.geometry.dofmaps[0],
         entity_dim,
         entities,
