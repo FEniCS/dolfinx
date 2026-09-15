@@ -101,7 +101,7 @@ public:
   Expression(Expression&& e) = default;
 
   /// Destructor
-  virtual ~Expression() = default;
+  ~Expression() = default;
 
   // Copy assignment (deleted)
   Expression& operator=(const Expression& e) = delete;
