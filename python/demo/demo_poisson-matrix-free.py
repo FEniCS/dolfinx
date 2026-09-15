@@ -102,7 +102,7 @@ mesh = create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], (10, 10), dtype=real_typ
 degree = 2
 V = fem.functionspace(mesh, ("Lagrange", degree))
 
-# The second argument to {py:class}`functionspace
+# The second argument to {py:func}`functionspace
 # <dolfinx.fem.functionspace>` is a tuple consisting of `(family,
 # degree)`, where `family` is the finite element family, and `degree`
 # specifies the polynomial degree. In this case `V` consists of
@@ -110,8 +110,8 @@ V = fem.functionspace(mesh, ("Lagrange", degree))
 #
 # Next, we locate the mesh facets that lie on the domain boundary
 # $\partial\Omega$. We do this by first calling
-# {py:func}`create_connectivity
-# <dolfinx.mesh.topology.create_connectivity>`  and then retrieving all
+# {py:meth}`create_connectivity
+# <dolfinx.mesh.Topology.create_connectivity>` and then retrieving all
 # facets on the boundary using {py:func}`exterior_facet_indices
 # <dolfinx.mesh.exterior_facet_indices>`.
 
@@ -146,7 +146,7 @@ L = ufl.inner(f, v) * ufl.dx
 L_fem = fem.form(L, dtype=dtype)
 
 # For the matrix-free solvers we also define a second linear form `M` as
-# the {py:class}`action <ufl.action>` of the bilinear form $a$ on an
+# the {py:func}`action <ufl.action>` of the bilinear form $a$ on an
 # arbitrary {py:class}`Function <dolfinx.fem.Function>` `ui`. This linear
 # form is defined as
 #
