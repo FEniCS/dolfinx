@@ -52,12 +52,11 @@ namespace
 template <typename T>
 constexpr bool nothrow_move_c = std::is_nothrow_move_constructible_v<T>;
 
-/// @brief Non-throwing move assignment. Not asserted for la::MatrixCSR,
-/// io::XDMFFile and mesh::EntityMap, which do not provide a move
-/// assignment operator, nor for fem::Expression, whose std::function
-/// member is not required by the standard to be non-throwing on move
-/// assignment (libc++ and libstdc++ both make it so, but that is not
-/// guaranteed).
+/// @brief Non-throwing move assignment. Not asserted for io::XDMFFile
+/// and mesh::EntityMap, which do not provide a move assignment
+/// operator, nor for fem::Expression, whose std::function member is not
+/// required by the standard to be non-throwing on move assignment
+/// (libc++ and libstdc++ both make it so, but that is not guaranteed).
 template <typename T>
 constexpr bool nothrow_move_a = std::is_nothrow_move_assignable_v<T>;
 
@@ -71,6 +70,8 @@ struct scalar_classes
   static_assert(nothrow_move_c<fem::Form<T>>);
   static_assert(nothrow_move_c<fem::Function<T>>);
   static_assert(nothrow_move_c<la::MatrixCSR<T>>);
+  static_assert(!std::is_copy_constructible_v<la::MatrixCSR<T>>);
+  static_assert(!std::is_copy_assignable_v<la::MatrixCSR<T>>);
   static_assert(nothrow_move_c<la::Vector<T>>);
 
   static_assert(nothrow_move_a<fem::Constant<T>>);
@@ -78,6 +79,7 @@ struct scalar_classes
   static_assert(nothrow_move_a<fem::Form<T>>);
   static_assert(std::is_move_assignable_v<fem::Expression<T>>);
   static_assert(nothrow_move_a<fem::Function<T>>);
+  static_assert(nothrow_move_a<la::MatrixCSR<T>>);
   static_assert(nothrow_move_a<la::Vector<T>>);
 };
 
