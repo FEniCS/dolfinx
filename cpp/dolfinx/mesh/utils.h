@@ -1779,14 +1779,18 @@ create_submesh(const Mesh<T>& mesh, int dim,
 ///
 /// @param[in] tags The meshtags object on the parent mesh.
 /// @param[in] submesh_topology The topology of the submesh.
-/// @param[in] vertex_map Map from submesh vertex to parent mesh vertex.
 /// @param[in] cell_map Map from submesh cell to parent mesh entity.
+/// @param[in] vertex_map Map from submesh vertex to parent mesh vertex.
 /// @return A meshtags object on the submesh.
+///
+/// @note The `cell_map`/`vertex_map` order matches the `(entity_map,
+/// vertex_map)` order that ::create_submesh returns, so its result can
+/// be unpacked and passed straight through.
 template <typename T>
 MeshTags<T> transfer_meshtags_to_submesh(
     const MeshTags<T>& tags,
     std::shared_ptr<const dolfinx::mesh::Topology> submesh_topology,
-    const EntityMap& vertex_map, const EntityMap& cell_map)
+    const EntityMap& cell_map, const EntityMap& vertex_map)
 {
   int tag_dim = tags.dim();
   int submesh_tdim = submesh_topology->dim();
@@ -1799,9 +1803,7 @@ MeshTags<T> transfer_meshtags_to_submesh(
 
   // Validate that cell_map/vertex_map relate `topology` (the tags'
   // parent topology) to `submesh_topology`, and have the dimension
-  // this function assumes. Passing the two maps in create_submesh's own
-  // return order (entity_map, vertex_map) rather than this function's
-  // (vertex_map, cell_map) is the natural mistake to make here.
+  // this function assumes.
   if (cell_map.dim() != static_cast<std::size_t>(submesh_tdim))
   {
     throw std::invalid_argument(

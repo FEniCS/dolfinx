@@ -186,14 +186,14 @@ void declare_meshtags(nb::module_& m, std::string_view type)
       pyfunc_name.c_str(),
       [](const dolfinx::mesh::MeshTags<T>& tags,
          std::shared_ptr<const dolfinx::mesh::Topology> submesh_topology,
-         const dolfinx::mesh::EntityMap& vertex_map,
-         const dolfinx::mesh::EntityMap& cell_map)
+         const dolfinx::mesh::EntityMap& cell_map,
+         const dolfinx::mesh::EntityMap& vertex_map)
       {
         return dolfinx::mesh::transfer_meshtags_to_submesh<T>(
-            tags, submesh_topology, vertex_map, cell_map);
+            tags, submesh_topology, cell_map, vertex_map);
       },
-      nb::arg("tags"), nb::arg("submesh_topology"), nb::arg("vertex_map"),
-      nb::arg("cell_map"));
+      nb::arg("tags"), nb::arg("submesh_topology"), nb::arg("cell_map"),
+      nb::arg("vertex_map"));
 }
 
 template <typename T>
