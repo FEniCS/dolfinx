@@ -64,7 +64,8 @@ rt_space(std::shared_ptr<mesh::Mesh<double>> mesh, int degree)
       basix::cell::type::triangle, degree,
       basix::element::lagrange_variant::legendre, false);
   return std::make_shared<fem::FunctionSpace<double>>(fem::create_functionspace(
-      mesh, std::make_shared<const fem::FiniteElement<double>>(e)));
+      mesh, std::make_shared<const fem::FiniteElement<double>>(
+                e, mesh->geometry().dim())));
 }
 } // namespace
 

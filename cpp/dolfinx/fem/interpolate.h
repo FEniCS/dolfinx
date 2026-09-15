@@ -513,7 +513,9 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
   const std::size_t value_size_ref0 = element0->reference_value_size();
-  const std::size_t value_size0 = V0->element()->reference_value_size();
+  // basis0 holds values pushed forward to the physical cell, one block
+  // at a time, so it is sized with the physical (base) value size.
+  const std::size_t value_size0 = V0->element()->base_value_size();
 
   const CoordinateElement<U>& cmap = mesh0->geometry().cmaps().front();
   auto x_dofmap = mesh0->geometry().dofmaps().front();
@@ -552,16 +554,22 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   md::mdspan<U, std::dextents<std::size_t, 3>> basis_reference0(
       basis_reference0_b.data(), Xshape[0], dim0, value_size_ref0);
 
-  std::vector<T> values0_b(Xshape[0] * 1 * V1->element()->value_size());
+  // values0 holds physical values (the value shapes of the two elements
+  // have been checked to be equal); mapped_values0 holds them pulled
+  // back to the reference cell of element 1, where each of its bs1
+  // blocks has reference_value_size components.
+  const std::size_t value_size1 = V1->element()->value_size();
+  const std::size_t value_size_ref1
+      = element1->reference_value_size() * static_cast<std::size_t>(bs1);
+  std::vector<T> values0_b(Xshape[0] * 1 * value_size1);
   md::mdspan<
       T, md::extents<std::size_t, md::dynamic_extent, 1, md::dynamic_extent>>
-      values0(values0_b.data(), Xshape[0], 1, V1->element()->value_size());
+      values0(values0_b.data(), Xshape[0], 1, value_size1);
 
-  std::vector<T> mapped_values_b(Xshape[0] * 1 * V1->element()->value_size());
+  std::vector<T> mapped_values_b(Xshape[0] * 1 * value_size_ref1);
   md::mdspan<
       T, md::extents<std::size_t, md::dynamic_extent, 1, md::dynamic_extent>>
-      mapped_values0(mapped_values_b.data(), Xshape[0], 1,
-                     V1->element()->value_size());
+      mapped_values0(mapped_values_b.data(), Xshape[0], 1, value_size_ref1);
 
   const std::size_t num_dofs_g = cmap.dim();
   std::vector<U> coord_dofs_b(num_dofs_g * gdim);
@@ -860,7 +868,9 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const int num_scalar_dofs = element.space_dimension() / element_bs;
   const int dofmap_bs = dofmap.bs();
 
+  // Identity map, so the physical and reference value sizes coincide.
   const int element_vs = element.reference_value_size();
+  assert(element_vs == element.base_value_size());
   if (element_vs > 1 and element_bs > 1)
     throw std::runtime_error("Interpolation into this element not supported.");
 
@@ -950,7 +960,8 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
   const int element_bs = element.block_size();
   const int num_scalar_dofs = element.space_dimension() / element_bs;
-  const int value_size = element.reference_value_size();
+  // f holds physical values, one block at a time.
+  const int value_size = element.base_value_size();
   const int dofmap_bs = dofmap.bs();
 
   // Skip the div/mod below when block sizes match (the common case)

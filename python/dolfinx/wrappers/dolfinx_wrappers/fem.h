@@ -137,14 +137,14 @@ void declare_function_space(nb::module_& m, std::string type)
         .def(
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self,
-               basix::FiniteElement<T>& element,
+               basix::FiniteElement<T>& element, std::size_t gdim,
                const std::optional<std::vector<std::size_t>>& block_shape,
                bool symmetric)
             {
-              new (self) dolfinx::fem::FiniteElement<T>(element, block_shape,
-                                                        symmetric);
+              new (self) dolfinx::fem::FiniteElement<T>(element, gdim,
+                                                        block_shape, symmetric);
             },
-            nb::arg("element"), nb::arg("block_shape").none(),
+            nb::arg("element"), nb::arg("gdim"), nb::arg("block_shape").none(),
             nb::arg("symmetric"), "Single Basix element constructor.")
         .def(
             "__init__",
@@ -192,6 +192,21 @@ void declare_function_space(nb::module_& m, std::string type)
                                                                {vshape.size()});
             },
             nb::rv_policy::reference_internal)
+        .def_prop_ro(
+            "reference_value_shape",
+            [](const dolfinx::fem::FiniteElement<T>& self)
+            {
+              std::span<const std::size_t> vshape
+                  = self.reference_value_shape();
+              return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
+                                                               {vshape.size()});
+            },
+            nb::rv_policy::reference_internal)
+        .def_prop_ro("value_size", &dolfinx::fem::FiniteElement<T>::value_size)
+        .def_prop_ro("base_value_size",
+                     &dolfinx::fem::FiniteElement<T>::base_value_size)
+        .def_prop_ro("reference_value_size",
+                     &dolfinx::fem::FiniteElement<T>::reference_value_size)
         .def("interpolation_points",
              [](const dolfinx::fem::FiniteElement<T>& self)
              {

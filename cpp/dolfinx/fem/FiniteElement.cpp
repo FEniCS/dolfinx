@@ -9,11 +9,14 @@
 #include <array>
 #include <basix/finite-element.h>
 #include <basix/interpolation.h>
+#include <basix/maps.h>
 #include <basix/polyset.h>
+#include <cstddef>
 #include <dolfinx/common/log.h>
 #include <format>
 #include <functional>
 #include <numeric>
+#include <span>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -30,16 +33,16 @@ namespace
 /// @return List of DOLFINx elements
 template <std::floating_point T>
 std::vector<std::shared_ptr<const FiniteElement<T>>>
-_build_element_list(std::vector<BasixElementData<T>> elements)
+_build_element_list(std::vector<BasixElementData<T>> elements, std::size_t gdim)
 {
   std::vector<std::shared_ptr<const FiniteElement<T>>> _e;
   _e.reserve(elements.size());
   std::ranges::transform(elements, std::back_inserter(_e),
-                         [](auto& data)
+                         [gdim](auto& data)
                          {
                            auto& [e, bs, symm] = data;
-                           return std::make_shared<fem::FiniteElement<T>>(e, bs,
-                                                                          symm);
+                           return std::make_shared<fem::FiniteElement<T>>(
+                               e, gdim, bs, symm);
                          });
   return _e;
 }
@@ -111,11 +114,53 @@ int _compute_block_size(std::optional<std::vector<std::size_t>> value_shape,
 } // namespace
 
 //-----------------------------------------------------------------------------
+std::vector<std::size_t>
+fem::compute_value_shape(basix::maps::type map_type,
+                         std::span<const std::size_t> reference_value_shape,
+                         std::size_t gdim)
+{
+  // Number of trailing axes contracted with the Jacobian by the
+  // push-forward.
+  std::size_t n = 0;
+  switch (map_type)
+  {
+  case basix::maps::type::identity:
+  case basix::maps::type::L2Piola:
+    n = 0;
+    break;
+  case basix::maps::type::covariantPiola:
+  case basix::maps::type::contravariantPiola:
+    n = 1;
+    break;
+  case basix::maps::type::doubleCovariantPiola:
+  case basix::maps::type::doubleContravariantPiola:
+    n = 2;
+    break;
+  default:
+    throw std::invalid_argument("Unknown map type. Cannot compute the physical "
+                                "value shape of the element.");
+  }
+
+  if (reference_value_shape.size() < n)
+  {
+    throw std::invalid_argument(
+        std::format("Reference value shape has rank {}, but the element map "
+                    "requires at least rank {}.",
+                    reference_value_shape.size(), n));
+  }
+
+  std::vector<std::size_t> value_shape(reference_value_shape.begin(),
+                                       reference_value_shape.end());
+  std::fill_n(std::prev(value_shape.end(), n), n, gdim);
+  return value_shape;
+}
+//-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
-    const basix::FiniteElement<T>& element,
+    const basix::FiniteElement<T>& element, std::size_t gdim,
     const std::optional<std::vector<std::size_t>>& value_shape, bool symmetric)
-    : _value_shape(value_shape.value_or(element.value_shape())),
+    : _value_shape(value_shape.value_or(compute_value_shape(
+          element.map_type(), element.value_shape(), gdim))),
       _bs(_compute_block_size(value_shape, symmetric)),
       _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
       _space_dim(_bs * element.dim()),
@@ -142,7 +187,7 @@ FiniteElement<T>::FiniteElement(
   {
     _sub_elements
         = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
-            _bs, std::make_shared<FiniteElement<T>>(element));
+            _bs, std::make_shared<FiniteElement<T>>(element, gdim));
   }
   else
     _sub_elements = {};
@@ -165,8 +210,9 @@ FiniteElement<T>::FiniteElement(
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-FiniteElement<T>::FiniteElement(std::vector<BasixElementData<T>> elements)
-    : FiniteElement(_build_element_list(std::move(elements)))
+FiniteElement<T>::FiniteElement(std::vector<BasixElementData<T>> elements,
+                                std::size_t gdim)
+    : FiniteElement(_build_element_list(std::move(elements), gdim))
 {
 }
 //-----------------------------------------------------------------------------
@@ -270,7 +316,11 @@ bool FiniteElement<T>::operator==(const FiniteElement& e) const
         "Missing a Basix element. Cannot check for equivalence");
   }
 
-  return *_element == *e._element;
+  // The value shape is part of the element: the same Basix element on
+  // meshes of different geometric dimension gives different physical
+  // value shapes, and callers use equality to decide that degrees of
+  // freedom can be copied directly.
+  return *_element == *e._element and _value_shape == e._value_shape;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -316,6 +366,24 @@ std::span<const std::size_t> FiniteElement<T>::value_shape() const
     return *_value_shape;
   else
     throw std::runtime_error("Element does not have a value_shape.");
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+int FiniteElement<T>::base_value_size() const
+{
+  if (!_value_shape)
+    throw std::runtime_error("Element does not have a value_shape.");
+
+  // A blocked element repeats a scalar base element, so one block of
+  // its field is a single scalar. A non-blocked element has one block,
+  // which is the whole field.
+  if (_bs > 1)
+    return 1;
+  else
+  {
+    return std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
+                           std::multiplies{});
+  }
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -432,8 +500,9 @@ basix::maps::type FiniteElement<T>::map_type() const
     return _element->map_type();
   else
   {
-    throw std::invalid_argument("Cannot element map type - no Basix element "
-                                "available. Maybe this is a mixed element?");
+    throw std::invalid_argument(
+        "Cannot get element map type - no Basix element "
+        "available. Maybe this is a mixed element?");
   }
 }
 //-----------------------------------------------------------------------------
