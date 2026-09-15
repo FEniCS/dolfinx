@@ -9,7 +9,6 @@
 #include "Topology.h"
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
-#include <format>
 #include <ranges>
 #include <span>
 #include <vector>
@@ -33,6 +32,7 @@ public:
   /// @param sub_topology_to_topology List of entities in `topology`
   /// where `sub_topology_to_topology[i]` is the index in `topology`
   /// corresponding to entity `i` in `sub_topology`.
+  /// @pre `sub_topology_to_topology` entries must be distinct.
   template <typename U>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
                                    std::vector<std::int32_t>>
@@ -52,13 +52,6 @@ public:
           "dim out of range for topology/sub_topology.");
 
     auto e_imap = sub_topology->index_map(_dim);
-    if (!e_imap)
-    {
-      throw std::runtime_error(std::format(
-          "No index map for entities, call `Topology::create_entities({})",
-          _dim));
-    }
-
     std::size_t num_ents = e_imap->size_local() + e_imap->num_ghosts();
     if (num_ents != _sub_topology_to_topology.size())
     {

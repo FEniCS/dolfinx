@@ -109,7 +109,10 @@ public:
   /// of the mesh entities of a given topological dimension.
   ///
   /// @param[in] dim Topological dimension.
-  /// @return Index maps, one for each cell type.
+  /// @return Index maps for entities of dimension `dim`. Entity types
+  /// with no map are dropped, so the result is empty or has one entry
+  /// per entity type in `entity_types(dim)` order; it is not indexable
+  /// positionally by entity-type index if any map is missing.
   std::vector<std::shared_ptr<const common::IndexMap>>
   index_maps(int dim) const;
 
@@ -117,8 +120,11 @@ public:
   /// of the mesh entities.
   ///
   /// @param[in] dim Topological dimension
-  /// @return Index map for the entities of dimension `dim`. Returns
-  /// `nullptr` if index map has not been set.
+  /// @return Index map for the entities of dimension `dim`.
+  /// @throws std::out_of_range If entities of dimension `dim` have not
+  /// been created (call `create_entities(dim)` first), or if there is
+  /// more than one entity type of dimension `dim` (call `index_maps`
+  /// instead).
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
   /// @brief Get the connectivity from entities of topological dimension
@@ -198,6 +204,8 @@ public:
 
   /// @brief Create entities of given topological dimension.
   ///
+  /// @note Collective.
+  ///
   /// @param[in] dim Topological dimension of entities to compute.
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
   /// @return True if entities are created, false if entities already
@@ -206,11 +214,17 @@ public:
 
   /// @brief Create connectivity between given pair of dimensions, `d0
   /// -> d1`.
+  ///
+  /// @note Collective.
+  ///
   /// @param[in] d0 Topological dimension.
   /// @param[in] d1 Topological dimension.
   void create_connectivity(int d0, int d1);
 
   /// @brief Compute entity permutations and reflections.
+  ///
+  /// @note Collective.
+  ///
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
   void create_entity_permutations(int num_threads = 1);
 
@@ -283,6 +297,8 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
 /// This function creates a Topology from cells that have been already
 /// distributed to the processes that own or ghost the cell.
 ///
+/// @note Collective.
+///
 /// @param[in] comm Communicator across which the topology will be
 /// distributed.
 /// @param[in] cell_types List of cell types in the topology.
@@ -319,6 +335,8 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
 /// This function provides a simplified interface to ::create_topology
 /// for the case that a mesh has one cell type only,
 ///
+/// @note Collective.
+///
 /// @param[in] comm Communicator across which the topology will be
 /// distributed.
 /// @param[in] cells Cell topology (list of vertices for each cell)
@@ -346,6 +364,8 @@ Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
 
 /// @brief Create a topology for a subset of entities of a given
 /// topological dimension.
+///
+/// @note Collective.
 ///
 /// @param[in] topology Original (parent) topology.
 /// @param[in] dim Topological dimension of the entities in the new

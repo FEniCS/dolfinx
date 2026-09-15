@@ -102,7 +102,8 @@ public:
     return indices;
   }
 
-  /// Indices of tagged topology entities (local-to-process). The
+  /// Indices of tagged topology entities (local-to-process, in
+  /// `[0, size_local + num_ghosts)`; may include ghost entities). The
   /// indices are sorted.
   std::span<const std::int32_t> indices() const { return _indices; }
 
@@ -145,7 +146,9 @@ private:
 /// @param[in] values Tag values for each entity in `entities`. The
 /// length of `values` must be equal to number of rows in `entities`.
 /// @param[in] name Name of the meshtags.
-/// @note Entities that do not exist on this rank are ignored.
+/// @note Entities that do not exist on this rank are ignored. Ghost
+/// entities matched by vertices are retained, so returned indices may
+/// include ghosts.
 /// @warning `entities` must not contain duplicate entities.
 template <typename T>
 MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
