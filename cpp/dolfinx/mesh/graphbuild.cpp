@@ -563,14 +563,14 @@ mesh::build_local_dual_graph(
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
 {
   if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   spdlog::info("Build local part of mesh dual graph");
   common::Timer timer("Compute local part of mesh dual graph");
 
   if (cells.size() != celltypes.size())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Number of cell types must match number of cell arrays.");
   }
 

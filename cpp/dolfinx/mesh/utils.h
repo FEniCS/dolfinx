@@ -99,7 +99,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
   const int tdim = topology->dim();
   if (dim == tdim)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cannot use mesh::locate_entities_boundary (boundary) for cells.");
   }
 
@@ -343,7 +343,7 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
   assert(topology);
   if (topology->cell_type() == CellType::prism and dim == 2)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cell normal computation for prism cells not yet supported.");
   }
 
@@ -568,7 +568,7 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
   cmdspan3x_t x(xdata.data(), xshape);
   const std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
-    throw std::runtime_error("Length of array of markers is wrong.");
+    throw std::invalid_argument("Length of array of markers is wrong.");
 
   auto topology = mesh.topology();
   assert(topology);
@@ -670,7 +670,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   int tdim = topology->dim();
   if (dim == tdim)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cannot use mesh::locate_entities_boundary (boundary) for cells.");
   }
 
@@ -689,7 +689,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   cmdspan3x_t x(xdata.data(), 3, xdata.size() / 3);
   std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
-    throw std::runtime_error("Length of array of markers is wrong.");
+    throw std::invalid_argument("Length of array of markers is wrong.");
 
   // Loop over entities and check vertex markers
   auto e_to_v = topology->connectivity(dim, 0);
@@ -747,8 +747,8 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   if ((cell_type == CellType::prism or cell_type == CellType::pyramid)
       and dim == 2)
   {
-    throw std::runtime_error("mesh::entities_to_geometry for prism/pyramid "
-                             "cell facets not yet supported.");
+    throw std::invalid_argument("mesh::entities_to_geometry for prism/pyramid "
+                                "cell facets not yet supported.");
   }
 
   const int tdim = topology->dim();
@@ -1341,7 +1341,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   using T = typename std::remove_reference_t<typename U::value_type>;
 
   if (cells.size() != elements.size())
-    throw std::runtime_error("Number of cell arrays and elements must match.");
+    throw std::invalid_argument(
+        "Number of cell arrays and elements must match.");
   std::vector<CellType> celltypes;
   std::ranges::transform(elements, std::back_inserter(celltypes),
                          [](auto& e) { return e.cell_shape(); });
@@ -1352,8 +1353,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   {
     if (cells[i].size() % doflayouts[i].num_dofs() != 0)
     {
-      throw std::runtime_error("Cell array size is not a multiple of the "
-                               "number of nodes per cell.");
+      throw std::invalid_argument("Cell array size is not a multiple of the "
+                                  "number of nodes per cell.");
     }
   }
 
@@ -1797,8 +1798,8 @@ MeshTags<T> transfer_meshtags_to_submesh(
   auto topology = tags.topology();
   if (tag_dim > submesh_tdim)
   {
-    throw std::runtime_error("Tag dimension must be less than or equal to "
-                             "submesh dimension");
+    throw std::invalid_argument("Tag dimension must be less than or equal to "
+                                "submesh dimension");
   }
 
   // Validate that cell_map/vertex_map relate `topology` (the tags'

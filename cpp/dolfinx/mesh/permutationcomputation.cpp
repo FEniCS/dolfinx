@@ -340,7 +340,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology,
                                   int num_threads)
 {
   if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   common::Timer t_perm("Compute entity permutations");
 
