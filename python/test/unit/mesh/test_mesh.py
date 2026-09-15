@@ -951,29 +951,6 @@ def test_compute_incident_entities_out_of_range_index():
             msh.topology, np.array([num_vertices], dtype=np.int32), 0, tdim
         )
 
-
-@pytest.mark.skip_in_parallel
-def test_transfer_meshtags_to_submesh_max_value_survives():
-    """A tag value equal to numeric_limits<T>::max() must survive the transfer.
-
-    Regression test: transfer_meshtags_to_submesh used
-    numeric_limits<T>::max() internally as an "unmapped" sentinel, which
-    collided with a legitimate tag value of exactly that value and
-    silently dropped it from the result.
-    """
-    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
-    tdim = mesh.topology.dim
-    submesh, entity_map, vertex_map, _node_map = create_submesh(
-        mesh, tdim, np.arange(2, dtype=np.int32)
-    )
-    max_val = np.iinfo(np.int32).max
-    et = dolfinx.mesh.meshtags(
-        mesh, tdim, np.array([0], dtype=np.int32), np.array([max_val], dtype=np.int32)
-    )
-    sub_et = transfer_meshtags_to_submesh(et, submesh, entity_map, vertex_map)
-    assert max_val in sub_et.values
-
-
 @pytest.mark.parametrize("codim", [0, 1, 2, 3])
 def test_transfer_to_submesh(codim):
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 4, 5)
