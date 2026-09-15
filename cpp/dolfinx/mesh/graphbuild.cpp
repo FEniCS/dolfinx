@@ -568,6 +568,12 @@ mesh::build_local_dual_graph(
   spdlog::info("Build local part of mesh dual graph");
   common::Timer timer("Compute local part of mesh dual graph");
 
+  if (cells.size() != celltypes.size())
+  {
+    throw std::runtime_error(
+        "Number of cell types must match number of cell arrays.");
+  }
+
   if (std::size_t ncells_local
       = std::accumulate(cells.begin(), cells.end(), 0,
                         [](std::size_t s, std::span<const std::int64_t> c)
@@ -578,12 +584,6 @@ mesh::build_local_dual_graph(
     return {graph::AdjacencyList<std::int32_t>(0), std::vector<std::int64_t>(),
             0, std::vector<std::int32_t>()};
   }
-
-  if (cells.size() != celltypes.size())
-  {
-    throw std::runtime_error(
-        "Number of cell types must match number of cell arrays.");
-  };
 
   int tdim = mesh::cell_dim(celltypes.front());
 
