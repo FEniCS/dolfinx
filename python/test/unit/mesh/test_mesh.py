@@ -26,6 +26,7 @@ from dolfinx.mesh import (
     DiagonalType,
     GhostMode,
     cell_num_vertices,
+    cell_num_entities,
     create_box,
     create_interval,
     create_point_mesh,
@@ -642,7 +643,7 @@ def test_empty_rank_mesh(dtype):
         num_cells = (
             mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
         )
-        num_entities = _cpp.mesh.cell_num_entities(cell_type, dim)
+        num_entities = cell_num_entities(cell_type, dim)
         # Vertices have no orientation, so their permutations are empty
         expected = 0 if dim == 0 else num_cells * num_entities
         assert perms.shape == (expected,)
