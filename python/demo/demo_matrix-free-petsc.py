@@ -22,7 +22,7 @@
 #   matrix-free, without ever forming the PETSc `MATAIJ` system matrix
 # - Solve a blocked, matrix-free problem with a PETSc Krylov subspace
 #   solver
-# - Use both a mixed-element and a `ufl.MixedFunctionSpace` formulation
+# - Use both a mixed-element and a {py:class}`ufl.MixedFunctionSpace` formulation
 #   of the same blocked problem
 #
 # We will start by defining our variational problem, and then in turn
