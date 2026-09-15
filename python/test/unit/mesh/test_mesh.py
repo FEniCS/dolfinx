@@ -365,7 +365,7 @@ def test_create_rectangle_degenerate_raises_on_every_rank():
     the others entered the collective ``create_mesh`` and hung, instead of
     every rank reporting the error.
     """
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         create_rectangle(
             MPI.COMM_WORLD,
             [[0.0, 0.0], [1e-8, 1.0]],
@@ -382,7 +382,7 @@ def test_create_box_degenerate_raises_on_every_rank():
     ``subcomm``-participating ranks, so with a strict-subset ``subcomm``
     the other ranks entered the collective ``create_mesh`` and hung.
     """
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         create_box(
             MPI.COMM_WORLD,
             [[0.0, 0.0, 0.0], [1e-6, 1.0, 1.0]],

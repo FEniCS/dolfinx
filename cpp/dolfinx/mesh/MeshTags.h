@@ -60,14 +60,14 @@ public:
       throw std::invalid_argument("dim out of range for topology.");
     if (_indices.size() != _values.size())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Indices and values arrays must have same size.");
     }
 #ifndef NDEBUG
     if (!std::ranges::is_sorted(_indices))
-      throw std::runtime_error("MeshTag data is not sorted");
+      throw std::invalid_argument("MeshTag data is not sorted");
     if (std::adjacent_find(_indices.begin(), _indices.end()) != _indices.end())
-      throw std::runtime_error("MeshTag data has duplicates");
+      throw std::invalid_argument("MeshTag data has duplicates");
 #endif
   }
 
@@ -164,7 +164,7 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
       = entities_to_index(*topology, dim, entities.array());
   if (indices.size() != values.size())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Duplicate mesh entities when building MeshTags object.");
   }
 
