@@ -54,14 +54,15 @@ public:
   /// Move constructor
   Comm(Comm&& comm) noexcept;
 
-  // Disable copy assignment operator
+  /// Destructor (frees wrapped communicator)
+  ~Comm();
+
+  // Copy assignment (deleted). MPI_Comm_dup is collective; assigning into
+  // a live Comm would hide a collective dup and free behind `=`.
   Comm& operator=(const Comm& comm) = delete;
 
   /// Move assignment operator
   Comm& operator=(Comm&& comm) noexcept;
-
-  /// Destructor (frees wrapped communicator)
-  ~Comm();
 
   /// Return the underlying MPI_Comm object
   MPI_Comm comm() const noexcept;
