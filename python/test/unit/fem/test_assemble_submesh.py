@@ -407,7 +407,9 @@ def _ellipsoid_mesh(cell_type, degree):
         msh = create_box(
             MPI.COMM_WORLD, ((-1.0, -1.0, -1.0), (1.0, 1.0, 1.0)), (3, 3, 3), cell_type=cell_type
         )
-    cmap = fem.coordinate_element(cell_type, degree, variant=LagrangeVariant.gll_isaac)
+    cmap = fem.coordinate_element(
+        cell_type, degree, variant=LagrangeVariant.gll_isaac, dtype=default_scalar_type
+    )
     msh = fem.interpolate_geometry(msh, cmap)
 
     # Elliptical grid mapping of the square/cube onto the disk/ball, then
