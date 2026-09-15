@@ -11,7 +11,7 @@ import pytest
 
 import basix
 import ufl
-from dolfinx.graph import partitioner
+from dolfinx.graph import adjacencylist, partitioner
 from dolfinx.mesh import (
     CellType,
     GhostMode,
@@ -21,6 +21,7 @@ from dolfinx.mesh import (
     create_unit_cube,
     create_unit_square,
     entities_to_geometry,
+    exterior_facet_indices,
 )
 
 
@@ -159,3 +160,79 @@ def test_facet_skeleton_mesh(cell_type):
 
             midpoint = compute_midpoints(skeleton_mesh, 1, np.array([facet], dtype=np.int32))[0]
             assert matched or on_boundary(midpoint)
+
+
+def _round_robin_partitioner(ghost: bool):
+    """Assign cell ``i`` to rank ``i % size``, optionally ghosting each
+    cell on the ranks owning its dual-graph neighbours.
+    """
+
+    def partitioner(comm, nparts, dual_graph, *args):
+        offset = comm.exscan(dual_graph.num_nodes) or 0
+        dests, offsets = [], [0]
+        for i in range(dual_graph.num_nodes):
+            owner = (offset + i) % nparts
+            d = [owner]
+            if ghost:
+                for j in dual_graph.links(i):
+                    r = int(j) % nparts
+                    if r not in d:
+                        d.append(r)
+            dests += d
+            offsets.append(len(dests))
+        return adjacencylist(np.array(dests, dtype=np.int32), np.array(offsets, dtype=np.int32))
+
+    return partitioner
+
+
+def _interprocess_vertices_reference(topology):
+    """Global indices of the vertices attached to cells owned by two or
+    more ranks, as seen by this rank.
+    """
+    comm = topology.comm
+    c_to_v = topology.connectivity(topology.dim, 0)
+    v_map = topology.index_map(0)
+    vertices = {v for c in range(topology.index_map(1).size_local) for v in c_to_v.links(c)}
+    attached = set(v_map.local_to_global(np.fromiter(vertices, dtype=np.int32)))
+    shared = comm.allgather(attached)
+    return {v for v in attached if sum(v in s for s in shared) > 1}
+
+
+@pytest.mark.parametrize("num_branches", [2, 3, 5, 7])
+@pytest.mark.parametrize("ghost", [False, True])
+def test_star_interprocess_facets(num_branches, ghost):
+    """A star of intervals meeting at one vertex, distributed one cell
+    per rank in turn. The joint vertex is an inter-process facet, and
+    the branch tips are the exterior facets, in both ghost modes.
+    """
+    comm = MPI.COMM_WORLD
+    if comm.rank == 0:
+        angle = 2 * np.pi * np.arange(num_branches) / num_branches
+        x = np.vstack([np.zeros((1, 2)), np.column_stack([np.cos(angle), np.sin(angle)])])
+        cells = np.array([[0, i + 1] for i in range(num_branches)], dtype=np.int64)
+    else:
+        x = np.empty((0, 2), dtype=np.float64)
+        cells = np.empty((0, 2), dtype=np.int64)
+
+    e = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(2,)))
+    mesh = create_mesh(
+        comm,
+        cells,
+        e,
+        x,
+        _round_robin_partitioner(ghost),
+        max_facet_to_cell_links=num_branches,
+    )
+
+    topology = mesh.topology
+    topology.create_connectivity(0, 1)
+    v_map = topology.index_map(0)
+
+    # Complete all collectives before asserting, so that a failure on
+    # one rank does not leave the others in a collective
+    interprocess = set(v_map.local_to_global(topology.interprocess_facets()))
+    reference = _interprocess_vertices_reference(topology)
+    num_exterior = comm.allreduce(len(exterior_facet_indices(topology)), MPI.SUM)
+
+    assert interprocess == reference
+    assert num_exterior == num_branches
