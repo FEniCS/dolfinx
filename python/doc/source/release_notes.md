@@ -15,6 +15,13 @@ hyperelasticity demo has a full example of use.
 Python users should use {py:class}`dolfinx.fem.petsc.NonlinearProblem`, which
 works with petsc4py's SNES interface directly.
 
+### `transfer_meshtags_to_submesh` argument order change
+
+{py:func}`dolfinx.mesh.transfer_meshtags_to_submesh` now takes its
+`cell_map`/`vertex_map` arguments in that order (previously
+`vertex_map`/`cell_map`), matching the `(entity_map, vertex_map)` order
+{py:func}`dolfinx.mesh.create_submesh` returns them in.
+
 ### Removal of the deprecated Newton solver
 
 The `NewtonSolver` and `NewtonSolverNonlinearProblem` classes, deprecated in

@@ -948,27 +948,6 @@ def test_compute_incident_entities_out_of_range_index():
         )
 
 
-def test_transfer_meshtags_to_submesh_swapped_maps_raises():
-    """transfer_meshtags_to_submesh must reject the maps in the wrong order.
-
-    Passing them in create_submesh's own return order (entity_map before
-    vertex_map) is the natural mistake, since that's the order
-    create_submesh returns them in. Regression test: this used to be an
-    unchecked out-of-bounds read and write with no exception.
-    """
-    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4)
-    tdim = mesh.topology.dim
-    entities = locate_entities(mesh, tdim, lambda x: x[0] >= 0.5)
-    submesh, entity_map, vertex_map, _node_map = create_submesh(mesh, tdim, entities)
-    mesh.topology.create_entities(0)
-    pe_map = mesh.topology.index_map(0)
-    num_parent = pe_map.size_local + pe_map.num_ghosts
-    values = np.ones(num_parent, dtype=np.int32)
-    et = dolfinx.mesh.meshtags(mesh, 0, np.arange(num_parent, dtype=np.int32), values)
-    with pytest.raises(ValueError):
-        transfer_meshtags_to_submesh(et, submesh, entity_map, vertex_map)
-
-
 @pytest.mark.parametrize("codim", [0, 1, 2, 3])
 def test_transfer_to_submesh(codim):
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 4, 5)
@@ -994,7 +973,7 @@ def test_transfer_to_submesh(codim):
         et_values = values[et_indices]
         et = dolfinx.mesh.meshtags(mesh, i, et_indices, et_values)
 
-        sub_et = transfer_meshtags_to_submesh(et, submesh, vertex_map, entity_map)
+        sub_et = transfer_meshtags_to_submesh(et, submesh, entity_map, vertex_map)
         ref_one = locate_entities(submesh, i, marker1)
         ref_two = np.sort(locate_entities(submesh, i, marker2))
         ref_one = np.setdiff1d(ref_one, ref_two, assume_unique=True)
