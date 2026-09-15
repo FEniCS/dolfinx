@@ -566,7 +566,7 @@ def test_non_mixed_element_dof_transformation_right(ttype, dtype):
         2,
         lagrange_variant=basix.LagrangeVariant.legendre,
     )
-    elem = finiteelement(CellType.triangle, ufl_e, np.float64)
+    elem = finiteelement(CellType.triangle, ufl_e, np.float64, gdim=2)
     assert elem.needs_dof_transformations
 
     ncols = elem.space_dimension
