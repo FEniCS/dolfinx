@@ -14,7 +14,6 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx import cpp as _cpp
 from dolfinx import fem, la
 from dolfinx.common import list_timings
 from dolfinx.fem import Form, Function, IntegralType, form_cpp_class, functionspace
@@ -281,7 +280,7 @@ def test_cffi_assembly():
     active_coeffs = np.array([], dtype=np.int8)
     integrals = {IntegralType.cell: [(0, ptrA, cells, active_coeffs)]}
     a = Form(
-        _cpp.fem.Form_float64(
+        form_cpp_class(np.float64)(
             [V._cpp_object, V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object
         ),
         mesh,
@@ -291,7 +290,9 @@ def test_cffi_assembly():
     ptrL = int(ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL")))
     integrals = {IntegralType.cell: [(0, ptrL, cells, active_coeffs)]}
     L = Form(
-        _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object),
+        form_cpp_class(np.float64)(
+            [V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object
+        ),
         mesh,
         [V],
     )

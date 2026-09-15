@@ -150,9 +150,16 @@ select = [
       "FLY",    # use f-string not static joins
       "NPY201", # numpy 2.x ruleset
       "B905",   # zip-without-explicit-strict
+      "TID251", # banned-api: dolfinx.cpp outside the wrapping layer
 ]
 ignore = ["RUF012"]
 allowed-confusables = ["σ", "ρ"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"dolfinx.cpp".msg = """\
+Use the pure Python dolfinx API, not the nanobind-wrapped dolfinx.cpp \
+module, which is for internal use by the dolfinx package itself.\
+"""
 
 [tool.ruff.lint.isort]
 known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
@@ -179,4 +186,19 @@ convention = "google"
       "D103", # undocumented-public-function
       "D205", # missing-blank-line-after-summary
 ]
-"conf.py" = ["D100", "D103", "D205"]
+# cpp/doc/source/conf.py reads dolfinx.cpp.__version__ for the C++ docs version.
+"conf.py" = ["D100", "D103", "D205", "TID251"]
+
+# dolfinx.cpp is the nanobind wrapping layer itself.
+"dolfinx/**/*.py" = ["TID251"]
+
+# Mixed-topology mesh construction has no pure-Python API yet.
+"test/unit/conftest.py" = ["D100", "D103", "D205", "TID251"]
+"test/unit/mesh/test_mixed_topology.py" = ["TID251"]
+"test/unit/mesh/test_create_mixed_mesh.py" = ["TID251"]
+"test/unit/fem/test_mixed_mesh_dofmap.py" = ["TID251"]
+"test/unit/io/test_vtkhdf.py" = ["TID251"]
+"demo_mixed-topology.py" = ["TID251"]
+
+# Deliberately compares the C++ and Python package versions.
+"test/unit/common/test_version.py" = ["TID251"]

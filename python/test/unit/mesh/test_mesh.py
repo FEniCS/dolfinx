@@ -15,18 +15,17 @@ import numpy as np
 import pytest
 
 import basix
-import dolfinx.cpp.graph
+import dolfinx
 import ufl
 from basix.ufl import element
-from dolfinx import cpp as _cpp
 from dolfinx import graph
 from dolfinx import mesh as _mesh
-from dolfinx.cpp.mesh import is_simplex
 from dolfinx.fem import assemble_scalar, coordinate_element, form, functionspace
 from dolfinx.mesh import (
     CellType,
     DiagonalType,
     GhostMode,
+    cell_num_vertices,
     create_box,
     create_interval,
     create_point_mesh,
@@ -37,6 +36,7 @@ from dolfinx.mesh import (
     create_unit_square,
     entities_to_geometry,
     exterior_facet_indices,
+    is_simplex,
     locate_entities,
     locate_entities_boundary,
     transfer_meshtags_to_submesh,
@@ -156,7 +156,7 @@ def test_empty_entities_to_geometry(cell_type):
     e_to_g = entities_to_geometry(mesh, 0, np.array([], dtype=np.int32), True)
     assert e_to_g.shape == (0, 1)
     e_to_g = entities_to_geometry(mesh, mesh.topology.dim, np.array([], dtype=np.int32), True)
-    assert e_to_g.shape == (0, _cpp.mesh.cell_num_vertices(cell_type))
+    assert e_to_g.shape == (0, cell_num_vertices(cell_type))
 
 
 def mesh_1d(dtype):
@@ -387,25 +387,6 @@ def test_get_coordinates():
     assert len(mesh.geometry.x) == 36
 
 
-@pytest.mark.skip("Needs to be re-implemented")
-@pytest.mark.skip_in_parallel
-def test_cell_inradius(c0, c1, c5):
-    assert _cpp.mesh.inradius(c0[0], [c0[2]]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
-    assert _cpp.mesh.inradius(c1[0], [c1[2]]) == pytest.approx(0.0)
-    assert _cpp.mesh.inradius(c5[0], [c5[2]]) == pytest.approx(math.sqrt(3.0) / 6.0)
-
-
-@pytest.mark.skip("Needs to be re-implemented")
-@pytest.mark.skip_in_parallel
-def test_cell_circumradius(c0, c1, c5):
-    assert _cpp.mesh.circumradius(c0[0], [c0[2]], c0[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
-    # Implementation of diameter() does not work accurately
-    # for degenerate cells - sometimes yields NaN
-    r_c1 = _cpp.mesh.circumradius(c1[0], [c1[2]], c1[1])
-    assert math.isnan(r_c1)
-    assert _cpp.mesh.circumradius(c5[0], [c5[2]], c5[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
-
-
 @pytest.mark.skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
@@ -420,7 +401,7 @@ def test_cell_h_prism():
     mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
     cells = np.arange(num_cells, dtype=np.int32)
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, cells)
+    h = mesh.h(tdim, cells)
     assert np.allclose(h, np.sqrt(3 / (N**2)))
 
 
@@ -431,16 +412,8 @@ def test_facet_h(ct):
     left_facets = locate_entities_boundary(
         mesh, mesh.topology.dim - 1, lambda x: np.isclose(x[0], 0)
     )
-    h = _cpp.mesh.h(mesh._cpp_object, mesh.topology.dim - 1, left_facets)
+    h = mesh.h(mesh.topology.dim - 1, left_facets)
     assert np.allclose(h, np.sqrt(2 / (N**2)))
-
-
-@pytest.mark.skip("Needs to be re-implemented")
-@pytest.mark.skip_in_parallel
-def test_cell_radius_ratio(c0, c1, c5):
-    assert _cpp.mesh.radius_ratio(c0[0], c0[2]) == pytest.approx(math.sqrt(3.0) - 1.0)
-    assert np.isnan(_cpp.mesh.radius_ratio(c1[0], c1[2]))
-    assert _cpp.mesh.radius_ratio(c5[0], c5[2]) == pytest.approx(1.0)
 
 
 @pytest.fixture(params=["dir1_fixture", "dir2_fixture"])
@@ -463,25 +436,10 @@ def test_hmin_hmax(_mesh, dtype, hmin, hmax):
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells))
+    h = mesh.h(tdim, np.arange(num_cells))
     assert h.min() == pytest.approx(hmin)
     assert h.max() == pytest.approx(hmax)
 
-
-# @pytest.mark.skip_in_parallel
-# @pytest.mark.skip("Needs to be re-implemented")
-# @pytest.mark.parametrize("mesh,rmin,rmax",
-#                          [
-#                              (mesh_1d(), 0.0, 0.125),
-#                              (mesh_2d(), 1.0 / (2.0 + math.sqrt(2.0)), math.sqrt(6.0) / 6.0),
-#                              (mesh_3d(), 0.0, math.sqrt(3.0) / 6.0),
-#                          ])
-# def test_rmin_rmax(mesh, rmin, rmax):
-#     tdim = mesh.topology.dim
-#     num_cells = mesh.topology.index_map(tdim).size_local
-#     inradius = cpp.mesh.inradius(mesh, range(num_cells))
-#     assert inradius.min() == pytest.approx(rmin)
-#     assert inradius.max() == pytest.approx(rmax)
 
 # - Facilities to run tests on combination of meshes
 
@@ -634,7 +592,7 @@ def test_empty_rank_mesh(dtype):
     def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
         """Leave cells on the current rank,."""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
-        return graph.adjacencylist(dest)._cpp_object
+        return graph.adjacencylist(dest)
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
@@ -897,11 +855,11 @@ def test_mesh_create_cmap(dtype):
 
 avail_partitioners: list[typing.Callable[..., dolfinx.mesh.PartitioningFunc]] = []
 if dolfinx.has_ptscotch:
-    avail_partitioners.append(getattr(dolfinx.cpp.graph, "partitioner_scotch"))
+    avail_partitioners.append(graph.partitioner_scotch)
 if dolfinx.has_kahip:
-    avail_partitioners.append(getattr(dolfinx.cpp.graph, "partitioner_kahip"))
+    avail_partitioners.append(graph.partitioner_kahip)
 if dolfinx.has_parmetis:
-    avail_partitioners.append(getattr(dolfinx.cpp.graph, "partitioner_parmetis"))
+    avail_partitioners.append(graph.partitioner_parmetis)
 
 
 @pytest.mark.parametrize("partitioner", avail_partitioners)

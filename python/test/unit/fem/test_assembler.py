@@ -15,10 +15,9 @@ import pytest
 import scipy.sparse
 
 import basix
-import dolfinx.cpp
+import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import cpp as _cpp
 from dolfinx import default_real_type, default_scalar_type, fem, graph, la, mesh
 from dolfinx.fem import (
     Constant,
@@ -39,6 +38,7 @@ from dolfinx.fem import (
 from dolfinx.mesh import (
     CellType,
     GhostMode,
+    cell_num_entities,
     create_mesh,
     create_rectangle,
     create_unit_cube,
@@ -1347,7 +1347,7 @@ class TestPETScAssemblers:
         def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
             """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
-            return graph.adjacencylist(dest)._cpp_object
+            return graph.adjacencylist(dest)
 
         if comm.rank == 0:
             # Put cells on rank 0
@@ -1524,7 +1524,7 @@ def test_lambda_assembler():
         cdata.append(list(np.tile(cols, len(rows))))
         return 0
 
-    _cpp.fem.assemble_matrix(mat_insert, a_form._cpp_object, [])
+    fem.assemble_matrix_fn(mat_insert, a_form)
     vdata = np.array(vdata).flatten()
     cdata = np.array(cdata).flatten()
     rdata = np.array(rdata).flatten()
@@ -1627,7 +1627,7 @@ def test_mixed_quadrature(dtype, method):
 def vertex_to_dof_map(V):
     """Create a map from the vertices of the mesh to the corresponding degree of freedom."""
     mesh = V.mesh
-    num_vertices_per_cell = dolfinx.cpp.mesh.cell_num_entities(mesh.topology.cell_type, 0)
+    num_vertices_per_cell = cell_num_entities(mesh.topology.cell_type, 0)
 
     dof_layout2 = np.empty((num_vertices_per_cell,), dtype=np.int32)
     for i in range(num_vertices_per_cell):
