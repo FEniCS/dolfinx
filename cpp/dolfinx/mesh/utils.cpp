@@ -235,7 +235,12 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
     const std::vector<int>& local_index = layout.entity_dofs(0, i);
-    assert(local_index.size() == 1);
+    if (local_index.size() != 1)
+    {
+      throw std::invalid_argument(
+          "Coordinate element dof layout must have exactly one dof per "
+          "vertex.");
+    }
     local_vertices[i] = local_index[0];
   }
 

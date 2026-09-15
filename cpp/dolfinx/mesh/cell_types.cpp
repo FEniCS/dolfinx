@@ -91,7 +91,8 @@ graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
 //-----------------------------------------------------------------------------
 int mesh::cell_num_entities(CellType type, int dim)
 {
-  assert(dim <= 3);
+  if (dim < 0 or dim > 3)
+    throw std::out_of_range("dim out of range for cell_num_entities.");
   return basix::cell::num_sub_entities(cell_type_to_basix_type(type), dim);
 }
 //-----------------------------------------------------------------------------
