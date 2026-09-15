@@ -222,6 +222,31 @@ myst_enable_extensions = [
     "dollarmath",
 ]
 
+# Fail the build on an unresolvable :doc:/{py:*} target, e.g. a typo or a
+# renamed API, rather than silently rendering it as plain text. The
+# autodoc-generated API reference (generated/*) is exempted below, since
+# it is dominated by type-hint cross-references Sphinx cannot resolve
+# (private numpy typing internals, nanobind stub types, ...); genuine
+# broken links there would still be caught by pyrefly/mypy on the
+# underlying annotations.
+nitpicky = True
+
+# Targets that are real but that we cannot make resolve: real, live
+# attributes of an external project (ufl) that project's own docs do not
+# publish, and dolfinx module attributes bound directly at the nanobind
+# layer (plain values, not introspectable Python descriptors), which
+# autodoc cannot discover as documented py:data targets.
+nitpick_ignore = [
+    ("py:attr", "ufl.Mesh.geometric_dimension"),
+    ("py:obj", "ufl.dP"),
+    ("py:obj", "ufl.dr"),
+    ("py:class", "ufl.MixedFunctionSpace"),
+    ("py:func", "ufl.TrialFunctions"),
+    ("py:data", "dolfinx.has_parmetis"),
+    ("py:data", "dolfinx.has_ptscotch"),
+    ("py:data", "dolfinx.has_kahip"),
+]
+
 
 def skip_member(app, what, name, obj, skip, opts):
     # Skip @entries from nanobind enums
@@ -231,5 +256,19 @@ def skip_member(app, what, name, obj, skip, opts):
         return skip
 
 
+def suppress_generated_api_nitpicks(app, env, node, contnode):
+    """Silence nitpicky warnings inside the autodoc-generated API
+    reference (generated/*): they are overwhelmingly type-hint
+    annotations Sphinx cannot resolve to a documented class, not
+    genuine broken documentation links. Hand-written pages (demos,
+    release notes, ...) are unaffected and still fail the build.
+    """
+    docname = env.docname or node.get("refdoc", "")
+    if docname.startswith("generated/"):
+        return contnode
+    return None
+
+
 def setup(app):
     app.connect("autodoc-skip-member", skip_member)
+    app.connect("missing-reference", suppress_generated_api_nitpicks)

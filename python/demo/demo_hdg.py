@@ -129,11 +129,10 @@ k = 3  # Polynomial order
 V = fem.functionspace(msh, ("Discontinuous Lagrange", k))
 Vbar = fem.functionspace(facet_mesh, ("Discontinuous Lagrange", k))
 
-# Trial and test functions in mixed space, we use {py:class}`
-# ufl.MixedFunctionSpace`
-# to create a single function space object we can extract {py:func}`
-# ufl.TrialFunctions`
-# and {py:func}`ufl.TestFunctions` from.
+# Trial and test functions in mixed space, we use
+# {py:class}`ufl.MixedFunctionSpace` to create a single function space
+# object we can extract {py:func}`ufl.TrialFunctions` and
+# {py:func}`ufl.TestFunctions` from.
 
 W = ufl.MixedFunctionSpace(V, Vbar)
 u, ubar = ufl.TrialFunctions(W)
