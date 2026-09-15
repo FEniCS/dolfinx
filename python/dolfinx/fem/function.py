@@ -175,7 +175,9 @@ class Expression(Generic[Scalar]):
                     raise RuntimeError("Could not extract MPI communicator for Expression.")
                 domain = domains[0]
                 assert isinstance(domain, ufl.Mesh)
-                mesh = domain.ufl_cargo()
+                from dolfinx.mesh import _mesh_from_ufl_domain
+
+                mesh = _mesh_from_ufl_domain(domain)
                 comm = mesh.comm
             except AttributeError:
                 print(
@@ -221,7 +223,9 @@ class Expression(Generic[Scalar]):
         if len(expr_domains) > 0:
             expr_domain = expr_domains[0]
             assert isinstance(expr_domain, ufl.Mesh)
-            geometry_dtype = expr_domain.ufl_cargo().geometry.x.dtype
+            from dolfinx.mesh import _mesh_from_ufl_domain
+
+            geometry_dtype = _mesh_from_ufl_domain(expr_domain).geometry.x.dtype
         else:
             geometry_dtype = np.dtype(dtype).type(0).real.dtype
         create_expression = Expression.cpp_types[np.dtype(dtype), geometry_dtype]
