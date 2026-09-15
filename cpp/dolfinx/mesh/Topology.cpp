@@ -14,6 +14,7 @@
 #include <boost/sort/sort.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
@@ -822,57 +823,89 @@ build_entity_types(const std::vector<CellType>& cell_types)
   return entity_types;
 }
 
-/// @brief Compute inter-process vertices for a topology of tdim == 1,
-/// where facets are vertices.
+/// @brief Compute inter-process vertices for a topology with tdim == 1,
+/// where the facets are vertices.
 ///
-/// Derived from the vertex IndexMap's ownership/ghosting data rather
-/// than mesh::compute_entities, which returns immediately for dim == 0.
+/// Matches the definition used by mesh::compute_entities for dim >= 1:
+/// an entity is inter-process if cells owned by two or more ranks are
+/// attached to it. mesh::compute_entities cannot be used here as it
+/// returns immediately for dim == 0, vertices being set up directly
+/// rather than computed on demand.
 ///
 /// @param[in] topology Topology with tdim == 1, whose vertex index map
 /// and cell-vertex connectivity have already been set.
-/// @return Sorted, local indices of the inter-process vertices.
+/// @return Sorted local indices of the inter-process vertices.
+///
+/// @note Collective.
 std::vector<std::int32_t>
 compute_interprocess_vertices(const Topology& topology)
 {
   assert(topology.dim() == 1);
-  const int tdim = 1;
+  constexpr int tdim = 1;
 
   auto vertex_map = topology.index_map(0);
   assert(vertex_map);
-  const std::int32_t num_local_vertices = vertex_map->size_local();
+  const std::int32_t num_local = vertex_map->size_local();
+  const std::int32_t num_ghosts = vertex_map->num_ghosts();
 
-  // A vertex is inter-process if it is touched by a locally owned cell
-  // and is shared with another rank (owned here and ghosted elsewhere,
-  // or ghosted here).
-  std::vector<std::int8_t> touched_by_owned_cell(
-      num_local_vertices + vertex_map->num_ghosts(), 0);
-  auto cell_maps = topology.index_maps(tdim);
+  // Vertices attached to a cell owned by this rank
+  std::vector<std::int8_t> attached(num_local + num_ghosts, 0);
+  std::vector<std::shared_ptr<const common::IndexMap>> cell_maps
+      = topology.index_maps(tdim);
   for (std::size_t i = 0; i < cell_maps.size(); ++i)
   {
-    auto cells = topology.connectivity({tdim, int(i)}, {0, 0});
-    assert(cells);
-    std::int32_t num_owned_cells = cell_maps[i]->size_local();
-    for (std::int32_t c = 0; c < num_owned_cells; ++c)
-      for (std::int32_t v : cells->links(c))
-        touched_by_owned_cell[v] = 1;
+    auto c_to_v = topology.connectivity({tdim, static_cast<int>(i)}, {0, 0});
+    assert(c_to_v);
+    for (std::int32_t c = 0; c < cell_maps[i]->size_local(); ++c)
+      for (std::int32_t v : c_to_v->links(c))
+        attached[v] = 1;
   }
 
-  std::vector<std::int32_t> interprocess_vertices;
+  // Count, for each owned vertex, the ranks with an attached owned cell:
+  // this rank, plus each ghosting rank that reports one. The owner does
+  // not necessarily have an attached owned cell itself (a sub-topology
+  // vertex may be incident to a cell on a ghosting rank only), so the
+  // flags of all ranks are counted rather than the owner's assumed.
+  const common::Scatterer<> scatter(*vertex_map);
+  std::span<const std::int32_t> local_ind = scatter.local_indices_block();
+  std::span<const std::int32_t> ghost_ind = scatter.remote_indices_block();
+  std::vector<std::int8_t> buffer_ghost(ghost_ind.size()),
+      buffer_local(local_ind.size());
+  std::ranges::transform(ghost_ind, buffer_ghost.begin(),
+                         [&attached, num_local](std::int32_t i)
+                         { return attached[num_local + i]; });
+  MPI_Request request;
+  scatter.scatter_rev_begin(buffer_ghost.data(), buffer_local.data(), 1,
+                            request);
+  scatter.scatter_rev_end(request);
 
-  // Owned vertices ghosted by another rank (collective).
-  for (std::int32_t v : vertex_map->shared_indices())
-    if (touched_by_owned_cell[v])
-      interprocess_vertices.push_back(v);
-
-  // Local ghost vertices.
-  for (std::int32_t g = 0; g < vertex_map->num_ghosts(); ++g)
+  std::vector<std::int8_t> interprocess(num_local + num_ghosts, 0);
   {
-    std::int32_t v = num_local_vertices + g;
-    if (touched_by_owned_cell[v])
-      interprocess_vertices.push_back(v);
+    std::vector<std::int32_t> count(num_local, 0);
+    for (std::int32_t v = 0; v < num_local; ++v)
+      count[v] = attached[v];
+    for (std::size_t i = 0; i < local_ind.size(); ++i)
+      count[local_ind[i]] += buffer_local[i];
+    for (std::int32_t v = 0; v < num_local; ++v)
+      interprocess[v] = count[v] > 1;
   }
 
-  std::ranges::sort(interprocess_vertices);
+  // Send the verdict for owned vertices back to the ghosting ranks
+  std::ranges::transform(local_ind, buffer_local.begin(),
+                         [&interprocess](std::int32_t i)
+                         { return interprocess[i]; });
+  scatter.scatter_fwd_begin(buffer_local.data(), buffer_ghost.data(), 1,
+                            request);
+  scatter.scatter_fwd_end(request);
+  for (std::size_t i = 0; i < ghost_ind.size(); ++i)
+    interprocess[num_local + ghost_ind[i]] = buffer_ghost[i];
+
+  // Keep only the vertices attached to a cell owned by this rank
+  std::vector<std::int32_t> interprocess_vertices;
+  for (std::int32_t v = 0; v < num_local + num_ghosts; ++v)
+    if (interprocess[v] and attached[v])
+      interprocess_vertices.push_back(v);
+
   return interprocess_vertices;
 }
 } // namespace
@@ -910,8 +943,8 @@ Topology::Topology(
     }
   }
 
-  // For tdim == 1, facets are vertices; compute inter-process facets
-  // directly from the vertex IndexMap (see compute_interprocess_vertices).
+  // For tdim == 1 the facets are vertices, which mesh::compute_entities
+  // does not compute (see compute_interprocess_vertices)
   if (tdim == 1)
     _interprocess_facets.push_back(compute_interprocess_vertices(*this));
 }
