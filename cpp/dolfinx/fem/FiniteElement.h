@@ -138,7 +138,7 @@ BasixElementData(U element, V bs, W symmetry)
 /// 9 but block size 6.
 ///
 /// Code that needs the number of physical components in *one block*
-/// must therefore call FiniteElement::base_value_size rather than
+/// must therefore call FiniteElement::physical_base_value_size rather than
 /// compute `value_size() / block_size()`, which is wrong for symmetric
 /// elements.
 ///
@@ -148,7 +148,7 @@ BasixElementData(U element, V bs, W symmetry)
 /// and `sym` marks a symmetric element. The columns are
 /// FiniteElement::value_shape, FiniteElement::block_size,
 /// FiniteElement::reference_value_shape and
-/// FiniteElement::base_value_size. FiniteElement::value_size and
+/// FiniteElement::physical_base_value_size. FiniteElement::value_size and
 /// FiniteElement::reference_value_size are the products of the
 /// respective shapes and are not tabulated.
 ///
@@ -380,7 +380,7 @@ public:
   /// @throws Exception is thrown for a mixed element as mixed elements
   /// do not have a value shape.
   /// @return Number of physical components per block.
-  int base_value_size() const;
+  int physical_base_value_size() const;
 
   /// @brief Value size of the base (non-blocked) finite element field
   /// on the reference cell.

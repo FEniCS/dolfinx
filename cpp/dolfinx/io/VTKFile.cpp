@@ -375,7 +375,7 @@ void write_function(
     // Check that pointwise elements are the same (up to the block size)
     if (!impl::is_cellwise(*e))
     {
-      if (*e != *element0)
+      if (!impl::same_base_element(*e, *element0))
       {
         throw std::runtime_error("All point-wise Functions written to VTK file "
                                  "must have same element.");
@@ -546,7 +546,7 @@ void write_function(
                    std::span<const T>(data), data_node);
         }
       }
-      else if (*e == *element0)
+      else if (impl::same_base_element(*e, *element0))
       {
         // -- Same element, possibly different dofmaps
 

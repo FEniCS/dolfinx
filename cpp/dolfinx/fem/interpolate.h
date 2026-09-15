@@ -515,7 +515,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   const std::size_t value_size_ref0 = element0->reference_value_size();
   // basis0 holds values pushed forward to the physical cell, one block
   // at a time, so it is sized with the physical (base) value size.
-  const std::size_t value_size0 = V0->element()->base_value_size();
+  const std::size_t value_size0 = V0->element()->physical_base_value_size();
 
   const CoordinateElement<U>& cmap = mesh0->geometry().cmaps().front();
   auto x_dofmap = mesh0->geometry().dofmaps().front();
@@ -870,7 +870,7 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
   // Identity map, so the physical and reference value sizes coincide.
   const int element_vs = element.reference_value_size();
-  assert(element_vs == element.base_value_size());
+  assert(element_vs == element.physical_base_value_size());
   if (element_vs > 1 and element_bs > 1)
     throw std::runtime_error("Interpolation into this element not supported.");
 
@@ -961,7 +961,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const int element_bs = element.block_size();
   const int num_scalar_dofs = element.space_dimension() / element_bs;
   // f holds physical values, one block at a time.
-  const int value_size = element.base_value_size();
+  const int value_size = element.physical_base_value_size();
   const int dofmap_bs = dofmap.bs();
 
   // Skip the div/mod below when block sizes match (the common case)

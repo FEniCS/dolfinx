@@ -369,7 +369,7 @@ std::span<const std::size_t> FiniteElement<T>::value_shape() const
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-int FiniteElement<T>::base_value_size() const
+int FiniteElement<T>::physical_base_value_size() const
 {
   if (!_value_shape)
     throw std::runtime_error("Element does not have a value_shape.");

@@ -203,8 +203,8 @@ void declare_function_space(nb::module_& m, std::string type)
             },
             nb::rv_policy::reference_internal)
         .def_prop_ro("value_size", &dolfinx::fem::FiniteElement<T>::value_size)
-        .def_prop_ro("base_value_size",
-                     &dolfinx::fem::FiniteElement<T>::base_value_size)
+        .def_prop_ro("physical_base_value_size",
+                     &dolfinx::fem::FiniteElement<T>::physical_base_value_size)
         .def_prop_ro("reference_value_size",
                      &dolfinx::fem::FiniteElement<T>::reference_value_size)
         .def("interpolation_points",

@@ -425,7 +425,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   // basis0 holds one block of V0's basis pushed forward to the physical
   // cell; basis_values holds all bs0 blocks; mapped_values holds them
   // pulled back to the reference cell of e1.
-  const std::size_t value_size0 = e0->base_value_size();
+  const std::size_t value_size0 = e0->physical_base_value_size();
   const std::size_t value_size_phys = e0->value_size();
   const std::size_t value_size_ref1
       = e1->reference_value_size() * static_cast<std::size_t>(bs1);

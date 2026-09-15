@@ -100,7 +100,8 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
 
   // Create a Nedelec function space
   auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-      mesh, std::make_shared<fem::FiniteElement<U>>(e)));
+      mesh,
+      std::make_shared<fem::FiniteElement<U>>(e, mesh->geometry().dim())));
 
   // Create a Nedelec finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
