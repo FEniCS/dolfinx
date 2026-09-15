@@ -98,10 +98,6 @@ class AdjacencyList(Generic[Index]):
             return NotImplemented
         return self._cpp_object == other._cpp_object
 
-    def __hash__(self) -> int:
-        """Hash of the wrapped adjacency list."""
-        return hash(self._cpp_object)
-
     def __repr__(self) -> str:
         """String representation of the adjacency list."""
         return self._cpp_object.__repr__()
