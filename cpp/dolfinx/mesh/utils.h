@@ -574,6 +574,14 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
   assert(topology);
   const int tdim = topology->dim();
 
+  if (entity_type_idx < 0
+      or static_cast<std::size_t>(entity_type_idx)
+             >= topology->entity_types(dim).size())
+  {
+    throw std::out_of_range(
+        "entity_type_idx out of range for Topology::entity_types(dim).");
+  }
+
   mesh.topology_mutable()->create_entities(dim);
   if (dim < tdim)
     mesh.topology_mutable()->create_connectivity(dim, 0);
@@ -801,7 +809,8 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   for (std::int32_t e : entities)
   {
     // Get a cell connected to the entity
-    assert(!e_to_c->links(e).empty());
+    if (e_to_c->links(e).empty())
+      throw std::runtime_error("No cell incident to entity.");
     std::int32_t c = e_to_c->links(e).front();
 
     // Get the local index of the entity

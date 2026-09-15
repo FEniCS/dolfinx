@@ -803,6 +803,8 @@ std::vector<std::int32_t> convert_to_local_indexing(
 std::vector<std::vector<CellType>>
 build_entity_types(const std::vector<CellType>& cell_types)
 {
+  if (cell_types.empty())
+    throw std::invalid_argument("cell_types must not be empty.");
   const int tdim = cell_dim(cell_types.front());
   std::vector<std::vector<CellType>> entity_types(tdim + 1);
 
@@ -837,7 +839,6 @@ Topology::Topology(
                               : std::vector<std::vector<std::int64_t>>()),
       _entity_types(build_entity_types(cell_types))
 {
-  assert(!cell_types.empty());
   int tdim = cell_dim(cell_types.front());
 #ifndef NDEBUG
   for (auto ct : cell_types)
@@ -1678,7 +1679,12 @@ mesh::entities_to_index(const Topology& topology, int dim,
       throw std::runtime_error("Duplicate mesh entity detected.");
   }
 
-  assert(entities.size() % num_vertices_per_entity == 0);
+  if (entities.size() % num_vertices_per_entity != 0)
+  {
+    throw std::invalid_argument(
+        "Size of entities array is not a multiple of the number of "
+        "vertices per entity.");
+  }
 
   // Iterate over all entities and find index
   std::vector<std::int32_t> indices;
