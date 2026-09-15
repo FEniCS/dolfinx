@@ -36,7 +36,7 @@ def test_read_write_vtkhdf_mesh3d():
 @pytest.mark.parametrize("num_threads", [1, 4])
 def test_read_write_vtkhdf_num_threads(num_threads):
     filename = "example_num_threads.vtkhdf"
-    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5)
     write_mesh(filename, mesh)
 
     mesh_1 = read_mesh(MPI.COMM_WORLD, filename, num_threads=1)
