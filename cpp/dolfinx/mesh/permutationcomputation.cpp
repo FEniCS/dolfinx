@@ -8,16 +8,25 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
+#include <array>
 #include <bitset>
+#include <cstddef>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
+#include <memory>
 #include <ranges>
+#include <stdexcept>
+#include <thread>
+#include <utility>
 
 namespace
 {
-constexpr int _BITSETSIZE = 32;
+constexpr int bitset_size = 32;
 } // namespace
 
 using namespace dolfinx;
@@ -359,7 +368,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology,
     spdlog::info("Compute face permutations");
     const int faces_per_cell = cell_num_entities(cell_type, 2);
     const auto face_perm
-        = compute_face_permutations<_BITSETSIZE>(topology, num_threads);
+        = compute_face_permutations<bitset_size>(topology, num_threads);
     for (int c = 0; c < num_cells; ++c)
       cell_permutation_info[c] = face_perm[c].to_ulong();
 
@@ -382,7 +391,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology,
     spdlog::info("Compute edge permutations");
     const int edges_per_cell = cell_num_entities(cell_type, 1);
     const auto edge_perm
-        = compute_edge_reflections<_BITSETSIZE>(topology, num_threads);
+        = compute_edge_reflections<bitset_size>(topology, num_threads);
     for (int c = 0; c < num_cells; ++c)
       cell_permutation_info[c] |= edge_perm[c].to_ulong() << used_bits;
 
@@ -396,7 +405,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology,
       }
     }
   }
-  assert(used_bits < _BITSETSIZE);
+  assert(used_bits < bitset_size);
 
   return {std::move(facet_permutations), std::move(cell_permutation_info)};
 }
