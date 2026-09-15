@@ -43,8 +43,7 @@ struct _unsigned_projection
     static_assert(std::bit_cast<uT>(std::numeric_limits<T>::min())
                   == (uT(1) << (sizeof(T) * 8 - 1)));
 
-    return std::bit_cast<uT>(std::forward<T>(e))
-           ^ (uT(1) << (sizeof(T) * 8 - 1));
+    return std::bit_cast<uT>(e) ^ (uT(1) << (sizeof(T) * 8 - 1));
   }
 };
 
