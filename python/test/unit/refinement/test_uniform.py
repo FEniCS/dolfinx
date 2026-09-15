@@ -42,10 +42,7 @@ def test_uniform_refine_mixed_mesh(mixed_topology_mesh):
     mesh.topology.create_entities(1)
     mesh.topology.create_entities(2)
 
-    m2 = Mesh(
-        dolfinx.cpp.refinement.uniform_refine(mesh._cpp_object, None, dolfinx.mesh.GhostMode.none),
-        None,
-    )
+    m2 = dolfinx.mesh.uniform_refine(mesh, ghost_mode=dolfinx.mesh.GhostMode.none)
     ncells1 = {ct[j]: m2.topology.index_maps(3)[j].size_local for j in range(4)}
 
     comm = mesh.comm

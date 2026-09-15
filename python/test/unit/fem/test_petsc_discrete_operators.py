@@ -13,9 +13,15 @@ import pytest
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
-from dolfinx.cpp.mesh import cell_dim
 from dolfinx.fem import Expression, Function, assemble_scalar, form, functionspace
-from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    cell_dim,
+    create_mesh,
+    create_unit_cube,
+    create_unit_square,
+)
 
 
 @pytest.mark.petsc4py
