@@ -357,6 +357,30 @@ def test_create_box_prism():
     assert mesh.topology.index_map(3).size_global == 48
 
 
+def test_create_rectangle_degenerate_raises_on_every_rank():
+    """A degenerate rectangle must raise on every rank."""
+    with pytest.raises(ValueError):
+        create_rectangle(
+            MPI.COMM_WORLD,
+            [[0.0, 0.0], [1e-8, 1.0]],
+            [4, 4],
+            CellType.triangle,
+            dtype=np.float32,
+        )
+
+
+def test_create_box_degenerate_raises_on_every_rank():
+    """A degenerate box must raise on every rank."""
+    with pytest.raises(ValueError):
+        create_box(
+            MPI.COMM_WORLD,
+            [[0.0, 0.0, 0.0], [1e-6, 1.0, 1.0]],
+            [100, 10, 10],
+            CellType.hexahedron,
+            dtype=np.float32,
+        )
+
+
 @pytest.mark.parametrize("gdim", [1, 2, 3])
 def test_create_interval_gdim(gdim):
     """Interval mesh embedded in gdim-dimensional space has correct tdim and gdim."""
