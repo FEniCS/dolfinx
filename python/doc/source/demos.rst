@@ -16,7 +16,7 @@ scalars, and a few demos only run in serial.
 
 
 Getting started
-----------------
+---------------
 
 * :doc:`demos/demo_poisson` -- the recommended starting point: solve the
   Poisson equation with mixed Dirichlet/Neumann boundary conditions.
@@ -26,8 +26,18 @@ Getting started
   interior penalty discontinuous Galerkin method.
 
 
+Interpolation, IO and visualisation
+-----------------------------------
+
+* :doc:`demos/demo_pyvista` -- visualise finite element functions with
+  PyVista, including warp-by-scalar and warp-by-vector plots.
+* :doc:`demos/demo_interpolation-io` -- interpolate into an
+  :math:`H(\mathrm{curl})` Nédélec space and visualise it via a
+  discontinuous Lagrange space.
+
+
 Mixed and hybridised formulations
-----------------------------------
+---------------------------------
 
 * :doc:`demos/demo_mixed-poisson` -- solve the Poisson equation in mixed
   (flux, potential) form with a block-preconditioned iterative solver.
@@ -43,30 +53,13 @@ Mixed and hybridised formulations
 
 
 Time-dependent and nonlinear problems
-----------------------------------------
+-------------------------------------
 
 * :doc:`demos/demo_cahn-hilliard` -- solve the time-dependent, nonlinear
   Cahn-Hilliard equation with a Newton solver.
 * :doc:`demos/demo_navier-stokes` -- time-step the semi-implicit
   divergence-conforming Navier-Stokes scheme (see also *Mixed and
   hybridised formulations*).
-
-
-Electromagnetics
------------------
-
-All demos in this section require DOLFINx to be built with complex
-PETSc scalars.
-
-* :doc:`demos/demo_half-loaded-waveguide` -- compute eigenmodes of a
-  half-loaded rectangular waveguide using SLEPc.
-* :doc:`demos/demo_scattering-boundary-conditions` -- simulate
-  electromagnetic scattering from a wire using scattering boundary
-  conditions.
-* :doc:`demos/demo_pml` -- simulate electromagnetic scattering from a
-  wire using a perfectly matched layer (PML).
-* :doc:`demos/demo_axis` -- simulate axisymmetric electromagnetic
-  scattering from a sphere using an axisymmetric PML.
 
 
 Linear solvers, preconditioners and matrix-free methods
@@ -102,16 +95,6 @@ Custom and advanced finite elements
   tiniest tensor element) using Basix's custom element interface.
 
 
-Interpolation, IO and visualisation
---------------------------------------
-
-* :doc:`demos/demo_pyvista` -- visualise finite element functions with
-  PyVista, including warp-by-scalar and warp-by-vector plots.
-* :doc:`demos/demo_interpolation-io` -- interpolate into an
-  :math:`H(\mathrm{curl})` Nédélec space and visualise it via a
-  discontinuous Lagrange space.
-
-
 Mesh generation, partitioning and parallel data
 ---------------------------------------------------
 
@@ -123,6 +106,23 @@ Mesh generation, partitioning and parallel data
   communication pattern of a distributed mesh with NetworkX.
 * :doc:`demos/demo_mixed-topology` -- solve a Helmholtz problem on a
   mesh with mixed cell topology (in development, serial only).
+
+
+Electromagnetics
+----------------
+
+All demos in this section require DOLFINx to be built with complex
+PETSc scalars.
+
+* :doc:`demos/demo_half-loaded-waveguide` -- compute eigenmodes of a
+  half-loaded rectangular waveguide using SLEPc.
+* :doc:`demos/demo_scattering-boundary-conditions` -- simulate
+  electromagnetic scattering from a wire using scattering boundary
+  conditions.
+* :doc:`demos/demo_pml` -- simulate electromagnetic scattering from a
+  wire using a perfectly matched layer (PML).
+* :doc:`demos/demo_axis` -- simulate axisymmetric electromagnetic
+  scattering from a sphere using an axisymmetric PML.
 
 
 ..
