@@ -111,7 +111,7 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("num_threads", [1, 4])
 def test_read_write_num_threads(tempdir, num_threads):
     filename = Path(tempdir, "mesh_num_threads.xdmf")
-    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4)
     with XDMFFile(mesh.comm, filename, "w") as file:
         file.write_mesh(mesh)
 
