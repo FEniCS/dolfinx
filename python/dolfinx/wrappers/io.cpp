@@ -82,23 +82,24 @@ void io(nb::module_& m)
   m.def(
       "read_vtkhdf_mesh_float64",
       [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
-         std::optional<std::int32_t> max_facet_to_cell_links)
+         std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
       {
         return dolfinx::io::VTKHDF::read_mesh<double>(
-            comm.get(), filename, gdim, max_facet_to_cell_links);
+            comm.get(), filename, gdim, max_facet_to_cell_links, num_threads);
       },
       nb::arg("comm"), nb::arg("filename"), nb::arg("gdim"),
-      nb::arg("max_facet_to_cell_links").none());
+      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"));
   m.def(
       "read_vtkhdf_mesh_float32",
       [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
-         std::optional<std::int32_t> max_facet_to_cell_links)
+         std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
       {
         return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename, gdim,
-                                                     max_facet_to_cell_links);
+                                                     max_facet_to_cell_links,
+                                                     num_threads);
       },
       nb::arg("comm"), nb::arg("filename"), nb::arg("gdim"),
-      nb::arg("max_facet_to_cell_links").none());
+      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"));
 
   // dolfinx::io::cell permutation functions
   m.def(

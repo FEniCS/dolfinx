@@ -350,6 +350,7 @@ class XDMFFile:
         name: str = "mesh",
         xpath: str = "/Xdmf/Domain",
         max_facet_to_cell_links: int = 2,
+        num_threads: int = 1,
     ) -> Mesh:
         """Read mesh data from file.
 
@@ -365,6 +366,8 @@ class XDMFFile:
             xpath: XPath where Mesh Grid is stored in the file.
             max_facet_to_cell_links: Maximum number of cells that a facet
                 can be linked to.
+            num_threads: Number of threads to use to build mesh. Must be
+                greater than 0.
         """
         cell_shape, cell_degree = self.read_cell_type(name, xpath)
         cells = self.read_topology_data(name, xpath)
@@ -434,7 +437,7 @@ class XDMFFile:
             _cpp.graph.partitioner(),
             ghost_mode,
             max_facet_to_cell_links,
-            1,
+            num_threads=num_threads,
             cell_weights=None,
             reorder_fn=None,
         )

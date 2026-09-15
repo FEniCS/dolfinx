@@ -315,11 +315,13 @@ void write_data(std::string_view point_or_cell,
 /// 2D.
 /// @param max_facet_to_cell_links The maximum number of cells a
 /// facet can be connected to.
+/// @param num_threads Number threads to use in mesh construction.
 /// @return The mesh read from file.
 template <std::floating_point U>
 mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                         std::size_t gdim = 3,
-                        std::optional<std::int32_t> max_facet_to_cell_links = 2)
+                        std::optional<std::int32_t> max_facet_to_cell_links = 2,
+                        int num_threads = 1)
 {
   hid_t h5file = hdf5::open_file(comm, filename, "r", true);
 
@@ -472,6 +474,6 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   return mesh::create_mesh(comm, comm, cells_span, coordinate_elements, comm,
                            points_pruned, {(std::size_t)x_shape[0], gdim},
                            graph::Partitioner{}, mesh::GhostMode::none,
-                           max_facet_to_cell_links, 1);
+                           max_facet_to_cell_links, num_threads);
 }
 } // namespace dolfinx::io::VTKHDF
