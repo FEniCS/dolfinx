@@ -11,7 +11,7 @@ from __future__ import annotations
 import typing
 import warnings
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, wraps
 
 from mpi4py import MPI as _MPI
 
@@ -30,7 +30,10 @@ from dolfinx.cpp.mesh import (
     DiagonalType,
     GhostMode,
     cell_dim,
+    cell_entity_type,
     cell_num_entities,
+    cell_num_vertices,
+    is_simplex,
     to_string,
     to_type,
 )
@@ -59,7 +62,10 @@ __all__ = [
     "Topology",
     "build_dual_graph",
     "cell_dim",
+    "cell_entity_type",
+    "cell_normals",
     "cell_num_entities",
+    "cell_num_vertices",
     "compute_cell_centroids",
     "compute_incident_entities",
     "compute_midpoints",
@@ -77,6 +83,7 @@ __all__ = [
     "create_unit_square",
     "entities_to_geometry",
     "exterior_facet_indices",
+    "is_simplex",
     "locate_entities",
     "locate_entities_boundary",
     "mark_equidistribution",
@@ -100,7 +107,7 @@ PartitioningFunc = typing.Callable[
         npt.NDArray[np.int32] | None,
         bool,
     ],
-    _cpp.graph.AdjacencyList_int32,
+    _cpp.graph.AdjacencyList_int32 | AdjacencyList[np.int32],
 ]
 
 # float64 to match the C++ span<double> interface. Unlike
@@ -121,7 +128,7 @@ HybridPartitioningFunc = typing.Callable[
         npt.NDArray[np.int32] | None,
         bool,
     ],
-    _cpp.graph.AdjacencyList_int32,
+    _cpp.graph.AdjacencyList_int32 | AdjacencyList[np.int32],
 ]
 
 # A cell reordering function receives the local cell dual graph and
@@ -195,7 +202,7 @@ def create_hybrid_cell_partitioner(
         Partitioning function, for use as :func:`create_mesh`'s
         ``partitioner`` argument.
     """
-    return _cpp.graph.create_hybrid_cell_partitioner(part)
+    return _cpp.graph.create_hybrid_cell_partitioner(_wrap_partitioner(part))
 
 
 def build_dual_graph(
@@ -1007,10 +1014,12 @@ def uniform_refine(
     Returns:
         The refined mesh.
     """
-    _cpp_mesh = _uniform_refine(msh._cpp_object, partitioner, ghost_mode)
+    _cpp_mesh = _uniform_refine(msh._cpp_object, _wrap_partitioner(partitioner), ghost_mode)
     if msh._ufl_domain is None:
-        raise ValueError("Cannot refine a mesh without a UFL domain.")
-    # Create a new UFL domain to associate with the refined mesh.
+        # A mixed-topology mesh has no UFL domain to carry over.
+        return Mesh(_cpp_mesh, None)
+    # Create new ufl domain as it will carry a reference to the C++ mesh
+    # in the ufl_cargo
     ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())
     return Mesh(_cpp_mesh, ufl_domain)
 
@@ -1055,7 +1064,7 @@ def refine(
        Refined mesh, (optional) parent cells, (optional) parent facets
     """
     mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
-        msh._cpp_object, edges, partitioner, option, ghost_mode
+        msh._cpp_object, edges, _wrap_partitioner(partitioner), option, ghost_mode
     )
     if msh._ufl_domain is None:
         raise ValueError("Cannot refine a mesh without a UFL domain.")
@@ -1065,6 +1074,48 @@ def refine(
 
 
 _MeshPartitioner = Callable | tuple[Callable, npt.NDArray[np.int32] | None] | None
+
+
+@typing.overload
+def _wrap_partitioner(fn: None) -> None: ...
+
+
+@typing.overload
+def _wrap_partitioner(fn: Callable) -> Callable: ...
+
+
+@typing.overload
+def _wrap_partitioner(fn: IdentityPartitionerPlaceholder) -> IdentityPartitionerPlaceholder: ...
+
+
+def _wrap_partitioner(
+    fn: Callable | IdentityPartitionerPlaceholder | None,
+) -> Callable | IdentityPartitionerPlaceholder | None:
+    """Adapt a partitioner so it may return a graph.AdjacencyList.
+
+    Opaque C++ partitioner handles (e.g. as returned by
+    ``graph.partitioner_scotch()``) are passed through unchanged:
+    ``create_mesh``'s nanobind binding recognises them specifically, and
+    wrapping one in a Python closure would silently demote it to the
+    slower raw-callable code path.
+    """
+    if fn is None or isinstance(
+        fn,
+        (
+            _cpp.graph.GraphPartitioner,
+            _cpp.graph.GeometricPartitioner,
+            _cpp.graph.HybridPartitioner,
+            IdentityPartitionerPlaceholder,
+        ),
+    ):
+        return fn
+
+    @wraps(fn)
+    def _wrapped(*args):
+        dest = fn(*args)
+        return dest._cpp_object if isinstance(dest, AdjacencyList) else dest
+
+    return _wrapped
 
 
 def _get_mesh_partitioner(
@@ -1081,8 +1132,8 @@ def _get_mesh_partitioner(
         partitioner_fn, cell_weights = partitioner
         if partitioner_fn is None:
             raise TypeError("The partitioner in the tuple must not be None.")
-        return partitioner_fn, cell_weights
-    return partitioner, None
+        return _wrap_partitioner(partitioner_fn), cell_weights
+    return _wrap_partitioner(partitioner), None
 
 
 def mark_maximum(
@@ -1436,6 +1487,7 @@ def create_interval(
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.graph.partitioner()
+    partitioner = _wrap_partitioner(partitioner)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1521,6 +1573,7 @@ def create_rectangle(
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.graph.partitioner()
+    partitioner = _wrap_partitioner(partitioner)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1633,6 +1686,7 @@ def create_box(
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.graph.partitioner()
+    partitioner = _wrap_partitioner(partitioner)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1711,6 +1765,20 @@ def entities_to_geometry(
         in `entities`.
     """
     return _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, permute)
+
+
+def cell_normals(msh: Mesh[Real], dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[Real]:
+    """Compute the normal to a set of mesh entities.
+
+    Args:
+        msh: The mesh.
+        dim: Topological dimension of the entities.
+        entities: Entity indices (local to the process).
+
+    Returns:
+        Normal vectors, ``shape=(len(entities), 3)``.
+    """
+    return _cpp.mesh.cell_normals(msh._cpp_object, dim, entities)  # type: ignore[return-value]
 
 
 def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:

@@ -11,11 +11,9 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx import fem
 from dolfinx.common import index_map
-from dolfinx.cpp.la import BlockMode
-from dolfinx.la import matrix_csr, sparsity_pattern
+from dolfinx.la import BlockMode, matrix_csr, sparsity_pattern
 from dolfinx.mesh import GhostMode, create_unit_square
 
 
@@ -207,7 +205,7 @@ def test_set_diagonal_distributed(dtype):
 
     # set diagonal values
     value = dtype(1.0)
-    _cpp.fem.insert_diagonal(A._cpp_object, dofs, value)
+    fem.set_diagonal(A, dofs, value)
 
     # check diagonal values: they should be 1.0, including ghost dofs
     diag = As.diagonal()
@@ -234,9 +232,7 @@ def test_set_diagonal_distributed(dtype):
     # set diagonal values using dirichlet bc: this will set diagonal values of
     # owned rows only
     bc = fem.dirichletbc(dtype(0.0), dofs, V)
-    _cpp.fem.insert_diagonal(
-        A._cpp_object, a.function_spaces[0]._cpp_object, [bc._cpp_object], value
-    )
+    fem.set_bc_diagonal(A, a.function_spaces[0], [bc], value)
 
     # check diagonal values: they should be 1.0, except ghost dofs
     diag = As.diagonal()
