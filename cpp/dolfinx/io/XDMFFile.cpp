@@ -22,6 +22,7 @@
 #include <filesystem>
 #include <format>
 #include <pugixml.hpp>
+#include <utility>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -130,6 +131,15 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
         throw std::runtime_error("Failed to append xml/xdmf Domain.");
     }
   }
+}
+//-----------------------------------------------------------------------------
+XDMFFile::XDMFFile(XDMFFile&& file) noexcept
+    : _comm(std::move(file._comm)), _filename(std::move(file._filename)),
+      _file_mode(std::move(file._file_mode)),
+      _h5_id(std::exchange(file._h5_id, -1)),
+      _xml_doc(std::move(file._xml_doc)), _encoding(file._encoding)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 XDMFFile::~XDMFFile() { close(); }

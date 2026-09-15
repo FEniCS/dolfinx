@@ -86,7 +86,7 @@ int dolfinx::MPI::size(const MPI_Comm comm)
   return size;
 }
 //-----------------------------------------------------------------------------
-void dolfinx::MPI::check_error(MPI_Comm comm, int code)
+void dolfinx::MPI::check_error(MPI_Comm comm, int code) noexcept
 {
   if (code != MPI_SUCCESS)
   {

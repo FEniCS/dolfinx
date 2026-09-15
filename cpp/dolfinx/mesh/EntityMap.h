@@ -65,8 +65,14 @@ public:
   /// Move constructor
   EntityMap(EntityMap&& map) = default;
 
-  // Destructor
+  /// Destructor
   ~EntityMap() = default;
+
+  // Copy assignment (deleted)
+  EntityMap& operator=(const EntityMap& map) = delete;
+
+  /// Move assignment
+  EntityMap& operator=(EntityMap&& map) = default;
 
   /// @brief Get the topological dimension of the entities related by
   /// this `EntityMap`.
