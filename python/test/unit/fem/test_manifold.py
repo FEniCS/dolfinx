@@ -137,8 +137,8 @@ def test_piola_element_value_shape(gdim, spec):
     """
     family, degree, rank = spec
     mesh = plane_mesh(1, gdim)
-    V = functionspace(mesh, element(family, "triangle", degree))
-
+    el = element(family, "triangle", degree, dtype=default_real_type)
+    V = functionspace(mesh, el)
     assert V.value_shape == (gdim,) * rank
     assert tuple(V.element.value_shape) == V.value_shape
 
@@ -157,7 +157,10 @@ def test_blocked_value_shape_independent_of_gdim(gdim, shape, symmetry):
     fix that rewrites trailing axes to ``gdim`` unconditionally.
     """
     mesh = plane_mesh(1, gdim)
-    V = functionspace(mesh, element("Lagrange", "triangle", 1, shape=shape, symmetry=symmetry))
+    V = functionspace(
+        mesh,
+        element("Lagrange", "triangle", 1, shape=shape, symmetry=symmetry, dtype=default_real_type),
+    )
 
     assert V.value_shape == shape
     assert tuple(V.element.value_shape) == shape
@@ -166,7 +169,8 @@ def test_blocked_value_shape_independent_of_gdim(gdim, shape, symmetry):
 @pytest.mark.parametrize("gdim", [2, 3])
 def test_scalar_value_shape(gdim):
     mesh = plane_mesh(1, gdim)
-    V = functionspace(mesh, element("Lagrange", "triangle", 1))
+    el = element("Lagrange", "triangle", 1, dtype=default_real_type)
+    V = functionspace(mesh, el)
     assert V.value_shape == ()
     assert tuple(V.element.value_shape) == ()
 
@@ -190,7 +194,7 @@ def test_interpolate_callable(gdim, spec):
     """
     family, degree, _ = spec
     mesh = plane_mesh(2, gdim)
-    V = functionspace(mesh, element(family, "triangle", degree))
+    V = functionspace(mesh, element(family, "triangle", degree, dtype=default_real_type))
 
     c = tangential_constant(gdim)
     w = Function(V)
@@ -214,8 +218,11 @@ def test_interpolate_piola_to_dg(gdim, spec):
     """
     family, degree, rank = spec
     mesh = plane_mesh(2, gdim)
-    V = functionspace(mesh, element(family, "triangle", degree))
-    Q = functionspace(mesh, element("DG", "triangle", max(degree, 1), shape=(gdim,) * rank))
+    V = functionspace(mesh, element(family, "triangle", degree, dtype=default_real_type))
+    Q = functionspace(
+        mesh,
+        element("DG", "triangle", max(degree, 1), shape=(gdim,) * rank, dtype=default_real_type),
+    )
 
     w = Function(V)
     w.x.array[:] = np.random.default_rng(seed=7).random(w.x.array.shape)
@@ -234,8 +241,8 @@ def test_interpolate_same_map(gdim, families):
     so this is exact. Takes the ``interpolate_same_map`` branch.
     """
     mesh = plane_mesh(2, gdim)
-    V = functionspace(mesh, element(families[0], "triangle", 1))
-    W = functionspace(mesh, element(families[1], "triangle", 1))
+    V = functionspace(mesh, element(families[0], "triangle", 1, dtype=default_real_type))
+    W = functionspace(mesh, element(families[1], "triangle", 1, dtype=default_real_type))
 
     w = Function(V)
     w.x.array[:] = np.random.default_rng(seed=11).random(w.x.array.shape)
@@ -256,8 +263,8 @@ def test_interpolate_expression(gdim, spec):
     """
     family, degree, _ = spec
     mesh = plane_mesh(2, gdim)
-    V = functionspace(mesh, element(family, "triangle", degree))
-    Q = functionspace(mesh, element("DG", "triangle", 1, shape=(gdim,)))
+    V = functionspace(mesh, element(family, "triangle", degree, dtype=default_real_type))
+    Q = functionspace(mesh, element("DG", "triangle", 1, shape=(gdim,), dtype=default_real_type))
 
     c = tangential_constant(gdim)
     g = Function(Q)
@@ -280,8 +287,8 @@ def test_interpolate_nonmatching_meshes(gdim):
     """
     mesh0 = plane_mesh(2, gdim)
     mesh1 = plane_mesh(3, gdim)
-    V0 = functionspace(mesh0, element("RT", "triangle", 1))
-    V1 = functionspace(mesh1, element("RT", "triangle", 1))
+    V0 = functionspace(mesh0, element("RT", "triangle", 1, dtype=default_real_type))
+    V1 = functionspace(mesh1, element("RT", "triangle", 1, dtype=default_real_type))
 
     c = tangential_constant(gdim)
     u0 = Function(V0)
@@ -311,7 +318,7 @@ def test_eval_piola(gdim, spec):
     """
     family, degree, _ = spec
     mesh = plane_mesh(1, gdim)
-    V = functionspace(mesh, element(family, "triangle", degree))
+    V = functionspace(mesh, element(family, "triangle", degree, dtype=default_real_type))
 
     c = tangential_constant(gdim)
     w = Function(V)
@@ -340,7 +347,7 @@ def test_eval_piola_is_tangential(gdim, spec):
     """
     family, degree, _ = spec
     mesh = plane_mesh(1, gdim)
-    V = functionspace(mesh, element(family, "triangle", degree))
+    V = functionspace(mesh, element(family, "triangle", degree, dtype=default_real_type))
 
     w = Function(V)
     w.x.array[:] = np.random.default_rng(seed=13).random(w.x.array.shape)
@@ -371,8 +378,8 @@ def test_interpolation_matrix(gdim):
     manifold it silently builds the wrong operator rather than raising.
     """
     mesh = plane_mesh(2, gdim)
-    V = functionspace(mesh, element("N1curl", "triangle", 1))
-    Q = functionspace(mesh, element("DG", "triangle", 1, shape=(gdim,)))
+    V = functionspace(mesh, element("N1curl", "triangle", 1, dtype=default_real_type))
+    Q = functionspace(mesh, element("DG", "triangle", 1, shape=(gdim,), dtype=default_real_type))
 
     c = tangential_constant(gdim)
     g = Function(Q)
@@ -393,8 +400,8 @@ def test_discrete_gradient(gdim):
     freedom, so it is expected to be correct on a manifold already.
     """
     mesh = plane_mesh(2, gdim)
-    W = functionspace(mesh, element("Lagrange", "triangle", 1))
-    V = functionspace(mesh, element("N1curl", "triangle", 1))
+    W = functionspace(mesh, element("Lagrange", "triangle", 1, dtype=default_real_type))
+    V = functionspace(mesh, element("N1curl", "triangle", 1, dtype=default_real_type))
 
     u = Function(W)
     u.interpolate(lambda x: 2.0 * x[0] - 3.0 * x[1])
