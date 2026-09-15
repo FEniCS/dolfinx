@@ -58,7 +58,14 @@ public:
     if (_start_time.has_value() and _task.has_value())
     {
       _acc += T::now() - *_start_time;
-      TimeLogger::instance().register_timing(*_task, _acc);
+      try
+      {
+        TimeLogger::instance().register_timing(*_task, _acc);
+      }
+      catch (...)
+      {
+        // Destructor is noexcept; discard the timing rather than terminate.
+      }
     }
   }
 
