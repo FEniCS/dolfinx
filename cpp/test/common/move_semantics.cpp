@@ -52,11 +52,11 @@ namespace
 template <typename T>
 constexpr bool nothrow_move_c = std::is_nothrow_move_constructible_v<T>;
 
-/// @brief Non-throwing move assignment. Not asserted for io::XDMFFile
-/// and mesh::EntityMap, which do not provide a move assignment
-/// operator, nor for fem::Expression, whose std::function member is not
-/// required by the standard to be non-throwing on move assignment
-/// (libc++ and libstdc++ both make it so, but that is not guaranteed).
+/// @brief Non-throwing move assignment. Not asserted for io::XDMFFile,
+/// which does not provide a move assignment operator, nor for
+/// fem::Expression, whose std::function member is not required by the
+/// standard to be non-throwing on move assignment (libc++ and libstdc++
+/// both make it so, but that is not guaranteed).
 template <typename T>
 constexpr bool nothrow_move_a = std::is_nothrow_move_assignable_v<T>;
 
@@ -152,5 +152,6 @@ static_assert(nothrow_move_a<graph::AdjacencyList<std::int32_t>>);
 static_assert(nothrow_move_a<graph::AdjacencyList<std::int64_t>>);
 static_assert(nothrow_move_a<io::VTKFile>);
 static_assert(nothrow_move_a<la::SparsityPattern>);
+static_assert(nothrow_move_a<mesh::EntityMap>);
 static_assert(nothrow_move_a<mesh::Topology>);
 } // namespace
