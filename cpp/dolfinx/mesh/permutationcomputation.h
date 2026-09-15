@@ -36,11 +36,19 @@ class Topology;
 /// @param[in] num_threads Number of threads to use.
 /// @return Permutation of each cell-local entity of dimension `dim`,
 /// flattened row-wise.
+/// @see compute_cell_permutations, which packs the orientations of all
+/// of a cell's sub-entities into one integer per cell, for correcting
+/// element DOFs rather than quadrature points.
 std::vector<std::uint8_t> compute_entity_permutations(const Topology& topology,
                                                       int dim, int num_threads);
 
-/// @brief Compute the cell permutation data used by non-Lagrange
-/// elements.
+/// @brief Compute the packed per-cell permutation data.
+///
+/// Required by elements whose DOF transformations are not the identity.
+/// Where those transformations are permutations, e.g. higher-order
+/// Lagrange, the correction is applied once to the dofmap when it is
+/// built; otherwise, e.g. N1curl and Raviart-Thomas, the correction
+/// is applied to the element tensor on each cell at assembly time.
 ///
 /// The cell permutation data contains information about the entities of
 /// each cell, relative to a low-to-high ordering. This data is packed
@@ -76,12 +84,11 @@ std::vector<std::uint8_t> compute_entity_permutations(const Topology& topology,
 ///   - edge 4 is reflected (1)
 ///   - edge 5 is not permuted (0)
 ///
-/// This data is used to correct the direction of vector functions on
-/// permuted entities.
-///
 /// @param[in] topology Mesh topology.
 /// @param[in] num_threads Number of threads to use.
 /// @return Packed permutation info for each cell.
+/// @see compute_entity_permutations, which gives the orientations of
+/// one entity dimension unpacked, for permuting quadrature points.
 std::vector<std::uint32_t> compute_cell_permutations(const Topology& topology,
                                                      int num_threads);
 
