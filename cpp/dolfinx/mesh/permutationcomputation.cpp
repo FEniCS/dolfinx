@@ -380,9 +380,13 @@ mesh::compute_entity_permutations(const mesh::Topology& topology, int dim,
     // Three bits encode each face: one reflection bit and two rotation
     // bits.
     for (std::int32_t c = 0; c < num_cells; ++c)
+    {
       for (int i = 0; i < entities_per_cell; ++i)
+      {
         perms[c * entities_per_cell + i]
             = (face_perm[c].to_ulong() >> (3 * i)) & 7;
+      }
+    }
     break;
   }
   default:
