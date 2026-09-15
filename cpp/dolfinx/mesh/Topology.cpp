@@ -714,11 +714,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 /// @brief Convert adjacency list edges from global indexing to local
 /// indexing.
 ///
-/// Nodes beyond `num_local_nodes` are discarded.
-///
 /// @param[in] g Graph with global edge indices
-/// @param[in] num_local_nodes Number of nodes to retain in the graph.
-/// Typically used to trim ghost nodes.
 /// @param[in] global_to_local Sorted array of (global, local) indices.
 /// @param[in] global_to_local_map Hash map holding the same
 /// (global, local) pairs as `global_to_local`, for O(1)-average
@@ -726,6 +722,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 /// reused for every cell type / thread, rather than rebuilt here).
 /// Unused, and may be empty, when `global_to_local` is identity (the
 /// common single-rank case).
+/// @param[in] num_threads Number of threads to use.
 std::vector<std::int32_t> convert_to_local_indexing(
     std::span<const std::int64_t> g,
     std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local,
@@ -971,9 +968,8 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 {
   if (auto i_map = this->index_map(this->dim() - 1);
-      !i_map
-      or (_facet_permutations.empty()
-          and (i_map->size_local() + i_map->num_ghosts() > 0)))
+      _facet_permutations.empty()
+      and (i_map->size_local() + i_map->num_ghosts() > 0))
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
