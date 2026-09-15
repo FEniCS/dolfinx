@@ -154,7 +154,8 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
 
   // Compute the indices of the topology entities (index is set to -1 if
   // it can't be found)
-  assert(topology);
+  if (!topology)
+    throw std::invalid_argument("topology must not be null.");
   const std::vector<std::int32_t> indices
       = entities_to_index(*topology, dim, entities.array());
   if (indices.size() != values.size())

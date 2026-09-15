@@ -1096,7 +1096,11 @@ mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
 
   {
     auto idx = std::ranges::find(topology.entity_types(dim), entity_type);
-    assert(idx != topology.entity_types(dim).end());
+    if (idx == topology.entity_types(dim).end())
+    {
+      throw std::invalid_argument(std::format(
+          "entity_type is not an entity type of the topology at dim={}.", dim));
+    }
     int index = std::ranges::distance(topology.entity_types(dim).begin(), idx);
     if (topology.connectivity({dim, index}, {0, 0}))
     {
@@ -1202,7 +1206,13 @@ mesh::compute_connectivity(const Topology& topology, std::array<int, 2> d0,
     if (!topology.connectivity(d1, d0))
     {
       // Only possible case is edge->facet
-      assert(d0[0] == 1 and d1[0] == 2);
+      if (d0[0] != 1 or d1[0] != 2)
+      {
+        throw std::invalid_argument(
+            std::format("Cannot compute connectivity ({}, {})-({}, {}): only "
+                        "edge-to-facet connectivity can be computed this way.",
+                        d0[0], d0[1], d1[0], d1[1]));
+      }
       auto c_d1_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_map(*c_d1_0, *c_d0_0));
 
@@ -1231,7 +1241,13 @@ mesh::compute_connectivity(const Topology& topology, std::array<int, 2> d0,
     // those of a higher dimension entity
 
     // Only possible case is facet->edge
-    assert(d0[0] == 2 and d1[0] == 1);
+    if (d0[0] != 2 or d1[0] != 1)
+    {
+      throw std::invalid_argument(
+          std::format("Cannot compute connectivity ({}, {})-({}, {}): only "
+                      "facet-to-edge connectivity can be computed this way.",
+                      d0[0], d0[1], d1[0], d1[1]));
+    }
     auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         compute_from_map(*c_d0_0, *c_d1_0));
     return {c_d0_d1, nullptr};
