@@ -212,6 +212,10 @@ Geometry(std::shared_ptr<const common::IndexMap>, U&&,
 /// 'node' coordinate data has been distributed to the processes where
 /// it is required.
 ///
+/// @note Collective.
+/// @pre `topology`, `elements` and `dim` must be consistent across all
+/// ranks.
+///
 /// @param[in] topology Mesh topology.
 /// @param[in] elements List of elements that defines the geometry map for
 /// each cell type.

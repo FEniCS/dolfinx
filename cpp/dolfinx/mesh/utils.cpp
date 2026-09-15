@@ -343,19 +343,11 @@ mesh::compute_incident_entities(const Topology& topology,
                                 std::span<const std::int32_t> entities, int d0,
                                 int d1)
 {
+  // index_map(d0)/index_map(d1) throw std::out_of_range if entities of
+  // that dimension have not been created; d1's map is otherwise unused
+  // here.
   auto map0 = topology.index_map(d0);
-  if (!map0)
-  {
-    throw std::runtime_error(std::format(
-        "Mesh entities of dimension {} have not been created.", d0));
-  }
-
-  auto map1 = topology.index_map(d1);
-  if (!map1)
-  {
-    throw std::runtime_error(std::format(
-        "Mesh entities of dimension {} have not been created.", d1));
-  }
+  topology.index_map(d1);
 
   auto e0_to_e1 = topology.connectivity(d0, d1);
   if (!e0_to_e1)
