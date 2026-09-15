@@ -931,6 +931,20 @@ def test_mesh_single_process_distribution(partitioner):
             assert adj.links(i).size == 2
 
 
+def test_create_submesh_empty_on_some_ranks():
+    """create_submesh must not deadlock when some ranks have zero entities."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 8, 8)
+    tdim = mesh.topology.dim
+    if MPI.COMM_WORLD.rank == 0:
+        num_local = mesh.topology.index_map(tdim).size_local
+        entities = np.arange(num_local, dtype=np.int32)
+    else:
+        entities = np.empty(0, dtype=np.int32)
+    submesh, _entity_map, _vertex_map, _node_map = create_submesh(mesh, tdim, entities)
+    if MPI.COMM_WORLD.rank != 0:
+        assert submesh.topology.index_map(tdim).size_local == 0
+
+
 def test_compute_incident_entities_out_of_range_index():
     """compute_incident_entities must reject an out-of-range entity index.
 

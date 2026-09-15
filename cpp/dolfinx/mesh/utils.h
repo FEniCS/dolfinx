@@ -1948,8 +1948,8 @@ MeshTags<T> transfer_meshtags_to_submesh(
   // Prepare sub entity to parent map
   std::size_t num_sub_entities
       = sub_entity_imap->size_local() + sub_entity_imap->num_ghosts();
-  constexpr T max_val = std::numeric_limits<T>::max();
-  std::vector<T> submesh_values(num_sub_entities, max_val);
+  std::vector<T> submesh_values(num_sub_entities);
+  std::vector<std::int8_t> submesh_value_found(num_sub_entities, 0);
   std::vector<std::int32_t> submesh_indices(num_sub_entities);
   std::iota(submesh_indices.begin(), submesh_indices.end(), 0);
 
@@ -2010,17 +2010,22 @@ MeshTags<T> transfer_meshtags_to_submesh(
     // Execute the search for the current entity
     std::int32_t sub_entity = find_and_map_sub_entity(tagged_entities[i]);
     if (sub_entity != -1)
+    {
       submesh_values[sub_entity] = tagged_values[i];
+      submesh_value_found[sub_entity] = 1;
+    }
   }
 
-  // Filter out the entities that were never mapped (values still equal max)
+  // Filter out the entities that were never mapped. Tracked with a
+  // separate flag rather than a sentinel value, since any T value
+  // (including numeric_limits<T>::max()) is a legitimate tag value.
   std::vector<std::int32_t> filtered_indices;
   std::vector<T> filtered_values;
   filtered_indices.reserve(num_sub_entities);
   filtered_values.reserve(num_sub_entities);
   for (std::size_t i = 0; i < submesh_values.size(); ++i)
   {
-    if (submesh_values[i] != max_val)
+    if (submesh_value_found[i])
     {
       filtered_indices.push_back(submesh_indices[i]);
       filtered_values.push_back(submesh_values[i]);
