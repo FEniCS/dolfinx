@@ -217,6 +217,15 @@ public:
   /// @brief Compute the permutations of the cell-local entities of a
   /// given dimension.
   ///
+  /// A permutation records how an entity is oriented as seen from a
+  /// cell, relative to a low-to-high ordering of the entity's global
+  /// vertex indices. It is passed to FFCx kernels as
+  /// `quadrature_permutation`, so that cells sharing an entity agree on
+  /// the order of the quadrature points on it. Which dimension is
+  /// needed is a property of the integral, not of the element: an
+  /// interior facet integral needs `dim() - 1`, a ridge integral
+  /// `dim() - 2`.
+  ///
   /// Does nothing if the permutations for `dim` have already been
   /// computed.
   ///
@@ -224,14 +233,30 @@ public:
   /// `dim() - 1` for facets. Must satisfy `0 <= dim < dim()`. Vertices
   /// have no orientation, so their permutations are empty.
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
+  /// @see create_cell_permutations, which packs the orientations of all
+  /// of a cell's sub-entities into one integer per cell, for correcting
+  /// element DOFs rather than quadrature points.
   void create_entity_permutations(int dim, int num_threads = 1);
 
-  /// @brief Compute the cell permutation info used by non-Lagrange
-  /// elements.
+  /// @brief Compute the packed per-cell permutation info.
+  ///
+  /// Encodes, for each cell, the orientation of every sub-entity of
+  /// that cell relative to a low-to-high ordering of global vertex
+  /// indices, packed into one 32-bit integer per cell. See
+  /// ::get_cell_permutation_info for the bit layout.
+  ///
+  /// Required by elements whose DOF transformations are not the
+  /// identity. Where those transformations are permutations, e.g.
+  /// higher-order Lagrange, the correction is applied once to the
+  /// dofmap when it is built; otherwise, e.g. N1curl and
+  /// Raviart-Thomas, the correction is applied to the element tensor on
+  /// each cell at assembly time.
   ///
   /// Does nothing if the cell permutations have already been computed.
   ///
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
+  /// @see create_entity_permutations, which gives the orientations of
+  /// one entity dimension unpacked, for permuting quadrature points.
   void create_cell_permutations(int num_threads = 1);
 
   /// Original cell index for each cell type

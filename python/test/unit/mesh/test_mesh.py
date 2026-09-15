@@ -1003,15 +1003,18 @@ def test_entity_permutations_are_computed_per_dimension():
     topology.get_entity_permutations(2)
 
 
-def test_facet_assembly_computes_only_facet_permutations():
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_facet_assembly_computes_only_facet_permutations(degree):
     """A form pays only for the entities it integrates over.
 
     An interior facet form needs permutations (it reads
     ``quadrature_permutation``), so the facets of the tetrahedron --
-    faces, dimension 2 -- must be computed. Its edges must not be.
+    faces, dimension 2 -- must be computed. Its edges must not be. This
+    holds at every degree: the quadrature permutation is a property of
+    the integral, not of the element.
     """
     msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
-    V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+    V = dolfinx.fem.functionspace(msh, ("Lagrange", degree))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = dolfinx.fem.form(ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS)
     assert a._cpp_object.needs_facet_permutations
@@ -1022,18 +1025,21 @@ def test_facet_assembly_computes_only_facet_permutations():
     with pytest.raises(RuntimeError):
         msh.topology.get_entity_permutations(1)
 
-    # A Lagrange element needs no dof transformations, so the packed
-    # cell info is not needed either
-    with pytest.raises(RuntimeError):
+    # Lagrange never needs dof transformations at assembly time, but from
+    # degree 3 it is required to permute the dofmap.
+    assert not V.element.needs_dof_transformations
+    if degree < 3:
+        with pytest.raises(RuntimeError):
+            msh.topology.get_cell_permutation_info()
+    else:
         msh.topology.get_cell_permutation_info()
 
 
 def test_cell_assembly_computes_only_cell_permutations():
     """Dof transformations need the packed cell info, but no sub-entities.
 
-    The cell permutation info used by non-Lagrange elements is no longer
-    computed as a side effect of, or alongside, the permutations of a
-    cell's sub-entities.
+    The packed cell info is no longer computed as a side effect of, or
+    alongside, the permutations of a cell's sub-entities.
     """
     msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = dolfinx.fem.functionspace(msh, ("N1curl", 1))

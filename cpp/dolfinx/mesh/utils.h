@@ -717,7 +717,6 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @param[in] entities Entity indices (local to process).
 /// @param[in] permute If `true`, permute the DOFs such that they are
 /// consistent with the orientation of `dim`-dimensional mesh entities.
-/// This requires `create_cell_permutations` to be called first.
 /// @return Geometry DOFs associated with the closure of each entity in
 /// `entities` and the shape. The shape is `(num_entities,
 /// num_xdofs_per_entity)` and the storage is row-major. The index
@@ -725,8 +724,10 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// vertex of the `entity[i]`.
 ///
 /// @pre Mesh connectivities `dim -> mesh.topology().dim()` and
-/// `mesh.topology().dim() -> dim` must have been computed. Otherwise an
-/// exception is thrown.
+/// `mesh.topology().dim() -> dim` must have been computed, and, if
+/// `permute` is `true`,
+/// `mesh.topology().create_cell_permutations()` must have been called.
+/// Otherwise `std::runtime_error` is thrown.
 template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::array<std::size_t, 2>>
 entities_to_geometry(const Mesh<T>& mesh, int dim,

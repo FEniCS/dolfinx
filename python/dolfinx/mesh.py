@@ -283,7 +283,7 @@ class Topology:
 
         Args:
             dim: Topological dimension of entities to create.
-            num_threads: Number of CPU threads to use. Must be >= 1.
+            num_threads: Number of threads to use. Must be >= 1.
 
         Returns:
             ``True` is entities are created, ``False`` is if entities
@@ -294,18 +294,47 @@ class Topology:
     def create_entity_permutations(self, dim: int, num_threads: int = 1) -> None:
         """Compute permutations of cell-local entities of a dimension.
 
+        A permutation records how an entity is oriented as seen from a
+        cell, relative to a low-to-high ordering of the entity's global
+        vertex indices. It is passed to FFCx kernels as
+        ``quadrature_permutation``, so that cells sharing an entity
+        agree on the order of the quadrature points on it. Which
+        dimension is needed is a property of the integral, not of the
+        element: an interior facet integral needs ``tdim - 1``, a ridge
+        integral ``tdim - 2``.
+
+        See also :meth:`~dolfinx.mesh.Topology.create_cell_permutations`,
+        which packs the orientations of all of a cell's sub-entities into
+        one integer per cell, for correcting element DOFs rather than
+        quadrature points.
+
         Args:
             dim: Topological dimension of the entities, e.g. ``tdim - 1``
                 for facets. Must satisfy ``0 <= dim < tdim``.
-            num_threads: Number of CPU threads to use. Must be >= 1.
+            num_threads: Number of threads to use. Must be >= 1.
         """
         self._cpp_object.create_entity_permutations(dim, num_threads)
 
     def create_cell_permutations(self, num_threads: int = 1) -> None:
-        """Compute the cell permutation info used by non-Lagrange elements.
+        """Compute the packed per-cell permutation info.
+
+        Encodes, for each cell, the orientation of every sub-entity of
+        that cell relative to a low-to-high ordering of global vertex
+        indices, packed into one 32-bit integer per cell. See
+        :meth:`~dolfinx.mesh.Topology.get_cell_permutation_info` for the
+        bit layout.
+
+        Required by elements whose DOF transformations are not the
+        identity. Where those transformations are permutations, e.g.
+        higher-order Lagrange, the correction is applied once to the
+        dofmap when it is built. Otherwise, e.g. N1curl and
+        Raviart-Thomas, it is applied to the element tensor on each cell
+        at assembly time; those are the elements for which
+        :attr:`dolfinx.fem.FiniteElement.needs_dof_transformations` is
+        ``True``.
 
         Args:
-            num_threads: Number of CPU threads to use. Must be >= 1.
+            num_threads: Number of threads to use. Must be >= 1.
         """
         self._cpp_object.create_cell_permutations(num_threads)
 
