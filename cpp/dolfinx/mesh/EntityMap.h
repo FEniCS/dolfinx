@@ -7,10 +7,16 @@
 #pragma once
 
 #include "Topology.h"
-#include <concepts>
+#include <algorithm>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <iterator>
+#include <memory>
 #include <ranges>
-#include <span>
+#include <stdexcept>
+#include <type_traits>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::mesh
@@ -66,13 +72,19 @@ public:
   /// Move constructor
   EntityMap(EntityMap&& map) = default;
 
-  // Destructor
+  /// Destructor
   ~EntityMap() = default;
+
+  /// Copy assignment
+  EntityMap& operator=(const EntityMap& map) = default;
+
+  /// Move assignment
+  EntityMap& operator=(EntityMap&& map) = default;
 
   /// @brief Get the topological dimension of the entities related by
   /// this `EntityMap`.
   /// @return The topological dimension.
-  std::size_t dim() const;
+  int dim() const;
 
   /// @brief Get the (parent) topology.
   /// @return The parent topology.
@@ -105,6 +117,7 @@ public:
   std::vector<std::int32_t> sub_topology_to_topology(CellRange auto&& entities,
                                                      bool inverse) const
   {
+    std::size_t num_entities = std::ranges::size(entities);
     if (!inverse)
     {
       // In this case, we want to map from entity indices in
@@ -115,7 +128,10 @@ public:
           = std::forward<decltype(entities)>(entities)
             | std::views::transform([this](std::int32_t i)
                                     { return _sub_topology_to_topology[i]; });
-      return std::vector<std::int32_t>(mapped.begin(), mapped.end());
+      std::vector<std::int32_t> mapped_v;
+      mapped_v.reserve(num_entities);
+      std::ranges::copy(mapped, std::back_inserter(mapped_v));
+      return mapped_v;
     }
     else
     {
@@ -148,13 +164,16 @@ public:
                                      ? it->second
                                      : -1;
                         });
-      return std::vector<std::int32_t>(mapped.begin(), mapped.end());
+      std::vector<std::int32_t> mapped_v;
+      mapped_v.reserve(num_entities);
+      std::ranges::copy(mapped, std::back_inserter(mapped_v));
+      return mapped_v;
     }
   }
 
 private:
   // Dimension of the entities
-  std::size_t _dim;
+  int _dim;
 
   // A topology
   std::shared_ptr<const Topology> _topology;

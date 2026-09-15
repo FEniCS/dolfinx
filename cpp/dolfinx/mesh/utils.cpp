@@ -5,13 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include "Geometry.h"
 #include "Mesh.h"
 #include "Topology.h"
 #include "cell_types.h"
 #include "graphbuild.h"
 #include <algorithm>
-#include <cstdlib>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>
@@ -20,10 +19,11 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <format>
+#include <iterator>
+#include <numeric>
 #include <optional>
 #include <span>
 #include <stdexcept>
-#include <string>
 #include <type_traits>
 #include <utility>
 #include <variant>

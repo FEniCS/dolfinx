@@ -7,16 +7,16 @@
 #pragma once
 
 #include <array>
-#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <span>
-#include <thread>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -154,6 +154,10 @@ public:
   connectivity(int d0, int d1) const;
 
   /// @brief Get the cell permutation information.
+  /// @throws std::runtime_error If create_entity_permutations has not
+  /// been called.
+  /// @throws std::out_of_range If there is more than one cell type
+  /// (see Topology::index_map).
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
   /// @brief Get the numbers that encode the number of permutations to
@@ -168,8 +172,10 @@ public:
   /// facets_per_cell + facet_index]` contains the facet with index
   /// `facet_index` of the cell with index `cell_index`.
   /// @return The encoded permutation info
-  /// @note An exception is raised if the permutations have not been
-  /// computed
+  /// @throws std::runtime_error If create_entity_permutations has not
+  /// been called.
+  /// @throws std::out_of_range If there is more than one facet type
+  /// (see Topology::index_map).
   const std::vector<std::uint8_t>& get_facet_permutations() const;
 
   /// @brief Get the types of cells in the topology
