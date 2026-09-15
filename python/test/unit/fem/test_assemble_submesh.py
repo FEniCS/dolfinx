@@ -12,7 +12,8 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx import default_scalar_type, fem, la
+from basix import LagrangeVariant
+from dolfinx import default_real_type, default_scalar_type, fem, la
 from dolfinx.fem import compute_integration_domains
 from dolfinx.mesh import (
     CellType,
@@ -375,6 +376,217 @@ def test_mixed_dom_codim_1(n, k):
     c1 = msh.comm.allreduce(fem.assemble_scalar(M1), op=MPI.SUM)
 
     assert np.isclose(c, c1)
+
+
+def _non_cubic_box(cell_type, ghost_mode=GhostMode.none):
+    """A deliberately non-cubic box, so facets with different normals differ in size."""
+    if cell_type in (CellType.triangle, CellType.quadrilateral):
+        return create_rectangle(
+            MPI.COMM_WORLD,
+            ((0.0, 0.0), (3.0, 1.0)),
+            (6, 2),
+            cell_type=cell_type,
+            ghost_mode=ghost_mode,
+        )
+    return create_box(
+        MPI.COMM_WORLD,
+        ((0.0, 0.0, 0.0), (3.0, 1.0, 2.0)),
+        (6, 2, 4),
+        cell_type=cell_type,
+        ghost_mode=ghost_mode,
+    )
+
+
+def _ellipsoid_mesh(cell_type, degree):
+    """`[-1, 1]^d` mapped onto an ellipse/ellipsoid, with degree-`degree` geometry."""
+    if cell_type in (CellType.triangle, CellType.quadrilateral):
+        msh = create_rectangle(
+            MPI.COMM_WORLD,
+            ((-1.0, -1.0), (1.0, 1.0)),
+            (6, 6),
+            cell_type=cell_type,
+            dtype=default_real_type,
+        )
+    else:
+        msh = create_box(
+            MPI.COMM_WORLD,
+            ((-1.0, -1.0, -1.0), (1.0, 1.0, 1.0)),
+            (3, 3, 3),
+            cell_type=cell_type,
+            dtype=default_real_type,
+        )
+    cmap = fem.coordinate_element(
+        cell_type, degree, variant=LagrangeVariant.gll_isaac, dtype=default_real_type
+    )
+    msh = fem.interpolate_geometry(msh, cmap)
+
+    # Elliptical grid mapping of the square/cube onto the disk/ball, then
+    # stretched: a circle is symmetric enough for the error this guards
+    # against to cancel around the boundary.
+    x = msh.geometry.x.copy()
+    y = np.zeros_like(x)
+    if msh.geometry.dim == 2:
+        y[:, 0] = 3.0 * x[:, 0] * np.sqrt(1.0 - x[:, 1] ** 2 / 2.0)
+        y[:, 1] = x[:, 1] * np.sqrt(1.0 - x[:, 0] ** 2 / 2.0)
+    else:
+        for i in range(3):
+            j, k = (i + 1) % 3, (i + 2) % 3
+            y[:, i] = x[:, i] * np.sqrt(
+                1.0 - x[:, j] ** 2 / 2.0 - x[:, k] ** 2 / 2.0 + x[:, j] ** 2 * x[:, k] ** 2 / 3.0
+            )
+        y[:, 0] *= 3.0
+    msh.geometry.x[:] = y
+    return msh
+
+
+def compute_codim1_and_manifold_dx(msh, k, integrand):
+    """Integrate `integrand` over the boundary of `msh` both ways.
+
+    Once through the parent's exterior facet measure, and once through
+    the boundary submesh's own cell measure. `integrand(g, x)` is built
+    from a degree-`k` Lagrange coefficient `g` on the submesh and the
+    submesh's spatial coordinate `x`.
+
+    `g` is linear with a distinct coefficient per axis: linear so that it
+    is represented exactly at every `k`, distinct per axis so that a
+    wrong tangential gradient does not cancel around the boundary.
+    """
+    tdim = msh.topology.dim
+    msh.topology.create_connectivity(tdim - 1, tdim)
+    boundary_facets = exterior_facet_indices(msh.topology)
+    smsh, entity_map = create_submesh(msh, tdim - 1, boundary_facets)[:2]
+
+    g = fem.Function(fem.functionspace(smsh, ("Lagrange", k)))
+    g.interpolate(lambda x: sum((i + 1) * x[i] for i in range(msh.geometry.dim)))
+    g.x.scatter_forward()
+    x = ufl.SpatialCoordinate(smsh)
+
+    ds = ufl.Measure("ds", domain=msh)
+    dx_smsh = ufl.Measure("dx", domain=smsh)
+
+    M_parent = fem.form(integrand(g, x) * ds, entity_maps=[entity_map])
+    M_submesh = fem.form(integrand(g, x) * dx_smsh)
+
+    c_parent = msh.comm.allreduce(fem.assemble_scalar(M_parent), op=MPI.SUM)
+    c_submesh = msh.comm.allreduce(fem.assemble_scalar(M_submesh), op=MPI.SUM)
+    return c_parent, c_submesh
+
+
+@pytest.mark.parametrize(
+    "cell_type, expected",
+    [
+        (CellType.triangle, 6.0),
+        (CellType.quadrilateral, 6.0),
+        (CellType.tetrahedron, 18.0),
+        (CellType.hexahedron, 18.0),
+    ],
+)
+@pytest.mark.parametrize("k", [1, 3])
+def test_codim_1_gradient(cell_type, expected, k):
+    """Grad of a codimension-1 submesh coefficient, via the parent's
+    facet measure and via the submesh's own cell measure.
+
+    The domain is deliberately non-cubic: on a symmetric one the error
+    cancels around the boundary.
+
+    This test checks for the correct extraction of submesh coordinate dofs
+    from the parent mesh.
+    """
+    # `g` interpolates x + 2y (+ 3z), so its manifold gradient is that
+    # ambient gradient projected onto each (axis-aligned) facet's tangent
+    # plane: x-component 0 on the x-normal facets, 1 on the rest. 2D: two
+    # y-normal edges of length 3. 3D: two y-normal faces of area 6 plus
+    # two z-normal faces of area 3.
+    msh = _non_cubic_box(cell_type)
+    c_parent, c_submesh = compute_codim1_and_manifold_dx(msh, k, lambda g, x: g.dx(0))
+    assert np.isclose(c_submesh, expected)
+    assert np.isclose(c_parent, c_submesh)
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
+)
+@pytest.mark.parametrize("degree", [2, 3])
+def test_codim_1_gradient_higher_order_geometry(cell_type, degree):
+    """Same test as `test_codim_1_gradient`, on curved parent geometry.
+
+    Does not have a closed form solution.
+    """
+    msh = _ellipsoid_mesh(cell_type, degree)
+    c_parent, c_submesh = compute_codim1_and_manifold_dx(msh, 2, lambda g, x: g.dx(0))
+    assert not np.isclose(c_submesh, 0.0)
+    assert np.isclose(c_parent, c_submesh)
+
+
+@pytest.mark.parametrize(
+    "cell_type, expected",
+    [
+        (CellType.triangle, 27.0),
+        (CellType.quadrilateral, 27.0),
+        (CellType.tetrahedron, 72.0),
+        (CellType.hexahedron, 72.0),
+    ],
+)
+def test_codim_1_spatial_coordinate(cell_type, expected):
+    """`SpatialCoordinate` of a codimension-1 submesh under the parent's
+    exterior facet measure.
+
+    No submesh coefficient or argument, so this checks that FFCx
+    extracts the submesh's coordinate dofs from the parent mesh correctly
+    and DOLFINx computes the facet permutations.
+    """
+    # `x[0]**2` to avoid being orientation invariant
+    msh = _non_cubic_box(cell_type)
+    c_parent, c_submesh = compute_codim1_and_manifold_dx(msh, 1, lambda g, x: x[0] ** 2)
+    assert np.isclose(c_submesh, expected)
+    assert np.isclose(c_parent, c_submesh)
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
+)
+def test_codim_1_gradient_interior_facet(cell_type):
+    """Grad of a codimension-1 submesh coefficient under `dS`, on both
+    restrictions.
+
+    The `"-"` side's coordinate dofs start one *parent* cell into
+    `coordinate_dofs`; which is larger than the submesh's.
+    `test_interior_facet_codim_1` checks values only, and those are right
+    on both restrictions even when the gradient is not.
+    """
+    msh = _non_cubic_box(cell_type, ghost_mode=GhostMode.shared_facet)
+    tdim = msh.topology.dim
+    fdim = tdim - 1
+    msh.topology.create_connectivity(fdim, tdim)
+    facet_imap = msh.topology.index_map(fdim)
+    exterior_facets = exterior_facet_indices(msh.topology)
+
+    # Owned and ghosted interior facets
+    facet_vector = la.vector(facet_imap, 1, dtype=np.int32)
+    facet_vector.array[: facet_imap.size_local] = 1
+    facet_vector.array[facet_imap.size_local :] = 0
+    facet_vector.array[exterior_facets] = 0
+    facet_vector.scatter_forward()
+    interior_facets = np.flatnonzero(facet_vector.array)
+
+    smsh, entity_map = create_submesh(msh, fdim, interior_facets)[:2]
+    g = fem.Function(fem.functionspace(smsh, ("Lagrange", 1)))
+    g.interpolate(lambda x: sum((i + 1) * x[i] for i in range(msh.geometry.dim)))
+    g.x.scatter_forward()
+
+    dS = ufl.Measure("dS", domain=msh)
+    dx_smsh = ufl.Measure("dx", domain=smsh)
+
+    M_submesh = fem.form(g.dx(0) * dx_smsh)
+    c_submesh = msh.comm.allreduce(fem.assemble_scalar(M_submesh), op=MPI.SUM)
+    assert not np.isclose(c_submesh, 0.0)
+
+    for restriction in ("+", "-"):
+        M = fem.form(g(restriction).dx(0) * dS, entity_maps=[entity_map])
+        c = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
+        assert np.isclose(c, c_submesh)
 
 
 def test_disjoint_submeshes():
