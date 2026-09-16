@@ -890,8 +890,8 @@ compute_interprocess_vertices(const Topology& topology)
                                 std::next(attached.begin(), num_local));
     for (std::size_t i = 0; i < local_ind.size(); ++i)
       count[local_ind[i]] += buffer_local[i];
-    for (std::int32_t v = 0; v < num_local; ++v)
-      interprocess[v] = count[v] > 1;
+    std::ranges::transform(count, interprocess.begin(),
+                           [](std::int32_t c) -> std::int8_t { return c > 1; });
   }
 
   // Send the verdict for owned vertices back to the ghosting ranks
