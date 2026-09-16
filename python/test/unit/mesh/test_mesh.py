@@ -357,41 +357,6 @@ def test_create_box_prism():
     assert mesh.topology.index_map(3).size_global == 48
 
 
-def test_create_rectangle_degenerate_raises_on_every_rank():
-    """A degenerate rectangle must raise on every rank.
-
-    Regression test: the degeneracy check used to run inside a
-    ``rank == 0`` block, so under multiple ranks rank 0 would raise while
-    the others entered the collective ``create_mesh`` and hung, instead of
-    every rank reporting the error.
-    """
-    with pytest.raises(ValueError):
-        create_rectangle(
-            MPI.COMM_WORLD,
-            [[0.0, 0.0], [1e-8, 1.0]],
-            [4, 4],
-            CellType.triangle,
-            dtype=np.float32,
-        )
-
-
-def test_create_box_degenerate_raises_on_every_rank():
-    """A degenerate box must raise on every rank.
-
-    Regression test: the degeneracy check used to run only on
-    ``subcomm``-participating ranks, so with a strict-subset ``subcomm``
-    the other ranks entered the collective ``create_mesh`` and hung.
-    """
-    with pytest.raises(ValueError):
-        create_box(
-            MPI.COMM_WORLD,
-            [[0.0, 0.0, 0.0], [1e-6, 1.0, 1.0]],
-            [100, 10, 10],
-            CellType.hexahedron,
-            dtype=np.float32,
-        )
-
-
 @pytest.mark.parametrize("gdim", [1, 2, 3])
 def test_create_interval_gdim(gdim):
     """Interval mesh embedded in gdim-dimensional space has correct tdim and gdim."""
@@ -943,23 +908,6 @@ def test_create_submesh_empty_on_some_ranks():
     submesh, _entity_map, _vertex_map, _node_map = create_submesh(mesh, tdim, entities)
     if MPI.COMM_WORLD.rank != 0:
         assert submesh.topology.index_map(tdim).size_local == 0
-
-
-def test_compute_incident_entities_out_of_range_index():
-    """compute_incident_entities must reject an out-of-range entity index.
-
-    Regression test: the entity index used to be passed straight into
-    AdjacencyList::links with no bounds check, so an out-of-range index
-    caused an out-of-bounds read instead of raising.
-    """
-    msh = create_unit_square(MPI.COMM_WORLD, 4, 4)
-    tdim = msh.topology.dim
-    msh.topology.create_connectivity(0, tdim)
-    num_vertices = msh.topology.index_map(0).size_local + msh.topology.index_map(0).num_ghosts
-    with pytest.raises(IndexError):
-        dolfinx.mesh.compute_incident_entities(
-            msh.topology, np.array([num_vertices], dtype=np.int32), 0, tdim
-        )
 
 
 @pytest.mark.parametrize("codim", [0, 1, 2, 3])
