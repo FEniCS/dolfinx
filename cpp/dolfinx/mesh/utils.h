@@ -670,6 +670,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   mesh.topology_mutable()->create_entities(tdim - 1);
   mesh.topology_mutable()->create_connectivity(tdim - 1, tdim);
   std::vector<std::int32_t> boundary_facets = exterior_facet_indices(*topology);
+  mesh.topology_mutable()->create_entities(dim);
 
   using cmdspan3x_t
       = md::mdspan<const T, md::extents<std::size_t, 3, md::dynamic_extent>>;
@@ -683,7 +684,6 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
     throw std::runtime_error("Length of array of markers is wrong.");
 
   // Loop over entities and check vertex markers
-  mesh.topology_mutable()->create_entities(dim);
   auto e_to_v = topology->connectivity(dim, 0);
   assert(e_to_v);
   std::vector<std::int32_t> entities;
@@ -1204,11 +1204,6 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
     for (std::int32_t i = 0; i < num_cell_types; ++i)
     {
       std::size_t num_cell_nodes = doflayouts[i].num_dofs();
-      if (cells[i].size() % num_cell_nodes != 0)
-      {
-        throw std::runtime_error("Cell array size is not a multiple of the "
-                                 "number of nodes per cell.");
-      }
       std::size_t num_cells = cells[i].size() / num_cell_nodes;
 
       // Extract destination AdjacencyList for this cell type
@@ -1246,11 +1241,6 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
     {
       cells1[i] = std::vector<std::int64_t>(cells[i].begin(), cells[i].end());
       std::int32_t num_cell_nodes = doflayouts[i].num_dofs();
-      if (cells1[i].size() % num_cell_nodes != 0)
-      {
-        throw std::runtime_error("Cell array size is not a multiple of the "
-                                 "number of nodes per cell.");
-      }
       original_idx1[i].resize(cells1[i].size() / num_cell_nodes);
       num_owned += original_idx1[i].size();
     }
@@ -1349,6 +1339,14 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   std::vector<fem::ElementDofLayout> doflayouts;
   std::ranges::transform(elements, std::back_inserter(doflayouts),
                          [](auto& e) { return e.create_dof_layout(); });
+  for (std::size_t i = 0; i < cells.size(); ++i)
+  {
+    if (cells[i].size() % doflayouts[i].num_dofs() != 0)
+    {
+      throw std::runtime_error("Cell array size is not a multiple of the "
+                               "number of nodes per cell.");
+    }
+  }
 
   // Note: `extract_topology` extracts topology data, i.e. just the
   // vertices. For other elements the filtered lists may have 'gaps',

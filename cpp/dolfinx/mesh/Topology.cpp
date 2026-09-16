@@ -373,20 +373,6 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
   std::ranges::set_difference(ghost_vertex_set, local_vertex_set,
                               std::back_inserter(unowned_vertices));
 
-#ifndef NDEBUG
-  // Sanity check: no vertices in unowned should also be in boundary.
-  // Test in DEBUG mode only because of cost.
-  std::vector<std::int64_t> unowned_vertices_in_error;
-  std::ranges::set_intersection(unowned_vertices, boundary_vertices,
-                                std::back_inserter(unowned_vertices_in_error));
-
-  if (!unowned_vertices_in_error.empty())
-  {
-    throw std::runtime_error(
-        "Adding boundary vertices in ghost cells not allowed.");
-  }
-#endif
-
   return {std::move(owned_vertices), std::move(unowned_vertices)};
 }
 /// @brief Send entity indices for owned entities to processes that
@@ -1179,6 +1165,28 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
   // and the list of boundary vertices
   auto [owned_vertices, unowned_vertices] = vertex_ownership_groups(
       owned_cells, ghost_cells, boundary_vertices, num_threads);
+
+#ifndef NDEBUG
+  // Sanity check: no vertex should be in both unowned_vertices and
+  // boundary_vertices. The check itself is rank-local, so reduce before
+  // throwing: throwing on only some ranks would leave the others waiting
+  // on the determine_sharing_ranks collective below.
+  {
+    std::vector<std::int64_t> unowned_vertices_in_error;
+    std::ranges::set_intersection(
+        unowned_vertices, boundary_vertices,
+        std::back_inserter(unowned_vertices_in_error));
+    int failed = !unowned_vertices_in_error.empty();
+    int failed_any;
+    int ierr = MPI_Allreduce(&failed, &failed_any, 1, MPI_INT, MPI_LOR, comm);
+    dolfinx::MPI::check_error(comm, ierr);
+    if (failed_any)
+    {
+      throw std::runtime_error(
+          "Adding boundary vertices in ghost cells not allowed.");
+    }
+  }
+#endif
 
   timer1.stop();
   timer1.flush();
