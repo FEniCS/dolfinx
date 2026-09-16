@@ -218,6 +218,9 @@ public:
   MatrixCSR& operator=(const MatrixCSR& A) = delete;
 
   /// Move assignment
+  /// @note The target must not have a scatter in flight, i.e. a prior
+  /// scatter_rev_begin() must already have a matching
+  /// scatter_rev_end().
   MatrixCSR& operator=(MatrixCSR&& A) = default;
 
   /// @brief Copy-convert matrix, possibly using to different container
