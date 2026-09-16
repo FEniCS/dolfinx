@@ -93,7 +93,7 @@ public:
   FunctionSpace(FunctionSpace&& V) = default;
 
   /// Destructor
-  virtual ~FunctionSpace() = default;
+  ~FunctionSpace() = default;
 
   // Assignment operator (delete)
   FunctionSpace& operator=(const FunctionSpace& V) = delete;

@@ -51,8 +51,24 @@ public:
   VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
           std::string_view file_mode);
 
+  // Copy constructor (deleted)
+  VTKFile(const VTKFile& file) = delete;
+
+  /// Move constructor
+  /// @note Defaulted in the .cpp, where pugi::xml_document is complete.
+  /// `noexcept` is explicit because it is not computed for a move
+  /// defaulted outside its first declaration.
+  VTKFile(VTKFile&& file) noexcept;
+
   /// Destructor
   ~VTKFile();
+
+  // Copy assignment (deleted)
+  VTKFile& operator=(const VTKFile& file) = delete;
+
+  /// Move assignment
+  /// @note Defaulted in the .cpp; see the move constructor.
+  VTKFile& operator=(VTKFile&& file) noexcept;
 
   /// Close file
   void close();
