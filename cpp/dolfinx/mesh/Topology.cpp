@@ -1169,9 +1169,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
 
 #ifndef NDEBUG
   // Sanity check: no vertex should be in both unowned_vertices and
-  // boundary_vertices. The check itself is rank-local, so reduce before
-  // throwing: throwing on only some ranks would leave the others waiting
-  // on the determine_sharing_ranks collective below.
+  // boundary_vertices. O(N) and collective, guarded.
   {
     std::vector<std::int64_t> unowned_vertices_in_error;
     std::ranges::set_intersection(
