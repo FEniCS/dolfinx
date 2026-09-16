@@ -284,7 +284,19 @@ _any_role = r"py:(attr|class|data|func|meth|obj)"
 nitpick_ignore_regex = [
     (_any_role, r"^numpy\.(u?int(8|16|32|64)|float(16|32|64)|complex(64|128))$"),
     (_any_role, r"^(numpy\.typing\.|npt\.)(NDArray|DTypeLike|ArrayLike)$"),
-    (_any_role, r"^numpy\._typing\.[\w.]+\.(NDArray|DTypeLike|ArrayLike)$"),
+    # Any target that mentions numpy's private _typing submodule
+    # anywhere, matched as a substring rather than anchored to a full
+    # dotted path: numpy.typing.DTypeLike/ArrayLike are themselves
+    # Union aliases of several private helper classes (_SupportsDType,
+    # _DTypeDict, _ScalarT, _SupportsArray, _NestedSequence, ...), and
+    # Sphinx sometimes renders the whole expanded Union as one combined
+    # (and occasionally truncated mid-expression, e.g. `type[~typing.Any]
+    # | ~numpy.dtype[...] | ~numpy._typing...`) target string rather
+    # than separate identifiers. Exactly which private classes get
+    # pulled in, and in what shape, varies by numpy version (CI's
+    # numpy differs from any one developer's local install), so match
+    # the substring rather than an enumerated, version-specific list.
+    (_any_role, r".*numpy\._typing\..*"),
     (_any_role, r"^np\.\w+$"),
     (_any_role, r"^_MPI\.\w+$"),
     (_any_role, r"^_sparse\.\w+$"),
