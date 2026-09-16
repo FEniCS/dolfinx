@@ -24,6 +24,32 @@ from dolfinx.mesh import (
     exterior_facet_indices,
 )
 
+_graph_partitioners: list = []
+try:
+    from dolfinx.graph import partitioner_scotch
+
+    _graph_partitioners.append(partitioner_scotch())
+except ImportError:
+    _graph_partitioners.append(
+        pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx build without SCOTCH"))
+    )
+try:
+    from dolfinx.graph import partitioner_parmetis
+
+    _graph_partitioners.append(partitioner_parmetis())
+except ImportError:
+    _graph_partitioners.append(
+        pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx built without Parmetis"))
+    )
+try:
+    from dolfinx.graph import partitioner_kahip
+
+    _graph_partitioners.append(partitioner_kahip())
+except ImportError:
+    _graph_partitioners.append(
+        pytest.param(None, marks=pytest.mark.skip(reason="DOLFINx built without KaHiP"))
+    )
+
 
 @pytest.mark.parametrize(
     "dim,cell_type",
@@ -198,6 +224,20 @@ def _interprocess_vertices_reference(topology):
     return {v for v in attached if sum(v in s for s in shared) > 1}
 
 
+def _star_mesh_data(comm, num_branches):
+    """Cells/geometry/element for a star of ``num_branches`` intervals
+    joining at vertex 0. Geometry is arbitrary; only the topology matters.
+    """
+    if comm.rank == 0:
+        x = np.arange(num_branches + 1, dtype=np.float64).reshape(-1, 1)
+        cells = np.array([[0, i + 1] for i in range(num_branches)], dtype=np.int64)
+    else:
+        x = np.empty((0, 1), dtype=np.float64)
+        cells = np.empty((0, 2), dtype=np.int64)
+    e = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(1,)))
+    return cells, x, e
+
+
 @pytest.mark.parametrize("num_branches", [2, 3, 5, 7])
 @pytest.mark.parametrize("ghost", [False, True])
 def test_star_interprocess_facets(num_branches, ghost):
@@ -209,16 +249,7 @@ def test_star_interprocess_facets(num_branches, ghost):
     v0 is ghosted to every rank that owns at least one branch.
     """
     comm = MPI.COMM_WORLD
-    if comm.rank == 0:
-        # This test only requires a topological star, the geometry is
-        # arbitrary.
-        x = np.arange(num_branches + 1, dtype=np.float64).reshape(-1, 1)
-        cells = np.array([[0, i + 1] for i in range(num_branches)], dtype=np.int64)
-    else:
-        x = np.empty((0, 1), dtype=np.float64)
-        cells = np.empty((0, 2), dtype=np.int64)
-
-    e = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(1,)))
+    cells, x, e = _star_mesh_data(comm, num_branches)
     mesh = create_mesh(
         comm,
         cells,
@@ -245,3 +276,38 @@ def test_star_interprocess_facets(num_branches, ghost):
     if comm.rank >= num_branches:
         assert topology.index_map(1).size_local == 0
         assert v_map.size_local == 0
+
+
+@pytest.mark.parametrize("gpart", _graph_partitioners)
+@pytest.mark.parametrize("num_branches", [7, 11])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+def test_star_interprocess_facets_builtin_partitioner(gpart, num_branches, ghost_mode):
+    """Same star-of-intervals check as test_star_interprocess_facets, but with
+    the built-in mesh partitioners.
+    """
+    comm = MPI.COMM_WORLD
+    cells, x, e = _star_mesh_data(comm, num_branches)
+    mesh = create_mesh(
+        comm,
+        cells,
+        e,
+        x,
+        gpart,
+        ghost_mode=ghost_mode,
+        max_facet_to_cell_links=num_branches,
+    )
+
+    topology = mesh.topology
+    topology.create_connectivity(0, 1)
+    v_map = topology.index_map(0)
+
+    interprocess = set(v_map.local_to_global(topology.interprocess_facets()))
+    reference = _interprocess_vertices_reference(topology)
+    num_exterior = comm.allreduce(len(exterior_facet_indices(topology)), MPI.SUM)
+    num_owning_ranks = comm.allreduce(int(topology.index_map(1).size_local > 0), MPI.SUM)
+    # num_branches must be large enough that the partitioner actually splits
+    # the star across ranks - SCOTCH seems to produce empty ranks, for example.
+    assert comm.size == 1 or num_owning_ranks > 1
+
+    assert interprocess == reference
+    assert num_exterior == num_branches
