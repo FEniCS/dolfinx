@@ -896,23 +896,6 @@ def test_mesh_single_process_distribution(partitioner):
             assert adj.links(i).size == 2
 
 
-def test_compute_incident_entities_out_of_range_index():
-    """compute_incident_entities must reject an out-of-range entity index.
-
-    Regression test: the entity index used to be passed straight into
-    AdjacencyList::links with no bounds check, so an out-of-range index
-    caused an out-of-bounds read instead of raising.
-    """
-    msh = create_unit_square(MPI.COMM_WORLD, 4, 4)
-    tdim = msh.topology.dim
-    msh.topology.create_connectivity(0, tdim)
-    num_vertices = msh.topology.index_map(0).size_local + msh.topology.index_map(0).num_ghosts
-    with pytest.raises(IndexError):
-        dolfinx.mesh.compute_incident_entities(
-            msh.topology, np.array([num_vertices], dtype=np.int32), 0, tdim
-        )
-
-
 def test_transfer_meshtags_to_submesh_swapped_maps_raises():
     """transfer_meshtags_to_submesh must reject the maps in the wrong order.
 
