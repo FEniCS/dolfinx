@@ -139,10 +139,10 @@ class DirichletBC(Generic[Scalar]):
 
         Note:
             Dirichlet boundary conditions  should normally be
-            constructed using :func:`fem.dirichletbc` and not using this
-            class initialiser. This class is combined with different
-            base classes that depend on the scalar type of the boundary
-            condition.
+            constructed using :func:`dolfinx.fem.dirichletbc` and not
+            using this class initialiser. This class is combined with
+            different base classes that depend on the scalar type of
+            the boundary condition.
 
         Args:
             bc: C++ wrapped Dirichlet condition.
