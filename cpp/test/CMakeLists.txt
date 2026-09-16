@@ -39,9 +39,11 @@ add_executable(
   petsc.cpp
   slepc.cpp
   io.cpp
+  io_xdmf.cpp
   common/CIFailure.cpp
   common/sub_systems_manager.cpp
   common/index_map.cpp
+  common/move_semantics.cpp
   common/sort.cpp
   fem/form.cpp
   fem/functionspace.cpp

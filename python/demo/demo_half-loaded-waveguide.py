@@ -23,7 +23,7 @@
 # * {download}`Jupyter notebook <./demo_half-loaded-waveguide.ipynb>`
 # ```
 #
-# The demo shows how to:
+# This demo illustrates how to:
 # - Setup an eigenvalue problem for Maxwell's equations
 # - Setup a half-loaded electromagnetic waveguide with perfect electric
 #   conducting walls

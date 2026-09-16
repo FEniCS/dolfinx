@@ -12,10 +12,20 @@
 #
 # Author: Jørgen S. Dokken
 #
-# This demo can be downloaded as a single Python file
-# {download}`demo_matrix-free-petsc.py`.
-# In this demo, we will demonstrate how to set up a matrix-free
-# solver using PETSc.
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_matrix-free-petsc.py>`
+# * {download}`Jupyter notebook <./demo_matrix-free-petsc.ipynb>`
+# ```
+# This demo illustrates how to:
+# - Define a custom PETSc `SHELL` matrix that applies an operator
+#   matrix-free, without ever forming the PETSc `MATAIJ` system matrix
+# - Solve a blocked, matrix-free problem with a PETSc Krylov subspace
+#   solver
+# - Use both a mixed-element and a
+#   {py:class}`ufl.MixedFunctionSpace` formulation of the same blocked
+#   problem
+#
 # We will start by defining our variational problem, and then in turn
 # define a custom PETSc SHELL matrix that will handle assembly without ever
 # forming the PETSc MATAIJ system matrix.
@@ -378,7 +388,7 @@ def create_matrix_free_ksp(
 def mixed_element(
     mesh: dolfinx.mesh.Mesh, f: ufl.core.expr.Expr, g: ufl.core.expr.Expr
 ) -> tuple[dolfinx.fem.Function, dolfinx.fem.Function]:
-    """Blocked problem using a {py:class}`basix.ufl.mixed_element`."""
+    """Blocked problem using a {py:func}`basix.ufl.mixed_element`."""
     # Define function space for mixed element and extract subspaces
     W = dolfinx.fem.functionspace(mesh, basix.ufl.mixed_element([el_0, el_1]))
     V, _ = W.sub(0).collapse()

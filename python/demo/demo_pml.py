@@ -1,3 +1,13 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.14.4
+# ---
+
 # # Electromagnetic scattering from a wire with PML
 #
 # Copyright (C) 2022-2025 Michele Castriotta, Igor Baratta
@@ -350,7 +360,7 @@ pml_tag = 4
 # -
 
 # We generate the mesh using GMSH and convert it to a
-# {py:class}`Mesh<dolfinx.mesh.Mesh>` using
+# {py:class}`Mesh <dolfinx.mesh.Mesh>` using
 # {py:func}`model_to_mesh <dolfinx.io.gmsh.model_to_mesh>`.
 
 # +
