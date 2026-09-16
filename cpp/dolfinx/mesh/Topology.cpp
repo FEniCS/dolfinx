@@ -1562,6 +1562,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
   auto [unique_end, range_end] = std::ranges::unique(src);
   src.erase(unique_end, range_end);
   std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+  dolfinx::radix_sort(dest);
 
   // Create index map for vertices. Passing the already-computed
   // src/dest avoids the tag-based constructor's own NBX consensus
