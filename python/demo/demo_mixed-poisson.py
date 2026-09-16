@@ -8,7 +8,7 @@
 #       jupytext_version: 1.14.1
 # ---
 
-# # Mixed formulation of the Poisson equation with a block-preconditioner/solver # noqa
+# # Mixed formulation of the Poisson equation with a block preconditioner
 #
 # This demo illustrates how to solve the Poisson equation using a mixed
 # (two-field) formulation and a block-preconditioned iterative solver.

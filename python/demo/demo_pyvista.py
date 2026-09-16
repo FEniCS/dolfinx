@@ -8,6 +8,8 @@
 #       jupytext_version: 1.13.6
 # ---
 
+# # Visualisation with PyVista
+#
 # Copyright (C) 2021-2022 Jørgen S. Dokken and Garth N. Wells
 #
 # This file is part of DOLFINx (<https://www.fenicsproject.org>)
@@ -19,8 +21,10 @@
 # * {download}`Python script <./demo_pyvista.py>`
 # * {download}`Jupyter notebook <./demo_pyvista.ipynb>`
 # ```
-#
-# # Visualization with PyVista
+# This demo illustrates how to:
+# - Visualise a scalar or vector finite element {py:class}`Function
+#   <dolfinx.fem.Function>` using [PyVista](https://pyvista.org/)
+# - Warp a plot by a scalar or a vector field
 #
 # [PyVista](https://pyvista.org/) can be used with DOLFINx for
 # interactive visualisation.

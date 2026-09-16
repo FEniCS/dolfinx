@@ -105,6 +105,15 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Ubuntu 26.04 ships OpenMPI 5.0.10, in which MPI_Dist_graph_create
+# deadlocks at random under the treematch topology component: it exchanges
+# edge metadata on hard-coded tags that the nonblocking-collective tag
+# allocator can count down into, so repeated communicator creation can
+# collide and leave the CID allreduce waiting forever (open-mpi/ompi#13918).
+# Fixed by open-mpi/ompi#13933; drop this once the image has OpenMPI
+# >= 5.0.11. MPICH ignores OMPI_MCA_*, so setting it is unconditionally safe.
+ENV OMPI_MCA_topo=basic
+
 # adios2 imports its serial bindings unless it detects an mpirun
 # environment. This forces adios2 MPI bindings always.
 ENV ADIOS2_ALWAYS_USE_MPI=1

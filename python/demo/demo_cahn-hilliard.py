@@ -15,14 +15,17 @@
 # * {download}`Python script <./demo_cahn-hilliard.py>`
 # * {download}`Jupyter notebook <./demo_cahn-hilliard.ipynb>`
 # ```
-# This example demonstrates the solution of the Cahn-Hilliard equation,
-# a nonlinear, time-dependent fourth-order PDE.
+# This demo solves the Cahn-Hilliard equation, a nonlinear,
+# time-dependent fourth-order PDE that is typically used to model phase
+# separation in binary mixtures.
+#
+# This demo illustrates how to use:
 #
 # - A mixed finite element method
 # - The $\theta$-method for time-dependent equations
 # - Automatic linearisation
 # - Use of the class
-#   {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>`
+#   {py:class}`NonlinearProblem <dolfinx.fem.petsc.NonlinearProblem>`
 # - Interpolation of functions
 # - Visualisation of a running simulation with
 #   [PyVista](https://pyvista.org/)
@@ -170,10 +173,10 @@ q, v = ufl.TestFunctions(ME)
 # ```{index} split functions
 # ```
 #
-# For the test functions, {py:func}`TestFunctions<function
-# ufl.argument.TestFunctions>` (note the 's' at the end) is used to
+# For the test functions, {py:func}`TestFunctions <ufl.TestFunctions>`
+# (note the 's' at the end) is used to
 # define the scalar test functions `q` and `v`. Some mixed objects of
-# the {py:class}`Function<dolfinx.fem.function.Function>` class on `ME`
+# the {py:class}`Function <dolfinx.fem.Function>` class on `ME`
 # are defined to represent $u = (c_{n+1}, \mu_{n+1})$ and $u0 = (c_{n},
 # \mu_{n})$, and these are then split into sub-functions:
 
@@ -251,7 +254,7 @@ F = F0 + F1
 # ```
 #
 # To solve the nonlinear system of equations,
-# {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>` object
+# {py:class}`NonlinearProblem <dolfinx.fem.petsc.NonlinearProblem>` object
 # to solve a system of nonlinear equations.
 # For the factorisation of the underlying linearized problems, prefer
 # MUMPS, then superlu_dist, then default.

@@ -15,8 +15,8 @@
 # * {download}`Python script <./demo_stokes.py>`
 # * {download}`Jupyter notebook <./demo_stokes.ipynb>`
 # ```
-# It shows how to solve the Stokes problem using Taylor-Hood elements
-# using different linear solvers:
+# This demo illustrates how to solve the Stokes problem using
+# Taylor-Hood elements using different linear solvers:
 #
 # 1. [Block preconditioner using PETSc Nest data structures using
 #    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
@@ -221,7 +221,7 @@ a_p: list[list[Form | None]] = form(a_p_ufl)  # type: ignore[assignment]
 # We first use the high-level {py:class}`LinearProblem
 # <dolfinx.fem.petsc.LinearProblem>` class which uses PETSc to solve
 # the linear problem. Details on the preconditioner setup are given in
-# {py:func}`nested_iterative_solver_low_level` below.
+# `nested_iterative_solver_low_level` below.
 
 
 def nested_iterative_solver_high_level():
