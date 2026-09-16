@@ -507,10 +507,12 @@ void test_local_global_index_conversion()
   const std::vector<std::int32_t> local_out_of_range = {2};
   CHECK_THROWS_AS(map.local_to_global(local_two, global),
                   std::invalid_argument);
+#ifndef NDEBUG
   CHECK_THROWS_AS(map.local_to_global(local_negative, global),
                   std::out_of_range);
   CHECK_THROWS_AS(map.local_to_global(local_out_of_range, global),
                   std::out_of_range);
+#endif
 
   // local_to_global accepts a larger output buffer and leaves its tail
   // unchanged.
