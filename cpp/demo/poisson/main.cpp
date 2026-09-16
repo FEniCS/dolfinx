@@ -196,10 +196,10 @@ int main(int argc, char* argv[])
     g->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          std::vector<T> f;
+          std::vector<T> g;
           for (std::size_t p = 0; p < x.extent(1); ++p)
-            f.push_back(std::sin(5 * x(0, p)));
-          return {f, {f.size()}};
+            g.push_back(std::sin(5 * x(0, p)));
+          return {g, {g.size()}};
         });
 
     //  Now, we have specified the variational forms and can consider
