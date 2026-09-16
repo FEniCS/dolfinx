@@ -1245,12 +1245,19 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
                                partitioner.node_weights, std::nullopt,
                                ghosting);
                     }
-                    else
+                    else if constexpr (std::is_same_v<P, graph::partition_fn>)
                     {
-                      static_assert(std::is_same_v<P, graph::partition_fn>);
                       return p(commt, size, dual_graph(),
                                partitioner.node_weights, std::nullopt,
                                ghosting);
+                    }
+                    else
+                    {
+                      // std::visit still requires this branch to
+                      // compile for graph::geom_partition_fn.
+                      static_assert(
+                          std::is_same_v<P, graph::geom_partition_fn>);
+                      throw std::logic_error("Unreachable.");
                     }
                   },
                   partitioner.fn);
