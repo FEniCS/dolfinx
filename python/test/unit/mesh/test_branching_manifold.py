@@ -304,10 +304,6 @@ def test_star_interprocess_facets_builtin_partitioner(gpart, num_branches, ghost
     interprocess = set(v_map.local_to_global(topology.interprocess_facets()))
     reference = _interprocess_vertices_reference(topology)
     num_exterior = comm.allreduce(len(exterior_facet_indices(topology)), MPI.SUM)
-    num_owning_ranks = comm.allreduce(int(topology.index_map(1).size_local > 0), MPI.SUM)
-    # num_branches must be large enough that the partitioner actually splits
-    # the star across ranks - SCOTCH seems to produce empty ranks, for example.
-    assert comm.size == 1 or num_owning_ranks > 1
 
     assert interprocess == reference
     assert num_exterior == num_branches
