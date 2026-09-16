@@ -128,10 +128,16 @@ def test_read_write_num_threads(tempdir, num_threads):
         assert m.topology.index_map(0).size_global == mesh.topology.index_map(0).size_global
 
     vol_1 = mesh_1.comm.allreduce(
-        dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=mesh_1))), op=MPI.SUM
+        dolfinx.fem.assemble_scalar(
+            dolfinx.fem.form(1 * ufl.dx(domain=mesh_1), dtype=mesh_1.geometry.x.dtype)
+        ),
+        op=MPI.SUM,
     )
     vol_n = mesh_n.comm.allreduce(
-        dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=mesh_n))), op=MPI.SUM
+        dolfinx.fem.assemble_scalar(
+            dolfinx.fem.form(1 * ufl.dx(domain=mesh_n), dtype=mesh_n.geometry.x.dtype)
+        ),
+        op=MPI.SUM,
     )
     assert np.isclose(vol_1, vol_n)
 
