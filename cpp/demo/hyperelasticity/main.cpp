@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
                          - (x2 - x2_c) * std::sin(theta) - x1);
             f(2, p) = scale
                       * (x2_c + (x1 - x1_c) * std::sin(theta)
-                         - (x2 - x2_c) * std::cos(theta) - x2);
+                         + (x2 - x2_c) * std::cos(theta) - x2);
           }
 
           return {std::move(fdata), {3, x.extent(1)}};

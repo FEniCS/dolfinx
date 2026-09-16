@@ -11,19 +11,21 @@
 // * Write custom cell kernels, bypassing UFL/FFCx code generation, to
 //   compute the P1 mass matrix and the RHS load vector for $f = 1$ on
 //   a triangle mesh
-// * Assemble such kernels into DOLFINx linear algebra data structures
-//   using several approaches: a `std::function` kernel wrapped in a
-//   {cpp:class}`dolfinx::fem::Form`, an inlined lambda kernel called
-//   directly against the mesh geometry and dofmap, and, for the
-//   matrix case, a kernel that also inserts entries directly into a
-//   {cpp:class}`dolfinx::la::MatrixCSR`
+// * Assemble such kernels into a {cpp:class}`dolfinx::la::MatrixCSR`
+//   or {cpp:class}`dolfinx::la::Vector` using two approaches: a
+//   `std::function` kernel wrapped in a {cpp:class}`dolfinx::fem::Form`
+//   and assembled with the standard `dolfinx::fem::assemble_matrix()`/
+//   `dolfinx::fem::assemble_vector()`, and an inlined lambda kernel
+//   assembled by calling the lower-level cell-assembly routines
+//   directly against the mesh geometry and dofmap, bypassing
+//   {cpp:class}`dolfinx::fem::Form` entirely
 //
 // The reference element matrix/vector are computed once using Basix
 // quadrature and basis tabulation, then mapped to each physical cell
 // inside the kernel. Each assembly variant returns the Frobenius norm
 // squared of the assembled matrix, or the $l^2$ norm squared of the
-// assembled vector, so that the different approaches can be checked
-// for consistency against each other.
+// assembled vector, so that the two approaches can be checked for
+// consistency against each other.
 
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
