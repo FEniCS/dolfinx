@@ -101,8 +101,9 @@ std::vector<std::int64_t> mesh::impl::reorder_cells(
       throw std::invalid_argument(
           "Cell reordering function returned the wrong number of cells.");
     }
+#ifndef NDEBUG
     {
-      std::vector<bool> seen(num_owned_cells, false);
+      std::vector<std::int8_t> seen(num_owned_cells, 0);
       for (std::int32_t r : remap)
       {
         if (r < 0 or static_cast<std::size_t>(r) >= num_owned_cells or seen[r])
@@ -110,9 +111,10 @@ std::vector<std::int64_t> mesh::impl::reorder_cells(
           throw std::invalid_argument(
               "Cell reordering function did not return a permutation.");
         }
-        seen[r] = true;
+        seen[r] = 1;
       }
     }
+#endif
 
     cell_offset += gdim * num_owned_cells;
 
