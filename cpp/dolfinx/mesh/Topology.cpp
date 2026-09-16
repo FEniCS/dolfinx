@@ -859,9 +859,13 @@ compute_interprocess_vertices(const Topology& topology)
   {
     auto c_to_v = topology.connectivity({tdim, static_cast<int>(i)}, {0, 0});
     assert(c_to_v);
-    for (std::int32_t c = 0; c < cell_maps[i]->size_local(); ++c)
-      for (std::int32_t v : c_to_v->links(c))
+    std::int32_t num_local_cells = cell_maps[i]->size_local();
+    std::int32_t end_idx = c_to_v->offsets()[num_local_cells];
+    std::span<const std::int32_t> all_links = c_to_v->array();
+    std::span<const std::int32_t> local_links = all_links.first(end_idx);
+    std::ranges::for_each(local_links, [&attached](std::int32_t v) {
         attached[v] = 1;
+});
   }
 
   // Count, for each owned vertex, the ranks with an attached owned cell:
