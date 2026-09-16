@@ -217,6 +217,8 @@ def _interprocess_vertices_reference(topology):
     """
     comm = topology.comm
     assert topology.dim == 1
+    c_to_v = topology.connectivity(topology.dim, 0)
+    v_map = topology.index_map(0)
     num_local_edges = topology.index_map(topology.dim).size_local
     end_idx = c_to_v.offsets[num_local_edges]
     vertices = np.unique(c_to_v.array[:end_idx]).astype(np.int32)
