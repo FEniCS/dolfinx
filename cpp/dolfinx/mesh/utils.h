@@ -806,8 +806,10 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   if (permute)
     cell_info = std::span(mesh.topology()->get_cell_permutation_info());
 
-  // Reused across entities to avoid a per-entity heap allocation
-  std::vector<std::int32_t> closure_dofs;
+  // Closure DOF count is the same for every local entity of dimension
+  // `dim` (the one case where it isn't, prism/pyramid facets, is
+  // rejected above), so size once and reuse across entities.
+  std::vector<std::int32_t> closure_dofs(num_entity_dofs);
   for (std::int32_t e : entities)
   {
     // Get a cell connected to the entity
@@ -825,7 +827,8 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     // orientation agrees with their global orientation
     const std::vector<int>& e_closure_dofs
         = closure_dofs_all[dim][local_entity];
-    closure_dofs.assign(e_closure_dofs.begin(), e_closure_dofs.end());
+    assert(e_closure_dofs.size() == closure_dofs.size());
+    std::ranges::copy(e_closure_dofs, closure_dofs.begin());
     if (permute)
     {
       mesh::CellType entity_type
