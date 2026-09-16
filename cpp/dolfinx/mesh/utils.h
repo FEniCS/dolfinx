@@ -806,6 +806,8 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   if (permute)
     cell_info = std::span(mesh.topology()->get_cell_permutation_info());
 
+  // Reused across entities to avoid a per-entity heap allocation
+  std::vector<std::int32_t> closure_dofs;
   for (std::int32_t e : entities)
   {
     // Get a cell connected to the entity
@@ -821,7 +823,9 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
     // Cell sub-entities must be permuted so that their local
     // orientation agrees with their global orientation
-    std::vector<std::int32_t> closure_dofs(closure_dofs_all[dim][local_entity]);
+    const std::vector<int>& e_closure_dofs
+        = closure_dofs_all[dim][local_entity];
+    closure_dofs.assign(e_closure_dofs.begin(), e_closure_dofs.end());
     if (permute)
     {
       mesh::CellType entity_type
