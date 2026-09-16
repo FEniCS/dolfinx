@@ -297,8 +297,8 @@ class Topology:
             topology: The C++ topology object
 
         Note:
-            Topology objects should usually be constructed with the
-            :func:`dolfinx.cpp.mesh.create_topology` and not this class
+            Topology objects should usually be constructed with
+            ``dolfinx.cpp.mesh.create_topology`` and not this class
             initializer.
         """
         self._cpp_object = topology
