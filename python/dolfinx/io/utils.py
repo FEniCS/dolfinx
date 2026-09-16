@@ -479,7 +479,7 @@ def distribute_entity_data(
 ) -> tuple[npt.NDArray[np.int64], np.ndarray]:
     """Distribute  mesh entities and values to owning process.
 
-    The entities are described by the global vertex indices of the mesh.
+    The entities are described by the global node indices of the mesh.
     These entity indices are using the original input ordering.
 
     Returns:
