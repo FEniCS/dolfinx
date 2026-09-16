@@ -169,7 +169,7 @@ public:
   Vector(Vec x, bool inc_ref_count);
 
   /// Destructor
-  virtual ~Vector();
+  ~Vector();
 
   // Assignment operator (disabled)
   Vector& operator=(const Vector& x) = delete;

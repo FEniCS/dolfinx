@@ -18,7 +18,12 @@
 # * {download}`Jupyter notebook <./demo_gmsh.ipynb>`
 # ```
 
-# This demo shows how to create meshes using the Gmsh Python interface.
+# This demo illustrates how to:
+# - Create meshes using the Gmsh Python interface
+# - Tag subentities of a mesh (peaks, ridges, facets and cells) with
+#   physical groups
+# - Read a mesh created with Gmsh, and its tags, into DOLFINx using
+#   {py:func}`model_to_mesh <dolfinx.io.gmsh.model_to_mesh>`
 #
 # The Gmsh module is required for this demo.
 

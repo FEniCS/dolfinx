@@ -166,7 +166,7 @@ def print_stats(G):
 
 # The graph data will be processed on rank 0. From the communication
 # graph data, edge and node data for creating a `NetworkX`` graph is build
-# using {py:fuc}`comm_graph_data <dolfinx.graph.comm_graph_data>`.
+# using {py:func}`comm_graph_data <dolfinx.graph.comm_graph_data>`.
 #
 # Data for use with `NetworkX` can also be reconstructed from a JSON
 # string. The JSON string can be created using {py:func}`comm_to_json

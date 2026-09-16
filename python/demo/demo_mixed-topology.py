@@ -8,7 +8,7 @@
 #       jupytext_version: 1.13.6
 # ---
 
-# # Poisson equation
+# # Helmholtz equation on a mixed-topology mesh
 #
 # ```{admonition} Download sources
 # :class: download
@@ -17,8 +17,8 @@
 # ```
 # This demo illustrates how to:
 # - Solve a simple Helmholtz problem on a mixed-topology mesh.
-# - Create a mesh from numpy arrays using {py:func}`
-# dolfinx.mesh.create_mesh`
+# - Create a mesh from numpy arrays using
+#   {py:func}`dolfinx.mesh.create_mesh`
 #
 # ```{admonition} In development
 # Mixed-topology meshes are a work in progress and are not yet fully
@@ -208,8 +208,8 @@ a_form = mixed_topology_form(a, dtype=np.float64)
 L_form = mixed_topology_form(L, dtype=np.float64)
 
 # ## Assembling and solving the linear system
-# We use the native {py:class}`matrix<dolfinx.la.MatrixCSR>` and
-# {py:class}`vector<dolfinx.la.Vector>` format in DOLFINx to assemble
+# We use the native {py:class}`matrix <dolfinx.la.MatrixCSR>` and
+# {py:class}`vector <dolfinx.la.Vector>` format in DOLFINx to assemble
 # the left and right hand side of the linear system.
 
 A = assemble_matrix(a_form, bcs=[bc])

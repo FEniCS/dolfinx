@@ -723,6 +723,10 @@ io::VTKFile::VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
   vtk_node.append_child("Collection");
 }
 //----------------------------------------------------------------------------
+io::VTKFile::VTKFile(VTKFile&& file) noexcept = default;
+//-----------------------------------------------------------------------------
+io::VTKFile& io::VTKFile::operator=(VTKFile&& file) noexcept = default;
+//-----------------------------------------------------------------------------
 io::VTKFile::~VTKFile()
 {
   if (_pvd_xml and dolfinx::MPI::rank(_comm.comm()) == 0)

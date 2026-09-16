@@ -52,7 +52,7 @@ public:
                     = basix::element::lagrange_variant::unset);
 
   /// Destructor
-  virtual ~CoordinateElement() = default;
+  ~CoordinateElement() = default;
 
   /// @brief Cell shape.
   /// @return The cell shape

@@ -338,22 +338,30 @@ public:
     }
   }
 
-  /// @brief Copy constructor (deleted).
-  ///
-  /// @note Deleted because ::_edata and ::_cdata cache `std::span`s
-  /// aliasing the entity vectors owned by ::_integrals; a shallow copy
-  /// would leave the copy's spans pointing into the original's data.
+  // Copy constructor (deleted). _edata and _cdata cache std::spans
+  // aliasing the entity vectors owned by _integrals; a shallow copy
+  // would leave the copy's spans pointing into the original's data.
   Form(const Form& form) = delete;
 
-  /// @brief Move constructor.
-  ///
+  /// Move constructor
   /// @note Valid because ::_integrals is a `std::map`, whose elements
-  /// keep a stable address across a move, so the `std::span`s cached
-  /// in ::_edata and ::_cdata remain valid after the move.
+  /// keep a stable address across a move, so the `std::span`s cached in
+  /// ::_edata and ::_cdata remain valid after the move.
   Form(Form&& form) = default;
 
   /// Destructor
-  virtual ~Form() = default;
+  ~Form() = default;
+
+  // Copy assignment (deleted). Same aliasing reason as the copy
+  // constructor.
+  Form& operator=(const Form& form) = delete;
+
+  /// Move assignment
+  /// @note Valid for the same reason as the move constructor: move
+  /// assigning a `std::map` transfers its nodes, so the entity vectors
+  /// aliased by the `std::span`s cached in ::_edata and ::_cdata keep
+  /// their addresses.
+  Form& operator=(Form&& form) = default;
 
   /// @brief Rank of the form.
   ///

@@ -8,7 +8,7 @@
 #       jupytext_version: 1.13.6
 # ---
 
-# # Divergence conforming discontinuous Galerkin method for the Navier--Stokes equations # noqa
+# # Divergence conforming discontinuous Galerkin method for Navier-Stokes
 #
 # ```{admonition} Download sources
 # :class: download
@@ -19,7 +19,7 @@
 # - Implement a divergence conforming discontinuous Galerkin method
 #   for the Navier-Stokes equations.
 # - Tune MUMPS to support singular systems.
-# discontinuous Galerkin method for the Navier-Stokes equations.
+#
 # The method conserves mass exactly and uses upwinding.
 # The formulation is based on a combination of [A fully divergence-free
 # finite element method for magnetohydrodynamic equations](
