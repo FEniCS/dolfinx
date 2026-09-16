@@ -946,11 +946,6 @@ Topology::Topology(
       _connectivity.insert({{{tdim, int(i)}, {0, 0}}, cells[i]});
     }
   }
-
-  // For tdim == 1 the facets are vertices, which mesh::compute_entities
-  // does not compute (see compute_interprocess_vertices)
-  if (tdim == 1)
-    _interprocess_facets.push_back(compute_interprocess_vertices(*this));
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept
@@ -1074,6 +1069,14 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
 //-----------------------------------------------------------------------------
 bool Topology::create_entities(int dim, int num_threads)
 {
+  // For tdim == 1 the facets are vertices, which already exist and
+  // are never computed by mesh::compute_entities (see
+  // compute_interprocess_vertices). Compute their inter-process data
+  // here, on first request, rather than unconditionally in the
+  // constructor.
+  if (dim == 0 and this->dim() == 1 and _interprocess_facets.empty())
+    _interprocess_facets.push_back(compute_interprocess_vertices(*this));
+
   // TODO: is this check sufficient/correct? Does not catch the
   // cell_entity entity case. Should there also be a check for
   // connectivity(this->dim(), dim)?
