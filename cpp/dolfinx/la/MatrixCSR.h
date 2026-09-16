@@ -199,13 +199,26 @@ public:
   template <SparsityImplementation T>
   MatrixCSR(const T& p, BlockMode mode = BlockMode::compact);
 
+  // Copy constructor (deleted). Copying deep-copies the matrix data and
+  // duplicates the communicator, which is collective. Both matrices
+  // would also share ::_request, so a copy taken while a scatter is in
+  // flight would wait on data delivered into the original's buffer.
+  MatrixCSR(const MatrixCSR& A) = delete;
+
   /// Move constructor
-  /// @todo Check handling of MPI_Request
+  /// @note ::_request is left set in the moved-from matrix. That is
+  /// harmless because a moved-from matrix must not be used further, but
+  /// it means a scatter in flight is completed by the target only.
   MatrixCSR(MatrixCSR&& A) = default;
 
-  /// Copy constructor
-  /// @todo Check handling of MPI_Request
-  MatrixCSR(const MatrixCSR& A) = default;
+  /// Destructor
+  ~MatrixCSR() = default;
+
+  // Copy assignment (deleted). Same reasons as the copy constructor.
+  MatrixCSR& operator=(const MatrixCSR& A) = delete;
+
+  /// Move assignment
+  MatrixCSR& operator=(MatrixCSR&& A) = default;
 
   /// @brief Copy-convert matrix, possibly using to different container
   /// types.
