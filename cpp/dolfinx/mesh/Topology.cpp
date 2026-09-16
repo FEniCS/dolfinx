@@ -887,7 +887,7 @@ compute_interprocess_vertices(const Topology& topology)
   std::vector<std::int8_t> interprocess(num_local + num_ghosts, 0);
   {
     std::vector<std::int32_t> count(attached.begin(),
-                                std::next(attached.begin(), num_local));
+                                    std::next(attached.begin(), num_local));
     for (std::size_t i = 0; i < local_ind.size(); ++i)
       count[local_ind[i]] += buffer_local[i];
     std::ranges::transform(count, interprocess.begin(),
