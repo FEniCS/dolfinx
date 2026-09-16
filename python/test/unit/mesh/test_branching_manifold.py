@@ -201,20 +201,24 @@ def _interprocess_vertices_reference(topology):
 @pytest.mark.parametrize("num_branches", [2, 3, 5, 7])
 @pytest.mark.parametrize("ghost", [False, True])
 def test_star_interprocess_facets(num_branches, ghost):
-    """A star of intervals meeting at one vertex, distributed one cell
-    per rank in turn. The joint vertex is an inter-process facet, and
-    the branch tips are the exterior facets, in both ghost modes.
+    """A topological star of intervals joining at one vertex, distributed one
+    cell per rank in turn. The joining vertex must be an interprocess facet, and
+    the interval tips must be exterior facets.
+
+    Note that because every cell is the dual graph neighbour of every other cell,
+    v0 is ghosted to every rank that owns at least one branch.
     """
     comm = MPI.COMM_WORLD
     if comm.rank == 0:
-        angle = 2 * np.pi * np.arange(num_branches) / num_branches
-        x = np.vstack([np.zeros((1, 2)), np.column_stack([np.cos(angle), np.sin(angle)])])
+        # This test only requires a topological star, the geometry is
+        # arbitrary.
+        x = np.arange(num_branches + 1, dtype=np.float64).reshape(-1, 1)
         cells = np.array([[0, i + 1] for i in range(num_branches)], dtype=np.int64)
     else:
-        x = np.empty((0, 2), dtype=np.float64)
+        x = np.empty((0, 1), dtype=np.float64)
         cells = np.empty((0, 2), dtype=np.int64)
 
-    e = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(2,)))
+    e = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(1,)))
     mesh = create_mesh(
         comm,
         cells,
@@ -228,11 +232,16 @@ def test_star_interprocess_facets(num_branches, ghost):
     topology.create_connectivity(0, 1)
     v_map = topology.index_map(0)
 
-    # Complete all collectives before asserting, so that a failure on
-    # one rank does not leave the others in a collective
     interprocess = set(v_map.local_to_global(topology.interprocess_facets()))
     reference = _interprocess_vertices_reference(topology)
     num_exterior = comm.allreduce(len(exterior_facet_indices(topology)), MPI.SUM)
 
     assert interprocess == reference
     assert num_exterior == num_branches
+
+    # A rank beyond the number of branches does not own a branch and is not a
+    # dual-graph neighbour of another branch, so it receives no cells or
+    # vertices.
+    if comm.rank >= num_branches:
+        assert topology.index_map(1).size_local == 0
+        assert v_map.size_local == 0
