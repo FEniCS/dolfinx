@@ -255,8 +255,10 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
     throw std::runtime_error("Edges have not been computed.");
   auto e_to_v = topology.connectivity(1, 0);
   if (!e_to_v)
+  {
     throw std::runtime_error(
         "Edge-to-vertex connectivity has not been computed.");
+  }
 
   auto im = topology.index_map(0);
   assert(im);
