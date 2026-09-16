@@ -224,7 +224,11 @@ def _interprocess_vertices_reference(topology):
     vertices = np.unique(c_to_v.array[:end_idx]).astype(np.int32)
     attached = v_map.local_to_global(vertices)
     shared = comm.allgather(attached)
-    return {v for v in attached if sum(v in s for s in shared) > 1}
+    all_vertices = np.concatenate(shared)
+    uniques, counts = np.unique(all_vertices, return_counts=True)
+    shared_globally = uniques[counts > 1]
+    local_shared = np.intersect1d(attached, shared_globally)
+    return set(local_shared)
 
 
 def _star_mesh_data(comm, num_branches):
