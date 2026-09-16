@@ -477,7 +477,7 @@ class XDMFFile:
 def distribute_entity_data(
     mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: np.ndarray
 ) -> tuple[npt.NDArray[np.int64], np.ndarray]:
-    """Distribute  mesh entities and values to owning process.
+    """Distribute mesh entities and values to owning process.
 
     The entities are described by the global node indices of the mesh.
     These entity indices are using the original input ordering.
