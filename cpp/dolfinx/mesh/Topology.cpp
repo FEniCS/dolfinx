@@ -1735,29 +1735,19 @@ mesh::entities_to_index(const Topology& topology, int dim,
   const int num_vertices_per_entity
       = cell_num_entities(cell_entity_type(topology.cell_type(), dim, 0), 0);
 
-  // Build a sorted list of (ordered local vertex indices, entity
-  // index) pairs for O(log n) binary-search lookups, avoiding a
-  // per-entity red-black-tree node allocation.
-  std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
+  // Build a map from ordered local vertex indices to entity index for
+  // O(1) average-case lookups, avoiding a per-entity node allocation.
+  boost::unordered_flat_map<std::vector<std::int32_t>, std::int32_t>
       entity_key_to_index;
   entity_key_to_index.reserve(map_e->size_local() + map_e->num_ghosts());
+  std::vector<std::int32_t> key(num_vertices_per_entity);
+  for (std::int32_t e = 0; e < map_e->size_local() + map_e->num_ghosts(); ++e)
   {
-    std::vector<std::int32_t> key(num_vertices_per_entity);
-    for (std::int32_t e = 0; e < map_e->size_local() + map_e->num_ghosts(); ++e)
-    {
-      auto vertices = e_to_v->links(e);
-      std::ranges::copy(vertices, key.begin());
-      std::ranges::sort(key);
-      entity_key_to_index.emplace_back(key, e);
-    }
-  }
-  std::ranges::sort(entity_key_to_index,
-                    [](auto& a, auto& b) { return a.first < b.first; });
-  if (std::ranges::adjacent_find(entity_key_to_index, [](auto& a, auto& b)
-                                 { return a.first == b.first; })
-      != entity_key_to_index.end())
-  {
-    throw std::runtime_error("Duplicate mesh entity detected.");
+    auto vertices = e_to_v->links(e);
+    std::ranges::copy(vertices, key.begin());
+    std::ranges::sort(key);
+    if (auto [it, inserted] = entity_key_to_index.emplace(key, e); !inserted)
+      throw std::runtime_error("Duplicate mesh entity detected.");
   }
 
   if (entities.size() % num_vertices_per_entity != 0)
@@ -1776,11 +1766,8 @@ mesh::entities_to_index(const Topology& topology, int dim,
     auto v = entities.subspan(e, num_vertices_per_entity);
     std::ranges::copy(v, vertices.begin());
     std::ranges::sort(vertices);
-    if (auto it = std::ranges::lower_bound(
-            entity_key_to_index, vertices, {},
-            [](auto& p) -> const std::vector<std::int32_t>&
-            { return p.first; });
-        it != entity_key_to_index.end() and it->first == vertices)
+    if (auto it = entity_key_to_index.find(vertices);
+        it != entity_key_to_index.end())
     {
       indices.push_back(it->second);
     }
