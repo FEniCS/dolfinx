@@ -1689,11 +1689,8 @@ mesh::entities_to_index(const Topology& topology, int dim,
     auto v = entities.subspan(e, num_vertices_per_entity);
     std::ranges::copy(v, vertices.begin());
     std::ranges::sort(vertices);
-    if (auto it = std::ranges::lower_bound(
-            entity_key_to_index, vertices, {},
-            [](auto& p) -> const std::vector<std::int32_t>&
-            { return p.first; });
-        it != entity_key_to_index.end() and it->first == vertices)
+    if (auto it = entity_key_to_index.find(vertices);
+        it != entity_key_to_index.end())
     {
       indices.push_back(it->second);
     }
