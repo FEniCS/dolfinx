@@ -216,10 +216,11 @@ def _interprocess_vertices_reference(topology):
     more ranks, as seen by this rank.
     """
     comm = topology.comm
-    c_to_v = topology.connectivity(topology.dim, 0)
-    v_map = topology.index_map(0)
-    vertices = {v for c in range(topology.index_map(1).size_local) for v in c_to_v.links(c)}
-    attached = set(v_map.local_to_global(np.fromiter(vertices, dtype=np.int32)))
+    assert topology.dim == 1
+    num_local_edges = topology.index_map(topology.dim).size_local
+    end_idx = c_to_v.offsets[num_local_edges]
+    vertices = np.unique(c_to_v.array[:end_idx]).astype(np.int32)
+    attached = v_map.local_to_global(vertices)
     shared = comm.allgather(attached)
     return {v for v in attached if sum(v in s for s in shared) > 1}
 
