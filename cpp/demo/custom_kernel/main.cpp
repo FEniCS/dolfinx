@@ -6,8 +6,24 @@
 
 // # Custom cell kernel assembly
 //
-// This demo shows various methods to define custom cell kernels in C++
-// and have them assembled into DOLFINx linear algebra data structures.
+// This demo illustrates how to:
+//
+// * Write custom cell kernels, bypassing UFL/FFCx code generation, to
+//   compute the P1 mass matrix and the RHS load vector for $f = 1$ on
+//   a triangle mesh
+// * Assemble such kernels into DOLFINx linear algebra data structures
+//   using several approaches: a `std::function` kernel wrapped in a
+//   {cpp:class}`dolfinx::fem::Form`, an inlined lambda kernel called
+//   directly against the mesh geometry and dofmap, and, for the
+//   matrix case, a kernel that also inserts entries directly into a
+//   {cpp:class}`dolfinx::la::MatrixCSR`
+//
+// The reference element matrix/vector are computed once using Basix
+// quadrature and basis tabulation, then mapped to each physical cell
+// inside the kernel. Each assembly variant returns the Frobenius norm
+// squared of the assembled matrix, or the $l^2$ norm squared of the
+// assembled vector, so that the different approaches can be checked
+// for consistency against each other.
 
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>

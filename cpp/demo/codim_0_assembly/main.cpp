@@ -5,6 +5,18 @@
 // * Create a submesh of co-dimension 0
 // * Assemble a mixed formulation with function spaces defined on the sub mesh
 // and parent mesh
+//
+// Running this demo requires the files:
+// {download}`demo_codim_0_assembly/main.cpp`,
+// {download}`demo_codim_0_assembly/mixed_codim0.py` and
+// {download}`demo_codim_0_assembly/CMakeLists.txt`.
+//
+// The UFL code is implemented in
+// {download}`demo_codim_0_assembly/mixed_codim0.py`.
+// ````{admonition} UFL code implemented in Python
+// :class: dropdown
+// ![ufl-code]
+// ````
 
 #include "mixed_codim0.h"
 #include <basix/finite-element.h>
