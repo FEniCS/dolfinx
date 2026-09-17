@@ -14,10 +14,8 @@
 #include <dolfinx/common/sort.h>
 #include <format>
 #include <functional>
-#include <map>
 #include <numeric>
 #include <optional>
-#include <set>
 #include <span>
 #include <vector>
 
@@ -409,9 +407,16 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       // boundaries and save to map
       common::Timer timer5("Extract partition boundaries from SCOTCH graph");
 
-      // Create a map of local nodes to their additional destination
-      // processes, due to ghosting
-      std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
+      // Build a flat list of (node0, additional destination rank) pairs
+      // for nodes with ghosting due to a neighbour in a different
+      // partition. This loop runs once per local graph node (e.g. a
+      // cell) times its edges, so can visit many millions of edges for
+      // a large mesh -- a std::map<int32_t, std::set<int32_t>> would
+      // heap-allocate a map node and a set node for every such edge, so
+      // a flat vector, deduplicated and sorted afterwards, is used
+      // instead (matching the approach used for the same kind of data
+      // in compute_destination_ranks above).
+      std::vector<std::array<std::int32_t, 2>> node0_to_dest;
       for (std::int32_t node0 = 0; node0 < graph.num_nodes(); ++node0)
       {
         // Get all edges outward from node i
@@ -422,21 +427,32 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
           // ghost
           const std::int32_t node1_rank = node_partition[edge_ghost_tab[j]];
           if (node0_rank != node1_rank)
-            local_node_to_dests[node0].insert(node1_rank);
+            node0_to_dest.push_back({node0, node1_rank});
         }
+      }
+
+      // De-duplicate with a single hash-set pass, then sort
+      // lexicographically so entries are grouped by node0 (column 0,
+      // ascending) with destination ranks ascending within each group.
+      {
+        boost::unordered_flat_set<std::array<std::int32_t, 2>> unique_set(
+            node0_to_dest.begin(), node0_to_dest.end());
+        node0_to_dest.assign(unique_set.begin(), unique_set.end());
+        std::ranges::sort(node0_to_dest);
       }
       timer5.stop();
       timer5.flush();
 
       offsets.reserve(graph.num_nodes() + 1);
+      dests.reserve(graph.num_nodes() + node0_to_dest.size());
+      auto it = node0_to_dest.begin();
       for (std::int32_t i = 0; i < graph.num_nodes(); ++i)
       {
         dests.push_back(node_partition[i]);
-        if (auto it = local_node_to_dests.find(i);
-            it != local_node_to_dests.end())
-        {
-          dests.insert(dests.end(), it->second.begin(), it->second.end());
-        }
+        auto it1 = std::find_if(it, node0_to_dest.end(),
+                                [i](auto& p) { return p[0] != i; });
+        for (; it != it1; ++it)
+          dests.push_back((*it)[1]);
 
         offsets.push_back(dests.size());
       }
