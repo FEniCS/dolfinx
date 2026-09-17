@@ -206,15 +206,9 @@ T assemble_scalar(
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
   if (M.needs_facet_permutations())
   {
-    mesh::CellType cell_type = mesh->topology()->cell_types()[cell_type_idx];
-    int num_facets_per_cell
-        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
-
-    mesh->topology_mutable()->create_entity_permutations();
-    const std::vector<std::uint8_t>& p
-        = mesh->topology()->get_facet_permutations();
-    facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
-                             num_facets_per_cell);
+    facet_perms = impl::entity_permutations(
+        *mesh->topology_mutable(), IntegralType::interior_facet,
+        mesh->topology()->cell_types()[cell_type_idx]);
   }
 
   for (int i = 0;
@@ -246,12 +240,22 @@ T assemble_scalar(
   for (auto itg_type : {fem::IntegralType::exterior_facet,
                         fem::IntegralType::vertex, fem::IntegralType::ridge})
   {
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
-        = (itg_type == fem::IntegralType::exterior_facet)
-              ? facet_perms
-              : md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>{};
+    const int num_itg = M.num_integrals(itg_type, cell_type_idx);
+    if (num_itg == 0)
+      continue;
 
-    for (int i = 0; i < M.num_integrals(itg_type, cell_type_idx); ++i)
+    // Each integral type is over entities of a different
+    // codimension, so only the permutations this form actually
+    // integrates over are computed.
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
+    if (M.needs_facet_permutations())
+    {
+      perms = impl::entity_permutations(
+          *mesh->topology_mutable(), itg_type,
+          mesh->topology()->cell_types()[cell_type_idx]);
+    }
+
+    for (int i = 0; i < num_itg; ++i)
     {
       auto fn = M.kernel(itg_type, i, cell_type_idx);
       assert(fn);

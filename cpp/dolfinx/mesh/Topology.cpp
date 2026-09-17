@@ -962,24 +962,31 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
       and i_map->size_local() + i_map->num_ghosts() > 0)
   {
     throw std::runtime_error(
-        "create_entity_permutations must be called before using this data.");
+        "create_cell_permutations must be called before using this data.");
   }
 
   return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
+const std::vector<std::uint8_t>&
+Topology::get_entity_permutations(int dim) const
 {
-  if (auto i_map = this->index_map(this->dim() - 1);
-      !i_map
-      or (_facet_permutations.empty()
-          and (i_map->size_local() + i_map->num_ghosts() > 0)))
+  if (dim < 0 or dim >= int(_entity_permutations.size()))
   {
-    throw std::runtime_error(
-        "create_entity_permutations must be called before using this data.");
+    throw std::invalid_argument(std::format(
+        "Dimension {} entities are not sub-entities of a cell.", dim));
   }
 
-  return _facet_permutations;
+  const std::optional<std::vector<std::uint8_t>>& p = _entity_permutations[dim];
+  if (!p.has_value())
+  {
+    throw std::runtime_error(
+        std::format("create_entity_permutations({}) must be called before "
+                    "using this data.",
+                    dim));
+  }
+
+  return *p;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>& Topology::interprocess_facets(int index) const
@@ -1091,7 +1098,53 @@ void Topology::create_connectivity(int d0, int d1)
   }
 }
 //-----------------------------------------------------------------------------
-void Topology::create_entity_permutations(int num_threads)
+void Topology::create_entity_permutations(int dim, int num_threads)
+{
+  const int tdim = this->dim();
+  if (dim < 0 or dim >= tdim)
+  {
+    throw std::invalid_argument(
+        std::format("Cannot compute permutations for dimension {} entities of "
+                    "a topology of dimension {}.",
+                    dim, tdim));
+  }
+
+  if (_entity_permutations[dim].has_value())
+    return;
+
+  if (!_cell_permutations.empty())
+  {
+    // The packed cell info already holds these orientations: 3 bits per
+    // face followed by 1 bit per edge. Unpack rather than recompute.
+    CellType cell_type = this->cell_type();
+    const std::int32_t num_cells = _cell_permutations.size();
+    const int num_entities = cell_num_entities(cell_type, dim);
+    const int bits = dim == 2 ? 3 : 1;
+    const int offset
+        = (dim == 1 and tdim > 2) ? 3 * cell_num_entities(cell_type, 2) : 0;
+    std::vector<std::uint8_t> perms(dim == 0 ? 0 : num_cells * num_entities);
+    for (std::int32_t c = 0; c < std::int32_t(perms.size() / num_entities); ++c)
+    {
+      for (int i = 0; i < num_entities; ++i)
+      {
+        perms[c * num_entities + i]
+            = (_cell_permutations[c] >> (offset + bits * i))
+              & ((1 << bits) - 1);
+      }
+    }
+    _entity_permutations[dim] = std::move(perms);
+    return;
+  }
+
+  // The orientation of an entity is relative to the cell's vertices, so
+  // the entities must exist.
+  create_entities(dim, num_threads);
+
+  _entity_permutations[dim]
+      = compute_entity_permutations(*this, dim, num_threads);
+}
+//-----------------------------------------------------------------------------
+void Topology::create_cell_permutations(int num_threads)
 {
   if (!_cell_permutations.empty())
     return;
@@ -1101,14 +1154,11 @@ void Topology::create_entity_permutations(int num_threads)
   // parallel work.
 
   // Create all mesh entities
-  int tdim = this->dim();
+  const int tdim = this->dim();
   for (int d = 0; d < tdim; ++d)
     create_entities(d, num_threads);
 
-  auto [facet_permutations, cell_permutations]
-      = compute_entity_permutations(*this, num_threads);
-  _facet_permutations = std::move(facet_permutations);
-  _cell_permutations = std::move(cell_permutations);
+  _cell_permutations = compute_cell_permutations(*this, num_threads);
 }
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::comm() const
