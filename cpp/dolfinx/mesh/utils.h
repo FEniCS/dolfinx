@@ -574,6 +574,14 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
   assert(topology);
   const int tdim = topology->dim();
 
+  if (entity_type_idx < 0
+      or static_cast<std::size_t>(entity_type_idx)
+             >= topology->entity_types(dim).size())
+  {
+    throw std::out_of_range(
+        "entity_type_idx out of range for Topology::entity_types(dim).");
+  }
+
   mesh.topology_mutable()->create_entities(dim);
   if (dim < tdim)
     mesh.topology_mutable()->create_connectivity(dim, 0);
@@ -798,10 +806,15 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   if (permute)
     cell_info = std::span(mesh.topology()->get_cell_permutation_info());
 
+  // Closure DOF count is the same for every local entity of dimension
+  // `dim` (the one case where it isn't, prism/pyramid facets, is
+  // rejected above), so size once and reuse across entities.
+  std::vector<std::int32_t> closure_dofs(num_entity_dofs);
   for (std::int32_t e : entities)
   {
     // Get a cell connected to the entity
-    assert(!e_to_c->links(e).empty());
+    if (e_to_c->links(e).empty())
+      throw std::runtime_error("No cell incident to entity.");
     std::int32_t c = e_to_c->links(e).front();
 
     // Get the local index of the entity
@@ -812,7 +825,10 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
     // Cell sub-entities must be permuted so that their local
     // orientation agrees with their global orientation
-    std::vector<std::int32_t> closure_dofs(closure_dofs_all[dim][local_entity]);
+    const std::vector<int>& e_closure_dofs
+        = closure_dofs_all[dim][local_entity];
+    assert(e_closure_dofs.size() == closure_dofs.size());
+    std::ranges::copy(e_closure_dofs, closure_dofs.begin());
     if (permute)
     {
       mesh::CellType entity_type

@@ -79,7 +79,8 @@ public:
         _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
   {
-    assert(_x.size() % 3 == 0);
+    if (_x.size() % 3 != 0)
+      throw std::invalid_argument("x size must be a multiple of 3.");
     if (_x.size() / 3 != _input_global_indices.size())
       throw std::runtime_error("Geometry size mismatch.");
 
@@ -298,7 +299,8 @@ create_geometry(const Topology& topology,
                          [&nodes](auto index) { return nodes[index]; });
 
   // Build coordinate dof array, copying coordinates to correct position
-  assert(x.size() % dim == 0);
+  if (x.size() % dim != 0)
+    throw std::invalid_argument("x size must be a multiple of dim.");
   const std::size_t shape0 = x.size() / dim;
   const std::size_t shape1 = dim;
   std::vector<T> xg(3 * shape0, 0);
