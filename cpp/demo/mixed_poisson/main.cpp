@@ -71,15 +71,16 @@
 // polynomial order $k$ and $V_h$ be discontinuous elements of
 // polynomial order $k-1$.
 //
-// We will use the same definitions of functions and boundaries as in the
-// demo for {doc}`the Poisson equation <demo_poisson>`. These are:
+// We will use a similar definition of the boundaries as in the demo
+// for {doc}`the Poisson equation <demo_poisson>`, but here on a unit
+// square domain:
 //
 // * $\Omega = [0,1] \times [0,1]$ (a unit square)
-// * $\Gamma_{D} = \{(0, y) \cup (1, y) \in \partial \Omega\}$
-// * $\Gamma_{N} = \{(x, 0) \cup (x, 1) \in \partial \Omega\}$
+// * $\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}$
+// * $\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}$
 // * $u_0 = 20 y + 1$ on $\Gamma_{D}$
 // * $g = 10$ (flux) on $\Gamma_{N}$
-// * $f = \sin(5x - 0.5) + 1 (source term)
+// * $f = \sin(5x) + 1$ (source term)
 
 // ## UFL form file
 //
@@ -264,8 +265,8 @@ int main(int argc, char* argv[])
         = fem::locate_dofs_topological(
             *mesh->topology(), {*V0->dofmap(), *W0->dofmap()}, 1, nfacets);
 
-    // Create boundary condition for $\sigma. $\sigma \cdot n$ will be
-    // constrained to to be equal to the normal component of $g$. The
+    // Create boundary condition for $\sigma$. $\sigma \cdot n$ will be
+    // constrained to be equal to the normal component of $g$. The
     // boundary conditions are applied to degrees-of-freedom ndofs, and
     // `V0` is the subspace that is constrained.
     fem::DirichletBC<T> bc(g, ndofs, V0);
