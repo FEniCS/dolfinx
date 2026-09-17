@@ -2,6 +2,18 @@
 
 ## v0.12.0 (draft)
 
+### Assembly over ridges with data on a codimension-2 submesh
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
+
+A form integrated over the ridges of a mesh (`ufl.dR`) may now have an
+argument or coefficient on a codimension-2 submesh, in the same way that a
+facet integral may have one on a codimension-1 submesh.
+
+Vertex integrals with data on another mesh remain unsupported and now raise a
+message naming the types that are supported.
+
+
 ### Entity permutations are computed per dimension
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
