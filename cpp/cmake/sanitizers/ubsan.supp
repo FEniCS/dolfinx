@@ -1,0 +1,7 @@
+# UndefinedBehaviorSanitizer suppressions for DOLFINx builds.
+#
+# Use with: UBSAN_OPTIONS=suppressions=<path-to-this-file>
+#
+# Empty by default. Add entries as false positives are found in
+# non-DOLFINx code, e.g.:
+#   nonnull-attribute:libsome-dependency
