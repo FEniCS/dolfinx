@@ -1815,11 +1815,15 @@ MeshTags<T> transfer_meshtags_to_submesh(
         "cell_map dimension must equal the submesh topology dimension.");
   }
   if (cell_map.topology() != topology)
+  {
     throw std::invalid_argument(
         "cell_map topology must match tags.topology().");
+  }
   if (cell_map.sub_topology() != submesh_topology)
+  {
     throw std::invalid_argument(
         "cell_map sub_topology must match submesh_topology.");
+  }
   if (vertex_map.dim() != 0)
     throw std::invalid_argument("vertex_map dimension must be 0.");
   if (vertex_map.topology() != topology)
