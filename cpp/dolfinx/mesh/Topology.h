@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/types.h>
 #include <map>
 #include <memory>
 #include <optional>
@@ -65,13 +66,23 @@ public:
   /// in `cell_types`.
   /// @param[in] original_cell_index Original indices for each cell in
   /// `cells`.
+  /// @param[in] ghost_mode Ghosting used to distribute `cell_maps`.
+  /// Unknown to a caller that assembles `vertex_map`/`cell_maps`/`cells`
+  /// itself (e.g. a subtopology) should pass `GhostMode::none`, which
+  /// disables any optimisation that assumes complete ghosting.
+  /// @param[in] max_facet_to_cell_links Bound on the number of cells a
+  /// facet of `cell_types` can be connected to, as asserted by the
+  /// caller when `cells` was built (`std::nullopt` for no known bound).
   Topology(
       std::vector<CellType> cell_types,
       std::shared_ptr<const common::IndexMap> vertex_map,
       std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
       std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
       const std::optional<std::vector<std::vector<std::int64_t>>>&
-          original_cell_index = std::nullopt);
+          original_cell_index
+      = std::nullopt,
+      GhostMode ghost_mode = GhostMode::none,
+      std::optional<std::int32_t> max_facet_to_cell_links = std::nullopt);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -264,6 +275,13 @@ private:
   // facet type. _interprocess_facets[i] is the inter-process facets of
   // facet type i.
   std::vector<std::vector<std::int32_t>> _interprocess_facets;
+
+  // Ghosting used to distribute _index_maps/_connectivity, and the
+  // bound on facet-to-cell links asserted when they were built. Used
+  // only to skip compute_interprocess_vertices for tdim == 1 when it
+  // provably cannot change the result (see create_entities).
+  GhostMode _ghost_mode;
+  std::optional<std::int32_t> _max_facet_to_cell_links;
 };
 
 /// @cond
@@ -286,7 +304,8 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
                 std::vector<std::span<const std::int64_t>> original_cell_index,
                 std::vector<std::span<const int>> ghost_owners,
                 std::span<const std::int64_t> boundary_vertices,
-                int num_threads);
+                int num_threads, GhostMode ghost_mode,
+                std::optional<std::int32_t> max_facet_to_cell_links);
 } // namespace impl
 /// @endcond
 
@@ -319,6 +338,12 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
 /// of the local topology. These vertices might appear on other
 /// processes.
 /// @param[in] num_threads Number of threads to use. Must be >= 1.
+/// @param[in] ghost_mode Ghosting used to distribute `cells`. Determines
+/// whether ::Topology::interprocess_facets can be computed for
+/// `tdim == 1` without extra communication; has no effect otherwise.
+/// @param[in] max_facet_to_cell_links Bound on the number of cells a
+/// facet can be connected to, as asserted by the caller when
+/// distributing `cells` (`std::nullopt` for no known bound).
 /// @return A distributed mesh topology.
 Topology
 create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
@@ -326,7 +351,9 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
                 std::vector<std::span<const std::int64_t>> original_cell_index,
                 std::vector<std::span<const int>> ghost_owners,
                 std::span<const std::int64_t> boundary_vertices,
-                int num_threads);
+                int num_threads, GhostMode ghost_mode = GhostMode::none,
+                std::optional<std::int32_t> max_facet_to_cell_links
+                = std::nullopt);
 
 /// @brief Create a mesh topology for a single cell type.
 ///
@@ -353,12 +380,21 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
 /// of the local topology. These vertices might appear on other
 /// processes.
 /// @param[in] num_threads Number of threads to use. Must be >= 1.
+/// @param[in] ghost_mode Ghosting used to distribute `cells`. Determines
+/// whether ::Topology::interprocess_facets can be computed for
+/// `tdim == 1` without extra communication; has no effect otherwise.
+/// @param[in] max_facet_to_cell_links Bound on the number of cells a
+/// facet can be connected to, as asserted by the caller when
+/// distributing `cells` (`std::nullopt` for no known bound).
 /// @return A distributed mesh topology.
 Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const std::int64_t> original_cell_index,
                          std::span<const int> ghost_owners, CellType cell_type,
                          std::span<const std::int64_t> boundary_vertices,
-                         int num_threads);
+                         int num_threads,
+                         GhostMode ghost_mode = GhostMode::none,
+                         std::optional<std::int32_t> max_facet_to_cell_links
+                         = std::nullopt);
 
 /// @brief Create a topology for a subset of entities of a given
 /// topological dimension.

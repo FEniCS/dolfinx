@@ -917,11 +917,13 @@ Topology::Topology(
     std::shared_ptr<const common::IndexMap> vertex_map,
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
     std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
-    const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
+    const std::optional<std::vector<std::vector<std::int64_t>>>& original_index,
+    GhostMode ghost_mode, std::optional<std::int32_t> max_facet_to_cell_links)
     : original_cell_index(original_index
                               ? *original_index
                               : std::vector<std::vector<std::int64_t>>()),
-      _entity_types(build_entity_types(cell_types))
+      _entity_types(build_entity_types(cell_types)), _ghost_mode(ghost_mode),
+      _max_facet_to_cell_links(max_facet_to_cell_links)
 {
   int tdim = cell_dim(cell_types.front());
 #ifndef NDEBUG
@@ -1075,7 +1077,30 @@ bool Topology::create_entities(int dim, int num_threads)
   // here, on first request, rather than unconditionally in the
   // constructor.
   if (dim == 0 and this->dim() == 1 and _interprocess_facets.empty())
-    _interprocess_facets.push_back(compute_interprocess_vertices(*this));
+  {
+    // With shared_facet ghosting every cell attached to a facet is
+    // ghosted onto every rank that touches it, so cell-to-vertex
+    // connectivity already reflects each facet's true global degree
+    // (num_links), not just the count of owned cells. A degree-1
+    // facet can then only have a single cell in the whole mesh, so it
+    // can never be inter-process, and on a mesh where no facet has
+    // degree > 2 (max_facet_to_cell_links <= 2, the manifold case)
+    // that covers every facet degree the callers of
+    // interprocess_facets() distinguish (exterior_facet_indices only
+    // tests degree == 1, fem::pack_coefficients-adjacent assembly only
+    // tests degree != 2). The inter-process set is then always empty
+    // and computing it is unnecessary. This does not hold once a
+    // facet may have degree > 2 (branching), where local degree alone
+    // cannot tell "several cells, one rank" from "several cells,
+    // several ranks".
+    if (_ghost_mode == GhostMode::shared_facet and _max_facet_to_cell_links
+        and *_max_facet_to_cell_links <= 2)
+    {
+      _interprocess_facets.push_back({});
+    }
+    else
+      _interprocess_facets.push_back(compute_interprocess_vertices(*this));
+  }
 
   // TODO: is this check sufficient/correct? Does not catch the
   // cell_entity entity case. Should there also be a check for
@@ -1204,7 +1229,8 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
     std::vector<std::span<const std::int64_t>> cells,
     std::vector<std::span<const std::int64_t>> original_cell_index,
     std::vector<std::span<const int>> ghost_owners,
-    std::span<const std::int64_t> boundary_vertices, int num_threads)
+    std::span<const std::int64_t> boundary_vertices, int num_threads,
+    GhostMode ghost_mode, std::optional<std::int32_t> max_facet_to_cell_links)
 {
   if (num_threads < 1)
     throw std::invalid_argument("num_threads must be >= 1.");
@@ -1595,7 +1621,8 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
   std::ranges::transform(global_to_local_vertices, input_vertex_index.begin(),
                          [](auto& e) { return e.first; });
 
-  return {Topology(cell_types, index_map_v, index_map_c, cells_c, orig_index),
+  return {Topology(cell_types, index_map_v, index_map_c, cells_c, orig_index,
+                   ghost_mode, max_facet_to_cell_links),
           std::move(input_vertex_index)};
 }
 //-----------------------------------------------------------------------------
@@ -1604,11 +1631,13 @@ Topology mesh::create_topology(
     std::vector<std::span<const std::int64_t>> cells,
     std::vector<std::span<const std::int64_t>> original_cell_index,
     std::vector<std::span<const int>> ghost_owners,
-    std::span<const std::int64_t> boundary_vertices, int num_threads)
+    std::span<const std::int64_t> boundary_vertices, int num_threads,
+    GhostMode ghost_mode, std::optional<std::int32_t> max_facet_to_cell_links)
 {
-  return impl::create_topology(
-             comm, cell_types, std::move(cells), std::move(original_cell_index),
-             std::move(ghost_owners), boundary_vertices, num_threads)
+  return impl::create_topology(comm, cell_types, std::move(cells),
+                               std::move(original_cell_index),
+                               std::move(ghost_owners), boundary_vertices,
+                               num_threads, ghost_mode, max_facet_to_cell_links)
       .first;
 }
 //-----------------------------------------------------------------------------
@@ -1617,11 +1646,13 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                       std::span<const std::int64_t> original_cell_index,
                       std::span<const int> ghost_owners, CellType cell_type,
                       std::span<const std::int64_t> boundary_vertices,
-                      int num_threads)
+                      int num_threads, GhostMode ghost_mode,
+                      std::optional<std::int32_t> max_facet_to_cell_links)
 {
   spdlog::info("Create topology (single cell type)");
   return create_topology(comm, {cell_type}, {cells}, {original_cell_index},
-                         {ghost_owners}, boundary_vertices, num_threads);
+                         {ghost_owners}, boundary_vertices, num_threads,
+                         ghost_mode, max_facet_to_cell_links);
 }
 //-----------------------------------------------------------------------------
 std::tuple<Topology, std::vector<int32_t>, std::vector<int32_t>>
