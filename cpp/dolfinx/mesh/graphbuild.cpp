@@ -593,10 +593,6 @@ mesh::build_local_dual_graph(
 
   common::Timer timer0("Compute local part of mesh dual graph: 0");
 
-  // TODO: cell_offsets can be removed?
-  std::vector<std::int32_t> cell_offsets{0};
-  cell_offsets.reserve(cells.size() + 1);
-
   int max_vertices_per_facet = 0;
   std::size_t facet_count = 0;
   for (std::size_t j = 0; j < cells.size(); ++j)
@@ -616,7 +612,6 @@ mesh::build_local_dual_graph(
                                   "number of vertices per cell.");
     }
     std::int32_t num_cells = cells[j].size() / num_cell_vertices;
-    cell_offsets.push_back(cell_offsets.back() + num_cells);
     facet_count += num_cell_facets * num_cells;
 
     graph::AdjacencyList<std::int32_t> cell_facets
@@ -654,7 +649,8 @@ mesh::build_local_dual_graph(
            std::size_t cell_offset, std::size_t facet_offset,
            const graph::AdjacencyList<int>& cell_facets,
            std::span<const std::int64_t> cells,
-           std::span<const std::span<std::int64_t>> facets)
+           std::span<const std::span<std::int64_t>> facets,
+           std::span<std::int32_t> facet_cell)
   {
     constexpr std::int32_t padding_value = -1;
     std::vector<std::int64_t> row(num_vertices_per_facet_max);
@@ -711,25 +707,28 @@ mesh::build_local_dual_graph(
         std::size_t idx = facet_offset + c * cell_facets.num_nodes() + f;
         for (int k = 0; k < num_vertices_per_facet_max; ++k)
           facets[k][idx] = row[k];
-        facets[num_vertices_per_facet_max][idx] = c + cell_offset;
+        facet_cell[idx] = c + cell_offset;
       }
     }
   };
 
-  const int shape1 = max_vertices_per_facet + 1;
-  std::vector<std::int64_t> facets_storage(facet_count * shape1);
-  std::vector<std::span<std::int64_t>> facets(shape1);
-  for (int col = 0; col < shape1; ++col)
+  std::vector<std::int64_t> facets_storage(facet_count
+                                           * max_vertices_per_facet);
+  std::vector<std::int32_t> facet_cell(facet_count);
+  std::vector<std::span<std::int64_t>> facets(max_vertices_per_facet);
+  for (int col = 0; col < max_vertices_per_facet; ++col)
   {
     facets[col] = std::span<std::int64_t>(
         facets_storage.data() + col * facet_count, facet_count);
   }
 
   std::size_t facet_offset = 0;
+  std::size_t cell_offset = 0;
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
     CellType cell_type = celltypes[j];
     int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
+
     graph::AdjacencyList<int> cell_facets
         = mesh::get_entity_vertices(cell_type, tdim - 1);
     std::span _cells = cells[j];
@@ -740,19 +739,22 @@ mesh::build_local_dual_graph(
       auto [c0, c1] = common::local_range(i, num_cells_j, num_threads);
       threads.emplace_back(
           build_facets_fn, max_vertices_per_facet, num_cell_vertices,
-          cell_offsets[j] + c0, facet_offset + c0 * cell_facets.num_nodes(),
+          cell_offset + c0, facet_offset + c0 * cell_facets.num_nodes(),
           std::cref(cell_facets),
           _cells.subspan(c0 * num_cell_vertices, (c1 - c0) * num_cell_vertices),
-          std::span<const std::span<std::int64_t>>(facets));
+          std::span<const std::span<std::int64_t>>(facets),
+          std::span<std::int32_t>(facet_cell));
     }
     auto [c0, c1] = common::local_range(0, num_cells_j, num_threads);
     build_facets_fn(
-        max_vertices_per_facet, num_cell_vertices, cell_offsets[j] + c0,
+        max_vertices_per_facet, num_cell_vertices, cell_offset + c0,
         facet_offset + c0 * cell_facets.num_nodes(), std::cref(cell_facets),
         _cells.subspan(c0 * num_cell_vertices, (c1 - c0) * num_cell_vertices),
-        std::span<const std::span<std::int64_t>>(facets));
+        std::span<const std::span<std::int64_t>>(facets),
+        std::span<std::int32_t>(facet_cell));
 
     facet_offset += num_cells_j * cell_facets.num_nodes();
+    cell_offset += num_cells_j / num_cell_vertices;
   }
 
   timer1.stop();
@@ -806,8 +808,7 @@ mesh::build_local_dual_graph(
   // attached cell index (the last column) of facet `idx`.
   auto facet_vertex
       = [&facets](std::size_t idx, int col) { return facets[col][idx]; };
-  auto facet_cell = [&facets, max_vertices_per_facet](std::size_t idx)
-  { return static_cast<std::int32_t>(facets[max_vertices_per_facet][idx]); };
+
   auto facets_equal = [&facet_vertex, max_vertices_per_facet](std::size_t idx0,
                                                               std::size_t idx1)
   {
@@ -842,7 +843,7 @@ mesh::build_local_dual_graph(
           std::size_t idx = *std::next(it, i);
           for (int col = 0; col < max_vertices_per_facet; ++col)
             unmatched_facets.push_back(facet_vertex(idx, col));
-          local_cells.push_back(facet_cell(idx));
+          local_cells.push_back(facet_cell[idx]);
         }
       }
 
@@ -852,11 +853,11 @@ mesh::build_local_dual_graph(
       for (auto facet_a_it = it; facet_a_it != matching_facets.end();
            ++facet_a_it)
       {
-        std::int32_t cell_a = facet_cell(*facet_a_it);
+        std::int32_t cell_a = facet_cell[*facet_a_it];
         for (auto facet_b_it = std::next(facet_a_it);
              facet_b_it != matching_facets.end(); ++facet_b_it)
         {
-          std::int32_t cell_b = facet_cell(*facet_b_it);
+          std::int32_t cell_b = facet_cell[*facet_b_it];
           edges.push_back({cell_a, cell_b});
         }
       }
@@ -876,7 +877,7 @@ mesh::build_local_dual_graph(
 
   common::Timer timer5("Compute local part of mesh dual graph: 5");
 
-  std::vector<std::int32_t> num_links(cell_offsets.back(), 0);
+  std::vector<std::int32_t> num_links(cell_offset, 0);
   for (auto [a, b] : edges)
   {
     ++num_links[a];
