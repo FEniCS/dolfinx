@@ -244,6 +244,9 @@ create_geometry(const Topology& topology,
 {
   spdlog::info("Create Geometry (multiple)");
 
+  if (dim < 1 or dim > 3)
+    throw std::invalid_argument("dim must be 1, 2 or 3.");
+
   assert(std::ranges::is_sorted(nodes));
   using T = typename std::remove_reference_t<typename U::value_type>;
 
@@ -293,14 +296,27 @@ create_geometry(const Topology& topology,
   const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
       graph::build::compute_local_to_global(xdofs, all_dofmaps), nodes);
 
+  // Cross-validate the three independently-derived quantities that the
+  // rest of this function assumes are equal: the number of coordinate
+  // rows in `x`, `nodes.size()`, and the geometry-dof count implied by
+  // `xdofs`/`dofmaps` (l2l.size()).
+  if (x.size() % dim != 0)
+    throw std::invalid_argument("x size must be a multiple of dim.");
+  if (x.size() / dim != nodes.size())
+    throw std::invalid_argument("x row count must equal nodes.size().");
+  if (l2l.size() != nodes.size())
+  {
+    throw std::invalid_argument(
+        "Mismatch between xdofs/dofmaps and nodes: derived geometry dof "
+        "count does not equal nodes.size().");
+  }
+
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(nodes.size());
   std::ranges::transform(l2l, igi.begin(),
                          [&nodes](auto index) { return nodes[index]; });
 
   // Build coordinate dof array, copying coordinates to correct position
-  if (x.size() % dim != 0)
-    throw std::invalid_argument("x size must be a multiple of dim.");
   const std::size_t shape0 = x.size() / dim;
   const std::size_t shape1 = dim;
   std::vector<T> xg(3 * shape0, 0);

@@ -93,6 +93,27 @@ std::vector<std::int64_t> mesh::impl::reorder_cells(
         },
         reorder_fn);
 
+    // Validate that the reordering function returned a permutation of
+    // [0, num_owned_cells), since remap is used as one below (both as a
+    // direct index and via reorder_list).
+    if (remap.size() != num_owned_cells)
+    {
+      throw std::invalid_argument(
+          "Cell reordering function returned the wrong number of cells.");
+    }
+    {
+      std::vector<bool> seen(num_owned_cells, false);
+      for (std::int32_t r : remap)
+      {
+        if (r < 0 or static_cast<std::size_t>(r) >= num_owned_cells or seen[r])
+        {
+          throw std::invalid_argument(
+              "Cell reordering function did not return a permutation.");
+        }
+        seen[r] = true;
+      }
+    }
+
     cell_offset += gdim * num_owned_cells;
 
     // Update 'original' indices
@@ -343,9 +364,12 @@ mesh::compute_incident_entities(const Topology& topology,
         std::format("Connectivity missing: ({}, {})", d0, d1));
   }
 
+  const std::int32_t num_entities0 = map0->size_local() + map0->num_ghosts();
   std::vector<std::int32_t> entities1;
   for (std::int32_t entity : entities)
   {
+    if (entity < 0 or entity >= num_entities0)
+      throw std::out_of_range("Entity index out of range.");
     auto e = e0_to_e1->links(entity);
     entities1.insert(entities1.end(), e.begin(), e.end());
   }
