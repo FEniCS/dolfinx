@@ -112,6 +112,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> finalize_mesh(
 /// `6*n[0]*n[1]*n[2]` cells. For hexahedra the number of cells will be
 /// `n[0]*n[1]*n[2]`.
 ///
+/// @note Collective.
+///
 /// @param[in] comm MPI communicator to distribute the mesh on.
 /// @param[in] subcomm MPI communicator to construct and partition the
 /// mesh topology on. If the process should not be involved in the
@@ -182,6 +184,8 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
 /// `6*n[0]*n[1]*n[2]` cells. For hexahedra the number of cells will be
 /// `n[0]*n[1]*n[2]`.
 ///
+/// @note Collective.
+///
 /// @param[in] comm MPI communicator to distribute the mesh on.
 /// @param[in] p Corner of the box.
 /// @param[in] n Number of cells in each direction.
@@ -210,6 +214,8 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
 /// maximum coordinates. The total number of vertices will be `(n[0] +
 /// 1)*(n[1] + 1)`. For triangles there will be  will be `2*n[0]*n[1]`
 /// cells. For quadrilaterals the number of cells will be `n[0]*n[1]`.
+///
+/// @note Collective.
 ///
 /// @param[in] comm MPI communicator to build the mesh on.
 /// @param[in] p Bottom-left and top-right corners of the rectangle.
@@ -276,6 +282,8 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// 1)*(n[1] + 1)`. For triangles there will be  will be `2*n[0]*n[1]`
 /// cells. For quadrilaterals the number of cells will be `n[0]*n[1]`.
 ///
+/// @note Collective.
+///
 /// @param[in] comm MPI communicator to build the mesh on
 /// @param[in] p Two corner points
 /// @param[in] n Number of cells in each direction
@@ -299,6 +307,8 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// Given `n` cells in the axial direction, the total number of
 /// intervals will be `n` and the total number of vertices will be
 /// `n + 1`.
+///
+/// @note Collective.
 ///
 /// @param[in] comm MPI communicator to build the mesh on.
 /// @param[in] n Number of cells.
@@ -466,7 +476,8 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
       const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
       const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
 
-      // Note that v0 < v1 < v2 < v3 < vmid
+      // Kuhn decomposition of the hexahedron into 6 tetrahedra sharing
+      // the v0-v7 diagonal.
       cells.insert(cells.end(),
                    {v0, v1, v3, v7, v0, v1, v7, v5, v0, v5, v7, v4,
                     v0, v3, v2, v7, v0, v6, v4, v7, v0, v2, v6, v7});
