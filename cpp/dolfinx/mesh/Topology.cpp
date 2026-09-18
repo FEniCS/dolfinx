@@ -1681,13 +1681,20 @@ mesh::entities_to_index(const Topology& topology, int dim,
   boost::unordered_flat_map<Key, std::int32_t> entity_key_to_index;
   entity_key_to_index.reserve(map_e->size_local() + map_e->num_ghosts());
   Key key;
-  key.fill(-1);
   for (std::int32_t e = 0; e < map_e->size_local() + map_e->num_ghosts(); ++e)
   {
+    // Reset and sort the whole (fixed-size) key every iteration, rather
+    // than only its first num_vertices_per_entity (runtime-valued)
+    // entries -- num_vertices_per_entity is constant across this loop,
+    // so the -1 padding always sorts to a consistent prefix, giving the
+    // same canonical key as sorting just the valid prefix would. This
+    // keeps the sort range compile-time-sized, which avoids a
+    // GCC -Warray-bounds false positive triggered by sorting a
+    // std::array using a runtime-computed sub-range.
+    key.fill(-1);
     auto vertices = e_to_v->links(e);
     std::ranges::copy(vertices, key.begin());
-    std::ranges::sort(key.begin(),
-                      std::next(key.begin(), num_vertices_per_entity));
+    std::ranges::sort(key);
     auto ins = entity_key_to_index.insert({key, e});
     if (!ins.second)
       throw std::runtime_error("Duplicate mesh entity detected.");
@@ -1704,13 +1711,12 @@ mesh::entities_to_index(const Topology& topology, int dim,
   std::vector<std::int32_t> indices;
   indices.reserve(entities.size() / num_vertices_per_entity);
   Key vertices;
-  vertices.fill(-1);
   for (std::size_t e = 0; e < entities.size(); e += num_vertices_per_entity)
   {
+    vertices.fill(-1);
     auto v = entities.subspan(e, num_vertices_per_entity);
     std::ranges::copy(v, vertices.begin());
-    std::ranges::sort(vertices.begin(),
-                      std::next(vertices.begin(), num_vertices_per_entity));
+    std::ranges::sort(vertices);
     if (auto it = entity_key_to_index.find(vertices);
         it != entity_key_to_index.end())
     {
