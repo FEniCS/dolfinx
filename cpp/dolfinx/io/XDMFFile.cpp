@@ -234,8 +234,10 @@ mesh::Mesh<double> XDMFFile::read_mesh(
   const std::vector<double>& _x = std::get<std::vector<double>>(x);
   mesh::Mesh<double> mesh = mesh::create_mesh(
       _comm.comm(), _comm.comm(), cells, {element}, _comm.comm(), _x, xshape,
-      dolfinx::graph::Partitioner{dolfinx::graph::partition_fn(dolfinx::graph::partition_graph),
-        std::nullopt, facet_intercept}, mode, max_facet_to_cell_links, 1);
+      dolfinx::graph::Partitioner{
+          dolfinx::graph::partition_fn(dolfinx::graph::partition_graph),
+          cell_weights, facet_intercept},
+      mode, max_facet_to_cell_links, 1);
 
   mesh.name = name;
   return mesh;
