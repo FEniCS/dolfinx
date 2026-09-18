@@ -1803,17 +1803,21 @@ def create_geometry(
 def transfer_meshtags_to_submesh(
     entity_tag: MeshTags,
     submesh: Mesh,
-    vertex_to_parent: EntityMap,
     cell_to_parent: EntityMap,
+    vertex_to_parent: EntityMap,
 ) -> MeshTags:
     """Transfer a ``entity_tag`` from a parent mesh to a ``submesh``.
+
+    The ``cell_to_parent``/``vertex_to_parent`` order matches the
+    ``(entity_map, vertex_map)`` order that :func:`create_submesh`
+    returns, so its result can be unpacked and passed straight through.
 
     Args:
         entity_tag: Tag to transfer
         submesh: Submesh to transfer tag to
+        cell_to_parent: Mapping from submesh cells to parent entities
         vertex_to_parent: Mapping from submesh vertices to parent
             mesh vertices
-        cell_to_parent: Mapping from submesh cells to parent entities
     Returns:
         The transferred meshtags object on the submesh.
     """
@@ -1844,8 +1848,8 @@ def transfer_meshtags_to_submesh(
     cpp_tag = ftype(
         entity_tag._cpp_object,  # type: ignore[arg-type]
         submesh.topology._cpp_object,
-        vertex_to_parent._cpp_object,
         cell_to_parent._cpp_object,
+        vertex_to_parent._cpp_object,
     )
     return MeshTags(cpp_tag)
 
