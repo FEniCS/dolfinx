@@ -36,6 +36,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
+include(FindPackageHandleStandardArgs)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 message(STATUS "Asking Python module FFCx for location of ufcx.h...")

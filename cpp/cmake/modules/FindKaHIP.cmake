@@ -49,9 +49,8 @@ include(FindPackageHandleStandardArgs)
 if(DOLFINX_SKIP_BUILD_TESTS)
   find_package_handle_standard_args(
     KaHIP
-    "KaHIP could not be found/configured."
-    KAHIP_INCLUDE_DIR
-    PARHIP_LIBRARY
+    REQUIRED_VARS KAHIP_INCLUDE_DIR PARHIP_LIBRARY
+    FAIL_MESSAGE "KaHIP could not be found/configured."
   )
 else()
   if(PARHIP_LIBRARY AND KAHIP_INCLUDE_DIR)
@@ -94,10 +93,8 @@ else()
   endif()
   find_package_handle_standard_args(
     KaHIP
-    "KaHIP could not be found/configured."
-    KAHIP_INCLUDE_DIR
-    PARHIP_LIBRARY
-    KAHIP_TEST_COMPILES
+    REQUIRED_VARS KAHIP_INCLUDE_DIR PARHIP_LIBRARY KAHIP_TEST_COMPILES
+    FAIL_MESSAGE "KaHIP could not be found/configured."
   )
 endif()
 

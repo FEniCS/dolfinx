@@ -41,6 +41,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
+include(FindPackageHandleStandardArgs)
 include(CMakePushCheckState)
 include(CheckCXXSourceCompiles)
 
@@ -206,13 +207,13 @@ if(ParMETIS_FOUND AND NOT TARGET ParMETIS::ParMETIS)
       $<$<BOOL:${METIS_LIBRARY}>:METIS::METIS>
       $<$<BOOL:${GKLIB_LIBRARY}>:GKLib::GKLib>
   )
-
-  mark_as_advanced(
-    PARMETIS_LIBRARY
-    PARMETIS_INCLUDE_DIR
-    METIS_LIBRARY
-    GKLIB_LIBRARY
-    PARMETIS_CONFIG_TEST_VERSION_EXITCODE
-    PARMETIS_CONFIG_TEST_VERSION_COMPILED
-  )
 endif()
+
+mark_as_advanced(
+  PARMETIS_LIBRARY
+  PARMETIS_INCLUDE_DIR
+  METIS_LIBRARY
+  GKLIB_LIBRARY
+  PARMETIS_CONFIG_TEST_VERSION_EXITCODE
+  PARMETIS_CONFIG_TEST_VERSION_COMPILED
+)
