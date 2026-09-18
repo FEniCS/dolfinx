@@ -26,6 +26,9 @@
 // squared of the assembled matrix, or the $l^2$ norm squared of the
 // assembled vector, so that the two approaches can be checked for
 // consistency against each other.
+//
+// Running this demo requires the files: {download}`demo_custom_kernel/main.cpp`
+// and {download}`demo_custom_kernel/CMakeLists.txt`.
 
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>

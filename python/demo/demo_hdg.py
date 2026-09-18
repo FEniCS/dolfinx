@@ -18,9 +18,9 @@
 # This demo illustrates how to:
 #
 # - Solve Poisson's equation using an HDG scheme.
-# - Defining custom integration domains
+# - Define custom integration domains
 # - Create a submesh over all facets of the mesh
-# - Use `ufl.MixedFunctionSpace` to defined blocked problems.
+# - Use `ufl.MixedFunctionSpace` to define blocked problems.
 # - Assemble mixed systems with multiple, related meshes
 
 # +
