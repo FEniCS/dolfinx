@@ -177,6 +177,24 @@ bool is_cellwise(const fem::FiniteElement<T>& e)
   return e.space_dimension() / e.block_size() == 1;
 }
 
+/// @brief Do two elements share a base element, ignoring any blocking?
+///
+/// VTK and VTX store a blocked field and its scalar base element
+/// identically, so a scalar and a vector Lagrange space of the same
+/// degree are interchangeable for output.
+/// fem::FiniteElement::operator== is stricter: it also compares value
+/// shapes, and so separates those two.
+///
+/// @throws std::invalid_argument if either element has no Basix
+/// element, i.e. is mixed or a quadrature element, matching what
+/// fem::FiniteElement::operator== did here previously.
+template <std::floating_point T>
+bool same_base_element(const fem::FiniteElement<T>& e0,
+                       const fem::FiniteElement<T>& e1)
+{
+  return e0.basix_element() == e1.basix_element();
+}
+
 } // namespace impl
 
 /// @brief Given a FunctionSpace, create a topology and geometry based
