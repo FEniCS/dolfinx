@@ -157,6 +157,7 @@ create_new_vertices(MPI_Comm comm,
   // Add new edge midpoints to list of vertices. The new vertex will be owned by
   // the process owning the edge.
   std::vector<std::int32_t> marked_edge_list;
+  marked_edge_list.reserve(edge_index_map->size_local());
   for (int local_i = 0; local_i < edge_index_map->size_local(); ++local_i)
   {
     if (marked_edges[local_i])

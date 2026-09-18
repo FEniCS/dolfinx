@@ -250,10 +250,15 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 
     auto c_to_v = topology->connectivity({tdim, k}, {0, 0});
     auto c_to_e = topology->connectivity({tdim, k}, {1, 0});
+
+    // Cell topology defined through its globally numbered vertices.
+    // Declared outside the cell loop below and cleared (not
+    // reallocated) each iteration, since that loop runs over every
+    // local cell of this entity type.
+    std::vector<std::int64_t> entities;
     for (int c = 0; c < topology->index_maps(tdim)[k]->size_local(); ++c)
     {
-      // Cell topology defined through its globally numbered vertices
-      std::vector<std::int64_t> entities;
+      entities.clear();
 
       // Extract new global vertex number for existing vertices
       for (std::int32_t i : c_to_v->links(c))

@@ -276,6 +276,26 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
     // Pack ghosts indices
     std::vector<std::vector<std::int64_t>> send_data(src.size());
     std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
+    {
+      // Count ghosts per destination rank first, then reserve each
+      // bucket's exact size -- avoids reallocation through the fill
+      // loop below, which runs over all ghosts (mesh scale).
+      std::vector<std::size_t> counts(src.size(), 0);
+      for (std::size_t i = 0; i < ghosts.size(); ++i)
+      {
+        if (include_ghost[i])
+        {
+          auto it = std::ranges::lower_bound(src, owners[i]);
+          assert(it != src.end() and *it == owners[i]);
+          ++counts[std::ranges::distance(src.begin(), it)];
+        }
+      }
+      for (std::size_t r = 0; r < src.size(); ++r)
+      {
+        send_data[r].reserve(counts[r]);
+        pos_to_ghost[r].reserve(counts[r]);
+      }
+    }
     for (std::size_t i = 0; i < ghosts.size(); ++i)
     {
       auto it = std::ranges::lower_bound(src, owners[i]);
@@ -405,6 +425,7 @@ compute_submap_indices(const IndexMap& imap,
     // Create a map from (global) indices in `recv_indices` to a list of
     // processes that can own them in the submap.
     std::vector<std::pair<std::int64_t, int>> global_idx_to_possible_owner;
+    global_idx_to_possible_owner.reserve(recv_indices.size());
     const std::array local_range = imap.local_range();
 
     // Loop through the received indices
@@ -571,6 +592,12 @@ compute_submap_indices(const IndexMap& imap,
 
     std::vector<std::int32_t> send_indices_local(send_indices.size());
     imap.global_to_local(send_indices, send_indices_local);
+
+    // Each iteration below adds to exactly one of submap_ghost or
+    // submap_owned, so send_indices_local.size() is a valid (combined)
+    // upper bound for both.
+    submap_ghost.reserve(send_indices_local.size());
+    submap_ghost_owners.reserve(send_indices_local.size());
 
     // Loop over ghost indices (in the original map) and add to
     // submap_owned if the owning process has decided this process to be
@@ -821,6 +848,24 @@ common::stack_index_maps(
     {
       std::vector<std::vector<std::int64_t>> ghost_by_rank(src.size());
       std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
+      {
+        // Count ghosts per owning rank first, then reserve each
+        // bucket's exact size -- avoids reallocation through the fill
+        // loop below, which runs over all ghosts of this map (mesh
+        // scale).
+        std::vector<std::size_t> counts(src.size(), 0);
+        for (std::size_t i = 0; i < ghosts.size(); ++i)
+        {
+          auto it = std::ranges::lower_bound(src, owners[i]);
+          assert(it != src.end() and *it == owners[i]);
+          ++counts[std::ranges::distance(src.begin(), it)];
+        }
+        for (std::size_t r = 0; r < src.size(); ++r)
+        {
+          ghost_by_rank[r].reserve(counts[r]);
+          pos_to_ghost[r].reserve(counts[r]);
+        }
+      }
       for (std::size_t i = 0; i < ghosts.size(); ++i)
       {
         auto it = std::ranges::lower_bound(src, owners[i]);
@@ -835,6 +880,8 @@ common::stack_index_maps(
                              [](auto& g) -> std::int32_t { return g.size(); });
 
       // Send buffer and ghost position to send buffer position
+      send_indices.reserve(ghosts.size());
+      ghost_buffer_pos.reserve(ghosts.size());
       for (auto& g : ghost_by_rank)
         send_indices.insert(send_indices.end(), g.begin(), g.end());
       for (auto& p : pos_to_ghost)
@@ -1189,6 +1236,7 @@ IndexMap::index_to_dest_ranks(int tag) const
     dolfinx::MPI::check_error(_comm.comm(), ierr);
 
     // Build array of (local index, ghosting local rank), and sort
+    idx_to_rank.reserve(recv_buffer.size());
     for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
     {
       for (int j = recv_disp[r]; j < recv_disp[r + 1]; ++j)
@@ -1233,6 +1281,28 @@ IndexMap::index_to_dest_ranks(int tag) const
     {
       const int mpi_rank = dolfinx::MPI::rank(_comm.comm());
       std::vector<std::vector<std::int64_t>> dest_idx_to_rank(dest.size());
+      {
+        // Count entries per destination rank first (mirroring the fill
+        // loop below without pushing), then reserve each bucket's
+        // exact size -- avoids reallocation through that loop, which
+        // runs over all owned indices and their sharing ranks (mesh
+        // scale).
+        std::vector<std::size_t> counts(dest.size(), 0);
+        for (std::size_t n = 0; n < offsets.size() - 1; ++n)
+        {
+          std::span<const std::int32_t> ranks(data.data() + offsets[n],
+                                              offsets[n + 1] - offsets[n]);
+          for (auto r0 : ranks)
+          {
+            for (auto r : ranks)
+              if (r0 != r)
+                counts[r0] += 2;
+            counts[r0] += 2;
+          }
+        }
+        for (std::size_t r0 = 0; r0 < dest_idx_to_rank.size(); ++r0)
+          dest_idx_to_rank[r0].reserve(counts[r0]);
+      }
       for (std::size_t n = 0; n < offsets.size() - 1; ++n)
       {
         std::span<const std::int32_t> ranks(data.data() + offsets[n],
@@ -1256,6 +1326,8 @@ IndexMap::index_to_dest_ranks(int tag) const
       // Count number of ghosts per destination and build send buffer
       std::ranges::transform(dest_idx_to_rank, std::back_inserter(send_sizes),
                              [](auto& x) -> int { return x.size(); });
+      send_buffer.reserve(
+          std::reduce(send_sizes.begin(), send_sizes.end(), std::size_t(0)));
       for (auto& d : dest_idx_to_rank)
         send_buffer.insert(send_buffer.end(), d.begin(), d.end());
 

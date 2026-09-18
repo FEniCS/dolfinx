@@ -173,8 +173,11 @@ std::vector<std::int64_t> mesh::impl::reorder_cells(
         std::span<std::span<const std::int64_t>>(facets0_view));
 
     // For facets in facets0 that appear only once, store the facet
-    // vertices
+    // vertices. num_facets * max_v is a safe upper bound (every facet
+    // contributes at most max_v entries, and only a subset of facets
+    // end up unmatched).
     std::vector<std::int64_t> vertices;
+    vertices.reserve(num_facets * max_v);
 
     // Number of leading valid (non -1 padding) vertices in row
     auto trim_len = [&facets0, max_v](std::int32_t row)
@@ -291,6 +294,7 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology,
   auto facet_map = topology.index_maps(tdim - 1).at(facet_type_idx);
 
   std::vector<std::int32_t> facets;
+  facets.reserve(facet_map->size_local());
   for (std::int32_t f = 0; f < facet_map->size_local(); ++f)
   {
     if (f_to_c->num_links(f) == 1)
@@ -344,6 +348,7 @@ mesh::compute_incident_entities(const Topology& topology,
   }
 
   std::vector<std::int32_t> entities1;
+  entities1.reserve(entities.size());
   for (std::int32_t entity : entities)
   {
     auto e = e0_to_e1->links(entity);

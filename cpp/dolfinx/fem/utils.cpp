@@ -234,6 +234,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
         0);
     std::ranges::for_each(interprocess_facets, [&interprocess_marker](auto f)
                           { interprocess_marker[f] = 1; });
+    entity_data.reserve(4 * entities.size());
     for (auto f : entities)
     {
       if (f_to_c->num_links(f) == 2)
@@ -258,6 +259,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   case IntegralType::ridge:
   {
     auto [e_to_c, c_to_e] = get_connectivities(dim);
+    entity_data.reserve(2 * entities.size());
     for (auto entity : entities)
     {
       std::array<std::int32_t, 2> pair = impl::get_cell_entity_pairs<1>(

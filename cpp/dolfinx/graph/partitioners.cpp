@@ -100,6 +100,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
   // Build send data and buffer
   std::vector<int> dest, send_sizes;
   std::vector<std::int64_t> send_buffer;
+  send_buffer.reserve(2 * node_to_dest.size());
   {
     auto it = node_to_dest.begin();
     while (it != node_to_dest.end())

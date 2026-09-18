@@ -335,8 +335,28 @@ compute_refinement(MPI_Comm neighbor_comm,
 
   const std::int32_t num_cells = map_c->size_local();
 
-  // Iterate over all cells, and refine if cell has a marked edge
+  // Iterate over all cells, and refine if cell has a marked edge.
+  // Reserve using the maximum possible number of children per parent
+  // cell (full/red refinement produces 2^tdim children); parent_facet
+  // grows in lockstep with cell_topology in both branches below (both
+  // add num_cell_vertices entries per unrefined cell, or
+  // simplex_set.size() entries per refined cell), so it is reserved
+  // with the same element count.
+  const std::size_t max_children = std::size_t(1) << tdim;
   std::vector<std::int64_t> cell_topology;
+  cell_topology.reserve(static_cast<std::size_t>(num_cells) * max_children
+                        * num_cell_vertices);
+  if (compute_parent_cell)
+    parent_cell->reserve(static_cast<std::size_t>(num_cells) * max_children);
+  if (compute_facets)
+  {
+    parent_facet->reserve(static_cast<std::size_t>(num_cells) * max_children
+                          * num_cell_vertices);
+  }
+
+  // Longest edges of each face in cell-local indexing, reused across
+  // the loop below (max size = number of faces per cell).
+  std::vector<std::int32_t> longest_edge;
   for (int c = 0; c < num_cells; ++c)
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
@@ -384,7 +404,7 @@ compute_refinement(MPI_Comm neighbor_comm,
     {
       // Need longest edges of each face in cell local indexing. NB in
       // 2D the face is the cell itself, and there is just one entry.
-      std::vector<std::int32_t> longest_edge;
+      longest_edge.clear();
       for (auto f : c_to_f->links(c))
         longest_edge.push_back(long_edge[f]);
 
