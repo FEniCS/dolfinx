@@ -232,10 +232,11 @@ def test_interpolate_geometry_discontinuous_assembly(dtype):
     assert np.isclose(total(dx, new_msh), 0.25, rtol=rtol)
 
 
-def test_interpolate_geometry_discontinuous_no_entity_geometry():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_interpolate_geometry_discontinuous_no_entity_geometry(dtype):
     """Sub-entity geometry is undefined for a discontinuous geometry."""
-    msh = create_unit_square(MPI.COMM_WORLD, 2, 2)
-    new_msh = interpolate_geometry(msh, _discontinuous_cmap(basix.CellType.triangle, 1, np.float64))
+    msh = create_unit_square(MPI.COMM_WORLD, 2, 2, dtype=dtype)
+    new_msh = interpolate_geometry(msh, _discontinuous_cmap(basix.CellType.triangle, 1, dtype))
     new_msh.topology.create_connectivity(1, 2)
     new_msh.topology.create_connectivity(2, 1)
     facets = np.arange(new_msh.topology.index_map(1).size_local, dtype=np.int32)

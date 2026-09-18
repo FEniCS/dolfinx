@@ -541,9 +541,8 @@ def test_discontinuous_coordinate_element(dtype, degree):
         cell_x = np.vstack([cell_x, [[1.1, -0.1], [0.0, 0.5], [1.0, 0.5]]]).astype(dtype)
     X = np.array([[0.25, 0.25], [0.5, 0.5], [0.0, 1.0]], dtype=dtype)
     x = cmap.push_forward(X, cell_x)
-    np.testing.assert_allclose(
-        cmap.pull_back(x, cell_x), X, atol=1e-5 if dtype == np.float32 else 1e-12
-    )
+    tol = np.sqrt(np.finfo(dtype).eps)
+    np.testing.assert_allclose(cmap.pull_back(x, cell_x), X, atol=tol)
 
 
 @pytest.mark.parametrize("gdim", [2, 3])
