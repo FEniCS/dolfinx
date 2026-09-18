@@ -1348,8 +1348,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   using T = typename std::remove_reference_t<typename U::value_type>;
 
   if (cells.size() != elements.size())
+  {
     throw std::invalid_argument(
         "Number of cell arrays and elements must match.");
+  }
   std::vector<CellType> celltypes;
   std::ranges::transform(elements, std::back_inserter(celltypes),
                          [](auto& e) { return e.cell_shape(); });
