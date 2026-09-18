@@ -238,11 +238,14 @@ constexpr bool bbox_in_bbox(std::span<const T, 6> a, std::span<const T, 6> b)
   return in;
 }
 
+/// Scratch storage reused across the whole closest-entity search (see
+/// squared_distance_entity and _compute_closest_entity).
 template <std::floating_point T>
 struct ClosestEntityScratch
 {
-  std::vector<T> nodes;
-  const fem::ElementDofLayout& cmap_dof_layout;
+  std::vector<T> nodes; ///< Entity geometry dof coordinates, resized as needed
+  const fem::ElementDofLayout&
+      cmap_dof_layout; ///< Coordinate-element dof layout
 };
 
 /// @brief Compute the squared distance from a point to a mesh entity.
