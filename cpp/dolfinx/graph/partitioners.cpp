@@ -408,15 +408,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       // boundaries and save to map
       common::Timer timer5("Extract partition boundaries from SCOTCH graph");
 
-      // Build a flat list of (node0, additional destination rank) pairs
-      // for nodes with ghosting due to a neighbour in a different
-      // partition. This loop runs once per local graph node (e.g. a
-      // cell) times its edges, so can visit many millions of edges for
-      // a large mesh -- a std::map<int32_t, std::set<int32_t>> would
-      // heap-allocate a map node and a set node for every such edge, so
-      // a flat vector, deduplicated and sorted afterwards, is used
-      // instead (matching the approach used for the same kind of data
-      // in compute_destination_ranks above).
+      // Collect (node, additional destination rank) pairs.
       std::vector<std::array<std::int32_t, 2>> node0_to_dest;
       for (std::int32_t node0 = 0; node0 < graph.num_nodes(); ++node0)
       {
@@ -432,9 +424,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
         }
       }
 
-      // De-duplicate with a single hash-set pass, then sort
-      // lexicographically so entries are grouped by node0 (column 0,
-      // ascending) with destination ranks ascending within each group.
+      // De-duplicate and group by node.
       {
         boost::unordered_flat_set<std::array<std::int32_t, 2>> unique_set(
             node0_to_dest.begin(), node0_to_dest.end());

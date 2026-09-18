@@ -241,8 +241,6 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
 
   // Copy facet meshtag from parent to child
   std::vector<std::int32_t> facet_indices, tag_values;
-  facet_indices.reserve(indices.size());
-  tag_values.reserve(indices.size());
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
     std::int32_t parent_index = indices[i];
@@ -343,8 +341,6 @@ refinement::transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& tags0,
 
   // Copy cell meshtag from parent to child
   std::vector<std::int32_t> cell_indices, tag_values;
-  cell_indices.reserve(indices0.size());
-  tag_values.reserve(indices0.size());
   // std::span<const std::int32_t> in_index = meshtag.indices();
   // std::span<const std::int32_t> in_value = meshtag.values();
   for (std::size_t i = 0; i < indices0.size(); ++i)

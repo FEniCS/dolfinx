@@ -435,10 +435,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
 
-    // Open-addressed map: built once from all local cell vertices (one
-    // insert per (cell, vertex) pair, i.e. mesh scale), then only
-    // read from -- a node-based std::map would heap-allocate a tree
-    // node per insert here.
+    // Map input node indices to local vertices.
     boost::unordered_flat_map<std::int64_t, std::int32_t> input_idx_to_vertex;
     input_idx_to_vertex.reserve(c_to_v->num_nodes() * cell_vertex_dofs.size());
     for (int c = 0; c < c_to_v->num_nodes(); ++c)

@@ -442,11 +442,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                  [offset = offsets.front()](auto x) { return x - offset; });
   hdf5::close_file(h5file);
 
-  // Create cell topologies for each celltype in mesh. Reserve each
-  // per-type buffer using its exact final size (a pre-pass over the
-  // per-cell node counts, summed by type), avoiding reallocation
-  // through the per-cell fill loop below, which runs over every local
-  // cell.
+  // Create cell topologies for each cell type.
   std::vector<std::vector<std::int64_t>> cells_local(recv_types.size());
   {
     std::vector<std::size_t> num_nodes_per_type(recv_types.size(), 0);

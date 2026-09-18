@@ -112,12 +112,6 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     assert(f_to_v);
     auto f_to_e = topology->connectivity(tdim - 1, dim);
     assert(f_to_e);
-
-    // Conservative upper bound: 4 is the largest vertex/closure-entity
-    // count of any facet type of a supported cell (a quadrilateral
-    // facet).
-    vertices.reserve(facets.size() * 4);
-    entities.reserve(facets.size() * 4);
     for (auto f : facets)
     {
       auto v = f_to_v->links(f);
@@ -597,7 +591,6 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
   auto e_to_v = topology->connectivity({dim, entity_type_idx}, {0, 0});
   assert(e_to_v);
   std::vector<std::int32_t> entities;
-  entities.reserve(e_to_v->num_nodes());
   for (int e = 0; e < e_to_v->num_nodes(); ++e)
   {
     // Iterate over entity vertices
@@ -702,7 +695,6 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   auto e_to_v = topology->connectivity(dim, 0);
   assert(e_to_v);
   std::vector<std::int32_t> entities;
-  entities.reserve(facet_entities.size());
   for (auto e : facet_entities)
   {
     // Iterate over entity vertices

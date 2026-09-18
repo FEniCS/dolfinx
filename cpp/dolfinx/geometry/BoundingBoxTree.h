@@ -143,9 +143,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> build_from_leaf(
   std::vector<std::int32_t> bboxes;
   std::vector<T> bbox_coordinates;
 
-  // A binary tree built by bisection from N leaves has exactly 2N - 1
-  // nodes, so the final sizes are known up front -- reserving avoids
-  // O(log N) reallocation/copy passes through the recursion below.
+  // A binary tree with N leaves has 2N - 1 nodes.
   const std::size_t num_nodes = 2 * leaf_bboxes.size() - 1;
   bboxes.reserve(2 * num_nodes);
   bbox_coordinates.reserve(6 * num_nodes);
@@ -305,8 +303,7 @@ public:
     {
       _bboxes.clear();
 
-      // See build_from_leaf: final sizes are known up front for a
-      // binary tree built by bisection.
+      // A binary tree with N leaves has 2N - 1 nodes.
       const std::size_t num_nodes = 2 * points.size() - 1;
       _bboxes.reserve(2 * num_nodes);
       _bbox_coordinates.reserve(6 * num_nodes);

@@ -1665,13 +1665,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
   const int num_vertices_per_entity
       = cell_num_entities(cell_entity_type(topology.cell_type(), dim, 0), 0);
 
-  // Key is the sorted local vertex indices of an entity, padded with -1
-  // up to the largest vertex count of any supported cell type
-  // (hexahedron, 8 vertices). A fixed-size array key lets
-  // boost::unordered_flat_map store it inline, avoiding a per-entity
-  // heap allocation that a std::vector key (or a node-based std::map)
-  // would incur -- this loop runs once per mesh entity, which can
-  // number in the millions.
+  // Fixed-size, padded key for entities with up to eight vertices.
   constexpr int max_vertices_per_entity = 8;
   assert(num_vertices_per_entity <= max_vertices_per_entity);
   using Key = std::array<std::int32_t, max_vertices_per_entity>;
@@ -1683,14 +1677,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
   Key key;
   for (std::int32_t e = 0; e < map_e->size_local() + map_e->num_ghosts(); ++e)
   {
-    // Reset and sort the whole (fixed-size) key every iteration, rather
-    // than only its first num_vertices_per_entity (runtime-valued)
-    // entries -- num_vertices_per_entity is constant across this loop,
-    // so the -1 padding always sorts to a consistent prefix, giving the
-    // same canonical key as sorting just the valid prefix would. This
-    // keeps the sort range compile-time-sized, which avoids a
-    // GCC -Warray-bounds false positive triggered by sorting a
-    // std::array using a runtime-computed sub-range.
+    // Padding makes the fixed-size key canonical.
     key.fill(-1);
     auto vertices = e_to_v->links(e);
     std::ranges::copy(vertices, key.begin());

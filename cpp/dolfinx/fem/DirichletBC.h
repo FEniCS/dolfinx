@@ -202,22 +202,8 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   // Iterate over cells
   auto topology = mesh->topology();
   assert(topology);
-  auto c_to_v = topology->connectivity(tdim, 0);
-  assert(c_to_v);
-
-  // Count matches first so bc_dofs can be sized exactly (each match
-  // contributes exactly element_bs entries), avoiding reallocation
-  // through the fill loop below, which runs over every local cell (not
-  // just marked ones).
-  std::size_t num_marked = 0;
-  for (int c = 0; c < c_to_v->num_nodes(); ++c)
-    for (std::int32_t d : dofmap1->cell_dofs(c))
-      if (marked_dofs[d])
-        ++num_marked;
-
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
-  bc_dofs.reserve(num_marked * element_bs);
-  for (int c = 0; c < c_to_v->num_nodes(); ++c)
+  for (int c = 0; c < topology->connectivity(tdim, 0)->num_nodes(); ++c)
   {
     // Get cell dofmaps
     auto cell_dofs0 = dofmap0->cell_dofs(c);

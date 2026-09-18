@@ -277,9 +277,7 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
     std::vector<std::vector<std::int64_t>> send_data(src.size());
     std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
     {
-      // Count ghosts per destination rank first, then reserve each
-      // bucket's exact size -- avoids reallocation through the fill
-      // loop below, which runs over all ghosts (mesh scale).
+      // Reserve each bucket before packing ghosts.
       std::vector<std::size_t> counts(src.size(), 0);
       for (std::size_t i = 0; i < ghosts.size(); ++i)
       {
@@ -593,9 +591,7 @@ compute_submap_indices(const IndexMap& imap,
     std::vector<std::int32_t> send_indices_local(send_indices.size());
     imap.global_to_local(send_indices, send_indices_local);
 
-    // Each iteration below adds to exactly one of submap_ghost or
-    // submap_owned, so send_indices_local.size() is a valid (combined)
-    // upper bound for both.
+    // Each entry is added to at most one output vector.
     submap_ghost.reserve(send_indices_local.size());
     submap_ghost_owners.reserve(send_indices_local.size());
 
@@ -849,10 +845,7 @@ common::stack_index_maps(
       std::vector<std::vector<std::int64_t>> ghost_by_rank(src.size());
       std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
       {
-        // Count ghosts per owning rank first, then reserve each
-        // bucket's exact size -- avoids reallocation through the fill
-        // loop below, which runs over all ghosts of this map (mesh
-        // scale).
+        // Reserve each bucket before packing ghosts.
         std::vector<std::size_t> counts(src.size(), 0);
         for (std::size_t i = 0; i < ghosts.size(); ++i)
         {
@@ -1282,11 +1275,7 @@ IndexMap::index_to_dest_ranks(int tag) const
       const int mpi_rank = dolfinx::MPI::rank(_comm.comm());
       std::vector<std::vector<std::int64_t>> dest_idx_to_rank(dest.size());
       {
-        // Count entries per destination rank first (mirroring the fill
-        // loop below without pushing), then reserve each bucket's
-        // exact size -- avoids reallocation through that loop, which
-        // runs over all owned indices and their sharing ranks (mesh
-        // scale).
+        // Reserve each destination bucket before packing entries.
         std::vector<std::size_t> counts(dest.size(), 0);
         for (std::size_t n = 0; n < offsets.size() - 1; ++n)
         {

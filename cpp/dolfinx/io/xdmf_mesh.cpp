@@ -63,7 +63,6 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Pack topology data
   std::vector<std::int64_t> topology_data;
-  topology_data.reserve(entities.size() * num_nodes_per_entity);
 
   auto x_dofmap = geometry.dofmaps().front();
   auto map_g = geometry.index_map();

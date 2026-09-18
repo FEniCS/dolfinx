@@ -238,29 +238,26 @@ constexpr bool bbox_in_bbox(std::span<const T, 6> a, std::span<const T, 6> b)
   return in;
 }
 
-/// @brief Compute the squared distance from a point to a single mesh
-/// entity.
+template <std::floating_point T>
+struct ClosestEntityScratch
+{
+  std::vector<T> nodes;
+  const fem::ElementDofLayout& cmap_dof_layout;
+};
+
+/// @brief Compute the squared distance from a point to a mesh entity.
 ///
-/// Equivalent to `geometry::squared_distance` restricted to a single
-/// entity, except that it takes a caller-provided `nodes` buffer to
-/// gather the entity's geometry dofs into, instead of allocating one
-/// internally. This is used by the closest-entity search below, which
-/// can call this once per candidate leaf visited per query point --
-/// reusing `nodes` across those calls (its capacity settles after the
-/// first few, since entities of a given dimension have a bounded
-/// number of geometry dofs) avoids a heap allocation on every call.
+/// Uses scratch storage shared by the closest-entity search.
 /// @param[in] mesh Mesh containing the entity.
 /// @param[in] dim Topological dimension of the entity.
 /// @param[in] entity Index of the entity (local to process).
 /// @param[in] point Point to compute the distance from.
-/// @param[in, out] nodes Scratch buffer, resized as needed.
-/// @param[in] cmap_dof_layout Coordinate-element dof layout.
+/// @param[in, out] scratch Search scratch storage.
 /// @return Squared shortest distance from `point` to `entity`.
 template <std::floating_point T>
 T squared_distance_entity(const mesh::Mesh<T>& mesh, int dim,
                           std::int32_t entity, std::span<const T, 3> point,
-                          std::vector<T>& nodes,
-                          const fem::ElementDofLayout& cmap_dof_layout)
+                          ClosestEntityScratch<T>& scratch)
 {
   const int tdim = mesh.topology()->dim();
   const mesh::Geometry<T>& geometry = mesh.geometry();
@@ -272,15 +269,15 @@ T squared_distance_entity(const mesh::Mesh<T>& mesh, int dim,
   {
     assert(entity >= 0);
     auto dofs = md::submdspan(x_dofmap, entity, md::full_extent);
-    nodes.resize(3 * dofs.size());
+    scratch.nodes.resize(3 * dofs.size());
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
       const std::int32_t pos = 3 * dofs[i];
       for (std::size_t j = 0; j < 3; ++j)
-        nodes[3 * i + j] = geom_dofs[pos + j];
+        scratch.nodes[3 * i + j] = geom_dofs[pos + j];
     }
 
-    d = compute_distance_gjk<T>(point, nodes);
+    d = compute_distance_gjk<T>(point, scratch.nodes);
   }
   else
   {
@@ -305,32 +302,28 @@ T squared_distance_entity(const mesh::Mesh<T>& mesh, int dim,
     // Tabulate geometry dofs for the entity
     auto dofs = md::submdspan(x_dofmap, c, md::full_extent);
     const std::vector<int>& entity_dofs
-        = cmap_dof_layout.entity_closure_dofs(dim, local_cell_entity);
-    nodes.resize(3 * entity_dofs.size());
+        = scratch.cmap_dof_layout.entity_closure_dofs(dim, local_cell_entity);
+    scratch.nodes.resize(3 * entity_dofs.size());
     for (std::size_t i = 0; i < entity_dofs.size(); i++)
     {
       const std::int32_t pos = 3 * dofs[entity_dofs[i]];
       for (std::size_t j = 0; j < 3; ++j)
-        nodes[3 * i + j] = geom_dofs[pos + j];
+        scratch.nodes[3 * i + j] = geom_dofs[pos + j];
     }
 
-    d = compute_distance_gjk<T>(point, nodes);
+    d = compute_distance_gjk<T>(point, scratch.nodes);
   }
 
   return d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
 }
 
-/// Compute closest entity {closest_entity, R2} (recursive)
-/// @param[in, out] nodes Scratch buffer forwarded to
-/// squared_distance_entity, reused across the whole recursive search
-/// for a query point (and across query points by the caller).
-/// @param[in] cmap_dof_layout Coordinate-element dof layout forwarded to
-/// squared_distance_entity.
+/// Compute closest entity {closest_entity, R2} (recursive).
 template <std::floating_point T>
-std::pair<std::int32_t, T> _compute_closest_entity(
-    const geometry::BoundingBoxTree<T>& tree, std::span<const T, 3> point,
-    std::int32_t node, const mesh::Mesh<T>& mesh, std::int32_t closest_entity,
-    T R2, std::vector<T>& nodes, const fem::ElementDofLayout& cmap_dof_layout)
+std::pair<std::int32_t, T>
+_compute_closest_entity(const geometry::BoundingBoxTree<T>& tree,
+                        std::span<const T, 3> point, std::int32_t node,
+                        const mesh::Mesh<T>& mesh, std::int32_t closest_entity,
+                        T R2, ClosestEntityScratch<T>& scratch)
 {
   // Get children of current bounding box node (child_1 denotes entity
   // index for leaves)
@@ -354,7 +347,7 @@ std::pair<std::int32_t, T> _compute_closest_entity(
       // obtain exact distance to the convex hull of the entity
       if (r2 <= R2)
         r2 = squared_distance_entity(mesh, tree.tdim(), bbox.back(), point,
-                                     nodes, cmap_dof_layout);
+                                     scratch);
     }
 
     // If entity is closer than best result so far, return it
@@ -375,12 +368,10 @@ std::pair<std::int32_t, T> _compute_closest_entity(
 
     // Check both children. We use R2 (as opposed to r2), as a bounding
     // box can be closer than the actual entity.
-    std::pair<std::int32_t, T> p0
-        = _compute_closest_entity(tree, point, bbox.front(), mesh,
-                                  closest_entity, R2, nodes, cmap_dof_layout);
-    std::pair<std::int32_t, T> p1
-        = _compute_closest_entity(tree, point, bbox.back(), mesh, p0.first,
-                                  p0.second, nodes, cmap_dof_layout);
+    std::pair<std::int32_t, T> p0 = _compute_closest_entity(
+        tree, point, bbox.front(), mesh, closest_entity, R2, scratch);
+    std::pair<std::int32_t, T> p1 = _compute_closest_entity(
+        tree, point, bbox.back(), mesh, p0.first, p0.second, scratch);
     return p1;
   }
 }
@@ -390,10 +381,7 @@ std::pair<std::int32_t, T> _compute_closest_entity(
 /// @param[in] points The points (`shape=(num_points, 3)`).
 /// @param[in, out] entities List of colliding entities (local to
 /// process).
-/// @param[in, out] stack Scratch buffer used as a LIFO stack of
-/// deferred subtrees. Passed in (and cleared) by the caller so its
-/// storage is reused across query points, rather than allocated fresh
-/// for each point.
+/// @param[in, out] stack Scratch stack of deferred subtrees.
 template <std::floating_point T>
 void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
                                std::span<const T, 3> p,
@@ -578,9 +566,7 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
     std::vector<std::int32_t> entities, offsets(points.size() / 3 + 1, 0);
     entities.reserve(points.size() / 3);
 
-    // Scratch stack reused across points -- once its capacity settles,
-    // no further allocation occurs, unlike a std::deque freshly
-    // constructed (and heap-allocating its first chunk) per point.
+    // Scratch stack reused across points.
     std::vector<std::int32_t> stack;
     for (std::size_t p = 0; p < points.size() / 3; ++p)
     {
@@ -684,13 +670,9 @@ compute_closest_entity(const BoundingBoxTree<T>& tree,
   std::vector<std::int32_t> entities;
   entities.reserve(points.size() / 3);
 
-  // Scratch buffer for gathering entity geometry dofs, reused across
-  // the recursive search for every leaf visited and every query point
-  // (see squared_distance_entity), instead of being heap-allocated on
-  // each candidate-entity distance evaluation.
-  std::vector<T> nodes;
   const fem::ElementDofLayout cmap_dof_layout
       = mesh.geometry().cmaps().front().create_dof_layout();
+  impl::ClosestEntityScratch<T> scratch{{}, cmap_dof_layout};
   for (std::size_t i = 0; i < points.size() / 3; ++i)
   {
     // Use midpoint tree to find initial closest entity to the point.
@@ -709,8 +691,7 @@ compute_closest_entity(const BoundingBoxTree<T>& tree,
     // queries are lightweight.
     const auto [m_index, m_distance2] = impl::_compute_closest_entity(
         midpoint_tree, std::span<const T, 3>(points.data() + 3 * i, 3),
-        midpoint_tree.num_bboxes() - 1, mesh, leaf0[0], R2, nodes,
-        cmap_dof_layout);
+        midpoint_tree.num_bboxes() - 1, mesh, leaf0[0], R2, scratch);
 
     // Use a recursives search through the bounding box tree to
     // determine which entity is actually closest.
@@ -719,8 +700,7 @@ compute_closest_entity(const BoundingBoxTree<T>& tree,
     // initial search radius.
     const auto [index, distance2] = impl::_compute_closest_entity(
         tree, std::span<const T, 3>(points.data() + 3 * i, 3),
-        tree.num_bboxes() - 1, mesh, m_index, m_distance2, nodes,
-        cmap_dof_layout);
+        tree.num_bboxes() - 1, mesh, m_index, m_distance2, scratch);
 
     entities.push_back(index);
   }

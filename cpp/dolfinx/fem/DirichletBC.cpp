@@ -177,7 +177,6 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 
   MPI_Wait(&request, MPI_STATUS_IGNORE);
   std::vector<std::int32_t> dofs;
-  dofs.reserve(dofs_received.size());
   for (auto dof_global : dofs_received)
   {
     // Insert owned dofs, else search in ghosts

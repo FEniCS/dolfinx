@@ -55,11 +55,6 @@ template <typename T>
 std::string container_to_string(const T& x, int precision)
 {
   std::string s;
-  // Upper-bound estimate of formatted width per entry (sign, integer
-  // part, decimal point, `precision` fractional digits, trailing
-  // space) avoids reallocation through the loop below, which runs
-  // over every point/cell coordinate or value -- mesh scale.
-  s.reserve(x.size() * (precision + 10));
   for (auto e : x)
     std::format_to(std::back_inserter(s), "{:.{}} ", e, precision);
   return s;
@@ -203,7 +198,6 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   connectivity_node.append_attribute("format") = "ascii";
   {
     std::string ss;
-    ss.reserve(cells.size() * 12);
     for (auto v : cells)
       std::format_to(std::back_inserter(ss), "{} ", v);
     connectivity_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
@@ -215,7 +209,6 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   offsets_node.append_attribute("format") = "ascii";
   {
     std::string ss;
-    ss.reserve(cshape[0] * 12);
     int num_nodes = cshape[1];
     for (std::size_t i = 0; i < cshape[0]; ++i)
       std::format_to(std::back_inserter(ss), "{} ", (i + 1) * num_nodes);
@@ -247,7 +240,6 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   ghost_cell_node.append_attribute("RangeMax") = "1";
   {
     std::string ss;
-    ss.reserve(cshape[0] * 2);
     for (std::int32_t c = 0; c < cellmap.size_local(); ++c)
       ss += "0 ";
     for (std::size_t c = cellmap.size_local(); c < cshape[0]; ++c)
@@ -263,7 +255,6 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   cell_id_node.append_attribute("format") = "ascii";
   {
     std::string ss;
-    ss.reserve((cellmap.size_local() + cellmap.ghosts().size()) * 21);
     const std::int64_t cell_offset = cellmap.local_range()[0];
     for (std::int32_t c = 0; c < cellmap.size_local(); ++c)
       std::format_to(std::back_inserter(ss), "{} ", cell_offset + c);
@@ -294,7 +285,6 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   point_id_node.append_attribute("format") = "ascii";
   {
     std::string ss;
-    ss.reserve(x_id.size() * 21);
     for (auto idx : x_id)
       std::format_to(std::back_inserter(ss), "{} ", idx);
     point_id_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
@@ -313,7 +303,6 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   point_ghost_node.append_attribute("format") = "ascii";
   {
     std::string ss;
-    ss.reserve(x_ghost.size() * 3);
     for (int ghost : x_ghost)
       std::format_to(std::back_inserter(ss), "{} ", ghost);
     point_ghost_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
