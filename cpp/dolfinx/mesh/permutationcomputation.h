@@ -24,8 +24,9 @@ class Topology;
 ///     - `n // 2` gives the number of rotations to apply
 ///
 ///    The data is stored in a flattened 2D array, so that `data[cell_index *
-///    facets_per_cell + facet_index]` contains the facet with index
-///    `facet_index` of the cell with index `cell_index`. This data passed to
+///    facets_per_cell + facet_index]` contains the permutation data for the
+///    facet with index `facet_index` of the cell with index `cell_index`.
+///    This data passed to
 ///    FFCx kernels, where it is used to permute the quadrature points on facet
 ///    integrals when data from the cells on both sides of the facet is used.
 ///
@@ -66,7 +67,16 @@ class Topology;
 ///    This data is used to correct the direction of vector function
 ///    on permuted facets.
 ///
-/// @return Facet permutation and cells permutations
+/// @note Not collective.
+/// @pre All entities of dimension `< topology.dim()` must already exist
+/// (see Topology::create_entities).
+/// @param[in] topology Mesh topology.
+/// @param[in] num_threads Number of threads to use. Must be >= 1.
+/// @return Facet permutation and cell permutations, covering both owned
+/// and ghost cells.
+/// @throws std::invalid_argument If `num_threads < 1`.
+/// @throws std::runtime_error If `topology` is a mixed-topology mesh
+/// (more than one 3D cell type).
 std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
 compute_entity_permutations(const Topology& topology, int num_threads);
 

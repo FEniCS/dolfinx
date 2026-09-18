@@ -60,14 +60,14 @@ public:
       throw std::invalid_argument("dim out of range for topology.");
     if (_indices.size() != _values.size())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Indices and values arrays must have same size.");
     }
 #ifndef NDEBUG
     if (!std::ranges::is_sorted(_indices))
-      throw std::runtime_error("MeshTag data is not sorted");
+      throw std::invalid_argument("MeshTag data is not sorted");
     if (std::adjacent_find(_indices.begin(), _indices.end()) != _indices.end())
-      throw std::runtime_error("MeshTag data has duplicates");
+      throw std::invalid_argument("MeshTag data has duplicates");
 #endif
   }
 
@@ -102,7 +102,8 @@ public:
     return indices;
   }
 
-  /// Indices of tagged topology entities (local-to-process). The
+  /// Indices of tagged topology entities (local-to-process, in
+  /// `[0, size_local + num_ghosts)`; may include ghost entities). The
   /// indices are sorted.
   std::span<const std::int32_t> indices() const { return _indices; }
 
@@ -145,7 +146,9 @@ private:
 /// @param[in] values Tag values for each entity in `entities`. The
 /// length of `values` must be equal to number of rows in `entities`.
 /// @param[in] name Name of the meshtags.
-/// @note Entities that do not exist on this rank are ignored.
+/// @note Entities that do not exist on this rank are ignored. Ghost
+/// entities matched by vertices are retained, so returned indices may
+/// include ghosts.
 /// @warning `entities` must not contain duplicate entities.
 template <typename T>
 MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
@@ -164,7 +167,7 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
       = entities_to_index(*topology, dim, entities.array());
   if (indices.size() != values.size())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Duplicate mesh entities when building MeshTags object.");
   }
 

@@ -714,11 +714,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 /// @brief Convert adjacency list edges from global indexing to local
 /// indexing.
 ///
-/// Nodes beyond `num_local_nodes` are discarded.
-///
 /// @param[in] g Graph with global edge indices
-/// @param[in] num_local_nodes Number of nodes to retain in the graph.
-/// Typically used to trim ghost nodes.
 /// @param[in] global_to_local Sorted array of (global, local) indices.
 /// @param[in] global_to_local_map Hash map holding the same
 /// (global, local) pairs as `global_to_local`, for O(1)-average
@@ -726,6 +722,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 /// reused for every cell type / thread, rather than rebuilt here).
 /// Unused, and may be empty, when `global_to_local` is identity (the
 /// common single-rank case).
+/// @param[in] num_threads Number of threads to use.
 std::vector<std::int32_t> convert_to_local_indexing(
     std::span<const std::int64_t> g,
     std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local,
@@ -915,7 +912,7 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   if (_entity_types.at(dim).size() > 1)
   {
-    throw std::runtime_error(
+    throw std::out_of_range(
         "Multiple index maps of this dimension. Call index_maps instead.");
   }
 
@@ -923,7 +920,7 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
       = this->index_maps(dim);
   if (im.empty())
   {
-    throw std::runtime_error(
+    throw std::out_of_range(
         std::format("Missing IndexMap in Topology. Maybe you need to "
                     "create_entities({}).",
                     dim));
@@ -971,9 +968,8 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 {
   if (auto i_map = this->index_map(this->dim() - 1);
-      !i_map
-      or (_facet_permutations.empty()
-          and (i_map->size_local() + i_map->num_ghosts() > 0)))
+      _facet_permutations.empty()
+      and (i_map->size_local() + i_map->num_ghosts() > 0))
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
@@ -1126,7 +1122,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
     std::span<const std::int64_t> boundary_vertices, int num_threads)
 {
   if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   common::Timer timer("Topology: create");
 
@@ -1146,7 +1142,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
     int num_vertices = num_cell_vertices(cell_types[i]);
     if (cells[i].size() % num_vertices != 0)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           std::format("Inconsistent number of cell vertices. Got {}, expected "
                       "multiple of {}.",
                       cells[i].size(), num_vertices));
@@ -1169,9 +1165,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
 
 #ifndef NDEBUG
   // Sanity check: no vertex should be in both unowned_vertices and
-  // boundary_vertices. The check itself is rank-local, so reduce before
-  // throwing: throwing on only some ranks would leave the others waiting
-  // on the determine_sharing_ranks collective below.
+  // boundary_vertices. O(N) and collective, guarded.
   {
     std::vector<std::int64_t> unowned_vertices_in_error;
     std::ranges::set_intersection(
@@ -1183,7 +1177,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
     dolfinx::MPI::check_error(comm, ierr);
     if (failed_any)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Adding boundary vertices in ghost cells not allowed.");
     }
   }
@@ -1724,7 +1718,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology, CellType facet_type)
     }
   }
   if (facet_index == -1)
-    throw std::runtime_error("Cannot find facet type in topology");
+    throw std::invalid_argument("Cannot find facet type in topology");
 
   std::vector<std::vector<std::int32_t>> facet_pair_lists;
   for (std::size_t i = 0; i < cell_types.size(); ++i)
