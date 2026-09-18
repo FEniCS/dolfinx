@@ -37,7 +37,7 @@ std::string mesh::to_string(CellType type)
   case CellType::hexahedron:
     return "hexahedron";
   default:
-    throw std::runtime_error("Unknown cell type.");
+    throw std::invalid_argument("Unknown cell type.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -60,7 +60,7 @@ mesh::CellType mesh::to_type(std::string_view cell)
   else if (cell == "hexahedron")
     return CellType::hexahedron;
   else
-    throw std::runtime_error(std::format("Unknown cell type ({})", cell));
+    throw std::invalid_argument(std::format("Unknown cell type ({})", cell));
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> mesh::get_entity_vertices(CellType type, int dim)
@@ -191,7 +191,7 @@ basix::cell::type mesh::cell_type_to_basix_type(CellType celltype)
   case CellType::pyramid:
     return basix::cell::type::pyramid;
   default:
-    throw std::runtime_error("Unrecognised cell type.");
+    throw std::invalid_argument("Unrecognised cell type.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -216,7 +216,7 @@ mesh::CellType mesh::cell_type_from_basix_type(basix::cell::type celltype)
   case basix::cell::type::pyramid:
     return CellType::pyramid;
   default:
-    throw std::runtime_error("Unrecognised cell type.");
+    throw std::invalid_argument("Unrecognised cell type.");
   }
 }
 //-----------------------------------------------------------------------------

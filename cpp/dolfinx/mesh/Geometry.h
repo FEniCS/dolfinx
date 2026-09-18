@@ -82,12 +82,12 @@ public:
     if (_x.size() % 3 != 0)
       throw std::invalid_argument("x size must be a multiple of 3.");
     if (_x.size() / 3 != _input_global_indices.size())
-      throw std::runtime_error("Geometry size mismatch.");
+      throw std::invalid_argument("Geometry size mismatch.");
 
     if (_dofmaps.size() != _cmaps.size())
     {
-      throw std::runtime_error("Geometry number of dofmaps not equal to the "
-                               "number of coordinate elements.");
+      throw std::invalid_argument("Geometry number of dofmaps not equal to the "
+                                  "number of coordinate elements.");
     }
 
     // TODO: check that elements dim == number of dofmap columns
@@ -254,7 +254,7 @@ create_geometry(const Topology& topology,
   const int tdim = topology.dim();
   const std::size_t num_cell_types = topology.entity_types(tdim).size();
   if (elements.size() != num_cell_types)
-    throw std::runtime_error("Mismatch between topology and geometry.");
+    throw std::invalid_argument("Mismatch between topology and geometry.");
 
   std::vector<fem::ElementDofLayout> dof_layouts;
   dof_layouts.reserve(elements.size());
