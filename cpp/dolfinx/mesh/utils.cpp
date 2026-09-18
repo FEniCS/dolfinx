@@ -65,10 +65,12 @@ std::vector<std::int64_t> mesh::impl::reorder_cells(
 
     // Build local dual graph for cell type, from the owned (non-ghost)
     // cells only
-    auto [graph, unmatched_facets, max_v, _facet_attached_cells]
+    auto [graph, unmatched_facets, max_v, _facet_attached_cells, edge_weights,
+          unmatched_weights]
         = build_local_dual_graph(std::vector{celltypes[i]},
                                  std::vector{cells_v_owned},
-                                 max_facet_to_cell_links, num_threads);
+                                 max_facet_to_cell_links, num_threads,
+                                 std::vector<std::span<const std::int32_t>>{});
 
     // Store unmatched_facets for current cell type
     facets.emplace_back(std::move(unmatched_facets), max_v);

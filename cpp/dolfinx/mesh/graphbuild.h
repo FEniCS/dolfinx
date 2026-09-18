@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2025 Garth N. Wells and Paul T. Kühner
+// Copyright (C) 2010-2026 Garth N. Wells, Paul T. Kühner and Chris Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -18,8 +18,7 @@ namespace dolfinx::mesh
 {
 enum class CellType : std::int8_t;
 
-/// @brief Compute the local part of the dual graph (cell-cell
-/// connections via facets) and facets with only one attached cell.
+/// @brief Build the local dual graph with optional cell-facet weights.
 ///
 /// @param[in] celltypes List of cell types.
 /// @param[in] cells Lists of cell vertices (stored as flattened lists,
@@ -35,6 +34,8 @@ enum class CellType : std::int8_t;
 /// unmatched.
 /// @param[in] num_threads Number of threads to use. Must be greater
 /// than 0.
+/// @param[in] facet_weights Optional weights for each facet of each
+/// cell, cellwise. e.g. for a tetrahedral mesh, shape of `(num_cells, 4)`.
 ///
 /// @return
 /// 1. Local dual graph
@@ -43,7 +44,12 @@ enum class CellType : std::int8_t;
 ///   2D array is flattened (row-major).
 /// 3. Facet data array (2) number of columns
 /// 4. Attached cell (local index) to each returned facet in (2).
+/// 5. Edge weights for the dual graph, one entry per edge in (1).
+///   If `facet_weights` is not provided, this is empty.
+/// 6. Unmatched facet weights, one entry per facet in (2),
+///   if `facet_weights` is provided. Otherwise empt
 ///
+
 /// Each row of the returned data (2) contains `[v0, ... v_(n-1), x, ..,
 /// x]`, where `v_i` is a vertex global index, `x` is a negative value
 /// (all padding values will be equal). The vertex global indices are
@@ -59,11 +65,13 @@ enum class CellType : std::int8_t;
 /// the same facet for branching meshes with `max_facet_to_cell_links>2`
 /// to account for all facet cell connectivies.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>, int,
+           std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
-build_local_dual_graph(std::span<const CellType> celltypes,
-                       const std::vector<std::span<const std::int64_t>>& cells,
-                       std::optional<std::int32_t> max_facet_to_cell_links,
-                       int num_threads);
+build_local_dual_graph(
+    std::span<const CellType> celltypes,
+    const std::vector<std::span<const std::int64_t>>& cells,
+    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
+    std::span<const std::span<const std::int32_t>> facet_weights);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.
