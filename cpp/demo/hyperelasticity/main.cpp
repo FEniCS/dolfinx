@@ -1,6 +1,42 @@
 // # Hyperelasticity
 //
-// Solve a compressible neo-Hookean model in 3D.
+// This demo illustrates how to:
+//
+// * Solve a nonlinear elasticity problem with a Newton solver
+// * Compute the Jacobian of a nonlinear form using automatic
+//   differentiation
+// * Evaluate a derived quantity (the Cauchy stress) at points in the
+//   domain using `dolfinx::fem::Expression`
+//
+// ## Equation and problem definition
+//
+// We solve a compressible neo-Hookean model in 3D, in which a unit
+// cube is deformed by rotating one face by 60 degrees about its
+// centre while the opposite face is held fixed. Denoting the
+// displacement by $u$ and the deformation gradient by
+// $F = I + \nabla u$, the stored strain energy density is
+//
+// $$
+//    \psi(F) = \frac{\mu}{2} ({\rm tr}(C) - 3) - \mu \ln(J)
+//    + \frac{\lambda}{2} (\ln(J))^{2},
+// $$
+//
+// where $C = F^{T} F$ is the right Cauchy-Green tensor, $J =
+// \det(F)$, and $\mu$ and $\lambda$ are the Lame parameters. The
+// total potential energy is
+//
+// $$
+//    \Pi(u) = \int_{\Omega} \psi(F) \, {\rm d} x
+//    - \int_{\Omega} B \cdot u \, {\rm d} x
+//    - \int_{\Gamma_{N}} T \cdot u \, {\rm d} s,
+// $$
+//
+// where $B$ is a body force per unit volume and $T$ is a traction
+// on the (Neumann) boundary. The equilibrium displacement is the
+// stationary point of $\Pi$, found here by computing the first
+// variation of $\Pi$ (the residual $F(u; v)$) and its Jacobian
+// $J(u; du, v)$, and solving $F(u; v) = 0$ for all test functions $v$
+// with Newton's method.
 
 // ## UFL form file
 //
@@ -114,7 +150,7 @@ int main(int argc, char* argv[])
                          - (x2 - x2_c) * std::sin(theta) - x1);
             f(2, p) = scale
                       * (x2_c + (x1 - x1_c) * std::sin(theta)
-                         - (x2 - x2_c) * std::cos(theta) - x2);
+                         + (x2 - x2_c) * std::cos(theta) - x2);
           }
 
           return {std::move(fdata), {3, x.extent(1)}};
