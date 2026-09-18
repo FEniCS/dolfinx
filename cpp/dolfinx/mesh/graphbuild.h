@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2025 Garth N. Wells and Paul T. Kühner
+// Copyright (C) 2010-2026 Garth N. Wells, Paul T. Kühner and Chris Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -18,52 +18,41 @@ namespace dolfinx::mesh
 {
 enum class CellType : std::int8_t;
 
-/// @brief Compute the local part of the dual graph (cell-cell
-/// connections via facets) and facets with only one attached cell.
+/// @brief Build the local dual graph with optional cell-facet weights.
 ///
-/// @param[in] celltypes List of cell types.
-/// @param[in] cells Lists of cell vertices (stored as flattened lists,
-/// one for each cell type).
-/// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet needs to be connected to be considered *matched*, i.e. a
-/// matched facet is not connected any cells on other processes. All
-/// facets connected to less than `max_facet_to_cell_links` cells are
-/// considered *unmatched* and parallel communication will check for
-/// further connections. Equal to `2` for non-branching manifold meshes.
-/// Passing std::nullopt (no upper bound) corresponds.
-/// to `max_facet_to_cell_links`=∞, i.e. every facet is considered
-/// unmatched.
-/// @param[in] num_threads Number of threads to use. Must be greater
-/// than 0.
-///
-/// @return
-/// 1. Local dual graph
-/// 2. Facets, defined by their sorted vertices, that are shared by only
-///   `max_facet_to_cell_links` or less cells on this rank. The logically
-///   2D array is flattened (row-major).
-/// 3. Facet data array (2) number of columns
-/// 4. Attached cell (local index) to each returned facet in (2).
-///
-/// Each row of the returned data (2) contains `[v0, ... v_(n-1), x, ..,
-/// x]`, where `v_i` is a vertex global index, `x` is a negative value
-/// (all padding values will be equal). The vertex global indices are
-/// sorted for each facet.
-///
-/// @note The cells of each cell type are numbered locally
-/// consecutively, i.e. if there are `n` cells of type `0` and `m` cells
-/// of type `1`, then cells of type `0` are numbered `0..(n-1)` and
-/// cells of type `1` are numbered `n..(n+m-1)` respectively, in the
-/// returned dual graph.
-///
-/// @note Facet (2) and cell (4) data will contain multiple entries for
-/// the same facet for branching meshes with `max_facet_to_cell_links>2`
-/// to account for all facet cell connectivies.
+/// @param[in] celltypes Cell types, as in the unweighted overload.
+/// @param[in] cells Flattened cell vertices, one array per cell type.
+/// @param[in] max_facet_to_cell_links See the unweighted overload.
+/// @param[in] num_threads Number of threads; must be positive.
+/// @param[in] facet_weights One array per cell type, flattened in cell-major
+/// order using the local facet numbering from get_entity_vertices. Each array
+/// has num_cells * num_facets entries. Weights must be positive integers.
+/// An empty outer span selects the unweighted path, which allocates no weight
+/// buffers. All weights on a shared facet are averaged (rounded down); this
+/// value is assigned to both directions of every cell-pair edge on that facet.
+/// @return A tuple of six items:
+/// 1. The local dual graph, with edges sorted by vertex key.
+/// 2. The unmatched facets, flattened in cell-major order using the local facet
+/// numbering from get_entity_vertices. Each row has the form [v0, ..., v_{n-1},
+/// -1, -1], where v_i are the sorted vertex global indices of the facets and -1
+/// is a padding value for the mixed topology case where facets can have
+/// differing number of vertices.
+/// 3. The number of columns in the unmatched facets array, i.e. the maximum
+/// number of vertices per facet.
+/// 4. The attached cell (local index) for each unmatched facet in the unmatched
+/// facets array.
+/// 5. Edge weights aligned with the local dual graph's array().
+/// 6. Original cell-side weights aligned with the returned unmatched facets.
+/// Both weight vectors are empty in the unweighted case. Unmatched weights
+/// remain unaveraged so later distributed matching can include remote cells.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>, int,
+           std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
-build_local_dual_graph(std::span<const CellType> celltypes,
-                       const std::vector<std::span<const std::int64_t>>& cells,
-                       std::optional<std::int32_t> max_facet_to_cell_links,
-                       int num_threads);
+build_local_dual_graph(
+    std::span<const CellType> celltypes,
+    const std::vector<std::span<const std::int64_t>>& cells,
+    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
+    std::span<const std::span<const std::int32_t>> facet_weights);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.
