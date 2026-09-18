@@ -113,7 +113,7 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     CHECK(EPSSetDimensions(solver.eps(), 3, PETSC_DETERMINE, PETSC_DETERMINE)
           == 0);
 
-    solver.solve();
+    CHECK(solver.solve() > 0);
 
     PetscInt nconv = 0;
     CHECK(EPSGetConverged(solver.eps(), &nconv) == 0);
@@ -173,7 +173,7 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     CHECK(EPSSetDimensions(solver.eps(), 2, PETSC_DETERMINE, PETSC_DETERMINE)
           == 0);
 
-    solver.solve();
+    CHECK(solver.solve() > 0);
     PetscInt nconv = 0;
     CHECK(EPSGetConverged(solver.eps(), &nconv) == 0);
     REQUIRE(nconv >= 2);

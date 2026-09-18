@@ -17,10 +17,10 @@ import basix
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
-from dolfinx.cpp.io import perm_vtk
 from dolfinx.fem import assemble_scalar, form, mixed_topology_form
 from dolfinx.io import XDMFFile
 from dolfinx.io.gmsh import model_to_mesh
+from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.mesh import CellType, Mesh, create_mesh, create_submesh
 from ufl import dx
 
@@ -422,7 +422,7 @@ def test_triangle_mesh_vtk(order, dtype):
         if order > 4:
             raise NotImplementedError
 
-    cell = np.array(cell)[perm_vtk(CellType.triangle, len(cell))]
+    cell = np.array(cell)[cell_perm_vtk(CellType.triangle, len(cell))]
     domain = ufl.Mesh(
         element(
             "Lagrange",
@@ -528,7 +528,7 @@ def test_tetrahedron_mesh_vtk(order, dtype):
                     for i in range(1, order - j - k):
                         cell.append(coord_to_vertex(i, j, k))
 
-    cell = np.array(cell)[perm_vtk(CellType.tetrahedron, len(cell))]
+    cell = np.array(cell)[cell_perm_vtk(CellType.tetrahedron, len(cell))]
     domain = ufl.Mesh(
         element(
             "Lagrange",
@@ -574,7 +574,7 @@ def test_quadrilateral_mesh_vtk(order, dtype):
             for i in range(1, order):
                 cell.append(coord_to_vertex(i, j))
 
-    cell = np.array(cell)[perm_vtk(CellType.quadrilateral, len(cell))]
+    cell = np.array(cell)[cell_perm_vtk(CellType.quadrilateral, len(cell))]
     domain = ufl.Mesh(
         element(
             "Q",
@@ -678,7 +678,7 @@ def test_hexahedron_mesh_vtk(order, dtype):
                 for i in range(1, order):
                     cell.append(coord_to_vertex(i, j, k))
 
-    cell = np.array(cell)[perm_vtk(CellType.hexahedron, len(cell))]
+    cell = np.array(cell)[cell_perm_vtk(CellType.hexahedron, len(cell))]
     domain = ufl.Mesh(
         element(
             "Q",
@@ -703,11 +703,11 @@ def test_hexahedron_mesh_vtk(order, dtype):
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_map_vtk_to_dolfin(vtk, dolfin, cell_type, dtype):
-    p = perm_vtk(cell_type, len(vtk))
+    p = cell_perm_vtk(cell_type, len(vtk))
     cell_p = np.array(vtk)[p]
     assert (cell_p == dolfin).all()
 
-    p = np.argsort(perm_vtk(cell_type, len(vtk)))
+    p = np.argsort(cell_perm_vtk(cell_type, len(vtk)))
     cell_p = np.array(dolfin)[p]
     assert (cell_p == vtk).all()
 
@@ -759,7 +759,7 @@ def test_gmsh_mixed_mesh_2d(order, dtype):
         Js = []
         for i, cell_type in enumerate(mesh._cpp_object.topology.cell_types):
             cell_name = cell_type.name
-            cmap = mesh._cpp_object.geometry.cmaps[i]
+            cmap = mesh.geometry.cmaps[i]
             domain = ufl.Mesh(
                 basix.ufl.element(
                     "Lagrange",
@@ -884,7 +884,7 @@ def test_gmsh_mixed_mesh_3d(order, dtype):
         Js = []
         for i, cell_type in enumerate(cell_types):
             cell_name = cell_type.name
-            cmap = mesh._cpp_object.geometry.cmaps[i]
+            cmap = mesh.geometry.cmaps[i]
             domain = ufl.Mesh(
                 basix.ufl.element(
                     "Lagrange",
@@ -978,7 +978,7 @@ def test_quadrilateral_cell_order_3(dtype):
 @pytest.mark.parametrize("order", range(1, 11))
 def test_vtk_perm_tetrahedron(order):
     size = (order + 1) * (order + 2) * (order + 3) // 6
-    p = perm_vtk(CellType.tetrahedron, size)
+    p = cell_perm_vtk(CellType.tetrahedron, size)
 
     if order == 1:
         q = [0, 1, 2, 3]
@@ -1985,7 +1985,7 @@ def test_vtk_perm_tetrahedron(order):
 @pytest.mark.parametrize("order", range(1, 7))
 def test_vtk_perm_hexahedron(order):
     size = (order + 1) ** 3
-    p = perm_vtk(CellType.hexahedron, size)
+    p = cell_perm_vtk(CellType.hexahedron, size)
 
     if order == 1:
         q = [0, 1, 3, 2, 4, 5, 7, 6]

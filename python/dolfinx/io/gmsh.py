@@ -7,7 +7,6 @@
 """Tools to extract data from Gmsh models."""
 
 import typing
-from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -20,11 +19,18 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.cpp.graph import AdjacencyList_int32 as _AdjacencyList_int32
 from dolfinx.fem import coordinate_element
 from dolfinx.graph import adjacencylist
 from dolfinx.io.utils import distribute_entity_data
-from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags_from_entities
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    Mesh,
+    MeshTags,
+    PartitioningFunc,
+    create_mesh,
+    meshtags_from_entities,
+)
 
 __all__ = [
     "MeshData",
@@ -288,20 +294,10 @@ def model_to_mesh(
     comm: _MPI.Comm,
     rank: int,
     gdim: int = 3,
-    partitioner: Callable[
-        [
-            _MPI.Comm,
-            int,
-            Sequence[CellType],
-            Sequence[npt.NDArray[np.int64]],
-            npt.NDArray[np.int32],
-            npt.NDArray[np.int32],
-        ],
-        _AdjacencyList_int32,
-    ]
-    | None = None,
+    partitioner: PartitioningFunc | None = None,
     dtype: npt.DTypeLike = default_real_type,
     max_facet_to_cell_links: int = 2,
+    ghost_mode: GhostMode = GhostMode.none,
 ) -> MeshData:
     """Create a Mesh from a Gmsh model.
 
@@ -320,6 +316,8 @@ def model_to_mesh(
         dtype: Data-type used for the mesh coordinates
         max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
+        ghost_mode: Ghost mode used in the mesh partitioning, passed to
+            ``partitioner`` at call time.
 
     Returns:
         MeshData with mesh and tags of corresponding entities by
@@ -335,6 +333,9 @@ def model_to_mesh(
         creation for efficient access.
     """
     valid_mesh = None
+    x = np.empty((0, gdim), dtype=dtype)
+    topologies: dict[int, TopologyDict] = {}
+    physical_groups: dict[str, PhysicalGroup] = {}
     if comm.rank == rank:
         if model is None:
             raise ValueError("Gmsh model is None on rank responsible for mesh creation.")
@@ -430,8 +431,6 @@ def model_to_mesh(
 
     # Create a distributed mesh, where mesh nodes are only distributed from
     # the input rank
-    if comm.rank != rank:
-        x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
     if len(ufl_domains) > 1:
         cmaps = []
         for ufl_domain in ufl_domains:
@@ -449,12 +448,14 @@ def model_to_mesh(
         cpp_mesh = _cpp.mesh.create_mesh(
             comm,
             cell_connectivities,
-            cmaps,  # type: ignore[arg-type]
+            cmaps,
             x[:, :gdim].astype(dtype).copy(),
             partitioner,
+            ghost_mode,
             max_facet_to_cell_links,
             1,
             cell_weights=None,
+            reorder_fn=None,
         )
         mesh = Mesh(cpp_mesh, None)
 
@@ -467,6 +468,7 @@ def model_to_mesh(
             ufl_domains[0],
             x[:, :gdim].astype(dtype, copy=False),
             partitioner,
+            ghost_mode=ghost_mode,
             max_facet_to_cell_links=max_facet_to_cell_links,
         )
     if tdim != mesh.topology.dim:
@@ -520,18 +522,8 @@ def read_from_msh(
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
-    partitioner: Callable[
-        [
-            _MPI.Comm,
-            int,
-            Sequence[CellType],
-            Sequence[npt.NDArray[np.int64]],
-            npt.NDArray[np.int32],
-            npt.NDArray[np.int32],
-        ],
-        _AdjacencyList_int32,
-    ]
-    | None = None,
+    partitioner: PartitioningFunc | None = None,
+    ghost_mode: GhostMode = GhostMode.none,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a mesh and cell facet markers.
 
@@ -546,6 +538,7 @@ def read_from_msh(
         gdim: Geometric dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
+        ghost_mode: Ghost mode used in the mesh partitioning.
 
     Returns:
         Meshdata with mesh, cell tags, facet tags, edge tags,
@@ -565,8 +558,12 @@ def read_from_msh(
         gmsh.initialize()
         gmsh.model.add("Mesh from file")
         gmsh.merge(str(filename))
-        msh = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
+        msh = model_to_mesh(
+            gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner, ghost_mode=ghost_mode
+        )
         gmsh.finalize()
         return msh
     else:
-        return model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
+        return model_to_mesh(
+            gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner, ghost_mode=ghost_mode
+        )

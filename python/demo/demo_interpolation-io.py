@@ -23,9 +23,6 @@
 #   finite element spaces
 # - Interpolate these special finite elements into discontinuous Lagrange
 #   spaces for artifact-free visualisation.
-# $H(\mathrm{curl})$ finite element spaces, and the interpolation of
-# these special finite elements in discontinuous Lagrange spaces for
-# artifact-free visualisation.
 
 
 # +

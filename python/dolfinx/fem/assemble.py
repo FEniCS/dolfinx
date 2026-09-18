@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import functools
 import typing
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -23,6 +23,7 @@ from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.forms import Form
 from dolfinx.fem.function import FunctionSpace
 from dolfinx.fem.utils import create_sparsity_pattern
+from dolfinx.typing import Scalar
 
 
 @typing.overload
@@ -365,11 +366,70 @@ def _assemble_matrix_csr(
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
-    if a.function_spaces[0] is a.function_spaces[1]:
-        typing.cast(typing.Any, _cpp.fem.insert_diagonal)(
-            A._cpp_object, a.function_spaces[0], _bcs, diag
-        )
+    if a.function_spaces[0]._cpp_object is a.function_spaces[1]._cpp_object:
+        set_bc_diagonal(A, a.function_spaces[0], bcs, diag)
     return A
+
+
+def set_diagonal(
+    A: la.MatrixCSR[Scalar],
+    rows: npt.NDArray[np.int32],
+    diagonal: Scalar | float | complex = 1.0,
+) -> None:
+    """Set a value on the diagonal for given rows of a matrix.
+
+    Args:
+        A: Matrix to modify.
+        rows: Rows to set the diagonal value for.
+        diagonal: Value to set on the diagonal.
+    """
+    typing.cast(typing.Any, _cpp.fem.insert_diagonal)(A._cpp_object, rows, diagonal)
+
+
+def set_bc_diagonal(
+    A: la.MatrixCSR[Scalar],
+    V: FunctionSpace,
+    bcs: Sequence[DirichletBC[Scalar]] | None,
+    diagonal: Scalar | float | complex = 1.0,
+) -> None:
+    """Set a value on the diagonal for Dirichlet boundary condition rows.
+
+    Args:
+        A: Matrix to modify. Must be associated with ``V`` on both its
+            row and column function spaces.
+        V: Function space that the rows/columns of ``A`` are associated
+            with.
+        bcs: Boundary conditions that identify the diagonal rows to
+            set. If ``None``, no rows are set.
+        diagonal: Value to set on the diagonal.
+    """
+    _bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
+    typing.cast(typing.Any, _cpp.fem.insert_diagonal)(A._cpp_object, V._cpp_object, _bcs, diagonal)
+
+
+def assemble_matrix_fn(
+    fn: Callable[[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray], int],
+    a: Form,
+    bcs: Sequence[DirichletBC] | None = None,
+) -> None:
+    """Assemble a bilinear form, inserting element matrices via ``fn``.
+
+    Rather than assembling into a :class:`~dolfinx.la.MatrixCSR` or a
+    PETSc matrix, ``fn`` is called once per cell/facet contribution with
+    the local-to-global row indices, column indices, and the element
+    matrix values, and is responsible for inserting them into a
+    caller-owned matrix representation.
+
+    Args:
+        fn: Called as ``fn(rows, cols, vals)`` for each contribution,
+            where ``vals`` has shape ``(len(rows), len(cols))``. Return
+            ``0`` on success.
+        a: Bilinear form to assemble.
+        bcs: Boundary conditions that affect the assembled matrix. Rows
+            and columns constrained by a boundary condition are zeroed.
+    """
+    _bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
+    typing.cast(typing.Any, _cpp.fem.assemble_matrix)(fn, a._cpp_object, _bcs)
 
 
 # -- Modifiers for Dirichlet conditions -----------------------------------
@@ -486,7 +546,7 @@ def apply_lifting(
         ]
 
     if coeffs is None:
-        coeffs = [pack_coefficients(form) for form in a]
+        coeffs = [pack_coefficients(form) if form is not None else {} for form in a]
 
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]

@@ -135,12 +135,13 @@ def create_vector(
             _assign_block_data(maps, b)
         return b
 
+    _maps = [(m._cpp_object, bs) for m, bs in maps]
     if kind is None or kind == PETSc.Vec.Type.MPI:
-        b = dolfinx.cpp.fem.petsc.create_vector_block(maps)
+        b = dolfinx.cpp.fem.petsc.create_vector_block(_maps)
         _assign_block_data(maps, b)
         return b
     elif kind == PETSc.Vec.Type.NEST:
-        return dolfinx.cpp.fem.petsc.create_vector_nest(maps)
+        return dolfinx.cpp.fem.petsc.create_vector_nest(_maps)
     else:
         raise NotImplementedError(
             "Vector type must be specified for blocked/nested assembly."
@@ -150,10 +151,7 @@ def create_vector(
 
 
 @functools.singledispatch
-def assign(
-    x0: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
-    x1: PETSc.Vec,
-) -> None:
+def _assign(x0: object, x1: object) -> None:
     """Assign ``x0`` values to a PETSc vector ``x1``.
 
     Values in ``x0``, which is possibly a stacked collection of arrays,
@@ -179,25 +177,29 @@ def assign(
         x0: An array or list of arrays that will be assigned to ``x1``.
         x1: Vector to assign values to.
     """
+    if not isinstance(x1, PETSc.Vec):
+        raise TypeError("Second argument must be a PETSc vector.")
+    arrays = typing.cast(npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]], x0)
     if x1.getType() == PETSc.Vec.Type().NEST:
         x1_nest = x1.getNestSubVecs()
-        for _x0, _x1 in zip(x0, x1_nest, strict=True):
+        assert x1_nest is not None
+        for _x0, _x1 in zip(arrays, x1_nest, strict=True):
             with _x1.localForm() as x:
                 x.array_w[:] = _x0
     else:
         with x1.localForm() as _x:
-            if isinstance(x0, Sequence):
+            if isinstance(arrays, Sequence):
                 start = 0
-                for _x0 in x0:
+                for _x0 in arrays:
                     end = start + _x0.shape[0]
                     _x.array_w[start:end] = _x0
                     start = end
             else:
-                _x.array_w[:] = x0
+                _x.array_w[:] = arrays
 
 
-@assign.register
-def _(  # type: ignore[misc]
+@_assign.register
+def _(
     x0: PETSc.Vec,
     x1: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
 ) -> None:
@@ -213,6 +215,7 @@ def _(  # type: ignore[misc]
     """
     if x0.getType() == PETSc.Vec.Type().NEST:
         x0_nest = x0.getNestSubVecs()
+        assert x0_nest is not None
         for _x0, _x1 in zip(x0_nest, x1, strict=True):
             with _x0.localForm() as x:
                 _x1[:] = x.array_r[:]
@@ -226,6 +229,28 @@ def _(  # type: ignore[misc]
                     start = end
             else:
                 x1[:] = _x0.array_r[:]
+
+
+@typing.overload
+def assign(
+    x0: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
+    x1: PETSc.Vec,
+) -> None: ...
+
+
+@typing.overload
+def assign(
+    x0: PETSc.Vec,
+    x1: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
+) -> None: ...
+
+
+def assign(
+    x0: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]] | PETSc.Vec,
+    x1: PETSc.Vec | npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
+) -> None:
+    """Assign values between arrays and a PETSc vector."""
+    _assign(x0, x1)
 
 
 def _assign_block_data(maps: Iterable[tuple[IndexMap, int]], vec: PETSc.Vec) -> None:

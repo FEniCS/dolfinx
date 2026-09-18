@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Chris Richardson and Igor Baratta
+# Copyright (C) 2021-2026 Chris Richardson, Igor Baratta and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -111,3 +111,21 @@ def test_vector_from_index_map_scatter_forward(dtype):
         global_idxs = np.asarray(global_idxs, dtype)
 
         assert np.all(vector.array == global_idxs)
+
+
+def test_vector_from_scatterer():
+    """Test creating vectors that share a scatterer."""
+    comm = MPI.COMM_WORLD
+    mesh = create_unit_square(comm, 5, 5)
+    index_map = mesh.topology.index_map(mesh.topology.dim)
+
+    x = la.vector(index_map)
+    y = la.vector(index_map, scatterer=x.scatterer)
+    assert y.scatterer._cpp_object is x.scatterer._cpp_object
+
+    y.array[: index_map.size_local] = np.arange(*index_map.local_range)
+    y.scatter_forward()
+    global_indices = index_map.local_to_global(
+        np.arange(index_map.size_local + index_map.num_ghosts, dtype=np.int32)
+    )
+    assert np.array_equal(y.array, global_indices)

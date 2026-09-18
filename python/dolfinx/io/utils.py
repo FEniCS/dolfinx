@@ -23,7 +23,6 @@ from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
 from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags
-from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
@@ -90,14 +89,22 @@ if _cpp.common.has_adios2:
                 raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
             if isinstance(output, Mesh):
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(  # type: ignore[no-matching-overload]
+                    comm, filename, output._cpp_object, engine
+                )
             else:
                 cpp_objects = (
                     [output._cpp_object]
                     if isinstance(output, Function)
                     else [o._cpp_object for o in output]
                 )
-                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)  # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(
+                    comm,
+                    filename,
+                    cpp_objects,  # type: ignore[bad-argument-type]
+                    engine,
+                    mesh_policy,
+                )
 
         def __enter__(self) -> Self:
             """Enter context manager."""
@@ -272,7 +279,7 @@ class XDMFFile:
 
     def read_geometry_data(
         self, name: str = "mesh", xpath: str = "/Xdmf/Domain"
-    ) -> npt.NDArray[np.float64]:
+    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Read geometry (node coordinates) data for a mesh from file.
 
         Args:
@@ -280,9 +287,10 @@ class XDMFFile:
             xpath: XPath where the Mesh Grid is stored in the file.
 
         Returns:
-            Node coordinates.
+            Node coordinates, as float32 or float64 depending on how
+            the data is stored in the file.
         """
-        return self._cpp_object.read_geometry_data(name, xpath)
+        return self._cpp_object.read_geometry_data(name, xpath)  # type: ignore[return-value]
 
     def read_cell_type(
         self, name: str = "mesh", xpath: str = "/Xdmf/Domain"
@@ -360,7 +368,7 @@ class XDMFFile:
         """
         cell_shape, cell_degree = self.read_cell_type(name, xpath)
         cells = self.read_topology_data(name, xpath)
-        x = self.read_geometry_data(name, xpath)
+        x = np.asarray(self.read_geometry_data(name, xpath), dtype=np.float64)
 
         # Get coordinate element, special handling for second order
         # serendipity.
@@ -423,10 +431,12 @@ class XDMFFile:
             cells,
             cmap,
             x,
-            _cell_partitioner(ghost_mode, max_facet_to_cell_links),
+            _cpp.graph.partitioner(),
+            ghost_mode,
             max_facet_to_cell_links,
             1,
             cell_weights=None,
+            reorder_fn=None,
         )
         msh.name = name
         domain = ufl.Mesh(basix_el)
@@ -467,9 +477,9 @@ class XDMFFile:
 def distribute_entity_data(
     mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: np.ndarray
 ) -> tuple[npt.NDArray[np.int64], np.ndarray]:
-    """Distribute  mesh entities and values to owning process.
+    """Distribute mesh entities and values to owning process.
 
-    The entities are described by the global vertex indices of the mesh.
+    The entities are described by the global node indices of the mesh.
     These entity indices are using the original input ordering.
 
     Returns:
@@ -480,7 +490,7 @@ def distribute_entity_data(
         mesh.topology._cpp_object,
         mesh.geometry.input_global_indices,
         mesh.geometry.index_map().size_global,
-        mesh.geometry.cmaps[0].create_dof_layout(),
+        mesh.geometry.cmaps[0].create_dof_layout()._cpp_object,
         mesh.geometry.dofmaps[0],
         entity_dim,
         entities,

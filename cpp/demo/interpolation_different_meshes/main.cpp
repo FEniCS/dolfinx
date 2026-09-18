@@ -5,6 +5,22 @@
 // ```
 
 // # Interpolation different meshes
+//
+// This demo illustrates how to:
+//
+// * Interpolate a vector-valued function between two unrelated
+//   meshes that discretise the same domain with different cell types
+//   (a tetrahedral mesh and a non-affinely-mapped hexahedral mesh)
+//   and different Lagrange degrees
+// * Create the point-ownership data needed by
+//   `dolfinx::fem::create_interpolation_data()` for a non-matching-mesh
+//   interpolation, which involves a nonaffine pullback for the
+//   hexahedral cells
+//
+// A vector field is first interpolated from an analytical expression
+// into a piecewise linear Lagrange space on the tetrahedral mesh, and
+// is then interpolated from there into a piecewise quadratic Lagrange
+// space on the (geometrically nonaffine) hexahedral mesh.
 
 #include <basix/e-lagrange.h>
 #include <dolfinx/fem/dolfinx_fem.h>

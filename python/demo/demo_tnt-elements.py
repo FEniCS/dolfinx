@@ -15,10 +15,14 @@
 # * {download}`Python script <./demo_tnt-elements.py>`
 # * {download}`Jupyter notebook <./demo_tnt-elements.ipynb>`
 # ```
+# This demo illustrates how to:
+# - Define a custom finite element using Basix's custom element
+#   interface
+# - Create tiniest tensor (TNT) elements and compare their accuracy
+#   with standard Lagrange elements
+#
 # Basix provides numerous finite elements, but there are many other
-# possible elements a user may want to use. This demo
-# ({download}`demo_tnt-elements.py`) shows how the Basix custom element
-# interface can be used to define elements. More detailed information
+# possible elements a user may want to use. More detailed information
 # about the inputs needed to create a custom element can be found in
 # [the Basix
 # documentation](https://docs.fenicsproject.org/basix/main/python/demo/demo_custom_element.py.html).

@@ -8,7 +8,7 @@
 #       jupytext_version: 1.13.6
 # ---
 
-# # Poisson equation
+# # Helmholtz equation on a mixed-topology mesh
 #
 # ```{admonition} Download sources
 # :class: download
@@ -17,8 +17,8 @@
 # ```
 # This demo illustrates how to:
 # - Solve a simple Helmholtz problem on a mixed-topology mesh.
-# - Create a mesh from numpy arrays using {py:func}`
-# dolfinx.mesh.create_mesh`
+# - Create a mesh from numpy arrays using
+#   {py:func}`dolfinx.mesh.create_mesh`
 #
 # ```{admonition} In development
 # Mixed-topology meshes are a work in progress and are not yet fully
@@ -27,7 +27,6 @@
 
 # +
 import sys
-import typing
 
 from mpi4py import MPI
 
@@ -35,23 +34,24 @@ import numpy as np
 from scipy.sparse.linalg import spsolve
 
 import basix
+import basix._basixcpp
 import dolfinx.cpp as _cpp
 import ufl
-from dolfinx.cpp.fem import locate_dofs_geometrical
-from dolfinx.cpp.mesh import GhostMode, create_mesh
+from dolfinx.cpp.mesh import create_mesh
 from dolfinx.fem import (
-    FiniteElement,
     FunctionSpace,
     assemble_matrix,
     assemble_vector,
     coordinate_element,
     create_dofmaps,
     dirichletbc,
+    finiteelement,
+    locate_dofs_geometrical,
     mixed_topology_form,
 )
+from dolfinx.graph import partitioner
 from dolfinx.io.utils import cell_perm_vtk
-from dolfinx.mesh import CellType, Mesh, Topology
-from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
+from dolfinx.mesh import CellType, GhostMode, Mesh, Topology
 
 # -
 
@@ -113,20 +113,23 @@ cells_np = [np.array(c) for c in cells]
 geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
+hexahedron_cpp: _cpp.fem.CoordinateElement_float64 = (
+    hexahedron._cpp_object  # type: ignore[assignment]
+)
+prism_cpp: _cpp.fem.CoordinateElement_float64 = prism._cpp_object  # type: ignore[assignment]
 
-part = _cell_partitioner(GhostMode.none, 2)
+part = partitioner()
 mesh = create_mesh(
     MPI.COMM_WORLD,
     cells_np,
-    [
-        typing.cast(_cpp.fem.CoordinateElement_float64, hexahedron._cpp_object),
-        typing.cast(_cpp.fem.CoordinateElement_float64, prism._cpp_object),
-    ],
+    [hexahedron_cpp, prism_cpp],
     geomx,
     part,
+    GhostMode.none,
     2,
     1,
-    cell_weights=None,
+    None,
+    None,
 )
 # -
 
@@ -139,12 +142,8 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 dolfinx_elements = [
-    FiniteElement(
-        _cpp.fem.FiniteElement_float64(
-            typing.cast(basix._basixcpp.FiniteElement_float64, e._e), None, False
-        )
-    )
-    for e in elements
+    finiteelement(cell_type, basix.ufl.wrap_element(e), np.float64)
+    for cell_type, e in zip([CellType.hexahedron, CellType.prism], elements, strict=True)
 ]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
 dofmaps = create_dofmaps(
@@ -156,7 +155,7 @@ dofmaps = create_dofmaps(
 # Create C++ function space
 V_cpp = _cpp.fem.FunctionSpace_float64(
     mesh,
-    [e._cpp_object for e in dolfinx_elements],  # type: ignore[misc]
+    [e._cpp_object for e in dolfinx_elements],
     [dofmap._cpp_object for dofmap in dofmaps],
 )
 
@@ -176,7 +175,7 @@ domain = ufl.Mesh(basix.ufl.element("Lagrange", "hexahedron", 1, shape=(3,)))
 element = basix.ufl.wrap_element(elements[0])
 V = FunctionSpace(Mesh(mesh, domain), element, V_cpp)
 
-bcdofs = locate_dofs_geometrical(V_cpp, marker)
+bcdofs = locate_dofs_geometrical(V, marker)
 bc = dirichletbc(value=0.0, dofs=bcdofs, V=V)
 
 # -
@@ -209,8 +208,8 @@ a_form = mixed_topology_form(a, dtype=np.float64)
 L_form = mixed_topology_form(L, dtype=np.float64)
 
 # ## Assembling and solving the linear system
-# We use the native {py:class}`matrix<dolfinx.la.MatrixCSR>` and
-# {py:class}`vector<dolfinx.la.Vector>` format in DOLFINx to assemble
+# We use the native {py:class}`matrix <dolfinx.la.MatrixCSR>` and
+# {py:class}`vector <dolfinx.la.Vector>` format in DOLFINx to assemble
 # the left and right hand side of the linear system.
 
 A = assemble_matrix(a_form, bcs=[bc])

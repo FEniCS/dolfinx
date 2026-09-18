@@ -316,7 +316,6 @@ compute_refinement(MPI_Comm neighbor_comm,
     parent_facet.emplace();
 
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
-  std::vector<std::int32_t> simplex_set;
 
   auto map_c = mesh.topology()->index_map(tdim);
   assert(map_c);

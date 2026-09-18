@@ -175,7 +175,9 @@ class Expression(Generic[Scalar]):
                     raise RuntimeError("Could not extract MPI communicator for Expression.")
                 domain = domains[0]
                 assert isinstance(domain, ufl.Mesh)
-                mesh = domain.ufl_cargo()
+                from dolfinx.mesh import _mesh_from_ufl_domain
+
+                mesh = _mesh_from_ufl_domain(domain)
                 comm = mesh.comm
             except AttributeError:
                 print(
@@ -212,7 +214,7 @@ class Expression(Generic[Scalar]):
         if len(arguments) == 0:
             self._argument_space = None
         elif len(arguments) == 1:
-            self._argument_space = arguments[0].ufl_function_space()._cpp_object
+            self._argument_space = arguments[0].ufl_function_space()
         else:
             raise RuntimeError("Expressions with more that one Argument not allowed.")
 
@@ -221,7 +223,9 @@ class Expression(Generic[Scalar]):
         if len(expr_domains) > 0:
             expr_domain = expr_domains[0]
             assert isinstance(expr_domain, ufl.Mesh)
-            geometry_dtype = expr_domain.ufl_cargo().geometry.x.dtype
+            from dolfinx.mesh import _mesh_from_ufl_domain
+
+            geometry_dtype = _mesh_from_ufl_domain(expr_domain).geometry.x.dtype
         else:
             geometry_dtype = np.dtype(dtype).type(0).real.dtype
         create_expression = Expression.cpp_types[np.dtype(dtype), geometry_dtype]
@@ -237,7 +241,7 @@ class Expression(Generic[Scalar]):
             coeffs,
             constants,
             _entity_maps,
-            self.argument_space,
+            self._argument_space._cpp_object if self._argument_space is not None else None,
         )
 
     def eval(
@@ -298,16 +302,16 @@ class Expression(Generic[Scalar]):
 
         constants = _cpp.fem.pack_constants(self._cpp_object)
         coeffs = _cpp.fem.pack_coefficients(
-            self._cpp_object,  # type: ignore[arg-type]
-            mesh._cpp_object,  # type: ignore[arg-type]
+            self._cpp_object,
+            mesh._cpp_object,
             _entities,
         )
         _cpp.fem.tabulate_expression(
-            values,  # type: ignore[arg-type]
-            self._cpp_object,  # type: ignore[arg-type]
-            constants,  # type: ignore[arg-type]
+            values,
+            self._cpp_object,
+            constants,
             coeffs,
-            mesh._cpp_object,  # type: ignore[arg-type]
+            mesh._cpp_object,
             _entities,
         )
         return values
@@ -480,10 +484,11 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             value_size = self._V.value_size
             u = np.empty((num_points, value_size), self.dtype)
 
+        assert u is not None
         self._cpp_object.eval(_x, _cells, u, tol, maxit)  # type: ignore
         if num_points == 1:
             u = np.reshape(u, (-1,))
-        return u
+        return typing.cast(npt.NDArray[Scalar], u)
 
     def interpolate_nonmatching(
         self,
@@ -560,8 +565,8 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             _interpolate(u0)
         else:
             x = _cpp.fem.interpolation_coords(
-                self._V.element._cpp_object,  # type: ignore[arg-type]
-                self._V.mesh.geometry._cpp_object,  # type: ignore[arg-type]
+                self._V.element._cpp_object,
+                self._V.mesh.geometry._cpp_object,
                 cells0,
             )
             self._cpp_object.interpolate_f(np.asarray(u0(x), dtype=self.dtype), cells0)
@@ -686,6 +691,7 @@ def functionspace(
     """
     # Create UFL element
     dtype = mesh.geometry.x.dtype
+    ufl_e: basix.ufl._ElementBase
     try:
         e = ElementMetaData(*typing.cast(tuple, element))
         ufl_e = basix.ufl.element(
@@ -697,11 +703,12 @@ def functionspace(
             dtype=dtype,
         )
     except TypeError:
-        ufl_e = element  # type: ignore
+        ufl_e = typing.cast(basix.ufl._ElementBase, element)
 
     # Check that element and mesh cell types match
     if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
+
     # Create DOLFINx objects
     dolfinx_element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
 
@@ -848,15 +855,15 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
         """Function space finite element."""
         return FiniteElement(self._cpp_object.element)
 
-    @property
+    @cached_property
     def dofmap(self) -> DofMap:
         """Degree-of-freedom map associated with the function space."""
         return DofMap(self._cpp_object.dofmap)
 
-    @property
-    def dofmaps(self) -> list[DofMap]:
-        """The geometry dofmaps, one per cell type."""
-        return [DofMap(_o) for _o in self._cpp_object.dofmaps]
+    @cached_property
+    def dofmaps(self) -> tuple[DofMap, ...]:
+        """The function space dofmaps, one per cell type."""
+        return tuple(DofMap(map) for map in self._cpp_object.dofmaps)
 
     @property
     def mesh(self) -> Mesh[Real]:

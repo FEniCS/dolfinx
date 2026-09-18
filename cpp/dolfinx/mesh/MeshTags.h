@@ -54,6 +54,10 @@ public:
         _indices(std::forward<U>(indices)), _values(std::forward<V>(values)),
         _name(name)
   {
+    if (!_topology)
+      throw std::invalid_argument("topology must not be null.");
+    if (_dim < 0 or _dim > _topology->dim())
+      throw std::invalid_argument("dim out of range for topology.");
     if (_indices.size() != _values.size())
     {
       throw std::runtime_error(
@@ -154,7 +158,8 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
 
   // Compute the indices of the topology entities (index is set to -1 if
   // it can't be found)
-  assert(topology);
+  if (!topology)
+    throw std::invalid_argument("topology must not be null.");
   const std::vector<std::int32_t> indices
       = entities_to_index(*topology, dim, entities.array());
   if (indices.size() != values.size())

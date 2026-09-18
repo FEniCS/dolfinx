@@ -11,8 +11,7 @@ import numpy as np
 import pytest
 
 import dolfinx
-from dolfinx.common import IndexMap
-from dolfinx.cpp.la import SparsityPattern
+from dolfinx.common import index_map
 from dolfinx.fem import (
     Function,
     apply_lifting,
@@ -196,9 +195,9 @@ def test_superlu_solver_asymmetric_blocks(dtype):
     bs0, bs1 = 2, 3
     n_row_blocks, n_col_blocks = 3, 2
 
-    im_row = IndexMap(MPI.COMM_WORLD, n_row_blocks)
-    im_col = IndexMap(MPI.COMM_WORLD, n_col_blocks)
-    sp = SparsityPattern(MPI.COMM_WORLD, [im_row, im_col], [bs0, bs1])
+    im_row = index_map(MPI.COMM_WORLD, n_row_blocks)
+    im_col = index_map(MPI.COMM_WORLD, n_col_blocks)
+    sp = dolfinx.la.sparsity_pattern(MPI.COMM_WORLD, [im_row, im_col], [bs0, bs1])
     for i in range(n_row_blocks):
         for j in range(n_col_blocks):
             sp.insert(i, j)

@@ -251,9 +251,14 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
   auto c_to_e = topology.connectivity(tdim, 1);
-  assert(c_to_e);
+  if (!c_to_e)
+    throw std::runtime_error("Edges have not been computed.");
   auto e_to_v = topology.connectivity(1, 0);
-  assert(e_to_v);
+  if (!e_to_v)
+  {
+    throw std::runtime_error(
+        "Edge-to-vertex connectivity has not been computed.");
+  }
 
   auto im = topology.index_map(0);
   assert(im);
@@ -261,7 +266,7 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   std::vector<std::bitset<BITSETSIZE>> edge_perm(num_cells, 0);
   auto process_thread
       = [](std::array<std::int64_t, 2> range, auto&& im, auto&& edge_perm,
-           auto&& c_to_v, auto&& e_to_v, auto&& c_to_e, int edges_per_cell)
+           auto&& c_to_v, auto&& e_to_v, auto&& c_to_e, int num_edges)
   {
     std::vector<std::int64_t> cell_vertices;
     std::vector<std::int64_t> vertices;
@@ -270,7 +275,7 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
       cell_vertices.resize(c_to_v->num_links(c));
       im->local_to_global(c_to_v->links(c), cell_vertices);
       auto cell_edges = c_to_e->links(c);
-      for (int edge = 0; edge < edges_per_cell; ++edge)
+      for (int edge = 0; edge < num_edges; ++edge)
       {
         vertices.resize(e_to_v->links(cell_edges[edge]).size());
         im->local_to_global(e_to_v->links(cell_edges[edge]), vertices);

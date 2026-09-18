@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2024 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -253,6 +253,30 @@ private:
   // facet type i.
   std::vector<std::vector<std::int32_t>> _interprocess_facets;
 };
+
+/// @cond
+namespace impl
+{
+/// @brief Create a mesh topology, additionally returning the input
+/// global indices of the topology vertices.
+///
+/// See ::create_topology for a description of the parameters. The
+/// vertex indices are returned because computing them is a by-product
+/// of building the topology, and a caller that holds 'P1' geometry data
+/// (geometry nodes are the cell vertices) would otherwise have to
+/// re-derive them with a sort of the full cell-vertex array.
+///
+/// @return Topology, and the sorted input ('original') global indices
+/// of the vertices in the topology, including ghost vertices.
+std::pair<Topology, std::vector<std::int64_t>>
+create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
+                std::vector<std::span<const std::int64_t>> cells,
+                std::vector<std::span<const std::int64_t>> original_cell_index,
+                std::vector<std::span<const int>> ghost_owners,
+                std::span<const std::int64_t> boundary_vertices,
+                int num_threads);
+} // namespace impl
+/// @endcond
 
 /// @brief Create a mesh topology.
 ///

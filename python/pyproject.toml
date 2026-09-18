@@ -76,7 +76,7 @@ docs = [
 lint = ["ruff", "gersemi", "clang-format"]
 ci = [
       "pytest-xdist",
-      "mypy",
+      "pyrefly",
       { include-group = "build" },
       { include-group = "docs" },
       { include-group = "lint" },
@@ -94,6 +94,35 @@ cmake.build-type = "Release"
 # Set to FALSE to disable automatic RPATH adjustments
 DOLFINX_INSTALL_RPATH_USE_LINK_PATH = "TRUE"
 
+[tool.pyrefly]
+project-includes = ["dolfinx", "demo", "test"]
+baseline = "pyrefly-baseline.json"
+infer-return-types = "annotated"
+replace-imports-with-any = [
+      "basix._basixcpp",
+      "gmsh",
+      "llvmlite",
+      "llvmlite.*",
+      "pyamg",
+      "slepc4py",
+      "slepc4py.*",
+      "networkx",
+      "pyvista",
+      "pyvista.*",
+      "pyvistaqt",
+      "cffi",
+      "cffi.*",
+      "_cffi_backend",
+]
+ignore-missing-imports = ["ufl", "ufl.*", "ffcx", "ffcx.*", "scipy.*", "_cffi_kernelA"]
+
+[[tool.pyrefly.sub-config]]
+matches = "test/**"
+check-unannotated-defs = false
+
+[tool.pyrefly.sub-config.errors]
+unbound-name = "ignore"
+
 [tool.pytest]
 junit_family = "xunit2"
 markers = [
@@ -102,100 +131,6 @@ markers = [
       "adios2: tests that require Adios2 (deselect with '-m \"not adios2\"').",
       "xfail_win32_complex: expected failures for complex numbers in Win32.",
 ]
-
-[tool.mypy]
-# Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
-disallow_untyped_defs = true
-disallow_any_unimported = true
-no_implicit_optional = true
-check_untyped_defs = true
-warn_return_any = true
-warn_unused_ignores = true
-show_error_codes = true
-ignore_missing_imports = false
-
-# Test bodies are unannotated pytest functions exercising loose numpy/dtype
-# patterns; check_untyped_defs and no_implicit_optional are not enforced
-# there.
-[[tool.mypy.overrides]]
-module = ["conftest", "unit.*", "test"]
-disallow_untyped_defs = false
-no_implicit_optional = false
-check_untyped_defs = false
-
-# Demos are lightly typed by convention (see AGENTS.md) and exempt from the
-# stricter disallow_untyped_defs enforced on the library. mypy module
-# patterns only allow '*' as a whole dotted component (not as a "demo_*"
-# prefix match), so each demo module is listed explicitly.
-[[tool.mypy.overrides]]
-module = [
-      "demo_axis",
-      "demo_biharmonic",
-      "demo_cahn-hilliard",
-      "demo_comm-pattern",
-      "demo_elasticity",
-      "demo_gmsh",
-      "demo_half-loaded-waveguide",
-      "demo_hdg",
-      "demo_helmholtz",
-      "demo_interpolation-io",
-      "demo_lagrange-variants",
-      "demo_matrix-free-petsc",
-      "demo_mixed-poisson",
-      "demo_mixed-topology",
-      "demo_navier-stokes",
-      "demo_pml",
-      "demo_poisson-matrix-free",
-      "demo_poisson",
-      "demo_pyamg",
-      "demo_pyvista",
-      "demo_scattering-boundary-conditions",
-      "demo_static-condensation",
-      "demo_stokes",
-      "demo_tnt-elements",
-      "demo_types",
-]
-disallow_untyped_defs = false
-
-# Sister FEniCS projects (ufl, ffcx) ship no py.typed/stubs; gmsh, llvmlite,
-# pyamg, slepc4py, pyvista, pyvistaqt and networkx are untyped optional
-# dependencies; _cffi_kernelA is a JIT-generated CFFI extension module name
-# that can never be resolved statically. basix, petsc4py and dolfinx.cpp are
-# typed/resolvable when actually built (e.g. local dev), but the lightweight
-# CI lint job installs neither a matching-version basix wheel, a from-source
-# petsc4py build, nor the native dolfinx.cpp extension, so they fall back to
-# unresolved there.
-[[tool.mypy.overrides]]
-module = [
-      "ufl",
-      "ufl.*",
-      "ffcx",
-      "ffcx.*",
-      "gmsh",
-      "llvmlite",
-      "llvmlite.*",
-      "pyamg",
-      "slepc4py",
-      "slepc4py.*",
-      "pyvista",
-      "pyvistaqt",
-      "networkx",
-      "scipy.*",
-      "cffi",
-      "cffi.*",
-      "_cffi_backend",
-]
-ignore_missing_imports = true
-
-# pyvista/pyvistaqt, when actually installed with their real stubs, wrap many
-# plotter methods (view_xy, set_position, ...) in a decorator whose stub loses
-# the "self" binding, so every call site sees a spurious "missing positional
-# argument" or argument-type error unrelated to dolfinx's own code. Skip
-# analysing their bodies so demos still get real Any-typed access without
-# tripping over this upstream stub gap.
-[[tool.mypy.overrides]]
-module = ["pyvista", "pyvistaqt"]
-follow_imports = "skip"
 
 [tool.ruff]
 line-length = 100
@@ -215,9 +150,16 @@ select = [
       "FLY",    # use f-string not static joins
       "NPY201", # numpy 2.x ruleset
       "B905",   # zip-without-explicit-strict
+      "TID251", # banned-api: dolfinx.cpp outside the wrapping layer
 ]
 ignore = ["RUF012"]
 allowed-confusables = ["σ", "ρ"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"dolfinx.cpp".msg = """\
+Use the pure Python dolfinx API, not the nanobind-wrapped dolfinx.cpp \
+module, which is for internal use by the dolfinx package itself.\
+"""
 
 [tool.ruff.lint.isort]
 known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
@@ -244,4 +186,19 @@ convention = "google"
       "D103", # undocumented-public-function
       "D205", # missing-blank-line-after-summary
 ]
-"conf.py" = ["D100", "D103", "D205"]
+# cpp/doc/source/conf.py reads dolfinx.cpp.__version__ for the C++ docs version.
+"conf.py" = ["D100", "D103", "D205", "TID251"]
+
+# dolfinx.cpp is the nanobind wrapping layer itself.
+"dolfinx/**/*.py" = ["TID251"]
+
+# Mixed-topology mesh construction has no pure-Python API yet.
+"test/unit/conftest.py" = ["D100", "D103", "D205", "TID251"]
+"test/unit/mesh/test_mixed_topology.py" = ["TID251"]
+"test/unit/mesh/test_create_mixed_mesh.py" = ["TID251"]
+"test/unit/fem/test_mixed_mesh_dofmap.py" = ["TID251"]
+"test/unit/io/test_vtkhdf.py" = ["TID251"]
+"demo_mixed-topology.py" = ["TID251"]
+
+# Deliberately compares the C++ and Python package versions.
+"test/unit/common/test_version.py" = ["TID251"]

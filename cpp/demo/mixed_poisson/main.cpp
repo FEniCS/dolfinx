@@ -71,15 +71,16 @@
 // polynomial order $k$ and $V_h$ be discontinuous elements of
 // polynomial order $k-1$.
 //
-// We will use the same definitions of functions and boundaries as in the
-// demo for {doc}`the Poisson equation <demo_poisson>`. These are:
+// We will use a similar definition of the boundaries as in the demo
+// for {doc}`the Poisson equation <demo_poisson>`, but here on a unit
+// square domain:
 //
 // * $\Omega = [0,1] \times [0,1]$ (a unit square)
-// * $\Gamma_{D} = \{(0, y) \cup (1, y) \in \partial \Omega\}$
-// * $\Gamma_{N} = \{(x, 0) \cup (x, 1) \in \partial \Omega\}$
+// * $\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}$
+// * $\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}$
 // * $u_0 = 20 y + 1$ on $\Gamma_{D}$
 // * $g = 10$ (flux) on $\Gamma_{N}$
-// * $f = \sin(5x - 0.5) + 1 (source term)
+// * $f = \sin(5x) + 1$ (source term)
 
 // ## UFL form file
 //
@@ -102,11 +103,13 @@
 #include <dolfinx/la/petsc.h>
 #include <map>
 #include <memory>
+#include <petscksp.h>
 #include <petscmat.h>
 #include <petscsys.h>
 #include <petscsystypes.h>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -117,7 +120,8 @@ using U = typename dolfinx::scalar_value_t<T>;
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  common::petsc::check(PetscInitialize(&argc, &argv, nullptr, nullptr),
+                       "PetscInitialize");
 
   {
     mesh::CellType cell_type = mesh::CellType::triangle;
@@ -193,8 +197,8 @@ int main(int argc, char* argv[])
         *mesh, 1,
         [](auto x)
         {
-          using U = typename decltype(x)::value_type;
-          constexpr U eps = 1e-8;
+          using coord_t = typename decltype(x)::value_type;
+          constexpr coord_t eps = 1e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -213,10 +217,10 @@ int main(int argc, char* argv[])
     int tdim = mesh->topology()->dim();
     int fdim = tdim - 1;
 
-    auto submesh_data = [](auto& mesh, int tdim, auto&& dfacets)
+    auto submesh_data = [](auto& mesh, int dim, auto&& dfacets)
     {
       auto [submesh, e_map, v_map, g_map]
-          = mesh::create_submesh(mesh, tdim, dfacets);
+          = mesh::create_submesh(mesh, dim, dfacets);
       return std::pair(std::make_shared<mesh::Mesh<U>>(std::move(submesh)),
                        std::move(e_map));
     };
@@ -261,8 +265,8 @@ int main(int argc, char* argv[])
         = fem::locate_dofs_topological(
             *mesh->topology(), {*V0->dofmap(), *W0->dofmap()}, 1, nfacets);
 
-    // Create boundary condition for $\sigma. $\sigma \cdot n$ will be
-    // constrained to to be equal to the normal component of $g$. The
+    // Create boundary condition for $\sigma$. $\sigma \cdot n$ will be
+    // constrained to be equal to the normal component of $g$. The
     // boundary conditions are applied to degrees-of-freedom ndofs, and
     // `V0` is the subspace that is constrained.
     fem::DirichletBC<T> bc(g, ndofs, V0);
@@ -356,7 +360,15 @@ int main(int argc, char* argv[])
     lu.set_operator(A.mat());
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
-    lu.solve(_u.vec(), _b.vec());
+    if (lu.solve(_u.vec(), _b.vec()) < 0)
+      throw std::runtime_error("Linear solver did not converge.");
+
+    // The KSP object is available for anything the solver does not
+    // wrap, here the number of linear solver iterations
+    PetscInt num_it = 0;
+    common::petsc::check(KSPGetIterationNumber(lu.ksp(), &num_it),
+                         "KSPGetIterationNumber");
+    std::cout << "Number of linear solver iterations: " << num_it << std::endl;
 
     // Update ghost values before output
     u->x()->scatter_fwd();
@@ -376,7 +388,7 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  PetscFinalize();
+  common::petsc::check(PetscFinalize(), "PetscFinalize");
 
   return 0;
 }

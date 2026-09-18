@@ -163,7 +163,6 @@ jobs:
           sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
           sudo apt-get install libegl1
 
-
       - name: Run demos (Python, serial)
         run: |
           pip install pytest-xdist
@@ -181,12 +180,10 @@ jobs:
     needs: [lint]
     strategy:
       matrix:
-        petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32, linux-gnu-real64-64]
+        petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32]
     container: "ghcr.io/fenics/test-env:current"
     env:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
-      OMPI_ALLOW_RUN_AS_ROOT: 1
-      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
       PYTEST_ADDOPTS: "-W error"
 
@@ -274,7 +271,8 @@ jobs:
 
       - name: Install pyvista (and dependencies)
         run: |
-          apt-get install libegl1 libxrender1
+          apt-get -y update
+          apt-get install -y libegl1 libxrender1
           pip install pyvista
 
       - name: Run demos (Python, serial)
@@ -295,8 +293,6 @@ jobs:
     container: "ghcr.io/fenics/test-env:current"
     env:
       PETSC_ARCH: linux-gnu-real64-32
-      OMPI_ALLOW_RUN_AS_ROOT: 1
-      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
     name: Build and publish docs

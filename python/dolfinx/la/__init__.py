@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2025 Garth N. Wells, Jack S. Hale
+# Copyright (C) 2017-2026 Garth N. Wells, Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -7,14 +7,18 @@
 
 from __future__ import annotations
 
+import functools
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Generic, TypeVar
+
+from mpi4py import MPI as _MPI
 
 import numpy as np
 import numpy.typing as npt
 
 import dolfinx
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.common import IndexMap
+from dolfinx.common import IndexMap, Scatterer
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 from dolfinx.typing import Scalar
 
@@ -27,11 +31,14 @@ __all__ = [
     "InsertMode",
     "MatrixCSR",
     "Norm",
+    "SparsityPattern",
     "Vector",
     "is_orthonormal",
     "matrix_csr",
     "norm",
     "orthonormalize",
+    "sparsity_pattern",
+    "sparsity_pattern_blocked",
     "vector",
 ]
 
@@ -51,7 +58,6 @@ class Vector(Generic[_T]):
         | _cpp.la.Vector_int32
         | _cpp.la.Vector_int64
     )
-    _petsc_x: PETSc.Vec | None
 
     def __init__(
         self,
@@ -75,35 +81,49 @@ class Vector(Generic[_T]):
             User code should call :func:`vector` to create a vector object.
         """
         self._cpp_object = x
-        self._petsc_x = None
 
     def __del__(self) -> None:
         """Delete the PETSc vector if it was created."""
-        if self._petsc_x is not None:
-            self._petsc_x.destroy()
+        if (petsc_x := self.__dict__.get("petsc_vec")) is not None:
+            petsc_x.destroy()
 
-    @property
+    @functools.cached_property
     def index_map(self) -> IndexMap:
-        """Index map that describes size and parallel distribution."""
-        return self._cpp_object.index_map
+        """Index map that describes size and parallel distribution.
+
+        Note:
+            This is a cached property. The wrapper is built on first
+            access and the same object is returned thereafter.
+        """
+        return IndexMap(self._cpp_object.index_map)
 
     @property
     def block_size(self) -> int:
         """Block size for the vector."""
         return self._cpp_object.bs
 
+    @functools.cached_property
+    def scatterer(self) -> Scatterer:
+        """Scatterer used for ghost communication.
+
+        Note:
+            This is a cached property. The wrapper is built on first
+            access and the same object is returned thereafter.
+        """
+        return Scatterer(self._cpp_object.scatterer)
+
     @property
     def array(self) -> npt.NDArray[_T]:
         """Local representation of the vector."""
         return self._cpp_object.array  # type: ignore[return-value]
 
-    @property
+    @functools.cached_property
     def petsc_vec(self) -> PETSc.Vec:
         """PETSc vector holding the entries of the vector.
 
-        Upon first call, this function creates a PETSc ``Vec`` object
-        that wraps the degree-of-freedom data. The ``Vec`` object is
-        cached and the cached ``Vec`` is returned upon subsequent calls.
+        Upon first access, this creates a PETSc ``Vec`` object that
+        wraps the degree-of-freedom data. The ``Vec`` object is cached
+        and the cached ``Vec`` is returned on subsequent accesses.
 
         Note:
           When the object is destroyed it will destroy the underlying
@@ -114,9 +134,7 @@ class Vector(Generic[_T]):
 
         from dolfinx.la.petsc import create_vector_wrap
 
-        if self._petsc_x is None:
-            self._petsc_x = create_vector_wrap(self)
-        return self._petsc_x
+        return create_vector_wrap(self)
 
     def scatter_forward(self) -> None:
         """Update ghost entries."""
@@ -130,6 +148,86 @@ class Vector(Generic[_T]):
                 owner.
         """
         self._cpp_object.scatter_reverse(mode)
+
+
+class SparsityPattern:
+    """Sparsity pattern of a distributed sparse matrix.
+
+    A pattern is built by inserting (row, column) index pairs and then
+    finalizing. Once finalized, it defines the nonzero structure and the
+    parallel distribution of a :class:`MatrixCSR`.
+    """
+
+    _cpp_object: _cpp.la.SparsityPattern
+
+    def __init__(self, sp: _cpp.la.SparsityPattern):
+        """Create a sparsity pattern.
+
+        Note:
+            Objects of this type should be created using
+            :func:`sparsity_pattern`, :func:`sparsity_pattern_blocked`
+            or :func:`dolfinx.fem.create_sparsity_pattern`, and not
+            using this initialiser.
+
+        Args:
+            sp: The C++/nanobind sparsity pattern object.
+        """
+        self._cpp_object = sp
+
+    def index_map(self, dim: int) -> IndexMap:
+        """Index map for the rows (``dim=0``) or columns (``dim=1``).
+
+        Args:
+            dim: 0 for the row map, 1 for the column map.
+        """
+        return IndexMap(self._cpp_object.index_map(dim))
+
+    @property
+    def num_nonzeros(self) -> int:
+        """Number of nonzeros in the finalized pattern."""
+        return self._cpp_object.num_nonzeros
+
+    def insert(
+        self,
+        rows: int | npt.NDArray[np.int32],
+        cols: int | npt.NDArray[np.int32],
+    ) -> None:
+        """Insert entries into the pattern.
+
+        Given arrays of rows and columns, an entry is inserted for every
+        (row, column) pair. Given a single row and column, the one entry
+        is inserted.
+
+        Args:
+            rows: Row index/indices.
+            cols: Column index/indices.
+        """
+        self._cpp_object.insert(rows, cols)  # type: ignore[arg-type]
+
+    def insert_diagonal(self, rows: npt.NDArray[np.int32]) -> None:
+        """Insert the diagonal entry for each of ``rows``.
+
+        Args:
+            rows: Rows to insert the diagonal entry for.
+        """
+        self._cpp_object.insert_diagonal(rows)
+
+    def finalize(self) -> None:
+        """Finalize the pattern.
+
+        The pattern cannot be modified after finalizing, and it must be
+        finalized before a matrix can be created from it.
+        """
+        self._cpp_object.finalize()
+
+    @property
+    def graph(self) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int64]]:
+        """Finalized pattern as a (column indices, row offsets) pair.
+
+        Note:
+            The returned arrays are read-only views into the pattern.
+        """
+        return self._cpp_object.graph
 
 
 class MatrixCSR(Generic[Scalar]):
@@ -168,7 +266,7 @@ class MatrixCSR(Generic[Scalar]):
         Args:
             i: 0 for row map, 1 for column map.
         """
-        return self._cpp_object.index_map(i)
+        return IndexMap(self._cpp_object.index_map(i))
 
     def mult(self, x: Vector[Scalar], y: Vector[Scalar], transpose: bool = False) -> None:
         """Compute ``y += Ax`` or ``y += A^T x``.
@@ -301,9 +399,7 @@ class MatrixCSR(Generic[Scalar]):
         """
         return self._cpp_object.to_dense()  # type: ignore[return-value]
 
-    def to_scipy(  # type: ignore[no-any-unimported]
-        self, ghosted: bool = False
-    ) -> _sparse.csr_matrix | _sparse.bsr_matrix:
+    def to_scipy(self, ghosted: bool = False) -> _sparse.csr_matrix | _sparse.bsr_matrix:
         """Convert to a SciPy CSR/BSR matrix. Data is shared.
 
         Note:
@@ -344,8 +440,59 @@ class MatrixCSR(Generic[Scalar]):
             )
 
 
+def sparsity_pattern(
+    comm: _MPI.Comm, maps: Sequence[IndexMap], bs: Sequence[int]
+) -> SparsityPattern:
+    """Create a sparsity pattern for a matrix.
+
+    Args:
+        comm: MPI communicator that the pattern is distributed over.
+        maps: Row and column index maps.
+        bs: Row and column block sizes.
+
+    Returns:
+        An empty sparsity pattern. Insert entries into it and call
+        :meth:`SparsityPattern.finalize` before creating a matrix.
+    """
+    return SparsityPattern(_cpp.la.SparsityPattern(comm, [m._cpp_object for m in maps], list(bs)))
+
+
+def sparsity_pattern_blocked(
+    comm: _MPI.Comm,
+    patterns: Sequence[Sequence[SparsityPattern | None]],
+    maps: Sequence[Sequence[tuple[IndexMap, int]]],
+    bs: Sequence[Sequence[int]],
+) -> SparsityPattern:
+    """Create a sparsity pattern from a rectangular array of patterns.
+
+    The blocks are concatenated into a single pattern, as required for a
+    monolithic matrix assembled from a block form.
+
+    Args:
+        comm: MPI communicator that the pattern is distributed over.
+        patterns: Sparsity pattern of each block. ``None`` marks a
+            structurally zero block.
+        maps: Index map and block size of each block row, and of each
+            block column.
+        bs: Row and column block sizes of the assembled pattern.
+
+    Returns:
+        An unfinalized sparsity pattern spanning all blocks.
+    """
+    return SparsityPattern(
+        _cpp.la.SparsityPattern(
+            comm,
+            # The C++ constructor permits null blocks, but the generated
+            # stub renders the nested pointer as non-optional.
+            [[p._cpp_object if p is not None else None for p in row] for row in patterns],  # type: ignore[misc]
+            [[(m._cpp_object, mbs) for m, mbs in row] for row in maps],
+            [list(b) for b in bs],
+        )
+    )
+
+
 def matrix_csr(
-    sp: _cpp.la.SparsityPattern,
+    sp: SparsityPattern,
     block_mode: BlockMode = BlockMode.compact,
     dtype: npt.DTypeLike = np.float64,
 ) -> MatrixCSR:
@@ -379,16 +526,24 @@ def matrix_csr(
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    return MatrixCSR(ftype(sp, block_mode))
+    return MatrixCSR(ftype(sp._cpp_object, block_mode))
 
 
-def vector(map: IndexMap, bs: int = 1, dtype: npt.DTypeLike = np.float64) -> Vector:
+def vector(
+    map: IndexMap,
+    bs: int = 1,
+    scatterer: Scatterer | None = None,
+    *,
+    dtype: npt.DTypeLike = np.float64,
+) -> Vector:
     """Create a distributed vector.
 
     Args:
         map: Index map the describes the size and distribution of the
             vector.
         bs: Block size.
+        scatterer: Scatterer compatible with ``map``. If ``None``, a
+            new scatterer is created.
         dtype: The scalar type.
 
     Returns:
@@ -420,7 +575,10 @@ def vector(map: IndexMap, bs: int = 1, dtype: npt.DTypeLike = np.float64) -> Vec
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    return Vector(vtype(map, bs))
+    if scatterer is None:
+        return Vector(vtype(map._cpp_object, bs))
+    else:
+        return Vector(vtype(map._cpp_object, bs, scatterer._cpp_object))
 
 
 def orthonormalize(basis: list[Vector[_T]]) -> None:

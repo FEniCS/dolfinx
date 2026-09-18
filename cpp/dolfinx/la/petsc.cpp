@@ -265,10 +265,10 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   else
   {
     // Expand for block size 1
-    const std::int32_t n = maps[0]->size_local() * bs[0];
-    _nnz_diag.resize(n);
-    _nnz_offdiag.resize(n);
-    auto rows = std::views::iota(std::int32_t(0), n);
+    const std::int32_t n_expanded = maps[0]->size_local() * bs[0];
+    _nnz_diag.resize(n_expanded);
+    _nnz_offdiag.resize(n_expanded);
+    auto rows = std::views::iota(std::int32_t(0), n_expanded);
     std::ranges::transform(rows, _nnz_diag.begin(), [&sp, &bs](std::int32_t i)
                            { return bs[1] * sp.nnz_diag(i / bs[0]); });
     std::ranges::transform(rows, _nnz_offdiag.begin(),
@@ -605,7 +605,8 @@ void petsc::KrylovSolver::set_operators(const Mat A, const Mat P)
   common::petsc::check(KSPSetOperators(_ksp, A, P), "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
-PetscInt petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
+KSPConvergedReason petsc::KrylovSolver::solve(Vec x, const Vec b,
+                                              bool transpose)
 {
   common::Timer timer("PETSc Krylov solver");
   assert(_ksp);
@@ -627,9 +628,8 @@ PetscInt petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
                        "KSPGetIterationNumber");
 
   // Check if the solution converged and warn if not. Note: this does
-  // not throw on non-convergence -- the caller is responsible for
-  // checking the convergence reason (via ksp()) if this matters for
-  // its use case.
+  // not throw on non-convergence -- the caller must check the
+  // returned convergence reason if this matters for its use case.
   KSPConvergedReason reason;
   common::petsc::check(KSPGetConvergedReason(_ksp, &reason),
                        "KSPGetConvergedReason");
@@ -643,7 +643,7 @@ PetscInt petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
                  num_iterations, reason_str);
   }
 
-  return num_iterations;
+  return reason;
 }
 //-----------------------------------------------------------------------------
 void petsc::KrylovSolver::set_options_prefix(std::string_view options_prefix)

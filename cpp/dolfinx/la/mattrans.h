@@ -271,14 +271,8 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   std::vector<T> recv_vals(total_recv * bs[0] * bs[1]);
 
   MPI_Request data_reqs[3];
-  MPI_Datatype mpi_T;
-  if (bs[0] * bs[1] == 1)
-    mpi_T = dolfinx::MPI::mpi_t<T>;
-  else
-  {
-    MPI_Type_contiguous(bs[0] * bs[1], dolfinx::MPI::mpi_t<T>, &mpi_T);
-    MPI_Type_commit(&mpi_T);
-  }
+  const dolfinx::MPI::Datatype<T> block(bs[0] * bs[1]);
+  MPI_Datatype mpi_T = block.type();
 
   MPI_Ineighbor_alltoallv(send_row_gidx.data(), send_count.data(),
                           send_disp.data(), MPI_INT64_T, recv_row_gidx.data(),
@@ -299,8 +293,6 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   // Wait for all data exchanges to complete.
   // -----------------------------------------------------------------------
   MPI_Waitall(3, data_reqs, MPI_STATUSES_IGNORE);
-  if (bs[0] * bs[1] != 1)
-    MPI_Type_free(&mpi_T);
   MPI_Comm_free(&neigh_comm);
 
   // -----------------------------------------------------------------------

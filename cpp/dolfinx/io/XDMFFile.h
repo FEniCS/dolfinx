@@ -71,7 +71,11 @@ public:
            std::string_view file_mode, Encoding encoding = Encoding::HDF5);
 
   /// Move constructor
-  XDMFFile(XDMFFile&&) = default;
+  /// @note Defined in the source file, where pugi::xml_document is
+  /// complete. The HDF5 identifier is an integer handle and is
+  /// transferred explicitly: a defaulted move would leave both objects
+  /// referring to the same file, and both would close it.
+  XDMFFile(XDMFFile&& file) noexcept;
 
   /// Destructor
   ~XDMFFile();
