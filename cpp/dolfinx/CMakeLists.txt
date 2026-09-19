@@ -242,6 +242,7 @@ install(
   EXPORT DOLFINXTargets
   NAMESPACE dolfinx::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
+  COMPONENT Development
 )
 
 # ------------------------------------------------------------------------------
@@ -392,7 +393,7 @@ block(
   foreach(_lib IN LISTS PKGCONFIG_DOLFINX_LIBS)
     # Add -Wl,option directives
     if("${_lib}" MATCHES "-Wl,[^ ]*")
-      set(PKG_LINKFLAGS "${_lib} ${PKG_LINKFLAGS}")
+      string(PREPEND PKG_LINKFLAGS "${_lib} ")
     else()
       cmake_path(GET _lib PARENT_PATH _path)
       cmake_path(GET _lib STEM _name)
@@ -400,7 +401,7 @@ block(
 
       # Add libraries that matches the form -L<libdir> -l<lib>
       if(NOT "${_path}" STREQUAL "")
-        set(PKG_LINKFLAGS "-L${_path} -l${_name} ${PKG_LINKFLAGS}")
+        string(PREPEND PKG_LINKFLAGS "-L${_path} -l${_name} ")
       endif()
     endif()
   endforeach()

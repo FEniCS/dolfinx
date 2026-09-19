@@ -596,6 +596,39 @@ add_custom_target(
 
 # ------------------------------------------------------------------------------
 # Print post-install message
-add_subdirectory(cmake/post-install)
+#
+# The message body is a bracket argument, so its ${...} are expanded when
+# the install script runs rather than at configure time. That way the
+# reported prefix is the one actually installed to, which
+# `cmake --install . --prefix <dir>` overrides.
+install(
+  CODE
+    "set(DOLFINX_INSTALL_LIBDIR \"${CMAKE_INSTALL_LIBDIR}\")
+set(DOLFINX_INSTALL_DATADIR \"${CMAKE_INSTALL_DATAROOTDIR}\")"
+)
+install(
+  CODE
+    [[
+message(
+  "----------------------------------------------------------------------------
+DOLFINx has now been installed in
+
+    ${CMAKE_INSTALL_PREFIX}
+
+and demo programs have been installed in
+
+    ${CMAKE_INSTALL_PREFIX}/${DOLFINX_INSTALL_DATADIR}/dolfinx/demo
+
+Don't forget to update your environment variables. This can be done
+easily using the helper file 'dolfinx.conf' which sets the appropriate
+variables (for users of the Bash shell).
+
+To update your environment variables, run the following command:
+
+    source ${CMAKE_INSTALL_PREFIX}/${DOLFINX_INSTALL_LIBDIR}/dolfinx/dolfinx.conf
+
+----------------------------------------------------------------------------")
+]]
+)
 
 # ------------------------------------------------------------------------------
