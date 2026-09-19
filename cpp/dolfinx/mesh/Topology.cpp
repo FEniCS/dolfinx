@@ -14,6 +14,7 @@
 #include <boost/sort/sort.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
@@ -821,6 +822,93 @@ build_entity_types(const std::vector<CellType>& cell_types)
   }
   return entity_types;
 }
+
+/// @brief Compute inter-process vertices for a topology with tdim == 1,
+/// where the facets are vertices.
+///
+/// Matches the definition used by mesh::compute_entities for dim >= 1:
+/// an entity is inter-process if cells owned by two or more ranks are
+/// attached to it. mesh::compute_entities cannot be used here as it
+/// returns immediately for dim == 0, vertices being set up directly
+/// rather than computed on demand.
+///
+/// @param[in] topology Topology with tdim == 1, whose vertex index map
+/// and cell-vertex connectivity have already been set.
+/// @return Sorted local indices of the inter-process vertices.
+///
+/// @note Collective.
+std::vector<std::int32_t>
+compute_interprocess_vertices(const Topology& topology)
+{
+  assert(topology.dim() == 1);
+  constexpr int tdim = 1;
+
+  auto vertex_map = topology.index_map(0);
+  assert(vertex_map);
+  const std::int32_t num_local = vertex_map->size_local();
+  const std::int32_t num_ghosts = vertex_map->num_ghosts();
+
+  // Vertices attached to a cell owned by this rank
+  std::vector<std::int8_t> attached(num_local + num_ghosts, 0);
+  std::vector<std::shared_ptr<const common::IndexMap>> cell_maps
+      = topology.index_maps(tdim);
+  for (std::size_t i = 0; i < cell_maps.size(); ++i)
+  {
+    auto c_to_v = topology.connectivity({tdim, static_cast<int>(i)}, {0, 0});
+    assert(c_to_v);
+    const std::int32_t num_local_cells = cell_maps[i]->size_local();
+    const std::int32_t end_idx = c_to_v->offsets()[num_local_cells];
+    std::span<const std::int32_t> local_links(c_to_v->array().data(), end_idx);
+    std::ranges::for_each(local_links,
+                          [&attached](std::int32_t v) { attached[v] = 1; });
+  }
+
+  // Count, for each owned vertex, the ranks with an attached owned cell:
+  // this rank, plus each ghosting rank that reports one. The owner does
+  // not necessarily have an attached owned cell itself (a sub-topology
+  // vertex may be incident to a cell on a ghosting rank only), so the
+  // flags of all ranks are counted rather than the owner's assumed.
+  const common::Scatterer<> scatter(*vertex_map);
+  std::span<const std::int32_t> local_ind = scatter.local_indices_block();
+  std::span<const std::int32_t> ghost_ind = scatter.remote_indices_block();
+  std::vector<std::int8_t> buffer_ghost(ghost_ind.size()),
+      buffer_local(local_ind.size());
+  std::ranges::transform(ghost_ind, buffer_ghost.begin(),
+                         [&attached, num_local](std::int32_t i)
+                         { return attached[num_local + i]; });
+  MPI_Request request;
+  scatter.scatter_rev_begin(buffer_ghost.data(), buffer_local.data(), 1,
+                            request);
+  scatter.scatter_rev_end(request);
+
+  std::vector<std::int8_t> interprocess(num_local + num_ghosts, 0);
+  {
+    std::vector<std::int32_t> count(attached.begin(),
+                                    std::next(attached.begin(), num_local));
+    for (std::size_t i = 0; i < local_ind.size(); ++i)
+      count[local_ind[i]] += buffer_local[i];
+    std::ranges::transform(count, interprocess.begin(),
+                           [](std::int32_t c) -> std::int8_t { return c > 1; });
+  }
+
+  // Send the verdict for owned vertices back to the ghosting ranks
+  std::ranges::transform(local_ind, buffer_local.begin(),
+                         [&interprocess](std::int32_t i)
+                         { return interprocess[i]; });
+  scatter.scatter_fwd_begin(buffer_local.data(), buffer_ghost.data(), 1,
+                            request);
+  scatter.scatter_fwd_end(request);
+  for (std::size_t i = 0; i < ghost_ind.size(); ++i)
+    interprocess[num_local + ghost_ind[i]] = buffer_ghost[i];
+
+  // Keep only the vertices attached to a cell owned by this rank
+  std::vector<std::int32_t> interprocess_vertices;
+  for (std::int32_t v = 0; v < num_local + num_ghosts; ++v)
+    if (interprocess[v] and attached[v])
+      interprocess_vertices.push_back(v);
+
+  return interprocess_vertices;
+}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -829,8 +917,7 @@ Topology::Topology(
     std::shared_ptr<const common::IndexMap> vertex_map,
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
     std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
-    const std::optional<std::vector<std::vector<std::int64_t>>>& original_index,
-    int num_threads)
+    const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
     : original_cell_index(original_index
                               ? *original_index
                               : std::vector<std::vector<std::int64_t>>()),
@@ -855,16 +942,6 @@ Topology::Topology(
       _index_maps.insert({{tdim, (int)i}, cell_maps[i]});
       _connectivity.insert({{{tdim, int(i)}, {0, 0}}, cells[i]});
     }
-  }
-
-  // FIXME: This is a hack for setting _interprocess_facets when
-  // tdim==1, i.e. the 'facets' are vertices
-  if (tdim == 1)
-  {
-    auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(*this, 0, CellType::point, num_threads);
-    std::ranges::sort(interprocess_entities);
-    _interprocess_facets.push_back(std::move(interprocess_entities));
   }
 }
 //-----------------------------------------------------------------------------
@@ -992,6 +1069,14 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
 //-----------------------------------------------------------------------------
 bool Topology::create_entities(int dim, int num_threads)
 {
+  // For tdim == 1 the facets are vertices, which already exist and
+  // are never computed by mesh::compute_entities (see
+  // compute_interprocess_vertices). Compute their inter-process data
+  // here, on first request, rather than unconditionally in the
+  // constructor.
+  if (dim == 0 and this->dim() == 1 and _interprocess_facets.empty())
+    _interprocess_facets.push_back(compute_interprocess_vertices(*this));
+
   // TODO: is this check sufficient/correct? Does not catch the
   // cell_entity entity case. Should there also be a check for
   // connectivity(this->dim(), dim)?
