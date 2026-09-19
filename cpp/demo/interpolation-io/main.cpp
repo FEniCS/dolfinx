@@ -26,7 +26,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/utils.h>
+#include <dolfinx/fem/functionspace_factory.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/mesh/Mesh.h>

@@ -12,8 +12,8 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/dofmapbuilder.h>
+#include <dolfinx/fem/integration_domains.h>
 #include <dolfinx/fem/sparsitybuild.h>
-#include <dolfinx/fem/utils.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>

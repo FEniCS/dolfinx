@@ -20,5 +20,10 @@ namespace dolfinx::fem
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/expression_evaluate.h>
+#include <dolfinx/fem/expression_factory.h>
+#include <dolfinx/fem/form_factory.h>
+#include <dolfinx/fem/functionspace_factory.h>
+#include <dolfinx/fem/integration_domains.h>
+#include <dolfinx/fem/interpolate_geometry.h>
 #include <dolfinx/fem/sparsitybuild.h>
-#include <dolfinx/fem/utils.h>
+#include <dolfinx/fem/sparsitypattern.h>
