@@ -26,10 +26,18 @@ function(dolfinx_prepend_pkgconfig_path dir_env_var)
     set(sep ":")
   endif()
 
-  # An unset PKG_CONFIG_PATH expands to the empty string
+  # Read PKG_CONFIG_PATH through a guard rather than dereferencing it
+  # directly: CI configures with --warn-uninitialized -Werror=dev, under
+  # which reading an unset environment variable is an error.
+  if(DEFINED ENV{PKG_CONFIG_PATH})
+    set(pkg_config_path "$ENV{PKG_CONFIG_PATH}")
+  else()
+    set(pkg_config_path "")
+  endif()
+
   set(
     ENV{PKG_CONFIG_PATH}
-    "$ENV{${dir_env_var}}/lib/pkgconfig${sep}$ENV{PKG_CONFIG_PATH}"
+    "$ENV{${dir_env_var}}/lib/pkgconfig${sep}${pkg_config_path}"
   )
   if(DEFINED ENV{PETSC_ARCH})
     set(
