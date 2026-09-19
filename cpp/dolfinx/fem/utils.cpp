@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "utils.h"
 #include "Constant.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
@@ -12,6 +11,9 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "dofmapbuilder.h"
+#include "form_factory.h"
+#include "functionspace_factory.h"
+#include "integration_domains.h"
 #include <algorithm>
 #include <array>
 #include <dolfinx/common/IndexMap.h>

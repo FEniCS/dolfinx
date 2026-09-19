@@ -6,10 +6,13 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/DofMap.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Expression.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/expression_factory.h
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Form.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/form_factory.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Function.h
   ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/functionspace_factory.h
   ${CMAKE_CURRENT_SOURCE_DIR}/assembler.h
   ${CMAKE_CURRENT_SOURCE_DIR}/assemble_expression_impl.h
   ${CMAKE_CURRENT_SOURCE_DIR}/assemble_matrix_impl.h
@@ -20,10 +23,13 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_fem.h
   ${CMAKE_CURRENT_SOURCE_DIR}/expression_evaluate.h
   ${CMAKE_CURRENT_SOURCE_DIR}/interpolate.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/interpolate_geometry.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/integration_domains.h
   ${CMAKE_CURRENT_SOURCE_DIR}/kernel.h
   ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pack.h
   ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/sparsitypattern.h
   ${CMAKE_CURRENT_SOURCE_DIR}/traits.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
   PARENT_SCOPE
