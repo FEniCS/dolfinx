@@ -18,23 +18,30 @@ configure_file(
 #
 # The base directories of a file set are added to the build interface and
 # mapped onto the install DESTINATION given in install(TARGETS) below, so
-# include directories do not have to be maintained separately. Generated
-# headers live under ${PROJECT_BINARY_DIR}, which is why it is a base
-# directory here: it is what makes <dolfinx/common/version.h> resolve in
-# the build tree for the library and for anything linking to it.
+# include directories do not have to be maintained separately.
 #
-# Sub-directories append to this set with
+# Three sets are needed because the base directories of a single set may
+# not be sub-directories of one another, and the build tree is allowed to
+# sit inside the source tree. Base directories of *different* sets may
+# nest, which is what keeps this legal for an in-source build directory.
+#
+# Sub-directories append to the main set with
 # target_sources(dolfinx PUBLIC FILE_SET HEADERS FILES ...).
+target_sources(dolfinx PUBLIC FILE_SET HEADERS BASE_DIRS ${DOLFINX_SOURCE_DIR})
+
+# Generated headers, so that <dolfinx/common/version.h> resolves in the
+# build tree for the library and for anything linking to it.
 target_sources(
   dolfinx
   PUBLIC
-    FILE_SET HEADERS
-      BASE_DIRS ${DOLFINX_SOURCE_DIR} ${PROJECT_BINARY_DIR}
+    FILE_SET generated_headers
+      TYPE HEADERS
+      BASE_DIRS ${PROJECT_BINARY_DIR}
       FILES ${CMAKE_CURRENT_BINARY_DIR}/common/version.h
 )
 
 # The umbrella <dolfinx.h> sits at the root of the include directory rather
-# than in dolfinx/, so it needs its own set with a different base directory.
+# than in dolfinx/, so it needs its own base directory too.
 target_sources(
   dolfinx
   PUBLIC
@@ -213,6 +220,9 @@ install(
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
   FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development
+  FILE_SET generated_headers
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    COMPONENT Development
   FILE_SET umbrella_header
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     COMPONENT Development

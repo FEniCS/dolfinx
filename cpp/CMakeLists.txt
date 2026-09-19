@@ -261,16 +261,23 @@ set(
   Release
   RelWithDebInfo
 )
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  set(
-    CMAKE_BUILD_TYPE
-    "RelWithDebInfo"
-    CACHE STRING
-    "Choose the type of build, options are: ${DOLFINX_BUILD_TYPES}."
-    FORCE
-  )
+if(NOT CMAKE_CONFIGURATION_TYPES)
+  if(NOT CMAKE_BUILD_TYPE)
+    set(
+      CMAKE_BUILD_TYPE
+      "RelWithDebInfo"
+      CACHE STRING
+      "Choose the type of build, options are: ${DOLFINX_BUILD_TYPES}."
+      FORCE
+    )
+  endif()
+  # Only a cache entry can carry STRINGS. On a multi-config generator no
+  # entry is created above, and a parent project may have set
+  # CMAKE_BUILD_TYPE as an ordinary variable.
+  if(DEFINED CACHE{CMAKE_BUILD_TYPE})
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${DOLFINX_BUILD_TYPES})
+  endif()
 endif()
-set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${DOLFINX_BUILD_TYPES})
 
 include(DolfinxDeveloperCompilerFlags)
 
