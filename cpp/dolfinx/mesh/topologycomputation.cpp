@@ -8,8 +8,10 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
+#include <array>
 #include <boost/sort/sort.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
+#include <cassert>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -19,9 +21,12 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <format>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <mpi.h>
 #include <numeric>
+#include <span>
+#include <stdexcept>
 #include <thread>
 #include <tuple>
 #include <utility>
@@ -541,7 +546,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   // found in entity_to_local_idx will have recv_index set to -1.
   const int mpi_rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> recv_index;
-  recv_index.reserve(recv_disp.size() - 1);
+  recv_index.reserve(recv_disp.back() / num_vertices_per_e);
   for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
   {
     // Loop over received entities (defined by array of entity vertices)
