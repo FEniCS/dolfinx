@@ -36,7 +36,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-message(STATUS "Checking for package 'KaHIP'")
+if(NOT KaHIP_FIND_QUIETLY)
+  message(STATUS "Checking for package 'KaHIP'")
+endif()
 
 find_package(MPI REQUIRED COMPONENTS CXX)
 

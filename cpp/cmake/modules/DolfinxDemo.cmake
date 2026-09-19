@@ -29,24 +29,32 @@ function(_dolfinx_demo_scalar_type out_flag out_is_complex)
 
   cmake_push_check_state(RESET)
   set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
-  check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h PETSC_SCALAR_COMPLEX)
-  check_symbol_exists(PETSC_USE_REAL_DOUBLE petscsystypes.h PETSC_REAL_DOUBLE)
+  check_symbol_exists(
+    PETSC_USE_COMPLEX
+    petscsystypes.h
+    DOLFINX_PETSC_SCALAR_COMPLEX
+  )
+  check_symbol_exists(
+    PETSC_USE_REAL_DOUBLE
+    petscsystypes.h
+    DOLFINX_PETSC_REAL_DOUBLE
+  )
   cmake_pop_check_state()
 
-  if(PETSC_SCALAR_COMPLEX)
-    if(PETSC_REAL_DOUBLE)
+  if(DOLFINX_PETSC_SCALAR_COMPLEX)
+    if(DOLFINX_PETSC_REAL_DOUBLE)
       set(${out_flag} "--scalar_type=complex128" PARENT_SCOPE)
     else()
       set(${out_flag} "--scalar_type=complex64" PARENT_SCOPE)
     endif()
   else()
-    if(PETSC_REAL_DOUBLE)
+    if(DOLFINX_PETSC_REAL_DOUBLE)
       set(${out_flag} "--scalar_type=float64" PARENT_SCOPE)
     else()
       set(${out_flag} "--scalar_type=float32" PARENT_SCOPE)
     endif()
   endif()
-  set(${out_is_complex} ${PETSC_SCALAR_COMPLEX} PARENT_SCOPE)
+  set(${out_is_complex} ${DOLFINX_PETSC_SCALAR_COMPLEX} PARENT_SCOPE)
 endfunction()
 
 function(dolfinx_add_demo name)
@@ -116,10 +124,10 @@ function(dolfinx_add_demo name)
   # Do not throw an error for 'multi-line comments' (these are typical in
   # rst, which includes LaTeX). Appended last so that it overrides the
   # -Wcomment implied by -Wall above.
-  check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
+  check_cxx_compiler_flag("-Wno-comment" DOLFINX_HAVE_WNO_COMMENT)
   target_compile_options(
     ${_target}
-    PRIVATE $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment>
+    PRIVATE $<$<BOOL:${DOLFINX_HAVE_WNO_COMMENT}>:-Wno-comment>
   )
 
   # Test targets (used by the DOLFINx testing system). To select one

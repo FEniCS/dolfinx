@@ -11,55 +11,58 @@ include_guard(GLOBAL)
 # variable ${dir_env_var} (e.g. PETSC_DIR) to PKG_CONFIG_PATH. Both
 # <prefix>/lib/pkgconfig and, when PETSC_ARCH is set,
 # <prefix>/$ENV{PETSC_ARCH}/lib/pkgconfig are added.
-macro(dolfinx_prepend_pkgconfig_path dir_env_var)
-  block(SCOPE_FOR VARIABLES)
-    if(WIN32)
-      set(_sep ";")
-    else()
-      set(_sep ":")
-    endif()
-    if(DEFINED ENV{PKG_CONFIG_PATH})
-      set(_orig "$ENV{PKG_CONFIG_PATH}")
-    else()
-      set(_orig "")
-    endif()
-    if(DEFINED ENV{${dir_env_var}})
-      set(
-        ENV{PKG_CONFIG_PATH}
-        "$ENV{${dir_env_var}}/lib/pkgconfig${_sep}${_orig}"
-      )
-      if(DEFINED ENV{PETSC_ARCH})
-        set(
-          ENV{PKG_CONFIG_PATH}
-          "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig${_sep}$ENV{PKG_CONFIG_PATH}"
-        )
-      endif()
-    endif()
-  endblock()
-endmacro()
+#
+# A function rather than a macro: neither helper here sets a variable in
+# the caller's scope, only the process environment, which a function
+# changes just the same.
+function(dolfinx_prepend_pkgconfig_path dir_env_var)
+  if(NOT DEFINED ENV{${dir_env_var}})
+    return()
+  endif()
+
+  if(WIN32)
+    set(sep ";")
+  else()
+    set(sep ":")
+  endif()
+
+  # An unset PKG_CONFIG_PATH expands to the empty string
+  set(
+    ENV{PKG_CONFIG_PATH}
+    "$ENV{${dir_env_var}}/lib/pkgconfig${sep}$ENV{PKG_CONFIG_PATH}"
+  )
+  if(DEFINED ENV{PETSC_ARCH})
+    set(
+      ENV{PKG_CONFIG_PATH}
+      "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig${sep}$ENV{PKG_CONFIG_PATH}"
+    )
+  endif()
+endfunction()
 
 # Set the environment variable ${dir_env_var} to the prefix reported by the
 # Python module ${module}, so that dolfinx_prepend_pkgconfig_path() finds
 # the PETSc/SLEPc a Python installation was built against. A variable set
 # by the user always wins.
-macro(dolfinx_python_prefix_hint module dir_env_var)
-  block(SCOPE_FOR VARIABLES)
-    if(NOT DEFINED ENV{${dir_env_var}})
-      find_package(Python3 COMPONENTS Interpreter QUIET)
-      if(Python3_Interpreter_FOUND)
-        execute_process(
-          COMMAND
-            ${Python3_EXECUTABLE} -c
-            "import ${module}, sys; sys.stdout.write(${module}.get_${module}_dir())"
-          OUTPUT_VARIABLE _dir
-          ERROR_QUIET
-          OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        if(_dir)
-          message(STATUS "Found ${module} Python module at ${_dir}")
-          set(ENV{${dir_env_var}} "${_dir}")
-        endif()
-      endif()
-    endif()
-  endblock()
-endmacro()
+function(dolfinx_python_prefix_hint module dir_env_var)
+  if(DEFINED ENV{${dir_env_var}})
+    return()
+  endif()
+
+  find_package(Python3 COMPONENTS Interpreter QUIET)
+  if(NOT Python3_Interpreter_FOUND)
+    return()
+  endif()
+
+  execute_process(
+    COMMAND
+      ${Python3_EXECUTABLE} -c
+      "import ${module}, sys; sys.stdout.write(${module}.get_${module}_dir())"
+    OUTPUT_VARIABLE dir
+    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  if(dir)
+    message(STATUS "Found ${module} Python module at ${dir}")
+    set(ENV{${dir_env_var}} "${dir}")
+  endif()
+endfunction()
