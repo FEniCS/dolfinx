@@ -10,8 +10,10 @@
 //   over subsets of the boundary.
 // * Use a submesh to represent boundary data
 //
-// The full implementation is in
-// {download}`demo_mixed_poisson/main.cpp`.
+// Running this demo requires the files:
+// {download}`demo_mixed_poisson/main.cpp`,
+// {download}`demo_mixed_poisson/mixed_poisson.py` and
+// {download}`demo_mixed_poisson/CMakeLists.txt`.
 //
 //
 // # Mixed formulation for the Poisson equation
@@ -19,8 +21,8 @@
 // ## Equation and problem definition
 //
 // A mixed formulation of Poisson equation can be formulated by
-// introducing an additional (vector) variable, namely the (negative)
-// flux: $\sigma = \nabla u$. The partial differential equations
+// introducing an additional vector variable, the gradient
+// $\sigma = \nabla u$. The partial differential equations
 // then read
 //
 // $$

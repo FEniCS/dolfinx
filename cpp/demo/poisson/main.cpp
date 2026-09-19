@@ -15,9 +15,9 @@
 // with particular boundary conditions reads:
 //
 // \begin{align*}
-//    - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
+//    - \nabla \cdot (\kappa \nabla u) &= f \quad {\rm in} \ \Omega, \\
 //      u &= 0 \quad {\rm on} \ \Gamma_{D}, \\
-//      \nabla u \cdot n &= g \quad {\rm on} \ \Gamma_{N}. \\
+//      \kappa \nabla u \cdot n &= g \quad {\rm on} \ \Gamma_{N}. \\
 // \end{align*}
 //
 // Here, $f$ and $g$ are input data and $n$ denotes the outward directed
@@ -48,7 +48,7 @@
 // (Dirichlet boundary)
 // * $\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}$
 // (Neumann boundary)
-// * $g = \sin(5x)$ (normal derivative)
+// * $g = \sin(5x)$ (normal flux)
 // * $f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)$ (source term)
 // * $\kappa = 2$ (diffusion coefficient)
 //
