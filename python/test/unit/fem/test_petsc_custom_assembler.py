@@ -18,12 +18,14 @@ try:
     from dolfinx.fem.petsc import ctypes_utils as petsc_ctypes
     from dolfinx.fem.petsc import numba_utils as petsc_numba
 except ImportError:
+    # petsc4py not installed; PETSc-dependent tests are skipped
     pass
 
 try:
     import numba
 
 except ImportError:
+    # numba not installed; numba-dependent tests are skipped
     pass
 
 import numpy as np
@@ -155,7 +157,10 @@ def test_custom_mesh_loop_petsc_rank2(set_vals, backend):
         end = time.time()
         print(f"Time (Numba/{backend}, pass {i}): {end - start}")
         A1.assemble()
-    assert (A1 - A0).norm() == pytest.approx(0.0, abs=1.0e-9)
+    # The two assemblies differ only in summation order, so the residual
+    # scales with eps * ||A||.
+    tol = max(1.0e-9, 10 * np.finfo(PETSc.ScalarType).eps * A0.norm())
+    assert (A1 - A0).norm() == pytest.approx(0.0, abs=tol)
 
     A0.destroy()
     A1.destroy()

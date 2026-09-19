@@ -15,9 +15,12 @@
 # * {download}`Python script <./demo_pyamg.py>`
 # * {download}`Jupyter notebook <./demo_pyamg.ipynb>`
 # ```
-# The demo illustrates solving the Poisson and linearised elasticity
-# equations with using algebraic multigrid from
-# [pyamg](https://github.com/pyamg/pyamg).
+# This demo illustrates how to:
+# - Solve the Poisson and linearised elasticity equations using
+#   algebraic multigrid from [pyamg](https://github.com/pyamg/pyamg)
+# - Assemble a DOLFINx bilinear form into a SciPy sparse matrix for use
+#   with a non-PETSc solver
+#
 # pyamg is not MPI-parallel, therefore this demo runs in serial only.
 
 # +
@@ -45,12 +48,12 @@ try:
     import pyamg
 except ImportError:
     print("This demo requires pyamg.")
-    exit(0)
+    sys.exit(0)
 
 
 if MPI.COMM_WORLD.size > 1:
     print("This demo works only in serial.")
-    exit(0)
+    sys.exit(0)
 # -
 
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2025 Garth N. Wells
+// Copyright (C) 2020-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -18,6 +18,7 @@
 #include <numeric>
 #include <span>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::la
@@ -54,62 +55,89 @@ class Vector
   friend class Vector;
 
 private:
+  /// @brief Call `f` with the block size as a compile-time constant for
+  /// the common block sizes, and as a plain `int` otherwise.
+  ///
+  /// The pack/unpack inner loops run over the block size, so giving it
+  /// to the compiler as a constant lets them be unrolled. Without this
+  /// the scatter is several times slower. la::MatrixCSR::mult does the
+  /// same for spmv.
+  template <class F>
+  static void dispatch_bs(int bs, F&& f)
+  {
+    switch (bs)
+    {
+    case 1:
+      return f(std::integral_constant<int, 1>{});
+    case 2:
+      return f(std::integral_constant<int, 2>{});
+    case 3:
+      return f(std::integral_constant<int, 3>{});
+    default:
+      return f(bs);
+    }
+  }
+
   /// @brief Return a 'pack' function for packing a send buffer.
   ///
   /// Typically used for forward and reverse scatter operations on a
   /// CPU.
   auto get_pack()
   {
-    return [](typename ScatterContainer::const_iterator idx_first,
-              typename ScatterContainer::const_iterator idx_last,
-              const auto in_first, auto out_first)
+    return [bs = _bs](typename ScatterContainer::const_iterator idx_first,
+                      typename ScatterContainer::const_iterator idx_last,
+                      const auto in_first, auto out_first)
     {
-      // out[i] = in[idx[i]]
-      std::transform(idx_first, idx_last, out_first,
-                     [in_first](auto p) { return *std::next(in_first, p); });
-    };
-  }
-
-  /// @brief Return an 'unpack' function for unpacking a receive buffer. Assigns
-  /// received values to entries.
-  ///
-  /// Typically used to unpack into ghost entries on a CPU.
-  auto get_unpack()
-  {
-    return [](typename ScatterContainer::const_iterator idx_first,
-              typename ScatterContainer::const_iterator idx_last,
-              const auto in_first, auto out_first)
-    {
-      // out[idx[i]] = in[i]
-      for (typename ScatterContainer::const_iterator idx = idx_first;
-           idx != idx_last; ++idx)
-      {
-        std::size_t d = std::distance(idx_first, idx);
-        *std::next(out_first, *idx) = *std::next(in_first, d);
-      }
+      // out[i * bs + j] = in[idx[i] * bs + j]
+      dispatch_bs(bs,
+                  [&](auto B)
+                  {
+                    auto out = out_first;
+                    for (auto idx = idx_first; idx != idx_last; ++idx)
+                    {
+                      auto in = std::next(in_first, (*idx) * B);
+                      for (int j = 0; j < B; ++j, ++in, ++out)
+                        *out = *in;
+                    }
+                  });
     };
   }
 
   /// @brief Return an 'unpack' function for unpacking a receive buffer.
-  /// Applied a binary operation an then assigns to entries.
+  /// Assigns received values to entries.
+  ///
+  /// Typically used to unpack into ghost entries on a CPU.
+  auto get_unpack()
+  {
+    // Assignment is accumulation with an operation that keeps the
+    // received value
+    return get_unpack_op([](auto, auto received) { return received; });
+  }
+
+  /// @brief Return an 'unpack' function for unpacking a receive buffer.
+  /// Applies a binary operation and assigns to entries.
   ///
   /// Typically used to unpack into owned entries on a CPU. Commonly
   /// more than one value per entry is received.
   template <typename BinaryOp>
   auto get_unpack_op(BinaryOp op)
   {
-    return [op](typename ScatterContainer::const_iterator idx_first,
-                typename ScatterContainer::const_iterator idx_last,
-                const auto in_first, auto out_first)
+    return [op, bs = _bs](typename ScatterContainer::const_iterator idx_first,
+                          typename ScatterContainer::const_iterator idx_last,
+                          const auto in_first, auto out_first)
     {
-      // out[idx[i]] = op(out[idx[i]], in[i])
-      for (typename ScatterContainer::const_iterator idx = idx_first;
-           idx != idx_last; ++idx)
-      {
-        std::size_t d = std::distance(idx_first, idx);
-        auto& out = *std::next(out_first, *idx);
-        out = op(out, *std::next(in_first, d));
-      }
+      // out[idx[i] * bs + j] = op(out[idx[i] * bs + j], in[i * bs + j])
+      dispatch_bs(bs,
+                  [&](auto B)
+                  {
+                    auto in = in_first;
+                    for (auto idx = idx_first; idx != idx_last; ++idx)
+                    {
+                      auto out = std::next(out_first, (*idx) * B);
+                      for (int j = 0; j < B; ++j, ++in, ++out)
+                        *out = op(*out, *in);
+                    }
+                  });
     };
   }
 
@@ -125,15 +153,35 @@ public:
 
   /// @brief Create a distributed vector.
   ///
+  /// This constructor creates a new Scatterer for the Vector. For
+  /// applications that create many Vectors with the same parallel layout,
+  /// constructing a distinct Scatterer for each Vector can exhaust the
+  /// available MPI communicators. This can be avoided by creating one
+  /// Scatterer and sharing it among those Vectors using the constructor that
+  /// takes a shared pointer to an existing Scatterer.
+  ///
   /// @param map Index map that describes the parallel layout of
   /// the data.
   /// @param bs Number of entries per index map 'index' (block size).
   Vector(std::shared_ptr<const common::IndexMap> map, int bs)
-      : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
-        _scatterer(
-            std::make_shared<common::Scatterer<ScatterContainer>>(*_map, bs)),
-        _buffer_local(_scatterer->local_indices().size()),
-        _buffer_remote(_scatterer->remote_indices().size())
+      : Vector(map, bs,
+               std::make_shared<common::Scatterer<ScatterContainer>>(*map))
+  {
+  }
+
+  /// @brief Create a distributed vector using an existing scatterer.
+  ///
+  /// @param[in] map Index map that describes the parallel layout of
+  /// the data.
+  /// @param[in] bs Number of entries per index map 'index' (block size).
+  /// @param[in] scatterer Scatterer compatible with `map`.
+  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
+         std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer)
+      : _map(std::move(map)), _bs(bs),
+        _x(bs * (_map->size_local() + _map->num_ghosts())),
+        _scatterer(std::move(scatterer)),
+        _buffer_local(bs * _scatterer->local_indices_block().size()),
+        _buffer_remote(bs * _scatterer->remote_indices_block().size())
   {
   }
 
@@ -148,8 +196,8 @@ private:
   /// the input Scatterer or (2) to a copy of input Scatterer.
   ///
   /// If the new and old Vectors share the same Scatterer type, the
-  /// Scatter can be shared. If the new Vector uses a different
-  /// Scatterer storage type, then the Scatterer needs to be copied.
+  /// Scatterer is shared. If the new Vector uses a different
+  /// Scatterer storage type, then a new Scatterer is created.
   ///
   /// @param sc Scatter of the Vector being copied.
   /// @return Scatter for use with the new Vector.
@@ -165,24 +213,31 @@ private:
   }
 
 public:
-  /// @brief Copy-convert vector, possibly using to different container
-  /// types.
+  /// @brief Create a vector by copying and converting another vector.
   ///
-  /// Examples of use include copying a Vector to a different value
-  /// type, e.g. double to float, or copying a Vector from a CPU to a
-  /// GPU.
+  /// The local vector data, including ghost values, is copied and converted to
+  /// `T` and `Container`. The index map is shared with `x`. If the scatter
+  /// container types are the same, the scatterer is also shared; otherwise, a
+  /// converted copy of the scatterer is created.
+  ///
+  /// This constructor can be used to convert the scalar type, e.g. from
+  /// `double` to `float`, or to transfer a vector between CPU and GPU storage.
+  ///
+  /// @note Construction is collective when `ScatterContainer` and
+  /// `ScatterContainer0` differ because copying the scatterer duplicates its
+  /// MPI neighbourhood communicators.
   ///
   /// @tparam T0 Scalar type of the Vector being copied.
   /// @tparam Container0 Data container type of the Vector being copied.
   /// @tparam ScatterContainer0 Scatterer container type of the Vector
   /// being copied.
-  /// @param x Vector to copy.
+  /// @param[in] x Vector to copy and convert.
   template <typename T0, typename Container0, typename ScatterContainer0>
   explicit Vector(const Vector<T0, Container0, ScatterContainer0>& x)
       : _map(x.index_map()), _bs(x.bs()), _x(x._x.begin(), x._x.end()),
         _scatterer(scatter_ptr(x._scatterer)), _request(MPI_REQUEST_NULL),
-        _buffer_local(_scatterer->local_indices().size()),
-        _buffer_remote(_scatterer->remote_indices().size())
+        _buffer_local(_bs * _scatterer->local_indices_block().size()),
+        _buffer_remote(_bs * _scatterer->remote_indices_block().size())
   {
   }
 
@@ -206,13 +261,14 @@ public:
   /// processes.
   ///
   /// The user provides the function to pack to the send buffer.
-  /// Typically usage would be a specialised function to pack data that
+  /// Typical use is a specialised function to pack data that
   /// resides on a GPU.
   ///
-  /// @note Collective MPI operation
+  /// @note Collective MPI operation. Every rank in the communicator
+  /// must call this function, including ranks without neighbours.
   ///
   /// @tparam U Pack function type.
-  /// @tparam GetPtr
+  /// @tparam GetPtr Function type that accesses a container's data pointer.
   /// @param pack Function that packs owned data into a send buffer.
   /// @param get_ptr Function that for a `Container` type returns the
   /// pointer to the underlying data.
@@ -221,10 +277,11 @@ public:
              and GetPtrConcept<GetPtr, Container, T>
   void scatter_fwd_begin(U pack, GetPtr get_ptr)
   {
-    pack(_scatterer->local_indices().begin(), _scatterer->local_indices().end(),
-         _x.begin(), _buffer_local.begin());
+    pack(_scatterer->local_indices_block().begin(),
+         _scatterer->local_indices_block().end(), _x.begin(),
+         _buffer_local.begin());
     _scatterer->scatter_fwd_begin(get_ptr(_buffer_local),
-                                  get_ptr(_buffer_remote), _request);
+                                  get_ptr(_buffer_remote), _bs, _request);
   }
 
   /// @brief Begin scatter (send) of local data that is ghosted on other
@@ -234,7 +291,8 @@ public:
   /// storage. The send buffer is packed internally by a function that
   /// is suitable for use on a CPU.
   ///
-  /// @note Collective MPI operation.
+  /// @note Collective MPI operation. Every rank in the communicator
+  /// must call this function, including ranks without neighbours.
   void scatter_fwd_begin()
     requires requires(Container c) {
       { c.data() } -> std::same_as<T*>;
@@ -247,20 +305,23 @@ public:
   /// other processes.
   ///
   /// The user provides the function to unpack the receive buffer.
-  /// Typically usage would be a specialised function to unpack data
+  /// Typical use is a specialised function to unpack data
   /// that resides on a GPU.
   ///
-  /// @note Collective MPI operation.
+  /// @note Local completion of the caller's own request, not itself
+  /// collective. Every rank that called ::scatter_fwd_begin must
+  /// still call this before reusing the buffers.
   ///
+  /// @tparam U Unpack function type.
   /// @param unpack Function to unpack the receive buffer into the ghost
   /// entries.
   template <typename U>
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_fwd_end(U unpack)
   {
-    _scatterer->scatter_end(_request);
-    unpack(_scatterer->remote_indices().begin(),
-           _scatterer->remote_indices().end(), _buffer_remote.begin(),
+    _scatterer->scatter_fwd_end(_request);
+    unpack(_scatterer->remote_indices_block().begin(),
+           _scatterer->remote_indices_block().end(), _buffer_remote.begin(),
            std::next(_x.begin(), _bs * _map->size_local()));
   }
 
@@ -271,7 +332,9 @@ public:
   /// storage. The receive buffer is unpacked internally by a function
   /// that is suitable for use on a CPU.
   ///
-  /// @note Collective MPI operation.
+  /// @note Local completion of the caller's own request, not itself
+  /// collective. Every rank that called ::scatter_fwd_begin must
+  /// still call this before reusing the buffers.
   void scatter_fwd_end()
     requires requires(Container c) {
       { c.data() } -> std::same_as<T*>;
@@ -288,7 +351,8 @@ public:
   /// storage. The send buffer is packed and the receive buffer unpacked
   /// by a function that is suitable for use on a CPU.
   ///
-  /// @note Collective MPI operation
+  /// @note Collective MPI operation. Every rank in the communicator
+  /// must call this function, including ranks without neighbours.
   void scatter_fwd()
     requires requires(Container c) {
       { c.data() } -> std::same_as<T*>;
@@ -302,12 +366,13 @@ public:
   /// process of an index.
   ///
   /// The user provides the function to pack to the send buffer.
-  /// Typically usage would be a specialised function to pack data that
+  /// Typical use is a specialised function to pack data that
   /// resides on a GPU.
   ///
-  /// @note Collective MPI operation
+  /// @note Collective MPI operation. Every rank in the communicator
+  /// must call this function, including ranks without neighbours.
   /// @tparam U Pack function type.
-  /// @tparam GetPtr
+  /// @tparam GetPtr Function type that accesses a container's data pointer.
   /// @param pack Function that packs ghost data into a send buffer.
   /// @param get_ptr Function that for a `Container` type returns the
   /// pointer to the underlying data.
@@ -317,11 +382,11 @@ public:
   void scatter_rev_begin(U pack, GetPtr get_ptr)
   {
     std::int32_t local_size = _bs * _map->size_local();
-    pack(_scatterer->remote_indices().begin(),
-         _scatterer->remote_indices().end(), std::next(_x.begin(), local_size),
-         _buffer_remote.begin());
+    pack(_scatterer->remote_indices_block().begin(),
+         _scatterer->remote_indices_block().end(),
+         std::next(_x.begin(), local_size), _buffer_remote.begin());
     _scatterer->scatter_rev_begin(get_ptr(_buffer_remote),
-                                  get_ptr(_buffer_local), _request);
+                                  get_ptr(_buffer_local), _bs, _request);
   }
 
   /// @brief Start scatter (send) of ghost entry data to the owning
@@ -331,7 +396,8 @@ public:
   /// storage. The send buffer is packed internally by a function that
   /// is suitable for use on a CPU.
   ///
-  /// @note Collective MPI operation
+  /// @note Collective MPI operation. Every rank in the communicator
+  /// must call this function, including ranks without neighbours.
   void scatter_rev_begin()
     requires requires(Container c) {
       { c.data() } -> std::same_as<T*>;
@@ -346,14 +412,18 @@ public:
   /// received. The received data can be summed or inserted into the
   /// owning entry by the `unpack` function.
   ///
-  /// @note Collective MPI operation
+  /// @note Local completion of the caller's own request, not itself
+  /// collective. Every rank that called ::scatter_rev_begin must
+  /// still call this before reusing the buffers.
+  ///
+  /// @tparam U Unpack function type.
   template <typename U>
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_rev_end(U unpack)
   {
-    _scatterer->scatter_end(_request);
-    unpack(_scatterer->local_indices().begin(),
-           _scatterer->local_indices().end(), _buffer_local.begin(),
+    _scatterer->scatter_rev_end(_request);
+    unpack(_scatterer->local_indices_block().begin(),
+           _scatterer->local_indices_block().end(), _buffer_local.begin(),
            _x.begin());
   }
 
@@ -363,9 +433,10 @@ public:
   ///
   /// For an owned entry, data from more than one process may be
   /// received. The received data can be summed or inserted into the
-  /// owning entry. The this is controlled by the `op` function.
+  /// owning entry. This is controlled by the `op` function.
   ///
-  /// @note Collective MPI operation
+  /// @note Collective MPI operation. Every rank in the communicator
+  /// must call this function, including ranks without neighbours.
   ///
   /// @param op IndexMap operation (add or insert).
   template <class BinaryOperation>
@@ -379,24 +450,36 @@ public:
   }
 
   /// Get IndexMap
-  std::shared_ptr<const common::IndexMap> index_map() const { return _map; }
+  std::shared_ptr<const common::IndexMap> index_map() const noexcept
+  {
+    return _map;
+  }
+
+  /// @brief Get the scatterer used for halo communication.
+  /// @return The scatterer.
+  std::shared_ptr<const common::Scatterer<ScatterContainer>>
+  scatterer() const noexcept
+  {
+    return _scatterer;
+  }
 
   /// Get block size
-  constexpr int bs() const { return _bs; }
+  constexpr int bs() const noexcept { return _bs; }
 
   /// @brief Get the process-local part of the vector.
   ///
   /// Owned entries appear first, followed by ghosted entries.
-  container_type& array() { return _x; }
+  container_type& array() noexcept { return _x; }
 
   /// @brief Get the process-local part of the vector (const version).
   ///
   /// Owned entries appear first, followed by ghosted entries.
-  const container_type& array() const { return _x; }
+  const container_type& array() const noexcept { return _x; }
 
   /// @deprecated Use ::array instead.
   /// @brief Get local part of the vector
-  [[deprecated("Use array() instead.")]] container_type& mutable_array()
+  [[deprecated("Use array() instead.")]] container_type&
+  mutable_array() noexcept
   {
     return _x;
   }

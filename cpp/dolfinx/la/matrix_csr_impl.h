@@ -93,7 +93,7 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       if (it == cit1 or *it != xcols[c])
         throw std::runtime_error("Entry not in sparsity");
 
-      std::size_t d = std::distance(cols.begin(), it);
+      std::size_t d = std::ranges::distance(cols.begin(), it);
       std::size_t di = d * BS0 * BS1;
       std::size_t xi = c * BS1;
       assert(di < data.size());
@@ -161,7 +161,7 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
         if (it == cit1 or *it != xcols[c] * BS1)
           throw std::runtime_error("Entry not in sparsity");
 
-        std::size_t d = std::distance(cols.begin(), it);
+        std::size_t d = std::ranges::distance(cols.begin(), it);
         assert(d < data.size());
         std::size_t xi = c * BS1;
         for (int j = 0; j < BS1; ++j)
@@ -223,7 +223,7 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       if (it == cit1 or *it != cdiv.quot)
         throw std::runtime_error("Entry not in sparsity");
 
-      std::size_t d = std::distance(cols.begin(), it);
+      std::size_t d = std::ranges::distance(cols.begin(), it);
       std::size_t di = d * nbs + rdiv.rem * bs1 + cdiv.rem;
       assert(di < data.size());
       op(data[di], xr[c]);

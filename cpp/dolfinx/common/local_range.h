@@ -8,8 +8,8 @@
 #pragma once
 
 #include <array>
-#include <cassert>
 #include <cstdint>
+#include <stdexcept>
 
 namespace dolfinx::common
 {
@@ -26,9 +26,12 @@ namespace dolfinx::common
 constexpr std::array<std::int64_t, 2> local_range(int index, std::int64_t N,
                                                   int size)
 {
-  assert(index >= 0);
-  assert(N >= 0);
-  assert(size > 0);
+  if (index < 0)
+    throw std::invalid_argument("local_range: index must be non-negative");
+  if (N < 0)
+    throw std::invalid_argument("local_range: N must be non-negative");
+  if (size <= 0)
+    throw std::invalid_argument("local_range: size must be positive");
 
   // Compute number of items per rank and remainder
   const std::int64_t n = N / size;

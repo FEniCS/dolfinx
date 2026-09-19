@@ -9,9 +9,11 @@
 #include "Constant.h"
 #include "Form.h"
 #include "FunctionSpace.h"
+#include "traits.h"
 #include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -29,19 +31,20 @@ namespace dolfinx::fem::impl
 /// a per-call allocation would not be amortized. The buffer must be
 /// sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
-T assemble_cells(
-    mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    std::span<const std::int32_t> cells, const FEkernel<T, U> auto& fn,
-    std::span<const T> constants,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<std::type_identity_t<U>> cdofs_b)
+T assemble_cells(MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
+                 std::span<const std::int32_t> cells,
+                 const FEkernel<T, U> auto& fn, std::span<const T> constants,
+                 md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+                 std::span<std::type_identity_t<U>> cdofs_b)
 {
   T value(0);
   if (cells.empty())
     return value;
 
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
+
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
 
   // Iterate over all cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -53,8 +56,8 @@ T assemble_cells(
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
-    fn(&value, &coeffs(index, 0), constants.data(), cdofs_b.data(), nullptr,
-       nullptr, nullptr);
+    fn(&value, coeffs_data + index * cstride, constants.data(), cdofs_b.data(),
+       nullptr, nullptr, nullptr);
   }
 
   return value;
@@ -77,8 +80,7 @@ T assemble_cells(
 /// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_entities(
-    mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
@@ -93,6 +95,9 @@ T assemble_entities(
 
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
 
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
   // Iterate over all facets
   for (std::size_t f = 0; f < entities.extent(0); ++f)
   {
@@ -106,8 +111,8 @@ T assemble_entities(
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
-    fn(&value, &coeffs(f, 0), constants.data(), cdofs_b.data(), &local_entity,
-       &perm, nullptr);
+    fn(&value, coeffs_data + f * cstride, constants.data(), cdofs_b.data(),
+       &local_entity, &perm, nullptr);
   }
 
   return value;
@@ -121,8 +126,7 @@ T assemble_entities(
 /// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_interior_facets(
-    mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
@@ -142,6 +146,9 @@ T assemble_interior_facets(
   auto cdofs0 = cdofs_b.first(3 * x_dofmap.extent(1));
   auto cdofs1 = cdofs_b.last(3 * x_dofmap.extent(1));
 
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = 2 * coeffs.extent(2);
+
   // Iterate over all facets
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
@@ -160,7 +167,7 @@ T assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    fn(&value, &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
+    fn(&value, coeffs_data + f * cstride, constants.data(), cdofs_b.data(),
        local_facet.data(), perm.data(), nullptr);
   }
 
@@ -191,7 +198,7 @@ T assemble_scalar(
     std::span<const std::int32_t> cells
         = M.domain(IntegralType::cell, i, cell_type_idx);
     assert(cells.size() * cstride == coeffs.size());
-    value += impl::assemble_cells(
+    value += impl::assemble_cells<T, U>(
         x_dofmap, x, cells, fn, constants,
         md::mdspan(coeffs.data(), cells.size(), cstride), cdofs_b);
   }
@@ -224,7 +231,7 @@ T assemble_scalar(
     constexpr std::size_t shape1 = 2 * num_adjacent_cells;
 
     assert((facets.size() / shape1) * 2 * cstride == coeffs.size());
-    value += impl::assemble_interior_facets(
+    value += impl::assemble_interior_facets<T, U>(
         x_dofmap, x,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2, 2>>(
@@ -254,7 +261,7 @@ T assemble_scalar(
 
       // Two values per each adj. cell (cell index and local entity index).
       assert((entities.size() / 2) * cstride == coeffs.size());
-      value += impl::assemble_entities(
+      value += impl::assemble_entities<T, U>(
           x_dofmap, x,
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>(

@@ -22,6 +22,7 @@
 #include <filesystem>
 #include <format>
 #include <pugixml.hpp>
+#include <utility>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -132,6 +133,15 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
   }
 }
 //-----------------------------------------------------------------------------
+XDMFFile::XDMFFile(XDMFFile&& file) noexcept
+    : _comm(std::move(file._comm)), _filename(std::move(file._filename)),
+      _file_mode(std::move(file._file_mode)),
+      _h5_id(std::exchange(file._h5_id, -1)),
+      _xml_doc(std::move(file._xml_doc)), _encoding(file._encoding)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 XDMFFile::~XDMFFile() { close(); }
 //-----------------------------------------------------------------------------
 void XDMFFile::close()
@@ -195,9 +205,12 @@ XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
   auto [x, xshape] = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
+  // TODO: figure out how to include cell weight data with XDMFFile
   const std::vector<double>& _x = std::get<std::vector<double>>(x);
   mesh::Mesh<double> mesh = mesh::create_mesh(
-      _comm.comm(), cells, element, _x, xshape, mode, max_facet_to_cell_links);
+      _comm.comm(), _comm.comm(), cells, {element}, _comm.comm(), _x, xshape,
+      dolfinx::graph::Partitioner{}, mode, max_facet_to_cell_links, 1);
+
   mesh.name = name;
   return mesh;
 }

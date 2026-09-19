@@ -12,20 +12,25 @@ import numpy as np
 import pytest
 
 import dolfinx
-from dolfinx.cpp.log import set_thread_name
 from dolfinx.cpp.mesh import (
     Mesh_float32,
     Mesh_float64,
     compute_mixed_cell_pairs,
-    create_cell_partitioner,
     create_geometry,
     create_mesh,
     create_topology,
     locate_entities,
 )
 from dolfinx.fem import coordinate_element
-from dolfinx.log import LogLevel, set_log_level
-from dolfinx.mesh import CellType, GhostMode, Mesh, Topology, create_unit_cube
+from dolfinx.graph import partitioner
+from dolfinx.log import LogLevel, set_log_level, set_thread_name
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    Mesh,
+    Topology,
+    create_unit_cube,
+)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -148,7 +153,7 @@ def test_mixed_topology_mesh_3d():
 
     # Tet -> quad
     with pytest.raises(RuntimeError):
-        t = topology.connectivity((3, 0), (2, qi))
+        topology.connectivity((3, 0), (2, qi))
     # Tet -> triangle
     t = topology.connectivity((3, 0), (2, ti))
     assert t.num_nodes == 2
@@ -169,7 +174,7 @@ def test_mixed_topology_mesh_3d():
     assert len(t.links(0)) == 6
     # Hex -> triangle
     with pytest.raises(RuntimeError):
-        t = topology.connectivity((3, 2), (2, ti))
+        topology.connectivity((3, 2), (2, ti))
 
     # Quad -> vertex
     t = topology.connectivity((2, qi), (0, 0))
@@ -356,13 +361,22 @@ def test_locate_entities(dtype):
         cells = [np.array([], dtype=np.int64), np.array([], dtype=np.int64)]
         geom = np.array([], dtype=dtype)
 
-    part = create_cell_partitioner(GhostMode.none, 2)
+    part = partitioner()
     hexahedron = coordinate_element(CellType.hexahedron, 1, dtype=dtype)
     prism = coordinate_element(CellType.prism, 1, dtype=dtype)
     comm = MPI.COMM_WORLD
     max_cells_per_facet = 2
     mesh = create_mesh(
-        comm, cells, [hexahedron._cpp_object, prism._cpp_object], geom, part, max_cells_per_facet, 1
+        comm,
+        cells,
+        [hexahedron._cpp_object, prism._cpp_object],
+        geom,
+        part,
+        GhostMode.none,
+        max_cells_per_facet,
+        1,
+        None,
+        None,
     )
 
     fdim = mesh.topology.dim - 1

@@ -32,7 +32,7 @@ def read_mesh(
     dtype: npt.DTypeLike = np.float64,
     gdim: int = 3,
     max_facet_to_cell_links: int = 2,
-):
+) -> Mesh:
     """Read a mesh from a VTKHDF format file.
 
     Note:
@@ -55,6 +55,8 @@ def read_mesh(
         mesh_cpp = read_vtkhdf_mesh_float64(comm, str(filename), gdim, max_facet_to_cell_links)
     elif dtype == np.float32:
         mesh_cpp = read_vtkhdf_mesh_float32(comm, str(filename), gdim, max_facet_to_cell_links)
+    else:
+        raise ValueError(f"Unsupported mesh geometry dtype: {dtype}.")
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:
@@ -75,7 +77,7 @@ def read_mesh(
     return Mesh(mesh_cpp, domain)
 
 
-def write_mesh(filename: str | Path, mesh: Mesh):
+def write_mesh(filename: str | Path, mesh: Mesh) -> None:
     """Write a mesh to file in VTKHDF format.
 
     Args:
@@ -85,7 +87,7 @@ def write_mesh(filename: str | Path, mesh: Mesh):
     write_vtkhdf_mesh(filename, mesh._cpp_object)
 
 
-def write_point_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float):
+def write_point_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float) -> None:
     """Write data at vertices of the mesh.
 
     Args:
@@ -97,7 +99,7 @@ def write_point_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: 
     write_vtkhdf_data("Point", filename, mesh._cpp_object, data, time)  # type: ignore[call-overload]
 
 
-def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float):
+def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float) -> None:
     """Write data at cells of the mesh.
 
     Args:

@@ -83,9 +83,9 @@ from mpi4py import MPI
 
 import numpy as np
 
-import dolfinx
 import ufl
-from dolfinx import fem, la
+from dolfinx import default_scalar_type, fem, la
+from dolfinx.mesh import create_rectangle, exterior_facet_indices
 
 # -
 
@@ -95,14 +95,14 @@ from dolfinx import fem, la
 # finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # on the mesh.
 
-dtype = dolfinx.default_scalar_type
-real_type = np.real(dtype(0.0)).dtype
+dtype = default_scalar_type
+real_type = np.empty(0, dtype=dtype).real.dtype
 comm = MPI.COMM_WORLD
-mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], (10, 10), dtype=real_type)
+mesh = create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], (10, 10), dtype=real_type)
 degree = 2
 V = fem.functionspace(mesh, ("Lagrange", degree))
 
-# The second argument to {py:class}`functionspace
+# The second argument to {py:func}`functionspace
 # <dolfinx.fem.functionspace>` is a tuple consisting of `(family,
 # degree)`, where `family` is the finite element family, and `degree`
 # specifies the polynomial degree. In this case `V` consists of
@@ -110,14 +110,14 @@ V = fem.functionspace(mesh, ("Lagrange", degree))
 #
 # Next, we locate the mesh facets that lie on the domain boundary
 # $\partial\Omega$. We do this by first calling
-# {py:func}`create_connectivity
-# <dolfinx.mesh.topology.create_connectivity>`  and then retrieving all
+# {py:meth}`create_connectivity
+# <dolfinx.mesh.Topology.create_connectivity>` and then retrieving all
 # facets on the boundary using {py:func}`exterior_facet_indices
 # <dolfinx.mesh.exterior_facet_indices>`.
 
 tdim = mesh.topology.dim
 mesh.topology.create_connectivity(tdim - 1, tdim)
-facets = dolfinx.mesh.exterior_facet_indices(mesh.topology)
+facets = exterior_facet_indices(mesh.topology)
 
 # We now find the degrees of freedom that are associated with the boundary
 # facets using
@@ -140,13 +140,13 @@ bc = fem.dirichletbc(value=uD, dofs=dofs)
 x = ufl.SpatialCoordinate(mesh)
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
-f = fem.Constant(mesh, dtype(-6.0))
+f = fem.Constant(mesh, np.asarray(-6.0, dtype=dtype)[()])
 a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
 L = ufl.inner(f, v) * ufl.dx
 L_fem = fem.form(L, dtype=dtype)
 
 # For the matrix-free solvers we also define a second linear form `M` as
-# the {py:class}`action <ufl.action>` of the bilinear form $a$ on an
+# the {py:func}`action <ufl.action>` of the bilinear form $a$ on an
 # arbitrary {py:class}`Function <dolfinx.fem.Function>` `ui`. This linear
 # form is defined as
 #
@@ -218,12 +218,12 @@ def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int = 200, rtol: fl
         return comm.allreduce(np.vdot(v0[:nr], v1[:nr]), MPI.SUM)
 
     # Get initial y = A.x
-    y = la.vector(b.index_map, 1, dtype)
+    y = la.vector(b.index_map, 1, dtype=dtype)
     action_A(x, y)
 
     # Copy residual to p
     r = b.array - y.array
-    p = la.vector(b.index_map, 1, dtype)
+    p = la.vector(b.index_map, 1, dtype=dtype)
     p.array[:] = r
 
     # Iterations of CG

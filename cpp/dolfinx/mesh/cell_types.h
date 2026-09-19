@@ -63,7 +63,7 @@ inline int cell_dim(CellType type)
   case CellType::pyramid:
     return 3;
   default:
-    throw std::runtime_error("Unsupported cell type");
+    throw std::invalid_argument("Unsupported cell type");
   }
 }
 
@@ -103,7 +103,7 @@ inline CellType cell_facet_type(CellType type, int index)
   case CellType::hexahedron:
     return CellType::quadrilateral;
   default:
-    throw std::runtime_error("Unknown cell type.");
+    throw std::invalid_argument("Unknown cell type.");
   }
 }
 

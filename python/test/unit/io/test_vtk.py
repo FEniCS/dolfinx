@@ -129,10 +129,6 @@ def test_save_2d_vector(tempdir, cell_type):
 @pytest.mark.skip_in_parallel
 def test_save_2d_vector_CG2(tempdir):
     points = np.array(
-        [[0, 0], [1, 0], [1, 2], [0, 2], [1 / 2, 0], [1, 1], [1 / 2, 2], [0, 1], [1 / 2, 1]],
-        dtype=default_real_type,
-    )
-    points = np.array(
         [[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0], [1, 2], [0.5, 2], [1, 1]],
         dtype=default_real_type,
     )

@@ -136,6 +136,8 @@
 #include <dolfinx/fem/petsc.h>
 #include <memory>
 #include <numbers>
+#include <petscksp.h>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -154,13 +156,14 @@ using U = typename dolfinx::scalar_value_t<T>;
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  dolfinx::common::petsc::check(PetscInitialize(&argc, &argv, nullptr, nullptr),
+                                "PetscInitialize");
   {
     //  Create mesh
-    auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet, 2);
-    auto mesh = std::make_shared<mesh::Mesh<U>>(
-        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
-                                  {32, 32}, mesh::CellType::triangle, part));
+    auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
+        MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 32},
+        mesh::CellType::triangle, graph::partition_graph,
+        mesh::DiagonalType::right, 2, mesh::GhostMode::shared_facet));
 
     //    A function space object, which is defined in the generated code,
     //    is created:
@@ -228,15 +231,19 @@ int main(int argc, char* argv[])
     la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
                     L.function_spaces()[0]->dofmap()->index_map_bs());
 
-    MatZeroEntries(A.mat());
+    common::petsc::check(MatZeroEntries(A.mat()), "MatZeroEntries");
     fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
                          a, {bc});
-    MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyEnd");
     fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
                          {bc});
-    MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyEnd");
 
     std::ranges::fill(b.array(), 0);
     fem::assemble_vector(b.array(), L);
@@ -245,14 +252,22 @@ int main(int argc, char* argv[])
     bc.set(b.array(), std::nullopt);
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
-    la::petsc::options::set("ksp_type", "preonly");
-    la::petsc::options::set("pc_type", "lu");
+    common::petsc::set_option("ksp_type", "preonly");
+    common::petsc::set_option("pc_type", "lu");
     lu.set_from_options();
 
     lu.set_operator(A.mat());
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
-    lu.solve(_u.vec(), _b.vec());
+    if (lu.solve(_u.vec(), _b.vec()) < 0)
+      throw std::runtime_error("Linear solver did not converge.");
+
+    // The KSP object is available for anything the solver does not
+    // wrap, here the number of linear solver iterations
+    PetscInt num_it = 0;
+    common::petsc::check(KSPGetIterationNumber(lu.ksp(), &num_it),
+                         "KSPGetIterationNumber");
+    std::cout << "Number of linear solver iterations: " << num_it << std::endl;
 
     //  Update ghost values before output
     u.x()->scatter_fwd();
@@ -267,6 +282,6 @@ int main(int argc, char* argv[])
     file.write<T>({u}, 0);
   }
 
-  PetscFinalize();
+  common::petsc::check(PetscFinalize(), "PetscFinalize");
   return 0;
 }

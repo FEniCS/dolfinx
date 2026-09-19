@@ -30,8 +30,8 @@ compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
 {
 
   // Number of rotations
-  std::uint8_t min_v
-      = std::distance(e_vertices.begin(), std::ranges::min_element(e_vertices));
+  std::uint8_t min_v = std::ranges::distance(
+      e_vertices.begin(), std::ranges::min_element(e_vertices));
 
   // pre is the (local) number of the next vertex clockwise from the lowest
   // numbered vertex
@@ -41,8 +41,8 @@ compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
   // lowest numbered vertex
   const int post = e_vertices[(min_v + 1) % 3];
 
-  std::uint8_t g_min_v
-      = std::distance(vertices.begin(), std::ranges::min_element(vertices));
+  std::uint8_t g_min_v = std::ranges::distance(
+      vertices.begin(), std::ranges::min_element(vertices));
 
   // g_pre is the (global) number of the next vertex clockwise from the lowest
   // numbered vertex
@@ -66,8 +66,8 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
                          const std::vector<std::int64_t>& vertices)
 {
   // Find minimum local cell vertex on facet
-  std::uint8_t min_v
-      = std::distance(e_vertices.begin(), std::ranges::min_element(e_vertices));
+  std::uint8_t min_v = std::ranges::distance(
+      e_vertices.begin(), std::ranges::min_element(e_vertices));
 
   // Table of next and previous vertices
   // 0 - 2
@@ -94,8 +94,8 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
     min_v = 5 - min_v;
 
   // Find minimum global vertex in facet
-  std::uint8_t g_min_v
-      = std::distance(vertices.begin(), std::ranges::min_element(vertices));
+  std::uint8_t g_min_v = std::ranges::distance(
+      vertices.begin(), std::ranges::min_element(vertices));
 
   // rots is the number of rotations to get the lowest numbered
   // vertex to the origin
@@ -194,7 +194,7 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
           assert(it != cell_vertices.end());
 
           // Get the actual local vertex indices
-          e_vertices[k] = std::distance(cell_vertices.begin(), it);
+          e_vertices[k] = std::ranges::distance(cell_vertices.begin(), it);
         }
 
         // Compute reflections and rotations for this face type
@@ -251,9 +251,14 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
   auto c_to_e = topology.connectivity(tdim, 1);
-  assert(c_to_e);
+  if (!c_to_e)
+    throw std::runtime_error("Edges have not been computed.");
   auto e_to_v = topology.connectivity(1, 0);
-  assert(e_to_v);
+  if (!e_to_v)
+  {
+    throw std::runtime_error(
+        "Edge-to-vertex connectivity has not been computed.");
+  }
 
   auto im = topology.index_map(0);
   assert(im);
@@ -261,7 +266,7 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   std::vector<std::bitset<BITSETSIZE>> edge_perm(num_cells, 0);
   auto process_thread
       = [](std::array<std::int64_t, 2> range, auto&& im, auto&& edge_perm,
-           auto&& c_to_v, auto&& e_to_v, auto&& c_to_e, int edges_per_cell)
+           auto&& c_to_v, auto&& e_to_v, auto&& c_to_e, int num_edges)
   {
     std::vector<std::int64_t> cell_vertices;
     std::vector<std::int64_t> vertices;
@@ -270,7 +275,7 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
       cell_vertices.resize(c_to_v->num_links(c));
       im->local_to_global(c_to_v->links(c), cell_vertices);
       auto cell_edges = c_to_e->links(c);
-      for (int edge = 0; edge < edges_per_cell; ++edge)
+      for (int edge = 0; edge < num_edges; ++edge)
       {
         vertices.resize(e_to_v->links(cell_edges[edge]).size());
         im->local_to_global(e_to_v->links(cell_edges[edge]), vertices);
@@ -337,7 +342,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology,
                                   int num_threads)
 {
   if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   common::Timer t_perm("Compute entity permutations");
 

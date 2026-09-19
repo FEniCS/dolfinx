@@ -15,14 +15,17 @@
 # * {download}`Python script <./demo_cahn-hilliard.py>`
 # * {download}`Jupyter notebook <./demo_cahn-hilliard.ipynb>`
 # ```
-# This example demonstrates the solution of the Cahn-Hilliard equation,
-# a nonlinear, time-dependent fourth-order PDE.
+# This demo solves the Cahn-Hilliard equation, a nonlinear,
+# time-dependent fourth-order PDE that is typically used to model phase
+# separation in binary mixtures.
+#
+# This demo illustrates how to use:
 #
 # - A mixed finite element method
 # - The $\theta$-method for time-dependent equations
 # - Automatic linearisation
 # - Use of the class
-#   {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>`
+#   {py:class}`NonlinearProblem <dolfinx.fem.petsc.NonlinearProblem>`
 # - Interpolation of functions
 # - Visualisation of a running simulation with
 #   [PyVista](https://pyvista.org/)
@@ -137,11 +140,10 @@ from dolfinx.mesh import CellType, create_unit_square
 try:
     import pyvista as pv
     import pyvistaqt as pvqt
-
-    have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
-    have_pyvista = False
+    pv = None
+    pvqt = None
 
 
 # Save all logging to file
@@ -171,10 +173,10 @@ q, v = ufl.TestFunctions(ME)
 # ```{index} split functions
 # ```
 #
-# For the test functions, {py:func}`TestFunctions<function
-# ufl.argument.TestFunctions>` (note the 's' at the end) is used to
+# For the test functions, {py:func}`TestFunctions <ufl.TestFunctions>`
+# (note the 's' at the end) is used to
 # define the scalar test functions `q` and `v`. Some mixed objects of
-# the {py:class}`Function<dolfinx.fem.function.Function>` class on `ME`
+# the {py:class}`Function <dolfinx.fem.Function>` class on `ME`
 # are defined to represent $u = (c_{n+1}, \mu_{n+1})$ and $u0 = (c_{n},
 # \mu_{n})$, and these are then split into sub-functions:
 
@@ -252,7 +254,7 @@ F = F0 + F1
 # ```
 #
 # To solve the nonlinear system of equations,
-# {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>` object
+# {py:class}`NonlinearProblem <dolfinx.fem.petsc.NonlinearProblem>` object
 # to solve a system of nonlinear equations.
 # For the factorisation of the underlying linearized problems, prefer
 # MUMPS, then superlu_dist, then default.
@@ -301,7 +303,9 @@ V0, dofs = ME.sub(0).collapse()
 
 # Prepare viewer for plotting the solution during the computation
 
-if have_pyvista:
+grid = None
+p = None
+if pv is not None and pvqt is not None:
     # Create a VTK 'mesh' with 'nodes' at the function dofs
     topology, cell_types, x = plot.vtk_mesh(V0)
     grid = pv.UnstructuredGrid(topology, cell_types, x)
@@ -333,7 +337,7 @@ while t < T:
     t += dt
     _ = problem.solve()
     converged_reason = problem.solver.getConvergedReason()
-    assert converged_reason > 0
+    assert converged_reason > 0  # type: ignore[operator]
     num_iterations = problem.solver.getIterationNumber()
     print(f"Step {step}: {converged_reason=} {num_iterations=}")
     u0.x.array[:] = u.x.array
@@ -345,7 +349,7 @@ while t < T:
     step += 1
 
     # Update the plot window
-    if have_pyvista:
+    if grid is not None and p is not None:
         p.add_text(f"time: {t:.2e}", font_size=12, name="timelabel")
         grid.point_data["c"] = u.x.array[dofs].real
         p.app.processEvents()
@@ -355,7 +359,7 @@ file.close()
 
 # Update plot
 
-if have_pyvista:
+if grid is not None and pv is not None:
     grid.point_data["c"] = u.x.array[dofs].real
-    screenshot = out_folder / "ch.png" if pv.OFF_SCREEN else None
+    screenshot = str(out_folder / "ch.png") if pv.OFF_SCREEN else None
     pv.plot(grid, show_edges=True, screenshot=screenshot)

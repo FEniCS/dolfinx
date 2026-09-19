@@ -15,8 +15,8 @@
 # * {download}`Python script <./demo_stokes.py>`
 # * {download}`Jupyter notebook <./demo_stokes.ipynb>`
 # ```
-# It shows how to solve the Stokes problem using Taylor-Hood elements
-# using different linear solvers:
+# This demo illustrates how to solve the Stokes problem using
+# Taylor-Hood elements using different linear solvers:
 #
 # 1. [Block preconditioner using PETSc Nest data structures using
 #    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
@@ -92,6 +92,8 @@
 # The required modules are first imported:
 
 # +
+import sys
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -102,6 +104,7 @@ from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, la
 from dolfinx.fem import (
     Constant,
+    Form,
     Function,
     bcs_by_block,
     dirichletbc,
@@ -192,20 +195,25 @@ bcs = [bc0, bc1]
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
 f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore[operator]
 
-a_ufl = [
+a_ufl: list[list[ufl.Form | None]] = [
     [ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, ufl.inner(p, ufl.div(v)) * ufl.dx],
     [ufl.inner(ufl.div(u), q) * ufl.dx, None],
 ]
-a = form(a_ufl)
-L_ufl = [ufl.inner(f, v) * ufl.dx, ufl.ZeroBaseForm((q,))]
-L = form(L_ufl)
+a: list[list[Form | None]] = form(a_ufl)  # type: ignore[assignment]
+L_ufl: list[ufl.Form] = [  # type: ignore[list-item]
+    ufl.inner(f, v) * ufl.dx,
+    ufl.ZeroBaseForm((q,)),
+]
+L: list[Form] = form(L_ufl)  # type: ignore[assignment]
 # -
 
 # A block-diagonal preconditioner will be used with the iterative
 # solvers for this problem:
 
-a_p11 = form(ufl.inner(p, q) * ufl.dx)
-a_p = [[a[0][0], None], [None, a_p11]]
+a_p11_ufl = ufl.inner(p, q) * ufl.dx
+a_p_ufl: list[list[ufl.Form | None]] = [[a_ufl[0][0], None], [None, a_p11_ufl]]
+a_p11 = form(a_p11_ufl)
+a_p: list[list[Form | None]] = form(a_p_ufl)  # type: ignore[assignment]
 
 
 # ### High-level nested matrix solver
@@ -213,7 +221,7 @@ a_p = [[a[0][0], None], [None, a_p11]]
 # We first use the high-level {py:class}`LinearProblem
 # <dolfinx.fem.petsc.LinearProblem>` class which uses PETSc to solve
 # the linear problem. Details on the preconditioner setup are given in
-# {py:func}`nested_iterative_solver_low_level` below.
+# `nested_iterative_solver_low_level` below.
 
 
 def nested_iterative_solver_high_level():
@@ -226,7 +234,7 @@ def nested_iterative_solver_high_level():
         L_ufl,
         kind="nest",
         bcs=bcs,
-        P=a_p,
+        P=a_p_ufl,
         petsc_options_prefix="demo_stokes__nested_iterative_solver_high_level_",
         petsc_options={
             "ksp_type": "minres",
@@ -249,7 +257,8 @@ def nested_iterative_solver_high_level():
     # Set velocity part to zero and the pressure part to a non-zero
     # constant
     null_vecs = null_vec.getNestSubVecs()
-    null_vecs[0].set(0.0), null_vecs[1].set(1.0)
+    null_vecs[0].set(0.0)
+    null_vecs[1].set(1.0)
 
     # Normalize the vector that spans the nullspace, create a nullspace
     # object, and attach it to the matrix
@@ -258,14 +267,15 @@ def nested_iterative_solver_high_level():
     problem.A.setNullSpace(nsp)
 
     A00 = problem.A.getNestSubMatrix(0, 0)
-    A00.setOption(PETSc.Mat.Option.SPD, True)
+    A00.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
+    assert problem.P_mat is not None
     P00, P11 = problem.P_mat.getNestSubMatrix(0, 0), problem.P_mat.getNestSubMatrix(1, 1)
-    P00.setOption(PETSc.Mat.Option.SPD, True)
-    P11.setOption(PETSc.Mat.Option.SPD, True)
+    P00.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
+    P11.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
     u_h, p_h = problem.solve()
-    assert problem.solver.getConvergedReason() > 0
+    assert problem.solver.getConvergedReason() > 0  # type: ignore[operator]
     # Because left-hand side operator is only assembled during solve
     # we can only test the null space at this point.
     assert nsp.test(problem.A)
@@ -304,15 +314,15 @@ def nested_iterative_solver_low_level():
     # Even if the Dirichlet conditions are only enforced on the velocity
     # space, we pass it to the pressure assembler for consistency.
     P11 = assemble_matrix(a_p11, bcs=bcs)
-    P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
+    P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])  # type: ignore[list-item]
     P.assemble()
 
     A00 = A.getNestSubMatrix(0, 0)
-    A00.setOption(PETSc.Mat.Option.SPD, True)
+    A00.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
     P00, P11 = P.getNestSubMatrix(0, 0), P.getNestSubMatrix(1, 1)
-    P00.setOption(PETSc.Mat.Option.SPD, True)
-    P11.setOption(PETSc.Mat.Option.SPD, True)
+    P00.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
+    P11.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
     # Assemble right-hand side vector
     b = assemble_vector(L, kind="nest")
@@ -324,7 +334,7 @@ def nested_iterative_solver_low_level():
     # Sum contributions for vector entries that are shared across
     # parallel processes
     for b_sub in b.getNestSubVecs():
-        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
 
     # Set Dirichlet boundary condition values in the RHS vector
     bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
@@ -334,7 +344,8 @@ def nested_iterative_solver_low_level():
     # up to a constant)
     null_vec = create_vector(extract_function_spaces(L), "nest")
     null_vecs = null_vec.getNestSubVecs()
-    null_vecs[0].set(0.0), null_vecs[1].set(1.0)
+    null_vecs[0].set(0.0)
+    null_vecs[1].set(1.0)
     null_vec.normalize()
     nsp = PETSc.NullSpace().create(vectors=[null_vec])
     assert nsp.test(A)
@@ -342,12 +353,12 @@ def nested_iterative_solver_low_level():
 
     # Create a MINRES Krylov solver and a block-diagonal preconditioner
     # using PETSc's additive fieldsplit preconditioner
-    ksp = PETSc.KSP().create(msh.comm)
+    ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
     ksp.setOperators(A, P)
     ksp.setType("minres")
     ksp.setTolerances(rtol=1e-9)
     ksp.getPC().setType("fieldsplit")
-    ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
+    ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)  # type: ignore[arg-type]
 
     # Define the matrix blocks in the preconditioner with the velocity
     # and pressure matrix index sets
@@ -417,7 +428,7 @@ def block_operators():
     b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
     bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
     apply_lifting(b, a, bcs=bcs1)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
     bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
     set_bc(b, bcs0)
 
@@ -450,18 +461,26 @@ def block_iterative_solver():
     offset_u = V_map.local_range[0] * V.dofmap.index_map_bs + Q_map.local_range[0]
     offset_p = offset_u + V_map.size_local * V.dofmap.index_map_bs
     is_u = PETSc.IS().createStride(
-        V_map.size_local * V.dofmap.index_map_bs, offset_u, 1, comm=msh.comm
+        V_map.size_local * V.dofmap.index_map_bs,
+        offset_u,
+        1,
+        comm=msh.comm,  # type: ignore[arg-type]
     )
-    is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=msh.comm)
+    is_p = PETSc.IS().createStride(
+        Q_map.size_local,
+        offset_p,
+        1,
+        comm=msh.comm,  # type: ignore[arg-type]
+    )
 
     # Create a MINRES Krylov solver and a block-diagonal preconditioner
     # using PETSc's additive fieldsplit preconditioner
-    ksp = PETSc.KSP().create(msh.comm)
+    ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
     ksp.setOperators(A, P)
     ksp.setTolerances(rtol=1e-9)
     ksp.setType("minres")
     ksp.getPC().setType("fieldsplit")
-    ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
+    ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)  # type: ignore[arg-type]
     ksp.getPC().setFieldSplitIS(("u", is_u), ("p", is_p))
 
     # Configure velocity and pressure sub-solvers
@@ -512,7 +531,7 @@ def block_direct_solver():
     A, _, b = block_operators()
 
     # Create a solver
-    ksp = PETSc.KSP().create(msh.comm)
+    ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
     ksp.setOperators(A)
     ksp.setType("preonly")
 
@@ -520,14 +539,10 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    use_superlu = PETSc.IntType == np.int64
-    if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
-        pc.setFactorSolverType("mumps")
-        pc.setFactorSetUpSolverType()
-        pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
-        pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
-    else:
-        pc.setFactorSolverType("superlu_dist")
+    pc.setFactorSolverType("mumps")
+    pc.setFactorSetUpSolverType()
+    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
 
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
@@ -564,17 +579,17 @@ def mixed_direct():
 
     # No slip boundary condition
     W0 = W.sub(0)
-    Q, _ = W0.collapse()
-    noslip = Function(Q)
+    V, _ = W0.collapse()
+    noslip = Function(V)
     facets = locate_entities_boundary(msh, 1, noslip_boundary)
-    dofs = locate_dofs_topological((W0, Q), 1, facets)
+    dofs = locate_dofs_topological((W0, V), 1, facets)
     bc0 = dirichletbc(noslip, dofs, W0)
 
     # Driving velocity condition u = (1, 0) on top boundary (y = 1)
-    lid_velocity = Function(Q)
+    lid_velocity = Function(V)
     lid_velocity.interpolate(lid_velocity_expression)
     facets = locate_entities_boundary(msh, 1, lid)
-    dofs = locate_dofs_topological((W0, Q), 1, facets)
+    dofs = locate_dofs_topological((W0, V), 1, facets)
     bc1 = dirichletbc(lid_velocity, dofs, W0)
 
     # Collect Dirichlet boundary conditions
@@ -583,7 +598,7 @@ def mixed_direct():
     # Define variational problem
     (u, p) = ufl.TrialFunctions(W)
     (v, q) = ufl.TestFunctions(W)
-    f = Function(Q)
+    f = Function(V)
     a = form(
         (ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(p, ufl.div(v)) + ufl.inner(ufl.div(u), q))
         * ufl.dx
@@ -597,14 +612,14 @@ def mixed_direct():
 
     bcs1 = bcs_by_block(extract_function_spaces([[a]], 1), bcs)
     apply_lifting(b, [a], bcs=bcs1)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
 
     # Set Dirichlet boundary condition values in the RHS
     for bc in bcs:
         bc.set(b.array_w)
 
     # Create and configure solver
-    ksp = PETSc.KSP().create(msh.comm)
+    ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
     ksp.setOperators(A)
     ksp.setType("preonly")
 
@@ -625,12 +640,23 @@ def mixed_direct():
     try:
         ksp.solve(b, U.x.petsc_vec)
     except PETSc.Error as e:
-        if e.ierr == 92:
+        if e.ierr == 92:  # type: ignore[attr-defined]
             print("The required PETSc solver/preconditioner is not available. Exiting.")
             print(e)
-            exit(0)
+            sys.exit(0)
         else:
             raise e
+
+    # Create the null vector and set the pressure dofs to 1.0
+    _Q, Q_to_W = W.sub(1).collapse()
+    null_v = Function(W)
+    null_v.x.array[Q_to_W] = 1.0
+    null_v.x.petsc_vec.normalize()
+
+    # Create the nullspace and remove that component from our solution
+    nsp = PETSc.NullSpace().create(vectors=[null_v.x.petsc_vec])
+    nsp.remove(U.x.petsc_vec)
+    U.x.scatter_forward()
 
     # Split the mixed solution and collapse
     u, p = U.sub(0).collapse(), U.sub(1).collapse()
@@ -641,7 +667,7 @@ def mixed_direct():
         print(f"(D) Norm of velocity coefficient vector (monolithic, direct): {norm_u}")
         print(f"(D) Norm of pressure coefficient vector (monolithic, direct): {norm_p}")
 
-    return norm_u, norm_u
+    return norm_u, norm_p
 
 
 # Solve using LinearProblem class
@@ -669,4 +695,8 @@ np.testing.assert_allclose(norm_p_3, norm_p_0, rtol=1e-4)
 # Solve using a non-blocked matrix and an LU solver
 
 norm_u_4, norm_p_4 = mixed_direct()
-np.testing.assert_allclose(norm_u_4, norm_u_0, rtol=1e-4)
+use_superlu = PETSc.IntType == np.int64
+if not use_superlu:
+    # SuperLU does not support finding null-pivots.
+    np.testing.assert_allclose(norm_u_4, norm_u_0, rtol=1e-4)
+    np.testing.assert_allclose(norm_p_4, norm_p_0, rtol=1e-4)

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 Garth N. Wells, Jørgen S. Dokken
+// Copyright (C) 2015-2026 Garth N. Wells, Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -18,6 +18,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <span>
+#include <stdexcept>
 #include <vector>
 
 namespace dolfinx::fem
@@ -91,13 +92,13 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   assert(mesh);
   assert(V1.mesh());
   if (mesh != V1.mesh())
-    throw std::runtime_error("Meshes must be the same.");
+    throw std::invalid_argument("Meshes must be the same.");
 
   if (mesh->geometry().dim() != 3)
-    throw std::runtime_error("Geometric must be equal to 3..");
+    throw std::invalid_argument("Geometric must be equal to 3..");
   if (mesh->geometry().dim() != mesh->topology()->dim())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Geometric and topological dimensions must be equal.");
   }
   constexpr int gdim = 3;
@@ -107,7 +108,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   assert(e0);
   if (e0->map_type() != basix::maps::type::covariantPiola)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Finite element for parent space must be covariant Piola.");
   }
 
@@ -115,7 +116,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   assert(e1);
   if (e1->map_type() != basix::maps::type::contravariantPiola)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Finite element for target space must be contracovariant Piola.");
   }
 
@@ -143,9 +144,9 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   const std::size_t space_dim0 = e0->space_dimension();
   const std::size_t space_dim1 = e1->space_dimension();
   if (e0->reference_value_size() != 3)
-    throw std::runtime_error("Value size for parent space should be 3.");
+    throw std::invalid_argument("Value size for parent space should be 3.");
   if (e1->reference_value_size() != 3)
-    throw std::runtime_error("Value size for target space should be 3.");
+    throw std::invalid_argument("Value size for target space should be 3.");
 
   // Get the V1 reference interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
@@ -204,9 +205,12 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
       std::size_t offset = p * size; // Offset for point p
 
       // Shape: (num_phi , (value_size * num_derivs))
-      apply_dof_transformation0(std::span(dPhi0.data_handle() + offset, size),
-                                cell_info, c,
-                                dPhi0.extent(2) * dPhi0.extent(3));
+      if (apply_dof_transformation0)
+      {
+        apply_dof_transformation0(std::span(dPhi0.data_handle() + offset, size),
+                                  cell_info, c,
+                                  dPhi0.extent(2) * dPhi0.extent(3));
+      }
     }
 
     // Compute curl
@@ -238,7 +242,8 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
             Ab[space_dim0 * j + i] += static_cast<U>(pi_val * curl(p, i, k));
         }
 
-    apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
+    if (apply_inverse_dof_transform1)
+      apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
     mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
   }
 }
@@ -289,16 +294,16 @@ void discrete_gradient(mesh::Topology& topology,
 
   // Check elements
   if (e0.map_type() != basix::maps::type::identity)
-    throw std::runtime_error("Wrong finite element space for V0.");
+    throw std::invalid_argument("Wrong finite element space for V0.");
   if (e0.block_size() != 1)
-    throw std::runtime_error("Block size is greater than 1 for V0.");
+    throw std::invalid_argument("Block size is greater than 1 for V0.");
   if (e0.reference_value_size() != 1)
-    throw std::runtime_error("Wrong value size for V0.");
+    throw std::invalid_argument("Wrong value size for V0.");
 
   if (e1.map_type() != basix::maps::type::covariantPiola)
-    throw std::runtime_error("Wrong finite element space for V1.");
+    throw std::invalid_argument("Wrong finite element space for V1.");
   if (e1.block_size() != 1)
-    throw std::runtime_error("Block size is greater than 1 for V1.");
+    throw std::invalid_argument("Block size is greater than 1 for V1.");
 
   // Get V1 (H(curl)) space interpolation points
   const auto [X, Xshape] = e1.interpolation_points();
@@ -346,7 +351,8 @@ void discrete_gradient(mesh::Topology& topology,
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     std::ranges::copy(Ab, Ae.begin());
-    apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
+    if (apply_inverse_dof_transform)
+      apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
     mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
   }
 }
@@ -557,12 +563,15 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     // element-by-element mdspan loop.
     std::ranges::copy(basis_derivatives_reference0_b,
                       basis_reference0_b.begin());
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    if (apply_dof_transformation0)
     {
-      apply_dof_transformation0(
-          std::span(basis_reference0.data_handle() + p * dim0 * value_size_ref0,
-                    dim0 * value_size_ref0),
-          cell_info, c, value_size_ref0);
+      for (std::size_t p = 0; p < Xshape[0]; ++p)
+      {
+        apply_dof_transformation0(std::span(basis_reference0.data_handle()
+                                                + p * dim0 * value_size_ref0,
+                                            dim0 * value_size_ref0),
+                                  cell_info, c, value_size_ref0);
+      }
     }
 
     for (std::size_t p = 0; p < basis0.extent(0); ++p)
@@ -646,7 +655,8 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
       }
     }
 
-    apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
+    if (apply_inverse_dof_transform1)
+      apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
 
     // Zero out all rows that have already been added on this process
     // and only add owned rows

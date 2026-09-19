@@ -86,7 +86,7 @@ int dolfinx::MPI::size(const MPI_Comm comm)
   return size;
 }
 //-----------------------------------------------------------------------------
-void dolfinx::MPI::check_error(MPI_Comm comm, int code)
+void dolfinx::MPI::check_error(MPI_Comm comm, int code) noexcept
 {
   if (code != MPI_SUCCESS)
   {
@@ -129,9 +129,9 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
   std::byte send_buffer{0};
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    int err = MPI_Isend(&send_buffer, 1, MPI_BYTE, edges[e],
-                        static_cast<int>(tag::consensus_pcx), comm,
-                        &send_requests[e]);
+    err = MPI_Isend(&send_buffer, 1, MPI_BYTE, edges[e],
+                    static_cast<int>(tag::consensus_pcx), comm,
+                    &send_requests[e]);
     dolfinx::MPI::check_error(comm, err);
   }
 
@@ -146,8 +146,8 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
   {
     MPI_Status status;
     std::byte buffer_recv;
-    int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE,
-                       static_cast<int>(tag::consensus_pcx), comm, &status);
+    err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE,
+                   static_cast<int>(tag::consensus_pcx), comm, &status);
     dolfinx::MPI::check_error(comm, err);
     other_ranks.push_back(status.MPI_SOURCE);
   }
@@ -230,8 +230,8 @@ nbx_consensus_rounds(MPI_Comm comm, std::array<std::span<const int>, K> edges,
       while (flag_recv)
       {
         src_ranks[i].push_back(status.MPI_SOURCE);
-        int err = MPI_Irecv(&buffer_recv[i], 1, MPI_BYTE, MPI_ANY_SOURCE,
-                            tags[i], comm, &recv_request[i]);
+        err = MPI_Irecv(&buffer_recv[i], 1, MPI_BYTE, MPI_ANY_SOURCE, tags[i],
+                        comm, &recv_request[i]);
         dolfinx::MPI::check_error(comm, err);
 
         err = MPI_Test(&recv_request[i], &flag_recv, &status);
@@ -258,7 +258,7 @@ nbx_consensus_rounds(MPI_Comm comm, std::array<std::span<const int>, K> edges,
       if (flag)
       {
         // All sends have completed, start non-blocking barrier
-        int err = MPI_Ibarrier(comm, &barrier_request);
+        err = MPI_Ibarrier(comm, &barrier_request);
         dolfinx::MPI::check_error(comm, err);
         barrier_active = true;
       }
@@ -341,18 +341,21 @@ dolfinx::MPI::impl::postoffice_plan(int size, int rank,
   for (std::int32_t i = 0; i < shape0_local; ++i)
   {
     std::size_t idx = i + rank_offset;
-    if (int dest = MPI::index_owner(size, idx, shape0); dest != rank)
+    if (int dest = dolfinx::MPI::index_owner(size, idx, shape0); dest != rank)
       dest_to_index.push_back({dest, i});
   }
 
   // Radix sort (not a comparison sort): dest_to_index can have
-  // hundreds of thousands of entries for a large mesh/problem.
+  // hundreds of thousands of entries for a large mesh/problem. Sort by
+  // the dest-rank column (0) only -- the grouping below only depends
+  // on dest rank, so sorting by the row-position column (1) too would
+  // be a wasted second radix-sort pass.
   {
     std::span<const std::int32_t> flat(
         reinterpret_cast<const std::int32_t*>(dest_to_index.data()),
         2 * dest_to_index.size());
     std::vector<std::int32_t> perm
-        = dolfinx::sort_by_perm<std::int32_t, 16>(flat, 2);
+        = dolfinx::sort_by_perm<std::int32_t, 16>(flat, 2, 1);
     std::vector<std::array<std::int32_t, 2>> sorted(dest_to_index.size());
     for (std::size_t i = 0; i < perm.size(); ++i)
       sorted[i] = dest_to_index[perm[i]];
@@ -379,7 +382,7 @@ dolfinx::MPI::impl::postoffice_plan(int size, int rank,
                                       { return idx[0] != r; });
 
       // Store number of items for current rank
-      num_items_per_dest.push_back(std::distance(it, it1));
+      num_items_per_dest.push_back(std::ranges::distance(it, it1));
 
       // Map from local x index to local destination rank
       for (auto e = it; e != it1; ++e)

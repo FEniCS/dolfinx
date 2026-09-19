@@ -19,6 +19,7 @@
 # ```
 # This demo illustrates how to:
 # - Create a complex-valued finite element formulation
+#
 # In the following example, we will consider the Helmholtz equation solved
 # with both a complex valued and a real valued finite element formulation.
 #

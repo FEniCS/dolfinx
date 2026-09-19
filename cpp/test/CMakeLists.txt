@@ -36,21 +36,27 @@ add_executable(
   graph.cpp
   vector.cpp
   matrix.cpp
+  petsc.cpp
+  slepc.cpp
   io.cpp
+  io_xdmf.cpp
   common/CIFailure.cpp
   common/sub_systems_manager.cpp
   common/index_map.cpp
+  common/move_semantics.cpp
   common/sort.cpp
   fem/form.cpp
   fem/functionspace.cpp
   mesh/branching_manifold.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp
+  mesh/geometric_partitioner.cpp
   mesh/read_named_meshtags.cpp
   mesh/refinement/interval.cpp
   mesh/refinement/option.cpp
   mesh/refinement/rectangle.cpp
   mesh/refinement/mark.cpp
+  nls/snessolver.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )

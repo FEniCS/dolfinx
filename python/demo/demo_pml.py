@@ -1,3 +1,13 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.14.4
+# ---
+
 # # Electromagnetic scattering from a wire with PML
 #
 # Copyright (C) 2022-2025 Michele Castriotta, Igor Baratta
@@ -29,28 +39,24 @@ import gmsh
 import numpy as np
 from scipy.special import h2vp, hankel2, jv, jvp
 
-import dolfinx
 import ufl
 from basix.ufl import element
-from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
+from dolfinx import default_real_type, default_scalar_type, fem, graph, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import gmsh as gmshio
-from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
 
 try:
     from dolfinx.io import VTXWriter
 except ImportError:
     print("This demo requires DOLFINx to be configured with adios2.")
-    exit(0)
+    sys.exit(0)
 
 
 try:
     import pyvista
-
-    have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
-    have_pyvista = False
+    pyvista = None
 # -
 
 # Since we want to solve time-harmonic Maxwell's equation, we require
@@ -58,7 +64,7 @@ except ModuleNotFoundError:
 
 if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
-    exit(0)
+    sys.exit(0)
 
 # # Mesh generation with GMSH
 # The mesh is made up by a central circle (the wire), and an external
@@ -225,7 +231,7 @@ def compute_a(nu: int, m: complex, alpha: float) -> complex:
 
     a_nu_num = J_nu_alpha * J_nu_malpha_p - m * J_nu_malpha * J_nu_alpha_p
     a_nu_den = H_nu_alpha * J_nu_malpha_p - m * J_nu_malpha * H_nu_alpha_p
-    return a_nu_num / a_nu_den
+    return complex(a_nu_num / a_nu_den)
 
 
 def calculate_analytical_efficiencies(
@@ -354,7 +360,7 @@ pml_tag = 4
 # -
 
 # We generate the mesh using GMSH and convert it to a
-# {py:class}`Mesh<dolfinx.mesh.Mesh>` using
+# {py:class}`Mesh <dolfinx.mesh.Mesh>` using
 # {py:func}`model_to_mesh <dolfinx.io.gmsh.model_to_mesh>`.
 
 # +
@@ -376,9 +382,16 @@ if MPI.COMM_WORLD.rank == 0:
         pml_tag,
     )
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = _cell_partitioner(dolfinx.mesh.GhostMode.shared_facet, 2)
+partitioner = graph.partitioner()
 
-mesh_data = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
+mesh_data = gmshio.model_to_mesh(
+    model,
+    MPI.COMM_WORLD,
+    0,
+    gdim=2,
+    partitioner=partitioner,
+    ghost_mode=mesh.GhostMode.shared_facet,
+)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
 assert all(pg.dim == 2 for _, pg in mesh_data.physical_groups.items()), "Wrong physical group dim."
@@ -393,7 +406,7 @@ MPI.COMM_WORLD.barrier()
 out_folder = Path("output_pml")
 out_folder.mkdir(parents=True, exist_ok=True)
 tdim = mesh_data.mesh.topology.dim
-if have_pyvista:
+if pyvista is not None:
     topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
@@ -629,14 +642,14 @@ F = (
 a, L = ufl.lhs(F), ufl.rhs(F)
 
 # For factorisation prefer MUMPS, then superlu_dist, then default
-sys = PETSc.Sys()  # type: ignore
+sys = PETSc.Sys()
 use_superlu = PETSc.IntType == np.int64
-if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
+if sys.hasExternalPackage("mumps") and not use_superlu:
     mat_factor_backend = "mumps"
-elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
+elif sys.hasExternalPackage("superlu_dist"):
     mat_factor_backend = "superlu_dist"
 else:
-    if mesh_data.mesh.comm > 1:
+    if mesh_data.mesh.comm.size > 1:
         raise RuntimeError("This demo requires a parallel LU solver.")
     else:
         mat_factor_backend = "petsc"
@@ -675,7 +688,7 @@ with VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
 # discretized with Nedelec elements, check [this](./demo_interpolation-io)
 # DOLFINx demo.
 
-if have_pyvista:
+if pyvista is not None:
     V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
@@ -826,7 +839,7 @@ err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
 err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
 
 # +
-par_print = PETSc.Sys.Print  # type: ignore
+par_print = PETSc.Sys.Print
 par_print(
     f"Analytical: Q_abs={q_abs_analyt:.6f}, Q_sca={q_sca_analyt:.6f}, Q_ext={q_ext_analyt:.6f}"
 )

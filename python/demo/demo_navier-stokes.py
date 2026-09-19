@@ -8,7 +8,7 @@
 #       jupytext_version: 1.13.6
 # ---
 
-# # Divergence conforming discontinuous Galerkin method for the Navier--Stokes equations # noqa
+# # Divergence conforming discontinuous Galerkin method for Navier-Stokes
 #
 # ```{admonition} Download sources
 # :class: download
@@ -19,7 +19,7 @@
 # - Implement a divergence conforming discontinuous Galerkin method
 #   for the Navier-Stokes equations.
 # - Tune MUMPS to support singular systems.
-# discontinuous Galerkin method for the Navier-Stokes equations.
+#
 # The method conserves mass exactly and uses upwinding.
 # The formulation is based on a combination of [A fully divergence-free
 # finite element method for magnetohydrodynamic equations](
@@ -177,6 +177,8 @@
 
 
 # +
+import sys
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -188,7 +190,7 @@ from dolfinx.fem.petsc import LinearProblem
 
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
-    exit(0)
+    sys.exit(0)
 
 
 # -
@@ -335,9 +337,11 @@ solver_options = {
 u_h = fem.Function(V)
 p_h = fem.Function(Q)
 p_h.name = "p"
+a_blocks: list[list[ufl.Form | None]] = ufl.extract_blocks(a)  # type: ignore[assignment]
+L_blocks: list[ufl.Form] = ufl.extract_blocks(L)  # type: ignore[assignment]
 stokes_problem = LinearProblem(
-    ufl.extract_blocks(a),
-    ufl.extract_blocks(L),
+    a_blocks,
+    L_blocks,
     u=[u_h, p_h],
     bcs=bcs,
     kind="mpi",
@@ -348,10 +352,10 @@ stokes_problem = LinearProblem(
 try:
     stokes_problem.solve()
 except PETSc.Error as e:
-    if e.ierr == 92:
+    if e.ierr == 92:  # type: ignore[attr-defined]
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)
-        exit(0)
+        sys.exit(0)
     else:
         raise e
 # -
@@ -364,6 +368,9 @@ p_h.x.array[:] -= domain_average(msh, p_h)
 # Write initial condition to file
 
 t = 0.0
+u_vis = None
+u_file = None
+p_file = None
 if has_adios2:
     u_vis = fem.Function(W, name="u_init")
     u_vis.interpolate(u_h)
@@ -399,9 +406,11 @@ L += (
     - ufl.inner(ufl.dot(u_n, n) * (1 - lmbda) * u_D, v) * ufl.ds
 )
 
+a_blocks = ufl.extract_blocks(a)  # type: ignore[assignment]
+L_blocks = ufl.extract_blocks(L)  # type: ignore[assignment]
 navier_stokes_problem = LinearProblem(
-    ufl.extract_blocks(a),
-    ufl.extract_blocks(L),
+    a_blocks,
+    L_blocks,
     u=[u_h, p_h],
     bcs=bcs,
     kind="mpi",
@@ -414,13 +423,13 @@ navier_stokes_problem = LinearProblem(
 
 # +
 for _ in range(num_time_steps):
-    t += delta_t.value
+    t += float(delta_t.value)
 
     navier_stokes_problem.solve()
     p_h.x.array[:] -= domain_average(msh, p_h)
 
     # Write to file
-    if has_adios2:
+    if u_vis is not None and u_file is not None and p_file is not None:
         u_vis.interpolate(u_h)
         u_file.write(t)
         p_file.write(t)
@@ -428,11 +437,9 @@ for _ in range(num_time_steps):
     # Update u_n
     u_n.x.array[:] = u_h.x.array
 
-try:
+if u_file is not None and p_file is not None:
     u_file.close()
     p_file.close()
-except NameError:
-    pass
 # -
 
 # Now we compare the computed solution to the exact solution

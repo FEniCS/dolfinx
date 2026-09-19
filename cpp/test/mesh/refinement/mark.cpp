@@ -1,4 +1,4 @@
-// Copyright (C) 2026 Paul T. Kühner
+// Copyright (C) 2026 Paul T. Kühner and Jack S. Hale
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -6,9 +6,12 @@
 
 #include <algorithm>
 #include <catch2/catch_template_test_macros.hpp>
+#include <cstddef>
+#include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/refinement/mark.h>
 #include <mpi.h>
+#include <span>
 #include <vector>
 
 using namespace dolfinx;
@@ -17,36 +20,58 @@ using namespace dolfinx::refinement;
 TEMPLATE_TEST_CASE("Mark maximum empty", "[refinement][mark][maximum]", double,
                    float)
 {
-  std::vector<TestType> marker;
-  auto indices = mark_maximum<TestType>(marker, .5, MPI_COMM_WORLD);
+  common::IndexMap im(MPI_COMM_WORLD, 0);
+  std::vector<TestType> values;
+  auto indices = mark_maximum<TestType>(values, im, .5);
   CHECK(indices.size() == 0);
 }
 
 TEMPLATE_TEST_CASE("Mark maximum", "[refinement][mark][maximum]", double, float)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
+  int rank = dolfinx::MPI::rank(comm);
+  int size = dolfinx::MPI::size(comm);
 
-  std::vector<TestType> marker;
-  marker.reserve(10);
-  for (std::size_t i = 0; i < 10; i++)
-    marker.push_back(10 * dolfinx::MPI::rank(comm) + i);
+  // vec: comm size entries owned by rank 0; each other process (rank>0) gets
+  // one as ghost
+  std::int32_t local_size = (rank == 0) ? size : 0;
+  std::vector<std::int64_t> ghosts = (rank == 0)
+                                         ? std::vector<std::int64_t>{}
+                                         : std::vector<std::int64_t>{rank};
+  std::vector<int> owners
+      = (rank == 0) ? std::vector<int>{} : std::vector<int>{0};
+  common::IndexMap im(comm, local_size, ghosts, owners);
+
+  std::vector<TestType> v(im.size_local() + im.num_ghosts());
+  if (rank == 0)
+  {
+    CHECK(v.size() == static_cast<std::size_t>(size));
+    for (int i = 0; i < size; i++)
+      v[i] = i;
+  }
+  else
+  {
+    CHECK(v.size() == 1);
+    // Check max reduction ignores ghosts.
+    v[0] = static_cast<TestType>(size + 1);
+  }
 
   TestType theta = 0.5;
-  auto indices = mark_maximum<TestType>(marker, theta, comm);
+  auto indices = mark_maximum(std::span<const TestType>(v), im, theta);
 
   CHECK(std::ranges::all_of(
-      indices, [&marker](auto e)
-      { return (0 <= e) && (e <= static_cast<std::int32_t>(marker.size())); }));
+      indices, [&v](auto e)
+      { return (0 <= e) && (e <= static_cast<std::int32_t>(v.size())); }));
 
-  TestType max = dolfinx::MPI::size(comm) * 10 - 1;
+  TestType max = size - 1;
   auto mark = [&theta, &max](auto e) { return e > theta * max; };
 
-  CHECK(std::ranges::count_if(marker, mark)
+  CHECK(std::ranges::count_if(v, mark)
         == static_cast<std::int32_t>(indices.size()));
 
-  for (std::int32_t i = 0; i < static_cast<std::int32_t>(marker.size()); ++i)
+  for (std::int32_t i = 0; i < static_cast<std::int32_t>(v.size()); ++i)
   {
-    bool expect_marked = mark(marker[i]);
+    bool expect_marked = mark(v[i]);
     bool marked = std::ranges::find(indices, i) != indices.end();
     CHECK(expect_marked == marked);
   }

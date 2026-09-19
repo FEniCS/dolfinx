@@ -64,7 +64,7 @@ else()
     if(KAHIP_LIBRARY)
       list(APPEND CMAKE_REQUIRED_LIBRARIES ${KAHIP_LIBRARY})
     endif()
-    list(APPEND CMAKE_REQUIRED_LINK_LIBRARIES MPI::MPI_CXX)
+    list(APPEND CMAKE_REQUIRED_LIBRARIES MPI::MPI_CXX)
     check_cxx_source_compiles(
       "
       #define MPICH_IGNORE_CXX_SEEK 1

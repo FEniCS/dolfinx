@@ -52,17 +52,15 @@ from dolfinx.fem.petsc import LinearProblem
 
 try:
     import pyvista
-
-    have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
-    have_pyvista = False
+    pyvista = None
 
 if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
     print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
     # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
     # than MUMPS and does not trigger memory failures.
-    exit(0)
+    sys.exit(0)
 
 # -
 
@@ -230,7 +228,7 @@ def compute_a(nu: int, m: complex, alpha: float) -> complex:
 
     a_nu_num = J_nu_alpha * J_nu_malpha_p - m * J_nu_malpha * J_nu_alpha_p
     a_nu_den = H_nu_alpha * J_nu_malpha_p - m * J_nu_malpha * H_nu_alpha_p
-    return a_nu_num / a_nu_den
+    return complex(a_nu_num / a_nu_den)
 
 
 def calculate_analytical_efficiencies(
@@ -256,7 +254,7 @@ def calculate_analytical_efficiencies(
 
 if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode.")
-    exit(0)
+    sys.exit(0)
 
 
 # Now, let's consider an infinite metallic wire immersed in a background
@@ -423,7 +421,7 @@ boundary_tag = 3  # boundary
 # -
 
 # We generate the mesh using GMSH and convert it to a
-# {py:class}`Mesh<dolfinx.mesh.Mesh>` using
+# {py:class}`Mesh <dolfinx.mesh.Mesh>` using
 # {py:func}`model_to_mesh <dolfinx.io.gmsh.model_to_mesh>`.
 
 # +
@@ -454,7 +452,7 @@ MPI.COMM_WORLD.barrier()
 # The mesh is visualized with [PyVista](https://docs.pyvista.org/)
 out_folder = Path("out_scattering_boundary_conditions")
 out_folder.mkdir(parents=True, exist_ok=True)
-if have_pyvista:
+if pyvista is not None:
     topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
@@ -640,7 +638,7 @@ problem = LinearProblem(
     petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
 )
 Esh = problem.solve()
-assert problem.solver.getConvergedReason() > 0
+assert problem.solver.getConvergedReason() > 0  # type: ignore[operator]
 
 # We save the solution as an [ADIOS2
 # bp](https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html)
@@ -664,11 +662,10 @@ else:
 
 # We visualize the solution using PyVista. For more information about
 # saving and visualizing vector fields discretized with Nedelec
-# elements, check [this](
-# https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_interpolation-io.html)
-# DOLFINx demo.
+# elements, see the {doc}`Interpolation and IO <./demo_interpolation-io>`
+# demo.
 
-if have_pyvista:
+if pyvista is not None:
     V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)

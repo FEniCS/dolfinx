@@ -24,15 +24,15 @@
 # - Assemble mixed systems with multiple, related meshes
 
 # +
+import sys
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
 import numpy as np
 
-import dolfinx
 import ufl
-from dolfinx import fem, mesh
-from dolfinx.cpp.mesh import cell_num_entities
+from dolfinx import fem, has_adios2, mesh
 from dolfinx.fem import extract_function_spaces
 from dolfinx.fem.petsc import (
     apply_lifting,
@@ -55,7 +55,7 @@ def norm_L2(v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx) -> np.inexact:
     """Convenience function to compute the L2 norm of a UFL expression."""
     compiled_form = fem.form(ufl.inner(v, v) * measure)
     comm = compiled_form.mesh.comm
-    return np.sqrt(comm.allreduce(fem.assemble_scalar(compiled_form), op=MPI.SUM))
+    return np.sqrt(comm.allreduce(fem.assemble_scalar(compiled_form), op=MPI.SUM))  # type: ignore[return-value]
 
 
 # In DOLFINx, we represent integration domains over entities of
@@ -67,7 +67,7 @@ def norm_L2(v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx) -> np.inexact:
 # there will be repeat entries, from the viewpoint of the connected cells).
 
 
-def compute_cell_boundary_facets(msh: dolfinx.mesh.Mesh) -> np.ndarray:
+def compute_cell_boundary_facets(msh: mesh.Mesh) -> np.ndarray:
     """Integration entities for integrals on boundaries of all cells.
 
     Parameters:
@@ -79,7 +79,7 @@ def compute_cell_boundary_facets(msh: dolfinx.mesh.Mesh) -> np.ndarray:
     """
     tdim = msh.topology.dim
     fdim = tdim - 1
-    n_f = cell_num_entities(msh.topology.cell_type, fdim)
+    n_f = mesh.cell_num_entities(msh.topology.cell_type, fdim)
     n_c = msh.topology.index_map(tdim).size_local
     return np.vstack((np.repeat(np.arange(n_c), n_f), np.tile(np.arange(n_f), n_c))).T.flatten()
 
@@ -129,11 +129,10 @@ k = 3  # Polynomial order
 V = fem.functionspace(msh, ("Discontinuous Lagrange", k))
 Vbar = fem.functionspace(facet_mesh, ("Discontinuous Lagrange", k))
 
-# Trial and test functions in mixed space, we use {py:class}`
-# ufl.MixedFunctionSpace`
-# to create a single function space object we can extract {py:func}`
-# ufl.TrialFunctions`
-# and {py:func}`ufl.TestFunctions` from.
+# Trial and test functions in mixed space, we use
+# {py:class}`ufl.MixedFunctionSpace` to create a single function space
+# object we can extract {py:func}`ufl.TrialFunctions` and
+# {py:func}`ufl.TestFunctions` from.
 
 W = ufl.MixedFunctionSpace(V, Vbar)
 u, ubar = ufl.TrialFunctions(W)
@@ -180,13 +179,13 @@ a = (
 
 f = -ufl.div(c * ufl.grad(u_e(x)))  # Manufacture a source term
 L = ufl.inner(f, v) * dx_c
-L += ufl.inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f
+L += ufl.inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f  # type: ignore[operator]
 # -
 
 # Our bilinear form involves two domains (`msh` and `facet_mesh`). The
 # mesh passed to the measure is called the "integration domain". For
 # each additional mesh in our form, we must pass an
-# {py:class}`EntityMap<dolfinx.mesh.EntityMap` object
+# {py:class}`EntityMap <dolfinx.mesh.EntityMap>` object
 # that relates entities in that mesh to entities in the integration
 # domain. In this case, the only other mesh is `facet_mesh`, so we pass
 # `facet_mesh_emap`.
@@ -196,8 +195,13 @@ entity_maps = [facet_mesh_emap]
 # Compile forms for the blocked system, using {py:func}`ufl.extract_blocks`
 # for the bilinear and linear forms.
 
-a_blocked = dolfinx.fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
-L_blocked = dolfinx.fem.form(ufl.extract_blocks(L))
+a_ufl: list[list[ufl.Form | None]] = ufl.extract_blocks(a)  # type: ignore[assignment]
+a_blocked: list[list[fem.Form | None]] = fem.form(  # type: ignore[assignment]
+    a_ufl,
+    entity_maps=entity_maps,
+)
+L_ufl: list[ufl.Form] = ufl.extract_blocks(L)  # type: ignore[assignment]
+L_blocked: list[fem.Form] = fem.form(L_ufl)  # type: ignore[assignment]
 
 # Apply Dirichlet boundary conditions. We begin by locating the boundary
 # facets of msh.
@@ -215,7 +219,7 @@ facet_mesh_boundary_facets = facet_mesh_emap.sub_topology_to_topology(
 
 facet_mesh.topology.create_connectivity(fdim, fdim)
 dofs = fem.locate_dofs_topological(Vbar, fdim, facet_mesh_boundary_facets)
-bc = fem.dirichletbc(dtype(0.0), dofs, Vbar)
+bc = fem.dirichletbc(dtype(0.0), dofs, Vbar)  # type: ignore[operator]
 
 # Assemble the matrix and vector
 
@@ -225,13 +229,13 @@ A.assemble()
 b = assemble_vector(L_blocked)
 bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_blocked, 1), [bc])
 apply_lifting(b, a_blocked, bcs=bcs1)
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
 bcs0 = fem.bcs_by_block(extract_function_spaces(L_blocked), [bc])
 set_bc(b, bcs0)
 
 # Setup the solver
 
-ksp = PETSc.KSP().create(msh.comm)
+ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
@@ -240,28 +244,28 @@ ksp.getPC().setFactorSolverType("superlu_dist")
 # Compute solution
 
 try:
-    x = create_vector([V, Vbar])
-    ksp.solve(b, x)
+    x_vec = create_vector([V, Vbar])
+    ksp.solve(b, x_vec)
     ksp.destroy()
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    x_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
     b.destroy()
 except PETSc.Error as e:
-    if e.ierr == 92:
+    if e.ierr == 92:  # type: ignore[attr-defined]
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)
-        exit(0)
+        sys.exit(0)
     else:
         raise e
 
 # Create functions for the solution and update values
 
 u, ubar = fem.Function(V, name="u"), fem.Function(Vbar, name="ubar")
-assign(x, [u, ubar])
-x.destroy()
+assign(x_vec, [u, ubar])  # type: ignore
+x_vec.destroy()
 
 # Write to file
 
-if dolfinx.has_adios2:
+if has_adios2:
     from dolfinx.io import VTXWriter
 
     with VTXWriter(msh.comm, "u.bp", u, "bp4") as f:

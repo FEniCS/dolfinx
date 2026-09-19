@@ -11,7 +11,6 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
 from dolfinx.io.gmsh import cell_perm_array, ufl_mesh
@@ -24,6 +23,7 @@ from dolfinx.mesh import (
     create_unit_interval,
     create_unit_square,
     locate_entities,
+    to_type,
 )
 
 # Supported XDMF file encoding
@@ -43,6 +43,8 @@ def mesh_factory(tdim, n, ghost_mode=GhostMode.shared_facet, dtype=default_real_
         return create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode, dtype=dtype)
     elif tdim == 3:
         return create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode, dtype=dtype)
+    else:
+        raise ValueError(f"Unsupported {tdim=}")
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
@@ -150,7 +152,7 @@ def test_read_write_p2_mesh(tempdir, encoding):
         cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
 
     domain = ufl_mesh(gmsh_cell_id, 3, dtype=default_real_type)
-    cell_type = _cpp.mesh.to_type(str(domain.ufl_cell()))
+    cell_type = to_type(str(domain.ufl_cell()))
     cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x)
