@@ -46,9 +46,16 @@ disclosure process.
   standard-library headers, alphabetically within each group.
 - **Include What You Use (IWYU)**: follow IWYU best practice down to
   including 'trivial' headers such as `<cstdint>` and `<iterators>`
-  directly, rather than relying on transitive includes -- IWYU is
-  not currently enforced systematically via testing, so check touched
-  files for missed opportunities and suggest fixes.
+  directly, rather than relying on transitive includes. A full IWYU run
+  is not part of the test suite, so check touched files for missed
+  opportunities and suggest fixes. Installed headers do have a
+  mechanical check: configure with
+  `-DCMAKE_VERIFY_INTERFACE_HEADER_SETS=ON` and build the
+  `all_verify_interface_header_sets` target, which compiles each header
+  in the target's header sets on its own. Some `fem/` headers are known
+  to fail it because `fem/Function.h` and `fem/assembler.h` include one
+  another; that is a design issue rather than a missing include, so do
+  not "fix" it by adding includes.
 - **Namespaces**: library code lives in `dolfinx::<module>` (e.g.
   `dolfinx::io::hdf5`). In `.cpp` files, prefer `using namespace
   dolfinx;` at the top and qualify definitions with the remaining
@@ -251,8 +258,32 @@ disclosure process.
 
 ## CMake style
 
+- **Minimum version**: CMake 3.26, declared identically in every
+  `cmake_minimum_required` in the tree. Features up to 3.26 may be used
+  freely; a policy introduced after 3.26 still needs an
+  `if(POLICY CMPxxxx)` guard.
 - Formatted with `gersemi` (2-space indent, see `.gersemirc`); CI runs
-  `gersemi --check .`.
+  `gersemi --check . cpp/.vcpkg-overlay`. The overlay directory is named
+  explicitly because `gersemi` does not descend into hidden directories.
+  `.gersemirc` lists the files defining the project's own CMake commands
+  so that calls to them are formatted rather than reported as unknown.
+- **Adding a header**: add it to the `FILE_SET HEADERS` list in the
+  `target_sources` call of its `cpp/dolfinx/<module>/CMakeLists.txt`.
+  The file set drives both the include directories and the install
+  rules, so nothing else needs updating. Sources go in the `PRIVATE`
+  `target_sources` call in the same file.
+- **Adding a C++ demo**: create `cpp/demo/<name>/` and a short
+  `CMakeLists.txt` calling `dolfinx_add_demo(<name> [UFL <file>.py]
+  [NO_COMPLEX])`, then register it in `cpp/demo/CMakeLists.txt`. The
+  helper lives in `cpp/cmake/modules/DolfinxDemo.cmake` and is
+  installed, so the demos also build standalone against an installed
+  DOLFINx.
+- Helper modules shared with consumers of an installed DOLFINx
+  (`DolfinxDemo.cmake`, `DolfinxDeveloperCompilerFlags.cmake`,
+  `DolfinxPkgConfigHelpers.cmake`) live in
+  `cpp/cmake/modules/` and are installed next to `DOLFINXConfig.cmake`.
+  Anything `DOLFINXConfig.cmake` needs at consume time belongs there
+  rather than being duplicated into the config template.
 
 ## Demos
 

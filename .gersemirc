@@ -1,1 +1,8 @@
 indent: 2
+# Teach gersemi about the project's own commands so that calls to them are
+# formatted rather than reported as unknown.
+definitions:
+  - cpp/CMakeLists.txt
+  - cpp/cmake/modules/DolfinxDemo.cmake
+  - cpp/cmake/modules/DolfinxPkgConfigHelpers.cmake
+  - cpp/demo/CMakeLists.txt

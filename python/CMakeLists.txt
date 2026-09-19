@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.26)
 
-project(dolfinx_nanobind LANGUAGES CXX)
+# C is enabled as a workaround for an ADIOS2 bug, see
+# https://github.com/ornladios/ADIOS2/pull/4255. It can be dropped once
+# the minimum supported ADIOS2 contains the fix.
+project(dolfinx_nanobind LANGUAGES C CXX)
 
 find_package(
   Python
@@ -11,41 +14,34 @@ find_package(
 # Options
 include(FeatureSummary)
 
-option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
-add_feature_info(
-  ENABLE_CLANG_TIDY
-  ENABLE_CLANG_TIDY
-  "Run clang-tidy while building"
-)
-
 option(
   DOLFINX_INSTALL_RPATH_USE_LINK_PATH
-  "Add linker search paths to rpath of dolfinx target. Packagers may want
-to set FALSE."
+  "Add linker search paths to rpath of dolfinx target. Packagers may want to set to FALSE."
   TRUE
 )
 add_feature_info(
   DOLFINX_INSTALL_RPATH_USE_LINK_PATH
   DOLFINX_INSTALL_RPATH_USE_LINK_PATH
-  "Add linker search paths to rpath of dolfinx target. Packagers may want
-	to set FALSE."
+  "Add linker search paths to rpath of dolfinx target. Packagers may want to set to FALSE."
 )
-
-feature_summary(WHAT ALL)
 
 # Detect the installed nanobind package and import it into CMake
 execute_process(
   COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
   OUTPUT_STRIP_TRAILING_WHITESPACE
   OUTPUT_VARIABLE NB_DIR
+  RESULT_VARIABLE NB_COMMAND_RESULT
+  ERROR_VARIABLE NB_COMMAND_ERROR
 )
+if(NB_COMMAND_RESULT)
+  message(
+    FATAL_ERROR
+    "Could not run '${Python_EXECUTABLE} -m nanobind --cmake_dir', so the "
+    "nanobind CMake package cannot be located:\n${NB_COMMAND_ERROR}"
+  )
+endif()
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
-
-# Enabling C here is a workaround for an ADIOS2 bug, see
-# https://github.com/ornladios/ADIOS2/pull/4255. Remove when the ADIOS2
-# fix is released.
-enable_language(C)
 
 find_package(DOLFINX REQUIRED CONFIG)
 message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
@@ -64,7 +60,7 @@ get_target_property(
 if("HAS_SUPERLU_DIST" IN_LIST _dolfinx_defs)
   # SuperLU_DIST Python interface requires the superlu_defs.h header for int_t.
   find_package(PkgConfig)
-  pkg_search_module(SUPERLU_DIST OPTIONAL IMPORTED_TARGET superlu_dist)
+  pkg_search_module(SUPERLU_DIST IMPORTED_TARGET superlu_dist)
 endif()
 
 # Create the binding library nanobind handles its own calls to
@@ -108,6 +104,8 @@ if(NANOBIND_SABI)
   target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
 endif()
 
+feature_summary(WHAT ALL)
+
 include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
 
 target_compile_options(
@@ -121,16 +119,6 @@ target_compile_definitions(
     $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 target_compile_features(cpp PRIVATE cxx_std_20)
-
-if(ENABLE_CLANG_TIDY)
-  find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
-  set_target_properties(
-    cpp
-    PROPERTIES
-      CXX_CLANG_TIDY
-        "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../.clang-tidy"
-  )
-endif()
 
 # Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx::dolfinx)
