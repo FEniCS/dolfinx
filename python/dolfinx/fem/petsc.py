@@ -1235,8 +1235,8 @@ def assemble_residual(
         bcs: List of Dirichlet boundary conditions to lift the residual.
         _blocks: If block assembly is requested this should contain the
             ownership layout for each block.
-            See :func:`dolfinx.la.create_vector` for more details on the
-            format of this argument.
+            See :func:`dolfinx.fem.petsc.create_vector` for more details
+            on the format of this argument.
     """
     # Update input vector before assigning
     dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]

@@ -30,25 +30,27 @@
 // where $V$ is a suitable function space and
 //
 // \begin{align*}
-//    a(u, v) &= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
+//    a(u, v) &= \int_{\Omega} \kappa \nabla u \cdot \nabla v \, {\rm d} x, \\
 //    L(v)    &= \int_{\Omega} f v \, {\rm d} x
 //    + \int_{\Gamma_{N}} g v \, {\rm d} s.
 // \end{align*}
 //
 // The expression $a(u, v)$ is the bilinear form and $L(v)$ is the
-// linear form. It is assumed that all functions in $V$ satisfy the
-// Dirichlet boundary conditions ($u = 0 \ {\rm on} \ \Gamma_{D}$).
+// linear form, and $\kappa$ is a (constant) diffusion coefficient. It
+// is assumed that all functions in $V$ satisfy the Dirichlet boundary
+// conditions ($u = 0 \ {\rm on} \ \Gamma_{D}$).
 //
 // In this demo, we shall consider the following definitions of the
 // input functions, the domain, and the boundaries:
 //
-// * $\Omega = [0,1] \times [0,1]$ (a unit square)
-// * $\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}$
+// * $\Omega = [0,2] \times [0,1]$ (a rectangle)
+// * $\Gamma_{D} = \{(0, y) \cup (2, y) \subset \partial \Omega\}$
 // (Dirichlet boundary)
 // * $\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}$
 // (Neumann boundary)
 // * $g = \sin(5x)$ (normal derivative)
 // * $f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)$ (source term)
+// * $\kappa = 2$ (diffusion coefficient)
 //
 //
 // ## Implementation
@@ -99,10 +101,10 @@ using T = PetscScalar;
 using U = typename dolfinx::scalar_value_t<T>;
 
 // Inside the `main` function, we begin by defining a mesh of the
-// domain. As the unit square is a very standard domain, we can use a
+// domain. As a rectangle is a very standard domain, we can use a
 // built-in mesh generator provided by the
 // {cpp:func}`dolfinx::mesh::create_rectangle()` function.
-// In order to create a mesh consisting of 32 x 32 squares with each square
+// In order to create a mesh consisting of 32 x 16 squares with each square
 // divided into two triangles, and the finite element space (specified
 // in the form file) defined relative to this mesh, we do as follows:
 
@@ -194,16 +196,17 @@ int main(int argc, char* argv[])
     g->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          std::vector<T> f;
+          std::vector<T> g;
           for (std::size_t p = 0; p < x.extent(1); ++p)
-            f.push_back(std::sin(5 * x(0, p)));
-          return {f, {f.size()}};
+            g.push_back(std::sin(5 * x(0, p)));
+          return {g, {g.size()}};
         });
 
     //  Now, we have specified the variational forms and can consider
     //  the solution of the variational problem. First, we need to
-    //  define a {cpp:class}`Function` `u` to store the solution. (Upon
-    //  initialization, it is simply set to the zero function.) Next, we
+    //  define a {cpp:class}`dolfinx::fem::Function` `u` to store the
+    //  solution. (Upon initialization, it is simply set to the zero
+    //  function.) Next, we
     //  can call the `solve` function with the arguments `a == L`, `u`
     //  and `bc` as follows:
 

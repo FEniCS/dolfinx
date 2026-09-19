@@ -373,20 +373,6 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
   std::ranges::set_difference(ghost_vertex_set, local_vertex_set,
                               std::back_inserter(unowned_vertices));
 
-#ifndef NDEBUG
-  // Sanity check: no vertices in unowned should also be in boundary.
-  // Test in DEBUG mode only because of cost.
-  std::vector<std::int64_t> unowned_vertices_in_error;
-  std::ranges::set_intersection(unowned_vertices, boundary_vertices,
-                                std::back_inserter(unowned_vertices_in_error));
-
-  if (!unowned_vertices_in_error.empty())
-  {
-    throw std::runtime_error(
-        "Adding boundary vertices in ghost cells not allowed.");
-  }
-#endif
-
   return {std::move(owned_vertices), std::move(unowned_vertices)};
 }
 /// @brief Send entity indices for owned entities to processes that
@@ -728,11 +714,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 /// @brief Convert adjacency list edges from global indexing to local
 /// indexing.
 ///
-/// Nodes beyond `num_local_nodes` are discarded.
-///
 /// @param[in] g Graph with global edge indices
-/// @param[in] num_local_nodes Number of nodes to retain in the graph.
-/// Typically used to trim ghost nodes.
 /// @param[in] global_to_local Sorted array of (global, local) indices.
 /// @param[in] global_to_local_map Hash map holding the same
 /// (global, local) pairs as `global_to_local`, for O(1)-average
@@ -740,6 +722,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 /// reused for every cell type / thread, rather than rebuilt here).
 /// Unused, and may be empty, when `global_to_local` is identity (the
 /// common single-rank case).
+/// @param[in] num_threads Number of threads to use.
 std::vector<std::int32_t> convert_to_local_indexing(
     std::span<const std::int64_t> g,
     std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local,
@@ -817,6 +800,8 @@ std::vector<std::int32_t> convert_to_local_indexing(
 std::vector<std::vector<CellType>>
 build_entity_types(const std::vector<CellType>& cell_types)
 {
+  if (cell_types.empty())
+    throw std::invalid_argument("cell_types must not be empty.");
   const int tdim = cell_dim(cell_types.front());
   std::vector<std::vector<CellType>> entity_types(tdim + 1);
 
@@ -851,7 +836,6 @@ Topology::Topology(
                               : std::vector<std::vector<std::int64_t>>()),
       _entity_types(build_entity_types(cell_types))
 {
-  assert(!cell_types.empty());
   int tdim = cell_dim(cell_types.front());
 #ifndef NDEBUG
   for (auto ct : cell_types)
@@ -915,7 +899,7 @@ std::vector<std::shared_ptr<const common::IndexMap>>
 Topology::index_maps(int dim) const
 {
   std::vector<std::shared_ptr<const common::IndexMap>> maps;
-  for (std::size_t i = 0; i < _entity_types[dim].size(); ++i)
+  for (std::size_t i = 0; i < _entity_types.at(dim).size(); ++i)
   {
     auto it = _index_maps.find({dim, int(i)});
     if (it != _index_maps.end())
@@ -926,9 +910,9 @@ Topology::index_maps(int dim) const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
-  if (_entity_types[dim].size() > 1)
+  if (_entity_types.at(dim).size() > 1)
   {
-    throw std::runtime_error(
+    throw std::out_of_range(
         "Multiple index maps of this dimension. Call index_maps instead.");
   }
 
@@ -936,7 +920,7 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
       = this->index_maps(dim);
   if (im.empty())
   {
-    throw std::runtime_error(
+    throw std::out_of_range(
         std::format("Missing IndexMap in Topology. Maybe you need to "
                     "create_entities({}).",
                     dim));
@@ -984,9 +968,8 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 {
   if (auto i_map = this->index_map(this->dim() - 1);
-      !i_map
-      or (_facet_permutations.empty()
-          and (i_map->size_local() + i_map->num_ghosts() > 0)))
+      _facet_permutations.empty()
+      and (i_map->size_local() + i_map->num_ghosts() > 0))
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
@@ -1139,7 +1122,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
     std::span<const std::int64_t> boundary_vertices, int num_threads)
 {
   if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   common::Timer timer("Topology: create");
 
@@ -1159,7 +1142,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
     int num_vertices = num_cell_vertices(cell_types[i]);
     if (cells[i].size() % num_vertices != 0)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           std::format("Inconsistent number of cell vertices. Got {}, expected "
                       "multiple of {}.",
                       cells[i].size(), num_vertices));
@@ -1179,6 +1162,26 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
   // and the list of boundary vertices
   auto [owned_vertices, unowned_vertices] = vertex_ownership_groups(
       owned_cells, ghost_cells, boundary_vertices, num_threads);
+
+#ifndef NDEBUG
+  // Sanity check: no vertex should be in both unowned_vertices and
+  // boundary_vertices. O(N) and collective, guarded.
+  {
+    std::vector<std::int64_t> unowned_vertices_in_error;
+    std::ranges::set_intersection(
+        unowned_vertices, boundary_vertices,
+        std::back_inserter(unowned_vertices_in_error));
+    int failed = !unowned_vertices_in_error.empty();
+    int failed_any;
+    int ierr = MPI_Allreduce(&failed, &failed_any, 1, MPI_INT, MPI_LOR, comm);
+    dolfinx::MPI::check_error(comm, ierr);
+    if (failed_any)
+    {
+      throw std::invalid_argument(
+          "Adding boundary vertices in ghost cells not allowed.");
+    }
+  }
+#endif
 
   timer1.stop();
   timer1.flush();
@@ -1670,7 +1673,12 @@ mesh::entities_to_index(const Topology& topology, int dim,
       throw std::runtime_error("Duplicate mesh entity detected.");
   }
 
-  assert(entities.size() % num_vertices_per_entity == 0);
+  if (entities.size() % num_vertices_per_entity != 0)
+  {
+    throw std::invalid_argument(
+        "Size of entities array is not a multiple of the number of "
+        "vertices per entity.");
+  }
 
   // Iterate over all entities and find index
   std::vector<std::int32_t> indices;
@@ -1710,7 +1718,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology, CellType facet_type)
     }
   }
   if (facet_index == -1)
-    throw std::runtime_error("Cannot find facet type in topology");
+    throw std::invalid_argument("Cannot find facet type in topology");
 
   std::vector<std::vector<std::int32_t>> facet_pair_lists;
   for (std::size_t i = 0; i < cell_types.size(); ++i)
