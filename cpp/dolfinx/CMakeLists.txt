@@ -73,12 +73,6 @@ set_target_properties(
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
-include(DolfinxClangTidy)
-dolfinx_enable_clang_tidy(
-  dolfinx
-  "${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy"
-)
-
 # Add git revision and UFCx signature
 target_compile_definitions(
   dolfinx
@@ -267,7 +261,6 @@ install(
     ${PROJECT_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/FindUFCx.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxDeveloperCompilerFlags.cmake
-    ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxClangTidy.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxDemo.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxPkgConfigHelpers.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/FindParMETIS.cmake

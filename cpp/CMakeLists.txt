@@ -129,9 +129,6 @@ dolfinx_option(
   ON
 )
 
-# clang-tidy
-dolfinx_option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
-
 # ------------------------------------------------------------------------------
 # Enable or disable optional packages
 

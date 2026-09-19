@@ -3,7 +3,6 @@ indent: 2
 # formatted rather than reported as unknown.
 definitions:
   - cpp/CMakeLists.txt
-  - cpp/cmake/modules/DolfinxClangTidy.cmake
   - cpp/cmake/modules/DolfinxDemo.cmake
   - cpp/cmake/modules/DolfinxPkgConfigHelpers.cmake
   - cpp/demo/CMakeLists.txt

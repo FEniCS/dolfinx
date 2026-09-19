@@ -98,17 +98,6 @@ if(DEFINED DOLFINX_CXX_DEVELOPER_DEFINITIONS)
   )
 endif()
 
-option(ENABLE_CLANG_TIDY "Enable clang-tidy analysis" OFF)
-if(DOLFINX_DIR)
-  include("${DOLFINX_DIR}/DolfinxClangTidy.cmake")
-else()
-  include(DolfinxClangTidy)
-endif()
-dolfinx_enable_clang_tidy(
-  unittests
-  "${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy"
-)
-
 # Uncommenting line allows for debugging individual tests, but slow.
 #catch_discover_tests(unittests)
 

@@ -280,7 +280,7 @@ disclosure process.
   DOLFINx.
 - Helper modules shared with consumers of an installed DOLFINx
   (`DolfinxDemo.cmake`, `DolfinxDeveloperCompilerFlags.cmake`,
-  `DolfinxPkgConfigHelpers.cmake`, `DolfinxClangTidy.cmake`) live in
+  `DolfinxPkgConfigHelpers.cmake`) live in
   `cpp/cmake/modules/` and are installed next to `DOLFINXConfig.cmake`.
   Anything `DOLFINXConfig.cmake` needs at consume time belongs there
   rather than being duplicated into the config template.
