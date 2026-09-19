@@ -11,9 +11,11 @@
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <cmath>
 #include <concepts>
+#include <dolfinx/common/local_range.h>
 #include <limits>
 #include <numeric>
 #include <span>
+#include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <thread>
 #include <utility>
