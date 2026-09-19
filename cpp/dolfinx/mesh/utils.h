@@ -1566,6 +1566,24 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   Geometry geometry
       = create_geometry(topology, elements, nodes1, nodes2, coords, xshape[1]);
 
+#ifndef NDEBUG
+  // Nodes in `x` that no cell references are dropped silently.
+  {
+    std::int64_t num_nodes_local = xshape[0];
+    std::int64_t num_nodes = 0;
+    int err = MPI_Allreduce(&num_nodes_local, &num_nodes, 1,
+                            dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM, comm);
+    dolfinx::MPI::check_error(comm, err);
+    if (std::int64_t num_used = geometry.index_map()->size_global();
+        num_used != num_nodes and dolfinx::MPI::rank(comm) == 0)
+    {
+      spdlog::warn("{} of {} input geometry nodes are not referenced by any "
+                   "cell and have been dropped.",
+                   num_nodes - num_used, num_nodes);
+    }
+  }
+#endif
+
   return Mesh(comm, std::make_shared<Topology>(std::move(topology)),
               std::move(geometry));
 }
