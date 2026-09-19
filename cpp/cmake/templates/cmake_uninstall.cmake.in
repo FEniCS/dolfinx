@@ -1,3 +1,6 @@
+# Run standalone via `cmake -P`, so it sets its own policy level.
+cmake_minimum_required(VERSION 3.26)
+
 if(NOT EXISTS "@PROJECT_BINARY_DIR@/install_manifest.txt")
   message(
     FATAL_ERROR
@@ -6,7 +9,7 @@ if(NOT EXISTS "@PROJECT_BINARY_DIR@/install_manifest.txt")
 endif()
 
 file(STRINGS "@PROJECT_BINARY_DIR@/install_manifest.txt" files)
-foreach(file ${files})
+foreach(file IN LISTS files)
   message(STATUS "Uninstalling \"$ENV{DESTDIR}${file}\"")
   if(EXISTS "$ENV{DESTDIR}${file}" OR IS_SYMLINK "$ENV{DESTDIR}${file}")
     file(REMOVE "$ENV{DESTDIR}${file}")

@@ -29,7 +29,7 @@ C++
 - C++ compiler (supporting the C++20 standard)
 - `Basix <https://github.com/FEniCS/basix>`_ (C++ interface)
 - `Boost <https://www.boost.org>`_
-- `CMake <https://cmake.org>`_ [build dependency]
+- `CMake <https://cmake.org>`_ (3.26 or later) [build dependency]
 - HDF5 (with MPI support enabled)
 - MPI (MPI-3 or later)
 - `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ [build dependency via CMake]

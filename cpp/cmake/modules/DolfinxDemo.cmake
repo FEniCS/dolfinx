@@ -13,18 +13,6 @@
 
 include_guard(GLOBAL)
 
-# Directory holding this module, and hence the other DOLFINx CMake modules
-# beside it, both in the source tree and in the install tree. Cached
-# because CMAKE_CURRENT_LIST_DIR inside a function refers to the calling
-# file, and because include_guard(GLOBAL) means this file is parsed in
-# only one directory scope.
-set(
-  DOLFINX_CMAKE_MODULE_DIR
-  "${CMAKE_CURRENT_LIST_DIR}"
-  CACHE INTERNAL
-  "Directory containing the installed DOLFINx CMake modules"
-)
-
 include(CMakePushCheckState)
 include(CheckCXXCompilerFlag)
 include(CheckSymbolExists)
@@ -107,7 +95,13 @@ function(dolfinx_add_demo name)
   # Use the DOLFINx Developer compiler flags for Developer build types.
   # Included here rather than at module scope so that the flags land in
   # this function's scope, which is where they are used.
-  include("${DOLFINX_CMAKE_MODULE_DIR}/DolfinxDeveloperCompilerFlags.cmake")
+  # CMAKE_CURRENT_FUNCTION_LIST_DIR is the directory of the file defining
+  # this function, which holds the other DOLFINx modules in both the
+  # source and the install tree (unlike CMAKE_CURRENT_LIST_DIR, which
+  # would be the calling CMakeLists.txt).
+  include(
+    "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DolfinxDeveloperCompilerFlags.cmake"
+  )
   target_compile_options(
     ${_target}
     PRIVATE

@@ -297,7 +297,7 @@ block(
     list(APPEND PKG_REQUIRES ${SUPERLU_DIST_MODULE_NAME})
   endif()
 
-  string(REPLACE ";" " " PKG_REQUIRES "${PKG_REQUIRES}")
+  list(JOIN PKG_REQUIRES " " PKG_REQUIRES)
 
   # Get link libraries and includes
   get_target_property(
@@ -319,7 +319,7 @@ block(
   # Add imported targets to lists for creating pkg-config file
   set(PKGCONFIG_DOLFINX_LIBS)
 
-  foreach(_target ${PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES})
+  foreach(_target IN LISTS PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES)
     # Skip "$<foo...>", which we get with static libs
     if(NOT "${_target}" MATCHES "^[^<>]+$")
       continue()
@@ -367,11 +367,12 @@ block(
   list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES)
   list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_LIBS)
 
-  # Convert include dirs to -I<incdir> form
-  set(PKG_INCLUDES)
-  foreach(_inc_dir ${PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES})
-    set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
-  endforeach()
+  # Convert include dirs to -I<incdir> form. Reversed only to keep the
+  # emitted flag order the same as the accumulating loop this replaced.
+  set(PKG_INCLUDES ${PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES})
+  list(REVERSE PKG_INCLUDES)
+  list(TRANSFORM PKG_INCLUDES PREPEND "-I")
+  list(JOIN PKG_INCLUDES " " PKG_INCLUDES)
 
   # Get dolfinx definitions
   get_target_property(
@@ -379,24 +380,22 @@ block(
     dolfinx
     INTERFACE_COMPILE_DEFINITIONS
   )
-  set(PKG_DEFINITIONS)
-
-  foreach(_def ${PKG_DOLFINX_DEFINITIONS})
-    set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
-  endforeach()
+  set(PKG_DEFINITIONS ${PKG_DOLFINX_DEFINITIONS})
+  list(TRANSFORM PKG_DEFINITIONS PREPEND "-D")
+  list(JOIN PKG_DEFINITIONS " " PKG_DEFINITIONS)
 
   # Convert compiler flags and definitions into space separated strings
   string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
   string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 
   # Convert libraries to -L<libdir> -l<lib> form
-  foreach(_lib ${PKGCONFIG_DOLFINX_LIBS})
+  foreach(_lib IN LISTS PKGCONFIG_DOLFINX_LIBS)
     # Add -Wl,option directives
     if("${_lib}" MATCHES "-Wl,[^ ]*")
       set(PKG_LINKFLAGS "${_lib} ${PKG_LINKFLAGS}")
     else()
-      get_filename_component(_path ${_lib} DIRECTORY)
-      get_filename_component(_name ${_lib} NAME_WE)
+      cmake_path(GET _lib PARENT_PATH _path)
+      cmake_path(GET _lib STEM _name)
       string(REGEX REPLACE "^lib" "" _name "${_name}")
 
       # Add libraries that matches the form -L<libdir> -l<lib>
@@ -409,7 +408,7 @@ block(
   # Remove duplicated link flags
   separate_arguments(PKG_LINKFLAGS)
   list(REMOVE_DUPLICATES PKG_LINKFLAGS)
-  string(REPLACE ";" " " PKG_LINKFLAGS "${PKG_LINKFLAGS}")
+  list(JOIN PKG_LINKFLAGS " " PKG_LINKFLAGS)
 
   # Boost include dir (used as pkg-config variable)
   get_target_property(
