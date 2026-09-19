@@ -423,7 +423,7 @@ if(DOLFINX_ENABLE_PETSC)
   endif()
 endif()
 
-if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
+if(DOLFINX_ENABLE_SLEPC AND TARGET PkgConfig::PETSC)
   find_package(PkgConfig REQUIRED)
   if(DOLFINX_SLEPC_PYTHON)
     dolfinx_python_prefix_hint(slepc SLEPC_DIR)
@@ -442,7 +442,7 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
   endif()
-elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
+elseif(_REQUIRE_SLEPC AND NOT TARGET PkgConfig::PETSC)
   message(
     FATAL_ERROR
     "SLEPc required, but not configured because PETSc was not found."
@@ -508,7 +508,11 @@ endif()
 feature_summary(WHAT ALL)
 
 # Check that at least one graph partitioner has been found
-if(NOT SCOTCH_FOUND AND NOT ParMETIS_FOUND AND NOT KaHIP_FOUND)
+if(
+  NOT TARGET SCOTCH::ptscotch
+  AND NOT TARGET ParMETIS::ParMETIS
+  AND NOT TARGET KaHIP::KaHIP
+)
   message(
     FATAL_ERROR
     "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required."

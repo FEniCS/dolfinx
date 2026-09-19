@@ -144,8 +144,7 @@ target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 # Optional packages
 
 # ADIOS2
-if(ADIOS2_FOUND)
-  target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
+if(DOLFINX_ENABLE_ADIOS2 AND ADIOS2_FOUND)
   # ADIOS2 2.11 and later
   if(TARGET adios2::cxx_mpi)
     set(_adios2_mpi_target adios2::cxx_mpi)
@@ -156,22 +155,23 @@ if(ADIOS2_FOUND)
     message(FATAL_ERROR "ADIOS2 found, but no adios2::cxx*_mpi target found.")
   endif()
   target_link_libraries(dolfinx PUBLIC ${_adios2_mpi_target})
+  target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
 endif()
 
 # PETSc
-if(DOLFINX_ENABLE_PETSC AND PETSC_FOUND)
+if(DOLFINX_ENABLE_PETSC AND TARGET PkgConfig::PETSC)
   target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)
   target_compile_definitions(dolfinx PUBLIC HAS_PETSC)
 endif()
 
 # SLEPC
-if(DOLFINX_ENABLE_SLEPC AND SLEPC_FOUND)
+if(DOLFINX_ENABLE_SLEPC AND TARGET PkgConfig::SLEPC)
   target_link_libraries(dolfinx PUBLIC PkgConfig::SLEPC)
   target_compile_definitions(dolfinx PUBLIC HAS_SLEPC)
 endif()
 
 # SCOTCH
-if(DOLFINX_ENABLE_SCOTCH AND SCOTCH_FOUND)
+if(DOLFINX_ENABLE_SCOTCH AND TARGET SCOTCH::ptscotch)
   target_compile_definitions(dolfinx PUBLIC HAS_PTSCOTCH)
   target_link_libraries(dolfinx PRIVATE SCOTCH::ptscotch)
   if(TARGET SCOTCH::scotcherr)
@@ -180,19 +180,19 @@ if(DOLFINX_ENABLE_SCOTCH AND SCOTCH_FOUND)
 endif()
 
 # ParMETIS
-if(DOLFINX_ENABLE_PARMETIS AND ParMETIS_FOUND)
+if(DOLFINX_ENABLE_PARMETIS AND TARGET ParMETIS::ParMETIS)
   target_compile_definitions(dolfinx PUBLIC HAS_PARMETIS)
   target_link_libraries(dolfinx PRIVATE ParMETIS::ParMETIS)
 endif()
 
 # KaHIP
-if(DOLFINX_ENABLE_KAHIP AND KaHIP_FOUND)
+if(DOLFINX_ENABLE_KAHIP AND TARGET KaHIP::KaHIP)
   target_compile_definitions(dolfinx PUBLIC HAS_KAHIP)
   target_link_libraries(dolfinx PRIVATE KaHIP::KaHIP)
 endif()
 
 # SuperLU_DIST
-if(DOLFINX_ENABLE_SUPERLU_DIST AND SUPERLU_DIST_FOUND)
+if(DOLFINX_ENABLE_SUPERLU_DIST AND TARGET PkgConfig::SUPERLU_DIST)
   target_compile_definitions(dolfinx PUBLIC HAS_SUPERLU_DIST)
   target_link_libraries(dolfinx PRIVATE PkgConfig::SUPERLU_DIST)
 endif()
