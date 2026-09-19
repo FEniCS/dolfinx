@@ -7,7 +7,6 @@
 #pragma once
 
 #include "cells.h"
-#include "vtk_utils.h"
 #include <algorithm>
 #include <array>
 #include <basix/mdspan.hpp>
