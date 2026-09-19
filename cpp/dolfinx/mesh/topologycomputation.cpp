@@ -40,14 +40,14 @@ namespace
 ///
 /// This code is thread-safe.
 ///
-/// @param[in] c0 Starting cell index.
-/// @param[in] num_cells Number of cells to process.
-/// @param[in,out] entity_list
+/// @param[in,out] entity_list Flattened output array to write entity
+/// vertices into.
 /// @param[in] entity_offset Global index of the first entity this call
 /// writes into `entity_list_sorted`.
 /// @param[in,out] entity_list_sorted Sorted-key columns (column-major,
 /// one span per vertex), written at rows `entity_offset` onwards.
-/// @param[in] cells Cell-to-vertex connectivity.
+/// @param[in] cells Cell-to-vertex connectivity, flattened.
+/// @param[in] num_cell_vertices Number of vertices per cell.
 /// @param[in] e_vertices Entity-to-vertices, where
 /// `e_vertices.links(e)[i]` is the `i`th local (to the cell) vertex
 /// index for entity `e`.
@@ -320,12 +320,12 @@ int get_ownership(const U& processes, const V& vertices)
 /// entity.
 ///
 /// @param[in] comm MPI Communicator
-/// @param[in] cell_map Index map for cell distribution
 /// @param[in] vertex_map Index map for vertex distribution
 /// @param[in] entity_list List of entities, each entity represented by
 /// its local vertex indices
 /// @param[in] num_vertices_per_e Number of vertices per entity
-/// @param[in] num_entities_per_cell Number of entities per cell
+/// @param[in] ghost_status Ownership/ghost status of each row in
+/// `entity_list`
 /// @param[in] entity_index Initial numbering for each row in
 /// `entity_list`
 /// @returns Local indices, the index map and shared entities
@@ -726,12 +726,13 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
 /// Compute entities of dimension d
 ///
-/// @param[in] comm MPI communicator (TODO: full or neighbor
-/// hood?)
-/// @param[in] cells Adjacency list for cell-vertex connectivity
-/// @param[in] shared_vertices TODO
-/// @param[in] cell_type Cell type
+/// @param[in] comm Full topology communicator.
+/// @param[in] cell_lists For each cell type: cell-vertex connectivity
+/// (flattened), and the index map for the cell distribution.
+/// @param[in] vertex_index_map Index map for the vertex distribution.
+/// @param[in] entity_type Type of entity to compute.
 /// @param[in] dim Topological dimension of the entities to be computed
+/// @param[in] num_threads Number of threads to use.
 /// @return Returns the (cell-entity connectivity, entity-vertex
 /// connectivity, index map for the entity distribution across
 /// processes, shared entities)
@@ -1022,8 +1023,7 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
 /// Compute the d0 -> d1 connectivity, where d0 > d1
 ///
 /// @param[in] c_d0_0 The d0 -> 0 (entity (d0) to vertex) connectivity
-/// @param[in] c_d0_0 The d1 -> 0 (entity (d1) to vertex) connectivity
-/// @param[in] cell_type_d0 The cell type for entities of dimension d0
+/// @param[in] c_d1_0 The d1 -> 0 (entity (d1) to vertex) connectivity
 /// @return The d0 -> d1 connectivity
 graph::AdjacencyList<std::int32_t>
 compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
@@ -1086,7 +1086,7 @@ mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
                        int num_threads)
 {
   if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   spdlog::info("Computing mesh entities of dimension {}", dim);
 
@@ -1256,6 +1256,7 @@ mesh::compute_connectivity(const Topology& topology, std::array<int, 2> d0,
     return {c_d0_d1, nullptr};
   }
   else
-    throw std::runtime_error("Entity dimension error when computing topology.");
+    throw std::invalid_argument(
+        "Entity dimension error when computing topology.");
 }
 //--------------------------------------------------------------------------
