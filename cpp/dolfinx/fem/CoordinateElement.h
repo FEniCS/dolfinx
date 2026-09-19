@@ -1,4 +1,5 @@
-// Copyright (C) 2018-2020 Garth N. Wells and Chris N. Richardson
+// Copyright (C) 2018-2026 Garth N. Wells, Chris N. Richardson and Jørgen S.
+// Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -287,6 +288,17 @@ public:
   /// @brief Check if geometry map is affine.
   /// @return True if geometry map is affine, false otherwise.
   bool is_affine() const noexcept { return _is_affine; }
+
+  /// @brief Check if the element is the discontinuous version of the
+  /// coordinate element.
+  ///
+  /// A discontinuous coordinate element associates all of its
+  /// degrees-of-freedom with the cell, so coordinate nodes are not
+  /// shared between cells and the geometry may be discontinuous across
+  /// cell facets.
+  ///
+  /// @return True if the element is discontinuous, false otherwise.
+  bool is_discontinuous() const;
 
 private:
   // Flag denoting affine map

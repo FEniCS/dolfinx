@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2021 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta
+// Copyright (C) 2018-2026 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -237,6 +237,13 @@ std::uint64_t CoordinateElement<T>::hash() const
 {
   assert(_element);
   return _element->hash();
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+bool CoordinateElement<T>::is_discontinuous() const
+{
+  assert(_element);
+  return _element->discontinuous();
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

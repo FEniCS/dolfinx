@@ -13,10 +13,18 @@ import numpy as np
 import pytest
 
 import ufl
-from basix import LatticeType, create_lattice
+from basix import CellType as BasixCellType
+from basix import (
+    DPCVariant,
+    ElementFamily,
+    LagrangeVariant,
+    LatticeType,
+    create_element,
+    create_lattice,
+)
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import functionspace, transpose_dofmap
+from dolfinx.fem import coordinate_element, functionspace, transpose_dofmap
 from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (
     CellType,
@@ -497,6 +505,44 @@ def test_push_forward_pull_back(gdim: int, is_affine: bool):
         x_pullback = mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)
         tol = np.sqrt(np.finfo(dtype).eps)
         assert np.allclose(x_pullback, ref_point, rtol=tol, atol=tol)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("degree", [1, 2])
+def test_discontinuous_coordinate_element(dtype, degree):
+    """A discontinuous coordinate element maps a single cell as usual."""
+    cmap = coordinate_element(
+        create_element(
+            ElementFamily.P,
+            BasixCellType.triangle,
+            degree,
+            LagrangeVariant.gll_isaac,
+            DPCVariant.unset,
+            True,
+            dtype=dtype,
+        )
+    )
+    assert cmap.is_discontinuous
+    assert cmap.degree == degree
+    assert cmap.dim == (degree + 1) * (degree + 2) // 2
+
+    # All degrees-of-freedom are attached to the cell, none to its
+    # sub-entities
+    layout = cmap.create_dof_layout()
+    assert layout.num_dofs == cmap.dim
+    assert layout.entity_dofs(0, 0) == []
+    assert layout.entity_dofs(1, 0) == []
+    assert len(layout.entity_dofs(2, 0)) == cmap.dim
+
+    # Push forward reference points to a (curved, for degree 2) cell and
+    # pull them back again
+    cell_x = np.array([[0.0, 0.0], [2.0, 0.0], [0.0, 1.0]], dtype=dtype)
+    if degree == 2:
+        cell_x = np.vstack([cell_x, [[1.1, -0.1], [0.0, 0.5], [1.0, 0.5]]]).astype(dtype)
+    X = np.array([[0.25, 0.25], [0.5, 0.5], [0.0, 1.0]], dtype=dtype)
+    x = cmap.push_forward(X, cell_x)
+    tol = np.sqrt(np.finfo(dtype).eps)
+    np.testing.assert_allclose(cmap.pull_back(x, cell_x), X, atol=tol)
 
 
 @pytest.mark.parametrize("gdim", [2, 3])
