@@ -9,7 +9,7 @@
 #include <basix/finite-element.h>
 
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/utils.h>
+#include <dolfinx/fem/functionspace_factory.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
 

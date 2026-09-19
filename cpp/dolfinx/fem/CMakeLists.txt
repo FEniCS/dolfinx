@@ -36,11 +36,17 @@ target_sources(
         dofmapbuilder.h
         dolfinx_fem.h
         expression_evaluate.h
+        expression_factory.h
+        form_factory.h
+        functionspace_factory.h
+        integration_domains.h
         interpolate.h
+        interpolate_geometry.h
         kernel.h
         pack.h
         petsc.h
         sparsitybuild.h
+        sparsitypattern.h
         traits.h
         utils.h
 )
