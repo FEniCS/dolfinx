@@ -276,24 +276,6 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
     // Pack ghosts indices
     std::vector<std::vector<std::int64_t>> send_data(src.size());
     std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
-    {
-      // Reserve each bucket before packing ghosts.
-      std::vector<std::size_t> counts(src.size(), 0);
-      for (std::size_t i = 0; i < ghosts.size(); ++i)
-      {
-        if (include_ghost[i])
-        {
-          auto it = std::ranges::lower_bound(src, owners[i]);
-          assert(it != src.end() and *it == owners[i]);
-          ++counts[std::ranges::distance(src.begin(), it)];
-        }
-      }
-      for (std::size_t r = 0; r < src.size(); ++r)
-      {
-        send_data[r].reserve(counts[r]);
-        pos_to_ghost[r].reserve(counts[r]);
-      }
-    }
     for (std::size_t i = 0; i < ghosts.size(); ++i)
     {
       auto it = std::ranges::lower_bound(src, owners[i]);
@@ -844,21 +826,6 @@ common::stack_index_maps(
     {
       std::vector<std::vector<std::int64_t>> ghost_by_rank(src.size());
       std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
-      {
-        // Reserve each bucket before packing ghosts.
-        std::vector<std::size_t> counts(src.size(), 0);
-        for (std::size_t i = 0; i < ghosts.size(); ++i)
-        {
-          auto it = std::ranges::lower_bound(src, owners[i]);
-          assert(it != src.end() and *it == owners[i]);
-          ++counts[std::ranges::distance(src.begin(), it)];
-        }
-        for (std::size_t r = 0; r < src.size(); ++r)
-        {
-          ghost_by_rank[r].reserve(counts[r]);
-          pos_to_ghost[r].reserve(counts[r]);
-        }
-      }
       for (std::size_t i = 0; i < ghosts.size(); ++i)
       {
         auto it = std::ranges::lower_bound(src, owners[i]);
@@ -1274,24 +1241,6 @@ IndexMap::index_to_dest_ranks(int tag) const
     {
       const int mpi_rank = dolfinx::MPI::rank(_comm.comm());
       std::vector<std::vector<std::int64_t>> dest_idx_to_rank(dest.size());
-      {
-        // Reserve each destination bucket before packing entries.
-        std::vector<std::size_t> counts(dest.size(), 0);
-        for (std::size_t n = 0; n < offsets.size() - 1; ++n)
-        {
-          std::span<const std::int32_t> ranks(data.data() + offsets[n],
-                                              offsets[n + 1] - offsets[n]);
-          for (auto r0 : ranks)
-          {
-            for (auto r : ranks)
-              if (r0 != r)
-                counts[r0] += 2;
-            counts[r0] += 2;
-          }
-        }
-        for (std::size_t r0 = 0; r0 < dest_idx_to_rank.size(); ++r0)
-          dest_idx_to_rank[r0].reserve(counts[r0]);
-      }
       for (std::size_t n = 0; n < offsets.size() - 1; ++n)
       {
         std::span<const std::int32_t> ranks(data.data() + offsets[n],
