@@ -6,10 +6,8 @@
 
 #pragma once
 
-#include "Expression.h"
-#include "FunctionSpace.h"
+#include "FiniteElement.h"
 #include "traits.h"
-#include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
 #include <dolfinx/common/IndexMap.h>

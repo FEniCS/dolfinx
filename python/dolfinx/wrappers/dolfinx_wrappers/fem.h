@@ -23,6 +23,7 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/dofmapbuilder.h>
+#include <dolfinx/fem/expression_evaluate.h>
 #include <dolfinx/fem/interpolate.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
@@ -735,11 +736,11 @@ void declare_objects(nb::module_& m, std::string type)
           {
             auto span = [](auto& x) { return std::span(x.data(), x.size()); };
             if (!cells0.has_value() and !cells1.has_value())
-              self.interpolate(e0);
+              dolfinx::fem::interpolate(self, e0);
             else if (cells0.has_value() and !cells1.has_value())
-              self.interpolate(e0, span(*cells0));
+              dolfinx::fem::interpolate(self, e0, span(*cells0));
             else if (cells0.has_value() and cells1.has_value())
-              self.interpolate(e0, span(*cells0), span(*cells1));
+              dolfinx::fem::interpolate(self, span(*cells1), e0, span(*cells0));
             else
             {
               throw std::runtime_error(
