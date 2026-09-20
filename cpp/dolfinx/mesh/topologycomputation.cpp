@@ -303,9 +303,12 @@ int get_ownership(const U& processes, const V& vertices)
     h ^= static_cast<std::uint64_t>(v);
     h *= 0x100000001b3ULL; // FNV-1a prime
   }
-  std::vector<int> p(processes.begin(), processes.end());
-  int index = static_cast<int>(h % p.size());
-  int owner = p[index];
+  // Index directly into the (already contiguous/sized) input range,
+  // rather than copying it into a fresh vector -- this function is
+  // called once per shared entity, so up to millions of times for a
+  // large, highly-ghosted mesh.
+  int index = static_cast<int>(h % processes.size());
+  int owner = processes[index];
   return owner;
 }
 //-----------------------------------------------------------------------------
