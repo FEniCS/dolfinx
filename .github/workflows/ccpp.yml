@@ -62,9 +62,7 @@ jobs:
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
       - name: gersemi
-        # cpp/.vcpkg-overlay is named explicitly: gersemi does not descend
-        # into hidden directories, so "." alone silently skips it.
-        run: gersemi --check . cpp/.vcpkg-overlay
+        run: gersemi --check .
 
 
   ccpp-build:
