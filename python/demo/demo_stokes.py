@@ -217,9 +217,8 @@ a_p11 = form(a_p11_ufl)
 a_p: list[list[Form | None]] = form(a_p_ufl)  # type: ignore[assignment]
 
 # Around 40% of this operator's element-tensor entries are identically
-# zero. `MAT_IGNORE_ZERO_ENTRIES` makes PETSc discard a zero value
-# before it searches the row for that entry's location, so those entries
-# are never created and the operator is smaller to store and to apply.
+# zero. `MAT_IGNORE_ZERO_ENTRIES` prevents most exact-zero additions from
+# creating an entry, so the operator is smaller to store and to apply.
 #
 # The option is set *before* assembly below, which is safe only because
 # each of these matrices is assembled once and then solved with. An

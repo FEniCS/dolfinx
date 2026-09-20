@@ -10,6 +10,7 @@
 #ifdef HAS_PETSC
 
 #include "Vector.h"
+#include <array>
 #include <cassert>
 #include <cstdint>
 #include <dolfinx/common/petsc.h>
@@ -125,13 +126,13 @@ void scatter_local_vectors(
 /// reserved for each row's non-zeros, but an entry does not exist until
 /// a value is inserted into it.
 ///
-/// @note Repeated re-assembly of a matrix with a fixed pattern can be
-/// made substantially faster by enabling `MAT_IGNORE_ZERO_ENTRIES`,
-/// which makes `MatSetValues` discard an added value that is exactly
-/// zero *before* binary-searching the row for that entry's location.
-/// Those searches dominate re-assembly, and element tensors are often
-/// substantially zero. Adding zero cannot change a matrix, so the
-/// assembled result is unchanged.
+/// @note For matrix types that support `MAT_IGNORE_ZERO_ENTRIES`
+/// (`MATAIJ`, `MATSELL`, and `MATIS`), repeated re-assembly with a fixed
+/// insertion pattern can be substantially faster when the option is
+/// enabled. It prevents most exact-zero additions from creating or
+/// searching for an entry. A zero on the locally owned diagonal is
+/// retained. Adding zero cannot change a matrix, so the assembled result
+/// is unchanged.
 ///
 /// How much this saves is a property of the problem and worth measuring
 /// first, because the zeros have two quite different origins. Those
@@ -157,17 +158,19 @@ void scatter_local_vectors(
 ///   MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
 ///   // subsequent MatZeroEntries + re-assembly skip zero insertions
 /// @endcode
-/// The first assembly writes every entry of `sp`, including those that
-/// are zero, and `MatAssemblyEnd` only reclaims unused preallocated
-/// space -- it does not discard stored zeros. `MAT_KEEP_NONZERO_PATTERN`,
-/// set here, then preserves the pattern across `MatZeroEntries`.
+/// The first assembly creates every location that it inserts, including
+/// those receiving only zero values, and `MatAssemblyEnd` does not
+/// discard stored zeros. `MatZeroEntries` always preserves the sparse
+/// pattern; this is independent of `MAT_KEEP_NONZERO_PATTERN`, which is
+/// set here for `MatZeroRows`.
 ///
-/// Enabling it before the first assembly instead means an entry that is
-/// zero then is never created at all, leaving the matrix with a smaller
-/// non-zero pattern than `sp` describes. That is a bug for a matrix that
-/// is re-assembled -- nothing appears wrong, because the missing entries
-/// are zero, until a later assembly produces a non-zero at one of them
-/// and `MAT_NEW_NONZERO_ALLOCATION_ERR` (set here) raises an error.
+/// Enabling it before the first assembly instead means most
+/// off-diagonal entries that are zero then are never created, leaving
+/// the matrix with a smaller non-zero pattern than `sp` describes. That
+/// is a bug for a matrix that is re-assembled -- nothing appears wrong,
+/// because the missing entries are zero, until a later assembly produces
+/// a non-zero at one of them and `MAT_NEW_NONZERO_ALLOCATION_ERR` (set
+/// here) raises an error.
 ///
 /// For a matrix that is assembled once and then solved with, it is
 /// instead a deliberate optimisation: the dropped entries are never
