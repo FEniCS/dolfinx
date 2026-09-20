@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2020 Garth N. Wells
+// Copyright (C) 2007-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <dolfinx/common/MPI.h>
 #include <memory>
 #include <span>
@@ -64,6 +65,11 @@ public:
 
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
+
+  /// @brief Reserve storage for additional insertions.
+  /// @param[in] num_entries Expected number of (row, column) entries,
+  /// including duplicates, to insert in addition to those already cached.
+  void reserve(std::size_t num_entries);
 
   /// @brief Insert non-zero locations using local (process-wise)
   /// indices.
