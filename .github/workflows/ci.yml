@@ -210,16 +210,10 @@ jobs:
           ctest --output-on-failure -R "demo_.*_np_1"
           ctest --output-on-failure -R "demo_.*_np_2"
 
-      # A static build is the only configuration in which the PRIVATE
-      # dependencies -- the graph partitioners and SuperLU_DIST -- appear
-      # in the exported link interface, so it is the only one that
-      # exercises the find_dependency() calls DOLFINXConfig.cmake makes
-      # for them. Without those, configuring a consumer fails with
-      # "target SCOTCH::ptscotch not found" or similar.
-      #
-      # Run on a single leg: this is a second, from-source build of the
-      # C++ library. This one is chosen because its PETSc variant brings
-      # in all of ptscotch, parmetis and superlu-dist.
+      # Only a static build puts the PRIVATE dependencies in the exported
+      # link interface, so only this exercises the find_dependency() calls
+      # DOLFINXConfig.cmake makes for them. One leg is enough; this one has
+      # ptscotch, parmetis and superlu-dist.
       - name: Build and consume DOLFINx as a static library
         if: >-
           ${{ matrix.petsc && matrix.mpi == 'openmpi'
@@ -233,8 +227,7 @@ jobs:
             -B build/static -S dolfinx-src/cpp/
           cmake --build build/static
           cmake --install build/static
-          # Fail loudly if BUILD_SHARED_LIBS was somehow ignored, which
-          # would make the rest of this step test the shared path again.
+          # Fail loudly if BUILD_SHARED_LIBS was ignored.
           test -n "$(find static-install -name libdolfinx.a -print -quit)"
           # Configuring the consumer is the actual test.
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer \
