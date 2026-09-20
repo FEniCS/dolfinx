@@ -8,6 +8,7 @@
 
 #include <array>
 #include <basix/mdspan.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Topology.h>
@@ -434,7 +435,9 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
 
-    std::map<std::int64_t, std::int32_t> input_idx_to_vertex;
+    // Map input node indices to local vertices.
+    boost::unordered_flat_map<std::int64_t, std::int32_t> input_idx_to_vertex;
+    input_idx_to_vertex.reserve(c_to_v->num_nodes() * cell_vertex_dofs.size());
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
       auto vertices = c_to_v->links(c);
@@ -446,6 +449,8 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
 
     std::vector<std::int32_t> local_entities;
     std::vector<T> local_data;
+    local_entities.reserve(entities_data.extent(0) * entities_data.extent(1));
+    local_data.reserve(entities_data.extent(0));
     std::vector<std::int32_t> entity(entities_data.extent(1));
     for (std::size_t e = 0; e < entities_data.extent(0); ++e)
     {
