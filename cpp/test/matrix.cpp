@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Igor A. Baratta
+// Copyright (C) 2022-2026 Igor A. Baratta and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -171,6 +171,25 @@ void test_matrix()
   CHECK(Adense(4, to_global_col(4)) != Aref(4, to_global_col(4)));
 }
 
+void test_sparsity_pattern_common_index_map()
+{
+  // A sparsity pattern built from the same IndexMap for both rows and
+  // columns should keep that same IndexMap object for both after
+  // finalize() when no new ghost columns are discovered (the common
+  // case for a symmetric, square operator from a single
+  // FunctionSpace). This lets callers such as la::petsc::create_matrix
+  // build a single shared PETSc ISLocalToGlobalMapping for row and
+  // column, avoiding a redundant column index translation on the
+  // assembly hot path.
+  auto map0 = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);
+  la::SparsityPattern p(MPI_COMM_SELF, {map0, map0}, {1, 1});
+  p.insert(0, 0);
+  p.insert(4, 5);
+  p.insert(5, 4);
+  p.finalize();
+  CHECK(p.index_map(0) == p.index_map(1));
+}
+
 } // namespace
 
 TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
@@ -179,4 +198,5 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_matrix_apply());
   CHECK_NOTHROW(test_matrix_norm());
   CHECK_NOTHROW(test_matrix_cast());
+  CHECK_NOTHROW(test_sparsity_pattern_common_index_map());
 }

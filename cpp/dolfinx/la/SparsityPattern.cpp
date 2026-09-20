@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2021 Garth N. Wells
+// Copyright (C) 2007-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -480,14 +480,25 @@ void SparsityPattern::finalize()
 
   _edges.shrink_to_fit();
 
-  // Column count increased due to received rows from other processes
-  spdlog::debug("Column ghost size increased from {} to {}",
-                _index_maps[1]->ghosts().size(), _col_ghosts.size());
-
-  // Update to new column index map
-  _index_maps[1] = std::make_shared<common::IndexMap>(
-      _comm.comm(), _index_maps[1]->size_local(), _col_ghosts,
-      _col_ghost_owners);
+  // _col_ghosts started as a copy of _index_maps[1]->ghosts() and only
+  // ever grew (new ghost columns discovered from received off-process
+  // rows are appended, never reordering or replacing existing entries),
+  // so an unchanged size means _col_ghosts/_col_ghost_owners are
+  // identical to the existing column IndexMap's ghosts/owners. Skip
+  // rebuilding it in that case: besides avoiding pointless work, this
+  // preserves reference equality between the row and column IndexMaps
+  // for a square, symmetric sparsity pattern (e.g. built from a single
+  // FunctionSpace), which la::petsc::create_matrix relies on to avoid a
+  // redundant column index translation when assembling into a PETSc
+  // matrix.
+  if (_col_ghosts.size() != _index_maps[1]->ghosts().size())
+  {
+    spdlog::debug("Column ghost size increased from {} to {}",
+                  _index_maps[1]->ghosts().size(), _col_ghosts.size());
+    _index_maps[1] = std::make_shared<common::IndexMap>(
+        _comm.comm(), _index_maps[1]->size_local(), _col_ghosts,
+        _col_ghost_owners);
+  }
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const
