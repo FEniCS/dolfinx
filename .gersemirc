@@ -1,8 +1,8 @@
 indent: 2
-# Teach gersemi about the project's own commands so that calls to them are
-# formatted rather than reported as unknown.
+# Directories scanned for the project's own command definitions, so that
+# calls to them are formatted rather than reported as unknown. Listing
+# directories rather than files means a new definition is picked up
+# without updating this file.
 definitions:
-  - cpp/CMakeLists.txt
-  - cpp/cmake/modules/DolfinxDemo.cmake
-  - cpp/cmake/modules/DolfinxPkgConfigHelpers.cmake
-  - cpp/demo/CMakeLists.txt
+  - cpp/
+  - python/
