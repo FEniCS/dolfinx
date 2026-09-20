@@ -106,10 +106,7 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const std::int32_t* dmap_ptr = dmap.data_handle();
 
-  // Use x_dofmap's static extent directly when known, so
-  // num_x_dofs_cell is a genuine compile-time constant (e.g. enabling
-  // the loop below to be fully unrolled) rather than relying on the
-  // optimiser folding x_dofmap.extent(1) through inlining.
+  // Use a static geometry-dof count when available.
   constexpr std::size_t x_dofmap_static_extent1
       = static_extent1<decltype(x_dofmap)>();
   const std::int32_t num_x_dofs_cell
@@ -228,10 +225,7 @@ void assemble_entities(
   const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
 
-  // Use x_dofmap's static extent directly when known, so
-  // num_x_dofs_cell is a genuine compile-time constant (e.g. enabling
-  // the loop below to be fully unrolled) rather than relying on the
-  // optimiser folding x_dofmap.extent(1) through inlining.
+  // Use a static geometry-dof count when available.
   constexpr std::size_t x_dofmap_static_extent1
       = static_extent1<decltype(x_dofmap)>();
   const std::int32_t num_x_dofs_cell
@@ -353,10 +347,7 @@ void assemble_interior_facets(
   const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
 
-  // Use x_dofmap's static extent directly when known, so
-  // num_x_dofs_cell is a genuine compile-time constant (e.g. enabling
-  // the loop below to be fully unrolled) rather than relying on the
-  // optimiser folding x_dofmap.extent(1) through inlining.
+  // Use a static geometry-dof count when available.
   constexpr std::size_t x_dofmap_static_extent1
       = static_extent1<decltype(x_dofmap)>();
   const std::int32_t num_x_dofs_cell
