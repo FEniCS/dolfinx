@@ -92,8 +92,20 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
   auto be = be_b.first(bs * dmap.extent(1));
 
   const U* x_ptr = x.data_handle();
+  const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const std::int32_t* dmap_ptr = dmap.data_handle();
+
+  // Use x_dofmap's static extent directly when known, so
+  // num_x_dofs_cell is a genuine compile-time constant (e.g. enabling
+  // the loop below to be fully unrolled) rather than relying on the
+  // optimiser folding x_dofmap.extent(1) through inlining.
+  constexpr std::size_t x_dofmap_static_extent1
+      = std::remove_cvref_t<decltype(x_dofmap)>::static_extent(1);
+  const std::int32_t num_x_dofs_cell
+      = x_dofmap_static_extent1 != md::dynamic_extent
+            ? static_cast<std::int32_t>(x_dofmap_static_extent1)
+            : static_cast<std::int32_t>(x_dofmap.extent(1));
 
   // P0 does not change across cells in this call, so whether it is a
   // set (non-null) transform is loop-invariant -- checked once here
@@ -111,13 +123,10 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
     std::int32_t c0 = cells0[index];
 
     // Get cell coordinates/geometry
-    for (std::size_t i = 0; i < x_dofmap.extent(1); ++i)
+    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
     {
-      const U* _x_ptr
-          = x_ptr + x_dofmap_ptr[c * x_dofmap.extent(1) + i] * x.extent(1);
-      U* cdofs = cdofs_b.data() + 3 * i;
-      for (std::size_t j = 0; j < x.extent(1); ++j)
-        cdofs[j] = _x_ptr[j];
+      const U* _x_ptr = x_ptr + x_dofmap_ptr[c * num_x_dofs_cell + i] * gdim;
+      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
     }
 
     // Tabulate vector for cell
@@ -208,7 +217,17 @@ void assemble_entities(
   const U* x_ptr = x.data_handle();
   const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+
+  // Use x_dofmap's static extent directly when known, so
+  // num_x_dofs_cell is a genuine compile-time constant (e.g. enabling
+  // the loop below to be fully unrolled) rather than relying on the
+  // optimiser folding x_dofmap.extent(1) through inlining.
+  constexpr std::size_t x_dofmap_static_extent1
+      = std::remove_cvref_t<decltype(x_dofmap)>::static_extent(1);
+  const std::int32_t num_x_dofs_cell
+      = x_dofmap_static_extent1 != md::dynamic_extent
+            ? static_cast<std::int32_t>(x_dofmap_static_extent1)
+            : static_cast<std::int32_t>(x_dofmap.extent(1));
   const std::int32_t* dmap_ptr = dmap.data_handle();
 
   // P0 does not change across entities in this call, so whether it is a
@@ -323,7 +342,17 @@ void assemble_interior_facets(
   const U* x_ptr = x.data_handle();
   const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+
+  // Use x_dofmap's static extent directly when known, so
+  // num_x_dofs_cell is a genuine compile-time constant (e.g. enabling
+  // the loop below to be fully unrolled) rather than relying on the
+  // optimiser folding x_dofmap.extent(1) through inlining.
+  constexpr std::size_t x_dofmap_static_extent1
+      = std::remove_cvref_t<decltype(x_dofmap)>::static_extent(1);
+  const std::int32_t num_x_dofs_cell
+      = x_dofmap_static_extent1 != md::dynamic_extent
+            ? static_cast<std::int32_t>(x_dofmap_static_extent1)
+            : static_cast<std::int32_t>(x_dofmap.extent(1));
 
   // P0 does not change across facets in this call, so whether it is a
   // set (non-null) transform is loop-invariant -- checked once here rather
