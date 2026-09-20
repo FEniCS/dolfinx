@@ -359,7 +359,7 @@ stokes_problem = LinearProblem(
 # with a convective term that depends on the previous velocity, so an
 # entry that is zero initially can become non-zero later, which would
 # raise an error once the entry no longer exists.
-stokes_problem.A.setOption(PETSc.Mat.Option.IGNORE_ZERO_ENTRIES, True)
+stokes_problem.A.setOption(PETSc.Mat.Option.IGNORE_ZERO_ENTRIES, True)  # type: ignore[arg-type]
 
 try:
     stokes_problem.solve()
