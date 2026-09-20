@@ -241,7 +241,7 @@ executable_prefixes = dict(demo="demo_")
 main_file_names = dict(demo=set(["main.cpp"]))
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)
-exclude_projects = []
+exclude_projects = ["custom_kernel"]
 
 
 def generate_cmake_files(subdirectory, generated_files):

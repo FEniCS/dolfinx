@@ -15,7 +15,17 @@ if(PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
 endif()
 
-add_executable(${PROJECT_NAME} main.cpp)
+# FFCx compile: mass.py -> mass.c. Only float64 is needed -- the demo's
+# FFCx-generated kernel variant runs at double precision only.
+add_custom_command(
+  OUTPUT mass.c
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/mass.py
+  VERBATIM
+  DEPENDS mass.py
+  COMMENT "Compile mass.py using FFCx"
+)
+
+add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/mass.c)
 target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx::dolfinx)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
