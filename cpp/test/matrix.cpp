@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Igor A. Baratta
+// Copyright (C) 2022-2026 Igor A. Baratta and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -171,6 +171,52 @@ void test_matrix()
   CHECK(Adense(4, to_global_col(4)) != Aref(4, to_global_col(4)));
 }
 
+void test_sparsity_pattern_common_index_map()
+{
+  // Preserve a shared IndexMap when no ghost columns are added.
+  auto map0 = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);
+  la::SparsityPattern p(MPI_COMM_SELF, {map0, map0}, {1, 1});
+  p.insert(0, 0);
+  p.insert(4, 5);
+  p.insert(5, 4);
+  p.finalize();
+  CHECK(p.index_map(0) == p.index_map(1));
+}
+
+void test_sparsity_pattern_asymmetric_column_ghost_growth()
+{
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const int rank = dolfinx::MPI::rank(comm);
+  if (dolfinx::MPI::size(comm) < 2)
+    return;
+
+  std::vector<std::int64_t> row_ghosts;
+  std::vector<int> row_ghost_owners;
+  if (rank == 1)
+  {
+    row_ghosts.push_back(0);
+    row_ghost_owners.push_back(0);
+  }
+
+  auto row_map = std::make_shared<common::IndexMap>(comm, 1, row_ghosts,
+                                                    row_ghost_owners);
+  auto column_map = std::make_shared<common::IndexMap>(comm, 1);
+  la::SparsityPattern p(comm, {row_map, column_map}, {1, 1});
+
+  // Rank 1 adds to rank 0's ghost row, creating a column ghost on rank 0.
+  if (rank == 1)
+    p.insert(1, 0);
+  p.finalize();
+
+  if (rank == 0)
+  {
+    CHECK(p.index_map(1)->ghosts().size() == 1);
+    CHECK(p.index_map(1)->ghosts().front() == 1);
+  }
+  else
+    CHECK(p.index_map(1)->ghosts().empty());
+}
+
 } // namespace
 
 TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
@@ -179,4 +225,6 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_matrix_apply());
   CHECK_NOTHROW(test_matrix_norm());
   CHECK_NOTHROW(test_matrix_cast());
+  CHECK_NOTHROW(test_sparsity_pattern_common_index_map());
+  CHECK_NOTHROW(test_sparsity_pattern_asymmetric_column_ghost_growth());
 }
