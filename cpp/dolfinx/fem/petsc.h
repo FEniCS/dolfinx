@@ -632,14 +632,8 @@ void assemble_operator(
 {
   common::petsc::check(MatZeroEntries(A), "MatZeroEntries");
 
-  // With an index map block size of 1, a block index and a dof index
-  // coincide, so the unblocked insertion path (MatSetValuesLocal) is
-  // equivalent to the blocked one (MatSetValuesBlockedLocal) here and
-  // avoids it for matrix types with no native "blocked" implementation
-  // (e.g. (MPI)AIJ), where MatSetValuesBlockedLocal/MatSetValuesBlocked
-  // fall back to re-expanding the (here, trivial) blocked indices and
-  // re-dispatching through MatSetValues -- pure overhead at block size
-  // 1.
+  // Block and dof indices coincide at block size 1. Avoid the generic
+  // blocked PETSc path, which expands these indices before insertion.
   if (a.function_spaces()[0]->dofmap()->index_map_bs() == 1
       and a.function_spaces()[1]->dofmap()->index_map_bs() == 1)
   {

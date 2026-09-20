@@ -173,14 +173,7 @@ void test_matrix()
 
 void test_sparsity_pattern_common_index_map()
 {
-  // A sparsity pattern built from the same IndexMap for both rows and
-  // columns should keep that same IndexMap object for both after
-  // finalize() when no new ghost columns are discovered (the common
-  // case for a symmetric, square operator from a single
-  // FunctionSpace). This lets callers such as la::petsc::create_matrix
-  // build a single shared PETSc ISLocalToGlobalMapping for row and
-  // column, avoiding a redundant column index translation on the
-  // assembly hot path.
+  // Preserve a shared IndexMap when no ghost columns are added.
   auto map0 = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);
   la::SparsityPattern p(MPI_COMM_SELF, {map0, map0}, {1, 1});
   p.insert(0, 0);
@@ -210,8 +203,7 @@ void test_sparsity_pattern_asymmetric_column_ghost_growth()
   auto column_map = std::make_shared<common::IndexMap>(comm, 1);
   la::SparsityPattern p(comm, {row_map, column_map}, {1, 1});
 
-  // Rank 1 inserts its owned column into rank 0's ghost row. Only rank 0
-  // discovers a new column ghost during finalization.
+  // Rank 1 adds to rank 0's ghost row, creating a column ghost on rank 0.
   if (rank == 1)
     p.insert(1, 0);
   p.finalize();

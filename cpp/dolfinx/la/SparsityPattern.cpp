@@ -480,18 +480,9 @@ void SparsityPattern::finalize()
 
   _edges.shrink_to_fit();
 
-  // _col_ghosts started as a copy of _index_maps[1]->ghosts() and only
-  // ever grew (new ghost columns discovered from received off-process
-  // rows are appended, never reordering or replacing existing entries),
-  // so an unchanged size means _col_ghosts/_col_ghost_owners are
-  // identical to the existing column IndexMap's ghosts/owners. Skip
-  // rebuilding it when the size is unchanged on every rank: besides
-  // avoiding pointless work, this
-  // preserves reference equality between the row and column IndexMaps
-  // for a square, symmetric sparsity pattern (e.g. built from a single
-  // FunctionSpace), which la::petsc::create_matrix relies on to avoid a
-  // redundant column index translation when assembling into a PETSc
-  // matrix.
+  // _col_ghosts only appends to the original column ghosts. Rebuild the
+  // collective IndexMap only if ghosts changed on at least one rank;
+  // otherwise preserve a shared row and column IndexMap.
   int ghosts_changed = _col_ghosts.size() != _index_maps[1]->ghosts().size();
   int ghosts_changed_global;
   const int ierr = MPI_Allreduce(&ghosts_changed, &ghosts_changed_global, 1,
