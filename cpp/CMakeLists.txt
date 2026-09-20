@@ -134,34 +134,69 @@ dolfinx_option(
 
 # Declare an optional-dependency switch DOLFINX_ENABLE_<X>.
 #
-# The package is treated as *required* only when the user explicitly passed
-# -DDOLFINX_ENABLE_<X>=ON, which is detected from the cache entry still
-# having type UNINITIALIZED before the option() call below gives it type
-# BOOL. That test is only meaningful on the very first configure, so the
-# answer is latched into the cache and never recomputed: recomputing it
-# would see type BOOL on every subsequent configure and silently downgrade
-# a required package to an optional one. Note that a build tree therefore
-# keeps the requirement it was first created with.
+# Each switch is AUTO (the default), ON (required) or OFF (disabled). AUTO
+# discovers a package without requiring it, while ON makes a missing package a
+# configuration error. This avoids inferring the user's intent from the cache
+# entry type, which cannot distinguish a default from an explicit ON after the
+# first configure.
+#
+# Existing BOOL cache entries are migrated: a previous explicit requirement is
+# retained, otherwise an enabled entry becomes AUTO. This preserves the old
+# optional default while allowing a subsequent -DDOLFINX_ENABLE_<X>=ON to make
+# the package required.
 #
 # Sets, for use at the find_package()/pkg_search_module() call site:
+#   _DOLFINX_USE_<X>      TRUE/FALSE
 #   _REQUIRE_<X>          TRUE/FALSE
 #   _REQUIRE_<X>_KEYWORD  "REQUIRED" or "" (empty)
 function(dolfinx_enable_option name description)
   string(REPLACE "DOLFINX_ENABLE_" "_REQUIRE_" require_var "${name}")
-  if(NOT DEFINED ${require_var})
-    get_property(type CACHE ${name} PROPERTY TYPE)
-    if(type STREQUAL "UNINITIALIZED")
-      set(${require_var} TRUE CACHE INTERNAL "Is ${name} REQUIRED?")
+  string(REPLACE "DOLFINX_ENABLE_" "_DOLFINX_USE_" use_var "${name}")
+  get_property(cache_type CACHE ${name} PROPERTY TYPE)
+
+  # Prior versions used a BOOL switch. A default ON meant AUTO, while an
+  # explicit ON was recorded in the internal requirement cache.
+  if(cache_type STREQUAL "BOOL")
+    if(${name})
+      if(DEFINED ${require_var} AND ${require_var})
+        set(mode ON)
+      else()
+        set(mode AUTO)
+      endif()
     else()
-      set(${require_var} FALSE CACHE INTERNAL "Is ${name} REQUIRED?")
+      set(mode OFF)
     endif()
-  endif()
-  if(${require_var})
-    set(${require_var}_KEYWORD "REQUIRED" PARENT_SCOPE)
+    set(${name} ${mode} CACHE STRING "${description}" FORCE)
   else()
-    set(${require_var}_KEYWORD "" PARENT_SCOPE)
+    set(${name} AUTO CACHE STRING "${description}")
+    string(TOUPPER "${${name}}" mode)
   endif()
-  option(${name} "${description}" ON)
+
+  set_property(CACHE ${name} PROPERTY STRINGS AUTO ON OFF)
+  if(mode STREQUAL "AUTO")
+    set(${use_var} TRUE)
+    set(${use_var} TRUE PARENT_SCOPE)
+    set(${require_var} FALSE PARENT_SCOPE)
+    set(${require_var}_KEYWORD "" PARENT_SCOPE)
+  elseif(mode MATCHES "^(ON|TRUE|YES|Y|1)$")
+    set(${name} ON CACHE STRING "${description}" FORCE)
+    set(${use_var} TRUE)
+    set(${use_var} TRUE PARENT_SCOPE)
+    set(${require_var} TRUE PARENT_SCOPE)
+    set(${require_var}_KEYWORD "REQUIRED" PARENT_SCOPE)
+  elseif(
+    mode MATCHES "^(OFF|FALSE|NO|N|IGNORE|NOTFOUND|0)$"
+    OR mode MATCHES "-NOTFOUND$"
+  )
+    set(${name} OFF CACHE STRING "${description}" FORCE)
+    set(${use_var} FALSE)
+    set(${use_var} FALSE PARENT_SCOPE)
+    set(${require_var} FALSE PARENT_SCOPE)
+    set(${require_var}_KEYWORD "" PARENT_SCOPE)
+  else()
+    message(FATAL_ERROR "${name} must be AUTO, ON or OFF, not '${${name}}'.")
+  endif()
+  add_feature_info(${name} ${use_var} "${description}")
 endfunction()
 
 dolfinx_enable_option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2.")
@@ -391,11 +426,11 @@ set_package_properties(
 
 # ------------------------------------------------------------------------------
 # Find optional packages
-if(DOLFINX_ENABLE_ADIOS2)
+if(_DOLFINX_USE_ADIOS2)
   find_package(ADIOS2 2.8.1 ${_REQUIRE_ADIOS2_KEYWORD} COMPONENTS CXX MPI)
 endif()
 
-if(DOLFINX_ENABLE_PETSC)
+if(_DOLFINX_USE_PETSC)
   find_package(PkgConfig REQUIRED)
   if(DOLFINX_PETSC_PYTHON)
     dolfinx_python_prefix_hint(petsc PETSC_DIR)
@@ -423,7 +458,7 @@ if(DOLFINX_ENABLE_PETSC)
   endif()
 endif()
 
-if(DOLFINX_ENABLE_SLEPC AND TARGET PkgConfig::PETSC)
+if(_DOLFINX_USE_SLEPC AND TARGET PkgConfig::PETSC)
   find_package(PkgConfig REQUIRED)
   if(DOLFINX_SLEPC_PYTHON)
     dolfinx_python_prefix_hint(slepc SLEPC_DIR)
@@ -450,7 +485,7 @@ elseif(_REQUIRE_SLEPC AND NOT TARGET PkgConfig::PETSC)
 endif()
 
 # SCOTCH 7.0.1 was first version with ScotchConfig.cmake
-if(DOLFINX_ENABLE_SCOTCH)
+if(_DOLFINX_USE_SCOTCH)
   find_package(SCOTCH 7.0.1 ${_REQUIRE_SCOTCH_KEYWORD} CONFIG)
 endif()
 
@@ -472,15 +507,15 @@ if(SCOTCH_FOUND)
   )
 endif()
 
-if(DOLFINX_ENABLE_PARMETIS)
+if(_DOLFINX_USE_PARMETIS)
   find_package(ParMETIS 4.0.2 ${_REQUIRE_PARMETIS_KEYWORD})
 endif()
 
-if(DOLFINX_ENABLE_KAHIP)
+if(_DOLFINX_USE_KAHIP)
   find_package(KaHIP ${_REQUIRE_KAHIP_KEYWORD})
 endif()
 
-if(DOLFINX_ENABLE_SUPERLU_DIST)
+if(_DOLFINX_USE_SUPERLU_DIST)
   find_package(PkgConfig REQUIRED)
   # If PETSc was built with SuperLU_DIST then pickup install there
   dolfinx_prepend_pkgconfig_path(PETSC_DIR)

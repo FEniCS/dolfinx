@@ -144,7 +144,7 @@ target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 # Optional packages
 
 # ADIOS2
-if(DOLFINX_ENABLE_ADIOS2 AND ADIOS2_FOUND)
+if(_DOLFINX_USE_ADIOS2 AND ADIOS2_FOUND)
   # ADIOS2 2.11 and later
   if(TARGET adios2::cxx_mpi)
     set(_adios2_mpi_target adios2::cxx_mpi)
@@ -159,19 +159,19 @@ if(DOLFINX_ENABLE_ADIOS2 AND ADIOS2_FOUND)
 endif()
 
 # PETSc
-if(DOLFINX_ENABLE_PETSC AND TARGET PkgConfig::PETSC)
+if(_DOLFINX_USE_PETSC AND TARGET PkgConfig::PETSC)
   target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)
   target_compile_definitions(dolfinx PUBLIC HAS_PETSC)
 endif()
 
 # SLEPC
-if(DOLFINX_ENABLE_SLEPC AND TARGET PkgConfig::SLEPC)
+if(_DOLFINX_USE_SLEPC AND TARGET PkgConfig::SLEPC)
   target_link_libraries(dolfinx PUBLIC PkgConfig::SLEPC)
   target_compile_definitions(dolfinx PUBLIC HAS_SLEPC)
 endif()
 
 # SCOTCH
-if(DOLFINX_ENABLE_SCOTCH AND TARGET SCOTCH::ptscotch)
+if(_DOLFINX_USE_SCOTCH AND TARGET SCOTCH::ptscotch)
   target_compile_definitions(dolfinx PUBLIC HAS_PTSCOTCH)
   target_link_libraries(dolfinx PRIVATE SCOTCH::ptscotch)
   if(TARGET SCOTCH::scotcherr)
@@ -180,19 +180,19 @@ if(DOLFINX_ENABLE_SCOTCH AND TARGET SCOTCH::ptscotch)
 endif()
 
 # ParMETIS
-if(DOLFINX_ENABLE_PARMETIS AND TARGET ParMETIS::ParMETIS)
+if(_DOLFINX_USE_PARMETIS AND TARGET ParMETIS::ParMETIS)
   target_compile_definitions(dolfinx PUBLIC HAS_PARMETIS)
   target_link_libraries(dolfinx PRIVATE ParMETIS::ParMETIS)
 endif()
 
 # KaHIP
-if(DOLFINX_ENABLE_KAHIP AND TARGET KaHIP::KaHIP)
+if(_DOLFINX_USE_KAHIP AND TARGET KaHIP::KaHIP)
   target_compile_definitions(dolfinx PUBLIC HAS_KAHIP)
   target_link_libraries(dolfinx PRIVATE KaHIP::KaHIP)
 endif()
 
 # SuperLU_DIST
-if(DOLFINX_ENABLE_SUPERLU_DIST AND TARGET PkgConfig::SUPERLU_DIST)
+if(_DOLFINX_USE_SUPERLU_DIST AND TARGET PkgConfig::SUPERLU_DIST)
   target_compile_definitions(dolfinx PUBLIC HAS_SUPERLU_DIST)
   target_link_libraries(dolfinx PRIVATE PkgConfig::SUPERLU_DIST)
 endif()
