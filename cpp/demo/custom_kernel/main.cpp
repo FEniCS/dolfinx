@@ -59,33 +59,42 @@
 #undef restrict
 
 #include <algorithm>
+#include <array>
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
 #include <basix/quadrature.h>
 #include <cassert>
 #include <cmath>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <functional>
 #include <limits>
 #include <map>
+#include <memory>
+#include <numeric>
+#include <span>
 #include <stdexcept>
-#include <stdint.h>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
 using namespace dolfinx;
-template <typename T, std::size_t ndim>
-using mdspand_t = md::mdspan<T, md::dextents<std::size_t, ndim>>;
 template <typename T, std::size_t n0, std::size_t n1>
 using mdspan2_t = md::mdspan<T, std::extents<std::size_t, n0, n1>>;
 constexpr std::size_t p1_triangle_dofs_per_cell = 3;
 using p1_triangle_dofmap_t = mdspan2_t<const std::int32_t, md::dynamic_extent,
                                        p1_triangle_dofs_per_cell>;
+template <typename T>
+using triangle_points_t
+    = md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 2>>;
+template <typename T>
+using p1_triangle_basis_t
+    = md::mdspan<T, md::extents<std::size_t, 1, md::dynamic_extent,
+                                p1_triangle_dofs_per_cell, 1>>;
 static_assert(p1_triangle_dofmap_t::static_extent(1)
               == p1_triangle_dofs_per_cell);
 
@@ -95,10 +104,12 @@ static_assert(p1_triangle_dofmap_t::static_extent(1)
 /// @param w Integration weights.
 /// @return Element reference matrix (row-major storage).
 template <typename T>
-std::array<T, 9> A_ref(mdspand_t<const T, 4> phi, std::span<const T> w)
+std::array<T, p1_triangle_dofs_per_cell * p1_triangle_dofs_per_cell>
+A_ref(p1_triangle_basis_t<const T> phi, std::span<const T> w)
 {
-  std::array<T, 9> A_b{};
-  mdspan2_t<T, 3, 3> A(A_b.data());
+  std::array<T, p1_triangle_dofs_per_cell * p1_triangle_dofs_per_cell> A_b{};
+  mdspan2_t<T, p1_triangle_dofs_per_cell, p1_triangle_dofs_per_cell> A(
+      A_b.data());
   for (std::size_t k = 0; k < phi.extent(1); ++k)   // quadrature point
     for (std::size_t i = 0; i < A.extent(0); ++i)   // row i
       for (std::size_t j = 0; j < A.extent(1); ++j) // column j
@@ -112,9 +123,10 @@ std::array<T, 9> A_ref(mdspand_t<const T, 4> phi, std::span<const T> w)
 /// @param w Integration weights.
 /// @return RHS reference vector.
 template <typename T>
-std::array<T, 3> b_ref(mdspand_t<const T, 4> phi, std::span<const T> w)
+std::array<T, p1_triangle_dofs_per_cell> b_ref(p1_triangle_basis_t<const T> phi,
+                                               std::span<const T> w)
 {
-  std::array<T, 3> b{};
+  std::array<T, p1_triangle_dofs_per_cell> b{};
   for (std::size_t k = 0; k < phi.extent(1); ++k) // quadrature point
     for (std::size_t i = 0; i < b.size(); ++i)    // row i
       b[i] += w[k] * phi(0, k, i, 0);
@@ -297,7 +309,7 @@ void assemble(MPI_Comm comm)
   auto [X_b, weights] = basix::quadrature::make_quadrature<T>(
       quadrature_type, basix::cell::type::triangle,
       basix::polyset::type::standard, max_degree);
-  mdspand_t<const T, 2> X(X_b.data(), weights.size(), 2);
+  triangle_points_t<const T> X(X_b.data(), weights.size());
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
@@ -311,11 +323,13 @@ void assemble(MPI_Comm comm)
   std::iota(cells.begin(), cells.end(), 0);
 
   // Tabulate basis functions at quadrature points
-  auto e_shape = e.tabulate_shape(0, weights.size());
-  std::size_t length
-      = std::accumulate(e_shape.begin(), e_shape.end(), 1, std::multiplies<>{});
-  std::vector<T> phi_b(length);
-  mdspand_t<T, 4> phi(phi_b.data(), e_shape);
+  const std::array<std::size_t, 4> e_shape
+      = e.tabulate_shape(0, weights.size());
+  assert((e_shape
+          == std::array<std::size_t, 4>{1, weights.size(),
+                                        p1_triangle_dofs_per_cell, 1}));
+  std::vector<T> phi_b(weights.size() * p1_triangle_dofs_per_cell);
+  p1_triangle_basis_t<T> phi(phi_b.data(), weights.size());
   e.tabulate(0, X, phi);
 
   // Utility function to compute det(J) for an affine triangle cell
@@ -327,13 +341,17 @@ void assemble(MPI_Comm comm)
   };
 
   // Finite element mass matrix kernel function
-  std::array<T, 9> A_hat_b = A_ref<T>(phi, weights);
-  auto kernel_a = [A_hat = mdspan2_t<T, 3, 3>(A_hat_b.data()),
-                   detJ](T* A, const T*, const T*, const T* x, const int*,
-                         const uint8_t*, void*)
+  std::array<T, p1_triangle_dofs_per_cell * p1_triangle_dofs_per_cell> A_hat_b
+      = A_ref<T>(phi, weights);
+  auto kernel_a
+      = [A_hat
+         = mdspan2_t<T, p1_triangle_dofs_per_cell, p1_triangle_dofs_per_cell>(
+             A_hat_b.data()),
+         detJ](T* A, const T*, const T*, const T* x, const int*, const uint8_t*,
+               void*)
   {
     T scale = detJ(mdspan2_t<const T, 3, 3>(x));
-    mdspan2_t<T, 3, 3> _A(A);
+    mdspan2_t<T, p1_triangle_dofs_per_cell, p1_triangle_dofs_per_cell> _A(A);
     for (std::size_t i = 0; i < A_hat.extent(0); ++i)
       for (std::size_t j = 0; j < A_hat.extent(1); ++j)
         _A(i, j) = scale * A_hat(i, j);
@@ -345,7 +363,7 @@ void assemble(MPI_Comm comm)
                          const uint8_t*, void*)
   {
     T scale = detJ(mdspan2_t<const T, 3, 3>(x));
-    for (std::size_t i = 0; i < 3; ++i)
+    for (std::size_t i = 0; i < p1_triangle_dofs_per_cell; ++i)
       b[i] = scale * b_hat[i];
   };
 
