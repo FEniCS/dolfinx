@@ -130,17 +130,6 @@ void check_norm(double norm, double reference)
     throw std::runtime_error("Assembly variants have different norms.");
 }
 
-/// @brief Return the float64 cell kernel for integral 0.
-ufcx_tabulate_tensor_float64* ffcx_cell_kernel(const ufcx_form& form)
-{
-  const int offset = form.form_integral_offsets[cell];
-  assert(form.form_integral_offsets[cell + 1] - offset == 1);
-  ufcx_integral* integral = form.form_integrals[offset];
-  assert(integral);
-  assert(integral->tabulate_tensor_float64);
-  return integral->tabulate_tensor_float64;
-}
-
 /// @brief Assemble a matrix operator using a `std::function` kernel
 /// function.
 /// @tparam T Scalar type.
@@ -378,22 +367,24 @@ void assemble(MPI_Comm comm)
   // FFCx generates only a float64 kernel.
   if constexpr (std::is_same_v<T, double>)
   {
+    // Call the generated functions directly so they can be inlined into the
+    // cell assembly loops.
     auto kernel_a_ffcx
-        = [tab = ffcx_cell_kernel(*form_mass_a)](
-              T* A, const T* w, const T* c, const T* coordinate_dofs,
-              const int* entity_local_index,
-              const uint8_t* quadrature_permutation, void* d)
+        = [](T* A, const T* w, const T* c, const T* coordinate_dofs,
+             const int* entity_local_index,
+             const uint8_t* quadrature_permutation, void* d)
     {
-      tab(A, w, c, coordinate_dofs, entity_local_index, quadrature_permutation,
+      tabulate_tensor_integral_0f31b12dbe4babd413e1ac21cdf56eb73b71c30d_triangle(
+          A, w, c, coordinate_dofs, entity_local_index, quadrature_permutation,
           d);
     };
     auto kernel_L_ffcx
-        = [tab = ffcx_cell_kernel(*form_mass_L)](
-              T* b, const T* w, const T* c, const T* coordinate_dofs,
-              const int* entity_local_index,
-              const uint8_t* quadrature_permutation, void* d)
+        = [](T* b, const T* w, const T* c, const T* coordinate_dofs,
+             const int* entity_local_index,
+             const uint8_t* quadrature_permutation, void* d)
     {
-      tab(b, w, c, coordinate_dofs, entity_local_index, quadrature_permutation,
+      tabulate_tensor_integral_0372d68a862ab7a471408bc8a4adef5abb12013d_triangle(
+          b, w, c, coordinate_dofs, entity_local_index, quadrature_permutation,
           d);
     };
     const double norm_A2 = assemble_matrix1<T>(mesh->geometry(), *V->dofmap(),
