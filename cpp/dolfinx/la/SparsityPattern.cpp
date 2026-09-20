@@ -485,13 +485,19 @@ void SparsityPattern::finalize()
   // rows are appended, never reordering or replacing existing entries),
   // so an unchanged size means _col_ghosts/_col_ghost_owners are
   // identical to the existing column IndexMap's ghosts/owners. Skip
-  // rebuilding it in that case: besides avoiding pointless work, this
+  // rebuilding it when the size is unchanged on every rank: besides
+  // avoiding pointless work, this
   // preserves reference equality between the row and column IndexMaps
   // for a square, symmetric sparsity pattern (e.g. built from a single
   // FunctionSpace), which la::petsc::create_matrix relies on to avoid a
   // redundant column index translation when assembling into a PETSc
   // matrix.
-  if (_col_ghosts.size() != _index_maps[1]->ghosts().size())
+  int ghosts_changed = _col_ghosts.size() != _index_maps[1]->ghosts().size();
+  int ghosts_changed_global;
+  const int ierr = MPI_Allreduce(&ghosts_changed, &ghosts_changed_global, 1,
+                                 MPI_INT, MPI_LOR, _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+  if (ghosts_changed_global)
   {
     spdlog::debug("Column ghost size increased from {} to {}",
                   _index_maps[1]->ghosts().size(), _col_ghosts.size());
