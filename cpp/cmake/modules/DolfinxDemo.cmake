@@ -14,6 +14,7 @@
 include_guard(GLOBAL)
 
 include(CMakePushCheckState)
+include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(CheckSymbolExists)
 
@@ -87,10 +88,18 @@ function(dolfinx_add_demo name)
     )
     list(APPEND _sources ${CMAKE_CURRENT_BINARY_DIR}/${_kernel})
 
-    # FFCx-generated C kernels have unused parameters fixed by the UFL ABI
+    # FFCx-generated C kernels have unused parameters fixed by the UFL ABI.
+    # Probed, as -Wno-comment is below, since MSVC rejects -Wno- flags. The
+    # kernel is C, so the C compiler is the one that has to accept it.
+    check_c_compiler_flag(
+      "-Wno-unused-parameter"
+      DOLFINX_HAVE_WNO_UNUSED_PARAMETER
+    )
     set_source_files_properties(
       ${CMAKE_CURRENT_BINARY_DIR}/${_kernel}
-      PROPERTIES COMPILE_OPTIONS "-Wno-unused-parameter"
+      PROPERTIES
+        COMPILE_OPTIONS
+          $<$<BOOL:${DOLFINX_HAVE_WNO_UNUSED_PARAMETER}>:-Wno-unused-parameter>
     )
   endif()
 

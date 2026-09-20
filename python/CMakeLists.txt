@@ -59,7 +59,7 @@ get_target_property(
 )
 if("HAS_SUPERLU_DIST" IN_LIST _dolfinx_defs)
   # SuperLU_DIST Python interface requires the superlu_defs.h header for int_t.
-  find_package(PkgConfig)
+  find_package(PkgConfig REQUIRED)
   pkg_search_module(SUPERLU_DIST IMPORTED_TARGET superlu_dist)
 endif()
 
