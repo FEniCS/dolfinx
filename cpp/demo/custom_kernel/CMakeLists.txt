@@ -15,8 +15,7 @@ if(PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
 endif()
 
-# FFCx compile: mass.py -> mass.c/mass.h. Only float64 is needed -- the
-# demo's FFCx-generated kernel variant runs at double precision only.
+# Generate the float64 FFCx form used by the generated-kernel variant.
 add_custom_command(
   OUTPUT mass.c mass.h
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/mass.py
@@ -25,11 +24,7 @@ add_custom_command(
   COMMENT "Compile mass.py using FFCx"
 )
 
-# main.cpp #includes mass.c directly (see main.cpp) rather than
-# compiling and linking it as its own translation unit, so the
-# generated kernel can be inlined into the assembler loop. Declared as
-# an explicit dependency so a fresh build generates it before
-# compiling main.cpp.
+# Include mass.c in main.cpp so its kernels can be inlined.
 set_source_files_properties(
   main.cpp
   PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/mass.c"
