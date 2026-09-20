@@ -258,15 +258,15 @@ disclosure process.
 
 ## CMake style
 
-- **Minimum version**: CMake 3.26, declared identically in every
-  `cmake_minimum_required` in the tree. Features up to 3.26 may be used
-  freely; a policy introduced after 3.26 still needs an
-  `if(POLICY CMPxxxx)` guard.
+- **Minimum version**: set by the `cmake_minimum_required` in
+  `cpp/CMakeLists.txt` and repeated identically by every other
+  `cmake_minimum_required` in the tree; don't restate it elsewhere.
+  Features up to that version may be used freely; a policy introduced
+  after it still needs an `if(POLICY CMPxxxx)` guard.
 - Formatted with `gersemi` (2-space indent, see `.gersemirc`); CI runs
-  `gersemi --check . cpp/.vcpkg-overlay`. The overlay directory is named
-  explicitly because `gersemi` does not descend into hidden directories.
-  `.gersemirc` lists the files defining the project's own CMake commands
-  so that calls to them are formatted rather than reported as unknown.
+  `gersemi --check .`. `.gersemirc` points `gersemi` at the directories
+  holding the project's own command definitions so that calls to them
+  are formatted rather than reported as unknown.
 - **Adding a header**: add it to the `FILE_SET HEADERS` list in the
   `target_sources` call of its `cpp/dolfinx/<module>/CMakeLists.txt`.
   The file set drives both the include directories and the install
