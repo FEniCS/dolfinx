@@ -8,13 +8,23 @@
 
 #ifdef HAS_PETSC
 
+#include <array>
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <cstdint>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
+#include <memory>
+#include <mpi.h>
+#include <numeric>
 #include <petscksp.h>
 #include <petscmat.h>
 #include <petscvec.h>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 using namespace dolfinx;
 
@@ -320,6 +330,92 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
   }
 
   CHECK(MatDestroy(&A) == 0);
+}
+
+TEST_CASE("PETSc Mat re-assembly keeps zero entries in the pattern", "[petsc]")
+{
+  init_petsc();
+
+  // MAT_IGNORE_ZERO_ENTRIES makes PETSc drop an added value that is
+  // exactly zero, and an entry that is only ever zero is then never
+  // created. Checks both orderings documented on
+  // la::petsc::create_matrix, using an element tensor whose off-diagonal
+  // entries are all zero: enabled after a full assembly the pattern
+  // survives re-assembly, enabled before it only the diagonal exists.
+  MPI_Comm comm = MPI_COMM_WORLD;
+  constexpr std::int32_t n = 4;
+
+  for (int bs : {1, 2})
+  {
+    auto map = std::make_shared<common::IndexMap>(comm, n);
+    la::SparsityPattern sp(comm, {map, map}, {bs, bs});
+    for (std::int32_t i = 0; i < n; ++i)
+      for (std::int32_t j = 0; j < n; ++j)
+        sp.insert(i, j);
+    sp.finalize();
+
+    // Diagonal-only element tensor: every off-diagonal insertion is an
+    // exact zero, i.e. exactly what MAT_IGNORE_ZERO_ENTRIES discards
+    std::vector<PetscScalar> vals(bs * n * bs * n, 0);
+    for (std::int32_t i = 0; i < bs * n; ++i)
+      vals[bs * n * i + i] = 1.0 + i;
+
+    std::vector<PetscInt> idx(bs * n);
+    std::iota(idx.begin(), idx.end(), 0);
+
+    auto fill = [&](Mat A)
+    {
+      CHECK(MatSetValuesLocal(A, idx.size(), idx.data(), idx.size(), idx.data(),
+                              vals.data(), ADD_VALUES)
+            == 0);
+      CHECK(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY) == 0);
+      CHECK(MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY) == 0);
+    };
+
+    // `when` == 0: never enabled (reference), 1: after the first
+    // assembly, 2: before it
+    auto assemble = [&](int when) -> std::pair<double, double>
+    {
+      Mat A = la::petsc::create_matrix(comm, sp);
+      if (when == 2)
+        CHECK(MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE) == 0);
+
+      fill(A);
+      if (when == 1)
+        CHECK(MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE) == 0);
+
+      // Re-assemble, as a time-dependent or non-linear problem would
+      CHECK(MatZeroEntries(A) == 0);
+      fill(A);
+
+      MatInfo info;
+      CHECK(MatGetInfo(A, MAT_GLOBAL_SUM, &info) == 0);
+      PetscReal norm;
+      CHECK(MatNorm(A, NORM_FROBENIUS, &norm) == 0);
+      CHECK(MatDestroy(&A) == 0);
+      return {info.nz_used, norm};
+    };
+
+    const int size = dolfinx::MPI::size(comm);
+    const double nnz_full = static_cast<double>(bs * n * bs * n * size);
+    const double nnz_diag = static_cast<double>(bs * n * size);
+
+    auto [nnz_plain, norm_plain] = assemble(0);
+    auto [nnz_after, norm_after] = assemble(1);
+    auto [nnz_before, norm_before] = assemble(2);
+
+    // Enabled after the first assembly, zero-valued insertions are
+    // skipped but the entries survive
+    CHECK(nnz_plain == Catch::Approx(nnz_full));
+    CHECK(nnz_after == Catch::Approx(nnz_full));
+    CHECK(norm_after == Catch::Approx(norm_plain));
+
+    // Enabled beforehand, only the diagonal is ever created. The values
+    // still agree -- the dropped entries are zero -- so the pattern is
+    // the only evidence either way, hence the note on create_matrix
+    CHECK(nnz_before == Catch::Approx(nnz_diag));
+    CHECK(norm_before == Catch::Approx(norm_plain));
+  }
 }
 
 #endif

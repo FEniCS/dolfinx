@@ -120,6 +120,61 @@ void scatter_local_vectors(
 
 /// @brief Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
+///
+/// The returned matrix is *preallocated*, not populated: room is
+/// reserved for each row's non-zeros, but an entry does not exist until
+/// a value is inserted into it.
+///
+/// @note Repeated re-assembly of a matrix with a fixed pattern can be
+/// made substantially faster by enabling `MAT_IGNORE_ZERO_ENTRIES`,
+/// which makes `MatSetValues` discard an added value that is exactly
+/// zero *before* binary-searching the row for that entry's location.
+/// Those searches dominate re-assembly, and element tensors are often
+/// substantially zero. Adding zero cannot change a matrix, so the
+/// assembled result is unchanged.
+///
+/// How much this saves is a property of the problem and worth measuring
+/// first, because the zeros have two quite different origins. Those
+/// coming from the form's block structure are reliable: a vector
+/// Laplacian does not couple components, so `1 - 1/d` of each element
+/// block vanishes for `d` components -- measured 67% for `d = 3`, and
+/// 37% for a Taylor-Hood Stokes system, on meshes with no special
+/// geometry. Those coming from the geometry are not: a scalar Laplacian
+/// has 34% zero entries on a structured simplex mesh, where each cell
+/// has orthogonal edge pairs, but 0.1% once the vertices are perturbed.
+/// A non-linear Jacobian couples every local degree of freedom to every
+/// other and typically has none.
+///
+/// When to enable it depends on whether the matrix is assembled more
+/// than once, because the option also decides whether an entry is ever
+/// *created*.
+///
+/// For a matrix that is re-assembled, enable it only *after* a full
+/// assembly has completed:
+/// @code
+///   Mat A = la::petsc::create_matrix(comm, sp);
+///   // ... assemble into A, ending in MAT_FINAL_ASSEMBLY ...
+///   MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
+///   // subsequent MatZeroEntries + re-assembly skip zero insertions
+/// @endcode
+/// The first assembly writes every entry of `sp`, including those that
+/// are zero, and `MatAssemblyEnd` only reclaims unused preallocated
+/// space -- it does not discard stored zeros. `MAT_KEEP_NONZERO_PATTERN`,
+/// set here, then preserves the pattern across `MatZeroEntries`.
+///
+/// Enabling it before the first assembly instead means an entry that is
+/// zero then is never created at all, leaving the matrix with a smaller
+/// non-zero pattern than `sp` describes. That is a bug for a matrix that
+/// is re-assembled -- nothing appears wrong, because the missing entries
+/// are zero, until a later assembly produces a non-zero at one of them
+/// and `MAT_NEW_NONZERO_ALLOCATION_ERR` (set here) raises an error.
+///
+/// For a matrix that is assembled once and then solved with, it is
+/// instead a deliberate optimisation: the dropped entries are never
+/// needed, and the result is a smaller operator to store and to apply.
+/// `demo_stokes.py` does this, dropping 42% of the entries of a
+/// Taylor-Hood operator.
+///
 /// @param[in] comm The MPI communicator
 /// @param[in] sp The sparsity pattern that determines the layout and
 /// non-zero structure of the matrix
