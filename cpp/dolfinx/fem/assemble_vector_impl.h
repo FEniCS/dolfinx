@@ -41,6 +41,16 @@ namespace dolfinx::fem::impl
 using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @endcond
 
+template <typename M>
+constexpr std::size_t static_extent1()
+{
+  using M0 = std::remove_cvref_t<M>;
+  if constexpr (requires { M0::static_extent(1); })
+    return M0::static_extent(1);
+  else
+    return md::dynamic_extent;
+}
+
 /// @brief Execute kernel over cells and accumulate result in vector.
 ///
 /// @note This function must not perform any dynamic (heap) memory
@@ -101,7 +111,7 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
   // the loop below to be fully unrolled) rather than relying on the
   // optimiser folding x_dofmap.extent(1) through inlining.
   constexpr std::size_t x_dofmap_static_extent1
-      = std::remove_cvref_t<decltype(x_dofmap)>::static_extent(1);
+      = static_extent1<decltype(x_dofmap)>();
   const std::int32_t num_x_dofs_cell
       = x_dofmap_static_extent1 != md::dynamic_extent
             ? static_cast<std::int32_t>(x_dofmap_static_extent1)
@@ -223,7 +233,7 @@ void assemble_entities(
   // the loop below to be fully unrolled) rather than relying on the
   // optimiser folding x_dofmap.extent(1) through inlining.
   constexpr std::size_t x_dofmap_static_extent1
-      = std::remove_cvref_t<decltype(x_dofmap)>::static_extent(1);
+      = static_extent1<decltype(x_dofmap)>();
   const std::int32_t num_x_dofs_cell
       = x_dofmap_static_extent1 != md::dynamic_extent
             ? static_cast<std::int32_t>(x_dofmap_static_extent1)
@@ -348,7 +358,7 @@ void assemble_interior_facets(
   // the loop below to be fully unrolled) rather than relying on the
   // optimiser folding x_dofmap.extent(1) through inlining.
   constexpr std::size_t x_dofmap_static_extent1
-      = std::remove_cvref_t<decltype(x_dofmap)>::static_extent(1);
+      = static_extent1<decltype(x_dofmap)>();
   const std::int32_t num_x_dofs_cell
       = x_dofmap_static_extent1 != md::dynamic_extent
             ? static_cast<std::int32_t>(x_dofmap_static_extent1)
