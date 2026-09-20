@@ -12,6 +12,7 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <mpi.h>
 #include <span>
 #include <utility>
