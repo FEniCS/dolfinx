@@ -349,16 +349,9 @@ stokes_problem = LinearProblem(
     petsc_options=solver_options,
 )
 
-# A large fraction of this operator's element-tensor entries are
-# identically zero. Setting `MAT_IGNORE_ZERO_ENTRIES` before assembly
-# prevents most of them from being created, leaving a smaller operator
-# to store and apply. This is safe here because the Stokes operator is
-# assembled once for the initial condition. It is deliberately not
-# enabled for the Navier-Stokes operator below: that one is re-assembled
-# every time step
-# with a convective term that depends on the previous velocity, so an
-# entry that is zero initially can become non-zero later, which would
-# raise an error once the entry no longer exists.
+# Omit zero entries from this one-time Stokes assembly. Do not use this
+# option for the re-assembled Navier--Stokes operator below: an entry that
+# is initially zero may become non-zero.
 stokes_problem.A.setOption(PETSc.Mat.Option.IGNORE_ZERO_ENTRIES, True)  # type: ignore[arg-type]
 
 try:

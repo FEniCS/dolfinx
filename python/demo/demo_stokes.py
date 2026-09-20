@@ -216,26 +216,16 @@ a_p_ufl: list[list[ufl.Form | None]] = [[a_ufl[0][0], None], [None, a_p11_ufl]]
 a_p11 = form(a_p11_ufl)
 a_p: list[list[Form | None]] = form(a_p_ufl)  # type: ignore[assignment]
 
-# Around 40% of this operator's element-tensor entries are identically
-# zero. `MAT_IGNORE_ZERO_ENTRIES` prevents most exact-zero additions from
-# creating an entry, so the operator is smaller to store and to apply.
-#
-# The option is set *before* assembly below, which is safe only because
-# each of these matrices is assembled once and then solved with. An
-# entry that is left out cannot be filled in later: DOLFINx sets
-# `MAT_NEW_NONZERO_ALLOCATION_ERR`, so a subsequent assembly that
-# produced a non-zero there would raise an error. For an operator that
-# is re-assembled, as in a time-dependent or non-linear problem, set the
-# option *after* the first assembly instead, so that the full non-zero
-# pattern is created first.
+# Omit zero entries to reduce storage. This is safe because these
+# matrices are assembled once. For re-assembly, enable the option after
+# the first assembly so that initially zero entries remain in the pattern.
 
 
 # +
 def ignore_zero_entries(A: PETSc.Mat) -> PETSc.Mat:
     """Let PETSc drop zero-valued insertions into ``A``."""
     if A.getType() == PETSc.Mat.Type.NEST:
-        # MatSetOption does nothing on a nest matrix, so set the option
-        # on each block
+        # MATNEST does not support this option; apply it to each block.
         nrow, ncol = A.getNestSize()
         for i in range(nrow):
             for j in range(ncol):
@@ -308,8 +298,7 @@ def nested_iterative_solver_high_level():
     P00.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
     P11.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
-    # LinearProblem assembles during solve, so the operators are still
-    # empty here and the option applies from their first assembly
+    # LinearProblem assembles the operators during solve.
     ignore_zero_entries(problem.A)
     ignore_zero_entries(problem.P_mat)
 

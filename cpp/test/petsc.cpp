@@ -335,12 +335,7 @@ TEST_CASE("PETSc Mat re-assembly keeps zero entries in the pattern", "[petsc]")
 {
   init_petsc();
 
-  // MAT_IGNORE_ZERO_ENTRIES makes PETSc drop an added value that is
-  // exactly zero, and an entry that is only ever zero is then never
-  // created. Checks both orderings documented on
-  // la::petsc::create_matrix, using an element tensor whose off-diagonal
-  // entries are all zero: enabled after a full assembly the pattern
-  // survives re-assembly, enabled before it only the diagonal exists.
+  // Check both orderings documented on la::petsc::create_matrix.
   MPI_Comm comm = MPI_COMM_WORLD;
   constexpr std::int32_t n = 4;
 
@@ -353,8 +348,7 @@ TEST_CASE("PETSc Mat re-assembly keeps zero entries in the pattern", "[petsc]")
         sp.insert(i, j);
     sp.finalize();
 
-    // Diagonal-only element tensor: every off-diagonal insertion is an
-    // exact zero, i.e. exactly what MAT_IGNORE_ZERO_ENTRIES discards
+    // Diagonal-only values make every off-diagonal insertion zero.
     std::vector<PetscScalar> vals(bs * n * bs * n, 0);
     for (std::int32_t i = 0; i < bs * n; ++i)
       vals[bs * n * i + i] = 1.0 + i;
@@ -371,8 +365,7 @@ TEST_CASE("PETSc Mat re-assembly keeps zero entries in the pattern", "[petsc]")
       CHECK(MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY) == 0);
     };
 
-    // `when` == 0: never enabled (reference), 1: after the first
-    // assembly, 2: before it
+    // 0: disabled, 1: enabled after first assembly, 2: enabled before.
     auto assemble = [&](int when) -> std::pair<double, double>
     {
       Mat A = la::petsc::create_matrix(comm, sp);
@@ -383,7 +376,7 @@ TEST_CASE("PETSc Mat re-assembly keeps zero entries in the pattern", "[petsc]")
       if (when == 1)
         CHECK(MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE) == 0);
 
-      // Re-assemble, as a time-dependent or non-linear problem would
+      // Re-assemble as a time-dependent or non-linear problem would.
       CHECK(MatZeroEntries(A) == 0);
       fill(A);
 
@@ -403,15 +396,12 @@ TEST_CASE("PETSc Mat re-assembly keeps zero entries in the pattern", "[petsc]")
     auto [nnz_after, norm_after] = assemble(1);
     auto [nnz_before, norm_before] = assemble(2);
 
-    // Enabled after the first assembly, zero-valued insertions are
-    // skipped but the entries survive
+    // Enabling after the first assembly preserves the pattern.
     CHECK(nnz_plain == Catch::Approx(nnz_full));
     CHECK(nnz_after == Catch::Approx(nnz_full));
     CHECK(norm_after == Catch::Approx(norm_plain));
 
-    // Enabled beforehand, only the diagonal is ever created. The values
-    // still agree -- the dropped entries are zero -- so the pattern is
-    // the only evidence either way, hence the note on create_matrix
+    // Enabling beforehand creates only the diagonal, with equal values.
     CHECK(nnz_before == Catch::Approx(nnz_diag));
     CHECK(norm_before == Catch::Approx(norm_plain));
   }
