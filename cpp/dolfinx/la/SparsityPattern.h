@@ -67,8 +67,8 @@ public:
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
   /// @brief Reserve storage for additional insertions.
-  /// @param[in] num_entries Number of additional entries to reserve
-  /// space for.
+  /// @param[in] num_entries Expected number of (row, column) entries,
+  /// including duplicates, to insert in addition to those already cached.
   void reserve(std::size_t num_entries);
 
   /// @brief Insert non-zero locations using local (process-wise)
