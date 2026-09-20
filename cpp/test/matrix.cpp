@@ -218,11 +218,7 @@ void test_sparsity_pattern_asymmetric_column_ghost_growth()
     CHECK(p.index_map(1)->ghosts().empty());
 }
 
-/// @brief SparsityPattern::reserve() is a pure capacity hint: a
-/// pattern built with an upfront reserve() must produce the exact
-/// same graph as one built without it, and must reject further use
-/// once the pattern has been finalized, like the other insertion
-/// methods.
+// Check that reserve only changes capacity and is rejected after finalization.
 void test_sparsity_pattern_reserve()
 {
   auto map = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);

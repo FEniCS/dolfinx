@@ -41,11 +41,7 @@ void cells(la::SparsityPattern& pattern, const std::pair<R0, R1>& cells,
   const DofMap& map0 = dofmaps[0].get();
   const DofMap& map1 = dofmaps[1].get();
 
-  // Every cell has the same number of dofs for a given dofmap, so the
-  // total entry count is known up front when the cell range reports
-  // its size -- reserve for it to avoid the insertion cache's
-  // incremental (reallocate-and-copy) growth over what can be tens of
-  // millions of entries.
+  // Reserve entries for all cell-wise outer products.
   if constexpr (std::ranges::sized_range<R0> and std::ranges::sized_range<R1>)
   {
     if (std::size_t num_cells = std::ranges::size(cells.first); num_cells > 0)
