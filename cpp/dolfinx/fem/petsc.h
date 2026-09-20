@@ -631,7 +631,25 @@ void assemble_operator(
         std::reference_wrapper<const DirichletBC<PetscScalar, T>>>& bcs)
 {
   common::petsc::check(MatZeroEntries(A), "MatZeroEntries");
-  fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a, bcs);
+
+  // With an index map block size of 1, a block index and a dof index
+  // coincide, so the unblocked insertion path (MatSetValuesLocal) is
+  // equivalent to the blocked one (MatSetValuesBlockedLocal) here and
+  // avoids it for matrix types with no native "blocked" implementation
+  // (e.g. (MPI)AIJ), where MatSetValuesBlockedLocal/MatSetValuesBlocked
+  // fall back to re-expanding the (here, trivial) blocked indices and
+  // re-dispatching through MatSetValues -- pure overhead at block size
+  // 1.
+  if (a.function_spaces()[0]->dofmap()->index_map_bs() == 1
+      and a.function_spaces()[1]->dofmap()->index_map_bs() == 1)
+  {
+    fem::assemble_matrix(la::petsc::Matrix::set_fn(A, ADD_VALUES), a, bcs);
+  }
+  else
+  {
+    fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
+                         bcs);
+  }
 
   // The unit diagonal is only meaningful when the rows and columns are
   // indexed by the same space
