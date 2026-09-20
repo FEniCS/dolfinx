@@ -8,6 +8,7 @@
 
 #include "poisson.h"
 #include <algorithm>
+#include <array>
 #include <basix/mdspan.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -217,6 +218,30 @@ void test_sparsity_pattern_asymmetric_column_ghost_growth()
     CHECK(p.index_map(1)->ghosts().empty());
 }
 
+// Check that reserve only changes capacity and is rejected after finalization.
+void test_sparsity_pattern_reserve()
+{
+  auto map = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);
+  std::vector<std::array<std::int32_t, 2>> entries
+      = {{0, 0}, {0, 3}, {4, 5}, {5, 4}, {7, 7}};
+
+  la::SparsityPattern p_reserved(MPI_COMM_SELF, {map, map}, {1, 1});
+  p_reserved.reserve(entries.size());
+  for (auto [row, col] : entries)
+    p_reserved.insert(row, col);
+  p_reserved.finalize();
+
+  la::SparsityPattern p_plain(MPI_COMM_SELF, {map, map}, {1, 1});
+  for (auto [row, col] : entries)
+    p_plain.insert(row, col);
+  p_plain.finalize();
+
+  CHECK(std::ranges::equal(p_reserved.graph().first, p_plain.graph().first));
+  CHECK(std::ranges::equal(p_reserved.graph().second, p_plain.graph().second));
+
+  CHECK_THROWS_AS(p_reserved.reserve(1), std::runtime_error);
+}
+
 } // namespace
 
 TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
@@ -227,4 +252,5 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_matrix_cast());
   CHECK_NOTHROW(test_sparsity_pattern_common_index_map());
   CHECK_NOTHROW(test_sparsity_pattern_asymmetric_column_ghost_growth());
+  CHECK_NOTHROW(test_sparsity_pattern_reserve());
 }
