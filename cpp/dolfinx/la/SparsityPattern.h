@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2020 Garth N. Wells
+// Copyright (C) 2007-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -64,6 +64,18 @@ public:
 
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
+
+  /// @brief Reserve storage for additional insertions.
+  ///
+  /// A caller that knows in advance how many (row, column) entries it
+  /// is about to insert (e.g. a fixed number of cells with a uniform
+  /// number of dofs per cell) can use this to avoid the repeated
+  /// reallocate-and-copy steps of the insertion cache's incremental
+  /// growth.
+  ///
+  /// @param[in] num_entries Number of additional entries to reserve
+  /// space for, on top of any already inserted.
+  void reserve(std::size_t num_entries);
 
   /// @brief Insert non-zero locations using local (process-wise)
   /// indices.
