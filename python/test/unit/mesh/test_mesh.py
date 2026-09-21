@@ -698,6 +698,9 @@ def test_create_mesh_unreferenced_nodes():
 
 
 @pytest.mark.skip_in_parallel
+@pytest.mark.skipif(
+    not dolfinx.common.has_debug, reason="Out-of-range node index check is debug-only"
+)
 def test_create_mesh_node_index_out_of_range():
     """A cell node index beyond the end of the node array is rejected."""
     cells = np.array([[0, 1, 7]], dtype=np.int64)

@@ -826,26 +826,31 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
   }
   const std::int64_t shape0_local = x.size() / shape1;
 
+  // A rank outside comm1 must hold no data. Check this collectively before
+  // the later comm0/comm1 collectives to avoid leaving other ranks blocked.
+  {
+    int invalid_local = (comm1 == MPI_COMM_NULL and !x.empty()) ? 1 : 0;
+    int invalid = 0;
+    int err
+        = MPI_Allreduce(&invalid_local, &invalid, 1, MPI_INT, MPI_MAX, comm0);
+    dolfinx::MPI::check_error(comm0, err);
+    if (invalid)
+      throw std::invalid_argument("Non-empty data on null MPI communicator");
+  }
+
   std::int64_t shape0 = 0;
   int err
       = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm0);
   dolfinx::MPI::check_error(comm0, err);
 
-  // Reduce the rank-local checks so that all ranks throw, or none: an
-  // early throw would block peers in the collectives below. An
-  // out-of-range index otherwise maps to a non-existent owner rank.
+#ifndef NDEBUG
   {
-    std::array<int, 2> invalid_local
-        = {comm1 == MPI_COMM_NULL and !x.empty(),
-           !std::ranges::all_of(indices, [shape0](std::int64_t i)
-                                { return i >= 0 and i < shape0; })};
-    std::array<int, 2> invalid{0, 0};
-    err = MPI_Allreduce(invalid_local.data(), invalid.data(), 2, MPI_INT,
-                        MPI_MAX, comm0);
+    int invalid_local = !std::ranges::all_of(indices, [shape0](std::int64_t i)
+                                             { return i >= 0 and i < shape0; });
+    int invalid = 0;
+    err = MPI_Allreduce(&invalid_local, &invalid, 1, MPI_INT, MPI_MAX, comm0);
     dolfinx::MPI::check_error(comm0, err);
-    if (invalid[0])
-      throw std::invalid_argument("Non-empty data on null MPI communicator");
-    if (invalid[1])
+    if (invalid)
     {
       throw std::out_of_range(
           std::format("distribute_data: index outside the global row range "
@@ -853,6 +858,7 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                       shape0));
     }
   }
+#endif
 
   std::int64_t rank_offset = -1;
   if (comm1 != MPI_COMM_NULL)
