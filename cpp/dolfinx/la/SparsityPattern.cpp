@@ -45,6 +45,60 @@ bucket_by_row(std::span<const std::int32_t> rows,
 } // namespace
 
 //-----------------------------------------------------------------------------
+std::size_t SparsityPattern::num_cached() const
+{
+  std::size_t n = _cache_rows.size() + _cache_diag.size();
+  for (std::size_t b = 0; b + 1 < _cache_boffs_r.size(); ++b)
+  {
+    n += std::size_t(_cache_boffs_r[b + 1] - _cache_boffs_r[b])
+         * std::size_t(_cache_boffs_c[b + 1] - _cache_boffs_c[b]);
+  }
+  return n;
+}
+//-----------------------------------------------------------------------------
+std::pair<std::vector<std::int64_t>, std::vector<std::int32_t>>
+SparsityPattern::bucket_cache(std::int32_t num_rows) const
+{
+  const std::size_t nblocks
+      = _cache_boffs_r.empty() ? 0 : _cache_boffs_r.size() - 1;
+
+  // Count entries per row
+  std::vector<std::int64_t> offsets(num_rows + 1, 0);
+  for (std::size_t b = 0; b < nblocks; ++b)
+  {
+    const std::int64_t nc = _cache_boffs_c[b + 1] - _cache_boffs_c[b];
+    for (std::int64_t i = _cache_boffs_r[b]; i < _cache_boffs_r[b + 1]; ++i)
+      offsets[_cache_brows[i] + 1] += nc;
+  }
+  for (std::int32_t row : _cache_rows)
+    ++offsets[row + 1];
+  for (std::int32_t row : _cache_diag)
+    ++offsets[row + 1];
+  std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
+
+  // Scatter
+  std::vector<std::int64_t> pos(offsets.begin(), std::prev(offsets.end()));
+  std::vector<std::int32_t> bucketed(offsets.back());
+  for (std::size_t b = 0; b < nblocks; ++b)
+  {
+    const std::int32_t* cols
+        = std::next(_cache_bcols.data(), _cache_boffs_c[b]);
+    const std::int64_t nc = _cache_boffs_c[b + 1] - _cache_boffs_c[b];
+    for (std::int64_t i = _cache_boffs_r[b]; i < _cache_boffs_r[b + 1]; ++i)
+    {
+      std::int64_t& p = pos[_cache_brows[i]];
+      std::copy_n(cols, nc, std::next(bucketed.begin(), p));
+      p += nc;
+    }
+  }
+  for (std::size_t i = 0; i < _cache_rows.size(); ++i)
+    bucketed[pos[_cache_rows[i]]++] = _cache_cols[i];
+  for (std::int32_t row : _cache_diag)
+    bucketed[pos[row]++] = row;
+
+  return {std::move(offsets), std::move(bucketed)};
+}
+//-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
     MPI_Comm comm, std::array<std::shared_ptr<const common::IndexMap>, 2> maps,
     std::array<int, 2> bs)
@@ -105,7 +159,7 @@ SparsityPattern::SparsityPattern(
     for (std::size_t row = 0; row < patterns.size(); ++row)
       for (std::size_t col = 0; col < patterns[row].size(); ++col)
         if (const SparsityPattern* p = patterns[row][col]; p)
-          num_entries += p->_cache_rows.size() * bs[0][row] * bs[1][col];
+          num_entries += p->num_cached() * bs[0][row] * bs[1][col];
     _cache_rows.reserve(num_entries);
     _cache_cols.reserve(num_entries);
   }
@@ -138,8 +192,7 @@ SparsityPattern::SparsityPattern(
 
       // Bucket the sub-pattern's cache by row for the loops below
       const auto [p_offsets, p_cols]
-          = bucket_by_row(p->_cache_rows, p->_cache_cols,
-                          num_rows_local + num_ghost_rows_local);
+          = p->bucket_cache(num_rows_local + num_ghost_rows_local);
 
       // Iterate over owned rows cache
       for (std::int32_t i = 0; i < num_rows_local; ++i)
@@ -203,6 +256,21 @@ void SparsityPattern::reserve(std::size_t num_entries)
   _cache_cols.reserve(_cache_cols.size() + num_entries);
 }
 //-----------------------------------------------------------------------------
+void SparsityPattern::reserve_blocks(std::size_t num_blocks,
+                                     std::size_t num_rows, std::size_t num_cols)
+{
+  if (!_offsets.empty())
+  {
+    throw std::runtime_error(
+        "Cannot reserve in sparsity pattern. It has already been finalized");
+  }
+
+  _cache_brows.reserve(_cache_brows.size() + num_rows);
+  _cache_bcols.reserve(_cache_bcols.size() + num_cols);
+  _cache_boffs_r.reserve(_cache_boffs_r.size() + num_blocks);
+  _cache_boffs_c.reserve(_cache_boffs_c.size() + num_blocks);
+}
+//-----------------------------------------------------------------------------
 void SparsityPattern::insert(std::int32_t row, std::int32_t col)
 {
   if (!_offsets.empty())
@@ -227,15 +295,15 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
 
   assert(_index_maps[0]);
 
-  // Note: no explicit reserve() here. reserve(n) allocates exactly n,
-  // not the amortised (e.g. doubled) capacity insert() itself would
-  // pick, so reserving to the current size on every call would turn
-  // the cache into an O(#insert calls^2) allocation pattern.
-  for (std::int32_t row : rows)
-  {
-    _cache_rows.insert(_cache_rows.end(), cols.size(), row);
-    _cache_cols.insert(_cache_cols.end(), cols.begin(), cols.end());
-  }
+  // Store the block as inserted rather than expanding it to
+  // rows.size() * cols.size() (row, column) pairs; finalize() expands
+  // it. Note: no explicit reserve() here -- reserve(n) allocates
+  // exactly n, not the amortised capacity insert() would pick, so
+  // reserving on every call would be O(#insert calls^2).
+  _cache_brows.insert(_cache_brows.end(), rows.begin(), rows.end());
+  _cache_bcols.insert(_cache_bcols.end(), cols.begin(), cols.end());
+  _cache_boffs_r.push_back(static_cast<std::int64_t>(_cache_brows.size()));
+  _cache_boffs_c.push_back(static_cast<std::int64_t>(_cache_bcols.size()));
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
@@ -247,8 +315,7 @@ void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
   }
 
   assert(_index_maps[0]);
-  _cache_rows.insert(_cache_rows.end(), rows.begin(), rows.end());
-  _cache_cols.insert(_cache_cols.end(), rows.begin(), rows.end());
+  _cache_diag.insert(_cache_diag.end(), rows.begin(), rows.end());
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
@@ -298,13 +365,17 @@ void SparsityPattern::finalize()
 
   // Bucket the insertion cache by row for the loops below
   const std::int32_t num_rows0 = local_size0 + _index_maps[0]->num_ghosts();
-  const auto [cache_offsets, cache_cols]
-      = bucket_by_row(_cache_rows, _cache_cols, num_rows0);
+  const auto [cache_offsets, cache_cols] = bucket_cache(num_rows0);
 
   // Cache is now fully bucketed into cache_offsets/cache_cols; drop it
   // early to reduce peak memory for the rest of finalize()
+  std::vector<std::int32_t>().swap(_cache_brows);
+  std::vector<std::int32_t>().swap(_cache_bcols);
+  std::vector<std::int64_t>().swap(_cache_boffs_r);
+  std::vector<std::int64_t>().swap(_cache_boffs_c);
   std::vector<std::int32_t>().swap(_cache_rows);
   std::vector<std::int32_t>().swap(_cache_cols);
+  std::vector<std::int32_t>().swap(_cache_diag);
 
   // Neighbourhood rank of each ghost row's owner, looked up once
   std::vector<int> neighbour_rank(owners0.size());

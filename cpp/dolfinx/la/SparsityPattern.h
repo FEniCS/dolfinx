@@ -71,6 +71,19 @@ public:
   /// including duplicates, to insert in addition to those already cached.
   void reserve(std::size_t num_entries);
 
+  /// @brief Reserve storage for additional `insert(rows, cols)` calls.
+  ///
+  /// Blocks are cached in the form they are inserted in, so the number
+  /// of calls and the total number of row and column indices are needed
+  /// rather than the number of (row, column) entries.
+  ///
+  /// @param[in] num_blocks Number of `insert(rows, cols)` calls.
+  /// @param[in] num_rows Total number of row indices over those calls.
+  /// @param[in] num_cols Total number of column indices over those
+  /// calls.
+  void reserve_blocks(std::size_t num_blocks, std::size_t num_rows,
+                      std::size_t num_cols);
+
   /// @brief Insert non-zero locations using local (process-wise)
   /// indices.
   /// @param[in] row local row index
@@ -170,10 +183,34 @@ private:
   // Owning process of ghost columns in owned rows
   std::vector<std::int32_t> _col_ghost_owners;
 
-  // Cache of unassembled (row, column) entries on owned and unowned
-  // (ghost) rows, as parallel row/column arrays (row-major COO).
+  // Cache of unassembled entries on owned and unowned (ghost) rows,
+  // held until finalize().
+  //
+  // insert(rows, cols) inserts the outer product of `rows` and `cols`,
+  // so storing one (row, column) pair per entry repeats each index
+  // rows.size() or cols.size() times over. Blocks are instead kept in
+  // the form they arrive in and expanded only in finalize(): for a P1
+  // tetrahedron that is 4 + 4 indices per cell rather than 16 + 16.
+  std::vector<std::int32_t> _cache_brows, _cache_bcols;
+  std::vector<std::int64_t> _cache_boffs_r{0}, _cache_boffs_c{0};
+
+  // Cache of individually inserted (row, column) pairs (row-major COO)
   std::vector<std::int32_t> _cache_rows;
   std::vector<std::int32_t> _cache_cols;
+
+  // Rows with a cached diagonal entry, from insert_diagonal
+  std::vector<std::int32_t> _cache_diag;
+
+  /// @brief Total number of cached (row, column) entries, counting
+  /// duplicates.
+  std::size_t num_cached() const;
+
+  /// @brief Expand every cached entry and group the columns by row.
+  /// @param[in] num_rows Number of rows to bucket into.
+  /// @return Row offsets (size `num_rows + 1`) and columns grouped by
+  /// row, neither sorted nor deduplicated within a row.
+  std::pair<std::vector<std::int64_t>, std::vector<std::int32_t>>
+  bucket_cache(std::int32_t num_rows) const;
 
   // Sparsity pattern adjacency data (computed once pattern is
   // finalised). _edges holds the edges (connected dofs). The edges for
