@@ -71,6 +71,23 @@ def test_shared_scatterer(W):
     assert w.x.scatterer != W.dofmap.scatterer
 
 
+def test_no_comm_duplication(V):
+    """Many Functions on one space do not exhaust MPI communicators.
+
+    With two communicators per Function this would exceed MPICH's
+    context ID limit. The surviving Functions must still communicate.
+    """
+    functions = [Function(V) for _ in range(2048)]
+    assert all(f.x.scatterer == V.dofmap.scatterer for f in functions)
+    if MPI.COMM_WORLD.rank == 0:
+        functions.pop()
+    u = functions[0]
+    u.x.array[:] = MPI.COMM_WORLD.rank
+    u.x.scatter_forward()
+    imap = V.dofmap.index_map
+    assert np.array_equal(u.x.array[imap.size_local :], imap.owners)
+
+
 def test_copy(V):
     u = Function(V)
     u.interpolate(lambda x: x[0] + 2 * x[1])

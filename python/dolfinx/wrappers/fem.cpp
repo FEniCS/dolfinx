@@ -116,17 +116,15 @@ void fem(nb::module_& m)
           "__init__",
           [](dolfinx::fem::DofMap* self,
              const dolfinx::fem::ElementDofLayout& element,
-             std::shared_ptr<const dolfinx::common::IndexMap> index_map,
              std::shared_ptr<const dolfinx::common::Scatterer<>> scatterer,
              int index_map_bs,
              const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap, int bs)
           {
-            new (self) dolfinx::fem::DofMap(element, index_map, scatterer,
-                                            index_map_bs, dofmap.array(), bs);
+            new (self) dolfinx::fem::DofMap(element, scatterer, index_map_bs,
+                                            dofmap.array(), bs);
           },
-          nb::arg("element_dof_layout"), nb::arg("index_map"),
-          nb::arg("scatterer"), nb::arg("index_map_bs"), nb::arg("dofmap"),
-          nb::arg("bs"))
+          nb::arg("element_dof_layout"), nb::arg("scatterer"),
+          nb::arg("index_map_bs"), nb::arg("dofmap"), nb::arg("bs"))
       .def_ro("index_map", &dolfinx::fem::DofMap::index_map)
       .def_ro("scatterer", &dolfinx::fem::DofMap::scatterer)
       .def_prop_ro("index_map_bs", &dolfinx::fem::DofMap::index_map_bs)

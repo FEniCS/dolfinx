@@ -128,7 +128,7 @@ def test_rank1_hdiv(dtype):
     scatter(As, array_evaluated, dofmap_row, dofmap_col)
     A.scatter_reverse()
 
-    gvec = la.vector(A.index_map(1), A.block_size[1], scatterer(A.index_map(1)), dtype=dtype)
+    gvec = la.vector(scatterer(A.index_map(1)), A.block_size[1], dtype=dtype)
     g = Function(RT1, gvec, name="g", dtype=dtype)
 
     # Interpolate a numpy expression into RT1

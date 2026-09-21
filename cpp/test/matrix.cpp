@@ -105,8 +105,8 @@ void test_matrix_apply()
   auto col_map = A.index_map(1);
 
   auto col_scatterer = common::create_scatterer(col_map);
-  la::Vector<double> x(col_map, 1, col_scatterer);
-  la::Vector<double> y(col_map, 1, col_scatterer);
+  la::Vector<double> x(col_scatterer, 1);
+  la::Vector<double> y(col_scatterer, 1);
 
   std::size_t col_size = col_map->size_local() + col_map->num_ghosts();
   CHECK(x.array().size() == col_size);

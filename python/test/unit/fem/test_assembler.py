@@ -1545,9 +1545,7 @@ def test_vector_types():
 
     c = Constant(mesh1, np.float64(1))
     L = inner(c, v1) * ufl.dx
-    x0 = la.vector(
-        V1.dofmap.index_map, V1.dofmap.index_map_bs, V1.dofmap.scatterer, dtype=np.float64
-    )
+    x0 = la.vector(V1.dofmap.scatterer, V1.dofmap.index_map_bs, dtype=np.float64)
     L = form(L, dtype=x0.array.dtype)
     c0 = pack_constants(L)
     c1 = pack_coefficients(L)
@@ -1556,9 +1554,7 @@ def test_vector_types():
 
     c = Constant(mesh1, np.complex128(1))
     L = inner(c, v1) * ufl.dx
-    x1 = la.vector(
-        V1.dofmap.index_map, V1.dofmap.index_map_bs, V1.dofmap.scatterer, dtype=np.complex128
-    )
+    x1 = la.vector(V1.dofmap.scatterer, V1.dofmap.index_map_bs, dtype=np.complex128)
     L = form(L, dtype=x1.array.dtype)
     c0 = pack_constants(L)
     c1 = pack_coefficients(L)
@@ -1567,9 +1563,7 @@ def test_vector_types():
 
     c = Constant(mesh0, np.float32(1))
     L = inner(c, v0) * ufl.dx
-    x2 = la.vector(
-        V0.dofmap.index_map, V0.dofmap.index_map_bs, V0.dofmap.scatterer, dtype=np.float32
-    )
+    x2 = la.vector(V0.dofmap.scatterer, V0.dofmap.index_map_bs, dtype=np.float32)
     L = form(L, dtype=x2.array.dtype)
     c0 = pack_constants(L)
     c1 = pack_coefficients(L)

@@ -21,7 +21,6 @@
 #include <memory>
 #include <mpi.h>
 #include <span>
-#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -75,39 +74,33 @@ class DofMap
 {
 public:
   /// @brief Create a DofMap from the layout of dofs on a reference
-  /// element, an IndexMap defining the distribution of dofs across
-  /// processes and a vector of indices.
+  /// element, a Scatterer holding the IndexMap that defines the
+  /// distribution of dofs across processes, and a vector of indices.
   ///
   /// @param[in] element The layout of the degrees of freedom on an
   /// element
-  /// @param[in] index_map The map describing the parallel distribution
-  /// of the degrees of freedom.
-  /// @param[in] scatterer Scatterer for `index_map`, shared by all
+  /// @param[in] scatterer Scatterer for the index map describing the
+  /// parallel distribution of the degrees of freedom. Shared by all
   /// vectors with this layout.
-  /// @param[in] index_map_bs The block size associated with the
-  /// `index_map`.
+  /// @param[in] index_map_bs The block size associated with the index
+  /// map.
   /// @param[in] dofmap Adjacency list with the degrees-of-freedom for
   /// each cell.
   /// @param[in] bs The block size of the `dofmap`.
-  /// @throws std::invalid_argument If `scatterer` was not created for
-  /// `index_map`.
   template <typename E, typename U>
     requires std::is_convertible_v<std::remove_cvref_t<E>,
                                    fem::ElementDofLayout>
                  and std::is_convertible_v<std::remove_cvref_t<U>,
                                            std::vector<std::int32_t>>
-  DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
-         std::shared_ptr<const common::Scatterer<>> scatterer, int index_map_bs,
-         U&& dofmap, int bs)
-      : index_map(std::move(index_map)), scatterer(std::move(scatterer)),
+  DofMap(E&& element, std::shared_ptr<const common::Scatterer<>> scatterer,
+         int index_map_bs, U&& dofmap, int bs)
+      : index_map(scatterer->index_map()), scatterer(std::move(scatterer)),
         _index_map_bs(index_map_bs),
         _element_dof_layout(std::forward<E>(element)),
         _dofmap(std::forward<U>(dofmap)), _bs(bs),
         _shape1(_element_dof_layout.num_dofs()
                 * _element_dof_layout.block_size() / _bs)
   {
-    if (this->scatterer->index_map() != this->index_map)
-      throw std::invalid_argument("Scatterer was not created for index map.");
   }
 
   // Copy constructor

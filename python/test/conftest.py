@@ -172,7 +172,7 @@ def cg_solver():
         # Create larger ghosted vector based on matrix column space
         # and get initial y = A.x
         col_map = A.index_map(1)
-        p = dolfinx_vector(col_map, A.block_size[1], scatterer(col_map), dtype=x.array.dtype)
+        p = dolfinx_vector(scatterer(col_map), A.block_size[1], dtype=x.array.dtype)
         p.array[:nr] = x.array[:nr]
         p.scatter_forward()
         y = A_op @ p.array

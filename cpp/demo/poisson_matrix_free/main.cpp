@@ -182,8 +182,7 @@ void solver(MPI_Comm comm)
   auto bc = std::make_shared<const fem::DirichletBC<T>>(u_D, bdofs);
 
   // Assemble RHS vector
-  la::Vector<T> b(V->dofmap()->index_map, V->dofmap()->index_map_bs(),
-                  V->dofmap()->scatterer);
+  la::Vector<T> b(V->dofmap()->scatterer, V->dofmap()->index_map_bs());
   fem::assemble_vector(b.array(), L);
 
   // Apply lifting to account for Dirichlet boundary condition

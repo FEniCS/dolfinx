@@ -17,7 +17,6 @@
 #include <memory>
 #include <numeric>
 #include <span>
-#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -161,31 +160,26 @@ public:
 
   /// @brief Create a distributed vector.
   ///
-  /// The Scatterer holds the communication pattern and (via
-  /// common::NeighbourhoodComms) the MPI communicators for `map`, and is
-  /// shared between all Vectors with the same layout. For a
-  /// function-space layout use `fem::DofMap::scatterer`; otherwise
-  /// create one with `common::Scatterer(map,
+  /// The Scatterer holds the index map that describes the parallel
+  /// layout, the communication pattern and (via
+  /// common::NeighbourhoodComms) the MPI communicators, and is shared
+  /// between all Vectors with the same layout. For a function-space
+  /// layout use `fem::DofMap::scatterer`; otherwise create one with
+  /// `common::Scatterer(map,
   /// std::make_shared<common::NeighbourhoodComms>(*map))`.
   ///
   /// @note Not collective.
   ///
-  /// @param[in] map Index map that describes the parallel layout of
-  /// the data.
+  /// @param[in] scatterer Scatterer for the index map of the vector.
   /// @param[in] bs Number of entries per index map 'index' (block size).
-  /// @param[in] scatterer Scatterer for `map`.
-  /// @throws std::invalid_argument If `scatterer` was not created for
-  /// `map`.
-  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
-         std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer)
-      : _map(std::move(map)), _bs(bs),
+  Vector(std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer,
+         int bs)
+      : _map(scatterer->index_map()), _bs(bs),
         _x(bs * (_map->size_local() + _map->num_ghosts())),
         _scatterer(std::move(scatterer)),
         _buffer_local(bs * _scatterer->local_indices_block().size()),
         _buffer_remote(bs * _scatterer->remote_indices_block().size())
   {
-    if (_scatterer->index_map() != _map)
-      throw std::invalid_argument("Scatterer was not created for index map.");
   }
 
   /// Copy constructor

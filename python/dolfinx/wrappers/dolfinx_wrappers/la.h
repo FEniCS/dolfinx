@@ -53,9 +53,8 @@ void declare_la_objects(nanobind::module_& m, std::string_view type)
   // dolfinx::la::Vector
   std::string pyclass_vector_name = std::string("Vector_").append(type);
   nb::class_<dolfinx::la::Vector<T>>(m, pyclass_vector_name.c_str())
-      .def(nb::init<std::shared_ptr<const dolfinx::common::IndexMap>, int,
-                    std::shared_ptr<const dolfinx::common::Scatterer<>>>(),
-           nb::arg("map"), nb::arg("bs"), nb::arg("scatterer"))
+      .def(nb::init<std::shared_ptr<const dolfinx::common::Scatterer<>>, int>(),
+           nb::arg("scatterer"), nb::arg("bs"))
       .def(nb::init<const dolfinx::la::Vector<T>&>(), nb::arg("vec"))
       .def_prop_ro("dtype", [](const dolfinx::la::Vector<T>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; })

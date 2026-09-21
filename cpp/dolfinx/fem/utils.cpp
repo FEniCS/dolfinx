@@ -73,7 +73,7 @@ fem::DofMap fem::create_dofmap(
     }
   }
 
-  return DofMap(layout, index_map, common::create_scatterer(index_map), bs,
+  return DofMap(layout, common::create_scatterer(index_map), bs,
                 std::move(dofmaps.front()), bs);
 }
 //-----------------------------------------------------------------------------
@@ -137,8 +137,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
   dms.reserve(dofmaps.size());
   for (std::size_t i = 0; i < dofmaps.size(); ++i)
   {
-    dms.emplace_back(layouts[i], index_map, scatterer, bs,
-                     std::move(dofmaps[i]), bs);
+    dms.emplace_back(layouts[i], scatterer, bs, std::move(dofmaps[i]), bs);
   }
 
   return dms;

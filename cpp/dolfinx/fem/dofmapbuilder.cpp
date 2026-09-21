@@ -748,7 +748,7 @@ fem::build_real_element_dofmap(const mesh::Topology& topology,
 
   std::vector<std::int32_t> dofmap(num_cells_on_process, 0);
   dofmap.reserve(1);
-  return dolfinx::fem::DofMap(dof_layout, imap, common::create_scatterer(imap),
+  return dolfinx::fem::DofMap(dof_layout, common::create_scatterer(imap),
                               dof_layout.block_size(), dofmap,
                               dof_layout.block_size());
 };

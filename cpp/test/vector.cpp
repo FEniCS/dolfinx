@@ -44,7 +44,7 @@ void test_vector()
 
   std::shared_ptr<const common::Scatterer<>> scatterer
       = common::create_scatterer(index_map);
-  la::Vector<T> v(index_map, 1, scatterer);
+  la::Vector<T> v(scatterer, 1);
   CHECK(v.scatterer() == scatterer);
   std::ranges::fill(v.array(), 1.0);
 
@@ -82,7 +82,7 @@ void test_vector_cast()
   auto index_map = std::make_shared<common::IndexMap>(
       MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
 
-  la::Vector<T> v(index_map, 1, common::create_scatterer(index_map));
+  la::Vector<T> v(common::create_scatterer(index_map), 1);
   std::ranges::fill(v.array(), 1);
 
   la::Vector<U, std::vector<U>, std::vector<std::int64_t>> v1(v);
@@ -118,7 +118,7 @@ void test_vector_scatter_rev()
   auto index_map = std::make_shared<common::IndexMap>(
       MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
 
-  la::Vector<double> v(index_map, 1, common::create_scatterer(index_map));
+  la::Vector<double> v(common::create_scatterer(index_map), 1);
   std::ranges::fill(v.array(), 0.0);
   std::fill(std::next(v.array().begin(), size_local), v.array().end(), 2.0);
 

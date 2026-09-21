@@ -135,7 +135,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view)
   ElementDofLayout element_dof_layout = dofmap_view.element_dof_layout().copy();
 
   // Create new dofmap and return
-  return DofMap(std::move(element_dof_layout), index_map,
+  return DofMap(std::move(element_dof_layout),
                 common::create_scatterer(index_map), 1, std::move(dofmap), 1);
 }
 
@@ -229,7 +229,7 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
 
   // Set element dof layout and cell dimension
   ElementDofLayout sub_dof_layout = _element_dof_layout.sub_layout(component);
-  return DofMap(std::move(sub_dof_layout), this->index_map, this->scatterer,
+  return DofMap(std::move(sub_dof_layout), this->scatterer,
                 this->index_map_bs(), std::move(dofmap), 1);
 }
 //-----------------------------------------------------------------------------
@@ -257,7 +257,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
           dofmap_comm, topology, {collapsed_dof_layout}, reorder_fn);
       auto index_map
           = std::make_shared<common::IndexMap>(std::move(_index_map));
-      return DofMap(layout, index_map, common::create_scatterer(index_map), bs,
+      return DofMap(layout, common::create_scatterer(index_map), bs,
                     std::move(dofmaps.front()), bs);
     }
     else

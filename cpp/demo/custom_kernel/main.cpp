@@ -137,7 +137,7 @@ double assemble_vector0(std::shared_ptr<const fem::FunctionSpace<T>> V,
                 fem::integral_data<T>(kernel, cells, std::vector<int>{})}};
   fem::Form<T> L({V}, integrals, mesh, {}, {}, false, {});
   auto dofmap = V->dofmap();
-  la::Vector<T> b(dofmap->index_map, 1, dofmap->scatterer);
+  la::Vector<T> b(dofmap->scatterer, 1);
   common::Timer timer("Assembler0 std::function (vector)");
   fem::assemble_vector(b.array(), L);
   b.scatter_rev(std::plus<T>());
@@ -204,7 +204,7 @@ template <std::floating_point T>
 double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
                         auto kernel, const std::vector<std::int32_t>& cells)
 {
-  la::Vector<T> b(dofmap.index_map, 1, dofmap.scatterer);
+  la::Vector<T> b(dofmap.scatterer, 1);
   // P1 triangle coordinate and field dofmaps have three dofs per cell.
   // The static extent propagates this information into the assembler.
   const auto x_dofmap0 = g.dofmaps().front();

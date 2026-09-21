@@ -565,7 +565,7 @@ def test_codim_1_gradient_interior_facet(cell_type):
     exterior_facets = exterior_facet_indices(msh.topology)
 
     # Owned and ghosted interior facets
-    facet_vector = la.vector(facet_imap, 1, scatterer(facet_imap), dtype=np.int32)
+    facet_vector = la.vector(scatterer(facet_imap), dtype=np.int32)
     facet_vector.array[: facet_imap.size_local] = 1
     facet_vector.array[facet_imap.size_local :] = 0
     facet_vector.array[exterior_facets] = 0
@@ -823,7 +823,7 @@ def test_interior_facet_codim_1(msh):
     facet_imap = msh.topology.index_map(fdim)
 
     # Mark all local and owned interior facets and "unmark" exterior facets
-    facet_vector = la.vector(facet_imap, 1, scatterer(facet_imap), dtype=np.int32)
+    facet_vector = la.vector(scatterer(facet_imap), dtype=np.int32)
     facet_vector.array[: facet_imap.size_local] = 1
     facet_vector.array[facet_imap.size_local :] = 0
     facet_vector.array[exterior_facet_indices(msh.topology)] = 0
