@@ -522,12 +522,12 @@ def test_discontinuous_coordinate_element(dtype, degree):
     """A discontinuous coordinate element maps a single cell as usual."""
     cmap = coordinate_element(
         create_element(
-            ElementFamily.P,
-            BasixCellType.triangle,
-            degree,
-            LagrangeVariant.gll_isaac,
-            DPCVariant.unset,
-            True,
+            family=ElementFamily.P,
+            celltype=BasixCellType.triangle,
+            degree=degree,
+            lagrange_variant=LagrangeVariant.gll_isaac,
+            dpc_variant=DPCVariant.unset,
+            discontinuous=True,
             dtype=dtype,
         )
     )
