@@ -33,8 +33,8 @@ f = Constant(V)
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
 
-# Linear form representing the action of the form `a`` on the
-# coefficient `ui`:`
+# Linear form representing the action of the form `a` on the
+# coefficient `ui`:
 ui = Coefficient(V)
 M = action(a, ui)
 

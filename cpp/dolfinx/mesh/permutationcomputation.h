@@ -23,11 +23,12 @@ class Topology;
 ///  - `n // 2` gives the number of rotations to apply
 ///
 /// The data is stored in a flattened 2D array, so that
-/// `data[cell_index * entities_per_cell + entity_index]` is the
-/// permutation of the cell-local entity `entity_index` of cell
-/// `cell_index`. It is passed to FFCx kernels, where it is used to
+/// `data[cell_index * entities_per_cell + entity_index]` contains the
+/// permutation data for the entity with index `entity_index` of cell
+/// `cell_index`. This data passed to FFCx kernels, where it is used to
 /// permute quadrature points on sub-entity integrals when data from
 /// more than one cell incident to the entity is used.
+
 ///
 /// @param[in] topology Mesh topology.
 /// @param[in] dim Topological dimension of the entities to permute.
@@ -84,11 +85,16 @@ std::vector<std::uint8_t> compute_entity_permutations(const Topology& topology,
 ///   - edge 4 is reflected (1)
 ///   - edge 5 is not permuted (0)
 ///
+/// @note Not collective.
+/// @pre All entities of dimension `< topology.dim()` must already exist
+/// (see Topology::create_entities).
 /// @param[in] topology Mesh topology.
-/// @param[in] num_threads Number of threads to use.
-/// @return Packed permutation info for each cell.
-/// @see compute_entity_permutations, which gives the orientations of
-/// one entity dimension unpacked, for permuting quadrature points.
+/// @param[in] num_threads Number of threads to use. Must be >= 1.
+/// @return Facet permutation and cell permutations, covering both owned
+/// and ghost cells.
+/// @throws std::invalid_argument If `num_threads < 1`.
+/// @throws std::runtime_error If `topology` is a mixed-topology mesh
+/// (more than one 3D cell type).
 std::vector<std::uint32_t> compute_cell_permutations(const Topology& topology,
                                                      int num_threads);
 

@@ -916,6 +916,20 @@ def test_mesh_single_process_distribution(partitioner):
             assert adj.links(i).size == 2
 
 
+def test_create_submesh_empty_on_some_ranks():
+    """create_submesh must not deadlock when some ranks have zero entities."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 8, 8)
+    tdim = mesh.topology.dim
+    if MPI.COMM_WORLD.rank == 0:
+        num_local = mesh.topology.index_map(tdim).size_local
+        entities = np.arange(num_local, dtype=np.int32)
+    else:
+        entities = np.empty(0, dtype=np.int32)
+    submesh, _entity_map, _vertex_map, _node_map = create_submesh(mesh, tdim, entities)
+    if MPI.COMM_WORLD.rank != 0:
+        assert submesh.topology.index_map(tdim).size_local == 0
+
+
 @pytest.mark.parametrize("codim", [0, 1, 2, 3])
 def test_transfer_to_submesh(codim):
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 4, 5)
@@ -941,7 +955,7 @@ def test_transfer_to_submesh(codim):
         et_values = values[et_indices]
         et = dolfinx.mesh.meshtags(mesh, i, et_indices, et_values)
 
-        sub_et = transfer_meshtags_to_submesh(et, submesh, vertex_map, entity_map)
+        sub_et = transfer_meshtags_to_submesh(et, submesh, entity_map, vertex_map)
         ref_one = locate_entities(submesh, i, marker1)
         ref_two = np.sort(locate_entities(submesh, i, marker2))
         ref_one = np.setdiff1d(ref_one, ref_two, assume_unique=True)

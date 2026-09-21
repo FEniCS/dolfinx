@@ -523,6 +523,7 @@ def read_from_msh(
     rank: int = 0,
     gdim: int = 3,
     partitioner: PartitioningFunc | None = None,
+    ghost_mode: GhostMode = GhostMode.none,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a mesh and cell facet markers.
 
@@ -537,6 +538,7 @@ def read_from_msh(
         gdim: Geometric dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
+        ghost_mode: Ghost mode used in the mesh partitioning.
 
     Returns:
         Meshdata with mesh, cell tags, facet tags, edge tags,
@@ -556,8 +558,12 @@ def read_from_msh(
         gmsh.initialize()
         gmsh.model.add("Mesh from file")
         gmsh.merge(str(filename))
-        msh = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
+        msh = model_to_mesh(
+            gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner, ghost_mode=ghost_mode
+        )
         gmsh.finalize()
         return msh
     else:
-        return model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
+        return model_to_mesh(
+            gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner, ghost_mode=ghost_mode
+        )

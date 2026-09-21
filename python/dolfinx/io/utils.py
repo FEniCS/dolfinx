@@ -22,7 +22,7 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
-from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags
+from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags, _get_mesh_partitioner
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
@@ -350,6 +350,7 @@ class XDMFFile:
         name: str = "mesh",
         xpath: str = "/Xdmf/Domain",
         max_facet_to_cell_links: int = 2,
+        num_threads: int = 1,
     ) -> Mesh:
         """Read mesh data from file.
 
@@ -365,6 +366,8 @@ class XDMFFile:
             xpath: XPath where Mesh Grid is stored in the file.
             max_facet_to_cell_links: Maximum number of cells that a facet
                 can be linked to.
+            num_threads: Number of threads to use to build mesh. Must be
+                greater than 0.
         """
         cell_shape, cell_degree = self.read_cell_type(name, xpath)
         cells = self.read_topology_data(name, xpath)
@@ -426,16 +429,17 @@ class XDMFFile:
             cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
 
         # Build the mesh
+        partitioner_fn, cell_weights = _get_mesh_partitioner(self.comm, None)
         msh = _cpp.mesh.create_mesh(
-            self.comm,
-            cells,
-            cmap,
-            x,
-            _cpp.graph.partitioner(),
-            ghost_mode,
-            max_facet_to_cell_links,
-            1,
-            cell_weights=None,
+            comm=self.comm,
+            cells=cells,
+            element=cmap,
+            x=x,
+            partitioner=partitioner_fn,
+            ghost_mode=ghost_mode,
+            max_facet_to_cell_links=max_facet_to_cell_links,
+            num_threads=num_threads,
+            cell_weights=cell_weights,
             reorder_fn=None,
         )
         msh.name = name
@@ -477,9 +481,9 @@ class XDMFFile:
 def distribute_entity_data(
     mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: np.ndarray
 ) -> tuple[npt.NDArray[np.int64], np.ndarray]:
-    """Distribute  mesh entities and values to owning process.
+    """Distribute mesh entities and values to owning process.
 
-    The entities are described by the global vertex indices of the mesh.
+    The entities are described by the global node indices of the mesh.
     These entity indices are using the original input ordering.
 
     Returns:

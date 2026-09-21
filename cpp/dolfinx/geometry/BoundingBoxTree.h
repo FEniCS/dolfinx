@@ -139,8 +139,15 @@ template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::vector<T>> build_from_leaf(
     std::vector<std::pair<std::array<T, 6>, std::int32_t>>& leaf_bboxes)
 {
+  assert(!leaf_bboxes.empty());
   std::vector<std::int32_t> bboxes;
   std::vector<T> bbox_coordinates;
+
+  // A binary tree with N leaves has 2N - 1 nodes.
+  const std::size_t num_nodes = 2 * leaf_bboxes.size() - 1;
+  bboxes.reserve(2 * num_nodes);
+  bbox_coordinates.reserve(6 * num_nodes);
+
   impl_bb::_build_from_leaf<T>(leaf_bboxes, bboxes, bbox_coordinates);
   return {std::move(bboxes), std::move(bbox_coordinates)};
 }
@@ -295,6 +302,12 @@ public:
     if (!points.empty())
     {
       _bboxes.clear();
+
+      // A binary tree with N leaves has 2N - 1 nodes.
+      const std::size_t num_nodes = 2 * points.size() - 1;
+      _bboxes.reserve(2 * num_nodes);
+      _bbox_coordinates.reserve(6 * num_nodes);
+
       impl_bb::_build_from_point(std::span(points), _bboxes, _bbox_coordinates);
     }
 

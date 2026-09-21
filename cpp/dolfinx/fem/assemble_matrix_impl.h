@@ -35,9 +35,6 @@ bool has_bc(auto& dofs, auto& bc, auto bs)
   return false;
 };
 
-/// @brief Typedef
-using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
-
 /// @brief Execute kernel over cells and accumulate result in a matrix.
 ///
 /// @note This function must not perform any dynamic (heap) memory

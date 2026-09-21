@@ -24,8 +24,8 @@
 # Basix provides numerous finite elements, but there are many other
 # possible elements a user may want to use. More detailed information
 # about the inputs needed to create a custom element can be found in
-# [the Basix
-# documentation](https://docs.fenicsproject.org/basix/main/python/demo/demo_custom_element.py.html).
+# [the Basix custom-element
+# API](https://docs.fenicsproject.org/basix/main/python/_autosummary/basix.finite_element.html#basix.finite_element.create_custom_element).
 #
 # We begin this demo by importing the required modules.
 
@@ -65,37 +65,15 @@ mpl.use("agg")
 # number of polynomials in the degree 2 set) with an $8 \times 8$
 # identity in the first 8 columns. The order in which polynomials appear
 # in the polynomial sets for each cell can be found in the [Basix
-# documentation](https://docs.fenicsproject.org/basix/main/polyset-order.html).
+# documentation](https://docs.fenicsproject.org/basix/main/python/polyset-order.html).
 
 wcoeffs = np.eye(8, 9)
 
-# For elements where the coefficients matrix is not an identity, we can
-# use the properties of orthonormal polynomials to compute `wcoeffs`.
-# Let $\{q_0, q_1,\dots\}$ be the orthonormal polynomials of a given
-# degree for a given cell, and suppose that we're trying to represent a
-# function $f_i\in\operatorname{span}\{q_1, q_2,\dots\}$ (as
-# $\{f_0, f_1,\dots\}$ is a basis of the polynomial space for our element).
-# Using the properties of orthonormal polynomials, we see that
-# $f_i = \sum_j\left(\int_R f_iq_j\,\mathrm{d}\mathbf{x}\right)q_j$,
-# and so the coefficients are given by
-# $a_{ij}=\int_R f_iq_j\,\mathrm{d}\mathbf{x}$.
-# Hence we could compute `wcoeffs` as follows:
-
-# +
-wcoeffs2 = np.empty((8, 9))
-pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 4)
-evals = basix.tabulate_polynomials(
-    basix.PolynomialType.legendre, basix.CellType.quadrilateral, 2, pts
-)
-
-for j, v in enumerate(evals):
-    wcoeffs2[0, j] = sum(v * wts)  # 1
-    wcoeffs2[1, j] = sum(v * pts[:, 1] * wts)  # y
-    wcoeffs2[2, j] = sum(v * pts[:, 1] ** 2 * wts)  # y^2
-    wcoeffs2[3, j] = sum(v * pts[:, 0] * pts[:, 1] * wts)  # xy
-    wcoeffs2[4, j] = sum(v * pts[:, 0] * pts[:, 1] ** 2 * wts)  # xy^2
-    wcoeffs2[5, j] = sum(v * pts[:, 0] ** 2 * pts[:, 1] * wts)  # x^2y
-# -
+# For an element whose basis is not a subset of the orthonormal
+# polynomial set, the coefficients in `wcoeffs` can be computed by
+# quadrature. If $\{q_0, q_1,\dots\}$ is the orthonormal basis and
+# $f_i$ is an element basis function, then
+# $f_i = \sum_j\left(\int_R f_iq_j\,\mathrm{d}\mathbf{x}\right)q_j$.
 
 # ### Interpolation operators
 #
