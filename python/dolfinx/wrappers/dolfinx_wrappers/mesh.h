@@ -376,11 +376,8 @@ void declare_mesh(nb::module_& m, std::string_view type)
          std::optional<part::impl::PythonCellReorder> reorder_fn)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
-
-        std::vector<std::span<const std::int64_t>> cells;
-        std::ranges::transform(
-            cells_nb, std::back_inserter(cells), [](auto& c)
-            { return std::span<const std::int64_t>(c.data(), c.size()); });
+        std::vector<std::span<const std::int64_t>> cells
+            = vec_of_spans(cells_nb);
 
         return dolfinx::mesh::create_mesh(
             comm.get(), comm.get(), cells, elements, comm.get(),
