@@ -18,6 +18,7 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
+#include <functional>
 #include <mpi.h>
 #include <span>
 
@@ -274,6 +275,34 @@ void test_sparsity_pattern_duplicate_blocks()
   CHECK(std::ranges::equal(offsets, std::array<std::int64_t, 4>{0, 2, 4, 4}));
 }
 
+void test_stacked_sparsity_pattern_blocks()
+{
+  auto map = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 3);
+  la::SparsityPattern p(MPI_COMM_SELF, {map, map}, {1, 1});
+  const std::array<std::int32_t, 3> rows{0, 0, 2};
+  const std::array<std::int32_t, 3> cols{1, 1, 2};
+  p.insert(rows, cols);
+  p.insert(rows, cols);
+
+  std::vector<std::vector<const la::SparsityPattern*>> patterns{{&p}};
+  using MapData
+      = std::pair<std::reference_wrapper<const common::IndexMap>, int>;
+  std::array<std::vector<MapData>, 2> maps;
+  maps[0].emplace_back(std::cref(*map), 2);
+  maps[1].emplace_back(std::cref(*map), 3);
+  std::array<std::vector<int>, 2> bs{{{2}, {3}}};
+
+  la::SparsityPattern stacked(MPI_COMM_SELF, patterns, maps, bs);
+  stacked.finalize();
+
+  const auto [edges, offsets] = stacked.graph();
+  const std::array<std::int32_t, 24> expected_edges{
+      3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8};
+  CHECK(std::ranges::equal(edges, expected_edges));
+  CHECK(std::ranges::equal(
+      offsets, std::array<std::int64_t, 7>{0, 6, 12, 12, 12, 18, 24}));
+}
+
 } // namespace
 
 TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
@@ -287,4 +316,5 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_sparsity_pattern_reserve());
   CHECK_NOTHROW(test_sparsity_pattern_empty_columns());
   CHECK_NOTHROW(test_sparsity_pattern_duplicate_blocks());
+  CHECK_NOTHROW(test_stacked_sparsity_pattern_blocks());
 }

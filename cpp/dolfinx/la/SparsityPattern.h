@@ -201,10 +201,6 @@ private:
   // Rows with a cached diagonal entry, from insert_diagonal
   std::vector<std::int32_t> _cache_diag;
 
-  /// @brief Total number of cached (row, column) entries, counting
-  /// duplicates.
-  std::size_t num_cached() const;
-
   /// @brief Expand every cached entry and group the columns by row.
   /// @param[in] num_rows Number of rows to bucket into.
   /// @param[in] num_cols Number of columns in the cached index space.

@@ -44,18 +44,6 @@ bucket_by_row(std::span<const std::int32_t> rows,
 }
 } // namespace
 
-//-----------------------------------------------------------------------------
-std::size_t SparsityPattern::num_cached() const
-{
-  std::size_t n = _cache_rows.size() + _cache_diag.size();
-  for (std::size_t b = 0; b + 1 < _cache_boffs_r.size(); ++b)
-  {
-    n += std::size_t(_cache_boffs_r[b + 1] - _cache_boffs_r[b])
-         * std::size_t(_cache_boffs_c[b + 1] - _cache_boffs_c[b]);
-  }
-  return n;
-}
-//-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, std::vector<std::int32_t>>
 SparsityPattern::bucket_cache(std::int32_t num_rows,
                               std::int32_t num_cols) const
@@ -185,18 +173,6 @@ SparsityPattern::SparsityPattern(
 
   const std::int32_t num_rows_local_new = _index_maps[0]->size_local();
 
-  // Reserve the exact final cache size (sub-pattern cache sizes are
-  // already known, so this is a one-off reserve, not a per-call one)
-  {
-    std::size_t num_entries = 0;
-    for (std::size_t row = 0; row < patterns.size(); ++row)
-      for (std::size_t col = 0; col < patterns[row].size(); ++col)
-        if (const SparsityPattern* p = patterns[row][col]; p)
-          num_entries += p->num_cached() * bs[0][row] * bs[1][col];
-    _cache_rows.reserve(num_entries);
-    _cache_cols.reserve(num_entries);
-  }
-
   // Iterate over block rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
@@ -228,51 +204,53 @@ SparsityPattern::SparsityPattern(
           = p->bucket_cache(num_rows_local + num_ghost_rows_local,
                             num_cols_local + map_col.num_ghosts());
 
+      std::size_t num_blocks = 0;
+      for (std::size_t i = 0; i + 1 < p_offsets.size(); ++i)
+        num_blocks += p_offsets[i] != p_offsets[i + 1];
+      reserve_blocks(num_blocks, num_blocks * bs_dof0, p_cols.size() * bs_dof1);
+
+      // Store each expanded source row as one outer-product block.
+      const auto append_row
+          = [this, &p_offsets, &p_cols, &local_offset1, &ghost_offsets1, col,
+             num_cols_local, bs_dof0,
+             bs_dof1](std::int32_t old_row, std::int32_t new_row)
+      {
+        if (p_offsets[old_row] == p_offsets[old_row + 1])
+          return;
+
+        for (int k0 = 0; k0 < bs_dof0; ++k0)
+          _cache_brows.push_back(new_row + k0);
+        for (std::int64_t k = p_offsets[old_row]; k < p_offsets[old_row + 1];
+             ++k)
+        {
+          const std::int32_t c_old = p_cols[k];
+          const std::int32_t c_new = (c_old < num_cols_local)
+                                         ? bs_dof1 * c_old + local_offset1[col]
+                                         : bs_dof1 * (c_old - num_cols_local)
+                                               + local_offset1.back()
+                                               + ghost_offsets1[col];
+          for (int k1 = 0; k1 < bs_dof1; ++k1)
+            _cache_bcols.push_back(c_new + k1);
+        }
+        _cache_boffs_r.push_back(
+            static_cast<std::int64_t>(_cache_brows.size()));
+        _cache_boffs_c.push_back(
+            static_cast<std::int64_t>(_cache_bcols.size()));
+      };
+
       // Iterate over owned rows cache
       for (std::int32_t i = 0; i < num_rows_local; ++i)
       {
-        for (std::int64_t k = p_offsets[i]; k < p_offsets[i + 1]; ++k)
-        {
-          const std::int32_t c_old = p_cols[k];
-          const std::int32_t r_new = bs_dof0 * i + local_offset0[row];
-          const std::int32_t c_new = (c_old < num_cols_local)
-                                         ? bs_dof1 * c_old + local_offset1[col]
-                                         : bs_dof1 * (c_old - num_cols_local)
-                                               + local_offset1.back()
-                                               + ghost_offsets1[col];
-
-          for (int k0 = 0; k0 < bs_dof0; ++k0)
-          {
-            for (int k1 = 0; k1 < bs_dof1; ++k1)
-            {
-              _cache_rows.push_back(r_new + k0);
-              _cache_cols.push_back(c_new + k1);
-            }
-          }
-        }
+        const std::int32_t r_new = bs_dof0 * i + local_offset0[row];
+        append_row(i, r_new);
       }
+
       // Iterate over unowned rows cache
       for (std::int32_t i = 0; i < num_ghost_rows_local; ++i)
       {
-        for (std::int64_t k = p_offsets[num_rows_local + i];
-             k < p_offsets[num_rows_local + i + 1]; ++k)
-        {
-          const std::int32_t c_old = p_cols[k];
-          const std::int32_t r_new = bs_dof0 * i + ghost_offsets0[row];
-          const std::int32_t c_new = (c_old < num_cols_local)
-                                         ? bs_dof1 * c_old + local_offset1[col]
-                                         : bs_dof1 * (c_old - num_cols_local)
-                                               + local_offset1.back()
-                                               + ghost_offsets1[col];
-          for (int k0 = 0; k0 < bs_dof0; ++k0)
-          {
-            for (int k1 = 0; k1 < bs_dof1; ++k1)
-            {
-              _cache_rows.push_back(num_rows_local_new + r_new + k0);
-              _cache_cols.push_back(c_new + k1);
-            }
-          }
-        }
+        const std::int32_t r_new
+            = num_rows_local_new + bs_dof0 * i + ghost_offsets0[row];
+        append_row(num_rows_local + i, r_new);
       }
     }
   }
