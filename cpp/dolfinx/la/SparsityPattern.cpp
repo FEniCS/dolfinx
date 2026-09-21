@@ -256,18 +256,6 @@ SparsityPattern::SparsityPattern(
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::reserve(std::size_t num_entries)
-{
-  if (!_offsets.empty())
-  {
-    throw std::runtime_error(
-        "Cannot reserve in sparsity pattern. It has already been finalized");
-  }
-
-  _cache_rows.reserve(_cache_rows.size() + num_entries);
-  _cache_cols.reserve(_cache_cols.size() + num_entries);
-}
-//-----------------------------------------------------------------------------
 void SparsityPattern::reserve_blocks(std::size_t num_blocks,
                                      std::size_t num_rows, std::size_t num_cols)
 {

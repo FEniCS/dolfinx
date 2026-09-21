@@ -66,11 +66,6 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// @brief Reserve storage for additional insertions.
-  /// @param[in] num_entries Expected number of (row, column) entries,
-  /// including duplicates, to insert in addition to those already cached.
-  void reserve(std::size_t num_entries);
-
   /// @brief Reserve storage for additional `insert(rows, cols)` calls.
   ///
   /// Blocks are cached in the form they are inserted in, so the number
