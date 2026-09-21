@@ -7,7 +7,7 @@ from dolfinx.cpp.mesh import Mesh_float64, create_geometry, create_topology
 from dolfinx.fem import coordinate_element, create_dofmaps
 from dolfinx.fem.element import finiteelement
 from dolfinx.log import LogLevel, set_log_level
-from dolfinx.mesh import CellType, Topology
+from dolfinx.mesh import CellType, GhostMode, Topology
 
 
 def create_element_dofmap(mesh, cell_types, degree):
@@ -46,6 +46,7 @@ def test_dofmap_mixed_topology():
         ghost_owners,
         boundary_vertices,
         1,
+        GhostMode.none,
     )
     # Create dofmaps for Geometry
     tri = coordinate_element(CellType.triangle, 1)
@@ -99,7 +100,14 @@ def test_dofmap_prism_mesh():
 
     topology = Topology(
         create_topology(
-            MPI.COMM_SELF, [CellType.prism], cells, orig_index, ghost_owners, boundary_vertices, 1
+            MPI.COMM_SELF,
+            [CellType.prism],
+            cells,
+            orig_index,
+            ghost_owners,
+            boundary_vertices,
+            1,
+            GhostMode.none,
         )
     )
     topology.create_entities(2)

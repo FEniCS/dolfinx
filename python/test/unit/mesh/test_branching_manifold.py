@@ -11,6 +11,9 @@ import pytest
 
 import basix
 import ufl
+from dolfinx.cpp.common import IndexMap as _IndexMap
+from dolfinx.cpp.graph import AdjacencyList_int32
+from dolfinx.cpp.mesh import Topology as _Topology
 from dolfinx.graph import adjacencylist, partitioner
 from dolfinx.mesh import (
     CellType,
@@ -19,6 +22,7 @@ from dolfinx.mesh import (
     compute_midpoints,
     create_mesh,
     create_unit_cube,
+    create_unit_interval,
     create_unit_square,
     entities_to_geometry,
     exterior_facet_indices,
@@ -212,8 +216,8 @@ def _round_robin_partitioner(ghost: bool):
 
 
 def _interprocess_vertices_reference(topology):
-    """Global indices of the vertices attached to cells owned by two or
-    more ranks, as seen by this rank.
+    """Global indices (sorted, unique) of the vertices attached to cells
+    owned by two or more ranks, as seen by this rank.
     """
     comm = topology.comm
     assert topology.dim == 1
@@ -227,8 +231,7 @@ def _interprocess_vertices_reference(topology):
     all_vertices = np.concatenate(shared)
     uniques, counts = np.unique(all_vertices, return_counts=True)
     shared_globally = uniques[counts > 1]
-    local_shared = np.intersect1d(attached, shared_globally)
-    return set(local_shared)
+    return np.intersect1d(attached, shared_globally)
 
 
 def _star_mesh_data(comm, num_branches):
@@ -270,11 +273,11 @@ def test_star_interprocess_facets(num_branches, ghost):
     topology.create_connectivity(0, 1)
     v_map = topology.index_map(0)
 
-    interprocess = set(v_map.local_to_global(topology.interprocess_facets()))
+    interprocess = np.sort(v_map.local_to_global(topology.interprocess_facets()))
     reference = _interprocess_vertices_reference(topology)
     num_exterior = comm.allreduce(len(exterior_facet_indices(topology)), MPI.SUM)
 
-    assert interprocess == reference
+    assert np.array_equal(interprocess, reference)
     assert num_exterior == num_branches
 
     # A rank beyond the number of branches does not own a branch and is not a
@@ -308,9 +311,119 @@ def test_star_interprocess_facets_builtin_partitioner(gpart, num_branches, ghost
     topology.create_connectivity(0, 1)
     v_map = topology.index_map(0)
 
-    interprocess = set(v_map.local_to_global(topology.interprocess_facets()))
+    interprocess = np.sort(v_map.local_to_global(topology.interprocess_facets()))
     reference = _interprocess_vertices_reference(topology)
     num_exterior = comm.allreduce(len(exterior_facet_indices(topology)), MPI.SUM)
 
-    assert interprocess == reference
+    assert np.array_equal(interprocess, reference)
     assert num_exterior == num_branches
+
+
+def test_interprocess_facets_manifold_shared_facet_shortcut():
+    """A plain (non-branching) interval mesh under GhostMode.shared_facet
+    must take Topology::create_entities's manifold shortcut: a local
+    vertex-degree check plus one Allreduce proves no facet has degree
+    > 2, so interprocess_facets(0) is set to empty directly, skipping
+    compute_interprocess_vertices entirely.
+
+    The result is intentionally weaker than the truth -- partition-
+    boundary vertices are still genuinely shared by two ranks' cells.
+    It is safe because exterior_facet_indices only removes
+    interprocess_facets() from its degree-1 candidates, and a degree-1
+    facet can never be inter-process anyway, so the empty answer and
+    the true answer agree exactly where it matters.
+    """
+    comm = MPI.COMM_WORLD
+    n = 4 * comm.size
+
+    mesh = create_unit_interval(comm, n, ghost_mode=GhostMode.shared_facet)
+    topology = mesh.topology
+    topology.create_connectivity(0, 1)
+
+    # Shortcut fires: proven empty, not merely computed as empty.
+    assert topology.interprocess_facets().size == 0
+
+    # Unaffected by the shortcut: still exactly the two tips, globally.
+    num_exterior = comm.allreduce(exterior_facet_indices(topology).size, MPI.SUM)
+    assert num_exterior == 2
+
+    # Control: GhostMode.none cannot take the shortcut (local degree may
+    # undercount), so this exercises the full computation and must match
+    # the true partition-boundary set -- non-empty for > 1 rank, ruling
+    # out "empty because there is nothing here" as the explanation above.
+    mesh_none = create_unit_interval(comm, n, ghost_mode=GhostMode.none)
+    topology_none = mesh_none.topology
+    topology_none.create_connectivity(0, 1)
+    v_map_none = topology_none.index_map(0)
+
+    interprocess_none = np.sort(v_map_none.local_to_global(topology_none.interprocess_facets()))
+    reference_none = _interprocess_vertices_reference(topology_none)
+    assert np.array_equal(interprocess_none, reference_none)
+    if comm.size > 1:
+        assert reference_none.size > 0
+
+    # Same externally observable answer either way, despite computing
+    # interprocess_facets() differently (full computation vs. shortcut).
+    num_exterior_none = comm.allreduce(exterior_facet_indices(topology_none).size, MPI.SUM)
+    assert num_exterior_none == 2
+
+
+def test_topology_constructor_shared_facet_shortcut():
+    """Exercise dolfinx.cpp.mesh.Topology's constructor directly, not
+    through create_mesh, with hand-built IndexMaps/cells asserting
+    GhostMode.shared_facet, to check the manifold shortcut fires from
+    the constructor itself and not merely through the create_mesh
+    pipeline that normally builds it.
+
+    Two ranks, one interval cell each: rank 0 owns (0, 1), rank 1 owns
+    (1, 2); global vertex 1 is the true partition boundary. Each rank
+    ghosts the other's cell, satisfying the shared_facet completeness
+    property by hand.
+    """
+    comm = MPI.COMM_WORLD
+    if comm.size != 2:
+        pytest.skip("Only supports two processes.")
+
+    if comm.rank == 0:
+        vertex_map = _IndexMap(
+            comm, 2, np.array([2], dtype=np.int64), np.array([1], dtype=np.int32), 1
+        )
+        cell_map = _IndexMap(
+            comm, 1, np.array([1], dtype=np.int64), np.array([1], dtype=np.int32), 1
+        )
+        cells = AdjacencyList_int32(np.array([[0, 1], [1, 2]], dtype=np.int32))
+        original_index = np.array([0, 1], dtype=np.int64)
+    else:
+        vertex_map = _IndexMap(
+            comm, 1, np.array([0, 1], dtype=np.int64), np.array([0, 0], dtype=np.int32), 1
+        )
+        cell_map = _IndexMap(
+            comm, 1, np.array([0], dtype=np.int64), np.array([0], dtype=np.int32), 1
+        )
+        cells = AdjacencyList_int32(np.array([[2, 0], [1, 2]], dtype=np.int32))
+        original_index = np.array([1, 0], dtype=np.int64)
+
+    def make_topology(ghost_mode):
+        return _Topology(
+            cell_type=CellType.interval,
+            vertex_map=vertex_map,
+            cell_map=cell_map,
+            cells=cells,
+            original_index=original_index,
+            ghost_mode=ghost_mode,
+        )
+
+    # Shortcut fires straight from the constructor: no facet has degree
+    # > 2 in this hand-built data, so this is set to empty without
+    # running compute_interprocess_vertices.
+    topology = make_topology(GhostMode.shared_facet)
+    topology.create_connectivity(0, 1)
+    assert topology.interprocess_facets().size == 0
+
+    # Control: the identical hand-built data under GhostMode.none cannot
+    # take the shortcut, so it runs the full computation and correctly
+    # identifies the true partition-boundary vertex (global index 1).
+    topology_none = make_topology(GhostMode.none)
+    topology_none.create_connectivity(0, 1)
+    global_interprocess = vertex_map.local_to_global(topology_none.interprocess_facets())
+    assert np.array_equal(global_interprocess, np.array([1], dtype=np.int64))

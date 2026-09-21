@@ -1876,6 +1876,7 @@ def create_point_mesh(comm: _MPI.Comm, points: npt.NDArray[np.float32 | np.float
         cell_map=imap._cpp_object,
         cells=_cpp.graph.AdjacencyList_int32(cells),
         original_index=igi,
+        ghost_mode=GhostMode.none,
     )
 
     e = basix.ufl.element("Lagrange", "point", 0, shape=(points.shape[1],), dtype=points.dtype)

@@ -200,5 +200,9 @@ convention = "google"
 "test/unit/io/test_vtkhdf.py" = ["TID251"]
 "demo_mixed-topology.py" = ["TID251"]
 
+# Exercises Topology's constructor directly with hand-built IndexMaps,
+# which has no pure-Python API.
+"test/unit/mesh/test_branching_manifold.py" = ["TID251"]
+
 # Deliberately compares the C++ and Python package versions.
 "test/unit/common/test_version.py" = ["TID251"]

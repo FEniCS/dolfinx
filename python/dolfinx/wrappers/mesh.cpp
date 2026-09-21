@@ -206,7 +206,8 @@ void mesh(nb::module_& m)
              std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>> cells,
              std::optional<
                  nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
-                 original_index)
+                 original_index,
+             dolfinx::mesh::GhostMode ghost_mode)
           {
             using U = std::vector<std::vector<std::int64_t>>;
             using V = std::optional<U>;
@@ -216,10 +217,11 @@ void mesh(nb::module_& m)
                                                + original_index->size()))
                         : V(std::nullopt);
             new (t) dolfinx::mesh::Topology({cell_type}, vertex_map, {cell_map},
-                                            {cells}, idx);
+                                            {cells}, idx, ghost_mode);
           },
           nb::arg("cell_type"), nb::arg("vertex_map"), nb::arg("cell_map"),
-          nb::arg("cells"), nb::arg("original_index").none())
+          nb::arg("cells"), nb::arg("original_index").none(),
+          nb::arg("ghost_mode"))
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
            nb::arg("dim"), nb::arg("num_threads"))
       .def("create_entity_permutations",
@@ -333,7 +335,7 @@ void mesh(nb::module_& m)
              ghost_owners,
          nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
              boundary_vertices,
-         int num_threads)
+         int num_threads, dolfinx::mesh::GhostMode ghost_mode)
       {
         std::vector<std::span<const std::int64_t>> cells_span
             = vec_of_spans(cells);
@@ -346,13 +348,13 @@ void mesh(nb::module_& m)
             boundary_vertices.data(), boundary_vertices.size());
         return dolfinx::mesh::create_topology(
             comm.get(), cell_type, cells_span, original_cell_index_span,
-            ghost_owners_span, boundary_vertices_span, num_threads);
+            ghost_owners_span, boundary_vertices_span, num_threads, ghost_mode);
       },
       nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells").noconvert(),
       nb::arg("original_cell_index").noconvert(),
       nb::arg("ghost_owners").noconvert(),
       nb::arg("boundary_vertices").noconvert(), nb::arg("num_threads"),
-      "Create a Topology object.");
+      nb::arg("ghost_mode"), "Create a Topology object.");
 
   m.def("compute_mixed_cell_pairs", &dolfinx::mesh::compute_mixed_cell_pairs,
         nb::arg("topology"), nb::arg("facet_type"));

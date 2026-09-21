@@ -1495,7 +1495,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // node indices required below.
   auto [topology, vertex_index] = mesh::impl::create_topology(
       comm, celltypes, cells1_v_span, original_idx1_span, ghost_owners_span,
-      boundary_v, num_threads, ghost_mode, max_facet_to_cell_links);
+      boundary_v, num_threads, ghost_mode);
 
   // Create connectivities required higher-order geometries for creating
   // a Geometry object

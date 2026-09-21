@@ -909,6 +909,39 @@ compute_interprocess_vertices(const Topology& topology)
 
   return interprocess_vertices;
 }
+
+/// @brief Local vertex degree (incident local cells, owned or ghost),
+/// equal to the true global degree only under GhostMode::shared_facet.
+///
+/// Under GhostMode::shared_facet every cell incident to a facet is
+/// ghosted onto every rank that touches it, so this count equals the
+/// facet's true global degree without any communication. Under
+/// GhostMode::none it only reflects owned cells and undercounts.
+///
+/// @param[in] topology Topology with tdim == 1, whose cell-vertex
+/// connectivity has already been set.
+/// @return Maximum local vertex degree on this rank (0 if none).
+/// Equal to the global maximum only under GhostMode::shared_facet.
+std::int32_t local_max_vertex_degree(const Topology& topology)
+{
+  assert(topology.dim() == 1);
+  constexpr int tdim = 1;
+
+  auto vertex_map = topology.index_map(0);
+  assert(vertex_map);
+  std::vector<std::int32_t> degree(
+      vertex_map->size_local() + vertex_map->num_ghosts(), 0);
+  for (std::size_t i = 0; i < topology.entity_types(tdim).size(); ++i)
+  {
+    auto c_to_v = topology.connectivity({tdim, static_cast<int>(i)}, {0, 0});
+    assert(c_to_v);
+    std::ranges::for_each(c_to_v->array(),
+                          [&degree](std::int32_t v) { ++degree[v]; });
+  }
+
+  auto it = std::ranges::max_element(degree);
+  return it == degree.end() ? 0 : *it;
+}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -918,12 +951,11 @@ Topology::Topology(
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
     std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
     const std::optional<std::vector<std::vector<std::int64_t>>>& original_index,
-    GhostMode ghost_mode, std::optional<std::int32_t> max_facet_to_cell_links)
+    GhostMode ghost_mode)
     : original_cell_index(original_index
                               ? *original_index
                               : std::vector<std::vector<std::int64_t>>()),
-      _entity_types(build_entity_types(cell_types)), _ghost_mode(ghost_mode),
-      _max_facet_to_cell_links(max_facet_to_cell_links)
+      _entity_types(build_entity_types(cell_types)), _ghost_mode(ghost_mode)
 {
   int tdim = cell_dim(cell_types.front());
 #ifndef NDEBUG
@@ -1078,26 +1110,24 @@ bool Topology::create_entities(int dim, int num_threads)
   // constructor.
   if (dim == 0 and this->dim() == 1 and _interprocess_facets.empty())
   {
-    // With shared_facet ghosting every cell attached to a facet is
-    // ghosted onto every rank that touches it, so cell-to-vertex
-    // connectivity already reflects each facet's true global degree
-    // (num_links), not just the count of owned cells. A degree-1
-    // facet can then only have a single cell in the whole mesh, so it
-    // can never be inter-process, and on a mesh where no facet has
-    // degree > 2 (max_facet_to_cell_links <= 2, the manifold case)
-    // that covers every facet degree the callers of
-    // interprocess_facets() distinguish (exterior_facet_indices only
-    // tests degree == 1, fem::pack_coefficients-adjacent assembly only
-    // tests degree != 2). The inter-process set is then always empty
-    // and computing it is unnecessary. This does not hold once a
-    // facet may have degree > 2 (branching), where local degree alone
-    // cannot tell "several cells, one rank" from "several cells,
-    // several ranks".
-    if (_ghost_mode == GhostMode::shared_facet and _max_facet_to_cell_links
-        and *_max_facet_to_cell_links <= 2)
+    // Under shared_facet ghosting, local facet degree equals true
+    // global degree, so global_max <= 2 means every facet is either
+    // degree 1 (a single cell overall, hence never inter-process) or
+    // degree 2 -- the only cases interprocess_facets() callers
+    // distinguish -- so the set is provably always empty.
+    bool manifold = false;
+    if (_ghost_mode == GhostMode::shared_facet)
     {
-      _interprocess_facets.push_back({});
+      std::int32_t local_max = local_max_vertex_degree(*this);
+      std::int32_t global_max;
+      int ierr = MPI_Allreduce(&local_max, &global_max, 1, MPI_INT32_T, MPI_MAX,
+                               this->comm());
+      dolfinx::MPI::check_error(this->comm(), ierr);
+      manifold = global_max <= 2;
     }
+
+    if (manifold)
+      _interprocess_facets.push_back({});
     else
       _interprocess_facets.push_back(compute_interprocess_vertices(*this));
   }
@@ -1230,7 +1260,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
     std::vector<std::span<const std::int64_t>> original_cell_index,
     std::vector<std::span<const int>> ghost_owners,
     std::span<const std::int64_t> boundary_vertices, int num_threads,
-    GhostMode ghost_mode, std::optional<std::int32_t> max_facet_to_cell_links)
+    GhostMode ghost_mode)
 {
   if (num_threads < 1)
     throw std::invalid_argument("num_threads must be >= 1.");
@@ -1622,7 +1652,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
                          [](auto& e) { return e.first; });
 
   return {Topology(cell_types, index_map_v, index_map_c, cells_c, orig_index,
-                   ghost_mode, max_facet_to_cell_links),
+                   ghost_mode),
           std::move(input_vertex_index)};
 }
 //-----------------------------------------------------------------------------
@@ -1632,12 +1662,12 @@ Topology mesh::create_topology(
     std::vector<std::span<const std::int64_t>> original_cell_index,
     std::vector<std::span<const int>> ghost_owners,
     std::span<const std::int64_t> boundary_vertices, int num_threads,
-    GhostMode ghost_mode, std::optional<std::int32_t> max_facet_to_cell_links)
+    GhostMode ghost_mode)
 {
   return impl::create_topology(comm, cell_types, std::move(cells),
                                std::move(original_cell_index),
                                std::move(ghost_owners), boundary_vertices,
-                               num_threads, ghost_mode, max_facet_to_cell_links)
+                               num_threads, ghost_mode)
       .first;
 }
 //-----------------------------------------------------------------------------
@@ -1646,13 +1676,12 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                       std::span<const std::int64_t> original_cell_index,
                       std::span<const int> ghost_owners, CellType cell_type,
                       std::span<const std::int64_t> boundary_vertices,
-                      int num_threads, GhostMode ghost_mode,
-                      std::optional<std::int32_t> max_facet_to_cell_links)
+                      int num_threads, GhostMode ghost_mode)
 {
   spdlog::info("Create topology (single cell type)");
   return create_topology(comm, {cell_type}, {cells}, {original_cell_index},
                          {ghost_owners}, boundary_vertices, num_threads,
-                         ghost_mode, max_facet_to_cell_links);
+                         ghost_mode);
 }
 //-----------------------------------------------------------------------------
 std::tuple<Topology, std::vector<int32_t>, std::vector<int32_t>>
@@ -1751,7 +1780,8 @@ mesh::create_subtopology(const Topology& topology, int dim,
   auto sub_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
 
-  return {Topology({entity_type}, submap0, {submap}, {sub_e_to_v}),
+  return {Topology({entity_type}, submap0, {submap}, {sub_e_to_v}, std::nullopt,
+                   GhostMode::none),
           std::move(subentities), std::move(subvertices0)};
 }
 //-----------------------------------------------------------------------------
