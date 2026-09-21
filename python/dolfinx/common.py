@@ -55,6 +55,7 @@ __all__ = [
     "index_map",
     "list_timings",
     "local_range",
+    "neighbourhood_comms",
     "scatterer",
     "timed",
     "timing",
