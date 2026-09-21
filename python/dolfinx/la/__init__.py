@@ -47,7 +47,15 @@ _T = TypeVar("_T", np.float32, np.float64, np.complex64, np.complex128, np.int8,
 
 
 class Vector(Generic[_T]):
-    """Distributed vector object."""
+    """Distributed vector object.
+
+    Vectors with the same layout share a :class:`dolfinx.common.Scatterer`
+    and hence MPI communicators. Scatters of different vectors may
+    overlap, but every rank must begin overlapping scatters of vectors
+    that share a scatterer in the same order, since MPI matches
+    non-blocking collectives on a communicator by the order in which they
+    are started.
+    """
 
     _cpp_object: (
         _cpp.la.Vector_float32

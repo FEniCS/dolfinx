@@ -231,6 +231,13 @@ class Scatterer:
     :class:`NeighbourhoodComms`, which scatterers on the same index map
     share; a scatterer creates no communicators of its own.
 
+    MPI matches non-blocking collectives on a communicator by the order
+    in which they are started. Scatters that share a
+    :class:`NeighbourhoodComms` may be in flight at the same time, but
+    every rank must then begin them in the same order. Forward and
+    reverse scatters use different communicators and are unordered with
+    respect to each other.
+
     A forward scatter sends data associated with owned/local indices
     to the ranks that ghost them; a reverse scatter sends ghost data
     back to the owning ranks, to be accumulated into the owned data.

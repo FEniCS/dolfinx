@@ -47,6 +47,14 @@ namespace dolfinx::common
 /// exchanged between neighbouring ranks; copying, moving and destroying
 /// are not.
 ///
+/// MPI matches non-blocking collectives on a communicator by the order
+/// in which they are started. Scatters that share a NeighbourhoodComms
+/// (e.g. through Scatterers on the same IndexMap, or la::Vector objects
+/// on the same fem::DofMap) may be in flight at the same time, but
+/// every rank must then begin them in the same order. Forward and
+/// reverse scatters use different communicators and are unordered with
+/// respect to each other.
+///
 /// A forward scatter sends data associated with owned/local indices
 /// to the ranks that ghost them; a reverse scatter sends ghost data
 /// back to the owning ranks, to be accumulated into the owned data.

@@ -40,6 +40,13 @@ concept GetPtrConcept = requires(GetPtr f, U x) {
 
 /// @brief A vector that can be distributed across processes.
 ///
+/// Vectors with the same layout share a common::Scatterer and hence MPI
+/// communicators. Scatters of different vectors may overlap, but since
+/// MPI matches non-blocking collectives on a communicator by the order
+/// in which they are started, every rank must begin overlapping
+/// scatters of vectors that share a Scatterer (or a
+/// common::NeighbourhoodComms) in the same order.
+///
 /// @tparam T Scalar type of the vector.
 /// @tparam Container Data container type. This is typically
 /// `std::vector<T>` on CPUs, and `thrust::device_vector<T>` on GPUs.
