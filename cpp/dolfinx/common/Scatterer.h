@@ -18,6 +18,7 @@
 #include <mpi.h>
 #include <numeric>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -107,7 +108,10 @@ public:
   /// @param[in] map Index map that describes the parallel layout of
   /// data.
   /// @param[in] comms Neighbourhood communicators of `map`.
-  /// @pre `comms` was created from `*map`.
+  /// @pre `comms` was created from `*map`. This is checked in Developer
+  /// builds; callers must ensure it in Release builds.
+  /// @throws std::invalid_argument If the `comms` precondition is
+  /// violated in a Developer build.
   Scatterer(std::shared_ptr<const IndexMap> map,
             std::shared_ptr<const NeighbourhoodComms> comms)
       : _map(std::move(map)), _comms(std::move(comms)),
@@ -125,6 +129,29 @@ public:
     // Check that src and dest ranks are unique and sorted
     assert(std::ranges::is_sorted(src));
     assert(std::ranges::is_sorted(dest));
+
+#ifndef NDEBUG
+    // Check that the owner -> ghost graph of comms matches the map
+    // (local MPI queries, no communication)
+    {
+      MPI_Comm comm0 = _comms->owner_to_ghost();
+      int indegree, outdegree, weighted;
+      int ierr = MPI_Dist_graph_neighbors_count(comm0, &indegree, &outdegree,
+                                                &weighted);
+      dolfinx::MPI::check_error(comm0, ierr);
+      std::vector<int> sources(indegree), destinations(outdegree);
+      ierr = MPI_Dist_graph_neighbors(comm0, indegree, sources.data(),
+                                      MPI_UNWEIGHTED, outdegree,
+                                      destinations.data(), MPI_UNWEIGHTED);
+      dolfinx::MPI::check_error(comm0, ierr);
+      if (!std::ranges::equal(sources, src)
+          or !std::ranges::equal(destinations, dest))
+      {
+        throw std::invalid_argument(
+            "NeighbourhoodComms was not created from index map.");
+      }
+    }
+#endif
 
     // Build permutation array that sorts ghost indices by owning rank
     std::span owners = _map->owners();

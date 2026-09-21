@@ -11,7 +11,6 @@
 
 #include "ElementDofLayout.h"
 #include <basix/mdspan.hpp>
-#include <cassert>
 #include <concepts>
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
@@ -22,6 +21,7 @@
 #include <memory>
 #include <mpi.h>
 #include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -89,7 +89,8 @@ public:
   /// @param[in] dofmap Adjacency list with the degrees-of-freedom for
   /// each cell.
   /// @param[in] bs The block size of the `dofmap`.
-  /// @pre `scatterer->index_map() == index_map`.
+  /// @throws std::invalid_argument If `scatterer` was not created for
+  /// `index_map`.
   template <typename E, typename U>
     requires std::is_convertible_v<std::remove_cvref_t<E>,
                                    fem::ElementDofLayout>
@@ -105,7 +106,8 @@ public:
         _shape1(_element_dof_layout.num_dofs()
                 * _element_dof_layout.block_size() / _bs)
   {
-    assert(this->scatterer->index_map() == this->index_map);
+    if (this->scatterer->index_map() != this->index_map)
+      throw std::invalid_argument("Scatterer was not created for index map.");
   }
 
   // Copy constructor

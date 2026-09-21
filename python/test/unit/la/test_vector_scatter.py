@@ -114,6 +114,16 @@ def test_vector_from_index_map_scatter_forward(dtype):
         assert np.all(vector.array == global_idxs)
 
 
+def test_vector_scatterer_mismatch():
+    """A scatterer for a different index map is rejected."""
+    comm = MPI.COMM_WORLD
+    mesh = create_unit_square(comm, 5, 5)
+    im0 = mesh.topology.index_map(mesh.topology.dim)
+    im1 = mesh.topology.index_map(0)
+    with pytest.raises(ValueError):
+        la.vector(im0, 1, scatterer(im1))
+
+
 def test_vector_from_scatterer():
     """Test creating vectors that share a scatterer."""
     comm = MPI.COMM_WORLD

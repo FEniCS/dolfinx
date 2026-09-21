@@ -8,7 +8,6 @@
 
 #include "utils.h"
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
@@ -18,6 +17,7 @@
 #include <memory>
 #include <numeric>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -167,7 +167,8 @@ public:
   /// the data.
   /// @param[in] bs Number of entries per index map 'index' (block size).
   /// @param[in] scatterer Scatterer for `map`.
-  /// @pre `scatterer->index_map() == map`.
+  /// @throws std::invalid_argument If `scatterer` was not created for
+  /// `map`.
   Vector(std::shared_ptr<const common::IndexMap> map, int bs,
          std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer)
       : _map(std::move(map)), _bs(bs),
@@ -176,7 +177,8 @@ public:
         _buffer_local(bs * _scatterer->local_indices_block().size()),
         _buffer_remote(bs * _scatterer->remote_indices_block().size())
   {
-    assert(_scatterer->index_map() == _map);
+    if (_scatterer->index_map() != _map)
+      throw std::invalid_argument("Scatterer was not created for index map.");
   }
 
   /// Copy constructor

@@ -10,7 +10,7 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx.common import index_map, neighbourhood_comms, scatterer
+from dolfinx.common import has_debug, index_map, neighbourhood_comms, scatterer
 
 
 @pytest.mark.parametrize("dtype", [np.int64, np.float32, np.float64, np.complex64, np.complex128])
@@ -93,3 +93,20 @@ def test_scatterers_share_comms():
     sc = scatterer(map)
     assert sc._cpp_object.comms is not comms._cpp_object
     assert sc._cpp_object.index_map is map._cpp_object
+
+
+def test_scatterer_comms_mismatch():
+    """Neighbourhood communicators of another map are rejected (Developer builds)."""
+    comm = MPI.COMM_WORLD
+    if comm.size == 1:
+        pytest.skip("Check is skipped on a single rank")
+    local_size = 10
+    dest = np.delete(np.arange(0, comm.size, dtype=np.int32), comm.rank)
+    map_ghosts = np.array([local_size * dest[r] for r in range(len(dest))], dtype=np.int64)
+    src = dest
+    map0 = index_map(comm, local_size, (map_ghosts, src), dest_src=[dest, src])
+    map1 = index_map(comm, local_size)
+    if not has_debug:
+        pytest.skip("Precondition checked in Developer builds only")
+    with pytest.raises(ValueError):
+        scatterer(map0, neighbourhood_comms(map1))
