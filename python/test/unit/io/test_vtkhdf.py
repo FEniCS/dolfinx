@@ -69,7 +69,7 @@ def test_read_vtkhdf_num_threads_invalid():
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     write_mesh(filename, mesh)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         read_mesh(MPI.COMM_WORLD, filename, num_threads=0)
 
 
