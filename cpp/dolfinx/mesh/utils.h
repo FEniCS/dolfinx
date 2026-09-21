@@ -1869,7 +1869,7 @@ MeshTags<T> transfer_meshtags_to_submesh(
   // Validate that cell_map/vertex_map relate `topology` (the tags'
   // parent topology) to `submesh_topology`, and have the dimension
   // this function assumes.
-  if (cell.dim() != submesh_tdim)
+  if (cell_map.dim() != submesh_tdim)
   {
     throw std::invalid_argument(
         "cell_map dimension must equal the submesh topology dimension.");
