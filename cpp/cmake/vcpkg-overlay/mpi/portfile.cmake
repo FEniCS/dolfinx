@@ -4,6 +4,7 @@ if(VCPKG_TARGET_IS_WINDOWS)
   file(
     INSTALL "${CURRENT_INSTALLED_DIR}/share/intel-mpi/mpi-wrapper.cmake"
     DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"
-    RENAME vcpkg-cmake-wrapper.cmake
+    RENAME
+    vcpkg-cmake-wrapper.cmake
   )
 endif()

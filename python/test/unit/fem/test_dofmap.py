@@ -13,11 +13,28 @@ import numpy as np
 import pytest
 
 import ufl
-from basix import LatticeType, create_lattice
+from basix import CellType as BasixCellType
+from basix import (
+    DPCVariant,
+    ElementFamily,
+    LagrangeVariant,
+    LatticeType,
+    create_element,
+    create_lattice,
+)
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import functionspace, transpose_dofmap
+from dolfinx.fem import (
+    assemble_matrix,
+    assemble_vector,
+    coordinate_element,
+    form,
+    functionspace,
+    interpolate_geometry,
+    transpose_dofmap,
+)
 from dolfinx.graph import adjacencylist
+from dolfinx.la import InsertMode
 from dolfinx.mesh import (
     CellType,
     create_mesh,
@@ -499,6 +516,44 @@ def test_push_forward_pull_back(gdim: int, is_affine: bool):
         assert np.allclose(x_pullback, ref_point, rtol=tol, atol=tol)
 
 
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("degree", [1, 2])
+def test_discontinuous_coordinate_element(dtype, degree):
+    """A discontinuous coordinate element maps a single cell as usual."""
+    cmap = coordinate_element(
+        create_element(
+            family=ElementFamily.P,
+            celltype=BasixCellType.triangle,
+            degree=degree,
+            lagrange_variant=LagrangeVariant.gll_isaac,
+            dpc_variant=DPCVariant.unset,
+            discontinuous=True,
+            dtype=dtype,
+        )
+    )
+    assert cmap.is_discontinuous
+    assert cmap.degree == degree
+    assert cmap.dim == (degree + 1) * (degree + 2) // 2
+
+    # All degrees-of-freedom are attached to the cell, none to its
+    # sub-entities
+    layout = cmap.create_dof_layout()
+    assert layout.num_dofs == cmap.dim
+    assert layout.entity_dofs(0, 0) == []
+    assert layout.entity_dofs(1, 0) == []
+    assert len(layout.entity_dofs(2, 0)) == cmap.dim
+
+    # Push forward reference points to a (curved, for degree 2) cell and
+    # pull them back again
+    cell_x = np.array([[0.0, 0.0], [2.0, 0.0], [0.0, 1.0]], dtype=dtype)
+    if degree == 2:
+        cell_x = np.vstack([cell_x, [[1.1, -0.1], [0.0, 0.5], [1.0, 0.5]]]).astype(dtype)
+    X = np.array([[0.25, 0.25], [0.5, 0.5], [0.0, 1.0]], dtype=dtype)
+    x = cmap.push_forward(X, cell_x)
+    tol = np.sqrt(np.finfo(dtype).eps)
+    np.testing.assert_allclose(cmap.pull_back(x, cell_x), X, atol=tol)
+
+
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("is_affine", [True, False])
 def test_undersized_working_array(gdim: int, is_affine: bool):
@@ -524,3 +579,49 @@ def test_undersized_working_array(gdim: int, is_affine: bool):
         # Pull back
         with pytest.raises(RuntimeError):
             mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_discontinuous_coordinate_element_assembly(dtype):
+    """Test that a discontinuous coordinate element can be used in assembly."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
+
+    V_ref = functionspace(mesh, ("Lagrange", 1))
+    u_ref = ufl.TrialFunction(V_ref)
+    v_ref = ufl.TestFunction(V_ref)
+    a = form(ufl.inner(ufl.grad(u_ref), ufl.grad(v_ref)) * ufl.dx, dtype=dtype)
+    A = assemble_matrix(a)
+    A.scatter_reverse()
+
+    x = ufl.SpatialCoordinate(mesh)
+    f = x[0] + ufl.sin(x[1])
+    L = assemble_vector(form(ufl.inner(f, v_ref) * ufl.dx, dtype=dtype))
+    L.scatter_reverse(InsertMode.add)
+    L.scatter_forward()
+
+    c_el = coordinate_element(
+        mesh.topology.cell_type, mesh.geometry.cmaps[0].degree, discontinuous=True, dtype=dtype
+    )
+    dg_mesh = interpolate_geometry(mesh, c_el)
+    assert dg_mesh.geometry.cmaps[0].is_discontinuous
+    assert dg_mesh.geometry.cmaps[0].degree == mesh.geometry.cmaps[0].degree
+    num_nodes = dg_mesh.geometry.dofmaps[0].shape[1]
+    assert (
+        dg_mesh.geometry.index_map().size_global
+        == dg_mesh.topology.index_map(dg_mesh.topology.dim).size_global * num_nodes
+    )
+
+    V_dg = functionspace(dg_mesh, ("Lagrange", 1))
+    u_dg = ufl.TrialFunction(V_dg)
+    v_dg = ufl.TestFunction(V_dg)
+    a_dg = form(ufl.inner(ufl.grad(u_dg), ufl.grad(v_dg)) * ufl.dx, dtype=dtype)
+    A_dg = assemble_matrix(a_dg)
+    A_dg.scatter_reverse()
+    tol = 100 * np.finfo(dtype).eps
+    np.testing.assert_allclose(A.data, A_dg.data, rtol=tol, atol=tol)
+    x_dg = ufl.SpatialCoordinate(dg_mesh)
+    f_dg = x_dg[0] + ufl.sin(x_dg[1])
+    L_dg = assemble_vector(form(ufl.inner(f_dg, v_dg) * ufl.dx, dtype=dtype))
+    L_dg.scatter_reverse(InsertMode.add)
+    L_dg.scatter_forward()
+    np.testing.assert_allclose(L.array, L_dg.array, rtol=tol, atol=tol)

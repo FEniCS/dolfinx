@@ -110,12 +110,14 @@ public:
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @param[in] max_facet_to_cell_links Maximum number of cells that can
   /// be linked to a facet.
+  /// @param[in] num_threads Number threads to use in mesh construction.
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
   mesh::Mesh<double>
   read_mesh(const fem::CoordinateElement<double>& element, mesh::GhostMode mode,
             std::string_view name, std::string_view xpath = "/Xdmf/Domain",
-            std::optional<std::int32_t> max_facet_to_cell_links = 2) const;
+            std::optional<std::int32_t> max_facet_to_cell_links = 2,
+            int num_threads = 1) const;
 
   /// Read Topology data for Mesh
   /// @param[in] name Name of the mesh (Grid)
