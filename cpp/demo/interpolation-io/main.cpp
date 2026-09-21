@@ -5,6 +5,20 @@
 // ```
 
 // # Interpolation and IO
+//
+// This demo illustrates how to:
+//
+// * Interpolate an analytical expression into a scalar Lagrange
+//   finite element space and into a vector-valued Nedelec
+//   ($H({\rm curl})$) finite element space
+// * Write the resulting finite element functions to file for
+//   visualisation using `dolfinx::io::VTXWriter`
+// * Repeat the interpolation for `float`/`double` and their complex
+//   counterparts, and for meshes with `float`/`double` geometry
+//
+// Running this demo requires the files:
+// {download}`demo_interpolation-io/main.cpp` and
+// {download}`demo_interpolation-io/CMakeLists.txt`.
 
 #include <basix/finite-element.h>
 #include <cmath>

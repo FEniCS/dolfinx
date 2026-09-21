@@ -442,8 +442,18 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                  [offset = offsets.front()](auto x) { return x - offset; });
   hdf5::close_file(h5file);
 
-  // Create cell topologies for each celltype in mesh
+  // Create cell topologies for each cell type.
   std::vector<std::vector<std::int64_t>> cells_local(recv_types.size());
+  {
+    std::vector<std::size_t> num_nodes_per_type(recv_types.size(), 0);
+    for (std::size_t j = 0; j < types.size(); ++j)
+    {
+      std::int32_t type_index = type_to_index.at({types[j], cell_degrees[j]});
+      num_nodes_per_type[type_index] += offsets[j + 1] - offsets[j];
+    }
+    for (std::size_t t = 0; t < cells_local.size(); ++t)
+      cells_local[t].reserve(num_nodes_per_type[t]);
+  }
   for (std::size_t j = 0; j < types.size(); ++j)
   {
     std::int32_t type_index = type_to_index.at({types[j], cell_degrees[j]});

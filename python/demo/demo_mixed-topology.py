@@ -17,8 +17,7 @@
 # ```
 # This demo illustrates how to:
 # - Solve a simple Helmholtz problem on a mixed-topology mesh.
-# - Create a mesh from numpy arrays using
-#   {py:func}`dolfinx.mesh.create_mesh`
+# - Create an experimental mixed-topology mesh directly from NumPy arrays
 #
 # ```{admonition} In development
 # Mixed-topology meshes are a work in progress and are not yet fully

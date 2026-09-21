@@ -79,14 +79,15 @@ public:
         _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
   {
-    assert(_x.size() % 3 == 0);
+    if (_x.size() % 3 != 0)
+      throw std::invalid_argument("x size must be a multiple of 3.");
     if (_x.size() / 3 != _input_global_indices.size())
-      throw std::runtime_error("Geometry size mismatch.");
+      throw std::invalid_argument("Geometry size mismatch.");
 
     if (_dofmaps.size() != _cmaps.size())
     {
-      throw std::runtime_error("Geometry number of dofmaps not equal to the "
-                               "number of coordinate elements.");
+      throw std::invalid_argument("Geometry number of dofmaps not equal to the "
+                                  "number of coordinate elements.");
     }
 
     // TODO: check that elements dim == number of dofmap columns
@@ -211,6 +212,10 @@ Geometry(std::shared_ptr<const common::IndexMap>, U&&,
 /// 'node' coordinate data has been distributed to the processes where
 /// it is required.
 ///
+/// @note Collective.
+/// @pre `topology`, `elements` and `dim` must be consistent across all
+/// ranks.
+///
 /// @param[in] topology Mesh topology.
 /// @param[in] elements List of elements that defines the geometry map for
 /// each cell type.
@@ -243,6 +248,9 @@ create_geometry(const Topology& topology,
 {
   spdlog::info("Create Geometry (multiple)");
 
+  if (dim < 1 or dim > 3)
+    throw std::invalid_argument("dim must be 1, 2 or 3.");
+
   assert(std::ranges::is_sorted(nodes));
   using T = typename std::remove_reference_t<typename U::value_type>;
 
@@ -250,7 +258,7 @@ create_geometry(const Topology& topology,
   const int tdim = topology.dim();
   const std::size_t num_cell_types = topology.entity_types(tdim).size();
   if (elements.size() != num_cell_types)
-    throw std::runtime_error("Mismatch between topology and geometry.");
+    throw std::invalid_argument("Mismatch between topology and geometry.");
 
   std::vector<fem::ElementDofLayout> dof_layouts;
   dof_layouts.reserve(elements.size());
@@ -292,13 +300,27 @@ create_geometry(const Topology& topology,
   const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
       graph::build::compute_local_to_global(xdofs, all_dofmaps), nodes);
 
+  // Cross-validate the three independently-derived quantities that the
+  // rest of this function assumes are equal: the number of coordinate
+  // rows in `x`, `nodes.size()`, and the geometry-dof count implied by
+  // `xdofs`/`dofmaps` (l2l.size()).
+  if (x.size() % dim != 0)
+    throw std::invalid_argument("x size must be a multiple of dim.");
+  if (x.size() / dim != nodes.size())
+    throw std::invalid_argument("x row count must equal nodes.size().");
+  if (l2l.size() != nodes.size())
+  {
+    throw std::invalid_argument(
+        "Mismatch between xdofs/dofmaps and nodes: derived geometry dof "
+        "count does not equal nodes.size().");
+  }
+
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(nodes.size());
   std::ranges::transform(l2l, igi.begin(),
                          [&nodes](auto index) { return nodes[index]; });
 
   // Build coordinate dof array, copying coordinates to correct position
-  assert(x.size() % dim == 0);
   const std::size_t shape0 = x.size() / dim;
   const std::size_t shape1 = dim;
   std::vector<T> xg(3 * shape0, 0);

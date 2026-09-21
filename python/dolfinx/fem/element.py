@@ -309,7 +309,7 @@ class FiniteElement(Generic[Real]):
         """Return underlying Basix C++ element (if it exists).
 
         Raises:
-            Runtime error if Basix element does not exist.
+            RuntimeError: If a Basix element does not exist.
         """
         return cast(
             "basix._basixcpp.FiniteElement_float32 | basix._basixcpp.FiniteElement_float64",

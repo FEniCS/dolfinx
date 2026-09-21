@@ -108,14 +108,13 @@
 // ![ufl-code]
 // ````
 //
-// ````{note}
-// TODO: explanation on how to run cmake and/or shell commands for `ffcx`.
-// To compile biharmonic.py using FFCx with an option
-// for PETSc scalar type `float64` one would execute the command
+// The supplied CMake configuration invokes FFCx with the scalar type of the
+// installed PETSc. From a directory containing the downloaded files, configure
+// and build the demo with
 // ```bash
-// ffcx biharmonic.py --scalar_type=float64
+// cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S .
+// cmake --build build
 // ```
-// ````
 //
 // ### C++ program
 //
