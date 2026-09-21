@@ -414,136 +414,143 @@ void SparsityPattern::finalize()
   std::vector<std::int32_t>().swap(_cache_cols);
   std::vector<std::int32_t>().swap(_cache_diag);
 
-  // Neighbourhood rank of each ghost row's owner, looked up once
-  std::vector<int> neighbour_rank(owners0.size());
-  std::ranges::transform(owners0, neighbour_rank.begin(),
-                         [src0](int owner)
-                         {
-                           auto it = std::ranges::lower_bound(src0, owner);
-                           assert(it != src0.end() and *it == owner);
-                           return static_cast<int>(
-                               std::ranges::distance(src0.begin(), it));
-                         });
-
-  // Compute size of data to send to each process
-  std::vector<int> send_sizes(src0.size(), 0);
-  for (std::size_t i = 0; i < owners0.size(); ++i)
+  // Exchange ghost-row entries and bucket the received entries. Keep all
+  // communication and mapping work arrays scoped so they are released before
+  // the final graph is allocated.
+  std::pair<std::vector<std::int64_t>, std::vector<std::int32_t>> recv_bucket;
   {
-    // Guard against overflowing the int MPI count
-    const std::size_t count = 3
-                              * (cache_offsets[local_size0 + i + 1]
-                                 - cache_offsets[local_size0 + i]);
-    assert(send_sizes[neighbour_rank[i]] + count
-           <= static_cast<std::size_t>(std::numeric_limits<int>::max()));
-    send_sizes[neighbour_rank[i]] += count;
-  }
+    // Neighbourhood rank of each ghost row's owner, looked up once
+    std::vector<int> neighbour_rank(owners0.size());
+    std::ranges::transform(owners0, neighbour_rank.begin(),
+                           [src0](int owner)
+                           {
+                             auto it = std::ranges::lower_bound(src0, owner);
+                             assert(it != src0.end() and *it == owner);
+                             return static_cast<int>(
+                                 std::ranges::distance(src0.begin(), it));
+                           });
 
-  // Compute send displacements
-  std::vector<int> send_disp(send_sizes.size() + 1, 0);
-  std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                   std::next(send_disp.begin(), 1));
-
-  // For each ghost row, pack and send (global row, global col,
-  // col_owner) triplets to send to neighborhood
-  std::vector<int> insert_pos(send_disp);
-  std::vector<std::int64_t> ghost_data(send_disp.back());
-  const int rank = dolfinx::MPI::rank(_comm.comm());
-  for (std::size_t i = 0; i < owners0.size(); ++i)
-  {
-    for (std::int64_t k = cache_offsets[local_size0 + i];
-         k < cache_offsets[local_size0 + i + 1]; ++k)
+    // Compute size of data to send to each process
+    std::vector<int> send_sizes(src0.size(), 0);
+    for (std::size_t i = 0; i < owners0.size(); ++i)
     {
-      const std::int32_t col_local = cache_cols[k];
+      // Guard against overflowing the int MPI count
+      const std::size_t count = 3
+                                * (cache_offsets[local_size0 + i + 1]
+                                   - cache_offsets[local_size0 + i]);
+      assert(send_sizes[neighbour_rank[i]] + count
+             <= static_cast<std::size_t>(std::numeric_limits<int>::max()));
+      send_sizes[neighbour_rank[i]] += count;
+    }
 
-      // Get index in send buffer
-      const std::int32_t pos = insert_pos[neighbour_rank[i]];
+    // Compute send displacements
+    std::vector<int> send_disp(send_sizes.size() + 1, 0);
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     std::next(send_disp.begin(), 1));
 
-      // Pack send data
-      ghost_data[pos] = ghosts0[i];
-      if (col_local < local_size1)
+    // For each ghost row, pack and send (global row, global col,
+    // col_owner) triplets to send to neighborhood
+    std::vector<int> insert_pos(send_disp);
+    std::vector<std::int64_t> ghost_data(send_disp.back());
+    const int rank = dolfinx::MPI::rank(_comm.comm());
+    for (std::size_t i = 0; i < owners0.size(); ++i)
+    {
+      for (std::int64_t k = cache_offsets[local_size0 + i];
+           k < cache_offsets[local_size0 + i + 1]; ++k)
       {
-        ghost_data[pos + 1] = col_local + local_range1[0];
-        ghost_data[pos + 2] = rank;
+        const std::int32_t col_local = cache_cols[k];
+
+        // Get index in send buffer
+        const std::int32_t pos = insert_pos[neighbour_rank[i]];
+
+        // Pack send data
+        ghost_data[pos] = ghosts0[i];
+        if (col_local < local_size1)
+        {
+          ghost_data[pos + 1] = col_local + local_range1[0];
+          ghost_data[pos + 2] = rank;
+        }
+        else
+        {
+          ghost_data[pos + 1] = _col_ghosts[col_local - local_size1];
+          ghost_data[pos + 2] = _col_ghost_owners[col_local - local_size1];
+        }
+
+        insert_pos[neighbour_rank[i]] += 3;
+      }
+    }
+
+    // Exchange data between processes
+    std::vector<std::int64_t> ghost_data_in;
+    {
+      MPI_Comm comm;
+      std::span dest0 = _index_maps[0]->dest();
+      MPI_Dist_graph_create_adjacent(_index_maps[0]->comm(), dest0.size(),
+                                     dest0.data(), MPI_UNWEIGHTED, src0.size(),
+                                     src0.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+                                     false, &comm);
+
+      std::vector<int> recv_sizes(dest0.size());
+      send_sizes.reserve(1);
+      recv_sizes.reserve(1);
+      MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                            MPI_INT, comm);
+
+      // Build recv displacements
+      std::vector<int> recv_disp{0};
+      std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                       std::back_inserter(recv_disp));
+
+      ghost_data_in.resize(recv_disp.back());
+      MPI_Neighbor_alltoallv(ghost_data.data(), send_sizes.data(),
+                             send_disp.data(), MPI_INT64_T,
+                             ghost_data_in.data(), recv_sizes.data(),
+                             recv_disp.data(), MPI_INT64_T, comm);
+      MPI_Comm_free(&comm);
+    }
+
+    // Global to local map for ghost column indices. Reserve for the
+    // worst case where every received entry is a new ghost column, to
+    // avoid rehashing while the map is populated below.
+    std::unordered_map<std::int64_t, std::int32_t> global_to_local;
+    global_to_local.reserve(_col_ghosts.size() + ghost_data_in.size() / 3);
+    std::int32_t local_i = local_size1;
+    for (std::int64_t global_i : _col_ghosts)
+      global_to_local.insert({global_i, local_i++});
+
+    // Add data received from the neighborhood, bucketed by row below
+    std::vector<std::int32_t> recv_rows, recv_cols;
+    recv_rows.reserve(ghost_data_in.size() / 3);
+    recv_cols.reserve(ghost_data_in.size() / 3);
+    for (std::size_t i = 0; i < ghost_data_in.size(); i += 3)
+    {
+      const std::int32_t row_local = ghost_data_in[i] - local_range0[0];
+      const std::int64_t col = ghost_data_in[i + 1];
+      const int owner = ghost_data_in[i + 2];
+      recv_rows.push_back(row_local);
+      if (col >= local_range1[0] and col < local_range1[1])
+      {
+        // Convert to local column index
+        const std::int32_t J = col - local_range1[0];
+        recv_cols.push_back(J);
       }
       else
       {
-        ghost_data[pos + 1] = _col_ghosts[col_local - local_size1];
-        ghost_data[pos + 2] = _col_ghost_owners[col_local - local_size1];
+        // Column index may not exist in column indexmap
+        auto it = global_to_local.insert({col, local_i});
+        if (it.second)
+        {
+          _col_ghosts.push_back(col);
+          _col_ghost_owners.push_back(owner);
+          ++local_i;
+        }
+
+        recv_cols.push_back(it.first->second);
       }
-
-      insert_pos[neighbour_rank[i]] += 3;
     }
+    recv_bucket = bucket_by_row(recv_rows, recv_cols, local_size0);
   }
-
-  // Exchange data between processes
-  std::vector<std::int64_t> ghost_data_in;
-  {
-    MPI_Comm comm;
-    std::span dest0 = _index_maps[0]->dest();
-    MPI_Dist_graph_create_adjacent(
-        _index_maps[0]->comm(), dest0.size(), dest0.data(), MPI_UNWEIGHTED,
-        src0.size(), src0.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-
-    std::vector<int> recv_sizes(dest0.size());
-    send_sizes.reserve(1);
-    recv_sizes.reserve(1);
-    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
-                          MPI_INT, comm);
-
-    // Build recv displacements
-    std::vector<int> recv_disp{0};
-    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                     std::back_inserter(recv_disp));
-
-    ghost_data_in.resize(recv_disp.back());
-    MPI_Neighbor_alltoallv(ghost_data.data(), send_sizes.data(),
-                           send_disp.data(), MPI_INT64_T, ghost_data_in.data(),
-                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
-                           comm);
-    MPI_Comm_free(&comm);
-  }
-
-  // Global to local map for ghost column indices. Reserve for the
-  // worst case where every received entry is a new ghost column, to
-  // avoid rehashing while the map is populated below.
-  std::unordered_map<std::int64_t, std::int32_t> global_to_local;
-  global_to_local.reserve(_col_ghosts.size() + ghost_data_in.size() / 3);
-  std::int32_t local_i = local_size1;
-  for (std::int64_t global_i : _col_ghosts)
-    global_to_local.insert({global_i, local_i++});
-
-  // Add data received from the neighborhood, bucketed by row below
-  std::vector<std::int32_t> recv_rows, recv_cols;
-  recv_rows.reserve(ghost_data_in.size() / 3);
-  recv_cols.reserve(ghost_data_in.size() / 3);
-  for (std::size_t i = 0; i < ghost_data_in.size(); i += 3)
-  {
-    const std::int32_t row_local = ghost_data_in[i] - local_range0[0];
-    const std::int64_t col = ghost_data_in[i + 1];
-    const int owner = ghost_data_in[i + 2];
-    recv_rows.push_back(row_local);
-    if (col >= local_range1[0] and col < local_range1[1])
-    {
-      // Convert to local column index
-      const std::int32_t J = col - local_range1[0];
-      recv_cols.push_back(J);
-    }
-    else
-    {
-      // Column index may not exist in column indexmap
-      auto it = global_to_local.insert({col, local_i});
-      if (it.second)
-      {
-        _col_ghosts.push_back(col);
-        _col_ghost_owners.push_back(owner);
-        ++local_i;
-      }
-
-      recv_cols.push_back(it.first->second);
-    }
-  }
-  const auto [recv_offsets, recv_cols_bucketed]
-      = bucket_by_row(recv_rows, recv_cols, local_size0);
+  const auto& [recv_offsets, recv_cols_bucketed] = recv_bucket;
 
   // De-duplicate each row's raw (unsorted, repeats included) column
   // list with a generation-stamped marker: last_seen[col] == i means
