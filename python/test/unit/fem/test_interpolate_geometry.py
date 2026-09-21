@@ -165,12 +165,12 @@ def _discontinuous_cmap(cell_type, degree, dtype, variant=LagrangeVariant.gll_is
     """Discontinuous Lagrange coordinate element."""
     return coordinate_element(
         basix.create_element(
-            basix.ElementFamily.P,
-            cell_type,
-            degree,
-            variant,
-            basix.DPCVariant.unset,
-            True,
+            family=basix.ElementFamily.P,
+            celltype=cell_type,
+            degree=degree,
+            lagrange_variant=variant,
+            dpc_variant=basix.DPCVariant.unset,
+            discontinuous=True,
             dtype=dtype,
         )
     )
