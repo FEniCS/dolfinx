@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 import dolfinx
-from dolfinx.common import index_map
+from dolfinx.common import index_map, scatterer
 from dolfinx.fem import (
     Function,
     apply_lifting,
@@ -221,9 +221,9 @@ def test_superlu_solver_asymmetric_blocks(dtype):
     b_np = rng.standard_normal(6).astype(dtype)
     x_expected = np.linalg.solve(A_dense, b_np)
 
-    b = vector(im_row, bs=bs0, dtype=dtype)
+    b = vector(im_row, bs0, scatterer(im_row), dtype=dtype)
     b.array[:] = b_np
-    u = vector(im_col, bs=bs1, dtype=dtype)
+    u = vector(im_col, bs1, scatterer(im_col), dtype=dtype)
 
     A_superlu = superlu_dist_matrix(A)
     solver = superlu_dist_solver(A_superlu)

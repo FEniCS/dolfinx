@@ -52,6 +52,25 @@ def test_name_argument(W):
     assert str(v) == "v"
 
 
+def test_shared_scatterer(W):
+    """Functions on one space share the dofmap's scatterer.
+
+    Sub-spaces share it too; collapsed spaces do not.
+    """
+    u = Function(W)
+    v = Function(W)
+    assert u.x.scatterer == v.x.scatterer
+    assert u.x.scatterer == W.dofmap.scatterer
+
+    W0 = W.sub(0)
+    assert W0.dofmap.scatterer == W.dofmap.scatterer
+
+    W0c, _ = W0.collapse()
+    w = Function(W0c)
+    assert w.x.scatterer == W0c.dofmap.scatterer
+    assert w.x.scatterer != W.dofmap.scatterer
+
+
 def test_copy(V):
     u = Function(V)
     u.interpolate(lambda x: x[0] + 2 * x[1])

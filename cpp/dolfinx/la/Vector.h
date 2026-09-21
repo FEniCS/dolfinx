@@ -8,6 +8,7 @@
 
 #include "utils.h"
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
@@ -153,28 +154,20 @@ public:
 
   /// @brief Create a distributed vector.
   ///
-  /// This constructor creates a new Scatterer for the Vector. For
-  /// applications that create many Vectors with the same parallel layout,
-  /// constructing a distinct Scatterer for each Vector can exhaust the
-  /// available MPI communicators. This can be avoided by creating one
-  /// Scatterer and sharing it among those Vectors using the constructor that
-  /// takes a shared pointer to an existing Scatterer.
+  /// The Scatterer holds the communication pattern and (via
+  /// common::NeighbourhoodComms) the MPI communicators for `map`, and is
+  /// shared between all Vectors with the same layout. For a
+  /// function-space layout use `fem::DofMap::scatterer`; otherwise
+  /// create one with `common::Scatterer(map,
+  /// std::make_shared<common::NeighbourhoodComms>(*map))`.
   ///
-  /// @param map Index map that describes the parallel layout of
-  /// the data.
-  /// @param bs Number of entries per index map 'index' (block size).
-  Vector(std::shared_ptr<const common::IndexMap> map, int bs)
-      : Vector(map, bs,
-               std::make_shared<common::Scatterer<ScatterContainer>>(*map))
-  {
-  }
-
-  /// @brief Create a distributed vector using an existing scatterer.
+  /// @note Not collective.
   ///
   /// @param[in] map Index map that describes the parallel layout of
   /// the data.
   /// @param[in] bs Number of entries per index map 'index' (block size).
-  /// @param[in] scatterer Scatterer compatible with `map`.
+  /// @param[in] scatterer Scatterer for `map`.
+  /// @pre `scatterer->index_map() == map`.
   Vector(std::shared_ptr<const common::IndexMap> map, int bs,
          std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer)
       : _map(std::move(map)), _bs(bs),
@@ -183,6 +176,7 @@ public:
         _buffer_local(bs * _scatterer->local_indices_block().size()),
         _buffer_remote(bs * _scatterer->remote_indices_block().size())
   {
+    assert(_scatterer->index_map() == _map);
   }
 
   /// Copy constructor
@@ -222,10 +216,6 @@ public:
   ///
   /// This constructor can be used to convert the scalar type, e.g. from
   /// `double` to `float`, or to transfer a vector between CPU and GPU storage.
-  ///
-  /// @note Construction is collective when `ScatterContainer` and
-  /// `ScatterContainer0` differ because copying the scatterer duplicates its
-  /// MPI neighbourhood communicators.
   ///
   /// @tparam T0 Scalar type of the Vector being copied.
   /// @tparam Container0 Data container type of the Vector being copied.

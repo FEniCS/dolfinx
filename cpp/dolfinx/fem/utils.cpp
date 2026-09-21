@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <array>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -72,7 +73,8 @@ fem::DofMap fem::create_dofmap(
     }
   }
 
-  return DofMap(layout, index_map, bs, std::move(dofmaps.front()), bs);
+  return DofMap(layout, index_map, common::create_scatterer(index_map), bs,
+                std::move(dofmaps.front()), bs);
 }
 //-----------------------------------------------------------------------------
 std::vector<fem::DofMap> fem::create_dofmaps(
@@ -128,10 +130,16 @@ std::vector<fem::DofMap> fem::create_dofmaps(
     }
   }
 
+  // One scatterer, shared by the dofmaps of all cell types
+  std::shared_ptr<const common::Scatterer<>> scatterer
+      = common::create_scatterer(index_map);
   std::vector<DofMap> dms;
   dms.reserve(dofmaps.size());
   for (std::size_t i = 0; i < dofmaps.size(); ++i)
-    dms.emplace_back(layouts[i], index_map, bs, std::move(dofmaps[i]), bs);
+  {
+    dms.emplace_back(layouts[i], index_map, scatterer, bs,
+                     std::move(dofmaps[i]), bs);
+  }
 
   return dms;
 }

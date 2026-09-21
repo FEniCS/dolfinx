@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 from dolfinx import la
+from dolfinx.common import scatterer
 from dolfinx.fem import functionspace
 from dolfinx.mesh import create_unit_square
 
@@ -62,8 +63,9 @@ def test_matvec(bs, dtype, mat_random, mat_gather):
     # Check gathered matrix
     assert np.allclose(A.to_dense()[: nr * bs[0], :], Ascipy.todense()[lr0 * bs[0] : lr1 * bs[0]])
 
-    b = la.vector(imap, bs=bs[1], dtype=dtype)
-    u = la.vector(imap, bs=bs[0], dtype=dtype)
+    sc = scatterer(imap)
+    b = la.vector(imap, bs[1], sc, dtype=dtype)
+    u = la.vector(imap, bs[0], sc, dtype=dtype)
     u.array[:] = 0.0
     b.array[:] = np.arange(len(b.array))
 
@@ -94,8 +96,9 @@ def test_matvec_transpose(bs, dtype, mat_random, mat_gather):
     # Check gathered matrix
     assert np.allclose(A.to_dense()[: nr * bs[0], :], Ascipy.todense()[lr0 * bs[0] : lr1 * bs[0]])
 
-    b = la.vector(imap, dtype=dtype, bs=bs[0])
-    u = la.vector(imap, dtype=dtype, bs=bs[1])
+    sc = scatterer(imap)
+    b = la.vector(imap, bs[0], sc, dtype=dtype)
+    u = la.vector(imap, bs[1], sc, dtype=dtype)
     u.array[:] = 0.0
     b.array[:] = np.arange(len(b.array))
 
@@ -121,9 +124,10 @@ def test_create_vector(dtype):
     """Test creation of a distributed vector."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     im = mesh.topology.index_map(0)
+    sc = scatterer(im)
 
     for bs in range(1, 4):
-        x = la.vector(im, bs=bs, dtype=dtype)
+        x = la.vector(im, bs, sc, dtype=dtype)
         assert x.array.dtype == dtype
         assert x.array.size == bs * (im.size_local + im.num_ghosts)
 
@@ -164,7 +168,7 @@ def xfail_norm_of_integral_type_vector(dtype):
 def test_vector_norm(dtype, norm_type):
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     im = mesh.topology.index_map(0)
-    x = la.vector(im, dtype=dtype)
+    x = la.vector(im, 1, scatterer(im), dtype=dtype)
     x.array[:] = 0.0
     normed_value = la.norm(x, norm_type)
     assert np.isclose(normed_value, 0.0)

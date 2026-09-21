@@ -12,6 +12,7 @@ import pytest
 
 from basix.ufl import element
 from dolfinx import default_real_type, la
+from dolfinx.common import scatterer
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import create_unit_square
 
@@ -104,7 +105,7 @@ def test_vector_from_index_map_scatter_forward(dtype):
     for d in range(mesh.topology.dim):
         mesh.topology.create_entities(d)
         im = mesh.topology.index_map(d)
-        vector = la.vector(im, dtype=dtype)
+        vector = la.vector(im, 1, scatterer(im), dtype=dtype)
         vector.array[: im.size_local] = np.arange(*im.local_range, dtype=dtype)
         vector.scatter_forward()
         global_idxs = im.local_to_global(np.arange(im.size_local + im.num_ghosts, dtype=np.int32))
@@ -119,8 +120,8 @@ def test_vector_from_scatterer():
     mesh = create_unit_square(comm, 5, 5)
     index_map = mesh.topology.index_map(mesh.topology.dim)
 
-    x = la.vector(index_map)
-    y = la.vector(index_map, scatterer=x.scatterer)
+    x = la.vector(index_map, 1, scatterer(index_map))
+    y = la.vector(index_map, 1, x.scatterer)
     assert y.scatterer._cpp_object is x.scatterer._cpp_object
 
     y.array[: index_map.size_local] = np.arange(*index_map.local_range)

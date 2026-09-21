@@ -15,6 +15,7 @@ import pytest
 import dolfinx.la
 import ufl
 from basix.ufl import element
+from dolfinx.common import scatterer
 from dolfinx.fem import Expression, Function, discrete_curl, discrete_gradient, functionspace
 from dolfinx.mesh import CellType, GhostMode, cell_dim, create_unit_cube, create_unit_square
 
@@ -297,7 +298,7 @@ def test_gradient_interpolation(cell_type, p, q):
     # processes where they will be summed to give an incorrect matrix
 
     # Vector for 'u' needs additional ghosts defined in columns of G
-    uvec = dolfinx.la.vector(G.index_map(1), dtype=dtype)
+    uvec = dolfinx.la.vector(G.index_map(1), 1, scatterer(G.index_map(1)), dtype=dtype)
     u = Function(V, uvec, dtype=dtype)
     u.interpolate(lambda x: 2 * x[0] ** p + 3 * x[1] ** p)
 
@@ -420,7 +421,12 @@ def test_discrete_interpolation(cell_type, dtype):
     int_matrix = dolfinx.fem.interpolation_matrix(V, Q)
     int_matrix.scatter_reverse()
 
-    _u = dolfinx.la.vector(int_matrix.index_map(1), int_matrix.block_size[1], dtype=dtype)
+    _u = dolfinx.la.vector(
+        int_matrix.index_map(1),
+        int_matrix.block_size[1],
+        scatterer(int_matrix.index_map(1)),
+        dtype=dtype,
+    )
     num_owned_dofs = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
     _u.array[:num_owned_dofs] = u.x.array[:num_owned_dofs]
     _u.scatter_forward()

@@ -15,6 +15,7 @@
 #include <concepts>
 #include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
@@ -103,8 +104,9 @@ void test_matrix_apply()
   // Get compatible vectors
   auto col_map = A.index_map(1);
 
-  la::Vector<double> x(col_map, 1);
-  la::Vector<double> y(col_map, 1);
+  auto col_scatterer = common::create_scatterer(col_map);
+  la::Vector<double> x(col_map, 1, col_scatterer);
+  la::Vector<double> y(col_map, 1, col_scatterer);
 
   std::size_t col_size = col_map->size_local() + col_map->num_ghosts();
   CHECK(x.array().size() == col_size);

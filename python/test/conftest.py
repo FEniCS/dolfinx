@@ -10,6 +10,7 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+from dolfinx.common import scatterer
 from dolfinx.la import vector as dolfinx_vector
 
 
@@ -170,7 +171,8 @@ def cg_solver():
 
         # Create larger ghosted vector based on matrix column space
         # and get initial y = A.x
-        p = dolfinx_vector(A.index_map(1), bs=A.block_size[1], dtype=x.array.dtype)
+        col_map = A.index_map(1)
+        p = dolfinx_vector(col_map, A.block_size[1], scatterer(col_map), dtype=x.array.dtype)
         p.array[:nr] = x.array[:nr]
         p.scatter_forward()
         y = A_op @ p.array

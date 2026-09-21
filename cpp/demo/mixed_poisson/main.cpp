@@ -315,8 +315,9 @@ int main(int argc, char* argv[])
 
     // Create matrix and RHS vector data structures
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(a), false);
-    la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
-                    L.function_spaces()[0]->dofmap()->index_map_bs());
+    auto dofmap = L.function_spaces()[0]->dofmap();
+    la::Vector<T> b(dofmap->index_map, dofmap->index_map_bs(),
+                    dofmap->scatterer);
 
     // Assemble the bilinear form into a matrix. The PETSc matrix is
     // 'flushed' so we can set values in it in the subsequent step.

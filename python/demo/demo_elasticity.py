@@ -74,7 +74,7 @@ def build_nullspace(V: FunctionSpace):
     # Create vectors that will span the nullspace
     bs = V.dofmap.index_map_bs
     length0 = V.dofmap.index_map.size_local
-    basis = [la.vector(V.dofmap.index_map, bs=bs, dtype=dtype) for i in range(6)]
+    basis = [la.vector(V.dofmap.index_map, bs, V.dofmap.scatterer, dtype=dtype) for i in range(6)]
     b = [b.array for b in basis]
 
     # Get dof indices for each subspace (x, y and z dofs)

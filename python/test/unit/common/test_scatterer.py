@@ -10,7 +10,7 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx.common import index_map, scatterer
+from dolfinx.common import index_map, neighbourhood_comms, scatterer
 
 
 @pytest.mark.parametrize("dtype", [np.int64, np.float32, np.float64, np.complex64, np.complex128])
@@ -74,3 +74,22 @@ def test_scatter_reverse(dtype):
     np.add.at(v, local_idx, recv_buffer)
 
     assert sum(v[:local_size]) == comm.size - 1
+
+
+def test_scatterers_share_comms():
+    """Scatterers on one index map share a NeighbourhoodComms."""
+    comm = MPI.COMM_WORLD
+    local_size = 10
+    dest = np.delete(np.arange(0, comm.size, dtype=np.int32), comm.rank)
+    map_ghosts = np.array([local_size * dest[r] for r in range(len(dest))], dtype=np.int64)
+    src = dest
+    map = index_map(comm, local_size, (map_ghosts, src), dest_src=[dest, src])
+
+    comms = neighbourhood_comms(map)
+    scatterers = [scatterer(map, comms) for _ in range(2048)]
+    assert all(sc._cpp_object.comms is comms._cpp_object for sc in scatterers)
+
+    # A scatterer created without comms gets its own
+    sc = scatterer(map)
+    assert sc._cpp_object.comms is not comms._cpp_object
+    assert sc._cpp_object.index_map is map._cpp_object

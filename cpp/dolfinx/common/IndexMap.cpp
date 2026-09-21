@@ -1,5 +1,5 @@
-// Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells, Igor Baratta,
-// Joseph P. Dean and Jørgen S. Dokken
+// Copyright (C) 2015-2026 Chris Richardson, Garth N. Wells, Igor Baratta,
+// Joseph P. Dean, Jørgen S. Dokken and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -1404,10 +1404,10 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
 
   // Send ghost indices to owner, and receive owned indices
   std::vector<std::int64_t> recv_buffer(recv_disp.back());
-  ierr = MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
-                                send_disp.data(), MPI_INT64_T,
-                                recv_buffer.data(), recv_sizes.data(),
-                                recv_disp.data(), MPI_INT64_T, comm);
+  ierr = MPI_Neighbor_alltoallv(
+      send_buffer.data(), send_sizes.data(), send_disp.data(),
+      dolfinx::MPI::mpi_t<std::int64_t>, recv_buffer.data(), recv_sizes.data(),
+      recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>, comm);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   ierr = MPI_Comm_free(&comm);
@@ -1450,7 +1450,7 @@ std::vector<std::int32_t> IndexMap::weights_dest() const
   std::vector<std::int32_t> w_src = this->weights_src();
   w_src.reserve(1);
 
-  // Create owner -> ghost comm
+  // Create ghost -> owner comm
   MPI_Comm comm;
   int ierr = MPI_Dist_graph_create_adjacent(
       _comm.comm(), _dest.size(), _dest.data(), MPI_UNWEIGHTED, _src.size(),
@@ -1459,8 +1459,9 @@ std::vector<std::int32_t> IndexMap::weights_dest() const
 
   std::vector<std::int32_t> w_dest(_dest.size());
   w_dest.reserve(1);
-  ierr = MPI_Neighbor_alltoall(w_src.data(), 1, MPI_INT32_T, w_dest.data(), 1,
-                               MPI_INT32_T, comm);
+  ierr = MPI_Neighbor_alltoall(w_src.data(), 1,
+                               dolfinx::MPI::mpi_t<std::int32_t>, w_dest.data(),
+                               1, dolfinx::MPI::mpi_t<std::int32_t>, comm);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   ierr = MPI_Comm_free(&comm);

@@ -122,7 +122,7 @@ def create_vector(V: FunctionSpace, dtype: npt.DTypeLike = default_scalar_type) 
     # Can just take the first dofmap here, since all dof maps have the same
     # index map in mixed-topology meshes
     dofmap = V.dofmaps[0]
-    return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=dtype)
+    return la.vector(dofmap.index_map, dofmap.index_map_bs, dofmap.scatterer, dtype=dtype)
 
 
 def create_matrix(a: Form, block_mode: la.BlockMode | None = None) -> la.MatrixCSR:

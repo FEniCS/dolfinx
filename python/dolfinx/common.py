@@ -35,6 +35,7 @@ from dolfinx.cpp.common import (
 
 __all__ = [
     "IndexMap",
+    "NeighbourhoodComms",
     "Reduction",
     "Scatterer",
     "Timer",
@@ -193,6 +194,30 @@ class IndexMap:
         return self._cpp_object.global_to_local(global_index)
 
 
+class NeighbourhoodComms:
+    """Neighbourhood MPI communicators for an :class:`IndexMap`.
+
+    Holds the owner-to-ghost and ghost-to-owner communicators used by
+    :class:`Scatterer`. Create one per index map, with
+    :func:`neighbourhood_comms`, and share it between all scatterers on
+    that map so that no communicators are duplicated.
+    """
+
+    _cpp_object: _cpp.common.NeighbourhoodComms
+
+    def __init__(self, comms: _cpp.common.NeighbourhoodComms):
+        """Wrap a C++ NeighbourhoodComms object.
+
+        Note:
+            This initialiser is intended for internal library use only.
+            User code should call :func:`neighbourhood_comms`.
+
+        Args:
+            comms: C++ NeighbourhoodComms object.
+        """
+        self._cpp_object = comms
+
+
 class Scatterer:
     """Scatter and gather data with a layout described by an ``IndexMap``.
 
@@ -202,7 +227,9 @@ class Scatterer:
     ``scatter_rev_begin`` are responsible for managing the send/receive
     buffers and the returned request, and can share one scatterer
     between multiple objects (e.g. :class:`dolfinx.la.Vector`) that use
-    the same index map.
+    the same index map. The MPI communicators are held by a
+    :class:`NeighbourhoodComms`, which scatterers on the same index map
+    share; a scatterer creates no communicators of its own.
 
     A forward scatter sends data associated with owned/local indices
     to the ranks that ghost them; a reverse scatter sends ghost data
@@ -463,17 +490,42 @@ def create_sub_index_map(
     return IndexMap(submap), submap_to_map, owners_changed
 
 
-def scatterer(index_map: IndexMap) -> Scatterer:
+def neighbourhood_comms(index_map: IndexMap) -> NeighbourhoodComms:
+    """Create the neighbourhood communicators for an index map.
+
+    Note:
+        Collective. Create these once per index map and share them
+        between all scatterers on the map.
+
+    Args:
+        index_map: Index map that describes the communication pattern.
+
+    Returns:
+        Neighbourhood communicators for ``index_map``.
+    """
+    return NeighbourhoodComms(_cpp.common.NeighbourhoodComms(index_map._cpp_object))
+
+
+def scatterer(index_map: IndexMap, comms: NeighbourhoodComms | None = None) -> Scatterer:
     """Create a scatterer for data with a layout described by an index map.
+
+    Note:
+        Collective. Scatterers on the same index map should share one
+        :class:`NeighbourhoodComms`; if ``comms`` is ``None`` a new one
+        is created, which creates MPI communicators.
 
     Args:
         index_map: Index map that describes the parallel layout of
             the data.
+        comms: Neighbourhood communicators of ``index_map``. If
+            ``None``, they are created.
 
     Returns:
         A new scatterer.
     """
-    return Scatterer(_cpp.common.Scatterer(index_map._cpp_object))
+    if comms is None:
+        comms = neighbourhood_comms(index_map)
+    return Scatterer(_cpp.common.Scatterer(index_map._cpp_object, comms._cpp_object))
 
 
 def timing(task: str) -> tuple[int, datetime.timedelta]:

@@ -212,8 +212,9 @@ int main(int argc, char* argv[])
 
     auto u = std::make_shared<fem::Function<T>>(V);
     la::petsc::Matrix A(fem::petsc::create_matrix(a), false);
-    la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
-                    L.function_spaces()[0]->dofmap()->index_map_bs());
+    auto dofmap = L.function_spaces()[0]->dofmap();
+    la::Vector<T> b(dofmap->index_map, dofmap->index_map_bs(),
+                    dofmap->scatterer);
 
     common::petsc::check(MatZeroEntries(A.mat()), "MatZeroEntries");
     fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),

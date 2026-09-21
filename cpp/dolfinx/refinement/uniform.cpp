@@ -7,11 +7,13 @@
 
 #include "uniform.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/NeighbourhoodComms.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <format>
 #include <iterator>
+#include <memory>
 #include <vector>
 
 using namespace dolfinx;
@@ -152,7 +154,9 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     std::iota(new_v[j].begin(), std::next(new_v[j].begin(), num_entities),
               local_range[0] + entity_offsets[j]);
 
-    common::Scatterer sc(*index_maps[j]);
+    const common::Scatterer sc(
+        index_maps[j],
+        std::make_shared<const common::NeighbourhoodComms>(*index_maps[j]));
     std::vector<std::int64_t> send_buffer(sc.local_indices_block().size());
     {
       auto& idx = sc.local_indices_block();

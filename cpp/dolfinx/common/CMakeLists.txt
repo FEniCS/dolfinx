@@ -3,6 +3,7 @@ target_sources(
   PRIVATE
     IndexMap.cpp
     MPI.cpp
+    NeighbourhoodComms.cpp
     Table.cpp
     TimeLogger.cpp
     log.cpp
@@ -17,6 +18,7 @@ target_sources(
       FILES
         IndexMap.h
         MPI.h
+        NeighbourhoodComms.h
         Scatterer.h
         Table.h
         TimeLogger.h

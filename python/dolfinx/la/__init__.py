@@ -531,19 +531,27 @@ def matrix_csr(
 
 def vector(
     map: IndexMap,
-    bs: int = 1,
-    scatterer: Scatterer | None = None,
+    bs: int,
+    scatterer: Scatterer,
     *,
     dtype: npt.DTypeLike = np.float64,
 ) -> Vector:
     """Create a distributed vector.
 
+    The scatterer holds the communication pattern and MPI communicators
+    for ``map`` and is shared by all vectors with the same layout. For a
+    function space layout use ``V.dofmap.scatterer`` (or
+    :func:`dolfinx.fem.create_vector`); for other index maps create one
+    with :func:`dolfinx.common.scatterer`.
+
+    Note:
+        Not collective.
+
     Args:
         map: Index map the describes the size and distribution of the
             vector.
         bs: Block size.
-        scatterer: Scatterer compatible with ``map``. If ``None``, a
-            new scatterer is created.
+        scatterer: Scatterer for ``map``.
         dtype: The scalar type.
 
     Returns:
@@ -575,10 +583,7 @@ def vector(
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    if scatterer is None:
-        return Vector(vtype(map._cpp_object, bs))
-    else:
-        return Vector(vtype(map._cpp_object, bs, scatterer._cpp_object))
+    return Vector(vtype(map._cpp_object, bs, scatterer._cpp_object))
 
 
 def orthonormalize(basis: list[Vector[_T]]) -> None:

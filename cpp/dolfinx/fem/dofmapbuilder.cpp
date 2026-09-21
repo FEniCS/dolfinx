@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -671,7 +672,8 @@ fem::build_dofmap_data(
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
   const auto [node_graphs, local_to_global0, dof_entity0, topo_index_maps,
-              offset] = build_basic_dofmaps(topology, element_dof_layouts);
+              offset]
+      = build_basic_dofmaps(topology, element_dof_layouts);
 
   spdlog::info("Got {} index_maps", topo_index_maps.size());
 
@@ -747,7 +749,8 @@ fem::build_real_element_dofmap(const mesh::Topology& topology,
 
   std::vector<std::int32_t> dofmap(num_cells_on_process, 0);
   dofmap.reserve(1);
-  return dolfinx::fem::DofMap(dof_layout, imap, dof_layout.block_size(), dofmap,
+  return dolfinx::fem::DofMap(dof_layout, imap, common::create_scatterer(imap),
+                              dof_layout.block_size(), dofmap,
                               dof_layout.block_size());
 };
 //-----------------------------------------------------------------------------

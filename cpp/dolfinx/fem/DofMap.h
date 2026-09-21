@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2026 Anders Logg, Garth N. Wells and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -11,9 +11,11 @@
 
 #include "ElementDofLayout.h"
 #include <basix/mdspan.hpp>
+#include <cassert>
 #include <concepts>
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <functional>
@@ -80,25 +82,30 @@ public:
   /// element
   /// @param[in] index_map The map describing the parallel distribution
   /// of the degrees of freedom.
+  /// @param[in] scatterer Scatterer for `index_map`, shared by all
+  /// vectors with this layout.
   /// @param[in] index_map_bs The block size associated with the
   /// `index_map`.
   /// @param[in] dofmap Adjacency list with the degrees-of-freedom for
   /// each cell.
   /// @param[in] bs The block size of the `dofmap`.
+  /// @pre `scatterer->index_map() == index_map`.
   template <typename E, typename U>
     requires std::is_convertible_v<std::remove_cvref_t<E>,
                                    fem::ElementDofLayout>
                  and std::is_convertible_v<std::remove_cvref_t<U>,
                                            std::vector<std::int32_t>>
   DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
-         int index_map_bs, U&& dofmap, int bs)
-      : index_map(std::move(index_map)), _index_map_bs(index_map_bs),
+         std::shared_ptr<const common::Scatterer<>> scatterer, int index_map_bs,
+         U&& dofmap, int bs)
+      : index_map(std::move(index_map)), scatterer(std::move(scatterer)),
+        _index_map_bs(index_map_bs),
         _element_dof_layout(std::forward<E>(element)),
         _dofmap(std::forward<U>(dofmap)), _bs(bs),
         _shape1(_element_dof_layout.num_dofs()
                 * _element_dof_layout.block_size() / _bs)
   {
-    // Do nothing
+    assert(this->scatterer->index_map() == this->index_map);
   }
 
   // Copy constructor
@@ -162,6 +169,11 @@ public:
   /// @brief Index map that describes the parallel distribution of the
   /// dofmap
   std::shared_ptr<const common::IndexMap> index_map;
+
+  /// @brief Scatterer for `index_map`. It owns the neighbourhood
+  /// communicators and is shared by all la::Vector objects with this
+  /// layout, so creating such a vector creates no communicators.
+  std::shared_ptr<const common::Scatterer<>> scatterer;
 
   /// @brief Block size associated with the index_map
   int index_map_bs() const;

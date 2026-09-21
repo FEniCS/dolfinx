@@ -27,7 +27,9 @@ def build_elastic_nullspace(V, dtype):
     dim = 3 if gdim == 2 else 6
 
     # Create list of vectors for null space
-    ns = [la.vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(dim)]
+    ns = [
+        la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, V.dofmap.scatterer) for i in range(dim)
+    ]
 
     basis = [x.array for x in ns]
     dofs = [V.sub(i).dofmap.list.flatten() for i in range(gdim)]

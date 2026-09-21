@@ -15,7 +15,7 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
-from dolfinx.common import IndexMap
+from dolfinx.common import IndexMap, Scatterer
 from dolfinx.cpp.fem import DofMap as _DofMap
 from dolfinx.cpp.fem import create_dofmaps as _create_dofmaps
 from dolfinx.fem.element import ElementDofLayout, FiniteElement
@@ -84,6 +84,19 @@ class DofMap:
             access and the same object is returned thereafter.
         """
         return IndexMap(self._cpp_object.index_map)
+
+    @functools.cached_property
+    def scatterer(self) -> Scatterer:
+        """Scatterer for :attr:`index_map`.
+
+        Shared by all vectors with this layout, e.g. those created by
+        :func:`dolfinx.fem.create_vector`.
+
+        Note:
+            This is a cached property. The wrapper is built on first
+            access and the same object is returned thereafter.
+        """
+        return Scatterer(self._cpp_object.scatterer)
 
     @property
     def index_map_bs(self) -> int:

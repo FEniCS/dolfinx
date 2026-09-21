@@ -1,4 +1,5 @@
-// Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells and Igor Baratta
+// Copyright (C) 2015-2026 Chris Richardson, Garth N. Wells, Igor Baratta
+// and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //

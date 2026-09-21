@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/NeighbourhoodComms.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
@@ -122,6 +123,7 @@ template struct meshtags_classes<double>;
 
 // Non-templated classes, and templates over a fixed index type
 static_assert(nothrow_move_c<common::IndexMap>);
+static_assert(nothrow_move_c<common::NeighbourhoodComms>);
 static_assert(nothrow_move_c<common::Scatterer<>>);
 static_assert(nothrow_move_c<dolfinx::MPI::Comm>);
 static_assert(nothrow_move_c<dolfinx::MPI::Datatype<double>>);
@@ -138,6 +140,7 @@ static_assert(nothrow_move_c<mesh::EntityMap>);
 static_assert(nothrow_move_c<mesh::Topology>);
 
 static_assert(nothrow_move_a<common::IndexMap>);
+static_assert(nothrow_move_a<common::NeighbourhoodComms>);
 static_assert(nothrow_move_a<common::Scatterer<>>);
 static_assert(nothrow_move_a<dolfinx::MPI::Comm>);
 static_assert(nothrow_move_a<dolfinx::MPI::Datatype<double>>);
