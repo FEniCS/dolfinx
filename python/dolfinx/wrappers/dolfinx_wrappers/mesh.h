@@ -361,7 +361,7 @@ void declare_mesh(nb::module_& m, std::string_view type)
       nb::arg("partitioner").none(), nb::arg("ghost_mode"));
 
   m.def(
-      "create_mesh",
+      "create_mixed_mesh",
       [](MPICommWrapper comm,
          const std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>,
                                        nb::c_contig>>& cells_nb,

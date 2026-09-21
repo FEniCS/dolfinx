@@ -5,7 +5,7 @@ import pytest
 
 from dolfinx.cpp.mesh import (
     GhostMode,
-    create_mesh,
+    create_mixed_mesh,
 )
 from dolfinx.fem import coordinate_element
 from dolfinx.graph import partitioner
@@ -85,7 +85,7 @@ def test_create_mixed_mesh(dtype):
 
     part = partitioner()
     max_cells_per_facet = 2
-    mesh = create_mesh(
+    mesh = create_mixed_mesh(
         MPI.COMM_WORLD,
         cells_np,
         [hexahedron._cpp_object, pyramid._cpp_object, tetrahedron._cpp_object],

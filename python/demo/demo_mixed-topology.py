@@ -36,7 +36,7 @@ import basix
 import basix._basixcpp
 import dolfinx.cpp as _cpp
 import ufl
-from dolfinx.cpp.mesh import create_mesh
+from dolfinx.cpp.mesh import create_mixed_mesh
 from dolfinx.fem import (
     FunctionSpace,
     assemble_matrix,
@@ -118,7 +118,7 @@ hexahedron_cpp: _cpp.fem.CoordinateElement_float64 = (
 prism_cpp: _cpp.fem.CoordinateElement_float64 = prism._cpp_object  # type: ignore[assignment]
 
 part = partitioner()
-mesh = create_mesh(
+mesh = create_mixed_mesh(
     MPI.COMM_WORLD,
     cells_np,
     [hexahedron_cpp, prism_cpp],

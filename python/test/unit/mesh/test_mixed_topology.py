@@ -17,7 +17,7 @@ from dolfinx.cpp.mesh import (
     Mesh_float64,
     compute_mixed_cell_pairs,
     create_geometry,
-    create_mesh,
+    create_mixed_mesh,
     create_topology,
     locate_entities,
 )
@@ -366,7 +366,7 @@ def test_locate_entities(dtype):
     prism = coordinate_element(CellType.prism, 1, dtype=dtype)
     comm = MPI.COMM_WORLD
     max_cells_per_facet = 2
-    mesh = create_mesh(
+    mesh = create_mixed_mesh(
         comm,
         cells,
         [hexahedron._cpp_object, prism._cpp_object],

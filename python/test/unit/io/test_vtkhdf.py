@@ -124,7 +124,7 @@ def test_read_write_higher_order():
 
     max_cells_per_facet = 2
     part = dolfinx.graph.partitioner()
-    mesh = dolfinx.cpp.mesh.create_mesh(
+    mesh = dolfinx.cpp.mesh.create_mixed_mesh(
         MPI.COMM_WORLD,
         cells_np,
         [e._cpp_object for e in coordinate_elements],
