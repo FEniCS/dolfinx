@@ -9,7 +9,9 @@
 #include "Geometry.h"
 #include <concepts>
 #include <dolfinx/common/MPI.h>
+#include <memory>
 #include <string>
+#include <type_traits>
 
 namespace dolfinx::mesh
 {
