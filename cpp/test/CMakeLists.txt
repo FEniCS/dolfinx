@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.26)
 
 project(dolfinx-tests LANGUAGES C CXX)
 
@@ -82,11 +82,6 @@ endif()
 # Required to find FFCx generated headers.
 target_include_directories(unittests PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
-if(NOT PROJECT_IS_TOP_LEVEL)
-  # Required to find version.h
-  target_include_directories(unittests PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../)
-endif()
-
 if(DEFINED DOLFINX_CXX_DEVELOPER_FLAGS)
   target_compile_options(
     unittests
@@ -100,17 +95,6 @@ if(DEFINED DOLFINX_CXX_DEVELOPER_DEFINITIONS)
     unittests
     PRIVATE
       $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
-  )
-endif()
-
-option(ENABLE_CLANG_TIDY "Enable clang-tidy analysis" OFF)
-if(ENABLE_CLANG_TIDY)
-  find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
-  set_target_properties(
-    unittests
-    PROPERTIES
-      CXX_CLANG_TIDY
-        "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy"
   )
 endif()
 
