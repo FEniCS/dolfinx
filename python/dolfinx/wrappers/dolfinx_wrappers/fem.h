@@ -1,4 +1,5 @@
-// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson, Garth N. Wells and Jørgen S.
+// Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -1101,18 +1102,22 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
       .def(
           "__init__",
           [](dolfinx::fem::CoordinateElement<T>* cm, dolfinx::mesh::CellType ct,
-             int d, int var)
+             int d, int var, bool discontinuous)
           {
             new (cm) dolfinx::fem::CoordinateElement<T>(
-                ct, d, static_cast<basix::element::lagrange_variant>(var));
+                ct, d, static_cast<basix::element::lagrange_variant>(var),
+                discontinuous);
           },
-          nb::arg("celltype"), nb::arg("degree"), nb::arg("variant"))
+          nb::arg("celltype"), nb::arg("degree"), nb::arg("variant"),
+          nb::arg("discontinuous"))
       .def_prop_ro("dtype", [](const dolfinx::fem::CoordinateElement<T>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
       .def_prop_ro("degree", &dolfinx::fem::CoordinateElement<T>::degree)
       .def_prop_ro("dim", &dolfinx::fem::CoordinateElement<T>::dim)
+      .def_prop_ro("is_discontinuous",
+                   &dolfinx::fem::CoordinateElement<T>::is_discontinuous)
       .def_prop_ro("variant", [](const dolfinx::fem::CoordinateElement<T>& self)
                    { return static_cast<int>(self.variant()); })
       .def("hash", &dolfinx::fem::CoordinateElement<T>::hash)

@@ -761,6 +761,10 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @pre Mesh connectivities `dim -> mesh.topology().dim()` and
 /// `mesh.topology().dim() -> dim` must have been computed. Otherwise an
 /// exception is thrown.
+///
+/// @note A discontinuous geometry has no coordinate degrees-of-freedom
+/// associated with sub-entities of a cell, so only `dim ==
+/// mesh.topology().dim()` is supported for such a mesh.
 template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::array<std::size_t, 2>>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
@@ -783,6 +787,14 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
   // Get the DOF layout and the number of DOFs per entity
   const fem::CoordinateElement<T>& coord_ele = geometry.cmaps().front();
+  if (dim < tdim and coord_ele.is_discontinuous())
+  {
+    throw std::invalid_argument(
+        "mesh::entities_to_geometry for sub-entities of a cell is not "
+        "supported for a discontinuous geometry, which has no coordinate "
+        "degrees-of-freedom associated with sub-entities.");
+  }
+
   const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
   const std::size_t num_entity_dofs = layout.entity_closure_dofs(dim, 0).size();
   std::vector<std::int32_t> entity_xdofs;
