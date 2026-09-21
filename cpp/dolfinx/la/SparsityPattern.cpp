@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2021 Garth N. Wells
+// Copyright (C) 2007-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -189,6 +189,18 @@ SparsityPattern::SparsityPattern(
       }
     }
   }
+}
+//-----------------------------------------------------------------------------
+void SparsityPattern::reserve(std::size_t num_entries)
+{
+  if (!_offsets.empty())
+  {
+    throw std::runtime_error(
+        "Cannot reserve in sparsity pattern. It has already been finalized");
+  }
+
+  _cache_rows.reserve(_cache_rows.size() + num_entries);
+  _cache_cols.reserve(_cache_cols.size() + num_entries);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(std::int32_t row, std::int32_t col)
@@ -480,14 +492,22 @@ void SparsityPattern::finalize()
 
   _edges.shrink_to_fit();
 
-  // Column count increased due to received rows from other processes
-  spdlog::debug("Column ghost size increased from {} to {}",
-                _index_maps[1]->ghosts().size(), _col_ghosts.size());
-
-  // Update to new column index map
-  _index_maps[1] = std::make_shared<common::IndexMap>(
-      _comm.comm(), _index_maps[1]->size_local(), _col_ghosts,
-      _col_ghost_owners);
+  // _col_ghosts only appends to the original column ghosts. Rebuild the
+  // collective IndexMap only if ghosts changed on at least one rank;
+  // otherwise preserve a shared row and column IndexMap.
+  int ghosts_changed = _col_ghosts.size() != _index_maps[1]->ghosts().size();
+  int ghosts_changed_global;
+  const int ierr = MPI_Allreduce(&ghosts_changed, &ghosts_changed_global, 1,
+                                 MPI_INT, MPI_LOR, _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+  if (ghosts_changed_global)
+  {
+    spdlog::debug("Column ghost size increased from {} to {}",
+                  _index_maps[1]->ghosts().size(), _col_ghosts.size());
+    _index_maps[1] = std::make_shared<common::IndexMap>(
+        _comm.comm(), _index_maps[1]->size_local(), _col_ghosts,
+        _col_ghost_owners);
+  }
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const

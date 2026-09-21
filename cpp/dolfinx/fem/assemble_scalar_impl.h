@@ -19,7 +19,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
-#include <type_traits>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -35,7 +34,7 @@ T assemble_cells(MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
                  std::span<const std::int32_t> cells,
                  const FEkernel<T, U> auto& fn, std::span<const T> constants,
                  md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-                 std::span<std::type_identity_t<U>> cdofs_b)
+                 std::span<U> cdofs_b)
 {
   T value(0);
   if (cells.empty())
@@ -87,7 +86,7 @@ T assemble_entities(
     const FEkernel<T, U> auto& fn, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<std::type_identity_t<U>> cdofs_b)
+    std::span<U> cdofs_b)
 {
   T value(0);
   if (entities.empty())
@@ -135,7 +134,7 @@ T assemble_interior_facets(
                                     md::dynamic_extent>>
         coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<std::type_identity_t<U>> cdofs_b)
+    std::span<U> cdofs_b)
 {
   T value(0);
   if (facets.empty())
@@ -198,9 +197,9 @@ T assemble_scalar(
     std::span<const std::int32_t> cells
         = M.domain(IntegralType::cell, i, cell_type_idx);
     assert(cells.size() * cstride == coeffs.size());
-    value += impl::assemble_cells<T, U>(
+    value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
-        md::mdspan(coeffs.data(), cells.size(), cstride), cdofs_b);
+        md::mdspan(coeffs.data(), cells.size(), cstride), std::span(cdofs_b));
   }
 
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
@@ -231,7 +230,7 @@ T assemble_scalar(
     constexpr std::size_t shape1 = 2 * num_adjacent_cells;
 
     assert((facets.size() / shape1) * 2 * cstride == coeffs.size());
-    value += impl::assemble_interior_facets<T, U>(
+    value += impl::assemble_interior_facets(
         x_dofmap, x,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2, 2>>(
@@ -240,7 +239,7 @@ T assemble_scalar(
         md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                         md::dynamic_extent>>(
             coeffs.data(), facets.size() / shape1, 2, cstride),
-        facet_perms, cdofs_b);
+        facet_perms, std::span(cdofs_b));
   }
 
   for (auto itg_type : {fem::IntegralType::exterior_facet,
@@ -261,14 +260,14 @@ T assemble_scalar(
 
       // Two values per each adj. cell (cell index and local entity index).
       assert((entities.size() / 2) * cstride == coeffs.size());
-      value += impl::assemble_entities<T, U>(
+      value += impl::assemble_entities(
           x_dofmap, x,
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>(
               entities.data(), entities.size() / 2, 2),
           fn, constants,
           md::mdspan(coeffs.data(), entities.size() / 2, cstride), perms,
-          cdofs_b);
+          std::span(cdofs_b));
     }
   }
 
