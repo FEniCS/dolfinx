@@ -115,4 +115,11 @@ concept DofMapPackFacets
     = DofMapPackBase<T> and requires(const std::remove_cvref_t<T>& t) {
         { std::get<2>(t)(0, 0, 0) } -> std::convertible_to<std::int32_t>;
       };
+
+namespace impl
+{
+/// @brief Rank-2 mdspan of 32-bit indices, as used for the dofmaps
+/// passed to the assembly kernels.
+using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
+} // namespace impl
 } // namespace dolfinx::fem

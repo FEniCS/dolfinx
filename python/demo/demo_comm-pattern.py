@@ -137,7 +137,7 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 # -
 
 # The function {py:func}`comm_graph <dolfinx.graph.comm_graph>` builds a
-# communication graph that represents data begin sent from the owning
+# communication graph that represents data being sent from the owning
 # rank to ranks that ghost the data. We use the degree-of-freedom map's
 # `IndexMap`. Building the communication data is collective across MPI
 # ranks. However, a non-empty graph is returned only on rank 0.
@@ -165,13 +165,13 @@ def print_stats(G):
 # -
 
 # The graph data will be processed on rank 0. From the communication
-# graph data, edge and node data for creating a `NetworkX`` graph is build
+# graph data, edge and node data for creating a `NetworkX` graph are built
 # using {py:func}`comm_graph_data <dolfinx.graph.comm_graph_data>`.
 #
 # Data for use with `NetworkX` can also be reconstructed from a JSON
 # string. The JSON string can be created using {py:func}`comm_to_json
-# <dolfinx.graph.comm_to_json>`. This is helpful for cases there a
-# simulaton is executed and the graph data is written to file for later
+# <dolfinx.graph.comm_to_json>`. This is helpful when a simulation is
+# executed and the graph data is written to file for later
 # analysis.
 
 # +

@@ -15,6 +15,10 @@
 //   visualisation using `dolfinx::io::VTXWriter`
 // * Repeat the interpolation for `float`/`double` and their complex
 //   counterparts, and for meshes with `float`/`double` geometry
+//
+// Running this demo requires the files:
+// {download}`demo_interpolation-io/main.cpp` and
+// {download}`demo_interpolation-io/CMakeLists.txt`.
 
 #include <basix/finite-element.h>
 #include <cmath>

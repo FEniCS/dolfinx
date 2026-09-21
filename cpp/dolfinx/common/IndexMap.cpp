@@ -405,6 +405,7 @@ compute_submap_indices(const IndexMap& imap,
     // Create a map from (global) indices in `recv_indices` to a list of
     // processes that can own them in the submap.
     std::vector<std::pair<std::int64_t, int>> global_idx_to_possible_owner;
+    global_idx_to_possible_owner.reserve(recv_indices.size());
     const std::array local_range = imap.local_range();
 
     // Loop through the received indices
@@ -571,6 +572,10 @@ compute_submap_indices(const IndexMap& imap,
 
     std::vector<std::int32_t> send_indices_local(send_indices.size());
     imap.global_to_local(send_indices, send_indices_local);
+
+    // Each entry is added to at most one output vector.
+    submap_ghost.reserve(send_indices_local.size());
+    submap_ghost_owners.reserve(send_indices_local.size());
 
     // Loop over ghost indices (in the original map) and add to
     // submap_owned if the owning process has decided this process to be
@@ -835,6 +840,8 @@ common::stack_index_maps(
                              [](auto& g) -> std::int32_t { return g.size(); });
 
       // Send buffer and ghost position to send buffer position
+      send_indices.reserve(ghosts.size());
+      ghost_buffer_pos.reserve(ghosts.size());
       for (auto& g : ghost_by_rank)
         send_indices.insert(send_indices.end(), g.begin(), g.end());
       for (auto& p : pos_to_ghost)
@@ -1189,6 +1196,7 @@ IndexMap::index_to_dest_ranks(int tag) const
     dolfinx::MPI::check_error(_comm.comm(), ierr);
 
     // Build array of (local index, ghosting local rank), and sort
+    idx_to_rank.reserve(recv_buffer.size());
     for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
     {
       for (int j = recv_disp[r]; j < recv_disp[r + 1]; ++j)
@@ -1256,6 +1264,8 @@ IndexMap::index_to_dest_ranks(int tag) const
       // Count number of ghosts per destination and build send buffer
       std::ranges::transform(dest_idx_to_rank, std::back_inserter(send_sizes),
                              [](auto& x) -> int { return x.size(); });
+      send_buffer.reserve(
+          std::reduce(send_sizes.begin(), send_sizes.end(), std::size_t(0)));
       for (auto& d : dest_idx_to_rank)
         send_buffer.insert(send_buffer.end(), d.begin(), d.end());
 

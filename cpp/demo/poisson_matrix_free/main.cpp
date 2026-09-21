@@ -12,6 +12,11 @@
 // * Create and apply Dirichlet boundary conditions
 // * Compute errors
 //
+// Running this demo requires the files:
+// {download}`demo_poisson_matrix_free/main.cpp`,
+// {download}`demo_poisson_matrix_free/poisson.py` and
+// {download}`demo_poisson_matrix_free/CMakeLists.txt`.
+//
 // \begin{align*}
 //    - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
 //      u &= u_D \quad {\rm on} \ \Gamma_{D}
