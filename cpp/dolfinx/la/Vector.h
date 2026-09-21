@@ -153,19 +153,18 @@ public:
 
   /// @brief Create a distributed vector.
   ///
-  /// This constructor creates a new Scatterer for the Vector. For
-  /// applications that create many Vectors with the same parallel layout,
-  /// constructing a distinct Scatterer for each Vector can exhaust the
-  /// available MPI communicators. This can be avoided by creating one
-  /// Scatterer and sharing it among those Vectors using the constructor that
-  /// takes a shared pointer to an existing Scatterer.
+  /// This constructor creates a new Scatterer for the Vector, which is
+  /// collective. Applications that create many Vectors with the same
+  /// parallel layout can instead create one Scatterer and share it
+  /// using the constructor that takes a shared pointer to an existing
+  /// Scatterer.
   ///
   /// @param map Index map that describes the parallel layout of
   /// the data.
   /// @param bs Number of entries per index map 'index' (block size).
   Vector(std::shared_ptr<const common::IndexMap> map, int bs)
       : Vector(map, bs,
-               std::make_shared<common::Scatterer<ScatterContainer>>(*map))
+               std::make_shared<common::Scatterer<ScatterContainer>>(map))
   {
   }
 
@@ -222,10 +221,6 @@ public:
   ///
   /// This constructor can be used to convert the scalar type, e.g. from
   /// `double` to `float`, or to transfer a vector between CPU and GPU storage.
-  ///
-  /// @note Construction is collective when `ScatterContainer` and
-  /// `ScatterContainer0` differ because copying the scatterer duplicates its
-  /// MPI neighbourhood communicators.
   ///
   /// @tparam T0 Scalar type of the Vector being copied.
   /// @tparam Container0 Data container type of the Vector being copied.

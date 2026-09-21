@@ -43,7 +43,7 @@ void test_vector()
       MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
 
   std::shared_ptr<common::Scatterer<>> scatterer
-      = std::make_shared<common::Scatterer<>>(*index_map);
+      = std::make_shared<common::Scatterer<>>(index_map);
   la::Vector<T> v(index_map, 1, scatterer);
   CHECK(v.scatterer() == scatterer);
   std::ranges::fill(v.array(), 1.0);

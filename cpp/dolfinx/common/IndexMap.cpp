@@ -1,5 +1,5 @@
-// Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells, Igor Baratta,
-// Joseph P. Dean and Jørgen S. Dokken
+// Copyright (C) 2015-2026 Chris Richardson, Garth N. Wells, Igor Baratta,
+// Joseph P. Dean, Jørgen S. Dokken and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -707,6 +708,35 @@ compute_submap_ghost_indices(std::span<const int> submap_src,
 
   return ghost_submap_gidx;
 }
+//-----------------------------------------------------------------------------
+/// @brief Create the owner -> ghost and ghost -> owner neighbourhood
+/// communicators of an index map.
+///
+/// @note Collective on `comm`.
+///
+/// @param[in] comm Index map communicator.
+/// @param[in] src Sorted unique ranks that own the caller's ghosts.
+/// @param[in] dest Sorted unique ranks that ghost the caller's entries.
+/// @return (0) Communicator with in-edges from `src` and out-edges to
+/// `dest`, and (1) the reverse graph.
+std::pair<dolfinx::MPI::Comm, dolfinx::MPI::Comm>
+create_neighbourhood_comms(MPI_Comm comm, std::span<const int> src,
+                           std::span<const int> dest)
+{
+  MPI_Comm comm0;
+  int ierr = MPI_Dist_graph_create_adjacent(
+      comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  MPI_Comm comm1;
+  ierr = MPI_Dist_graph_create_adjacent(
+      comm, dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(), src.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  return {dolfinx::MPI::Comm(comm0, false), dolfinx::MPI::Comm(comm1, false)};
+}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -976,6 +1006,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size) : _comm(comm, true)
   auto [local_range, size_global] = compute_layout(_comm.comm(), local_size);
   _local_range = local_range;
   _size_global = size_global;
+  std::tie(_comm_owner_to_ghost, _comm_ghost_to_owner)
+      = create_neighbourhood_comms(_comm.comm(), _src, _dest);
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
@@ -994,6 +1026,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
   _size_global = size_global;
   _src = std::move(src_dest[0]);
   _dest = std::move(src_dest[1]);
+  std::tie(_comm_owner_to_ghost, _comm_ghost_to_owner)
+      = create_neighbourhood_comms(_comm.comm(), _src, _dest);
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
@@ -1013,6 +1047,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
       _comm.comm(), local_size, _src, _dest, _ghosts, _owners, verify_dest);
   _local_range = local_range;
   _size_global = size_global;
+  std::tie(_comm_owner_to_ghost, _comm_ghost_to_owner)
+      = create_neighbourhood_comms(_comm.comm(), _src, _dest);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
@@ -1115,6 +1151,16 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 }
 //-----------------------------------------------------------------------------
 MPI_Comm IndexMap::comm() const { return _comm.comm(); }
+//-----------------------------------------------------------------------------
+MPI_Comm IndexMap::comm_owner_to_ghost() const noexcept
+{
+  return _comm_owner_to_ghost.comm();
+}
+//-----------------------------------------------------------------------------
+MPI_Comm IndexMap::comm_ghost_to_owner() const noexcept
+{
+  return _comm_ghost_to_owner.comm();
+}
 //----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<std::int32_t>>
 IndexMap::index_to_dest_ranks(int tag) const
@@ -1383,18 +1429,12 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
     it = it1;
   }
 
-  // Create ghost -> owner comm
-  MPI_Comm comm;
-  int ierr = MPI_Dist_graph_create_adjacent(
-      _comm.comm(), _dest.size(), _dest.data(), MPI_UNWEIGHTED, _src.size(),
-      _src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-
+  MPI_Comm comm = _comm_ghost_to_owner.comm();
   std::vector<int> recv_sizes(_dest.size(), 0);
   send_sizes.reserve(1);
   recv_sizes.reserve(1);
-  ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(),
-                               1, MPI_INT, comm);
+  int ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT,
+                                   recv_sizes.data(), 1, MPI_INT, comm);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   // Prepare receive displacement array
@@ -1404,13 +1444,10 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
 
   // Send ghost indices to owner, and receive owned indices
   std::vector<std::int64_t> recv_buffer(recv_disp.back());
-  ierr = MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
-                                send_disp.data(), MPI_INT64_T,
-                                recv_buffer.data(), recv_sizes.data(),
-                                recv_disp.data(), MPI_INT64_T, comm);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-  ierr = MPI_Comm_free(&comm);
+  ierr = MPI_Neighbor_alltoallv(
+      send_buffer.data(), send_sizes.data(), send_disp.data(),
+      dolfinx::MPI::mpi_t<std::int64_t>, recv_buffer.data(), recv_sizes.data(),
+      recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>, comm);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   std::vector<std::int32_t> shared;
@@ -1450,20 +1487,12 @@ std::vector<std::int32_t> IndexMap::weights_dest() const
   std::vector<std::int32_t> w_src = this->weights_src();
   w_src.reserve(1);
 
-  // Create owner -> ghost comm
-  MPI_Comm comm;
-  int ierr = MPI_Dist_graph_create_adjacent(
-      _comm.comm(), _dest.size(), _dest.data(), MPI_UNWEIGHTED, _src.size(),
-      _src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-
+  // Send ghost counts to the owning ranks (ghost -> owner)
   std::vector<std::int32_t> w_dest(_dest.size());
   w_dest.reserve(1);
-  ierr = MPI_Neighbor_alltoall(w_src.data(), 1, MPI_INT32_T, w_dest.data(), 1,
-                               MPI_INT32_T, comm);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-  ierr = MPI_Comm_free(&comm);
+  int ierr = MPI_Neighbor_alltoall(
+      w_src.data(), 1, dolfinx::MPI::mpi_t<std::int32_t>, w_dest.data(), 1,
+      dolfinx::MPI::mpi_t<std::int32_t>, _comm_ghost_to_owner.comm());
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   return w_dest;

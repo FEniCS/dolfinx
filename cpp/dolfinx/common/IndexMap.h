@@ -1,4 +1,5 @@
-// Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells and Igor Baratta
+// Copyright (C) 2015-2026 Chris Richardson, Garth N. Wells, Igor Baratta
+// and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -257,6 +258,27 @@ public:
   /// @return Communicator
   MPI_Comm comm() const;
 
+  /// @brief Return the neighbourhood communicator for sending owned
+  /// data to the ranks that ghost it.
+  ///
+  /// The communicator has a distributed graph topology with in-edges
+  /// from src() and out-edges to dest(), so a neighbourhood collective
+  /// on it sends to dest() and receives from src(). It spans the same
+  /// ranks as comm(), is created with the map and is shared by all
+  /// objects using the map, e.g. common::Scatterer.
+  ///
+  /// @return Owner-to-ghost neighbourhood communicator.
+  MPI_Comm comm_owner_to_ghost() const noexcept;
+
+  /// @brief Return the neighbourhood communicator for sending ghost
+  /// data to the owning ranks.
+  ///
+  /// The reverse graph of comm_owner_to_ghost(): in-edges from dest()
+  /// and out-edges to src().
+  ///
+  /// @return Ghost-to-owner neighbourhood communicator.
+  MPI_Comm comm_ghost_to_owner() const noexcept;
+
   /// @brief Compute global indices for local indices.
   ///
   /// @param[in] local Local indices in `[0, size_local() + num_ghosts())`.
@@ -358,6 +380,14 @@ private:
 
   // Map communicator
   dolfinx::MPI::Comm _comm;
+
+  // Neighbourhood communicator with in-edges from _src and out-edges to
+  // _dest (owner -> ghost data flow)
+  dolfinx::MPI::Comm _comm_owner_to_ghost{MPI_COMM_NULL};
+
+  // Reverse graph: in-edges from _dest, out-edges to _src (ghost ->
+  // owner data flow)
+  dolfinx::MPI::Comm _comm_ghost_to_owner{MPI_COMM_NULL};
 
   // Global ghost indices
   std::vector<std::int64_t> _ghosts;

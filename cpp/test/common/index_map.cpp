@@ -15,8 +15,10 @@
 #include <dolfinx/common/utils.h>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <numeric>
 #include <set>
+#include <span>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -49,12 +51,10 @@ void test_scatter_fwd(int n, bool use_dtype)
   constexpr int size_local = 100;
 
   // Create an IndexMap
-  const common::IndexMap idx_map
-      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
-  std::int32_t num_ghosts = idx_map.num_ghosts();
+  auto idx_map = std::make_shared<const common::IndexMap>(
+      create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3));
+  std::int32_t num_ghosts = idx_map->num_ghosts();
 
-  // Move, rather than copy, the Scatterer: a copy would duplicate the
-  // communicators, which is collective
   common::Scatterer sct0(idx_map);
   common::Scatterer sct = std::move(sct0);
 
@@ -108,9 +108,9 @@ void test_scatter_rev(bool use_dtype)
   constexpr int size_local = 100;
 
   // Create an IndexMap
-  const common::IndexMap idx_map
-      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
-  std::int32_t num_ghosts = idx_map.num_ghosts();
+  auto idx_map = std::make_shared<const common::IndexMap>(
+      create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3));
+  std::int32_t num_ghosts = idx_map->num_ghosts();
 
   common::Scatterer<std::vector<std::int32_t>> sct(idx_map);
   {
@@ -209,7 +209,8 @@ void test_scatter_with_isolated_rank()
     owners = {0};
   }
 
-  const common::IndexMap map(MPI_COMM_WORLD, 1, src_dest, ghosts, owners);
+  auto map = std::make_shared<const common::IndexMap>(MPI_COMM_WORLD, 1,
+                                                      src_dest, ghosts, owners);
   const common::Scatterer scatterer(map);
 
   {
@@ -241,9 +242,9 @@ void test_scatter_with_isolated_rank()
   }
 }
 
-// A copy of a Scatterer duplicates the communicators, so the copy must
-// describe the same communication pattern as the original. A move takes
-// the communicators over.
+// Copies and moves of a Scatterer share the index map, and hence its
+// neighbourhood communicators, and must describe the same communication
+// pattern as the original
 void test_scatter_copy_move()
 {
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
@@ -251,8 +252,8 @@ void test_scatter_copy_move()
   // Must be at least the ghost count, so that every ghost index is in
   // the owning rank's range
   constexpr int size_local = 100;
-  const common::IndexMap idx_map
-      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
+  auto idx_map = std::make_shared<const common::IndexMap>(
+      create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3));
 
   const std::int64_t val = 11;
   const std::vector<std::int64_t> data_local(size_local, val * mpi_rank);
@@ -291,8 +292,7 @@ void test_scatter_copy_move()
     CHECK(fwd(sct_cast) == expected);
   }
 
-  // Move construction, then move assignment onto a Scatterer that
-  // already holds communicators
+  // Move construction, then move assignment
   {
     common::Scatterer sct_move(std::move(sct));
     CHECK(fwd(sct_move) == expected);
@@ -303,11 +303,98 @@ void test_scatter_copy_move()
   }
 }
 
+// Scatterers share the communicators of their IndexMap rather than
+// creating their own. Many Scatterers on one map must therefore not
+// exhaust the MPI communicators (MPICH allows ~2048), and copying or
+// destroying a Scatterer on a single rank must not deadlock, as it
+// would if a communicator were duplicated or freed.
+void test_scatter_no_comm_duplication()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  constexpr int size_local = 10;
+  auto idx_map = std::make_shared<const common::IndexMap>(
+      create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3));
+
+  std::vector<common::Scatterer<>> scatterers;
+  for (int i = 0; i < 2048; ++i)
+    scatterers.emplace_back(idx_map);
+
+  // Copy, cast-copy, move and destroy on one rank only
+  if (mpi_rank == 0)
+  {
+    const common::Scatterer sct_copy(scatterers.front());
+    const common::Scatterer<std::vector<std::int64_t>> sct_cast(sct_copy);
+    common::Scatterer sct_move(std::move(scatterers.back()));
+    scatterers.pop_back();
+  }
+
+  // The remaining Scatterers must still communicate
+  const std::vector<std::int64_t> x(size_local, mpi_rank);
+  const auto& idx_local = scatterers.front().local_indices_block();
+  std::vector<std::int64_t> send_buffer(idx_local.size());
+  for (std::size_t i = 0; i < idx_local.size(); ++i)
+    send_buffer[i] = x[idx_local[i]];
+  std::vector<std::int64_t> recv_buffer(
+      scatterers.front().remote_indices_block().size(), -1);
+  MPI_Request request = MPI_REQUEST_NULL;
+  scatterers.front().scatter_fwd_begin(send_buffer.data(), recv_buffer.data(),
+                                       1, request);
+  scatterers.front().scatter_fwd_end(request);
+  CHECK(std::ranges::all_of(recv_buffer, [mpi_rank, mpi_size](std::int64_t v)
+                            { return v == (mpi_rank + 1) % mpi_size; }));
+}
+
+// Check that a neighbourhood communicator of `map` has a distributed
+// graph topology with in-edges `sources` and out-edges `destinations`
+void check_neighbourhood_comm(MPI_Comm comm, std::span<const int> sources,
+                              std::span<const int> destinations)
+{
+  int topo;
+  MPI_Topo_test(comm, &topo);
+  REQUIRE(topo == MPI_DIST_GRAPH);
+
+  int indegree, outdegree, weighted;
+  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
+  REQUIRE(indegree == static_cast<int>(sources.size()));
+  REQUIRE(outdegree == static_cast<int>(destinations.size()));
+
+  std::vector<int> src(indegree), dest(outdegree);
+  MPI_Dist_graph_neighbors(comm, indegree, src.data(), MPI_UNWEIGHTED,
+                           outdegree, dest.data(), MPI_UNWEIGHTED);
+  CHECK(std::ranges::equal(src, sources));
+  CHECK(std::ranges::equal(dest, destinations));
+
+  // The neighbourhood communicator spans the same ranks as comm()
+  CHECK(dolfinx::MPI::size(comm) == dolfinx::MPI::size(MPI_COMM_WORLD));
+}
+
+// An IndexMap creates its owner -> ghost and ghost -> owner
+// neighbourhood communicators once, shared by all Scatterers on the map
+void test_neighbourhood_comms()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+  const common::IndexMap idx_map
+      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
+  check_neighbourhood_comm(idx_map.comm_owner_to_ghost(), idx_map.src(),
+                           idx_map.dest());
+  check_neighbourhood_comm(idx_map.comm_ghost_to_owner(), idx_map.dest(),
+                           idx_map.src());
+
+  // Non-overlapping map: zero-degree graphs, but valid communicators
+  const common::IndexMap map0(MPI_COMM_WORLD, size_local);
+  CHECK(map0.src().empty());
+  CHECK(map0.dest().empty());
+  check_neighbourhood_comm(map0.comm_owner_to_ghost(), map0.src(), map0.dest());
+  check_neighbourhood_comm(map0.comm_ghost_to_owner(), map0.dest(), map0.src());
+}
+
 // On a single-rank communicator there are no neighbours, so a scatter
 // performs no communication and leaves the request as MPI_REQUEST_NULL
 void test_scatter_single_rank()
 {
-  const common::IndexMap map(MPI_COMM_SELF, 4);
+  auto map = std::make_shared<const common::IndexMap>(MPI_COMM_SELF, 4);
   const common::Scatterer sct(map);
   CHECK(sct.local_indices_block().empty());
   CHECK(sct.remote_indices_block().empty());
@@ -545,6 +632,16 @@ TEST_CASE("Scatter reverse using IndexMap", "[index_map_scatter_rev]")
 TEST_CASE("Scatter with a copied and a moved Scatterer", "[index_map_scatter]")
 {
   CHECK_NOTHROW(test_scatter_copy_move());
+}
+
+TEST_CASE("Scatterers share IndexMap communicators", "[index_map_comms]")
+{
+  CHECK_NOTHROW(test_scatter_no_comm_duplication());
+}
+
+TEST_CASE("IndexMap neighbourhood communicators", "[index_map_comms]")
+{
+  CHECK_NOTHROW(test_neighbourhood_comms());
 }
 
 TEST_CASE("Scatter on a single rank", "[index_map_scatter]")

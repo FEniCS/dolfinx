@@ -28,6 +28,7 @@
 #include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
+#include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/string_view.h>
 #include <nanobind/stl/tuple.h>
@@ -85,7 +86,8 @@ void common(nb::module_& m)
 
   auto sc
       = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
-            .def(nb::init<dolfinx::common::IndexMap&>(), nb::arg("index_map"))
+            .def(nb::init<std::shared_ptr<const dolfinx::common::IndexMap>>(),
+                 nb::arg("index_map"))
             .def_prop_ro(
                 "local_indices_block",
                 [](const dolfinx::common::Scatterer<>& self)
