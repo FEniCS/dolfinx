@@ -388,7 +388,7 @@ void declare_mesh(nb::module_& m, std::string_view type)
             ghost_mode, max_facet_to_cell_links, num_threads,
             part::impl::to_cell_reorder(reorder_fn));
       },
-      nb::arg("comm"), nb::arg("cells"), nb::arg("elements"),
+      nb::arg("comm"), nb::arg("cells").noconvert(), nb::arg("elements"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
       nb::arg("ghost_mode"), nb::arg("max_facet_to_cell_links").none(),
       nb::arg("num_threads"), nb::arg("cell_weights").none(),
@@ -420,7 +420,7 @@ void declare_mesh(nb::module_& m, std::string_view type)
             ghost_mode, max_facet_to_cell_links, num_threads,
             part::impl::to_cell_reorder(reorder_fn));
       },
-      nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
+      nb::arg("comm"), nb::arg("cells").noconvert(), nb::arg("element"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
       nb::arg("ghost_mode"), nb::arg("max_facet_to_cell_links").none(),
       nb::arg("num_threads"), nb::arg("cell_weights").none(),
