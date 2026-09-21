@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Igor A. Baratta
+// Copyright (C) 2022-2026 Igor A. Baratta and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,6 +8,7 @@
 
 #include "poisson.h"
 #include <algorithm>
+#include <array>
 #include <basix/mdspan.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -171,6 +172,76 @@ void test_matrix()
   CHECK(Adense(4, to_global_col(4)) != Aref(4, to_global_col(4)));
 }
 
+void test_sparsity_pattern_common_index_map()
+{
+  // Preserve a shared IndexMap when no ghost columns are added.
+  auto map0 = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);
+  la::SparsityPattern p(MPI_COMM_SELF, {map0, map0}, {1, 1});
+  p.insert(0, 0);
+  p.insert(4, 5);
+  p.insert(5, 4);
+  p.finalize();
+  CHECK(p.index_map(0) == p.index_map(1));
+}
+
+void test_sparsity_pattern_asymmetric_column_ghost_growth()
+{
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const int rank = dolfinx::MPI::rank(comm);
+  if (dolfinx::MPI::size(comm) < 2)
+    return;
+
+  std::vector<std::int64_t> row_ghosts;
+  std::vector<int> row_ghost_owners;
+  if (rank == 1)
+  {
+    row_ghosts.push_back(0);
+    row_ghost_owners.push_back(0);
+  }
+
+  auto row_map = std::make_shared<common::IndexMap>(comm, 1, row_ghosts,
+                                                    row_ghost_owners);
+  auto column_map = std::make_shared<common::IndexMap>(comm, 1);
+  la::SparsityPattern p(comm, {row_map, column_map}, {1, 1});
+
+  // Rank 1 adds to rank 0's ghost row, creating a column ghost on rank 0.
+  if (rank == 1)
+    p.insert(1, 0);
+  p.finalize();
+
+  if (rank == 0)
+  {
+    CHECK(p.index_map(1)->ghosts().size() == 1);
+    CHECK(p.index_map(1)->ghosts().front() == 1);
+  }
+  else
+    CHECK(p.index_map(1)->ghosts().empty());
+}
+
+// Check that reserve only changes capacity and is rejected after finalization.
+void test_sparsity_pattern_reserve()
+{
+  auto map = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);
+  std::vector<std::array<std::int32_t, 2>> entries
+      = {{0, 0}, {0, 3}, {4, 5}, {5, 4}, {7, 7}};
+
+  la::SparsityPattern p_reserved(MPI_COMM_SELF, {map, map}, {1, 1});
+  p_reserved.reserve(entries.size());
+  for (auto [row, col] : entries)
+    p_reserved.insert(row, col);
+  p_reserved.finalize();
+
+  la::SparsityPattern p_plain(MPI_COMM_SELF, {map, map}, {1, 1});
+  for (auto [row, col] : entries)
+    p_plain.insert(row, col);
+  p_plain.finalize();
+
+  CHECK(std::ranges::equal(p_reserved.graph().first, p_plain.graph().first));
+  CHECK(std::ranges::equal(p_reserved.graph().second, p_plain.graph().second));
+
+  CHECK_THROWS_AS(p_reserved.reserve(1), std::runtime_error);
+}
+
 } // namespace
 
 TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
@@ -179,4 +250,7 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_matrix_apply());
   CHECK_NOTHROW(test_matrix_norm());
   CHECK_NOTHROW(test_matrix_cast());
+  CHECK_NOTHROW(test_sparsity_pattern_common_index_map());
+  CHECK_NOTHROW(test_sparsity_pattern_asymmetric_column_ghost_growth());
+  CHECK_NOTHROW(test_sparsity_pattern_reserve());
 }

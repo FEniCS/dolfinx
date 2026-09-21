@@ -288,7 +288,7 @@ void declare_assembly_functions(nanobind::module_& m)
 
         if (entities.ndim() == 1)
         {
-          dolfinx::fem::tabulate_expression<T>(
+          dolfinx::fem::tabulate_expression(
               std::span<T>(values.data(), values.size()), e,
               md::mdspan(coeffs.data(), coeffs.shape(0), coeffs.shape(1)),
               std::span(constants.data(), constants.size()), mesh,
@@ -302,7 +302,7 @@ void declare_assembly_functions(nanobind::module_& m)
                 std::format("2D entities array must have 2 columns, got {}.",
                             entities.shape(1)));
           }
-          dolfinx::fem::tabulate_expression<T>(
+          dolfinx::fem::tabulate_expression(
               std::span<T>(values.data(), values.size()), e,
               md::mdspan(coeffs.data(), coeffs.shape(0), coeffs.shape(1)),
               std::span(constants.data(), constants.size()), mesh,

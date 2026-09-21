@@ -37,6 +37,11 @@
 // variation of $\Pi$ (the residual $F(u; v)$) and its Jacobian
 // $J(u; du, v)$, and solving $F(u; v) = 0$ for all test functions $v$
 // with Newton's method.
+//
+// Running this demo requires the files:
+// {download}`demo_hyperelasticity/main.cpp`,
+// {download}`demo_hyperelasticity/hyperelasticity.py` and
+// {download}`demo_hyperelasticity/CMakeLists.txt`.
 
 // ## UFL form file
 //
