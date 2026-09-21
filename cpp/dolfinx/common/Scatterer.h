@@ -108,10 +108,12 @@ public:
   /// @param[in] map Index map that describes the parallel layout of
   /// data.
   /// @param[in] comms Neighbourhood communicators of `map`.
-  /// @pre `comms` was created from `*map`. This is checked in Developer
-  /// builds; callers must ensure it in Release builds.
+  /// @pre `comms` was created from `*map`, i.e. its owner-to-ghost graph
+  /// has in-edges `map->src()` and out-edges `map->dest()`. This is
+  /// checked only when compiled without `NDEBUG` (Developer builds) and
+  /// on more than one rank; callers must ensure it otherwise.
   /// @throws std::invalid_argument If the `comms` precondition is
-  /// violated in a Developer build.
+  /// violated and checked.
   Scatterer(std::shared_ptr<const IndexMap> map,
             std::shared_ptr<const NeighbourhoodComms> comms)
       : _map(std::move(map)), _comms(std::move(comms)),

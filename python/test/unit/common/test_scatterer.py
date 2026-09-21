@@ -96,10 +96,15 @@ def test_scatterers_share_comms():
 
 
 def test_scatterer_comms_mismatch():
-    """Neighbourhood communicators of another map are rejected (Developer builds)."""
+    """Neighbourhood communicators of another map are rejected.
+
+    The check runs in the Scatterer constructor only when the Python
+    extension is compiled without NDEBUG, and not on a single rank,
+    where the constructor returns before it.
+    """
     comm = MPI.COMM_WORLD
     if comm.size == 1:
-        pytest.skip("Check is skipped on a single rank")
+        pytest.skip("Scatterer constructor performs no checks on a single rank")
     local_size = 10
     dest = np.delete(np.arange(0, comm.size, dtype=np.int32), comm.rank)
     map_ghosts = np.array([local_size * dest[r] for r in range(len(dest))], dtype=np.int64)
@@ -107,6 +112,6 @@ def test_scatterer_comms_mismatch():
     map0 = index_map(comm, local_size, (map_ghosts, src), dest_src=[dest, src])
     map1 = index_map(comm, local_size)
     if not has_debug:
-        pytest.skip("Precondition checked in Developer builds only")
+        pytest.skip("Scatterer/NeighbourhoodComms mismatch is only detected without NDEBUG")
     with pytest.raises(ValueError):
         scatterer(map0, neighbourhood_comms(map1))
