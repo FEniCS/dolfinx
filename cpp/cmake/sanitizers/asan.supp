@@ -1,0 +1,3 @@
+# AddressSanitizer suppressions for DOLFINx DeveloperDebug builds.
+#
+# Use with: ASAN_OPTIONS=suppressions=<path-to-this-file>
