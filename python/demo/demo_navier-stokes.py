@@ -349,6 +349,11 @@ stokes_problem = LinearProblem(
     petsc_options=solver_options,
 )
 
+# Omit zero entries from this one-time Stokes assembly. Do not use this
+# option for the re-assembled Navier--Stokes operator below: an entry that
+# is initially zero may become non-zero.
+stokes_problem.A.setOption(PETSc.Mat.Option.IGNORE_ZERO_ENTRIES, True)  # type: ignore[arg-type]
+
 try:
     stokes_problem.solve()
 except PETSc.Error as e:
