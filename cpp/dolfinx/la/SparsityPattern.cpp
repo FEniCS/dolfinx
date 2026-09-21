@@ -431,8 +431,7 @@ void SparsityPattern::finalize()
   const std::int32_t num_rows0 = local_size0 + _index_maps[0]->num_ghosts();
   const std::int32_t num_cols_cache
       = local_size1 + _index_maps[1]->num_ghosts();
-  const auto [cache_offsets, cache_cols]
-      = bucket_cache(num_rows0, num_cols_cache);
+  auto [cache_offsets, cache_cols] = bucket_cache(num_rows0, num_cols_cache);
 
   // Cache is now fully bucketed into cache_offsets/cache_cols; drop it
   // early to reduce peak memory for the rest of finalize()
@@ -584,24 +583,43 @@ void SparsityPattern::finalize()
   }
   const auto& [recv_offsets, recv_cols_bucketed] = recv_bucket;
 
-  // De-duplicate each row's raw (unsorted, repeats included) column
-  // list with a generation-stamped marker: last_seen[col] == i means
-  // col has already been recorded for row i. Rows are visited exactly
-  // once in increasing order, so the row index itself is the stamp --
-  // no reset between rows needed. This turns per-row de-duplication
-  // from O(m log m) (sort the raw, repeat-laden list) into
-  // O(m + k log k), where k <= m is the de-duplicated count: sorting
-  // only ever runs over the much smaller de-duplicated list.
-  const std::int32_t num_cols0
-      = local_size1 + static_cast<std::int32_t>(_col_ghosts.size());
-  std::vector<std::int32_t> last_seen(num_cols0, -1);
-
-  // Count the final union only when remote entries may overlap the local
-  // cache. Otherwise the deduplicated cache gives the exact edge count.
-  std::size_t num_edges = cache_cols.size();
-  if (!recv_cols_bucketed.empty())
+  _off_diagonal_offsets.resize(num_rows0);
+  if (recv_cols_bucketed.empty())
   {
-    num_edges = 0;
+    // Nothing was received, so the de-duplicated cache is already the
+    // graph. Adopt its storage rather than counting the edges and
+    // copying each row into a second buffer of the same size.
+    _offsets = std::move(cache_offsets);
+    _edges = std::move(cache_cols);
+    for (std::int32_t i = 0; i < num_rows0; ++i)
+    {
+      std::vector<std::int32_t>::iterator row_start
+          = std::next(_edges.begin(), _offsets[i]);
+      std::vector<std::int32_t>::iterator row_end
+          = std::next(_edges.begin(), _offsets[i + 1]);
+      std::ranges::sort(row_start, row_end);
+
+      // Find position of first "off-diagonal" column
+      _off_diagonal_offsets[i] = std::ranges::distance(
+          row_start, std::ranges::lower_bound(row_start, row_end, local_size1));
+    }
+  }
+  else
+  {
+    // De-duplicate each row's raw (unsorted, repeats included) column
+    // list with a generation-stamped marker: last_seen[col] == i means
+    // col has already been recorded for row i. Rows are visited exactly
+    // once in increasing order, so the row index itself is the stamp --
+    // no reset between rows needed. This turns per-row de-duplication
+    // from O(m log m) (sort the raw, repeat-laden list) into
+    // O(m + k log k), where k <= m is the de-duplicated count: sorting
+    // only ever runs over the much smaller de-duplicated list.
+    const std::int32_t num_cols0
+        = local_size1 + static_cast<std::int32_t>(_col_ghosts.size());
+    std::vector<std::int32_t> last_seen(num_cols0, -1);
+
+    // Size of the union of the cached and the received entries
+    std::size_t num_edges = 0;
     for (std::int32_t i = 0; i < num_rows0; ++i)
     {
       for (std::int64_t k = cache_offsets[i]; k < cache_offsets[i + 1]; ++k)
@@ -625,60 +643,59 @@ void SparsityPattern::finalize()
       }
     }
     std::ranges::fill(last_seen, -1);
-  }
-  _edges.reserve(num_edges);
+    _edges.reserve(num_edges);
 
-  // Build CSR offsets as we go. Offsets are int64_t to avoid overflow.
-  // _edges is reserved to the exact edge count above, so appending in
-  // place never reallocates.
-  _off_diagonal_offsets.resize(num_rows0);
-  _offsets.reserve(num_rows0 + 1);
-  _offsets.push_back(0);
-  for (std::int32_t i = 0; i < num_rows0; ++i)
-  {
-    const std::size_t row_begin = _edges.size();
-    if (i < local_size0 and recv_offsets[i] != recv_offsets[i + 1])
+    // Build CSR offsets as we go. Offsets are int64_t to avoid overflow.
+    // _edges is reserved to the exact edge count above, so appending in
+    // place never reallocates.
+    _offsets.reserve(num_rows0 + 1);
+    _offsets.push_back(0);
+    for (std::int32_t i = 0; i < num_rows0; ++i)
     {
-      // bucket_cache() already de-duplicated the cached columns of this
-      // row, so they only need stamping; the received columns are the
-      // ones that may repeat them.
-      for (std::int64_t k = cache_offsets[i]; k < cache_offsets[i + 1]; ++k)
+      const std::size_t row_begin = _edges.size();
+      if (i < local_size0 and recv_offsets[i] != recv_offsets[i + 1])
       {
-        const std::int32_t c = cache_cols[k];
-        last_seen[c] = i;
-        _edges.push_back(c);
-      }
-      for (std::int64_t k = recv_offsets[i]; k < recv_offsets[i + 1]; ++k)
-      {
-        if (std::int32_t c = recv_cols_bucketed[k]; last_seen[c] != i)
+        // bucket_cache() already de-duplicated the cached columns of this
+        // row, so they only need stamping; the received columns are the
+        // ones that may repeat them.
+        for (std::int64_t k = cache_offsets[i]; k < cache_offsets[i + 1]; ++k)
         {
+          const std::int32_t c = cache_cols[k];
           last_seen[c] = i;
           _edges.push_back(c);
         }
+        for (std::int64_t k = recv_offsets[i]; k < recv_offsets[i + 1]; ++k)
+        {
+          if (std::int32_t c = recv_cols_bucketed[k]; last_seen[c] != i)
+          {
+            last_seen[c] = i;
+            _edges.push_back(c);
+          }
+        }
       }
+      else
+      {
+        // Nothing was received for this row, so the de-duplicated cache is
+        // the row. Skipping the marker pass leaves last_seen untouched,
+        // which is safe: rows are visited in increasing order and the row
+        // index is the stamp, so a stamp left by an earlier row never
+        // matches a later one.
+        _edges.insert(_edges.end(),
+                      std::next(cache_cols.begin(), cache_offsets[i]),
+                      std::next(cache_cols.begin(), cache_offsets[i + 1]));
+      }
+
+      std::vector<std::int32_t>::iterator row_start
+          = std::next(_edges.begin(), row_begin);
+      std::ranges::sort(row_start, _edges.end());
+
+      // Find position of first "off-diagonal" column
+      _off_diagonal_offsets[i] = std::ranges::distance(
+          row_start,
+          std::ranges::lower_bound(row_start, _edges.end(), local_size1));
+
+      _offsets.push_back(static_cast<std::int64_t>(_edges.size()));
     }
-    else
-    {
-      // Nothing was received for this row, so the de-duplicated cache is
-      // the row. Skipping the marker pass leaves last_seen untouched,
-      // which is safe: rows are visited in increasing order and the row
-      // index is the stamp, so a stamp left by an earlier row never
-      // matches a later one.
-      _edges.insert(_edges.end(),
-                    std::next(cache_cols.begin(), cache_offsets[i]),
-                    std::next(cache_cols.begin(), cache_offsets[i + 1]));
-    }
-
-    std::vector<std::int32_t>::iterator row_start
-        = std::next(_edges.begin(), row_begin);
-    std::ranges::sort(row_start, _edges.end());
-
-    // Find position of first "off-diagonal" column
-    _off_diagonal_offsets[i] = std::ranges::distance(
-        row_start,
-        std::ranges::lower_bound(row_start, _edges.end(), local_size1));
-
-    _offsets.push_back(static_cast<std::int64_t>(_edges.size()));
   }
 
   // _col_ghosts only appends to the original column ghosts. Rebuild the
