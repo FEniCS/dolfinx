@@ -1102,12 +1102,14 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
       .def(
           "__init__",
           [](dolfinx::fem::CoordinateElement<T>* cm, dolfinx::mesh::CellType ct,
-             int d, int var)
+             int d, int var, bool discontinuous)
           {
             new (cm) dolfinx::fem::CoordinateElement<T>(
-                ct, d, static_cast<basix::element::lagrange_variant>(var));
+                ct, d, static_cast<basix::element::lagrange_variant>(var),
+                discontinuous);
           },
-          nb::arg("celltype"), nb::arg("degree"), nb::arg("variant"))
+          nb::arg("celltype"), nb::arg("degree"), nb::arg("variant"),
+          nb::arg("discontinuous"))
       .def_prop_ro("dtype", [](const dolfinx::fem::CoordinateElement<T>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def("create_dof_layout",

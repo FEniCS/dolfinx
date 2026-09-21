@@ -48,9 +48,14 @@ public:
   /// @param[in] degree Polynomial degree of the map.
   /// @param[in] type Type of Lagrange element (see Basix documentation
   /// for possible types).
-  CoordinateElement(mesh::CellType celltype, int degree,
-                    basix::element::lagrange_variant type
-                    = basix::element::lagrange_variant::unset);
+  /// @param[in] discontinuous If true, create a discontinuous coordinate
+  /// element. A discontinuous coordinate element associates all of its
+  /// degrees-of-freedom with the cell, so coordinate nodes are not shared
+  /// between cells and the geometry may be discontinuous across cell facets.
+  explicit CoordinateElement(mesh::CellType celltype, int degree,
+                             basix::element::lagrange_variant type
+                             = basix::element::lagrange_variant::unset,
+                             bool discontinuous = false);
 
   /// Destructor
   ~CoordinateElement() = default;

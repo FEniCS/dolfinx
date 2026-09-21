@@ -24,8 +24,17 @@ from basix import (
 )
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import coordinate_element, functionspace, transpose_dofmap
+from dolfinx.fem import (
+    assemble_matrix,
+    assemble_vector,
+    coordinate_element,
+    form,
+    functionspace,
+    interpolate_geometry,
+    transpose_dofmap,
+)
 from dolfinx.graph import adjacencylist
+from dolfinx.la import InsertMode
 from dolfinx.mesh import (
     CellType,
     create_mesh,
@@ -570,3 +579,48 @@ def test_undersized_working_array(gdim: int, is_affine: bool):
         # Pull back
         with pytest.raises(RuntimeError):
             mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)
+
+
+def test_discontinuous_coordinate_element_assembly():
+    """Test that a discontinuous coordinate element can be used in assembly."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+
+    V_ref = functionspace(mesh, ("Lagrange", 1))
+    u_ref = ufl.TrialFunction(V_ref)
+    v_ref = ufl.TestFunction(V_ref)
+    a = form(ufl.inner(ufl.grad(u_ref), ufl.grad(v_ref)) * ufl.dx)
+    A = assemble_matrix(a)
+    A.scatter_reverse()
+
+    x = ufl.SpatialCoordinate(mesh)
+    f = x[0] + ufl.sin(x[1])
+    L = assemble_vector(form(ufl.inner(f, v_ref) * ufl.dx))
+    L.scatter_reverse(InsertMode.add)
+    L.scatter_forward()
+
+    c_el = coordinate_element(
+        mesh.topology.cell_type, mesh.geometry.cmaps[0].degree, discontinuous=True
+    )
+    dg_mesh = interpolate_geometry(mesh, c_el)
+    assert dg_mesh.geometry.cmaps[0].is_discontinuous
+    assert dg_mesh.geometry.cmaps[0].degree == mesh.geometry.cmaps[0].degree
+    num_nodes = dg_mesh.geometry.dofmaps[0].shape[1]
+    assert (
+        dg_mesh.geometry.index_map().size_global
+        == dg_mesh.topology.index_map(dg_mesh.topology.dim).size_global * num_nodes
+    )
+
+    V_dg = functionspace(dg_mesh, ("Lagrange", 1))
+    u_dg = ufl.TrialFunction(V_dg)
+    v_dg = ufl.TestFunction(V_dg)
+    a_dg = form(ufl.inner(ufl.grad(u_dg), ufl.grad(v_dg)) * ufl.dx)
+    A_dg = assemble_matrix(a_dg)
+    A_dg.scatter_reverse()
+    tol = 100 * np.finfo(mesh.geometry.x.dtype).eps
+    np.testing.assert_allclose(A.data, A_dg.data, rtol=tol, atol=tol)
+    x_dg = ufl.SpatialCoordinate(dg_mesh)
+    f_dg = x_dg[0] + ufl.sin(x_dg[1])
+    L_dg = assemble_vector(form(ufl.inner(f_dg, v_dg) * ufl.dx))
+    L_dg.scatter_reverse(InsertMode.add)
+    L_dg.scatter_forward()
+    np.testing.assert_allclose(L.array, L_dg.array, rtol=tol, atol=tol)

@@ -243,6 +243,7 @@ def coordinate_element(
     degree: int,
     variant: int = int(basix.LagrangeVariant.unset),
     dtype: npt.DTypeLike = np.float64,
+    discontinuous: bool = False,
 ) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from element metadata.
 
@@ -253,12 +254,13 @@ def coordinate_element(
         degree: Polynomial degree of the coordinate element map.
         variant: Basix Lagrange variant (affects node placement).
         dtype: Scalar type for the coordinate element.
+        discontinuous: Continuity of the coordinate element.
 
     Returns:
         A coordinate element.
     """
     cpp_type = CoordinateElement.cpp_types[np.dtype(dtype)]
-    return CoordinateElement(cpp_type(celltype, degree, variant))
+    return CoordinateElement(cpp_type(celltype, degree, variant, discontinuous))
 
 
 @coordinate_element.register(basix.finite_element.FiniteElement)
