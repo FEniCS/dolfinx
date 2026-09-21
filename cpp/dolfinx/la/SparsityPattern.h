@@ -92,6 +92,9 @@ public:
   /// rows and cols into the sparsity pattern, i.e. adds the matrix
   /// entries at `A[row[i], col[j]] for all i, j`.
   ///
+  /// @note Passing the same span for `rows` and `cols` avoids caching a
+  /// second copy of the indices.
+  ///
   /// @param[in] rows list of the local row indices
   /// @param[in] cols list of the local column indices
   void insert(std::span<const std::int32_t> rows,
@@ -188,6 +191,13 @@ private:
   // tetrahedron that is 4 + 4 indices per cell rather than 16 + 16.
   std::vector<std::int32_t> _cache_brows, _cache_bcols;
   std::vector<std::int64_t> _cache_boffs_r{0}, _cache_boffs_c{0};
+
+  // Cache of square blocks, i.e. those whose row and column index lists
+  // are the same span, which is the case whenever the test and trial
+  // dofmaps and the cells indexing them coincide. Only the row list is
+  // stored, halving both the copy in insert() and the cached bytes.
+  std::vector<std::int32_t> _cache_srows;
+  std::vector<std::int64_t> _cache_soffs{0};
 
   // Cache of individually inserted (row, column) pairs (row-major COO)
   std::vector<std::int32_t> _cache_rows;
