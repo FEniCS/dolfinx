@@ -207,10 +207,11 @@ private:
 
   /// @brief Expand every cached entry and group the columns by row.
   /// @param[in] num_rows Number of rows to bucket into.
+  /// @param[in] num_cols Number of columns in the cached index space.
   /// @return Row offsets (size `num_rows + 1`) and columns grouped by
-  /// row, neither sorted nor deduplicated within a row.
+  /// row and deduplicated, but not sorted, within each row.
   std::pair<std::vector<std::int64_t>, std::vector<std::int32_t>>
-  bucket_cache(std::int32_t num_rows) const;
+  bucket_cache(std::int32_t num_rows, std::int32_t num_cols) const;
 
   // Sparsity pattern adjacency data (computed once pattern is
   // finalised). _edges holds the edges (connected dofs). The edges for

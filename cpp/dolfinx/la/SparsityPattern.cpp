@@ -57,44 +57,77 @@ std::size_t SparsityPattern::num_cached() const
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, std::vector<std::int32_t>>
-SparsityPattern::bucket_cache(std::int32_t num_rows) const
+SparsityPattern::bucket_cache(std::int32_t num_rows,
+                              std::int32_t num_cols) const
 {
   const std::size_t nblocks
       = _cache_boffs_r.empty() ? 0 : _cache_boffs_r.size() - 1;
 
-  // Count entries per row
-  std::vector<std::int64_t> offsets(num_rows + 1, 0);
+  // Group block indices by row. This avoids traversing every block entry
+  // twice to determine the deduplicated output size.
+  std::vector<std::int64_t> block_offsets(num_rows + 1, 0);
   for (std::size_t b = 0; b < nblocks; ++b)
   {
-    const std::int64_t nc = _cache_boffs_c[b + 1] - _cache_boffs_c[b];
     for (std::int64_t i = _cache_boffs_r[b]; i < _cache_boffs_r[b + 1]; ++i)
-      offsets[_cache_brows[i] + 1] += nc;
+      ++block_offsets[_cache_brows[i] + 1];
   }
-  for (std::int32_t row : _cache_rows)
-    ++offsets[row + 1];
-  for (std::int32_t row : _cache_diag)
-    ++offsets[row + 1];
-  std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
-
-  // Scatter
-  std::vector<std::int64_t> pos(offsets.begin(), std::prev(offsets.end()));
-  std::vector<std::int32_t> bucketed(offsets.back());
-  for (std::size_t b = 0; b < nblocks; ++b)
+  std::partial_sum(block_offsets.begin(), block_offsets.end(),
+                   block_offsets.begin());
+  assert(nblocks
+         <= static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()));
+  std::vector<std::int32_t> block_ids(block_offsets.back());
   {
-    const std::int32_t* cols
-        = std::next(_cache_bcols.data(), _cache_boffs_c[b]);
-    const std::int64_t nc = _cache_boffs_c[b + 1] - _cache_boffs_c[b];
-    for (std::int64_t i = _cache_boffs_r[b]; i < _cache_boffs_r[b + 1]; ++i)
+    std::vector<std::int64_t> pos(block_offsets.begin(),
+                                  std::prev(block_offsets.end()));
+    for (std::size_t b = 0; b < nblocks; ++b)
     {
-      std::int64_t& p = pos[_cache_brows[i]];
-      std::copy_n(cols, nc, std::next(bucketed.begin(), p));
-      p += nc;
+      for (std::int64_t i = _cache_boffs_r[b]; i < _cache_boffs_r[b + 1]; ++i)
+        block_ids[pos[_cache_brows[i]]++] = static_cast<std::int32_t>(b);
     }
   }
-  for (std::size_t i = 0; i < _cache_rows.size(); ++i)
-    bucketed[pos[_cache_rows[i]]++] = _cache_cols[i];
+
+  const auto [pair_offsets, pair_cols]
+      = bucket_by_row(_cache_rows, _cache_cols, num_rows);
+  std::vector<bool> diagonal(num_rows, false);
   for (std::int32_t row : _cache_diag)
-    bucketed[pos[row]++] = row;
+    diagonal[row] = true;
+
+  // Traverse each block entry once and append unique columns row-wise.
+  std::vector<std::int32_t> last_seen(num_cols, -1);
+  std::vector<std::int64_t> offsets;
+  offsets.reserve(num_rows + 1);
+  offsets.push_back(0);
+  std::vector<std::int32_t> bucketed;
+  for (std::int32_t row = 0; row < num_rows; ++row)
+  {
+    for (std::int64_t k = block_offsets[row]; k < block_offsets[row + 1]; ++k)
+    {
+      const std::int32_t b = block_ids[k];
+      std::vector<std::int32_t>::const_iterator cols_begin
+          = std::next(_cache_bcols.begin(), _cache_boffs_c[b]);
+      std::vector<std::int32_t>::const_iterator cols_end
+          = std::next(_cache_bcols.begin(), _cache_boffs_c[b + 1]);
+      for (auto col = cols_begin; col != cols_end; ++col)
+      {
+        if (last_seen[*col] != row)
+        {
+          last_seen[*col] = row;
+          bucketed.push_back(*col);
+        }
+      }
+    }
+    for (std::int64_t k = pair_offsets[row]; k < pair_offsets[row + 1]; ++k)
+    {
+      if (std::int32_t col = pair_cols[k]; last_seen[col] != row)
+      {
+        last_seen[col] = row;
+        bucketed.push_back(col);
+      }
+    }
+    if (diagonal[row] and last_seen[row] != row)
+      bucketed.push_back(row);
+    offsets.push_back(bucketed.size());
+  }
 
   return {std::move(offsets), std::move(bucketed)};
 }
@@ -192,7 +225,8 @@ SparsityPattern::SparsityPattern(
 
       // Bucket the sub-pattern's cache by row for the loops below
       const auto [p_offsets, p_cols]
-          = p->bucket_cache(num_rows_local + num_ghost_rows_local);
+          = p->bucket_cache(num_rows_local + num_ghost_rows_local,
+                            num_cols_local + map_col.num_ghosts());
 
       // Iterate over owned rows cache
       for (std::int32_t i = 0; i < num_rows_local; ++i)
@@ -365,7 +399,10 @@ void SparsityPattern::finalize()
 
   // Bucket the insertion cache by row for the loops below
   const std::int32_t num_rows0 = local_size0 + _index_maps[0]->num_ghosts();
-  const auto [cache_offsets, cache_cols] = bucket_cache(num_rows0);
+  const std::int32_t num_cols_cache
+      = local_size1 + _index_maps[1]->num_ghosts();
+  const auto [cache_offsets, cache_cols]
+      = bucket_cache(num_rows0, num_cols_cache);
 
   // Cache is now fully bucketed into cache_offsets/cache_cols; drop it
   // early to reduce peak memory for the rest of finalize()
@@ -508,9 +545,6 @@ void SparsityPattern::finalize()
   const auto [recv_offsets, recv_cols_bucketed]
       = bucket_by_row(recv_rows, recv_cols, local_size0);
 
-  // Reserve the exact pre-dedup edge count
-  _edges.reserve(cache_cols.size() + recv_cols_bucketed.size());
-
   // De-duplicate each row's raw (unsorted, repeats included) column
   // list with a generation-stamped marker: last_seen[col] == i means
   // col has already been recorded for row i. Rows are visited exactly
@@ -522,6 +556,38 @@ void SparsityPattern::finalize()
   const std::int32_t num_cols0
       = local_size1 + static_cast<std::int32_t>(_col_ghosts.size());
   std::vector<std::int32_t> last_seen(num_cols0, -1);
+
+  // Count the final union only when remote entries may overlap the local
+  // cache. Otherwise the deduplicated cache gives the exact edge count.
+  std::size_t num_edges = cache_cols.size();
+  if (!recv_cols_bucketed.empty())
+  {
+    num_edges = 0;
+    for (std::int32_t i = 0; i < num_rows0; ++i)
+    {
+      for (std::int64_t k = cache_offsets[i]; k < cache_offsets[i + 1]; ++k)
+      {
+        if (std::int32_t c = cache_cols[k]; last_seen[c] != i)
+        {
+          last_seen[c] = i;
+          ++num_edges;
+        }
+      }
+      if (i < local_size0)
+      {
+        for (std::int64_t k = recv_offsets[i]; k < recv_offsets[i + 1]; ++k)
+        {
+          if (std::int32_t c = recv_cols_bucketed[k]; last_seen[c] != i)
+          {
+            last_seen[c] = i;
+            ++num_edges;
+          }
+        }
+      }
+    }
+    std::ranges::fill(last_seen, -1);
+  }
+  _edges.reserve(num_edges);
 
   // Build CSR offsets as we go. Offsets are int64_t to avoid overflow.
   _off_diagonal_offsets.resize(num_rows0);
@@ -560,8 +626,6 @@ void SparsityPattern::finalize()
     _edges.insert(_edges.end(), row.begin(), row.end());
     _offsets.push_back(_offsets.back() + row.size());
   }
-
-  _edges.shrink_to_fit();
 
   // _col_ghosts only appends to the original column ghosts. Rebuild the
   // collective IndexMap only if ghosts changed on at least one rank;
