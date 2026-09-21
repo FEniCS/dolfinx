@@ -25,6 +25,11 @@
 //    in this translation unit makes those kernel bodies available for
 //    inlining too.
 //
+// ```{note}
+// This is an advanced demo. Most applications should express forms in UFL
+// and use the public {cpp:class}`dolfinx::fem::Form` assembly interface.
+// ```
+//
 // ```{warning}
 // The direct assembly route uses internal `fem::impl` and UFCx interfaces.
 // It is a performance-oriented example, not a stable user-facing API.
