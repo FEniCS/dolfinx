@@ -103,8 +103,9 @@ TEST_CASE("Form with data on a mesh of the wrong dimension",
       basix::element::dpc_variant::unset, false);
   auto V = std::make_shared<fem::FunctionSpace<double>>(
       fem::create_functionspace<double>(
-          smesh, std::make_shared<fem::FiniteElement<double>>(
-                     element, std::vector<std::size_t>{})));
+          smesh,
+          std::make_shared<fem::FiniteElement<double>>(
+              element, mesh->geometry().dim(), std::vector<std::size_t>{})));
 
   auto kernel = [](double*, const double*, const double*, const double*,
                    const int*, const uint8_t*, void*) {};
