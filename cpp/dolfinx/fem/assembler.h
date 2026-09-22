@@ -42,7 +42,7 @@ class Form;
 template <std::floating_point T>
 class FunctionSpace;
 
-/// @brief Evaluate an Expression on cells or facets.
+/// @brief Evaluate an Expression on cells, facets or ridges.
 ///
 /// This function accepts packed coefficient data, which allows it be
 /// called without re-packing all coefficient data at each evaluation.
@@ -58,9 +58,9 @@ class FunctionSpace;
 /// @param[in] constants Packed constant data. Typically computed using
 /// fem::pack_constants.
 /// @param[in] entities Mesh entities to evaluate the expression over.
-/// For cells it is a list of cell indices. For facets is is a list of
-/// (cell index, local facet index) index pairs, i.e. `entities=[cell0,
-/// facet_local0, cell1, facet_local1, ...]`.
+/// For cells it is a list of cell indices. For facets and ridges it is
+/// a list of (cell index, local entity index) index pairs, i.e.
+/// `entities=[cell0, entity_local0, cell1, entity_local1, ...]`.
 /// @param[in] mesh Mesh that the Expression is evaluated on.
 /// @param[in] element Argument element and argument space dimension.
 template <dolfinx::scalar T, std::floating_point U>
@@ -84,7 +84,7 @@ void tabulate_expression(
                             constants, mesh, entities, element);
 }
 
-/// @brief Evaluate an Expression on cells or facets.
+/// @brief Evaluate an Expression on cells, facets or ridges.
 ///
 /// @tparam T Scalar type.
 /// @tparam U Geometry type
@@ -131,8 +131,8 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
     std::vector<std::reference_wrapper<const Function<T, U>>> c;
     std::ranges::transform(coefficients, std::back_inserter(c),
                            [](auto c) -> const Function<T, U>& { return *c; });
-    fem::pack_coefficients(c, mesh, entities, e.entity_maps(), coffsets,
-                           std::span(coeffs));
+    fem::pack_coefficients(c, mesh, entities, e.entity_dim(), e.entity_maps(),
+                           coffsets, std::span(coeffs));
   }
   std::vector<T> constants = fem::pack_constants(e);
 

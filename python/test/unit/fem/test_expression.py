@@ -20,6 +20,7 @@ from dolfinx.mesh import (
     compute_midpoints,
     create_rectangle,
     create_submesh,
+    create_unit_cube,
     create_unit_square,
     exterior_facet_indices,
     locate_entities,
@@ -702,3 +703,85 @@ def test_skewed_quadrature(dtype):
     values_parent = expr_parent.eval(mesh, entities.reshape(-1, 2))
 
     np.testing.assert_allclose(values_codim, values_parent, atol=tol)
+
+
+def compute_ridge_entities(mesh):
+    """(cell, local ridge index) pairs for every owned ridge of ``mesh``."""
+    tdim = mesh.topology.dim
+    mesh.topology.create_entities(tdim - 2)
+    mesh.topology.create_connectivity(tdim - 2, tdim)
+    mesh.topology.create_connectivity(tdim, tdim - 2)
+    ridges = np.arange(mesh.topology.index_map(tdim - 2).size_local, dtype=np.int32)
+    entities = fem.compute_integration_domains(fem.IntegralType.ridge, mesh.topology, ridges)
+    return ridges, entities.reshape(-1, 2)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_ridge_expression(dtype):
+    """Evaluate an Expression on the ridges (edges) of a 3D mesh."""
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, dtype=xtype)
+    tdim = mesh.topology.dim
+    ridges, entities = compute_ridge_entities(mesh)
+
+    # The cells are affine, so the midpoint of a ridge is the image of
+    # the midpoint of the reference interval
+    x = ufl.SpatialCoordinate(mesh)
+    expr = Expression(x[0] + 2.0 * x[1] - 3.0 * x[2], np.array([[0.5]], dtype=xtype), dtype=dtype)
+    assert expr.entity_dim == tdim - 2
+    values = expr.eval(mesh, entities)
+
+    midpoints = compute_midpoints(mesh, tdim - 2, ridges)
+    exact = midpoints[:, 0] + 2.0 * midpoints[:, 1] - 3.0 * midpoints[:, 2]
+    np.testing.assert_allclose(
+        values[:, 0], exact.astype(dtype), atol=50 * np.finfo(xtype).resolution
+    )
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_submesh_codim_two(dtype):
+    """Evaluate a ridge Expression with a coefficient on a ridge submesh."""
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, dtype=xtype)
+    tdim = mesh.topology.dim
+    ridges, entities = compute_ridge_entities(mesh)
+
+    def expr0(x):
+        return x[0] + 2.0 * x[1]
+
+    def expr1(x):
+        return x[2] ** 2 - x[0]
+
+    u = Function(functionspace(mesh, ("Lagrange", 1)), dtype=dtype)
+    u.interpolate(expr0)
+
+    # A ridge is a straight line, so `expr1` restricted to it is
+    # quadratic in the arc length and is captured exactly by P2
+    submesh, entity_map, _, _ = create_submesh(mesh, tdim - 2, ridges)
+    u_sub = Function(functionspace(submesh, ("Lagrange", 2)), dtype=dtype)
+    u_sub.interpolate(expr1)
+
+    quadrature_points = np.array([[0.31], [0.77]], dtype=xtype)
+    expr = Expression(u * u_sub, quadrature_points, dtype=dtype, entity_maps=[entity_map])
+    values = expr.eval(mesh, entities)
+
+    x = ufl.SpatialCoordinate(mesh)
+    expr_exact = Expression(expr0(x) * expr1(x), quadrature_points, dtype=dtype)
+    values_exact = expr_exact.eval(mesh, entities)
+    np.testing.assert_allclose(values, values_exact, atol=50 * np.finfo(xtype).resolution)

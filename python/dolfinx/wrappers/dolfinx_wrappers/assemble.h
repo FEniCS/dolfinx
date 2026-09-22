@@ -235,7 +235,7 @@ void declare_assembly_functions(nanobind::module_& m)
         {
           dolfinx::fem::pack_coefficients(
               c, mesh, md::mdspan(entities.data(), entities.shape(0)),
-              e.entity_maps(), coffsets, std::span(coeffs));
+              e.entity_dim(), e.entity_maps(), coffsets, std::span(coeffs));
         }
         else
         {
@@ -244,7 +244,7 @@ void declare_assembly_functions(nanobind::module_& m)
               md::mdspan<const std::int32_t,
                          md::extents<std::size_t, md::dynamic_extent, 2>>(
                   entities.data(), entities.shape(0), entities.shape(1)),
-              e.entity_maps(), coffsets, std::span(coeffs));
+              e.entity_dim(), e.entity_maps(), coffsets, std::span(coeffs));
         }
         return dolfinx_wrappers::as_nbarray(std::move(coeffs),
                                             {entities.shape(0), cstride});
