@@ -48,7 +48,7 @@ void cells(la::SparsityPattern& pattern, const std::pair<R0, R1>& cells,
     {
       std::size_t n0 = map0.cell_dofs(*cells.first.begin()).size();
       std::size_t n1 = map1.cell_dofs(*cells.second.begin()).size();
-      pattern.reserve(num_cells * n0 * n1);
+      pattern.reserve_blocks(num_cells, num_cells * n0, num_cells * n1);
     }
   }
 

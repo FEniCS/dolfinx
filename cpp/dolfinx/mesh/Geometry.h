@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/sort.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/dofmapbuilder.h>
@@ -23,8 +22,11 @@
 #include <functional>
 #include <iterator>
 #include <memory>
+#include <numeric>
 #include <span>
+#include <spdlog/spdlog.h>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -294,7 +296,10 @@ create_geometry(const Topology& topology,
   // coords
 
   std::vector<std::int32_t> all_dofmaps;
-  for (auto q : dofmaps)
+  all_dofmaps.reserve(std::accumulate(
+      dofmaps.begin(), dofmaps.end(), std::size_t(0),
+      [](std::size_t n, const auto& q) { return n + q.size(); }));
+  for (const std::vector<std::int32_t>& q : dofmaps)
     all_dofmaps.insert(all_dofmaps.end(), q.begin(), q.end());
 
   const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
