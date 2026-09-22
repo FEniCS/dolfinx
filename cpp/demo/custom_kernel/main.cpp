@@ -69,7 +69,10 @@
 //
 // The forms used to generate the third pair of kernels are defined in
 // {download}`demo_custom_kernel/mass.py`. They are mathematically identical
-// to the hand-written kernels below.
+// to the hand-written kernels below. Each integral carries
+// `ffcx_kernel_name` metadata, which fixes the name of the generated kernel
+// function so that it can be called directly from C++. Without it, FFCx
+// derives the name from the Python variable holding the form.
 //
 // ````{admonition} UFL forms implemented in Python
 // :class: dropdown
@@ -80,10 +83,10 @@
 //
 // FFCx normally compiles generated C source separately. Here it is included
 // in `main.cpp` so that its function definitions and the templated DOLFINx
-// cell loops are visible to the optimiser in the same translation unit.
-// `restrict` is a C keyword used by the generated kernels, so it is mapped to
-// the corresponding compiler extension while the generated source is parsed
-// as C++.
+// cell loops are visible to the optimiser in the same translation unit. The
+// generated header declares the named kernels. `restrict` is a C keyword used
+// by the generated kernels, so it is mapped to the corresponding compiler
+// extension while the generated source is parsed as C++.
 
 #include "mass.h"
 
@@ -505,25 +508,24 @@ void assemble(MPI_Comm comm)
   // mass.py. This FFCx invocation generates only float64 kernels.
   if constexpr (std::is_same_v<T, double>)
   {
-    // The lambdas call the generated functions directly. Because mass.c was
-    // included above, the optimiser can see and inline their definitions.
+    // The lambdas call the generated functions by the names fixed in mass.py.
+    // Because mass.c was included above, the optimiser can see and inline
+    // their definitions.
     auto kernel_a_ffcx
         = [](T* A, const T* w, const T* c, const T* coordinate_dofs,
              const int* entity_local_index,
              const uint8_t* quadrature_permutation, void* d)
     {
-      tabulate_tensor_integral_0f31b12dbe4babd413e1ac21cdf56eb73b71c30d_triangle(
-          A, w, c, coordinate_dofs, entity_local_index, quadrature_permutation,
-          d);
+      tabulate_tensor_mass(A, w, c, coordinate_dofs, entity_local_index,
+                           quadrature_permutation, d);
     };
     auto kernel_L_ffcx
         = [](T* b, const T* w, const T* c, const T* coordinate_dofs,
              const int* entity_local_index,
              const uint8_t* quadrature_permutation, void* d)
     {
-      tabulate_tensor_integral_0372d68a862ab7a471408bc8a4adef5abb12013d_triangle(
-          b, w, c, coordinate_dofs, entity_local_index, quadrature_permutation,
-          d);
+      tabulate_tensor_load(b, w, c, coordinate_dofs, entity_local_index,
+                           quadrature_permutation, d);
     };
     const double norm_A2 = assemble_matrix1<T>(mesh->geometry(), *V->dofmap(),
                                                kernel_a_ffcx, cells);
