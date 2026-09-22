@@ -18,6 +18,7 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
+#include <functional>
 #include <mpi.h>
 #include <span>
 
@@ -206,7 +207,10 @@ void test_sparsity_pattern_asymmetric_column_ghost_growth()
 
   // Rank 1 adds to rank 0's ghost row, creating a column ghost on rank 0.
   if (rank == 1)
-    p.insert(1, 0);
+  {
+    p.insert(std::array<std::int32_t, 2>{1, 1},
+             std::array<std::int32_t, 2>{0, 0});
+  }
   p.finalize();
 
   if (rank == 0)
@@ -218,28 +222,61 @@ void test_sparsity_pattern_asymmetric_column_ghost_growth()
     CHECK(p.index_map(1)->ghosts().empty());
 }
 
-// Check that reserve only changes capacity and is rejected after finalization.
-void test_sparsity_pattern_reserve()
+void test_sparsity_pattern_empty_columns()
 {
-  auto map = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);
-  std::vector<std::array<std::int32_t, 2>> entries
-      = {{0, 0}, {0, 3}, {4, 5}, {5, 4}, {7, 7}};
+  auto map = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 2);
+  la::SparsityPattern p(MPI_COMM_SELF, {map, map}, {1, 1});
+  p.insert(std::array<std::int32_t, 1>{0}, std::span<const std::int32_t>{});
+  p.insert(1, 0);
+  p.finalize();
 
-  la::SparsityPattern p_reserved(MPI_COMM_SELF, {map, map}, {1, 1});
-  p_reserved.reserve(entries.size());
-  for (auto [row, col] : entries)
-    p_reserved.insert(row, col);
-  p_reserved.finalize();
+  const auto [edges, offsets] = p.graph();
+  CHECK(std::ranges::equal(edges, std::array<std::int32_t, 1>{0}));
+  CHECK(std::ranges::equal(offsets, std::array<std::int64_t, 3>{0, 0, 1}));
+}
 
-  la::SparsityPattern p_plain(MPI_COMM_SELF, {map, map}, {1, 1});
-  for (auto [row, col] : entries)
-    p_plain.insert(row, col);
-  p_plain.finalize();
+void test_sparsity_pattern_duplicate_blocks()
+{
+  auto map = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 3);
+  la::SparsityPattern p(MPI_COMM_SELF, {map, map}, {1, 1});
+  const std::array<std::int32_t, 3> rows{0, 0, 1};
+  const std::array<std::int32_t, 3> cols{1, 1, 2};
+  p.insert(rows, cols);
+  p.insert(rows, cols);
+  p.insert_diagonal(std::array<std::int32_t, 2>{1, 1});
+  p.finalize();
 
-  CHECK(std::ranges::equal(p_reserved.graph().first, p_plain.graph().first));
-  CHECK(std::ranges::equal(p_reserved.graph().second, p_plain.graph().second));
+  const auto [edges, offsets] = p.graph();
+  CHECK(std::ranges::equal(edges, std::array<std::int32_t, 4>{1, 2, 1, 2}));
+  CHECK(std::ranges::equal(offsets, std::array<std::int64_t, 4>{0, 2, 4, 4}));
+}
 
-  CHECK_THROWS_AS(p_reserved.reserve(1), std::runtime_error);
+void test_stacked_sparsity_pattern_blocks()
+{
+  auto map = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 3);
+  la::SparsityPattern p(MPI_COMM_SELF, {map, map}, {1, 1});
+  const std::array<std::int32_t, 3> rows{0, 0, 2};
+  const std::array<std::int32_t, 3> cols{1, 1, 2};
+  p.insert(rows, cols);
+  p.insert(rows, cols);
+
+  std::vector<std::vector<const la::SparsityPattern*>> patterns{{&p}};
+  using MapData
+      = std::pair<std::reference_wrapper<const common::IndexMap>, int>;
+  std::array<std::vector<MapData>, 2> maps;
+  maps[0].emplace_back(std::cref(*map), 2);
+  maps[1].emplace_back(std::cref(*map), 3);
+  std::array<std::vector<int>, 2> bs{{{2}, {3}}};
+
+  la::SparsityPattern stacked(MPI_COMM_SELF, patterns, maps, bs);
+  stacked.finalize();
+
+  const auto [edges, offsets] = stacked.graph();
+  const std::array<std::int32_t, 24> expected_edges{
+      3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8};
+  CHECK(std::ranges::equal(edges, expected_edges));
+  CHECK(std::ranges::equal(
+      offsets, std::array<std::int64_t, 7>{0, 6, 12, 12, 12, 18, 24}));
 }
 
 } // namespace
@@ -252,5 +289,7 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_matrix_cast());
   CHECK_NOTHROW(test_sparsity_pattern_common_index_map());
   CHECK_NOTHROW(test_sparsity_pattern_asymmetric_column_ghost_growth());
-  CHECK_NOTHROW(test_sparsity_pattern_reserve());
+  CHECK_NOTHROW(test_sparsity_pattern_empty_columns());
+  CHECK_NOTHROW(test_sparsity_pattern_duplicate_blocks());
+  CHECK_NOTHROW(test_stacked_sparsity_pattern_blocks());
 }
