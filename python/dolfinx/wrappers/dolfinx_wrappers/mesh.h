@@ -363,6 +363,37 @@ void declare_mesh(nb::module_& m, std::string_view type)
   m.def(
       "create_mixed_mesh",
       [](MPICommWrapper comm,
+         nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> cells,
+         const dolfinx::fem::CoordinateElement<T>& element,
+         nb::ndarray<const T, nb::c_contig> x,
+         const part::impl::PythonPartitionFn& p,
+         dolfinx::mesh::GhostMode ghost_mode,
+         std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
+         std::optional<
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+             cell_weights,
+         std::optional<part::impl::PythonCellReorder> reorder_fn)
+      {
+        std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
+        return dolfinx::mesh::create_mesh(
+            comm.get(), comm.get(), std::span(cells.data(), cells.size()),
+            element, comm.get(), std::span(x.data(), x.size()),
+            {x.shape(0), shape1},
+            dolfinx::graph::Partitioner{
+                .fn = part::impl::to_any_cell_partitioner(p),
+                .node_weights = to_cell_weights_span(cell_weights)},
+            ghost_mode, max_facet_to_cell_links, num_threads,
+            part::impl::to_cell_reorder(reorder_fn));
+      },
+      nb::arg("comm"), nb::arg("cells").noconvert(), nb::arg("element"),
+      nb::arg("x").noconvert(), nb::arg("partitioner").none(),
+      nb::arg("ghost_mode"), nb::arg("max_facet_to_cell_links").none(),
+      nb::arg("num_threads"), nb::arg("cell_weights").none(),
+      nb::arg("reorder_fn").none(), "Helper function for creating meshes.");
+
+  m.def(
+      "create_mesh",
+      [](MPICommWrapper comm,
          const std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>,
                                        nb::c_contig>>& cells_nb,
          const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
@@ -395,36 +426,6 @@ void declare_mesh(nb::module_& m, std::string_view type)
       nb::arg("reorder_fn").none(),
       "Helper function for creating a mixed topology mesh.");
 
-  m.def(
-      "create_mesh",
-      [](MPICommWrapper comm,
-         nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> cells,
-         const dolfinx::fem::CoordinateElement<T>& element,
-         nb::ndarray<const T, nb::c_contig> x,
-         const part::impl::PythonPartitionFn& p,
-         dolfinx::mesh::GhostMode ghost_mode,
-         std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
-         std::optional<
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
-             cell_weights,
-         std::optional<part::impl::PythonCellReorder> reorder_fn)
-      {
-        std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
-        return dolfinx::mesh::create_mesh(
-            comm.get(), comm.get(), std::span(cells.data(), cells.size()),
-            element, comm.get(), std::span(x.data(), x.size()),
-            {x.shape(0), shape1},
-            dolfinx::graph::Partitioner{
-                .fn = part::impl::to_any_cell_partitioner(p),
-                .node_weights = to_cell_weights_span(cell_weights)},
-            ghost_mode, max_facet_to_cell_links, num_threads,
-            part::impl::to_cell_reorder(reorder_fn));
-      },
-      nb::arg("comm"), nb::arg("cells").noconvert(), nb::arg("element"),
-      nb::arg("x").noconvert(), nb::arg("partitioner").none(),
-      nb::arg("ghost_mode"), nb::arg("max_facet_to_cell_links").none(),
-      nb::arg("num_threads"), nb::arg("cell_weights").none(),
-      nb::arg("reorder_fn").none(), "Helper function for creating meshes.");
   m.def(
       "create_submesh",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
