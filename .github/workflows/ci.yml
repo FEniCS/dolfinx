@@ -237,6 +237,20 @@ jobs:
           cd build/static-demo
           ctest --output-on-failure -R demo_poisson_np_1
 
+      # A pure pkg-config consumer of the same static install, so a
+      # non-CMake consumer's Libs: line is exercised too.
+      - name: Build and consume DOLFINx as a static library (pkg-config)
+        if: >-
+          ${{ matrix.petsc && matrix.mpi == 'openmpi'
+          && matrix.scalar == 'float64' && matrix.index == 'int32' }}
+        shell: spack-bash {0}
+        working-directory: dolfinx-src/cpp/test/pkgconfig
+        run: |
+          spack env activate ci
+          export PKG_CONFIG_PATH=$(dirname "$(find $GITHUB_WORKSPACE/static-install -name dolfinx.pc)"):$PKG_CONFIG_PATH
+          make
+          make run
+
       # Guard against a mis-specified variant silently building PETSc into
       # the PETSc-free leg, which would make it test nothing new.
       - name: Check PETSc configuration matches the matrix
