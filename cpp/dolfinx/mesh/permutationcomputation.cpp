@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Matthew Scroggs
+// Copyright (C) 2020-2026 Matthew Scroggs and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -17,6 +17,7 @@
 #include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <format>
 #include <functional>
 #include <memory>
 #include <ranges>
@@ -272,7 +273,7 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   auto im = topology.index_map(0);
   assert(im);
 
-  std::vector<std::bitset<BITSETSIZE>> edge_perm(num_cells, 0);
+  std::vector<std::bitset<bitset_size>> edge_perm(num_cells, 0);
   auto process_thread
       = [](std::array<std::int64_t, 2> range, auto&& im, auto&& edge_perm,
            auto&& c_to_v, auto&& e_to_v, auto&& c_to_e, int num_edges)
@@ -346,69 +347,110 @@ compute_face_permutations(const mesh::Topology& topology, int num_threads)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
-mesh::compute_entity_permutations(const mesh::Topology& topology,
+std::vector<std::uint8_t>
+mesh::compute_entity_permutations(const mesh::Topology& topology, int dim,
                                   int num_threads)
 {
   if (num_threads < 1)
     throw std::invalid_argument("num_threads must be >= 1.");
 
+  const int tdim = topology.dim();
+  if (dim < 0 or dim >= tdim)
+  {
+    throw std::invalid_argument(
+        std::format("Cannot compute permutations for dimension {} entities of "
+                    "a topology of dimension {}.",
+                    dim, tdim));
+  }
+
+  // A vertex has no orientation, so there is nothing to permute.
+  if (dim == 0)
+    return {};
+
   common::Timer t_perm("Compute entity permutations");
+
+  CellType cell_type = topology.cell_type();
+  const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
+  const int entities_per_cell = cell_num_entities(cell_type, dim);
+  std::vector<std::uint8_t> perms(num_cells * entities_per_cell, 0);
+
+  switch (dim)
+  {
+  case 1:
+  {
+    spdlog::info("Compute edge permutations");
+    const std::vector<std::bitset<bitset_size>> edge_perm
+        = compute_edge_reflections<bitset_size>(topology, num_threads);
+    for (std::int32_t c = 0; c < num_cells; ++c)
+      for (int i = 0; i < entities_per_cell; ++i)
+        perms[c * entities_per_cell + i] = edge_perm[c][i];
+    break;
+  }
+  case 2:
+  {
+    spdlog::info("Compute face permutations");
+    const std::vector<std::bitset<bitset_size>> face_perm
+        = compute_face_permutations<bitset_size>(topology, num_threads);
+    // Three bits encode each face: one reflection bit and two rotation
+    // bits.
+    for (std::int32_t c = 0; c < num_cells; ++c)
+    {
+      for (int i = 0; i < entities_per_cell; ++i)
+      {
+        perms[c * entities_per_cell + i]
+            = (face_perm[c].to_ulong() >> (3 * i)) & 7;
+      }
+    }
+    break;
+  }
+  default:
+    throw std::invalid_argument(std::format(
+        "Permutations of dimension {} entities are not supported.", dim));
+  }
+
+  return perms;
+}
+//-----------------------------------------------------------------------------
+
+std::vector<std::uint32_t>
+mesh::compute_cell_permutations(const mesh::Topology& topology, int num_threads)
+{
+  if (num_threads < 1)
+    throw std::invalid_argument("num_threads must be >= 1.");
+
+  common::Timer t_perm("Compute cell permutations");
 
   const int tdim = topology.dim();
   CellType cell_type = topology.cell_type();
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
-  // Point meshes have no facets per cell and cell_num_entities(vertex, -1) is
-  // undefined
-  int facets_per_cell = (tdim > 0) ? cell_num_entities(cell_type, tdim - 1) : 0;
 
   std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
-  std::vector<std::uint8_t> facet_permutations(num_cells * facets_per_cell);
   std::int32_t used_bits = 0;
   if (tdim > 2)
   {
+    // Each face occupies 3 bits: one reflection and two rotations. This
+    // will need increasing if faces with more than 4 sides are added.
     spdlog::info("Compute face permutations");
-    const int faces_per_cell = cell_num_entities(cell_type, 2);
-    const auto face_perm
+    const std::vector<std::bitset<bitset_size>> face_perm
         = compute_face_permutations<bitset_size>(topology, num_threads);
-    for (int c = 0; c < num_cells; ++c)
+    for (std::int32_t c = 0; c < num_cells; ++c)
       cell_permutation_info[c] = face_perm[c].to_ulong();
 
-    // Currently, 3 bits are used for each face. If faces with more than
-    // 4 sides are implemented, this will need to be increased.
-    used_bits += faces_per_cell * 3;
-    assert(tdim == 3);
-    for (int c = 0; c < num_cells; ++c)
-    {
-      for (int i = 0; i < facets_per_cell; ++i)
-      {
-        facet_permutations[c * facets_per_cell + i]
-            = (cell_permutation_info[c] >> (3 * i)) & 7;
-      }
-    }
+    used_bits += cell_num_entities(cell_type, 2) * 3;
   }
 
   if (tdim > 1)
   {
     spdlog::info("Compute edge permutations");
-    const int edges_per_cell = cell_num_entities(cell_type, 1);
-    const auto edge_perm
+    const std::vector<std::bitset<bitset_size>> edge_perm
         = compute_edge_reflections<bitset_size>(topology, num_threads);
-    for (int c = 0; c < num_cells; ++c)
+    for (std::int32_t c = 0; c < num_cells; ++c)
       cell_permutation_info[c] |= edge_perm[c].to_ulong() << used_bits;
 
-    used_bits += edges_per_cell;
-    if (tdim == 2)
-    {
-      for (int c = 0; c < num_cells; ++c)
-      {
-        for (int i = 0; i < facets_per_cell; ++i)
-          facet_permutations[c * facets_per_cell + i] = edge_perm[c][i];
-      }
-    }
+    used_bits += cell_num_entities(cell_type, 1);
   }
   assert(used_bits < bitset_size);
 
-  return {std::move(facet_permutations), std::move(cell_permutation_info)};
+  return cell_permutation_info;
 }
 //-----------------------------------------------------------------------------
