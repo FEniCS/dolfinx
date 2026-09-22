@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2021 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta
+// Copyright (C) 2018-2026 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -31,12 +31,13 @@ CoordinateElement<T>::CoordinateElement(
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 CoordinateElement<T>::CoordinateElement(mesh::CellType celltype, int degree,
-                                        basix::element::lagrange_variant type)
-    : CoordinateElement(std::make_shared<basix::FiniteElement<T>>(
-          basix::create_element<T>(basix::element::family::P,
-                                   mesh::cell_type_to_basix_type(celltype),
-                                   degree, type,
-                                   basix::element::dpc_variant::unset, false)))
+                                        basix::element::lagrange_variant type,
+                                        bool discontinuous)
+    : CoordinateElement(
+          std::make_shared<basix::FiniteElement<T>>(basix::create_element<T>(
+              basix::element::family::P,
+              mesh::cell_type_to_basix_type(celltype), degree, type,
+              basix::element::dpc_variant::unset, discontinuous)))
 {
   // Do nothing
 }
@@ -237,6 +238,13 @@ std::uint64_t CoordinateElement<T>::hash() const
 {
   assert(_element);
   return _element->hash();
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+bool CoordinateElement<T>::is_discontinuous() const
+{
+  assert(_element);
+  return _element->discontinuous();
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

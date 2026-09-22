@@ -12,14 +12,16 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import basix
 from basix import LagrangeVariant
 from dolfinx.fem import assemble_scalar, coordinate_element, form, interpolate_geometry
 from dolfinx.mesh import (
     CellType,
     create_rectangle,
     create_unit_square,
+    entities_to_geometry,
 )
-from ufl import ds, dx
+from ufl import dS, ds, dx
 
 
 def _assert_close_up_to_row_permutation(a, b, atol):
@@ -157,3 +159,89 @@ def test_curve_mesh(degree, dtype, R, cell_type, lagrange_variant):
         assert circ_rate >= expected_rate - tolerance, (
             f"Circumference convergence rate {circ_rate:.2f} below expected {expected_rate}"
         )
+
+
+def _discontinuous_cmap(cell_type, degree, dtype, variant=LagrangeVariant.gll_isaac):
+    """Discontinuous Lagrange coordinate element."""
+    return coordinate_element(
+        basix.create_element(
+            family=basix.ElementFamily.P,
+            celltype=cell_type,
+            degree=degree,
+            lagrange_variant=variant,
+            dpc_variant=basix.DPCVariant.unset,
+            discontinuous=True,
+            dtype=dtype,
+        )
+    )
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("degree", [1, 2])
+def test_interpolate_geometry_discontinuous(dtype, degree):
+    """A discontinuous coordinate element gives each cell its own nodes."""
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
+    cmap = _discontinuous_cmap(basix.CellType.triangle, degree, dtype)
+    assert cmap.is_discontinuous
+
+    new_msh = interpolate_geometry(msh, cmap)
+    new_cmap = new_msh.geometry.cmaps[0]
+    assert new_cmap.is_discontinuous
+    assert new_cmap.degree == degree
+    assert new_msh.topology._cpp_object is msh.topology._cpp_object
+
+    # Nodes are not shared between cells
+    dm_new = new_msh.geometry.dofmaps[0]
+    num_cells = msh.topology.index_map(2).size_local + msh.topology.index_map(2).num_ghosts
+    assert dm_new.shape == (num_cells, new_cmap.dim)
+    assert len(np.unique(dm_new)) == dm_new.size
+    imap = new_msh.geometry.index_map()
+    assert imap.size_global == new_cmap.dim * msh.topology.index_map(2).size_global
+
+    # The geometry of each cell is unchanged
+    ref_msh = interpolate_geometry(
+        msh, coordinate_element(CellType.triangle, degree, LagrangeVariant.gll_isaac, dtype=dtype)
+    )
+    x_ref, dm_ref = ref_msh.geometry.x, ref_msh.geometry.dofmaps[0]
+    x_new = new_msh.geometry.x
+    atol = 10 * np.finfo(dtype).eps
+    for c in range(num_cells):
+        np.testing.assert_allclose(x_new[dm_new[c]], x_ref[dm_ref[c]], atol=atol, rtol=0.0)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_interpolate_geometry_discontinuous_assembly(dtype):
+    """Integrals over a discontinuous geometry, before and after moving cells."""
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
+    new_msh = interpolate_geometry(msh, _discontinuous_cmap(basix.CellType.triangle, 1, dtype))
+    comm = new_msh.comm
+
+    def total(measure, domain):
+        return comm.allreduce(assemble_scalar(form(1 * measure(domain=domain), dtype=dtype)))
+
+    rtol = 1e-5 if dtype == np.float32 else 1e-12
+    assert np.isclose(total(dx, new_msh), 1.0, rtol=rtol)
+    assert np.isclose(total(ds, new_msh), 4.0, rtol=rtol)
+    assert np.isclose(total(dS, new_msh), total(dS, msh), rtol=rtol)
+
+    # Each cell can be scaled about the origin independently of its
+    # neighbours, which a continuous geometry does not allow
+    x, dm = new_msh.geometry.x, new_msh.geometry.dofmaps[0]
+    for c in range(dm.shape[0]):
+        x[dm[c], :2] *= 0.5
+    assert np.isclose(total(dx, new_msh), 0.25, rtol=rtol)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_interpolate_geometry_discontinuous_no_entity_geometry(dtype):
+    """Sub-entity geometry is undefined for a discontinuous geometry."""
+    msh = create_unit_square(MPI.COMM_WORLD, 2, 2, dtype=dtype)
+    new_msh = interpolate_geometry(msh, _discontinuous_cmap(basix.CellType.triangle, 1, dtype))
+    new_msh.topology.create_connectivity(1, 2)
+    new_msh.topology.create_connectivity(2, 1)
+    facets = np.arange(new_msh.topology.index_map(1).size_local, dtype=np.int32)
+    with pytest.raises(ValueError, match="discontinuous geometry"):
+        entities_to_geometry(new_msh, 1, facets)
+
+    cells = np.arange(new_msh.topology.index_map(2).size_local, dtype=np.int32)
+    assert entities_to_geometry(new_msh, 2, cells).shape == (len(cells), 3)

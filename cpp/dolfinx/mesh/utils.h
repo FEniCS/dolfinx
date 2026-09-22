@@ -27,14 +27,16 @@
 #include <dolfinx/graph/partition.h>
 #include <exception>
 #include <format>
+#include <iterator>
+#include <memory>
 #include <mpi.h>
 #include <numeric>
 #include <optional>
 #include <ranges>
 #include <span>
 #include <stdexcept>
-#include <string>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -761,6 +763,10 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @pre Mesh connectivities `dim -> mesh.topology().dim()` and
 /// `mesh.topology().dim() -> dim` must have been computed. Otherwise an
 /// exception is thrown.
+///
+/// @note A discontinuous geometry has no coordinate degrees-of-freedom
+/// associated with sub-entities of a cell, so only `dim ==
+/// mesh.topology().dim()` is supported for such a mesh.
 template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::array<std::size_t, 2>>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
@@ -783,6 +789,14 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
   // Get the DOF layout and the number of DOFs per entity
   const fem::CoordinateElement<T>& coord_ele = geometry.cmaps().front();
+  if (dim < tdim and coord_ele.is_discontinuous())
+  {
+    throw std::invalid_argument(
+        "mesh::entities_to_geometry for sub-entities of a cell is not "
+        "supported for a discontinuous geometry, which has no coordinate "
+        "degrees-of-freedom associated with sub-entities.");
+  }
+
   const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
   const std::size_t num_entity_dofs = layout.entity_closure_dofs(dim, 0).size();
   std::vector<std::int32_t> entity_xdofs;
@@ -1184,7 +1198,7 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
     if (std::holds_alternative<graph::geom_partition_fn>(partitioner.fn))
     {
       try_locally(
-          [&]
+          [&dest, &comm, &centroid, &partitioner, &xshape]
           {
             int size = dolfinx::MPI::size(comm);
             const auto& p = std::get<graph::geom_partition_fn>(partitioner.fn);
@@ -1206,37 +1220,58 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
       // rank reaches the graph::build::distribute collective, or a throw
       // here would leave the rest of comm blocked on it forever.
       try_locally(
-          [&]
+          [&dest, &comm, &commt, &celltypes, &topology_view,
+           &max_facet_to_cell_links, &num_threads, &partitioner, &centroid,
+           &ghosting]
           {
             int size = dolfinx::MPI::size(comm);
             // Shared by the graph::partition_fn and
             // graph::hybrid_partition_fn alternatives below: neither has any
             // other way to obtain the mesh dual graph.
-            auto dual_graph = [&]() -> graph::AdjacencyList<std::int64_t>
+            auto dual_graph
+                = [&commt, &celltypes, &topology_view, &max_facet_to_cell_links,
+                   &num_threads]() -> graph::AdjacencyList<std::int64_t>
             {
               return build_dual_graph(commt, celltypes, topology_view,
                                       max_facet_to_cell_links, num_threads);
             };
 
-            dest = std::visit(
-                [&](const auto& p) -> graph::AdjacencyList<std::int32_t>
-                {
-                  using P = std::decay_t<decltype(p)>;
-                  if constexpr (std::is_same_v<P, graph::hybrid_partition_fn>)
+            // `dest` is already correct for graph::geom_partition_fn (set
+            // above); skip the visit's dispatch (and the AdjacencyList
+            // copy an unconditional assignment would cost) for that case.
+            if (!std::holds_alternative<graph::geom_partition_fn>(
+                    partitioner.fn))
+            {
+              dest = std::visit(
+                  [&dual_graph, &commt, size, &centroid, &partitioner,
+                   &ghosting](
+                      const auto& p) -> graph::AdjacencyList<std::int32_t>
                   {
-                    return p(commt, size, dual_graph(),
-                             std::span<const double>(centroid),
-                             partitioner.node_weights, std::nullopt, ghosting);
-                  }
-                  else if constexpr (std::is_same_v<P, graph::partition_fn>)
-                  {
-                    return p(commt, size, dual_graph(),
-                             partitioner.node_weights, std::nullopt, ghosting);
-                  }
-                  else
-                    return dest;
-                },
-                partitioner.fn);
+                    using P = std::decay_t<decltype(p)>;
+                    if constexpr (std::is_same_v<P, graph::hybrid_partition_fn>)
+                    {
+                      return p(commt, size, dual_graph(),
+                               std::span<const double>(centroid),
+                               partitioner.node_weights, std::nullopt,
+                               ghosting);
+                    }
+                    else if constexpr (std::is_same_v<P, graph::partition_fn>)
+                    {
+                      return p(commt, size, dual_graph(),
+                               partitioner.node_weights, std::nullopt,
+                               ghosting);
+                    }
+                    else
+                    {
+                      // std::visit still requires this branch to
+                      // compile for graph::geom_partition_fn.
+                      static_assert(
+                          std::is_same_v<P, graph::geom_partition_fn>);
+                      throw std::logic_error("Unreachable.");
+                    }
+                  },
+                  partitioner.fn);
+            }
           },
           error);
     }
@@ -1477,7 +1512,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   std::vector<std::int64_t> boundary_v;
   std::exception_ptr error;
   impl::try_locally(
-      [&]
+      [&boundary_v, &reorder_fn, &cell_centroids, &xshape,
+       &max_facet_to_cell_links, &celltypes, &doflayouts, &ghost_owners,
+       &cells1, &cells1_v, &original_idx1, &num_threads]
       {
         boundary_v = impl::reorder_cells(reorder_fn, cell_centroids, xshape[1],
                                          max_facet_to_cell_links, celltypes,
@@ -1520,11 +1557,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
       spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
       if (dim_sum > 0)
-        topology.create_entities(dim);
+        topology.create_entities(dim, num_threads);
     }
 
     if (elements[i].needs_dof_permutations())
-      topology.create_entity_permutations();
+      topology.create_entity_permutations(num_threads);
   }
 
   // Cell 'node' indices (global), as a single flat array. This is
@@ -1716,9 +1753,6 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
 
   // Get the geometry dofs in the sub-geometry based on the entities in
   // sub-geometry
-  const fem::ElementDofLayout layout
-      = geometry.cmaps().front().create_dof_layout();
-
   const std::vector<std::int32_t> x_indices
       = entities_to_geometry(mesh, dim, subentity_to_entity, true).first;
 
@@ -1865,7 +1899,7 @@ MeshTags<T> transfer_meshtags_to_submesh(
   // Validate that cell_map/vertex_map relate `topology` (the tags'
   // parent topology) to `submesh_topology`, and have the dimension
   // this function assumes.
-  if (cell_map.dim() != static_cast<std::size_t>(submesh_tdim))
+  if (cell_map.dim() != submesh_tdim)
   {
     throw std::invalid_argument(
         "cell_map dimension must equal the submesh topology dimension.");
