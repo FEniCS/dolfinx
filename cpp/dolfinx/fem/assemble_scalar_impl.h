@@ -19,7 +19,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
-#include <type_traits>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -35,7 +34,7 @@ T assemble_cells(MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
                  std::span<const std::int32_t> cells,
                  const FEkernel<T, U> auto& fn, std::span<const T> constants,
                  md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-                 std::span<std::type_identity_t<U>> cdofs_b)
+                 std::span<U> cdofs_b)
 {
   T value(0);
   if (cells.empty())
@@ -87,7 +86,7 @@ T assemble_entities(
     const FEkernel<T, U> auto& fn, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<std::type_identity_t<U>> cdofs_b)
+    std::span<U> cdofs_b)
 {
   T value(0);
   if (entities.empty())
@@ -135,7 +134,7 @@ T assemble_interior_facets(
                                     md::dynamic_extent>>
         coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<std::type_identity_t<U>> cdofs_b)
+    std::span<U> cdofs_b)
 {
   T value(0);
   if (facets.empty())
@@ -198,23 +197,17 @@ T assemble_scalar(
     std::span<const std::int32_t> cells
         = M.domain(IntegralType::cell, i, cell_type_idx);
     assert(cells.size() * cstride == coeffs.size());
-    value += impl::assemble_cells<T, U>(
+    value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
-        md::mdspan(coeffs.data(), cells.size(), cstride), cdofs_b);
+        md::mdspan(coeffs.data(), cells.size(), cstride), std::span(cdofs_b));
   }
 
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
   if (M.needs_facet_permutations())
   {
-    mesh::CellType cell_type = mesh->topology()->cell_types()[cell_type_idx];
-    int num_facets_per_cell
-        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
-
-    mesh->topology_mutable()->create_entity_permutations();
-    const std::vector<std::uint8_t>& p
-        = mesh->topology()->get_facet_permutations();
-    facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
-                             num_facets_per_cell);
+    facet_perms = impl::entity_permutations(
+        *mesh->topology_mutable(), IntegralType::interior_facet,
+        mesh->topology()->cell_types()[cell_type_idx]);
   }
 
   for (int i = 0;
@@ -231,7 +224,7 @@ T assemble_scalar(
     constexpr std::size_t shape1 = 2 * num_adjacent_cells;
 
     assert((facets.size() / shape1) * 2 * cstride == coeffs.size());
-    value += impl::assemble_interior_facets<T, U>(
+    value += impl::assemble_interior_facets(
         x_dofmap, x,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2, 2>>(
@@ -240,18 +233,28 @@ T assemble_scalar(
         md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                         md::dynamic_extent>>(
             coeffs.data(), facets.size() / shape1, 2, cstride),
-        facet_perms, cdofs_b);
+        facet_perms, std::span(cdofs_b));
   }
 
   for (auto itg_type : {fem::IntegralType::exterior_facet,
                         fem::IntegralType::vertex, fem::IntegralType::ridge})
   {
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
-        = (itg_type == fem::IntegralType::exterior_facet)
-              ? facet_perms
-              : md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>{};
+    const int num_itg = M.num_integrals(itg_type, cell_type_idx);
+    if (num_itg == 0)
+      continue;
 
-    for (int i = 0; i < M.num_integrals(itg_type, cell_type_idx); ++i)
+    // Each integral type is over entities of a different
+    // codimension, so only the permutations this form actually
+    // integrates over are computed.
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
+    if (M.needs_facet_permutations())
+    {
+      perms = impl::entity_permutations(
+          *mesh->topology_mutable(), itg_type,
+          mesh->topology()->cell_types()[cell_type_idx]);
+    }
+
+    for (int i = 0; i < num_itg; ++i)
     {
       auto fn = M.kernel(itg_type, i, cell_type_idx);
       assert(fn);
@@ -261,14 +264,14 @@ T assemble_scalar(
 
       // Two values per each adj. cell (cell index and local entity index).
       assert((entities.size() / 2) * cstride == coeffs.size());
-      value += impl::assemble_entities<T, U>(
+      value += impl::assemble_entities(
           x_dofmap, x,
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>(
               entities.data(), entities.size() / 2, 2),
           fn, constants,
           md::mdspan(coeffs.data(), entities.size() / 2, cstride), perms,
-          cdofs_b);
+          std::span(cdofs_b));
     }
   }
 

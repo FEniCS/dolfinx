@@ -56,7 +56,8 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices,
   {
     std::int64_t max_index
         = indices.empty() ? 0 : *std::ranges::max_element(indices);
-    MPI_Allreduce(&max_index, &global_range, 1, MPI_INT64_T, MPI_MAX, comm);
+    MPI_Allreduce(&max_index, &global_range, 1,
+                  dolfinx::MPI::mpi_t<std::int64_t>, MPI_MAX, comm);
     global_range += 1;
   }
 
@@ -492,8 +493,9 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
                      std::next(recv_disp.begin()));
     recv_data = std::vector<std::int64_t>(recv_disp.back());
     MPI_Neighbor_alltoallv(sbuffer.data(), send_sizes.data(), send_disp.data(),
-                           MPI_INT64_T, recv_data.data(), recv_sizes.data(),
-                           recv_disp.data(), MPI_INT64_T, comm0);
+                           dolfinx::MPI::mpi_t<std::int64_t>, recv_data.data(),
+                           recv_sizes.data(), recv_disp.data(),
+                           dolfinx::MPI::mpi_t<std::int64_t>, comm0);
 
     MPI_Comm_free(&comm0);
   }
@@ -612,8 +614,9 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     // Send ghost indices to owner, and receive owned indices
     std::vector<std::int64_t> recv_buffer(recv_disp.back());
     MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
-                           send_disp.data(), MPI_INT64_T, recv_buffer.data(),
-                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           send_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+                           recv_buffer.data(), recv_sizes.data(),
+                           recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
                            comm1);
     MPI_Comm_free(&comm1);
 
@@ -687,16 +690,16 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
       }
     }
   }
-  assert(send_buffer.size() == (std::size_t)send_disp.back());
+  assert(send_buffer.size() == static_cast<std::size_t>(send_disp.back()));
 
   std::vector<int> recv_disp(src.size() + 1, 0);
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::next(recv_disp.begin()));
   std::vector<std::int64_t> recv_buffer(recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
-                         send_disp.data(), MPI_INT64_T, recv_buffer.data(),
-                         recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
-                         comm);
+  MPI_Neighbor_alltoallv(
+      send_buffer.data(), send_sizes.data(), send_disp.data(),
+      dolfinx::MPI::mpi_t<std::int64_t>, recv_buffer.data(), recv_sizes.data(),
+      recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>, comm);
 
   std::vector<std::array<std::int64_t, 3>> data;
   data.reserve(recv_buffer.size() / 3);
@@ -916,9 +919,8 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
         "Multiple index maps of this dimension. Call index_maps instead.");
   }
 
-  std::vector<std::shared_ptr<const common::IndexMap>> im
-      = this->index_maps(dim);
-  if (im.empty())
+  auto it = _index_maps.find({dim, 0});
+  if (it == _index_maps.end())
   {
     throw std::out_of_range(
         std::format("Missing IndexMap in Topology. Maybe you need to "
@@ -926,7 +928,7 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
                     dim));
   }
 
-  return im.at(0);
+  return it->second;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
@@ -952,30 +954,36 @@ Topology::connectivity(int d0, int d1) const
 //-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
-  // Check if this process owns or ghosts any cells
-  assert(this->index_map(this->dim()));
   if (auto i_map = this->index_map(this->dim());
       _cell_permutations.empty()
       and i_map->size_local() + i_map->num_ghosts() > 0)
   {
     throw std::runtime_error(
-        "create_entity_permutations must be called before using this data.");
+        "create_cell_permutations must be called before using this data.");
   }
 
   return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
+const std::vector<std::uint8_t>&
+Topology::get_entity_permutations(int dim) const
 {
-  if (auto i_map = this->index_map(this->dim() - 1);
-      _facet_permutations.empty()
-      and (i_map->size_local() + i_map->num_ghosts() > 0))
+  if (dim < 0 or dim >= int(_entity_permutations.size()))
   {
-    throw std::runtime_error(
-        "create_entity_permutations must be called before using this data.");
+    throw std::invalid_argument(std::format(
+        "Dimension {} entities are not sub-entities of a cell.", dim));
   }
 
-  return _facet_permutations;
+  const std::optional<std::vector<std::uint8_t>>& p = _entity_permutations[dim];
+  if (!p.has_value())
+  {
+    throw std::runtime_error(
+        std::format("create_entity_permutations({}) must be called before "
+                    "using this data.",
+                    dim));
+  }
+
+  return *p;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>& Topology::interprocess_facets(int index) const
@@ -1010,31 +1018,27 @@ bool Topology::create_entities(int dim, int num_threads)
   if (entities_created)
     return false;
 
-  // for (std::size_t index = 0; index < this->entity_types(dim).size();
-  // ++index)
-  for (auto entity = this->entity_types(dim).begin();
-       entity != this->entity_types(dim).end(); ++entity)
+  const std::vector<CellType>& entity_types_dim = this->entity_types(dim);
+  for (int index = 0, num = entity_types_dim.size(); index < num; ++index)
   {
-    int index = std::ranges::distance(this->entity_types(dim).begin(), entity);
-
     // Create local entities
     auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(*this, dim, *entity, num_threads);
+        = compute_entities(*this, dim, entity_types_dim[index], num_threads);
     for (std::size_t k = 0; k < cell_entity.size(); ++k)
     {
       if (cell_entity[k])
       {
         _connectivity.insert(
-            {{{this->dim(), int(k)}, {dim, int(index)}}, cell_entity[k]});
+            {{{this->dim(), int(k)}, {dim, index}}, cell_entity[k]});
       }
     }
 
     // TODO: is this check necessary? Seems redundant after the "skip
     // check"
     if (entity_vertex)
-      _connectivity.insert({{{dim, int(index)}, {0, 0}}, entity_vertex});
+      _connectivity.insert({{{dim, index}, {0, 0}}, entity_vertex});
 
-    _index_maps.insert({{dim, int(index)}, index_map});
+    _index_maps.insert({{dim, index}, index_map});
 
     // Store interprocess facets
     if (dim == this->dim() - 1)
@@ -1087,7 +1091,53 @@ void Topology::create_connectivity(int d0, int d1)
   }
 }
 //-----------------------------------------------------------------------------
-void Topology::create_entity_permutations(int num_threads)
+void Topology::create_entity_permutations(int dim, int num_threads)
+{
+  const int tdim = this->dim();
+  if (dim < 0 or dim >= tdim)
+  {
+    throw std::invalid_argument(
+        std::format("Cannot compute permutations for dimension {} entities of "
+                    "a topology of dimension {}.",
+                    dim, tdim));
+  }
+
+  if (_entity_permutations[dim].has_value())
+    return;
+
+  if (!_cell_permutations.empty())
+  {
+    // The packed cell info already holds these orientations: 3 bits per
+    // face followed by 1 bit per edge. Unpack rather than recompute.
+    CellType cell_type = this->cell_type();
+    const std::int32_t num_cells = _cell_permutations.size();
+    const int num_entities = cell_num_entities(cell_type, dim);
+    const int bits = dim == 2 ? 3 : 1;
+    const int offset
+        = (dim == 1 and tdim > 2) ? 3 * cell_num_entities(cell_type, 2) : 0;
+    std::vector<std::uint8_t> perms(dim == 0 ? 0 : num_cells * num_entities);
+    for (std::int32_t c = 0; c < std::int32_t(perms.size() / num_entities); ++c)
+    {
+      for (int i = 0; i < num_entities; ++i)
+      {
+        perms[c * num_entities + i]
+            = (_cell_permutations[c] >> (offset + bits * i))
+              & ((1 << bits) - 1);
+      }
+    }
+    _entity_permutations[dim] = std::move(perms);
+    return;
+  }
+
+  // The orientation of an entity is relative to the cell's vertices, so
+  // the entities must exist.
+  create_entities(dim, num_threads);
+
+  _entity_permutations[dim]
+      = compute_entity_permutations(*this, dim, num_threads);
+}
+//-----------------------------------------------------------------------------
+void Topology::create_cell_permutations(int num_threads)
 {
   if (!_cell_permutations.empty())
     return;
@@ -1097,14 +1147,11 @@ void Topology::create_entity_permutations(int num_threads)
   // parallel work.
 
   // Create all mesh entities
-  int tdim = this->dim();
+  const int tdim = this->dim();
   for (int d = 0; d < tdim; ++d)
     create_entities(d, num_threads);
 
-  auto [facet_permutations, cell_permutations]
-      = compute_entity_permutations(*this, num_threads);
-  _facet_permutations = std::move(facet_permutations);
-  _cell_permutations = std::move(cell_permutations);
+  _cell_permutations = compute_cell_permutations(*this, num_threads);
 }
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::comm() const
@@ -1289,11 +1336,15 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
 
   common::Timer timer4("Topology: 4");
 
-  // Compute the global offset for owned (local) vertex indices
+  // Compute the global offset for owned (local) vertex indices.
+  // global_offset_v is pre-initialized to 0 since MPI_Exscan leaves
+  // rank 0's receive buffer undefined.
   std::int64_t global_offset_v = 0;
   {
     std::int64_t nlocal = owned_vertices.size();
-    MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
+    int ierr = MPI_Exscan(&nlocal, &global_offset_v, 1,
+                          dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM, comm);
+    dolfinx::MPI::check_error(comm, ierr);
   }
 
   // Get global indices of ghost cells
@@ -1472,21 +1523,22 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
   //
   // Note: This step is required only for meshes with ghost cells and
   // could be skipped when the mesh is not ghosted.
-  std::vector<int> dest;
-  {
-    // Build list of ranks that own vertices that are ghosted by this
-    // rank (out edges)
-    std::vector<int> src = ghost_vertex_owners;
-    dolfinx::radix_sort(src);
-    auto [unique_end, range_end] = std::ranges::unique(src);
-    src.erase(unique_end, range_end);
-    dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
-  }
+  // Build list of ranks that own vertices that are ghosted by this
+  // rank (in edges), and the ranks that ghost vertices owned by this
+  // rank (out edges).
+  std::vector<int> src = ghost_vertex_owners;
+  dolfinx::radix_sort(src);
+  auto [unique_end, range_end] = std::ranges::unique(src);
+  src.erase(unique_end, range_end);
+  std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+  dolfinx::radix_sort(dest);
 
-  // Create index map for vertices
+  // Create index map for vertices. Passing the already-computed
+  // src/dest avoids the tag-based constructor's own NBX consensus
+  // round to rediscover the same information.
   auto index_map_v = std::make_shared<common::IndexMap>(
-      comm, owned_vertices.size(), ghost_vertices, ghost_vertex_owners,
-      static_cast<int>(dolfinx::MPI::tag::consensus_nbx) + cell_types.size());
+      comm, owned_vertices.size(), std::array{std::move(src), std::move(dest)},
+      ghost_vertices, ghost_vertex_owners);
 
   // Set cell index map and connectivity
   std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells_c;
@@ -1647,24 +1699,26 @@ mesh::entities_to_index(const Topology& topology, int dim,
 
   // Tagged entity topological dimension
   auto map_e = topology.index_map(dim);
-  if (!map_e)
-  {
-    throw std::runtime_error(std::format(
-        "Mesh entities of dimension {} have not been created.", dim));
-  }
-
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
 
   const int num_vertices_per_entity
       = cell_num_entities(cell_entity_type(topology.cell_type(), dim, 0), 0);
 
+  // Fixed-size, padded key for entities with up to eight vertices.
+  constexpr int max_vertices_per_entity = 8;
+  assert(num_vertices_per_entity <= max_vertices_per_entity);
+  using Key = std::array<std::int32_t, max_vertices_per_entity>;
+
   // Build map from ordered local vertex indices (key) to entity index
   // (value)
-  std::map<std::vector<std::int32_t>, std::int32_t> entity_key_to_index;
-  std::vector<std::int32_t> key(num_vertices_per_entity);
+  boost::unordered_flat_map<Key, std::int32_t> entity_key_to_index;
+  entity_key_to_index.reserve(map_e->size_local() + map_e->num_ghosts());
+  Key key;
   for (std::int32_t e = 0; e < map_e->size_local() + map_e->num_ghosts(); ++e)
   {
+    // Padding makes the fixed-size key canonical.
+    key.fill(-1);
     auto vertices = e_to_v->links(e);
     std::ranges::copy(vertices, key.begin());
     std::ranges::sort(key);
@@ -1683,9 +1737,10 @@ mesh::entities_to_index(const Topology& topology, int dim,
   // Iterate over all entities and find index
   std::vector<std::int32_t> indices;
   indices.reserve(entities.size() / num_vertices_per_entity);
-  std::vector<std::int32_t> vertices(num_vertices_per_entity);
+  Key vertices;
   for (std::size_t e = 0; e < entities.size(); e += num_vertices_per_entity)
   {
+    vertices.fill(-1);
     auto v = entities.subspan(e, num_vertices_per_entity);
     std::ranges::copy(v, vertices.begin());
     std::ranges::sort(vertices);
@@ -1733,10 +1788,11 @@ mesh::compute_mixed_cell_pairs(const Topology& topology, CellType facet_type)
 
       auto local_facet = [](const auto& cf, std::int32_t c, std::int32_t f)
       {
-        auto it = std::find(cf->links(c).begin(), cf->links(c).end(), f);
-        assert(it != cf->links(c).end()
+        std::span facets = cf->links(c);
+        auto it = std::ranges::find(facets, f);
+        assert(it != facets.end()
                && "Facet-cell and cell-facet connectivity are inconsistent.");
-        return std::ranges::distance(cf->links(c).begin(), it);
+        return std::ranges::distance(facets.begin(), it);
       };
 
       if (i == j)

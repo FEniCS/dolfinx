@@ -445,7 +445,7 @@ def test_permutation_wrappers(space_order, data_types):
 
     arr = u.x.array[V.dofmap.list]
 
-    domain.topology.create_entity_permutations()
+    domain.topology.create_cell_permutations()
     cell_perm = domain.topology.get_cell_permutation_info()
     org_data = arr.copy()
     V.element.Tt_apply(arr.reshape(-1), cell_perm, 1)

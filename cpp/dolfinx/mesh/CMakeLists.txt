@@ -1,29 +1,31 @@
-set(
-  HEADERS_mesh
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_mesh.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Topology.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/MeshTags.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/generation.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/graphbuild.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/permutationcomputation.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/topologycomputation.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/types.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/EntityMap.h
-  PARENT_SCOPE
-)
-
 target_sources(
   dolfinx
   PRIVATE
-    Topology.cpp
     EntityMap.cpp
+    Topology.cpp
     cell_types.cpp
     graphbuild.cpp
     permutationcomputation.cpp
     topologycomputation.cpp
     utils.cpp
+)
+
+target_sources(
+  dolfinx
+  PUBLIC
+    FILE_SET HEADERS
+      FILES
+        EntityMap.h
+        Geometry.h
+        Mesh.h
+        MeshTags.h
+        Topology.h
+        cell_types.h
+        dolfinx_mesh.h
+        generation.h
+        graphbuild.h
+        permutationcomputation.h
+        topologycomputation.h
+        types.h
+        utils.h
 )

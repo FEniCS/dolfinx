@@ -41,6 +41,16 @@ namespace dolfinx::fem::impl
 using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @endcond
 
+template <typename M>
+constexpr std::size_t static_extent1()
+{
+  using M0 = std::remove_cvref_t<M>;
+  if constexpr (requires { M0::static_extent(1); })
+    return M0::static_extent(1);
+  else
+    return md::dynamic_extent;
+}
+
 /// @brief Execute kernel over cells and accumulate result in vector.
 ///
 /// @note This function must not perform any dynamic (heap) memory
@@ -92,8 +102,17 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
   auto be = be_b.first(bs * dmap.extent(1));
 
   const U* x_ptr = x.data_handle();
+  const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const std::int32_t* dmap_ptr = dmap.data_handle();
+
+  // Use a static geometry-dof count when available.
+  constexpr std::size_t x_dofmap_static_extent1
+      = static_extent1<decltype(x_dofmap)>();
+  const std::int32_t num_x_dofs_cell
+      = x_dofmap_static_extent1 != md::dynamic_extent
+            ? static_cast<std::int32_t>(x_dofmap_static_extent1)
+            : static_cast<std::int32_t>(x_dofmap.extent(1));
 
   // P0 does not change across cells in this call, so whether it is a
   // set (non-null) transform is loop-invariant -- checked once here
@@ -111,13 +130,10 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
     std::int32_t c0 = cells0[index];
 
     // Get cell coordinates/geometry
-    for (std::size_t i = 0; i < x_dofmap.extent(1); ++i)
+    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
     {
-      const U* _x_ptr
-          = x_ptr + x_dofmap_ptr[c * x_dofmap.extent(1) + i] * x.extent(1);
-      U* cdofs = cdofs_b.data() + 3 * i;
-      for (std::size_t j = 0; j < x.extent(1); ++j)
-        cdofs[j] = _x_ptr[j];
+      const U* _x_ptr = x_ptr + x_dofmap_ptr[c * num_x_dofs_cell + i] * gdim;
+      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
     }
 
     // Tabulate vector for cell
@@ -208,7 +224,14 @@ void assemble_entities(
   const U* x_ptr = x.data_handle();
   const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+
+  // Use a static geometry-dof count when available.
+  constexpr std::size_t x_dofmap_static_extent1
+      = static_extent1<decltype(x_dofmap)>();
+  const std::int32_t num_x_dofs_cell
+      = x_dofmap_static_extent1 != md::dynamic_extent
+            ? static_cast<std::int32_t>(x_dofmap_static_extent1)
+            : static_cast<std::int32_t>(x_dofmap.extent(1));
   const std::int32_t* dmap_ptr = dmap.data_handle();
 
   // P0 does not change across entities in this call, so whether it is a
@@ -323,7 +346,14 @@ void assemble_interior_facets(
   const U* x_ptr = x.data_handle();
   const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+
+  // Use a static geometry-dof count when available.
+  constexpr std::size_t x_dofmap_static_extent1
+      = static_extent1<decltype(x_dofmap)>();
+  const std::int32_t num_x_dofs_cell
+      = x_dofmap_static_extent1 != md::dynamic_extent
+            ? static_cast<std::int32_t>(x_dofmap_static_extent1)
+            : static_cast<std::int32_t>(x_dofmap.extent(1));
 
   // P0 does not change across facets in this call, so whether it is a
   // set (non-null) transform is loop-invariant -- checked once here rather
@@ -521,9 +551,9 @@ void assemble_vector(
         = element->template dof_transformation_fn<T>(doftransform::standard);
 
     std::span<const std::uint32_t> cell_info0;
-    if (element->needs_dof_transformations() or L.needs_facet_permutations())
+    if (element->needs_dof_transformations())
     {
-      mesh0->topology_mutable()->create_entity_permutations();
+      mesh0->topology_mutable()->create_cell_permutations();
       cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
     }
 
@@ -563,14 +593,9 @@ void assemble_vector(
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
     if (L.needs_facet_permutations())
     {
-      mesh::CellType cell_type = mesh->topology()->cell_types()[cell_type_idx];
-      int num_facets_per_cell
-          = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
-      mesh->topology_mutable()->create_entity_permutations();
-      const std::vector<std::uint8_t>& p
-          = mesh->topology()->get_facet_permutations();
-      facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
-                               num_facets_per_cell);
+      facet_perms = impl::entity_permutations(
+          *mesh->topology_mutable(), IntegralType::interior_facet,
+          mesh->topology()->cell_types()[0]);
     }
 
     using mdspanx2_t
@@ -626,12 +651,21 @@ void assemble_vector(
     for (auto itg_type : {fem::IntegralType::exterior_facet,
                           fem::IntegralType::vertex, fem::IntegralType::ridge})
     {
-      md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
-          = (itg_type == fem::IntegralType::exterior_facet)
-                ? facet_perms
-                : md::mdspan<const std::uint8_t,
-                             md::dextents<std::size_t, 2>>{};
-      for (int i = 0; i < L.num_integrals(itg_type, 0); ++i)
+      const int num_itg = L.num_integrals(itg_type, 0);
+      if (num_itg == 0)
+        continue;
+
+      // Each integral type is over entities of a different
+      // codimension, so only the permutations this form actually
+      // integrates over are computed.
+      md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
+      if (L.needs_facet_permutations())
+      {
+        perms = impl::entity_permutations(*mesh->topology_mutable(), itg_type,
+                                          mesh->topology()->cell_types()[0]);
+      }
+
+      for (int i = 0; i < num_itg; ++i)
       {
         auto fn = L.kernel(itg_type, i, 0);
         assert(fn);

@@ -631,7 +631,19 @@ void assemble_operator(
         std::reference_wrapper<const DirichletBC<PetscScalar, T>>>& bcs)
 {
   common::petsc::check(MatZeroEntries(A), "MatZeroEntries");
-  fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a, bcs);
+
+  // Block and dof indices coincide at block size 1. Avoid the generic
+  // blocked PETSc path, which expands these indices before insertion.
+  if (a.function_spaces()[0]->dofmap()->index_map_bs() == 1
+      and a.function_spaces()[1]->dofmap()->index_map_bs() == 1)
+  {
+    fem::assemble_matrix(la::petsc::Matrix::set_fn(A, ADD_VALUES), a, bcs);
+  }
+  else
+  {
+    fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
+                         bcs);
+  }
 
   // The unit diagonal is only meaningful when the rows and columns are
   // indexed by the same space

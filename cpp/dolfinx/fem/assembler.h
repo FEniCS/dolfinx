@@ -24,6 +24,7 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 /// @file assembler.h
@@ -135,8 +136,9 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
   }
   std::vector<T> constants = fem::pack_constants(e);
 
-  tabulate_expression<T, U>(
-      values, e, md::mdspan(coeffs.data(), entities.extent(0), cstride),
+  tabulate_expression(
+      values, e,
+      md::mdspan(std::as_const(coeffs).data(), entities.extent(0), cstride),
       std::span<const T>(constants), mesh, entities, element);
 }
 
