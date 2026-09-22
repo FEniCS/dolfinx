@@ -34,8 +34,13 @@ enum class CellType : std::int8_t;
 /// unmatched.
 /// @param[in] num_threads Number of threads to use. Must be greater
 /// than 0.
-/// @param[in] facet_weights Optional weights for each facet of each
-/// cell, cellwise. e.g. for a tetrahedral mesh, shape of `(num_cells, 4)`.
+/// @param[in] facet_weights Positive integer cell-facet weights, with one
+/// array per cell type in `celltypes`. Each array is flattened in cell-major
+/// order, with shape `(num_cells, num_facets_per_cell)`. Facet numbering
+/// follows `get_entity_vertices(celltypes[j], tdim - 1)`. An empty outer span
+/// selects the unweighted path, which allocates no weight buffers.
+/// For each shared facet, the mean over all attached cells on this rank is
+/// rounded down and assigned to both directions of every cell-pair edge.
 ///
 /// @return
 /// 1. Local dual graph
@@ -44,12 +49,12 @@ enum class CellType : std::int8_t;
 ///   2D array is flattened (row-major).
 /// 3. Facet data array (2) number of columns
 /// 4. Attached cell (local index) to each returned facet in (2).
-/// 5. Edge weights for the dual graph, one entry per edge in (1).
-///   If `facet_weights` is not provided, this is empty.
-/// 6. Unmatched facet weights, one entry per facet in (2),
-///   if `facet_weights` is provided. Otherwise empty.
+/// 5. Edge weights aligned with the adjacency entries in (1).array().
+///   Empty when the outer `facet_weights` span is empty.
+/// 6. Original cell-side weights aligned with the unmatched facet rows in
+///   (2) and attached cells in (4). These are not averaged, so later matching
+///   can include contributions from remote cells. Empty in the unweighted case.
 ///
-
 /// Each row of the returned data (2) contains `[v0, ... v_(n-1), x, ..,
 /// x]`, where `v_i` is a vertex global index, `x` is a negative value
 /// (all padding values will be equal). The vertex global indices are
@@ -63,7 +68,7 @@ enum class CellType : std::int8_t;
 ///
 /// @note Facet (2) and cell (4) data will contain multiple entries for
 /// the same facet for branching meshes with `max_facet_to_cell_links>2`
-/// to account for all facet cell connectivies.
+/// to account for all facet-cell connectivities.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>, int,
            std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>

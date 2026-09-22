@@ -650,20 +650,11 @@ mesh::build_local_dual_graph(
   timer0.stop();
   timer0.flush();
 
-  // 2) Build a list of (all) facets, defined by sorted vertices, with
-  //    the connected cell index after the vertices. For v_ij the j-th
-  //    vertex of the i-th facet. The last index is the cell index (non
-  //    unique). Stored column-major (SoA): `facets` is one span per
-  //    column, backed by a single contiguous allocation
-  //    (`facets_storage`), so sorting the leading max_vertices_per_facet
-  //    columns (via the column-major sort_by_perm overload below) needs
-  //    no per-column extraction copy, unlike the row-major layout this
-  //    replaced.
-  // facets[0] = [v_11, v_21, ..., v_n1]
-  // facets[1] = [v_12, v_22, ..., v_n2]
-  //                ⋮      ⋮  ⋱     ⋮
-  // facets[k] = [-1,   -1,  ..., -1]    (padding, mixed-topology only)
-  // facets[max_vertices_per_facet] = [0, 1, ..., n]   (attached cell)
+  // 2) Build cell-facet records in type/cell/local-facet order. Sorted
+  //    vertex keys are stored column-major in facets_storage, with one
+  //    span per vertex column. Shorter facets are padded with -1.
+  //    facet_cell and optional facet_weight use the same record indices.
+  //    Sorting a permutation of these indices leaves all arrays in place.
 
   common::Timer timer1("Compute local part of mesh dual graph: 1");
 
@@ -802,9 +793,7 @@ mesh::build_local_dual_graph(
     std::iota(perm.begin(), perm.end(), 0);
     boost::sort::block_indirect_sort(
         perm.begin(), perm.end(),
-        // Compare only the vertex columns (`max_vertices_per_facet` of
-        // the `shape1` columns) -- the trailing column is the attached
-        // cell index, which the matching step below never compares on.
+        // Compare vertex keys only; attached cells and weights are payload.
         [facets = std::cref(facets), max_vertices_per_facet](auto f0, auto f1)
         {
           for (int col = 0; col < max_vertices_per_facet; ++col)
@@ -820,8 +809,7 @@ mesh::build_local_dual_graph(
   }
   else
   {
-    // Exclude the trailing cell-index column from the sort key, as
-    // above.
+    // Use all vertex columns as the sort key.
     std::vector<std::span<const std::int64_t>> sort_cols(
         facets.begin(), std::next(facets.begin(), max_vertices_per_facet));
     perm = dolfinx::sort_by_perm(std::span(sort_cols));
@@ -831,13 +819,12 @@ mesh::build_local_dual_graph(
   timer3.flush();
 
   // 4) Iterate over sorted list of facets. Facets shared by more than
-  //    one cell lead to a graph edge to be added. Facets that are not
-  //    shared are stored as these might be shared by a cell on another
-  //    process.
+  //    one cell lead to graph edges. Facets below max_facet_to_cell_links
+  //    (or all facets when no bound is given) are also retained for matching
+  //    against cells on other processes.
   common::Timer timer4("Compute local part of mesh dual graph: 4");
 
-  // Column-major accessors: vertex column `col` of facet `idx`, and the
-  // attached cell index (the last column) of facet `idx`.
+  // Vertex column `col` of cell-facet record `idx`.
   auto facet_vertex
       = [&facets](std::size_t idx, int col) { return facets[col][idx]; };
 
