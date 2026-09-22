@@ -13,6 +13,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -243,7 +244,10 @@ constexpr bool bbox_in_bbox(std::span<const T, 6> a, std::span<const T, 6> b)
 template <std::floating_point T>
 struct ClosestEntityScratch
 {
-  std::vector<T> nodes; ///< Entity geometry dof coordinates, resized as needed
+  std::vector<T> nodes; ///< Entity geometry dof coordinates. Sized once to
+                        ///< the largest coordinate element in the mesh; only
+                        ///< the leading `3 * num_nodes` entries are used for
+                        ///< a given entity.
   const fem::ElementDofLayout&
       cmap_dof_layout; ///< Coordinate-element dof layout
 };
@@ -272,7 +276,7 @@ T squared_distance_entity(const mesh::Mesh<T>& mesh, int dim,
   {
     assert(entity >= 0);
     auto dofs = md::submdspan(x_dofmap, entity, md::full_extent);
-    scratch.nodes.resize(3 * dofs.size());
+    assert(3 * dofs.size() <= scratch.nodes.size());
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
       const std::int32_t pos = 3 * dofs[i];
@@ -280,7 +284,8 @@ T squared_distance_entity(const mesh::Mesh<T>& mesh, int dim,
         scratch.nodes[3 * i + j] = geom_dofs[pos + j];
     }
 
-    d = compute_distance_gjk<T>(point, scratch.nodes);
+    d = compute_distance_gjk<T>(
+        point, std::span<const T>(scratch.nodes.data(), 3 * dofs.size()));
   }
   else
   {
@@ -306,7 +311,7 @@ T squared_distance_entity(const mesh::Mesh<T>& mesh, int dim,
     auto dofs = md::submdspan(x_dofmap, c, md::full_extent);
     const std::vector<int>& entity_dofs
         = scratch.cmap_dof_layout.entity_closure_dofs(dim, local_cell_entity);
-    scratch.nodes.resize(3 * entity_dofs.size());
+    assert(3 * entity_dofs.size() <= scratch.nodes.size());
     for (std::size_t i = 0; i < entity_dofs.size(); i++)
     {
       const std::int32_t pos = 3 * dofs[entity_dofs[i]];
@@ -314,7 +319,9 @@ T squared_distance_entity(const mesh::Mesh<T>& mesh, int dim,
         scratch.nodes[3 * i + j] = geom_dofs[pos + j];
     }
 
-    d = compute_distance_gjk<T>(point, scratch.nodes);
+    d = compute_distance_gjk<T>(
+        point,
+        std::span<const T>(scratch.nodes.data(), 3 * entity_dofs.size()));
   }
 
   return d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
@@ -675,7 +682,15 @@ compute_closest_entity(const BoundingBoxTree<T>& tree,
 
   const fem::ElementDofLayout cmap_dof_layout
       = mesh.geometry().cmaps().front().create_dof_layout();
-  impl::ClosestEntityScratch<T> scratch{{}, cmap_dof_layout};
+
+  // Scratch buffer sized for the largest coordinate element, to avoid
+  // repeated resizing in the closest-entity search (mixed topology may
+  // have more than one coordinate element).
+  std::size_t max_nodes = 0;
+  for (const fem::CoordinateElement<T>& cmap : mesh.geometry().cmaps())
+    max_nodes = std::max(max_nodes, static_cast<std::size_t>(cmap.dim()));
+  impl::ClosestEntityScratch<T> scratch{std::vector<T>(3 * max_nodes),
+                                        cmap_dof_layout};
   for (std::size_t i = 0; i < points.size() / 3; ++i)
   {
     // Use midpoint tree to find initial closest entity to the point.

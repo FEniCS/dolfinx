@@ -551,9 +551,9 @@ void assemble_vector(
         = element->template dof_transformation_fn<T>(doftransform::standard);
 
     std::span<const std::uint32_t> cell_info0;
-    if (element->needs_dof_transformations() or L.needs_facet_permutations())
+    if (element->needs_dof_transformations())
     {
-      mesh0->topology_mutable()->create_entity_permutations();
+      mesh0->topology_mutable()->create_cell_permutations();
       cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
     }
 
@@ -593,14 +593,9 @@ void assemble_vector(
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
     if (L.needs_facet_permutations())
     {
-      mesh::CellType cell_type = mesh->topology()->cell_types()[cell_type_idx];
-      int num_facets_per_cell
-          = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
-      mesh->topology_mutable()->create_entity_permutations();
-      const std::vector<std::uint8_t>& p
-          = mesh->topology()->get_facet_permutations();
-      facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
-                               num_facets_per_cell);
+      facet_perms = impl::entity_permutations(
+          *mesh->topology_mutable(), IntegralType::interior_facet,
+          mesh->topology()->cell_types()[0]);
     }
 
     using mdspanx2_t
@@ -656,12 +651,21 @@ void assemble_vector(
     for (auto itg_type : {fem::IntegralType::exterior_facet,
                           fem::IntegralType::vertex, fem::IntegralType::ridge})
     {
-      md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
-          = (itg_type == fem::IntegralType::exterior_facet)
-                ? facet_perms
-                : md::mdspan<const std::uint8_t,
-                             md::dextents<std::size_t, 2>>{};
-      for (int i = 0; i < L.num_integrals(itg_type, 0); ++i)
+      const int num_itg = L.num_integrals(itg_type, 0);
+      if (num_itg == 0)
+        continue;
+
+      // Each integral type is over entities of a different
+      // codimension, so only the permutations this form actually
+      // integrates over are computed.
+      md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
+      if (L.needs_facet_permutations())
+      {
+        perms = impl::entity_permutations(*mesh->topology_mutable(), itg_type,
+                                          mesh->topology()->cell_types()[0]);
+      }
+
+      for (int i = 0; i < num_itg; ++i)
       {
         auto fn = L.kernel(itg_type, i, 0);
         assert(fn);

@@ -124,7 +124,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   std::span<const std::uint32_t> cell_info;
   if (e1->needs_dof_transformations() or e0->needs_dof_transformations())
   {
-    mesh->topology_mutable()->create_entity_permutations();
+    mesh->topology_mutable()->create_cell_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
@@ -327,7 +327,7 @@ void discrete_gradient(mesh::Topology& topology,
       doftransform::inverse_transpose, false);
 
   // Generate cell permutations
-  topology.create_entity_permutations();
+  topology.create_cell_permutations();
   const std::vector<std::uint32_t>& cell_info
       = topology.get_cell_permutation_info();
 
@@ -399,7 +399,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   std::span<const std::uint32_t> cell_info;
   if (e1->needs_dof_transformations() or e0->needs_dof_transformations())
   {
-    mesh->topology_mutable()->create_entity_permutations();
+    mesh->topology_mutable()->create_cell_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 

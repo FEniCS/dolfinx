@@ -10,6 +10,7 @@
 #ifdef HAS_PETSC
 
 #include "Vector.h"
+#include <array>
 #include <cassert>
 #include <cstdint>
 #include <dolfinx/common/petsc.h>
@@ -120,6 +121,14 @@ void scatter_local_vectors(
 
 /// @brief Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
+///
+/// @note `MAT_IGNORE_ZERO_ENTRIES` skips exact-zero insertions. Enable it
+/// before assembly to reduce storage only if the matrix is assembled
+/// once. For re-assembly, enable it after the first full assembly so
+/// initially zero entries remain in the sparsity pattern. Otherwise, a
+/// later non-zero insertion can fail because
+/// `MAT_NEW_NONZERO_ALLOCATION_ERR` is set.
+///
 /// @param[in] comm The MPI communicator
 /// @param[in] sp The sparsity pattern that determines the layout and
 /// non-zero structure of the matrix

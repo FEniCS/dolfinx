@@ -386,9 +386,9 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
   if (element1->needs_dof_transformations()
       or element0->needs_dof_transformations())
   {
-    mesh0->topology_mutable()->create_entity_permutations();
+    mesh0->topology_mutable()->create_cell_permutations();
     cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
-    mesh1->topology_mutable()->create_entity_permutations();
+    mesh1->topology_mutable()->create_cell_permutations();
     cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
   }
 
@@ -490,9 +490,9 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   if (element1->needs_dof_transformations()
       or element0->needs_dof_transformations())
   {
-    mesh0->topology_mutable()->create_entity_permutations();
+    mesh0->topology_mutable()->create_cell_permutations();
     cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
-    mesh1->topology_mutable()->create_entity_permutations();
+    mesh1->topology_mutable()->create_cell_permutations();
     cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
   }
 
@@ -1196,7 +1196,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
-    mesh->topology_mutable()->create_entity_permutations();
+    mesh->topology_mutable()->create_cell_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
