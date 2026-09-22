@@ -6,41 +6,62 @@ target_compile_features(dolfinx PUBLIC cxx_std_20)
 set_target_properties(dolfinx PROPERTIES CXX_EXTENSIONS OFF)
 
 # ------------------------------------------------------------------------------
-# Add source files to the target
-set(
-  DOLFINX_DIRS
-  common
-  fem
-  geometry
-  graph
-  io
-  la
-  mesh
-  nls
-  refinement
-)
-
-# Add source to dolfinx target, and get sets of header files
-foreach(DIR ${DOLFINX_DIRS})
-  add_subdirectory(${DIR})
-endforeach()
-
-# Set target include location (for build and installed)
-target_include_directories(
-  dolfinx
-  PUBLIC
-    $<INSTALL_INTERFACE:include>
-    "$<BUILD_INTERFACE:${DOLFINX_SOURCE_DIR};${DOLFINX_SOURCE_DIR}/dolfinx>"
-)
-
-# ------------------------------------------------------------------------------
 # Configure the common/version.h file
-
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/common/version.h.in
   common/version.h
   @ONLY
 )
+
+# ------------------------------------------------------------------------------
+# Declare the header file sets
+#
+# The base directories of a file set are added to the build interface and
+# mapped onto the install DESTINATION given in install(TARGETS) below, so
+# include directories do not have to be maintained separately.
+#
+# Three sets are needed because the base directories of a single set may
+# not be sub-directories of one another, and the build tree is allowed to
+# sit inside the source tree. Base directories of *different* sets may
+# nest, which is what keeps this legal for an in-source build directory.
+#
+# Sub-directories append to the main set with
+# target_sources(dolfinx PUBLIC FILE_SET HEADERS FILES ...).
+target_sources(dolfinx PUBLIC FILE_SET HEADERS BASE_DIRS ${DOLFINX_SOURCE_DIR})
+
+# Generated headers, so that <dolfinx/common/version.h> resolves in the
+# build tree for the library and for anything linking to it.
+target_sources(
+  dolfinx
+  PUBLIC
+    FILE_SET generated_headers
+      TYPE HEADERS
+      BASE_DIRS ${PROJECT_BINARY_DIR}
+      FILES ${CMAKE_CURRENT_BINARY_DIR}/common/version.h
+)
+
+# The umbrella <dolfinx.h> sits at the root of the include directory rather
+# than in dolfinx/, so it needs its own base directory too.
+target_sources(
+  dolfinx
+  PUBLIC
+    FILE_SET umbrella_header
+      TYPE HEADERS
+      BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+      FILES dolfinx.h
+)
+
+# ------------------------------------------------------------------------------
+# Add sources and headers to the target
+add_subdirectory(common)
+add_subdirectory(fem)
+add_subdirectory(geometry)
+add_subdirectory(graph)
+add_subdirectory(io)
+add_subdirectory(la)
+add_subdirectory(mesh)
+add_subdirectory(nls)
+add_subdirectory(refinement)
 
 # ------------------------------------------------------------------------------
 # Set target properties
@@ -51,16 +72,6 @@ set_target_properties(
     SOVERSION ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR}
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
-
-if(ENABLE_CLANG_TIDY)
-  find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
-  set_target_properties(
-    dolfinx
-    PROPERTIES
-      CXX_CLANG_TIDY
-        "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy"
-  )
-endif()
 
 # Add git revision and UFCx signature
 target_compile_definitions(
@@ -133,8 +144,7 @@ target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 # Optional packages
 
 # ADIOS2
-if(ADIOS2_FOUND)
-  target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
+if(_DOLFINX_USE_ADIOS2 AND ADIOS2_FOUND)
   # ADIOS2 2.11 and later
   if(TARGET adios2::cxx_mpi)
     set(_adios2_mpi_target adios2::cxx_mpi)
@@ -145,22 +155,23 @@ if(ADIOS2_FOUND)
     message(FATAL_ERROR "ADIOS2 found, but no adios2::cxx*_mpi target found.")
   endif()
   target_link_libraries(dolfinx PUBLIC ${_adios2_mpi_target})
+  target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
 endif()
 
 # PETSc
-if(DOLFINX_ENABLE_PETSC AND PETSC_FOUND)
+if(_DOLFINX_USE_PETSC AND TARGET PkgConfig::PETSC)
   target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)
   target_compile_definitions(dolfinx PUBLIC HAS_PETSC)
 endif()
 
 # SLEPC
-if(DOLFINX_ENABLE_SLEPC AND SLEPC_FOUND)
+if(_DOLFINX_USE_SLEPC AND TARGET PkgConfig::SLEPC)
   target_link_libraries(dolfinx PUBLIC PkgConfig::SLEPC)
   target_compile_definitions(dolfinx PUBLIC HAS_SLEPC)
 endif()
 
 # SCOTCH
-if(DOLFINX_ENABLE_SCOTCH AND SCOTCH_FOUND)
+if(_DOLFINX_USE_SCOTCH AND TARGET SCOTCH::ptscotch)
   target_compile_definitions(dolfinx PUBLIC HAS_PTSCOTCH)
   target_link_libraries(dolfinx PRIVATE SCOTCH::ptscotch)
   if(TARGET SCOTCH::scotcherr)
@@ -169,19 +180,19 @@ if(DOLFINX_ENABLE_SCOTCH AND SCOTCH_FOUND)
 endif()
 
 # ParMETIS
-if(DOLFINX_ENABLE_PARMETIS AND ParMETIS_FOUND)
+if(_DOLFINX_USE_PARMETIS AND TARGET ParMETIS::ParMETIS)
   target_compile_definitions(dolfinx PUBLIC HAS_PARMETIS)
   target_link_libraries(dolfinx PRIVATE ParMETIS::ParMETIS)
 endif()
 
 # KaHIP
-if(DOLFINX_ENABLE_KAHIP AND KaHIP_FOUND)
+if(_DOLFINX_USE_KAHIP AND TARGET KaHIP::KaHIP)
   target_compile_definitions(dolfinx PUBLIC HAS_KAHIP)
   target_link_libraries(dolfinx PRIVATE KaHIP::KaHIP)
 endif()
 
 # SuperLU_DIST
-if(DOLFINX_ENABLE_SUPERLU_DIST AND SUPERLU_DIST_FOUND)
+if(_DOLFINX_USE_SUPERLU_DIST AND TARGET PkgConfig::SUPERLU_DIST)
   target_compile_definitions(dolfinx PUBLIC HAS_SUPERLU_DIST)
   target_link_libraries(dolfinx PRIVATE PkgConfig::SUPERLU_DIST)
 endif()
@@ -202,6 +213,13 @@ install(
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeExecutables
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
+  FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development
+  FILE_SET generated_headers
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    COMPONENT Development
+  FILE_SET umbrella_header
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    COMPONENT Development
 )
 
 if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
@@ -218,26 +236,6 @@ install(
   EXPORT DOLFINXTargets
   NAMESPACE dolfinx::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
-)
-
-# Install the header files
-install(
-  FILES dolfinx.h
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  COMPONENT Development
-)
-
-foreach(DIR ${DOLFINX_DIRS})
-  install(
-    FILES ${HEADERS_${DIR}}
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfinx/${DIR}
-    COMPONENT Development
-  )
-endforeach()
-
-install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/common/version.h
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfinx/common
   COMPONENT Development
 )
 
@@ -245,24 +243,28 @@ install(
 # Generate CMake config files (DOLFINXConfig{,Version}.cmake)
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-  ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
+  ${PROJECT_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
   VERSION ${DOLFINX_VERSION}
   COMPATIBILITY AnyNewerVersion
 )
 
 configure_package_config_file(
   ${DOLFINX_SOURCE_DIR}/cmake/templates/DOLFINXConfig.cmake.in
-  ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
+  ${PROJECT_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
 )
 
 # Install CMake helper files
 install(
   FILES
-    ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
-    ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
+    ${PROJECT_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
+    ${PROJECT_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/FindUFCx.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxDeveloperCompilerFlags.cmake
+    ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxDemo.cmake
+    ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxPkgConfigHelpers.cmake
+    ${DOLFINX_SOURCE_DIR}/cmake/modules/FindParMETIS.cmake
+    ${DOLFINX_SOURCE_DIR}/cmake/modules/FindKaHIP.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
   COMPONENT Development
 )
@@ -289,7 +291,7 @@ block(
     list(APPEND PKG_REQUIRES ${SUPERLU_DIST_MODULE_NAME})
   endif()
 
-  string(REPLACE ";" " " PKG_REQUIRES "${PKG_REQUIRES}")
+  list(JOIN PKG_REQUIRES " " PKG_REQUIRES)
 
   # Get link libraries and includes
   get_target_property(
@@ -311,40 +313,46 @@ block(
   # Add imported targets to lists for creating pkg-config file
   set(PKGCONFIG_DOLFINX_LIBS)
 
-  foreach(_target ${PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES})
-    if("${_target}" MATCHES "^[^<>]+$") # Skip "$<foo...>", which we get with
-      # static libs
-      if("${_target}" MATCHES "^.*::.*$")
-        # Get include paths
-        get_target_property(_inc_dirs ${_target} INTERFACE_INCLUDE_DIRECTORIES)
+  foreach(_target IN LISTS PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES)
+    # Skip "$<foo...>", which we get with static libs
+    if(NOT "${_target}" MATCHES "^[^<>]+$")
+      continue()
+    endif()
 
-        if(_inc_dirs)
-          list(APPEND PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES ${_inc_dirs})
-        endif()
-
-        # Get libraries
-        get_target_property(_libs ${_target} INTERFACE_LINK_LIBRARIES)
-
-        if(_libs)
-          list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
-        endif()
-
-      else()
-        # 'regular' libs, i.e. not imported targets
-        list(APPEND PKGCONFIG_DOLFINX_LIBS ${_target})
+    if("${_target}" MATCHES "::")
+      # Get include paths
+      get_target_property(_inc_dirs ${_target} INTERFACE_INCLUDE_DIRECTORIES)
+      if(_inc_dirs)
+        list(APPEND PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES ${_inc_dirs})
       endif()
 
-      # Special handling to extract data for compiled Boost imported
-      # targets to use in generate pkg-config file
-      if(
-        ("${_target}" MATCHES "^.*Boost::.*$")
-        AND NOT "${_target}" STREQUAL "Boost::headers"
-      )
-        get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
+      # Get libraries
+      get_target_property(_libs ${_target} INTERFACE_LINK_LIBRARIES)
+      if(_libs)
+        list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
+      endif()
+    else()
+      # 'regular' libs, i.e. not imported targets
+      list(APPEND PKGCONFIG_DOLFINX_LIBS ${_target})
+    endif()
 
-        if(_libs)
-          list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
-        endif()
+    # Compiled Boost, ADIOS2 and HDF5 imported targets carry the library
+    # in IMPORTED_LOCATION_RELEASE (or IMPORTED_LOCATION) rather than in
+    # INTERFACE_LINK_LIBRARIES.
+    if(
+      "${_target}" MATCHES "^(adios2|hdf5)::"
+      OR
+        (
+          "${_target}" MATCHES "^Boost::"
+          AND NOT "${_target}" STREQUAL "Boost::headers"
+        )
+    )
+      get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
+      if(NOT _libs)
+        get_target_property(_libs ${_target} IMPORTED_LOCATION)
+      endif()
+      if(_libs)
+        list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
       endif()
     endif()
   endforeach()
@@ -353,11 +361,12 @@ block(
   list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES)
   list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_LIBS)
 
-  # Convert include dirs to -I<incdir> form
-  set(PKG_INCLUDES)
-  foreach(_inc_dir ${PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES})
-    set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
-  endforeach()
+  # Convert include dirs to -I<incdir> form. Reversed only to keep the
+  # emitted flag order the same as the accumulating loop this replaced.
+  set(PKG_INCLUDES ${PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES})
+  list(REVERSE PKG_INCLUDES)
+  list(TRANSFORM PKG_INCLUDES PREPEND "-I")
+  list(JOIN PKG_INCLUDES " " PKG_INCLUDES)
 
   # Get dolfinx definitions
   get_target_property(
@@ -365,47 +374,27 @@ block(
     dolfinx
     INTERFACE_COMPILE_DEFINITIONS
   )
-  set(PKG_DEFINITIONS)
-
-  foreach(_def ${PKG_DOLFINX_DEFINITIONS})
-    set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
-  endforeach()
+  set(PKG_DEFINITIONS ${PKG_DOLFINX_DEFINITIONS})
+  list(TRANSFORM PKG_DEFINITIONS PREPEND "-D")
+  list(JOIN PKG_DEFINITIONS " " PKG_DEFINITIONS)
 
   # Convert compiler flags and definitions into space separated strings
   string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
   string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 
   # Convert libraries to -L<libdir> -l<lib> form
-  foreach(_lib ${PKGCONFIG_DOLFINX_LIBS})
+  foreach(_lib IN LISTS PKGCONFIG_DOLFINX_LIBS)
     # Add -Wl,option directives
     if("${_lib}" MATCHES "-Wl,[^ ]*")
-      set(PKG_LINKFLAGS "${_lib} ${PKG_LINKFLAGS}")
+      string(PREPEND PKG_LINKFLAGS "${_lib} ")
     else()
-      get_filename_component(_path ${_lib} DIRECTORY)
-      get_filename_component(_name ${_lib} NAME_WE)
-      string(REPLACE "lib" "" _name "${_name}")
+      cmake_path(GET _lib PARENT_PATH _path)
+      cmake_path(GET _lib STEM _name)
+      string(REGEX REPLACE "^lib" "" _name "${_name}")
 
       # Add libraries that matches the form -L<libdir> -l<lib>
       if(NOT "${_path}" STREQUAL "")
-        set(PKG_LINKFLAGS "-L${_path} -l${_name} ${PKG_LINKFLAGS}")
-      endif()
-    endif()
-
-    # Special handling for ADIOS2 and HDF5 imported targets which expose
-    # IMPORTED_LOCATION_RELEASE (or IMPORTED_LOCATION) rather than
-    # INTERFACE_LINK_LIBRARIES
-    if(
-      "${_target}" MATCHES "^.*adios2::.*$"
-      OR "${_target}" MATCHES "^.*hdf5::.*$"
-    )
-      get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
-
-      if(NOT _libs)
-        get_target_property(_libs ${_target} IMPORTED_LOCATION)
-      endif()
-
-      if(_libs)
-        list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
+        string(PREPEND PKG_LINKFLAGS "-L${_path} -l${_name} ")
       endif()
     endif()
   endforeach()
@@ -413,7 +402,7 @@ block(
   # Remove duplicated link flags
   separate_arguments(PKG_LINKFLAGS)
   list(REMOVE_DUPLICATES PKG_LINKFLAGS)
-  string(REPLACE ";" " " PKG_LINKFLAGS "${PKG_LINKFLAGS}")
+  list(JOIN PKG_LINKFLAGS " " PKG_LINKFLAGS)
 
   # Boost include dir (used as pkg-config variable)
   get_target_property(
@@ -426,11 +415,11 @@ endblock()
 # Configure and install pkg-config file
 configure_file(
   ${DOLFINX_SOURCE_DIR}/cmake/templates/dolfinx.pc.in
-  ${CMAKE_BINARY_DIR}/dolfinx.pc
+  ${PROJECT_BINARY_DIR}/dolfinx.pc
   @ONLY
 )
 install(
-  FILES ${CMAKE_BINARY_DIR}/dolfinx.pc
+  FILES ${PROJECT_BINARY_DIR}/dolfinx.pc
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
   COMPONENT Development
 )

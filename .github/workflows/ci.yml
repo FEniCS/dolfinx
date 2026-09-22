@@ -210,6 +210,33 @@ jobs:
           ctest --output-on-failure -R "demo_.*_np_1"
           ctest --output-on-failure -R "demo_.*_np_2"
 
+      # Only a static build puts the PRIVATE dependencies in the exported
+      # link interface, so only this exercises the find_dependency() calls
+      # DOLFINXConfig.cmake makes for them. One leg is enough; this one has
+      # ptscotch, parmetis and superlu-dist.
+      - name: Build and consume DOLFINx as a static library
+        if: >-
+          ${{ matrix.petsc && matrix.mpi == 'openmpi'
+          && matrix.scalar == 'float64' && matrix.index == 'int32' }}
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          spack load cmake ninja py-fenics-ffcx
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer \
+            -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=$PWD/static-install \
+            -B build/static -S dolfinx-src/cpp/
+          cmake --build build/static
+          cmake --install build/static
+          # Fail loudly if BUILD_SHARED_LIBS was ignored.
+          test -n "$(find static-install -name libdolfinx.a -print -quit)"
+          # Configuring the consumer is the actual test.
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer \
+            -DCMAKE_PREFIX_PATH=$PWD/static-install \
+            -B build/static-demo -S static-install/share/dolfinx/demo/poisson
+          cmake --build build/static-demo
+          cd build/static-demo
+          ctest --output-on-failure -R demo_poisson_np_1
+
       # Guard against a mis-specified variant silently building PETSc into
       # the PETSc-free leg, which would make it test nothing new.
       - name: Check PETSc configuration matches the matrix
