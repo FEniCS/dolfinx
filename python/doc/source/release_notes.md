@@ -7,8 +7,9 @@
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
 
 {py:class}`dolfinx.fem.Expression` may now be evaluated on the ridges of a mesh, i.e. its
-codimension-2 entities (the edges of a 3D mesh), by giving evaluation points
-on the reference interval. As for facets, the entities are passed to
+codimension-2 entities, by giving evaluation points on the reference cell of
+a ridge: the reference interval for the edges of a 3D mesh, and a points
+array with zero columns for the vertices of a 2D mesh. As for facets, the entities are passed to
 {py:func}`dolfinx.fem.Expression.eval` as `(cell, local entity index)` pairs, and a coefficient
 may live on a submesh of the entities being evaluated over.
 
