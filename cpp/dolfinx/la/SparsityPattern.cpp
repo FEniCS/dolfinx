@@ -85,6 +85,45 @@ transpose_blocks(std::span<const std::int32_t> rows,
 
   return {std::move(block_offsets), std::move(block_ids)};
 }
+
+/// @brief As transpose_blocks, but for blocks that all hold `bs` row
+/// indices, so that block `b` occupies `rows[b * bs : (b + 1) * bs]`.
+/// @param[in] rows Row indices of all blocks, concatenated.
+/// @param[in] bs Number of row indices in each block.
+/// @param[in] num_rows Number of rows to group by.
+/// @return Row offsets (size `num_rows + 1`) and block indices grouped
+/// by row, or two empty vectors if the cache holds no blocks.
+std::pair<std::vector<std::int64_t>, std::vector<std::int32_t>>
+transpose_blocks_uniform(std::span<const std::int32_t> rows, std::int32_t bs,
+                         std::int32_t num_rows)
+{
+  if (rows.empty())
+    return {};
+
+  assert(bs > 0);
+  const std::size_t nblocks = rows.size() / bs;
+  assert(nblocks
+         <= static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()));
+
+  std::vector<std::int64_t> block_offsets(num_rows + 1, 0);
+  for (std::int32_t row : rows)
+    ++block_offsets[row + 1];
+  std::partial_sum(block_offsets.begin(), block_offsets.end(),
+                   block_offsets.begin());
+
+  // The block index is tracked by a counter rather than computed as
+  // i / bs, which would be a runtime integer division per entry.
+  std::vector<std::int32_t> block_ids(block_offsets.back());
+  std::vector<std::int64_t> pos(block_offsets.begin(),
+                                std::prev(block_offsets.end()));
+  for (std::size_t b = 0, i = 0; b < nblocks; ++b)
+  {
+    for (std::int32_t k = 0; k < bs; ++k, ++i)
+      block_ids[pos[rows[i]]++] = static_cast<std::int32_t>(b);
+  }
+
+  return {std::move(block_offsets), std::move(block_ids)};
+}
 } // namespace
 
 std::pair<std::vector<std::int64_t>, std::vector<std::int32_t>>
@@ -96,7 +135,9 @@ SparsityPattern::bucket_cache(std::int32_t num_rows,
   const auto [block_offsets, block_ids]
       = transpose_blocks(_cache_brows, _cache_boffs_r, num_rows);
   const auto [sblock_offsets, sblock_ids]
-      = transpose_blocks(_cache_srows, _cache_soffs, num_rows);
+      = _cache_sbs > 0
+            ? transpose_blocks_uniform(_cache_srows, _cache_sbs, num_rows)
+            : transpose_blocks(_cache_srows, _cache_soffs, num_rows);
 
   const auto [pair_offsets, pair_cols]
       = bucket_by_row(_cache_rows, _cache_cols, num_rows);
@@ -137,7 +178,26 @@ SparsityPattern::bucket_cache(std::int32_t num_rows,
         }
       }
     }
-    if (has_sblocks)
+    if (has_sblocks and _cache_sbs > 0)
+    {
+      // Blocks of a single width: no offsets to load, and the inner
+      // trip count is the same for every block
+      const std::int64_t bs = _cache_sbs;
+      for (std::int64_t k = sblock_offsets[row]; k < sblock_offsets[row + 1];
+           ++k)
+      {
+        const std::int64_t begin = bs * sblock_ids[k];
+        for (std::int64_t i = begin; i < begin + bs; ++i)
+        {
+          if (std::int32_t col = _cache_srows[i]; last_seen[col] != row)
+          {
+            last_seen[col] = row;
+            bucketed.push_back(col);
+          }
+        }
+      }
+    }
+    else if (has_sblocks)
     {
       for (std::int64_t k = sblock_offsets[row]; k < sblock_offsets[row + 1];
            ++k)
@@ -315,14 +375,22 @@ void SparsityPattern::reserve_blocks(std::size_t num_blocks,
   }
 
   // Which of the two block caches the blocks land in is only known once
-  // insert() sees the spans, so reserve both. The unused one is never
-  // written to, so it costs address space rather than resident pages.
-  _cache_brows.reserve(_cache_brows.size() + num_rows);
-  _cache_bcols.reserve(_cache_bcols.size() + num_cols);
-  _cache_boffs_r.reserve(_cache_boffs_r.size() + num_blocks);
-  _cache_boffs_c.reserve(_cache_boffs_c.size() + num_blocks);
-  _cache_srows.reserve(_cache_srows.size() + num_rows);
-  _cache_soffs.reserve(_cache_soffs.size() + num_blocks);
+  // insert() sees the spans. Reserving both maps around 2.5x the cache
+  // that is actually filled, which costs more than the untouched pages
+  // suggest, so hold the request and let insert() apply it to the
+  // cache it uses.
+  _reserve = {_reserve[0] + num_blocks, _reserve[1] + num_rows,
+              _reserve[2] + num_cols};
+}
+//-----------------------------------------------------------------------------
+void SparsityPattern::expand_square_offsets()
+{
+  assert(_cache_sbs > 0);
+  const std::size_t nblocks = _cache_srows.size() / _cache_sbs;
+  _cache_soffs.resize(nblocks + 1);
+  for (std::size_t b = 0; b <= nblocks; ++b)
+    _cache_soffs[b] = static_cast<std::int64_t>(b) * _cache_sbs;
+  _cache_sbs = -1;
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(std::int32_t row, std::int32_t col)
@@ -358,11 +426,33 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
   {
     // Same index list for rows and columns, e.g. a cell block for a
     // form whose test and trial dofmaps coincide. Cache it once.
+    if (_reserve[0] > 0)
+    {
+      _cache_srows.reserve(_cache_srows.size() + _reserve[1]);
+      _reserve = {0, 0, 0};
+    }
+
+    const std::int32_t bs = static_cast<std::int32_t>(rows.size());
+    if (_cache_sbs == 0)
+      _cache_sbs = bs;
+    else if (_cache_sbs > 0 and _cache_sbs != bs)
+      expand_square_offsets();
+
     _cache_srows.insert(_cache_srows.end(), rows.begin(), rows.end());
-    _cache_soffs.push_back(static_cast<std::int64_t>(_cache_srows.size()));
+    if (_cache_sbs < 0)
+      _cache_soffs.push_back(static_cast<std::int64_t>(_cache_srows.size()));
   }
   else
   {
+    if (_reserve[0] > 0)
+    {
+      _cache_brows.reserve(_cache_brows.size() + _reserve[1]);
+      _cache_bcols.reserve(_cache_bcols.size() + _reserve[2]);
+      _cache_boffs_r.reserve(_cache_boffs_r.size() + _reserve[0]);
+      _cache_boffs_c.reserve(_cache_boffs_c.size() + _reserve[0]);
+      _reserve = {0, 0, 0};
+    }
+
     _cache_brows.insert(_cache_brows.end(), rows.begin(), rows.end());
     _cache_bcols.insert(_cache_bcols.end(), cols.begin(), cols.end());
     _cache_boffs_r.push_back(static_cast<std::int64_t>(_cache_brows.size()));
@@ -441,9 +531,11 @@ void SparsityPattern::finalize()
   std::vector<std::int64_t>().swap(_cache_boffs_c);
   std::vector<std::int32_t>().swap(_cache_srows);
   std::vector<std::int64_t>().swap(_cache_soffs);
+  _cache_sbs = 0;
   std::vector<std::int32_t>().swap(_cache_rows);
   std::vector<std::int32_t>().swap(_cache_cols);
   std::vector<std::int32_t>().swap(_cache_diag);
+  _reserve = {0, 0, 0};
 
   // Exchange ghost-row entries and bucket the received entries. Keep all
   // communication and mapping work arrays scoped so they are released before

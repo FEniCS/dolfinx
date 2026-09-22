@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <memory>
 #include <span>
@@ -71,6 +72,9 @@ public:
   /// Blocks are cached in the form they are inserted in, so the number
   /// of calls and the total number of row and column indices are needed
   /// rather than the number of (row, column) entries.
+  ///
+  /// @note The request is applied by the next `insert(rows, cols)`
+  /// call, the first point at which the cache it belongs to is known.
   ///
   /// @param[in] num_blocks Number of `insert(rows, cols)` calls.
   /// @param[in] num_rows Total number of row indices over those calls.
@@ -196,8 +200,14 @@ private:
   // are the same span, which is the case whenever the test and trial
   // dofmaps and the cells indexing them coincide. Only the row list is
   // stored, halving both the copy in insert() and the cached bytes.
+  //
+  // _cache_sbs is the width shared by every cached square block, 0 if
+  // none are cached and -1 if they differ. Cell integrals give blocks
+  // of a single width, which are indexed by stride, so _cache_soffs
+  // stays empty until a block of a different width arrives.
   std::vector<std::int32_t> _cache_srows;
-  std::vector<std::int64_t> _cache_soffs{0};
+  std::int32_t _cache_sbs = 0;
+  std::vector<std::int64_t> _cache_soffs;
 
   // Cache of individually inserted (row, column) pairs (row-major COO)
   std::vector<std::int32_t> _cache_rows;
@@ -205,6 +215,17 @@ private:
 
   // Rows with a cached diagonal entry, from insert_diagonal
   std::vector<std::int32_t> _cache_diag;
+
+  // Pending reserve_blocks request, as {number of blocks, total row
+  // indices, total column indices}. Which of the two block caches the
+  // blocks land in is only known once insert() sees the spans, and
+  // reserving both maps around 2.5x what is used, so the request is
+  // held here until then.
+  std::array<std::size_t, 3> _reserve{0, 0, 0};
+
+  /// @brief Replace the implied stride of the square block cache with
+  /// explicit offsets, so that blocks of a different width can follow.
+  void expand_square_offsets();
 
   /// @brief Expand every cached entry and group the columns by row.
   /// @param[in] num_rows Number of rows to bucket into.
