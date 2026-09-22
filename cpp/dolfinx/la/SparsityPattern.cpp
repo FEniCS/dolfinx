@@ -432,7 +432,15 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
       _reserve = {0, 0, 0};
     }
 
+    // An empty block adds no entries, but caching it is not free: it
+    // would count as a block of a different width and drop the square
+    // cache from stride indexing to explicit offsets.
+    // sparsitybuild::interior_facets passes an empty list for a facet
+    // with no cell on one side, so this is a live path.
     const std::int32_t bs = static_cast<std::int32_t>(rows.size());
+    if (bs == 0)
+      return;
+
     if (_cache_sbs == 0)
       _cache_sbs = bs;
     else if (_cache_sbs > 0 and _cache_sbs != bs)
