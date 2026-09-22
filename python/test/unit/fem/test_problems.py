@@ -85,3 +85,8 @@ def test_superlu_problem_default_args():
     # Check that no optional arguments leads to successful solve
     problem = LinearProblem(a, L)
     _ = problem.solve()
+
+    # The solution and work vectors share one scatterer
+    sc = problem.u.x.scatterer._cpp_object
+    assert problem.x.scatterer._cpp_object is sc
+    assert problem.b.scatterer._cpp_object is sc

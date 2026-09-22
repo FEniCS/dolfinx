@@ -568,9 +568,12 @@ void declare_objects(nb::module_& m, std::string type)
   nb::class_<dolfinx::fem::Function<T, U>>(m, pyclass_name_function.c_str(),
                                            "A finite element function")
       .def(nb::init<std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>>(),
-           "Create a function on the given function space")
+           nb::arg("V"), "Create a function on the given function space")
       .def(nb::init<std::shared_ptr<dolfinx::fem::FunctionSpace<U>>,
-                    std::shared_ptr<dolfinx::la::Vector<T>>>())
+                    std::shared_ptr<dolfinx::la::Vector<T>>>(),
+           nb::arg("V"), nb::arg("x"),
+           "Create a function on the given function space using an "
+           "existing degree-of-freedom vector")
       .def_rw("name", &dolfinx::fem::Function<T, U>::name)
       .def("sub", &dolfinx::fem::Function<T, U>::sub,
            "Return sub-function (view into parent Function")

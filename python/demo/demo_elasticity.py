@@ -33,7 +33,7 @@ from petsc4py import PETSc
 import numpy as np
 
 import ufl
-from dolfinx import la
+from dolfinx import common, la
 from dolfinx.fem import (
     Expression,
     Function,
@@ -71,10 +71,12 @@ dtype = PETSc.ScalarType
 
 def build_nullspace(V: FunctionSpace):
     """Build PETSc nullspace for 3D elasticity."""
-    # Create vectors that will span the nullspace
+    # Create vectors that will span the nullspace. The vectors share one
+    # scatterer, so only one set of MPI communicators is created.
     bs = V.dofmap.index_map_bs
     length0 = V.dofmap.index_map.size_local
-    basis = [la.vector(V.dofmap.index_map, bs=bs, dtype=dtype) for i in range(6)]
+    sc = common.scatterer(V.dofmap.index_map)
+    basis = [la.vector(V.dofmap.index_map, bs=bs, scatterer=sc, dtype=dtype) for i in range(6)]
     b = [b.array for b in basis]
 
     # Get dof indices for each subspace (x, y and z dofs)

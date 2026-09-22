@@ -41,6 +41,13 @@ namespace dolfinx::common
 /// is not collective, but move assignment is, since it frees the
 /// communicators held by the assignment target.
 ///
+/// A Scatterer holds no block size, so one Scatterer serves data of any
+/// block size and scalar type on its IndexMap. It is intended to be
+/// shared (via `std::shared_ptr`) by all objects with the same parallel
+/// layout, e.g. la::Vector, rather than created per object: each
+/// Scatterer duplicates MPI communicators, of which a finite number are
+/// available.
+///
 /// A forward scatter sends data associated with owned/local indices
 /// to the ranks that ghost them; a reverse scatter sends ghost data
 /// back to the owning ranks, to be accumulated into the owned data.
