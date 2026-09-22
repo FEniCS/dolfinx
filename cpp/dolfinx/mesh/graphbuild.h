@@ -47,7 +47,7 @@ enum class CellType : std::int8_t;
 /// 5. Edge weights for the dual graph, one entry per edge in (1).
 ///   If `facet_weights` is not provided, this is empty.
 /// 6. Unmatched facet weights, one entry per facet in (2),
-///   if `facet_weights` is provided. Otherwise empt
+///   if `facet_weights` is provided. Otherwise empty.
 ///
 
 /// Each row of the returned data (2) contains `[v0, ... v_(n-1), x, ..,
