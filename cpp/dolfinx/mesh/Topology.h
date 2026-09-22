@@ -7,16 +7,16 @@
 #pragma once
 
 #include <array>
-#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <span>
-#include <thread>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -156,23 +156,33 @@ public:
   connectivity(int d0, int d1) const;
 
   /// @brief Get the cell permutation information.
+  /// @throws std::runtime_error If create_entity_permutations has not
+  /// been called.
+  /// @throws std::out_of_range If there is more than one cell type
+  /// (see Topology::index_map).
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
-  /// @brief Get the numbers that encode the number of permutations to
-  /// apply to facets.
+  /// @brief Get the numbers that encode the permutation to apply to
+  /// each cell-local entity of a given dimension.
   ///
   /// The permutations are encoded so that:
   ///
   ///   - `n % 2` gives the number of reflections to apply
   ///   - `n // 2` gives the number of rotations to apply
   ///
-  /// The data is stored in a flattened 2D array, so that `data[cell_index *
-  /// facets_per_cell + facet_index]` contains the facet with index
-  /// `facet_index` of the cell with index `cell_index`.
-  /// @return The encoded permutation info
-  /// @note An exception is raised if the permutations have not been
-  /// computed
-  const std::vector<std::uint8_t>& get_facet_permutations() const;
+  /// The data is stored in a flattened 2D array, so that
+  /// `data[cell_index * entities_per_cell + entity_index]` contains
+  /// the permutation of the cell-local entity `entity_index` of cell
+  /// with local index `cell_index`.
+  ///
+  /// @param[in] dim Topological dimension of the entities. Vertices
+  /// have no orientation, so their permutations are empty.
+  /// @return The encoded permutation info.
+  /// @throws std::runtime_error If create_entity_permutations has not
+  /// been called for `dim`.
+  /// @throws std::out_of_range If there is more than one facet type
+  /// (see Topology::index_map).
+  const std::vector<std::uint8_t>& get_entity_permutations(int dim) const;
 
   /// @brief Get the types of cells in the topology
   /// @return The cell types
@@ -225,8 +235,47 @@ public:
   ///
   /// @note Collective.
   ///
+  /// A permutation records how an entity is oriented as seen from a
+  /// cell, relative to a low-to-high ordering of the entity's global
+  /// vertex indices. It is passed to FFCx kernels as
+  /// `quadrature_permutation`, so that cells sharing an entity agree on
+  /// the order of the quadrature points on it. Which dimension is
+  /// needed is a property of the integral, not of the element: an
+  /// interior facet integral needs `dim() - 1`, a ridge integral
+  /// `dim() - 2`.
+  ///
+  /// Does nothing if the permutations for `dim` have already been
+  /// computed.
+  ///
+  /// @param[in] dim Topological dimension of the entities, e.g.
+  /// `dim() - 1` for facets. Must satisfy `0 <= dim < dim()`. Vertices
+  /// have no orientation, so their permutations are empty.
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
-  void create_entity_permutations(int num_threads = 1);
+  /// @see create_cell_permutations, which packs the orientations of all
+  /// of a cell's sub-entities into one integer per cell, for correcting
+  /// element DOFs rather than quadrature points.
+  void create_entity_permutations(int dim, int num_threads = 1);
+
+  /// @brief Compute the packed per-cell permutation info.
+  ///
+  /// Encodes, for each cell, the orientation of every sub-entity of
+  /// that cell relative to a low-to-high ordering of global vertex
+  /// indices, packed into one 32-bit integer per cell. See
+  /// ::get_cell_permutation_info for the bit layout.
+  ///
+  /// Required by elements whose DOF transformations are not the
+  /// identity. Where those transformations are permutations, e.g.
+  /// higher-order Lagrange, the correction is applied once to the
+  /// dofmap when it is built; otherwise, e.g. N1curl and
+  /// Raviart-Thomas, the correction is applied to the element tensor on
+  /// each cell at assembly time.
+  ///
+  /// Does nothing if the cell permutations have already been computed.
+  ///
+  /// @param[in] num_threads Number of threads to use. Must be >= 1.
+  /// @see create_entity_permutations, which gives the orientations of
+  /// one entity dimension unpacked, for permuting quadrature points.
+  void create_cell_permutations(int num_threads = 1);
 
   /// Original cell index for each cell type
   std::vector<std::vector<std::int64_t>> original_cell_index;
@@ -253,10 +302,13 @@ private:
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>>
       _connectivity;
 
-  // The facet permutations (local facet, cell)
+  // Entity permutations by entity dimension, each (local entity, cell)
   // [cell0_0, cell0_1, cell0_2, cell1_0, cell1_1, cell1_2, ...,
-  // celln_0, celln_1, celln_2]
-  std::vector<std::uint8_t> _facet_permutations;
+  // celln_0, celln_1, celln_2]. Only sub-entities of a cell are stored,
+  // so the dimension is at most 2. Unset until computed, which an empty
+  // permutation vector (vertices, or a rank with no cells) does not
+  // indicate.
+  std::array<std::optional<std::vector<std::uint8_t>>, 3> _entity_permutations;
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.

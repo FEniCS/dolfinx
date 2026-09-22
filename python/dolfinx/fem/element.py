@@ -1,4 +1,5 @@
-# Copyright (C) 2024 Garth N. Wells and Paul T. Kühner
+# Copyright (C) 2024-2026 Garth N. Wells, Paul T. Kühner and
+# Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -213,6 +214,17 @@ class CoordinateElement(Generic[Real]):
         """Polynomial degree of the coordinate element."""
         return self._cpp_object.degree
 
+    @property
+    def is_discontinuous(self) -> bool:
+        """Whether the element is the discontinuous version of the element.
+
+        A discontinuous coordinate element associates all of its
+        degrees-of-freedom with the cell, so coordinate nodes are not
+        shared between cells and the geometry may be discontinuous
+        across cell facets.
+        """
+        return self._cpp_object.is_discontinuous
+
     def pull_back_working_size(self, gdim: int) -> int:
         """Compute the working array size required for pull back.
 
@@ -231,6 +243,7 @@ def coordinate_element(
     degree: int,
     variant: int = int(basix.LagrangeVariant.unset),
     dtype: npt.DTypeLike = np.float64,
+    discontinuous: bool = False,
 ) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from element metadata.
 
@@ -241,12 +254,13 @@ def coordinate_element(
         degree: Polynomial degree of the coordinate element map.
         variant: Basix Lagrange variant (affects node placement).
         dtype: Scalar type for the coordinate element.
+        discontinuous: Continuity of the coordinate element.
 
     Returns:
         A coordinate element.
     """
     cpp_type = CoordinateElement.cpp_types[np.dtype(dtype)]
-    return CoordinateElement(cpp_type(celltype, degree, variant))
+    return CoordinateElement(cpp_type(celltype, degree, variant, discontinuous))
 
 
 @coordinate_element.register(basix.finite_element.FiniteElement)

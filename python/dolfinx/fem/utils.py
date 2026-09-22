@@ -1,5 +1,5 @@
-# Copyright (C) 2013-2026 Johan Hake, Jan Blechta, Garth N. Wells and
-# Jack S. Hale
+# Copyright (C) 2013-2026 Johan Hake, Jan Blechta, Garth N. Wells,
+# Jack S. Hale and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -266,8 +266,19 @@ def interpolate_geometry(msh: dolfinx.mesh.Mesh, cmap: CoordinateElement) -> dol
     Useful for creating a higher-order mesh from a lower-order one for
     computation, or vice-versa, for IO.
 
+    If ``cmap`` is discontinuous, the new geometry is discontinuous: each
+    cell has its own coordinate nodes, which are not shared with
+    neighbouring cells, so cell geometries can be moved independently of
+    each other. This is required, e.g., for periodic meshes.
+
     Note:
         The topology is shared between ``msh`` and the returned mesh.
+
+    Note:
+        A discontinuous geometry has no coordinate degrees-of-freedom
+        associated with the sub-entities of a cell, so functions that
+        extract the geometry of a sub-entity, e.g.
+        :func:`dolfinx.mesh.entities_to_geometry`, do not support it.
 
     Args:
         msh: Input mesh.
@@ -292,12 +303,14 @@ def interpolate_geometry(msh: dolfinx.mesh.Mesh, cmap: CoordinateElement) -> dol
             new_msh = _cpp.fem.interpolate_geometry(cpp_msh, cpp_cmap)
         case _:
             raise TypeError("interpolate_geometry requires msh and cmap to have the same dtype.")
+    new_cmap = new_msh.geometry.cmaps[0]
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
             _mesh.to_string(new_msh.topology.cell_type),
-            new_msh.geometry.cmaps[0].degree,
-            basix.LagrangeVariant(new_msh.geometry.cmaps[0].variant),
+            new_cmap.degree,
+            basix.LagrangeVariant(new_cmap.variant),
+            discontinuous=new_cmap.is_discontinuous,
             shape=(new_msh.geometry.dim,),
             dtype=new_msh.geometry.x.dtype,
         )

@@ -1,5 +1,5 @@
-// Copyright (C) 2013-2025 Johan Hake, Jan Blechta, Garth N. Wells and Paul T.
-// Kühner
+// Copyright (C) 2013-2026 Johan Hake, Jan Blechta, Garth N. Wells, Paul T.
+// Kühner and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -707,27 +707,7 @@ Form<T, U> create_form_factory(
     for (IntegralType itg_type : {IntegralType::exterior_facet,
                                   IntegralType::vertex, IntegralType::ridge})
     {
-      std::size_t dim;
-      switch (itg_type)
-      {
-      case IntegralType::exterior_facet:
-      {
-        dim = tdim - 1;
-        break;
-      }
-      case IntegralType::ridge:
-      {
-        dim = tdim - 2;
-        break;
-      }
-      case IntegralType::vertex:
-      {
-        dim = 0;
-        break;
-      }
-      default:
-        throw std::invalid_argument("Unsupported integral type");
-      }
+      const std::size_t dim = integral_entity_dim(itg_type, tdim);
 
       const std::function<std::vector<std::int32_t>(const mesh::Topology&,
                                                     IntegralType)>
@@ -1060,12 +1040,20 @@ Expression<T, U> create_expression(
 /// Useful for creating a higher-order mesh from a lower-order one for
 /// computation, or vice-versa, for IO.
 ///
+/// If `new_cmap` is discontinuous, the new geometry is discontinuous:
+/// each cell has its own coordinate nodes, which are not shared with
+/// neighbouring cells.
+///
 /// @param[in] mesh Input mesh.
 /// @param[in] new_cmap Coordinate element for the new geometry.
 /// @param[in] reorder_fn Optional graph reordering function applied to
 /// the new geometry dofmap.
 /// @return A new mesh sharing the topology of `mesh` and with a
 /// geometry described by `new_cmap`.
+/// @note A discontinuous geometry has no coordinate
+/// degrees-of-freedom associated with sub-entities of a cell, so
+/// functions that extract the geometry of a sub-entity, e.g.
+/// mesh::entities_to_geometry, do not support it.
 template <std::floating_point T>
 mesh::Mesh<T> interpolate_geometry(
     std::shared_ptr<mesh::Mesh<T>> mesh, const CoordinateElement<T>& new_cmap,
@@ -1082,11 +1070,14 @@ mesh::Mesh<T> interpolate_geometry(
 
   const int gdim = mesh->geometry().dim();
 
-  // Build a vector-valued Lagrange FiniteElement from the coordinate element.
+  // Build a vector-valued Lagrange FiniteElement from the coordinate
+  // element. It must have the same dof layout as `new_cmap`, i.e. be
+  // discontinuous if and only if `new_cmap` is.
   basix::FiniteElement<T> b_element = basix::create_element<T>(
       basix::element::family::P,
       mesh::cell_type_to_basix_type(new_cmap.cell_shape()), new_cmap.degree(),
-      new_cmap.variant(), basix::element::dpc_variant::unset, false);
+      new_cmap.variant(), basix::element::dpc_variant::unset,
+      new_cmap.is_discontinuous());
   auto element = std::make_shared<const FiniteElement<T>>(
       b_element, std::vector<std::size_t>{static_cast<std::size_t>(gdim)});
 
