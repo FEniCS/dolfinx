@@ -725,22 +725,34 @@ def compute_ridge_entities(mesh):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_ridge_expression(dtype):
-    """Evaluate an Expression on the ridges (edges) of a 3D mesh."""
+@pytest.mark.parametrize("tdim", [2, 3])
+def test_ridge_expression(dtype, tdim):
+    """Evaluate an Expression on the ridges of a 2D or 3D mesh.
+
+    A ridge of a 3D mesh is an edge, so the evaluation points are given
+    on the reference interval. A ridge of a 2D mesh is a vertex, which
+    has no interior, so the points array has zero columns.
+    """
     xtype = dtype(0).real.dtype
-    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, dtype=xtype)
-    tdim = mesh.topology.dim
+    if tdim == 3:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, dtype=xtype)
+        # The cells are affine, so the midpoint of a ridge is the image
+        # of the midpoint of the reference interval
+        points = np.array([[0.5]], dtype=xtype)
+    else:
+        mesh = create_unit_square(MPI.COMM_WORLD, 3, 2, dtype=xtype)
+        points = np.zeros((1, 0), dtype=xtype)
+
     ridges, entities = compute_ridge_entities(mesh)
 
-    # The cells are affine, so the midpoint of a ridge is the image of
-    # the midpoint of the reference interval
+    weights = np.array([1.0, 2.0, -3.0][:tdim], dtype=xtype)
     x = ufl.SpatialCoordinate(mesh)
-    expr = Expression(x[0] + 2.0 * x[1] - 3.0 * x[2], np.array([[0.5]], dtype=xtype), dtype=dtype)
+    expr = Expression(ufl.dot(ufl.as_vector(weights), x), points, dtype=dtype)
     assert expr.entity_dim == tdim - 2
     values = expr.eval(mesh, entities)
 
     midpoints = compute_midpoints(mesh, tdim - 2, ridges)
-    exact = midpoints[:, 0] + 2.0 * midpoints[:, 1] - 3.0 * midpoints[:, 2]
+    exact = midpoints[:, :tdim] @ weights
     np.testing.assert_allclose(
         values[:, 0], exact.astype(dtype), atol=50 * np.finfo(xtype).resolution
     )
@@ -755,29 +767,41 @@ def test_ridge_expression(dtype):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_submesh_codim_two(dtype):
-    """Evaluate a ridge Expression with a coefficient on a ridge submesh."""
+@pytest.mark.parametrize("tdim", [2, 3])
+def test_submesh_codim_two(dtype, tdim):
+    """Evaluate a ridge Expression with a coefficient on a ridge submesh.
+
+    The ridges of a 3D mesh are edges, so the submesh is a mesh of
+    intervals. The ridges of a 2D mesh are vertices, so the submesh is a
+    mesh of points, on which only degree 0 is defined.
+    """
     xtype = dtype(0).real.dtype
-    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, dtype=xtype)
-    tdim = mesh.topology.dim
+    if tdim == 3:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, dtype=xtype)
+        quadrature_points = np.array([[0.31], [0.77]], dtype=xtype)
+        # A ridge is a straight line, so `expr1` restricted to it is
+        # quadratic in the arc length and is captured exactly by P2
+        sub_element = ("Lagrange", 2)
+    else:
+        mesh = create_unit_square(MPI.COMM_WORLD, 3, 2, dtype=xtype)
+        quadrature_points = np.zeros((1, 0), dtype=xtype)
+        sub_element = ("Lagrange", 0)
+
     ridges, entities = compute_ridge_entities(mesh)
 
     def expr0(x):
         return x[0] + 2.0 * x[1]
 
     def expr1(x):
-        return x[2] ** 2 - x[0]
+        return x[1] ** 2 - x[0]
 
     u = Function(functionspace(mesh, ("Lagrange", 1)), dtype=dtype)
     u.interpolate(expr0)
 
-    # A ridge is a straight line, so `expr1` restricted to it is
-    # quadratic in the arc length and is captured exactly by P2
     submesh, entity_map, _, _ = create_submesh(mesh, tdim - 2, ridges)
-    u_sub = Function(functionspace(submesh, ("Lagrange", 2)), dtype=dtype)
+    u_sub = Function(functionspace(submesh, sub_element), dtype=dtype)
     u_sub.interpolate(expr1)
 
-    quadrature_points = np.array([[0.31], [0.77]], dtype=xtype)
     expr = Expression(u * u_sub, quadrature_points, dtype=dtype, entity_maps=[entity_map])
     values = expr.eval(mesh, entities)
 
