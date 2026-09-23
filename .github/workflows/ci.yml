@@ -247,9 +247,8 @@ jobs:
         working-directory: dolfinx-src/cpp/test/pkgconfig
         run: |
           spack env activate ci
-          export PKG_CONFIG_PATH=$(dirname "$(find $GITHUB_WORKSPACE/static-install -name dolfinx.pc)"):$PKG_CONFIG_PATH
-          make
-          make run
+          export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/static-install/lib/pkgconfig:$PKG_CONFIG_PATH
+          make run-static
 
       # Guard against a mis-specified variant silently building PETSc into
       # the PETSc-free leg, which would make it test nothing new.
