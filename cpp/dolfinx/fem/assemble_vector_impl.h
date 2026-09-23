@@ -17,6 +17,7 @@
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
+#include <cstring>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -133,7 +134,12 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
     for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
     {
       const U* _x_ptr = x_ptr + x_dofmap_ptr[c * num_x_dofs_cell + i] * gdim;
-      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
+      if constexpr (static_extent1<decltype(x)>() == 3)
+      {
+        std::memcpy(cdofs_b.data() + 3 * i, _x_ptr, 3 * sizeof(U));
+      }
+      else
+        std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
     }
 
     // Tabulate vector for cell
