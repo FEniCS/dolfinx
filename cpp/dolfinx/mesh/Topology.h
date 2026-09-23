@@ -65,15 +65,13 @@ public:
   /// in `cell_types`.
   /// @param[in] original_cell_index Original indices for each cell in
   /// `cells`.
-  /// @param[in] num_threads Number of threads to use. Must be >= 1.
   Topology(
       std::vector<CellType> cell_types,
       std::shared_ptr<const common::IndexMap> vertex_map,
       std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
       std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
       const std::optional<std::vector<std::vector<std::int64_t>>>&
-          original_cell_index = std::nullopt,
-      int num_threads = 1);
+          original_cell_index = std::nullopt);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
