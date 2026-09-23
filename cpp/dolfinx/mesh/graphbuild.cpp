@@ -57,12 +57,16 @@ namespace
 /// @param[in] local_dual_graph The dual graph for cells on this MPI rank
 ///
 /// @return Global dual graph, including ghost edges (edges to
-/// off-procss cells)
-graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
+/// off-procss cells), and edge weights for each edge in the graph. The edge
+/// weights are averaged over all attached cells on this rank for each edge.
+std::pair<graph::AdjacencyList<std::int64_t>, std::vector<std::int32_t>>
+compute_nonlocal_dual_graph(
     const MPI_Comm comm, std::span<const std::int64_t> facets,
     std::size_t local_max_vertices_per_facet,
     std::span<const std::int32_t> cells,
-    const graph::AdjacencyList<std::int32_t>& local_dual_graph)
+    const graph::AdjacencyList<std::int32_t>& local_dual_graph,
+    const std::span<const std::int32_t> local_edge_weights,
+    const std::span<const std::int32_t> local_unmatched_weights)
 {
   spdlog::info("Build nonlocal part of mesh dual graph");
   common::Timer timer("Compute non-local part of mesh dual graph");
@@ -84,10 +88,13 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   if (comm_size == 1)
   {
     // Convert graph to int64_t and return
-    return graph::AdjacencyList(
-        std::vector<std::int64_t>(local_dual_graph.array().begin(),
-                                  local_dual_graph.array().end()),
-        local_dual_graph.offsets());
+    return std::make_pair(
+        graph::AdjacencyList(
+            std::vector<std::int64_t>(local_dual_graph.array().begin(),
+                                      local_dual_graph.array().end()),
+            local_dual_graph.offsets()),
+        std::vector<std::int32_t>(local_edge_weights.begin(),
+                                  local_edge_weights.end()));
   }
 
   // Postoffice (PO) setup:
@@ -556,7 +563,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     data.resize(write_pos);
   }
 
-  return graph::AdjacencyList(std::move(data), std::move(offsets));
+  return {graph::AdjacencyList(std::move(data), std::move(offsets)), {}};
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -962,8 +969,8 @@ mesh::build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
           std::vector<std::span<const std::int32_t>>{});
 
   // Extend with nonlocal edges and convert to global indices
-  graph::AdjacencyList graph
-      = compute_nonlocal_dual_graph(comm, facets, shape1, fcells, local_graph);
+  auto [graph, graph_edge_wt] = compute_nonlocal_dual_graph(
+      comm, facets, shape1, fcells, local_graph, edge_wt, unmatched_wt);
 
   spdlog::info("Graph edges (local: {}, non-local: {})",
                local_graph.offsets().back(),
