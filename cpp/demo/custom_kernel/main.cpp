@@ -81,12 +81,15 @@
 //
 // ## C++ program
 //
-// FFCx normally compiles generated C source separately. Here it is included
-// in `main.cpp` so that its function definitions and the templated DOLFINx
-// cell loops are visible to the optimiser in the same translation unit. The
-// generated header declares the named kernels. `restrict` is a C keyword used
-// by the generated kernels, so it is mapped to the corresponding compiler
-// extension while the generated source is parsed as C++.
+// Normal DOLFINx solvers compile the FFCx-generated C source in a separate
+// translation unit, so the assembler can reach the kernels only through
+// function pointers. Here the generated source is included in `main.cpp` so
+// that its function definitions and the templated DOLFINx cell loops are
+// visible to the optimiser in the same translation unit, which allows the
+// kernels to be inlined. The generated header declares the named kernels.
+// `restrict` is a C keyword used by the generated kernels, so it is mapped to
+// the corresponding compiler extension while the generated source is parsed as
+// C++.
 
 #include "mass.h"
 
@@ -134,7 +137,9 @@
 //
 // The low-level assembly functions are templates over their `mdspan`
 // arguments. Encoding dimensions that are fixed by the problem in the
-// `mdspan` type makes those values available while the cell loop is compiled.
+// `mdspan` type makes those values available while the cell loop is compiled,
+// which allows the compiler extra scope for optimisation, e.g. fully unrolling
+// loops over cell degrees-of-freedom.
 // For a scalar P1 triangle there are three coordinate degrees-of-freedom and
 // three field degrees-of-freedom per cell. DOLFINx stores each geometry point
 // in three components, including for a two-dimensional mesh. Only the number
@@ -492,6 +497,9 @@ void assemble(MPI_Comm comm)
   };
 
   // Route 1: wrap each hand-written kernel in a Form and use public assembly.
+  // The Form stores kernels as type-erased `std::function` objects, so each
+  // cell incurs an indirect call that the compiler cannot inline. For small
+  // kernels like these the call overhead is significant relative to the work.
   const double norm_A0 = assemble_matrix0<T>(V, kernel_a, cells);
   const double norm_b0 = assemble_vector0<T>(V, kernel_L, cells);
 
@@ -505,7 +513,10 @@ void assemble(MPI_Comm comm)
   check_norm<T>(norm_b1, norm_b0);
 
   // Route 3: repeat the direct assembly using the kernels generated from
-  // mass.py. This FFCx invocation generates only float64 kernels.
+  // mass.py. FFCx generates kernels for a single scalar type, float64 by
+  // default, so they take `double*` arguments and this route is compiled only
+  // for T = double. Float32 kernels would need a second FFCx run with
+  // `--scalar_type float32` and different kernel names.
   if constexpr (std::is_same_v<T, double>)
   {
     // The lambdas call the generated functions by the names fixed in mass.py.
