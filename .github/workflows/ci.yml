@@ -244,10 +244,10 @@ jobs:
           ${{ matrix.petsc && matrix.mpi == 'openmpi'
           && matrix.scalar == 'float64' && matrix.index == 'int32' }}
         shell: spack-bash {0}
-        working-directory: dolfinx-src/cpp/test/pkgconfig
         run: |
           spack env activate ci
           export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/static-install/lib/pkgconfig:$PKG_CONFIG_PATH
+          cd dolfinx-src/cpp/test/pkgconfig
           make run-static
 
       # Guard against a mis-specified variant silently building PETSc into
