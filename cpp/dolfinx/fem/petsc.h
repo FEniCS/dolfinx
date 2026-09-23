@@ -140,75 +140,115 @@ Mat create_matrix_block(
   // Initialise matrix
   Mat A = la::petsc::create_matrix(mesh->comm(), pattern, type);
 
-  // Create row and column local-to-global maps (field0, field1, field2,
-  // etc), i.e. ghosts of field0 appear before owned indices of field1
-  std::array<std::vector<PetscInt>, 2> _maps;
-  for (int d = 0; d < 2; ++d)
+  // On error below, A (and any local-to-global mapping already
+  // created) must be destroyed explicitly -- they are not yet owned
+  // by anything that would otherwise clean them up.
+  try
   {
-    if (d == 1 and V[0] == V[1])
+    // Create row and column local-to-global maps (field0, field1, field2,
+    // etc), i.e. ghosts of field0 appear before owned indices of field1
+    std::array<std::vector<PetscInt>, 2> _maps;
+    for (int d = 0; d < 2; ++d)
     {
-      // Row and column spaces are identical, so the concatenated
-      // index map for d=1 is identical to the one already computed
-      // for d=0 -- reuse it rather than paying for a second,
-      // communication-heavy call to stack_index_maps.
-      _maps[1] = _maps[0];
-      continue;
+      if (d == 1 and V[0] == V[1])
+      {
+        // Row and column spaces are identical, so the concatenated
+        // index map for d=1 is identical to the one already computed
+        // for d=0 -- reuse it rather than paying for a second,
+        // communication-heavy call to stack_index_maps.
+        _maps[1] = _maps[0];
+        continue;
+      }
+
+      const std::vector<
+          std::pair<std::reference_wrapper<const common::IndexMap>, int>>& map
+          = maps[d];
+      std::vector<PetscInt>& _map = _maps[d];
+
+      // Concatenate the block index map in the row and column directions
+      const auto [rank_offset, local_offset, ghosts, _]
+          = common::stack_index_maps(map);
+      const std::size_t num_ghosts = std::accumulate(
+          ghosts.begin(), ghosts.end(), std::size_t(0),
+          [](std::size_t n, auto& g) { return n + g.size(); });
+      _map.reserve(local_offset.back() + num_ghosts);
+      for (std::size_t f = 0; f < map.size(); ++f)
+      {
+        auto offset = local_offset[f];
+        const common::IndexMap& imap = map[f].first.get();
+        int bs = map[f].second;
+        auto owned
+            = std::views::iota(std::int32_t(0), bs * imap.size_local())
+              | std::views::transform([offset, rank_offset](std::int32_t i)
+                                      { return i + rank_offset + offset; });
+        _map.insert(_map.end(), owned.begin(), owned.end());
+        _map.insert(_map.end(), ghosts[f].begin(), ghosts[f].end());
+      }
     }
 
-    const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& map
-        = maps[d];
-    std::vector<PetscInt>& _map = _maps[d];
-
-    // Concatenate the block index map in the row and column directions
-    const auto [rank_offset, local_offset, ghosts, _]
-        = common::stack_index_maps(map);
-    const std::size_t num_ghosts
-        = std::accumulate(ghosts.begin(), ghosts.end(), std::size_t(0),
-                          [](std::size_t n, auto& g) { return n + g.size(); });
-    _map.reserve(local_offset.back() + num_ghosts);
-    for (std::size_t f = 0; f < map.size(); ++f)
-    {
-      auto offset = local_offset[f];
-      const common::IndexMap& imap = map[f].first.get();
-      int bs = map[f].second;
-      auto owned
-          = std::views::iota(std::int32_t(0), bs * imap.size_local())
-            | std::views::transform([offset, rank_offset](std::int32_t i)
-                                    { return i + rank_offset + offset; });
-      _map.insert(_map.end(), owned.begin(), owned.end());
-      _map.insert(_map.end(), ghosts[f].begin(), ghosts[f].end());
-    }
-  }
-
-  // Create PETSc local-to-global map/index sets and attach to matrix
-  ISLocalToGlobalMapping petsc_local_to_global0;
-  common::petsc::check(ISLocalToGlobalMappingCreate(
-                           MPI_COMM_SELF, 1, _maps[0].size(), _maps[0].data(),
-                           PETSC_COPY_VALUES, &petsc_local_to_global0),
-                       "ISLocalToGlobalMappingCreate");
-  if (V[0] == V[1])
-  {
-    common::petsc::check(MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
-                                                    petsc_local_to_global0),
-                         "MatSetLocalToGlobalMapping");
-    common::petsc::check(ISLocalToGlobalMappingDestroy(&petsc_local_to_global0),
-                         "ISLocalToGlobalMappingDestroy");
-  }
-  else
-  {
-    ISLocalToGlobalMapping petsc_local_to_global1;
+    // Create PETSc local-to-global map/index sets and attach to matrix
+    ISLocalToGlobalMapping petsc_local_to_global0;
     common::petsc::check(ISLocalToGlobalMappingCreate(
-                             MPI_COMM_SELF, 1, _maps[1].size(), _maps[1].data(),
-                             PETSC_COPY_VALUES, &petsc_local_to_global1),
+                             MPI_COMM_SELF, 1, _maps[0].size(), _maps[0].data(),
+                             PETSC_COPY_VALUES, &petsc_local_to_global0),
                          "ISLocalToGlobalMappingCreate");
-    common::petsc::check(MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
-                                                    petsc_local_to_global1),
-                         "MatSetLocalToGlobalMapping");
-    common::petsc::check(ISLocalToGlobalMappingDestroy(&petsc_local_to_global0),
-                         "ISLocalToGlobalMappingDestroy");
-    common::petsc::check(ISLocalToGlobalMappingDestroy(&petsc_local_to_global1),
-                         "ISLocalToGlobalMappingDestroy");
+
+    // Neither mapping is owned by A until MatSetLocalToGlobalMapping
+    // succeeds, so on error they must be destroyed explicitly here
+    // rather than relying on A's cleanup below.
+    ISLocalToGlobalMapping petsc_local_to_global1 = nullptr;
+    try
+    {
+      if (V[0] == V[1])
+      {
+        common::petsc::check(MatSetLocalToGlobalMapping(A,
+                                                        petsc_local_to_global0,
+                                                        petsc_local_to_global0),
+                             "MatSetLocalToGlobalMapping");
+        common::petsc::check(
+            ISLocalToGlobalMappingDestroy(&petsc_local_to_global0),
+            "ISLocalToGlobalMappingDestroy");
+      }
+      else
+      {
+        common::petsc::check(
+            ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
+                                         _maps[1].data(), PETSC_COPY_VALUES,
+                                         &petsc_local_to_global1),
+            "ISLocalToGlobalMappingCreate");
+        common::petsc::check(MatSetLocalToGlobalMapping(A,
+                                                        petsc_local_to_global0,
+                                                        petsc_local_to_global1),
+                             "MatSetLocalToGlobalMapping");
+        common::petsc::check(
+            ISLocalToGlobalMappingDestroy(&petsc_local_to_global0),
+            "ISLocalToGlobalMappingDestroy");
+        common::petsc::check(
+            ISLocalToGlobalMappingDestroy(&petsc_local_to_global1),
+            "ISLocalToGlobalMappingDestroy");
+      }
+    }
+    catch (...)
+    {
+      if (petsc_local_to_global1)
+      {
+        common::petsc::check(
+            ISLocalToGlobalMappingDestroy(&petsc_local_to_global1),
+            "ISLocalToGlobalMappingDestroy");
+      }
+      if (petsc_local_to_global0)
+      {
+        common::petsc::check(
+            ISLocalToGlobalMappingDestroy(&petsc_local_to_global0),
+            "ISLocalToGlobalMappingDestroy");
+      }
+      throw;
+    }
+  }
+  catch (...)
+  {
+    common::petsc::check(MatDestroy(&A), "MatDestroy");
+    throw;
   }
 
   return A;
