@@ -246,6 +246,7 @@ jobs:
         shell: spack-bash {0}
         run: |
           spack env activate ci
+          spack load make
           export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/static-install/lib/pkgconfig:$PKG_CONFIG_PATH
           cd dolfinx-src/cpp/test/pkgconfig
           make run-static
