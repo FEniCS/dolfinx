@@ -1,4 +1,5 @@
-// Copyright (C) 2003-2026 Anders Logg, Garth N. Wells and Massimiliano Leoni
+// Copyright (C) 2003-2026 Anders Logg, Garth N. Wells, Massimiliano Leoni and
+// Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -13,6 +14,7 @@
 #include "interpolate.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
+#include <cassert>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
@@ -22,6 +24,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
 #include <memory>
+#include <mpi.h>
 #include <numeric>
 #include <span>
 #include <stdexcept>
@@ -54,6 +57,16 @@ public:
   using geometry_type = U;
 
   /// @brief Create function on given function space.
+  ///
+  /// This constructor creates a new la::Vector, and hence a new
+  /// common::Scatterer, for the Function. Each Scatterer duplicates MPI
+  /// communicators, so creating many Functions on the same space can
+  /// exhaust the available communicators. To share one Scatterer,
+  /// create it once (or take it from an existing vector with
+  /// la::Vector::scatterer), build each vector with
+  /// la::Vector(map, bs, scatterer) and use the constructor that takes
+  /// a vector.
+  ///
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
       : _function_space(V), _x(std::make_shared<la::Vector<value_type>>(
@@ -71,22 +84,58 @@ public:
   /// @brief Create function on given function space with a given
   /// vector.
   ///
-  /// @warning This constructor is intended for internal library use
-  /// only.
+  /// The Function takes shared ownership of `x`; it is not copied. This
+  /// is used by ::sub to create views, and lets several Functions on the
+  /// same space share one common::Scatterer:
+  /// @code
+  /// Function<T> u0(V);
+  /// auto map = V->dofmap()->index_map;
+  /// int bs = V->dofmap()->index_map_bs();
+  /// auto x = std::make_shared<la::Vector<T>>(map, bs, u0.x()->scatterer());
+  /// Function<T> u1(V, x);
+  /// @endcode
   ///
   /// @param[in] V The function space.
-  /// @param[in] x The vector.
+  /// @param[in] x The vector. Its block size and index map (local
+  /// range, ghosts and communicator) must match those of `V`.
+  /// @throws std::invalid_argument if the layout of `x` does not match
+  /// the index map of `V`. The ghost indices and owners are compared
+  /// only in Debug builds.
   Function(std::shared_ptr<const FunctionSpace<geometry_type>> V,
            std::shared_ptr<la::Vector<value_type>> x)
-      : _function_space(V), _x(x)
+      : _function_space(std::move(V)), _x(std::move(x))
   {
-    // NOTE: We do not check for a subspace since this constructor is
-    // used for creating subfunctions
+    // Not checked for a subspace: this constructor is used by sub()
+    assert(!_function_space->dofmaps().empty());
+    const DofMap& dofmap = *_function_space->dofmaps().front();
+    const common::IndexMap& map0 = *dofmap.index_map;
+    const common::IndexMap& map1 = *_x->index_map();
+    if (_x->bs() != dofmap.index_map_bs()
+        or map1.local_range() != map0.local_range()
+        or map1.size_global() != map0.size_global()
+        or map1.num_ghosts() != map0.num_ghosts())
+    {
+      throw std::invalid_argument(
+          "Vector layout does not match the function space index map.");
+    }
 
-    // Assertion uses '<=' to deal with sub-functions
-    assert(V->dofmap());
-    assert(V->dofmap()->index_map->size_global() * V->dofmap()->index_map_bs()
-           <= _x->bs() * _x->index_map()->size_global());
+    // MPI_Comm_compare is a local operation
+    int cmp = MPI_UNEQUAL;
+    MPI_Comm_compare(map1.comm(), map0.comm(), &cmp);
+    if (cmp != MPI_IDENT and cmp != MPI_CONGRUENT)
+    {
+      throw std::invalid_argument(
+          "Vector communicator does not match the function space.");
+    }
+
+#ifndef NDEBUG
+    if (!std::ranges::equal(map1.ghosts(), map0.ghosts())
+        or !std::ranges::equal(map1.owners(), map0.owners()))
+    {
+      throw std::invalid_argument(
+          "Vector ghost indices do not match the function space index map.");
+    }
+#endif
   }
 
   // Copy constructor

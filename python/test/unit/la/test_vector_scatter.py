@@ -123,6 +123,15 @@ def test_vector_from_scatterer():
     y = la.vector(index_map, scatterer=x.scatterer)
     assert y.scatterer._cpp_object is x.scatterer._cpp_object
 
+    # A copy shares the index map and scatterer
+    x.array[:] = 1.0
+    z = x.copy()
+    assert z.scatterer._cpp_object is x.scatterer._cpp_object
+    assert z.index_map._cpp_object is x.index_map._cpp_object
+    assert np.array_equal(z.array, x.array)
+    z.array[:] = 2.0
+    assert np.all(x.array == 1.0)
+
     y.array[: index_map.size_local] = np.arange(*index_map.local_range)
     y.scatter_forward()
     global_indices = index_map.local_to_global(

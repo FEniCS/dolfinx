@@ -393,8 +393,25 @@ class Function(ufl.Coefficient, Generic[Scalar]):
 
         Args:
             V: The function space that the Function is defined on.
-            x: Function degree-of-freedom vector. Typically required
-                only when reading a saved Function from file.
+            x: Function degree-of-freedom vector. If ``None``, a new
+                vector (with a new :class:`dolfinx.common.Scatterer`)
+                is created. Pass a vector to wrap existing data, e.g.
+                when reading a saved Function from file, or to share
+                one scatterer between Functions on the same space::
+
+                    u0 = Function(V)
+                    x = la.vector(
+                        V.dofmap.index_map,
+                        V.dofmap.index_map_bs,
+                        scatterer=u0.x.scatterer,
+                        dtype=u0.dtype,
+                    )
+                    u1 = Function(V, x)
+
+                The scatterer can also be created up front with
+                :func:`dolfinx.common.scatterer` and passed to every
+                vector. The vector is not copied; its block size and
+                local layout must match the index map of ``V``.
             name: Function name.
             dtype: Scalar type. Is not set, the DOLFINx default scalar
                 type is used.
@@ -430,8 +447,9 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         # Store DOLFINx FunctionSpace object
         self._V = V
 
-        # Store Python wrapper around the underlying Vector
-        self._x = la.Vector(self._cpp_object.x)
+        # Keep the caller's Vector wrapper (and its cached properties),
+        # otherwise wrap the vector created by the C++ object
+        self._x = x if x is not None else la.Vector(self._cpp_object.x)
 
     @property
     def function_space(self) -> FunctionSpace:
@@ -575,16 +593,12 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         """Create a copy of the Function.
 
         The function space is shared and the degree-of-freedom vector is
-        copied.
+        copied. The copied vector shares the scatterer of the original.
 
         Returns:
             A new Function with a copy of the degree-of-freedom vector.
         """
-        return Function(
-            self.function_space,
-            la.Vector(type(self.x._cpp_object)(self.x._cpp_object)),  # type: ignore[arg-type]
-            name=self.name,
-        )
+        return Function(self.function_space, self.x.copy(), name=self.name)
 
     @property
     def x(self) -> la.Vector[Scalar]:

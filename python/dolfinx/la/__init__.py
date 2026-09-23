@@ -106,6 +106,10 @@ class Vector(Generic[_T]):
     def scatterer(self) -> Scatterer:
         """Scatterer used for ghost communication.
 
+        Pass it to :func:`vector` (or to a
+        :class:`dolfinx.fem.Function` via a vector created that way)
+        to share it with other vectors on the same index map.
+
         Note:
             This is a cached property. The wrapper is built on first
             access and the same object is returned thereafter.
@@ -116,6 +120,17 @@ class Vector(Generic[_T]):
     def array(self) -> npt.NDArray[_T]:
         """Local representation of the vector."""
         return self._cpp_object.array  # type: ignore[return-value]
+
+    def copy(self) -> Vector[_T]:
+        """Create a copy of the vector.
+
+        The local data, including ghost entries, is copied. The index
+        map and scatterer are shared with the original.
+
+        Returns:
+            A new vector with the same layout and a copy of the data.
+        """
+        return Vector(type(self._cpp_object)(self._cpp_object))  # type: ignore[arg-type]
 
     @functools.cached_property
     def petsc_vec(self) -> PETSc.Vec:
@@ -542,8 +557,14 @@ def vector(
         map: Index map the describes the size and distribution of the
             vector.
         bs: Block size.
-        scatterer: Scatterer compatible with ``map``. If ``None``, a
-            new scatterer is created.
+        scatterer: Scatterer created from ``map``. If ``None``, a new
+            scatterer is created. Each scatterer duplicates MPI
+            communicators, so when creating many vectors on the same
+            index map share one: create it with
+            :func:`dolfinx.common.scatterer` and pass it to each
+            vector, or pass the scatterer of an existing vector
+            (:attr:`Vector.scatterer`). The block size and scalar type
+            need not match.
         dtype: The scalar type.
 
     Returns:

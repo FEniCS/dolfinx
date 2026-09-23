@@ -90,7 +90,8 @@ int cg(auto& x, auto& b, auto action, int kmax = 50, double rtol = 1e-8)
 {
   using T = typename std::decay_t<decltype(x)>::value_type;
 
-  // Create working vectors
+  // Create working vectors (the copy constructor shares the scatterer
+  // of b)
   la::Vector r(b), y(b);
 
   // Compute initial residual r0 = b - Ax0
@@ -181,8 +182,10 @@ void solver(MPI_Comm comm)
       *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
   auto bc = std::make_shared<const fem::DirichletBC<T>>(u_D, bdofs);
 
-  // Assemble RHS vector
-  la::Vector<T> b(V->dofmap()->index_map, V->dofmap()->index_map_bs());
+  // Assemble RHS vector, sharing the scatterer of ui rather than
+  // creating a new one (and its MPI communicators)
+  la::Vector<T> b(V->dofmap()->index_map, V->dofmap()->index_map_bs(),
+                  ui->x()->scatterer());
   fem::assemble_vector(b.array(), L);
 
   // Apply lifting to account for Dirichlet boundary condition
@@ -226,8 +229,12 @@ void solver(MPI_Comm comm)
     y.scatter_fwd();
   };
 
-  // Compute solution using the CG method
-  auto u = std::make_shared<fem::Function<T>>(V);
+  // Compute solution using the CG method. The solution Function is
+  // created from a vector that shares the scatterer of ui.
+  auto u = std::make_shared<fem::Function<T>>(
+      V, std::make_shared<la::Vector<T>>(V->dofmap()->index_map,
+                                         V->dofmap()->index_map_bs(),
+                                         ui->x()->scatterer()));
   int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
   // Set BC values in the solution vectors

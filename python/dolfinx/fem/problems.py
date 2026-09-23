@@ -118,14 +118,17 @@ class LinearProblem:
             ),
         )
         self._A = create_matrix(self._a)
-        self._x = create_vector(L.arguments()[0].ufl_function_space(), dtype=_dtype)
-        self._b = create_vector(L.arguments()[0].ufl_function_space(), dtype=_dtype)
 
         self._u: Function
         if u is None:
             self._u = Function(L.arguments()[0].ufl_function_space(), dtype=_dtype)
         else:
             self._u = u
+
+        # Share the scatterer of u to avoid creating one per vector
+        V = L.arguments()[0].ufl_function_space()
+        self._x = create_vector(V, dtype=_dtype, scatterer=self._u.x.scatterer)
+        self._b = create_vector(V, dtype=_dtype, scatterer=self._u.x.scatterer)
 
         self.bcs = [] if bcs is None else bcs
 
