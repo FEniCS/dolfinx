@@ -18,7 +18,7 @@ import basix
 import dolfinx
 import ufl
 from basix.ufl import element
-from dolfinx import graph
+from dolfinx import default_real_type, graph
 from dolfinx import mesh as _mesh
 from dolfinx.fem import assemble_scalar, coordinate_element, form, functionspace
 from dolfinx.mesh import (
@@ -694,6 +694,40 @@ def test_create_mesh_cell_reordering_exception():
 
     with pytest.raises(ValueError, match="reordering callback failed"):
         _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=reorder)
+
+
+@pytest.mark.skip_in_parallel
+def test_create_mesh_unreferenced_nodes():
+    """Nodes that no cell references are dropped from the geometry."""
+    cells = np.array([[0, 1, 2], [1, 4, 2]], dtype=np.int64)
+    # Nodes 3 and 5 are not referenced by any cell
+    x = np.array(
+        [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.5, 0.5], [1.0, 1.0], [9.0, 9.0]],
+        dtype=default_real_type,
+    )
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type))
+    msh = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x)
+
+    # The geometry holds the referenced nodes only, renumbered
+    # contiguously, and records the input index of each of them
+    assert msh.geometry.x.shape[0] == 4
+    assert msh.geometry.index_map().size_global == 4
+    igi = np.asarray(msh.geometry.input_global_indices)
+    assert sorted(igi) == [0, 1, 2, 4]
+    np.testing.assert_allclose(msh.geometry.x[:, :2], x[igi])
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.skipif(
+    not dolfinx.common.has_debug, reason="Out-of-range node index check is debug-only"
+)
+def test_create_mesh_node_index_out_of_range():
+    """A cell node index beyond the end of the node array is rejected."""
+    cells = np.array([[0, 1, 7]], dtype=np.int64)
+    x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]], dtype=default_real_type)
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type))
+    with pytest.raises(IndexError, match="outside the global row range"):
+        _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x)
 
 
 @pytest.mark.skip_in_parallel
