@@ -137,6 +137,10 @@ jobs:
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
+      - name: Locate unittests executable (debug)
+        working-directory: dolfinx-src/cpp/build-dir
+        run: |
+          Get-ChildItem -Recurse -Filter "unittests*"
       - name: Run tests (C++, serial)
         working-directory: dolfinx-src/cpp/build-dir/test/Release
         run: |
