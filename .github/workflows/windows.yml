@@ -141,6 +141,10 @@ jobs:
         working-directory: dolfinx-src/cpp/build-dir
         run: |
           Get-ChildItem -Recurse -Filter "unittests*"
+      - name: Rebuild unittests verbosely (debug)
+        working-directory: dolfinx-src/cpp
+        run: |
+          cmake --build build-dir --config Release --target unittests -- /v:normal
       - name: Run tests (C++, serial)
         working-directory: dolfinx-src/cpp/build-dir/test/Release
         run: |
