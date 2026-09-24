@@ -35,30 +35,20 @@ using namespace dolfinx;
 namespace
 {
 //-----------------------------------------------------------------------------
-/// @brief Build nonlocal part of dual graph for mesh and return number
-/// of non-local edges.
+/// @brief Extend a local dual graph with connections to off-process cells.
 ///
-/// @note Scalable version.
+/// @note Collective. Build the local graph and unmatched data with
+/// mesh::build_local_dual_graph before calling this function.
 ///
-/// @note graphbuild::compute_local_dual_graph should be called
-/// before this function is called.
-///
-/// @param[in] comm MPI communicator
-/// @param[in] facets Facets on this rank that are shared by only one
-/// cell on this rank, i.e. candidates for possibly residing on other
-/// processes. Each row in `facets` corresponds to a facet, and the row
-/// data has the form `[v0, ..., v_{n-1}, -1, -1]`, where `v_i` are the
-/// sorted vertex global indices of the facets and `-1` is a padding
-/// value for the mixed topology case where facets can have differing
-/// number of vertices.
-/// @param[in] local_max_vertices_per_facet Number of columns for `facets`.
-/// @param[in] cells Attached cell (local index) for each facet in
-/// `facet`.
-/// @param[in] local_dual_graph The dual graph for cells on this MPI rank
-///
-/// @return Global dual graph, including ghost edges (edges to
-/// off-procss cells), and edge weights for each edge in the graph. The edge
-/// weights are averaged over all attached cells on this rank for each edge.
+/// @param[in] comm MPI communicator.
+/// @param[in] local_dual_graph The dual graph for cells on this MPI rank.
+/// @param[in] local_edge_weights Weights aligned with local_dual_graph.array(),
+/// or empty for an unweighted graph.
+/// @param[in] unmatched_facets Facet keys, attached local cells, original
+/// cell-side weights, and the weighted-mode flag. The flag must agree on
+/// all ranks, including ranks with no local cells or edges.
+/// @return Graph with global cell indices, including off-process neighbours,
+/// and the corresponding edge weights (empty in the unweighted case).
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<std::int32_t>>
 compute_nonlocal_dual_graph(
     const MPI_Comm comm,
@@ -675,7 +665,10 @@ mesh::build_local_dual_graph(
   }
 
   if (facet_count == 0)
-    return {graph::AdjacencyList<std::int32_t>(0), {}, {}};
+  {
+    return {
+        graph::AdjacencyList<std::int32_t>(0), {}, {{}, 0, {}, {}, weighted}};
+  }
 
   timer0.stop();
   timer0.flush();

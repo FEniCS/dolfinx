@@ -18,12 +18,22 @@ namespace dolfinx::mesh
 {
 enum class CellType : std::int8_t;
 
+/// Cell-facet records retained for matching across MPI ranks.
+/// A shared facet can have multiple records, one per attached local cell.
 struct UnmatchedFacetData
 {
+  /// Flattened row-major vertex keys, with num_columns entries per row.
+  /// Each row contains sorted global vertex indices followed by -1 padding.
   std::vector<std::int64_t> facets;
+  /// Number of vertex columns per facet record; zero for empty data.
   int num_columns;
+  /// Local cell index for each facet record.
   std::vector<std::int32_t> attached_cells;
+  /// Original cell-side weights, one per record when weighted is true.
+  /// Not averaged, so remote cell contributions can be included later.
   std::vector<std::int32_t> unmatched_weights;
+  /// Whether weights are enabled, independently of the number of records.
+  /// Must agree across ranks when used for distributed matching.
   bool weighted;
 };
 
@@ -52,22 +62,12 @@ struct UnmatchedFacetData
 /// rounded down and assigned to both directions of every cell-pair edge.
 ///
 /// @return
-/// 1. Local dual graph
-/// 2. Facets, defined by their sorted vertices, that are shared by fewer
-///   than `max_facet_to_cell_links` cells on this rank. The logically
-///   2D array is flattened (row-major).
-/// 3. Facet data array (2) number of columns
-/// 4. Attached cell (local index) to each returned facet in (2).
-/// 5. Edge weights aligned with the adjacency entries in (1).array().
+/// 1. Local dual graph.
+/// 2. Edge weights aligned with the adjacency entries in the graph's array().
 ///   Empty when the outer `facet_weights` span is empty.
-/// 6. Original cell-side weights aligned with the unmatched facet rows in
-///   (2) and attached cells in (4). These are not averaged, so later matching
-///   can include contributions from remote cells. Empty in the unweighted case.
-///
-/// Each row of the returned data (2) contains `[v0, ... v_(n-1), x, ..,
-/// x]`, where `v_i` is a vertex global index, `x` is a negative value
-/// (all padding values will be equal). The vertex global indices are
-/// sorted for each facet.
+/// 3. UnmatchedFacetData for facets shared by fewer than
+///   `max_facet_to_cell_links` cells on this rank, or all facets if no bound
+///   is given. Original cell-side weights are retained for later matching.
 ///
 /// @note The cells of each cell type are numbered locally
 /// consecutively, i.e. if there are `n` cells of type `0` and `m` cells
@@ -75,9 +75,8 @@ struct UnmatchedFacetData
 /// cells of type `1` are numbered `n..(n+m-1)` respectively, in the
 /// returned dual graph.
 ///
-/// @note Facet (2) and cell (4) data will contain multiple entries for
-/// the same facet for branching meshes with `max_facet_to_cell_links>2`
-/// to account for all facet-cell connectivities.
+/// @note The unmatched data can contain multiple records for the same facet
+/// on branching meshes, one for each attached local cell.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int32_t>,
            UnmatchedFacetData>
 build_local_dual_graph(
