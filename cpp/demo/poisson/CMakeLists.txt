@@ -10,7 +10,9 @@ if(PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
 endif()
 
-list(APPEND CMAKE_MODULE_PATH ${DOLFINX_DIR})
+if(DOLFINX_DIR)
+  list(APPEND CMAKE_MODULE_PATH ${DOLFINX_DIR})
+endif()
 include(DolfinxDemo)
 
 dolfinx_add_demo(poisson UFL poisson.py)
