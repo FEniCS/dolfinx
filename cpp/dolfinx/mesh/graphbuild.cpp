@@ -61,13 +61,20 @@ namespace
 /// weights are averaged over all attached cells on this rank for each edge.
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<std::int32_t>>
 compute_nonlocal_dual_graph(
-    const MPI_Comm comm, std::span<const std::int64_t> facets,
-    std::size_t local_max_vertices_per_facet,
-    std::span<const std::int32_t> cells,
+    const MPI_Comm comm,
     const graph::AdjacencyList<std::int32_t>& local_dual_graph,
     const std::span<const std::int32_t> local_edge_weights,
-    const std::span<const std::int32_t> local_unmatched_weights, bool weighted)
+    const mesh::UnmatchedFacetData& unmatched_facets)
+
 {
+  // Unpack unmatched facet data
+  const std::span<const std::int64_t> facets = unmatched_facets.facets;
+  std::size_t local_max_vertices_per_facet = unmatched_facets.num_columns;
+  const std::span<const std::int32_t> cells = unmatched_facets.attached_cells;
+  const std::span<const std::int32_t> local_unmatched_weights
+      = unmatched_facets.unmatched_weights;
+  bool weighted = unmatched_facets.weighted;
+
   spdlog::info("Build nonlocal part of mesh dual graph");
   common::Timer timer("Compute non-local part of mesh dual graph");
 
@@ -585,7 +592,8 @@ compute_nonlocal_dual_graph(
 //-----------------------------------------------------------------------------
 } // namespace
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int32_t>, dolfinx::mesh::UnmatchedFacetData>
+std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int32_t>,
+           dolfinx::mesh::UnmatchedFacetData>
 mesh::build_local_dual_graph(
     std::span<const CellType> celltypes,
     const std::vector<std::span<const std::int64_t>>& cells,
@@ -612,7 +620,7 @@ mesh::build_local_dual_graph(
   }
 
   if (celltypes.empty())
-    return {graph::AdjacencyList<std::int32_t>(0), {}};
+    return {graph::AdjacencyList<std::int32_t>(0), {}, {}};
 
   int tdim = mesh::cell_dim(celltypes.front());
 
@@ -667,7 +675,7 @@ mesh::build_local_dual_graph(
   }
 
   if (facet_count == 0)
-    return {graph::AdjacencyList<std::int32_t>(0), {}};
+    return {graph::AdjacencyList<std::int32_t>(0), {}, {}};
 
   timer0.stop();
   timer0.flush();
@@ -961,9 +969,9 @@ mesh::build_local_dual_graph(
   timer5.flush();
 
   return {graph::AdjacencyList(std::move(data), std::move(offsets)),
+          std::move(weights),
           {std::move(unmatched_facets), max_vertices_per_facet,
-           std::move(local_cells), std::move(weights),
-           std::move(unmatched_weights)}};
+           std::move(local_cells), std::move(unmatched_weights), weighted}};
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
@@ -978,15 +986,13 @@ mesh::build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
 
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
-  auto [local_graph, unmatched_facets] = mesh::build_local_dual_graph(
-      celltypes, cells, max_facet_to_cell_links, num_threads, facet_weights);
+  auto [local_graph, local_edge_wt, unmatched_facets]
+      = mesh::build_local_dual_graph(celltypes, cells, max_facet_to_cell_links,
+                                     num_threads, facet_weights);
 
   // Extend with nonlocal edges and convert to global indices
   auto [graph, graph_edge_wt] = compute_nonlocal_dual_graph(
-      comm, unmatched_facets.facets, unmatched_facets.num_columns,
-      unmatched_facets.attached_cells, local_graph,
-      unmatched_facets.edge_weights, unmatched_facets.unmatched_weights,
-      !facet_weights.empty());
+      comm, local_graph, local_edge_wt, unmatched_facets);
 
   spdlog::info("Graph edges (local: {}, non-local: {})",
                local_graph.offsets().back(),
