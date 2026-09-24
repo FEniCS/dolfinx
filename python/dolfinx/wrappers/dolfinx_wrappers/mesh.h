@@ -361,7 +361,7 @@ void declare_mesh(nb::module_& m, std::string_view type)
       nb::arg("partitioner").none(), nb::arg("ghost_mode"));
 
   m.def(
-      "create_mixed_mesh",
+      "create_mesh",
       [](MPICommWrapper comm,
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> cells,
          const dolfinx::fem::CoordinateElement<T>& element,
@@ -392,7 +392,7 @@ void declare_mesh(nb::module_& m, std::string_view type)
       nb::arg("reorder_fn").none(), "Helper function for creating meshes.");
 
   m.def(
-      "create_mesh",
+      "_create_mixed_mesh",
       [](MPICommWrapper comm,
          const std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>,
                                        nb::c_contig>>& cells_nb,

@@ -445,7 +445,7 @@ def model_to_mesh(
                 )._cpp_object
             )
         # The mixed topology constructor is not great at the moment
-        cpp_mesh = _cpp.mesh.create_mixed_mesh(
+        cpp_mesh = _cpp.mesh._create_mixed_mesh(
             comm,
             cell_connectivities,
             cmaps,

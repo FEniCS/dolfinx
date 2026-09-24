@@ -11,7 +11,7 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx.cpp.mesh import create_mixed_mesh
+from dolfinx.cpp.mesh import _create_mixed_mesh
 from dolfinx.fem import coordinate_element
 from dolfinx.graph import partitioner
 from dolfinx.mesh import CellType, GhostMode
@@ -113,7 +113,7 @@ def mixed_topology_mesh():
     coordinate_elements = [coordinate_element(cell, 1) for cell in cell_types]
     part = partitioner()
     max_cells_per_facet = 2
-    return create_mixed_mesh(
+    return _create_mixed_mesh(
         MPI.COMM_WORLD,
         cells_np,
         [e._cpp_object for e in coordinate_elements],
