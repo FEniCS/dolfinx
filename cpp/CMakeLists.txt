@@ -404,16 +404,14 @@ set_package_properties(
 )
 
 # Check for UFC
-# Note: we use the case (ufcx vs UFCx) elsewhere to determine by which
-# method UFCx was found.
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
   find_package(ufcx 0.12 REQUIRED CONFIG)
 else()
-  # Check in MODULE mode (using FindUFCX.cmake) using Python
+  # Check in MODULE mode (using FindUFCxPython.cmake) using Python
   # interpreter
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  find_package(UFCx 0.12 REQUIRED MODULE)
+  find_package(UFCxPython 0.12 REQUIRED MODULE)
 endif()
 
 set_package_properties(
