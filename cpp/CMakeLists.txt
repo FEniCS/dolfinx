@@ -15,7 +15,7 @@ project(
   DOLFINX
   VERSION "0.12.0.0"
   DESCRIPTION
-    "DOLFINx: Dynamic Object-oriented Library for FINite element computation"
+    "The finite element problem solving environment of the FEniCS Project"
   HOMEPAGE_URL "https://fenicsproject.org"
   LANGUAGES CXX C
 )
