@@ -336,6 +336,24 @@ class FiniteElement(Generic[Real]):
         return self._cpp_object.num_sub_elements
 
     @property
+    def physical_base_value_size(self) -> npt.NDArray[np.integer]:
+        """Number of physical components in one block of the field.
+
+        A blocked element repeats a scalar base element
+        {py:attr}<FiniteElement.block_size> times, so one block of
+        its field is a single scalar and this is 1. A non-blocked element
+        has a single block, so this is {py:attr}<FiniteElement.value_size>.
+
+        This is the size of the push-forward of one (non-blocked) basis
+        function, and hence the extent a buffer needs when it holds
+        physical values one block at a time. It is the physical
+        counterpart of {py:attr}<FiniteElement.reference_value_size>,
+        and equals it unless the element is Piola mapped on a manifold,
+        where it is `gdim` rather than `tdim`.
+        """
+        return self._cpp_object.physical_base_value_size
+
+    @property
     def value_shape(self) -> npt.NDArray[np.integer]:
         """Value shape of the finite element field in physical space.
 
