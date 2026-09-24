@@ -18,6 +18,15 @@ namespace dolfinx::mesh
 {
 enum class CellType : std::int8_t;
 
+struct UnmatchedFacetData
+{
+  std::vector<std::int64_t> facets;
+  int num_columns;
+  std::vector<std::int32_t> attached_cells;
+  std::vector<std::int32_t> edge_weights;
+  std::vector<std::int32_t> unmatched_weights;
+};
+
 /// @brief Build the local dual graph with optional cell-facet weights.
 ///
 /// @param[in] celltypes List of cell types.
@@ -69,9 +78,7 @@ enum class CellType : std::int8_t;
 /// @note Facet (2) and cell (4) data will contain multiple entries for
 /// the same facet for branching meshes with `max_facet_to_cell_links>2`
 /// to account for all facet-cell connectivities.
-std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>, int,
-           std::vector<std::int32_t>, std::vector<std::int32_t>,
-           std::vector<std::int32_t>>
+std::pair<graph::AdjacencyList<std::int32_t>, UnmatchedFacetData>
 build_local_dual_graph(
     std::span<const CellType> celltypes,
     const std::vector<std::span<const std::int64_t>>& cells,

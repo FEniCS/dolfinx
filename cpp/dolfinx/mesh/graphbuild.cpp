@@ -66,7 +66,7 @@ compute_nonlocal_dual_graph(
     std::span<const std::int32_t> cells,
     const graph::AdjacencyList<std::int32_t>& local_dual_graph,
     const std::span<const std::int32_t> local_edge_weights,
-    const std::span<const std::int32_t> local_unmatched_weights)
+    const std::span<const std::int32_t> local_unmatched_weights, bool weighted)
 {
   spdlog::info("Build nonlocal part of mesh dual graph");
   common::Timer timer("Compute non-local part of mesh dual graph");
@@ -268,7 +268,10 @@ compute_nonlocal_dual_graph(
 
   // Pack send buffer
   std::vector<std::int32_t> send_indx_to_pos(send_disp.back());
-  std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
+
+  std::int32_t buffer_shape2
+      = buffer_shape1 + (weighted ? 1 : 0); // +1 if there are edge weights
+  std::vector<std::int64_t> send_buffer(buffer_shape2 * send_disp.back(), -1);
   {
     std::vector<std::int32_t> send_offsets = send_disp;
     for (std::size_t f = 0; f < facet_count; ++f)
@@ -280,10 +283,12 @@ compute_nonlocal_dual_graph(
       // Copy facet data into buffer
       auto fdata = facets.subspan(f * local_max_vertices_per_facet,
                                   local_max_vertices_per_facet);
-      std::span send_buffer_f(send_buffer.data() + buffer_shape1 * pos,
-                              max_vertices_per_facet + 1);
+      std::span send_buffer_f(send_buffer.data() + buffer_shape2 * pos,
+                              buffer_shape2);
       std::ranges::copy(fdata, send_buffer_f.begin());
-      send_buffer_f.back() = cells[f] + cell_offset;
+      send_buffer_f[max_vertices_per_facet] = cells[f] + cell_offset;
+      if (weighted)
+        send_buffer_f[max_vertices_per_facet + 1] = local_unmatched_weights[f];
       ++send_offsets[neigh_dest];
     }
   }
@@ -302,9 +307,9 @@ compute_nonlocal_dual_graph(
 
   // Send/receive data facet
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
+  MPI_Type_contiguous(buffer_shape2, MPI_INT64_T, &compound_type);
   MPI_Type_commit(&compound_type);
-  std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
+  std::vector<std::int64_t> recv_buffer(buffer_shape2 * recv_disp.back());
   MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
                          send_disp.data(), compound_type, recv_buffer.data(),
                          num_items_recv.data(), recv_disp.data(), compound_type,
@@ -325,18 +330,18 @@ compute_nonlocal_dual_graph(
         "Compute non-local part of mesh dual graph: sort received facets");
 
     // Compute sort permutation for received data. Facet rows are
-    // strided by buffer_shape1 (vertices plus a trailing attached-cell
-    // entry) but only the leading max_vertices_per_facet columns are
-    // the sort key, so those columns are extracted into a compact,
+    // strided by buffer_shape2 (vertices plus a trailing attached-cell
+    // entry + optional weights) but only the leading max_vertices_per_facet
+    // columns are the sort key, so those columns are extracted into a compact,
     // contiguously-strided buffer before calling the radix-sort-based
     // sort_by_perm (a generic comparison sort here previously
     // dominated this function's cost at scale).
-    const std::size_t num_recv_facets = recv_buffer.size() / buffer_shape1;
+    const std::size_t num_recv_facets = recv_buffer.size() / buffer_shape2;
     std::vector<std::int64_t> facet_keys(num_recv_facets
                                          * max_vertices_per_facet);
     for (std::size_t f = 0; f < num_recv_facets; ++f)
     {
-      std::copy_n(std::next(recv_buffer.begin(), f * buffer_shape1),
+      std::copy_n(std::next(recv_buffer.begin(), f * buffer_shape2),
                   max_vertices_per_facet,
                   std::next(facet_keys.begin(), f * max_vertices_per_facet));
     }
@@ -344,27 +349,39 @@ compute_nonlocal_dual_graph(
         = sort_by_perm<std::int64_t>(facet_keys, max_vertices_per_facet);
 
     auto for_each_matched_pair
-        = [buffer_shape1, max_vertices_per_facet,
+        = [buffer_shape2, max_vertices_per_facet,
            sort_order = std::cref(sort_order),
-           recv_buffer = std::cref(recv_buffer)](auto&& lambda)
+           recv_buffer = std::cref(recv_buffer), &weighted](auto&& lambda)
     {
       for (auto it = sort_order.get().begin(); it != sort_order.get().end();)
       {
-        std::size_t offset0 = (*it) * buffer_shape1;
+        std::size_t offset0 = (*it) * buffer_shape2;
         auto f0 = std::next(recv_buffer.get().begin(), offset0);
 
         // Find range of equal facets f0.
         auto matching_facets = std::ranges::subrange(
             it, std::find_if_not(
                     it, sort_order.get().end(),
-                    [f0, recv_buffer, buffer_shape1,
+                    [f0, recv_buffer, buffer_shape2,
                      max_vertices_per_facet](auto idx) -> bool
                     {
-                      std::size_t offset1 = idx * buffer_shape1;
+                      std::size_t offset1 = idx * buffer_shape2;
                       auto f1 = std::next(recv_buffer.get().begin(), offset1);
                       return std::equal(
                           f0, std::next(f0, max_vertices_per_facet), f1);
                     }));
+
+        std::int32_t mean_weight = 0;
+        if (weighted)
+        {
+          std::int64_t sum = 0;
+          for (std::int32_t idx : matching_facets)
+          {
+            sum += recv_buffer.get()[std::size_t(idx) * buffer_shape2
+                                     + max_vertices_per_facet + 1];
+          }
+          mean_weight = sum / std::ranges::distance(matching_facets);
+        }
 
         for (auto facet_a_it = matching_facets.begin();
              facet_a_it != matching_facets.end(); facet_a_it++)
@@ -377,10 +394,10 @@ compute_nonlocal_dual_graph(
 
             std::int64_t cell_a
                 = recv_buffer
-                      .get()[facet_a * buffer_shape1 + max_vertices_per_facet];
+                      .get()[facet_a * buffer_shape2 + max_vertices_per_facet];
             std::int64_t cell_b
                 = recv_buffer
-                      .get()[facet_b * buffer_shape1 + max_vertices_per_facet];
+                      .get()[facet_b * buffer_shape2 + max_vertices_per_facet];
 
             lambda(facet_a, cell_a, facet_b, cell_b);
           }
@@ -568,9 +585,7 @@ compute_nonlocal_dual_graph(
 //-----------------------------------------------------------------------------
 } // namespace
 //-----------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>, int,
-           std::vector<std::int32_t>, std::vector<std::int32_t>,
-           std::vector<std::int32_t>>
+std::pair<graph::AdjacencyList<std::int32_t>, dolfinx::mesh::UnmatchedFacetData>
 mesh::build_local_dual_graph(
     std::span<const CellType> celltypes,
     const std::vector<std::span<const std::int64_t>>& cells,
@@ -597,7 +612,7 @@ mesh::build_local_dual_graph(
   }
 
   if (celltypes.empty())
-    return {graph::AdjacencyList<std::int32_t>(0), {}, 0, {}, {}, {}};
+    return {graph::AdjacencyList<std::int32_t>(0), {}};
 
   int tdim = mesh::cell_dim(celltypes.front());
 
@@ -652,7 +667,7 @@ mesh::build_local_dual_graph(
   }
 
   if (facet_count == 0)
-    return {graph::AdjacencyList<std::int32_t>(0), {}, 0, {}, {}, {}};
+    return {graph::AdjacencyList<std::int32_t>(0), {}};
 
   timer0.stop();
   timer0.flush();
@@ -946,11 +961,9 @@ mesh::build_local_dual_graph(
   timer5.flush();
 
   return {graph::AdjacencyList(std::move(data), std::move(offsets)),
-          std::move(unmatched_facets),
-          max_vertices_per_facet,
-          std::move(local_cells),
-          std::move(weights),
-          std::move(unmatched_weights)};
+          {std::move(unmatched_facets), max_vertices_per_facet,
+           std::move(local_cells), std::move(weights),
+           std::move(unmatched_weights)}};
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
@@ -961,16 +974,19 @@ mesh::build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
 {
   spdlog::info("Building mesh dual graph");
 
+  std::vector<std::span<const std::int32_t>> facet_weights;
+
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
-  auto [local_graph, facets, shape1, fcells, edge_wt, unmatched_wt]
-      = mesh::build_local_dual_graph(
-          celltypes, cells, max_facet_to_cell_links, num_threads,
-          std::vector<std::span<const std::int32_t>>{});
+  auto [local_graph, unmatched_facets] = mesh::build_local_dual_graph(
+      celltypes, cells, max_facet_to_cell_links, num_threads, facet_weights);
 
   // Extend with nonlocal edges and convert to global indices
   auto [graph, graph_edge_wt] = compute_nonlocal_dual_graph(
-      comm, facets, shape1, fcells, local_graph, edge_wt, unmatched_wt);
+      comm, unmatched_facets.facets, unmatched_facets.num_columns,
+      unmatched_facets.attached_cells, local_graph,
+      unmatched_facets.edge_weights, unmatched_facets.unmatched_weights,
+      !facet_weights.empty());
 
   spdlog::info("Graph edges (local: {}, non-local: {})",
                local_graph.offsets().back(),
