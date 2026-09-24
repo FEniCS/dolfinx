@@ -19,7 +19,6 @@
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
 #include <functional>
-#include <iostream>
 #include <mpi.h>
 #include <span>
 
@@ -131,29 +130,21 @@ void test_matrix_cast()
 
 void test_matrix()
 {
-  std::cerr << "DEBUG test_matrix: start" << std::endl;
   auto map0 = std::make_shared<common::IndexMap>(MPI_COMM_WORLD, 8);
-  std::cerr << "DEBUG test_matrix: map0 built" << std::endl;
   la::SparsityPattern p(MPI_COMM_WORLD, {map0, map0}, {1, 1});
-  std::cerr << "DEBUG test_matrix: SparsityPattern built" << std::endl;
   p.insert(0, 0);
   p.insert(4, 5);
   p.insert(5, 4);
-  std::cerr << "DEBUG test_matrix: inserts done" << std::endl;
   p.finalize();
-  std::cerr << "DEBUG test_matrix: finalize done" << std::endl;
 
   using T = float;
   la::MatrixCSR<T> A(p);
-  std::cerr << "DEBUG test_matrix: MatrixCSR built" << std::endl;
   A.add(std::vector<decltype(A)::value_type>{1}, std::vector{0},
         std::vector{0});
   A.add(std::vector<decltype(A)::value_type>{2.3}, std::vector{4},
         std::vector{5});
-  std::cerr << "DEBUG test_matrix: adds done" << std::endl;
 
   const std::vector Adense0 = A.to_dense();
-  std::cerr << "DEBUG test_matrix: to_dense done" << std::endl;
 
   // Note: we cut off the ghost rows by intent here! But therefore we are not
   // able to work with the dimensions of Adense0 to compute indices, these
