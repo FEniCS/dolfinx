@@ -15,13 +15,17 @@
 # * {download}`Python script <./demo_tnt-elements.py>`
 # * {download}`Jupyter notebook <./demo_tnt-elements.ipynb>`
 # ```
+# This demo illustrates how to:
+# - Define a custom finite element using Basix's custom element
+#   interface
+# - Create tiniest tensor (TNT) elements and compare their accuracy
+#   with standard Lagrange elements
+#
 # Basix provides numerous finite elements, but there are many other
-# possible elements a user may want to use. This demo
-# ({download}`demo_tnt-elements.py`) shows how the Basix custom element
-# interface can be used to define elements. More detailed information
+# possible elements a user may want to use. More detailed information
 # about the inputs needed to create a custom element can be found in
-# [the Basix
-# documentation](https://docs.fenicsproject.org/basix/main/python/demo/demo_custom_element.py.html).
+# [the Basix custom-element
+# API](https://docs.fenicsproject.org/basix/main/python/_autosummary/basix.finite_element.html#basix.finite_element.create_custom_element).
 #
 # We begin this demo by importing the required modules.
 
@@ -61,37 +65,15 @@ mpl.use("agg")
 # number of polynomials in the degree 2 set) with an $8 \times 8$
 # identity in the first 8 columns. The order in which polynomials appear
 # in the polynomial sets for each cell can be found in the [Basix
-# documentation](https://docs.fenicsproject.org/basix/main/polyset-order.html).
+# documentation](https://docs.fenicsproject.org/basix/main/python/polyset-order.html).
 
 wcoeffs = np.eye(8, 9)
 
-# For elements where the coefficients matrix is not an identity, we can
-# use the properties of orthonormal polynomials to compute `wcoeffs`.
-# Let $\{q_0, q_1,\dots\}$ be the orthonormal polynomials of a given
-# degree for a given cell, and suppose that we're trying to represent a
-# function $f_i\in\operatorname{span}\{q_1, q_2,\dots\}$ (as
-# $\{f_0, f_1,\dots\}$ is a basis of the polynomial space for our element).
-# Using the properties of orthonormal polynomials, we see that
-# $f_i = \sum_j\left(\int_R f_iq_j\,\mathrm{d}\mathbf{x}\right)q_j$,
-# and so the coefficients are given by
-# $a_{ij}=\int_R f_iq_j\,\mathrm{d}\mathbf{x}$.
-# Hence we could compute `wcoeffs` as follows:
-
-# +
-wcoeffs2 = np.empty((8, 9))
-pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 4)
-evals = basix.tabulate_polynomials(
-    basix.PolynomialType.legendre, basix.CellType.quadrilateral, 2, pts
-)
-
-for j, v in enumerate(evals):
-    wcoeffs2[0, j] = sum(v * wts)  # 1
-    wcoeffs2[1, j] = sum(v * pts[:, 1] * wts)  # y
-    wcoeffs2[2, j] = sum(v * pts[:, 1] ** 2 * wts)  # y^2
-    wcoeffs2[3, j] = sum(v * pts[:, 0] * pts[:, 1] * wts)  # xy
-    wcoeffs2[4, j] = sum(v * pts[:, 0] * pts[:, 1] ** 2 * wts)  # xy^2
-    wcoeffs2[5, j] = sum(v * pts[:, 0] ** 2 * pts[:, 1] * wts)  # x^2y
-# -
+# For an element whose basis is not a subset of the orthonormal
+# polynomial set, the coefficients in `wcoeffs` can be computed by
+# quadrature. If $\{q_0, q_1,\dots\}$ is the orthonormal basis and
+# $f_i$ is an element basis function, then
+# $f_i = \sum_j\left(\int_R f_iq_j\,\mathrm{d}\mathbf{x}\right)q_j$.
 
 # ### Interpolation operators
 #
@@ -102,8 +84,8 @@ for j, v in enumerate(evals):
 # +
 geometry = basix.geometry(basix.CellType.quadrilateral)
 topology = basix.topology(basix.CellType.quadrilateral)
-x = [[], [], [], []]  # type: ignore [var-annotated]
-M = [[], [], [], []]  # type: ignore [var-annotated]
+x: list[list[np.ndarray]] = [[], [], [], []]
+M: list[list[np.ndarray]] = [[], [], [], []]
 
 for v in topology[0]:
     x[0].append(np.array(geometry[v]))
@@ -183,8 +165,8 @@ def create_tnt_quad(degree):
     # Interpolation
     geometry = basix.geometry(basix.CellType.quadrilateral)
     topology = basix.topology(basix.CellType.quadrilateral)
-    x = [[], [], [], []]
-    M = [[], [], [], []]
+    x: list[list[np.ndarray]] = [[], [], [], []]
+    M: list[list[np.ndarray]] = [[], [], [], []]
 
     # Vertices
     for v in topology[0]:
@@ -282,7 +264,7 @@ def poisson_error(V: fem.FunctionSpace):
     uh = problem.solve()
     converged_reason = problem.solver.getConvergedReason()
     num_its = problem.solver.getIterationNumber()
-    assert converged_reason > 0, (
+    assert converged_reason > 0, (  # type: ignore[operator]
         f"Failed to converge, reason: {converged_reason}, iterations: {num_its}"
     )
 

@@ -17,6 +17,7 @@
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <format>
 #include <functional>
 #include <memory>
 #include <nanobind/nanobind.h>
@@ -34,9 +35,11 @@
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 namespace nb = nanobind;
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
@@ -50,26 +53,18 @@ void fem(nb::module_& m)
       [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& layout)
       {
-        assert(topology.entity_types(topology.dim()).size() == 1);
+        if (topology.entity_types(topology.dim()).size() != 1)
+          throw std::invalid_argument("Mixed topology unsupported.");
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
-            comm.get(), topology, {layout}, dolfinx::graph::reorder_rcm);
+            comm.get(), topology, {layout}, nullptr);
         return std::tuple(std::move(map), bs, std::move(dofmap));
       },
       nb::arg("comm"), nb::arg("topology"), nb::arg("layout"),
       "Build a dofmap on a mesh.");
 
   m.def(
-      "build_real_element_dofmap",
-      [](const dolfinx::mesh::Topology& topology,
-         const std::vector<std::vector<std::vector<int>>>& entity_dofs,
-         const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
-         std::size_t value_size)
-      {
-        return dolfinx::fem::build_real_element_dofmap(
-            topology, entity_dofs, entity_closure_dofs, value_size);
-      },
-      nb::arg("topology"), nb::arg("entity_dofs"),
-      nb::arg("entity_closure_dofs"), nb::arg("value_size"),
+      "build_real_element_dofmap", dolfinx::fem::build_real_element_dofmap,
+      nb::arg("topology"), nb::arg("layout"),
       "Build a dofmap on a real element, i.e. a single constant dof shared by "
       "all cells.");
   m.def(
@@ -81,6 +76,7 @@ void fem(nb::module_& m)
             dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         return dolfinx::fem::transpose_dofmap(_dofmap, num_cells);
       },
+      nb::arg("dofmap"), nb::arg("num_cells"),
       "Build the index to (cell, local index) map from a dofmap ((cell, local "
       "index) -> index).");
   m.def(
@@ -133,8 +129,14 @@ void fem(nb::module_& m)
       .def_prop_ro("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
       .def(
           "cell_dofs",
-          [](const dolfinx::fem::DofMap& self, int cell)
+          [](const dolfinx::fem::DofMap& self, std::int32_t cell)
           {
+            if (cell < 0 or std::cmp_greater_equal(cell, self.map().extent(0)))
+            {
+              throw std::out_of_range(std::format(
+                  "Cell index {} is out of range for a dofmap with {} cells.",
+                  cell, self.map().extent(0)));
+            }
             std::span<const std::int32_t> dofs = self.cell_dofs(cell);
             return nb::ndarray<const std::int32_t, nb::numpy>(dofs.data(),
                                                               {dofs.size()});
@@ -151,12 +153,12 @@ void fem(nb::module_& m)
           },
           nb::rv_policy::reference_internal);
 
-  nb::enum_<dolfinx::fem::IntegralType>(m, "_IntegralType")
+  nb::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell, "cell integral")
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet,
              "exterior facet integral")
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet,
-             "exterior facet integral")
+             "interior facet integral")
       .value("vertex", dolfinx::fem::IntegralType::vertex, "vertex integral")
       .value("ridge", dolfinx::fem::IntegralType::ridge, "ridge integral");
 

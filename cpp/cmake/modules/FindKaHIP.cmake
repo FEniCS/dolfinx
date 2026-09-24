@@ -36,7 +36,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-message(STATUS "Checking for package 'KaHIP'")
+if(NOT KaHIP_FIND_QUIETLY)
+  message(STATUS "Checking for package 'KaHIP'")
+endif()
 
 find_package(MPI REQUIRED COMPONENTS CXX)
 
@@ -49,9 +51,8 @@ include(FindPackageHandleStandardArgs)
 if(DOLFINX_SKIP_BUILD_TESTS)
   find_package_handle_standard_args(
     KaHIP
-    "KaHIP could not be found/configured."
-    KAHIP_INCLUDE_DIR
-    PARHIP_LIBRARY
+    REQUIRED_VARS KAHIP_INCLUDE_DIR PARHIP_LIBRARY
+    FAIL_MESSAGE "KaHIP could not be found/configured."
   )
 else()
   if(PARHIP_LIBRARY AND KAHIP_INCLUDE_DIR)
@@ -64,7 +65,7 @@ else()
     if(KAHIP_LIBRARY)
       list(APPEND CMAKE_REQUIRED_LIBRARIES ${KAHIP_LIBRARY})
     endif()
-    list(APPEND CMAKE_REQUIRED_LINK_LIBRARIES MPI::MPI_CXX)
+    list(APPEND CMAKE_REQUIRED_LIBRARIES MPI::MPI_CXX)
     check_cxx_source_compiles(
       "
       #define MPICH_IGNORE_CXX_SEEK 1
@@ -94,10 +95,8 @@ else()
   endif()
   find_package_handle_standard_args(
     KaHIP
-    "KaHIP could not be found/configured."
-    KAHIP_INCLUDE_DIR
-    PARHIP_LIBRARY
-    KAHIP_TEST_COMPILES
+    REQUIRED_VARS KAHIP_INCLUDE_DIR PARHIP_LIBRARY KAHIP_TEST_COMPILES
+    FAIL_MESSAGE "KaHIP could not be found/configured."
   )
 endif()
 

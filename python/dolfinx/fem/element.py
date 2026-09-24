@@ -1,4 +1,5 @@
-# Copyright (C) 2024 Garth N. Wells and Paul T. Kühner
+# Copyright (C) 2024-2026 Garth N. Wells, Paul T. Kühner and
+# Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -6,15 +7,86 @@
 """Finite elements."""
 
 from functools import singledispatch
-from typing import ClassVar, Generic
+from typing import ClassVar, Generic, cast
 
 import numpy as np
 import numpy.typing as npt
 
 import basix
+import basix._basixcpp
 import basix.ufl
 from dolfinx import cpp as _cpp
 from dolfinx.typing import Real
+
+
+class ElementDofLayout:
+    """Layout of the degrees-of-freedom on a cell.
+
+    Describes which degrees-of-freedom of a cell are associated with
+    each sub-entity (vertex, edge, face, cell) of the cell.
+    """
+
+    _cpp_object: _cpp.fem.ElementDofLayout
+
+    def __init__(self, dof_layout: _cpp.fem.ElementDofLayout):
+        """Initialize a dof layout from a C++ ElementDofLayout.
+
+        Note:
+            Dof layouts are obtained from
+            :attr:`DofMap.dof_layout <dolfinx.fem.DofMap.dof_layout>` or
+            :meth:`CoordinateElement.create_dof_layout`, and not created
+            using this initialiser.
+
+        Args:
+            dof_layout: The C++ dof layout object.
+        """
+        self._cpp_object = dof_layout
+
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same dof layout."""
+        if not isinstance(other, ElementDofLayout):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped dof layout."""
+        return hash(self._cpp_object)
+
+    @property
+    def num_dofs(self) -> int:
+        """Number of degrees-of-freedom on the cell."""
+        return self._cpp_object.num_dofs
+
+    @property
+    def block_size(self) -> int:
+        """Block size of the layout."""
+        return self._cpp_object.block_size
+
+    def entity_dofs(self, dim: int, entity_index: int) -> list[int]:
+        """Degrees-of-freedom associated with a sub-entity of the cell.
+
+        Args:
+            dim: Topological dimension of the sub-entity.
+            entity_index: Local index of the sub-entity.
+
+        Returns:
+            Cell-local degrees-of-freedom on the sub-entity, excluding
+            those on its boundary.
+        """
+        return self._cpp_object.entity_dofs(dim, entity_index)
+
+    def entity_closure_dofs(self, dim: int, entity_index: int) -> list[int]:
+        """Degrees-of-freedom on the closure of a sub-entity.
+
+        Args:
+            dim: Topological dimension of the sub-entity.
+            entity_index: Local index of the sub-entity.
+
+        Returns:
+            Cell-local degrees-of-freedom on the sub-entity and on its
+            boundary.
+        """
+        return self._cpp_object.entity_closure_dofs(dim, entity_index)
 
 
 class CoordinateElement(Generic[Real]):
@@ -64,9 +136,9 @@ class CoordinateElement(Generic[Real]):
         """Hash identifier of the coordinate element."""
         return self._cpp_object.hash()
 
-    def create_dof_layout(self) -> _cpp.fem.ElementDofLayout:
+    def create_dof_layout(self) -> ElementDofLayout:
         """Compute and return the dof layout."""
-        return self._cpp_object.create_dof_layout()
+        return ElementDofLayout(self._cpp_object.create_dof_layout())
 
     def push_forward(
         self, X: npt.NDArray[Real], cell_geometry: npt.NDArray[Real]
@@ -84,14 +156,16 @@ class CoordinateElement(Generic[Real]):
         Returns:
             Physical coordinates of the points reference points ``X``.
         """
-        return self._cpp_object.push_forward(X, cell_geometry)
+        return self._cpp_object.push_forward(X, cell_geometry)  # type: ignore[arg-type,return-value]
 
     def pull_back(
         self,
         x: npt.NDArray[Real],
         cell_geometry: npt.NDArray[Real],
-        tol: float = 1.0e-6,
+        *,
+        tol: float | None = None,
         maxit: int = 15,
+        working_array: npt.NDArray[Real] | None = None,
     ) -> npt.NDArray[Real]:
         """Pull points on the physical cell back to the reference cell.
 
@@ -105,14 +179,25 @@ class CoordinateElement(Generic[Real]):
                 geometrical_dimension)``. They can be created by accessing
                 ``geometry.x[geometry.dofmaps[0].cell_dofs(i)]``,
             tol: Tolerance for convergence in Newton method for
-                nonaffine pullbacks.
+                nonaffine pullbacks. If not provided, it is set from
+                the square root of the machine epsilon of ``x``'s
+                dtype, since a fixed value tuned for ``float64`` is
+                often unreachable in ``float32`` arithmetic.
             maxit: Maximum number of Newton iterations for
                 nonaffine pullbacks.
+            working_array: Working memory for the pull-back operation.
+                If not provided, a new array will be allocated. The size of
+                the working array can be computed using
+                :func:`pull_back_working_size`.
 
         Returns:
             Reference coordinates of the physical points ``x``.
         """
-        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit)
+        if tol is None:
+            tol = float(np.sqrt(np.finfo(x.dtype).eps))
+        if working_array is None:
+            working_array = np.zeros(self.pull_back_working_size(x.shape[1]), dtype=x.dtype)
+        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit, working_array)  # type: ignore[arg-type,return-value]
 
     @property
     def variant(self) -> int:
@@ -129,13 +214,36 @@ class CoordinateElement(Generic[Real]):
         """Polynomial degree of the coordinate element."""
         return self._cpp_object.degree
 
+    @property
+    def is_discontinuous(self) -> bool:
+        """Whether the element is the discontinuous version of the element.
+
+        A discontinuous coordinate element associates all of its
+        degrees-of-freedom with the cell, so coordinate nodes are not
+        shared between cells and the geometry may be discontinuous
+        across cell facets.
+        """
+        return self._cpp_object.is_discontinuous
+
+    def pull_back_working_size(self, gdim: int) -> int:
+        """Compute the working array size required for pull back.
+
+        Args:
+            gdim: Geometrical dimension of input points
+
+        Returns:
+            Number of elements required in the working array for pull back.
+        """
+        return self._cpp_object.pull_back_working_size(gdim)
+
 
 @singledispatch
 def coordinate_element(
-    celltype: _cpp.mesh.CellType,
+    celltype: _cpp.mesh.CellType | basix.finite_element.FiniteElement,
     degree: int,
-    variant=int(basix.LagrangeVariant.unset),
+    variant: int = int(basix.LagrangeVariant.unset),
     dtype: npt.DTypeLike = np.float64,
+    discontinuous: bool = False,
 ) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from element metadata.
 
@@ -146,16 +254,17 @@ def coordinate_element(
         degree: Polynomial degree of the coordinate element map.
         variant: Basix Lagrange variant (affects node placement).
         dtype: Scalar type for the coordinate element.
+        discontinuous: Continuity of the coordinate element.
 
     Returns:
         A coordinate element.
     """
     cpp_type = CoordinateElement.cpp_types[np.dtype(dtype)]
-    return CoordinateElement(cpp_type(celltype, degree, variant))
+    return CoordinateElement(cpp_type(celltype, degree, variant, discontinuous))
 
 
 @coordinate_element.register(basix.finite_element.FiniteElement)
-def _(e: basix.finite_element.FiniteElement) -> CoordinateElement:
+def _coordinate_element_from_basix(e: basix.finite_element.FiniteElement) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from a Basix finite element.
 
     Coordinate elements are typically used when creating meshes.
@@ -196,23 +305,30 @@ class FiniteElement(Generic[Real]):
         """
         self._cpp_object = cpp_object
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """Check equality with another finite element."""
+        if not isinstance(other, FiniteElement):
+            return NotImplemented
         return self._cpp_object == other._cpp_object
 
     @property
     def dtype(self) -> np.dtype:
         """Geometry type of the mesh that the space is defined on."""
-        return self._cpp_object.dtype
+        return np.dtype(self._cpp_object.dtype)
 
     @property
-    def basix_element(self) -> basix.finite_element.FiniteElement:
+    def basix_element(
+        self,
+    ) -> basix._basixcpp.FiniteElement_float32 | basix._basixcpp.FiniteElement_float64:
         """Return underlying Basix C++ element (if it exists).
 
         Raises:
-            Runtime error if Basix element does not exist.
+            RuntimeError: If a Basix element does not exist.
         """
-        return self._cpp_object.basix_element
+        return cast(
+            "basix._basixcpp.FiniteElement_float32 | basix._basixcpp.FiniteElement_float64",
+            self._cpp_object.basix_element,
+        )
 
     @property
     def num_sub_elements(self) -> int:
@@ -242,7 +358,7 @@ class FiniteElement(Generic[Real]):
             positions. For other elements the points will typically be the
             quadrature points used to evaluate moment degrees of freedom.
         """
-        return self._cpp_object.interpolation_points()
+        return self._cpp_object.interpolation_points()  # type: ignore[return-value]
 
     @property
     def interpolation_ident(self) -> bool:
@@ -308,7 +424,7 @@ class FiniteElement(Generic[Real]):
             cells. Please see `basix.numba_helpers` for performant
             versions.
         """
-        self._cpp_object.T_apply(x, cell_permutations, dim)
+        self._cpp_object.T_apply(x, cell_permutations, dim)  # type: ignore[arg-type]
 
     def Tt_apply(
         self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
@@ -322,7 +438,7 @@ class FiniteElement(Generic[Real]):
             cell_permutations: Permutation data for the cells
             dim: Number of columns in ``data``.
         """
-        self._cpp_object.Tt_apply(x, cell_permutations, dim)
+        self._cpp_object.Tt_apply(x, cell_permutations, dim)  # type: ignore[arg-type]
 
     def Tt_inv_apply(
         self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
@@ -336,7 +452,7 @@ class FiniteElement(Generic[Real]):
             cell_permutations: Permutation data for the cells
             dim: Number of columns in ``data``.
         """
-        self._cpp_object.Tt_inv_apply(x, cell_permutations, dim)
+        self._cpp_object.Tt_inv_apply(x, cell_permutations, dim)  # type: ignore[arg-type]
 
 
 def finiteelement(
@@ -356,7 +472,9 @@ def finiteelement(
 
     if ufl_e.is_mixed:
         elements = [
-            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object  # type: ignore
+            finiteelement(
+                cell_type, cast(basix.ufl._ElementBase, e), FiniteElement_dtype
+            )._cpp_object
             for e in ufl_e.sub_elements
         ]
         return FiniteElement(CppElement(elements))

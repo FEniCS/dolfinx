@@ -46,14 +46,9 @@ build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
 /// by all cells.
 ///
 /// @param[in] topology The mesh topology.
-/// @param[in] entity_dofs The dofs for each mesh entity.
-/// @param[in] entity_closure_dofs The closure dofs for each mesh entity.
-/// @param[in] value_size The number of components for the real element.
+/// @param[in] dof_layout The element dof layout for the real element.
 /// @return The dofmap for the real element.
-fem::DofMap build_real_element_dofmap(
-    const mesh::Topology& topology,
-    const std::vector<std::vector<std::vector<int>>>& entity_dofs,
-    const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
-    int value_size);
+fem::DofMap build_real_element_dofmap(const mesh::Topology& topology,
+                                      const fem::ElementDofLayout& dof_layout);
 
 } // namespace dolfinx::fem

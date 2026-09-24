@@ -22,19 +22,13 @@
 #include <numeric>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <vector>
 
 namespace dolfinx::fem
 {
 template <dolfinx::scalar T, std::floating_point U>
 class Function;
-
-template <typename T>
-concept MDSpan = requires(T x, std::size_t idx) {
-  x(idx, idx);
-  { x.extent(0) } -> std::integral;
-  { x.extent(1) } -> std::integral;
-};
 
 /// @brief Compute the evaluation points in the physical space at which
 /// an expression should be computed to interpolate it in a finite
@@ -99,7 +93,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
     }
 
     // Push forward coordinates (X -> x)
-    std::size_t offset = std::distance(cells.begin(), cell_it);
+    std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       for (std::size_t j = 0; j < gdim; ++j)
@@ -173,8 +167,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   // Build unique set of the sorted src_ranks
   std::vector<std::int32_t> out_ranks(src_ranks.size());
   out_ranks.assign(src_ranks.begin(), src_ranks.end());
-  auto [unique_end, range_end] = std::ranges::unique(out_ranks);
-  out_ranks.erase(unique_end, range_end);
+  out_ranks.erase(std::ranges::unique(out_ranks).begin(), out_ranks.end());
   out_ranks.reserve(out_ranks.size() + 1);
 
   // Remove negative entries from dest_ranks
@@ -185,11 +178,8 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
                [](auto rank) { return rank >= 0; });
 
   // Create unique set of sorted in-ranks
-  {
-    std::ranges::sort(in_ranks);
-    auto [unique_end, range_end] = std::ranges::unique(in_ranks);
-    in_ranks.erase(unique_end, range_end);
-  }
+  std::ranges::sort(in_ranks);
+  in_ranks.erase(std::ranges::unique(in_ranks).begin(), in_ranks.end());
   in_ranks.reserve(in_ranks.size() + 1);
 
   // Create neighborhood communicator
@@ -290,7 +280,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 
   // Insert values received from neighborhood communicator in output
   // span
-  std::ranges::fill(recv_values, T(0));
+  std::ranges::fill(recv_values, T{0});
   for (std::size_t i = 0; i < comm_to_output.size(); i++)
   {
     auto vals = std::next(recv_values.begin(), comm_to_output[i]);
@@ -307,7 +297,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 /// f1(x0), f0(x1), f1(x1), ...).
 /// @param[out] coeffs Degrees of freedom to compute.
 /// @param[in] bs The block size.
-template <MDSpan U, MDSpan V, dolfinx::scalar T>
+template <dolfinx::MDSpanRank2 U, dolfinx::MDSpanRank2 V, dolfinx::scalar T>
 void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 {
   // Geometry (real) scalar type, taken from the interpolation operator Pi
@@ -396,9 +386,9 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
   if (element1->needs_dof_transformations()
       or element0->needs_dof_transformations())
   {
-    mesh0->topology_mutable()->create_entity_permutations();
+    mesh0->topology_mutable()->create_cell_permutations();
     cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
-    mesh1->topology_mutable()->create_entity_permutations();
+    mesh1->topology_mutable()->create_cell_permutations();
     cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
   }
 
@@ -425,7 +415,7 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
   // Iterate over mesh and interpolate on each cell
   using X = U; // geometry (real) type, independent of the value scalar T
   if (cells0.size() != cells1.size())
-    throw std::runtime_error("Length of cells0 and cells1 must match.");
+    throw std::invalid_argument("Length of cells0 and cells1 must match.");
   for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
        cell0_it != cells0.end() and cell1_it != cells1.end();
        ++cell0_it, ++cell1_it)
@@ -436,7 +426,8 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
       for (int k = 0; k < bs0; ++k)
         local0[bs0 * i + k] = u0_array[bs0 * dofs0[i] + k];
 
-    apply_dof_transformation(local0, cell_info0, *cell0_it, 1);
+    if (apply_dof_transformation)
+      apply_dof_transformation(local0, cell_info0, *cell0_it, 1);
 
     // FIXME: Get compile-time ranges from Basix
     // Apply interpolation operator
@@ -445,7 +436,8 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
       for (std::size_t j = 0; j < im_shape[1]; ++j)
         local1[i] += static_cast<X>(i_m[im_shape[1] * i + j]) * local0[j];
 
-    apply_inverse_dof_transform(local1, cell_info1, *cell1_it, 1);
+    if (apply_inverse_dof_transform)
+      apply_inverse_dof_transform(local1, cell_info1, *cell1_it, 1);
     std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(*cell1_it);
     for (std::size_t i = 0; i < dofs1.size(); ++i)
       for (int k = 0; k < bs1; ++k)
@@ -498,9 +490,9 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   if (element1->needs_dof_transformations()
       or element0->needs_dof_transformations())
   {
-    mesh0->topology_mutable()->create_entity_permutations();
+    mesh0->topology_mutable()->create_cell_permutations();
     cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
-    mesh1->topology_mutable()->create_entity_permutations();
+    mesh1->topology_mutable()->create_cell_permutations();
     cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
   }
 
@@ -606,7 +598,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   std::span<const T> array0 = u0.x()->array();
   std::span<T> array1 = u1.x()->array();
   if (cells0.size() != cells1.size())
-    throw std::runtime_error("Length of cells0 and cells1 must match.");
+    throw std::invalid_argument("Length of cells0 and cells1 must match.");
   for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
        cell0_it != cells0.end() and cell1_it != cells1.end();
        ++cell0_it, ++cell1_it)
@@ -641,12 +633,15 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
           basis_reference0(k0, k1, k2)
               = basis_derivatives_reference0(0, k0, k1, k2);
 
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    if (apply_dof_transformation0)
     {
-      apply_dof_transformation0(
-          std::span(basis_reference0_b.data() + p * dim0 * value_size_ref0,
-                    dim0 * value_size_ref0),
-          cell_info0, *cell0_it, value_size_ref0);
+      for (std::size_t p = 0; p < Xshape[0]; ++p)
+      {
+        apply_dof_transformation0(
+            std::span(basis_reference0_b.data() + p * dim0 * value_size_ref0,
+                      dim0 * value_size_ref0),
+            cell_info0, *cell0_it, value_size_ref0);
+      }
     }
 
     for (std::size_t i = 0; i < basis0.extent(0); ++i)
@@ -696,7 +691,8 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
     auto values
         = md::submdspan(mapped_values0, md::full_extent, 0, md::full_extent);
     interpolation_apply(Pi_1, values, std::span(local1), bs1);
-    apply_inv_dof_transform1(local1, cell_info1, *cell1_it, 1);
+    if (apply_inv_dof_transform1)
+      apply_inv_dof_transform1(local1, cell_info1, *cell1_it, 1);
 
     // Copy local coefficients to the correct position in u dof array
     const int dof_bs1 = dofmap1->bs();
@@ -760,7 +756,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
       std::size_t row = 0;
       std::size_t rowstart = 0;
       std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
-      std::size_t offset = std::distance(cells.begin(), cell_it);
+      std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
       for (int k = 0; k < element_bs; ++k)
       {
         if (k - rowstart > row)
@@ -775,8 +771,11 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
             std::next(f.begin(), (row * matrix_size + k - rowstart) * fshape[1]
                                      + offset * num_scalar_dofs),
             num_scalar_dofs, coeffs_b.data());
-        apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
-                                               1);
+        if (apply_inv_transpose_dof_transformation)
+        {
+          apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
+                                                 1);
+        }
         if (same_bs)
         {
           for (int i = 0; i < num_scalar_dofs; ++i)
@@ -798,7 +797,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
     // Loop over cells
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
-      std::size_t offset = std::distance(cells.begin(), cell_it);
+      std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
       std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
       for (int k = 0; k < element_bs; ++k)
       {
@@ -807,8 +806,11 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
         std::copy_n(
             std::next(f.begin(), k * fshape[1] + offset * num_scalar_dofs),
             num_scalar_dofs, coeffs_b.data());
-        apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
-                                               1);
+        if (apply_inv_transpose_dof_transformation)
+        {
+          apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
+                                                 1);
+        }
         if (same_bs)
         {
           for (int i = 0; i < num_scalar_dofs; ++i)
@@ -851,7 +853,8 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   // e.g. not Piola mapped
 
   if (symmetric)
-    throw std::runtime_error("Interpolation into this element not supported.");
+    throw std::invalid_argument(
+        "Interpolation into this element not supported.");
 
   const int element_bs = element.block_size();
   const int num_scalar_dofs = element.space_dimension() / element_bs;
@@ -881,7 +884,7 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   std::vector<T> coeffs_b(num_scalar_dofs);
   for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
   {
-    std::size_t offset = std::distance(cells.begin(), cell_it);
+    std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
     std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
     for (int k = 0; k < element_bs; ++k)
     {
@@ -895,7 +898,11 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       }
 
       impl::interpolation_apply(Pi, ref_data, std::span(coeffs_b), 1);
-      apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it, 1);
+      if (apply_inv_transpose_dof_transformation)
+      {
+        apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
+                                               1);
+      }
       if (same_bs)
       {
         for (int i = 0; i < num_scalar_dofs; ++i)
@@ -934,7 +941,8 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
                              const mesh::Mesh<U>& mesh, std::span<T> coeffs)
 {
   if (symmetric)
-    throw std::runtime_error("Interpolation into this element not supported.");
+    throw std::invalid_argument(
+        "Interpolation into this element not supported.");
 
   const int gdim = mesh.geometry().dim();
   assert(mesh.topology());
@@ -954,12 +962,12 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const auto [X, Xshape] = element.interpolation_points();
   if (X.empty())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Interpolation into this space is not yet supported.");
   }
 
   if (_f.extent(1) != cells.size() * Xshape[0])
-    throw std::runtime_error("Interpolation data has the wrong shape.");
+    throw std::invalid_argument("Interpolation data has the wrong shape.");
 
   // Get coordinate map
   const CoordinateElement<U>& cmap = mesh.geometry().cmaps().front();
@@ -1046,7 +1054,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
     }
 
-    const std::size_t offset = std::distance(cells.begin(), cell_it);
+    const std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
     std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
     for (int k = 0; k < element_bs; ++k)
     {
@@ -1072,7 +1080,8 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
       auto ref = md::submdspan(ref_data, md::full_extent, 0, md::full_extent);
       impl::interpolation_apply(Pi, ref, std::span(coeffs_b), element_bs);
-      apply_inv_trans_dof_transformation(coeffs_b, cell_info, *cell_it, 1);
+      if (apply_inv_trans_dof_transformation)
+        apply_inv_trans_dof_transformation(coeffs_b, cell_info, *cell_it, 1);
 
       // Copy interpolation dofs into coefficient vector
       assert(coeffs_b.size() == static_cast<std::size_t>(num_scalar_dofs));
@@ -1105,19 +1114,27 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 /// @param[in] cells Indices of the cells in the destination mesh on
 /// which to interpolate. Should be the same as the list used when
 /// calling `interpolation_coords`.
-/// @param[in] padding Absolute padding of bounding boxes of all
-/// entities on `mesh1`. This is used avoid floating point issues when
-/// an interpolation point from `mesh0` is on the surface of a cell in
-/// `mesh1`. This parameter can also be used for extrapolation, i.e. if
-/// cells in `mesh0` is not overlapped by `mesh1`.
+/// @param[in] padding Absolute padding applied to the bounding box of
+/// each cell in `mesh1` before searching for candidate cells.
+/// Increasing `padding` increases the number of `mesh1` cells
+/// considered as candidates for an interpolation point; it does not by
+/// itself decide whether a point with no actually-containing cell is
+/// assigned an owner, which is controlled by `allow_extrapolation`.
+/// @param[in] allow_extrapolation If `true` (default), a point from
+/// `mesh0` not actually contained in any candidate cell of `mesh1` is
+/// instead assigned the candidate cell closest to it (relevant e.g. if
+/// `mesh0` is not fully overlapped by `mesh1`). If `false`, such points
+/// are left unowned.
 ///
-/// @note Setting the `padding` to a large value will increase the
-/// runtime of this function, as one has to determine what entity is
-/// closest if there is no intersection.
+/// @note With `allow_extrapolation` set to `true`, setting `padding` to
+/// a large value will increase the runtime of this function, since a
+/// point not contained in any candidate then requires a GJK distance
+/// computation against every candidate cell.
 template <std::floating_point T>
 geometry::PointOwnershipData<T> create_interpolation_data(
     const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
-    const mesh::Mesh<T>& mesh1, mesh::CellRange auto&& cells, T padding)
+    const mesh::Mesh<T>& mesh1, mesh::CellRange auto&& cells, T padding,
+    bool allow_extrapolation = true)
 {
   // Collect all the points at which values are needed to define the
   // interpolating function
@@ -1131,8 +1148,8 @@ geometry::PointOwnershipData<T> create_interpolation_data(
       x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
-  return geometry::determine_point_ownership<T>(mesh1, x, padding,
-                                                std::nullopt);
+  return geometry::determine_point_ownership<T>(mesh1, x, padding, std::nullopt,
+                                                allow_extrapolation);
 }
 
 template <dolfinx::scalar T, std::floating_point U>
@@ -1148,8 +1165,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   if (int num_sub = element->num_sub_elements();
       num_sub > 0 and num_sub != element_bs)
   {
-    throw std::runtime_error("Cannot directly interpolate a mixed space. "
-                             "Interpolate into subspaces.");
+    throw std::invalid_argument("Cannot directly interpolate a mixed space. "
+                                "Interpolate into subspaces.");
   }
 
   // Get mesh
@@ -1161,14 +1178,14 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
           != (std::size_t)u.function_space()->elements(index)->value_size()
       or f.size() != fshape[0] * fshape[1])
   {
-    throw std::runtime_error("Interpolation data has the wrong shape/size.");
+    throw std::invalid_argument("Interpolation data has the wrong shape/size.");
   }
 
   spdlog::debug("Check for dof transformation");
   std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
-    mesh->topology_mutable()->create_entity_permutations();
+    mesh->topology_mutable()->create_cell_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
@@ -1235,8 +1252,8 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
     MPI_Comm_compare(comm, mesh0->comm(), &result);
     if (result == MPI_UNEQUAL)
     {
-      throw std::runtime_error("Interpolation on different meshes is only "
-                               "supported on the same communicator.");
+      throw std::invalid_argument("Interpolation on different meshes is only "
+                                  "supported on the same communicator.");
     }
   }
 
@@ -1302,7 +1319,7 @@ void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
                  const Function<T, U>& u0, mesh::CellRange auto&& cells0)
 {
   if (cells0.size() != cells1.size())
-    throw std::runtime_error("Length of cell lists do not match.");
+    throw std::invalid_argument("Length of cell lists do not match.");
 
   auto V1 = u1.function_space();
   assert(V1);
@@ -1316,7 +1333,7 @@ void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
   assert(e1);
   if (!std::ranges::equal(e0->value_shape(), e1->value_shape()))
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Interpolation: elements have different value dimensions");
   }
 
@@ -1324,7 +1341,7 @@ void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
   {
     // Same element and same mesh
     if (e1->block_size() != e0->block_size())
-      throw std::runtime_error("Mismatch in element block size.");
+      throw std::invalid_argument("Mismatch in element block size.");
 
     // Get dofmaps
     std::shared_ptr<const DofMap> dofmap0 = V0->dofmap();
@@ -1388,7 +1405,7 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
   if (u1.function_space()->mesh() == u0.function_space()->mesh())
     interpolate<T, U>(u1, cells, u0, cells);
   else
-    throw std::runtime_error("Meshes do no match.");
+    throw std::invalid_argument("Meshes do no match.");
 }
 
 /// @brief Interpolate from one finite element Function to another

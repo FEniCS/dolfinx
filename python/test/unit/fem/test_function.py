@@ -6,6 +6,7 @@
 """Unit tests for the Function class."""
 
 import importlib
+import sys
 
 from mpi4py import MPI
 
@@ -15,7 +16,7 @@ import pytest
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import default_real_type, la
+from dolfinx import la
 from dolfinx.fem import Function, functionspace
 from dolfinx.geometry import bb_tree, compute_colliding_cells, compute_collisions_points
 from dolfinx.mesh import create_mesh, create_unit_cube
@@ -60,10 +61,40 @@ def test_copy(V):
     assert not np.allclose(u.x.array, v.x.array)
 
 
-def test_eval(V, W, Q, mesh):
-    u1 = Function(V)
-    u2 = Function(W)
-    u3 = Function(Q)
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
+def test_eval(dtype):
+    xdtype = dtype(0).real.dtype
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=xdtype)
+    gdim = mesh.geometry.dim
+    V = functionspace(mesh, ("Lagrange", 1))
+    W = functionspace(mesh, ("Lagrange", 1, (gdim,)))
+    Q = functionspace(mesh, ("Lagrange", 1, (gdim, gdim)))
+
+    u1 = Function(V, dtype=dtype)
+    u2 = Function(W, dtype=dtype)
+    u3 = Function(Q, dtype=dtype)
 
     def e2(x):
         values = np.empty((3, x.shape[1]))
@@ -95,43 +126,95 @@ def test_eval(V, W, Q, mesh):
     cell = compute_colliding_cells(mesh, cell_candidates, x0).array
     assert len(cell) > 0
     first_cell = cell[0]
-    assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
+    # The same expression through two spaces, so equal to a few ulp.
+    tol = max(1.0e-15, 10 * np.finfo(dtype).eps)
+    assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=tol, atol=tol)
 
 
 @pytest.mark.skip_in_parallel
-def test_eval_manifold():
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
+def test_eval_manifold(dtype):
+    xdtype = dtype(0).real.dtype
     # Simple two-triangle surface in 3d
     vertices = np.array(
         [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)],
-        dtype=default_real_type,
+        dtype=xdtype,
     )
     cells = [(0, 1, 2), (0, 1, 3)]
-    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=xdtype))
     mesh = create_mesh(MPI.COMM_WORLD, cells, domain, vertices)
     Q = functionspace(mesh, ("Lagrange", 1))
-    u = Function(Q)
+    u = Function(Q, dtype=dtype)
     u.interpolate(lambda x: x[0] + x[1])
-    assert np.isclose(u.eval([0.75, 0.25, 0.5], 0)[0], 1.0)
+    # The expected value is exact, so the tolerance covers rounding only.
+    rtol = max(1.0e-5, 1000 * np.finfo(dtype).eps)
+    assert np.isclose(u.eval([0.75, 0.25, 0.5], 0)[0], 1.0, rtol=rtol)
 
 
 def test_interpolation_mismatch_rank0(W):
     u = Function(W)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         u.interpolate(lambda x: np.ones(x.shape[1]))
 
 
 def test_interpolation_mismatch_rank1(W):
     u = Function(W)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         u.interpolate(lambda x: np.ones((2, x.shape[1])))
 
 
-def test_mixed_element_interpolation():
-    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    el = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
+def test_mixed_element_interpolation(dtype):
+    xdtype = dtype(0).real.dtype
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=xdtype)
+    el = element("Lagrange", mesh.basix_cell(), 1, dtype=xdtype)
     V = functionspace(mesh, mixed_element([el, el]))
-    u = Function(V)
-    with pytest.raises(RuntimeError):
+    u = Function(V, dtype=dtype)
+    with pytest.raises(ValueError):
         u.interpolate(lambda x: np.ones(2, x.shape[1]))
 
 
@@ -216,11 +299,37 @@ def test_cffi_expression(dtype, cdtype):
     assert la.norm(f1.x) < 1.0e-12
 
 
-def test_interpolation_function(mesh):
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
+def test_interpolation_function(dtype):
+    xdtype = dtype(0).real.dtype
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=xdtype)
     V = functionspace(mesh, ("Lagrange", 1))
-    u = Function(V)
+    u = Function(V, dtype=dtype)
     u.x.array[:] = 1
     Vh = functionspace(mesh, ("Lagrange", 1))
-    uh = Function(Vh)
+    uh = Function(Vh, dtype=dtype)
     uh.interpolate(u)
-    assert np.allclose(uh.x.array, 1)
+    # Interpolating a constant between identical spaces is exact.
+    assert np.allclose(uh.x.array, 1, rtol=max(1.0e-5, 100 * np.finfo(dtype).eps))

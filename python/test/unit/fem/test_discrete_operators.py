@@ -16,7 +16,7 @@ import dolfinx.la
 import ufl
 from basix.ufl import element
 from dolfinx.fem import Expression, Function, discrete_curl, discrete_gradient, functionspace
-from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
+from dolfinx.mesh import CellType, GhostMode, cell_dim, create_unit_cube, create_unit_square
 
 
 @pytest.mark.parametrize(
@@ -55,7 +55,7 @@ def test_discrete_curl_gdim_raises(cell):
     E0 = element("N1curl", msh.basix_cell(), 2, dtype=np.float64)
     E1 = element("RT", msh.basix_cell(), 2, dtype=np.float64)
     V0, V1 = functionspace(msh, E0), functionspace(msh, E1)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         discrete_curl(V0, V1)
 
 
@@ -86,7 +86,7 @@ def test_discrete_curl_map_raises(elements):
         MPI.COMM_WORLD, 3, 3, 3, cell_type=CellType.tetrahedron, dtype=np.float64
     )
     V0, V1 = functionspace(msh, elements[0]), functionspace(msh, elements[1])
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         discrete_curl(V0, V1)
 
 
@@ -399,7 +399,7 @@ def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange):
     [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
 )
 def test_discrete_interpolation(cell_type, dtype):
-    tdim = dolfinx.cpp.mesh.cell_dim(cell_type)
+    tdim = cell_dim(cell_type)
     if tdim == 2:
         mesh = dolfinx.mesh.create_unit_square(
             MPI.COMM_WORLD, 4, 4, cell_type=cell_type, dtype=dtype

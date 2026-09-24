@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
@@ -98,10 +99,9 @@ plotter.show()
   mesh.topology()->create_entities(
       1, std::max(1, static_cast<int>(std::thread::hardware_concurrency())));
 
-  auto [mesh_fine, parent_cell, parent_facet] = refinement::refine(
-      mesh, std::nullopt,
-      mesh::create_cell_partitioner(mesh::GhostMode::none, 2),
-      refinement::Option::parent_cell_and_facet);
+  auto [mesh_fine, parent_cell, parent_facet]
+      = refinement::refine(mesh, std::nullopt, graph::partition_graph,
+                           refinement::Option::parent_cell_and_facet);
 
   // vertex layout:
   // 8---7---5

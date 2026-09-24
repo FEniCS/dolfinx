@@ -7,11 +7,16 @@
 #pragma once
 
 #include "Topology.h"
-#include <concepts>
+#include <algorithm>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
-#include <format>
+#include <iterator>
+#include <memory>
 #include <ranges>
-#include <span>
+#include <stdexcept>
+#include <type_traits>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::mesh
@@ -33,6 +38,7 @@ public:
   /// @param sub_topology_to_topology List of entities in `topology`
   /// where `sub_topology_to_topology[i]` is the index in `topology`
   /// corresponding to entity `i` in `sub_topology`.
+  /// @pre `sub_topology_to_topology` entries must be distinct.
   template <typename U>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
                                    std::vector<std::int32_t>>
@@ -43,18 +49,21 @@ public:
         _sub_topology_to_topology(std::forward<U>(sub_topology_to_topology)),
         _sub_topology(sub_topology)
   {
-    auto e_imap = sub_topology->index_map(_dim);
-    if (!e_imap)
+    if (!topology)
+      throw std::invalid_argument("topology must not be null.");
+    if (!sub_topology)
+      throw std::invalid_argument("sub_topology must not be null.");
+    if (dim < 0 or dim > topology->dim() or dim > sub_topology->dim())
     {
-      throw std::runtime_error(std::format(
-          "No index map for entities, call `Topology::create_entities({})",
-          _dim));
+      throw std::invalid_argument(
+          "dim out of range for topology/sub_topology.");
     }
 
+    auto e_imap = sub_topology->index_map(_dim);
     std::size_t num_ents = e_imap->size_local() + e_imap->num_ghosts();
     if (num_ents != _sub_topology_to_topology.size())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Size mismatch between `sub_topology_to_topology` and index map.");
     }
   }
@@ -65,13 +74,19 @@ public:
   /// Move constructor
   EntityMap(EntityMap&& map) = default;
 
-  // Destructor
+  /// Destructor
   ~EntityMap() = default;
+
+  // Copy assignment (deleted)
+  EntityMap& operator=(const EntityMap& map) = delete;
+
+  /// Move assignment
+  EntityMap& operator=(EntityMap&& map) = default;
 
   /// @brief Get the topological dimension of the entities related by
   /// this `EntityMap`.
   /// @return The topological dimension.
-  std::size_t dim() const;
+  int dim() const;
 
   /// @brief Get the (parent) topology.
   /// @return The parent topology.
@@ -104,6 +119,7 @@ public:
   std::vector<std::int32_t> sub_topology_to_topology(CellRange auto&& entities,
                                                      bool inverse) const
   {
+    std::size_t num_entities = std::ranges::size(entities);
     if (!inverse)
     {
       // In this case, we want to map from entity indices in
@@ -114,7 +130,10 @@ public:
           = std::forward<decltype(entities)>(entities)
             | std::views::transform([this](std::int32_t i)
                                     { return _sub_topology_to_topology[i]; });
-      return std::vector<std::int32_t>(mapped.begin(), mapped.end());
+      std::vector<std::int32_t> mapped_v;
+      mapped_v.reserve(num_entities);
+      std::ranges::copy(mapped, std::back_inserter(mapped_v));
+      return mapped_v;
     }
     else
     {
@@ -147,13 +166,16 @@ public:
                                      ? it->second
                                      : -1;
                         });
-      return std::vector<std::int32_t>(mapped.begin(), mapped.end());
+      std::vector<std::int32_t> mapped_v;
+      mapped_v.reserve(num_entities);
+      std::ranges::copy(mapped, std::back_inserter(mapped_v));
+      return mapped_v;
     }
   }
 
 private:
   // Dimension of the entities
-  std::size_t _dim;
+  int _dim;
 
   // A topology
   std::shared_ptr<const Topology> _topology;

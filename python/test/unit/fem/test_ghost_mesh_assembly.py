@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly."""
 
+import sys
+
 from mpi4py import MPI
 
 import numpy as np
@@ -78,18 +80,43 @@ def test_ghost_mesh_assembly(mode, dx, ds):
     ],
 )
 @pytest.mark.parametrize("dS", [dS_from_ufl])
-def test_ghost_mesh_dS_assembly(mode, dS):
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
+def test_ghost_mesh_dS_assembly(mode, dS, dtype):
+    xdtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=xdtype)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dS = dS(mesh)
-    a = form(inner(avg(u), avg(v)) * dS)
+    a = form(inner(avg(u), avg(v)) * dS, dtype=dtype)
 
     # Initial assembly
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
     assert isinstance(A, la.MatrixCSR)
 
-    # Check that the norms are the same for all three modes
+    # Check that the norms are the same for all three modes.
+    abs_tol = max(1.0e-12, 100 * np.finfo(dtype).eps)
     normA = np.sqrt(A.squared_norm())
-    assert normA == pytest.approx(2.1834054713561906, rel=1.0e-5, abs=1.0e-12)
+    assert normA == pytest.approx(2.1834054713561906, rel=1.0e-5, abs=abs_tol)

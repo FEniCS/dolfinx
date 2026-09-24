@@ -75,13 +75,21 @@ void la(nb::module_& m)
                  std::vector<const dolfinx::la::SparsityPattern*>>& patterns,
              const std::array<
                  std::vector<std::pair<
-                     std::reference_wrapper<const dolfinx::common::IndexMap>,
-                     int>>,
+                     std::shared_ptr<const dolfinx::common::IndexMap>, int>>,
                  2>& maps,
              std::array<std::vector<int>, 2> bs)
           {
+            std::array<
+                std::vector<std::pair<
+                    std::reference_wrapper<const dolfinx::common::IndexMap>,
+                    int>>,
+                2>
+                _maps;
+            for (int i = 0; i < 2; ++i)
+              for (auto& [map, map_bs] : maps[i])
+                _maps[i].push_back({*map, map_bs});
             new (sp)
-                dolfinx::la::SparsityPattern(comm.get(), patterns, maps, bs);
+                dolfinx::la::SparsityPattern(comm.get(), patterns, _maps, bs);
           },
           nb::arg("comm"), nb::arg("patterns"), nb::arg("maps"), nb::arg("bs"))
       .def("index_map", &dolfinx::la::SparsityPattern::index_map,

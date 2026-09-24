@@ -23,9 +23,6 @@
 #   finite element spaces
 # - Interpolate these special finite elements into discontinuous Lagrange
 #   spaces for artifact-free visualisation.
-# $H(\mathrm{curl})$ finite element spaces, and the interpolation of
-# these special finite elements in discontinuous Lagrange spaces for
-# artifact-free visualisation.
 
 
 # +
@@ -119,7 +116,7 @@ try:
     pl.add_text("y-component", font_size=12, color="black", position="upper_edge")
     pl.add_mesh(grid.copy(), component=1, show_edges=True)
 
-    pl.view_xy()  # type: ignore
+    pl.view_xy()
     pl.link_views()
 
     # If pyvista environment variable is set to off-screen (static)

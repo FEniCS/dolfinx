@@ -1,5 +1,5 @@
-// Copyright (C) 2013-2025 Johan Hake, Jan Blechta, Garth N. Wells and Paul T.
-// Kühner
+// Copyright (C) 2013-2026 Johan Hake, Jan Blechta, Garth N. Wells, Paul T.
+// Kühner and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -85,7 +85,7 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
     auto cell_facets = c_to_f.links(cell);
     auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
     assert(facet_it != cell_facets.end());
-    int local_f = std::distance(cell_facets.begin(), facet_it);
+    int local_f = std::ranges::distance(cell_facets.begin(), facet_it);
     cell_local_facet_pairs[2 * c] = cell;
     cell_local_facet_pairs[2 * c + 1] = local_f;
   }
@@ -116,7 +116,7 @@ get_cell_entity_pairs(std::int32_t e, std::span<const std::int32_t> cells,
   auto cell_entities = c_to_e.links(cell);
   auto it = std::ranges::find(cell_entities, e);
   assert(it != cell_entities.end());
-  std::int32_t local_index = std::distance(cell_entities.begin(), it);
+  std::int32_t local_index = std::ranges::distance(cell_entities.begin(), it);
 
   return {cell, local_index};
 }
@@ -227,7 +227,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
 {
   if (a.rank() != 2)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cannot create sparsity pattern. Form is not a bilinear.");
   }
 
@@ -305,7 +305,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         }
         break;
       default:
-        throw std::runtime_error("Unsupported integral type");
+        throw std::invalid_argument("Unsupported integral type");
       }
     }
   }
@@ -427,17 +427,17 @@ Form<T, U> create_form_factory(
   for (const ufcx_form& ufcx_form : ufcx_forms)
   {
     if (ufcx_form.rank != (int)spaces.size())
-      throw std::runtime_error("Wrong number of argument spaces for Form.");
+      throw std::invalid_argument("Wrong number of argument spaces for Form.");
     if (ufcx_form.num_coefficients != (int)coefficients.size())
     {
-      throw std::runtime_error("Mismatch between number of expected and "
-                               "provided Form coefficients.");
+      throw std::invalid_argument("Mismatch between number of expected and "
+                                  "provided Form coefficients.");
     }
 
     // Check Constants for rank and size consistency
     if (ufcx_form.num_constants != (int)constants.size())
     {
-      throw std::runtime_error(std::format(
+      throw std::invalid_argument(std::format(
           "Mismatch between number of expected and "
           "provided Form Constants. Expected {} constants, but got {}.",
           ufcx_form.num_constants, constants.size()));
@@ -446,7 +446,7 @@ Form<T, U> create_form_factory(
     {
       if (ufcx_form.constant_ranks[c] != (int)constants[c]->shape.size())
       {
-        throw std::runtime_error(std::format(
+        throw std::invalid_argument(std::format(
             "Mismatch between expected and actual rank of "
             "Form Constant. Rank of Constant {} should be {}, but got rank {}.",
             c, ufcx_form.constant_ranks[c], constants[c]->shape.size()));
@@ -454,7 +454,7 @@ Form<T, U> create_form_factory(
       if (!std::equal(constants[c]->shape.begin(), constants[c]->shape.end(),
                       ufcx_form.constant_shapes[c]))
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             std::format("Mismatch between expected and actual shape of Form "
                         "Constant for Constant {}.",
                         c));
@@ -474,7 +474,7 @@ Form<T, U> create_form_factory(
           and element_hash
                   != spaces[i]->elements(form_idx)->basix_element().hash())
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Cannot create form. Elements are different to "
             "those used to compile the form.");
       }
@@ -485,7 +485,7 @@ Form<T, U> create_form_factory(
   if (!mesh and !spaces.empty())
     mesh = spaces.front()->mesh();
   if (!mesh)
-    throw std::runtime_error("No mesh could be associated with the Form.");
+    throw std::invalid_argument("No mesh could be associated with the Form.");
 
   auto topology = mesh->topology();
   assert(topology);
@@ -571,7 +571,7 @@ Form<T, U> create_form_factory(
         impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
         if (!k)
         {
-          throw std::runtime_error(
+          throw std::invalid_argument(
               "UFCx kernel function is NULL. Check requested types.");
         }
 
@@ -707,34 +707,14 @@ Form<T, U> create_form_factory(
     for (IntegralType itg_type : {IntegralType::exterior_facet,
                                   IntegralType::vertex, IntegralType::ridge})
     {
-      std::size_t dim;
-      switch (itg_type)
-      {
-      case IntegralType::exterior_facet:
-      {
-        dim = tdim - 1;
-        break;
-      }
-      case IntegralType::ridge:
-      {
-        dim = tdim - 2;
-        break;
-      }
-      case IntegralType::vertex:
-      {
-        dim = 0;
-        break;
-      }
-      default:
-        throw std::runtime_error("Unsupported integral type");
-      }
+      const std::size_t dim = integral_entity_dim(itg_type, tdim);
 
       const std::function<std::vector<std::int32_t>(const mesh::Topology&,
                                                     IntegralType)>
           get_default_integration_entities
-          = [dim](const mesh::Topology& topology, IntegralType itg_type)
+          = [dim](const mesh::Topology& topology, IntegralType itype)
       {
-        if (itg_type == IntegralType::exterior_facet)
+        if (itype == IntegralType::exterior_facet)
         {
           // Integrate over all owned exterior facets
           return mesh::exterior_facet_indices(topology);
@@ -934,7 +914,7 @@ FunctionSpace<T> create_functionspace(
   assert(mesh);
   assert(mesh->topology());
   if (e->cell_type() != mesh->topology()->cell_type())
-    throw std::runtime_error("Cell type of element and mesh must match.");
+    throw std::invalid_argument("Cell type of element and mesh must match.");
 
   // Create element dof layout
   fem::ElementDofLayout layout = fem::create_element_dof_layout(*e);
@@ -961,8 +941,8 @@ Expression<T, U> create_expression(
 {
   if (e.rank > 0 and !argument_space)
   {
-    throw std::runtime_error("Expression has Argument but no Argument "
-                             "function space was provided.");
+    throw std::invalid_argument("Expression has Argument but no Argument "
+                                "function space was provided.");
   }
 
   std::vector<U> X(e.points, e.points + e.num_points * e.entity_dimension);
@@ -991,7 +971,7 @@ Expression<T, U> create_expression(
     tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_complex128);
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else
-    throw std::runtime_error("Type not supported.");
+    throw std::invalid_argument("Type not supported.");
 
   assert(tabulate_tensor);
   std::uint64_t e_hash = e.coordinate_element_hash;
@@ -1060,12 +1040,20 @@ Expression<T, U> create_expression(
 /// Useful for creating a higher-order mesh from a lower-order one for
 /// computation, or vice-versa, for IO.
 ///
+/// If `new_cmap` is discontinuous, the new geometry is discontinuous:
+/// each cell has its own coordinate nodes, which are not shared with
+/// neighbouring cells.
+///
 /// @param[in] mesh Input mesh.
 /// @param[in] new_cmap Coordinate element for the new geometry.
 /// @param[in] reorder_fn Optional graph reordering function applied to
 /// the new geometry dofmap.
 /// @return A new mesh sharing the topology of `mesh` and with a
 /// geometry described by `new_cmap`.
+/// @note A discontinuous geometry has no coordinate
+/// degrees-of-freedom associated with sub-entities of a cell, so
+/// functions that extract the geometry of a sub-entity, e.g.
+/// mesh::entities_to_geometry, do not support it.
 template <std::floating_point T>
 mesh::Mesh<T> interpolate_geometry(
     std::shared_ptr<mesh::Mesh<T>> mesh, const CoordinateElement<T>& new_cmap,
@@ -1076,17 +1064,20 @@ mesh::Mesh<T> interpolate_geometry(
   const CoordinateElement<T>& old_cmap = mesh->geometry().cmaps().front();
   if (new_cmap.cell_shape() != old_cmap.cell_shape())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cell shape of new coordinate element must match input mesh.");
   }
 
   const int gdim = mesh->geometry().dim();
 
-  // Build a vector-valued Lagrange FiniteElement from the coordinate element.
+  // Build a vector-valued Lagrange FiniteElement from the coordinate
+  // element. It must have the same dof layout as `new_cmap`, i.e. be
+  // discontinuous if and only if `new_cmap` is.
   basix::FiniteElement<T> b_element = basix::create_element<T>(
       basix::element::family::P,
       mesh::cell_type_to_basix_type(new_cmap.cell_shape()), new_cmap.degree(),
-      new_cmap.variant(), basix::element::dpc_variant::unset, false);
+      new_cmap.variant(), basix::element::dpc_variant::unset,
+      new_cmap.is_discontinuous());
   auto element = std::make_shared<const FiniteElement<T>>(
       b_element, std::vector<std::size_t>{static_cast<std::size_t>(gdim)});
 

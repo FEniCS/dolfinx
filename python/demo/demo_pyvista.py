@@ -8,6 +8,8 @@
 #       jupytext_version: 1.13.6
 # ---
 
+# # Visualisation with PyVista
+#
 # Copyright (C) 2021-2022 Jørgen S. Dokken and Garth N. Wells
 #
 # This file is part of DOLFINx (<https://www.fenicsproject.org>)
@@ -19,8 +21,10 @@
 # * {download}`Python script <./demo_pyvista.py>`
 # * {download}`Jupyter notebook <./demo_pyvista.ipynb>`
 # ```
-#
-# # Visualization with PyVista
+# This demo illustrates how to:
+# - Visualise a scalar or vector finite element {py:class}`Function
+#   <dolfinx.fem.Function>` using [PyVista](https://pyvista.org/)
+# - Warp a plot by a scalar or a vector field
 #
 # [PyVista](https://pyvista.org/) can be used with DOLFINx for
 # interactive visualisation.
@@ -128,7 +132,9 @@ def plot_meshtags():
     # otherwise 0
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32))
-    cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
+    cell_tags = meshtags(
+        msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32), in_circle(midpoints)
+    )
 
     # Create VTK mesh
     cells, types, x = plot.vtk_mesh(msh)
@@ -188,7 +194,9 @@ def plot_higher_order():
     # it gets value 1, otherwise 0.
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32))
-    cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
+    cell_tags = meshtags(
+        msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32), in_circle(midpoints)
+    )
 
     # We start by interpolating a discontinuous function (discontinuous
     # between cells with different mesh tag values) into a degree 2

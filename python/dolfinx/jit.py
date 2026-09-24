@@ -10,6 +10,8 @@ import functools
 import json
 import os
 import sys
+import typing
+from collections.abc import Callable
 from pathlib import Path
 
 from mpi4py import MPI
@@ -20,7 +22,9 @@ import ufl
 
 __all__ = ["ffcx_jit", "get_options", "mpi_jit_decorator"]
 
-DOLFINX_DEFAULT_JIT_OPTIONS = {
+_JITOptionValue = Path | bool | int | list[str] | None
+
+DOLFINX_DEFAULT_JIT_OPTIONS: dict[str, tuple[_JITOptionValue, str]] = {
     "cache_dir": (
         os.getenv("XDG_CACHE_HOME", default=Path.home().joinpath(".cache")) / Path("fenics"),
         "Path for storing DOLFINx JIT cache. "
@@ -44,7 +48,9 @@ else:
     )
 
 
-def mpi_jit_decorator(local_jit, *args, **kwargs):
+def mpi_jit_decorator(
+    local_jit: Callable[..., typing.Any], *args: typing.Any, **kwargs: typing.Any
+) -> Callable[..., typing.Any]:
     """A decorator for jit compilation.
 
     Use this function as a decorator to any jit compiler function. In a
@@ -55,14 +61,14 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     """
 
     @functools.wraps(local_jit)
-    def mpi_jit(comm, *args, **kwargs):
+    def mpi_jit(comm: MPI.Intracomm, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         # Just call JIT compiler when running in with one rank
         if comm.size == 1:
             return local_jit(*args, **kwargs)
 
         # Remove possibility of unbound variables
         output = None
-        status = 1  # assume failure
+        status: int | None = 1  # assume failure
         error_msg = ""
 
         # Compile on rank 0
@@ -106,7 +112,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 
 
 @functools.cache
-def _load_options():
+def _load_options() -> tuple[dict, dict]:
     """Loads options from JSON files."""
     user_config_file = os.getenv("XDG_CONFIG_HOME", default=Path.home().joinpath(".config")) / Path(
         "dolfinx", "dolfinx_jit_options.json"
@@ -160,8 +166,10 @@ def get_options(priority_options: dict | None = None) -> dict:
 
 @mpi_jit_decorator
 def ffcx_jit(
-    ufl_object, form_compiler_options: dict | None = None, jit_options: dict | None = None
-):
+    ufl_object: typing.Any,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+) -> tuple[typing.Any, typing.Any, typing.Any]:
     """Compile UFL object with FFCx and CFFI.
 
     Args:

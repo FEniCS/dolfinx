@@ -1,28 +1,36 @@
-// Copyright (C) 2017-2019 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dolfinx_wrappers/common.h"
-#include "dolfinx_wrappers/MPICommWrapper.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/mpi_wrappers.h"
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/defines.h>
+#include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/chrono.h>
+#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/string_view.h>
+#include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
@@ -65,17 +73,46 @@ void common(nb::module_& m)
   m.attr("ufcx_signature") = dolfinx::ufcx_signature();
   m.attr("version") = dolfinx::version();
 
+  // From dolfinx/common/MPI.h. Default MPI tag of the consensus
+  // exchange used when building a ghosted index map.
+  m.attr("consensus_nbx_tag")
+      = static_cast<int>(dolfinx::MPI::tag::consensus_nbx);
+
   nb::enum_<dolfinx::Table::Reduction>(m, "Reduction")
       .value("max", dolfinx::Table::Reduction::max)
       .value("min", dolfinx::Table::Reduction::min)
       .value("average", dolfinx::Table::Reduction::average);
 
-  auto sc = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
-                .def(nb::init<dolfinx::common::IndexMap&, int>(),
-                     nb::arg("index_map"), nb::arg("block_size"));
+  auto sc
+      = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
+            .def(nb::init<dolfinx::common::IndexMap&>(), nb::arg("index_map"))
+            .def_prop_ro(
+                "local_indices_block",
+                [](const dolfinx::common::Scatterer<>& self)
+                {
+                  std::span idx = self.local_indices_block();
+                  return nb::ndarray<const std::int32_t, nb::numpy>(
+                      idx.data(), {idx.size()});
+                },
+                nb::rv_policy::reference_internal,
+                "Indices of owned data packed/unpacked in a forward/reverse "
+                "scatter, used to size a caller-provided packing buffer.")
+            .def_prop_ro(
+                "remote_indices_block",
+                [](const dolfinx::common::Scatterer<>& self)
+                {
+                  std::span idx = self.remote_indices_block();
+                  return nb::ndarray<const std::int32_t, nb::numpy>(
+                      idx.data(), {idx.size()});
+                },
+                nb::rv_policy::reference_internal,
+                "Indices of ghost data packed/unpacked in a reverse/forward "
+                "scatter, used to size a caller-provided packing buffer.");
   declare_scatter_functions<std::int64_t>(sc);
   declare_scatter_functions<double>(sc);
   declare_scatter_functions<float>(sc);
+  declare_scatter_functions<std::complex<double>>(sc);
+  declare_scatter_functions<std::complex<float>>(sc);
 
   // dolfinx::common::IndexMap
   nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")
@@ -109,34 +146,51 @@ void common(nb::module_& m)
              nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners)
           {
             std::array<std::vector<int>, 2> ranks;
-            ranks[0].assign(dest_src[0].data(),
-                            dest_src[0].data() + dest_src[0].size());
-            ranks[1].assign(dest_src[1].data(),
+            ranks[0].assign(dest_src[1].data(),
                             dest_src[1].data() + dest_src[1].size());
+            ranks[1].assign(dest_src[0].data(),
+                            dest_src[0].data() + dest_src[0].size());
             new (self) dolfinx::common::IndexMap(
                 comm.get(), local_size, ranks,
                 std::span(ghosts.data(), ghosts.size()),
                 std::span(ghost_owners.data(), ghost_owners.size()));
           },
           nb::arg("comm"), nb::arg("local_size"), nb::arg("dest_src"),
-          nb::arg("ghosts"), nb::arg("ghost_owners"))
+          nb::arg("ghosts"), nb::arg("ghost_owners"),
+          "Create an IndexMap with explicit neighbour ranks. ``dest_src`` "
+          "contains destination ranks followed by source ranks. "
+          "``ghost_owners[i]`` owns ``ghosts[i]``; its unique values must "
+          "equal the source ranks.")
       .def_prop_ro(
           "comm", [](const dolfinx::common::IndexMap& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>())
       .def_prop_ro("size_local", &dolfinx::common::IndexMap::size_local)
       .def_prop_ro("size_global", &dolfinx::common::IndexMap::size_global)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
-      .def_prop_ro("local_range", &dolfinx::common::IndexMap::local_range,
-                   "Range of indices owned by this map")
-      .def("index_to_dest_ranks",
-           &dolfinx::common::IndexMap::index_to_dest_ranks)
+      .def_prop_ro(
+          "local_range",
+          [](const dolfinx::common::IndexMap& self)
+          {
+            std::array<std::int64_t, 2> range = self.local_range();
+            return std::make_pair(range[0], range[1]);
+          },
+          "Range of indices owned by this map")
+      .def(
+          "index_to_dest_ranks",
+          [](const dolfinx::common::IndexMap& self, int tag)
+          {
+            auto [data, offsets] = self.index_to_dest_ranks(tag);
+            return std::pair{dolfinx_wrappers::as_nbarray(std::move(data)),
+                             dolfinx_wrappers::as_nbarray(std::move(offsets))};
+          },
+          nb::arg("tag"))
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
           {
             std::span ghosts = self.ghosts();
-            return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
-                                                              {ghosts.size()});
+            return nb::ndarray<const std::int64_t, nb::ndim<1>, nb::numpy>(
+                ghosts.data(), {ghosts.size()});
           },
           nb::rv_policy::reference_internal, "Return list of ghost indices")
       .def_prop_ro(
@@ -160,15 +214,19 @@ void common(nb::module_& m)
           nb::arg("local"))
       .def(
           "global_to_local",
+          // Named `global_index` rather than `global`: the argument name
+          // reaches Python through the generated stubs, and `global` is a
+          // keyword there.
           [](const dolfinx::common::IndexMap& self,
-             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> global)
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
+                 global_index)
           {
-            std::vector<std::int32_t> local(global.size());
-            self.global_to_local(std::span(global.data(), global.size()),
-                                 local);
+            std::vector<std::int32_t> local(global_index.size());
+            self.global_to_local(
+                std::span(global_index.data(), global_index.size()), local);
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
-          nb::arg("global"));
+          nb::arg("global_index"));
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
@@ -193,11 +251,22 @@ void common(nb::module_& m)
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::flush,
            "Flush timer");
 
-  m.def("timing", &dolfinx::timing);
+  m.def("timing", &dolfinx::timing, nb::arg("task"));
   m.def("timings", &dolfinx::timings);
 
   m.def("hardware_concurrency",
         []() { return std::max<int>(1, std::thread::hardware_concurrency()); });
+
+  m.def(
+      "local_range",
+      [](int index, std::int64_t N, int size)
+      {
+        std::array<std::int64_t, 2> range
+            = dolfinx::common::local_range(index, N, size);
+        return std::make_pair(range[0], range[1]);
+      },
+      nb::arg("index"), nb::arg("N"), nb::arg("size"),
+      "Local range for partitioning [0, N) into size almost-equal blocks");
 
   m.def(
       "list_timings",
@@ -219,21 +288,28 @@ void common(nb::module_& m)
   m.def(
       "create_sub_index_map",
       [](const dolfinx::common::IndexMap& imap,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
-         bool allow_owner_change)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices)
       {
         const std::int32_t size = imap.size_local() + imap.num_ghosts();
         for (std::size_t i = 0; i < indices.size(); ++i)
         {
           if (indices.data()[i] < 0 or indices.data()[i] >= size)
-            throw std::runtime_error("Index out of range in indices array.");
+            throw std::out_of_range("Index out of range in indices array.");
         }
-        auto [map, submap_to_map] = dolfinx::common::create_sub_index_map(
-            imap, std::span(indices.data(), indices.size()),
-            dolfinx::common::IndexMapOrder::any, allow_owner_change);
-        return std::pair(std::move(map), dolfinx_wrappers::as_nbarray(
-                                             std::move(submap_to_map)));
+        auto [map, submap_to_map, owners_changed]
+            = dolfinx::common::create_sub_index_map(
+                imap, std::span(indices.data(), indices.size()),
+                dolfinx::common::IndexMapOrder::any);
+        return std::tuple(
+            std::move(map),
+            dolfinx_wrappers::as_nbarray(std::move(submap_to_map)),
+            owners_changed);
       },
-      nb::arg("index_map"), nb::arg("indices"), nb::arg("allow_owner_change"));
+      nb::arg("index_map"), nb::arg("indices"),
+      "Create a sub-index map collectively. ``indices`` must contain unique "
+      "local indices in range. Returns the new map, the corresponding local "
+      "indices in the parent map, and a rank-local flag indicating whether "
+      "an index acquired a new owner. Reduce the flag across the communicator "
+      "before using it to make a collective control-flow decision.");
 }
 } // namespace dolfinx_wrappers

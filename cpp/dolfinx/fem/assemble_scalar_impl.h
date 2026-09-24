@@ -9,34 +9,41 @@
 #include "Constant.h"
 #include "Form.h"
 #include "FunctionSpace.h"
+#include "traits.h"
 #include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
-#include <type_traits>
 #include <vector>
 
 namespace dolfinx::fem::impl
 {
-/// Assemble functional over cells
+/// @brief Assemble functional over cells.
+///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of cells, so
+/// a per-call allocation would not be amortized. The buffer must be
+/// sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
-T assemble_cells(
-    mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    std::span<const std::int32_t> cells, FEkernel<T, U> auto fn,
-    std::span<const T> constants,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<std::type_identity_t<U>> cdofs_b)
+T assemble_cells(MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
+                 std::span<const std::int32_t> cells,
+                 const FEkernel<T, U> auto& fn, std::span<const T> constants,
+                 md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+                 std::span<U> cdofs_b)
 {
   T value(0);
   if (cells.empty())
     return value;
 
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
+
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
 
   // Iterate over all cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -48,8 +55,8 @@ T assemble_cells(
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
-    fn(&value, &coeffs(index, 0), constants.data(), cdofs_b.data(), nullptr,
-       nullptr, nullptr);
+    fn(&value, coeffs_data + index * cstride, constants.data(), cdofs_b.data(),
+       nullptr, nullptr, nullptr);
   }
 
   return value;
@@ -65,23 +72,30 @@ T assemble_cells(
 /// However, entities may be attached to more than one cell. This function
 /// therefore computes 'one-sided' integrals, i.e. evaluates integrals as seen
 /// from cell used to define the entity.
+///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of entities,
+/// so a per-call allocation would not be amortized. The buffer must
+/// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_entities(
-    mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
-    FEkernel<T, U> auto fn, std::span<const T> constants,
+    const FEkernel<T, U> auto& fn, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<std::type_identity_t<U>> cdofs_b)
+    std::span<U> cdofs_b)
 {
   T value(0);
   if (entities.empty())
     return value;
 
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
+
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
 
   // Iterate over all facets
   for (std::size_t f = 0; f < entities.extent(0); ++f)
@@ -96,27 +110,31 @@ T assemble_entities(
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
-    fn(&value, &coeffs(f, 0), constants.data(), cdofs_b.data(), &local_entity,
-       &perm, nullptr);
+    fn(&value, coeffs_data + f * cstride, constants.data(), cdofs_b.data(),
+       &local_entity, &perm, nullptr);
   }
 
   return value;
 }
 
-/// Assemble functional over interior facets
+/// @brief Assemble functional over interior facets.
+///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of facets,
+/// so a per-call allocation would not be amortized. The buffer must
+/// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_interior_facets(
-    mdspan2_t x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
-    FEkernel<T, U> auto fn, std::span<const T> constants,
+    const FEkernel<T, U> auto& fn, std::span<const T> constants,
     md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                     md::dynamic_extent>>
         coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<std::type_identity_t<U>> cdofs_b)
+    std::span<U> cdofs_b)
 {
   T value(0);
   if (facets.empty())
@@ -126,6 +144,9 @@ T assemble_interior_facets(
   assert(cdofs_b.size() >= 2 * 3 * x_dofmap.extent(1));
   auto cdofs0 = cdofs_b.first(3 * x_dofmap.extent(1));
   auto cdofs1 = cdofs_b.last(3 * x_dofmap.extent(1));
+
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = 2 * coeffs.extent(2);
 
   // Iterate over all facets
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -145,7 +166,7 @@ T assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    fn(&value, &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
+    fn(&value, coeffs_data + f * cstride, constants.data(), cdofs_b.data(),
        local_facet.data(), perm.data(), nullptr);
   }
 
@@ -178,21 +199,15 @@ T assemble_scalar(
     assert(cells.size() * cstride == coeffs.size());
     value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
-        md::mdspan(coeffs.data(), cells.size(), cstride), cdofs_b);
+        md::mdspan(coeffs.data(), cells.size(), cstride), std::span(cdofs_b));
   }
 
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
   if (M.needs_facet_permutations())
   {
-    mesh::CellType cell_type = mesh->topology()->cell_types()[cell_type_idx];
-    int num_facets_per_cell
-        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
-
-    mesh->topology_mutable()->create_entity_permutations();
-    const std::vector<std::uint8_t>& p
-        = mesh->topology()->get_facet_permutations();
-    facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
-                             num_facets_per_cell);
+    facet_perms = impl::entity_permutations(
+        *mesh->topology_mutable(), IntegralType::interior_facet,
+        mesh->topology()->cell_types()[cell_type_idx]);
   }
 
   for (int i = 0;
@@ -218,18 +233,28 @@ T assemble_scalar(
         md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                         md::dynamic_extent>>(
             coeffs.data(), facets.size() / shape1, 2, cstride),
-        facet_perms, cdofs_b);
+        facet_perms, std::span(cdofs_b));
   }
 
   for (auto itg_type : {fem::IntegralType::exterior_facet,
                         fem::IntegralType::vertex, fem::IntegralType::ridge})
   {
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
-        = (itg_type == fem::IntegralType::exterior_facet)
-              ? facet_perms
-              : md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>{};
+    const int num_itg = M.num_integrals(itg_type, cell_type_idx);
+    if (num_itg == 0)
+      continue;
 
-    for (int i = 0; i < M.num_integrals(itg_type, cell_type_idx); ++i)
+    // Each integral type is over entities of a different
+    // codimension, so only the permutations this form actually
+    // integrates over are computed.
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
+    if (M.needs_facet_permutations())
+    {
+      perms = impl::entity_permutations(
+          *mesh->topology_mutable(), itg_type,
+          mesh->topology()->cell_types()[cell_type_idx]);
+    }
+
+    for (int i = 0; i < num_itg; ++i)
     {
       auto fn = M.kernel(itg_type, i, cell_type_idx);
       assert(fn);
@@ -246,7 +271,7 @@ T assemble_scalar(
               entities.data(), entities.size() / 2, 2),
           fn, constants,
           md::mdspan(coeffs.data(), entities.size() / 2, cstride), perms,
-          cdofs_b);
+          std::span(cdofs_b));
     }
   }
 

@@ -17,6 +17,7 @@
 #include <format>
 #include <map>
 #include <numeric>
+#include <stdexcept>
 #include <utility>
 
 using namespace dolfinx;
@@ -74,7 +75,8 @@ find_local_entity_index(const mesh::Topology& topology,
     auto entities_d = c_to_e->links(cell);
     auto it = std::ranges::find(entities_d, e);
     assert(it != entities_d.end());
-    std::size_t entity_local_index = std::distance(entities_d.begin(), it);
+    std::size_t entity_local_index
+        = std::ranges::distance(entities_d.begin(), it);
     entity_indices.emplace_back(cell, entity_local_index);
   }
 
@@ -161,7 +163,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 
   // Build map from ghost global index to local position
   // NOTE: Should we use map here or just one vector with ghosts and
-  // std::distance?
+  // std::ranges::distance?
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
   global_local_ghosts.reserve(ghosts.size());
   const std::int32_t local_size = range[1] - range[0];
@@ -259,13 +261,12 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     }
   }
   else
-    throw std::runtime_error("Block size combination not supported");
+    throw std::invalid_argument("Block size combination not supported");
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
   std::ranges::sort(dofs);
-  auto [unique_end, range_end] = std::ranges::unique(dofs);
-  dofs.erase(unique_end, range_end);
+  dofs.erase(std::ranges::unique(dofs).begin(), dofs.end());
 
   if (remote)
   {
@@ -282,8 +283,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       std::span dest = map->dest();
       std::vector<int> ranks;
       std::ranges::set_union(src, dest, std::back_inserter(ranks));
-      auto [unique_end, range_end] = std::ranges::unique(ranks);
-      ranks.erase(unique_end, range_end);
+      ranks.erase(std::ranges::unique(ranks).begin(), ranks.end());
       MPI_Dist_graph_create_adjacent(
           map->comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
           ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
@@ -301,8 +301,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     // duplicates
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
     std::ranges::sort(dofs);
-    auto [unique_end, range_end] = std::ranges::unique(dofs);
-    dofs.erase(unique_end, range_end);
+    dofs.erase(std::ranges::unique(dofs).begin(), dofs.end());
   }
 
   return dofs;

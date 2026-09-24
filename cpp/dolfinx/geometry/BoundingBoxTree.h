@@ -107,7 +107,7 @@ std::int32_t _build_from_leaf(
     std::array<T, 3> b_diff;
     std::transform(std::next(b.cbegin(), 3), b.cend(), b.cbegin(),
                    b_diff.begin(), std::minus<T>());
-    const std::size_t axis = std::distance(
+    const std::size_t axis = std::ranges::distance(
         b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
 
     auto middle = std::next(leaf_bboxes.begin(), leaf_bboxes.size() / 2);
@@ -139,8 +139,15 @@ template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::vector<T>> build_from_leaf(
     std::vector<std::pair<std::array<T, 6>, std::int32_t>>& leaf_bboxes)
 {
+  assert(!leaf_bboxes.empty());
   std::vector<std::int32_t> bboxes;
   std::vector<T> bbox_coordinates;
+
+  // A binary tree with N leaves has 2N - 1 nodes.
+  const std::size_t num_nodes = 2 * leaf_bboxes.size() - 1;
+  bboxes.reserve(2 * num_nodes);
+  bbox_coordinates.reserve(6 * num_nodes);
+
   impl_bb::_build_from_leaf<T>(leaf_bboxes, bboxes, bbox_coordinates);
   return {std::move(bboxes), std::move(bbox_coordinates)};
 }
@@ -176,7 +183,7 @@ _build_from_point(std::span<std::pair<std::array<T, 3>, std::int32_t>> points,
   std::array<T, 3> b_diff;
   std::ranges::transform(b1, b0, b_diff.begin(), std::minus<T>());
   const std::size_t axis
-      = std::distance(b_diff.begin(), std::ranges::max_element(b_diff));
+      = std::ranges::distance(b_diff.begin(), std::ranges::max_element(b_diff));
 
   auto middle = std::next(points.begin(), points.size() / 2);
   std::nth_element(points.begin(), middle, points.end(),
@@ -295,6 +302,12 @@ public:
     if (!points.empty())
     {
       _bboxes.clear();
+
+      // A binary tree with N leaves has 2N - 1 nodes.
+      const std::size_t num_nodes = 2 * points.size() - 1;
+      _bboxes.reserve(2 * num_nodes);
+      _bbox_coordinates.reserve(6 * num_nodes);
+
       impl_bb::_build_from_point(std::span(points), _bboxes, _bbox_coordinates);
     }
 
@@ -302,20 +315,20 @@ public:
                  num_bboxes(), points.size());
   }
 
+  // Copy constructor (deleted)
+  BoundingBoxTree(const BoundingBoxTree& tree) = delete;
+
   /// Move constructor
   BoundingBoxTree(BoundingBoxTree&& tree) = default;
 
-  /// Copy constructor
-  BoundingBoxTree(const BoundingBoxTree& tree) = delete;
+  /// Destructor
+  ~BoundingBoxTree() = default;
+
+  // Copy assignment (deleted)
+  BoundingBoxTree& operator=(const BoundingBoxTree& other) = delete;
 
   /// Move assignment
   BoundingBoxTree& operator=(BoundingBoxTree&& other) = default;
-
-  /// Copy assignment
-  BoundingBoxTree& operator=(const BoundingBoxTree& other) = default;
-
-  /// Destructor
-  ~BoundingBoxTree() = default;
 
   /// @brief Return bounding box coordinates for a given node in the
   /// tree,

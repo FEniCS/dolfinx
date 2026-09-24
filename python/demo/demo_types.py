@@ -16,11 +16,11 @@
 # * {download}`Jupyter notebook <./demo_types.ipynb>`
 # ```
 
-# This demo shows:
+# This demo illustrates how to:
 #
-# - How to solve problems using different scalar types, .e.g. single or
+# - Solve problems using different scalar types, e.g. single or
 #   double precision, or complex numbers
-# - Interfacing with [SciPy](https://scipy.org/) sparse linear algebra
+# - Interface with [SciPy](https://scipy.org/) sparse linear algebra
 #   functionality
 
 
@@ -231,18 +231,18 @@ def elasticity(dtype) -> fem.Function:
 # Solve problems for different types
 
 
-uh = poisson(dtype=np.float32)
+poisson(dtype=np.float32)
 uh = poisson(dtype=np.float64)
 if not sys.platform.startswith("win32"):
-    uh = poisson(dtype=np.complex64)
+    poisson(dtype=np.complex64)
     uh = poisson(dtype=np.complex128)
 display_scalar(uh, "poisson", np.real)
 display_scalar(uh, "poisson", np.imag)
 
 
-uh = elasticity(dtype=np.float32)
+elasticity(dtype=np.float32)
 uh = elasticity(dtype=np.float64)
 if not sys.platform.startswith("win32"):
-    uh = elasticity(dtype=np.complex64)
+    elasticity(dtype=np.complex64)
     uh = elasticity(dtype=np.complex128)
 display_vector(uh, "elasticity", np.real)

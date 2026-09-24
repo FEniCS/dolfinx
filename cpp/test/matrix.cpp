@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Igor A. Baratta
+// Copyright (C) 2022-2026 Igor A. Baratta and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,6 +8,7 @@
 
 #include "poisson.h"
 #include <algorithm>
+#include <array>
 #include <basix/mdspan.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -17,6 +18,7 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
+#include <functional>
 #include <mpi.h>
 #include <span>
 
@@ -30,7 +32,7 @@ namespace
 template <std::floating_point T>
 la::MatrixCSR<T> create_operator(MPI_Comm comm)
 {
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none, 2);
+  auto part = graph::partition_graph;
   auto mesh = std::make_shared<mesh::Mesh<T>>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
@@ -66,7 +68,7 @@ void test_matrix_norm()
 void test_matrix_apply()
 {
   MPI_Comm comm = MPI_COMM_WORLD;
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none, 2);
+  auto part = graph::partition_graph;
   auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
@@ -154,7 +156,7 @@ void test_matrix()
   md::mdspan<T, md::extents<std::size_t, 8, md::dynamic_extent>> Aref(
       Aref_data.data(), 8, A.index_map(1)->size_global());
 
-  auto to_global_col = [&](auto col)
+  auto to_global_col = [&A](auto col)
   {
     std::array<std::int64_t, 1> tmp;
     A.index_map(1)->local_to_global(std::vector<std::int32_t>{col}, tmp);
@@ -171,6 +173,112 @@ void test_matrix()
   CHECK(Adense(4, to_global_col(4)) != Aref(4, to_global_col(4)));
 }
 
+void test_sparsity_pattern_common_index_map()
+{
+  // Preserve a shared IndexMap when no ghost columns are added.
+  auto map0 = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);
+  la::SparsityPattern p(MPI_COMM_SELF, {map0, map0}, {1, 1});
+  p.insert(0, 0);
+  p.insert(4, 5);
+  p.insert(5, 4);
+  p.finalize();
+  CHECK(p.index_map(0) == p.index_map(1));
+}
+
+void test_sparsity_pattern_asymmetric_column_ghost_growth()
+{
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const int rank = dolfinx::MPI::rank(comm);
+  if (dolfinx::MPI::size(comm) < 2)
+    return;
+
+  std::vector<std::int64_t> row_ghosts;
+  std::vector<int> row_ghost_owners;
+  if (rank == 1)
+  {
+    row_ghosts.push_back(0);
+    row_ghost_owners.push_back(0);
+  }
+
+  auto row_map = std::make_shared<common::IndexMap>(comm, 1, row_ghosts,
+                                                    row_ghost_owners);
+  auto column_map = std::make_shared<common::IndexMap>(comm, 1);
+  la::SparsityPattern p(comm, {row_map, column_map}, {1, 1});
+
+  // Rank 1 adds to rank 0's ghost row, creating a column ghost on rank 0.
+  if (rank == 1)
+  {
+    p.insert(std::array<std::int32_t, 2>{1, 1},
+             std::array<std::int32_t, 2>{0, 0});
+  }
+  p.finalize();
+
+  if (rank == 0)
+  {
+    CHECK(p.index_map(1)->ghosts().size() == 1);
+    CHECK(p.index_map(1)->ghosts().front() == 1);
+  }
+  else
+    CHECK(p.index_map(1)->ghosts().empty());
+}
+
+void test_sparsity_pattern_empty_columns()
+{
+  auto map = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 2);
+  la::SparsityPattern p(MPI_COMM_SELF, {map, map}, {1, 1});
+  p.insert(std::array<std::int32_t, 1>{0}, std::span<const std::int32_t>{});
+  p.insert(1, 0);
+  p.finalize();
+
+  const auto [edges, offsets] = p.graph();
+  CHECK(std::ranges::equal(edges, std::array<std::int32_t, 1>{0}));
+  CHECK(std::ranges::equal(offsets, std::array<std::int64_t, 3>{0, 0, 1}));
+}
+
+void test_sparsity_pattern_duplicate_blocks()
+{
+  auto map = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 3);
+  la::SparsityPattern p(MPI_COMM_SELF, {map, map}, {1, 1});
+  const std::array<std::int32_t, 3> rows{0, 0, 1};
+  const std::array<std::int32_t, 3> cols{1, 1, 2};
+  p.insert(rows, cols);
+  p.insert(rows, cols);
+  p.insert_diagonal(std::array<std::int32_t, 2>{1, 1});
+  p.finalize();
+
+  const auto [edges, offsets] = p.graph();
+  CHECK(std::ranges::equal(edges, std::array<std::int32_t, 4>{1, 2, 1, 2}));
+  CHECK(std::ranges::equal(offsets, std::array<std::int64_t, 4>{0, 2, 4, 4}));
+}
+
+void test_stacked_sparsity_pattern_blocks()
+{
+  auto map = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 3);
+  la::SparsityPattern p(MPI_COMM_SELF, {map, map}, {1, 1});
+  const std::array<std::int32_t, 3> rows{0, 0, 2};
+  const std::array<std::int32_t, 3> cols{1, 1, 2};
+  p.insert(rows, cols);
+  p.insert(rows, cols);
+
+  std::vector<std::vector<const la::SparsityPattern*>> patterns{{&p}};
+  using MapData
+      = std::pair<std::reference_wrapper<const common::IndexMap>, int>;
+  std::array<std::vector<MapData>, 2> maps;
+  maps[0].emplace_back(std::cref(*map), 2);
+  maps[1].emplace_back(std::cref(*map), 3);
+  std::array<std::vector<int>, 2> bs{{{2}, {3}}};
+
+  la::SparsityPattern stacked(MPI_COMM_SELF, patterns, maps, bs);
+  stacked.finalize();
+
+  const auto [edges, offsets] = stacked.graph();
+  const std::array<std::int32_t, 24> expected_edges{
+      3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8};
+  CHECK(std::ranges::equal(edges, expected_edges));
+  CHECK(std::ranges::equal(
+      offsets, std::array<std::int64_t, 7>{0, 6, 12, 12, 12, 18, 24}));
+}
+
 } // namespace
 
 TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
@@ -179,4 +287,9 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_matrix_apply());
   CHECK_NOTHROW(test_matrix_norm());
   CHECK_NOTHROW(test_matrix_cast());
+  CHECK_NOTHROW(test_sparsity_pattern_common_index_map());
+  CHECK_NOTHROW(test_sparsity_pattern_asymmetric_column_ghost_growth());
+  CHECK_NOTHROW(test_sparsity_pattern_empty_columns());
+  CHECK_NOTHROW(test_sparsity_pattern_duplicate_blocks());
+  CHECK_NOTHROW(test_stacked_sparsity_pattern_blocks());
 }

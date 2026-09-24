@@ -73,7 +73,7 @@
 from pathlib import Path
 
 from mpi4py import MPI
-from petsc4py.PETSc import ScalarType  # type: ignore
+from petsc4py.PETSc import ScalarType
 
 import numpy as np
 
@@ -134,7 +134,7 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 # {py:class}`DirichletBC <dolfinx.fem.DirichletBC>` class that
 # represents the boundary condition:
 
-bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
+bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)  # type: ignore[operator]
 
 # Next, the variational problem is defined:
 
@@ -185,8 +185,8 @@ with io.XDMFFile(msh.comm, out_folder / "poisson.xdmf", "w") as file:
 try:
     import pyvista
 
-    cells, types, x = plot.vtk_mesh(V)
-    grid = pyvista.UnstructuredGrid(cells, types, x)
+    cells, types, points = plot.vtk_mesh(V)
+    grid = pyvista.UnstructuredGrid(cells, types, points)
     grid.point_data["u"] = uh.x.array.real
     grid.set_active_scalars("u")
     plotter = pyvista.Plotter()

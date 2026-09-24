@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Garth N. Wells
+// Copyright (C) 2025-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -17,6 +17,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -61,7 +62,7 @@ namespace dolfinx::fem::impl
 /// @param[in] perms Entity permutation information for use in `fn`.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
-    std::span<T> values, fem::FEkernel<T, U> auto fn,
+    std::span<T> values, const fem::FEkernel<T, U> auto& fn,
     std::array<std::size_t, 2> Xshape, std::size_t value_size,
     std::size_t num_argument_dofs,
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> x_dofmap,
@@ -69,7 +70,7 @@ void tabulate_expression(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, fem::MDSpan2 auto entities,
     std::span<const std::uint32_t> cell_info,
-    fem::DofTransformKernel<T> auto P0,
+    const fem::DofTransformKernel<T> auto& P0,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
 {
   static_assert(entities.rank() == 1 or entities.rank() == 2);
@@ -81,6 +82,10 @@ void tabulate_expression(
   int size0 = Xshape[0] * value_size;
   std::vector<T> values_local(size0 * num_argument_dofs, 0);
   std::size_t offset = values_local.size();
+
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
   for (std::size_t e = 0; e < entities.extent(0); ++e)
   {
     std::ranges::fill(values_local, 0);
@@ -93,7 +98,7 @@ void tabulate_expression(
         std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                     std::next(coord_dofs.begin(), 3 * i));
       }
-      fn(values_local.data(), &coeffs(e, 0), constants.data(),
+      fn(values_local.data(), coeffs_data + e * cstride, constants.data(),
          coord_dofs.data(), nullptr, nullptr, nullptr);
 
       P0(values_local, cell_info, entity, size0);
@@ -109,7 +114,7 @@ void tabulate_expression(
         std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                     std::next(coord_dofs.begin(), 3 * i));
       }
-      fn(values_local.data(), &coeffs(e, 0), constants.data(),
+      fn(values_local.data(), coeffs_data + e * cstride, constants.data(),
          coord_dofs.data(), &local_entity, &perm, nullptr);
       P0(values_local, cell_info, entity, size0);
     }
@@ -153,7 +158,7 @@ void tabulate_expression(
 /// expression values at the evaluation points.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
-    std::span<T> values, fem::FEkernel<T, U> auto fn,
+    std::span<T> values, const fem::FEkernel<T, U> auto& fn,
     std::array<std::size_t, 2> Xshape, std::size_t value_size,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, const mesh::Mesh<U>& mesh,
@@ -179,29 +184,30 @@ void tabulate_expression(
     num_argument_dofs = element->second;
     if (element->first.get().needs_dof_transformations())
     {
-      mesh.topology_mutable()->create_entity_permutations();
+      mesh.topology_mutable()->create_cell_permutations();
       cell_info = std::span(topology->get_cell_permutation_info());
       post_dof_transform
           = element->first.get().template dof_transformation_right_fn<T>(
               doftransform::transpose);
     }
   }
+
   // An expression has no notion of requiring a facet permutation.
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
-  if constexpr (entities.rank() == 2)
+  if constexpr (std::remove_cvref_t<decltype(entities)>::rank() == 2)
   {
+    const int facet_dim = mesh.topology()->dim() - 1;
     mesh::CellType cell_type = mesh.topology()->cell_types()[0];
-    int num_facets_per_cell
-        = mesh::cell_num_entities(cell_type, mesh.topology()->dim() - 1);
-    mesh.topology_mutable()->create_entity_permutations();
+    int num_facets_per_cell = mesh::cell_num_entities(cell_type, facet_dim);
+    mesh.topology_mutable()->create_entity_permutations(facet_dim);
     const std::vector<std::uint8_t>& p
-        = mesh.topology()->get_facet_permutations();
+        = mesh.topology()->get_entity_permutations(facet_dim);
     facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
                              num_facets_per_cell);
   }
-  tabulate_expression<T, U>(values, fn, Xshape, value_size, num_argument_dofs,
-                            mesh.geometry().dofmaps().front(),
-                            mesh.geometry().x(), coeffs, constants, entities,
-                            cell_info, post_dof_transform, facet_perms);
+  tabulate_expression(values, fn, Xshape, value_size, num_argument_dofs,
+                      mesh.geometry().dofmaps().front(), mesh.geometry().x(),
+                      coeffs, constants, entities, cell_info,
+                      post_dof_transform, facet_perms);
 }
 } // namespace dolfinx::fem::impl
