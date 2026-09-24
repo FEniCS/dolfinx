@@ -322,6 +322,7 @@ compute_nonlocal_dual_graph(
   std::vector<int> dedge_send_count(recv_disp.back());
   std::vector<std::int32_t> dedge_send_displs(dedge_send_count.size() + 1, 0);
   std::vector<std::int64_t> dedge_send_data;
+  std::vector<std::int32_t> dedge_send_weights;
   {
     common::Timer timer0(
         "Compute non-local part of mesh dual graph: sort received facets");
@@ -396,7 +397,7 @@ compute_nonlocal_dual_graph(
                 = recv_buffer
                       .get()[facet_b * buffer_shape2 + max_vertices_per_facet];
 
-            lambda(facet_a, cell_a, facet_b, cell_b);
+            lambda(facet_a, cell_a, facet_b, cell_b, mean_weight);
           }
         }
         it = matching_facets.end();
@@ -407,7 +408,8 @@ compute_nonlocal_dual_graph(
     // dual edges
     for_each_matched_pair(
         [&dedge_send_count](int facet_a, std::int64_t /* cell_a */, int facet_b,
-                            std::int64_t /* cell_b */)
+                            std::int64_t /* cell_b */,
+                            std::int32_t /* mean_weight */)
         {
           ++dedge_send_count[facet_a];
           ++dedge_send_count[facet_b];
@@ -419,15 +421,27 @@ compute_nonlocal_dual_graph(
     std::int32_t send_dual_edges_size
         = std::accumulate(dedge_send_count.begin(), dedge_send_count.end(), 0);
     dedge_send_data.resize(send_dual_edges_size);
+    if (weighted)
+      dedge_send_weights.resize(send_dual_edges_size);
 
     // Iterate matching facets to store dual edges
     std::vector<std::int32_t> offset = dedge_send_displs;
     for_each_matched_pair(
-        [&dedge_send_data, &offset](int facet_a, std::int64_t cell_a,
-                                    int facet_b, std::int64_t cell_b)
+        [&dedge_send_data, &dedge_send_weights, weighted,
+         &offset](int facet_a, std::int64_t cell_a, int facet_b,
+                  std::int64_t cell_b, std::int32_t mean_weight)
         {
-          dedge_send_data[offset[facet_a]++] = cell_b;
-          dedge_send_data[offset[facet_b]++] = cell_a;
+          std::int32_t pos_a = offset[facet_a];
+          std::int32_t pos_b = offset[facet_b];
+          dedge_send_data[pos_a] = cell_b;
+          dedge_send_data[pos_b] = cell_a;
+          if (weighted)
+          {
+            dedge_send_weights[pos_a] = mean_weight;
+            dedge_send_weights[pos_b] = mean_weight;
+          }
+          ++offset[facet_a];
+          ++offset[facet_b];
         });
   }
 
@@ -489,6 +503,18 @@ compute_nonlocal_dual_graph(
                          dedge_recv_displs_pp.data(),
                          dolfinx::MPI::mpi_t<std::int64_t>, comm_po_receive);
 
+  std::vector<std::int32_t> recv_dual_weights;
+  if (weighted)
+  {
+    recv_dual_weights.resize(recv_dual_edges.size());
+    MPI_Neighbor_alltoallv(
+        dedge_send_weights.data(), dedge_send_count_pp.data(),
+        dedge_send_displs_pp.data(), dolfinx::MPI::mpi_t<std::int32_t>,
+        recv_dual_weights.data(), dedge_recv_count_pp.data(),
+        dedge_recv_displs_pp.data(), dolfinx::MPI::mpi_t<std::int32_t>,
+        comm_po_receive);
+  }
+
   MPI_Comm_free(&comm_po_receive);
 
   // --- Build global dual graph
@@ -514,7 +540,10 @@ compute_nonlocal_dual_graph(
                      std::next(offsets.begin()));
   }
 
-  // Compute adjacency list data (edges)
+  // Compute adjacency list data  and weights if any (edges)
+  std::vector<std::int32_t> edge_weights;
+  if (weighted)
+    edge_weights.resize(offsets.back());
   std::vector<std::int64_t> data(offsets.back());
   {
     std::vector<std::int32_t> disp = offsets;
@@ -526,6 +555,12 @@ compute_nonlocal_dual_graph(
       disp[i] += e.size();
       std::ranges::transform(e, std::next(data.begin(), offsets[i]),
                              [cell_offset](auto x) { return x + cell_offset; });
+      if (weighted)
+      {
+        const auto w = local_edge_weights.subspan(local_dual_graph.offsets()[i],
+                                                  e.size());
+        std::ranges::copy(w, std::next(edge_weights.begin(), offsets[i]));
+      }
     }
 
     // Add non-local data
@@ -540,6 +575,8 @@ compute_nonlocal_dual_graph(
         std::int32_t _cell_offset = disp[cell]++;
         std::int64_t node = recv_dual_edges[offset + j];
         data[_cell_offset] = node;
+        if (weighted)
+          edge_weights[_cell_offset] = recv_dual_weights[offset + j];
       }
 
       offset += dedge_recv_count[i];
@@ -577,7 +614,8 @@ compute_nonlocal_dual_graph(
     data.resize(write_pos);
   }
 
-  return {graph::AdjacencyList(std::move(data), std::move(offsets)), {}};
+  return {graph::AdjacencyList(std::move(data), std::move(offsets)),
+          std::move(edge_weights)};
 }
 //-----------------------------------------------------------------------------
 } // namespace
