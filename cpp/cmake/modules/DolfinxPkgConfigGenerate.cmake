@@ -51,8 +51,10 @@ function(dolfinx_pkgconfig_collect_private target libs_var visited_var)
   endif()
   foreach(_loc_prop IN LISTS _loc_props)
     get_target_property(_loc ${target} ${_loc_prop})
+    # Unquoted: a pre-seeded cache var (e.g. Spack's METIS_LIBRARY) can make
+    # this a real semicolon-joined list, not the single path it should be.
     if(_loc)
-      list(APPEND ${libs_var} "${_loc}")
+      list(APPEND ${libs_var} ${_loc})
       break()
     endif()
   endforeach()
