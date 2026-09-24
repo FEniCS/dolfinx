@@ -221,7 +221,7 @@ jobs:
         shell: spack-bash {0}
         run: |
           spack env activate ci
-          spack load ninja py-fenics-ffcx
+          spack load cmake ninja py-fenics-ffcx
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer \
             -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=$PWD/static-install \
             -B build/static -S dolfinx-src/cpp/
