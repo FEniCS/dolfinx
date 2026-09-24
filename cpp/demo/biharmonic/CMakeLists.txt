@@ -14,5 +14,8 @@ if(DOLFINX_DIR)
   list(APPEND CMAKE_MODULE_PATH ${DOLFINX_DIR})
 endif()
 include(DolfinxDemo)
+if(DOLFINX_DIR)
+  list(REMOVE_ITEM CMAKE_MODULE_PATH ${DOLFINX_DIR})
+endif()
 
 dolfinx_add_demo(biharmonic UFL biharmonic.py)
