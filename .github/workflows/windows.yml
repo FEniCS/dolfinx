@@ -140,11 +140,11 @@ jobs:
       - name: Run tests (C++, serial)
         working-directory: dolfinx-src/cpp/build-dir/test/Release
         run: |
-          mpiexec -n 1 ./unittests
+          mpiexec -n 1 ./unittests.exe
       - name: Run tests (C++, MPI, np=3)
         working-directory: dolfinx-src/cpp/build-dir/test/Release
         run: |
-          mpiexec -n 3 ./unittests
+          mpiexec -n 3 ./unittests.exe
 
       - name: Install DOLFINx Python build dependencies
         working-directory: dolfinx-src/python
