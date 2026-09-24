@@ -1,11 +1,12 @@
-vcpkg_from_gitlab(
-  GITLAB_URL https://gitlab.inria.fr/
+# Windows/MSVC build fixes are applied upstream of this port, on
+# https://github.com/jhale/scotch (mirrored from
+# https://gitlab.inria.fr/scotch/scotch), branch jhale/windows-fixes.
+vcpkg_from_github(
   OUT_SOURCE_PATH SOURCE_PATH
-  REPO scotch/scotch
-  REF "v${VERSION}"
-  SHA512 0de400e7ddf415270d8befea8434b29bd6c3d8133267c81fdc2c913e056a969c401dcd597405282e01cee5891fc048672aa81a195b15d379fc5b7fe181964459
-  HEAD_REF master
-  PATCHES fix-build.patch
+  REPO jhale/scotch
+  REF 96d03abdcf7c9e67fb53842c3be55f53a07f1ce5
+  SHA512 91db45aae0ffd98d67e377d2bd28f7db8ab4d8f7a99eb72e7db64d97bbd854569c367581a2375f94ed633feed363034bc817ce07b7c4b19ac6603f06cda66538
+  HEAD_REF jhale/windows-fixes
 )
 
 vcpkg_find_acquire_program(FLEX)
@@ -85,10 +86,6 @@ endif()
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/share")
 vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/doc/CeCILL-C_V1-en.txt")
 
-vcpkg_replace_string(
-  "${CURRENT_PACKAGES_DIR}/share/scotch/SCOTCHConfig.cmake" "find_dependency(Threads)"
-  "if(NOT WIN32)\nfind_dependency(Threads)\nelse()\nfind_dependency(PThreads4W)\nendif()"
-)
 file(
   REMOVE_RECURSE
   "${CURRENT_PACKAGES_DIR}/debug/include"

@@ -1,61 +1,13 @@
+# Windows/MSVC build fixes (wingetopt.c/.h CMakeLists.txt typos, guarding
+# out unistd.h in util.c) are applied upstream of this port, on
+# https://github.com/jhale/superlu_dist, branch jhale/windows-fixes; also
+# submitted upstream as https://github.com/xiaoyeli/superlu_dist/pull/225.
 vcpkg_from_github(
   OUT_SOURCE_PATH SOURCE_PATH
-  REPO xiaoyeli/superlu_dist
-  REF "v${VERSION}"
-  SHA512 41afccaaffff28911504a6eff50e934a3944ef7a8613b1f9294820e45f293780b5547881e70359e7aa02e92727777d140ffc31fe53f0a36a7bedc7e977ab4849
-  HEAD_REF master
-)
-
-# Upstream typo: every other source under prec-independent/ is spelled
-# correctly except the MSVC-only wingetopt.c entry, which breaks the
-# Windows configure (Cannot find source file: pred-independent/wingetopt.c).
-vcpkg_replace_string(
-  "${SOURCE_PATH}/SRC/CMakeLists.txt"
-  "pred-independent/wingetopt.c"
-  "prec-independent/wingetopt.c"
-)
-
-# Same class of upstream bug: every other header in this list has its
-# subdirectory prefix (include/, CplusplusFactor/); the MSVC-only
-# wingetopt.h entry is missing "include/", so the install step fails
-# looking for it directly under SRC/.
-vcpkg_replace_string(
-  "${SOURCE_PATH}/SRC/CMakeLists.txt"
-  "list(APPEND headers wingetopt.h)"
-  "list(APPEND headers include/wingetopt.h)"
-)
-
-# unistd.h doesn't exist under MSVC. The only things util.c used it for
-# (sleep()) are already commented out, so the include is unconditionally
-# unused dead weight; guard it out rather than trying to shim unistd.h.
-vcpkg_replace_string(
-  "${SOURCE_PATH}/SRC/prec-independent/util.c"
-  "#include <unistd.h>"
-  "#ifndef _MSC_VER
-#include <unistd.h>
-#endif"
-)
-
-# Astore->nzval is void* (SuperLU_DIST's generic, precision-independent
-# matrix storage type), so indexing it directly is arithmetic on a void
-# pointer -- a GCC/Clang extension (treating void* like char*) that ISO C
-# and MSVC both reject (C2036: 'void *': unknown size). Cast to the
-# precision-specific element type each of these three files already
-# otherwise assumes (matching the sizeof() used on the same line).
-vcpkg_replace_string(
-  "${SOURCE_PATH}/SRC/double/d3DPartition.c"
-  "Astore->nzval[idx]"
-  "((double *)Astore->nzval)[idx]"
-)
-vcpkg_replace_string(
-  "${SOURCE_PATH}/SRC/single/s3DPartition.c"
-  "Astore->nzval[idx]"
-  "((float *)Astore->nzval)[idx]"
-)
-vcpkg_replace_string(
-  "${SOURCE_PATH}/SRC/complex16/z3DPartition.c"
-  "Astore->nzval[idx]"
-  "((doublecomplex *)Astore->nzval)[idx]"
+  REPO jhale/superlu_dist
+  REF 592dbe8cc8db1366dd4ef940230ea191f64fafeb
+  SHA512 3b8347af968052732b880f9adedc15ec3decb56afa9e81db349a5b3a5b0345f899d0059e8a87468bff36f0510818ec897f5b6627a8d984d4f09fc716d4c52a3a
+  HEAD_REF jhale/windows-fixes
 )
 
 # SuperLU_DIST's ParMETIS TPL is satisfied by the ScotchParMETIS
