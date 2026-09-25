@@ -44,7 +44,10 @@ public:
   Table(const Table& table) = default;
 
   /// Move constructor
-  Table(Table&& table) = default;
+  /// @note Explicit `noexcept`: MSVC's `std::map` move constructor
+  /// (::_values) isn't `noexcept`, so this isn't implicitly noexcept
+  /// either.
+  Table(Table&& table) noexcept = default;
 
   /// Destructor
   ~Table() = default;

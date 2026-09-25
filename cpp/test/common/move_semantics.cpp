@@ -64,17 +64,9 @@ struct scalar_classes
   static_assert(nothrow_move_c<fem::Constant<T>>);
   static_assert(nothrow_move_c<fem::DirichletBC<T>>);
   static_assert(nothrow_move_c<fem::Expression<T>>);
-#ifndef _MSC_VER
-  // MSVC (toolset 14.44) reports Form's defaulted move constructor as
-  // potentially throwing, unlike its move assignment (asserted below)
-  // or GCC/Clang. Form::_integrals is a std::map; per the standard its
-  // move constructor is noexcept(is_nothrow_move_constructible_v<Compare>)
-  // regardless of the mapped type, but MSVC's STL does not appear to
-  // honour that here. Every class in this file that fails this way
-  // (Form, Table, Topology below) holds a std::map member; every class
-  // that passes does not.
+  // Form's move constructor is explicitly noexcept: MSVC's std::map
+  // move constructor isn't noexcept (see Form.h).
   static_assert(nothrow_move_c<fem::Form<T>>);
-#endif
   static_assert(nothrow_move_c<fem::Function<T>>);
   static_assert(nothrow_move_c<la::MatrixCSR<T>>);
   static_assert(!std::is_copy_constructible_v<la::MatrixCSR<T>>);
@@ -135,10 +127,8 @@ static_assert(nothrow_move_c<common::IndexMap>);
 static_assert(nothrow_move_c<common::Scatterer<>>);
 static_assert(nothrow_move_c<dolfinx::MPI::Comm>);
 static_assert(nothrow_move_c<dolfinx::MPI::Datatype<double>>);
-#ifndef _MSC_VER
-// See comment on fem::Form above. Table::_values is a std::map too.
+// Explicitly noexcept, see Table.h.
 static_assert(nothrow_move_c<dolfinx::Table>);
-#endif
 static_assert(nothrow_move_c<common::Timer<>>);
 static_assert(nothrow_move_c<fem::DofMap>);
 static_assert(nothrow_move_c<fem::ElementDofLayout>);
@@ -148,11 +138,8 @@ static_assert(nothrow_move_c<io::VTKFile>);
 static_assert(nothrow_move_c<io::XDMFFile>);
 static_assert(nothrow_move_c<la::SparsityPattern>);
 static_assert(nothrow_move_c<mesh::EntityMap>);
-#ifndef _MSC_VER
-// See comment on fem::Form above. Topology::_index_maps and
-// ::_connectivity are std::map too.
+// Explicitly noexcept, see Topology.h.
 static_assert(nothrow_move_c<mesh::Topology>);
-#endif
 
 static_assert(nothrow_move_a<common::IndexMap>);
 static_assert(nothrow_move_a<common::Scatterer<>>);

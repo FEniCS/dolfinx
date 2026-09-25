@@ -422,7 +422,10 @@ public:
   /// @note Valid because ::_integrals is a `std::map`, whose elements
   /// keep a stable address across a move, so the `std::span`s cached in
   /// ::_edata and ::_cdata remain valid after the move.
-  Form(Form&& form) = default;
+  /// @note Explicit `noexcept`: MSVC's `std::map` move constructor
+  /// isn't `noexcept`, so a defaulted move constructor holding one
+  /// isn't implicitly noexcept either.
+  Form(Form&& form) noexcept = default;
 
   /// Destructor
   ~Form() = default;
