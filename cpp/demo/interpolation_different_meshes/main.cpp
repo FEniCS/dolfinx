@@ -58,7 +58,8 @@ int main(int argc, char* argv[])
     auto V_tet = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace<double>(
             mesh_tet, std::make_shared<fem::FiniteElement<double>>(
-                          element_tet, std::vector<std::size_t>{3})));
+                          element_tet, mesh_tet->geometry().dim(),
+                          std::vector<std::size_t>{3})));
 
     basix::FiniteElement element_hex = basix::element::create_lagrange<double>(
         mesh::cell_type_to_basix_type(mesh_hex->topology()->cell_type()), 2,
@@ -66,7 +67,8 @@ int main(int argc, char* argv[])
     auto V_hex = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace<double>(
             mesh_hex, std::make_shared<fem::FiniteElement<double>>(
-                          element_hex, std::vector<std::size_t>{3})));
+                          element_hex, mesh_hex->geometry().dim(),
+                          std::vector<std::size_t>{3})));
 
     auto u_tet = std::make_shared<fem::Function<T>>(V_tet);
     auto u_hex = std::make_shared<fem::Function<T>>(V_hex);
