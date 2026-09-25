@@ -209,16 +209,9 @@ jobs:
           # not the OS shell, so it's $VAR/$(...) on every platform including
           # Windows. CIBW_BEFORE_BUILD/REPAIR/TEST_COMMAND_WINDOWS below are
           # genuinely run via cmd.exe though, so those use %VAR%.
-          # CMAKE_PREFIX_PATH goes here (not -D in CONFIG_SETTINGS_WINDOWS
-          # below), since scikit-build-core's cmake.args setting itself uses
-          # ';' as its list separator between distinct -D flags - a second
-          # ';'-joined path inside one -D value would be misparsed as a
-          # separate, bogus argument. CMake reads CMAKE_PREFIX_PATH from the
-          # environment automatically, so setting it directly here avoids
-          # the ambiguity.
           CIBW_ENVIRONMENT_WINDOWS: >
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
-            CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/dolfinx-install;$GITHUB_WORKSPACE/basix-install"
+            CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -298,20 +291,18 @@ jobs:
             cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
             sudo cmake --install dolfinx-build-dir/
           # Phase A (fully bundled wheel, no MPI unbundling yet): build
-          # Basix and DOLFINx's C++ libraries against vcpkg + Intel MPI,
-          # matching windows.yml's proven Windows CI build. Basix is built
-          # standalone (from the source checkout above, needed anyway since
-          # build_fenicsx_stack=true) rather than consumed via its pip
-          # wheel: that wheel's basix.dll isn't on any path delvewheel
-          # searches when repairing the DOLFINx wheel below, whereas a
-          # standalone install gives a clean, known bin/ directory.
+          # DOLFINx's C++ library against vcpkg + Intel MPI, matching
+          # windows.yml's proven Windows CI build. Basix (and FFCx's ufcx
+          # header) are consumed via their pip wheel - whether from PyPI or
+          # the local dev index - exactly as the Linux/macOS legs already
+          # do, letting DOLFINx's own CMake Python-hint mechanism locate
+          # Basix's CMake config inside the installed package. See
+          # CIBW_REPAIR_WHEEL_COMMAND_WINDOWS below for how delvewheel finds
+          # basix.dll there too.
           CIBW_BEFORE_BUILD_WINDOWS: >
             pip -v install --pre fenics-basix fenics-ffcx &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind delvewheel &&
-            cmake -S basix/cpp -B basix-build-dir/ -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake &&
-            cmake --build basix-build-dir/ --config Release &&
-            cmake --install basix-build-dir/ --config Release --prefix %GITHUB_WORKSPACE%/basix-install &&
-            cmake -S dolfinx/cpp -B dolfinx-build-dir/ -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR=%GITHUB_WORKSPACE%/basix-install/lib/cmake/basix -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
+            cmake -S dolfinx/cpp -B dolfinx-build-dir/ -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
             cmake --build dolfinx-build-dir/ --config Release &&
             cmake --install dolfinx-build-dir/ --config Release --prefix %GITHUB_WORKSPACE%/dolfinx-install
           # As of 6/26 DOLFINx uses std::jthread which is only officially
@@ -351,9 +342,15 @@ jobs:
             pipx run abi3audit --verbose --strict --report {wheel}
           # Phase A: bundle everything, including Intel MPI's impi.dll and
           # libfabric.dll (no --exclude yet; unbundling via impi-rt is a
-          # follow-up once this fully-bundled build is proven).
+          # follow-up once this fully-bundled build is proven). Basix's own
+          # wheel-repair step mangles its *third-party* runtime DLLs into
+          # fenics_basix.libs, but leaves basix.dll itself as a plain file
+          # directly in the installed basix package directory - nowhere
+          # delvewheel would otherwise look. Discover that directory via
+          # Python (avoids cmd.exe variable-expansion pitfalls) and invoke
+          # delvewheel with it added, rather than hardcoding a path.
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
-            delvewheel repair --add-path "%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/basix-install/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin" -w {dest_dir} {wheel}
+            python -c "import basix, os, subprocess; subprocess.run(['delvewheel', 'repair', '--add-path', os.path.dirname(basix.__file__) + ';%GITHUB_WORKSPACE%/dolfinx-install/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', '{dest_dir}', '{wheel}'], check=True)"
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
           CIBW_TEST_COMMAND_LINUX: >
