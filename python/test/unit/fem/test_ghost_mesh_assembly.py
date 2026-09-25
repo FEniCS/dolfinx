@@ -88,7 +88,7 @@ def test_ghost_mesh_assembly(mode, dx, ds):
             np.complex64,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=(NotImplementedError, RuntimeError),
+                raises=NotImplementedError,
                 reason="missing _Complex",
             ),
         ),
@@ -97,7 +97,7 @@ def test_ghost_mesh_assembly(mode, dx, ds):
             np.complex128,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=(NotImplementedError, RuntimeError),
+                raises=NotImplementedError,
                 reason="missing _Complex",
             ),
         ),

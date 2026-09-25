@@ -354,7 +354,7 @@ def test_evaluation(cell_type, space_type, space_order):
             np.complex64,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=(NotImplementedError, RuntimeError),
+                raises=NotImplementedError,
                 reason="missing _Complex",
             ),
         ),
@@ -363,7 +363,7 @@ def test_evaluation(cell_type, space_type, space_order):
             np.complex128,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=(NotImplementedError, RuntimeError),
+                raises=NotImplementedError,
                 reason="missing _Complex",
             ),
         ),
