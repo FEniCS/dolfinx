@@ -205,10 +205,12 @@ jobs:
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
             MACOSX_DEPLOYMENT_TARGET=$(xcrun --sdk macosx --show-sdk-version)
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install:$(brew --prefix)
-          # cibuildwheel runs Windows shell strings via cmd.exe (not bash):
-          # use %VAR% expansion, no $(...) command substitution.
+          # CIBW_ENVIRONMENT_* is parsed by cibuildwheel itself (bashlex),
+          # not the OS shell, so it's $VAR/$(...) on every platform including
+          # Windows. CIBW_BEFORE_BUILD/REPAIR/TEST_COMMAND_WINDOWS below are
+          # genuinely run via cmd.exe though, so those use %VAR%.
           CIBW_ENVIRONMENT_WINDOWS: >
-            PIP_EXTRA_INDEX_URL=file://%GITHUB_WORKSPACE%/simple
+            PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -310,8 +312,12 @@ jobs:
             cmake.args="-DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH;-DCMAKE_CXX_FLAGS_INIT=-fexperimental-library"
             wheel.py-api=cp312
             cmake.build-type="Release"
+          # CIBW_CONFIG_SETTINGS_* gets no variable expansion at all (only
+          # {project}/{package} placeholders) - use a GH Actions expression,
+          # resolved at workflow-parse time, and the vcpkg path that's fixed
+          # on the windows-2022 runner image (matching windows.yml).
           CIBW_CONFIG_SETTINGS_WINDOWS: >
-            cmake.args="-DCMAKE_PREFIX_PATH=%GITHUB_WORKSPACE%/dolfinx-install;-DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake;-DVCPKG_OVERLAY_PORTS=../cpp/cmake/vcpkg-overlay"
+            cmake.args="-DCMAKE_PREFIX_PATH=${{ github.workspace }}/dolfinx-install;-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake;-DVCPKG_OVERLAY_PORTS=../cpp/cmake/vcpkg-overlay"
             wheel.py-api=cp312
             cmake.build-type="Release"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
