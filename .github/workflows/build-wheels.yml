@@ -295,7 +295,7 @@ jobs:
           # copies vcpkg-provided runtime DLLs (Intel MPI, HDF5, Boost, ...)
           # into the install prefix's bin/ for delvewheel to find below.
           CIBW_BEFORE_BUILD_WINDOWS: >
-            pip -v install fenics-basix fenics-ffcx &&
+            pip -v install --pre fenics-basix fenics-ffcx &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind delvewheel &&
             cmake -S dolfinx/cpp -B dolfinx-build-dir/ -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
             cmake --build dolfinx-build-dir/ --config Release &&
