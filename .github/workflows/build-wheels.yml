@@ -368,7 +368,7 @@ jobs:
           else
             source .venv-consolidatewheels/Scripts/activate
           fi
-          pip install wheel "consolidatewheels@git+https://github.com/shimwell/consolidatewheels.git@support-versioned-linux-libraries"
+          pip install wheel "consolidatewheels@git+https://github.com/jhale/consolidatewheels.git@linux-content-hash-dedup"
           consolidatewheels wheelhouse/*.whl --dest=wheelhouse-consolidated
           deactivate
           rm -rf wheelhouse-consolidated/tmp
