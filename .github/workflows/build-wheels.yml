@@ -357,9 +357,14 @@ jobs:
           # dolfinx-build-dir/vcpkg_installed/.../bin holds DOLFINx's other
           # vcpkg-provided runtime deps (spdlog, boost, hdf5, ...) - these
           # were never copied into dolfinx-install/bin since
-          # INSTALL_RUNTIME_DEPENDENCIES was dropped above.
+          # INSTALL_RUNTIME_DEPENDENCIES was dropped above. basix.dll's own
+          # third-party deps (openblas, lapack, ...) were delvewheel-mangled
+          # into the sibling fenics_basix.libs directory when Basix's own
+          # wheel was repaired, and basix.dll's import table was patched to
+          # reference those mangled names - so that directory needs to be
+          # searched too, not just the basix package directory itself.
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
-            python -c "import basix, os, subprocess; subprocess.run(['delvewheel', 'repair', '--add-path', os.path.dirname(basix.__file__) + ';' + r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
+            python -c "import basix, os, subprocess; site_packages = os.path.dirname(os.path.dirname(basix.__file__)); paths = os.path.dirname(basix.__file__) + ';' + os.path.join(site_packages, 'fenics_basix.libs'); subprocess.run(['delvewheel', 'repair', '--add-path', paths + ';' + r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
           CIBW_TEST_COMMAND_LINUX: >
