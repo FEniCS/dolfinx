@@ -409,6 +409,24 @@ jobs:
             python -m pytest -n auto -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
 
+      # Basix and DOLFINx wheels each independently bundle their own copy of
+      # shared libraries they both depend on (e.g. libbasix/basix.dll
+      # itself), auditwheel/delocate/delvewheel-mangled with different
+      # names. consolidatewheels reconciles the naming across the whole
+      # wheelhouse and drops the now-redundant duplicates, so DOLFINx's
+      # wheel references Basix's already-bundled copy instead of shipping
+      # its own. Uses shimwell's fork/branch for versioned Linux .so
+      # support (e.g. libfoo.so.1.2.3), not yet in the upstream release.
+      # Only meaningful when build_fenicsx_stack built a local Basix wheel
+      # to consolidate against; otherwise a harmless no-op.
+      - name: Consolidate wheels
+        shell: bash
+        run: |
+          pip install "consolidatewheels @ git+https://github.com/shimwell/consolidatewheels.git@support-versioned-linux-libraries"
+          consolidatewheels wheelhouse/*.whl --dest=wheelhouse-consolidated
+          rm -rf wheelhouse
+          mv wheelhouse-consolidated wheelhouse
+
       - name: Update temporary simple503 repository (Linux)
         if: runner.os == 'Linux'
         run: |
