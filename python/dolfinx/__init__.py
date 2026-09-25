@@ -11,6 +11,15 @@ import sys
 # Template placeholder for injecting Windows dll directories in CI
 # WINDOWSDLL
 
+# On Windows, importing mpi4py registers the MPI runtime's DLL directory
+# (mpi4py._mpi_dll_path, e.g. from a pip-installed impi-rt) via
+# os.add_dll_directory before dolfinx.cpp is loaded below. Windows resolves
+# a .pyd's own DLL dependencies before any of its Python-level code runs,
+# so this import must happen first: it's not otherwise used here.
+import mpi4py as _mpi4py
+
+del _mpi4py
+
 import typing as _typing
 
 import numpy as _np

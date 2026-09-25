@@ -290,8 +290,7 @@ jobs:
               -DCMAKE_BUILD_TYPE=RelWithDebInfo &&
             cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
             sudo cmake --install dolfinx-build-dir/
-          # Phase A (fully bundled wheel, no MPI unbundling yet): build
-          # DOLFINx's C++ library against vcpkg + Intel MPI, matching
+          # Build DOLFINx's C++ library against vcpkg + Intel MPI, matching
           # windows.yml's proven Windows CI build. Basix (and FFCx's ufcx
           # header) are consumed via their pip wheel - whether from PyPI or
           # the local dev index - exactly as the Linux/macOS legs already
@@ -363,8 +362,22 @@ jobs:
           # wheel was repaired, and basix.dll's import table was patched to
           # reference those mangled names - so that directory needs to be
           # searched too, not just the basix package directory itself.
+          #
+          # impi.dll/libfabric.dll are excluded rather than bundled (unlike
+          # Linux/macOS's fully-bundled MPI story elsewhere in this file):
+          # dolfinx.cpp and mpi4py share raw MPI_Comm handles directly
+          # (caster_mpi.h), so they must resolve to the exact same loaded
+          # impi.dll instance. Bundling DOLFINx's own copy would risk a
+          # second, independently-loaded MPI runtime instance alongside
+          # whatever mpi4py resolves (e.g. via a separately pip-installed
+          # impi-rt) - not just wasted disk space, but an ABI/state mismatch
+          # since MPI_Comm handles from one instance are meaningless to the
+          # other. Both dolfinx.cpp and mpi4py instead rely on mpi4py's own
+          # _mpi_dll_path mechanism (triggered by dolfinx/__init__.py's
+          # `import mpi4py`, which runs before dolfinx.cpp is loaded) to
+          # find the one impi-rt-provided copy.
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
-            python -c "import basix, os, subprocess; site_packages = os.path.dirname(os.path.dirname(basix.__file__)); paths = os.path.dirname(basix.__file__) + ';' + os.path.join(site_packages, 'fenics_basix.libs'); subprocess.run(['delvewheel', 'repair', '--add-path', paths + ';' + r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
+            python -c "import basix, os, subprocess; site_packages = os.path.dirname(os.path.dirname(basix.__file__)); paths = os.path.dirname(basix.__file__) + ';' + os.path.join(site_packages, 'fenics_basix.libs'); subprocess.run(['delvewheel', 'repair', '--exclude', 'impi.dll;libfabric.dll', '--add-path', paths + ';' + r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
           CIBW_TEST_COMMAND_LINUX: >
@@ -376,7 +389,13 @@ jobs:
             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}" &&
             mpiexec -n 1 python -m pytest -n auto -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
+          # impi.dll is excluded from the wheel (see
+          # CIBW_REPAIR_WHEEL_COMMAND_WINDOWS above), so mpiexec/impi.dll
+          # must come from somewhere for both mpi4py and dolfinx.cpp -
+          # impi-rt, matching mpi4py's own documented Windows install
+          # instructions (pip install mpi4py impi-rt).
           CIBW_TEST_COMMAND_WINDOWS: >
+            pip install impi-rt &&
             python -m pytest -n auto -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
 
@@ -439,17 +458,18 @@ jobs:
           which mpiexec
           mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
 
-      # Phase A: the wheel bundles Intel MPI, so no separate MPI runtime
-      # package is installed here (unlike the Linux/macOS legs above); this
-      # only proves the wheel is a valid standalone artifact. mpiexec comes
-      # from the Intel MPI SDK installed earlier in the job.
-      - name: Test in clean virtual environment (Windows)
+      # impi.dll is excluded from the wheel like Linux/macOS's own MPI
+      # libraries, so impi-rt is installed here the same way mpich/impi-rt/
+      # openmpi are above - matching mpi4py's own documented Windows install
+      # instructions (pip install mpi4py impi-rt). mpiexec itself comes from
+      # the Intel MPI SDK installed earlier in the job (already on PATH).
+      - name: Test in clean virtual environment with pypi Intel MPI (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: |
           cd dolfinx && git clean -fdx && cd ../
           python -m venv venv-test
-          PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" venv-test/Scripts/pip install --group dolfinx/python/pyproject.toml:test fenics-dolfinx
+          PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" venv-test/Scripts/pip install --group dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx
           venv-test/Scripts/python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
           mpiexec -n 2 venv-test/Scripts/python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
 
