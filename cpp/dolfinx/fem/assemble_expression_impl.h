@@ -1,4 +1,4 @@
-// Copyright (C) 2025-2026 Garth N. Wells
+// Copyright (C) 2025-2026 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -12,12 +12,17 @@
 #include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <functional>
 #include <memory>
+#include <optional>
+#include <span>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -56,6 +61,9 @@ namespace dolfinx::fem::impl
 /// `entities[i, 1]` is the local index of the facet relative to the
 /// cell.
 /// @param[in] cell_info Cell orientation data for use in `P0`.
+/// @param[in] argument_cells Cell of the argument's mesh for each of
+/// `entities`, for use in `P0`. Empty if the argument is defined on the
+/// entities' mesh.
 /// @param[in] P0 Degree-of-freedom transformation function. Applied when
 /// expressions includes an argument function that requires a
 /// transformation.
@@ -70,6 +78,7 @@ void tabulate_expression(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, fem::MDSpan2 auto entities,
     std::span<const std::uint32_t> cell_info,
+    std::span<const std::int32_t> argument_cells,
     const fem::DofTransformKernel<T> auto& P0,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
 {
@@ -101,7 +110,8 @@ void tabulate_expression(
       fn(values_local.data(), coeffs_data + e * cstride, constants.data(),
          coord_dofs.data(), nullptr, nullptr, nullptr);
 
-      P0(values_local, cell_info, entity, size0);
+      P0(values_local, cell_info,
+         argument_cells.empty() ? entity : argument_cells[e], size0);
     }
     else
     {
@@ -116,7 +126,8 @@ void tabulate_expression(
       }
       fn(values_local.data(), coeffs_data + e * cstride, constants.data(),
          coord_dofs.data(), &local_entity, &perm, nullptr);
-      P0(values_local, cell_info, entity, size0);
+      P0(values_local, cell_info,
+         argument_cells.empty() ? entity : argument_cells[e], size0);
     }
 
     for (std::size_t j = 0; j < values_local.size(); ++j)
@@ -156,6 +167,10 @@ void tabulate_expression(
 /// Used to computed a 1-form expression, e.g. can be used to create a
 /// matrix that when applied to a degree-of-freedom vector gives the
 /// expression values at the evaluation points.
+/// @param[in] argument_cells The argument's mesh and, for each of
+/// `entities`, its cell there, when the argument is defined on a mesh
+/// other than `mesh`. Its dof transformations use that mesh's cell
+/// orientation data.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, const fem::FEkernel<T, U> auto& fn,
@@ -165,7 +180,10 @@ void tabulate_expression(
     fem::MDSpan2 auto entities,
     std::optional<
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
-        element)
+        element,
+    std::optional<std::pair<std::reference_wrapper<const mesh::Mesh<U>>,
+                            std::span<const std::int32_t>>>
+        argument_cells = std::nullopt)
 {
   std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
@@ -175,17 +193,20 @@ void tabulate_expression(
     // Do nothing
   };
 
-  std::shared_ptr<const mesh::Topology> topology = mesh.topology();
-  assert(topology);
   std::size_t num_argument_dofs = 1;
   std::span<const std::uint32_t> cell_info;
+  std::span<const std::int32_t> argument_entities;
   if (element)
   {
     num_argument_dofs = element->second;
     if (element->first.get().needs_dof_transformations())
     {
-      mesh.topology_mutable()->create_cell_permutations();
-      cell_info = std::span(topology->get_cell_permutation_info());
+      const mesh::Mesh<U>& mesh_v
+          = argument_cells ? argument_cells->first.get() : mesh;
+      if (argument_cells)
+        argument_entities = argument_cells->second;
+      mesh_v.topology_mutable()->create_cell_permutations();
+      cell_info = std::span(mesh_v.topology()->get_cell_permutation_info());
       post_dof_transform
           = element->first.get().template dof_transformation_right_fn<T>(
               doftransform::transpose);
@@ -207,7 +228,7 @@ void tabulate_expression(
   }
   tabulate_expression(values, fn, Xshape, value_size, num_argument_dofs,
                       mesh.geometry().dofmaps().front(), mesh.geometry().x(),
-                      coeffs, constants, entities, cell_info,
+                      coeffs, constants, entities, cell_info, argument_entities,
                       post_dof_transform, facet_perms);
 }
 } // namespace dolfinx::fem::impl
