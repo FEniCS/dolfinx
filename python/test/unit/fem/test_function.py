@@ -69,7 +69,7 @@ def test_copy(V):
             np.complex64,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=(NotImplementedError, RuntimeError),
+                raises=NotImplementedError,
                 reason="missing _Complex",
             ),
         ),
@@ -78,7 +78,7 @@ def test_copy(V):
             np.complex128,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=(NotImplementedError, RuntimeError),
+                raises=NotImplementedError,
                 reason="missing _Complex",
             ),
         ),
@@ -140,7 +140,7 @@ def test_eval(dtype):
             np.complex64,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=(NotImplementedError, RuntimeError),
+                raises=NotImplementedError,
                 reason="missing _Complex",
             ),
         ),
@@ -149,7 +149,7 @@ def test_eval(dtype):
             np.complex128,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=(NotImplementedError, RuntimeError),
+                raises=NotImplementedError,
                 reason="missing _Complex",
             ),
         ),
@@ -193,7 +193,7 @@ def test_interpolation_mismatch_rank1(W):
             np.complex64,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=(NotImplementedError, RuntimeError),
+                raises=NotImplementedError,
                 reason="missing _Complex",
             ),
         ),
@@ -202,7 +202,7 @@ def test_interpolation_mismatch_rank1(W):
             np.complex128,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=(NotImplementedError, RuntimeError),
+                raises=NotImplementedError,
                 reason="missing _Complex",
             ),
         ),
@@ -307,7 +307,7 @@ def test_cffi_expression(dtype, cdtype):
             np.complex64,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=(NotImplementedError, RuntimeError),
+                raises=NotImplementedError,
                 reason="missing _Complex",
             ),
         ),
@@ -316,7 +316,7 @@ def test_cffi_expression(dtype, cdtype):
             np.complex128,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=(NotImplementedError, RuntimeError),
+                raises=NotImplementedError,
                 reason="missing _Complex",
             ),
         ),
