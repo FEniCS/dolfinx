@@ -209,8 +209,16 @@ jobs:
           # not the OS shell, so it's $VAR/$(...) on every platform including
           # Windows. CIBW_BEFORE_BUILD/REPAIR/TEST_COMMAND_WINDOWS below are
           # genuinely run via cmd.exe though, so those use %VAR%.
+          # CMAKE_PREFIX_PATH goes here (not -D in CONFIG_SETTINGS_WINDOWS
+          # below), since scikit-build-core's cmake.args setting itself uses
+          # ';' as its list separator between distinct -D flags - a second
+          # ';'-joined path inside one -D value would be misparsed as a
+          # separate, bogus argument. CMake reads CMAKE_PREFIX_PATH from the
+          # environment automatically, so setting it directly here avoids
+          # the ambiguity.
           CIBW_ENVIRONMENT_WINDOWS: >
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
+            CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/dolfinx-install;$GITHUB_WORKSPACE/basix-install"
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -290,18 +298,20 @@ jobs:
             cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
             sudo cmake --install dolfinx-build-dir/
           # Phase A (fully bundled wheel, no MPI unbundling yet): build
-          # DOLFINx's C++ library against vcpkg + Intel MPI, matching
-          # windows.yml's proven Windows CI build. This install tree is only
-          # consumed as a CMake package (headers/libs/config) by the Python
-          # wheel build below - not INSTALL_RUNTIME_DEPENDENCIES, since Basix
-          # (consumed as its pip wheel) has its runtime DLLs delvewheel-
-          # mangled into fenics_basix.libs, which CMake's dependency walk
-          # can't resolve. The actual wheel's own delvewheel repair step
-          # (CIBW_REPAIR_WHEEL_COMMAND_WINDOWS) does the real DLL bundling.
+          # Basix and DOLFINx's C++ libraries against vcpkg + Intel MPI,
+          # matching windows.yml's proven Windows CI build. Basix is built
+          # standalone (from the source checkout above, needed anyway since
+          # build_fenicsx_stack=true) rather than consumed via its pip
+          # wheel: that wheel's basix.dll isn't on any path delvewheel
+          # searches when repairing the DOLFINx wheel below, whereas a
+          # standalone install gives a clean, known bin/ directory.
           CIBW_BEFORE_BUILD_WINDOWS: >
             pip -v install --pre fenics-basix fenics-ffcx &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind delvewheel &&
-            cmake -S dolfinx/cpp -B dolfinx-build-dir/ -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
+            cmake -S basix/cpp -B basix-build-dir/ -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake &&
+            cmake --build basix-build-dir/ --config Release &&
+            cmake --install basix-build-dir/ --config Release --prefix %GITHUB_WORKSPACE%/basix-install &&
+            cmake -S dolfinx/cpp -B dolfinx-build-dir/ -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR=%GITHUB_WORKSPACE%/basix-install/lib/cmake/basix -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
             cmake --build dolfinx-build-dir/ --config Release &&
             cmake --install dolfinx-build-dir/ --config Release --prefix %GITHUB_WORKSPACE%/dolfinx-install
           # As of 6/26 DOLFINx uses std::jthread which is only officially
@@ -321,7 +331,7 @@ jobs:
           # resolved at workflow-parse time, and the vcpkg path that's fixed
           # on the windows-2022 runner image (matching windows.yml).
           CIBW_CONFIG_SETTINGS_WINDOWS: >
-            cmake.args="-DCMAKE_PREFIX_PATH=${{ github.workspace }}/dolfinx-install;-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake;-DVCPKG_OVERLAY_PORTS=../cpp/cmake/vcpkg-overlay"
+            cmake.args="-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake;-DVCPKG_OVERLAY_PORTS=../cpp/cmake/vcpkg-overlay"
             wheel.py-api=cp312
             cmake.build-type="Release"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
@@ -343,7 +353,7 @@ jobs:
           # libfabric.dll (no --exclude yet; unbundling via impi-rt is a
           # follow-up once this fully-bundled build is proven).
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
-            delvewheel repair --add-path "%GITHUB_WORKSPACE%/dolfinx-install/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin" -w {dest_dir} {wheel}
+            delvewheel repair --add-path "%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/basix-install/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin" -w {dest_dir} {wheel}
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
           CIBW_TEST_COMMAND_LINUX: >
