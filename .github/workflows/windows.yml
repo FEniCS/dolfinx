@@ -32,9 +32,16 @@ jobs:
       FEED_URL: https://nuget.pkg.github.com/FEniCS/index.json
       VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/FEniCS/index.json,readwrite"
 
+    # A non-zero exit from a native command (cmake, pip, mpiexec, ...)
+    # does not by itself stop a pwsh `run:` step or fail it, unlike
+    # bash's `set -e`; set both preferences once here, for every step,
+    # rather than repeating them in each `run:` block.
+    defaults:
+      run:
+        shell: pwsh -Command "$ErrorActionPreference = 'Stop'; $PSNativeCommandUseErrorActionPreference = $true; . '{0}'"
+
     steps:
       - name: Add NuGet sources
-        shell: pwsh
         run: |
           .$(${{ env.VCPKG_EXE }} fetch nuget) `
             sources add `
@@ -132,8 +139,6 @@ jobs:
       - name: Install DOLFINx (C++)
         working-directory: dolfinx-src/cpp
         run: |
-          $ErrorActionPreference = 'Stop'
-          $PSNativeCommandUseErrorActionPreference = $true
           cmake -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cmake/vcpkg-overlay" -B build-dir -S .
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
@@ -142,22 +147,16 @@ jobs:
       - name: Run tests (C++)
         working-directory: dolfinx-src/cpp/build-dir
         run: |
-          $ErrorActionPreference = 'Stop'
-          $PSNativeCommandUseErrorActionPreference = $true
           ctest --output-on-failure -C Release
 
       - name: Build C++ demos
         working-directory: dolfinx-src/cpp
         run: |
-          $ErrorActionPreference = 'Stop'
-          $PSNativeCommandUseErrorActionPreference = $true
           cmake -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DDOLFINX_DIR="D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cmake/vcpkg-overlay" -B build-demo -S demo
           cmake --build build-demo --config Release
       - name: Run C++ demos
         working-directory: dolfinx-src/cpp/build-demo
         run: |
-          $ErrorActionPreference = 'Stop'
-          $PSNativeCommandUseErrorActionPreference = $true
           ctest --output-on-failure -C Release
 
       - name: Install DOLFINx Python build dependencies
