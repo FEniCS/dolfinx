@@ -423,9 +423,11 @@ public:
   /// keep a stable address across a move, so the `std::span`s cached in
   /// ::_edata and ::_cdata remain valid after the move.
 #ifdef _MSC_VER
-  /// @note Explicit `noexcept`: MSVC's `std::map` move constructor
-  /// isn't `noexcept`, so a defaulted move constructor holding one
-  /// isn't implicitly noexcept either.
+  /// @note Explicit `noexcept`, MSVC only: MSVC's `std::map` move
+  /// constructor isn't marked `noexcept`, so Form's move constructor
+  /// would otherwise be deduced possibly-throwing. A map's move never
+  /// actually throws - it only transfers internal state - so the
+  /// noexcept override is safe.
   Form(Form&& form) noexcept = default;
 #else
   Form(Form&& form) = default;

@@ -45,9 +45,8 @@ public:
 
   /// Move constructor
 #ifdef _MSC_VER
-  /// @note Explicit `noexcept`: MSVC's `std::map` move constructor
-  /// (::_values) isn't `noexcept`, so this isn't implicitly noexcept
-  /// either.
+  /// @note Explicit `noexcept`, MSVC only; see fem::Form's move
+  /// constructor for why the noexcept override is safe.
   Table(Table&& table) noexcept = default;
 #else
   Table(Table&& table) = default;
