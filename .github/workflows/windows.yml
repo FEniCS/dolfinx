@@ -147,6 +147,19 @@ jobs:
         run: |
           mpiexec -n 3 ./unittests.exe
 
+      - name: Build C++ demos
+        working-directory: dolfinx-src/cpp
+        run: |
+          cmake -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DDOLFINX_DIR="D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cmake/vcpkg-overlay" -B build-demo -S demo
+          cmake --build build-demo --config Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run C++ demos (serial and MPI, np=2 and np=3)
+        working-directory: dolfinx-src/cpp/build-demo
+        run: |
+          ctest --output-on-failure -C Release -R "demo_.*_np_1"
+          ctest --output-on-failure -C Release -R "demo_.*_np_2"
+          ctest --output-on-failure -C Release -R "demo_.*_np_3"
+
       - name: Install DOLFINx Python build dependencies
         working-directory: dolfinx-src/python
         run: |
