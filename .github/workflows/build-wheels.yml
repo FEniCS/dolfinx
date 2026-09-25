@@ -311,10 +311,13 @@ jobs:
             wheel.py-api=cp312
             cmake.build-type="Release"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
-          # The first line allows auditwheel to find and bundle in libbasix
+          # The first line allows auditwheel to find and bundle in libbasix.
+          # libopenblas is separately excluded: it's also bundled by Basix's
+          # own wheel, and consolidatewheels (below) errors on a library
+          # present, unreconciled, in both wheels.
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
-            auditwheel repair --exclude libmpi.so* -w {dest_dir} {wheel} &&
+            auditwheel repair --exclude libmpi.so* --exclude libopenblas.so* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             delocate-listdeps --depending {wheel} &&
@@ -325,7 +328,7 @@ jobs:
             find {dest_dir}/unpacked \( -name "*.so" -o -name "*.dylib" \) | xargs -I% codesign --force --sign - % &&
             wheel pack {dest_dir}/unpacked/* -d {dest_dir} &&
             pipx run abi3audit --verbose --strict --report {wheel}
-          
+
           # impi.dll/libfabric.dll are excluded rather than bundled - user must
           # install. msvcp140.dll/msvcp140_atomic_wait.dll are already present
           # on any modern Windows system.
@@ -353,14 +356,10 @@ jobs:
 
       # This utility 'consolidates' the built wheels - in practice, shared
       # objects bundled in basix are not bundled a second time into dolfinx.
+      # Note that consolidatewheels requires the wheel utility.
       - name: Consolidate wheels
         shell: bash
         run: |
-          # consolidatewheels shells out to the `wheel` CLI (wheel
-          # unpack/pack), needing it on PATH - install into an isolated venv
-          # rather than the system/runner Python, avoiding any interaction
-          # with Linux's apt-managed system packages (where a python3-wheel
-          # package was present but without a PATH-visible console script).
           python -m venv .venv-consolidatewheels
           if [ -f .venv-consolidatewheels/bin/activate ]; then
             source .venv-consolidatewheels/bin/activate
@@ -431,7 +430,7 @@ jobs:
           PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install --group dolfinx/python/pyproject.toml:test openmpi fenics-dolfinx
           which mpiexec
           mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
-      
+
       - name: Test in clean virtual environment with pypi Intel MPI (Windows)
         if: runner.os == 'Windows'
         shell: bash
