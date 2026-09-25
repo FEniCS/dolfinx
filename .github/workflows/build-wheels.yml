@@ -73,6 +73,11 @@ jobs:
             cibw_build: cp312-macosx_arm64
           - os: macos-15-intel
             cibw_build: cp312-macosx_x86_64
+          - os: windows-2022
+            cibw_build: cp312-win_amd64
+
+    permissions:
+      packages: write
 
     env:
       CIBW_BUILD: ${{ matrix.cibw_build }}
@@ -80,10 +85,37 @@ jobs:
       CIBW_ENVIRONMENT: PIP_INDEX_URL="file:///project/simple" PIP_EXTRA_INDEX_URL="https://pypi.org/simple"
       CIBW_ARCHS_LINUX: native
       CIBW_ARCHS_MACOS: native
+      CIBW_ARCHS_WINDOWS: AMD64
       CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64:latest
       CIBW_MANYLINUX_AARCH64_IMAGE: quay.io/pypa/manylinux_2_34_aarch64:latest
+      # vcpkg is pre-installed on the windows-2022 runner image.
+      VCPKG_EXE: C:/vcpkg/vcpkg
+      VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/FEniCS/index.json,readwrite"
 
     steps:
+      # Windows only: cache vcpkg-built ports (e.g. Intel MPI) in a GitHub
+      # Packages NuGet feed, matching windows.yml.
+      - name: Add NuGet sources (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          .$(${{ env.VCPKG_EXE }} fetch nuget) `
+            sources add `
+            -Source "https://nuget.pkg.github.com/FEniCS/index.json" `
+            -StorePasswordInClearText `
+            -Name GitHubPackages `
+            -UserName "FEniCS" `
+            -Password "${{ secrets.GITHUB_TOKEN }}"
+          .$(${{ env.VCPKG_EXE }} fetch nuget) `
+            setapikey "${{ secrets.GITHUB_TOKEN }}" `
+            -Source "https://nuget.pkg.github.com/FEniCS/index.json"
+
+      - name: Install Intel MPI (Windows)
+        if: runner.os == 'Windows'
+        uses: mpi4py/setup-mpi@v1.4.4
+        with:
+          mpi: "intelmpi"
+
       - uses: actions/setup-python@v7
 
       - name: Install Python dependencies
@@ -130,10 +162,12 @@ jobs:
           python -m cibuildwheel --output-dir ../wheelhouse/ .
 
       - name: Make temporary simple503 repo directories
+        shell: bash
         run: mkdir -p wheelhouse/ simple/
 
       - name: Add wheels to simple503 repository (if built)
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        shell: bash
         run: cp wheelhouse/* simple/
 
       - name: Index simple503 repository (Linux)
@@ -142,6 +176,11 @@ jobs:
 
       - name: Index simple503 repository (macOS)
         if: runner.os == 'macOS'
+        run: python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple/
+
+      - name: Index simple503 repository (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
         run: python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple/
 
       - name: Checkout DOLFINx
@@ -165,6 +204,8 @@ jobs:
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
             MACOSX_DEPLOYMENT_TARGET=$(xcrun --sdk macosx --show-sdk-version)
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install:$(brew --prefix)
+          CIBW_ENVIRONMENT_WINDOWS: >
+            PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -243,6 +284,17 @@ jobs:
               -DCMAKE_BUILD_TYPE=RelWithDebInfo &&
             cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
             sudo cmake --install dolfinx-build-dir/
+          # Phase A (fully bundled wheel, no MPI unbundling yet): build
+          # DOLFINx's C++ library against vcpkg + Intel MPI, matching
+          # windows.yml's proven Windows CI build. INSTALL_RUNTIME_DEPENDENCIES
+          # copies vcpkg-provided runtime DLLs (Intel MPI, HDF5, Boost, ...)
+          # into the install prefix's bin/ for delvewheel to find below.
+          CIBW_BEFORE_BUILD_WINDOWS: >
+            pip -v install $(python -c "import tomllib; deps=tomllib.load(open('dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
+            pip -v install mpi4py scikit-build-core[pyproject] nanobind delvewheel &&
+            cmake -S dolfinx/cpp -B dolfinx-build-dir/ -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
+            cmake --build dolfinx-build-dir/ --config Release &&
+            cmake --install dolfinx-build-dir/ --config Release --prefix $GITHUB_WORKSPACE/dolfinx-install
           # As of 6/26 DOLFINx uses std::jthread which is only officially
           # supported in macOS SDK 26. -fexperimental-library enables
           # experimental std library support which allows the build to complete
@@ -253,6 +305,10 @@ jobs:
             cmake.build-type="Release"
           CIBW_CONFIG_SETTINGS_MACOS: >
             cmake.args="-DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH;-DCMAKE_CXX_FLAGS_INIT=-fexperimental-library"
+            wheel.py-api=cp312
+            cmake.build-type="Release"
+          CIBW_CONFIG_SETTINGS_WINDOWS: >
+            cmake.args="-DCMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install;-DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake;-DVCPKG_OVERLAY_PORTS=../cpp/cmake/vcpkg-overlay"
             wheel.py-api=cp312
             cmake.build-type="Release"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
@@ -270,6 +326,11 @@ jobs:
             find {dest_dir}/unpacked \( -name "*.so" -o -name "*.dylib" \) | xargs -I% codesign --force --sign - % &&
             wheel pack {dest_dir}/unpacked/* -d {dest_dir} &&
             pipx run abi3audit --verbose --strict --report {wheel}
+          # Phase A: bundle everything, including Intel MPI's impi.dll and
+          # libfabric.dll (no --exclude yet; unbundling via impi-rt is a
+          # follow-up once this fully-bundled build is proven).
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
+            delvewheel repair --add-path "$GITHUB_WORKSPACE/dolfinx-install/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin" -w {dest_dir} {wheel}
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
           CIBW_TEST_COMMAND_LINUX: >
@@ -281,6 +342,9 @@ jobs:
             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}" &&
             mpiexec -n 1 python -m pytest -n auto -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
+          CIBW_TEST_COMMAND_WINDOWS: >
+            python -m pytest -n auto -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
+            mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
 
       - name: Update temporary simple503 repository (Linux)
         if: runner.os == 'Linux'
@@ -290,6 +354,13 @@ jobs:
 
       - name: Update temporary simple503 repository (macOS)
         if: runner.os == 'macOS'
+        run: |
+          cp wheelhouse/* simple
+          python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple
+
+      - name: Update temporary simple503 repository (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
         run: |
           cp wheelhouse/* simple
           python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple
@@ -333,6 +404,20 @@ jobs:
           PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install --group dolfinx/python/pyproject.toml:test openmpi fenics-dolfinx
           which mpiexec
           mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
+
+      # Phase A: the wheel bundles Intel MPI, so no separate MPI runtime
+      # package is installed here (unlike the Linux/macOS legs above); this
+      # only proves the wheel is a valid standalone artifact. mpiexec comes
+      # from the Intel MPI SDK installed earlier in the job.
+      - name: Test in clean virtual environment (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd dolfinx && git clean -fdx && cd ../
+          python -m venv venv-test
+          PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" venv-test/Scripts/pip install --group dolfinx/python/pyproject.toml:test fenics-dolfinx
+          venv-test/Scripts/python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
+          mpiexec -n 2 venv-test/Scripts/python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
 
       - name: Update FEniCS Project simple503 repository
         run: |
