@@ -349,8 +349,13 @@ jobs:
           # delvewheel would otherwise look. Discover that directory via
           # Python (avoids cmd.exe variable-expansion pitfalls) and invoke
           # delvewheel with it added, rather than hardcoding a path.
+          # %GITHUB_WORKSPACE% is substituted by cmd.exe as literal (possibly
+          # backslash-laden) text before python ever parses this string, so
+          # it and the {dest_dir}/{wheel} substitutions below are wrapped in
+          # raw string literals - otherwise e.g. "D:\a\..." reads \a as a
+          # (corrupting, not even erroring) Python escape sequence.
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
-            python -c "import basix, os, subprocess; subprocess.run(['delvewheel', 'repair', '--add-path', os.path.dirname(basix.__file__) + ';%GITHUB_WORKSPACE%/dolfinx-install/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', '{dest_dir}', '{wheel}'], check=True)"
+            python -c "import basix, os, subprocess; subprocess.run(['delvewheel', 'repair', '--add-path', os.path.dirname(basix.__file__) + ';' + r'%GITHUB_WORKSPACE%/dolfinx-install/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
           CIBW_TEST_COMMAND_LINUX: >
