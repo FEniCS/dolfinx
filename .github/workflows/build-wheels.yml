@@ -204,8 +204,10 @@ jobs:
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
             MACOSX_DEPLOYMENT_TARGET=$(xcrun --sdk macosx --show-sdk-version)
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install:$(brew --prefix)
+          # cibuildwheel runs Windows shell strings via cmd.exe (not bash):
+          # use %VAR% expansion, no $(...) command substitution.
           CIBW_ENVIRONMENT_WINDOWS: >
-            PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
+            PIP_EXTRA_INDEX_URL=file://%GITHUB_WORKSPACE%/simple
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -290,11 +292,11 @@ jobs:
           # copies vcpkg-provided runtime DLLs (Intel MPI, HDF5, Boost, ...)
           # into the install prefix's bin/ for delvewheel to find below.
           CIBW_BEFORE_BUILD_WINDOWS: >
-            pip -v install $(python -c "import tomllib; deps=tomllib.load(open('dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
+            pip -v install fenics-basix fenics-ffcx &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind delvewheel &&
-            cmake -S dolfinx/cpp -B dolfinx-build-dir/ -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
+            cmake -S dolfinx/cpp -B dolfinx-build-dir/ -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
             cmake --build dolfinx-build-dir/ --config Release &&
-            cmake --install dolfinx-build-dir/ --config Release --prefix $GITHUB_WORKSPACE/dolfinx-install
+            cmake --install dolfinx-build-dir/ --config Release --prefix %GITHUB_WORKSPACE%/dolfinx-install
           # As of 6/26 DOLFINx uses std::jthread which is only officially
           # supported in macOS SDK 26. -fexperimental-library enables
           # experimental std library support which allows the build to complete
@@ -308,7 +310,7 @@ jobs:
             wheel.py-api=cp312
             cmake.build-type="Release"
           CIBW_CONFIG_SETTINGS_WINDOWS: >
-            cmake.args="-DCMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install;-DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake;-DVCPKG_OVERLAY_PORTS=../cpp/cmake/vcpkg-overlay"
+            cmake.args="-DCMAKE_PREFIX_PATH=%GITHUB_WORKSPACE%/dolfinx-install;-DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake;-DVCPKG_OVERLAY_PORTS=../cpp/cmake/vcpkg-overlay"
             wheel.py-api=cp312
             cmake.build-type="Release"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
@@ -330,7 +332,7 @@ jobs:
           # libfabric.dll (no --exclude yet; unbundling via impi-rt is a
           # follow-up once this fully-bundled build is proven).
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
-            delvewheel repair --add-path "$GITHUB_WORKSPACE/dolfinx-install/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin" -w {dest_dir} {wheel}
+            delvewheel repair --add-path "%GITHUB_WORKSPACE%/dolfinx-install/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin" -w {dest_dir} {wheel}
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
           CIBW_TEST_COMMAND_LINUX: >
