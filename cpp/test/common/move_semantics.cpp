@@ -67,7 +67,12 @@ struct scalar_classes
 #ifndef _MSC_VER
   // MSVC (toolset 14.44) reports Form's defaulted move constructor as
   // potentially throwing, unlike its move assignment (asserted below)
-  // or GCC/Clang; not yet root-caused against a real Windows compiler.
+  // or GCC/Clang. Form::_integrals is a std::map; per the standard its
+  // move constructor is noexcept(is_nothrow_move_constructible_v<Compare>)
+  // regardless of the mapped type, but MSVC's STL does not appear to
+  // honour that here. Every class in this file that fails this way
+  // (Form, Table, Topology below) holds a std::map member; every class
+  // that passes does not.
   static_assert(nothrow_move_c<fem::Form<T>>);
 #endif
   static_assert(nothrow_move_c<fem::Function<T>>);
@@ -131,7 +136,7 @@ static_assert(nothrow_move_c<common::Scatterer<>>);
 static_assert(nothrow_move_c<dolfinx::MPI::Comm>);
 static_assert(nothrow_move_c<dolfinx::MPI::Datatype<double>>);
 #ifndef _MSC_VER
-// See comment on fem::Form above; same MSVC discrepancy for Table.
+// See comment on fem::Form above. Table::_values is a std::map too.
 static_assert(nothrow_move_c<dolfinx::Table>);
 #endif
 static_assert(nothrow_move_c<common::Timer<>>);
@@ -144,7 +149,8 @@ static_assert(nothrow_move_c<io::XDMFFile>);
 static_assert(nothrow_move_c<la::SparsityPattern>);
 static_assert(nothrow_move_c<mesh::EntityMap>);
 #ifndef _MSC_VER
-// See comment on fem::Form above; same MSVC discrepancy for Topology.
+// See comment on fem::Form above. Topology::_index_maps and
+// ::_connectivity are std::map too.
 static_assert(nothrow_move_c<mesh::Topology>);
 #endif
 
