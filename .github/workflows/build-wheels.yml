@@ -247,7 +247,7 @@ jobs:
             cmake --build superlu_dist-build-dir/ &&
             cmake --install superlu_dist-build-dir/ &&
             echo /usr/local/lib64 > /etc/ld.so.conf.d/usr-local-lib64.conf && ldconfig &&
-            pip -v install $(python -c "import tomllib; deps=tomllib.load(open('/project/dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
+            pip -v install --pre fenics-basix fenics-ffcx &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ \
               -DPython3_EXECUTABLE=$(which python) \
@@ -282,7 +282,7 @@ jobs:
               -DTPL_ENABLE_LAPACKLIB=ON &&
             cmake --build superlu_dist-build-dir/ &&
             sudo cmake --install superlu_dist-build-dir/ &&
-            pip -v install $(python -c "import tomllib; deps=tomllib.load(open('dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
+            pip -v install --pre fenics-basix fenics-ffcx &&
             pip -v install wheel mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S $GITHUB_WORKSPACE/dolfinx/cpp -B $GITHUB_WORKSPACE/dolfinx-build-dir/ \
               -DPython3_EXECUTABLE=$(which python) \
