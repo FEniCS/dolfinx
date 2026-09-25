@@ -18,30 +18,22 @@ import pytest
 DEMO_TIMEOUT_S = 300
 
 
-# Demos importing one of these modules are skipped when the module is
-# not installed, rather than failing.
-OPTIONAL_DEMO_MODULES = ["petsc4py", "gmsh", "pyvista"]
-
-
-def imports_module(f, module):
-    """Check if a file imports a given (optional) module."""
+def imports_petsc4py(f):
+    """Check if a file imports petsc4py."""
     with open(f, encoding="utf-8") as file:
         read_data = file.read()
-    if module == "petsc4py":
         return "petsc4py" in read_data or ".petsc" in read_data
-    return f"import {module}" in read_data
 
 
 # Get directory of this file
 path = pathlib.Path(__file__).resolve().parent
 
-# Build list of demo programs, skipping ones that import an optional
-# module not installed in this environment.
+# Build list of demo programs
 demo_files = list(path.glob("**/*.py"))
-missing_modules = [m for m in OPTIONAL_DEMO_MODULES if importlib.util.find_spec(m) is None]
-demos = [
-    (f.parent, f.name) for f in demo_files if not any(imports_module(f, m) for m in missing_modules)
-]
+if importlib.util.find_spec("petsc4py") is not None:
+    demos = [(f.parent, f.name) for f in demo_files]
+else:
+    demos = [(f.parent, f.name) for f in demo_files if not imports_petsc4py(f)]
 
 
 @pytest.mark.serial
