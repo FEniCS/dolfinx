@@ -327,7 +327,6 @@ endif()
 if(DEFINED ENV{BOOST_USE_MULTITHREADED})
   set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 endif()
-set(Boost_VERBOSE TRUE)
 # 1.81 is required for boost/unordered/unordered_flat_set.hpp, used by
 # dolfinx::graph::partitioners.
 find_package(Boost 1.81 REQUIRED)

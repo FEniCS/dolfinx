@@ -30,7 +30,6 @@ endif()
 if(DEFINED ENV{BOOST_USE_MULTITHREADED})
   set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 endif()
-set(Boost_VERBOSE TRUE)
 # find_package() rather than find_dependency(): the latter defers to a
 # function defined in CMakeFindDependencyMacro.cmake, which captured the
 # policy stack at its own definition and so would not see the CMP0167
