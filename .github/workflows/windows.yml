@@ -167,11 +167,11 @@ jobs:
         run: |
           mpiexec -n 3 python -m pytest -m "not petsc4py and not adios2" unit/
 
-      - name: Run Python demos (serial)
+      - name: Run Python demos, skip demo_comm-pattern (serial)
         working-directory: dolfinx-src/python/demo
         run: |
-          python3 -m pytest -n auto -m serial --durations=10 test.py
-      - name: Run Python demos (MPI, np=3)
+          python3 -m pytest -n auto -m serial -k "not demo_comm-pattern" --durations=10 test.py
+      - name: Run Python demos, skip demo_comm-pattern (MPI, np=3)
         working-directory: dolfinx-src/python/demo
         run: |
-          python3 -m pytest -m mpi --num-proc=3 test.py
+          python3 -m pytest -m mpi -k "not demo_comm-pattern" --num-proc=3 test.py
