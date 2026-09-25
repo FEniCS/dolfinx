@@ -177,6 +177,8 @@ jobs:
         run: |
           pip install gmsh networkx matplotlib scipy pyvista
 
+      - uses: pyvista/setup-headless-display-action@v5.1.0
+
       - name: Run Python demos, skip demo_comm-pattern (serial)
         working-directory: dolfinx-src/python/demo
         run: |
