@@ -85,11 +85,8 @@ def mpi_jit_decorator(
 
         status = comm.bcast(status, root=0)
         if status != 0:
-            # Broadcast the exception's type name and message (not the
-            # exception object itself, which may not be picklable) so
-            # every rank raises the same type: a rank-dependent type
-            # would let a caller's except clause match on some ranks
-            # but not others.
+            # Broadcast type name and message, not the exception (may
+            # not be picklable), so every rank raises the same type.
             error_type_name, error_str = comm.bcast(
                 (type(error).__name__, str(error)) if is_root else None, root=0
             )
