@@ -314,10 +314,14 @@ jobs:
           # The first line lets auditwheel resolve libbasix, which is
           # excluded rather than bundled since DOLFINx doesn't use it
           # directly, only through Basix; consolidatewheels (below) points
-          # the reference at Basix's own bundled copy instead.
+          # the reference at Basix's own bundled copy instead. libopenblas
+          # is excluded too: DOLFINx pulls it in independently through
+          # SuperLU_DIST's own LAPACK dependency, so excluding libbasix
+          # alone wasn't enough to stop DOLFINx's wheel from also bundling
+          # its own copy.
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
-            auditwheel repair --exclude libmpi.so* --exclude libbasix.so* -w {dest_dir} {wheel} &&
+            auditwheel repair --exclude libmpi.so* --exclude libbasix.so* --exclude libopenblas.so* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             delocate-listdeps --depending {wheel} &&
