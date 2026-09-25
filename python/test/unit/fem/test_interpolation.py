@@ -422,7 +422,7 @@ def test_mixed_interpolation():
             np.complex64,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=NotImplementedError,
+                raises=(NotImplementedError, RuntimeError),
                 reason="missing _Complex",
             ),
         ),
@@ -431,7 +431,7 @@ def test_mixed_interpolation():
             np.complex128,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=NotImplementedError,
+                raises=(NotImplementedError, RuntimeError),
                 reason="missing _Complex",
             ),
         ),
@@ -472,7 +472,7 @@ def test_interpolation_nedelec(order1, order2, dtype):
             np.complex64,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=NotImplementedError,
+                raises=(NotImplementedError, RuntimeError),
                 reason="missing _Complex",
             ),
         ),
@@ -481,7 +481,7 @@ def test_interpolation_nedelec(order1, order2, dtype):
             np.complex128,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=NotImplementedError,
+                raises=(NotImplementedError, RuntimeError),
                 reason="missing _Complex",
             ),
         ),
@@ -513,7 +513,7 @@ def test_interpolation_dg_to_n1curl(tdim, order, dtype):
             np.complex64,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=NotImplementedError,
+                raises=(NotImplementedError, RuntimeError),
                 reason="missing _Complex",
             ),
         ),
@@ -522,7 +522,7 @@ def test_interpolation_dg_to_n1curl(tdim, order, dtype):
             np.complex128,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=NotImplementedError,
+                raises=(NotImplementedError, RuntimeError),
                 reason="missing _Complex",
             ),
         ),
@@ -554,7 +554,7 @@ def test_interpolation_n1curl_to_dg(tdim, order, dtype):
             np.complex64,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=NotImplementedError,
+                raises=(NotImplementedError, RuntimeError),
                 reason="missing _Complex",
             ),
         ),
@@ -563,7 +563,7 @@ def test_interpolation_n1curl_to_dg(tdim, order, dtype):
             np.complex128,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=NotImplementedError,
+                raises=(NotImplementedError, RuntimeError),
                 reason="missing _Complex",
             ),
         ),
@@ -595,7 +595,7 @@ def test_interpolation_n2curl_to_bdm(tdim, order, dtype):
             np.complex64,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=NotImplementedError,
+                raises=(NotImplementedError, RuntimeError),
                 reason="missing _Complex",
             ),
         ),
@@ -604,7 +604,7 @@ def test_interpolation_n2curl_to_bdm(tdim, order, dtype):
             np.complex128,
             marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
-                raises=NotImplementedError,
+                raises=(NotImplementedError, RuntimeError),
                 reason="missing _Complex",
             ),
         ),
