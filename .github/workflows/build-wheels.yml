@@ -356,16 +356,21 @@ jobs:
       - name: Consolidate wheels
         shell: bash
         run: |
-          # consolidatewheels shells out to the `wheel` CLI (wheel unpack/pack)
-          # rather than using the Python package's API. On Linux only the
-          # system python3-wheel apt package was present, which apparently
-          # doesn't ship a PATH-visible console script - force a pip-managed
-          # install so its entry point lands in the same location pip put
-          # consolidatewheels' own.
-          pip install --force-reinstall wheel
-          pip install "consolidatewheels@git+https://github.com/shimwell/consolidatewheels.git@support-versioned-linux-libraries"
+          # consolidatewheels shells out to the `wheel` CLI (wheel
+          # unpack/pack), needing it on PATH - install into an isolated venv
+          # rather than the system/runner Python, avoiding any interaction
+          # with Linux's apt-managed system packages (where a python3-wheel
+          # package was present but without a PATH-visible console script).
+          python -m venv .venv-consolidatewheels
+          if [ -f .venv-consolidatewheels/bin/activate ]; then
+            source .venv-consolidatewheels/bin/activate
+          else
+            source .venv-consolidatewheels/Scripts/activate
+          fi
+          pip install wheel "consolidatewheels@git+https://github.com/shimwell/consolidatewheels.git@support-versioned-linux-libraries"
           consolidatewheels wheelhouse/*.whl --dest=wheelhouse-consolidated
-          rm -rf wheelhouse
+          deactivate
+          rm -rf wheelhouse .venv-consolidatewheels
           mv wheelhouse-consolidated wheelhouse
 
       - name: Update temporary simple503 repository (Linux)
