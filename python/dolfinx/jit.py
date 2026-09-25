@@ -6,6 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Just-in-time (JIT) compilation using FFCx."""
 
+import builtins
 import functools
 import json
 import os
@@ -84,13 +85,19 @@ def mpi_jit_decorator(
 
         status = comm.bcast(status, root=0)
         if status != 0:
-            # Only root has the original exception; other ranks can't
-            # know its type, so they raise a generic RuntimeError.
+            # Broadcast the exception's type name and message (not the
+            # exception object itself, which may not be picklable) so
+            # every rank raises the same type: a rank-dependent type
+            # would let a caller's except clause match on some ranks
+            # but not others.
+            error_type_name, error_str = comm.bcast(
+                (type(error).__name__, str(error)) if is_root else None, root=0
+            )
+            error_type = getattr(builtins, error_type_name, RuntimeError)
             if is_root:
-                assert error is not None
-                raise type(error)(f"Failed JIT compilation of form: {error}") from error
+                raise error_type(f"Failed JIT compilation of form: {error_str}") from error
             else:
-                raise RuntimeError("JIT compilation failed on rank 0.")
+                raise error_type("JIT compilation failed on rank 0.")
 
         # Load cache on all other ranks
         if not is_root:
