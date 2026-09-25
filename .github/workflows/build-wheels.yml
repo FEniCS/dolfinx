@@ -356,6 +356,13 @@ jobs:
       - name: Consolidate wheels
         shell: bash
         run: |
+          # consolidatewheels shells out to the `wheel` CLI (wheel unpack/pack)
+          # rather than using the Python package's API. On Linux only the
+          # system python3-wheel apt package was present, which apparently
+          # doesn't ship a PATH-visible console script - force a pip-managed
+          # install so its entry point lands in the same location pip put
+          # consolidatewheels' own.
+          pip install --force-reinstall wheel
           pip install "consolidatewheels@git+https://github.com/shimwell/consolidatewheels.git@support-versioned-linux-libraries"
           consolidatewheels wheelhouse/*.whl --dest=wheelhouse-consolidated
           rm -rf wheelhouse
