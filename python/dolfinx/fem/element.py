@@ -336,7 +336,7 @@ class FiniteElement(Generic[Real]):
         return self._cpp_object.num_sub_elements
 
     @property
-    def physical_base_value_size(self) -> npt.NDArray[np.integer]:
+    def physical_base_value_size(self) -> int:
         """Number of physical components in one block of the field.
 
         A blocked element repeats a scalar base element
