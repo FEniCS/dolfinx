@@ -69,7 +69,7 @@ def mpi_jit_decorator(
         # Remove possibility of unbound variables
         output = None
         status: int | None = 1  # assume failure
-        error_msg = ""
+        error: Exception | None = None
 
         # Compile on rank 0
         is_root = comm.rank == 0
@@ -78,15 +78,21 @@ def mpi_jit_decorator(
                 output = local_jit(*args, **kwargs)
                 status = 0
             except Exception as e:
-                error_msg = str(e)
+                error = e
         else:
             status = None  # placeholder for bcast
 
         status = comm.bcast(status, root=0)
         if status != 0:
-            # Only root includes the detailed message.
+            # Only root has the original exception. Re-raise with its
+            # type preserved (not always RuntimeError) so callers
+            # catching a specific JIT failure mode, e.g.
+            # NotImplementedError for missing platform support, still
+            # see it under MPI. Other ranks have no way to know the
+            # original type, so they raise a generic RuntimeError.
             if is_root:
-                raise RuntimeError(f"Failed JIT compilation of form: {error_msg}")
+                assert error is not None
+                raise type(error)(f"Failed JIT compilation of form: {error}") from error
             else:
                 raise RuntimeError("JIT compilation failed on rank 0.")
 
