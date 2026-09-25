@@ -291,13 +291,17 @@ jobs:
             sudo cmake --install dolfinx-build-dir/
           # Phase A (fully bundled wheel, no MPI unbundling yet): build
           # DOLFINx's C++ library against vcpkg + Intel MPI, matching
-          # windows.yml's proven Windows CI build. INSTALL_RUNTIME_DEPENDENCIES
-          # copies vcpkg-provided runtime DLLs (Intel MPI, HDF5, Boost, ...)
-          # into the install prefix's bin/ for delvewheel to find below.
+          # windows.yml's proven Windows CI build. This install tree is only
+          # consumed as a CMake package (headers/libs/config) by the Python
+          # wheel build below - not INSTALL_RUNTIME_DEPENDENCIES, since Basix
+          # (consumed as its pip wheel) has its runtime DLLs delvewheel-
+          # mangled into fenics_basix.libs, which CMake's dependency walk
+          # can't resolve. The actual wheel's own delvewheel repair step
+          # (CIBW_REPAIR_WHEEL_COMMAND_WINDOWS) does the real DLL bundling.
           CIBW_BEFORE_BUILD_WINDOWS: >
             pip -v install --pre fenics-basix fenics-ffcx &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind delvewheel &&
-            cmake -S dolfinx/cpp -B dolfinx-build-dir/ -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
+            cmake -S dolfinx/cpp -B dolfinx-build-dir/ -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
             cmake --build dolfinx-build-dir/ --config Release &&
             cmake --install dolfinx-build-dir/ --config Release --prefix %GITHUB_WORKSPACE%/dolfinx-install
           # As of 6/26 DOLFINx uses std::jthread which is only officially
