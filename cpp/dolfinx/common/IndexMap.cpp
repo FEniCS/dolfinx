@@ -321,6 +321,8 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
 
     // Send ghost indices to owner, and receive indices
     recv_indices.resize(recv_disp.back());
+    send_indices.reserve(1);
+    recv_indices.reserve(1);
     ierr = MPI_Neighbor_alltoallv(send_indices.data(), send_sizes.data(),
                                   send_disp.data(), MPI_INT64_T,
                                   recv_indices.data(), recv_sizes.data(),
@@ -976,6 +978,13 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size) : _comm(comm, true)
   auto [local_range, size_global] = compute_layout(_comm.comm(), local_size);
   _local_range = local_range;
   _size_global = size_global;
+
+  // Guarantee non-null data() for the (here, always empty) src/dest
+  // rank lists, which are passed to MPI_Dist_graph_create_adjacent by
+  // consumers of src()/dest(); some MPI implementations do not accept
+  // a null pointer even for a zero-length argument.
+  _src.reserve(1);
+  _dest.reserve(1);
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
@@ -994,6 +1003,10 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
   _size_global = size_global;
   _src = std::move(src_dest[0]);
   _dest = std::move(src_dest[1]);
+
+  // See comment in the single-argument constructor above.
+  _src.reserve(1);
+  _dest.reserve(1);
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
@@ -1004,6 +1017,10 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
       _owners(owners.begin(), owners.end()), _src(src_dest[0]),
       _dest(src_dest[1])
 {
+  // See comment in the single-argument constructor above.
+  _src.reserve(1);
+  _dest.reserve(1);
+
   validate_ghost_data(_comm.comm(), local_size, _ghosts, _owners);
 #ifndef NDEBUG
   validate_src_dest(_comm.comm(), _src, _dest, _owners);

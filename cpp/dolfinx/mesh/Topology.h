@@ -79,7 +79,13 @@ public:
   Topology(const Topology& topology) = default;
 
   /// Move constructor
+#ifdef _MSC_VER
+  /// @note Explicit `noexcept`, MSVC only; see fem::Form's move
+  /// constructor for why the noexcept override is safe.
+  Topology(Topology&& topology) noexcept = default;
+#else
   Topology(Topology&& topology) = default;
+#endif
 
   /// Destructor
   ~Topology() = default;

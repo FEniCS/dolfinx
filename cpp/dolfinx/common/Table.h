@@ -44,7 +44,13 @@ public:
   Table(const Table& table) = default;
 
   /// Move constructor
+#ifdef _MSC_VER
+  /// @note Explicit `noexcept`, MSVC only; see fem::Form's move
+  /// constructor for why the noexcept override is safe.
+  Table(Table&& table) noexcept = default;
+#else
   Table(Table&& table) = default;
+#endif
 
   /// Destructor
   ~Table() = default;

@@ -6,6 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Just-in-time (JIT) compilation using FFCx."""
 
+import builtins
 import functools
 import json
 import os
@@ -69,7 +70,7 @@ def mpi_jit_decorator(
         # Remove possibility of unbound variables
         output = None
         status: int | None = 1  # assume failure
-        error_msg = ""
+        error: Exception | None = None
 
         # Compile on rank 0
         is_root = comm.rank == 0
@@ -78,17 +79,22 @@ def mpi_jit_decorator(
                 output = local_jit(*args, **kwargs)
                 status = 0
             except Exception as e:
-                error_msg = str(e)
+                error = e
         else:
             status = None  # placeholder for bcast
 
         status = comm.bcast(status, root=0)
         if status != 0:
-            # Only root includes the detailed message.
+            # Broadcast type name and message, not the exception (may
+            # not be picklable), so every rank raises the same type.
+            error_type_name, error_str = comm.bcast(
+                (type(error).__name__, str(error)) if is_root else None, root=0
+            )
+            error_type = getattr(builtins, error_type_name, RuntimeError)
             if is_root:
-                raise RuntimeError(f"Failed JIT compilation of form: {error_msg}")
+                raise error_type(f"Failed JIT compilation of form: {error_str}") from error
             else:
-                raise RuntimeError("JIT compilation failed on rank 0.")
+                raise error_type("JIT compilation failed on rank 0.")
 
         # Load cache on all other ranks
         if not is_root:
