@@ -79,10 +79,14 @@ public:
   Topology(const Topology& topology) = default;
 
   /// Move constructor
+#ifdef _MSC_VER
   /// @note Explicit `noexcept`: MSVC's `std::map` move constructor
   /// (::_index_maps, ::_connectivity) isn't `noexcept`, so this isn't
   /// implicitly noexcept either.
   Topology(Topology&& topology) noexcept = default;
+#else
+  Topology(Topology&& topology) = default;
+#endif
 
   /// Destructor
   ~Topology() = default;
