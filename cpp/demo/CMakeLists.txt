@@ -6,8 +6,7 @@ if(PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
 endif()
 
-# Populate PETSC_FOUND (checked below), same as each demo subdirectory
-# would do on its own first.
+# Populate PETSC_FOUND, checked below.
 if(NOT TARGET dolfinx::dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
@@ -24,9 +23,7 @@ macro(add_demo_subdirectory subdir)
   endif()
 endmacro()
 
-# Add demos. biharmonic, codim_0_assembly, hyperelasticity, mixed_poisson,
-# poisson and poisson_matrix_free use PETSc directly in their source, so
-# are only buildable when PETSc was found.
+# These demos use PETSc directly, so need it to build.
 if(PETSC_FOUND)
   add_demo_subdirectory(biharmonic)
   add_demo_subdirectory(codim_0_assembly)
