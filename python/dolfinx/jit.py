@@ -84,12 +84,8 @@ def mpi_jit_decorator(
 
         status = comm.bcast(status, root=0)
         if status != 0:
-            # Only root has the original exception. Re-raise with its
-            # type preserved (not always RuntimeError) so callers
-            # catching a specific JIT failure mode, e.g.
-            # NotImplementedError for missing platform support, still
-            # see it under MPI. Other ranks have no way to know the
-            # original type, so they raise a generic RuntimeError.
+            # Only root has the original exception; other ranks can't
+            # know its type, so they raise a generic RuntimeError.
             if is_root:
                 assert error is not None
                 raise type(error)(f"Failed JIT compilation of form: {error}") from error
