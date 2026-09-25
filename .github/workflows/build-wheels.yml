@@ -367,6 +367,7 @@ jobs:
           pip install wheel "consolidatewheels@git+https://github.com/shimwell/consolidatewheels.git@support-versioned-linux-libraries"
           consolidatewheels wheelhouse/*.whl --dest=wheelhouse-consolidated
           deactivate
+          find wheelhouse-consolidated -mindepth 1 -maxdepth 1 ! -name '*.whl' -exec rm -rf {} +
           rm -rf wheelhouse .venv-consolidatewheels
           mv wheelhouse-consolidated wheelhouse
 
