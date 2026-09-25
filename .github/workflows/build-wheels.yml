@@ -311,14 +311,17 @@ jobs:
             wheel.py-api=cp312
             cmake.build-type="Release"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
-          # libbasix/libopenblas excluded: DOLFINx links against Basix's
-          # own already-mangled copy (via the LD_LIBRARY_PATH below), so
-          # auditwheel would otherwise bundle a self-referential,
-          # double-mangled copy here instead of leaving a plain reference
-          # for consolidatewheels to redirect to Basix's copy.
+          # The first line allows auditwheel to find and bundle libbasix.
+          # No --exclude for libbasix/libopenblas: DOLFINx bundles its own
+          # copy self-contained, same as macOS/Windows. There's no RPATH
+          # across wheels on Linux, so a copy shared with Basix's wheel
+          # wouldn't be resolvable at runtime - our consolidatewheels fork
+          # only deduplicates when it can leave both wheels' own copies in
+          # place (e.g. from auditwheel's double-mangling of a library
+          # already bundled elsewhere), never by deleting one.
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
-            auditwheel repair --exclude libmpi.so* --exclude libbasix.so* --exclude libopenblas.so* -w {dest_dir} {wheel} &&
+            auditwheel repair --exclude libmpi.so* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             delocate-listdeps --depending {wheel} &&
@@ -337,14 +340,15 @@ jobs:
             python -c "import basix, os, subprocess; site_packages = os.path.dirname(os.path.dirname(basix.__file__)); paths = os.path.dirname(basix.__file__) + ';' + os.path.join(site_packages, 'fenics_basix.libs'); subprocess.run(['delvewheel', 'repair', '--exclude', 'impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll', '--add-path', paths + ';' + r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
-          # No CIBW_TEST_COMMAND_LINUX: the Linux wheel excludes
-          # libbasix/libopenblas (see CIBW_REPAIR_WHEEL_COMMAND_LINUX above),
-          # so it isn't self-contained until consolidatewheels has run - it
-          # can't be tested at this stage of the build.
           # --durations=50 on the serial run only, matching macos.yml's own
           # pytest invocation - diagnostic for the macOS wheel-build leg
           # running much slower than macos.yml's own Python test step despite
           # similar test scope; not yet root-caused.
+          CIBW_TEST_COMMAND_LINUX: >
+            . /etc/profile &&
+            module load mpi/mpich-$(arch) &&
+            python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
+            mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
           CIBW_TEST_COMMAND_MACOS: >
             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}" &&
             mpiexec -n 1 python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
