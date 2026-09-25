@@ -479,7 +479,7 @@ jobs:
         run: |
           cd dolfinx && git clean -fdx && cd ../
           python -m venv venv-test
-          venv-test/Scripts/pip install --upgrade pip
+          venv-test/Scripts/python -m pip install --upgrade pip
           PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" venv-test/Scripts/pip install --group dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx
           venv-test/Scripts/python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
           mpiexec -n 2 venv-test/Scripts/python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
