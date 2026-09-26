@@ -332,11 +332,14 @@ jobs:
             wheel pack {dest_dir}/unpacked/* -d {dest_dir} &&
             pipx run abi3audit --verbose --strict --report {wheel}
 
-          # impi.dll/libfabric.dll are excluded rather than bundled - user must
-          # install. msvcp140.dll/msvcp140_atomic_wait.dll are already present
-          # on any modern Windows system.
+          # impi.dll/libfabric.dll are excluded rather than bundled - user
+          # must install. No exclude for msvcp140.dll/msvcp140_atomic_wait.dll:
+          # Basix's own repair has no exclude for them either, so delvewheel's
+          # default (bundle) already applies there - matching it here instead
+          # of fighting it, since excluding it here alone is a no-op anyway
+          # once DOLFINx links against Basix's own already-renamed copy.
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
-            python -c "import basix, os, subprocess; site_packages = os.path.dirname(os.path.dirname(basix.__file__)); paths = os.path.dirname(basix.__file__) + ';' + os.path.join(site_packages, 'fenics_basix.libs'); subprocess.run(['delvewheel', 'repair', '--exclude', 'impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll', '--add-path', paths + ';' + r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
+            python -c "import basix, os, subprocess; site_packages = os.path.dirname(os.path.dirname(basix.__file__)); paths = os.path.dirname(basix.__file__) + ';' + os.path.join(site_packages, 'fenics_basix.libs'); subprocess.run(['delvewheel', 'repair', '--exclude', 'impi.dll;libfabric.dll', '--add-path', paths + ';' + r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
           CIBW_TEST_COMMAND_LINUX: >
