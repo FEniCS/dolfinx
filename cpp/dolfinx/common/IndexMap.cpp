@@ -975,12 +975,13 @@ common::compute_sharing_neighbourhood(const IndexMap& imap)
 {
   auto [data, offsets] = imap.index_to_dest_ranks();
 
-  // Unique sharing ranks
+  // Unique sharing ranks. Reserve before erasing, which keeps the
+  // capacity: after it, GCC 14 wrongly reports -Wfree-nonheap-object.
   std::vector<int> ranks = data;
+  ranks.reserve(1);
   std::ranges::sort(ranks);
   auto [unique_end, range_end] = std::ranges::unique(ranks);
   ranks.erase(unique_end, range_end);
-  ranks.reserve(1);
 
   // Convert sharing ranks to neighbourhood ranks
   std::ranges::transform(data, data.begin(),
