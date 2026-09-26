@@ -62,17 +62,15 @@ jobs:
   build_wheels:
     name: Build wheels
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            cibw_build: cp312-manylinux_x86_64
-          - os: ubuntu-24.04-arm
-            cibw_build: cp312-manylinux_aarch64
           - os: macos-15
             cibw_build: cp312-macosx_arm64
-          - os: macos-15-intel
-            cibw_build: cp312-macosx_x86_64
+          - os: macos-26
+            cibw_build: cp312-macosx_arm64
 
     env:
       CIBW_BUILD: ${{ matrix.cibw_build }}
