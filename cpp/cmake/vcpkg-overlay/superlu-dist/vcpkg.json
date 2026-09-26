@@ -1,6 +1,6 @@
 {
   "name": "superlu-dist",
-  "version": "9.2.1",
+  "version-string": "9.3.0-7e73329",
   "description": "A general purpose library for the direct solution of large, sparse, nonsymmetric systems of linear equations on high performance distributed memory parallel machines",
   "homepage": "https://github.com/xiaoyeli/superlu_dist",
   "license": "BSD-3-Clause-LBNL",

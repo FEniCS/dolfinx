@@ -1,8 +1,8 @@
 {
   "name": "scotch",
-  "version": "7.0.12",
+  "version-string": "7.0.12-ee62988",
   "description": "Scotch: a software package for graph and mesh/hypergraph partitioning, graph clustering, and sparse matrix ordering",
-  "homepage": "https://gitlab.inria.fr/scotch/scotch",
+  "homepage": "https://github.com/jhale/scotch",
   "license": null,
   "supports": "!arm & !uwp & !android & !osx",
   "dependencies": [

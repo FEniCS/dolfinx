@@ -1,14 +1,12 @@
 if(VCPKG_TARGET_IS_WINDOWS)
   vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 endif()
-vcpkg_from_gitlab(
-  GITLAB_URL https://gitlab.inria.fr/
+vcpkg_from_github(
   OUT_SOURCE_PATH SOURCE_PATH
-  REPO scotch/scotch
-  REF "v${VERSION}"
-  SHA512 0de400e7ddf415270d8befea8434b29bd6c3d8133267c81fdc2c913e056a969c401dcd597405282e01cee5891fc048672aa81a195b15d379fc5b7fe181964459
-  HEAD_REF master
-  PATCHES fix-build.patch
+  REPO jhale/scotch
+  REF ee62988448538a80e27f95b6bd38f8d457d01972
+  SHA512 641796d15ea5cd2f991d6f24e55057ba2de12eb463acda355420b93602ab2c15697fdee1cbd5c0f5b7ab61f7cc17acf1055a66781f44bca192aff8c9fe6d46f9
+  HEAD_REF jhale/windows-fixes-squash
 )
 
 vcpkg_find_acquire_program(FLEX)
