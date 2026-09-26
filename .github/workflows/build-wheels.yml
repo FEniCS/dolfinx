@@ -314,11 +314,8 @@ jobs:
           # The first line allows auditwheel to find and bundle libbasix.
           # No --exclude for libbasix/libopenblas: DOLFINx bundles its own
           # copy self-contained, same as macOS/Windows. There's no RPATH
-          # across wheels on Linux, so a copy shared with Basix's wheel
-          # wouldn't be resolvable at runtime - our consolidatewheels fork
-          # only deduplicates when it can leave both wheels' own copies in
-          # place (e.g. from auditwheel's double-mangling of a library
-          # already bundled elsewhere), never by deleting one.
+          # across wheels, so a copy shared with Basix's wheel wouldn't be
+          # resolvable in a plain pip install.
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
             auditwheel repair --exclude libmpi.so* -w {dest_dir} {wheel} &&
@@ -357,25 +354,6 @@ jobs:
             pip install impi-rt &&
             python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
-
-      # This utility 'consolidates' the built wheels - in practice, shared
-      # objects bundled in basix are not bundled a second time into dolfinx.
-      # Note that consolidatewheels requires the wheel utility.
-      - name: Consolidate wheels
-        shell: bash
-        run: |
-          python -m venv .venv-consolidatewheels
-          if [ -f .venv-consolidatewheels/bin/activate ]; then
-            source .venv-consolidatewheels/bin/activate
-          else
-            source .venv-consolidatewheels/Scripts/activate
-          fi
-          pip install wheel "consolidatewheels@git+https://github.com/jhale/consolidatewheels.git@linux-content-hash-dedup"
-          consolidatewheels wheelhouse/*.whl --dest=wheelhouse-consolidated
-          deactivate
-          rm -rf wheelhouse-consolidated/tmp
-          rm -rf wheelhouse .venv-consolidatewheels
-          mv wheelhouse-consolidated wheelhouse
 
       - name: Update temporary simple503 repository (Linux)
         if: runner.os == 'Linux'
