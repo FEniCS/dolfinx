@@ -26,14 +26,18 @@ concept DofTransformKernel
 ///
 /// A nullable kernel (`std::function`) is checked for truthiness,
 /// matching the "no transform needed" convention used throughout the
-/// assembly/interpolation code. A non-nullable callable (e.g. a plain
-/// lambda, as used when calling the low-level `impl::assemble_*`
-/// kernels directly -- see the `custom_kernel` demo) can never be
-/// "unset", so it is always invoked.
+/// assembly/interpolation code. A non-nullable callable (a lambda, or
+/// a function passed directly, as when calling the low-level
+/// `impl::assemble_*` kernels -- see the `custom_kernel` demo) can
+/// never be "unset", so it is always invoked.
 template <typename F>
 constexpr bool is_transform_set(const F& fn)
 {
-  if constexpr (requires { static_cast<bool>(fn); })
+  // A reference to a function is never null, and converting one to
+  // bool warns under -Waddress rather than answering the question.
+  if constexpr (std::is_function_v<F>)
+    return true;
+  else if constexpr (requires { static_cast<bool>(fn); })
     return static_cast<bool>(fn);
   else
     return true;
