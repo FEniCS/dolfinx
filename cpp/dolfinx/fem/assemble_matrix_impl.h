@@ -114,10 +114,12 @@ void assemble_cells_matrix(
   // them. mdspan and span are two-word copies.
   const auto dmap0 = std::get<0>(dofmap0);
   const auto bs0 = std::get<1>(dofmap0);
-  std::span<const std::int32_t> cells0 = std::get<2>(dofmap0);
+  // By reference: a generated range (e.g. iota) does not convert to a
+  // span, and a caller holding a std::vector must not be copied.
+  const auto& cells0 = std::get<2>(dofmap0);
   const auto dmap1 = std::get<0>(dofmap1);
   const auto bs1 = std::get<1>(dofmap1);
-  std::span<const std::int32_t> cells1 = std::get<2>(dofmap1);
+  const auto& cells1 = std::get<2>(dofmap1);
 
   static_assert(x.extent(1) == 3);
   const auto num_dofs0 = dmap0.extent(1);

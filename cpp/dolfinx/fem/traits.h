@@ -117,14 +117,17 @@ concept DofMapPackFacets
         { std::get<2>(t)(0, 0, 0) } -> std::convertible_to<std::int32_t>;
       };
 
-/// @brief Concept for a contiguous list of process-local indices, as
-/// used for the cell lists passed to the assembly kernels.
+/// @brief Concept for a randomly-indexable list of process-local
+/// indices, as used for the cell lists passed to the assembly kernels.
 ///
-/// Satisfied by `std::span<const std::int32_t>`, and by a span or array
-/// of static extent, which carries the list length in its type.
+/// Satisfied by `std::span<const std::int32_t>`, by a span or array of
+/// static extent, which carries the list length in its type, and by a
+/// generated range such as `std::views::iota`. A generated range costs
+/// no memory traffic: the assembler's cell lookup folds to the loop
+/// index, which is what a caller assembling over every cell wants.
 template <class C>
 concept IndexList
-    = std::ranges::contiguous_range<C>
+    = std::ranges::random_access_range<C>
       and std::same_as<std::ranges::range_value_t<C>, std::int32_t>;
 
 /// @brief Concept for the mutable scratch buffers passed to the

@@ -94,7 +94,9 @@ void assemble_cells(
   // them. mdspan and span are two-word copies.
   const auto dmap = std::get<0>(dofmap);
   const auto bs = std::get<1>(dofmap);
-  std::span<const std::int32_t> cells0 = std::get<2>(dofmap);
+  // By reference: a generated range (e.g. iota) does not convert to a
+  // span, and a caller holding a std::vector must not be copied.
+  const auto& cells0 = std::get<2>(dofmap);
 
   static_assert(x.extent(1) == 3);
   const auto ndofs_x = x_dofmap.extent(1);
@@ -115,8 +117,10 @@ void assemble_cells(
   // The integration-domain and test-function cell lists are usually the
   // same span, in which case the second lookup is redundant. The test
   // is loop-invariant, so the branch predicts perfectly.
-  const bool same_cells
-      = cells0.data() == cells.data() and cells0.size() == cells.size();
+  bool same_cells = false;
+  if constexpr (std::ranges::contiguous_range<decltype(cells)>)
+    same_cells
+        = cells0.data() == cells.data() and cells0.size() == cells.size();
 
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
