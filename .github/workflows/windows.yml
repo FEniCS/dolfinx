@@ -151,7 +151,13 @@ jobs:
       - name: Install DOLFINx (C++)
         working-directory: dolfinx-src/cpp
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DDOLFINX_ENABLE_SCOTCH=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cmake/vcpkg-overlay" -B build-dir -S .
+          # vcpkg's applocal-deps copies runtime DLLs next to dolfinx.dll
+          # in the build tree as a build-time convenience; that copy then
+          # conflicts with the deliberate install(RUNTIME_DEPENDENCY_SET)
+          # step below, which already finds the same DLLs via Basix's own
+          # install tree. Disable it: the DOLFINx install prefix and
+          # Basix's bin/ are both already on PATH for running tests.
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DVCPKG_APPLOCAL_DEPS=OFF -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DDOLFINX_ENABLE_SCOTCH=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cmake/vcpkg-overlay" -B build-dir -S .
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
