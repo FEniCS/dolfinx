@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -175,6 +176,15 @@ public:
   {
     return _x_ref;
   }
+
+  /// @brief Topological dimension of the mesh entities that the
+  /// Expression is evaluated on.
+  ///
+  /// The evaluation points are given on the reference cell of the
+  /// entity, so this is the number of columns of ::X, e.g. the mesh
+  /// topological dimension for an Expression on cells, one less for one
+  /// on facets and two less for one on ridges.
+  int entity_dim() const { return static_cast<int>(_x_ref.second[1]); }
 
   /// @brief Maps between entities of different meshes.
   const std::vector<std::reference_wrapper<const dolfinx::mesh::EntityMap>>&

@@ -255,8 +255,9 @@ class Expression(Generic[Scalar]):
         Args:
             mesh: Mesh to evaluate Expression on.
             entities: Entities to evaluate the Expression over. For
-                cells, it is a list of cell indices. For facets, it is a
-                2D array of (cell index, local facet index).
+                cells, it is a list of cell indices. For facets and
+                ridges, it is a 2D array of (cell index, local entity
+                index).
             values: Array to fill with evaluated values. If ``None``,
                 storage will be allocated. Otherwise it must have shape
                 ``(entities.shape[0], num_points, *value_shape)`` if
@@ -273,12 +274,15 @@ class Expression(Generic[Scalar]):
             Expression does have an argument function.
         """
         _entities = np.asarray(entities, dtype=np.int32)
-        if (tdim := mesh.topology.dim) != (expr_dim := self._cpp_object.X().shape[1]):
-            if expr_dim != tdim - 1:
-                raise ValueError("Expression must be defined on the mesh or its facets.")
-            if entities.ndim != 2:
+        if (tdim := mesh.topology.dim) != (expr_dim := self.entity_dim):
+            if expr_dim < tdim - 2:
                 raise ValueError(
-                    "entities list should have two dimensions for expression evaluation on facets."
+                    "Expression must be defined on the cells, facets or ridges of the mesh."
+                )
+            if _entities.ndim != 2:
+                raise ValueError(
+                    "entities list should have two dimensions for expression evaluation on "
+                    "facets or ridges."
                 )
 
         if self.argument_space is None:
@@ -319,6 +323,17 @@ class Expression(Generic[Scalar]):
     def X(self) -> npt.NDArray:
         """Evaluation points on the reference cell."""
         return self._cpp_object.X()
+
+    @property
+    def entity_dim(self) -> int:
+        """Dimension of the entities the Expression is evaluated on.
+
+        The evaluation points are given on the reference cell of the
+        entity, so this is the number of columns of :func:`X`, e.g. the
+        mesh topological dimension for an Expression on cells, one less
+        for one on facets and two less for one on ridges.
+        """
+        return self._cpp_object.entity_dim
 
     @property
     def ufl_expression(self) -> ufl.core.expr.Expr:

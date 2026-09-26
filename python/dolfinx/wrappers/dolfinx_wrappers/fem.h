@@ -822,6 +822,7 @@ void declare_objects(nb::module_& m, std::string type)
              auto [X, shape] = self.X();
              return dolfinx_wrappers::as_nbarray(std::move(X), shape);
            })
+      .def_prop_ro("entity_dim", &dolfinx::fem::Expression<T, U>::entity_dim)
       .def_prop_ro("dtype", [](const dolfinx::fem::Expression<T, U>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def_prop_ro("value_size", &dolfinx::fem::Expression<T, U>::value_size)
