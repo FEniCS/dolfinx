@@ -402,23 +402,15 @@ void apply_lifting(
         bc.get().set(bc_values1, std::nullopt, 1);
       }
 
-      if (bs0 == 1 and bs1 == 1)
-      {
-        impl::lift_bc(b, a[j]->get(), std::integral_constant<int, 1>{},
-                      std::integral_constant<int, 1>{}, constants[j], coeffs[j],
-                      std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
-      }
-      else if (bs0 == 3 and bs1 == 3)
-      {
-        impl::lift_bc(b, a[j]->get(), std::integral_constant<int, 3>{},
-                      std::integral_constant<int, 3>{}, constants[j], coeffs[j],
-                      std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
-      }
-      else
-      {
-        impl::lift_bc(b, a[j]->get(), bs0, bs1, constants[j], coeffs[j],
-                      std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
-      }
+      impl::dispatch_bs(bs0, bs1,
+                        [&b, &a, j, &constants, &coeffs, &bc_values1,
+                         &bc_markers1, &_x0, alpha](auto bs0, auto bs1)
+                        {
+                          impl::lift_bc(b, a[j]->get(), bs0, bs1, constants[j],
+                                        coeffs[j],
+                                        std::span<const T>(bc_values1),
+                                        bc_markers1, _x0, alpha);
+                        });
     }
   }
 }

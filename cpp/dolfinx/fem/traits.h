@@ -74,47 +74,142 @@ concept MDSpan2Floating
     = std::floating_point<U> and dolfinx::MDSpanRank2<T>
       and std::same_as<typename std::remove_cvref_t<T>::value_type, U>;
 
+/// @brief Mesh geometry data passed to the assembly kernels.
+///
+/// @tparam D Geometry dofmap type, a rank-2 mdspan of
+/// `const std::int32_t`.
+/// @tparam U Geometry (coordinate) scalar type.
+template <class D, std::floating_point U>
+  requires MDSpan2Int32<D>
+struct GeometryPack
+{
+  /// Geometry dofmap, shape `(num_cells, num_nodes_per_cell)`.
+  D dofmap;
+
+  /// Node coordinates, shape `(num_nodes, 3)`. The trailing extent is
+  /// static so that the coordinate gather folds.
+  md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x;
+};
+
+/// @brief Degree-of-freedom map data for one form argument, as passed
+/// to the assembly kernels.
+///
+/// The block size is a member rather than a tuple element so that
+/// reading it cannot introduce a reference: a structured binding of a
+/// tuple-like type binds references, and a reference is not usable in
+/// a constant expression, which silently costs the compile-time block
+/// size.
+///
+/// @tparam D Dofmap type, a rank-2 mdspan of `const std::int32_t`.
+/// @tparam B Block size type, `int` or
+/// `std::integral_constant<int, N>`.
+/// @tparam E Entity index list type. Its shape differs between the
+/// cell, entity and facet kernels, and is constrained by the
+/// `DofMapPack*` concepts below.
+template <class D, class B, class E>
+struct DofMapPack
+{
+  /// Dofmap, shape `(num_cells, num_dofs_per_cell)`.
+  D map;
+
+  /// Dofmap block size.
+  B bs;
+
+  /// Entity indices in this argument's mesh.
+  E entities;
+};
+
 /// @cond
-/// Common part of the `DofMapPack*` concepts: a 3-tuple whose (0)
-/// entry is the dofmap (a rank-2 `const std::int32_t` mdspan) and (1)
-/// entry is the block size, as a run-time `int` or a compile-time
-/// `std::integral_constant<int, N>`. The (2) entry (cell/entity
-/// indices) is constrained separately by each `DofMapPack*` concept,
-/// since its shape differs between the cell, entity and facet
-/// assembly kernels.
+/// Common part of the `DofMapPack*` concepts.
 template <class T>
 concept DofMapPackBase = requires(const std::remove_cvref_t<T>& t) {
-  requires std::tuple_size_v<std::remove_cvref_t<T>> == 3;
-  requires MDSpan2Int32<decltype(std::get<0>(t))>;
-  { std::get<1>(t) } -> std::convertible_to<int>;
+  requires MDSpan2Int32<decltype(t.map)>;
+  { t.bs } -> std::convertible_to<int>;
 };
 /// @endcond
 
 /// @brief Concept for the degree-of-freedom map data passed to the
-/// cell assembly kernel, whose (2) entry is a flat, integer-indexable
+/// cell assembly kernel, whose entities are a flat, integer-indexable
 /// list of cell indices.
 template <class T>
 concept DofMapPackCells
     = DofMapPackBase<T> and requires(const std::remove_cvref_t<T>& t) {
-        { std::get<2>(t)[0] } -> std::convertible_to<std::int32_t>;
+        { t.entities[0] } -> std::convertible_to<std::int32_t>;
       };
 
 /// @brief Concept for the degree-of-freedom map data passed to the
-/// entity assembly kernel, whose (2) entry is indexed by (entity,
+/// entity assembly kernel, whose entities are indexed by (entity,
 /// local index).
 template <class T>
 concept DofMapPackEntities
     = DofMapPackBase<T> and requires(const std::remove_cvref_t<T>& t) {
-        { std::get<2>(t)(0, 0) } -> std::convertible_to<std::int32_t>;
+        { t.entities(0, 0) } -> std::convertible_to<std::int32_t>;
       };
 
 /// @brief Concept for the degree-of-freedom map data passed to the
-/// interior facet assembly kernel, whose (2) entry is indexed by
+/// interior facet assembly kernel, whose entities are indexed by
 /// (facet, side, local index).
 template <class T>
 concept DofMapPackFacets
     = DofMapPackBase<T> and requires(const std::remove_cvref_t<T>& t) {
-        { std::get<2>(t)(0, 0, 0) } -> std::convertible_to<std::int32_t>;
+        { t.entities(0, 0, 0) } -> std::convertible_to<std::int32_t>;
+      };
+
+/// @brief Data for one form argument (test or trial function) passed
+/// to the assembly kernels.
+///
+/// @tparam P Dof transformation kernel type.
+/// @tparam D Dofmap type.
+/// @tparam B Block size type.
+/// @tparam E Entity index list type.
+template <class P, class D, class B, class E>
+struct FormArgument
+{
+  /// Dofmap, block size and entity indices for this argument.
+  DofMapPack<D, B, E> dofmap;
+
+  /// Dof transformation applied in-place to the element tensor.
+  ///
+  /// Held by reference: the transformations are `std::function`s, and
+  /// the assembly kernels must not allocate.
+  const P& transform;
+
+  /// Cell permutation information for this argument's mesh. Empty if
+  /// the element needs no dof transformations.
+  std::span<const std::uint32_t> cell_info;
+};
+
+/// @cond
+/// Common part of the `FormArgument*` concepts.
+template <class A, class T>
+concept FormArgumentBase = requires(const std::remove_cvref_t<A>& a) {
+  requires DofTransformKernel<std::remove_cvref_t<decltype(a.transform)>, T>;
+  { a.cell_info } -> std::convertible_to<std::span<const std::uint32_t>>;
+};
+/// @endcond
+
+/// @brief Concept for the form argument data passed to the cell
+/// assembly kernels.
+template <class A, class T>
+concept FormArgumentCells
+    = FormArgumentBase<A, T> and requires(const std::remove_cvref_t<A>& a) {
+        requires DofMapPackCells<decltype(a.dofmap)>;
+      };
+
+/// @brief Concept for the form argument data passed to the entity
+/// assembly kernels.
+template <class A, class T>
+concept FormArgumentEntities
+    = FormArgumentBase<A, T> and requires(const std::remove_cvref_t<A>& a) {
+        requires DofMapPackEntities<decltype(a.dofmap)>;
+      };
+
+/// @brief Concept for the form argument data passed to the interior
+/// facet assembly kernels.
+template <class A, class T>
+concept FormArgumentFacets
+    = FormArgumentBase<A, T> and requires(const std::remove_cvref_t<A>& a) {
+        requires DofMapPackFacets<decltype(a.dofmap)>;
       };
 
 /// @brief Concept for a randomly-indexable list of process-local
@@ -160,5 +255,61 @@ namespace impl
 /// @brief Rank-2 mdspan of 32-bit indices, as used for the dofmaps
 /// passed to the assembly kernels.
 using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
+
+/// @brief Call `f` with the dofmap block size as a compile-time
+/// constant for the common block sizes, and as a plain `int`
+/// otherwise.
+///
+/// The assembly kernels loop over the block size when scattering the
+/// element tensor, so passing it as `std::integral_constant<int, N>`
+/// lets that loop be unrolled and the element tensor offsets fold to
+/// constants. Block sizes other than those handled here take the
+/// run-time path.
+///
+/// @param[in] bs Dofmap block size.
+/// @param[in] f Callable invoked with the block size.
+template <class F>
+void dispatch_bs(int bs, F&& f)
+{
+  switch (bs)
+  {
+  case 1:
+    return f(std::integral_constant<int, 1>{});
+  case 3:
+    return f(std::integral_constant<int, 3>{});
+  default:
+    return f(bs);
+  }
+}
+
+/// @brief Call `f` with the test and trial function block sizes as
+/// compile-time constants when they are equal and one of the common
+/// block sizes, and as plain `int`s otherwise.
+///
+/// See the single block size overload. Only matching block sizes are
+/// specialised: the mixed cases would multiply the number of kernel
+/// instantiations for a case that a bilinear form rarely has.
+///
+/// @param[in] bs0 Test function dofmap block size.
+/// @param[in] bs1 Trial function dofmap block size.
+/// @param[in] f Callable invoked with the two block sizes.
+template <class F>
+void dispatch_bs(int bs0, int bs1, F&& f)
+{
+  if (bs0 == bs1)
+  {
+    switch (bs0)
+    {
+    case 1:
+      return f(std::integral_constant<int, 1>{},
+               std::integral_constant<int, 1>{});
+    case 3:
+      return f(std::integral_constant<int, 3>{},
+               std::integral_constant<int, 3>{});
+    }
+  }
+
+  return f(bs0, bs1);
+}
 } // namespace impl
 } // namespace dolfinx::fem

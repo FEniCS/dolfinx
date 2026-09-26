@@ -29,23 +29,21 @@ namespace dolfinx::fem::impl
 /// allocation. It may be called over only a small number of cells, so
 /// a per-call allocation would not be amortized. The buffer must be
 /// sized by the caller and passed in via `cdofs_b`.
-template <dolfinx::scalar T, std::floating_point U>
-T assemble_cells(
-    MDSpan2Int32 auto x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    IndexList auto cells, const FEkernel<T, U> auto& fn,
-    std::span<const T> constants,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    ScratchBuffer<U> auto cdofs_b)
+template <dolfinx::scalar T, MDSpan2Int32 XD, std::floating_point U>
+T assemble_cells(GeometryPack<XD, U> geometry, IndexList auto cells,
+                 const FEkernel<T, U> auto& fn, std::span<const T> constants,
+                 md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+                 ScratchBuffer<U> auto cdofs_b)
 {
   T value(0);
   if (cells.empty())
     return value;
 
+  const auto x_dofmap = geometry.dofmap;
   const auto ndofs_x = x_dofmap.extent(1);
   assert(cdofs_b.size() == 3 * static_cast<std::size_t>(ndofs_x));
 
-  const U* x_ptr = x.data_handle();
+  const U* x_ptr = geometry.x.data_handle();
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const T* coeffs_data = coeffs.data_handle();
   const auto cstride = coeffs.extent(1);
@@ -86,10 +84,9 @@ T assemble_cells(
 /// allocation. It may be called over only a small number of entities,
 /// so a per-call allocation would not be amortized. The buffer must
 /// be sized by the caller and passed in via `cdofs_b`.
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, MDSpan2Int32 XD, std::floating_point U>
 T assemble_entities(
-    MDSpan2Int32 auto x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    GeometryPack<XD, U> geometry,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
@@ -102,10 +99,11 @@ T assemble_entities(
   if (entities.empty())
     return value;
 
+  const auto x_dofmap = geometry.dofmap;
   const auto ndofs_x = x_dofmap.extent(1);
   assert(cdofs_b.size() == 3 * static_cast<std::size_t>(ndofs_x));
 
-  const U* x_ptr = x.data_handle();
+  const U* x_ptr = geometry.x.data_handle();
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const T* coeffs_data = coeffs.data_handle();
   const auto cstride = coeffs.extent(1);
@@ -141,10 +139,9 @@ T assemble_entities(
 /// allocation. It may be called over only a small number of facets,
 /// so a per-call allocation would not be amortized. The buffer must
 /// be sized by the caller and passed in via `cdofs_b`.
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, MDSpan2Int32 XD, std::floating_point U>
 T assemble_interior_facets(
-    MDSpan2Int32 auto x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    GeometryPack<XD, U> geometry,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
@@ -160,12 +157,13 @@ T assemble_interior_facets(
     return value;
 
   // Create data structures used in assembly
+  const auto x_dofmap = geometry.dofmap;
   const auto ndofs_x = x_dofmap.extent(1);
   assert(cdofs_b.size() == 2 * 3 * static_cast<std::size_t>(ndofs_x));
   U* cdofs0 = cdofs_b.data();
   U* cdofs1 = cdofs_b.data() + 3 * ndofs_x;
 
-  const U* x_ptr = x.data_handle();
+  const U* x_ptr = geometry.x.data_handle();
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const T* coeffs_data = coeffs.data_handle();
   const auto cstride = 2 * coeffs.extent(2);
@@ -220,6 +218,7 @@ T assemble_scalar(
   // integrals get the leading half.
   std::vector<U> cdofs_b(2 * 3 * x_dofmap.extent(1));
   std::span cdofs_b1 = std::span(cdofs_b).first(3 * x_dofmap.extent(1));
+  GeometryPack geometry{x_dofmap, x};
 
   T value = 0;
   for (int i = 0; i < M.num_integrals(IntegralType::cell, cell_type_idx); ++i)
@@ -231,7 +230,7 @@ T assemble_scalar(
         = M.domain(IntegralType::cell, i, cell_type_idx);
     assert(cells.size() * cstride == coeffs.size());
     value += impl::assemble_cells(
-        x_dofmap, x, cells, fn, constants,
+        geometry, cells, fn, constants,
         md::mdspan(coeffs.data(), cells.size(), cstride), cdofs_b1);
   }
 
@@ -258,7 +257,7 @@ T assemble_scalar(
 
     assert((facets.size() / shape1) * 2 * cstride == coeffs.size());
     value += impl::assemble_interior_facets(
-        x_dofmap, x,
+        geometry,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2, 2>>(
             facets.data(), facets.size() / shape1, 2, 2),
@@ -298,7 +297,7 @@ T assemble_scalar(
       // Two values per each adj. cell (cell index and local entity index).
       assert((entities.size() / 2) * cstride == coeffs.size());
       value += impl::assemble_entities(
-          x_dofmap, x,
+          geometry,
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>(
               entities.data(), entities.size() / 2, 2),

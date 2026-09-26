@@ -54,21 +54,15 @@ bool has_bc(auto& dofs, auto& bc, auto bs)
 /// @tparam U Geometry type.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
-/// @param[in] x_dofmap Degree-of-freedom map for the mesh geometry.
-/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] geometry Mesh geometry dofmap and coordinates.
 /// @param[in] cells Cell indices to execute the kernel over. These are
-/// the indices into the geometry dofmap `x_dofmap`.
-/// @param[in] dofmap0 Test function (row) degree-of-freedom data
-/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices.
-/// @param[in] P0 Function that applies transformation `P_0 A` in-place
-/// to the computed tensor `A` to transform its test degrees-of-freedom.
-/// @param[in] dofmap1 Trial function (column) degree-of-freedom data
-/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices.
-/// @param[in] P1T Function that applies transformation `A P_1^T`
-/// in-place to the computed tensor `A` to transform trial
-/// degrees-of-freedom.
+/// the indices into the geometry dofmap `geometry.dofmap`.
+/// @param[in] arg0 Test function (row) data: dofmap, block size, cell
+/// indices, the dof transformation `P_0 A` applied in-place to the
+/// computed tensor `A`, and cell permutation information.
+/// @param[in] arg1 Trial function (column) data: dofmap, block size,
+/// cell indices, the dof transformation `A P_1^T` applied in-place to
+/// the computed tensor `A`, and cell permutation information.
 /// @param bc0 Marker for rows with Dirichlet boundary conditions
 /// applied.
 /// @param bc1 Marker for columns with Dirichlet boundary conditions
@@ -78,48 +72,42 @@ bool has_bc(auto& dofs, auto& bc, auto bs)
 /// `(cells.size(), num_cell_coeffs)`. `coeffs(i, j)` is the `j`th
 /// coefficient for cell `i`.
 /// @param constants Constant data.
-/// @param cell_info0 Cell permutation information for the test
-/// function mesh.
-/// @param cell_info1 Cell permutation information for the trial
-/// function mesh.
 /// @param Ab Buffer for local element matrix. Size must be at least
 /// `(bs0 * num_dofs0) * (bs1 * num_dofs1)`, where `bs0 * num_dofs0` is
 /// the number of rows and `bs1 * num_dofs1` is the number of columns in
 /// local element matrix.
 /// @param cdofs_b Buffer for local element geometry. Size must be
-/// exactly `3 * x_dofmap.extent(1))`.
-template <bool LiftingMode, typename AB, std::floating_point U,
+/// exactly `3 * geometry.dofmap.extent(1))`.
+template <bool LiftingMode, typename AB, MDSpan2Int32 XD, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<AB>::value_type>
   requires ScratchBuffer<AB, T>
 void assemble_cells_matrix(
-    la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    IndexList auto cells, const DofMapPackCells auto& dofmap0,
-    const fem::DofTransformKernel<T> auto& P0,
-    const DofMapPackCells auto& dofmap1,
-    const fem::DofTransformKernel<T> auto& P1T,
-    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
-    const FEkernel<T, U> auto& kernel,
+    la::MatSet<T> auto mat_set, GeometryPack<XD, U> geometry,
+    IndexList auto cells, const FormArgumentCells<T> auto& arg0,
+    const FormArgumentCells<T> auto& arg1, std::span<const std::int8_t> bc0,
+    std::span<const std::int8_t> bc1, const FEkernel<T, U> auto& kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1, AB Ab,
-    ScratchBuffer<U> auto cdofs_b)
+    std::span<const T> constants, AB Ab, ScratchBuffer<U> auto cdofs_b)
 {
   if (cells.empty())
     return;
 
-  // Taken by value. A structured binding of a tuple-like type introduces
-  // references, and a reference is not usable in a constant expression,
-  // so the sizes below would not fold even when the caller's types carry
-  // them. mdspan and span are two-word copies.
-  const auto dmap0 = std::get<0>(dofmap0);
-  const auto bs0 = std::get<1>(dofmap0);
+  // Taken by value: the sizes below fold only if they are not read
+  // through a reference. mdspan and span are two-word copies.
+  const auto x_dofmap = geometry.dofmap;
+  const auto x = geometry.x;
+  const auto& P0 = arg0.transform;
+  const auto& P1T = arg1.transform;
+  std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
+  std::span<const std::uint32_t> cell_info1 = arg1.cell_info;
+  const auto dmap0 = arg0.dofmap.map;
+  const auto bs0 = arg0.dofmap.bs;
   // By reference: a generated range (e.g. iota) does not convert to a
   // span, and a caller holding a std::vector must not be copied.
-  const auto& cells0 = std::get<2>(dofmap0);
-  const auto dmap1 = std::get<0>(dofmap1);
-  const auto bs1 = std::get<1>(dofmap1);
-  const auto& cells1 = std::get<2>(dofmap1);
+  const auto& cells0 = arg0.dofmap.entities;
+  const auto dmap1 = arg1.dofmap.map;
+  const auto bs1 = arg1.dofmap.bs;
+  const auto& cells1 = arg1.dofmap.entities;
 
   static_assert(x.extent(1) == 3);
   const auto num_dofs0 = dmap0.extent(1);
@@ -265,20 +253,15 @@ void assemble_cells_matrix(
 /// @tparam U Geometry type.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
-/// @param[in] x_dofmap Dofmap for the mesh geometry.
-/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] geometry Mesh geometry dofmap and coordinates.
 /// @param[in] entities Integration entities (in the integration domain mesh) to
 /// execute the kernel over. These are pairs (cell, local entity index)
-/// @param[in] dofmap0 Test function (row) degree-of-freedom data
-/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices.
-/// @param[in] P0 Function that applies transformation P0.A in-place to
-/// transform test degrees-of-freedom.
-/// @param[in] dofmap1 Trial function (column) degree-of-freedom data
-/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices.
-/// @param[in] P1T Function that applies transformation A.P1^T in-place
-/// to transform trial degrees-of-freedom.
+/// @param[in] arg0 Test function (row) data: dofmap, block size, entity
+/// indices, the dof transformation `P0.A` applied in-place to the
+/// computed tensor, and cell permutation information.
+/// @param[in] arg1 Trial function (column) data: dofmap, block size,
+/// entity indices, the dof transformation `A.P1^T` applied in-place to
+/// the computed tensor, and cell permutation information.
 /// @param[in] bc0 Marker for rows with Dirichlet boundary conditions
 /// applied.
 /// @param[in] bc1 Marker for columns with Dirichlet boundary conditions
@@ -287,10 +270,6 @@ void assemble_cells_matrix(
 /// @param[in] coeffs Coefficient data array of shape `(cells.size(),
 /// cstride)`.
 /// @param[in] constants Constant data.
-/// @param[in] cell_info0 Cell permutation information for the test
-/// function mesh.
-/// @param[in] cell_info1 Cell permutation information for the trial
-/// function mesh.
 /// @param[in] perms Entity permutation integer. Empty if entity
 /// permutations are not required.
 /// @param Ab Buffer for local element matrix. Size must be at least
@@ -298,41 +277,40 @@ void assemble_cells_matrix(
 /// the number of rows and `bs1 * num_dofs1` is the number of columns in
 /// local element matrix.
 /// @param cdofs_b Buffer for local element geometry. Size must be
-/// exactly `3 * x_dofmap.extent(1))`.
-template <bool LiftingMode, typename AB, std::floating_point U,
+/// exactly `3 * geometry.dofmap.extent(1))`.
+template <bool LiftingMode, typename AB, MDSpan2Int32 XD, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<AB>::value_type>
   requires ScratchBuffer<AB, T>
 void assemble_entities(
-    la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    la::MatSet<T> auto mat_set, GeometryPack<XD, U> geometry,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
-    const DofMapPackEntities auto& dofmap0,
-    const fem::DofTransformKernel<T> auto& P0,
-    const DofMapPackEntities auto& dofmap1,
-    const fem::DofTransformKernel<T> auto& P1T,
-    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
-    const FEkernel<T, U> auto& kernel,
+    const FormArgumentEntities<T> auto& arg0,
+    const FormArgumentEntities<T> auto& arg1, std::span<const std::int8_t> bc0,
+    std::span<const std::int8_t> bc1, const FEkernel<T, U> auto& kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1,
+    std::span<const T> constants,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms, AB Ab,
     ScratchBuffer<U> auto cdofs_b)
 {
   if (entities.empty())
     return;
 
-  // Taken by value. A structured binding of a tuple-like type introduces
-  // references, and a reference is not usable in a constant expression,
-  // so the sizes below would not fold even when the caller's types carry
-  // them. mdspan and span are two-word copies.
-  const auto dmap0 = std::get<0>(dofmap0);
-  const auto bs0 = std::get<1>(dofmap0);
-  const auto entities0 = std::get<2>(dofmap0);
-  const auto dmap1 = std::get<0>(dofmap1);
-  const auto bs1 = std::get<1>(dofmap1);
-  const auto entities1 = std::get<2>(dofmap1);
+  // Taken by value: the sizes below fold only if they are not read
+  // through a reference. mdspan and span are two-word copies.
+  const auto x_dofmap = geometry.dofmap;
+  const auto x = geometry.x;
+  const auto& P0 = arg0.transform;
+  const auto& P1T = arg1.transform;
+  std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
+  std::span<const std::uint32_t> cell_info1 = arg1.cell_info;
+  const auto dmap0 = arg0.dofmap.map;
+  const auto bs0 = arg0.dofmap.bs;
+  const auto entities0 = arg0.dofmap.entities;
+  const auto dmap1 = arg1.dofmap.map;
+  const auto bs1 = arg1.dofmap.bs;
+  const auto entities1 = arg1.dofmap.entities;
 
   static_assert(x.extent(1) == 3);
   const auto num_dofs0 = dmap0.extent(1);
@@ -470,22 +448,19 @@ void assemble_entities(
 /// (including BC-marked columns) is passed to `mat_set`.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
-/// @param[in] x_dofmap Dofmap for the mesh geometry.
-/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] geometry Mesh geometry dofmap and coordinates.
 /// @param[in] facets Facet indices (in the integration domain mesh) to
 /// execute the kernel over.
-/// @param[in] dofmap0 Test function (row) degree-of-freedom data
-/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices. Cells that don't exist in the test function domain should be
-/// marked with -1 in the cell indices list.
-/// @param[in] P0 Function that applies transformation P0.A in-place to
-/// transform test degrees-of-freedom.
-/// @param[in] dofmap1 Trial function (column) degree-of-freedom data
-/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices. Cells that don't exist in the trial function domain should be
-/// marked with -1 in the cell indices list.
-/// @param[in] P1T Function that applies transformation A.P1^T in-place
-/// to transform trial degrees-of-freedom.
+/// @param[in] arg0 Test function (row) data: dofmap, block size, facet
+/// indices, the dof transformation `P0.A` applied in-place to the
+/// computed tensor, and cell permutation information. Cells that don't
+/// exist in the test function domain should be marked with -1 in the
+/// facet indices list.
+/// @param[in] arg1 Trial function (column) data: dofmap, block size,
+/// facet indices, the dof transformation `A.P1^T` applied in-place to
+/// the computed tensor, and cell permutation information. Cells that
+/// don't exist in the trial function domain should be marked with -1 in
+/// the facet indices list.
 /// @param[in] bc0 Marker for rows with Dirichlet boundary conditions
 /// applied.
 /// @param[in] bc1 Marker for columns with Dirichlet boundary conditions
@@ -494,10 +469,6 @@ void assemble_entities(
 /// @param[in] coeffs  The coefficient data array of shape (cells.size(),
 /// cstride).
 /// @param[in] constants Constant data.
-/// @param[in] cell_info0 Cell permutation information for the test
-/// function mesh.
-/// @param[in] cell_info1 Cell permutation information for the trial
-/// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
 /// @param Ab Buffer for local element matrix. Size must be at least `4
@@ -511,26 +482,21 @@ void assemble_entities(
 /// @param Ae_block_b Buffer used to gather a single (test, trial) block
 /// of the local element matrix. Size must be at least `(bs0 *
 /// dmap0.extent(1)) * (bs1 * dmap1.extent(1))`.
-template <bool LiftingMode, typename AB, std::floating_point U,
+template <bool LiftingMode, typename AB, MDSpan2Int32 XD, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<AB>::value_type>
   requires ScratchBuffer<AB, T>
 void assemble_interior_facets(
-    la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    la::MatSet<T> auto mat_set, GeometryPack<XD, U> geometry,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
-    const DofMapPackFacets auto& dofmap0,
-    const fem::DofTransformKernel<T> auto& P0,
-    const DofMapPackFacets auto& dofmap1,
-    const fem::DofTransformKernel<T> auto& P1T,
-    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
-    const FEkernel<T, U> auto& kernel,
+    const FormArgumentFacets<T> auto& arg0,
+    const FormArgumentFacets<T> auto& arg1, std::span<const std::int8_t> bc0,
+    std::span<const std::int8_t> bc1, const FEkernel<T, U> auto& kernel,
     md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                     md::dynamic_extent>>
         coeffs,
-    std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1,
+    std::span<const T> constants,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms, AB Ab,
     ScratchBuffer<U> auto cdofs_b, ScratchBuffer<std::int32_t> auto dofs_b,
     ScratchBuffer<T> auto Ae_block_b)
@@ -538,16 +504,20 @@ void assemble_interior_facets(
   if (facets.empty())
     return;
 
-  // Taken by value. A structured binding of a tuple-like type introduces
-  // references, and a reference is not usable in a constant expression,
-  // so the sizes below would not fold even when the caller's types carry
-  // them. mdspan and span are two-word copies.
-  const auto dmap0 = std::get<0>(dofmap0);
-  const auto bs0 = std::get<1>(dofmap0);
-  const auto facets0 = std::get<2>(dofmap0);
-  const auto dmap1 = std::get<0>(dofmap1);
-  const auto bs1 = std::get<1>(dofmap1);
-  const auto facets1 = std::get<2>(dofmap1);
+  // Taken by value: the sizes below fold only if they are not read
+  // through a reference. mdspan and span are two-word copies.
+  const auto x_dofmap = geometry.dofmap;
+  const auto x = geometry.x;
+  const auto& P0 = arg0.transform;
+  const auto& P1T = arg1.transform;
+  std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
+  std::span<const std::uint32_t> cell_info1 = arg1.cell_info;
+  const auto dmap0 = arg0.dofmap.map;
+  const auto bs0 = arg0.dofmap.bs;
+  const auto facets0 = arg0.dofmap.entities;
+  const auto dmap1 = arg1.dofmap.map;
+  const auto bs1 = arg1.dofmap.bs;
+  const auto facets1 = arg1.dofmap.entities;
 
   // Data structures used in assembly
   static_assert(x.extent(1) == 3);
@@ -845,6 +815,7 @@ void assemble_matrix(
   {
     // Geometry dofmap and data
     mdspan2_t x_dofmap = mesh->geometry().dofmaps().at(cell_type_idx);
+    GeometryPack geometry{x_dofmap, x};
 
     // Get dofmap data
     std::shared_ptr<const fem::DofMap> dofmap0
@@ -905,32 +876,19 @@ void assemble_matrix(
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
-      if (bs0 == 1 and bs1 == 1)
-      {
-        impl::assemble_cells_matrix<LiftingMode>(
-            mat_set, x_dofmap, x, cells,
-            std::tuple{dofs0, std::integral_constant<int, 1>{}, cells0}, P0,
-            std::tuple{dofs1, std::integral_constant<int, 1>{}, cells1}, P1T,
-            bc0, bc1, fn, md::mdspan(coeffs.data(), cells.size(), cstride),
-            constants, cell_info0, cell_info1, Ab1, cdofs_b1);
-      }
-      else if (bs0 == 3 and bs1 == 3)
-      {
-        impl::assemble_cells_matrix<LiftingMode>(
-            mat_set, x_dofmap, x, cells,
-            std::tuple{dofs0, std::integral_constant<int, 3>{}, cells0}, P0,
-            std::tuple{dofs1, std::integral_constant<int, 3>{}, cells1}, P1T,
-            bc0, bc1, fn, md::mdspan(coeffs.data(), cells.size(), cstride),
-            constants, cell_info0, cell_info1, Ab1, cdofs_b1);
-      }
-      else
-      {
-        impl::assemble_cells_matrix<LiftingMode>(
-            mat_set, x_dofmap, x, cells, std::tuple{dofs0, bs0, cells0}, P0,
-            std::tuple{dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
-            md::mdspan(coeffs.data(), cells.size(), cstride), constants,
-            cell_info0, cell_info1, Ab1, cdofs_b1);
-      }
+      impl::dispatch_bs(
+          bs0, bs1,
+          [&mat_set, &geometry, &cells, &dofs0, &cells0, &P0, &cell_info0,
+           &dofs1, &cells1, &P1T, &cell_info1, &bc0, &bc1, &fn, &coeffs,
+           cstride, &constants, &Ab1, &cdofs_b1](auto bs0, auto bs1)
+          {
+            impl::assemble_cells_matrix<LiftingMode>(
+                mat_set, geometry, cells,
+                FormArgument{DofMapPack{dofs0, bs0, cells0}, P0, cell_info0},
+                FormArgument{DofMapPack{dofs1, bs1, cells1}, P1T, cell_info1},
+                bc0, bc1, fn, md::mdspan(coeffs.data(), cells.size(), cstride),
+                constants, Ab1, cdofs_b1);
+          });
     }
 
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
@@ -966,51 +924,29 @@ void assemble_matrix(
       std::span facets0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
       std::span facets1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
-      if (bs0 == 1 and bs1 == 1)
-      {
-        impl::assemble_interior_facets<LiftingMode>(
-            mat_set, x_dofmap, x,
-            mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-            std::tuple{dofs0, std::integral_constant<int, 1>{},
-                       mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
-            P0,
-            std::tuple{dofs1, std::integral_constant<int, 1>{},
-                       mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
-            P1T, bc0, bc1, fn,
-            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            constants, cell_info0, cell_info1, facet_perms, std::span(Ab),
-            std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
-      }
-      else if (bs0 == 3 and bs1 == 3)
-      {
-        impl::assemble_interior_facets<LiftingMode>(
-            mat_set, x_dofmap, x,
-            mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-            std::tuple{dofs0, std::integral_constant<int, 3>{},
-                       mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
-            P0,
-            std::tuple{dofs1, std::integral_constant<int, 3>{},
-                       mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
-            P1T, bc0, bc1, fn,
-            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            constants, cell_info0, cell_info1, facet_perms, std::span(Ab),
-            std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
-      }
-      else
-      {
-        impl::assemble_interior_facets<LiftingMode>(
-            mat_set, x_dofmap, x,
-            mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-            std::tuple{dofs0, bs0,
-                       mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
-            P0,
-            std::tuple{dofs1, bs1,
-                       mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
-            P1T, bc0, bc1, fn,
-            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            constants, cell_info0, cell_info1, facet_perms, std::span(Ab),
-            std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
-      }
+      impl::dispatch_bs(
+          bs0, bs1,
+          [&mat_set, &geometry, &facets, &dofs0, &facets0, &P0, &cell_info0,
+           &dofs1, &facets1, &P1T, &cell_info1, &bc0, &bc1, &fn, &coeffs,
+           cstride, &constants, &facet_perms, &Ab, &cdofs_b, &dmap_b,
+           &Ae_block_b](auto bs0, auto bs1)
+          {
+            impl::assemble_interior_facets<LiftingMode>(
+                mat_set, geometry,
+                mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
+                FormArgument{DofMapPack{dofs0, bs0,
+                                        mdspanx22_t(facets0.data(),
+                                                    facets0.size() / 4, 2, 2)},
+                             P0, cell_info0},
+                FormArgument{DofMapPack{dofs1, bs1,
+                                        mdspanx22_t(facets1.data(),
+                                                    facets1.size() / 4, 2, 2)},
+                             P1T, cell_info1},
+                bc0, bc1, fn,
+                mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
+                constants, facet_perms, std::span(Ab), std::span(cdofs_b),
+                dmap_b, std::span(Ae_block_b));
+          });
     }
 
     for (auto itg_type : {fem::IntegralType::exterior_facet,
@@ -1054,36 +990,23 @@ void assemble_matrix(
         std::span e1 = a.domain_arg(itg_type, 1, i, 0);
         mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
         assert((entities.size() / 2) * cstride == coeffs.size());
-        if (bs0 == 1 and bs1 == 1)
-        {
-          impl::assemble_entities<LiftingMode>(
-              mat_set, x_dofmap, x, entities,
-              std::tuple{dofs0, std::integral_constant<int, 1>{}, entities0},
-              P0,
-              std::tuple{dofs1, std::integral_constant<int, 1>{}, entities1},
-              P1T, bc0, bc1, fn,
-              md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
-              cell_info0, cell_info1, perms, Ab1, cdofs_b1);
-        }
-        else if (bs0 == 3 and bs1 == 3)
-        {
-          impl::assemble_entities<LiftingMode>(
-              mat_set, x_dofmap, x, entities,
-              std::tuple{dofs0, std::integral_constant<int, 3>{}, entities0},
-              P0,
-              std::tuple{dofs1, std::integral_constant<int, 3>{}, entities1},
-              P1T, bc0, bc1, fn,
-              md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
-              cell_info0, cell_info1, perms, Ab1, cdofs_b1);
-        }
-        else
-        {
-          impl::assemble_entities<LiftingMode>(
-              mat_set, x_dofmap, x, entities, std::tuple{dofs0, bs0, entities0},
-              P0, std::tuple{dofs1, bs1, entities1}, P1T, bc0, bc1, fn,
-              md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
-              cell_info0, cell_info1, perms, Ab1, cdofs_b1);
-        }
+        impl::dispatch_bs(
+            bs0, bs1,
+            [&mat_set, &geometry, &entities, &dofs0, &entities0, &P0,
+             &cell_info0, &dofs1, &entities1, &P1T, &cell_info1, &bc0, &bc1,
+             &fn, &coeffs, cstride, &constants, &perms, &Ab1,
+             &cdofs_b1](auto bs0, auto bs1)
+            {
+              impl::assemble_entities<LiftingMode>(
+                  mat_set, geometry, entities,
+                  FormArgument{DofMapPack{dofs0, bs0, entities0}, P0,
+                               cell_info0},
+                  FormArgument{DofMapPack{dofs1, bs1, entities1}, P1T,
+                               cell_info1},
+                  bc0, bc1, fn,
+                  md::mdspan(coeffs.data(), entities.extent(0), cstride),
+                  constants, perms, Ab1, cdofs_b1);
+            });
       }
     }
   }

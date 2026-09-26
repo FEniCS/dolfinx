@@ -342,20 +342,24 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 
   // The direct assembler does not allocate inside the cell loop. Supply
   // storage for the 3-by-3 element matrix and the three geometry points,
-  // each of which has three coordinate components. The dofmap tuples contain
-  // the dofmap, its block size and the cell indices. The scalar block size is
-  // represented by `integral_constant`, making it available at compile time.
+  // each of which has three coordinate components. Each `FormArgument`
+  // carries the dofmap, its block size, the cell indices, the
+  // degree-of-freedom transformation and the cell permutation data for one
+  // form argument. The scalar block size is represented by
+  // `integral_constant`, making it available at compile time.
   //
   // The buffers are passed by value as `std::array`, so the assembler sees
   // their size in the type and their addresses do not escape the inlined
   // kernel, which lets the compiler keep them in registers.
   std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
   std::array<T, p1_triangle_dofs_per_cell * p1_triangle_dofs_per_cell> Ab;
+  fem::FormArgument arg{
+      fem::DofMapPack{dmap, std::integral_constant<int, 1>{}, cells},
+      ident,
+      {}};
   fem::impl::assemble_cells_matrix<false>(
-      A.mat_add_values(), x_dofmap, x, cells,
-      std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, ident,
-      std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, ident, {}, {},
-      kernel, {}, {}, {}, {}, Ab, cdofs_b);
+      A.mat_add_values(), fem::GeometryPack{x_dofmap, x}, cells, arg, arg, {},
+      {}, kernel, {}, {}, Ab, cdofs_b);
   A.scatter_rev();
   return A.squared_norm();
 }
@@ -392,10 +396,14 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   // element matrix. Geometry storage is unchanged.
   std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
   std::array<T, p1_triangle_dofs_per_cell> be_b;
+  auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
   fem::impl::assemble_cells(
-      [](auto, auto, auto, auto) {}, b.array(), x_dofmap, x, cells,
-      std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, kernel, {}, {},
-      {}, be_b, cdofs_b);
+      b.array(), fem::GeometryPack{x_dofmap, x}, cells,
+      fem::FormArgument{
+          fem::DofMapPack{dmap, std::integral_constant<int, 1>{}, cells},
+          ident,
+          {}},
+      kernel, {}, {}, be_b, cdofs_b);
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }
