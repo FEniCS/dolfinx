@@ -445,7 +445,8 @@ ORIENTED_ELEMENTS = [
 
 
 def oriented_id(spec):
-    return f"{spec[0]}{spec[1]}"
+    label = "linear_tangential_field" if spec[2] else "constant"
+    return f"{spec[0]}{spec[1]}-{label}"
 
 
 def tangential_field(mesh, linear):
