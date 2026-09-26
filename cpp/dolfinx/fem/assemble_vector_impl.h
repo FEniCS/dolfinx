@@ -72,20 +72,17 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// least `bs * dmap.extent(1)`.
 /// @param[in] cdofs_b Buffer for local element geometry. Size must be
 /// at least `3 * x_dofmap.extent(1)`.
-template <typename V, typename X,
-          std::floating_point U = typename std::remove_cvref_t<X>::value_type,
+template <typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
-           and MDSpan2Floating<X, U>
-void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
-                    MDSpan2Int32 auto x_dofmap, X x,
-                    std::span<const std::int32_t> cells,
-                    const DofMapPackCells auto& dofmap,
-                    const FEkernel<T, U> auto& kernel,
-                    std::span<const T> constants,
-                    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-                    std::span<const std::uint32_t> cell_info0, auto be_b,
-                    auto cdofs_b)
+void assemble_cells(
+    const fem::DofTransformKernel<T> auto& P0, V&& b,
+    MDSpan2Int32 auto x_dofmap,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    std::span<const std::int32_t> cells, const DofMapPackCells auto& dofmap,
+    const FEkernel<T, U> auto& kernel, std::span<const T> constants,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    std::span<const std::uint32_t> cell_info0, auto be_b, auto cdofs_b)
 {
   if (cells.empty())
     return;
@@ -98,7 +95,7 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
   const auto bs = std::get<1>(dofmap);
   std::span<const std::int32_t> cells0 = std::get<2>(dofmap);
 
-  const auto gdim = x.extent(1);
+  static_assert(x.extent(1) == 3);
   const auto ndofs_x = x_dofmap.extent(1);
   const auto ndofs = dmap.extent(1);
   const auto be_size = be_b.size();
@@ -134,8 +131,9 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * ndofs_x;
     for (std::int32_t i = 0; i < ndofs_x; ++i)
     {
-      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * gdim;
-      for (std::int32_t k = 0; k < gdim; ++k)
+      const U* src
+          = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * x.extent(1);
+      for (std::size_t k = 0; k < x.extent(1); ++k)
         cdofs_b[3 * i + k] = src[k];
     }
 
