@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2020 Garth N. Wells
+// Copyright (C) 2007-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <memory>
 #include <span>
@@ -34,16 +36,17 @@ public:
                   std::array<std::shared_ptr<const common::IndexMap>, 2> maps,
                   std::array<int, 2> bs);
 
-  /// Create a new sparsity pattern by concatenating sub-patterns, e.g.
+  /// @brief Create a new sparsity pattern by concatenating sub-patterns,
+  /// e.g.
   /// pattern =[ pattern00 ][ pattern 01]
   ///          [ pattern10 ][ pattern 11]
   ///
   /// @param[in] comm Communicator that the pattern is defined on.
   /// @param[in] patterns Rectangular array of sparsity pattern. The
-  /// patterns must not be finalised. Null block are permitted/
+  /// patterns must not be finalised. Null blocks are permitted.
   /// @param[in] maps Pairs of (index map, block size) for each row
-  /// block (maps[0]) and column blocks (maps[1])/
-  /// @param[in] bs Block sizes for the sparsity pattern entries/
+  /// block (maps[0]) and column blocks (maps[1]).
+  /// @param[in] bs Block sizes for the sparsity pattern entries.
   SparsityPattern(
       MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>>& patterns,
@@ -64,6 +67,22 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
+  /// @brief Reserve storage for additional `insert(rows, cols)` calls.
+  ///
+  /// Blocks are cached in the form they are inserted in, so the number
+  /// of calls and the total number of row and column indices are needed
+  /// rather than the number of (row, column) entries.
+  ///
+  /// @note The request is applied by the next `insert(rows, cols)`
+  /// call, the first point at which the cache it belongs to is known.
+  ///
+  /// @param[in] num_blocks Number of `insert(rows, cols)` calls.
+  /// @param[in] num_rows Total number of row indices over those calls.
+  /// @param[in] num_cols Total number of column indices over those
+  /// calls.
+  void reserve_blocks(std::size_t num_blocks, std::size_t num_rows,
+                      std::size_t num_cols);
+
   /// @brief Insert non-zero locations using local (process-wise)
   /// indices.
   /// @param[in] row local row index
@@ -76,6 +95,9 @@ public:
   /// This routine inserts non-zero locations at the outer product of
   /// rows and cols into the sparsity pattern, i.e. adds the matrix
   /// entries at `A[row[i], col[j]] for all i, j`.
+  ///
+  /// @note Passing the same span for `rows` and `cols` avoids caching a
+  /// second copy of the indices.
   ///
   /// @param[in] rows list of the local row indices
   /// @param[in] cols list of the local column indices
@@ -99,12 +121,18 @@ public:
   /// @return The index map.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// @brief Global indices of non-zero columns on owned rows.
+  /// @brief Global column indices corresponding to the local column
+  /// indices used by SparsityPattern::graph.
+  ///
+  /// Entry `i` of the returned vector is the global index of local
+  /// column `i`: for `i` in the owned range this is every owned
+  /// column (whether or not it holds a non-zero entry), and for `i`
+  /// beyond the owned range it is the ghost column, i.e. a column
+  /// with at least one non-zero entry owned by another rank.
   ///
   /// @note The ghosts are computed only once SparsityPattern::finalize
   /// has been called.
-  /// @return Global index non-zero columns on this process, including
-  /// ghosts.
+  /// @return Global column indices on this process, including ghosts.
   std::vector<std::int64_t> column_indices() const;
 
   /// @brief Return index map block size for dimension dim
@@ -157,8 +185,55 @@ private:
   // Owning process of ghost columns in owned rows
   std::vector<std::int32_t> _col_ghost_owners;
 
-  // Cache for unassembled entries on owned and unowned (ghost) rows
-  std::vector<std::vector<std::int32_t>> _row_cache;
+  // Cache of unassembled entries on owned and unowned (ghost) rows,
+  // held until finalize().
+  //
+  // insert(rows, cols) inserts the outer product of `rows` and `cols`,
+  // so storing one (row, column) pair per entry repeats each index
+  // rows.size() or cols.size() times over. Blocks are instead kept in
+  // the form they arrive in and expanded only in finalize(): for a P1
+  // tetrahedron that is 4 + 4 indices per cell rather than 16 + 16.
+  std::vector<std::int32_t> _cache_brows, _cache_bcols;
+  std::vector<std::int64_t> _cache_boffs_r{0}, _cache_boffs_c{0};
+
+  // Cache of square blocks, i.e. those whose row and column index lists
+  // are the same span, which is the case whenever the test and trial
+  // dofmaps and the cells indexing them coincide. Only the row list is
+  // stored, halving both the copy in insert() and the cached bytes.
+  //
+  // _cache_sbs is the width shared by every cached square block, 0 if
+  // none are cached and -1 if they differ. Cell integrals give blocks
+  // of a single width, which are indexed by stride, so _cache_soffs
+  // stays empty until a block of a different width arrives.
+  std::vector<std::int32_t> _cache_srows;
+  std::int32_t _cache_sbs = 0;
+  std::vector<std::int64_t> _cache_soffs;
+
+  // Cache of individually inserted (row, column) pairs (row-major COO)
+  std::vector<std::int32_t> _cache_rows;
+  std::vector<std::int32_t> _cache_cols;
+
+  // Rows with a cached diagonal entry, from insert_diagonal
+  std::vector<std::int32_t> _cache_diag;
+
+  // Pending reserve_blocks request, as {number of blocks, total row
+  // indices, total column indices}. Which of the two block caches the
+  // blocks land in is only known once insert() sees the spans, and
+  // reserving both maps around 2.5x what is used, so the request is
+  // held here until then.
+  std::array<std::size_t, 3> _reserve{0, 0, 0};
+
+  /// @brief Replace the implied stride of the square block cache with
+  /// explicit offsets, so that blocks of a different width can follow.
+  void expand_square_offsets();
+
+  /// @brief Expand every cached entry and group the columns by row.
+  /// @param[in] num_rows Number of rows to bucket into.
+  /// @param[in] num_cols Number of columns in the cached index space.
+  /// @return Row offsets (size `num_rows + 1`) and columns grouped by
+  /// row and deduplicated, but not sorted, within each row.
+  std::pair<std::vector<std::int64_t>, std::vector<std::int32_t>>
+  bucket_cache(std::int32_t num_rows, std::int32_t num_cols) const;
 
   // Sparsity pattern adjacency data (computed once pattern is
   // finalised). _edges holds the edges (connected dofs). The edges for

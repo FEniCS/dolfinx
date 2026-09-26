@@ -9,11 +9,12 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx.cpp.mesh import cell_entity_type, cell_num_entities
 from dolfinx.graph import adjacencylist
 from dolfinx.io import distribute_entity_data
 from dolfinx.mesh import (
     CellType,
+    cell_entity_type,
+    cell_num_entities,
     create_unit_cube,
     entities_to_geometry,
     locate_entities,
@@ -34,12 +35,13 @@ def test_create(cell_type):
 
     entities = adjacencylist(f_v[marked_lines])
     values = np.full(marked_lines.shape[0], 2, dtype=np.int32)
-    mt = meshtags_from_entities(mesh, 1, entities, values)
+    mt = meshtags_from_entities(mesh, 1, entities, values, "my-name")
 
     assert hasattr(mt, "ufl_id")
     assert mt.indices.shape == marked_lines.shape
     assert mt.values.dtype == np.int32
     assert mt.values.shape[0] == entities.num_nodes
+    assert mt.name == "my-name"
 
 
 def test_ufl_id():

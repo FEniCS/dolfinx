@@ -1,5 +1,93 @@
 # Release notes
 
+## v0.12.0 (draft)
+
+### Assembly over ridges with data on a codimension-2 submesh
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
+
+A form integrated over the ridges of a mesh (`ufl.dR`) may now have an
+argument or coefficient on a codimension-2 submesh, in the same way that a
+facet integral may have one on a codimension-1 submesh.
+
+Vertex integrals with data on another mesh remain unsupported and now raise a
+message naming the types that are supported.
+
+
+### Entity permutations are computed per dimension
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
+
+Permutations of a cell's sub-entities are now computed for one entity
+dimension at a time, rather than for every dimension at once.
+
+The single `create_entity_permutations()` call has been split in two, along
+the line of what the two kinds of permutation data are for:
+
+- {py:meth}`Topology.create_entity_permutations
+  <dolfinx.mesh.Topology.create_entity_permutations>` now takes a `dim`
+  argument, matching {py:meth}`Topology.create_entities
+  <dolfinx.mesh.Topology.create_entities>`, and computes only that dimension.
+  These permutations are passed to FFCx kernels as `quadrature_permutation`,
+  so that cells sharing an entity agree on the order of the quadrature points
+  on it. Which dimension is needed follows from the integral, not from the
+  element: an interior facet integral needs `tdim - 1`, a ridge integral
+  `tdim - 2`. Vertices have no orientation, so `dim` 0 gives an empty array.
+- {py:meth}`Topology.create_cell_permutations
+  <dolfinx.mesh.Topology.create_cell_permutations>` computes the packed
+  per-cell permutation info, previously a side effect of
+  `create_entity_permutations()`. It describes the orientation of all of a
+  cell's sub-entities at once, and is required by elements whose DOF
+  transformations are not the identity: applied once to the dofmap when it is
+  built where those transformations are permutations (higher-order Lagrange),
+  and to the element tensor on each cell at assembly time where they are not
+  (N1curl, Raviart-Thomas).
+
+Code that called `create_entity_permutations()` in order to use
+{py:meth}`Topology.get_cell_permutation_info
+<dolfinx.mesh.Topology.get_cell_permutation_info>` should now call
+`create_cell_permutations()`.
+
+`Topology.get_facet_permutations` has been removed. Use the new
+{py:meth}`Topology.get_entity_permutations
+<dolfinx.mesh.Topology.get_entity_permutations>`, which takes the entity
+dimension, after calling `create_entity_permutations(dim)` for it:
+`get_facet_permutations()` becomes `get_entity_permutations(tdim - 1)`.
+
+
+In C++, `mesh::compute_entity_permutations` now takes an entity dimension and
+returns only that dimension's permutations, the cell permutation info is
+returned by the new `mesh::compute_cell_permutations`, and
+`Topology::get_facet_permutations` has been removed in favour of
+`Topology::get_entity_permutations(dim)`.
+
+### A first-class SNES interface for C++
+
+**Authors**: [Jack Hale](https://github.com/jhale)
+
+C++ users now have a `nls::petsc::SNESSolver` class that adapts C++ callables
+to the PETSc SNES callback interface and handles PETSc memory management,
+approximately following the design of
+{py:class}`dolfinx.fem.petsc.NonlinearProblem` on the Python side. The C++
+hyperelasticity demo has a full example of use.
+
+Python users should use {py:class}`dolfinx.fem.petsc.NonlinearProblem`, which
+works with petsc4py's SNES interface directly.
+
+### `transfer_meshtags_to_submesh` argument order change
+
+{py:func}`dolfinx.mesh.transfer_meshtags_to_submesh` now takes its
+`cell_map`/`vertex_map` arguments in that order (previously
+`vertex_map`/`cell_map`), matching the `(entity_map, vertex_map)` order
+{py:func}`dolfinx.mesh.create_submesh` returns them in.
+
+### Removal of the deprecated Newton solver
+
+The `NewtonSolver` and `NewtonSolverNonlinearProblem` classes, deprecated in
+v0.10.0 in favor of {py:class}`dolfinx.fem.petsc.NonlinearProblem` for Python
+users, have now been removed from both interfaces. As `NewtonSolver` was the
+only member of the `dolfinx.nls` module, the module has been removed.
+
 ## v0.11.0
 
 Since the 0.10.0 release, there has been 177 merged pull requests from 27 contributors.
@@ -204,8 +292,6 @@ One of the visually pleasing improvements is the use of `@property`-decorators.
 {py:class}`ufl.Mesh` now has {py:attr}`geometric_dimension<ufl.Mesh.geometric_dimension>`.
 See [UFL PR \#385](https://github.com/FEniCS/ufl/pull/385) for more details.
 
-
-
 ## v0.10.0
 
 Since the 0.9.0 release, there have  been 311 merged pull requests from 25 contributors.
@@ -229,11 +315,11 @@ The FEniCS project has for the last 15 years had its own implementation of a New
 We no longer see the need of providing this solver, as the {py:class}`PETSc SNES<petsc4py.PETSc.SNES>` solver,
 and equivalent solver for C++ provides more features than our own implementation.
 
-The previously shipped {py:class}`dolfinx.nls.petsc.NewtonSolver` is deprecated, in favor of
+The previously shipped `dolfinx.nls.petsc.NewtonSolver` is deprecated, in favor of
 {py:class}`dolfinx.fem.petsc.NonlinearProblem`, which now integrates directly with {py:class}`petsc4py.PETSc.SNES`.
 
-The non-linear problem object that was sent into {py:class}`dolfinx.nls.petsc.NewtonSolver` has been renamed
-to {py:class}`NewtonSolverNonlinearProblem<dolfinx.fem.petsc.NewtonSolverNonlinearProblem>` and is also deprecated.
+The non-linear problem object that was sent into `dolfinx.nls.petsc.NewtonSolver` has been renamed
+to `NewtonSolverNonlinearProblem` (`dolfinx.fem.petsc.NewtonSolverNonlinearProblem`) and is also deprecated.
 
 The new {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>` has additional support for blocked systems,
 such as {py:attr}`NEST<petsc4py.PETSc.Mat.Type.NEST>` by supplying `kind="nest"` to its initializer. See the documentation for further
@@ -298,7 +384,7 @@ and [Jørgen S. Dokken](https://github.com/jorgensd)
 - The tabulation kernels now have an extra input, a `void*`, to make it possible to pass custom data for custom kernels.
 - New {py:class}`dolfinx.fem.IntegralType` support
   - Vertex integrals: {py:obj}`ufl.dP`
-  - Ridge integrals (codim=2); {py:obj}`uf.dr`
+  - Ridge integrals (codim=2); {py:obj}`ufl.dr`
 - One can now assemble the diagonal of a bilinear form into a vector by adding `form_compiler_options={"part":"diagonal"}`
   when calling {py:func}`dolfinx.fem.form`. Instead of calling {py:func}`dolfinx.fem.petsc.assemble_matrix` one should now call
   {py:func}`dolfinx.fem.petsc.assemble_vector`. This is useful for matrix-free solvers with Jacobi smoothing.
@@ -313,12 +399,12 @@ and [Jørgen S. Dokken](https://github.com/jorgensd)
 - Branching meshes (a mesh where a single facet is connected to more than two cells), such as T-joints (3 cells connected to a single facet)
   are now supported as input meshes to DOLFINx. To ensure proper partitioning in parallel, one should change the default
   option `max_facet_to_cell_links` to how many cells a facet
-  can be attached to in {py:meth}`dolfinx.io.XDMFFile.read_mesh`, {py:func}`dolfinx.io.vtkhd.read_mesh` and
+  can be attached to in {py:meth}`dolfinx.io.XDMFFile.read_mesh`, {py:func}`dolfinx.io.vtkhdf.read_mesh` and
   {py:func}`dolfinx.mesh.create_mesh`.
 - One can no longer use `set_connectivity` or `set_index_map` to modify {py:class}`dolfinx.mesh.Topology`
   objects. Any connectivity that is not `(tdim, 0)`, (`tdim`, `tdim`) or `(0, 0)` should be created with
  {py:meth}`dolfinx.mesh.Topology.create_connectivity`. The aforementioned connections should be attached
- to the topology when calling {py:func}`dolfinx.cpp.mesh.create_topology`.
+ to the topology when calling `dolfinx.cpp.mesh.create_topology`.
 - Mixed-dimensional support has been vastly improved by creating {py:class}`dolfinx.mesh.EntityMap`,
   which replaces the numpy arrays used as `entity_maps` in {py:func}`dolfinx.fem.form` in the previous release.
   This is a two-way map, meaning that the user no longer has to take care of creating the correct mapping.
@@ -374,8 +460,8 @@ See or {py:class}`Timer<dolfinx.common.Timer>` for examples of usage.
 
 The GMSH interface to DOLFINx has received a major upgrade.
 - An **API**-breaking change is that the module `dolfinx.io.gmshio` has been renamed to {py:mod}`dolfinx.io.gmsh`.
-- Another API-breaking change is the return type of {py:func}`dolfinx.io.gmshio.model_to_mesh` and
-  {py:func}`dolfinx.io.read_from_msh`. Instead of returning the {py:class}`dolfinx.mesh.Mesh`, cell and facet
+- Another API-breaking change is the return type of `dolfinx.io.gmshio.model_to_mesh` and
+  `dolfinx.io.read_from_msh`. Instead of returning the {py:class}`dolfinx.mesh.Mesh`, cell and facet
   {py:class}`dolfinx.mesh.MeshTags`, it now returns a {py:class}`dolfinx.io.gmsh.MeshData` data-class,
   that can contain {py:class}`dolfinx.mesh.MeshTags` of an sub-entity:
     - Cell (codim 0)
@@ -407,7 +493,7 @@ from another (unique) function space.
 #### XDMF
 
 **Author**: [Massimiliano Leoni](https://github.com/mleoni-pf) and [Paul T. Kühner](https://github.com/schnellerhase)
-- When using {py:meth}`dolfinx.io.XDMFFIle.read_meshtags` one can now specify the attribute name, if the grid has
+- When using {py:meth}`dolfinx.io.XDMFFile.read_meshtags` one can now specify the attribute name, if the grid has
 multiple tags assigned to it.
 - Flushing data to file is now possible with {py:meth}`dolfinx.io.XDMFFile.flush`. This is useful when wanting to visualize
   long-running jobs in Paraview.
@@ -419,5 +505,5 @@ in Paraview, we have decided to remove it from DOLFINx.
 
 #### Pyvista
 
-Pyvista no longer requires {py:func}`pyvista.start_xvfb` if one has installed `vtk` with OSMesa support.
+Pyvista no longer requires `pyvista.start_xvfb` if one has installed `vtk` with OSMesa support.
 

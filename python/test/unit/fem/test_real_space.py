@@ -115,3 +115,82 @@ def test_complex_real_space(ftype, stype):
 
     tol = 100 * np.finfo(stype).eps
     np.testing.assert_allclose(b.array, b_const.array, atol=tol)
+
+
+@pytest.mark.parametrize(
+    "ftype",
+    [np.float32, np.float64],
+)
+@pytest.mark.parametrize("vs", [(3, 2), (2,), (), (1,)])
+def test_real_sub_spaces(vs, ftype):
+
+    mesh = dolfinx.mesh.create_unit_square(
+        MPI.COMM_WORLD, 4, 4, dolfinx.mesh.CellType.triangle, dtype=ftype
+    )
+    el = basix.ufl.real_element(mesh.basix_cell(), value_shape=vs, dtype=ftype)
+    V = dolfinx.fem.functionspace(mesh, el)
+    if vs == () or vs == (1,):
+        assert V.num_sub_spaces == 0
+        assert V.dofmap.index_map.size_global == 1
+        assert V.dofmap.index_map_bs == 1
+    else:
+        assert V.num_sub_spaces == int(np.prod(vs))
+
+        for i in range(V.num_sub_spaces):
+            subspace = V.sub(i)
+            sub, s_to_p = subspace.collapse()
+
+            assert s_to_p[0] == i
+
+            assert subspace.num_sub_spaces == 0
+            assert subspace.dofmap.index_map.size_global == 1
+            assert subspace.dofmap.index_map_bs == V.num_sub_spaces
+            assert sub.dofmap.index_map_bs == 1
+            assert sub.dofmap.index_map.size_global == 1
+
+
+@pytest.mark.parametrize(
+    "ftype",
+    [np.float32, np.float64],
+)
+@pytest.mark.parametrize("vs", [(3, 3), (2, 2), (), (1, 1), (6, 6)])
+def test_symmetric(vs, ftype):
+
+    mesh = dolfinx.mesh.create_unit_square(
+        MPI.COMM_WORLD, 4, 4, dolfinx.mesh.CellType.triangle, dtype=ftype
+    )
+    if vs == ():
+        with pytest.raises(ValueError):
+            basix.ufl.real_element(mesh.basix_cell(), value_shape=vs, dtype=ftype, symmetry=True)
+        return
+    el = basix.ufl.real_element(mesh.basix_cell(), value_shape=vs, dtype=ftype, symmetry=True)
+    V = dolfinx.fem.functionspace(mesh, el)
+    num_dofs = int(vs[0] * (vs[0] + 1) / 2)
+    num_sub_elements = num_dofs if vs[0] > 1 else 0
+    assert V.num_sub_spaces == num_sub_elements
+    assert V.dofmap.index_map.size_global * V.dofmap.index_map_bs == num_dofs
+
+    # Check that the evaluation of a function in the symmetric space is symmetric
+    u = dolfinx.fem.Function(V, dtype=ftype)
+    u.x.array[:] = np.arange(num_dofs, dtype=ftype)
+    expr = dolfinx.fem.Expression(u, np.array([[0.0, 0.0]], dtype=ftype))
+    cell = (
+        np.zeros(1, dtype=np.int32)
+        if mesh.topology.index_map(mesh.topology.dim).size_local > 0
+        else np.zeros(0, dtype=np.int32)
+    )
+    values = expr.eval(mesh, cell)
+    if len(cell) > 0:
+        val_matrix = values.reshape(vs)
+        np.testing.assert_allclose(val_matrix, val_matrix.T)
+
+    # Check that collapsing into the subspace gives the correct parent index
+    for i in range(V.num_sub_spaces):
+        subspace = V.sub(i)
+        sub, s_to_p = subspace.collapse()
+        assert s_to_p[0] == i
+        assert subspace.num_sub_spaces == 0
+        assert subspace.dofmap.index_map.size_global == 1
+        assert subspace.dofmap.index_map_bs == V.num_sub_spaces
+        assert sub.dofmap.index_map_bs == 1
+        assert sub.dofmap.index_map.size_global == 1

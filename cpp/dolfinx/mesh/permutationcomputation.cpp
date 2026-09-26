@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Matthew Scroggs
+// Copyright (C) 2020-2026 Matthew Scroggs and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,16 +8,26 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
+#include <array>
 #include <bitset>
+#include <cstddef>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <format>
+#include <functional>
+#include <memory>
 #include <ranges>
+#include <stdexcept>
+#include <thread>
+#include <utility>
 
 namespace
 {
-constexpr int _BITSETSIZE = 32;
+constexpr int bitset_size = 32;
 } // namespace
 
 using namespace dolfinx;
@@ -30,8 +40,8 @@ compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
 {
 
   // Number of rotations
-  std::uint8_t min_v
-      = std::distance(e_vertices.begin(), std::ranges::min_element(e_vertices));
+  std::uint8_t min_v = std::ranges::distance(
+      e_vertices.begin(), std::ranges::min_element(e_vertices));
 
   // pre is the (local) number of the next vertex clockwise from the lowest
   // numbered vertex
@@ -41,8 +51,8 @@ compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
   // lowest numbered vertex
   const int post = e_vertices[(min_v + 1) % 3];
 
-  std::uint8_t g_min_v
-      = std::distance(vertices.begin(), std::ranges::min_element(vertices));
+  std::uint8_t g_min_v = std::ranges::distance(
+      vertices.begin(), std::ranges::min_element(vertices));
 
   // g_pre is the (global) number of the next vertex clockwise from the lowest
   // numbered vertex
@@ -66,8 +76,8 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
                          const std::vector<std::int64_t>& vertices)
 {
   // Find minimum local cell vertex on facet
-  std::uint8_t min_v
-      = std::distance(e_vertices.begin(), std::ranges::min_element(e_vertices));
+  std::uint8_t min_v = std::ranges::distance(
+      e_vertices.begin(), std::ranges::min_element(e_vertices));
 
   // Table of next and previous vertices
   // 0 - 2
@@ -94,8 +104,8 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
     min_v = 5 - min_v;
 
   // Find minimum global vertex in facet
-  std::uint8_t g_min_v
-      = std::distance(vertices.begin(), std::ranges::min_element(vertices));
+  std::uint8_t g_min_v = std::ranges::distance(
+      vertices.begin(), std::ranges::min_element(vertices));
 
   // rots is the number of rotations to get the lowest numbered
   // vertex to the origin
@@ -194,7 +204,7 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
           assert(it != cell_vertices.end());
 
           // Get the actual local vertex indices
-          e_vertices[k] = std::distance(cell_vertices.begin(), it);
+          e_vertices[k] = std::ranges::distance(cell_vertices.begin(), it);
         }
 
         // Compute reflections and rotations for this face type
@@ -251,17 +261,22 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
   auto c_to_e = topology.connectivity(tdim, 1);
-  assert(c_to_e);
+  if (!c_to_e)
+    throw std::runtime_error("Edges have not been computed.");
   auto e_to_v = topology.connectivity(1, 0);
-  assert(e_to_v);
+  if (!e_to_v)
+  {
+    throw std::runtime_error(
+        "Edge-to-vertex connectivity has not been computed.");
+  }
 
   auto im = topology.index_map(0);
   assert(im);
 
-  std::vector<std::bitset<BITSETSIZE>> edge_perm(num_cells, 0);
+  std::vector<std::bitset<bitset_size>> edge_perm(num_cells, 0);
   auto process_thread
       = [](std::array<std::int64_t, 2> range, auto&& im, auto&& edge_perm,
-           auto&& c_to_v, auto&& e_to_v, auto&& c_to_e, int edges_per_cell)
+           auto&& c_to_v, auto&& e_to_v, auto&& c_to_e, int num_edges)
   {
     std::vector<std::int64_t> cell_vertices;
     std::vector<std::int64_t> vertices;
@@ -270,7 +285,7 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
       cell_vertices.resize(c_to_v->num_links(c));
       im->local_to_global(c_to_v->links(c), cell_vertices);
       auto cell_edges = c_to_e->links(c);
-      for (int edge = 0; edge < edges_per_cell; ++edge)
+      for (int edge = 0; edge < num_edges; ++edge)
       {
         vertices.resize(e_to_v->links(cell_edges[edge]).size());
         im->local_to_global(e_to_v->links(cell_edges[edge]), vertices);
@@ -332,69 +347,110 @@ compute_face_permutations(const mesh::Topology& topology, int num_threads)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
-mesh::compute_entity_permutations(const mesh::Topology& topology,
+std::vector<std::uint8_t>
+mesh::compute_entity_permutations(const mesh::Topology& topology, int dim,
                                   int num_threads)
 {
   if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
+
+  const int tdim = topology.dim();
+  if (dim < 0 or dim >= tdim)
+  {
+    throw std::invalid_argument(
+        std::format("Cannot compute permutations for dimension {} entities of "
+                    "a topology of dimension {}.",
+                    dim, tdim));
+  }
+
+  // A vertex has no orientation, so there is nothing to permute.
+  if (dim == 0)
+    return {};
 
   common::Timer t_perm("Compute entity permutations");
+
+  CellType cell_type = topology.cell_type();
+  const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
+  const int entities_per_cell = cell_num_entities(cell_type, dim);
+  std::vector<std::uint8_t> perms(num_cells * entities_per_cell, 0);
+
+  switch (dim)
+  {
+  case 1:
+  {
+    spdlog::info("Compute edge permutations");
+    const std::vector<std::bitset<bitset_size>> edge_perm
+        = compute_edge_reflections<bitset_size>(topology, num_threads);
+    for (std::int32_t c = 0; c < num_cells; ++c)
+      for (int i = 0; i < entities_per_cell; ++i)
+        perms[c * entities_per_cell + i] = edge_perm[c][i];
+    break;
+  }
+  case 2:
+  {
+    spdlog::info("Compute face permutations");
+    const std::vector<std::bitset<bitset_size>> face_perm
+        = compute_face_permutations<bitset_size>(topology, num_threads);
+    // Three bits encode each face: one reflection bit and two rotation
+    // bits.
+    for (std::int32_t c = 0; c < num_cells; ++c)
+    {
+      for (int i = 0; i < entities_per_cell; ++i)
+      {
+        perms[c * entities_per_cell + i]
+            = (face_perm[c].to_ulong() >> (3 * i)) & 7;
+      }
+    }
+    break;
+  }
+  default:
+    throw std::invalid_argument(std::format(
+        "Permutations of dimension {} entities are not supported.", dim));
+  }
+
+  return perms;
+}
+//-----------------------------------------------------------------------------
+
+std::vector<std::uint32_t>
+mesh::compute_cell_permutations(const mesh::Topology& topology, int num_threads)
+{
+  if (num_threads < 1)
+    throw std::invalid_argument("num_threads must be >= 1.");
+
+  common::Timer t_perm("Compute cell permutations");
 
   const int tdim = topology.dim();
   CellType cell_type = topology.cell_type();
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
-  // Point meshes have no facets per cell and cell_num_entities(vertex, -1) is
-  // undefined
-  int facets_per_cell = (tdim > 0) ? cell_num_entities(cell_type, tdim - 1) : 0;
 
   std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
-  std::vector<std::uint8_t> facet_permutations(num_cells * facets_per_cell);
   std::int32_t used_bits = 0;
   if (tdim > 2)
   {
+    // Each face occupies 3 bits: one reflection and two rotations. This
+    // will need increasing if faces with more than 4 sides are added.
     spdlog::info("Compute face permutations");
-    const int faces_per_cell = cell_num_entities(cell_type, 2);
-    const auto face_perm
-        = compute_face_permutations<_BITSETSIZE>(topology, num_threads);
-    for (int c = 0; c < num_cells; ++c)
+    const std::vector<std::bitset<bitset_size>> face_perm
+        = compute_face_permutations<bitset_size>(topology, num_threads);
+    for (std::int32_t c = 0; c < num_cells; ++c)
       cell_permutation_info[c] = face_perm[c].to_ulong();
 
-    // Currently, 3 bits are used for each face. If faces with more than
-    // 4 sides are implemented, this will need to be increased.
-    used_bits += faces_per_cell * 3;
-    assert(tdim == 3);
-    for (int c = 0; c < num_cells; ++c)
-    {
-      for (int i = 0; i < facets_per_cell; ++i)
-      {
-        facet_permutations[c * facets_per_cell + i]
-            = (cell_permutation_info[c] >> (3 * i)) & 7;
-      }
-    }
+    used_bits += cell_num_entities(cell_type, 2) * 3;
   }
 
   if (tdim > 1)
   {
     spdlog::info("Compute edge permutations");
-    const int edges_per_cell = cell_num_entities(cell_type, 1);
-    const auto edge_perm
-        = compute_edge_reflections<_BITSETSIZE>(topology, num_threads);
-    for (int c = 0; c < num_cells; ++c)
+    const std::vector<std::bitset<bitset_size>> edge_perm
+        = compute_edge_reflections<bitset_size>(topology, num_threads);
+    for (std::int32_t c = 0; c < num_cells; ++c)
       cell_permutation_info[c] |= edge_perm[c].to_ulong() << used_bits;
 
-    used_bits += edges_per_cell;
-    if (tdim == 2)
-    {
-      for (int c = 0; c < num_cells; ++c)
-      {
-        for (int i = 0; i < facets_per_cell; ++i)
-          facet_permutations[c * facets_per_cell + i] = edge_perm[c][i];
-      }
-    }
+    used_bits += cell_num_entities(cell_type, 1);
   }
-  assert(used_bits < _BITSETSIZE);
+  assert(used_bits < bitset_size);
 
-  return {std::move(facet_permutations), std::move(cell_permutation_info)};
+  return cell_permutation_info;
 }
 //-----------------------------------------------------------------------------

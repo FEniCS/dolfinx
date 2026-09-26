@@ -1,5 +1,5 @@
-// Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and
-// Garth N. Wells
+// Copyright (C) 2004-2026 Johan Hoffman, Johan Jansson, Anders Logg,
+// Garth N. Wells and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,16 +10,19 @@
 #ifdef HAS_PETSC
 
 #include "Vector.h"
-#include <boost/lexical_cast.hpp>
+#include <array>
+#include <cassert>
+#include <cstdint>
+#include <dolfinx/common/petsc.h>
 #include <functional>
 #include <optional>
 #include <petscksp.h>
 #include <petscmat.h>
-#include <petscoptions.h>
 #include <petscvec.h>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::common
@@ -30,34 +33,31 @@ class IndexMap;
 namespace dolfinx::la
 {
 class SparsityPattern;
-enum class Norm : std::int8_t;
 
 /// @brief PETSc linear algebra functions
 namespace petsc
 {
-/// Print error message for PETSc calls that return an error
-void error(PetscErrorCode error_code, std::string_view filename,
-           std::string_view petsc_function);
-
-/// Create PETsc vectors from the local data. The data is copied into
-/// the PETSc vectors and is not shared.
+/// @brief Create PETSc vectors from the local data. The data is
+/// copied into the PETSc vectors and is not shared. Each vector's
+/// global size is determined by summing the corresponding local size
+/// across all ranks in `comm`.
 /// @note Caller is responsible for destroying the returned object
 /// @param[in] comm The MPI communicator
-/// @param[in] x The vector data owned by the calling rank. All
-/// components must have the same length.
+/// @param[in] x The vector data owned by the calling rank
 /// @return Array of PETSc vectors
 std::vector<Vec>
 create_vectors(MPI_Comm comm,
                const std::vector<std::span<const PetscScalar>>& x);
 
-/// Create a ghosted PETSc Vec
+/// @brief Create a ghosted PETSc Vec.
 /// @note Caller is responsible for destroying the returned object
 /// @param[in] map The index map describing the parallel layout (by block)
 /// @param[in] bs The block size
 /// @returns A PETSc Vec
 Vec create_vector(const common::IndexMap& map, int bs);
 
-/// Create a ghosted PETSc Vec from a local range and ghost indices
+/// @brief Create a ghosted PETSc Vec from a local range and ghost
+/// indices.
 /// @note Caller is responsible for freeing the returned object
 /// @param[in] comm The MPI communicator
 /// @param[in] range The local ownership range (by blocks)
@@ -68,11 +68,12 @@ Vec create_vector(const common::IndexMap& map, int bs);
 Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
                   std::span<const std::int64_t> ghosts, int bs);
 
-/// Create a PETSc Vec that wraps the data in an array
+/// @brief Create a PETSc Vec that wraps the data in an array.
 /// @param[in] map The index map that describes the parallel layout of
 /// the distributed vector (by block)
 /// @param[in] bs Block size
-/// @param[in] x The local part of the vector, including ghost entries
+/// @param[in] x The local part of the vector, including ghost entries.
+/// Must have size at least `bs * (map.size_local() + map.num_ghosts())`.
 /// @return A PETSc Vec object that shares the data in @p x
 /// @note The array `x` must be kept alive to use the PETSc Vec object
 /// @note The caller should call VecDestroy to free the return PETSc
@@ -80,7 +81,7 @@ Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 Vec create_vector_wrap(const common::IndexMap& map, int bs,
                        std::span<const PetscScalar> x);
 
-/// Create a PETSc Vec that wraps the data in an array
+/// @brief Create a PETSc Vec that wraps the data in an array.
 /// @param[in] x The vector to be wrapped
 /// @return A PETSc Vec object that shares the data in @p x
 template <class V>
@@ -118,48 +119,30 @@ void scatter_local_vectors(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
-/// Create a PETSc Mat. Caller is responsible for destroying the
+/// @brief Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
+///
+/// @note `MAT_IGNORE_ZERO_ENTRIES` skips exact-zero insertions. Enable it
+/// before assembly to reduce storage only if the matrix is assembled
+/// once. For re-assembly, enable it after the first full assembly so
+/// initially zero entries remain in the sparsity pattern. Otherwise, a
+/// later non-zero insertion can fail because
+/// `MAT_NEW_NONZERO_ALLOCATION_ERR` is set.
+///
+/// @param[in] comm The MPI communicator
+/// @param[in] sp The sparsity pattern that determines the layout and
+/// non-zero structure of the matrix
+/// @param[in] type The PETSc Mat type to create. If `std::nullopt` or
+/// an empty string, the PETSc default is used.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
                   std::optional<std::string_view> type = std::nullopt);
 
-/// Create PETSc MatNullSpace. Caller is responsible for destruction
-/// returned object.
-/// @param [in] comm The MPI communicator
+/// @brief Create PETSc MatNullSpace. Caller is responsible for
+/// destruction returned object.
+/// @param[in] comm The MPI communicator
 /// @param[in] basis The nullspace basis vectors
 /// @return A PETSc nullspace object
 MatNullSpace create_nullspace(MPI_Comm comm, std::span<const Vec> basis);
-
-/// These class provides static functions that permit users to set and
-/// retrieve PETSc options via the PETSc option/parameter system. The
-/// option must not be prefixed by '-', e.g.
-///
-///     la::petsc::options::set("mat_mumps_icntl_14", 40);
-namespace options
-{
-/// Set PETSc option that takes no value
-void set(std::string option);
-
-/// Generic function for setting PETSc option
-template <typename T>
-void set(std::string option, const T& value)
-{
-  if (option[0] != '-')
-    option = '-' + option;
-
-  PetscErrorCode ierr;
-  ierr = PetscOptionsSetValue(nullptr, option.c_str(),
-                              boost::lexical_cast<std::string>(value).c_str());
-  if (ierr != 0)
-    petsc::error(ierr, __FILE__, "PetscOptionsSetValue");
-}
-
-/// Clear a PETSc option
-void clear(std::string option);
-
-/// Clear PETSc global options database
-void clear();
-} // namespace options
 
 /// A simple wrapper for a PETSc vector pointer (Vec). Its main purpose
 /// is to assist with memory/lifetime management of PETSc Vec objects.
@@ -169,7 +152,7 @@ void clear();
 class Vector
 {
 public:
-  /// Create a vector
+  /// @brief Create a vector.
   /// @note Collective
   /// @param[in] map Index map describing the parallel layout
   /// @param[in] bs the block size
@@ -181,10 +164,10 @@ public:
   /// Move constructor
   Vector(Vector&& x) noexcept;
 
-  /// Create holder of a PETSc Vec object/pointer. The Vec x object
-  /// should already be created. If inc_ref_count is true, the reference
-  /// counter of the Vec object will be increased. The Vec reference
-  /// count will always be decreased upon destruction of the
+  /// @brief Create holder of a PETSc Vec object/pointer. The Vec x
+  /// object should already be created. If inc_ref_count is true, the
+  /// reference counter of the Vec object will be increased. The Vec
+  /// reference count will always be decreased upon destruction of the
   /// PETScVector.
   ///
   /// @note Collective
@@ -195,7 +178,7 @@ public:
   Vector(Vec x, bool inc_ref_count);
 
   /// Destructor
-  virtual ~Vector();
+  ~Vector();
 
   // Assignment operator (disabled)
   Vector& operator=(const Vector& x) = delete;
@@ -203,7 +186,7 @@ public:
   /// Move Assignment operator
   Vector& operator=(Vector&& x) noexcept;
 
-  /// Create a copy of the vector
+  /// @brief Create a copy of the vector.
   /// @note Collective
   Vector copy() const;
 
@@ -237,58 +220,17 @@ private:
   Vec _x;
 };
 
-/// This class is a base class for matrices that can be used in
-/// petsc::KrylovSolver.
-class Operator
-{
-public:
-  /// Constructor
-  Operator(Mat A, bool inc_ref_count);
-
-  // Copy constructor (deleted)
-  Operator(const Operator& A) = delete;
-
-  /// Move constructor
-  Operator(Operator&& A) noexcept;
-
-  /// Destructor
-  virtual ~Operator();
-
-  /// Assignment operator (deleted)
-  Operator& operator=(const Operator& A) = delete;
-
-  /// Move assignment operator
-  Operator& operator=(Operator&& A) noexcept;
-
-  /// Return number of rows and columns (num_rows, num_cols). PETSc
-  /// returns -1 if size has not been set.
-  std::array<std::int64_t, 2> size() const;
-
-  /// Initialize vector to be compatible with the matrix-vector product
-  /// y = Ax. In the parallel case, size and layout are both important.
-  ///
-  /// @param[in] dim The dimension (axis): dim = 0 --> z = y, dim = 1
-  /// --> z = x
-  Vec create_vector(std::size_t dim) const;
-
-  /// Return PETSc Mat pointer
-  Mat mat() const;
-
-protected:
-  // PETSc Mat pointer
-  Mat _matA;
-};
-
 /// It is a simple wrapper for a PETSc matrix pointer (Mat). Its main
 /// purpose is to assist memory management of PETSc Mat objects.
 ///
 /// For advanced usage, access the PETSc Mat pointer using the function
 /// mat() and use the standard PETSc interface.
-class Matrix : public Operator
+class Matrix
 {
 public:
-  /// Return a function with an interface for adding or inserting values
-  /// into the matrix A (calls MatSetValuesLocal)
+  /// @brief Return a function with an interface for adding or inserting
+  /// values into the matrix A (calls MatSetValuesLocal).
+  ///
   /// @param[in] A The matrix to set values in
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static auto set_fn(Mat A, InsertMode mode)
@@ -313,16 +255,15 @@ public:
 #endif
 
 #ifndef NDEBUG
-      if (ierr != 0)
-        petsc::error(ierr, __FILE__, "MatSetValuesLocal");
+      common::petsc::check(ierr, "MatSetValuesLocal");
 #endif
       return ierr;
     };
   }
 
-  /// Return a function with an interface for adding or inserting values
-  /// into the matrix A using blocked indices
-  /// (calls MatSetValuesBlockedLocal)
+  /// @brief Return a function with an interface for adding or
+  /// inserting values into the matrix A using blocked indices (calls
+  /// MatSetValuesBlockedLocal).
   /// @param[in] A The matrix to set values in
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static auto set_block_fn(Mat A, InsertMode mode)
@@ -347,17 +288,18 @@ public:
 #endif
 
 #ifndef NDEBUG
-      if (ierr != 0)
-        petsc::error(ierr, __FILE__, "MatSetValuesBlockedLocal");
+      common::petsc::check(ierr, "MatSetValuesBlockedLocal");
 #endif
       return ierr;
     };
   }
 
-  /// Return a function with an interface for adding or inserting blocked
-  /// values to the matrix A using non-blocked insertion (calls
-  /// MatSetValuesLocal). Internally it expands the blocked indices into
-  /// non-blocked arrays.
+  /// @brief Return a function with an interface for adding or inserting
+  /// blocked values to the matrix A using non-blocked insertion (calls
+  /// MatSetValuesLocal).
+  ///
+  /// Internally it expands the blocked indices into non-blocked arrays.
+  ///
   /// @param[in] A The matrix to set values in
   /// @param[in] bs0 Block size for the matrix rows
   /// @param[in] bs1 Block size for the matrix columns
@@ -384,8 +326,7 @@ public:
       ierr = MatSetValuesLocal(A, cache0.size(), cache0.data(), cache1.size(),
                                cache1.data(), vals.data(), mode);
 #ifndef NDEBUG
-      if (ierr != 0)
-        petsc::error(ierr, __FILE__, "MatSetValuesLocal");
+      common::petsc::check(ierr, "MatSetValuesLocal");
 #endif
       return ierr;
     };
@@ -395,45 +336,44 @@ public:
   Matrix(MPI_Comm comm, const SparsityPattern& sp,
          std::optional<std::string_view> type = std::nullopt);
 
-  /// Create holder of a PETSc Mat object/pointer. The Mat A object
-  /// should already be created. If inc_ref_count is true, the reference
-  /// counter of the Mat will be increased. The Mat reference count will
-  /// always be decreased upon destruction of the petsc::Matrix.
+  /// @brief Create holder of a PETSc Mat object/pointer. The Mat A object
+  /// should already be created.
+  /// @param[in] A PETSc Mat object, which must already have been
+  /// created. The reference count of `A` is always decreased when this
+  /// Matrix is destroyed.
+  /// @param[in] inc_ref_count True if the reference count of `A` should
+  /// be incremented.
   Matrix(Mat A, bool inc_ref_count);
 
   // Copy constructor (deleted)
   Matrix(const Matrix& A) = delete;
 
-  /// Move constructor (falls through to base class move constructor)
-  Matrix(Matrix&& A) = default;
+  /// Move constructor
+  Matrix(Matrix&& A) noexcept;
 
   /// Destructor
-  ~Matrix() = default;
+  ~Matrix();
 
-  /// Assignment operator (deleted)
+  // Assignment operator (deleted)
   Matrix& operator=(const Matrix& A) = delete;
 
   /// Move assignment operator
-  Matrix& operator=(Matrix&& A) = default;
+  Matrix& operator=(Matrix&& A) noexcept;
 
-  /// Assembly type
-  ///   FINAL - corresponds to PETSc MAT_FINAL_ASSEMBLY
-  ///   FLUSH - corresponds to PETSc MAT_FLUSH_ASSEMBLY
-  enum class AssemblyType : std::int8_t
-  {
-    FINAL,
-    FLUSH
-  };
+  /// Return number of rows and columns (num_rows, num_cols). PETSc
+  /// returns -1 if size has not been set.
+  std::array<std::int64_t, 2> size() const;
 
-  /// Finalize assembly of tensor. The following values are recognized
-  /// for the mode parameter:
-  /// @param type
-  ///   FINAL    - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
-  ///   FLUSH  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
-  void apply(AssemblyType type);
+  /// @brief Initialize vector to be compatible with the matrix-vector
+  /// product y = Ax. In the parallel case, size and layout are both
+  /// important.
+  ///
+  /// @param[in] dim The dimension (axis): dim = 0 --> z = y, dim = 1
+  /// --> z = x
+  Vec create_vector(std::size_t dim) const;
 
-  /// Return norm of matrix
-  double norm(Norm norm_type) const;
+  /// Return PETSc Mat pointer
+  Mat mat() const;
 
   //--- Special PETSc Functions ---
 
@@ -447,6 +387,10 @@ public:
 
   /// Call PETSc function MatSetFromOptions on the PETSc Mat object
   void set_from_options();
+
+private:
+  // PETSc Mat pointer
+  Mat _matA;
 };
 
 /// This class implements Krylov methods for linear systems of the form
@@ -454,13 +398,16 @@ public:
 class KrylovSolver
 {
 public:
-  /// Create Krylov solver for a particular method and named
-  /// preconditioner
+  /// @brief Create a Krylov solver.
+  /// @param[in] comm MPI communicator.
   explicit KrylovSolver(MPI_Comm comm);
 
-  /// Create solver wrapper of a PETSc KSP object
-  /// @param[in] ksp The PETSc KSP object. It should already have been created
-  /// @param[in] inc_ref_count Increment the reference count on `ksp` if true
+  /// @brief Create solver wrapper of a PETSc KSP object.
+  /// @param[in] ksp PETSc KSP object, which must already have been
+  /// created. The reference count of `ksp` is always decreased when this
+  /// KrylovSolver is destroyed.
+  /// @param[in] inc_ref_count True if the reference count of `ksp`
+  /// should be incremented.
   KrylovSolver(KSP ksp, bool inc_ref_count);
 
   // Copy constructor (deleted)
@@ -484,9 +431,18 @@ public:
   /// Set operator and preconditioner matrix (Mat)
   void set_operators(const Mat A, const Mat P);
 
-  /// Solve linear system Ax = b and return number of iterations (A^t x
-  /// = b if transpose is true)
-  int solve(Vec x, const Vec b, bool transpose = false) const;
+  /// @brief Solve linear system Ax = b (A^t x = b if `transpose` is
+  /// true).
+  ///
+  /// Non-convergence is not treated as an error (a warning is
+  /// logged); check the returned convergence reason.
+  ///
+  /// @return The PETSc convergence reason (positive on convergence,
+  /// negative on divergence).
+  [[nodiscard(
+      "check the converged reason - positive on convergence, negative on "
+      "divergence")]] KSPConvergedReason
+  solve(Vec x, const Vec b, bool transpose = false);
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database

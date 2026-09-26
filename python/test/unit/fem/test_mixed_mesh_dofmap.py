@@ -12,7 +12,8 @@ from dolfinx.mesh import CellType, Topology
 
 def create_element_dofmap(mesh, cell_types, degree):
     elements = [
-        finiteelement(ct, basix.ufl.element("P", ct, degree), np.float64) for ct in cell_types
+        finiteelement(ct, basix.ufl.element("P", ct, degree), np.float64, mesh.geometry.dim)
+        for ct in cell_types
     ]
     dofmaps = create_dofmaps(mesh.comm, Topology(mesh.topology), elements)
     return (elements, dofmaps)
@@ -25,12 +26,18 @@ def test_dofmap_mixed_topology():
     tri = [0, 1, 4, 0, 3, 4]
     quad = [1, 4, 2, 5]
     # cells with global indexing
-    cells = [[t + 3 * rank for t in tri], [q + 3 * rank for q in quad]]
-    orig_index = [[3 * rank, 1 + 3 * rank], [2 + 3 * rank]]
+    cells = [
+        np.array([t + 3 * rank for t in tri], dtype=np.int64),
+        np.array([q + 3 * rank for q in quad], dtype=np.int64),
+    ]
+    orig_index = [
+        np.array([3 * rank, 1 + 3 * rank], dtype=np.int64),
+        np.array([2 + 3 * rank], dtype=np.int64),
+    ]
     # No ghosting
-    ghost_owners = [[], []]
+    ghost_owners = [np.array([], dtype=np.int32), np.array([], dtype=np.int32)]
     # All vertices are on boundary
-    boundary_vertices = [3 * rank + i for i in range(6)]
+    boundary_vertices = np.array([3 * rank + i for i in range(6)], dtype=np.int64)
 
     topology = create_topology(
         MPI.COMM_WORLD,
@@ -83,13 +90,13 @@ def test_dofmap_mixed_topology():
 
 def test_dofmap_prism_mesh():
     # Prism mesh
-    cells = [[0, 1, 2, 3, 4, 5]]
+    cells = [np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)]
     # cells with global indexing
-    orig_index = [[0, 1, 2, 3, 4, 5]]
+    orig_index = [np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)]
     # No ghosting
-    ghost_owners = [[]]
+    ghost_owners = [np.array([], dtype=np.int32)]
     # All vertices are on boundary
-    boundary_vertices = [0, 1, 2, 3, 4, 5]
+    boundary_vertices = np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)
 
     topology = Topology(
         create_topology(

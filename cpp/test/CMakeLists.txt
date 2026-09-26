@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.26)
 
 project(dolfinx-tests LANGUAGES C CXX)
 
@@ -36,21 +36,27 @@ add_executable(
   graph.cpp
   vector.cpp
   matrix.cpp
+  petsc.cpp
+  slepc.cpp
   io.cpp
+  io_xdmf.cpp
   common/CIFailure.cpp
   common/sub_systems_manager.cpp
   common/index_map.cpp
+  common/move_semantics.cpp
   common/sort.cpp
   fem/form.cpp
   fem/functionspace.cpp
   mesh/branching_manifold.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp
+  mesh/geometric_partitioner.cpp
   mesh/read_named_meshtags.cpp
   mesh/refinement/interval.cpp
   mesh/refinement/option.cpp
   mesh/refinement/rectangle.cpp
   mesh/refinement/mark.cpp
+  nls/snessolver.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
@@ -73,13 +79,17 @@ if(WIN32)
   target_link_libraries(unittests PRIVATE bcrypt)
 endif()
 
+# Windows defaults new threads to a 1 MiB stack, versus 8 MiB on
+# Linux/macOS. Mesh-partitioning tests that build a real mesh (e.g.
+# via SCOTCH's recursive bisection, whose working set scales with the
+# (sub)graph being partitioned) overflow the default Windows stack even
+# though they run fine elsewhere; match the other platforms' size.
+if(WIN32 AND MSVC)
+  target_link_options(unittests PRIVATE /STACK:8388608)
+endif()
+
 # Required to find FFCx generated headers.
 target_include_directories(unittests PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-
-if(NOT PROJECT_IS_TOP_LEVEL)
-  # Required to find version.h
-  target_include_directories(unittests PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../)
-endif()
 
 if(DEFINED DOLFINX_CXX_DEVELOPER_FLAGS)
   target_compile_options(
@@ -94,17 +104,6 @@ if(DEFINED DOLFINX_CXX_DEVELOPER_DEFINITIONS)
     unittests
     PRIVATE
       $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
-  )
-endif()
-
-option(ENABLE_CLANG_TIDY "Enable clang-tidy analysis" OFF)
-if(ENABLE_CLANG_TIDY)
-  find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
-  set_target_properties(
-    unittests
-    PROPERTIES
-      CXX_CLANG_TIDY
-        "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy"
   )
 endif()
 

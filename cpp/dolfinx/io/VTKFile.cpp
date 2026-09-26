@@ -40,8 +40,8 @@ std::string get_counter(const pugi::xml_node& node, std::string_view name)
 {
   const std::string nm(name);
   // Count number of entries
-  const std::size_t n = std::distance(node.children(nm.c_str()).begin(),
-                                      node.children(nm.c_str()).end());
+  const std::size_t n = std::ranges::distance(node.children(nm.c_str()).begin(),
+                                              node.children(nm.c_str()).end());
 
   // Compute counter string
   constexpr int num_digits = 6;
@@ -375,7 +375,7 @@ void write_function(
     // Check that pointwise elements are the same (up to the block size)
     if (!impl::is_cellwise(*e))
     {
-      if (*e != *element0)
+      if (!impl::same_base_element(*e, *element0))
       {
         throw std::runtime_error("All point-wise Functions written to VTK file "
                                  "must have same element.");
@@ -546,7 +546,7 @@ void write_function(
                    std::span<const T>(data), data_node);
         }
       }
-      else if (*e == *element0)
+      else if (impl::same_base_element(*e, *element0))
       {
         // -- Same element, possibly different dofmaps
 
@@ -559,7 +559,7 @@ void write_function(
 
         // Get data on each cell
         auto u_vector = _u.get().x()->array();
-        std::vector<T> u(u_vector.size());
+        std::vector<T> u_data(u_vector.size());
         for (std::size_t c = 0; c < cshape[0]; ++c)
         {
           std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
@@ -569,8 +569,8 @@ void write_function(
             for (int k = 0; k < bs; ++k)
             {
               assert(i < dofs0.size());
-              assert(bs * dofs0[i] + k < (int)u.size());
-              u[bs * dofs0[i] + k] = u_vector[bs * dofs[i] + k];
+              assert(bs * dofs0[i] + k < (int)u_data.size());
+              u_data[bs * dofs0[i] + k] = u_vector[bs * dofs[i] + k];
             }
           }
         }
@@ -579,7 +579,7 @@ void write_function(
         if (mesh0->geometry().dim() == 3)
           add_data(_u.get().name,
                    std::span<const std::size_t>(component_vector),
-                   std::span<const T>(u), data_node);
+                   std::span<const T>(u_data), data_node);
         else
         {
           // Pad with zeros and then add
@@ -663,7 +663,8 @@ void write_function(
       if (num_components < std::pow(3, rank))
         num_components = std::pow(3, rank);
 
-      auto add_field = [&](const std::string& name, int size)
+      auto add_field
+          = [&data_pnode, &num_components](const std::string& name, int size)
       {
         std::string type = std::format("Float{}", size);
         pugi::xml_node data_node = data_pnode.append_child("PDataArray");
@@ -688,9 +689,9 @@ void write_function(
     // Add data for each process to the PVTU object
     for (int r = 0; r < mpi_size; ++r)
     {
-      std::filesystem::path vtu = create_vtu_path(r);
-      pugi::xml_node piece_node = grid_node.append_child("Piece");
-      piece_node.append_attribute("Source") = vtu.filename().c_str();
+      std::filesystem::path vtu_r = create_vtu_path(r);
+      pugi::xml_node piece_node_r = grid_node.append_child("Piece");
+      piece_node_r.append_attribute("Source") = vtu_r.filename().c_str();
     }
 
     // Write PVTU file
@@ -722,6 +723,10 @@ io::VTKFile::VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
   vtk_node.append_child("Collection");
 }
 //----------------------------------------------------------------------------
+io::VTKFile::VTKFile(VTKFile&& file) noexcept = default;
+//-----------------------------------------------------------------------------
+io::VTKFile& io::VTKFile::operator=(VTKFile&& file) noexcept = default;
+//-----------------------------------------------------------------------------
 io::VTKFile::~VTKFile()
 {
   if (_pvd_xml and dolfinx::MPI::rank(_comm.comm()) == 0)
@@ -849,9 +854,9 @@ void io::VTKFile::write(const mesh::Mesh<U>& mesh, double t)
     const int mpi_size = dolfinx::MPI::size(_comm.comm());
     for (int r = 0; r < mpi_size; ++r)
     {
-      std::filesystem::path vtu = create_vtu_path(r);
-      pugi::xml_node piece_node = grid_node.append_child("Piece");
-      piece_node.append_attribute("Source") = vtu.filename().c_str();
+      std::filesystem::path vtu_r = create_vtu_path(r);
+      pugi::xml_node piece_node_r = grid_node.append_child("Piece");
+      piece_node_r.append_attribute("Source") = vtu_r.filename().c_str();
     }
 
     // Write PVTU file

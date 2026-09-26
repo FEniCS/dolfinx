@@ -1,58 +1,29 @@
-Documenting DOLFINx demos
-=========================
+# DOLFINx C++ demos
 
-The documentation for the DOLFINx demos is written by hand and located
-together with the demos in the DOLFINx source tree. To document a (new)
-DOLFINx demo located in the directory foo (for instance pde/poisson),
-follow the two steps below. In general, the simplest way is probably
-to look at one of the documented demos for instance
-(demo/pde/poisson/) and follow the same setup.
+Each subdirectory is a self-contained demo that builds against an installed
+DOLFINx. [FFCx](https://github.com/FEniCS/ffcx) is required to compile the UFL
+forms (`.py` files) that accompany most demos.
 
-1) Add these 3 files
+## Building
 
-  * foo/common.txt -- containing common information such as the main
-    features the demo illustrates and, if applicable, a mathematical
-    description of the differential equation that is solved. This file
-    should then be included in the C++ and Python versions.
+To build all demos:
 
-  * foo/cpp/documentation.rst -- containing the reST source file with
-    the documentation that is specific to the C++ version of the demo.
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S .
+    cmake --build build
 
-  * foo/python/documentation.rst -- containing the reST source file
-    with the documentation that is specific to the Python version of
-    the demo.
+To build a single demo, use its directory as the source, e.g. `-S poisson`.
 
-   If either the C++ or the Python version of the demo does not exist,
-   feel free to add the version and continue.
+Each demo registers tests for 1, 2 and 3 MPI processes:
 
-2) Move the directory foo from the directory undocumented/ to the
-   suitable directory (for instance pde/ or la/).
+    ctest --test-dir build          # all demos
+    ctest --test-dir build -R demo_poisson_np_3
 
+The demos can also be built as part of DOLFINx by configuring `cpp/` with
+`-DDOLFINX_BUILD_DEMOS=ON`. The `demos` target then builds them all, and their
+tests are added to the `test` target alongside the unit tests.
 
-Note
+## Documentation
 
-   The demo documentation is automatically included in the complete
-   DOLFINx documentation when running make doc after building
-   DOLFINx. While documenting a demo, it may be handy to only run
-   make doc_demo and then make doc_html_[python|cpp].
-
-Note
-
-   Tests for the validity of the code snippets used in the demo
-   documentation are included in the standard DOLFINx tests.
-
-C++ and Python specific contents
-================================
-
-The C++ and Python documentation reST source files should
-
-* Explain each step of the solution procedure. Do this by including
-  and explaining code snippets from the demo source code.
-
-* Include links to the API documentation using the :cpp:class: and
-  :py:class: directives. Note that for the Python classes, the
-  full module path is required (for instance
-  py:class:dolfinx.cpp.NewtonSolver)
-
-* Include the complete set of files needed to run the demo using the
-  include directive.
+The demo sources are commented in Markdown and rendered into the DOLFINx
+documentation with jupytext and Sphinx, so keep the prose comments in
+`main.cpp` in step with the code.

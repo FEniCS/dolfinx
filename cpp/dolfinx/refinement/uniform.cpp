@@ -1,4 +1,11 @@
+// Copyright (C) 2025-2026 Chris Richardson, Garth N. Wells, Jørgen S. Dokken
+// and Paul T. Kühner
+//
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "uniform.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -7,14 +14,12 @@
 #include <iterator>
 #include <vector>
 
-#include "uniform.h"
-
 using namespace dolfinx;
 
 template <typename T>
-mesh::Mesh<T>
-refinement::uniform_refine(const mesh::Mesh<T>& mesh,
-                           const mesh::CellPartitionFunction& partitioner)
+mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
+                                         const graph::partition_fn& partitioner,
+                                         mesh::GhostMode ghost_mode)
 {
   // Requires edges (and facets for some 3D meshes) to be built already
   auto topology = mesh.topology();
@@ -44,7 +49,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   if (auto it = std::find(entity_types[2].begin(), entity_types[2].end(),
                           mesh::CellType::quadrilateral);
       it != entity_types[2].end())
-    e_index.push_back(std::distance(entity_types[2].begin(), it));
+    e_index.push_back(std::ranges::distance(entity_types[2].begin(), it));
 
   if (tdim == 3)
   {
@@ -52,7 +57,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     if (auto it = std::find(cell_entity_types.begin(), cell_entity_types.end(),
                             mesh::CellType::hexahedron);
         it != entity_types[3].end())
-      e_index.push_back(std::distance(cell_entity_types.begin(), it));
+      e_index.push_back(std::ranges::distance(cell_entity_types.begin(), it));
   }
 
   // Add up all local vertices, edges, quad facets and hex cells.
@@ -147,21 +152,21 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     std::iota(new_v[j].begin(), std::next(new_v[j].begin(), num_entities),
               local_range[0] + entity_offsets[j]);
 
-    common::Scatterer sc(*index_maps[j], 1);
-    std::vector<std::int64_t> send_buffer(sc.local_indices().size());
+    common::Scatterer sc(*index_maps[j]);
+    std::vector<std::int64_t> send_buffer(sc.local_indices_block().size());
     {
-      auto& idx = sc.local_indices();
+      auto& idx = sc.local_indices_block();
       for (std::size_t i = 0; i < idx.size(); ++i)
         send_buffer[i] = new_v[j][idx[i]];
     }
-    std::vector<std::int64_t> recv_buffer(sc.remote_indices().size());
+    std::vector<std::int64_t> recv_buffer(sc.remote_indices_block().size());
     MPI_Request request = MPI_REQUEST_NULL;
-    sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
-    sc.scatter_end(request);
+    sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), 1, request);
+    sc.scatter_fwd_end(request);
     {
       std::span ghosts(std::next(new_v[j].begin(), num_entities),
                        new_v[j].end());
-      auto& idx = sc.remote_indices();
+      auto& idx = sc.remote_indices_block();
       for (std::size_t i = 0; i < idx.size(); ++i)
         ghosts[idx[i]] = recv_buffer[i];
     }
@@ -176,7 +181,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   auto it = std::find(cell_entity_types.begin(), cell_entity_types.end(),
                       mesh::CellType::tetrahedron);
   if (it != cell_entity_types.end())
-    ktet = std::distance(cell_entity_types.begin(), it);
+    ktet = std::ranges::distance(cell_entity_types.begin(), it);
   // Topology for tetrahedra which arise from pyramid subdivision
   std::array<int, 16> pyr_to_tet_list
       = {5, 13, 7, 9, 6, 13, 11, 7, 10, 13, 12, 11, 8, 13, 9, 12};
@@ -245,10 +250,12 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 
     auto c_to_v = topology->connectivity({tdim, k}, {0, 0});
     auto c_to_e = topology->connectivity({tdim, k}, {1, 0});
+
+    // Cell topology defined through globally numbered vertices.
+    std::vector<std::int64_t> entities;
     for (int c = 0; c < topology->index_maps(tdim)[k]->size_local(); ++c)
     {
-      // Cell topology defined through its globally numbered vertices
-      std::vector<std::int64_t> entities;
+      entities.clear();
 
       // Extract new global vertex number for existing vertices
       for (std::int32_t i : c_to_v->links(c))
@@ -304,7 +311,8 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     geometry_cmaps.push_back(cm);
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, geometry_cmaps, mesh.comm(), new_x,
-      {new_x.size() / 3, 3}, partitioner, 2, 1);
+      {new_x.size() / 3, 3}, graph::Partitioner{.fn = partitioner}, ghost_mode,
+      2, 1);
 
   return new_mesh;
 }
@@ -312,8 +320,8 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 /// @cond Explicit instantiation for float and double
 template mesh::Mesh<double>
 refinement::uniform_refine(const mesh::Mesh<double>& mesh,
-                           const mesh::CellPartitionFunction&);
+                           const graph::partition_fn&, mesh::GhostMode);
 template mesh::Mesh<float>
 refinement::uniform_refine(const mesh::Mesh<float>& mesh,
-                           const mesh::CellPartitionFunction&);
+                           const graph::partition_fn&, mesh::GhostMode);
 /// @endcond

@@ -8,9 +8,13 @@
 @PACKAGE_INIT@
 include(CMakeFindDependencyMacro)
 
-find_dependency(MPI REQUIRED)
-find_dependency(spdlog REQUIRED)
-find_dependency(pugixml REQUIRED)
+# PETSc/SLEPc pkg-config discovery helpers, shared with the DOLFINx build
+# and installed alongside this file.
+include("${CMAKE_CURRENT_LIST_DIR}/DolfinxPkgConfigHelpers.cmake")
+
+find_dependency(MPI 3 COMPONENTS CXX)
+find_dependency(spdlog)
+find_dependency(pugixml)
 
 if(POLICY CMP0167)
   cmake_policy(SET CMP0167 NEW) # Boost CONFIG mode
@@ -23,19 +27,26 @@ endif()
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
-set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-set(Boost_VERBOSE TRUE)
-find_package(Boost 1.70 REQUIRED)
+if(DEFINED ENV{BOOST_USE_MULTITHREADED})
+  set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
+endif()
+# find_package() rather than find_dependency(): the latter defers to a
+# function defined in CMakeFindDependencyMacro.cmake, which captured the
+# policy stack at its own definition and so would not see the CMP0167
+# setting above (Boost would be searched for with the removed FindBoost
+# module rather than in CONFIG mode).
+find_package(Boost 1.81 REQUIRED)
 
-if(@ufcx_FOUND@)
-  find_dependency(ufcx)
-elseif(@UFCx_FOUND@)
+if("@ufcx_FOUND@")
+  find_dependency(ufcx CONFIG)
+elseif("@UFCxPython_FOUND@")
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
-  find_dependency(UFCx MODULE)
+  find_dependency(UFCxPython MODULE)
+  list(REMOVE_ITEM CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 endif()
 
 # Basix
-if(@DOLFINX_BASIX_PYTHON@)
+if("@DOLFINX_BASIX_PYTHON@")
   find_package(Python3 COMPONENTS Interpreter QUIET)
 
   if(Python3_Interpreter_FOUND)
@@ -52,7 +63,8 @@ if(@DOLFINX_BASIX_PYTHON@)
   endif()
 
   if(BASIX_PY_DIR)
-    # TODO: CMake 3.20 has more modern cmake_path.
+    # file(TO_CMAKE_PATH) rather than cmake_path(), because this file is
+    # parsed under the consuming project's cmake_minimum_required().
     file(TO_CMAKE_PATH "${BASIX_PY_DIR}" BASIX_PY_DIR)
     message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
   else()
@@ -60,55 +72,50 @@ if(@DOLFINX_BASIX_PYTHON@)
   endif()
 endif()
 
-find_dependency(
-  Basix
-  REQUIRED
-  CONFIG
-  HINTS
-  ${BASIX_PY_DIR}
-)
+find_dependency(Basix CONFIG HINTS ${BASIX_PY_DIR})
 
 # HDF5
 if(NOT TARGET hdf5::hdf5)
   set(HDF5_PREFER_PARALLEL TRUE)
-  set(HDF5_FIND_DEBUG TRUE)
   find_dependency(HDF5 COMPONENTS C)
   if(NOT (HDF5_IS_PARALLEL OR HDF5_PROVIDES_PARALLEL))
     message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required")
   endif()
 endif()
 
-if(@PETSC_FOUND@)
+if("@PETSC_FOUND@")
   if(NOT TARGET PkgConfig::PETSC)
     find_package(PkgConfig REQUIRED)
-    set(
-      ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-    )
-    pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc petsc)
+    if("@DOLFINX_PETSC_PYTHON@")
+      dolfinx_python_prefix_hint(petsc PETSC_DIR)
+    endif()
+    dolfinx_prepend_pkgconfig_path(PETSC_DIR)
+    pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
+  endif()
+
+  # As when building DOLFINx: PETSc commonly bundles the libraries it was
+  # built with (graph partitioners, SuperLU_DIST), so its prefix is a
+  # search hint for them.
+  if(PETSC_PREFIX)
+    list(APPEND CMAKE_PREFIX_PATH ${PETSC_PREFIX})
   endif()
 endif()
 
-if(@SLEPC_FOUND@)
+if("@SLEPC_FOUND@")
   if(NOT TARGET PkgConfig::SLEPC)
     find_package(PkgConfig REQUIRED)
-    set(
-      ENV{PKG_CONFIG_PATH}
-      "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-    )
-    set(
-      ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-    )
-    set(
-      ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}"
-    )
-    pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET SLEPc slepc)
+    if("@DOLFINX_SLEPC_PYTHON@")
+      dolfinx_python_prefix_hint(slepc SLEPC_DIR)
+    endif()
+    # slepc.pc requires petsc.pc, which need not have been searched for
+    # above if PkgConfig::PETSC was already defined by the consumer.
+    dolfinx_prepend_pkgconfig_path(PETSC_DIR)
+    dolfinx_prepend_pkgconfig_path(SLEPC_DIR)
+    pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
   endif()
 endif()
 
-if(@ADIOS2_FOUND@)
+if("@ADIOS2_FOUND@")
   find_dependency(
     ADIOS2
     2.8.1
@@ -116,6 +123,30 @@ if(@ADIOS2_FOUND@)
     CXX
     MPI
   )
+endif()
+
+# Graph partitioners and SuperLU_DIST are linked PRIVATE, so they only
+# appear in the exported link interface of a static build, where the
+# consumer has to be able to resolve them too.
+if(NOT @BUILD_SHARED_LIBS@)
+  if("@SCOTCH_FOUND@")
+    find_dependency(SCOTCH 7.0.1 CONFIG)
+  endif()
+  if("@ParMETIS_FOUND@")
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+    find_dependency(ParMETIS 4.0.2 MODULE)
+    list(REMOVE_ITEM CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+  endif()
+  if("@KaHIP_FOUND@")
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+    find_dependency(KaHIP MODULE)
+    list(REMOVE_ITEM CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+  endif()
+  if("@SUPERLU_DIST_FOUND@")
+    find_package(PkgConfig REQUIRED)
+    dolfinx_prepend_pkgconfig_path(PETSC_DIR)
+    pkg_search_module(SUPERLU_DIST REQUIRED IMPORTED_TARGET superlu_dist)
+  endif()
 endif()
 
 if(NOT TARGET dolfinx::dolfinx)

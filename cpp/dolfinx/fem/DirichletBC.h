@@ -19,6 +19,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -112,7 +113,7 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
     assert(V.elements(i));
     if (V.elements(i)->is_mixed())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Cannot locate dofs geometrically for mixed space. Use subspaces.");
     }
   }
@@ -169,13 +170,13 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   assert(mesh);
   assert(V1.mesh());
   if (mesh != V1.mesh())
-    throw std::runtime_error("Meshes are not the same.");
+    throw std::invalid_argument("Meshes are not the same.");
   const int tdim = mesh->topology()->dim();
 
   assert(V0.element());
   assert(V1.element());
   if (*V0.element() != *V1.element())
-    throw std::runtime_error("Function spaces must have the same element.");
+    throw std::invalid_argument("Function spaces must have the same element.");
 
   // Compute dof coordinates
   const std::vector<T> dof_coordinates = V1.tabulate_dof_coordinates(true);
@@ -266,7 +267,7 @@ private:
     std::int32_t map_size = dofmap.index_map->size_local();
     std::int32_t owned_size = bs * map_size;
     auto it = std::ranges::lower_bound(dofs, owned_size);
-    return std::distance(dofs.begin(), it);
+    return std::ranges::distance(dofs.begin(), it);
   }
 
   /// Unroll dofs for block size.
@@ -335,14 +336,14 @@ public:
     assert(V->elements(0));
     if (g->shape.size() != V->elements(0)->value_shape().size())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Rank mismatch between Constant and function space in DirichletBC");
     }
 
     if (g->value.size()
         != (std::size_t)_function_space->dofmaps().front()->bs())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Creating a DirichletBC using a Constant is not supported when the "
           "Constant size is not equal to the block size of the constrained "
           "(sub-)space. Use a fem::Function to create the fem::DirichletBC.");
@@ -350,7 +351,7 @@ public:
 
     if (!V->elements(0)->interpolation_ident())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Constant can be used only with point-evaluation elements");
     }
 
@@ -480,21 +481,24 @@ public:
   /// degrees-of-freedom, `x_bc` is the value of the boundary condition
   /// interpolated into the finite element space.
   ///
-  /// If `x` includes ghosted entries (entries available on the calling
-  /// rank but owned by another rank), ghosted entries constrained by a
-  /// Dirichlet condition will also be set.
+  /// `x` may hold only owned entries or also include ghosts (entries
+  /// available on the calling rank but owned by another rank); a
+  /// constrained degree-of-freedom beyond the end of `x` is silently
+  /// skipped, so an owned-only `x` sets only owned entries.
   ///
   /// @param[in,out] x Array to modify for Dirichlet boundary
-  /// conditions.
+  /// conditions. May include ghost entries.
   /// @param[in] x0 Optional array used in computing the value to set.
   /// If not provided it is treated as zero.
   /// @param[in] alpha Scaling to apply.
+  /// @note If `x0` is provided, it must be at least as long as `x`
+  /// (checked only in Debug builds).
   void set(std::span<T> x, std::optional<std::span<const T>> x0,
            T alpha = 1) const
   {
     // set_fn is a lambda which gets evaluated for every index in [0,
     // _dofs0.size()) and its result is assigned to x[_dofs0[i]].
-    auto apply = [&](std::invocable<std::int32_t> auto set_fn)
+    auto apply = [this, &x](std::invocable<std::int32_t> auto set_fn)
     {
       static_assert(
           std::is_same_v<std::invoke_result_t<decltype(set_fn), std::int32_t>,

@@ -7,7 +7,6 @@
 """Tools to extract data from Gmsh models."""
 
 import typing
-from collections.abc import Callable
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -20,11 +19,18 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.cpp.graph import AdjacencyList_int32 as _AdjacencyList_int32
 from dolfinx.fem import coordinate_element
-from dolfinx.graph import AdjacencyList, adjacencylist
+from dolfinx.graph import adjacencylist
 from dolfinx.io.utils import distribute_entity_data
-from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags_from_entities
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    Mesh,
+    MeshTags,
+    PartitioningFunc,
+    create_mesh,
+    meshtags_from_entities,
+)
 
 __all__ = [
     "MeshData",
@@ -146,12 +152,12 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
         degree,
         basix.LagrangeVariant.equispaced,
         shape=(gdim,),
-        dtype=dtype,  # type: ignore[arg-type]
+        dtype=dtype,
     )
     return ufl.Mesh(element)
 
 
-def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
+def cell_perm_array(cell_type: CellType, num_nodes: int) -> npt.NDArray[np.uint16]:
     """Array for permuting Gmsh ordering to DOLFINx ordering.
 
     Args:
@@ -166,7 +172,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
 
 
 def extract_topology_and_markers(
-    model, name: str | None = None
+    model: typing.Any, name: str | None = None
 ) -> tuple[dict[int, TopologyDict], dict[str, PhysicalGroup]]:
     """Extract entities with a physical marker in the Gmsh model.
 
@@ -248,7 +254,7 @@ def extract_topology_and_markers(
     return topologies, physical_groups
 
 
-def extract_geometry(model, name: str | None = None) -> npt.NDArray[np.float64]:
+def extract_geometry(model: typing.Any, name: str | None = None) -> npt.NDArray[np.float64]:
     """Extract the mesh geometry from a Gmsh model.
 
     Returns an array of shape ``(num_nodes, 3)``, where the i-th row
@@ -280,18 +286,18 @@ def extract_geometry(model, name: str | None = None) -> npt.NDArray[np.float64]:
     perm_sort = np.argsort(indices)
     if not np.all(indices[perm_sort] == np.arange(len(indices))):
         raise RuntimeError("Gmsh model node indices are not contiguous.")
-    return points[perm_sort]
+    return typing.cast(npt.NDArray[np.float64], points[perm_sort])
 
 
 def model_to_mesh(
-    model,
+    model: typing.Any,
     comm: _MPI.Comm,
     rank: int,
     gdim: int = 3,
-    partitioner: Callable[[_MPI.Comm, int, int, _AdjacencyList_int32], _AdjacencyList_int32]
-    | None = None,
-    dtype=default_real_type,
+    partitioner: PartitioningFunc | None = None,
+    dtype: npt.DTypeLike = default_real_type,
     max_facet_to_cell_links: int = 2,
+    ghost_mode: GhostMode = GhostMode.none,
 ) -> MeshData:
     """Create a Mesh from a Gmsh model.
 
@@ -304,12 +310,14 @@ def model_to_mesh(
         model: Gmsh model.
         comm: MPI communicator to use for mesh creation.
         rank: MPI rank that the Gmsh model is initialized on.
-        gdim: Geometrical dimension of the mesh.
+        gdim: Geometric dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
         dtype: Data-type used for the mesh coordinates
         max_facet_to_cell_links: Maximum number of cells a facet can
-                    be connected to.
+            be connected to.
+        ghost_mode: Ghost mode used in the mesh partitioning, passed to
+            ``partitioner`` at call time.
 
     Returns:
         MeshData with mesh and tags of corresponding entities by
@@ -325,6 +333,9 @@ def model_to_mesh(
         creation for efficient access.
     """
     valid_mesh = None
+    x = np.empty((0, gdim), dtype=dtype)
+    topologies: dict[int, TopologyDict] = {}
+    physical_groups: dict[str, PhysicalGroup] = {}
     if comm.rank == rank:
         if model is None:
             raise ValueError("Gmsh model is None on rank responsible for mesh creation.")
@@ -400,7 +411,7 @@ def model_to_mesh(
             meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
         else:
             # Any other process than input rank does not have any entities
-            marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int32)
+            marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int64)
             entity_values = np.empty((0,), dtype=np.int32)
             meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
 
@@ -420,8 +431,6 @@ def model_to_mesh(
 
     # Create a distributed mesh, where mesh nodes are only distributed from
     # the input rank
-    if comm.rank != rank:
-        x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
     if len(ufl_domains) > 1:
         cmaps = []
         for ufl_domain in ufl_domains:
@@ -442,8 +451,11 @@ def model_to_mesh(
             cmaps,
             x[:, :gdim].astype(dtype).copy(),
             partitioner,
+            ghost_mode,
             max_facet_to_cell_links,
             1,
+            cell_weights=None,
+            reorder_fn=None,
         )
         mesh = Mesh(cpp_mesh, None)
 
@@ -456,6 +468,7 @@ def model_to_mesh(
             ufl_domains[0],
             x[:, :gdim].astype(dtype, copy=False),
             partitioner,
+            ghost_mode=ghost_mode,
             max_facet_to_cell_links=max_facet_to_cell_links,
         )
     if tdim != mesh.topology.dim:
@@ -509,7 +522,8 @@ def read_from_msh(
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
-    partitioner: Callable[[_MPI.Comm, int, int, AdjacencyList], _AdjacencyList_int32] | None = None,
+    partitioner: PartitioningFunc | None = None,
+    ghost_mode: GhostMode = GhostMode.none,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a mesh and cell facet markers.
 
@@ -521,9 +535,10 @@ def read_from_msh(
         comm: MPI communicator to create the mesh on.
         rank: Rank of ``comm`` responsible for reading the ``.msh``
             file.
-        gdim: Geometric dimension of the mesh
+        gdim: Geometric dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
+        ghost_mode: Ghost mode used in the mesh partitioning.
 
     Returns:
         Meshdata with mesh, cell tags, facet tags, edge tags,
@@ -543,8 +558,12 @@ def read_from_msh(
         gmsh.initialize()
         gmsh.model.add("Mesh from file")
         gmsh.merge(str(filename))
-        msh = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
+        msh = model_to_mesh(
+            gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner, ghost_mode=ghost_mode
+        )
         gmsh.finalize()
         return msh
     else:
-        return model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
+        return model_to_mesh(
+            gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner, ghost_mode=ghost_mode
+        )

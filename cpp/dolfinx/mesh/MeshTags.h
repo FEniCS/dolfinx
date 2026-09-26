@@ -8,13 +8,17 @@
 
 #include "Topology.h"
 #include <algorithm>
+#include <cassert>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/io/cells.h>
 #include <memory>
 #include <span>
+#include <stdexcept>
+#include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -41,6 +45,7 @@ public:
   /// process).
   /// @param[in] values List of values for each index in indices. The
   /// size must be equal to the size of `indices`.
+  /// @param[in] name Name of the meshtags.
   /// @pre `indices` must be sorted and unique.
   template <typename U, typename V>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
@@ -48,20 +53,25 @@ public:
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<T>>
   MeshTags(std::shared_ptr<const Topology> topology, int dim, U&& indices,
-           V&& values)
+           V&& values, std::string name = "mesh_tags")
       : _topology(std::move(topology)), _dim(dim),
-        _indices(std::forward<U>(indices)), _values(std::forward<V>(values))
+        _indices(std::forward<U>(indices)), _values(std::forward<V>(values)),
+        _name(name)
   {
+    if (!_topology)
+      throw std::invalid_argument("topology must not be null.");
+    if (_dim < 0 or _dim > _topology->dim())
+      throw std::invalid_argument("dim out of range for topology.");
     if (_indices.size() != _values.size())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Indices and values arrays must have same size.");
     }
 #ifndef NDEBUG
     if (!std::ranges::is_sorted(_indices))
-      throw std::runtime_error("MeshTag data is not sorted");
+      throw std::invalid_argument("MeshTag data is not sorted");
     if (std::adjacent_find(_indices.begin(), _indices.end()) != _indices.end())
-      throw std::runtime_error("MeshTag data has duplicates");
+      throw std::invalid_argument("MeshTag data has duplicates");
 #endif
   }
 
@@ -74,7 +84,7 @@ public:
   /// Destructor
   ~MeshTags() = default;
 
-  /// Move assignment
+  /// Copy assignment
   MeshTags& operator=(const MeshTags& tags) = default;
 
   /// Move assignment
@@ -96,7 +106,8 @@ public:
     return indices;
   }
 
-  /// Indices of tagged topology entities (local-to-process). The
+  /// Indices of tagged topology entities (local-to-process, in
+  /// `[0, size_local + num_ghosts)`; may include ghost entities). The
   /// indices are sorted.
   std::span<const std::int32_t> indices() const { return _indices; }
 
@@ -109,8 +120,11 @@ public:
   /// Return topology
   std::shared_ptr<const Topology> topology() const { return _topology; }
 
-  /// Name
-  std::string name = "mesh_tags";
+  /// Return name
+  const std::string& name() const { return _name; }
+
+  /// Set name
+  void name(std::string name) { _name = std::move(name); }
 
 private:
   // Associated topology
@@ -124,6 +138,9 @@ private:
 
   // Values attached to entities
   std::vector<T> _values;
+
+  // Name
+  std::string _name;
 };
 
 /// @brief Create MeshTags from arrays
@@ -132,24 +149,29 @@ private:
 /// @param[in] entities Local vertex indices for tagged entities.
 /// @param[in] values Tag values for each entity in `entities`. The
 /// length of `values` must be equal to number of rows in `entities`.
-/// @note Entities that do not exist on this rank are ignored.
+/// @param[in] name Name of the meshtags.
+/// @note Entities that do not exist on this rank are ignored. Ghost
+/// entities matched by vertices are retained, so returned indices may
+/// include ghosts.
 /// @warning `entities` must not contain duplicate entities.
 template <typename T>
 MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
-                            std::span<const T> values)
+                            std::span<const T> values,
+                            std::string name = "mesh_tags")
 {
   spdlog::info(
       "Building MeshTags object from tagged entities (defined by vertices).");
 
   // Compute the indices of the topology entities (index is set to -1 if
   // it can't be found)
-  assert(topology);
+  if (!topology)
+    throw std::invalid_argument("topology must not be null.");
   const std::vector<std::int32_t> indices
       = entities_to_index(*topology, dim, entities.array());
   if (indices.size() != values.size())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Duplicate mesh entities when building MeshTags object.");
   }
 
@@ -158,12 +180,12 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
 
   // Remove any entities that were not found (these have an index of -1)
   auto it0 = std::ranges::lower_bound(indices_sorted, 0);
-  std::size_t pos0 = std::distance(indices_sorted.begin(), it0);
+  std::size_t pos0 = std::ranges::distance(indices_sorted.begin(), it0);
   indices_sorted.erase(indices_sorted.begin(), it0);
   values_sorted.erase(values_sorted.begin(),
                       std::next(values_sorted.begin(), pos0));
 
   return MeshTags<T>(topology, dim, std::move(indices_sorted),
-                     std::move(values_sorted));
+                     std::move(values_sorted), std::move(name));
 }
 } // namespace dolfinx::mesh

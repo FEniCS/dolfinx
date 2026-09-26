@@ -51,7 +51,7 @@ from dolfinx import fem, graph, mesh
 
 
 # +
-def plot_graph(G: nx.MultiGraph, egde_labels=False):
+def plot_graph(G: nx.DiGraph, egde_labels=False):  # type: ignore[no-any-unimported]
     """Plot the communication graph."""
     pos = nx.circular_layout(G)
     nx.draw_networkx_nodes(G, pos, alpha=0.75)
@@ -91,7 +91,7 @@ def plot_graph(G: nx.MultiGraph, egde_labels=False):
 
 
 # +
-def plot_bar(G: nx.MultiGraph):
+def plot_bar(G: nx.DiGraph):  # type: ignore[no-any-unimported]
     """Plot bars charts with the degree and weights.
 
     Degree is the number of 'out-edges' and the weights are the outward
@@ -137,7 +137,7 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 # -
 
 # The function {py:func}`comm_graph <dolfinx.graph.comm_graph>` builds a
-# communication graph that represents data begin sent from the owning
+# communication graph that represents data being sent from the owning
 # rank to ranks that ghost the data. We use the degree-of-freedom map's
 # `IndexMap`. Building the communication data is collective across MPI
 # ranks. However, a non-empty graph is returned only on rank 0.
@@ -165,13 +165,13 @@ def print_stats(G):
 # -
 
 # The graph data will be processed on rank 0. From the communication
-# graph data, edge and node data for creating a `NetworkX`` graph is build
-# using {py:fuc}`comm_graph_data <dolfinx.graph.comm_graph_data>`.
+# graph data, edge and node data for creating a `NetworkX` graph are built
+# using {py:func}`comm_graph_data <dolfinx.graph.comm_graph_data>`.
 #
 # Data for use with `NetworkX` can also be reconstructed from a JSON
 # string. The JSON string can be created using {py:func}`comm_to_json
-# <dolfinx.graph.comm_to_json>`. This is helpful for cases there a
-# simulaton is executed and the graph data is written to file for later
+# <dolfinx.graph.comm_to_json>`. This is helpful when a simulation is
+# executed and the graph data is written to file for later
 # analysis.
 
 # +
@@ -185,13 +185,13 @@ if msh.comm.rank == 0:
     print("Test:", graph.comm_graph_data(comm_graph))
 
     # Create a NetworkX directed graph.
-    H = nx.DiGraph()
+    H: nx.DiGraph = nx.DiGraph()
     H.add_edges_from(adj_data)
     H.add_nodes_from(node_data)
 
     # Create graph with sorted nodes. This can be helpful for
     # visualisations.
-    G = nx.DiGraph()
+    G: nx.DiGraph = nx.DiGraph()
     G.add_nodes_from(sorted(H.nodes(data=True)))
     G.add_edges_from(H.edges(data=True))
 
@@ -210,7 +210,7 @@ if msh.comm.rank == 0:
 
     # Create graph with sorted nodes. This can be helpful for
     # visualisations.
-    G1 = nx.DiGraph()
+    G1: nx.DiGraph = nx.DiGraph()
     G1.add_nodes_from(sorted(H1.nodes(data=True)))
     G1.add_edges_from(H1.edges(data=True))
     print_stats(G1)

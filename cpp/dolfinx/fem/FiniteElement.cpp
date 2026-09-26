@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Garth N. Wells and Matthew W. Scroggs
+// Copyright (C) 2020-2026 Garth N. Wells and Matthew W. Scroggs
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,11 +9,15 @@
 #include <array>
 #include <basix/finite-element.h>
 #include <basix/interpolation.h>
+#include <basix/maps.h>
 #include <basix/polyset.h>
+#include <cstddef>
 #include <dolfinx/common/log.h>
 #include <format>
 #include <functional>
 #include <numeric>
+#include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -29,15 +33,16 @@ namespace
 /// @return List of DOLFINx elements
 template <std::floating_point T>
 std::vector<std::shared_ptr<const FiniteElement<T>>>
-_build_element_list(std::vector<BasixElementData<T>> elements)
+_build_element_list(std::vector<BasixElementData<T>> elements, std::size_t gdim)
 {
   std::vector<std::shared_ptr<const FiniteElement<T>>> _e;
+  _e.reserve(elements.size());
   std::ranges::transform(elements, std::back_inserter(_e),
-                         [](auto& data)
+                         [gdim](auto& data)
                          {
                            auto& [e, bs, symm] = data;
-                           return std::make_shared<fem::FiniteElement<T>>(e, bs,
-                                                                          symm);
+                           return std::make_shared<fem::FiniteElement<T>>(
+                               e, gdim, bs, symm);
                          });
   return _e;
 }
@@ -51,22 +56,23 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
   // Check that a sub system has been specified
   if (component.empty())
   {
-    throw std::runtime_error("Cannot extract subsystem of finite element. No "
-                             "system was specified");
+    throw std::invalid_argument(
+        "Cannot extract subsystem of finite element. No "
+        "system was specified");
   }
 
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
   {
-    throw std::runtime_error("Cannot extract subsystem of finite element. "
-                             "There are no subsystems.");
+    throw std::invalid_argument("Cannot extract subsystem of finite element. "
+                                "There are no subsystems.");
   }
 
   // Check the number of available sub systems
   if (component[0] >= finite_element.num_sub_elements())
   {
-    throw std::runtime_error("Cannot extract subsystem of finite element. "
-                             "Requested subsystem out of range.");
+    throw std::out_of_range("Cannot extract subsystem of finite element. "
+                            "Requested subsystem out of range.");
   }
 
   // Get sub system
@@ -91,7 +97,7 @@ int _compute_block_size(std::optional<std::vector<std::size_t>> value_shape,
     if (value_shape->size() != 2
         or (value_shape->front() != value_shape->back()))
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Symmetric elements require square rank-2 value shape.");
     }
 
@@ -108,11 +114,53 @@ int _compute_block_size(std::optional<std::vector<std::size_t>> value_shape,
 } // namespace
 
 //-----------------------------------------------------------------------------
+std::vector<std::size_t>
+fem::compute_value_shape(basix::maps::type map_type,
+                         std::span<const std::size_t> reference_value_shape,
+                         std::size_t gdim)
+{
+  // Number of trailing axes contracted with the Jacobian by the
+  // push-forward.
+  std::size_t n = 0;
+  switch (map_type)
+  {
+  case basix::maps::type::identity:
+  case basix::maps::type::L2Piola:
+    n = 0;
+    break;
+  case basix::maps::type::covariantPiola:
+  case basix::maps::type::contravariantPiola:
+    n = 1;
+    break;
+  case basix::maps::type::doubleCovariantPiola:
+  case basix::maps::type::doubleContravariantPiola:
+    n = 2;
+    break;
+  default:
+    throw std::invalid_argument("Unknown map type. Cannot compute the physical "
+                                "value shape of the element.");
+  }
+
+  if (reference_value_shape.size() < n)
+  {
+    throw std::invalid_argument(
+        std::format("Reference value shape has rank {}, but the element map "
+                    "requires at least rank {}.",
+                    reference_value_shape.size(), n));
+  }
+
+  std::vector<std::size_t> value_shape(reference_value_shape.begin(),
+                                       reference_value_shape.end());
+  std::fill_n(std::prev(value_shape.end(), n), n, gdim);
+  return value_shape;
+}
+//-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
-    const basix::FiniteElement<T>& element,
+    const basix::FiniteElement<T>& element, std::size_t gdim,
     const std::optional<std::vector<std::size_t>>& value_shape, bool symmetric)
-    : _value_shape(value_shape.value_or(element.value_shape())),
+    : _value_shape(value_shape.value_or(compute_value_shape(
+          element.map_type(), element.value_shape(), gdim))),
       _bs(_compute_block_size(value_shape, symmetric)),
       _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
       _space_dim(_bs * element.dim()),
@@ -130,15 +178,16 @@ FiniteElement<T>::FiniteElement(
 {
   if (value_shape and !element.value_shape().empty())
   {
-    throw std::runtime_error("Blocked finite elements can be constructed only "
-                             "from scalar base elements.");
+    throw std::invalid_argument(
+        "Blocked finite elements can be constructed only "
+        "from scalar base elements.");
   }
 
   if (value_shape)
   {
     _sub_elements
         = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
-            _bs, std::make_shared<FiniteElement<T>>(element));
+            _bs, std::make_shared<FiniteElement<T>>(element, gdim));
   }
   else
     _sub_elements = {};
@@ -161,8 +210,9 @@ FiniteElement<T>::FiniteElement(
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-FiniteElement<T>::FiniteElement(std::vector<BasixElementData<T>> elements)
-    : FiniteElement(_build_element_list(std::move(elements)))
+FiniteElement<T>::FiniteElement(std::vector<BasixElementData<T>> elements,
+                                std::size_t gdim)
+    : FiniteElement(_build_element_list(std::move(elements), gdim))
 {
 }
 //-----------------------------------------------------------------------------
@@ -203,8 +253,8 @@ FiniteElement<T>::FiniteElement(
     {
       for (std::size_t j = 0; j < _entity_dofs[i].size(); ++j)
       {
-        std::vector<int> sub_ed = e->entity_dofs()[i][j];
-        std::vector<int> sub_ecd = e->entity_closure_dofs()[i][j];
+        const std::vector<int>& sub_ed = e->entity_dofs()[i][j];
+        const std::vector<int>& sub_ecd = e->entity_closure_dofs()[i][j];
         for (auto k : sub_ed)
         {
           for (std::size_t b = 0; b < sub_bs; ++b)
@@ -266,7 +316,11 @@ bool FiniteElement<T>::operator==(const FiniteElement& e) const
         "Missing a Basix element. Cannot check for equivalence");
   }
 
-  return *_element == *e._element;
+  // The value shape is part of the element: the same Basix element on
+  // meshes of different geometric dimension gives different physical
+  // value shapes, and callers use equality to decide that degrees of
+  // freedom can be copied directly.
+  return *_element == *e._element and _value_shape == e._value_shape;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -282,7 +336,7 @@ mesh::CellType FiniteElement<T>::cell_type() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-std::string FiniteElement<T>::signature() const noexcept
+const std::string& FiniteElement<T>::signature() const noexcept
 {
   return _signature;
 }
@@ -312,6 +366,24 @@ std::span<const std::size_t> FiniteElement<T>::value_shape() const
     return *_value_shape;
   else
     throw std::runtime_error("Element does not have a value_shape.");
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+int FiniteElement<T>::physical_base_value_size() const
+{
+  if (!_value_shape)
+    throw std::runtime_error("Element does not have a value_shape.");
+
+  // A blocked element repeats a scalar base element, so one block of
+  // its field is a single scalar. A non-blocked element has one block,
+  // which is the whole field.
+  if (_bs > 1)
+    return 1;
+  else
+  {
+    return std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
+                           std::multiplies{});
+  }
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -416,8 +488,8 @@ const basix::FiniteElement<T>& FiniteElement<T>::basix_element() const
     return *_element;
   else
   {
-    throw std::runtime_error("No Basix element available. "
-                             "Maybe this is a mixed element?");
+    throw std::invalid_argument("No Basix element available. "
+                                "Maybe this is a mixed element?");
   }
 }
 //-----------------------------------------------------------------------------
@@ -428,8 +500,9 @@ basix::maps::type FiniteElement<T>::map_type() const
     return _element->map_type();
   else
   {
-    throw std::runtime_error("Cannot element map type - no Basix element "
-                             "available. Maybe this is a mixed element?");
+    throw std::invalid_argument(
+        "Cannot get element map type - no Basix element "
+        "available. Maybe this is a mixed element?");
   }
 }
 //-----------------------------------------------------------------------------
@@ -469,9 +542,9 @@ FiniteElement<T>::interpolation_points() const
   {
     if (!_element)
     {
-      throw std::runtime_error(
-          "Cannot get interpolation points - no Basix element available. Maybe "
-          "this is a mixed element?");
+      throw std::invalid_argument(
+          "Cannot get interpolation points - no Basix element available. "
+          "Maybe this is a mixed element?");
     }
 
     return _element->points();
@@ -499,8 +572,8 @@ FiniteElement<T>::create_interpolation_operator(const FiniteElement& from) const
   assert(from._element);
   if (_element->map_type() != from._element->map_type())
   {
-    throw std::runtime_error("Interpolation between elements with different "
-                             "maps is not supported.");
+    throw std::invalid_argument("Interpolation between elements with different "
+                                "maps is not supported.");
   }
 
   if (_bs == 1 or from._bs == 1)
@@ -530,7 +603,7 @@ FiniteElement<T>::create_interpolation_operator(const FiniteElement& from) const
   }
   else
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Interpolation for element combination is not supported.");
   }
 }
@@ -578,6 +651,8 @@ FiniteElement<T>::dof_permutation_fn(bool inverse, bool scalar_element) const
       std::vector<std::function<void(std::span<std::int32_t>, std::uint32_t)>>
           sub_element_functions;
       std::vector<int> dims;
+      sub_element_functions.reserve(_sub_elements.size());
+      dims.reserve(_sub_elements.size());
       for (std::size_t i = 0; i < _sub_elements.size(); ++i)
       {
         sub_element_functions.push_back(
@@ -585,8 +660,10 @@ FiniteElement<T>::dof_permutation_fn(bool inverse, bool scalar_element) const
         dims.push_back(_sub_elements[i]->space_dimension());
       }
 
-      return [dims, sub_element_functions](std::span<std::int32_t> doflist,
-                                           std::uint32_t cell_permutation)
+      return
+          [dims = std::move(dims),
+           sub_element_functions = std::move(sub_element_functions)](
+              std::span<std::int32_t> doflist, std::uint32_t cell_permutation)
       {
         std::size_t start = 0;
         for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
@@ -605,10 +682,10 @@ FiniteElement<T>::dof_permutation_fn(bool inverse, bool scalar_element) const
           = _sub_elements.front()->dof_permutation_fn(inverse);
       int dim = _sub_elements.front()->space_dimension();
       int bs = _bs;
-      return
-          [sub_element_function, bs, subdofs = std::vector<std::int32_t>(dim)](
-              std::span<std::int32_t> doflist,
-              std::uint32_t cell_permutation) mutable
+      return [sub_element_function = std::move(sub_element_function), bs,
+              subdofs = std::vector<std::int32_t>(dim)](
+                 std::span<std::int32_t> doflist,
+                 std::uint32_t cell_permutation) mutable
       {
         for (int k = 0; k < bs; ++k)
         {

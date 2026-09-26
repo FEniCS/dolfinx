@@ -188,10 +188,10 @@ class TestVTX:
             element("Lagrange", cell_type.name, 1, shape=(2,), dtype=default_real_type)
         )
 
-        def partitioner(comm, nparts, local_graph, num_ghost_nodes):
+        def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
             """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
-            return adjacencylist(dest)._cpp_object
+            return adjacencylist(dest)
 
         if comm.rank == 0:
             cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
@@ -233,7 +233,7 @@ class TestVTX:
         writer.write(2)
         writer.close()
 
-        reuse_variables = ["NumberOfEntities", "NumberOfNodes", "connectivity", "geometry", "types"]
+        reuse_variables = ["NumberOfCells", "NumberOfNodes", "connectivity", "geometry", "types"]
         target_all = 3  # For all other variables the step count is number of writes
         target_mesh = 1 if reuse else 3
         # For mesh variables the step count is 1 if reuse else number of writes

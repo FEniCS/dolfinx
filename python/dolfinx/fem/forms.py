@@ -39,7 +39,15 @@ class Form(typing.Generic[Scalar]):
 
     # Matched-precision built-ins (geometry == real scalar part). Public:
     # extend with additional (scalar, geometry) dtype pairs as needed.
-    cpp_types: typing.ClassVar[dict] = {
+    cpp_types: typing.ClassVar[
+        dict[
+            tuple[np.dtype, np.dtype],
+            type[_cpp.fem.Form_float32]
+            | type[_cpp.fem.Form_float64]
+            | type[_cpp.fem.Form_complex64]
+            | type[_cpp.fem.Form_complex128],
+        ]
+    ] = {
         (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.Form_float32,
         (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.Form_float64,
         (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.Form_complex64,
@@ -51,6 +59,8 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_float32
         | _cpp.fem.Form_float64
     )
+    _mesh: Mesh
+    _spaces: tuple[FunctionSpace, ...]
     _code: str | list[str] | None
 
     def __init__(
@@ -59,7 +69,9 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_complex128
         | _cpp.fem.Form_float32
         | _cpp.fem.Form_float64,
-        ufcx_form=None,
+        msh: Mesh,
+        spaces: list[FunctionSpace],
+        ufcx_form: typing.Any = None,
         code: str | list[str] | None = None,
         module: types.ModuleType | list[types.ModuleType] | None = None,
     ):
@@ -73,17 +85,22 @@ class Form(typing.Generic[Scalar]):
 
         Args:
             form: Compiled form object.
+            msh: Mesh that form is defined on.
+            spaces: Function spaces that the form arguments are defined
+                on, one per argument.
             ufcx_form: UFCx form.
             code: Form C++ code.
             module: CFFI module.
         """
+        self._cpp_object = form
+        self._mesh = msh
+        self._spaces = tuple(spaces)
         self._code = code
         self._ufcx_form = ufcx_form
-        self._cpp_object = form
         self._module = module
 
     @property
-    def ufcx_form(self):
+    def ufcx_form(self) -> typing.Any:
         """The compiled ufcx_form object."""
         return self._ufcx_form
 
@@ -103,9 +120,9 @@ class Form(typing.Generic[Scalar]):
         return self._cpp_object.rank
 
     @property
-    def function_spaces(self) -> list[FunctionSpace]:
+    def function_spaces(self) -> tuple[FunctionSpace, ...]:
         """Function spaces on which this form is defined."""
-        return self._cpp_object.function_spaces
+        return self._spaces
 
     @property
     def dtype(self) -> np.dtype:
@@ -113,12 +130,12 @@ class Form(typing.Generic[Scalar]):
         return np.dtype(self._cpp_object.dtype)
 
     @property
-    def mesh(self) -> _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64:
+    def mesh(self) -> Mesh:
         """Mesh on which this form is defined."""
-        return self._cpp_object.mesh
+        return self._mesh
 
     @property
-    def integral_types(self):
+    def integral_types(self) -> set[IntegralType]:
         """Integral types in the form."""
         return self._cpp_object.integral_types
 
@@ -170,25 +187,27 @@ def get_integration_domains(
     else:
         domains = []
         if not isinstance(subdomain, list):
+            topology = subdomain.topology
+            tdim = topology.dim
+            # Only assigned when needed below, but declared unconditionally
+            # so the type checker can see it is always bound.
+            exterior_facets = np.empty(0, dtype=np.int32)
             if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
-                tdim = subdomain.topology.dim
-                subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
-                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
+                topology.create_connectivity(tdim - 1, tdim)
+                topology.create_connectivity(tdim, tdim - 1)
 
             if integral_type is IntegralType.vertex:
-                tdim = subdomain.topology.dim
-                subdomain._cpp_object.topology.create_connectivity(0, tdim)
-                subdomain._cpp_object.topology.create_connectivity(tdim, 0)
+                topology.create_connectivity(0, tdim)
+                topology.create_connectivity(tdim, 0)
 
             if integral_type is IntegralType.ridge:
-                tdim = subdomain.topology.dim
-                subdomain._cpp_object.topology.create_connectivity(tdim - 2, tdim)
-                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 2)
+                topology.create_connectivity(tdim - 2, tdim)
+                topology.create_connectivity(tdim, tdim - 2)
 
             # Special handling for exterior facets, compared to other
             # one-sided entity integrals
             if integral_type is IntegralType.exterior_facet:
-                exterior_facets = _cpp.mesh.exterior_facet_indices(subdomain.topology)
+                exterior_facets = _cpp.mesh.exterior_facet_indices(topology._cpp_object)
 
             # Compute integration domains only for each subdomain id in
             # the integrals. If a process has no integral entities,
@@ -201,7 +220,7 @@ def get_integration_domains(
 
                 integration_entities = _cpp.fem.compute_integration_domains(
                     integral_type,
-                    subdomain._cpp_object.topology,
+                    topology._cpp_object,
                     entities,
                 )
                 domains.append((id, integration_entities))
@@ -213,18 +232,31 @@ def get_integration_domains(
 def form_cpp_class(
     dtype: npt.DTypeLike,
 ) -> (
-    _cpp.fem.Form_float32
-    | _cpp.fem.Form_float64
-    | _cpp.fem.Form_complex64
-    | _cpp.fem.Form_complex128
+    type[_cpp.fem.Form_float32]
+    | type[_cpp.fem.Form_float64]
+    | type[_cpp.fem.Form_complex64]
+    | type[_cpp.fem.Form_complex128]
 ):
-    """Wrapped C++ class of a variational form of a specific scalar type.
+    """Look up the wrapped C++ ``Form`` class for a given scalar type.
+
+    DOLFINx's C++ ``Form`` is templated on the scalar type and, for
+    complex scalars, on the geometry (coordinate) type. This resolves
+    ``dtype`` to the matching entry in :attr:`Form.cpp_types`, using
+    matched precision between the scalar and geometry types, e.g.
+    ``np.complex64`` maps to the class with ``np.float32`` geometry
+    and ``np.complex128`` to the class with ``np.float64`` geometry.
 
     Args:
-        dtype: Scalar type of the required form class.
+        dtype: Scalar type of the required form class, e.g.
+            ``np.float64`` or ``np.complex128``.
 
     Returns:
-        Wrapped C++ form class of the requested type.
+        Wrapped C++ form class matching ``dtype``.
+
+    Raises:
+        KeyError: If ``dtype`` is not one of the supported scalar
+            types (``np.float32``, ``np.float64``, ``np.complex64``,
+            ``np.complex128``).
 
     Note:
         This function is for advanced usage, typically when writing
@@ -251,7 +283,7 @@ def mixed_topology_form(
     jit_options: dict | None = None,
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
-):
+) -> Form:
     """Create a mixed-topology from an array of Forms.
 
     # FIXME: This function is a temporary hack for mixed-topology
@@ -291,13 +323,13 @@ def mixed_topology_form(
         if not all(d is data[0] for d in data if d is not None):
             raise ValueError("Subdomain data must be the same for each integral type.")
 
-    mesh = domain.ufl_cargo()
-    if mesh is None:
-        raise RuntimeError("Expecting to find a Mesh in the form.")
-    comm = mesh.comm if jit_comm is None else jit_comm
+    from dolfinx.mesh import _mesh_from_ufl_domain
+
+    msh = _mesh_from_ufl_domain(domain)
+    comm = msh.comm if jit_comm is None else jit_comm
 
     # Geometry type is fixed by the mesh.
-    ftype = Form.cpp_types[np.dtype(dtype), mesh.geometry.x.dtype]
+    ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
 
     ufcx_forms = []
     modules = []
@@ -313,35 +345,78 @@ def mixed_topology_form(
         modules.append(module)
         codes.append(code)
 
-    # In a mixed-topology mesh, each form has the same C++ function
-    # space, so we can extract it from any of them
-    V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+    # In a mixed-topology mesh, each form has the same function space,
+    # so we can extract it from any of them
+    spaces = [arg.ufl_function_space() for arg in form.arguments()]
 
     # TODO coeffs, constants, subdomains, entity_maps
     f = ftype(
-        [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)) for ufcx_form in ufcx_forms],
-        V,
+        [
+            int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))
+            for ufcx_form in ufcx_forms
+        ],
+        [V._cpp_object for V in spaces],
         [],
         [],
         {},
         [],
-        mesh,
+        typing.cast(typing.Any, msh._cpp_object),
     )
-    return Form(f, ufcx_forms, codes, modules)
+    return Form(f, msh, spaces, ufcx_forms, codes, modules)
 
 
+@typing.overload
 def form(
-    form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]],
+    form: None,
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
-):
+) -> None: ...
+@typing.overload
+def form(
+    form: ufl.Form,
+    dtype: npt.DTypeLike = default_scalar_type,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    jit_comm: MPI.Intracomm | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
+) -> Form: ...
+@typing.overload
+def form(
+    form: Sequence[ufl.Form | None],
+    dtype: npt.DTypeLike = default_scalar_type,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    jit_comm: MPI.Intracomm | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
+) -> list[Form | None]: ...
+@typing.overload
+def form(
+    form: Sequence[Sequence[ufl.Form | None]],
+    dtype: npt.DTypeLike = default_scalar_type,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    jit_comm: MPI.Intracomm | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
+) -> list[list[Form | None]]: ...
+def form(
+    form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
+    dtype: npt.DTypeLike = default_scalar_type,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    jit_comm: MPI.Intracomm | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
+) -> Form | list[Form | None] | list[list[Form | None]] | None:
     """Create a Form or list of Forms.
 
     Args:
-        form: A UFL form or iterable of UFL forms.
+        form: A UFL form, or a nested sequence of UFL forms (e.g. for
+            a block form). Any entry may be ``None``, e.g. to indicate
+            a zero block in a block form; each ``None`` entry is
+            returned as ``None`` in the corresponding position of the
+            result, rather than being compiled.
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
@@ -369,7 +444,12 @@ def form(
 
     form_compiler_options["scalar_type"] = dtype
 
-    def _form(form):
+    if entity_maps is None:
+        _entity_maps = []
+    else:
+        _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
+
+    def _form(form: ufl.Form) -> Form:
         """Compile a single UFL form."""
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
@@ -380,12 +460,12 @@ def form(
             if not all(d is data[0] for d in data if d is not None):
                 raise ValueError("Subdomain data must be the same for each integral type.")
 
-        msh = domain.ufl_cargo()
-        if msh is None:
-            raise RuntimeError("Expecting to find a Mesh in the form.")
+        from dolfinx.mesh import _mesh_from_ufl_domain
+
+        msh = _mesh_from_ufl_domain(domain)
         comm = msh.comm if jit_comm is None else jit_comm
 
-        # Geometry type is fixed by the mesh.
+        # Geometry type is fixed by the mesh
         ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
 
         ufcx_form, module, code = jit.ffcx_jit(
@@ -393,10 +473,10 @@ def form(
         )
 
         # For each argument in form extract its function space
-        V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+        spaces = [arg.ufl_function_space() for arg in form.arguments()]
         part = form_compiler_options.get("part", "full")
         if part == "diagonal":
-            V = [V[0]]
+            spaces = [spaces[0]]
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
@@ -408,7 +488,7 @@ def form(
         constants = [c._cpp_object for c in form.constants()]
 
         # Extract subdomain ids from ufcx_form
-        subdomain_ids = {type: [] for type in sd.get(domain).keys()}
+        subdomain_ids: dict[str, list[int]] = {type: [] for type in sd.get(domain).keys()}
         integral_offsets = [
             ufcx_form.form_integral_offsets[i] for i in range(len(IntegralType) + 1)
         ]
@@ -425,46 +505,43 @@ def form(
             for (key, subdomain_data) in sd.get(domain).items()
         }
 
-        if entity_maps is None:
-            _entity_maps = []
-        else:
-            _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
-
         f = ftype(
-            [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
-            V,
+            [int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))],
+            [V._cpp_object for V in spaces],
             coeffs,
             constants,
             subdomains,
             _entity_maps,
-            msh,
+            typing.cast(typing.Any, msh._cpp_object),
         )
-        return Form(f, ufcx_form, code, module)
+        return Form(f, msh, spaces, ufcx_form, code, module)
 
-    def _zero_form(form):
+    def _zero_form(form: ufl.ZeroBaseForm) -> Form:
         """Compile a single 'zero' UFL form.
 
         I.e. a form with no integrals.
         """
-        V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
-        assert len(V) > 0
-        msh = V[0].mesh
+        spaces = [arg.ufl_function_space() for arg in form.arguments()]
+        assert len(spaces) > 0
+        msh = spaces[0].mesh
 
         # Geometry type is fixed by the mesh.
         ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
 
         f = ftype(
-            spaces=V,
+            spaces=[V._cpp_object for V in spaces],
             integrals={},
             coefficients=[],
             constants=[],
             need_permutation_data=False,
-            entity_maps=[],
-            mesh=msh,
+            entity_maps=_entity_maps,
+            mesh=msh._cpp_object,
         )
-        return Form(f)
+        return Form(f, msh, spaces)
 
-    def _create_form(form):
+    def _create_form(
+        form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
+    ) -> typing.Any:
         """Recursively convert ufl.Forms to dolfinx.fem.Form.
 
         Args:
@@ -483,26 +560,24 @@ def form(
         else:
             return form
 
-    return _create_form(form)
+    return typing.cast(
+        "Form | list[Form | None] | list[list[Form | None]] | None", _create_form(form)
+    )
 
 
 @typing.overload
-def extract_function_spaces(forms: Form, index: int = 0) -> FunctionSpace | None: ...
-
-
+def extract_function_spaces(forms: Form, index: None = None) -> FunctionSpace | None: ...
 @typing.overload
 def extract_function_spaces(
-    forms: Sequence[Form], index: int = 0
+    forms: Sequence[Form | None], index: None = None
 ) -> list[FunctionSpace | None]: ...
-
-
 @typing.overload
 def extract_function_spaces(
-    forms: Sequence[Sequence[Form]], index: int = 0
-) -> list[list[FunctionSpace | None]]: ...
-
-
-def extract_function_spaces(forms, index: int = 0):
+    forms: Sequence[Sequence[Form | None]], index: int = 0
+) -> list[FunctionSpace | None]: ...
+def extract_function_spaces(
+    forms: Form | Sequence[Form | None] | Sequence[Sequence[Form | None]], index: int | None = None
+) -> FunctionSpace | list[FunctionSpace | None] | None:
     """Extract common function spaces from an array of forms.
 
     If ``forms`` is a list of linear forms, this function returns of list
@@ -513,24 +588,29 @@ def extract_function_spaces(forms, index: int = 0):
 
     Args:
         forms: A list of forms or a 2D array of forms.
-        index: Index of the function space to extract. If ``index=0``,
-            the test function spaces are extracted, if ``index=1`` the
-            trial function spaces are extracted.
+        index: For a 2D array of bilinear forms, selects whether the
+            common test function space of each row (``index=0``) or
+            the common trial function space of each column
+            (``index=1``) is extracted. Must be ``None`` (the
+            default) for a single form or a 1D sequence of linear
+            forms.
 
     Returns:
         List of function spaces.
     """
     _forms = np.array(forms)
     if _forms.ndim == 0:
+        if index is not None:
+            raise ValueError("index must be None for a single form.")
         form: Form = _forms.tolist()
         return form.function_spaces[0] if form is not None else None
     elif _forms.ndim == 1:
-        if index != 0:
-            raise ValueError("index must be 0 for a 1D array of forms.")
+        if index is not None:
+            raise ValueError("index must be None for a 1D array of forms.")
         for form in _forms:
             if form is not None and form.rank != 1:
                 raise ValueError("Expected a linear form.")
-        return [form.function_spaces[0] if form is not None else None for form in forms]  # type: ignore[union-attr]
+        return [form.function_spaces[0] if form is not None else None for form in _forms]
     elif _forms.ndim == 2:
         if index not in (0, 1):
             raise ValueError("index must be 0 or 1 for a 2D array of forms.")
@@ -539,7 +619,7 @@ def extract_function_spaces(forms, index: int = 0):
         )
         V = extract_spaces(_forms)
 
-        def unique_spaces(V):
+        def unique_spaces(V: npt.NDArray[np.object_]) -> npt.NDArray[np.object_]:
             # Pick spaces from first column
             V0 = V[:, 0]
 
@@ -594,17 +674,17 @@ def compile_form(
     p_ffcx = ffcx.get_options(form_compiler_options)
     p_jit = jit.get_options(jit_options)
     ufcx_form, module, code = jit.ffcx_jit(comm, form, p_ffcx, p_jit)
-    scalar_type: npt.DTypeLike = p_ffcx["scalar_type"]  # type: ignore [assignment]
+    scalar_type: npt.DTypeLike = typing.cast(npt.DTypeLike, p_ffcx["scalar_type"])
     return CompiledForm(form, ufcx_form, module, code, scalar_type)
 
 
 def form_cpp_creator(
     dtype: npt.DTypeLike,
 ) -> (
-    _cpp.fem.Form_float32
-    | _cpp.fem.Form_float64
-    | _cpp.fem.Form_complex64
-    | _cpp.fem.Form_complex128
+    typing.Callable[..., _cpp.fem.Form_float32]
+    | typing.Callable[..., _cpp.fem.Form_float64]
+    | typing.Callable[..., _cpp.fem.Form_complex64]
+    | typing.Callable[..., _cpp.fem.Form_complex128]
 ):
     """A wrapped C++ constructor for a form with a specified scalar type.
 
@@ -701,7 +781,7 @@ def create_form(
 
     ftype = form_cpp_creator(form.dtype)
     f = ftype(
-        form.module.ffi.cast("uintptr_t", form.module.ffi.addressof(form.ufcx_form)),
+        int(form.module.ffi.cast("uintptr_t", form.module.ffi.addressof(form.ufcx_form))),
         [fs._cpp_object for fs in V],
         coefficients,
         constants,
@@ -709,7 +789,7 @@ def create_form(
         _entity_maps,
         msh._cpp_object,
     )
-    return Form(f, form.ufcx_form, form.code)
+    return Form(f, msh, list(V), form.ufcx_form, form.code)
 
 
 def _derive_univariate_residual(
@@ -719,7 +799,7 @@ def _derive_univariate_residual(
 ) -> ufl.Form:
     if du is None:
         du = ufl.TestFunction(u.function_space)
-    return ufl.derivative(F, u, du)
+    return typing.cast(ufl.Form, ufl.derivative(F, u, du))
 
 
 def _derive_block_residual(
@@ -729,7 +809,7 @@ def _derive_block_residual(
 ) -> Sequence[ufl.Form]:
     if du is None:
         du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
-    return ufl.extract_blocks(ufl.derivative(F, u, du))
+    return typing.cast(Sequence[ufl.Form], ufl.extract_blocks(ufl.derivative(F, u, du)))
 
 
 def _derive_univariate_jacobian(
@@ -739,7 +819,7 @@ def _derive_univariate_jacobian(
 ) -> ufl.Form:
     if du is None:
         du = ufl.TrialFunction(u.function_space)
-    return ufl.derivative(F, u, du)
+    return typing.cast(ufl.Form, ufl.derivative(F, u, du))
 
 
 def _derive_block_jacobian(
@@ -758,6 +838,18 @@ def _derive_block_jacobian(
     return [[ufl.derivative(F_i, u_j, du_j) for u_j, du_j in zip(u, du, strict=True)] for F_i in F]
 
 
+@typing.overload
+def derivative_block(F: ufl.Form, u: Function, du: ufl.Argument | None = None) -> ufl.Form: ...
+@typing.overload
+def derivative_block(
+    F: Sequence[ufl.Form],
+    u: Sequence[Function],
+    du: Sequence[ufl.Argument] | None = None,
+) -> Sequence[Sequence[ufl.Form]]: ...
+@typing.overload
+def derivative_block(
+    F: ufl.Form, u: Sequence[Function], du: Sequence[ufl.Argument] | None = None
+) -> Sequence[ufl.Form]: ...
 def derivative_block(
     F: ufl.Form | Sequence[ufl.Form],
     u: Function | Sequence[Function],
@@ -818,15 +910,27 @@ def derivative_block(
     """  # noqa: D301
     if isinstance(F, ufl.Form) and not F.arguments():
         if isinstance(u, Function):
-            return _derive_univariate_residual(F, u, du)  # type: ignore
+            if du is not None and not isinstance(du, ufl.Argument):
+                raise ValueError("du must be a ufl.Argument when u is a ufl.Function.")
+            return _derive_univariate_residual(F, u, du)
         elif isinstance(u, Sequence):
-            return _derive_block_residual(F, u, du)  # type: ignore
+            if du is not None and not isinstance(du, Sequence):
+                raise ValueError("du must be a sequence of ufl.Argument when u is a sequence.")
+            return _derive_block_residual(F, u, du)
         else:
             raise ValueError("u must be either a ufl.Function or a sequence of ufl.Function")
     elif isinstance(F, ufl.Form) and len(F.arguments()) == 1:
-        return _derive_univariate_jacobian(F, u, du)  # type: ignore[arg-type]
+        if not isinstance(u, Function):
+            raise ValueError("u must be a ufl.Function when F is a rank-one form.")
+        if du is not None and not isinstance(du, ufl.Argument):
+            raise ValueError("du must be a ufl.Argument when F is a rank-one form.")
+        return _derive_univariate_jacobian(F, u, du)
     elif isinstance(F, Sequence):
-        return _derive_block_jacobian(F, u, du)  # type: ignore
+        if not isinstance(u, Sequence):
+            raise ValueError("u must be a sequence of ufl.Function when F is a sequence.")
+        if du is not None and not isinstance(du, Sequence):
+            raise ValueError("du must be a sequence of ufl.Argument when F is a sequence.")
+        return _derive_block_jacobian(F, u, du)
     else:
         raise ValueError(
             "F must be either a UFL form (with rank zero or one), or a sequence of "

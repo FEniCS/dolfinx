@@ -21,9 +21,11 @@ void assemble(nb::module_& m)
   declare_assembly_functions<std::complex<float>, float>(m);
   declare_assembly_functions<std::complex<double>, double>(m);
 
+  // interpolation_matrix/discrete_curl/discrete_gradient produce a real
+  // (never complex) operator matrix, independent of the scalar type of
+  // the FEM problem the FunctionSpace belongs to, so only one
+  // instantiation per geometry type is registered.
   declare_discrete_operators<float, float>(m);
   declare_discrete_operators<double, double>(m);
-  declare_discrete_operators<std::complex<float>, float>(m);
-  declare_discrete_operators<std::complex<double>, double>(m);
 }
 } // namespace dolfinx_wrappers

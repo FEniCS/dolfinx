@@ -9,6 +9,7 @@
 #include "log.h"
 #include <format>
 #include <iostream>
+#include <stdexcept>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
@@ -25,8 +26,7 @@ void TimeLogger::register_timing(
     std::string_view task, std::chrono::duration<double, std::ratio<1>> time)
 {
   // Print a message
-  std::string line = std::format("Elapsed time: {} ({})", time.count(), task);
-  spdlog::debug(line.c_str());
+  spdlog::debug("Elapsed time: {} ({})", time.count(), task);
 
   // Store values for summary
   if (auto it = _timings.find(task); it != _timings.end())
@@ -73,7 +73,7 @@ TimeLogger::timing(std::string_view task) const
   auto it = _timings.find(task);
   if (it == _timings.end())
   {
-    throw std::runtime_error(
+    throw std::out_of_range(
         std::format("No timings registered for task \"{}\".", task));
   }
 

@@ -8,27 +8,146 @@
 #include "AdjacencyList.h"
 #include "partitioners.h"
 #include <algorithm>
+#include <array>
 #include <boost/sort/sort.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
+#include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
-#include <map>
+#include <dolfinx/common/sort.h>
 #include <memory>
+#include <numeric>
+#include <span>
+#include <stdexcept>
+#include <vector>
 
 using namespace dolfinx;
 
+namespace
+{
+/// @brief Setup shared by both graph::build::distribute overloads:
+/// determine send/receive ranks and start exchanging item counts,
+/// before each overload packs and exchanges its own payload.
+///
+/// The size exchange (`request`) is left pending so the caller can
+/// overlap it with (potentially expensive) send-buffer packing.
+struct DistributionPlan
+{
+  /// (destination rank, local index, owning rank) triples for each
+  /// entry of `destinations`, one per outgoing edge, sorted by
+  /// destination rank.
+  std::vector<std::array<int, 3>> dest_to_index;
+  /// Unique destination ranks, i.e. the neighbourhood communicator's
+  /// out-edges.
+  std::vector<int> dest;
+  /// Number of rows sent to each entry of `dest`.
+  std::vector<std::int32_t> num_items_per_dest;
+  /// Send displacements into `dest_to_index`, size `dest.size() + 1`.
+  std::vector<std::int32_t> send_disp;
+  /// Source ranks, i.e. the neighbourhood communicator's in-edges.
+  std::vector<int> src;
+  /// Number of rows received from each entry of `src`. Filled once
+  /// `request` completes.
+  std::vector<int> num_items_recv;
+  /// Neighbourhood communicator. The caller must `MPI_Comm_free` it.
+  MPI_Comm neigh_comm;
+  /// Pending `MPI_Ineighbor_alltoall` for `num_items_recv`. The caller
+  /// must `MPI_Wait` it before reading `num_items_recv`.
+  MPI_Request request;
+};
+
+DistributionPlan compute_distribution_plan(
+    MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& destinations)
+{
+  DistributionPlan plan;
+
+  // Build (dest, index, owning rank) list and sort
+  plan.dest_to_index.reserve(destinations.array().size());
+  for (std::int32_t i = 0; i < destinations.num_nodes(); ++i)
+  {
+    auto di = destinations.links(i);
+    std::ranges::transform(di, std::back_inserter(plan.dest_to_index),
+                           [i, d0 = di.front()](auto d) -> std::array<int, 3>
+                           { return {d, i, d0}; });
+  }
+
+  // Only grouping by destination rank is required (order within a group
+  // is irrelevant downstream), and the key is bounded by the
+  // communicator size, so a radix sort keyed on the destination rank
+  // alone is used rather than a full lexicographic sort.
+  dolfinx::radix_sort(plan.dest_to_index, [](const auto& e) { return e[0]; });
+
+  // Build list of unique dest ranks and count number of rows to send to
+  // each dest (by neighbourhood rank)
+  {
+    auto it = plan.dest_to_index.begin();
+    while (it != plan.dest_to_index.end())
+    {
+      // Store global rank and find iterator to next global rank
+      plan.dest.push_back(it->front());
+      auto it1 = std::find_if(it, plan.dest_to_index.end(),
+                              [r = plan.dest.back()](auto& idx)
+                              { return idx[0] != r; });
+
+      // Store number of items for current rank
+      plan.num_items_per_dest.push_back(std::ranges::distance(it, it1));
+
+      // Advance iterator
+      it = it1;
+    }
+  }
+
+  // Determine source ranks. Sort ranks to make distribution
+  // deterministic.
+  plan.src = dolfinx::MPI::compute_graph_edges_nbx(comm, plan.dest);
+  std::ranges::sort(plan.src);
+
+  // Create neighbourhood communicator
+  plan.dest.reserve(1);
+  MPI_Dist_graph_create_adjacent(
+      comm, plan.src.size(), plan.src.data(), MPI_UNWEIGHTED, plan.dest.size(),
+      plan.dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &plan.neigh_comm);
+
+  // Send number of rows to receivers
+  plan.num_items_recv.resize(plan.src.size());
+  plan.num_items_per_dest.reserve(1);
+  plan.num_items_recv.reserve(1);
+  MPI_Ineighbor_alltoall(plan.num_items_per_dest.data(), 1, MPI_INT,
+                         plan.num_items_recv.data(), 1, MPI_INT,
+                         plan.neigh_comm, &plan.request);
+
+  // Compute send displacements
+  plan.send_disp.resize(plan.num_items_per_dest.size() + 1, 0);
+  std::partial_sum(plan.num_items_per_dest.begin(),
+                   plan.num_items_per_dest.end(),
+                   std::next(plan.send_disp.begin()));
+
+  return plan;
+}
+} // namespace
+
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-graph::partition_graph(MPI_Comm comm, int nparts,
-                       const AdjacencyList<std::int64_t>& local_graph,
-                       bool ghosting)
+bool graph::has_partitioner(const AnyPartitionFunction& partitioner)
+{
+  return std::visit([](const auto& p) { return static_cast<bool>(p); },
+                    partitioner);
+}
+//-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t> graph::partition_graph(
+    MPI_Comm comm, int nparts, const AdjacencyList<std::int64_t>& local_graph,
+    std::optional<std::span<const std::int32_t>> node_weights,
+    std::optional<std::span<const std::int32_t>> edge_weights, bool ghosting)
 {
 #if HAS_PARMETIS
-  return graph::parmetis::partitioner()(comm, nparts, local_graph, ghosting);
+  return graph::parmetis::partitioner()(comm, nparts, local_graph, node_weights,
+                                        edge_weights, ghosting);
 #elif HAS_PTSCOTCH
-  return graph::scotch::partitioner()(comm, nparts, local_graph, ghosting);
+  return graph::scotch::partitioner()(comm, nparts, local_graph, node_weights,
+                                      edge_weights, ghosting);
 #elif HAS_KAHIP
-  return graph::kahip::partitioner()(comm, nparts, local_graph, ghosting);
+  return graph::kahip::partitioner()(comm, nparts, local_graph, node_weights,
+                                     edge_weights, ghosting);
 #else
 // Should never reach this point
 #endif
@@ -65,72 +184,16 @@ graph::build::distribute(MPI_Comm comm,
   // and node global index)
   const std::size_t buffer_shape1 = shape1 + 3;
 
-  // Build (dest, index, owning rank) list and sort
-  std::vector<std::array<int, 3>> dest_to_index;
-  dest_to_index.reserve(destinations.array().size());
-  for (std::int32_t i = 0; i < destinations.num_nodes(); ++i)
-  {
-    auto di = destinations.links(i);
-    std::ranges::transform(di, std::back_inserter(dest_to_index),
-                           [i, d0 = di.front()](auto d) -> std::array<int, 3>
-                           { return {d, i, d0}; });
-  }
-  std::ranges::sort(dest_to_index);
-
-  // Build list of unique dest ranks and count number of rows to send to
-  // each dest (by neighbourhood rank)
-  std::vector<int> dest;
-  std::vector<std::int32_t> num_items_per_dest;
-  {
-    auto it = dest_to_index.begin();
-    while (it != dest_to_index.end())
-    {
-      // Store global rank and find iterator to next global rank
-      dest.push_back(it->front());
-      auto it1
-          = std::find_if(it, dest_to_index.end(),
-                         [r = dest.back()](auto idx) { return idx[0] != r; });
-
-      // Store number of items for current rank
-      num_items_per_dest.push_back(std::distance(it, it1));
-
-      // Advance iterator
-      it = it1;
-    }
-  }
-
-  // Determine source ranks. Sort ranks to make distribution
-  // deterministic.
-  std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-  std::ranges::sort(src);
-
-  // Create neighbourhood communicator
-  MPI_Comm neigh_comm;
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm);
-
-  // Send number of nodes to receivers
-  std::vector<int> num_items_recv(src.size());
-  num_items_per_dest.reserve(1);
-  num_items_recv.reserve(1);
-  MPI_Request request_size;
-  MPI_Ineighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
-                         num_items_recv.data(), 1, MPI_INT, neigh_comm,
-                         &request_size);
-
-  // Compute send displacements
-  std::vector<std::int32_t> send_disp(num_items_per_dest.size() + 1, 0);
-  std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
-                   std::next(send_disp.begin()));
+  DistributionPlan plan = compute_distribution_plan(comm, destinations);
 
   // Pack send buffer
-  std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
+  std::vector<std::int64_t> send_buffer(buffer_shape1 * plan.send_disp.back(),
+                                        -1);
   {
-    assert(send_disp.back() == (std::int32_t)dest_to_index.size());
-    for (std::size_t i = 0; i < dest_to_index.size(); ++i)
+    assert(plan.send_disp.back() == (std::int32_t)plan.dest_to_index.size());
+    for (std::size_t i = 0; i < plan.dest_to_index.size(); ++i)
     {
-      std::array<int, 3> dest_data = dest_to_index[i];
+      std::array<int, 3> dest_data = plan.dest_to_index[i];
       const std::size_t pos = dest_data[1];
 
       std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
@@ -145,9 +208,9 @@ graph::build::distribute(MPI_Comm comm,
   }
 
   // Prepare receive displacement
-  MPI_Wait(&request_size, MPI_STATUS_IGNORE);
-  std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
-  std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
+  MPI_Wait(&plan.request, MPI_STATUS_IGNORE);
+  std::vector<std::int32_t> recv_disp(plan.num_items_recv.size() + 1, 0);
+  std::partial_sum(plan.num_items_recv.begin(), plan.num_items_recv.end(),
                    std::next(recv_disp.begin()));
 
   // Send/receive data facet
@@ -155,12 +218,12 @@ graph::build::distribute(MPI_Comm comm,
   MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
   MPI_Type_commit(&compound_type);
   std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
-                         send_disp.data(), compound_type, recv_buffer.data(),
-                         num_items_recv.data(), recv_disp.data(), compound_type,
-                         neigh_comm);
+  MPI_Neighbor_alltoallv(send_buffer.data(), plan.num_items_per_dest.data(),
+                         plan.send_disp.data(), compound_type,
+                         recv_buffer.data(), plan.num_items_recv.data(),
+                         recv_disp.data(), compound_type, plan.neigh_comm);
   MPI_Type_free(&compound_type);
-  MPI_Comm_free(&neigh_comm);
+  MPI_Comm_free(&plan.neigh_comm);
 
   // Unpack receive buffer
   std::vector<int> src_ranks, src_ranks1, ghost_index_owner;
@@ -180,7 +243,7 @@ graph::build::distribute(MPI_Comm comm,
   global_indices1.reserve(recv_disp.back());
   for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
   {
-    const int src_rank = src[p];
+    const int src_rank = plan.src[p];
     for (std::int32_t i = recv_disp[p]; i < recv_disp[p + 1]; ++i)
     {
       std::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
@@ -249,72 +312,16 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   // and node global index)
   const std::size_t buffer_shape1 = shape[1] + 2;
 
-  // Build (dest, index, owning rank) list and sort
-  std::vector<std::array<int, 3>> dest_to_index;
-  dest_to_index.reserve(destinations.array().size());
-  for (std::int32_t i = 0; i < destinations.num_nodes(); ++i)
-  {
-    auto di = destinations.links(i);
-    std::ranges::transform(di, std::back_inserter(dest_to_index),
-                           [i, d0 = di.front()](auto d) -> std::array<int, 3>
-                           { return {d, i, d0}; });
-  }
-  std::ranges::sort(dest_to_index);
-
-  // Build list of unique dest ranks and count number of rows to send to
-  // each dest (by neighbourhood rank)
-  std::vector<int> dest;
-  std::vector<std::int32_t> num_items_per_dest;
-  {
-    auto it = dest_to_index.begin();
-    while (it != dest_to_index.end())
-    {
-      // Store global rank and find iterator to next global rank
-      dest.push_back(it->front());
-      auto it1
-          = std::find_if(it, dest_to_index.end(),
-                         [r = dest.back()](auto& idx) { return idx[0] != r; });
-
-      // Store number of items for current rank
-      num_items_per_dest.push_back(std::distance(it, it1));
-
-      // Advance iterator
-      it = it1;
-    }
-  }
-
-  // Determine source ranks. Sort ranks to make distribution
-  // deterministic.
-  std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-  std::ranges::sort(src);
-
-  // Create neighbourhood communicator
-  MPI_Comm neigh_comm;
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm);
-
-  // Send number of nodes to receivers
-  std::vector<int> num_items_recv(src.size());
-  num_items_per_dest.reserve(1);
-  num_items_recv.reserve(1);
-  MPI_Request request_size;
-  MPI_Ineighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
-                         num_items_recv.data(), 1, MPI_INT, neigh_comm,
-                         &request_size);
-
-  // Compute send displacements
-  std::vector<std::int32_t> send_disp(num_items_per_dest.size() + 1, 0);
-  std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
-                   std::next(send_disp.begin()));
+  DistributionPlan plan = compute_distribution_plan(comm, destinations);
 
   // Pack send buffer
-  std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
+  std::vector<std::int64_t> send_buffer(buffer_shape1 * plan.send_disp.back(),
+                                        -1);
   {
-    assert(send_disp.back() == (std::int32_t)dest_to_index.size());
-    for (std::size_t i = 0; i < dest_to_index.size(); ++i)
+    assert(plan.send_disp.back() == (std::int32_t)plan.dest_to_index.size());
+    for (std::size_t i = 0; i < plan.dest_to_index.size(); ++i)
     {
-      std::array<int, 3> dest_data = dest_to_index[i];
+      std::array<int, 3> dest_data = plan.dest_to_index[i];
       const std::size_t pos = dest_data[1];
 
       std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
@@ -328,9 +335,9 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   }
 
   // Prepare receive displacement
-  MPI_Wait(&request_size, MPI_STATUS_IGNORE);
-  std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
-  std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
+  MPI_Wait(&plan.request, MPI_STATUS_IGNORE);
+  std::vector<std::int32_t> recv_disp(plan.num_items_recv.size() + 1, 0);
+  std::partial_sum(plan.num_items_recv.begin(), plan.num_items_recv.end(),
                    std::next(recv_disp.begin()));
 
   // Send/receive data facet
@@ -338,12 +345,12 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
   MPI_Type_commit(&compound_type);
   std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
-                         send_disp.data(), compound_type, recv_buffer.data(),
-                         num_items_recv.data(), recv_disp.data(), compound_type,
-                         neigh_comm);
+  MPI_Neighbor_alltoallv(send_buffer.data(), plan.num_items_per_dest.data(),
+                         plan.send_disp.data(), compound_type,
+                         recv_buffer.data(), plan.num_items_recv.data(),
+                         recv_disp.data(), compound_type, plan.neigh_comm);
   MPI_Type_free(&compound_type);
-  MPI_Comm_free(&neigh_comm);
+  MPI_Comm_free(&plan.neigh_comm);
 
   spdlog::debug("Received {} data on {} [{}]", recv_disp.back(), rank,
                 shape[1]);
@@ -355,7 +362,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   std::vector<int> src_ranks, src_ranks1;
   for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
   {
-    int src_rank = src[p];
+    int src_rank = plan.src[p];
     for (std::int32_t q = recv_disp[p]; q < recv_disp[p + 1]; ++q)
     {
       std::span row(recv_buffer.data() + q * buffer_shape1, buffer_shape1);
@@ -409,7 +416,12 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   // Find out how many ghosts are on each neighboring process
   std::vector<int> ghost_index_count;
   std::vector<int> neighbors;
-  std::map<int, int> proc_to_neighbor;
+  // A tree map here costs a heap-allocating node lookup/insert on
+  // every one of potentially many millions of ghost ranks touched
+  // below, even though the map itself stays tiny (bounded by the
+  // number of distinct neighbour ranks); an open-addressed map avoids
+  // that per-element allocation and pointer-chasing.
+  boost::unordered_flat_map<int, int> proc_to_neighbor;
   for (int p : ghost_owners)
   {
     assert(p != dolfinx::MPI::rank(comm));
@@ -427,6 +439,8 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
 
   std::vector<int> in_edges
       = dolfinx::MPI::compute_graph_edges_pcx(comm, neighbors);
+  in_edges.reserve(1);
+  neighbors.reserve(1);
   MPI_Dist_graph_create_adjacent(comm, in_edges.size(), in_edges.data(),
                                  MPI_UNWEIGHTED, neighbors.size(),
                                  neighbors.data(), MPI_UNWEIGHTED,
@@ -481,33 +495,53 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   // Complete global_offset scan
   MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
 
-  std::vector<std::array<std::int64_t, 2>> old_to_new;
-  old_to_new.reserve(owned_indices.size());
-
-  for (auto idx : owned_indices)
-  {
-    old_to_new.push_back(
-        {idx, static_cast<std::int64_t>(offset_local + old_to_new.size())});
-  }
-
   if (num_threads > 1)
   {
+    std::vector<std::array<std::int64_t, 2>> old_to_new;
+    old_to_new.reserve(owned_indices.size());
+    for (auto idx : owned_indices)
+    {
+      old_to_new.push_back(
+          {idx, static_cast<std::int64_t>(offset_local + old_to_new.size())});
+    }
+
     boost::sort::block_indirect_sort(old_to_new.begin(), old_to_new.end(),
                                      num_threads);
+
+    // Replace values in recv_data with new_index and send back
+    std::ranges::transform(
+        recv_data, recv_data.begin(),
+        [&old_to_new](auto r)
+        {
+          auto it = std::ranges::lower_bound(old_to_new, r, std::ranges::less(),
+                                             [](auto e) { return e[0]; });
+          assert(it != old_to_new.end() and it->front() == r);
+          return (*it)[1];
+        });
   }
   else
-    std::ranges::sort(old_to_new);
+  {
+    // Map from old (global) index to new (global) index. A hash map
+    // replaces the sort and O(log n) binary search with an
+    // O(1)-average lookup per entry of recv_data -- worth it since
+    // owned_indices (built once) can be in the millions, while
+    // recv_data (the ghost-boundary traffic, looked up repeatedly) is
+    // typically far smaller.
+    boost::unordered_flat_map<std::int64_t, std::int64_t> old_to_new;
+    old_to_new.reserve(owned_indices.size());
+    std::int64_t new_idx = offset_local;
+    for (auto idx : owned_indices)
+      old_to_new.emplace(idx, new_idx++);
 
-  // Replace values in recv_data with new_index and send back
-  std::ranges::transform(recv_data, recv_data.begin(),
-                         [&old_to_new](auto r)
-                         {
-                           auto it = std::ranges::lower_bound(
-                               old_to_new, r, std::ranges::less(),
-                               [](auto e) { return e[0]; });
-                           assert(it != old_to_new.end() and it->front() == r);
-                           return (*it)[1];
-                         });
+    // Replace values in recv_data with new_index and send back
+    std::ranges::transform(recv_data, recv_data.begin(),
+                           [&old_to_new](auto r)
+                           {
+                             auto it = old_to_new.find(r);
+                             assert(it != old_to_new.end());
+                             return it->second;
+                           });
+  }
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
@@ -517,23 +551,22 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   MPI_Comm_free(&neighbor_comm_fwd);
   MPI_Comm_free(&neighbor_comm_rev);
 
-  // Build (old id,  new id) pairs
-  std::vector<std::array<std::int64_t, 2>> old_to_new1(send_data.size());
-  std::ranges::transform(send_data, new_recv, old_to_new1.begin(),
-                         [](auto idx_old, auto idx_new) ->
-                         typename decltype(old_to_new1)::value_type
-                         { return {idx_old, idx_new}; });
-  std::ranges::sort(old_to_new1);
+  // Build old id -> new id map. As above, built once and then queried
+  // once per entry of `ghost_indices` -- a hash map replaces the sort
+  // and the O(log n) binary search per lookup with an O(1)-average
+  // lookup.
+  boost::unordered_flat_map<std::int64_t, std::int64_t> old_to_new1;
+  old_to_new1.reserve(send_data.size());
+  for (std::size_t i = 0; i < send_data.size(); ++i)
+    old_to_new1.emplace(send_data[i], new_recv[i]);
 
   std::vector<std::int64_t> ghost_global_indices(ghost_indices.size());
   std::ranges::transform(ghost_indices, ghost_global_indices.begin(),
                          [&old_to_new1](auto q)
                          {
-                           auto it = std::ranges::lower_bound(
-                               old_to_new1, std::array<std::int64_t, 2>{q, 0},
-                               [](auto a, auto b) { return a[0] < b[0]; });
-                           assert(it != old_to_new1.end() and it->front() == q);
-                           return (*it)[1];
+                           auto it = old_to_new1.find(q);
+                           assert(it != old_to_new1.end());
+                           return it->second;
                          });
 
   return ghost_global_indices;

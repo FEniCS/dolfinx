@@ -1,25 +1,35 @@
-set(
-  HEADERS_common
-  ${CMAKE_CURRENT_SOURCE_DIR}/defines.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_common.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_doc.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/log.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/sort.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/types.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/local_range.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/math.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/MPI.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Scatterer.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Table.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Timer.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/timing.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
-  PARENT_SCOPE
+target_sources(
+  dolfinx
+  PRIVATE
+    IndexMap.cpp
+    MPI.cpp
+    Table.cpp
+    TimeLogger.cpp
+    log.cpp
+    petsc.cpp
+    timing.cpp
 )
 
 target_sources(
   dolfinx
-  PRIVATE IndexMap.cpp log.cpp MPI.cpp Table.cpp TimeLogger.cpp timing.cpp
+  PUBLIC
+    FILE_SET HEADERS
+      FILES
+        IndexMap.h
+        MPI.h
+        Scatterer.h
+        Table.h
+        TimeLogger.h
+        Timer.h
+        defines.h
+        dolfinx_common.h
+        dolfinx_doc.h
+        local_range.h
+        log.h
+        math.h
+        petsc.h
+        sort.h
+        timing.h
+        types.h
+        utils.h
 )

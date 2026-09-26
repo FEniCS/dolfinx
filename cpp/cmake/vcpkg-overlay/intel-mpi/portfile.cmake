@@ -23,8 +23,11 @@ file(
 )
 
 # Get files in bin directory
-file(GLOB TOOLS_FILES "${SOURCE_TOOLS_PATH}/*.exe" "${SOURCE_TOOLS_PATH}/*.dll"
-     "${SOURCE_TOOLS_PATH}/*.bat"
+file(
+  GLOB TOOLS_FILES
+  "${SOURCE_TOOLS_PATH}/*.exe"
+  "${SOURCE_TOOLS_PATH}/*.dll"
+  "${SOURCE_TOOLS_PATH}/*.bat"
 )
 
 # Install tools files
@@ -32,51 +35,53 @@ file(INSTALL ${TOOLS_FILES} DESTINATION "${CURRENT_PACKAGES_DIR}/tools/${PORT}")
 
 # Also install include files in the tools directory because the compiler
 # wrappers (mpicc.bat for example) needs them
-file(INSTALL ${SOURCE_INCLUDE_FILES}
-     DESTINATION "${CURRENT_PACKAGES_DIR}/tools/${PORT}/include"
+file(
+  INSTALL ${SOURCE_INCLUDE_FILES}
+  DESTINATION "${CURRENT_PACKAGES_DIR}/tools/${PORT}/include"
 )
 
 # Install include files
-file(INSTALL ${SOURCE_INCLUDE_FILES}
-     DESTINATION "${CURRENT_PACKAGES_DIR}/include"
+file(
+  INSTALL ${SOURCE_INCLUDE_FILES}
+  DESTINATION "${CURRENT_PACKAGES_DIR}/include"
 )
 
 # Install release library files
-file(INSTALL "${SOURCE_LIB_PATH}/impi.lib" "${SOURCE_LIB_PATH}/impicxx.lib"
-     DESTINATION "${CURRENT_PACKAGES_DIR}/lib"
+file(
+  INSTALL "${SOURCE_LIB_PATH}/impi.lib" "${SOURCE_LIB_PATH}/impicxx.lib"
+  DESTINATION "${CURRENT_PACKAGES_DIR}/lib"
 )
 
 # Install debug library files
-file(INSTALL "${SOURCE_DEBUG_LIB_PATH}/impi.lib"
-     "${SOURCE_DEBUG_LIB_PATH}/impicxx.lib"
-     DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib"
+file(
+  INSTALL
+    "${SOURCE_DEBUG_LIB_PATH}/impi.lib"
+    "${SOURCE_DEBUG_LIB_PATH}/impicxx.lib"
+  DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib"
 )
 
 # 'libfabric.dll' is not needed for the compilation but it is needed for the
 # runtime and should be in the PATH for 'mpiexec' to work
-file(INSTALL "${SOURCE_LIBFABRIC_PATH}/libfabric.dll"
-     "${SOURCE_BIN_PATH}/impi.dll"
-     DESTINATION "${CURRENT_PACKAGES_DIR}/bin"
+file(
+  INSTALL "${SOURCE_LIBFABRIC_PATH}/libfabric.dll" "${SOURCE_BIN_PATH}/impi.dll"
+  DESTINATION "${CURRENT_PACKAGES_DIR}/bin"
 )
 
-file(INSTALL "${SOURCE_LIBFABRIC_PATH}/libfabric.dll"
-     "${SOURCE_BIN_PATH}/impi.dll"
-     DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin"
+file(
+  INSTALL "${SOURCE_LIBFABRIC_PATH}/libfabric.dll" "${SOURCE_BIN_PATH}/impi.dll"
+  DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin"
 )
 
 set(_PDB_FILE "${SOURCE_BIN_PATH}/impi.pdb")
 
 if(EXISTS "${_PDB_FILE}")
-     file(INSTALL "${_PDB_FILE}"
-          DESTINATION "${CURRENT_PACKAGES_DIR}/bin"
-     )
-     file(INSTALL "${_PDB_FILE}"
-          DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin"
-     )
+  file(INSTALL "${_PDB_FILE}" DESTINATION "${CURRENT_PACKAGES_DIR}/bin")
+  file(INSTALL "${_PDB_FILE}" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin")
 endif()
 
-file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/mpi-wrapper.cmake"
-     DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"
+file(
+  INSTALL "${CMAKE_CURRENT_LIST_DIR}/mpi-wrapper.cmake"
+  DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"
 )
 
 # Handle copyright

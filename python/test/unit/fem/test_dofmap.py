@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2019 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
+# Copyright (C) 2009-2026 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -12,11 +12,29 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-import dolfinx
 import ufl
+from basix import CellType as BasixCellType
+from basix import (
+    DPCVariant,
+    ElementFamily,
+    LagrangeVariant,
+    LatticeType,
+    create_element,
+    create_lattice,
+)
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import functionspace
+from dolfinx.fem import (
+    assemble_matrix,
+    assemble_vector,
+    coordinate_element,
+    form,
+    functionspace,
+    interpolate_geometry,
+    transpose_dofmap,
+)
+from dolfinx.graph import adjacencylist
+from dolfinx.la import InsertMode
 from dolfinx.mesh import (
     CellType,
     create_mesh,
@@ -65,7 +83,8 @@ def test_tabulate_dofs(mesh_factory):
         assert len(np.intersect1d(dofs0, dofs1)) == 0
         assert len(np.intersect1d(dofs0, dofs2)) == 0
         assert len(np.intersect1d(dofs1, dofs2)) == 0
-        assert np.array_equal(np.append(dofs1, dofs2), dofs3)
+        combined_dofs = np.append(dofs1, dofs2)
+        assert np.array_equal(combined_dofs, dofs3)
 
 
 def test_entity_dofs(mesh):
@@ -108,6 +127,17 @@ def test_entity_dofs(mesh):
     for i, cdofs in enumerate([[0, 1], [2, 3], [4, 5]]):
         dofs = [bs * d + b for d in V.dofmap.dof_layout.entity_dofs(0, i) for b in range(bs)]
         assert all(d == cd for d, cd in zip(dofs, cdofs, strict=True))
+
+
+def test_dofmaps_is_immutable(mesh):
+    """Test that the returned dofmaps cannot be used to modify the space."""
+    V = functionspace(mesh, ("Lagrange", 1))
+    dofmaps = V.dofmaps
+    # A tuple cannot be appended/assigned to, and identity across repeated
+    # access confirms it is the same cached tuple, not a fresh copy that a
+    # caller could otherwise mutate without effect.
+    assert isinstance(dofmaps, tuple)
+    assert V.dofmaps[0] is dofmaps[0]
 
 
 @pytest.mark.skip
@@ -226,7 +256,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
     view into the data; in particular test lifetime of data owner.
     """
-    V = functionspace(mesh, "P", 1)
+    V = functionspace(mesh, ("P", 1))
     dofmap = V.dofmap
     index_map = dofmap().index_map
 
@@ -421,7 +451,7 @@ def test_higher_order_tetra_coordinate_map(order):
 @pytest.mark.skip_in_parallel
 def test_transpose_dofmap():
     dofmap = np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]], dtype=np.int32)
-    transpose = dolfinx.fem.transpose_dofmap(dofmap, 3)
+    transpose = transpose_dofmap(dofmap, 3)
     assert np.array_equal(transpose.array, [0, 2, 5, 8, 1, 4, 3, 7, 6])
 
 
@@ -435,11 +465,10 @@ def test_empty_rank_collapse():
         cells = np.empty((0, 2), dtype=np.int64)
     c_el = element("Lagrange", "interval", 1, shape=(1,))
 
-    def self_partitioner(comm: MPI.Intracomm, n, m, topo):
-        dests = np.full(len(topo[0]) // 2, comm.rank, dtype=np.int32)
-        offsets = np.arange(len(topo[0]) // 2 + 1, dtype=np.int32)
-        # TODO: can we improve on this interface? I.e. warp to do cpp type conversion automatically
-        return dolfinx.graph.adjacencylist(dests, offsets)._cpp_object
+    def self_partitioner(comm: MPI.Intracomm, n, dual_graph, cell_weights, edge_weights, ghosting):
+        dests = np.full(dual_graph.num_nodes, comm.rank, dtype=np.int32)
+        offsets = np.arange(dual_graph.num_nodes + 1, dtype=np.int32)
+        return adjacencylist(dests, offsets)
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, c_el, nodes, partitioner=self_partitioner)
 
@@ -447,3 +476,152 @@ def test_empty_rank_collapse():
     V = functionspace(mesh, el)
     V_0, _ = V.sub(0).collapse()
     assert V.dofmap.index_map.size_local == V_0.dofmap.index_map.size_local
+
+
+@pytest.mark.parametrize("gdim", [2, 3])
+@pytest.mark.parametrize("is_affine", [True, False])
+def test_push_forward_pull_back(gdim: int, is_affine: bool):
+    if gdim == 2:
+        ct = CellType.triangle if is_affine else CellType.quadrilateral
+        mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, ct)
+    else:
+        ct = CellType.tetrahedron if is_affine else CellType.hexahedron
+        mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, ct)
+    dtype = mesh.geometry.x.dtype
+    basix_cell = mesh.basix_cell()
+    ref_point = create_lattice(basix_cell, 9, LatticeType.equispaced, exterior=True).astype(dtype)
+
+    def warp(x):
+        return np.array(
+            [x[0] + 0.5 * x[1] * x[0], 2 * (x[0] + x[1]), 1.5 * x[2] + 0.8 * x[1] * x[0] * x[2]]
+        )
+
+    # Warp mesh to make it truly non-affine
+    mesh.geometry.x[:] = warp(mesh.geometry.x.T).T
+
+    # Push point forward
+    num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
+    scratch_size = mesh.geometry.cmaps[0].pull_back_working_size(gdim)
+    working_array = np.zeros(scratch_size, dtype=dtype)
+
+    for cell in range(num_cells_local):
+        # Push forward
+        cell_geometry = mesh.geometry.x[mesh.geometry.dofmaps[0][cell], :gdim]
+        x = mesh.geometry.cmaps[0].push_forward(
+            ref_point.reshape(ref_point.shape[0], gdim), cell_geometry
+        )
+        # Pull back
+        x_pullback = mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)
+        tol = np.sqrt(np.finfo(dtype).eps)
+        assert np.allclose(x_pullback, ref_point, rtol=tol, atol=tol)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("degree", [1, 2])
+def test_discontinuous_coordinate_element(dtype, degree):
+    """A discontinuous coordinate element maps a single cell as usual."""
+    cmap = coordinate_element(
+        create_element(
+            family=ElementFamily.P,
+            celltype=BasixCellType.triangle,
+            degree=degree,
+            lagrange_variant=LagrangeVariant.gll_isaac,
+            dpc_variant=DPCVariant.unset,
+            discontinuous=True,
+            dtype=dtype,
+        )
+    )
+    assert cmap.is_discontinuous
+    assert cmap.degree == degree
+    assert cmap.dim == (degree + 1) * (degree + 2) // 2
+
+    # All degrees-of-freedom are attached to the cell, none to its
+    # sub-entities
+    layout = cmap.create_dof_layout()
+    assert layout.num_dofs == cmap.dim
+    assert layout.entity_dofs(0, 0) == []
+    assert layout.entity_dofs(1, 0) == []
+    assert len(layout.entity_dofs(2, 0)) == cmap.dim
+
+    # Push forward reference points to a (curved, for degree 2) cell and
+    # pull them back again
+    cell_x = np.array([[0.0, 0.0], [2.0, 0.0], [0.0, 1.0]], dtype=dtype)
+    if degree == 2:
+        cell_x = np.vstack([cell_x, [[1.1, -0.1], [0.0, 0.5], [1.0, 0.5]]]).astype(dtype)
+    X = np.array([[0.25, 0.25], [0.5, 0.5], [0.0, 1.0]], dtype=dtype)
+    x = cmap.push_forward(X, cell_x)
+    tol = np.sqrt(np.finfo(dtype).eps)
+    np.testing.assert_allclose(cmap.pull_back(x, cell_x), X, atol=tol)
+
+
+@pytest.mark.parametrize("gdim", [2, 3])
+@pytest.mark.parametrize("is_affine", [True, False])
+def test_undersized_working_array(gdim: int, is_affine: bool):
+    """Test that an error is raised when the working memory is too small."""
+    if gdim == 2:
+        ct = CellType.triangle if is_affine else CellType.quadrilateral
+        mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, ct)
+    else:
+        ct = CellType.tetrahedron if is_affine else CellType.hexahedron
+        mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, ct)
+
+    # Create a small working memory array
+    dtype = mesh.geometry.x.dtype
+    working_array = np.zeros(1, dtype=dtype)
+
+    # Try to pull back with insufficient working memory
+    ref_point = np.full((1, mesh.topology.dim), 0.0, dtype=dtype)
+    if mesh.topology.index_map(mesh.topology.dim).size_local > 0:
+        cell_geometry = mesh.geometry.x[mesh.geometry.dofmaps[0][0], :gdim]
+        x = mesh.geometry.cmaps[0].push_forward(
+            ref_point.reshape(ref_point.shape[0], gdim), cell_geometry
+        )
+        # Pull back
+        with pytest.raises(RuntimeError):
+            mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_discontinuous_coordinate_element_assembly(dtype):
+    """Test that a discontinuous coordinate element can be used in assembly."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
+
+    V_ref = functionspace(mesh, ("Lagrange", 1))
+    u_ref = ufl.TrialFunction(V_ref)
+    v_ref = ufl.TestFunction(V_ref)
+    a = form(ufl.inner(ufl.grad(u_ref), ufl.grad(v_ref)) * ufl.dx, dtype=dtype)
+    A = assemble_matrix(a)
+    A.scatter_reverse()
+
+    x = ufl.SpatialCoordinate(mesh)
+    f = x[0] + ufl.sin(x[1])
+    L = assemble_vector(form(ufl.inner(f, v_ref) * ufl.dx, dtype=dtype))
+    L.scatter_reverse(InsertMode.add)
+    L.scatter_forward()
+
+    c_el = coordinate_element(
+        mesh.topology.cell_type, mesh.geometry.cmaps[0].degree, discontinuous=True, dtype=dtype
+    )
+    dg_mesh = interpolate_geometry(mesh, c_el)
+    assert dg_mesh.geometry.cmaps[0].is_discontinuous
+    assert dg_mesh.geometry.cmaps[0].degree == mesh.geometry.cmaps[0].degree
+    num_nodes = dg_mesh.geometry.dofmaps[0].shape[1]
+    assert (
+        dg_mesh.geometry.index_map().size_global
+        == dg_mesh.topology.index_map(dg_mesh.topology.dim).size_global * num_nodes
+    )
+
+    V_dg = functionspace(dg_mesh, ("Lagrange", 1))
+    u_dg = ufl.TrialFunction(V_dg)
+    v_dg = ufl.TestFunction(V_dg)
+    a_dg = form(ufl.inner(ufl.grad(u_dg), ufl.grad(v_dg)) * ufl.dx, dtype=dtype)
+    A_dg = assemble_matrix(a_dg)
+    A_dg.scatter_reverse()
+    tol = 100 * np.finfo(dtype).eps
+    np.testing.assert_allclose(A.data, A_dg.data, rtol=tol, atol=tol)
+    x_dg = ufl.SpatialCoordinate(dg_mesh)
+    f_dg = x_dg[0] + ufl.sin(x_dg[1])
+    L_dg = assemble_vector(form(ufl.inner(f_dg, v_dg) * ufl.dx, dtype=dtype))
+    L_dg.scatter_reverse(InsertMode.add)
+    L_dg.scatter_forward()
+    np.testing.assert_allclose(L.array, L_dg.array, rtol=tol, atol=tol)

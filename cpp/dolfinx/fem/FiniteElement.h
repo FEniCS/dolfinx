@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2024 Garth N. Wells and Matthew W. Scroggs
+// Copyright (C) 2020-2026 Garth N. Wells and Matthew W. Scroggs
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,13 +9,17 @@
 #include "traits.h"
 #include <array>
 #include <basix/finite-element.h>
+#include <basix/maps.h>
+#include <cassert>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -30,6 +34,48 @@ enum class doftransform : std::uint8_t
   inverse_transpose = 3, ///< Transpose inverse
 };
 
+template <std::floating_point T>
+class FiniteElement;
+
+/// @brief Value shape of a finite element field in physical space.
+///
+/// A basis is tabulated on the reference cell and pushed forward to the
+/// physical cell. The push-forward of a Piola-mapped element contracts
+/// the trailing axes of the reference value shape with the Jacobian
+/// `J`, of shape `(gdim, tdim)`, so those axes have extent `gdim` in
+/// physical space rather than `tdim`. How many trailing axes are
+/// affected depends on the map type alone:
+///
+/// | `basix::maps::type`        | axes set to `gdim` |
+/// | -------------------------- | -----------------: |
+/// | `identity`                 |                  0 |
+/// | `L2Piola`                  |                  0 |
+/// | `covariantPiola`           |                  1 |
+/// | `contravariantPiola`       |                  1 |
+/// | `doubleCovariantPiola`     |                  2 |
+/// | `doubleContravariantPiola` |                  2 |
+///
+/// The remaining (leading) axes are copied unchanged. For example,
+/// Raviart-Thomas on a triangle has reference value shape `{2}`, and
+/// physical value shape `{3}` on a triangle embedded in 3D. The two
+/// shapes coincide whenever `gdim == tdim`.
+///
+/// @note This mirrors `AbstractPullback.physical_value_shape` in UFL,
+/// which is what `ufl.FunctionSpace.value_shape` (and hence the shape
+/// seen by the form compiler) is built from. The two must agree.
+///
+/// @param[in] map_type Map used to push the reference basis forward.
+/// @param[in] reference_value_shape Value shape on the reference cell,
+/// e.g. `basix::FiniteElement::value_shape`.
+/// @param[in] gdim Geometric dimension of the mesh.
+/// @throws std::invalid_argument if `reference_value_shape` has too few
+/// axes for `map_type`.
+/// @return Value shape in physical space.
+std::vector<std::size_t>
+compute_value_shape(basix::maps::type map_type,
+                    std::span<const std::size_t> reference_value_shape,
+                    std::size_t gdim);
+
 /// @brief Basix element holder
 /// @tparam T Scalar type
 template <std::floating_point T>
@@ -37,8 +83,11 @@ struct BasixElementData
 {
   std::reference_wrapper<const basix::FiniteElement<T>>
       element; ///< Finite element.
-  std::optional<std::vector<std::size_t>> value_shape
-      = std::nullopt;    ///< Value shape. Can only be set for scalar `element`.
+  /// Value shape of the blocked element, e.g. `{3}` for a vector or
+  /// `{2, 2}` for a rank-2 tensor. Can only be set for a scalar
+  /// `element`, and is unrelated to the geometric dimension of the
+  /// mesh. `std::nullopt` for a non-blocked element.
+  std::optional<std::vector<std::size_t>> value_shape = std::nullopt;
   bool symmetry = false; ///< Symmetry. Should only be set for 2nd-order tensor
                          ///< blocked elements.
 };
@@ -52,6 +101,99 @@ BasixElementData(U element, V bs, W symmetry)
 ///
 /// Provides the dof layout on a reference element, and various methods
 /// for evaluating and transforming the basis.
+///
+/// # Value shapes
+///
+/// An element has two value shapes, and they are not interchangeable.
+///
+/// A basis is tabulated on the *reference* cell and pushed forward to a
+/// *physical* cell. FiniteElement::reference_value_shape is the shape
+/// Basix tabulates in, and is the shape of the data returned by
+/// FiniteElement::tabulate. FiniteElement::value_shape is the shape of
+/// the field after the push-forward. It is the shape a user of the
+/// space sees, and the one UFL reports for a Coefficient or Argument on
+/// the space, so it is the one to use for anything user-facing, for
+/// checking that two spaces are compatible, and for sizing buffers that
+/// hold physical values.
+///
+/// The two differ for three independent reasons:
+///
+/// 1. *Blocking.* A blocked element repeats a scalar base element at
+///    each dof point, e.g. a vector Lagrange space. Its value shape is
+///    whatever the caller asked for, while its reference value shape is
+///    that of the scalar base element, `{}`.
+/// 2. *Quadrature elements*, whose reference value shape is `{}`.
+/// 3. *The map.* A Piola-mapped basis is pushed forward with the
+///    Jacobian `J`, which has shape `(gdim, tdim)`. The value axes that
+///    `J` contracts therefore have extent `gdim` in physical space and
+///    `tdim` on the reference cell. These are equal unless
+///    `gdim != tdim`, i.e. on a manifold. See ::compute_value_shape.
+///
+/// # Blocking
+///
+/// FiniteElement::block_size is the number of dofs collocated at a dof
+/// point. For a blocked element it equals FiniteElement::value_size,
+/// *except* for a symmetric rank-2 tensor, which stores only its
+/// independent components: a `{3, 3}` symmetric element has value size
+/// 9 but block size 6.
+///
+/// Code that needs the number of physical components in *one block*
+/// must therefore call FiniteElement::physical_base_value_size rather than
+/// compute `value_size() / block_size()`, which is wrong for symmetric
+/// elements.
+///
+/// # Examples
+///
+/// All on a mesh of triangles, so `tdim == 2`. `RT` is Raviart-Thomas
+/// and `sym` marks a symmetric element. The columns are
+/// FiniteElement::value_shape, FiniteElement::block_size,
+/// FiniteElement::reference_value_shape and
+/// FiniteElement::physical_base_value_size. FiniteElement::value_size and
+/// FiniteElement::reference_value_size are the products of the
+/// respective shapes and are not tabulated.
+///
+/// | element        | gdim | vshape | bs | rvshape | bvsize |
+/// | -------------- | ---: | -----: | -: | ------: | -----: |
+/// | P1             |    2 |     {} |  1 |      {} |      1 |
+/// | P1             |    3 |     {} |  1 |      {} |      1 |
+/// | P1, shape {2}  |    2 |    {2} |  2 |      {} |      1 |
+/// | P1, shape {2}  |    3 |    {2} |  2 |      {} |      1 |
+/// | P1, shape {5}  |    2 |    {5} |  5 |      {} |      1 |
+/// | P1, sym {3, 3} |    2 | {3, 3} |  6 |      {} |      1 |
+/// | RT 1           |    2 |    {2} |  1 |     {2} |      2 |
+/// | RT 1           |    3 |    {3} |  1 |     {2} |      3 |
+/// | Regge 0        |    2 | {2, 2} |  1 |  {2, 2} |      4 |
+/// | Regge 0        |    3 | {3, 3} |  1 |  {2, 2} |      9 |
+/// | mixed          |  any | throws |  1 |  throws | throws |
+///
+/// Note first that `gdim` changes nothing for `P1` or `P1, shape {2}`:
+/// both are identity mapped, so their physical and reference value
+/// shapes agree on a manifold exactly as they do on a 2D mesh, and the
+/// blocked shape `{2}` stays `{2}` on a `gdim == 3` mesh. Contrast the
+/// `RT 1` and `Regge 0` pairs, where the Piola push-forward does
+/// introduce `gdim`.
+///
+/// Some rows deserve further comment:
+///
+/// - `P1, shape {5}`. A blocked element's value shape is chosen by the
+///   caller and has nothing to do with `gdim`. A 5-vector, or a
+///   `{3, 3}` tensor field, on a mesh of any geometric dimension is
+///   legal, and `gdim` must never be substituted into such a shape.
+/// - `P1, sym {3, 3}`. The only case in which the block size is not the
+///   value size: the value size is 9, but only the six independent
+///   components are stored, one dof each, and the other three are
+///   recovered by symmetry.
+/// - `RT 1` with `gdim == 3`, i.e. a triangle embedded in 3D. The
+///   contravariant Piola push-forward multiplies by a `(3, 2)`
+///   Jacobian, so the field has three components in physical space
+///   while Basix still tabulates two. This is the case that separates
+///   the two value shapes for a *non-blocked* element.
+/// - `mixed`. A mixed element has no value shape of its own, so every
+///   shape and size accessor throws; only FiniteElement::block_size is
+///   defined, and is 1. Extract a sub-element with
+///   ::extract_sub_element to get at its shapes. FiniteElement::is_mixed
+///   reports this case, and is implemented as "has no reference value
+///   shape".
 template <std::floating_point T>
 class FiniteElement
 {
@@ -61,6 +203,8 @@ public:
 
   /// @brief Create a finite element from a Basix finite element.
   /// @param[in] element Basix finite element.
+  /// @param[in] gdim Geometric dimension of the mesh the element will be
+  /// used on.
   /// @param[in] value_shape Value shape for blocked element, e.g. `{3}`
   /// for a vector in 3D or `{2, 2}` for a rank-2 tensor in 2D. Can only
   /// be set for blocked scalar `element`. For other elements and scalar
@@ -68,6 +212,7 @@ public:
   /// @param[in] symmetric Is the element a symmetric tensor? Should
   /// only set for 2nd-order tensor blocked elements.
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
+                std::size_t gdim,
                 const std::optional<std::vector<std::size_t>>& value_shape
                 = std::nullopt,
                 bool symmetric = false);
@@ -80,7 +225,10 @@ public:
   ///
   /// @param[in] elements List of (Basix finite element, block size,
   /// symmetric) tuples, one for each element in the mixed element.
-  FiniteElement(std::vector<BasixElementData<geometry_type>> elements);
+  /// @param[in] gdim Geometric dimension of the mesh the element will be
+  /// used on, applied to every sub-element.
+  FiniteElement(std::vector<BasixElementData<geometry_type>> elements,
+                std::size_t gdim);
 
   /// @brief Create a mixed finite element from a list of finite
   /// elements.
@@ -104,6 +252,9 @@ public:
           elements);
 
   /// @brief Create a quadrature element.
+  /// @note A quadrature element is identity mapped, so `value_shape` is
+  /// both its reference and its physical value shape and no geometric
+  /// dimension is required.
   /// @param[in] cell_type Cell type.
   /// @param[in] points Quadrature points.
   /// @param[in] pshape Shape of `points` array.
@@ -150,7 +301,7 @@ public:
   /// not be relied upon for determining the element type. Use other
   /// functions, commonly returning enums, to determine element
   /// properties.
-  std::string signature() const noexcept;
+  const std::string& signature() const noexcept;
 
   /// @brief Dimension of the finite element function space (the number
   /// of degrees-of-freedom for the element).
@@ -164,69 +315,98 @@ public:
   /// @brief Block size of the finite element function space.
   ///
   /// For non-blocked elements, this is always 1. For blocked elements,
-  /// this is the number of DOFs collocated at each DOF point. For
-  /// blocked elements the block size is equal to the value size, except
-  /// for symmetric rank-2 tensor blocked elements. For a symmetric
-  /// rank-2 tensor blocked element the block size is 3 in 2D and 6 in
-  /// 3D.
+  /// this is the number of DOFs collocated at each DOF point, which
+  /// equals FiniteElement::value_size except for a symmetric rank-2
+  /// tensor. A symmetric rank-2 tensor stores only its independent
+  /// components, so a `{2, 2}` symmetric element has value size 4 and
+  /// block size 3, and a `{3, 3}` one has value size 9 and block size
+  /// 6.
   ///
   /// @return Block size of the finite element space.
   int block_size() const noexcept;
 
-  /// @brief Value size of the finite element field.
+  /// @brief Value size of the finite element field in physical space.
   ///
-  /// The value size is the number of components in the finite element
-  /// field. It is the product of the value shape, e.g. is is 1 for a
+  /// The value size is the number of components of the finite element
+  /// field once the basis has been pushed forward to a physical cell.
+  /// It is the product of FiniteElement::value_shape, e.g. 1 for a
   /// scalar function, 2 for a 2D vector, 9 for a second-order tensor in
-  /// 3D, etc. For blocked elements, this function returns the value
-  /// size for the full 'blocked' element.
-  ///
-  /// @note The return value of this function is inconsistent with
-  /// value_shape() for rank-2 'symmetric' elements. Due to issues
-  /// elsewhere in the code base, rank-2 symmetric fields have value
-  /// shape `{3}` (2D) or `{6}` rather than `{2, 2}` and `{3, 3}`,
-  /// respectively. For symmetric rank-2 tensors this function returns 4
-  /// for 2D cases and 9 for 3D cases. This inconsistency will be fixed
-  /// in the future.
+  /// 3D, etc. For blocked elements this is the value size of the full
+  /// 'blocked' element.
   ///
   /// @throws Exception is thrown for a mixed element as mixed elements
   /// do not have a value shape.
   /// @return The value size.
   int value_size() const;
 
-  /// @brief Value shape of the finite element field.
+  /// @brief Value shape of the finite element field in physical space.
   ///
-  /// The value shape describes the shape of the finite element field,
-  /// e.g. `{}` for a scalar, `{2}` for a vector in 2D, `{3, 3}` for a
-  /// rank-2 tensor in 3D, etc.
+  /// The value shape describes the shape of the finite element field
+  /// once the basis has been pushed forward to a physical cell, e.g.
+  /// `{}` for a scalar, `{2}` for a vector in 2D, `{3, 3}` for a rank-2
+  /// tensor in 3D, etc.
+  ///
+  /// It differs from FiniteElement::reference_value_shape for blocked
+  /// and quadrature elements, and for a Piola-mapped element on a
+  /// manifold: Raviart-Thomas on a triangle embedded in 3D has
+  /// reference value shape `{2}` and value shape `{3}`, because the
+  /// push-forward contracts the reference value axis with a Jacobian of
+  /// shape `(gdim, tdim)`. See ::compute_value_shape.
   ///
   /// @throws Exception is thrown for a mixed element as mixed elements
   /// do not have a value shape.
   /// @return The value shape.
   std::span<const std::size_t> value_shape() const;
 
-  /// @brief Value size of the base (non-blocked) finite element field.
+  /// @brief Number of physical components in one block of the finite
+  /// element field.
+  ///
+  /// A blocked element repeats a scalar base element
+  /// FiniteElement::block_size times, so one block of its field is a
+  /// single scalar and this is 1. A non-blocked element has a single
+  /// block, so this is FiniteElement::value_size.
+  ///
+  /// This is the size of the push-forward of one (non-blocked) basis
+  /// function, and hence the extent a buffer needs when it holds
+  /// physical values one block at a time. It is the physical
+  /// counterpart of FiniteElement::reference_value_size, and equals it
+  /// unless the element is Piola mapped on a manifold, where it is
+  /// `gdim` rather than `tdim`.
+  ///
+  /// @note This is not `value_size() / block_size()`: for a symmetric
+  /// rank-2 tensor element that expression gives 4/3 or 9/6 rather than
+  /// the correct value of 1.
+  ///
+  /// @throws Exception is thrown for a mixed element as mixed elements
+  /// do not have a value shape.
+  /// @return Number of physical components per block.
+  int physical_base_value_size() const;
+
+  /// @brief Value size of the base (non-blocked) finite element field
+  /// on the reference cell.
   ///
   /// The reference value size is the product of the reference value
   /// shape, e.g. it is  1 for a scalar element, 2 for a 2D
   /// (non-blocked) vector, 9 for a (non-blocked) second-order tensor in
-  /// 3D, etc.
+  /// 3D, etc. It is the number of components produced by
+  /// FiniteElement::tabulate.
   ///
-  /// For blocked elements, this function returns the value shape for
-  /// the 'base' element from which the blocked element is composed. For
-  /// other elements, the return value is the same as
-  /// FiniteElement::value_shape.
+  /// For blocked elements, this function returns the value size for
+  /// the 'base' element from which the blocked element is composed.
   ///
   /// @throws Exception is thrown for a mixed element as mixed elements
   /// do not have a value shape.
   /// @return The value size.
   int reference_value_size() const;
 
-  /// @brief Value shape of the base (non-blocked) finite element field.
+  /// @brief Value shape of the base (non-blocked) finite element field
+  /// on the reference cell.
   ///
-  /// For non-blocked elements, this function returns the same as
-  /// FiniteElement::value_shape. For blocked and quadrature elements
-  /// the returned shape will be `{}`.
+  /// This is the shape Basix tabulates in. For blocked and quadrature
+  /// elements the returned shape will be `{}`. For other elements it is
+  /// the same as FiniteElement::value_shape except on a manifold, where
+  /// a Piola-mapped element has `tdim` reference components and `gdim`
+  /// physical ones.
   ///
   /// Mixed elements do not have a reference value shape.
   ///
@@ -244,7 +424,12 @@ public:
   const std::vector<std::vector<std::vector<int>>>&
   entity_closure_dofs() const noexcept;
 
-  /// Does the element represent a symmetric 2-tensor?
+  /// @brief Does the element represent a symmetric 2-tensor?
+  ///
+  /// A symmetric element has a square rank-2
+  /// FiniteElement::value_shape, but stores only the independent
+  /// components, so its FiniteElement::block_size is `d * (d + 1) / 2`
+  /// rather than `d * d`. See the examples in the class documentation.
   bool symmetric() const;
 
   /// @brief Evaluate derivatives of the basis functions up to given order
@@ -435,13 +620,7 @@ public:
   dof_transformation_fn(doftransform ttype, bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
-    {
-      // If no permutation needed, return function that does nothing
-      return [](std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)
-      {
-        // Do nothing
-      };
-    }
+      return nullptr;
 
     if (!_sub_elements.empty())
     {
@@ -451,6 +630,8 @@ public:
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
             sub_element_fns;
         std::vector<int> dims;
+        sub_element_fns.reserve(_sub_elements.size());
+        dims.reserve(_sub_elements.size());
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
         {
           sub_element_fns.push_back(
@@ -458,16 +639,20 @@ public:
           dims.push_back(_sub_elements[i]->space_dimension());
         }
 
-        return [dims, sub_element_fns](std::span<U> data,
-                                       std::span<const std::uint32_t> cell_info,
-                                       std::int32_t cell, int block_size)
+        return [dims = std::move(dims),
+                sub_element_fns = std::move(sub_element_fns)](
+                   std::span<U> data, std::span<const std::uint32_t> cell_info,
+                   std::int32_t cell, int block_size)
         {
           std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_fns.size(); ++e)
           {
             const std::size_t width = dims[e] * block_size;
-            sub_element_fns[e](data.subspan(offset, width), cell_info, cell,
-                               block_size);
+            if (sub_element_fns[e])
+            {
+              sub_element_fns[e](data.subspan(offset, width), cell_info, cell,
+                                 block_size);
+            }
             offset += width;
           }
         };
@@ -479,10 +664,11 @@ public:
                            std::int32_t, int)>
             sub_fn
             = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
+        assert(sub_fn); // Consistent with needs_dof_transformations() above
         const int ebs = _bs;
-        return [ebs, sub_fn](std::span<U> data,
-                             std::span<const std::uint32_t> cell_info,
-                             std::int32_t cell, int data_block_size)
+        return [ebs, sub_fn = std::move(sub_fn)](
+                   std::span<U> data, std::span<const std::uint32_t> cell_info,
+                   std::int32_t cell, int data_block_size)
         { sub_fn(data, cell_info, cell, ebs * data_block_size); };
       }
     }
@@ -506,7 +692,7 @@ public:
                     std::int32_t cell, int block_size)
       { T_apply(data, cell_info[cell], block_size); };
     default:
-      throw std::runtime_error("Unknown transformation type");
+      throw std::invalid_argument("Unknown transformation type");
     }
   }
 
@@ -540,13 +726,7 @@ public:
                               bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
-    {
-      // If no permutation needed, return function that does nothing
-      return [](std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)
-      {
-        // Do nothing
-      };
-    }
+      return nullptr;
     else if (!_sub_elements.empty())
     {
       if (!_reference_value_shape) // Mixed element
@@ -555,6 +735,8 @@ public:
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
             sub_element_fns;
         std::vector<int> dims;
+        sub_element_fns.reserve(_sub_elements.size());
+        dims.reserve(_sub_elements.size());
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
         {
           sub_element_fns.push_back(
@@ -562,15 +744,26 @@ public:
           dims.push_back(_sub_elements[i]->space_dimension());
         }
 
-        return [dims, sub_element_fns](std::span<U> data,
-                                       std::span<const std::uint32_t> cell_info,
-                                       std::int32_t cell, int block_size)
+        return [dims = std::move(dims),
+                sub_element_fns = std::move(sub_element_fns)](
+                   std::span<U> data, std::span<const std::uint32_t> cell_info,
+                   std::int32_t cell, int block_size)
         {
+          // `data` is (block_size, ndofs), row-major. Sub-element `e`
+          // owns columns [offset, offset + dims[e]) of every row, so the
+          // rows are transformed one at a time.
+          const std::size_t ndofs = data.size() / block_size;
           std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_fns.size(); ++e)
           {
-            sub_element_fns[e](data.subspan(offset, data.size() - offset),
-                               cell_info, cell, block_size);
+            if (sub_element_fns[e])
+            {
+              for (int i = 0; i < block_size; ++i)
+              {
+                sub_element_fns[e](data.subspan(i * ndofs + offset, dims[e]),
+                                   cell_info, cell, 1);
+              }
+            }
             offset += dims[e];
           }
         };
@@ -586,9 +779,10 @@ public:
                            std::int32_t, int)>
             sub_fn
             = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
-        return [this, sub_fn](std::span<U> data,
-                              std::span<const std::uint32_t> cell_info,
-                              std::int32_t cell, int data_block_size)
+        assert(sub_fn); // Consistent with needs_dof_transformations() above
+        return [this, sub_fn = std::move(sub_fn)](
+                   std::span<U> data, std::span<const std::uint32_t> cell_info,
+                   std::int32_t cell, int data_block_size)
         {
           const int ebs = block_size();
           const std::size_t dof_count = data.size() / data_block_size;
@@ -620,7 +814,7 @@ public:
                     std::int32_t cell, int n)
       { T_apply_right(data, cell_info[cell], n); };
     default:
-      throw std::runtime_error("Unknown transformation type");
+      throw std::invalid_argument("Unknown transformation type");
     }
   }
 
@@ -802,7 +996,7 @@ public:
   void permute(std::span<std::int32_t> doflist,
                std::uint32_t cell_permutation) const;
 
-  /// @brief Perform the inverse of the operation applied by permute().
+  /// @brief Perform the inverse of the operation applied by @ref permute.
   ///
   /// Given an array \f$d\f$ that holds an integer associated with each
   /// degree-of-freedom and following the globally consistent physical
@@ -824,7 +1018,7 @@ public:
   /// @brief Return a function that applies a degree-of-freedom
   /// permutation to some data.
   ///
-  /// The returned function can apply permute() to mixed-elements.
+  /// The returned function can apply @ref permute to mixed-elements.
   ///
   /// The signature of the returned function has three arguments:
   /// - [in,out] doflist The numbers of the DOFs, a span of length num_dofs
@@ -839,10 +1033,11 @@ public:
   dof_permutation_fn(bool inverse = false, bool scalar_element = false) const;
 
 private:
-  // Value shape. For blocked elements this is larger than
-  // _reference_value_shape. For non-blocked 'primal' elements it is
-  // equal to _reference_value_shape. For mixed elements, it is
-  // std::nullopt.
+  // Value shape in physical space. For blocked elements this is larger
+  // than _reference_value_shape. For non-blocked elements it equals
+  // _reference_value_shape, except for a Piola-mapped element on a
+  // manifold, where the trailing axes have extent gdim rather than
+  // tdim. For mixed elements, it is std::nullopt.
   std::optional<std::vector<std::size_t>> _value_shape;
 
   // Block size for BlockedElements. This gives the number of DOFs
@@ -862,8 +1057,10 @@ private:
   std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
       _sub_elements;
 
-  // Value space shape, e.g. {} for a scalar, {3, 3} for a tensor in 3D.
-  // For a mixed element it is std::nullopt.
+  // Value shape on the reference cell, i.e. the shape Basix tabulates
+  // in, e.g. {} for a scalar, {3, 3} for a tensor in 3D. For a mixed
+  // element it is std::nullopt, which is the sentinel used by
+  // is_mixed() and the dof transformation functions.
   std::optional<std::vector<std::size_t>> _reference_value_shape;
 
   // Basix Element (nullptr for mixed elements)

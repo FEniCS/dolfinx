@@ -77,7 +77,8 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
           std::ranges::sort(cf);
           auto [last1, last2, it_last] = std::ranges::set_intersection(
               facet_table_2d[fpi], cf, set_output.begin());
-          num_common_vertices = std::distance(set_output.begin(), it_last);
+          num_common_vertices
+              = std::ranges::distance(set_output.begin(), it_last);
         }
         else
         {
@@ -87,7 +88,8 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
           std::ranges::sort(cf);
           auto [last1, last2, it_last] = std::ranges::set_intersection(
               facet_table_3d[fpi], cf, set_output.begin());
-          num_common_vertices = std::distance(set_output.begin(), it_last);
+          num_common_vertices
+              = std::ranges::distance(set_output.begin(), it_last);
         }
 
         if (num_common_vertices == tdim)
@@ -192,11 +194,13 @@ face_long_edge(const mesh::Mesh<T>& mesh)
     auto it0 = std::find(cell_vertices.begin(), cell_vertices.end(),
                          edge_vertices[0]);
     assert(it0 != cell_vertices.end());
-    const std::size_t local0 = std::distance(cell_vertices.begin(), it0);
+    const std::size_t local0
+        = std::ranges::distance(cell_vertices.begin(), it0);
     auto it1 = std::find(cell_vertices.begin(), cell_vertices.end(),
                          edge_vertices[1]);
     assert(it1 != cell_vertices.end());
-    const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
+    const std::size_t local1
+        = std::ranges::distance(cell_vertices.begin(), it1);
 
     auto x_dofs = md::submdspan(x_dofmap, cells.front(), md::full_extent);
     std::span<const T, 3> x0(mesh.geometry().x().data() + 3 * x_dofs[local0],
@@ -312,7 +316,6 @@ compute_refinement(MPI_Comm neighbor_comm,
     parent_facet.emplace();
 
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
-  std::vector<std::int32_t> simplex_set;
 
   auto map_c = mesh.topology()->index_map(tdim);
   assert(map_c);
@@ -332,8 +335,21 @@ compute_refinement(MPI_Comm neighbor_comm,
 
   const std::int32_t num_cells = map_c->size_local();
 
-  // Iterate over all cells, and refine if cell has a marked edge
+  // Refine cells with marked edges.
+  const std::size_t max_children = std::size_t(1) << tdim;
   std::vector<std::int64_t> cell_topology;
+  cell_topology.reserve(static_cast<std::size_t>(num_cells) * max_children
+                        * num_cell_vertices);
+  if (compute_parent_cell)
+    parent_cell->reserve(static_cast<std::size_t>(num_cells) * max_children);
+  if (compute_facets)
+  {
+    parent_facet->reserve(static_cast<std::size_t>(num_cells) * max_children
+                          * num_cell_vertices);
+  }
+
+  // Longest edge of each face in cell-local indexing.
+  std::vector<std::int32_t> longest_edge;
   for (int c = 0; c < num_cells; ++c)
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
@@ -381,7 +397,7 @@ compute_refinement(MPI_Comm neighbor_comm,
     {
       // Need longest edges of each face in cell local indexing. NB in
       // 2D the face is the cell itself, and there is just one entry.
-      std::vector<std::int32_t> longest_edge;
+      longest_edge.clear();
       for (auto f : c_to_f->links(c))
         longest_edge.push_back(long_edge[f]);
 
@@ -478,7 +494,8 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
     throw std::runtime_error("Edges must be initialised");
 
   // Get sharing ranks for each edge
-  graph::AdjacencyList<int> edge_ranks = map_e->index_to_dest_ranks();
+  auto [_data, _offsets] = map_e->index_to_dest_ranks();
+  graph::AdjacencyList<int> edge_ranks(std::move(_data), std::move(_offsets));
 
   // Create unique list of ranks that share edges (owners of ghosts plus
   // ranks that ghost owned indices)
@@ -493,7 +510,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
                          {
                            auto it = std::ranges::lower_bound(ranks, r);
                            assert(it != ranks.end() and *it == r);
-                           return std::distance(ranks.begin(), it);
+                           return std::ranges::distance(ranks.begin(), it);
                          });
 
   // Get number of neighbors
