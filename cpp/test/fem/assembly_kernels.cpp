@@ -4,15 +4,14 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-// Tests that drive the assembly implementation kernels directly, rather
+// Tests that drive the assembly implementation kernels directly rather
 // than through fem::assemble_*. The kernels are local loops over
-// caller-supplied arrays, so the data here is synthetic and identical on
-// every rank: no mesh is built and nothing is communicated.
+// caller-supplied arrays, so the data is synthetic and identical on
+// every rank: no mesh, no communication.
 //
-// The cases covered are the ones a form-level test cannot reach
-// conveniently: block sizes other than one, an integration domain whose
-// cell list differs from the argument's, and an active degree-of-freedom
-// transformation.
+// Covered are the cases a form-level test cannot reach conveniently:
+// block sizes other than one, an integration domain whose cell list
+// differs from the argument's, and an active dof transformation.
 
 #include <array>
 #include <basix/mdspan.hpp>
@@ -45,15 +44,15 @@ using dofmap3_t = md::mdspan<const std::int32_t,
 constexpr std::array<std::int32_t, 6> x_dofs = {0, 1, 2, 1, 3, 2};
 constexpr std::array<T, 12> x_coords = {0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0};
 
-/// Test/trial dofmap. Cell 1 is deliberately not the identity, so a
-/// scatter that used the integration cell would be caught.
+/// Test/trial dofmap. Cell 1 is not the identity, so a scatter using
+/// the integration cell is caught.
 constexpr std::array<std::int32_t, 6> dofs = {0, 1, 2, 3, 2, 1};
 constexpr std::size_t num_cells = 2;
 constexpr std::size_t num_dofs_cell = 3;
 constexpr std::size_t num_dofs = 4;
 
-/// Per-cell permutation words, distinct so that a transformation handed
-/// the wrong cell index produces the wrong answer.
+/// Per-cell permutation words, distinct so a transformation handed the
+/// wrong cell index gives the wrong answer.
 constexpr std::array<std::uint32_t, 2> cell_info = {2, 5};
 
 auto geometry_pack()
@@ -64,9 +63,9 @@ auto geometry_pack()
           x_coords.data(), x_coords.size() / 3, 3)};
 }
 
-/// Element vector entry for local dof `i`, component `k`, on a cell
-/// whose gathered coordinates are `cdofs`. Depends on the coordinates so
-/// that a wrong geometry gather is caught.
+/// Element vector entry for local dof `i`, component `k`, on a cell with
+/// gathered coordinates `cdofs`. Coordinate-dependent, so a wrong
+/// geometry gather is caught.
 constexpr T be_value(const T* cdofs, std::size_t i, int k)
 {
   return 100 * cdofs[3 * i] + 10 * cdofs[3 * i + 1] + (k + 1);
@@ -128,7 +127,7 @@ std::vector<T> assemble(std::span<const std::int32_t> cells,
   std::vector<T> b(bs * num_dofs, 0);
   std::array<T, bs * num_dofs_cell> be_b;
   std::array<T, 3 * num_dofs_cell> cdofs_b;
-  fem::impl::assemble_cells(
+  fem::impl::assemble_cells_vector(
       b, geometry_pack(), cells,
       fem::FormArgument{fem::DofMapPack{dofmap3_t(dofs.data(), num_cells),
                                         std::integral_constant<int, bs>{},
@@ -138,8 +137,8 @@ std::vector<T> assemble(std::span<const std::int32_t> cells,
   return b;
 }
 
-/// Scales the element tensor by the cell's permutation word, so that the
-/// cell index the assembler passes is observable in the result.
+/// Scales the element tensor by the cell's permutation word, making the
+/// cell index the assembler passes observable in the result.
 void scale_by_cell_info(std::span<T> be, std::span<const std::uint32_t> info,
                         std::int32_t cell, int)
 {
@@ -148,12 +147,11 @@ void scale_by_cell_info(std::span<T> be, std::span<const std::uint32_t> info,
 }
 } // namespace
 
-// The kernels fold the element tensor offsets only if the block size and
-// the per-cell dofmap length survive the unpack as compile-time
+// The kernels fold the element tensor offsets only if the block size
+// and per-cell dofmap length survive the unpack as compile-time
 // constants. Reading either through a reference -- as a structured
-// binding of a tuple-like type does -- loses that silently, costing
-// performance and nothing else, so pin the property here where a
-// compiler can check it.
+// binding of a tuple-like type does -- loses that silently, so pin it
+// here where the compiler can check.
 namespace
 {
 using pack_t = fem::DofMapPack<dofmap3_t, std::integral_constant<int, 3>,
@@ -225,9 +223,9 @@ TEST_CASE("Assemble cells into a vector (block sizes)", "[assembly_kernels]")
 TEST_CASE("Assemble cells into a vector (argument cell list differs)",
           "[assembly_kernels]")
 {
-  // The integration domain and the test function domain number their
-  // cells differently, so the geometry must be gathered through `cells`
-  // and the result scattered through `cells0`.
+  // The integration and test function domains number cells differently,
+  // so geometry is gathered through `cells` and the result scattered
+  // through `cells0`.
   constexpr std::array<std::int32_t, 2> cells = {0, 1};
   constexpr std::array<std::int32_t, 2> cells0 = {1, 0};
   std::span<const std::int32_t> c(cells), c0(cells0);
@@ -289,8 +287,8 @@ TEST_CASE("Assemble cells into a matrix (block sizes and bcs)",
         Ae[ndim * r + c1] = 100 * cdofs[0] + 10 * r + c1 + 1;
   };
 
-  // Collect the inserted blocks rather than building a matrix, so the
-  // rows, columns and values the kernel hands to `mat_set` are visible.
+  // Collect the inserted blocks rather than build a matrix, so the rows,
+  // columns and values handed to `mat_set` are visible.
   auto collect = [](std::map<std::pair<std::int32_t, std::int32_t>, T>& out)
   {
     return [&out](std::span<const std::int32_t> r,

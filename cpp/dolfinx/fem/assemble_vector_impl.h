@@ -70,24 +70,24 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 template <typename V, MDSpan2Int32 XD, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires AssemblyVector<V, T>
-void assemble_cells(V&& b, GeometryPack<XD, U> geometry, IndexList auto cells,
-                    const FormArgumentCells<T> auto& arg0,
-                    const FEkernel<T, U> auto& kernel,
-                    std::span<const T> constants,
-                    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-                    ScratchBuffer<T> auto be_b, ScratchBuffer<U> auto cdofs_b)
+void assemble_cells_vector(
+    V&& b, GeometryPack<XD, U> geometry, IndexList auto cells,
+    const FormArgumentCells<T> auto& arg0, const FEkernel<T, U> auto& kernel,
+    std::span<const T> constants,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    ScratchBuffer<T> auto be_b, ScratchBuffer<U> auto cdofs_b)
 {
   if (cells.empty())
     return;
 
-  // Taken by value: the sizes below fold only if they are not read
-  // through a reference. mdspan and span are two-word copies.
+  // By value: the sizes below fold only if not read through a
+  // reference. mdspan and span are two-word copies.
   const auto x_dofmap = geometry.dofmap;
   const auto x = geometry.x;
   const auto dmap = arg0.dofmap.map;
   const auto bs = arg0.dofmap.bs;
   // By reference: a generated range (e.g. iota) does not convert to a
-  // span, and a caller holding a std::vector must not be copied.
+  // span, and a caller's std::vector must not be copied.
   const auto& cells0 = arg0.dofmap.entities;
   const auto& P0 = arg0.transform;
   std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
@@ -108,9 +108,9 @@ void assemble_cells(V&& b, GeometryPack<XD, U> geometry, IndexList auto cells,
   // set (non-null) transform is loop-invariant.
   const bool p0_set = is_transform_set(P0);
 
-  // The integration-domain and test-function cell lists are usually the
-  // same span, in which case the second lookup is redundant. The test
-  // is loop-invariant, so the branch predicts perfectly.
+  // The integration-domain and argument cell lists are usually the same
+  // span, making the second lookup redundant. Loop-invariant, so the
+  // branch predicts perfectly.
   bool same_cells = false;
   if constexpr (std::ranges::contiguous_range<decltype(cells)>)
     same_cells
@@ -123,10 +123,10 @@ void assemble_cells(V&& b, GeometryPack<XD, U> geometry, IndexList auto cells,
     const std::int32_t c = cells[index];
     const std::int32_t c0 = same_cells ? c : cells0[index];
 
-    // Get cell coordinates/geometry. A loop rather than std::copy_n:
-    // for a trivially copyable type the latter goes through
-    // __builtin_memmove, which is emitted as a call even for this
-    // constant length, once per vertex.
+    // Gather cell coordinates. A loop, not std::copy_n: for a
+    // trivially copyable type the latter goes through
+    // __builtin_memmove, emitted as a call even at this constant
+    // length, once per vertex.
     const std::int32_t* xdofs
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * ndofs_x;
     for (std::size_t i = 0; i < ndofs_x; ++i)
@@ -193,7 +193,7 @@ void assemble_cells(V&& b, GeometryPack<XD, U> geometry, IndexList auto cells,
 template <typename V, MDSpan2Int32 XD, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires AssemblyVector<V, T>
-void assemble_entities(
+void assemble_entities_vector(
     V&& b, GeometryPack<XD, U> geometry,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
@@ -207,8 +207,8 @@ void assemble_entities(
   if (entities.empty())
     return;
 
-  // Taken by value: the sizes below fold only if they are not read
-  // through a reference. mdspan and span are two-word copies.
+  // By value: the sizes below fold only if not read through a
+  // reference. mdspan and span are two-word copies.
   const auto x_dofmap = geometry.dofmap;
   const auto x = geometry.x;
   const auto dmap = arg0.dofmap.map;
@@ -303,7 +303,7 @@ void assemble_entities(
 template <typename V, MDSpan2Int32 XD, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires AssemblyVector<V, T>
-void assemble_interior_facets(
+void assemble_interior_facets_vector(
     V&& b, GeometryPack<XD, U> geometry,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2, 2>>
@@ -319,8 +319,8 @@ void assemble_interior_facets(
   if (facets.empty())
     return;
 
-  // Taken by value: the sizes below fold only if they are not read
-  // through a reference. mdspan and span are two-word copies.
+  // By value: the sizes below fold only if not read through a
+  // reference. mdspan and span are two-word copies.
   const auto x_dofmap = geometry.dofmap;
   const auto x = geometry.x;
   const auto dmap = arg0.dofmap.map;
@@ -570,7 +570,7 @@ void assemble_vector(
           [&b, &geometry, &cells, &dofs, &cells0, &P0, &cell_info0, &fn,
            &constants, &coeffs, cstride, &be_b1, &cdofs_b1](auto bs)
           {
-            impl::assemble_cells(
+            impl::assemble_cells_vector(
                 b, geometry, cells,
                 FormArgument{DofMapPack{dofs, bs, cells0}, P0, cell_info0}, fn,
                 constants, md::mdspan(coeffs.data(), cells.size(), cstride),
@@ -614,7 +614,7 @@ void assemble_vector(
            &cell_info0, &fn, &constants, &coeffs, &facets, cstride,
            &facet_perms, &be_b, &cdofs_b](auto bs)
           {
-            impl::assemble_interior_facets(
+            impl::assemble_interior_facets_vector(
                 b, geometry, facets_mdspan,
                 FormArgument{DofMapPack{dofs, bs, facets1_mdspan}, P0,
                              cell_info0},
@@ -656,7 +656,7 @@ void assemble_vector(
             [&b, &geometry, &entities, &dofs, &entities1, &P0, &cell_info0, &fn,
              &constants, &coeffs, cstride, &perms, &be_b1, &cdofs_b1](auto bs)
             {
-              impl::assemble_entities(
+              impl::assemble_entities_vector(
                   b, geometry, entities,
                   FormArgument{DofMapPack{dofs, bs, entities1}, P0, cell_info0},
                   fn, constants,

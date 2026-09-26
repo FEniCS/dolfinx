@@ -299,7 +299,7 @@ double assemble_vector0(std::shared_ptr<const fem::FunctionSpace<T>> V,
 // permutations, so the corresponding views and callbacks are empty.
 //
 // The advantage is that `kernel` retains its concrete type as it passes into
-// `assemble_cells_matrix` or `assemble_cells`. Together with the static
+// `assemble_cells_matrix` or `assemble_cells_vector`. Together with the static
 // `mdspan` extents and compile-time block size, this allows the compiler to
 // specialise the cell loop for this element and kernel.
 
@@ -397,7 +397,7 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
   std::array<T, p1_triangle_dofs_per_cell> be_b;
   auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
-  fem::impl::assemble_cells(
+  fem::impl::assemble_cells_vector(
       b.array(), fem::GeometryPack{x_dofmap, x}, cells,
       fem::FormArgument{
           fem::DofMapPack{dmap, std::integral_constant<int, 1>{}, cells},

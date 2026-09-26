@@ -87,24 +87,23 @@ struct GeometryPack
   D dofmap;
 
   /// Node coordinates, shape `(num_nodes, 3)`. The trailing extent is
-  /// static so that the coordinate gather folds.
+  /// static so the coordinate gather folds.
   md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x;
 };
 
 /// @brief Degree-of-freedom map data for one form argument, as passed
 /// to the assembly kernels.
 ///
-/// The block size is a member rather than a tuple element so that
-/// reading it cannot introduce a reference: a structured binding of a
+/// A member rather than a tuple element, so that reading the block
+/// size cannot introduce a reference. A structured binding of a
 /// tuple-like type binds references, and a reference is not usable in
-/// a constant expression, which silently costs the compile-time block
+/// a constant expression, silently costing the compile-time block
 /// size.
 ///
 /// @tparam D Dofmap type, a rank-2 mdspan of `const std::int32_t`.
 /// @tparam B Block size type, `int` or
 /// `std::integral_constant<int, N>`.
-/// @tparam E Entity index list type. Its shape differs between the
-/// cell, entity and facet kernels, and is constrained by the
+/// @tparam E Entity index list type, constrained by the
 /// `DofMapPack*` concepts below.
 template <class D, class B, class E>
 struct DofMapPack
@@ -168,14 +167,13 @@ struct FormArgument
   /// Dofmap, block size and entity indices for this argument.
   DofMapPack<D, B, E> dofmap;
 
-  /// Dof transformation applied in-place to the element tensor.
-  ///
-  /// Held by reference: the transformations are `std::function`s, and
-  /// the assembly kernels must not allocate.
+  /// Dof transformation applied in-place to the element tensor. Held
+  /// by reference: it is a `std::function`, and the kernels must not
+  /// allocate.
   const P& transform;
 
-  /// Cell permutation information for this argument's mesh. Empty if
-  /// the element needs no dof transformations.
+  /// Cell permutations for this argument's mesh. Empty if the element
+  /// needs no dof transformations.
   std::span<const std::uint32_t> cell_info;
 };
 
@@ -260,11 +258,9 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// constant for the common block sizes, and as a plain `int`
 /// otherwise.
 ///
-/// The assembly kernels loop over the block size when scattering the
-/// element tensor, so passing it as `std::integral_constant<int, N>`
-/// lets that loop be unrolled and the element tensor offsets fold to
-/// constants. Block sizes other than those handled here take the
-/// run-time path.
+/// The kernels loop over the block size when scattering the element
+/// tensor, so `std::integral_constant<int, N>` lets that loop unroll
+/// and the offsets fold. Other block sizes take the run-time path.
 ///
 /// @param[in] bs Dofmap block size.
 /// @param[in] f Callable invoked with the block size.
@@ -286,9 +282,9 @@ void dispatch_bs(int bs, F&& f)
 /// compile-time constants when they are equal and one of the common
 /// block sizes, and as plain `int`s otherwise.
 ///
-/// See the single block size overload. Only matching block sizes are
-/// specialised: the mixed cases would multiply the number of kernel
-/// instantiations for a case that a bilinear form rarely has.
+/// See the single block size overload. Only matching sizes are
+/// specialised; the mixed cases would multiply instantiations for a
+/// case a bilinear form rarely has.
 ///
 /// @param[in] bs0 Test function dofmap block size.
 /// @param[in] bs1 Trial function dofmap block size.

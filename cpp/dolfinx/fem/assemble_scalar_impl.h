@@ -30,10 +30,11 @@ namespace dolfinx::fem::impl
 /// a per-call allocation would not be amortized. The buffer must be
 /// sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, MDSpan2Int32 XD, std::floating_point U>
-T assemble_cells(GeometryPack<XD, U> geometry, IndexList auto cells,
-                 const FEkernel<T, U> auto& fn, std::span<const T> constants,
-                 md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-                 ScratchBuffer<U> auto cdofs_b)
+T assemble_cells_scalar(
+    GeometryPack<XD, U> geometry, IndexList auto cells,
+    const FEkernel<T, U> auto& kernel, std::span<const T> constants,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    ScratchBuffer<U> auto cdofs_b)
 {
   T value(0);
   if (cells.empty())
@@ -62,8 +63,8 @@ T assemble_cells(GeometryPack<XD, U> geometry, IndexList auto cells,
       for (std::size_t k = 0; k < 3; ++k)
         cdofs_b[3 * i + k] = src[k];
     }
-    fn(&value, coeffs_data + index * cstride, constants.data(), cdofs_b.data(),
-       nullptr, nullptr, nullptr);
+    kernel(&value, coeffs_data + index * cstride, constants.data(),
+           cdofs_b.data(), nullptr, nullptr, nullptr);
   }
 
   return value;
@@ -85,12 +86,12 @@ T assemble_cells(GeometryPack<XD, U> geometry, IndexList auto cells,
 /// so a per-call allocation would not be amortized. The buffer must
 /// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, MDSpan2Int32 XD, std::floating_point U>
-T assemble_entities(
+T assemble_entities_scalar(
     GeometryPack<XD, U> geometry,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
-    const FEkernel<T, U> auto& fn, std::span<const T> constants,
+    const FEkernel<T, U> auto& kernel, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
     ScratchBuffer<U> auto cdofs_b)
@@ -126,8 +127,8 @@ T assemble_entities(
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
-    fn(&value, coeffs_data + f * cstride, constants.data(), cdofs_b.data(),
-       &local_entity, &perm, nullptr);
+    kernel(&value, coeffs_data + f * cstride, constants.data(), cdofs_b.data(),
+           &local_entity, &perm, nullptr);
   }
 
   return value;
@@ -140,12 +141,12 @@ T assemble_entities(
 /// so a per-call allocation would not be amortized. The buffer must
 /// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, MDSpan2Int32 XD, std::floating_point U>
-T assemble_interior_facets(
+T assemble_interior_facets_scalar(
     GeometryPack<XD, U> geometry,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
-    const FEkernel<T, U> auto& fn, std::span<const T> constants,
+    const FEkernel<T, U> auto& kernel, std::span<const T> constants,
     md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                     md::dynamic_extent>>
         coeffs,
@@ -193,8 +194,8 @@ T assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    fn(&value, coeffs_data + f * cstride, constants.data(), cdofs_b.data(),
-       local_facet.data(), perm.data(), nullptr);
+    kernel(&value, coeffs_data + f * cstride, constants.data(), cdofs_b.data(),
+           local_facet.data(), perm.data(), nullptr);
   }
 
   return value;
@@ -229,7 +230,7 @@ T assemble_scalar(
     std::span<const std::int32_t> cells
         = M.domain(IntegralType::cell, i, cell_type_idx);
     assert(cells.size() * cstride == coeffs.size());
-    value += impl::assemble_cells(
+    value += impl::assemble_cells_scalar(
         geometry, cells, fn, constants,
         md::mdspan(coeffs.data(), cells.size(), cstride), cdofs_b1);
   }
@@ -256,7 +257,7 @@ T assemble_scalar(
     constexpr std::size_t shape1 = 2 * num_adjacent_cells;
 
     assert((facets.size() / shape1) * 2 * cstride == coeffs.size());
-    value += impl::assemble_interior_facets(
+    value += impl::assemble_interior_facets_scalar(
         geometry,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2, 2>>(
@@ -296,7 +297,7 @@ T assemble_scalar(
 
       // Two values per each adj. cell (cell index and local entity index).
       assert((entities.size() / 2) * cstride == coeffs.size());
-      value += impl::assemble_entities(
+      value += impl::assemble_entities_scalar(
           geometry,
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>(
