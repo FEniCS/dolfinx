@@ -518,61 +518,43 @@ mesh::compute_cell_orientations(const mesh::Topology& topology)
                     "dimension 2), not dimension {}.",
                     topology.dim()));
   }
-  // Positions of the vertices in the order that goes round the cell. A
-  // 2D cell is a triangle or a quadrilateral.
-  const std::vector<int> cycle
-      = topology.cell_type() == mesh::CellType::triangle
-            ? std::vector{0, 1, 2}
-            : std::vector{0, 1, 3, 2};
-
-  auto c_to_v = topology.connectivity(2, 0);
   auto c_to_e = topology.connectivity(2, 1);
-  auto e_to_v = topology.connectivity(1, 0);
   auto e_to_c = topology.connectivity(1, 2);
-  if (!c_to_v or !c_to_e or !e_to_v or !e_to_c)
+  if (!c_to_e or !e_to_c)
   {
     throw std::runtime_error("Edges and the connectivity between edges and "
                              "cells must be created first.");
   }
 
   MPI_Comm comm = topology.comm();
-  const int comm_size = dolfinx::MPI::size(comm);
   std::shared_ptr<const common::IndexMap> cell_map = topology.index_map(2);
   std::shared_ptr<const common::IndexMap> edge_map = topology.index_map(1);
-  std::shared_ptr<const common::IndexMap> vertex_map = topology.index_map(0);
   const std::int32_t num_owned = cell_map->size_local();
   const std::int32_t num_cells = num_owned + cell_map->num_ghosts();
 
-  // Global indices of the vertices, to compare edge directions across
-  // ranks
-  std::vector<std::int64_t> global_vertex(vertex_map->size_local()
-                                          + vertex_map->num_ghosts());
-  std::iota(global_vertex.begin(),
-            std::next(global_vertex.begin(), vertex_map->size_local()),
-            vertex_map->local_range()[0]);
-  std::ranges::copy(vertex_map->ghosts(),
-                    std::next(global_vertex.begin(), vertex_map->size_local()));
-
-  // Whether going round cell c in the order of its vertices runs edge e
-  // from its lower to its higher global vertex
-  auto runs_up = [&e_to_v, &c_to_v, &global_vertex,
-                  &cycle](std::int32_t c, std::int32_t e) -> bool
+  // For process-local cell c and one of its edges e, whether walking
+  // round c in its vertex order (anticlockwise on the reference cell)
+  // runs e from its lower to its higher global vertex. The global vertex
+  // numbering is shared by all cells and ranks, so values from different
+  // cells can be compared. forward[i] is whether the walk runs Basix edge
+  // i = [p, q] from p to q, and the reflection bit whether p to q runs
+  // from the higher to the lower global vertex. Round a triangle (0-1-2)
+  // the walk runs its edges [1, 2], [0, 2], [0, 1] forward, back,
+  // forward, and round a quadrilateral (0-1-3-2) its edges [0, 1],
+  // [0, 2], [1, 3], [2, 3] forward, back, forward, back.
+  const std::vector<std::uint8_t>& edge_perms
+      = topology.get_entity_permutations(1);
+  const int edges_per_cell = mesh::cell_num_entities(topology.cell_type(), 1);
+  auto runs_up = [&c_to_e, &edge_perms, &edges_per_cell](std::int32_t c,
+                                                         std::int32_t e) -> bool
   {
-    std::span<const std::int32_t> ev = e_to_v->links(e);
-    const auto [lo, hi] = global_vertex[ev[0]] < global_vertex[ev[1]]
-                              ? std::pair(ev[0], ev[1])
-                              : std::pair(ev[1], ev[0]);
-    std::span<const std::int32_t> cv = c_to_v->links(c);
-    for (std::size_t i = 0; i < cycle.size(); ++i)
-    {
-      const std::int32_t a = cv[cycle[i]];
-      const std::int32_t b = cv[cycle[(i + 1) % cycle.size()]];
-      if (a == lo and b == hi)
-        return true;
-      if (a == hi and b == lo)
-        return false;
-    }
-    throw std::runtime_error("Edge is not an edge of the cell.");
+    constexpr std::array<bool, 4> forward = {true, false, true, false};
+    std::span<const std::int32_t> edges = c_to_e->links(c);
+    const std::size_t i
+        = std::ranges::distance(edges.begin(), std::ranges::find(edges, e));
+    assert(i < edges.size());
+    const bool reflected = edge_perms[c * edges_per_cell + i] % 2;
+    return forward[i] != reflected;
   };
 
   // Throw on every rank if any rank found a problem. Collective.
@@ -650,137 +632,129 @@ mesh::compute_cell_orientations(const mesh::Topology& topology)
   // Stop before the collective steps if any rank found a problem
   check_problems(problems);
 
-  // 2. Pair the sides of each edge on a rank boundary, i.e. a ghost edge
-  //    or an owned edge ghosted by another rank. Every owned cell on such
-  //    an edge gives a "half" of it, sent to the "post office" of the
-  //    edge, the rank that its global index maps to, which thus sees all
-  //    cells of the edge. For each half: its owned cell, whether that
-  //    cell runs the edge up, and the edge's global index.
-  std::vector<std::int8_t> on_rank_boundary(
-      edge_map->size_local() + edge_map->num_ghosts(), 0);
-  for (std::int32_t e : edge_map->shared_indices())
-    on_rank_boundary[e] = 1;
-  std::fill(std::next(on_rank_boundary.begin(), edge_map->size_local()),
-            on_rank_boundary.end(), 1);
+  // 2. Find the cell on the other side of each edge that the walk could
+  //    not cross because that cell is owned by another rank. Step 3 joins
+  //    the parts across these pairs.
+  //
+  //    A "half" is an owned cell together with one of its edges that
+  //    other ranks hold, as owner or ghost. Only these "sharing ranks"
+  //    can own the other cells of the edge. Every half is sent to all
+  //    sharing ranks of its edge, so each rank sees, with its own halves,
+  //    all cells of its shared edges and pairs its halves itself, without
+  //    a reply. The sharing ranks of all edges form one symmetric
+  //    neighbourhood, whose communicator step 3 uses again.
+  auto [ranks, edge_rank_data, edge_rank_offsets]
+      = common::compute_sharing_neighbourhood(*edge_map);
+  const graph::AdjacencyList<int> edge_ranks(std::move(edge_rank_data),
+                                             std::move(edge_rank_offsets));
+  const std::size_t num_neighbours = ranks.size();
+  MPI_Comm graph;
+  int ierr = MPI_Dist_graph_create_adjacent(
+      comm, ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
+      ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &graph);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  // The halves: owned cell, whether the cell runs the edge up, and the
+  // local edge
   std::vector<std::int32_t> half_cell;
   std::vector<std::int8_t> half_up;
-  std::vector<std::int32_t> half_edge_local;
+  std::vector<std::int32_t> half_edge;
   for (std::int32_t c = 0; c < num_owned; ++c)
   {
     for (std::int32_t e : c_to_e->links(c))
     {
-      if (on_rank_boundary[e])
+      if (edge_ranks.num_links(e) > 0)
       {
         half_cell.push_back(c);
         half_up.push_back(runs_up(c, e));
-        half_edge_local.push_back(e);
+        half_edge.push_back(e);
       }
     }
   }
   const std::size_t num_halves = half_cell.size();
-  std::vector<std::int64_t> half_edge(num_halves);
-  edge_map->local_to_global(half_edge_local, half_edge);
 
-  // Rank, half index and direction of the other side of each half, or
-  // -1 as rank if it has none
-  std::vector<std::int32_t> partner_rank(num_halves, -1);
+  // The other side of each half: the neighbourhood rank that owns it, or
+  // -1 if there is none, its half index there, and whether it runs the
+  // edge up. Step 3 sends to that rank, addressed to that half, and
+  // compares the directions to tell whether the two cells agree.
+  std::vector<std::int32_t> partner(num_halves, -1);
   std::vector<std::int64_t> partner_half(num_halves, -1);
   std::vector<std::int8_t> partner_up(num_halves, 0);
   {
-    // Send (edge, direction, half index) to the post office of the edge,
-    // grouped by office
-    const std::int64_t num_edges = edge_map->size_global();
-    std::vector<int> office(num_halves);
+    // Send (global edge, direction, half index) to every rank sharing the
+    // edge. The receiver finds the edge by its global index and keeps the
+    // half index to address the half in step 3.
+    std::vector<std::int64_t> global_edge(num_halves);
+    edge_map->local_to_global(half_edge, global_edge);
+    std::vector<std::vector<std::int64_t>> send_to(num_neighbours);
     for (std::size_t h = 0; h < num_halves; ++h)
-      office[h] = dolfinx::MPI::index_owner(comm_size, half_edge[h], num_edges);
-    std::vector<std::int32_t> perm(num_halves);
-    std::iota(perm.begin(), perm.end(), 0);
-    std::ranges::stable_sort(perm, {},
-                             [&office](std::int32_t h) { return office[h]; });
-    std::vector<int> dest;
-    std::vector<std::int32_t> rows_per_dest;
-    std::vector<std::int64_t> send;
-    send.reserve(3 * num_halves);
-    for (std::int32_t h : perm)
     {
-      if (dest.empty() or dest.back() != office[h])
+      for (int r : edge_ranks.links(half_edge[h]))
       {
-        dest.push_back(office[h]);
-        rows_per_dest.push_back(0);
+        send_to[r].insert(send_to[r].end(), {global_edge[h], half_up[h],
+                                             static_cast<std::int64_t>(h)});
       }
-      ++rows_per_dest.back();
-      send.insert(send.end(), {half_edge[h], half_up[h], h});
     }
-    std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-    src.reserve(1);
-    dest.reserve(1);
-    MPI_Comm to_office;
-    int ierr = MPI_Dist_graph_create_adjacent(
-        comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
-        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &to_office);
-    dolfinx::MPI::check_error(comm, ierr);
-    auto [recv, rows_per_src] = exchange_rows(to_office, std::move(send),
-                                              rows_per_dest, src.size(), 3);
-    MPI_Comm_free(&to_office);
-
-    // Sort the received halves by edge, so the halves of an edge are
-    // adjacent. Each entry is (edge, position of the sender in src, row
-    // in recv).
-    std::vector<std::array<std::int64_t, 3>> rows;
-    for (std::size_t s = 0, r = 0; s < src.size(); ++s)
-      for (std::int32_t i = 0; i < rows_per_src[s]; ++i, ++r)
-        rows.push_back({recv[3 * r], static_cast<std::int64_t>(s),
-                        static_cast<std::int64_t>(r)});
-    std::ranges::sort(rows);
-
-    // An edge with two halves from different ranks pairs them: reply to
-    // each with (its half index, partner rank, partner half index,
-    // partner direction), grouped by its rank. Two halves from the same
-    // rank were joined by the walk, one half is on the boundary of the
-    // surface, and more than two mean too many cells share the edge.
-    std::vector<std::vector<std::int64_t>> replies(src.size());
-    for (auto it = rows.begin(); it != rows.end();)
+    std::vector<std::int64_t> send;
+    std::vector<std::int32_t> rows_per_dest;
+    for (const std::vector<std::int64_t>& rows : send_to)
     {
-      auto next = std::find_if(
-          it, rows.end(), [e = (*it)[0]](const std::array<std::int64_t, 3>& row)
-          { return row[0] != e; });
-      if (std::distance(it, next) > 2)
-        problems |= not_manifold;
-      else if (std::distance(it, next) == 2 and (*it)[1] != (*(it + 1))[1])
+      send.insert(send.end(), rows.begin(), rows.end());
+      rows_per_dest.push_back(rows.size() / 3);
+    }
+    auto [recv, rows_per_src] = exchange_rows(graph, std::move(send),
+                                              rows_per_dest, num_neighbours, 3);
+
+    // Count on each edge the owned cells, i.e. own halves, and the halves
+    // received from other ranks, and keep the sender and row of a
+    // received half. A rank that holds an edge only through ghost cells
+    // receives its halves but has none of its own, and ignores them.
+    const std::int32_t num_edges
+        = edge_map->size_local() + edge_map->num_ghosts();
+    std::vector<std::int32_t> num_own(num_edges, 0);
+    for (std::int32_t e : half_edge)
+      ++num_own[e];
+    std::vector<std::int32_t> num_remote(num_edges, 0);
+    std::vector<std::int32_t> remote_src(num_edges, -1);
+    std::vector<std::int32_t> remote_row(num_edges, -1);
+    {
+      const std::size_t num_rows = recv.size() / 3;
+      std::vector<std::int64_t> recv_global(num_rows);
+      for (std::size_t r = 0; r < num_rows; ++r)
+        recv_global[r] = recv[3 * r];
+      std::vector<std::int32_t> recv_edge(num_rows);
+      edge_map->global_to_local(recv_global, recv_edge);
+      for (std::size_t s = 0, r = 0; s < num_neighbours; ++s)
       {
-        for (int side = 0; side < 2; ++side)
+        for (std::int32_t i = 0; i < rows_per_src[s]; ++i, ++r)
         {
-          const auto& self = *(it + side);
-          const auto& other = *(it + 1 - side);
-          replies[self[1]].insert(replies[self[1]].end(),
-                                  {recv[3 * self[2] + 2], src[other[1]],
-                                   recv[3 * other[2] + 2],
-                                   recv[3 * other[2] + 1]});
+          const std::int32_t e = recv_edge[r];
+          assert(e >= 0);
+          ++num_remote[e];
+          remote_src[e] = s;
+          remote_row[e] = r;
         }
       }
-      it = next;
     }
-    std::vector<std::int64_t> reply;
-    std::vector<std::int32_t> rows_per_src_reply;
-    for (const std::vector<std::int64_t>& r : replies)
+
+    // Classify each half by the number of cells of its edge. More than two
+    // means that the surface is not a manifold there, e.g. a T-joint whose
+    // cells are split over ranks, so that no rank holds all of them. With
+    // exactly one received half, and so one own, the two are partners.
+    // Otherwise there is no partner: two own halves were joined by the
+    // walk, and a single one lies on the boundary of the surface.
+    for (std::size_t h = 0; h < num_halves; ++h)
     {
-      reply.insert(reply.end(), r.begin(), r.end());
-      rows_per_src_reply.push_back(r.size() / 4);
-    }
-    MPI_Comm from_office;
-    ierr = MPI_Dist_graph_create_adjacent(
-        comm, dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(), src.data(),
-        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &from_office);
-    dolfinx::MPI::check_error(comm, ierr);
-    auto [answers, rows_per_office] = exchange_rows(
-        from_office, std::move(reply), rows_per_src_reply, dest.size(), 4);
-    MPI_Comm_free(&from_office);
-    for (std::size_t r = 0; r < answers.size() / 4; ++r)
-    {
-      const std::int64_t h = answers[4 * r];
-      partner_rank[h] = answers[4 * r + 1];
-      partner_half[h] = answers[4 * r + 2];
-      partner_up[h] = answers[4 * r + 3];
+      const std::int32_t e = half_edge[h];
+      if (num_own[e] + num_remote[e] > 2)
+        problems |= not_manifold;
+      else if (num_remote[e] == 1)
+      {
+        const std::int32_t r = remote_row[e];
+        partner[h] = remote_src[e];
+        partner_half[h] = recv[3 * r + 2];
+        partner_up[h] = recv[3 * r + 1];
+      }
     }
   }
 
@@ -793,45 +767,30 @@ mesh::compute_cell_orientations(const mesh::Topology& topology)
   {
     const std::int64_t offset = cell_map->local_range()[0];
     for (std::int32_t c = 0, p = 0; p < num_parts; ++c)
-    {
       if (part[c] == p)
         label[p++] = offset + c;
-    }
   }
   std::vector<std::int8_t> part_sign(num_parts, 1);
 
-  // Halves with a partner, grouped by partner rank, which are the
-  // neighbours in the merge
+  // Halves with a partner, grouped by the partner's neighbourhood rank
   std::vector<std::int32_t> paired;
+  std::vector<std::int32_t> rows_per_neighbour(num_neighbours, 0);
   for (std::size_t h = 0; h < num_halves; ++h)
-    if (partner_rank[h] >= 0)
-      paired.push_back(h);
-  std::ranges::stable_sort(paired, {}, [&partner_rank](std::int32_t h)
-                           { return partner_rank[h]; });
-  std::vector<int> neighbours;
-  std::vector<std::int32_t> rows_per_neighbour;
-  for (std::int32_t h : paired)
   {
-    if (neighbours.empty() or neighbours.back() != partner_rank[h])
+    if (partner[h] >= 0)
     {
-      neighbours.push_back(partner_rank[h]);
-      rows_per_neighbour.push_back(0);
+      paired.push_back(h);
+      ++rows_per_neighbour[partner[h]];
     }
-    ++rows_per_neighbour.back();
   }
-  neighbours.reserve(1);
-  MPI_Comm graph;
-  int ierr = MPI_Dist_graph_create_adjacent(
-      comm, neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
-      neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &graph);
-  dolfinx::MPI::check_error(comm, ierr);
+  std::ranges::stable_sort(paired, {},
+                           [&partner](std::int32_t h) { return partner[h]; });
 
   // Send (partner half, label, orientation) for every paired half and
   // return what the partners sent
   auto exchange_state
       = [&paired, &half_cell, &partner_half, &label, &part, &part_sign, &sign,
-         graph, &rows_per_neighbour, &neighbours]()
+         &graph, &rows_per_neighbour, &num_neighbours]()
   {
     std::vector<std::int64_t> send;
     send.reserve(3 * paired.size());
@@ -842,7 +801,7 @@ mesh::compute_cell_orientations(const mesh::Topology& topology)
                                part_sign[part[c]] * sign[c]});
     }
     return exchange_rows(graph, std::move(send), rows_per_neighbour,
-                         neighbours.size(), 3)
+                         num_neighbours, 3)
         .first;
   };
 
