@@ -91,8 +91,8 @@ bool has_bc(auto& dofs, auto& bc, auto bs)
 template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
-    MDSpan2Floating<U> auto x, std::span<const std::int32_t> cells,
-    const DofMapPackCells auto& dofmap0,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    std::span<const std::int32_t> cells, const DofMapPackCells auto& dofmap0,
     const fem::DofTransformKernel<T> auto& P0,
     const DofMapPackCells auto& dofmap1,
     const fem::DofTransformKernel<T> auto& P1T,
@@ -100,28 +100,35 @@ void assemble_cells_matrix(
     const FEkernel<T, U> auto& kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1, std::span<T> Ab,
-    std::span<U> cdofs_b)
+    std::span<const std::uint32_t> cell_info1, auto Ab, auto cdofs_b)
 {
   if (cells.empty())
     return;
 
-  const auto [dmap0, bs0, cells0] = dofmap0;
-  const auto [dmap1, bs1, cells1] = dofmap1;
+  // Taken by value. A structured binding of a tuple-like type introduces
+  // references, and a reference is not usable in a constant expression,
+  // so the sizes below would not fold even when the caller's types carry
+  // them. mdspan and span are two-word copies.
+  const auto dmap0 = std::get<0>(dofmap0);
+  const auto bs0 = std::get<1>(dofmap0);
+  const auto cells0 = std::get<2>(dofmap0);
+  const auto dmap1 = std::get<0>(dofmap1);
+  const auto bs1 = std::get<1>(dofmap1);
+  const auto cells1 = std::get<2>(dofmap1);
 
-  std::size_t num_dofs0 = dmap0.extent(1);
-  std::size_t num_dofs1 = dmap1.extent(1);
-  std::size_t ndim0 = bs0 * num_dofs0;
-  std::size_t ndim1 = bs1 * num_dofs1;
+  static_assert(x.extent(1) == 3);
+  const auto num_dofs0 = dmap0.extent(1);
+  const auto num_dofs1 = dmap1.extent(1);
+  const std::size_t ndim0 = bs0 * num_dofs0;
+  const std::size_t ndim1 = bs1 * num_dofs1;
+  const auto num_x_dofs_cell = x_dofmap.extent(1);
 
   const U* x_ptr = x.data_handle();
-  const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
 
   assert(Ab.size() >= ndim0 * ndim1);
-  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
-  auto Ae = Ab.first(ndim0 * ndim1);
+  assert(cdofs_b.size() >= 3 * static_cast<std::size_t>(num_x_dofs_cell));
+  std::span<T> Ae(Ab.data(), ndim0 * ndim1);
 
   // P0/P1T do not change across cells in this call, so whether each is a
   // set (non-null) transform is loop-invariant -- checked once here
@@ -154,11 +161,11 @@ void assemble_cells_matrix(
     }
 
     // Get cell coordinates/geometry
-    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
-    {
-      const U* _x_ptr = x_ptr + x_dofmap_ptr[cell * num_x_dofs_cell + i] * gdim;
-      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
-    }
+    const std::int32_t* xdofs
+        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * num_x_dofs_cell;
+    for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
+      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3, 3,
+                  cdofs_b.data() + 3 * i);
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
@@ -279,7 +286,7 @@ void assemble_cells_matrix(
 template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_entities(
     la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
-    MDSpan2Floating<U> auto x,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
@@ -292,29 +299,37 @@ void assemble_entities(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<T> Ab, std::span<U> cdofs_b)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms, auto Ab,
+    auto cdofs_b)
 {
   if (entities.empty())
     return;
 
-  const auto [dmap0, bs0, entities0] = dofmap0;
-  const auto [dmap1, bs1, entities1] = dofmap1;
+  // Taken by value. A structured binding of a tuple-like type introduces
+  // references, and a reference is not usable in a constant expression,
+  // so the sizes below would not fold even when the caller's types carry
+  // them. mdspan and span are two-word copies.
+  const auto dmap0 = std::get<0>(dofmap0);
+  const auto bs0 = std::get<1>(dofmap0);
+  const auto entities0 = std::get<2>(dofmap0);
+  const auto dmap1 = std::get<0>(dofmap1);
+  const auto bs1 = std::get<1>(dofmap1);
+  const auto entities1 = std::get<2>(dofmap1);
 
-  std::size_t num_dofs0 = dmap0.extent(1);
-  std::size_t num_dofs1 = dmap1.extent(1);
-  std::size_t ndim0 = bs0 * num_dofs0;
-  std::size_t ndim1 = bs1 * num_dofs1;
+  static_assert(x.extent(1) == 3);
+  const auto num_dofs0 = dmap0.extent(1);
+  const auto num_dofs1 = dmap1.extent(1);
+  const std::size_t ndim0 = bs0 * num_dofs0;
+  const std::size_t ndim1 = bs1 * num_dofs1;
+  const auto num_x_dofs_cell = x_dofmap.extent(1);
   assert(entities0.size() == entities.size());
   assert(entities1.size() == entities.size());
   assert(Ab.size() >= ndim0 * ndim1);
-  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
-  auto Ae = Ab.first(ndim0 * ndim1);
+  assert(cdofs_b.size() >= 3 * static_cast<std::size_t>(num_x_dofs_cell));
+  std::span<T> Ae(Ab.data(), ndim0 * ndim1);
 
   const U* x_ptr = x.data_handle();
-  const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
 
   // P0/P1T do not change across entities in this call, so whether each is a
   // set (non-null) transform is loop-invariant -- checked once here rather
@@ -346,11 +361,11 @@ void assemble_entities(
     }
 
     // Get cell coordinates/geometry
-    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
-    {
-      const U* _x_ptr = x_ptr + x_dofmap_ptr[cell * num_x_dofs_cell + i] * gdim;
-      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
-    }
+    const std::int32_t* xdofs
+        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * num_x_dofs_cell;
+    for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
+      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3, 3,
+                  cdofs_b.data() + 3 * i);
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
@@ -470,7 +485,7 @@ void assemble_entities(
 template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
-    MDSpan2Floating<U> auto x,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
@@ -485,28 +500,35 @@ void assemble_interior_facets(
         coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<T> Ab, std::span<U> cdofs_b, std::span<std::int32_t> dofs_b,
-    std::span<T> Ae_block_b)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms, auto Ab,
+    auto cdofs_b, std::span<std::int32_t> dofs_b, std::span<T> Ae_block_b)
 {
   if (facets.empty())
     return;
 
-  const auto [dmap0, bs0, facets0] = dofmap0;
-  const auto [dmap1, bs1, facets1] = dofmap1;
+  // Taken by value. A structured binding of a tuple-like type introduces
+  // references, and a reference is not usable in a constant expression,
+  // so the sizes below would not fold even when the caller's types carry
+  // them. mdspan and span are two-word copies.
+  const auto dmap0 = std::get<0>(dofmap0);
+  const auto bs0 = std::get<1>(dofmap0);
+  const auto facets0 = std::get<2>(dofmap0);
+  const auto dmap1 = std::get<0>(dofmap1);
+  const auto bs1 = std::get<1>(dofmap1);
+  const auto facets1 = std::get<2>(dofmap1);
 
   // Data structures used in assembly
-  assert(cdofs_b.size() >= 2 * 3 * x_dofmap.extent(1));
-  auto cdofs0 = cdofs_b.first(3 * x_dofmap.extent(1));
-  auto cdofs1 = cdofs_b.last(3 * x_dofmap.extent(1));
+  static_assert(x.extent(1) == 3);
+  const auto num_x_dofs_cell = x_dofmap.extent(1);
+  assert(cdofs_b.size() >= 2 * 3 * static_cast<std::size_t>(num_x_dofs_cell));
+  U* cdofs0 = cdofs_b.data();
+  U* cdofs1 = cdofs_b.data() + 3 * num_x_dofs_cell;
 
   const U* x_ptr = x.data_handle();
-  const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
 
-  std::size_t dmap0_size = dmap0.extent(1);
-  std::size_t dmap1_size = dmap1.extent(1);
+  const auto dmap0_size = dmap0.extent(1);
+  const auto dmap1_size = dmap1.extent(1);
   std::size_t num_rows = bs0 * 2 * dmap0_size;
   std::size_t num_cols = bs1 * 2 * dmap1_size;
 
@@ -518,7 +540,7 @@ void assemble_interior_facets(
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   assert(Ab.size() >= num_rows * num_cols);
-  auto Ae = Ab.first(num_rows * num_cols);
+  std::span<T> Ae(Ab.data(), num_rows * num_cols);
 
   // Buffer used to gather a contiguous (test, trial) block of Ae when
   // one of the two cells attached to the facet does not exist in the
@@ -567,14 +589,18 @@ void assemble_interior_facets(
     std::array local_facet{facets(f, 0, 1), facets(f, 1, 1)};
 
     // Get cell geometry
-    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+    const std::int32_t* xdofs0
+        = x_dofmap_ptr
+          + static_cast<std::ptrdiff_t>(cells[0]) * num_x_dofs_cell;
+    const std::int32_t* xdofs1
+        = x_dofmap_ptr
+          + static_cast<std::ptrdiff_t>(cells[1]) * num_x_dofs_cell;
+    for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
     {
-      const U* _x_ptr0
-          = x_ptr + x_dofmap_ptr[cells[0] * num_x_dofs_cell + i] * gdim;
-      std::copy_n(_x_ptr0, gdim, cdofs0.data() + 3 * i);
-      const U* _x_ptr1
-          = x_ptr + x_dofmap_ptr[cells[1] * num_x_dofs_cell + i] * gdim;
-      std::copy_n(_x_ptr1, gdim, cdofs1.data() + 3 * i);
+      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs0[i]) * 3, 3,
+                  cdofs0 + 3 * i);
+      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs1[i]) * 3, 3,
+                  cdofs1 + 3 * i);
     }
 
     // Get dof maps for cells and pack
