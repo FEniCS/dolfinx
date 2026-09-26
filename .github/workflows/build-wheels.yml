@@ -214,11 +214,12 @@ jobs:
             dnf -y update &&
             dnf -y install git hdf5-mpich-devel make \
               mpich-devel ninja-build openblas-devel pugixml-devel spdlog-devel &&
-            curl -L https://archives.boost.io/release/1.92.0/source/boost_1_92_0.tar.gz | tar -xz &&
+            (for i in 1 2 3; do curl -L https://archives.boost.io/release/1.92.0/source/boost_1_92_0.tar.gz | tar -xz && exit 0; sleep 10; done; exit 1) &&
             (cd boost_1_92_0/ && ./bootstrap.sh --prefix=/usr/local &&
               ./b2 -d0 --prefix=/usr/local --with-headers install) &&
             ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
-            mkdir -p scotch && curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch &&
+            mkdir -p scotch &&
+            (for i in 1 2 3; do curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch && exit 0; sleep 10; done; exit 1) &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
@@ -254,7 +255,8 @@ jobs:
             cmake --install dolfinx-build-dir/
           CIBW_BEFORE_BUILD_MACOS: >
             brew install boost hdf5-mpi ninja open-mpi openblas pkgconf pugixml spdlog &&
-            mkdir -p scotch && curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch &&
+            mkdir -p scotch &&
+            (for i in 1 2 3; do curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch && exit 0; sleep 10; done; exit 1) &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
