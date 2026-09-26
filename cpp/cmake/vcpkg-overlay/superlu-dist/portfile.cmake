@@ -22,7 +22,7 @@ set(
   scotchmetisv5
   scotch
   scotcherr
-  zlib
+  z
   bz2
   lzma
 )
