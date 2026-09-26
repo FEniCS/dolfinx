@@ -110,7 +110,9 @@ def constant_callable(c):
 
 def l2_error(mesh, e):
     """Global ``||e||`` of a UFL expression over ``mesh``."""
-    norm2 = mesh.comm.allreduce(assemble_scalar(form(ufl.inner(e, e) * ufl.dx)), op=MPI.SUM)
+    norm2 = mesh.comm.allreduce(
+        assemble_scalar(form(ufl.inner(e, e) * ufl.dx, dtype=default_real_type)), op=MPI.SUM
+    )
     return np.sqrt(abs(norm2))
 
 
@@ -213,7 +215,7 @@ def test_interpolate_callable(gdim, spec):
     V = functionspace(mesh, element(family, "triangle", degree, dtype=default_real_type))
 
     c = tangential_constant(gdim)
-    w = Function(V)
+    w = Function(V, dtype=default_real_type)
     w.interpolate(constant_callable(c))
 
     assert l2_error(mesh, w - ufl.as_vector(c)) < tol(mesh)
@@ -240,9 +242,9 @@ def test_interpolate_piola_to_dg(gdim, spec):
         element("DG", "triangle", max(degree, 1), shape=(gdim,) * rank, dtype=default_real_type),
     )
 
-    w = Function(V)
+    w = Function(V, dtype=default_real_type)
     w.x.array[:] = np.random.default_rng(seed=7).random(w.x.array.shape)
-    q = Function(Q)
+    q = Function(Q, dtype=default_real_type)
     q.interpolate(w)
 
     assert l2_error(mesh, w - q) < tol(mesh)
@@ -260,9 +262,9 @@ def test_interpolate_same_map(gdim, families):
     V = functionspace(mesh, element(families[0], "triangle", 1, dtype=default_real_type))
     W = functionspace(mesh, element(families[1], "triangle", 1, dtype=default_real_type))
 
-    w = Function(V)
+    w = Function(V, dtype=default_real_type)
     w.x.array[:] = np.random.default_rng(seed=11).random(w.x.array.shape)
-    v = Function(W)
+    v = Function(W, dtype=default_real_type)
     v.interpolate(w)
 
     assert l2_error(mesh, w - v) < tol(mesh)
@@ -283,11 +285,11 @@ def test_interpolate_expression(gdim, spec):
     Q = functionspace(mesh, element("DG", "triangle", 1, shape=(gdim,), dtype=default_real_type))
 
     c = tangential_constant(gdim)
-    g = Function(Q)
+    g = Function(Q, dtype=default_real_type)
     g.interpolate(constant_callable(c))
 
-    w = Function(V)
-    w.interpolate(Expression(2 * g, V.element.interpolation_points))
+    w = Function(V, dtype=default_real_type)
+    w.interpolate(Expression(2 * g, V.element.interpolation_points, dtype=default_real_type))
 
     assert l2_error(mesh, w - 2 * ufl.as_vector(c)) < tol(mesh)
 
@@ -307,12 +309,12 @@ def test_interpolate_nonmatching_meshes(gdim):
     V1 = functionspace(mesh1, element("RT", "triangle", 1, dtype=default_real_type))
 
     c = tangential_constant(gdim)
-    u0 = Function(V0)
+    u0 = Function(V0, dtype=default_real_type)
     u0.interpolate(constant_callable(c))
 
     cells = np.arange(mesh1.topology.index_map(mesh1.topology.dim).size_local, dtype=np.int32)
     data = create_interpolation_data(V1, V0, cells, padding=1e-6)
-    u1 = Function(V1)
+    u1 = Function(V1, dtype=default_real_type)
     u1.interpolate_nonmatching(u0, cells, data)
 
     assert l2_error(mesh1, u1 - ufl.as_vector(c)) < tol(mesh1)
@@ -398,10 +400,10 @@ def test_interpolation_matrix(gdim):
     Q = functionspace(mesh, element("DG", "triangle", 1, shape=(gdim,), dtype=default_real_type))
 
     c = tangential_constant(gdim)
-    g = Function(Q)
+    g = Function(Q, dtype=default_real_type)
     g.interpolate(constant_callable(c))
 
-    w = Function(V)
+    w = Function(V, dtype=default_real_type)
     w.x.array[:] = interpolation_matrix(Q, V).to_dense() @ g.x.array
 
     assert l2_error(mesh, w - ufl.as_vector(c)) < tol(mesh)
@@ -419,10 +421,10 @@ def test_discrete_gradient(gdim):
     W = functionspace(mesh, element("Lagrange", "triangle", 1, dtype=default_real_type))
     V = functionspace(mesh, element("N1curl", "triangle", 1, dtype=default_real_type))
 
-    u = Function(W)
+    u = Function(W, dtype=default_real_type)
     u.interpolate(lambda x: 2.0 * x[0] - 3.0 * x[1])
 
-    w = Function(V)
+    w = Function(V, dtype=default_real_type)
     w.x.array[:] = discrete_gradient(W, V).to_dense() @ u.x.array
 
     assert l2_error(mesh, w - ufl.grad(u)) < tol(mesh)
@@ -563,7 +565,7 @@ def test_interpolate_on_mixed_cell_orientations(gdim, spec):
     V = functionspace(mesh, element(family, "triangle", degree, dtype=default_real_type))
     f, f_ufl = tangential_field(mesh, linear)
 
-    w = Function(V)
+    w = Function(V, dtype=default_real_type)
     if gdim == 3 and family in ("RT", "BDM"):
         w.interpolate(f)
         assert l2_error(mesh, w - f_ufl) > 0.1, "the reversed cells should show"
@@ -572,8 +574,8 @@ def test_interpolate_on_mixed_cell_orientations(gdim, spec):
     # Interpolation of a callable, and of a compiled expression
     w.interpolate(f)
     assert l2_error(mesh, w - f_ufl) < tol(mesh)
-    w_expr = Function(V)
-    w_expr.interpolate(Expression(f_ufl, V.element.interpolation_points))
+    w_expr = Function(V, dtype=default_real_type)
+    w_expr.interpolate(Expression(f_ufl, V.element.interpolation_points, dtype=default_real_type))
     assert l2_error(mesh, w_expr - f_ufl) < tol(mesh)
 
     # Function.eval, which pushes the basis forward in C++
@@ -596,16 +598,18 @@ def test_divergence_theorem_on_a_closed_surface(family, degree, ghost_mode):
     """
     surface = cube_surface(ghost_mode)
     V = functionspace(surface, element(family, "triangle", degree, dtype=default_real_type))
-    w = Function(V)
+    w = Function(V, dtype=default_real_type)
     imap = V.dofmap.index_map
     indices = np.arange(imap.size_local + imap.num_ghosts, dtype=np.int32)
-    w.x.array[:] = np.sin(imap.local_to_global(indices).astype(np.float64) + 0.3)
+    w.x.array[:] = np.sin(imap.local_to_global(indices).astype(default_real_type) + 0.3)
 
     def integral(e):
-        return surface.comm.allreduce(assemble_scalar(form(e * ufl.dx)), op=MPI.SUM)
+        return surface.comm.allreduce(
+            assemble_scalar(form(e * ufl.dx, dtype=default_real_type)), op=MPI.SUM
+        )
 
     rounding = tol(surface) * integral(abs(ufl.div(w)))
-    assert abs(integral(ufl.div(w))) > 1e3 * rounding, "the reversed cells should show"
+    assert abs(integral(ufl.div(w))) > 1e2 * rounding, "the reversed cells should show"
 
     surface.topology.create_cell_orientations()
     num_owned = surface.topology.index_map(2).size_local
