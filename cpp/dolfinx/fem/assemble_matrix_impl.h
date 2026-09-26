@@ -177,8 +177,11 @@ void assemble_cells_matrix(
     const std::int32_t* xdofs
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * num_x_dofs_cell;
     for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
-      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3, 3,
-                  cdofs_b.data() + 3 * i);
+    {
+      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs_b[3 * i + k] = src[k];
+    }
 
     // Tabulate tensor
     std::ranges::fill(Ab, T(0));
@@ -387,8 +390,11 @@ void assemble_entities(
     const std::int32_t* xdofs
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * num_x_dofs_cell;
     for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
-      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3, 3,
-                  cdofs_b.data() + 3 * i);
+    {
+      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs_b[3 * i + k] = src[k];
+    }
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
@@ -635,10 +641,12 @@ void assemble_interior_facets(
           + static_cast<std::ptrdiff_t>(cells[1]) * num_x_dofs_cell;
     for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
     {
-      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs0[i]) * 3, 3,
-                  cdofs0 + 3 * i);
-      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs1[i]) * 3, 3,
-                  cdofs1 + 3 * i);
+      const U* src0 = x_ptr + static_cast<std::ptrdiff_t>(xdofs0[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs0[3 * i + k] = src0[k];
+      const U* src1 = x_ptr + static_cast<std::ptrdiff_t>(xdofs1[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs1[3 * i + k] = src1[k];
     }
 
     // Get dof maps for cells and pack

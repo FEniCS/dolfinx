@@ -130,7 +130,9 @@ void assemble_cells(
     const std::int32_t c0 = same_cells ? c : cells0[index];
 
     // Get cell coordinates/geometry. A loop rather than std::copy_n:
-    // with a run-time length that lowers to a memmove call, per vertex.
+    // for a trivially copyable type the latter goes through
+    // __builtin_memmove, which is emitted as a call even for this
+    // constant length, once per vertex.
     const std::int32_t* xdofs
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * ndofs_x;
     for (std::size_t i = 0; i < ndofs_x; ++i)
@@ -259,8 +261,9 @@ void assemble_entities(
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * num_x_dofs_cell;
     for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
     {
-      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3, 3,
-                  cdofs_b.data() + 3 * i);
+      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs_b[3 * i + k] = src[k];
     }
 
     // Permutations
@@ -382,10 +385,12 @@ void assemble_interior_facets(
           + static_cast<std::ptrdiff_t>(cells[1]) * num_x_dofs_cell;
     for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
     {
-      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs0[i]) * 3, 3,
-                  cdofs0 + 3 * i);
-      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs1[i]) * 3, 3,
-                  cdofs1 + 3 * i);
+      const U* src0 = x_ptr + static_cast<std::ptrdiff_t>(xdofs0[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs0[3 * i + k] = src0[k];
+      const U* src1 = x_ptr + static_cast<std::ptrdiff_t>(xdofs1[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs1[3 * i + k] = src1[k];
     }
 
     // Get dofmaps for cells. When integrating over interfaces between

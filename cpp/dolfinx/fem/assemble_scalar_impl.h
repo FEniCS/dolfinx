@@ -60,8 +60,9 @@ T assemble_cells(
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * ndofs_x;
     for (std::size_t i = 0; i < ndofs_x; ++i)
     {
-      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3, 3,
-                  cdofs_b.data() + 3 * i);
+      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs_b[3 * i + k] = src[k];
     }
     fn(&value, coeffs_data + index * cstride, constants.data(), cdofs_b.data(),
        nullptr, nullptr, nullptr);
@@ -120,8 +121,9 @@ T assemble_entities(
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * ndofs_x;
     for (std::size_t i = 0; i < ndofs_x; ++i)
     {
-      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3, 3,
-                  cdofs_b.data() + 3 * i);
+      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs_b[3 * i + k] = src[k];
     }
 
     // Permutations
@@ -181,10 +183,12 @@ T assemble_interior_facets(
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cells[1]) * ndofs_x;
     for (std::size_t i = 0; i < ndofs_x; ++i)
     {
-      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs0[i]) * 3, 3,
-                  cdofs0 + 3 * i);
-      std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs1[i]) * 3, 3,
-                  cdofs1 + 3 * i);
+      const U* src0 = x_ptr + static_cast<std::ptrdiff_t>(xdofs0[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs0[3 * i + k] = src0[k];
+      const U* src1 = x_ptr + static_cast<std::ptrdiff_t>(xdofs1[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs1[3 * i + k] = src1[k];
     }
 
     std::array perm = perms.empty()
