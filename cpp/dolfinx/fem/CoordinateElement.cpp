@@ -72,6 +72,10 @@ void CoordinateElement<T>::permute_subentity_closure(std::span<std::int32_t> d,
                                                      int entity_index) const
 {
   assert(_element);
+  // The last bit of cell_info, mesh::reversed_cell_bit, is the cell
+  // orientation on a manifold. Basix reads only the sub-entity bits and
+  // ignores it, here and in permute/permute_inv; if Basix changes this,
+  // the bit must be masked out.
   _element->permute_subentity_closure_inv(
       d, cell_info, mesh::cell_type_to_basix_type(entity_type), entity_index);
 }

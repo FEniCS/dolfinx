@@ -26,6 +26,7 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
 from dolfinx.fem import (
+    Constant,
     Expression,
     Function,
     assemble_scalar,
@@ -35,7 +36,15 @@ from dolfinx.fem import (
     functionspace,
     interpolation_matrix,
 )
-from dolfinx.mesh import create_mesh
+from dolfinx.mesh import (
+    GhostMode,
+    cell_normals,
+    compute_midpoints,
+    create_mesh,
+    create_submesh,
+    create_unit_cube,
+    exterior_facet_indices,
+)
 
 # Tangent vectors of the embedding plane used by ``plane_mesh``. Every
 # cell of the mesh lies in this plane, so any constant combination of
@@ -44,12 +53,15 @@ TANGENTS = {2: (np.array([1.0, 0.0]), np.array([0.0, 1.0]))}
 TANGENTS[3] = (np.array([1.0, 0.0, 1.0]), np.array([0.0, 1.0, 0.0]))
 
 
-def plane_mesh(n, gdim, dtype=default_real_type):
+def plane_mesh(n, gdim, dtype=default_real_type, mixed_orientation=False):
     """Triangulate the unit square with ``2 * n**2`` cells.
 
     For ``gdim == 3`` the square is embedded in R^3 as the plane
     ``z = x``, giving a flat manifold whose cells all share the tangent
     plane spanned by ``TANGENTS[3]``.
+
+    Every cell's vertices run anticlockwise, so all cell normals agree.
+    With ``mixed_orientation`` every other cell is reversed instead.
     """
     if MPI.COMM_WORLD.rank == 0:
         s = np.linspace(0.0, 1.0, n + 1)
@@ -73,6 +85,8 @@ def plane_mesh(n, gdim, dtype=default_real_type):
             ],
             dtype=np.int64,
         )
+        if mixed_orientation:
+            cells[::2] = cells[::2][:, [0, 2, 1]]
     else:
         x = np.zeros((0, gdim))
         cells = np.zeros((0, 3), dtype=np.int64)
@@ -410,3 +424,240 @@ def test_discrete_gradient(gdim):
     w.x.array[:] = discrete_gradient(W, V).to_dense() @ u.x.array
 
     assert l2_error(mesh, w - ufl.grad(u)) < tol(mesh)
+
+
+# -----------------------------------------------------------------------
+# Cell orientations
+# -----------------------------------------------------------------------
+
+# Vector-valued elements, and whether each contains a linear tangential
+# field (otherwise only a constant one).
+ORIENTED_ELEMENTS = [
+    ("RT", 1, False),
+    ("RT", 2, True),
+    ("BDM", 1, True),
+    ("N1curl", 1, False),
+    ("N1curl", 2, True),
+    ("N2curl", 1, True),
+]
+
+
+def oriented_id(spec):
+    return f"{spec[0]}{spec[1]}"
+
+
+def tangential_field(mesh, linear):
+    """A field tangential to ``plane_mesh``, as a callable and as UFL.
+
+    Constant, or linear in the plane coordinates ``(x, y)``.
+    """
+    t0, t1 = TANGENTS[mesh.geometry.dim]
+
+    def coefficients(x0, x1, zero):
+        return (0.3 + 0.5 * x1, 0.7 - 0.4 * x0) if linear else (0.3 + zero, 0.7 + zero)
+
+    def f(x):
+        a, b = coefficients(x[0], x[1], np.zeros(x.shape[1]))
+        return np.outer(t0, a) + np.outer(t1, b)
+
+    # A mesh-bound zero, so that the constant field still has a mesh to
+    # compile an Expression on
+    X = ufl.SpatialCoordinate(mesh)
+    a, b = coefficients(X[0], X[1], Constant(mesh, default_real_type(0.0)))
+    return f, a * ufl.as_vector(t0) + b * ufl.as_vector(t1)
+
+
+def reversed_cells(mesh):
+    """Whether the orientation of each owned and ghost cell is reversed.
+
+    Read from the bit ``create_cell_orientations`` sets in the cell
+    permutation info.
+    """
+    return (mesh.topology.get_cell_permutation_info() >> 31).astype(bool)
+
+
+def cube_surface(ghost_mode):
+    """The boundary of a cube, as a facet submesh.
+
+    Its cells keep the vertex order of the cube's facets, so their
+    normals point both inwards and outwards.
+    """
+    cube = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, ghost_mode=ghost_mode)
+    cube.topology.create_connectivity(2, 3)
+    return create_submesh(cube, 2, exterior_facet_indices(cube.topology))[0]
+
+
+def mobius_mesh(n, m, dtype=default_real_type):
+    """A Moebius strip, ``n`` cells around and ``m`` across."""
+    if MPI.COMM_WORLD.rank == 0:
+        width = 0.4
+
+        def node(i, j):
+            # The half twist: column n is column 0, upside down
+            return i * (m + 1) + j if i < n else m - j
+
+        u = np.repeat(2 * np.pi * np.arange(n) / n, m + 1)
+        v = np.tile(np.linspace(-width, width, m + 1), n)
+        r = 1 + v * np.cos(u / 2)
+        x = np.column_stack([r * np.cos(u), r * np.sin(u), v * np.sin(u / 2)])
+        cells = np.array(
+            [
+                c
+                for i in range(n)
+                for j in range(m)
+                for c in (
+                    [node(i, j), node(i + 1, j), node(i, j + 1)],
+                    [node(i + 1, j), node(i + 1, j + 1), node(i, j + 1)],
+                )
+            ],
+            dtype=np.int64,
+        )
+    else:
+        x = np.zeros((0, 3))
+        cells = np.zeros((0, 3), dtype=np.int64)
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(3,), dtype=dtype))
+    return create_mesh(MPI.COMM_WORLD, cells, domain, x.astype(dtype))
+
+
+@pytest.mark.parametrize("gdim", [2, 3])
+@pytest.mark.parametrize("spec", ORIENTED_ELEMENTS, ids=oriented_id)
+def test_interpolate_on_mixed_cell_orientations(gdim, spec):
+    """Piola-mapped fields on a mesh whose cell normals disagree.
+
+    Every other cell is reversed. In 2D the signed Jacobian determinant
+    orients every cell, and covariant fields (N1curl, N2curl) do not
+    depend on it: both are controls. A contravariant field (RT, BDM) on
+    the manifold uses the unsigned pseudo-determinant, so neighbouring
+    cells disagree about the direction of the flux they share until the
+    cells are oriented.
+    """
+    family, degree, linear = spec
+    mesh = plane_mesh(2, gdim, mixed_orientation=True)
+    V = functionspace(mesh, element(family, "triangle", degree, dtype=default_real_type))
+    f, f_ufl = tangential_field(mesh, linear)
+
+    w = Function(V)
+    if gdim == 3 and family in ("RT", "BDM"):
+        w.interpolate(f)
+        assert l2_error(mesh, w - f_ufl) > 0.1, "the reversed cells should show"
+        mesh.topology.create_cell_orientations()
+
+    # Interpolation of a callable, and of a compiled expression
+    w.interpolate(f)
+    assert l2_error(mesh, w - f_ufl) < tol(mesh)
+    w_expr = Function(V)
+    w_expr.interpolate(Expression(f_ufl, V.element.interpolation_points))
+    assert l2_error(mesh, w_expr - f_ufl) < tol(mesh)
+
+    # Function.eval, which pushes the basis forward in C++
+    num_cells = mesh.topology.index_map(2).size_local
+    cells = np.arange(num_cells, dtype=np.int32)
+    midpoints = compute_midpoints(mesh, 2, cells)
+    values = w.eval(midpoints, cells).reshape(num_cells, gdim)
+    np.testing.assert_allclose(values, f(midpoints.T).T, atol=tol(mesh))
+
+
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("family, degree", [("RT", 1), ("RT", 2), ("BDM", 1)])
+def test_divergence_theorem_on_a_closed_surface(family, degree, ghost_mode):
+    """``int div(w) dx = 0`` on a closed surface, for any conforming ``w``.
+
+    Summed over the cells, the flux through each edge cancels between
+    the two cells sharing it, provided they agree about its direction.
+    The degrees-of-freedom are set from their global index, so the field
+    does not depend on the partition.
+    """
+    surface = cube_surface(ghost_mode)
+    V = functionspace(surface, element(family, "triangle", degree, dtype=default_real_type))
+    w = Function(V)
+    imap = V.dofmap.index_map
+    indices = np.arange(imap.size_local + imap.num_ghosts, dtype=np.int32)
+    w.x.array[:] = np.sin(imap.local_to_global(indices).astype(np.float64) + 0.3)
+
+    def integral(e):
+        return surface.comm.allreduce(assemble_scalar(form(e * ufl.dx)), op=MPI.SUM)
+
+    rounding = tol(surface) * integral(abs(ufl.div(w)))
+    assert abs(integral(ufl.div(w))) > 1e3 * rounding, "the reversed cells should show"
+
+    surface.topology.create_cell_orientations()
+    num_owned = surface.topology.index_map(2).size_local
+    num_reversed = surface.comm.allreduce(
+        int(np.sum(reversed_cells(surface)[:num_owned])), op=MPI.SUM
+    )
+    num_cells = surface.topology.index_map(2).size_global
+    assert 0 < num_reversed < num_cells, "the test needs cells of both orientations"
+    assert abs(integral(ufl.div(w))) < rounding
+
+
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+def test_cell_orientations_agree_with_the_outward_normal(ghost_mode):
+    """On a closed surface the computed orientation is the outward one or its opposite.
+
+    It comes from the vertex orders alone, so it is fixed only up to one
+    sign per connected surface, which has to be the same on every rank,
+    ghost cells included.
+    """
+    surface = cube_surface(ghost_mode)
+    surface.topology.create_cell_orientations()
+    cell_map = surface.topology.index_map(2)
+    cells = np.arange(cell_map.size_local + cell_map.num_ghosts, dtype=np.int32)
+    own_outward = (
+        np.einsum(
+            "ci,ci->c",
+            cell_normals(surface, 2, cells).reshape(-1, 3),
+            compute_midpoints(surface, 2, cells) - 0.5,
+        )
+        > 0
+    )
+    # Outward once the orientation is applied
+    outward = own_outward != reversed_cells(surface)
+    comm = surface.comm
+    all_outward = comm.allreduce(bool(np.all(outward)), op=MPI.LAND)
+    all_inward = comm.allreduce(not bool(np.any(outward)), op=MPI.LAND)
+    assert all_outward or all_inward
+
+
+def test_cell_orientations_undo_mixed_vertex_orders():
+    """The cells that ``plane_mesh`` reverses are flagged opposite to the others.
+
+    With ``mixed_orientation`` the even original cells are reversed.
+    Which of the two groups is flagged depends on the partitioning.
+    """
+    mesh = plane_mesh(2, 3, mixed_orientation=True)
+    mesh.topology.create_cell_orientations()
+    num_owned = mesh.topology.index_map(2).size_local
+    even = np.asarray(mesh.topology.original_cell_index[:num_owned]) % 2 == 0
+    flipped = reversed_cells(mesh)[:num_owned]
+    comm = mesh.comm
+    even_flagged = comm.allreduce(bool(np.all(flipped == even)), op=MPI.LAND)
+    odd_flagged = comm.allreduce(bool(np.all(flipped != even)), op=MPI.LAND)
+    assert even_flagged or odd_flagged
+
+
+def test_cell_orientations_do_not_change_other_elements():
+    """Orientations change no element off a manifold, nor covariant ones on it."""
+    for gdim, family in [(2, "RT"), (3, "N1curl")]:
+        mesh = plane_mesh(2, gdim, mixed_orientation=True)
+        V = functionspace(mesh, element(family, "triangle", 1, dtype=default_real_type))
+        f, _ = tangential_field(mesh, False)
+        before = Function(V)
+        before.interpolate(f)
+        mesh.topology.create_cell_orientations()
+        assert mesh.comm.allreduce(bool(np.any(reversed_cells(mesh))), op=MPI.LOR)
+        after = Function(V)
+        after.interpolate(f)
+        np.testing.assert_array_equal(after.x.array, before.x.array)
+
+
+def test_cell_orientations_refuse_a_moebius_strip():
+    """A non-orientable surface has no consistent orientation, so it is refused."""
+    mesh = mobius_mesh(24, 4)
+    with pytest.raises(RuntimeError, match="not orientable"):
+        mesh.topology.create_cell_orientations()
+
+
+def test_cell_orientations_need_a_surface():
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    with pytest.raises(ValueError, match="surface mesh"):
+        mesh.topology.create_cell_orientations()
