@@ -30,20 +30,25 @@ namespace dolfinx::fem::impl
 /// a per-call allocation would not be amortized. The buffer must be
 /// sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
-T assemble_cells(MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
-                 std::span<const std::int32_t> cells,
-                 const FEkernel<T, U> auto& fn, std::span<const T> constants,
-                 md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-                 std::span<U> cdofs_b)
+T assemble_cells(
+    MDSpan2Int32 auto x_dofmap,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    IndexList auto cells, const FEkernel<T, U> auto& fn,
+    std::span<const T> constants,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    ScratchBuffer<U> auto cdofs_b)
 {
   T value(0);
   if (cells.empty())
     return value;
 
-  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
+  const auto ndofs_x = x_dofmap.extent(1);
+  assert(cdofs_b.size() == 3 * static_cast<std::size_t>(ndofs_x));
 
+  const U* x_ptr = x.data_handle();
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const T* coeffs_data = coeffs.data_handle();
-  const std::size_t cstride = coeffs.extent(1);
+  const auto cstride = coeffs.extent(1);
 
   // Iterate over all cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -51,10 +56,14 @@ T assemble_cells(MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
     std::int32_t c = cells[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
-
+    const std::int32_t* xdofs
+        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * ndofs_x;
+    for (std::size_t i = 0; i < ndofs_x; ++i)
+    {
+      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs_b[3 * i + k] = src[k];
+    }
     fn(&value, coeffs_data + index * cstride, constants.data(), cdofs_b.data(),
        nullptr, nullptr, nullptr);
   }
@@ -79,23 +88,27 @@ T assemble_cells(MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
 /// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_entities(
-    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
+    MDSpan2Int32 auto x_dofmap,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
     const FEkernel<T, U> auto& fn, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<U> cdofs_b)
+    ScratchBuffer<U> auto cdofs_b)
 {
   T value(0);
   if (entities.empty())
     return value;
 
-  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
+  const auto ndofs_x = x_dofmap.extent(1);
+  assert(cdofs_b.size() == 3 * static_cast<std::size_t>(ndofs_x));
 
+  const U* x_ptr = x.data_handle();
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const T* coeffs_data = coeffs.data_handle();
-  const std::size_t cstride = coeffs.extent(1);
+  const auto cstride = coeffs.extent(1);
 
   // Iterate over all facets
   for (std::size_t f = 0; f < entities.extent(0); ++f)
@@ -104,9 +117,14 @@ T assemble_entities(
     std::int32_t local_entity = entities(f, 1);
 
     // Get cell coordinates/geometry
-    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
+    const std::int32_t* xdofs
+        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * ndofs_x;
+    for (std::size_t i = 0; i < ndofs_x; ++i)
+    {
+      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs_b[3 * i + k] = src[k];
+    }
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
@@ -125,7 +143,8 @@ T assemble_entities(
 /// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_interior_facets(
-    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
+    MDSpan2Int32 auto x_dofmap,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
@@ -134,19 +153,22 @@ T assemble_interior_facets(
                                     md::dynamic_extent>>
         coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<U> cdofs_b)
+    ScratchBuffer<U> auto cdofs_b)
 {
   T value(0);
   if (facets.empty())
     return value;
 
   // Create data structures used in assembly
-  assert(cdofs_b.size() >= 2 * 3 * x_dofmap.extent(1));
-  auto cdofs0 = cdofs_b.first(3 * x_dofmap.extent(1));
-  auto cdofs1 = cdofs_b.last(3 * x_dofmap.extent(1));
+  const auto ndofs_x = x_dofmap.extent(1);
+  assert(cdofs_b.size() == 2 * 3 * static_cast<std::size_t>(ndofs_x));
+  U* cdofs0 = cdofs_b.data();
+  U* cdofs1 = cdofs_b.data() + 3 * ndofs_x;
 
+  const U* x_ptr = x.data_handle();
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const T* coeffs_data = coeffs.data_handle();
-  const std::size_t cstride = 2 * coeffs.extent(2);
+  const auto cstride = 2 * coeffs.extent(2);
 
   // Iterate over all facets
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -155,12 +177,19 @@ T assemble_interior_facets(
     std::array local_facet = {facets(f, 0, 1), facets(f, 1, 1)};
 
     // Get cell geometry
-    auto x_dofs0 = md::submdspan(x_dofmap, cells[0], md::full_extent);
-    for (std::size_t i = 0; i < x_dofs0.size(); ++i)
-      std::copy_n(&x(x_dofs0[i], 0), 3, std::next(cdofs0.begin(), 3 * i));
-    auto x_dofs1 = md::submdspan(x_dofmap, cells[1], md::full_extent);
-    for (std::size_t i = 0; i < x_dofs1.size(); ++i)
-      std::copy_n(&x(x_dofs1[i], 0), 3, std::next(cdofs1.begin(), 3 * i));
+    const std::int32_t* xdofs0
+        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cells[0]) * ndofs_x;
+    const std::int32_t* xdofs1
+        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cells[1]) * ndofs_x;
+    for (std::size_t i = 0; i < ndofs_x; ++i)
+    {
+      const U* src0 = x_ptr + static_cast<std::ptrdiff_t>(xdofs0[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs0[3 * i + k] = src0[k];
+      const U* src1 = x_ptr + static_cast<std::ptrdiff_t>(xdofs1[i]) * 3;
+      for (std::size_t k = 0; k < 3; ++k)
+        cdofs1[3 * i + k] = src1[k];
+    }
 
     std::array perm = perms.empty()
                           ? std::array<std::uint8_t, 2>{0, 0}
@@ -186,7 +215,11 @@ T assemble_scalar(
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
 
+  // Sized for the worst case (interior facets, which touch two cells).
+  // The kernels require an exactly-sized buffer, so the one-cell
+  // integrals get the leading half.
   std::vector<U> cdofs_b(2 * 3 * x_dofmap.extent(1));
+  std::span cdofs_b1 = std::span(cdofs_b).first(3 * x_dofmap.extent(1));
 
   T value = 0;
   for (int i = 0; i < M.num_integrals(IntegralType::cell, cell_type_idx); ++i)
@@ -199,7 +232,7 @@ T assemble_scalar(
     assert(cells.size() * cstride == coeffs.size());
     value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
-        md::mdspan(coeffs.data(), cells.size(), cstride), std::span(cdofs_b));
+        md::mdspan(coeffs.data(), cells.size(), cstride), cdofs_b1);
   }
 
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
@@ -271,7 +304,7 @@ T assemble_scalar(
               entities.data(), entities.size() / 2, 2),
           fn, constants,
           md::mdspan(coeffs.data(), entities.size() / 2, cstride), perms,
-          std::span(cdofs_b));
+          cdofs_b1);
     }
   }
 

@@ -41,6 +41,7 @@
 #include <dolfinx/la/SparsityPattern.h>
 #include <functional>
 #include <map>
+#include <ranges>
 #include <stdint.h>
 #include <tuple>
 #include <type_traits>
@@ -157,7 +158,7 @@ double assemble_vector0(std::shared_ptr<const fem::FunctionSpace<T>> V,
 /// @return Frobenius norm squared of the matrix.
 template <std::floating_point T>
 double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
-                        auto kernel, std::span<const std::int32_t> cells)
+                        auto kernel, auto cells)
 {
   auto sp = la::SparsityPattern(dofmap.index_map->comm(),
                                 {dofmap.index_map, dofmap.index_map},
@@ -178,13 +179,17 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
 
+  // The buffers are passed by value as std::array, so the assembler
+  // sees their size in the type. They are then function-local there,
+  // their addresses do not escape the inlined kernel, and the compiler
+  // can keep them in registers.
   std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
   std::array<T, p1_triangle_dofs_per_cell * p1_triangle_dofs_per_cell> Ab;
   fem::impl::assemble_cells_matrix<false>(
       A.mat_add_values(), x_dofmap, x, cells,
       std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, ident,
       std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, ident, {}, {},
-      kernel, {}, {}, {}, {}, std::span<T>(Ab), std::span<T>(cdofs_b));
+      kernel, {}, {}, {}, {}, Ab, cdofs_b);
   A.scatter_rev();
   return A.squared_norm();
 }
@@ -202,7 +207,7 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 /// @return l2 norm squared of the vector.
 template <std::floating_point T>
 double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
-                        auto kernel, const std::vector<std::int32_t>& cells)
+                        auto kernel, auto cells)
 {
   la::Vector<T> b(dofmap.index_map, 1);
   // P1 triangle coordinate and field dofmaps have three dofs per cell.
@@ -216,12 +221,16 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
   common::Timer timer("Assembler1 lambda (vector)");
+  // The buffers are passed by value as std::array, so the assembler
+  // sees their size in the type. They are then function-local there,
+  // their addresses do not escape the inlined kernel, and the compiler
+  // can keep them in registers.
   std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
   std::array<T, p1_triangle_dofs_per_cell> be_b;
   fem::impl::assemble_cells(
       [](auto, auto, auto, auto) {}, b.array(), x_dofmap, x, cells,
       std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, kernel, {}, {},
-      {}, std::span<T>(be_b), std::span<T>(cdofs_b));
+      {}, be_b, cdofs_b);
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }
@@ -318,8 +327,14 @@ void assemble(MPI_Comm comm)
   // supports efficient inlining of the kernel in the assembler. This
   // can give a significant performance improvement for lightweight
   // kernels.
-  assemble_matrix1<T>(mesh->geometry(), *V->dofmap(), kernel_a, cells);
-  assemble_vector1<T>(mesh->geometry(), *V->dofmap(), kernel_L, cells);
+  //
+  // The kernel is executed over every cell, so the cell list is passed
+  // as a generated range rather than the materialised vector. The
+  // assembler's per-cell lookup then folds to the loop index and costs
+  // no memory traffic.
+  auto all_cells = std::views::iota(std::int32_t(0), size_local);
+  assemble_matrix1<T>(mesh->geometry(), *V->dofmap(), kernel_a, all_cells);
+  assemble_vector1<T>(mesh->geometry(), *V->dofmap(), kernel_L, all_cells);
 
   list_timings(comm);
 }
