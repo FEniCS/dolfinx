@@ -337,20 +337,20 @@ jobs:
             python -c "import basix, os, subprocess; site_packages = os.path.dirname(os.path.dirname(basix.__file__)); paths = os.path.dirname(basix.__file__) + ';' + os.path.join(site_packages, 'fenics_basix.libs'); subprocess.run(['delvewheel', 'repair', '--exclude', 'impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll', '--add-path', paths + ';' + r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
-          # --durations=50 on the serial run only, matching macos.yml's own
-          # pytest invocation - diagnostic for the macOS wheel-build leg
-          # running much slower than macos.yml's own Python test step despite
-          # similar test scope; not yet root-caused.
+          # Matches macos.yml/ci.yml's -O0 JIT options, missing here.
           CIBW_TEST_COMMAND_LINUX: >
+            echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json &&
             . /etc/profile &&
             module load mpi/mpich-$(arch) &&
             python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
           CIBW_TEST_COMMAND_MACOS: >
+            echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json &&
             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}" &&
             mpiexec -n 1 python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
           CIBW_TEST_COMMAND_WINDOWS: >
+            echo { "cffi_extra_compile_args": ["-g0", "-O0" ] } > dolfinx_jit_options.json &&
             pip install impi-rt &&
             python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
@@ -392,8 +392,9 @@ jobs:
           cd dolfinx &&
           sudo git clean -fdx && cd ../ &&
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
-            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple python:3.13 \
-            /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test mpich fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
+            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple \
+            --env XDG_CONFIG_HOME=/config python:3.13 \
+            /bin/bash -l -c "mkdir -p /config/dolfinx && echo '{ \"cffi_extra_compile_args\": [\"-g0\", \"-O0\" ] }' > /config/dolfinx/dolfinx_jit_options.json && pip install --group /dolfinx/python/pyproject.toml:test mpich fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Test in clean python image with pypi Intel MPI (x86_64 only)
         if: runner.os == 'Linux' && runner.arch == 'X64'
@@ -401,8 +402,9 @@ jobs:
           cd dolfinx &&
           sudo git clean -fdx && cd ../ &&
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
-            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple python:3.14 \
-            /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
+            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple \
+            --env XDG_CONFIG_HOME=/config python:3.14 \
+            /bin/bash -l -c "mkdir -p /config/dolfinx && echo '{ \"cffi_extra_compile_args\": [\"-g0\", \"-O0\" ] }' > /config/dolfinx/dolfinx_jit_options.json && pip install --group /dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Test in clean virtual environment with pypi OpenMPI (macOS)
         if: runner.os == 'macOS'
@@ -410,6 +412,7 @@ jobs:
           cd dolfinx && git clean -fdx && cd ../
           python -m venv venv-test
           source venv-test/bin/activate
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json
           PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install --group dolfinx/python/pyproject.toml:test openmpi fenics-dolfinx
           which mpiexec
           mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
@@ -422,6 +425,7 @@ jobs:
           python -m venv venv-test
           source venv-test/Scripts/activate
           python -m pip install --upgrade pip
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json
           PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install --group dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx
           python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
           mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
