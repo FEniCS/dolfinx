@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells, Igor Baratta,
+// Copyright (C) 2015-2026 Chris Richardson, Garth N. Wells, Igor Baratta,
 // Joseph P. Dean and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -968,6 +968,31 @@ common::create_sub_index_map(const IndexMap& imap,
   return {IndexMap(imap.comm(), submap_local_size, {submap_src, submap_dest},
                    submap_ghost_gidxs, submap_ghost_owners),
           std::move(sub_imap_to_imap), owners_changed};
+}
+//-----------------------------------------------------------------------------
+std::tuple<std::vector<int>, std::vector<int>, std::vector<std::int32_t>>
+common::compute_sharing_neighbourhood(const IndexMap& imap)
+{
+  auto [data, offsets] = imap.index_to_dest_ranks();
+
+  // Unique sharing ranks. Reserve before erasing, which keeps the
+  // capacity: after it, GCC 14 wrongly reports -Wfree-nonheap-object.
+  std::vector<int> ranks = data;
+  ranks.reserve(1);
+  std::ranges::sort(ranks);
+  auto [unique_end, range_end] = std::ranges::unique(ranks);
+  ranks.erase(unique_end, range_end);
+
+  // Convert sharing ranks to neighbourhood ranks
+  std::ranges::transform(data, data.begin(),
+                         [&ranks](int r) -> int
+                         {
+                           auto it = std::ranges::lower_bound(ranks, r);
+                           assert(it != ranks.end() and *it == r);
+                           return std::ranges::distance(ranks.begin(), it);
+                         });
+
+  return {std::move(ranks), std::move(data), std::move(offsets)};
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

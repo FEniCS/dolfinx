@@ -1,4 +1,5 @@
-// Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells and Igor Baratta
+// Copyright (C) 2015-2026 Chris Richardson, Garth N. Wells, Igor Baratta
+// and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -103,6 +104,33 @@ std::tuple<IndexMap, std::vector<std::int32_t>, bool>
 create_sub_index_map(const IndexMap& imap,
                      std::span<const std::int32_t> indices,
                      IndexMapOrder order = IndexMapOrder::any);
+
+/// @brief Compute the ranks that share indices with the caller.
+///
+/// An index map stores source and destination ranks (IndexMap::src,
+/// IndexMap::dest), but not which ranks share each index. That per-index
+/// adjacency list, which also contains the other ranks that ghost a
+/// ghost index, can be large and vary greatly in length between indices,
+/// so it is computed on demand by IndexMap::index_to_dest_ranks rather
+/// than stored.
+///
+/// This function returns that list with each rank replaced by its
+/// position in the sorted list of all sharing ranks, i.e. as a
+/// neighbourhood rank. Sharing is symmetric, rank `a` lists rank `b` if
+/// and only if `b` lists `a`, so the sharing ranks can be both the
+/// sources and the destinations of one neighbourhood communicator.
+///
+/// @note Collective.
+///
+/// @param[in] imap Index map.
+/// @return (0) Sorted ranks that share an index with the caller, (1)
+/// the data of IndexMap::index_to_dest_ranks with each rank replaced by
+/// its position in (0), and (2) its offsets. The neighbourhood ranks
+/// sharing local index `i` occupy `[offsets[i], offsets[i + 1])`.
+/// `data()` of (0) is not null, as required by some MPI
+/// implementations, even if (0) is empty.
+std::tuple<std::vector<int>, std::vector<int>, std::vector<std::int32_t>>
+compute_sharing_neighbourhood(const IndexMap& imap);
 
 /// @brief Distribution of a global index range `[0, N)` across MPI
 /// ranks.
