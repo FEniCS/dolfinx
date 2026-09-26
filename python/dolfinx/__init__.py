@@ -11,6 +11,11 @@ import sys
 # Template placeholder for injecting Windows dll directories in CI
 # WINDOWSDLL
 
+# Importing mpi4py registers Windows MPI DLL search paths before dolfinx.cpp loads.
+import mpi4py as _mpi4py
+
+del _mpi4py
+
 import typing as _typing
 
 import numpy as _np
