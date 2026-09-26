@@ -198,7 +198,12 @@ a = (
     + ufl.inner(r, v)
     + ufl.inner(u, t)
 ) * ufl.dx
-L = [ufl.ZeroBaseForm((tau,)), ufl.inner(g, v) * ufl.dx, ufl.ZeroBaseForm((t,))]
+a_blocked: list[list[ufl.Form | None]] = ufl.extract_blocks(a)
+L_blocked: list[ufl.Form | None] = [
+    ufl.ZeroBaseForm((tau,)),
+    ufl.inner(g, v) * ufl.dx,
+    ufl.ZeroBaseForm((t,)),
+]
 
 petsc_options = {
     "ksp_type": "preonly",
@@ -207,8 +212,8 @@ petsc_options = {
     "ksp_error_if_not_converged": True,
 }
 problem = dolfinx.fem.petsc.LinearProblem(
-    ufl.extract_blocks(a),
-    L,
+    a_blocked,
+    L_blocked,
     bcs=[],
     petsc_options=petsc_options,
     petsc_options_prefix="mixed_poisson_",
