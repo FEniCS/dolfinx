@@ -1,10 +1,10 @@
 vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 vcpkg_from_github(
   OUT_SOURCE_PATH SOURCE_PATH
-  REPO xiaoyeli/superlu_dist
-  REF 7e73329b2c2ac47dde14bf8bc4fa2704e281e65c
-  SHA512 f72d74080333b5fffacd118c2678b89d3868064bd37a89e26ecf6b0a229065ce64982002a0b40d1eac77affcd01f1be9c3ea9215a2187119861868a78a132ff9
-  HEAD_REF master
+  REPO jhale/superlu_dist
+  REF 626c8e5a9c8049d2ea18baa683742c45e908402b
+  SHA512 7595fbd347e7781830da68b02c7c08195f095743c8d079cee9eceda3af3466ca67b99f4e341b8cc1868d02f0a6941ff39ee13e25ac25ae770ed0add681d86c53
+  HEAD_REF jhale/windows-fixes
 )
 
 # SuperLU_DIST's ParMETIS TPL is satisfied by the ScotchParMETIS
