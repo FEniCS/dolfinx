@@ -1,4 +1,5 @@
-// Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells and Igor Baratta
+// Copyright (C) 2015-2026 Chris Richardson, Garth N. Wells, Igor Baratta
+// and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -103,6 +104,25 @@ std::tuple<IndexMap, std::vector<std::int32_t>, bool>
 create_sub_index_map(const IndexMap& imap,
                      std::span<const std::int32_t> indices,
                      IndexMapOrder order = IndexMapOrder::any);
+
+/// @brief Compute the ranks that share indices witht the current rank.
+///
+/// An index map only stores the reverse relation, a rank only knows
+/// where its ghosts come from, it doesn't know where to send its
+/// owned indices. This is computed on the fly as it can potentially
+/// be a huge adjacency list that varies alot in its offsets.
+///
+/// This is a convenince function that computes the sharing neighbourhood.  The
+///
+/// @note Collective.
+///
+/// @param[in] imap Index map.
+/// @return (0) Sorted ranks that share an index with the caller, (1)
+/// the ranks sharing each local index as neighbourhood ranks, and (2) offsets.
+/// The neighbourhood ranks sharing (1) and (2) are the outputs of
+/// `IndexMap::index_to_dest_ranks()`.
+std::tuple<std::vector<int>, std::vector<int>, std::vector<std::int32_t>>
+compute_sharing_neighbourhood(const IndexMap& imap);
 
 /// @brief Distribution of a global index range `[0, N)` across MPI
 /// ranks.
