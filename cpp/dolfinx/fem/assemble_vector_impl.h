@@ -14,6 +14,7 @@
 #include "traits.h"
 #include "utils.h"
 #include <algorithm>
+#include <array>
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
@@ -26,6 +27,7 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <tuple>
 #include <type_traits>
 #include <vector>
 
@@ -40,63 +42,6 @@ namespace dolfinx::fem::impl
 /// @cond
 using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @endcond
-
-template <typename M>
-constexpr std::size_t static_extent1()
-{
-  using M0 = std::remove_cvref_t<M>;
-  if constexpr (requires { M0::static_extent(1); })
-    return M0::static_extent(1);
-  else
-    return md::dynamic_extent;
-}
-
-/// @brief Gather cell vertex coordinates into the kernel's buffer.
-///
-/// `GDIM` and `N` (geometry dofs per cell, 0 for a run-time count) are
-/// template parameters so the copy is a fixed number of scalar moves.
-/// With a run-time count `std::copy_n` lowers to a `memmove` call,
-/// which for a handful of doubles costs more than the copy.
-template <int GDIM, int N, std::floating_point U>
-inline void pack_cell_coords(U* __restrict__ cdofs, const U* __restrict__ x,
-                             const std::int32_t* __restrict__ xdofs,
-                             std::int32_t num_dofs)
-{
-  const std::int32_t n = N > 0 ? N : num_dofs;
-  for (std::int32_t i = 0; i < n; ++i)
-  {
-    const U* src = x + static_cast<std::ptrdiff_t>(xdofs[i]) * GDIM;
-    for (int k = 0; k < GDIM; ++k)
-      cdofs[3 * i + k] = src[k];
-  }
-}
-
-/// @brief Scatter-add a local element vector into the global vector.
-///
-/// `BS` and `N` (dofs per cell, 0 for a run-time count) are template
-/// parameters so the common unblocked case is one indirect accumulate
-/// per degree of freedom with a known trip count, rather than a nested
-/// loop the compiler cannot unroll.
-template <int BS, int N, dolfinx::scalar T, typename V>
-inline void scatter_cell_vector(V&& b, const std::int32_t* __restrict__ dofs,
-                                const T* __restrict__ be, std::size_t num_dofs)
-{
-  const std::size_t n = N > 0 ? static_cast<std::size_t>(N) : num_dofs;
-  if constexpr (BS == 1)
-  {
-    for (std::size_t i = 0; i < n; ++i)
-      b[dofs[i]] += be[i];
-  }
-  else
-  {
-    for (std::size_t i = 0; i < n; ++i)
-    {
-      const std::int32_t dof = BS * dofs[i];
-      for (int k = 0; k < BS; ++k)
-        b[dof + k] += be[BS * i + k];
-    }
-  }
-}
 
 /// @brief Execute kernel over cells and accumulate result in vector.
 ///
@@ -127,41 +72,44 @@ inline void scatter_cell_vector(V&& b, const std::int32_t* __restrict__ dofs,
 /// least `bs * dmap.extent(1)`.
 /// @param[in] cdofs_b Buffer for local element geometry. Size must be
 /// at least `3 * x_dofmap.extent(1)`.
-template <typename V, std::floating_point U,
+template <typename V, typename X,
+          std::floating_point U = typename std::remove_cvref_t<X>::value_type,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
+           and MDSpan2Floating<X, U>
 void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
-                    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
+                    MDSpan2Int32 auto x_dofmap, X x,
                     std::span<const std::int32_t> cells,
                     const DofMapPackCells auto& dofmap,
                     const FEkernel<T, U> auto& kernel,
                     std::span<const T> constants,
                     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-                    std::span<const std::uint32_t> cell_info0,
-                    std::span<T> be_b, std::span<U> cdofs_b)
+                    std::span<const std::uint32_t> cell_info0, auto be_b,
+                    auto cdofs_b)
 {
   if (cells.empty())
     return;
 
-  const auto& [dmap, bs, cells0] = dofmap;
+  // Taken by value. A structured binding of a tuple-like type introduces
+  // references, and a reference is not usable in a constant expression,
+  // so the sizes below would not fold even when the caller's types carry
+  // them. mdspan and span are two-word copies.
+  const auto dmap = std::get<0>(dofmap);
+  const auto bs = std::get<1>(dofmap);
+  std::span<const std::int32_t> cells0 = std::get<2>(dofmap);
 
-  // Extents taken from the mdspan types. The parameters are deduced so
-  // that a caller which knows its cell shape can pass mdspans carrying
-  // it; the element buffers are then function-local arrays rather than
-  // the caller's scratch space. That is what makes the difference: the
-  // caller's buffers are memory the compiler must treat as observable,
-  // so the kernel's writes and the scatter's reads travel through it,
-  // while locals whose address does not escape an inlined kernel are
-  // promoted to registers.
-  constexpr std::size_t gdim_s = static_extent1<decltype(x)>();
-  constexpr std::size_t ndofs_x_s = static_extent1<decltype(x_dofmap)>();
-  constexpr std::size_t ndofs_s = static_extent1<decltype(dmap)>();
+  const auto gdim = x.extent(1);
+  const auto ndofs_x = x_dofmap.extent(1);
+  const auto ndofs = dmap.extent(1);
+  const auto be_size = be_b.size();
+  assert(be_size >= static_cast<std::size_t>(bs) * ndofs);
+  assert(cdofs_b.size() >= 3 * static_cast<std::size_t>(ndofs_x));
 
   const U* x_ptr = x.data_handle();
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const std::int32_t* dmap_ptr = dmap.data_handle();
   const T* coeffs_data = coeffs.data_handle();
-  const std::size_t cstride = coeffs.extent(1);
+  const auto cstride = coeffs.extent(1);
 
   // P0 does not change across cells in this call, so whether it is a
   // set (non-null) transform is loop-invariant.
@@ -173,80 +121,39 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
   const bool same_cells
       = cells0.data() == cells.data() and cells0.size() == cells.size();
 
-  if constexpr (gdim_s != md::dynamic_extent and ndofs_x_s != md::dynamic_extent
-                and ndofs_s != md::dynamic_extent)
-  {
-    if (bs == 1)
-    {
-      for (std::size_t index = 0; index < cells.size(); ++index)
-      {
-        const std::int32_t c = cells[index];
-        const std::int32_t c0 = same_cells ? c : cells0[index];
-        U cdofs[3 * ndofs_x_s];
-        T be[ndofs_s] = {};
-        pack_cell_coords<gdim_s, ndofs_x_s>(
-            cdofs, x_ptr,
-            x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * ndofs_x_s,
-            ndofs_x_s);
-        kernel(be, coeffs_data + index * cstride, constants.data(), cdofs,
-               nullptr, nullptr, nullptr);
-        if (p0_set)
-          P0(std::span<T>(be, ndofs_s), cell_info0, c0, 1);
-        scatter_cell_vector<1, ndofs_s, T>(
-            b, dmap_ptr + static_cast<std::ptrdiff_t>(c0) * ndofs_s, be,
-            ndofs_s);
-      }
-      return;
-    }
-  }
-
-  // Run-time extents: the element buffers must be the caller's, since
-  // their size is not known until now.
-  const std::int32_t gdim = x.extent(1);
-  const std::size_t ndofs_cell = dmap.extent(1);
-  const std::int32_t num_x_dofs_cell
-      = static_cast<std::int32_t>(x_dofmap.extent(1));
-  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
-  assert(be_b.size() >= bs * ndofs_cell);
-  auto be = be_b.first(bs * ndofs_cell);
-
+  // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
+    // Integration domain cell and test function cell
     const std::int32_t c = cells[index];
     const std::int32_t c0 = same_cells ? c : cells0[index];
 
     // Get cell coordinates/geometry. A loop rather than std::copy_n:
     // with a run-time length that lowers to a memmove call, per vertex.
-    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+    const std::int32_t* xdofs
+        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * ndofs_x;
+    for (std::int32_t i = 0; i < ndofs_x; ++i)
     {
-      const U* src
-          = x_ptr
-            + static_cast<std::ptrdiff_t>(
-                  x_dofmap_ptr[static_cast<std::ptrdiff_t>(c) * num_x_dofs_cell
-                               + i])
-                  * gdim;
+      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * gdim;
       for (std::int32_t k = 0; k < gdim; ++k)
         cdofs_b[3 * i + k] = src[k];
     }
 
-    // Tabulate vector for cell. A loop rather than std::fill_n: a
-    // run-time length sends that to memset for a handful of scalars.
-    for (std::size_t i = 0; i < be.size(); ++i)
-      be[i] = T(0);
-    kernel(be.data(), coeffs_data + index * cstride, constants.data(),
+    // Tabulate vector for cell
+    std::ranges::fill(be_b, T(0));
+    kernel(be_b.data(), coeffs_data + index * cstride, constants.data(),
            cdofs_b.data(), nullptr, nullptr, nullptr);
     if (p0_set)
-      P0(be, cell_info0, c0, 1);
+      P0(std::span<T>(be_b.data(), be_size), cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
     const std::int32_t* dofs
-        = dmap_ptr + static_cast<std::ptrdiff_t>(c0) * ndofs_cell;
-    for (std::size_t i = 0; i < ndofs_cell; ++i)
+        = dmap_ptr + static_cast<std::ptrdiff_t>(c0) * ndofs;
+    for (std::size_t i = 0; i < ndofs; ++i)
     {
-      std::int32_t dof = bs * dofs[i];
-      std::int32_t offset = bs * i;
+      const std::int32_t dof = bs * dofs[i];
       for (int k = 0; k < bs; ++k)
-        b[dof + k] += be[offset + k];
+        b[dof + k] += be_b[bs * i + k];
     }
   }
 }
@@ -321,13 +228,9 @@ void assemble_entities(
   const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
 
-  // Use a static geometry-dof count when available.
-  constexpr std::size_t x_dofmap_static_extent1
-      = static_extent1<decltype(x_dofmap)>();
-  const std::int32_t num_x_dofs_cell
-      = x_dofmap_static_extent1 != md::dynamic_extent
-            ? static_cast<std::int32_t>(x_dofmap_static_extent1)
-            : static_cast<std::int32_t>(x_dofmap.extent(1));
+  // extent() on a rank whose extent is static is itself a constant
+  // expression, so this folds to a literal when the type carries it.
+  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
   const std::int32_t* dmap_ptr = dmap.data_handle();
 
   // P0 does not change across entities in this call, so whether it is a
@@ -443,13 +346,9 @@ void assemble_interior_facets(
   const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
 
-  // Use a static geometry-dof count when available.
-  constexpr std::size_t x_dofmap_static_extent1
-      = static_extent1<decltype(x_dofmap)>();
-  const std::int32_t num_x_dofs_cell
-      = x_dofmap_static_extent1 != md::dynamic_extent
-            ? static_cast<std::int32_t>(x_dofmap_static_extent1)
-            : static_cast<std::int32_t>(x_dofmap.extent(1));
+  // extent() on a rank whose extent is static is itself a constant
+  // expression, so this folds to a literal when the type carries it.
+  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
 
   // P0 does not change across facets in this call, so whether it is a
   // set (non-null) transform is loop-invariant -- checked once here rather
