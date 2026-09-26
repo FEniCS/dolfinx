@@ -29,7 +29,7 @@
   ],
   "features": {
     "basix-from-source": {
-      "description": "Build Basix from a local checkout via the basix overlay port, for CI cross-testing against Basix's current branch tip. Activate with -DVCPKG_MANIFEST_FEATURES=basix-from-source.",
+      "description": "Build Basix from a local checkout for CI cross-testing.",
       "dependencies": [
         "basix"
       ]

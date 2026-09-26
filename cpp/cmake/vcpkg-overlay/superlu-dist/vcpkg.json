@@ -1,6 +1,6 @@
 {
   "name": "superlu-dist",
-  "version-string": "9.3.0-626c8e5",
+  "version-string": "9.3.0-80a69fe",
   "description": "A general purpose library for the direct solution of large, sparse, nonsymmetric systems of linear equations on high performance distributed memory parallel machines",
   "homepage": "https://github.com/jhale/superlu_dist",
   "license": "BSD-3-Clause-LBNL",

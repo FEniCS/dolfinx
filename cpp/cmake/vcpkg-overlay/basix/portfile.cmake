@@ -1,12 +1,6 @@
-# This port builds Basix from an already-checked-out local source
-# tree instead of downloading a tagged release: dolfinx CI tests
-# against Basix's current branch tip (or a specific feature branch),
-# so there is no fixed commit to pin/hash here. The workflow that
-# invokes vcpkg for this port must set the BASIX_SOURCE_DIR
-# environment variable to that checked-out cpp/ directory, and must
-# also keep vcpkg.json's version-string in step with the checked-out
-# commit, so vcpkg's binary cache doesn't reuse a build made from a
-# different commit under the same version.
+# This port builds Basix from an already-checked-out local source tree
+# instead of a pinned release, since dolfinx CI tracks Basix's current
+# branch tip.
 if(NOT DEFINED ENV{BASIX_SOURCE_DIR})
   message(
     FATAL_ERROR

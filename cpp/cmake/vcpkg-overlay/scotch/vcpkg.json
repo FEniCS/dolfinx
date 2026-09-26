@@ -1,6 +1,6 @@
 {
   "name": "scotch",
-  "version-string": "7.0.12-e2ba6c4",
+  "version-string": "7.0.12-7fe04d6",
   "description": "Scotch: a software package for graph and mesh/hypergraph partitioning, graph clustering, and sparse matrix ordering",
   "homepage": "https://github.com/jhale/scotch",
   "license": null,

@@ -59,13 +59,7 @@ jobs:
         with:
           path: dolfinx-src
 
-      # Ninja is single-config, so CMAKE_BUILD_TYPE is fixed at configure
-      # time and vcpkg's toolchain resolves only the matching (release)
-      # variant of each dependency's libraries. The default multi-config
-      # Visual Studio generator configures both variants at once, and a
-      # find_package()/find_library() call that isn't a proper per-config
-      # imported target can then resolve to the debug variant even when
-      # only Release is ever built, causing link failures.
+      # Ninja avoids vcpkg resolving debug libraries into a Release build.
       - name: Set up MSVC developer environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -97,27 +91,21 @@ jobs:
           path: basix
           ref: ${{ env.basix_ref }}
 
-      # dolfinx's own basix vcpkg overlay port builds this checkout
-      # directly rather than a downloaded/pinned release (dolfinx CI
-      # tests against Basix's current branch tip), so point it at the
-      # source and fold the checked-out commit into the port's
-      # version-string, so vcpkg's binary cache doesn't reuse a build
-      # made from a different commit under the same version.
+      # The basix overlay port builds this checkout directly, since
+      # dolfinx CI tracks Basix's current branch tip rather than a
+      # pinned release.
       - name: Point vcpkg's basix port at the checked-out source
         run: |
           $basixCommit = (git -C basix rev-parse --short HEAD).Trim()
           echo "BASIX_SOURCE_DIR=$((Resolve-Path basix/cpp).Path)" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
-          # vcpkg runs portfile.cmake in a deliberately scrubbed
-          # environment, for build reproducibility; VCPKG_KEEP_ENV_VARS
-          # allowlists BASIX_SOURCE_DIR through to it.
+          # VCPKG_KEEP_ENV_VARS allowlists BASIX_SOURCE_DIR into vcpkg's scrubbed build environment.
           echo "VCPKG_KEEP_ENV_VARS=BASIX_SOURCE_DIR" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
           $vcpkgJsonPath = "dolfinx-src/cpp/cmake/vcpkg-overlay/basix/vcpkg.json"
+          # Folds the commit into the version so vcpkg's cache can't reuse a build from a different commit.
           (Get-Content $vcpkgJsonPath).Replace('0.0.0-local', "0.0.0-$basixCommit") | Set-Content $vcpkgJsonPath
           Get-Content $vcpkgJsonPath
 
-      # basix.dll is now built by vcpkg (see the "Configure DOLFINx
-      # (C++)" step below) rather than a standalone install prefix, so
-      # point this at vcpkg's install tree instead.
+      # basix.dll now comes from vcpkg's install tree, not a standalone prefix.
       - name: Insert add_dll_directory calls into Basix
         working-directory: basix/python/basix
         run: |
@@ -142,19 +130,10 @@ jobs:
         with:
           mpi: "intelmpi"
 
-      # Configure only: cpp/test compiles FFCx-generated forms as part
-      # of the DOLFINx C++ build itself, so FFCx (and therefore Basix
-      # Python) must already be installed before the build step below
-      # runs. But basix.dll is only produced as a side effect of this
-      # configure step, which resolves the vcpkg manifest (including
-      # the basix overlay port) — so configure and build are split,
-      # with Basix Python and FFCx installed in between.
-      # basix is behind the basix-from-source vcpkg manifest feature,
-      # not a plain dependency: other workflows (e.g. build-wheels.yml)
-      # point their own vcpkg toolchain at this same cpp/vcpkg.json but
-      # get Basix from a published wheel instead, and would otherwise
-      # unconditionally trip the basix overlay port's BASIX_SOURCE_DIR
-      # requirement below.
+      # Split from the build step below because FFCx and Basix Python
+      # need to exist before cpp/test compiles FFCx-generated forms.
+      # basix is a manifest feature so build-wheels.yml can share this
+      # vcpkg.json without triggering the overlay port.
       - name: Configure DOLFINx (C++)
         working-directory: dolfinx-src/cpp
         run: |
@@ -208,9 +187,7 @@ jobs:
       - name: Run tests (Python, serial)
         working-directory: dolfinx-src/python/test
         run: |
-          # /Od is MSVC's -O0: dolfinx.jit reads $PWD/dolfinx_jit_options.json
-          # first (before any XDG_CONFIG_HOME lookup), so this is enough to
-          # disable optimisation for the forms JIT-compiled during tests.
+          # /Od is MSVC's -O0, disabling optimisation for JIT-compiled forms.
           '{ "cffi_extra_compile_args": ["/Od"] }' | Set-Content dolfinx_jit_options.json
           pip install pytest-xdist
           python -m pytest -n auto -m "not petsc4py and not adios2" unit/
