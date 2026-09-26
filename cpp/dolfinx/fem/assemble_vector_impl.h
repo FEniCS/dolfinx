@@ -98,110 +98,6 @@ inline void scatter_cell_vector(V&& b, const std::int32_t* __restrict__ dofs,
   }
 }
 
-/// @brief Cell loop for ::assemble_cells, with the geometric dimension,
-/// block size and dof counts as compile-time constants.
-///
-/// When all of them are known the element buffers are function-local
-/// arrays. That matters more than the indexing it saves: the caller's
-/// scratch buffers are memory the compiler must assume is observable,
-/// so the kernel's writes and the scatter's reads go through it, while
-/// locals whose address does not escape an inlined kernel are promoted
-/// to registers and the marshalling disappears.
-///
-/// @tparam GDIM Geometric dimension.
-/// @tparam BS Dofmap block size, or 0 for a run-time block size.
-/// @tparam NDOFS_X Geometry dofs per cell, or 0 for a run-time count.
-/// @tparam NDOFS Test-space dofs per cell, or 0 for a run-time count.
-template <int GDIM, int BS, int NDOFS_X, int NDOFS, typename V,
-          std::floating_point U,
-          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
-void assemble_cells_impl(
-    const fem::DofTransformKernel<T> auto& P0, V&& b,
-    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
-    std::span<const std::int32_t> cells, const DofMapPackCells auto& dofmap,
-    const FEkernel<T, U> auto& kernel, std::span<const T> constants,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<const std::uint32_t> cell_info0, std::span<T> be_b,
-    std::span<U> cdofs_b)
-{
-  const auto& [dmap, bs, cells0] = dofmap;
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t* dmap_ptr = dmap.data_handle();
-  const U* x_ptr = x.data_handle();
-  const T* coeffs_data = coeffs.data_handle();
-  const std::size_t cstride = coeffs.extent(1);
-
-  // P0 does not change across cells in this call, so whether it is a
-  // set (non-null) transform is loop-invariant -- checked once here
-  // rather than on every cell.
-  const bool p0_set = is_transform_set(P0);
-
-  // The integration-domain and test-function cell lists are usually the
-  // same span, in which case the second lookup is redundant. The test
-  // is loop-invariant, so the branch below predicts perfectly and only
-  // the load is saved.
-  const bool same_cells
-      = cells0.data() == cells.data() and cells0.size() == cells.size();
-
-  constexpr bool static_shape = NDOFS_X > 0 and NDOFS > 0 and BS > 0;
-  const std::size_t ndofs_cell
-      = NDOFS > 0 ? static_cast<std::size_t>(NDOFS) : dmap.extent(1);
-  const std::int32_t num_x_dofs_cell
-      = NDOFS_X > 0 ? NDOFS_X : static_cast<std::int32_t>(x_dofmap.extent(1));
-
-  for (std::size_t index = 0; index < cells.size(); ++index)
-  {
-    // Integration domain cell and test function cell
-    const std::int32_t c = cells[index];
-    const std::int32_t c0 = same_cells ? c : cells0[index];
-    const std::int32_t* xdofs
-        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * num_x_dofs_cell;
-    const std::int32_t* dofs
-        = dmap_ptr + static_cast<std::ptrdiff_t>(c0) * ndofs_cell;
-
-    if constexpr (static_shape)
-    {
-      U cdofs[3 * NDOFS_X];
-      T be[BS * NDOFS] = {};
-      pack_cell_coords<GDIM, NDOFS_X>(cdofs, x_ptr, xdofs, num_x_dofs_cell);
-      kernel(be, coeffs_data + index * cstride, constants.data(), cdofs,
-             nullptr, nullptr, nullptr);
-      if (p0_set)
-        P0(std::span<T>(be, BS * NDOFS), cell_info0, c0, 1);
-      scatter_cell_vector<BS, NDOFS, T>(b, dofs, be, ndofs_cell);
-    }
-    else
-    {
-      assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
-      assert(be_b.size() >= bs * dmap.extent(1));
-      auto be = be_b.first(bs * ndofs_cell);
-      pack_cell_coords<GDIM, NDOFS_X>(cdofs_b.data(), x_ptr, xdofs,
-                                      num_x_dofs_cell);
-      // A loop rather than std::fill_n: the element vector is a handful
-      // of scalars, and a run-time length sends std::fill_n to memset.
-      for (std::size_t i = 0; i < be.size(); ++i)
-        be[i] = T(0);
-      kernel(be.data(), coeffs_data + index * cstride, constants.data(),
-             cdofs_b.data(), nullptr, nullptr, nullptr);
-      if (p0_set)
-        P0(be, cell_info0, c0, 1);
-
-      if constexpr (BS == 0)
-      {
-        for (std::size_t i = 0; i < ndofs_cell; ++i)
-        {
-          std::int32_t dof = bs * dofs[i];
-          std::int32_t offset = bs * i;
-          for (int k = 0; k < bs; ++k)
-            b[dof + k] += be[offset + k];
-        }
-      }
-      else
-        scatter_cell_vector<BS, NDOFS, T>(b, dofs, be.data(), ndofs_cell);
-    }
-  }
-}
-
 /// @brief Execute kernel over cells and accumulate result in vector.
 ///
 /// @note This function must not perform any dynamic (heap) memory
@@ -248,62 +144,110 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
     return;
 
   const auto& [dmap, bs, cells0] = dofmap;
-  const std::int32_t gdim = x.extent(1);
-  const std::size_t nx = x_dofmap.extent(1);
-  const std::size_t nd = dmap.extent(1);
 
-  auto call = [&]<int GDIM, int BS, int NX, int ND>()
-  {
-    return assemble_cells_impl<GDIM, BS, NX, ND>(
-        P0, b, x_dofmap, x, cells, dofmap, kernel, constants, coeffs,
-        cell_info0, be_b, cdofs_b);
-  };
+  // Extents taken from the mdspan types. The parameters are deduced so
+  // that a caller which knows its cell shape can pass mdspans carrying
+  // it; the element buffers are then function-local arrays rather than
+  // the caller's scratch space. That is what makes the difference: the
+  // caller's buffers are memory the compiler must treat as observable,
+  // so the kernel's writes and the scatter's reads travel through it,
+  // while locals whose address does not escape an inlined kernel are
+  // promoted to registers.
+  constexpr std::size_t gdim_s = static_extent1<decltype(x)>();
+  constexpr std::size_t ndofs_x_s = static_extent1<decltype(x_dofmap)>();
+  constexpr std::size_t ndofs_s = static_extent1<decltype(dmap)>();
 
-  // The geometric dimension, block size and dof counts are small and
-  // fixed for a given problem, but are run-time values here. Dispatch
-  // once, on entry, to a loop that has them as compile-time constants.
-  // The shapes given static dof counts are the ones that dominate in
-  // practice: an unblocked scalar space on a 3D simplex, at the lowest
-  // few degrees. Everything else keeps run-time counts, as all shapes
-  // did before.
-  if (gdim == 3 and bs == 1 and nx == 4)
+  const U* x_ptr = x.data_handle();
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
+  const std::int32_t* dmap_ptr = dmap.data_handle();
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
+  // P0 does not change across cells in this call, so whether it is a
+  // set (non-null) transform is loop-invariant.
+  const bool p0_set = is_transform_set(P0);
+
+  // The integration-domain and test-function cell lists are usually the
+  // same span, in which case the second lookup is redundant. The test
+  // is loop-invariant, so the branch predicts perfectly.
+  const bool same_cells
+      = cells0.data() == cells.data() and cells0.size() == cells.size();
+
+  if constexpr (gdim_s != md::dynamic_extent and ndofs_x_s != md::dynamic_extent
+                and ndofs_s != md::dynamic_extent)
   {
-    switch (nd)
+    if (bs == 1)
     {
-    case 4:
-      return call.template operator()<3, 1, 4, 4>();
-    case 10:
-      return call.template operator()<3, 1, 4, 10>();
-    case 20:
-      return call.template operator()<3, 1, 4, 20>();
-    default:
-      break;
+      for (std::size_t index = 0; index < cells.size(); ++index)
+      {
+        const std::int32_t c = cells[index];
+        const std::int32_t c0 = same_cells ? c : cells0[index];
+        U cdofs[3 * ndofs_x_s];
+        T be[ndofs_s] = {};
+        pack_cell_coords<gdim_s, ndofs_x_s>(
+            cdofs, x_ptr,
+            x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * ndofs_x_s,
+            ndofs_x_s);
+        kernel(be, coeffs_data + index * cstride, constants.data(), cdofs,
+               nullptr, nullptr, nullptr);
+        if (p0_set)
+          P0(std::span<T>(be, ndofs_s), cell_info0, c0, 1);
+        scatter_cell_vector<1, ndofs_s, T>(
+            b, dmap_ptr + static_cast<std::ptrdiff_t>(c0) * ndofs_s, be,
+            ndofs_s);
+      }
+      return;
     }
   }
 
-  auto dispatch_bs = [&]<int GDIM>()
-  {
-    switch (bs)
-    {
-    case 1:
-      return call.template operator()<GDIM, 1, 0, 0>();
-    case 2:
-      return call.template operator()<GDIM, 2, 0, 0>();
-    case 3:
-      return call.template operator()<GDIM, 3, 0, 0>();
-    default:
-      return call.template operator()<GDIM, 0, 0, 0>();
-    }
-  };
+  // Run-time extents: the element buffers must be the caller's, since
+  // their size is not known until now.
+  const std::int32_t gdim = x.extent(1);
+  const std::size_t ndofs_cell = dmap.extent(1);
+  const std::int32_t num_x_dofs_cell
+      = static_cast<std::int32_t>(x_dofmap.extent(1));
+  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
+  assert(be_b.size() >= bs * ndofs_cell);
+  auto be = be_b.first(bs * ndofs_cell);
 
-  switch (gdim)
+  for (std::size_t index = 0; index < cells.size(); ++index)
   {
-  case 1:
-    return dispatch_bs.template operator()<1>();
-  case 2:
-    return dispatch_bs.template operator()<2>();
-  default:
-    return dispatch_bs.template operator()<3>();
+    const std::int32_t c = cells[index];
+    const std::int32_t c0 = same_cells ? c : cells0[index];
+
+    // Get cell coordinates/geometry. A loop rather than std::copy_n:
+    // with a run-time length that lowers to a memmove call, per vertex.
+    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+    {
+      const U* src
+          = x_ptr
+            + static_cast<std::ptrdiff_t>(
+                  x_dofmap_ptr[static_cast<std::ptrdiff_t>(c) * num_x_dofs_cell
+                               + i])
+                  * gdim;
+      for (std::int32_t k = 0; k < gdim; ++k)
+        cdofs_b[3 * i + k] = src[k];
+    }
+
+    // Tabulate vector for cell. A loop rather than std::fill_n: a
+    // run-time length sends that to memset for a handful of scalars.
+    for (std::size_t i = 0; i < be.size(); ++i)
+      be[i] = T(0);
+    kernel(be.data(), coeffs_data + index * cstride, constants.data(),
+           cdofs_b.data(), nullptr, nullptr, nullptr);
+    if (p0_set)
+      P0(be, cell_info0, c0, 1);
+
+    // Scatter cell vector to 'global' vector array
+    const std::int32_t* dofs
+        = dmap_ptr + static_cast<std::ptrdiff_t>(c0) * ndofs_cell;
+    for (std::size_t i = 0; i < ndofs_cell; ++i)
+    {
+      std::int32_t dof = bs * dofs[i];
+      std::int32_t offset = bs * i;
+      for (int k = 0; k < bs; ++k)
+        b[dof + k] += be[offset + k];
+    }
   }
 }
 
