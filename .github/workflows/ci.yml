@@ -163,7 +163,7 @@ jobs:
             py-numba ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
             py-pytest py-pytest-xdist py-scipy \
             "py-pyvista ^[virtuals=gl] osmesa"
-          spack -e ci add catch2 ninja
+          spack -e ci add catch2 gmake ninja
           spack -e ci concretize -j $(nproc)
           spack -e ci install -j $(nproc) --use-buildcache auto
 
@@ -236,6 +236,20 @@ jobs:
           cmake --build build/static-demo
           cd build/static-demo
           ctest --output-on-failure -R demo_poisson_np_1
+
+      # A pure pkg-config consumer of the same static install, so a
+      # non-CMake consumer's Libs: line is exercised too.
+      - name: Build and consume DOLFINx as a static library (pkg-config)
+        if: >-
+          ${{ matrix.petsc && matrix.mpi == 'openmpi'
+          && matrix.scalar == 'float64' && matrix.index == 'int32' }}
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          spack load gmake
+          export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/static-install/lib/pkgconfig:$PKG_CONFIG_PATH
+          cd dolfinx-src/cpp/test/pkgconfig
+          make run-static
 
       # Guard against a mis-specified variant silently building PETSc into
       # the PETSc-free leg, which would make it test nothing new.
