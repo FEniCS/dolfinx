@@ -124,7 +124,8 @@ std::vector<std::uint32_t> compute_cell_permutations(const Topology& topology,
 /// every field unchanged.
 ///
 /// @note Collective.
-/// @pre The edges, and the connectivity between edges and cells, must
+/// @pre The edges, the connectivity between edges and cells, and the
+/// edge permutations (see Topology::create_entity_permutations) must
 /// have been created.
 /// @param[in] topology Topology of a mesh of triangles or
 /// quadrilaterals.

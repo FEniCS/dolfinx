@@ -971,8 +971,10 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 //-----------------------------------------------------------------------------
 void Topology::create_cell_orientations()
 {
-  // Creates the edges, which the orientation is computed across
+  // Creates the edges, which the orientation is computed across, and
+  // their orientations relative to the cells
   create_cell_permutations();
+  create_entity_permutations(1);
   create_connectivity(dim() - 1, dim());
   const std::vector<std::int8_t> orientations
       = compute_cell_orientations(*this);
