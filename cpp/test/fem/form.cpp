@@ -66,8 +66,9 @@ TEST_CASE("Create Expression/Form (mismatch of mesh geometry)",
 
   auto V = std::make_shared<fem::FunctionSpace<double>>(
       fem::create_functionspace<double>(
-          mesh, std::make_shared<fem::FiniteElement<double>>(
-                    element, std::vector<std::size_t>{3})));
+          mesh,
+          std::make_shared<fem::FiniteElement<double>>(
+              element, mesh->geometry().dim(), std::vector<std::size_t>{3})));
 
   test_form_cmap_compat(V);
   test_expression_cmap_compat(V);
@@ -102,8 +103,9 @@ TEST_CASE("Form with data on a mesh of the wrong dimension",
       basix::element::dpc_variant::unset, false);
   auto V = std::make_shared<fem::FunctionSpace<double>>(
       fem::create_functionspace<double>(
-          smesh, std::make_shared<fem::FiniteElement<double>>(
-                     element, std::vector<std::size_t>{})));
+          smesh,
+          std::make_shared<fem::FiniteElement<double>>(
+              element, mesh->geometry().dim(), std::vector<std::size_t>{})));
 
   auto kernel = [](double*, const double*, const double*, const double*,
                    const int*, const uint8_t*, void*) {};

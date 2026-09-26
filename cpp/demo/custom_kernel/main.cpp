@@ -437,7 +437,8 @@ void assemble(MPI_Comm comm)
 
   // Create the scalar finite element function space.
   auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
-      mesh, std::make_shared<fem::FiniteElement<T>>(e)));
+      mesh,
+      std::make_shared<fem::FiniteElement<T>>(e, mesh->geometry().dim())));
 
   // Assemble over the cells owned by this rank. Ghost-cell contributions are
   // not assembled; reverse scatter later accumulates shared-dof entries.
