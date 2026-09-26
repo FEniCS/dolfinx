@@ -14,6 +14,16 @@ namespace dolfinx::mesh
 {
 class Topology;
 
+/// @brief Bit of the cell permutation info that marks a cell whose
+/// orientation is reversed relative to the orientation of a manifold
+/// mesh.
+///
+/// Set by Topology::create_cell_orientations. The sub-entity permutations
+/// packed into the same integer (see compute_cell_permutations) use at
+/// most 30 bits (hexahedron: three per face and one per edge), so this
+/// bit is free for every cell type.
+constexpr std::uint32_t reversed_cell_bit = std::uint32_t(1) << 31;
+
 /// @brief Compute the permutation to apply to each cell-local entity of
 /// a given dimension.
 ///
@@ -61,7 +71,8 @@ std::vector<std::uint8_t> compute_entity_permutations(const Topology& topology,
 /// reflected, the next 2 bits say how many times face 0 is rotated; the
 /// next three bits are for face 1, then three for face 2, etc; after
 /// all the faces, there is 1 bit for each edge to say whether or not
-/// they are reversed.
+/// they are reversed. The most significant bit is left for
+/// ::reversed_cell_bit.
 ///
 /// For example, if a quadrilateral has cell permutation info
 /// `....0111` then (from right to left):
@@ -97,5 +108,33 @@ std::vector<std::uint8_t> compute_entity_permutations(const Topology& topology,
 /// (more than one 3D cell type).
 std::vector<std::uint32_t> compute_cell_permutations(const Topology& topology,
                                                      int num_threads);
+
+/// @brief Compute a consistent orientation of the cells of a surface
+/// mesh.
+///
+/// Two cells sharing an edge are consistently oriented when, going
+/// round each cell in the order of its vertices, they run the edge in
+/// opposite directions. Each connected part of the surface, i.e. each
+/// set of cells connected through shared edges, is walked across its
+/// edges from its cell with the lowest global index, which keeps
+/// orientation `1`. Cells meeting only at a vertex are oriented
+/// independently. The geometry is not used. Which of its two
+/// orientations a part gets depends on the partitioning, but reversing
+/// all cells of a part negates all of its basis functions, which leaves
+/// every field unchanged.
+///
+/// @note Collective.
+/// @pre The edges, and the connectivity between edges and cells, must
+/// have been created.
+/// @param[in] topology Topology of a mesh of triangles or
+/// quadrilaterals.
+/// @return For each owned and ghost cell, in local cell order, `1` if
+/// its vertex order agrees with the orientation of its part of the
+/// surface and `-1` otherwise.
+/// @throws std::invalid_argument If the topological dimension is not
+/// 2.
+/// @throws std::runtime_error If the surface is not orientable, e.g. a
+/// Möbius strip, or an edge is shared by more than two cells.
+std::vector<std::int8_t> compute_cell_orientations(const Topology& topology);
 
 } // namespace dolfinx::mesh

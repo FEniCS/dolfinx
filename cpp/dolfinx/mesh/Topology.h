@@ -168,6 +168,34 @@ public:
   /// (see Topology::index_map).
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
+  /// @brief Orient the cells of a surface mesh consistently.
+  ///
+  /// On a manifold mesh, whose topological dimension is less than its
+  /// geometric dimension, the Jacobian of a cell is not square and its
+  /// determinant has no sign. The normal of each cell is then set by
+  /// the order of its vertices, and elements mapped by the
+  /// contravariant Piola map (e.g. Raviart-Thomas, Brezzi-Douglas-Marini)
+  /// are conforming only between cells whose normals agree. Call this
+  /// before creating such spaces on a surface whose cells may not be
+  /// consistently ordered, e.g. one extracted from a volume mesh with
+  /// create_submesh. Lagrange and Nédélec spaces do not need it.
+  ///
+  /// The orientation of each cell is computed from the vertex orders
+  /// alone (see compute_cell_orientations) and stored in the cell
+  /// permutation info (see ::reversed_cell_bit). Such elements change
+  /// the sign of their basis on the cells whose vertex order disagrees
+  /// with it, which applies to every later assembly, interpolation and
+  /// evaluation. Degrees-of-freedom computed before the call follow the
+  /// cells' own vertex orders.
+  ///
+  /// @note Collective.
+  /// @throws std::invalid_argument If the topological dimension is not
+  /// 2.
+  /// @throws std::runtime_error If the surface is not orientable, e.g. a
+  /// Möbius strip, or an edge is shared by more than two cells.
+  /// @throws std::out_of_range If there is more than one cell type.
+  void create_cell_orientations();
+
   /// @brief Get the numbers that encode the permutation to apply to
   /// each cell-local entity of a given dimension.
   ///

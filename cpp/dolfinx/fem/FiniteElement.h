@@ -7,6 +7,7 @@
 #pragma once
 
 #include "traits.h"
+#include <algorithm>
 #include <array>
 #include <basix/finite-element.h>
 #include <basix/maps.h>
@@ -15,6 +16,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/permutationcomputation.h>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -559,6 +561,22 @@ public:
   /// @return True if DOF transformations are required.
   bool needs_dof_transformations() const noexcept;
 
+  /// @brief Check if the basis changes sign on cells whose orientation
+  /// is reversed relative to the mesh (see
+  /// mesh::Topology::create_cell_orientations).
+  ///
+  /// True for elements mapped by the contravariant Piola map on a
+  /// manifold, whose field depends on the sign of the Jacobian
+  /// determinant, and for mixed elements with such a sub-element. The
+  /// sign change is applied by the DOF transformations
+  /// (see T_apply()), so it takes effect only if
+  /// needs_dof_transformations() is also true; for elements without DOF
+  /// transformations, e.g. discontinuous ones, a sign per cell is only a
+  /// change of basis.
+  ///
+  /// @return True if the basis depends on the cell orientation.
+  bool depends_on_cell_orientation() const noexcept;
+
   /// @brief Check if DOF permutations are needed for this element.
   ///
   /// DOF permutations will be needed for elements which might not be
@@ -859,6 +877,7 @@ public:
   {
     assert(_element);
     _element->T_apply(data, n, cell_permutation);
+    flip_reversed_cell(data, cell_permutation);
   }
 
   /// @brief Apply the inverse transpose of the operator applied by
@@ -876,6 +895,7 @@ public:
   {
     assert(_element);
     _element->Tt_inv_apply(data, n, cell_permutation);
+    flip_reversed_cell(data, cell_permutation);
   }
 
   /// @brief Apply the transpose of the operator applied by T_apply().
@@ -892,6 +912,7 @@ public:
   {
     assert(_element);
     _element->Tt_apply(data, n, cell_permutation);
+    flip_reversed_cell(data, cell_permutation);
   }
 
   /// @brief Apply the inverse of the operator applied by T_apply().
@@ -908,6 +929,7 @@ public:
   {
     assert(_element);
     _element->Tinv_apply(data, n, cell_permutation);
+    flip_reversed_cell(data, cell_permutation);
   }
 
   /// @brief Right(post)-apply the operator applied by T_apply().
@@ -924,6 +946,7 @@ public:
   {
     assert(_element);
     _element->T_apply_right(data, n, cell_permutation);
+    flip_reversed_cell(data, cell_permutation);
   }
 
   /// @brief Right(post)-apply the inverse of the operator applied by
@@ -941,6 +964,7 @@ public:
   {
     assert(_element);
     _element->Tinv_apply_right(data, n, cell_permutation);
+    flip_reversed_cell(data, cell_permutation);
   }
 
   /// @brief Right(post)-apply the transpose of the operator applied by
@@ -958,6 +982,7 @@ public:
   {
     assert(_element);
     _element->Tt_apply_right(data, n, cell_permutation);
+    flip_reversed_cell(data, cell_permutation);
   }
 
   /// @brief Right(post)-apply the transpose inverse of the operator
@@ -975,6 +1000,7 @@ public:
   {
     assert(_element);
     _element->Tt_inv_apply_right(data, n, cell_permutation);
+    flip_reversed_cell(data, cell_permutation);
   }
 
   /// @brief Permute indices associated with degree-of-freedoms on the
@@ -1033,6 +1059,25 @@ public:
   dof_permutation_fn(bool inverse = false, bool scalar_element = false) const;
 
 private:
+  // Negate data on a cell marked with mesh::reversed_cell_bit if the
+  // basis depends on the cell orientation. A sign is its own inverse and
+  // transpose, so every DOF transformation applies it the same way.
+  //
+  // The DOF transformations pass cell_permutation to Basix unmasked.
+  // Its last bit, mesh::reversed_cell_bit, is the cell orientation on a
+  // manifold, which Basix ignores as it reads only the sub-entity bits.
+  // If Basix changes this, the bit must be masked out.
+  template <typename U>
+  void flip_reversed_cell(std::span<U> data,
+                          std::uint32_t cell_permutation) const
+  {
+    if ((cell_permutation & mesh::reversed_cell_bit)
+        and depends_on_cell_orientation())
+    {
+      std::ranges::transform(data, data.begin(), std::negate{});
+    }
+  }
+
   // Value shape in physical space. For blocked elements this is larger
   // than _reference_value_shape. For non-blocked elements it equals
   // _reference_value_shape, except for a Piola-mapped element on a

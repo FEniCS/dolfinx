@@ -250,6 +250,9 @@ void mesh(nb::module_& m)
                                                                {p.size()});
           },
           nb::rv_policy::reference_internal)
+      .def("create_cell_orientations",
+           &dolfinx::mesh::Topology::create_cell_orientations,
+           "Orient the cells of a surface mesh consistently.")
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
       .def_prop_rw(

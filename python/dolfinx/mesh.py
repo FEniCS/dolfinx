@@ -446,6 +446,35 @@ class Topology:
         """
         return self._cpp_object.get_cell_permutation_info()
 
+    def create_cell_orientations(self) -> None:
+        """Orient the cells of a surface mesh consistently.
+
+        On a manifold mesh, whose topological dimension is less than its
+        geometric dimension, the determinant of a cell's Jacobian has no
+        sign, so the order of a cell's vertices decides which way its
+        normal points. Elements mapped by the contravariant Piola map
+        (e.g. Raviart-Thomas, Brezzi-Douglas-Marini) are then conforming
+        only between cells whose normals agree. Call this before creating
+        such spaces on a surface whose cells may not be consistently
+        ordered, e.g. one extracted from a volume mesh with
+        :func:`dolfinx.mesh.create_submesh`. Lagrange and Nédélec spaces
+        do not need it.
+
+        The orientations are computed from the cells' vertex orders, not
+        the geometry, and apply to every later assembly, interpolation
+        and evaluation. Which of its two orientations a connected surface
+        gets depends on the partitioning, which changes the signs of
+        degrees-of-freedom but no field.
+        Degrees-of-freedom computed before the call follow the cells' own
+        vertex orders. Collective.
+
+        Raises:
+            ValueError: If the topological dimension is not 2.
+            RuntimeError: If the surface is not orientable, e.g. a Möbius
+                strip, or an edge is shared by more than two cells.
+        """
+        self._cpp_object.create_cell_orientations()
+
     def get_entity_permutations(self, dim: int) -> npt.NDArray[np.uint8]:
         """Get the permutation integer for entities of a dimension.
 
