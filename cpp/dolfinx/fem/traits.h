@@ -22,6 +22,18 @@ concept DofTransformKernel
     = std::is_invocable_v<U, std::span<T>, std::span<const std::uint32_t>,
                           std::int32_t, int>;
 
+/// @brief Check whether a nullable callable is set.
+///
+/// Non-nullable callables are always set.
+template <typename F>
+constexpr bool is_callable_set(const F& fn)
+{
+  if constexpr (requires { static_cast<bool>(fn); })
+    return static_cast<bool>(fn);
+  else
+    return true;
+}
+
 /// @brief Whether a DofTransformKernel `fn` should be invoked.
 ///
 /// A nullable kernel (`std::function`) is checked for truthiness,
@@ -33,10 +45,7 @@ concept DofTransformKernel
 template <typename F>
 constexpr bool is_transform_set(const F& fn)
 {
-  if constexpr (requires { static_cast<bool>(fn); })
-    return static_cast<bool>(fn);
-  else
-    return true;
+  return is_callable_set(fn);
 }
 
 /// @brief Finite element cell kernel concept.

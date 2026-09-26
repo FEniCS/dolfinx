@@ -194,8 +194,8 @@ extract_function_spaces(const std::vector<std::vector<const Form<T, U>*>>& a)
 /// for calling SparsityPattern::assemble.
 /// @param[in] a A bilinear form
 /// @return The corresponding sparsity pattern
-template <dolfinx::scalar T, std::floating_point U>
-la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
+template <dolfinx::scalar T, std::floating_point U, typename K>
+la::SparsityPattern create_sparsity_pattern(const Form<T, U, K>& a)
 {
   std::shared_ptr mesh = a.mesh();
   assert(mesh);
@@ -222,8 +222,9 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
 /// for calling SparsityPattern::assemble.
 /// @param[in] pattern The sparsity pattern to add to
 /// @param[in] a A bilinear form
-template <dolfinx::scalar T, std::floating_point U>
-void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
+template <dolfinx::scalar T, std::floating_point U, typename K>
+void build_sparsity_pattern(la::SparsityPattern& pattern,
+                            const Form<T, U, K>& a)
 {
   if (a.rank() != 2)
   {

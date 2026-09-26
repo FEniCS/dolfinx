@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Garth N. Wells and Paul T. Kühner
+// Copyright (C) 2019-2026 Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -203,9 +203,9 @@ T assemble_interior_facets(
 }
 
 /// Assemble functional into an scalar with provided mesh geometry.
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U, typename K>
 T assemble_scalar(
-    const fem::Form<T, U>& M, mdspan2_t x_dofmap,
+    const fem::Form<T, U, K>& M, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
@@ -224,8 +224,8 @@ T assemble_scalar(
   T value = 0;
   for (int i = 0; i < M.num_integrals(IntegralType::cell, cell_type_idx); ++i)
   {
-    auto fn = M.kernel(IntegralType::cell, i, cell_type_idx);
-    assert(fn);
+    const auto& fn = M.kernel(IntegralType::cell, i, cell_type_idx);
+    assert(is_callable_set(fn));
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     std::span<const std::int32_t> cells
         = M.domain(IntegralType::cell, i, cell_type_idx);
@@ -246,8 +246,8 @@ T assemble_scalar(
   for (int i = 0;
        i < M.num_integrals(IntegralType::interior_facet, cell_type_idx); ++i)
   {
-    auto fn = M.kernel(IntegralType::interior_facet, i, cell_type_idx);
-    assert(fn);
+    const auto& fn = M.kernel(IntegralType::interior_facet, i, cell_type_idx);
+    assert(is_callable_set(fn));
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::interior_facet, i});
     std::span facets = M.domain(IntegralType::interior_facet, i, cell_type_idx);
@@ -289,8 +289,8 @@ T assemble_scalar(
 
     for (int i = 0; i < num_itg; ++i)
     {
-      auto fn = M.kernel(itg_type, i, cell_type_idx);
-      assert(fn);
+      const auto& fn = M.kernel(itg_type, i, cell_type_idx);
+      assert(is_callable_set(fn));
       auto& [coeffs, cstride] = coefficients.at({itg_type, i});
 
       std::span entities = M.domain(itg_type, i, cell_type_idx);

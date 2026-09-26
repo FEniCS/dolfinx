@@ -37,7 +37,7 @@ template <dolfinx::scalar T, std::floating_point U>
 class DirichletBC;
 template <dolfinx::scalar T, std::floating_point U>
 class Expression;
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U, typename K>
 class Form;
 template <std::floating_point T>
 class FunctionSpace;
@@ -172,9 +172,9 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 /// @param[in] coefficients The coefficients that appear in `M`
 /// @return The contribution to the form (functional) from the local
 /// process
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U, typename K>
 T assemble_scalar(
-    const Form<T, U>& M, std::span<const T> constants,
+    const Form<T, U, K>& M, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
@@ -207,8 +207,8 @@ T assemble_scalar(
 /// @param[in] M The form (functional) to assemble.
 /// @return The contribution to the form (functional) from the local
 /// process.
-template <dolfinx::scalar T, std::floating_point U>
-T assemble_scalar(const Form<T, U>& M)
+template <dolfinx::scalar T, std::floating_point U, typename K>
+T assemble_scalar(const Form<T, U, K>& M)
 {
   const std::vector<T> constants = pack_constants(M);
   auto coefficients = allocate_coefficient_storage(M);
@@ -230,15 +230,105 @@ T assemble_scalar(const Form<T, U>& M)
 /// @param[in] constants The constants that appear in `L`.
 /// @param[in] coefficients The coefficients that appear in `L`.
 // template <dolfinx::scalar T, std::floating_point U>
-template <typename V, std::floating_point U,
+template <typename V, std::floating_point U, typename K,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void assemble_vector(
-    V&& b, const Form<T, U>& L, std::span<const T> constants,
+    V&& b, const Form<T, U, K>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
   impl::assemble_vector(b, L, constants, coefficients);
+}
+
+/// @brief Assemble one cell integral of a linear form into a vector
+/// using the kernel stored by the Form.
+///
+/// The Form retains the concrete kernel type, so it can be inlined into
+/// the cell loop. `L` also supplies the dofmap, cell list and
+/// degree-of-freedom transformation. The caller supplies the scratch
+/// buffers and, optionally, dofmap types carrying the cell shape.
+///
+/// @note This is the low-allocation entry point for hand-written
+/// kernels. Assembly of a `Form` whose kernels come from a generated
+/// module should use `assemble_vector`, where the kernel is only known
+/// at run time and cannot be inlined.
+///
+/// @tparam XDofmap Geometry dofmap type. Give a type with a static
+/// trailing extent to fold the number of geometry nodes per cell.
+/// @tparam Dofmap Test function dofmap type, likewise.
+/// @param[in,out] b Vector to accumulate into. Not zeroed.
+/// @param[in] L Form supplying the dofmap and cell list.
+/// @param[in] constants Packed constants for `L`.
+/// @param[in] coeffs Packed coefficients for this integral.
+/// @param[in] cstride Number of coefficient values per cell.
+/// @param[in] integral_id Cell integral id within `L`.
+/// @param[in] cell_type_idx Cell type index.
+/// @param[in] be_b Element vector buffer, exactly `bs * dmap.extent(1)`.
+/// @param[in] cdofs_b Element geometry buffer, exactly
+/// `3 * x_dofmap.extent(1)`.
+template <class XDofmap = impl::mdspan2_t, class Dofmap = impl::mdspan2_t,
+          typename V, std::floating_point U, typename K,
+          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
+  requires AssemblyVector<V, T>
+void assemble_vector_cells(V&& b, const Form<T, U, K>& L,
+                           std::span<const T> constants,
+                           std::span<const T> coeffs, std::size_t cstride,
+                           int integral_id, int cell_type_idx,
+                           ScratchBuffer<T> auto be_b,
+                           ScratchBuffer<U> auto cdofs_b)
+{
+  std::shared_ptr<const mesh::Mesh<U>> mesh = L.mesh();
+  assert(mesh);
+  std::span<const U> xg = mesh->geometry().x();
+  md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x(
+      xg.data(), xg.size() / 3, 3);
+  impl::mdspan2_t x_dofmap_dyn = mesh->geometry().dofmaps().at(cell_type_idx);
+  XDofmap x_dofmap(x_dofmap_dyn.data_handle(), x_dofmap_dyn.extent(0),
+                   x_dofmap_dyn.extent(1));
+
+  auto element = L.function_spaces().at(0)->elements(cell_type_idx);
+  assert(element);
+  std::shared_ptr<const fem::DofMap> dofmap
+      = L.function_spaces().at(0)->dofmaps().at(cell_type_idx);
+  assert(dofmap);
+  impl::mdspan2_t dofs_dyn = dofmap->map();
+  Dofmap dofs(dofs_dyn.data_handle(), dofs_dyn.extent(0), dofs_dyn.extent(1));
+
+  const fem::DofTransformKernel<T> auto& P0
+      = element->template dof_transformation_fn<T>(doftransform::standard);
+
+  std::span<const std::uint32_t> cell_info0;
+  auto mesh0 = L.function_spaces().at(0)->mesh();
+  if (element->needs_dof_transformations())
+  {
+    mesh0->topology_mutable()->create_cell_permutations();
+    cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
+  }
+
+  std::span cells = L.domain(IntegralType::cell, integral_id, cell_type_idx);
+  std::span cells0
+      = L.domain_arg(IntegralType::cell, 0, integral_id, cell_type_idx);
+  assert(cells.size() * cstride == coeffs.size());
+  const K& kernel = L.kernel(IntegralType::cell, integral_id, cell_type_idx);
+  assert(is_callable_set(kernel));
+
+  const int bs = dofmap->bs();
+  if (bs == 1)
+  {
+    impl::assemble_cells(
+        P0, b, x_dofmap, x, cells,
+        std::tuple{dofs, std::integral_constant<int, 1>{}, cells0}, kernel,
+        constants, md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0,
+        be_b, cdofs_b);
+  }
+  else
+  {
+    impl::assemble_cells(P0, b, x_dofmap, x, cells,
+                         std::tuple{dofs, bs, cells0}, kernel, constants,
+                         md::mdspan(coeffs.data(), cells.size(), cstride),
+                         cell_info0, be_b, cdofs_b);
+  }
 }
 
 /// @brief Assemble linear form into a vector.
@@ -247,10 +337,10 @@ void assemble_vector(
 /// @param[in] L Linear forms to assemble into b.
 // template <dolfinx::scalar T, std::floating_point U>
 // void assemble_vector(std::span<T> b, const Form<T, U>& L)
-template <typename V, std::floating_point U,
+template <typename V, std::floating_point U, typename K,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
-void assemble_vector(V&& b, const Form<T, U>& L)
+void assemble_vector(V&& b, const Form<T, U, K>& L)
 {
   auto coefficients = allocate_coefficient_storage(L);
   pack_coefficients(L, coefficients);
@@ -513,9 +603,9 @@ void apply_lifting(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U, typename K>
 void assemble_matrix(
-    la::MatSet<T> auto mat_add, const Form<T, U>& a,
+    la::MatSet<T> auto mat_add, const Form<T, U, K>& a,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
@@ -542,9 +632,9 @@ void assemble_matrix(
 /// @param[in] coefficients Coefficients that appear in `a`.
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 /// dofs the row and column are zeroed. The diagonal  entry is not set.
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U, typename K>
 void assemble_matrix(
-    auto mat_add, const Form<T, U>& a, std::span<const T> constants,
+    auto mat_add, const Form<T, U, K>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
@@ -589,9 +679,9 @@ void assemble_matrix(
 /// @param[in] a The bilinear from to assemble.
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 /// dofs the row and column are zeroed. The diagonal  entry is not set.
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U, typename K>
 void assemble_matrix(
-    auto mat_add, const Form<T, U>& a,
+    auto mat_add, const Form<T, U, K>& a,
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
 {
   // Prepare constants and coefficients
@@ -615,8 +705,8 @@ void assemble_matrix(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If `bc[i]` is `true` then rows `i` in `A` will be zeroed. The index
 /// `i` is a local index.
-template <dolfinx::scalar T, std::floating_point U>
-void assemble_matrix(auto mat_add, const Form<T, U>& a,
+template <dolfinx::scalar T, std::floating_point U, typename K>
+void assemble_matrix(auto mat_add, const Form<T, U, K>& a,
                      std::span<const std::int8_t> dof_marker0,
                      std::span<const std::int8_t> dof_marker1)
 

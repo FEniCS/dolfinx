@@ -1,5 +1,5 @@
 // ```text
-// Copyright (C) 2024 Jack S. Hale and Garth N. Wells
+// Copyright (C) 2024-2026 Jack S. Hale and Garth N. Wells
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 // ```
@@ -12,19 +12,19 @@
 //   compute the P1 mass matrix and the RHS load vector for $f = 1$ on
 //   a triangle mesh
 // * Assemble such kernels into a {cpp:class}`dolfinx::la::MatrixCSR`
-//   or {cpp:class}`dolfinx::la::Vector` using two approaches: a
+//   or {cpp:class}`dolfinx::la::Vector` using an erased
 //   `std::function` kernel wrapped in a {cpp:class}`dolfinx::fem::Form`
-//   and assembled with the standard `dolfinx::fem::assemble_matrix()`/
-//   `dolfinx::fem::assemble_vector()`, and an inlined lambda kernel
-//   assembled by calling the lower-level cell-assembly routines
-//   directly against the mesh geometry and dofmap, bypassing
-//   {cpp:class}`dolfinx::fem::Form` entirely
+//   and an inlined lambda kernel. For vector assembly, the lambda is
+//   retained by a typed {cpp:class}`dolfinx::fem::Form` and assembled
+//   both through `dolfinx::fem::assemble_vector()` and through a
+//   cell-shape-aware overload. Matrix assembly calls the lower-level
+//   cell routine directly.
 //
 // The reference element matrix/vector are computed once using Basix
 // quadrature and basis tabulation, then mapped to each physical cell
 // inside the kernel. Each assembly variant returns the Frobenius norm
 // squared of the assembled matrix, or the $l^2$ norm squared of the
-// assembled vector, so that the two approaches can be checked for
+// assembled vector, so that the approaches can be checked for
 // consistency against each other.
 //
 // Running this demo requires the files: {download}`demo_custom_kernel/main.cpp`
@@ -194,43 +194,72 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   return A.squared_norm();
 }
 
-/// @brief Assemble a RHS vector using using a lambda kernel function.
-///
-/// The lambda function can be inlined in the assembly code, which can
-/// be important for performance for lightweight kernels.
+/// @brief Assemble a RHS vector using a Form that retains its concrete kernel
+/// type.
 ///
 /// @tparam T Scalar type.
-/// @param g mesh geometry.
-/// @param dofmap dofmap.
+/// @param V Function space.
 /// @param kernel Element kernel to execute.
 /// @param cells Cells to execute the kernel over.
 /// @return l2 norm squared of the vector.
 template <std::floating_point T>
-double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
-                        auto kernel, auto cells)
+double assemble_vector1(std::shared_ptr<const fem::FunctionSpace<T>> V,
+                        auto kernel, const std::vector<std::int32_t>& cells)
 {
-  la::Vector<T> b(dofmap.index_map, 1);
+  using kernel_type = decltype(kernel);
+  std::map integrals{std::pair{std::tuple{fem::IntegralType::cell, 0, 0},
+                               fem::integral_data<T, T, kernel_type>(
+                                   kernel, cells, std::vector<int>{})}};
+  fem::Form<T, T, kernel_type> L({V}, std::move(integrals), V->mesh(), {}, {},
+                                 false, {});
+
+  std::shared_ptr<const fem::DofMap> dofmap = V->dofmap();
+  la::Vector<T> b(dofmap->index_map, 1);
+  common::Timer timer("Assembler1 typed Form (vector)");
+  fem::assemble_vector(b.array(), L);
+  b.scatter_rev(std::plus<T>());
+  return la::squared_norm(b);
+}
+
+/// @brief Assemble a RHS vector using using a lambda kernel function.
+///
+/// The lambda function can be inlined in the assembly code, which can
+/// be important for performance for lightweight kernels. The concrete
+/// kernel type is retained by the Form.
+///
+/// @tparam T Scalar type.
+/// @param V Function space.
+/// @param kernel Element kernel to execute.
+/// @param cells Cells to execute the kernel over.
+/// @return l2 norm squared of the vector.
+template <std::floating_point T>
+double assemble_vector2(std::shared_ptr<const fem::FunctionSpace<T>> V,
+                        auto kernel, const std::vector<std::int32_t>& cells)
+{
+  using kernel_type = decltype(kernel);
+  std::map integrals{std::pair{std::tuple{fem::IntegralType::cell, 0, 0},
+                               fem::integral_data<T, T, kernel_type>(
+                                   kernel, cells, std::vector<int>{})}};
+  fem::Form<T, T, kernel_type> L({V}, std::move(integrals), V->mesh(), {}, {},
+                                 false, {});
+
+  std::shared_ptr<const fem::DofMap> dofmap = V->dofmap();
+  la::Vector<T> b(dofmap->index_map, 1);
   // P1 triangle coordinate and field dofmaps have three dofs per cell.
   // The static extent propagates this information into the assembler.
-  const auto x_dofmap0 = g.dofmaps().front();
+  const auto x_dofmap0 = V->mesh()->geometry().dofmaps().front();
   assert(x_dofmap0.extent(1) == p1_triangle_dofs_per_cell);
-  p1_triangle_dofmap_t x_dofmap(x_dofmap0.data_handle(), x_dofmap0.extent(0));
-  const auto dmap0 = dofmap.map();
+  const auto dmap0 = dofmap->map();
   assert(dmap0.extent(1) == p1_triangle_dofs_per_cell);
-  p1_triangle_dofmap_t dmap(dmap0.data_handle(), dmap0.extent(0));
-  md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
-      g.x().data(), g.x().size() / 3, 3);
-  common::Timer timer("Assembler1 lambda (vector)");
+  common::Timer timer("Assembler2 typed Form static shape (vector)");
   // The buffers are passed by value as std::array, so the assembler
   // sees their size in the type. They are then function-local there,
   // their addresses do not escape the inlined kernel, and the compiler
   // can keep them in registers.
   std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
   std::array<T, p1_triangle_dofs_per_cell> be_b;
-  fem::impl::assemble_cells(
-      [](auto, auto, auto, auto) {}, b.array(), x_dofmap, x, cells,
-      std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, kernel, {}, {},
-      {}, be_b, cdofs_b);
+  fem::assemble_vector_cells<p1_triangle_dofmap_t, p1_triangle_dofmap_t>(
+      b.array(), L, {}, {}, 0, 0, 0, be_b, cdofs_b);
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }
@@ -319,22 +348,22 @@ void assemble(MPI_Comm comm)
       b[i] = scale * b_hat[i];
   };
 
-  // Assemble matrix and vector using std::function kernel
+  // Assemble matrix and vector using a std::function kernel.
   assemble_matrix0<T>(V, kernel_a, cells);
   assemble_vector0<T>(V, kernel_L, cells);
 
-  // Assemble matrix and vector using lambda kernel. This version
-  // supports efficient inlining of the kernel in the assembler. This
-  // can give a significant performance improvement for lightweight
-  // kernels.
+  // Assemble using concrete lambda kernels. The vector variants retain
+  // the lambda in a typed Form; the second also propagates the static
+  // cell shape into the assembly loop.
   //
-  // The kernel is executed over every cell, so the cell list is passed
-  // as a generated range rather than the materialised vector. The
-  // assembler's per-cell lookup then folds to the loop index and costs
-  // no memory traffic.
+  // The matrix kernel is executed over every cell, so its cell list is
+  // passed as a generated range rather than the materialised vector.
+  // The assembler lookup then folds to the loop index and costs no
+  // memory traffic.
   auto all_cells = std::views::iota(std::int32_t(0), size_local);
   assemble_matrix1<T>(mesh->geometry(), *V->dofmap(), kernel_a, all_cells);
-  assemble_vector1<T>(mesh->geometry(), *V->dofmap(), kernel_L, all_cells);
+  assemble_vector1<T>(V, kernel_L, cells);
+  assemble_vector2<T>(V, kernel_L, cells);
 
   list_timings(comm);
 }

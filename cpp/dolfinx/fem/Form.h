@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Garth N. Wells, Chris Richardson, Joseph P. Dean and
+// Copyright (C) 2019-2026 Garth N. Wells, Chris Richardson, Joseph P. Dean and
 // Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -105,10 +105,21 @@ entity_permutations(mesh::Topology& topology, IntegralType type,
 }
 } // namespace impl
 
+/// @brief Type-erased finite element integration kernel.
+/// @tparam T Scalar type.
+/// @tparam U Geometry type.
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
+using FormKernel = std::function<void(T*, const T*, const T*, const U*,
+                                      const int*, const uint8_t*, void*)>;
+
 /// @brief Represents integral data, containing the kernel, and a list
 /// of entities to integrate over and the indices of the coefficient
 /// functions (relative to the Form) active for this integral.
-template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
+/// @tparam T Scalar type.
+/// @tparam U Geometry type.
+/// @tparam K Integration kernel type.
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>,
+          typename K = FormKernel<T, U>>
 struct integral_data
 {
   /// @brief Create a structure to hold integral data.
@@ -116,25 +127,20 @@ struct integral_data
   /// @param[in] entities Indices of entities to integrate over.
   /// @param[in] coeffs Indices of the coefficients that are present
   /// (active) in `kernel`.
-  template <typename K, typename V, typename W>
-    requires std::is_convertible_v<
-                 std::remove_cvref_t<K>,
-                 std::function<void(T*, const T*, const T*, const U*,
-                                    const int*, const uint8_t*, void*)>>
+  template <typename K0, typename V, typename W>
+    requires std::is_convertible_v<std::remove_cvref_t<K0>, K>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<int>>
-  integral_data(K&& kernel, V&& entities, W&& coeffs)
-      : kernel(std::forward<K>(kernel)), entities(std::forward<V>(entities)),
+  integral_data(K0&& kernel, V&& entities, W&& coeffs)
+      : kernel(std::forward<K0>(kernel)), entities(std::forward<V>(entities)),
         coeffs(std::forward<W>(coeffs))
   {
   }
 
   /// @brief The integration kernel.
-  std::function<void(T*, const T*, const T*, const U*, const int*,
-                     const uint8_t*, void*)>
-      kernel;
+  K kernel;
 
   /// @brief The entities to integrate over for this integral. These are
   /// the entities in 'full' mesh.
@@ -172,7 +178,9 @@ struct integral_data
 /// @tparam T Scalar type in the form.
 /// @tparam U Float (real) type used for the finite element and
 /// geometry.
-template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_t<T>>
+/// @tparam K Integration kernel type.
+template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_t<T>,
+          typename K = FormKernel<T, U>>
 class Form
 {
 public:
@@ -211,7 +219,7 @@ public:
     requires std::is_convertible_v<
                  std::remove_cvref_t<X>,
                  std::map<std::tuple<IntegralType, int, int>,
-                          integral_data<scalar_type, geometry_type>>>
+                          integral_data<scalar_type, geometry_type, K>>>
   Form(
       const std::vector<std::shared_ptr<const FunctionSpace<geometry_type>>>& V,
       X&& integrals, std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
@@ -477,9 +485,7 @@ public:
   /// @param[in] kernel_idx Index of the kernel (we may have multiple
   /// kernels for a given idx in mixed-topology meshes).
   /// @return Function to call for `tabulate_tensor`.
-  std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                     const geometry_type*, const int*, const uint8_t*, void*)>
-  kernel(IntegralType type, int idx, int kernel_idx) const
+  const K& kernel(IntegralType type, int idx, int kernel_idx) const
   {
     auto it = _integrals.find({type, idx, kernel_idx});
     if (it == _integrals.end())
@@ -710,7 +716,7 @@ private:
 
   // Integrals (integral type, idx, kernel_idx)
   std::map<std::tuple<IntegralType, int, int>,
-           integral_data<scalar_type, geometry_type>>
+           integral_data<scalar_type, geometry_type, K>>
       _integrals;
 
   // The mesh

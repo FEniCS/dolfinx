@@ -456,9 +456,9 @@ void assemble_interior_facets(
 /// @param[in] x0 Array used in the lifting, typically a 'current
 /// solution' in a Newton method.
 /// @param[in] alpha Scaling to apply.
-template <dolfinx::scalar T, std::floating_point U, typename V>
+template <dolfinx::scalar T, std::floating_point U, typename K, typename V>
   requires AssemblyVector<V, T>
-void lift_bc(V&& b, const Form<T, U>& a, auto bs0, auto bs1,
+void lift_bc(V&& b, const Form<T, U, K>& a, auto bs0, auto bs1,
              std::span<const T> constants,
              const std::map<std::pair<IntegralType, int>,
                             std::pair<std::span<const T>, int>>& coefficients,
@@ -519,11 +519,11 @@ void lift_bc(V&& b, const Form<T, U>& a, auto bs0, auto bs1,
 /// @param[in] x Mesh coordinates.
 /// @param[in] constants Packed constants that appear in `L`.
 /// @param[in] coefficients Packed coefficients that appear in `L`.
-template <typename V, std::floating_point U,
+template <typename V, std::floating_point U, typename K,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires AssemblyVector<V, T>
 void assemble_vector(
-    V&& b, const Form<T, U>& L,
+    V&& b, const Form<T, U, K>& L,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
@@ -576,8 +576,8 @@ void assemble_vector(
 
     for (int i = 0; i < L.num_integrals(IntegralType::cell, 0); ++i)
     {
-      auto fn = L.kernel(IntegralType::cell, i, cell_type_idx);
-      assert(fn);
+      const auto& fn = L.kernel(IntegralType::cell, i, cell_type_idx);
+      assert(is_callable_set(fn));
       std::span cells = L.domain(IntegralType::cell, i, cell_type_idx);
       std::span cells0 = L.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
@@ -627,8 +627,8 @@ void assemble_vector(
 
     for (int i = 0; i < L.num_integrals(IntegralType::interior_facet, 0); ++i)
     {
-      auto fn = L.kernel(IntegralType::interior_facet, i, 0);
-      assert(fn);
+      const auto& fn = L.kernel(IntegralType::interior_facet, i, 0);
+      assert(is_callable_set(fn));
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       std::span facets = L.domain(IntegralType::interior_facet, i, 0);
@@ -684,8 +684,8 @@ void assemble_vector(
 
       for (int i = 0; i < num_itg; ++i)
       {
-        auto fn = L.kernel(itg_type, i, 0);
-        assert(fn);
+        const auto& fn = L.kernel(itg_type, i, 0);
+        assert(is_callable_set(fn));
         auto& [coeffs, cstride] = coefficients.at({itg_type, i});
         std::span e = L.domain(itg_type, i, 0);
         mdspanx2_t entities(e.data(), e.size() / 2, 2);
@@ -726,11 +726,11 @@ void assemble_vector(
 /// @param[in] L Linear forms to assemble into b.
 /// @param[in] constants Packed constants that appear in `L`.
 /// @param[in] coefficients Packed coefficients that appear in `L.`
-template <typename V, std::floating_point U,
+template <typename V, std::floating_point U, typename K,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires AssemblyVector<V, T>
 void assemble_vector(
-    V&& b, const Form<T, U>& L, std::span<const T> constants,
+    V&& b, const Form<T, U, K>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {

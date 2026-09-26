@@ -813,9 +813,10 @@ void assemble_interior_facets(
 /// applied.
 /// @param bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
-template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
+template <bool LiftingMode, dolfinx::scalar T, std::floating_point U,
+          typename K>
 void assemble_matrix(
-    la::MatSet<T> auto mat_set, const Form<T, U>& a,
+    la::MatSet<T> auto mat_set, const Form<T, U, K>& a,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
@@ -898,8 +899,8 @@ void assemble_matrix(
 
     for (int i = 0; i < a.num_integrals(IntegralType::cell, cell_type_idx); ++i)
     {
-      auto fn = a.kernel(IntegralType::cell, i, cell_type_idx);
-      assert(fn);
+      const auto& fn = a.kernel(IntegralType::cell, i, cell_type_idx);
+      assert(is_callable_set(fn));
       std::span cells = a.domain(IntegralType::cell, i, cell_type_idx);
       std::span cells0 = a.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
@@ -957,8 +958,8 @@ void assemble_matrix(
           = md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                             md::dynamic_extent>>;
 
-      auto fn = a.kernel(IntegralType::interior_facet, i, 0);
-      assert(fn);
+      const auto& fn = a.kernel(IntegralType::interior_facet, i, 0);
+      assert(is_callable_set(fn));
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
 
@@ -1043,8 +1044,8 @@ void assemble_matrix(
             = md::mdspan<const std::int32_t,
                          md::extents<std::size_t, md::dynamic_extent, 2>>;
 
-        auto fn = a.kernel(itg_type, i, 0);
-        assert(fn);
+        const auto& fn = a.kernel(itg_type, i, 0);
+        assert(is_callable_set(fn));
         auto& [coeffs, cstride] = coefficients.at({itg_type, i});
 
         std::span e = a.domain(itg_type, i, 0);

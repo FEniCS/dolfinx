@@ -176,10 +176,10 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
 /// @param[in] idx Integral index in the flattened list of integral
 /// kernels (see Form::domain).
 /// @return A storage container and the column stride
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U, typename K>
 std::pair<std::vector<T>, int>
-allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
-                             int idx)
+allocate_coefficient_storage(const Form<T, U, K>& form,
+                             IntegralType integral_type, int idx)
 {
   std::size_t num_entities = 0;
   int cstride = 0;
@@ -213,9 +213,9 @@ allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
 /// @return Map from a form `(integral_type, idx)` pair to a `(coeffs,
 /// cstride)` pair, where `idx` is the integral index in the
 /// flattened list of integral kernels (see Form::domain).
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U, typename K>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
-allocate_coefficient_storage(const Form<T, U>& form)
+allocate_coefficient_storage(const Form<T, U, K>& form)
 {
   std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
   for (fem::IntegralType type : form.integral_types())
@@ -255,8 +255,8 @@ allocate_coefficient_storage(const Form<T, U>& form)
 /// coefficient immediately followed by the other's -- and
 /// `num_int_entities` is twice the number of facets; see the packing
 /// code below for the exact per-facet layout.
-template <dolfinx::scalar T, std::floating_point U>
-void pack_coefficients(const Form<T, U>& form,
+template <dolfinx::scalar T, std::floating_point U, typename K>
+void pack_coefficients(const Form<T, U, K>& form,
                        std::map<std::pair<IntegralType, int>,
                                 std::pair<std::vector<T>, int>>& coeffs)
 {
@@ -596,12 +596,13 @@ std::vector<T> pack_constants(
 /// @param u The Expression or Form to pack constant data for.
 /// @return Packed constants
 template <typename U>
-  requires std::convertible_to<
-               U, fem::Expression<typename std::decay_t<U>::scalar_type,
-                                  typename std::decay_t<U>::geometry_type>>
-           or std::convertible_to<
-               U, fem::Form<typename std::decay_t<U>::scalar_type,
-                            typename std::decay_t<U>::geometry_type>>
+  requires requires(const U& u) {
+    typename std::decay_t<U>::scalar_type;
+    {
+      u.constants()
+    } -> std::same_as<const std::vector<std::shared_ptr<
+        const Constant<typename std::decay_t<U>::scalar_type>>>&>;
+  }
 std::vector<typename U::scalar_type> pack_constants(const U& u)
 {
   using T = typename std::decay_t<U>::scalar_type;
