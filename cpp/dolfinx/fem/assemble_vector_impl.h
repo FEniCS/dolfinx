@@ -129,7 +129,7 @@ void assemble_cells(
     // with a run-time length that lowers to a memmove call, per vertex.
     const std::int32_t* xdofs
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * ndofs_x;
-    for (std::int32_t i = 0; i < ndofs_x; ++i)
+    for (std::size_t i = 0; i < ndofs_x; ++i)
     {
       const U* src
           = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * x.extent(1);
