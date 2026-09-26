@@ -151,7 +151,18 @@ jobs:
       - name: Install DOLFINx (C++)
         working-directory: dolfinx-src/cpp
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DDOLFINX_ENABLE_SCOTCH=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cmake/vcpkg-overlay" -B build-dir -S .
+          # dolfinx has its own direct vcpkg dependency on
+          # lapack/openblas (independent of Basix's own copy), so
+          # vcpkg's applocal-deps build-time DLL copying places a
+          # second, redundant copy of their shared MinGW runtime DLLs
+          # (e.g. libgcc_s_seh-1.dll) directly in this build tree.
+          # That collides with the deliberate install(RUNTIME_DEPENDENCY_SET)
+          # step below, which needs to search Basix's own install tree
+          # to resolve basix.dll itself (a non-vcpkg dependency
+          # applocal-deps never touches) and picks up its runtime DLLs
+          # too. Disable applocal-deps here: both the DOLFINx and Basix
+          # install prefixes are already on PATH for running tests.
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DVCPKG_APPLOCAL_DEPS=OFF -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DDOLFINX_ENABLE_SCOTCH=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cmake/vcpkg-overlay" -B build-dir -S .
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
