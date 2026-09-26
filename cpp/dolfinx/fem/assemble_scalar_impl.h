@@ -33,7 +33,7 @@ template <dolfinx::scalar T, std::floating_point U>
 T assemble_cells(
     MDSpan2Int32 auto x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    std::span<const std::int32_t> cells, const FEkernel<T, U> auto& fn,
+    IndexList auto cells, const FEkernel<T, U> auto& fn,
     std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     ScratchBuffer<U> auto cdofs_b)
@@ -59,9 +59,10 @@ T assemble_cells(
     const std::int32_t* xdofs
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * ndofs_x;
     for (std::size_t i = 0; i < ndofs_x; ++i)
+    {
       std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3, 3,
                   cdofs_b.data() + 3 * i);
-
+    }
     fn(&value, coeffs_data + index * cstride, constants.data(), cdofs_b.data(),
        nullptr, nullptr, nullptr);
   }
@@ -118,8 +119,10 @@ T assemble_entities(
     const std::int32_t* xdofs
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * ndofs_x;
     for (std::size_t i = 0; i < ndofs_x; ++i)
+    {
       std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3, 3,
                   cdofs_b.data() + 3 * i);
+    }
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);

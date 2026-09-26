@@ -79,7 +79,7 @@ void assemble_cells(
     const fem::DofTransformKernel<T> auto& P0, V&& b,
     MDSpan2Int32 auto x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    std::span<const std::int32_t> cells, const DofMapPackCells auto& dofmap,
+    IndexList auto cells, const DofMapPackCells auto& dofmap,
     const FEkernel<T, U> auto& kernel, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const std::uint32_t> cell_info0, ScratchBuffer<T> auto be_b,
@@ -254,8 +254,10 @@ void assemble_entities(
     const std::int32_t* xdofs
         = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * num_x_dofs_cell;
     for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
+    {
       std::copy_n(x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3, 3,
                   cdofs_b.data() + 3 * i);
+    }
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
