@@ -1,7 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
-    "basix",
     "boost-algorithm",
     "boost-functional",
     "boost-lexical-cast",
@@ -27,5 +26,13 @@
     "superlu-dist",
     "vcpkg-cmake",
     "vcpkg-cmake-config"
-  ]
+  ],
+  "features": {
+    "basix-from-source": {
+      "description": "Build Basix from a local checkout via the basix overlay port, for CI cross-testing against Basix's current branch tip. Activate with -DVCPKG_MANIFEST_FEATURES=basix-from-source.",
+      "dependencies": [
+        "basix"
+      ]
+    }
+  }
 }
