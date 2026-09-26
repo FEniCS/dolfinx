@@ -199,7 +199,7 @@ a = (
     + ufl.inner(u, t)
 ) * ufl.dx
 a_blocked: list[list[ufl.Form | None]] = ufl.extract_blocks(a)
-L_blocked: list[ufl.Form | None] = [
+L_blocked: list[ufl.Form] = [
     ufl.ZeroBaseForm((tau,)),
     ufl.inner(g, v) * ufl.dx,
     ufl.ZeroBaseForm((t,)),
