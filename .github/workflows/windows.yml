@@ -208,11 +208,16 @@ jobs:
       - name: Run tests (Python, serial)
         working-directory: dolfinx-src/python/test
         run: |
+          # /Od is MSVC's -O0: dolfinx.jit reads $PWD/dolfinx_jit_options.json
+          # first (before any XDG_CONFIG_HOME lookup), so this is enough to
+          # disable optimisation for the forms JIT-compiled during tests.
+          '{ "cffi_extra_compile_args": ["/Od"] }' | Set-Content dolfinx_jit_options.json
           pip install pytest-xdist
           python -m pytest -n auto -m "not petsc4py and not adios2" unit/
       - name: Run tests (Python, MPI, np=3)
         working-directory: dolfinx-src/python/test
         run: |
+          '{ "cffi_extra_compile_args": ["/Od"] }' | Set-Content dolfinx_jit_options.json
           mpiexec -n 3 python -m pytest -m "not petsc4py and not adios2" unit/
 
       - name: Install demo dependencies (excluding numba)
