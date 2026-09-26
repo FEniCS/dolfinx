@@ -63,6 +63,9 @@ class FunctionSpace;
 /// facet_local0, cell1, facet_local1, ...]`.
 /// @param[in] mesh Mesh that the Expression is evaluated on.
 /// @param[in] element Argument element and argument space dimension.
+/// @note An argument on a mesh other than `mesh` is mapped to its own
+/// cells through the Expression's entity maps, whose orientation data
+/// its dof transformations use.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, const fem::Expression<T, U>& e,
@@ -79,9 +82,27 @@ void tabulate_expression(
     throw std::invalid_argument(
         "Expression was created on a different mesh. Cannot tabulate.");
   }
+
+  std::vector<std::int32_t> argument_cells;
+  std::optional<std::pair<std::reference_wrapper<const mesh::Mesh<U>>,
+                          std::span<const std::int32_t>>>
+      argument;
+  if (std::shared_ptr<const FunctionSpace<U>> V = e.argument_space();
+      element and V and V->mesh()->topology() != mesh.topology()
+      and element->first.get().needs_dof_transformations())
+  {
+    std::shared_ptr<const mesh::Mesh<U>> mesh_v = V->mesh();
+    assert(mesh_v);
+    const mesh::EntityMap& emap
+        = find_entity_map(e.entity_maps(), mesh, *mesh_v);
+    argument_cells
+        = extract_cells_from_entities(*mesh_v, mesh, entities, std::cref(emap));
+    argument.emplace(std::cref(*mesh_v), argument_cells);
+  }
+
   auto [X, Xshape] = e.X();
   impl::tabulate_expression(values, e.kernel(), Xshape, e.value_size(), coeffs,
-                            constants, mesh, entities, element);
+                            constants, mesh, entities, element, argument);
 }
 
 /// @brief Evaluate an Expression on cells or facets.
