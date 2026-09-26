@@ -615,6 +615,23 @@ bool FiniteElement<T>::needs_dof_transformations() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
+bool FiniteElement<T>::depends_on_cell_orientation() const noexcept
+{
+  if (is_mixed())
+  {
+    return std::ranges::any_of(
+        _sub_elements, [](const std::shared_ptr<const FiniteElement<T>>& e)
+        { return e->depends_on_cell_orientation(); });
+  }
+
+  // On a manifold, the contravariant Piola map pushes the tdim reference
+  // components forward to gdim physical components
+  return _element
+         and _element->map_type() == basix::maps::type::contravariantPiola
+         and physical_base_value_size() != reference_value_size();
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
 bool FiniteElement<T>::needs_dof_permutations() const noexcept
 {
   return _needs_dof_permutations;
@@ -624,6 +641,9 @@ template <std::floating_point T>
 void FiniteElement<T>::permute(std::span<std::int32_t> doflist,
                                std::uint32_t cell_permutation) const
 {
+  // The last bit, mesh::reversed_cell_bit, is the cell orientation on a
+  // manifold. Basix reads only the sub-entity bits and ignores it; if
+  // Basix changes this, the bit must be masked out.
   _element->permute(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
@@ -631,6 +651,7 @@ template <std::floating_point T>
 void FiniteElement<T>::permute_inv(std::span<std::int32_t> doflist,
                                    std::uint32_t cell_permutation) const
 {
+  // See the note on mesh::reversed_cell_bit in permute
   _element->permute_inv(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------

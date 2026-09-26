@@ -969,6 +969,24 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
   return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
+void Topology::create_cell_orientations()
+{
+  // Creates the edges, which the orientation is computed across, and
+  // their orientations relative to the cells
+  create_cell_permutations();
+  create_entity_permutations(1);
+  create_connectivity(dim() - 1, dim());
+  const std::vector<std::int8_t> orientations
+      = compute_cell_orientations(*this);
+  for (std::size_t c = 0; c < orientations.size(); ++c)
+  {
+    if (orientations[c] < 0)
+      _cell_permutations[c] |= reversed_cell_bit;
+    else
+      _cell_permutations[c] &= ~reversed_cell_bit;
+  }
+}
+//-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>&
 Topology::get_entity_permutations(int dim) const
 {
