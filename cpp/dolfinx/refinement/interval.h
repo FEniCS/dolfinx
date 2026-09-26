@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "dolfinx/common/IndexMap.h"
 #include "dolfinx/mesh/Mesh.h"
 #include "dolfinx/mesh/cell_types.h"
 #include "dolfinx/mesh/utils.h"
@@ -52,28 +53,10 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   auto map_c = topology->index_map(1);
   assert(map_c);
 
-  // TODO: creation of sharing ranks in external function? Also same
-  // code in use for plaza
-  // Get sharing ranks for each cell
-  auto [_data, _offsets_g] = map_c->index_to_dest_ranks();
-  graph::AdjacencyList<int> cell_ranks(std::move(_data), std::move(_offsets_g));
-
-  // Create unique list of ranks that share cells (owners of ghosts plus
-  // ranks that ghost owned indices)
-  std::vector<int> ranks = cell_ranks.array();
-  std::ranges::sort(ranks);
-  auto to_remove = std::ranges::unique(ranks);
-  ranks.erase(to_remove.begin(), to_remove.end());
-
-  // Convert cell_ranks from global rank to to neighbourhood ranks
-  std::ranges::transform(cell_ranks.array(), cell_ranks.array().begin(),
-                         [&ranks](auto r)
-                         {
-                           auto it = std::lower_bound(ranks.begin(),
-                                                      ranks.end(), r);
-                           assert(it != ranks.end() and *it == r);
-                           return std::ranges::distance(ranks.begin(), it);
-                         });
+  // Ranks that share cells, and the neighbourhood ranks sharing each
+  // cell
+  auto [ranks, _data, _offsets] = common::compute_sharing_neighbourhood(*map_c);
+  graph::AdjacencyList<int> cell_ranks(std::move(_data), std::move(_offsets));
 
   // Create refinement flag for cells
   std::vector<std::int8_t> refinement_marker(
