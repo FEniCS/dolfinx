@@ -1,11 +1,9 @@
-if(VCPKG_TARGET_IS_WINDOWS)
-  vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
-endif()
+vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 vcpkg_from_github(
   OUT_SOURCE_PATH SOURCE_PATH
   REPO jhale/scotch
-  REF c05c7c8d21120474b9c08a2d832a3e265bbee4bd
-  SHA512 f411f5a23f6c8f8cfcde2a05ccff108689c6a0b8e40da8299b4a73e2c0d2302fa0cb55946af15075db30120c4ebb123a76143b7a529edb79621aec84407a777e
+  REF 03de84453f70ea381a9990cdadd73c82e1f7de36
+  SHA512 ba9a59b6ec4bcb73af7ac2ec1ae396247aaff0e792949ddf961bc62b9e6f8259f8b6a7bdc51e9f60f8883f0ed372d585c5f86a00487eada525203571a3c0ba21
   HEAD_REF jhale/windows-fixes-squash
 )
 
@@ -17,11 +15,9 @@ vcpkg_find_acquire_program(BISON)
 cmake_path(GET BISON PARENT_PATH BISON_DIR)
 vcpkg_add_to_path("${BISON_DIR}")
 
-if(VCPKG_TARGET_IS_WINDOWS)
-  # Uses gcc intrinsics otherwise
-  string(APPEND VCPKG_C_FLAGS " -DGRAPHMATCHNOTHREAD")
-  string(APPEND VCPKG_CXX_FLAGS " -DGRAPHMATCHNOTHREAD")
-endif()
+# Uses gcc intrinsics otherwise
+string(APPEND VCPKG_C_FLAGS " -DGRAPHMATCHNOTHREAD")
+string(APPEND VCPKG_CXX_FLAGS " -DGRAPHMATCHNOTHREAD")
 
 vcpkg_check_features(
   OUT_FEATURE_OPTIONS
@@ -85,10 +81,6 @@ endif()
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/share")
 vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/doc/CeCILL-C_V1-en.txt")
 
-vcpkg_replace_string(
-  "${CURRENT_PACKAGES_DIR}/share/scotch/SCOTCHConfig.cmake" "find_dependency(Threads)"
-  "if(NOT WIN32)\nfind_dependency(Threads)\nelse()\nfind_dependency(PThreads4W)\nendif()"
-)
 file(
   REMOVE_RECURSE
   "${CURRENT_PACKAGES_DIR}/debug/include"

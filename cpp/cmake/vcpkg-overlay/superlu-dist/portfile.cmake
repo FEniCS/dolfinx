@@ -1,3 +1,4 @@
+vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 vcpkg_from_github(
   OUT_SOURCE_PATH SOURCE_PATH
   REPO xiaoyeli/superlu_dist
@@ -11,40 +12,31 @@ vcpkg_from_github(
 # provides the METIS API used by SuperLU_DIST itself, and
 # ptscotchparmetisv3 provides the ParMETIS API. TPL_PARMETIS_LIBRARIES
 # is a raw (non-target) link line, so scotch's static-library
-# dependencies have to be listed out by hand on Windows, where the
-# scotch port is always built static; on other platforms scotch is
-# built shared, so its own dependencies are pulled in transitively.
-if(VCPKG_TARGET_IS_WINDOWS)
-  set(
-    SUPERLU_DIST_SCOTCH_LIBRARY_NAMES
-    ptscotchparmetisv3
-    ptscotch
-    ptscotcherr
-    scotchmetisv5
-    scotch
-    scotcherr
-    pthreadVC3
-    zlib
-    bz2
-    lzma
+# dependencies have to be listed out by hand, since the scotch port
+# is always built static.
+set(
+  SUPERLU_DIST_SCOTCH_LIBRARY_NAMES
+  ptscotchparmetisv3
+  ptscotch
+  ptscotcherr
+  scotchmetisv5
+  scotch
+  scotcherr
+  zlib
+  bz2
+  lzma
+)
+set(SUPERLU_DIST_PARMETIS_LIBRARIES "")
+foreach(
+  SUPERLU_DIST_SCOTCH_LIBRARY_NAME
+  IN
+  LISTS SUPERLU_DIST_SCOTCH_LIBRARY_NAMES
+)
+  string(
+    APPEND SUPERLU_DIST_PARMETIS_LIBRARIES
+    "${CURRENT_INSTALLED_DIR}/lib/${SUPERLU_DIST_SCOTCH_LIBRARY_NAME}.lib "
   )
-  set(SUPERLU_DIST_PARMETIS_LIBRARIES "")
-  foreach(
-    SUPERLU_DIST_SCOTCH_LIBRARY_NAME
-    IN
-    LISTS SUPERLU_DIST_SCOTCH_LIBRARY_NAMES
-  )
-    string(
-      APPEND SUPERLU_DIST_PARMETIS_LIBRARIES
-      "${CURRENT_INSTALLED_DIR}/lib/${SUPERLU_DIST_SCOTCH_LIBRARY_NAME}.lib "
-    )
-  endforeach()
-else()
-  set(
-    SUPERLU_DIST_PARMETIS_LIBRARIES
-    "-lptscotchparmetisv3 -lptscotch -lptscotcherr -lscotchmetisv5 -lscotch -lscotcherr"
-  )
-endif()
+endforeach()
 
 vcpkg_cmake_configure(
   SOURCE_PATH "${SOURCE_PATH}"
@@ -54,7 +46,7 @@ vcpkg_cmake_configure(
     -Denable_examples=OFF
     -Denable_python=OFF
     -Denable_openmp=OFF
-    -DBUILD_STATIC_LIBS=OFF
+    -DBUILD_STATIC_LIBS=ON
     -DTPL_ENABLE_INTERNAL_BLASLIB=OFF
     -DTPL_ENABLE_LAPACKLIB=ON
     -DTPL_ENABLE_PARMETISLIB=ON

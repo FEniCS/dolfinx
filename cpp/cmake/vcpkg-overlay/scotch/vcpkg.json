@@ -1,14 +1,13 @@
 {
   "name": "scotch",
-  "version-string": "7.0.12-c05c7c8",
+  "version-string": "7.0.12-03de844",
   "description": "Scotch: a software package for graph and mesh/hypergraph partitioning, graph clustering, and sparse matrix ordering",
   "homepage": "https://github.com/jhale/scotch",
   "license": null,
-  "supports": "!arm & !uwp & !android & !osx",
+  "supports": "windows",
   "dependencies": [
     "bzip2",
     "liblzma",
-    "pthread",
     {
       "name": "vcpkg-cmake",
       "host": true
