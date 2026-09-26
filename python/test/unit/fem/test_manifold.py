@@ -36,7 +36,9 @@ from dolfinx.fem import (
     functionspace,
     interpolation_matrix,
 )
+from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (
+    CellType,
     GhostMode,
     cell_normals,
     compute_midpoints,
@@ -476,13 +478,14 @@ def reversed_cells(mesh):
     return (mesh.topology.get_cell_permutation_info() >> 31).astype(bool)
 
 
-def cube_surface(ghost_mode):
+def cube_surface(ghost_mode, cell_type=CellType.tetrahedron):
     """The boundary of a cube, as a facet submesh.
 
     Its cells keep the vertex order of the cube's facets, so their
-    normals point both inwards and outwards.
+    normals point both inwards and outwards. They are triangles for a
+    tetrahedral and quadrilaterals for a hexahedral cube.
     """
-    cube = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, ghost_mode=ghost_mode)
+    cube = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, cell_type=cell_type, ghost_mode=ghost_mode)
     cube.topology.create_connectivity(2, 3)
     return create_submesh(cube, 2, exterior_facet_indices(cube.topology))[0]
 
@@ -517,6 +520,29 @@ def mobius_mesh(n, m, dtype=default_real_type):
         cells = np.zeros((0, 3), dtype=np.int64)
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(3,), dtype=dtype))
     return create_mesh(MPI.COMM_WORLD, cells, domain, x.astype(dtype))
+
+
+def t_joint_mesh(dests, dtype=default_real_type):
+    """Three triangles sharing one edge, cell ``i`` on rank ``dests[i]``.
+
+    The ranks are taken modulo the number of ranks. The mesh is not
+    ghosted, so a rank sees only the cells of the edge that it owns.
+    """
+    if MPI.COMM_WORLD.rank == 0:
+        x = np.array([[0, 0, 0], [1, 0, 0], [0.5, 1, 0], [0.5, -1, 0], [0.5, 0, 1]])
+        cells = np.array([[0, 1, 2], [0, 1, 3], [0, 1, 4]], dtype=np.int64)
+    else:
+        x = np.zeros((0, 3))
+        cells = np.zeros((0, 3), dtype=np.int64)
+
+    def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
+        ranks = np.array(dests[: dual_graph.num_nodes], dtype=np.int32) % comm.size
+        return adjacencylist(ranks)
+
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(3,), dtype=dtype))
+    return create_mesh(
+        MPI.COMM_WORLD, cells, domain, x.astype(dtype), partitioner, max_facet_to_cell_links=3
+    )
 
 
 @pytest.mark.parametrize("gdim", [2, 3])
@@ -590,15 +616,17 @@ def test_divergence_theorem_on_a_closed_surface(family, degree, ghost_mode):
     assert abs(integral(ufl.div(w))) < rounding
 
 
+@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_cell_orientations_agree_with_the_outward_normal(ghost_mode):
+def test_cell_orientations_agree_with_the_outward_normal(ghost_mode, cell_type):
     """On a closed surface the computed orientation is the outward one or its opposite.
 
     It comes from the vertex orders alone, so it is fixed only up to one
     sign per connected surface, which has to be the same on every rank,
-    ghost cells included.
+    ghost cells included. Triangle and quadrilateral surfaces run their
+    edges in different directions.
     """
-    surface = cube_surface(ghost_mode)
+    surface = cube_surface(ghost_mode, cell_type)
     surface.topology.create_cell_orientations()
     cell_map = surface.topology.index_map(2)
     cells = np.arange(cell_map.size_local + cell_map.num_ghosts, dtype=np.int32)
@@ -654,6 +682,19 @@ def test_cell_orientations_refuse_a_moebius_strip():
     """A non-orientable surface has no consistent orientation, so it is refused."""
     mesh = mobius_mesh(24, 4)
     with pytest.raises(RuntimeError, match="not orientable"):
+        mesh.topology.create_cell_orientations()
+
+
+@pytest.mark.parametrize("dests", [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 2)])
+def test_cell_orientations_refuse_a_t_joint(dests):
+    """An edge shared by three cells cannot be oriented, so it is refused.
+
+    ``dests`` places the cells on ranks, so that in parallel no rank owns
+    all cells of the edge: two on one rank and one on another, or one on
+    each of three ranks.
+    """
+    mesh = t_joint_mesh(dests)
+    with pytest.raises(RuntimeError, match="more than two cells"):
         mesh.topology.create_cell_orientations()
 
 
