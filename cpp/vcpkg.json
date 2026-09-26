@@ -15,11 +15,24 @@
       ]
     },
     "mpi",
-    "parmetis",
     "pugixml",
     "pkgconf",
+    { "name": "scotch",
+      "features": [
+        "ptscotch"
+      ]
+    },
     "spdlog",
+    "superlu-dist",
     "vcpkg-cmake",
     "vcpkg-cmake-config"
-  ]
+  ],
+  "features": {
+    "basix-from-source": {
+      "description": "Build Basix from a local checkout for CI cross-testing.",
+      "dependencies": [
+        "basix"
+      ]
+    }
+  }
 }

@@ -1,0 +1,20 @@
+{
+  "name": "basix",
+  "version-string": "0.0.0-local",
+  "description": "Finite element definition and tabulation runtime library",
+  "homepage": "https://github.com/FEniCS/basix",
+  "license": "MIT",
+  "supports": "windows",
+  "dependencies": [
+    "blas",
+    "lapack",
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ]
+}
