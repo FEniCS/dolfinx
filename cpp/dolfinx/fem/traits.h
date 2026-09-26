@@ -9,6 +9,7 @@
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/types.h>
+#include <ranges>
 #include <span>
 #include <tuple>
 #include <type_traits>
@@ -115,6 +116,31 @@ concept DofMapPackFacets
     = DofMapPackBase<T> and requires(const std::remove_cvref_t<T>& t) {
         { std::get<2>(t)(0, 0, 0) } -> std::convertible_to<std::int32_t>;
       };
+
+/// @brief Concept for the mutable scratch buffers passed to the
+/// assembly kernels.
+///
+/// Satisfied by `std::span<T>` and by `std::array<T, N>`. The buffers
+/// are taken by value, so an array carries its size in its type and the
+/// assembler can size its work at compile time; a span leaves the size
+/// to run time and the storage to the caller.
+template <class B, class T>
+concept ScratchBuffer
+    = std::ranges::contiguous_range<B> and std::ranges::output_range<B, T>
+      and std::same_as<std::ranges::range_value_t<B>, T> and requires(B& b) {
+            { b.data() } -> std::same_as<T*>;
+            { b.size() } -> std::convertible_to<std::size_t>;
+          };
+
+/// @brief Concept for the container that assembled values are
+/// accumulated into, indexed by a process-local degree-of-freedom
+/// index.
+template <class V, class T>
+concept AssemblyVector
+    = std::same_as<typename std::remove_cvref_t<V>::value_type, T>
+      and requires(std::remove_cvref_t<V>& v, std::int32_t i) {
+            { v[i] } -> std::convertible_to<T&>;
+          };
 
 namespace impl
 {

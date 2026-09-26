@@ -35,14 +35,15 @@ T assemble_cells(
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     std::span<const std::int32_t> cells, const FEkernel<T, U> auto& fn,
     std::span<const T> constants,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs, auto cdofs_b)
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    ScratchBuffer<U> auto cdofs_b)
 {
   T value(0);
   if (cells.empty())
     return value;
 
   const auto ndofs_x = x_dofmap.extent(1);
-  assert(cdofs_b.size() >= 3 * static_cast<std::size_t>(ndofs_x));
+  assert(cdofs_b.size() == 3 * static_cast<std::size_t>(ndofs_x));
 
   const U* x_ptr = x.data_handle();
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
@@ -93,14 +94,14 @@ T assemble_entities(
     const FEkernel<T, U> auto& fn, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    auto cdofs_b)
+    ScratchBuffer<U> auto cdofs_b)
 {
   T value(0);
   if (entities.empty())
     return value;
 
   const auto ndofs_x = x_dofmap.extent(1);
-  assert(cdofs_b.size() >= 3 * static_cast<std::size_t>(ndofs_x));
+  assert(cdofs_b.size() == 3 * static_cast<std::size_t>(ndofs_x));
 
   const U* x_ptr = x.data_handle();
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
@@ -147,7 +148,7 @@ T assemble_interior_facets(
                                     md::dynamic_extent>>
         coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    auto cdofs_b)
+    ScratchBuffer<U> auto cdofs_b)
 {
   T value(0);
   if (facets.empty())
@@ -155,7 +156,7 @@ T assemble_interior_facets(
 
   // Create data structures used in assembly
   const auto ndofs_x = x_dofmap.extent(1);
-  assert(cdofs_b.size() >= 2 * 3 * static_cast<std::size_t>(ndofs_x));
+  assert(cdofs_b.size() == 2 * 3 * static_cast<std::size_t>(ndofs_x));
   U* cdofs0 = cdofs_b.data();
   U* cdofs1 = cdofs_b.data() + 3 * ndofs_x;
 
@@ -207,7 +208,11 @@ T assemble_scalar(
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
 
+  // Sized for the worst case (interior facets, which touch two cells).
+  // The kernels require an exactly-sized buffer, so the one-cell
+  // integrals get the leading half.
   std::vector<U> cdofs_b(2 * 3 * x_dofmap.extent(1));
+  std::span cdofs_b1 = std::span(cdofs_b).first(3 * x_dofmap.extent(1));
 
   T value = 0;
   for (int i = 0; i < M.num_integrals(IntegralType::cell, cell_type_idx); ++i)
@@ -220,7 +225,7 @@ T assemble_scalar(
     assert(cells.size() * cstride == coeffs.size());
     value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
-        md::mdspan(coeffs.data(), cells.size(), cstride), std::span(cdofs_b));
+        md::mdspan(coeffs.data(), cells.size(), cstride), cdofs_b1);
   }
 
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
@@ -292,7 +297,7 @@ T assemble_scalar(
               entities.data(), entities.size() / 2, 2),
           fn, constants,
           md::mdspan(coeffs.data(), entities.size() / 2, cstride), perms,
-          std::span(cdofs_b));
+          cdofs_b1);
     }
   }
 

@@ -68,13 +68,13 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// coefficient for cell `i`.
 /// @param[in] cell_info0 Cell permutation information for the test
 /// function mesh.
-/// @param[in] be_b Buffer for local element vector. Size must be at
-/// least `bs * dmap.extent(1)`.
+/// @param[in] be_b Buffer for local element vector. Size must be
+/// exactly `bs * dmap.extent(1)`.
 /// @param[in] cdofs_b Buffer for local element geometry. Size must be
-/// at least `3 * x_dofmap.extent(1)`.
+/// exactly `3 * x_dofmap.extent(1)`.
 template <typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
-  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
+  requires AssemblyVector<V, T>
 void assemble_cells(
     const fem::DofTransformKernel<T> auto& P0, V&& b,
     MDSpan2Int32 auto x_dofmap,
@@ -82,7 +82,8 @@ void assemble_cells(
     std::span<const std::int32_t> cells, const DofMapPackCells auto& dofmap,
     const FEkernel<T, U> auto& kernel, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<const std::uint32_t> cell_info0, auto be_b, auto cdofs_b)
+    std::span<const std::uint32_t> cell_info0, ScratchBuffer<T> auto be_b,
+    ScratchBuffer<U> auto cdofs_b)
 {
   if (cells.empty())
     return;
@@ -98,9 +99,8 @@ void assemble_cells(
   static_assert(x.extent(1) == 3);
   const auto ndofs_x = x_dofmap.extent(1);
   const auto ndofs = dmap.extent(1);
-  const auto be_size = be_b.size();
-  assert(be_size >= static_cast<std::size_t>(bs) * ndofs);
-  assert(cdofs_b.size() >= 3 * static_cast<std::size_t>(ndofs_x));
+  assert(be_b.size() == static_cast<std::size_t>(bs) * ndofs);
+  assert(cdofs_b.size() == 3 * static_cast<std::size_t>(ndofs_x));
 
   const U* x_ptr = x.data_handle();
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
@@ -142,7 +142,7 @@ void assemble_cells(
     kernel(be_b.data(), coeffs_data + index * cstride, constants.data(),
            cdofs_b.data(), nullptr, nullptr, nullptr);
     if (p0_set)
-      P0(std::span<T>(be_b.data(), be_size), cell_info0, c0, 1);
+      P0(std::span<T>(be_b), cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
     const std::int32_t* dofs
@@ -191,13 +191,13 @@ void assemble_cells(
 /// function mesh.
 /// @param[in] perms Entity permutation integer. Empty if entity
 /// permutations are not required.
-/// @param[in] be_b Buffer for local element vector. Size must be at
-/// least `bs * dmap.extent(1)`.
+/// @param[in] be_b Buffer for local element vector. Size must be
+/// exactly `bs * dmap.extent(1)`.
 /// @param[in] cdofs_b Buffer for local element geometry. Size must be
-/// at least `3 * x_dofmap.extent(1)`.
+/// exactly `3 * x_dofmap.extent(1)`.
 template <typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
-  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
+  requires AssemblyVector<V, T>
 void assemble_entities(
     const fem::DofTransformKernel<T> auto& P0, V&& b,
     MDSpan2Int32 auto x_dofmap,
@@ -210,7 +210,7 @@ void assemble_entities(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const std::uint32_t> cell_info0,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    auto be_b, auto cdofs_b)
+    ScratchBuffer<T> auto be_b, ScratchBuffer<U> auto cdofs_b)
 {
   if (entities.empty())
     return;
@@ -226,9 +226,8 @@ void assemble_entities(
   static_assert(x.extent(1) == 3);
   const auto num_dofs = dmap.extent(1);
   const auto num_x_dofs_cell = x_dofmap.extent(1);
-  const auto be_size = be_b.size();
-  assert(cdofs_b.size() >= 3 * static_cast<std::size_t>(num_x_dofs_cell));
-  assert(be_size >= static_cast<std::size_t>(bs) * num_dofs);
+  assert(cdofs_b.size() == 3 * static_cast<std::size_t>(num_x_dofs_cell));
+  assert(be_b.size() == static_cast<std::size_t>(bs) * num_dofs);
   assert(entities0.size() == entities.size());
 
   const U* x_ptr = x.data_handle();
@@ -266,7 +265,7 @@ void assemble_entities(
     kernel(be_b.data(), coeffs_data + f * cstride, constants.data(),
            cdofs_b.data(), &local_entity, &perm, nullptr);
     if (p0_set)
-      P0(std::span<T>(be_b.data(), be_size), cell_info0, cell0, 1);
+      P0(std::span<T>(be_b), cell_info0, cell0, 1);
 
     // Add to global vector
     const std::int32_t* dofs
@@ -305,13 +304,13 @@ void assemble_entities(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
-/// @param[in] be_b Buffer for local element vector. Size must be at
-/// least `2 * bs * dmap.extent(1)`.
+/// @param[in] be_b Buffer for local element vector. Size must be
+/// exactly `2 * bs * dmap.extent(1)`.
 /// @param[in] cdofs_b Buffer for local element geometry. Size must be
-/// at least `2 * 3 * x_dofmap.extent(1)`.
+/// exactly `2 * 3 * x_dofmap.extent(1)`.
 template <typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
-  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
+  requires AssemblyVector<V, T>
 void assemble_interior_facets(
     const fem::DofTransformKernel<T> auto& P0, V&& b,
     MDSpan2Int32 auto x_dofmap,
@@ -326,7 +325,7 @@ void assemble_interior_facets(
         coeffs,
     std::span<const std::uint32_t> cell_info0,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    auto be_b, auto cdofs_b)
+    ScratchBuffer<T> auto be_b, ScratchBuffer<U> auto cdofs_b)
 {
   if (facets.empty())
     return;
@@ -342,9 +341,8 @@ void assemble_interior_facets(
   static_assert(x.extent(1) == 3);
   const auto num_x_dofs_cell = x_dofmap.extent(1);
   const auto dmap_size = dmap.extent(1);
-  const auto be_size = be_b.size();
-  assert(cdofs_b.size() >= 2 * static_cast<std::size_t>(num_x_dofs_cell) * 3);
-  assert(be_size >= static_cast<std::size_t>(bs) * 2 * dmap_size);
+  assert(cdofs_b.size() == 2 * static_cast<std::size_t>(num_x_dofs_cell) * 3);
+  assert(be_b.size() == static_cast<std::size_t>(bs) * 2 * dmap_size);
   assert(facets0.size() == facets.size());
   U* cdofs0 = cdofs_b.data();
   U* cdofs1 = cdofs_b.data() + num_x_dofs_cell * 3;
@@ -402,7 +400,7 @@ void assemble_interior_facets(
            cdofs_b.data(), local_facet.data(), perm.data(), nullptr);
 
     if (p0_set and cells0[0] >= 0)
-      P0(std::span<T>(be_b.data(), be_size), cell_info0, cells0[0], 1);
+      P0(std::span<T>(be_b), cell_info0, cells0[0], 1);
     if (p0_set and cells0[1] >= 0)
     {
       std::span sub_be(be_b.data() + bs * dmap_size, bs * dmap_size);
@@ -448,7 +446,7 @@ void assemble_interior_facets(
 /// solution' in a Newton method.
 /// @param[in] alpha Scaling to apply.
 template <dolfinx::scalar T, std::floating_point U, typename V>
-  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
+  requires AssemblyVector<V, T>
 void lift_bc(V&& b, const Form<T, U>& a, auto bs0, auto bs1,
              std::span<const T> constants,
              const std::map<std::pair<IntegralType, int>,
@@ -512,7 +510,7 @@ void lift_bc(V&& b, const Form<T, U>& a, auto bs0, auto bs1,
 /// @param[in] coefficients Packed coefficients that appear in `L`.
 template <typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
-  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
+  requires AssemblyVector<V, T>
 void assemble_vector(
     V&& b, const Form<T, U>& L,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -545,11 +543,15 @@ void assemble_vector(
     const int bs = dofmap->bs();
 
     // Buffers reused across all integral kernels for this cell type,
-    // sized for the worst case (interior facets, which touch two cells).
+    // sized for the worst case (interior facets, which touch two
+    // cells). The kernels require an exactly-sized buffer, so the
+    // one-cell integrals get the leading half.
     std::vector<T> be_buffer(2 * bs * dofs.extent(1));
     std::vector<U> cdofs_buffer(2 * 3 * x_dofmap.extent(1));
     std::span be_b(be_buffer);
     std::span cdofs_b(cdofs_buffer);
+    std::span be_b1 = be_b.first(bs * dofs.extent(1));
+    std::span cdofs_b1 = cdofs_b.first(3 * x_dofmap.extent(1));
 
     const fem::DofTransformKernel<T> auto& P0
         = element->template dof_transformation_fn<T>(doftransform::standard);
@@ -575,7 +577,7 @@ void assemble_vector(
             P0, b, x_dofmap, x, cells,
             std::tuple{dofs, std::integral_constant<int, 1>{}, cells0}, fn,
             constants, md::mdspan(coeffs.data(), cells.size(), cstride),
-            cell_info0, be_b, cdofs_b);
+            cell_info0, be_b1, cdofs_b1);
       }
       else if (bs == 3)
       {
@@ -583,14 +585,14 @@ void assemble_vector(
             P0, b, x_dofmap, x, cells,
             std::tuple{dofs, std::integral_constant<int, 3>(), cells0}, fn,
             constants, md::mdspan(coeffs.data(), cells.size(), cstride),
-            cell_info0, be_b, cdofs_b);
+            cell_info0, be_b1, cdofs_b1);
       }
       else
       {
         impl::assemble_cells(P0, b, x_dofmap, x, cells,
                              std::tuple{dofs, bs, cells0}, fn, constants,
                              md::mdspan(coeffs.data(), cells.size(), cstride),
-                             cell_info0, be_b, cdofs_b);
+                             cell_info0, be_b1, cdofs_b1);
       }
     }
 
@@ -685,7 +687,7 @@ void assemble_vector(
               P0, b, x_dofmap, x, entities,
               std::tuple{dofs, std::integral_constant<int, 1>{}, entities1}, fn,
               constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
-              cell_info0, perms, be_b, cdofs_b);
+              cell_info0, perms, be_b1, cdofs_b1);
         }
         else if (bs == 3)
         {
@@ -693,14 +695,14 @@ void assemble_vector(
               P0, b, x_dofmap, x, entities,
               std::tuple{dofs, std::integral_constant<int, 3>{}, entities1}, fn,
               constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
-              cell_info0, perms, be_b, cdofs_b);
+              cell_info0, perms, be_b1, cdofs_b1);
         }
         else
         {
           impl::assemble_entities(
               P0, b, x_dofmap, x, entities, std::tuple{dofs, bs, entities1}, fn,
               constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
-              cell_info0, perms, be_b, cdofs_b);
+              cell_info0, perms, be_b1, cdofs_b1);
         }
       }
     }
@@ -715,7 +717,7 @@ void assemble_vector(
 /// @param[in] coefficients Packed coefficients that appear in `L.`
 template <typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
-  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
+  requires AssemblyVector<V, T>
 void assemble_vector(
     V&& b, const Form<T, U>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
