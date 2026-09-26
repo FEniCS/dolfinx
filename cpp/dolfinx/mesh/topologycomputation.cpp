@@ -365,19 +365,13 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   // Create a symmetric neighbor_comm from vertex_ranks
   common::Timer timer_li_nc("Entity local indexing: neighbourhood setup");
 
-  // Get sharing ranks for each vertex
-  auto [data, offsets] = vertex_map.index_to_dest_ranks();
+  // Ranks that share vertices, and the neighbourhood ranks sharing each
+  // vertex
+  auto [all_ranks, data, offsets]
+      = common::compute_sharing_neighbourhood(vertex_map);
   graph::AdjacencyList<int> vertex_ranks(std::move(data), std::move(offsets));
 
-  // Create unique list of ranks that share vertices (owners of)
-  std::vector<int> all_ranks(vertex_ranks.array().begin(),
-                             vertex_ranks.array().end());
-  std::ranges::sort(all_ranks);
-  auto [unique_end, range_end] = std::ranges::unique(all_ranks);
-  all_ranks.erase(unique_end, range_end);
-
   MPI_Comm neighbor_comm;
-  all_ranks.reserve(1);
   MPI_Dist_graph_create_adjacent(comm, all_ranks.size(), all_ranks.data(),
                                  MPI_UNWEIGHTED, all_ranks.size(),
                                  all_ranks.data(), MPI_UNWEIGHTED,
@@ -431,7 +425,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       std::span entity
           = entity_list.subspan(pos * num_vertices_per_e, num_vertices_per_e);
 
-      // Build list of ranks that share vertices of the entity, and sort
+      // Build list of neighbourhood ranks that share vertices of the
+      // entity, and sort
       entity_ranks.clear();
       for (auto v : entity)
       {
@@ -459,11 +454,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           // Only send entities that are not known to be ghosts
           if (ghost_status[id] != 1)
           {
-            auto itr_local = std::ranges::lower_bound(all_ranks, *it);
-            assert(itr_local != all_ranks.end() and *itr_local == *it);
-            std::size_t r = std::ranges::distance(all_ranks.begin(), itr_local);
-
-            // Entity id may be shared with rank r
+            // Entity id may be shared with neighbourhood rank r
+            const std::size_t r = *it;
             send_entities[r].insert(send_entities[r].end(), vglobal.begin(),
                                     vglobal.end());
             send_index[r].push_back(id);
