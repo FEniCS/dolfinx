@@ -88,7 +88,8 @@ bool has_bc(auto& dofs, auto& bc, auto bs)
 /// local element matrix.
 /// @param cdofs_b Buffer for local element geometry. Size must be at
 /// least `3 * x_dofmap.extent(1))`.
-template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
+template <bool LiftingMode, typename AB, std::floating_point U,
+          dolfinx::scalar T = typename std::remove_cvref_t<AB>::value_type>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -100,7 +101,7 @@ void assemble_cells_matrix(
     const FEkernel<T, U> auto& kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1, auto Ab, auto cdofs_b)
+    std::span<const std::uint32_t> cell_info1, AB Ab, auto cdofs_b)
 {
   if (cells.empty())
     return;
@@ -111,10 +112,10 @@ void assemble_cells_matrix(
   // them. mdspan and span are two-word copies.
   const auto dmap0 = std::get<0>(dofmap0);
   const auto bs0 = std::get<1>(dofmap0);
-  const auto cells0 = std::get<2>(dofmap0);
+  std::span<const std::int32_t> cells0 = std::get<2>(dofmap0);
   const auto dmap1 = std::get<0>(dofmap1);
   const auto bs1 = std::get<1>(dofmap1);
-  const auto cells1 = std::get<2>(dofmap1);
+  std::span<const std::int32_t> cells1 = std::get<2>(dofmap1);
 
   static_assert(x.extent(1) == 3);
   const auto num_dofs0 = dmap0.extent(1);
@@ -283,7 +284,8 @@ void assemble_cells_matrix(
 /// local element matrix.
 /// @param cdofs_b Buffer for local element geometry. Size must be at
 /// least `3 * x_dofmap.extent(1))`.
-template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
+template <bool LiftingMode, typename AB, std::floating_point U,
+          dolfinx::scalar T = typename std::remove_cvref_t<AB>::value_type>
 void assemble_entities(
     la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -299,7 +301,7 @@ void assemble_entities(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms, auto Ab,
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms, AB Ab,
     auto cdofs_b)
 {
   if (entities.empty())
@@ -482,7 +484,8 @@ void assemble_entities(
 /// @param Ae_block_b Buffer used to gather a single (test, trial) block
 /// of the local element matrix. Size must be at least `(bs0 *
 /// dmap0.extent(1)) * (bs1 * dmap1.extent(1))`.
-template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
+template <bool LiftingMode, typename AB, std::floating_point U,
+          dolfinx::scalar T = typename std::remove_cvref_t<AB>::value_type>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -500,7 +503,7 @@ void assemble_interior_facets(
         coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms, auto Ab,
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms, AB Ab,
     auto cdofs_b, std::span<std::int32_t> dofs_b, std::span<T> Ae_block_b)
 {
   if (facets.empty())
