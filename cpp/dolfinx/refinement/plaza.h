@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "dolfinx/common/IndexMap.h"
 #include "dolfinx/graph/AdjacencyList.h"
 #include "dolfinx/mesh/Mesh.h"
 #include "dolfinx/mesh/Topology.h"
@@ -493,25 +494,10 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   if (!map_e)
     throw std::runtime_error("Edges must be initialised");
 
-  // Get sharing ranks for each edge
-  auto [_data, _offsets] = map_e->index_to_dest_ranks();
+  // Ranks that share edges, and the neighbourhood ranks sharing each
+  // edge
+  auto [ranks, _data, _offsets] = common::compute_sharing_neighbourhood(*map_e);
   graph::AdjacencyList<int> edge_ranks(std::move(_data), std::move(_offsets));
-
-  // Create unique list of ranks that share edges (owners of ghosts plus
-  // ranks that ghost owned indices)
-  std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
-  std::ranges::sort(ranks);
-  auto [unique_end, range_end] = std::ranges::unique(ranks);
-  ranks.erase(unique_end, range_end);
-
-  // Convert edge_ranks from global rank to to neighbourhood ranks
-  std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),
-                         [&ranks](auto r)
-                         {
-                           auto it = std::ranges::lower_bound(ranks, r);
-                           assert(it != ranks.end() and *it == r);
-                           return std::ranges::distance(ranks.begin(), it);
-                         });
 
   // Get number of neighbors
   std::vector<std::int8_t> marked_edges(
