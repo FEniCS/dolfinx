@@ -59,6 +59,18 @@ jobs:
         with:
           path: dolfinx-src
 
+      # Ninja is single-config, so CMAKE_BUILD_TYPE is fixed at configure
+      # time and vcpkg's toolchain resolves only the matching (release)
+      # variant of each dependency's libraries. The default multi-config
+      # Visual Studio generator configures both variants at once, and a
+      # find_package()/find_library() call that isn't a proper per-config
+      # imported target can then resolve to the debug variant even when
+      # only Release is ever built, causing link failures.
+      - name: Set up MSVC developer environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
       - name: Load environment variables
         run: |
           cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $env:GITHUB_ENV
@@ -94,7 +106,7 @@ jobs:
       - name: Install Basix (C++)
         working-directory: basix/cpp
         run: |
-          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build-dir -S .
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build-dir -S .
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix "D:/a/dolfinx/basix-install"
           echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
@@ -117,7 +129,7 @@ jobs:
       - name: Install UFCx header
         working-directory: ffcx
         run: |
-          cmake -B build-dir -S cmake/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S cmake/
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/ufcx-install
 
@@ -139,7 +151,7 @@ jobs:
       - name: Install DOLFINx (C++)
         working-directory: dolfinx-src/cpp
         run: |
-          cmake -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DDOLFINX_ENABLE_SCOTCH=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cmake/vcpkg-overlay" -B build-dir -S .
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DDOLFINX_ENABLE_SCOTCH=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cmake/vcpkg-overlay" -B build-dir -S .
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
