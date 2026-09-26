@@ -73,6 +73,7 @@ jobs:
             cibw_build: cp312-macosx_arm64
 
     env:
+      BASELINE_NANOBIND: "2.13.0"
       CIBW_BUILD: ${{ matrix.cibw_build }}
       CIBW_BUILD_VERBOSITY: 1
       CIBW_ENVIRONMENT: PIP_INDEX_URL="file:///project/simple" PIP_EXTRA_INDEX_URL="https://pypi.org/simple"
@@ -86,6 +87,11 @@ jobs:
 
       - name: Install Python dependencies
         run: python -m pip install cibuildwheel simple503 build
+
+      # Baseline experiment: the 2026-07-30 run resolved nanobind 2.13.0.
+      # Today's PyPI serves 3.1.0, which this source predates.
+      - name: Pin baseline build dependencies
+        run: echo "nanobind==${{ env.BASELINE_NANOBIND }}" > "${GITHUB_WORKSPACE}/baseline-constraints.txt"
 
       - name: Checkout UFL
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
@@ -124,6 +130,8 @@ jobs:
       - name: Build Basix wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         working-directory: basix/
+        env:
+          PIP_CONSTRAINT: ${{ github.workspace }}/baseline-constraints.txt
         run: |
           python -m cibuildwheel --output-dir ../wheelhouse/ .
 
@@ -163,6 +171,7 @@ jobs:
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
             MACOSX_DEPLOYMENT_TARGET=$(xcrun --sdk macosx --show-sdk-version)
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install:$(brew --prefix)
+            PIP_CONSTRAINT=$GITHUB_WORKSPACE/baseline-constraints.txt
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
