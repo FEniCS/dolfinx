@@ -161,7 +161,7 @@ if orient_cells:
 # +
 V = dolfinx.fem.functionspace(mesh, ("RT", order))
 Q = dolfinx.fem.functionspace(mesh, ("DG", order - 1))
-r_el = basix.ufl.real_element(mesh.basix_cell(), value_shape=())
+r_el = basix.ufl.real_element(mesh.basix_cell(), value_shape=(), dtype=dolfinx.default_real_type)
 R = dolfinx.fem.functionspace(mesh, r_el)
 W = ufl.MixedFunctionSpace(V, Q, R)
 
