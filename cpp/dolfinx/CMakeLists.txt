@@ -223,11 +223,18 @@ install(
 )
 
 if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
+  # Basix::basix is a proper imported target, so its own location is
+  # already known without a DIRECTORIES hint; that hint is only for
+  # resolving basix's non-target, PE-import-scanned runtime deps (e.g.
+  # libgcc_s_seh-1.dll from a MinGW-built OpenBLAS/LAPACK). vcpkg's own
+  # applocal-deps already copies dolfinx's own copies of those same
+  # DLLs into this build tree, so pointing this scan at Basix's install
+  # tree too gives two conflicting paths for the same DLL name.
   install(
     RUNTIME_DEPENDENCY_SET dependencies DESTINATION ${CMAKE_INSTALL_BINDIR}
     PRE_EXCLUDE_REGEXES [[api-ms-win-.*]] [[ext-ms-.*]]
     POST_EXCLUDE_REGEXES [[.*(\\|/)system32(\\|/).*\.dll]]
-    DIRECTORIES $<TARGET_FILE_DIR:Basix::basix> $<TARGET_FILE_DIR:hdf5::hdf5>
+    DIRECTORIES $<TARGET_FILE_DIR:hdf5::hdf5>
   )
 endif()
 
