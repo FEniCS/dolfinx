@@ -51,6 +51,157 @@ constexpr std::size_t static_extent1()
     return md::dynamic_extent;
 }
 
+/// @brief Gather cell vertex coordinates into the kernel's buffer.
+///
+/// `GDIM` and `N` (geometry dofs per cell, 0 for a run-time count) are
+/// template parameters so the copy is a fixed number of scalar moves.
+/// With a run-time count `std::copy_n` lowers to a `memmove` call,
+/// which for a handful of doubles costs more than the copy.
+template <int GDIM, int N, std::floating_point U>
+inline void pack_cell_coords(U* __restrict__ cdofs, const U* __restrict__ x,
+                             const std::int32_t* __restrict__ xdofs,
+                             std::int32_t num_dofs)
+{
+  const std::int32_t n = N > 0 ? N : num_dofs;
+  for (std::int32_t i = 0; i < n; ++i)
+  {
+    const U* src = x + static_cast<std::ptrdiff_t>(xdofs[i]) * GDIM;
+    for (int k = 0; k < GDIM; ++k)
+      cdofs[3 * i + k] = src[k];
+  }
+}
+
+/// @brief Scatter-add a local element vector into the global vector.
+///
+/// `BS` and `N` (dofs per cell, 0 for a run-time count) are template
+/// parameters so the common unblocked case is one indirect accumulate
+/// per degree of freedom with a known trip count, rather than a nested
+/// loop the compiler cannot unroll.
+template <int BS, int N, dolfinx::scalar T, typename V>
+inline void scatter_cell_vector(V&& b, const std::int32_t* __restrict__ dofs,
+                                const T* __restrict__ be, std::size_t num_dofs)
+{
+  const std::size_t n = N > 0 ? static_cast<std::size_t>(N) : num_dofs;
+  if constexpr (BS == 1)
+  {
+    for (std::size_t i = 0; i < n; ++i)
+      b[dofs[i]] += be[i];
+  }
+  else
+  {
+    for (std::size_t i = 0; i < n; ++i)
+    {
+      const std::int32_t dof = BS * dofs[i];
+      for (int k = 0; k < BS; ++k)
+        b[dof + k] += be[BS * i + k];
+    }
+  }
+}
+
+/// @brief Cell loop for ::assemble_cells, with the geometric dimension,
+/// block size and dof counts as compile-time constants.
+///
+/// When all of them are known the element buffers are function-local
+/// arrays. That matters more than the indexing it saves: the caller's
+/// scratch buffers are memory the compiler must assume is observable,
+/// so the kernel's writes and the scatter's reads go through it, while
+/// locals whose address does not escape an inlined kernel are promoted
+/// to registers and the marshalling disappears.
+///
+/// @tparam GDIM Geometric dimension.
+/// @tparam BS Dofmap block size, or 0 for a run-time block size.
+/// @tparam NDOFS_X Geometry dofs per cell, or 0 for a run-time count.
+/// @tparam NDOFS Test-space dofs per cell, or 0 for a run-time count.
+template <int GDIM, int BS, int NDOFS_X, int NDOFS, typename V,
+          std::floating_point U,
+          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
+void assemble_cells_impl(
+    const fem::DofTransformKernel<T> auto& P0, V&& b,
+    MDSpan2Int32 auto x_dofmap, MDSpan2Floating<U> auto x,
+    std::span<const std::int32_t> cells, const DofMapPackCells auto& dofmap,
+    const FEkernel<T, U> auto& kernel, std::span<const T> constants,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    std::span<const std::uint32_t> cell_info0, std::span<T> be_b,
+    std::span<U> cdofs_b)
+{
+  const auto& [dmap, bs, cells0] = dofmap;
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
+  const std::int32_t* dmap_ptr = dmap.data_handle();
+  const U* x_ptr = x.data_handle();
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
+  // P0 does not change across cells in this call, so whether it is a
+  // set (non-null) transform is loop-invariant -- checked once here
+  // rather than on every cell.
+  const bool p0_set = is_transform_set(P0);
+
+  // The integration-domain and test-function cell lists are usually the
+  // same span, in which case the second lookup is redundant. The test
+  // is loop-invariant, so the branch below predicts perfectly and only
+  // the load is saved.
+  const bool same_cells
+      = cells0.data() == cells.data() and cells0.size() == cells.size();
+
+  constexpr bool static_shape = NDOFS_X > 0 and NDOFS > 0 and BS > 0;
+  const std::size_t ndofs_cell
+      = NDOFS > 0 ? static_cast<std::size_t>(NDOFS) : dmap.extent(1);
+  const std::int32_t num_x_dofs_cell
+      = NDOFS_X > 0 ? NDOFS_X : static_cast<std::int32_t>(x_dofmap.extent(1));
+
+  for (std::size_t index = 0; index < cells.size(); ++index)
+  {
+    // Integration domain cell and test function cell
+    const std::int32_t c = cells[index];
+    const std::int32_t c0 = same_cells ? c : cells0[index];
+    const std::int32_t* xdofs
+        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * num_x_dofs_cell;
+    const std::int32_t* dofs
+        = dmap_ptr + static_cast<std::ptrdiff_t>(c0) * ndofs_cell;
+
+    if constexpr (static_shape)
+    {
+      U cdofs[3 * NDOFS_X];
+      T be[BS * NDOFS] = {};
+      pack_cell_coords<GDIM, NDOFS_X>(cdofs, x_ptr, xdofs, num_x_dofs_cell);
+      kernel(be, coeffs_data + index * cstride, constants.data(), cdofs,
+             nullptr, nullptr, nullptr);
+      if (p0_set)
+        P0(std::span<T>(be, BS * NDOFS), cell_info0, c0, 1);
+      scatter_cell_vector<BS, NDOFS, T>(b, dofs, be, ndofs_cell);
+    }
+    else
+    {
+      assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
+      assert(be_b.size() >= bs * dmap.extent(1));
+      auto be = be_b.first(bs * ndofs_cell);
+      pack_cell_coords<GDIM, NDOFS_X>(cdofs_b.data(), x_ptr, xdofs,
+                                      num_x_dofs_cell);
+      // A loop rather than std::fill_n: the element vector is a handful
+      // of scalars, and a run-time length sends std::fill_n to memset.
+      for (std::size_t i = 0; i < be.size(); ++i)
+        be[i] = T(0);
+      kernel(be.data(), coeffs_data + index * cstride, constants.data(),
+             cdofs_b.data(), nullptr, nullptr, nullptr);
+      if (p0_set)
+        P0(be, cell_info0, c0, 1);
+
+      if constexpr (BS == 0)
+      {
+        for (std::size_t i = 0; i < ndofs_cell; ++i)
+        {
+          std::int32_t dof = bs * dofs[i];
+          std::int32_t offset = bs * i;
+          for (int k = 0; k < bs; ++k)
+            b[dof + k] += be[offset + k];
+        }
+      }
+      else
+        scatter_cell_vector<BS, NDOFS, T>(b, dofs, be.data(), ndofs_cell);
+    }
+  }
+}
+
 /// @brief Execute kernel over cells and accumulate result in vector.
 ///
 /// @note This function must not perform any dynamic (heap) memory
@@ -97,61 +248,62 @@ void assemble_cells(const fem::DofTransformKernel<T> auto& P0, V&& b,
     return;
 
   const auto& [dmap, bs, cells0] = dofmap;
-  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
-  assert(be_b.size() >= bs * dmap.extent(1));
-  auto be = be_b.first(bs * dmap.extent(1));
-
-  const U* x_ptr = x.data_handle();
   const std::int32_t gdim = x.extent(1);
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t* dmap_ptr = dmap.data_handle();
+  const std::size_t nx = x_dofmap.extent(1);
+  const std::size_t nd = dmap.extent(1);
 
-  // Use a static geometry-dof count when available.
-  constexpr std::size_t x_dofmap_static_extent1
-      = static_extent1<decltype(x_dofmap)>();
-  const std::int32_t num_x_dofs_cell
-      = x_dofmap_static_extent1 != md::dynamic_extent
-            ? static_cast<std::int32_t>(x_dofmap_static_extent1)
-            : static_cast<std::int32_t>(x_dofmap.extent(1));
-
-  // P0 does not change across cells in this call, so whether it is a
-  // set (non-null) transform is loop-invariant -- checked once here
-  // rather than on every cell.
-  const bool p0_set = is_transform_set(P0);
-
-  const T* coeffs_data = coeffs.data_handle();
-  const std::size_t cstride = coeffs.extent(1);
-
-  // Iterate over active cells
-  for (std::size_t index = 0; index < cells.size(); ++index)
+  auto call = [&]<int GDIM, int BS, int NX, int ND>()
   {
-    // Integration domain cell and test function cell
-    std::int32_t c = cells[index];
-    std::int32_t c0 = cells0[index];
+    return assemble_cells_impl<GDIM, BS, NX, ND>(
+        P0, b, x_dofmap, x, cells, dofmap, kernel, constants, coeffs,
+        cell_info0, be_b, cdofs_b);
+  };
 
-    // Get cell coordinates/geometry
-    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+  // The geometric dimension, block size and dof counts are small and
+  // fixed for a given problem, but are run-time values here. Dispatch
+  // once, on entry, to a loop that has them as compile-time constants.
+  // The shapes given static dof counts are the ones that dominate in
+  // practice: an unblocked scalar space on a 3D simplex, at the lowest
+  // few degrees. Everything else keeps run-time counts, as all shapes
+  // did before.
+  if (gdim == 3 and bs == 1 and nx == 4)
+  {
+    switch (nd)
     {
-      const U* _x_ptr = x_ptr + x_dofmap_ptr[c * num_x_dofs_cell + i] * gdim;
-      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
+    case 4:
+      return call.template operator()<3, 1, 4, 4>();
+    case 10:
+      return call.template operator()<3, 1, 4, 10>();
+    case 20:
+      return call.template operator()<3, 1, 4, 20>();
+    default:
+      break;
     }
+  }
 
-    // Tabulate vector for cell
-    std::ranges::fill(be, 0);
-    kernel(be.data(), coeffs_data + index * cstride, constants.data(),
-           cdofs_b.data(), nullptr, nullptr, nullptr);
-    if (p0_set)
-      P0(be, cell_info0, c0, 1);
-
-    // Scatter cell vector to 'global' vector array
-    std::span dofs(dmap_ptr + c0 * dmap.extent(1), dmap.extent(1));
-    for (std::size_t i = 0; i < dmap.extent(1); ++i)
+  auto dispatch_bs = [&]<int GDIM>()
+  {
+    switch (bs)
     {
-      std::int32_t dof = bs * dofs[i];
-      std::int32_t offset = bs * i;
-      for (int k = 0; k < bs; ++k)
-        b[dof + k] += be[offset + k];
+    case 1:
+      return call.template operator()<GDIM, 1, 0, 0>();
+    case 2:
+      return call.template operator()<GDIM, 2, 0, 0>();
+    case 3:
+      return call.template operator()<GDIM, 3, 0, 0>();
+    default:
+      return call.template operator()<GDIM, 0, 0, 0>();
     }
+  };
+
+  switch (gdim)
+  {
+  case 1:
+    return dispatch_bs.template operator()<1>();
+  case 2:
+    return dispatch_bs.template operator()<2>();
+  default:
+    return dispatch_bs.template operator()<3>();
   }
 }
 
