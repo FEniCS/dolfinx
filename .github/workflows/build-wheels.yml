@@ -342,14 +342,22 @@ jobs:
             pipx run abi3audit --verbose --strict --report {wheel}
 
           # impi.dll/libfabric.dll are excluded rather than bundled - user
-          # must install. msvcp140.dll/msvcp140_atomic_wait.dll are excluded
-          # because delvewheel finds them twice, once via Basix's bundled
-          # mangled copy and once on PATH, and fails renaming the second onto
-          # the first: "FileExistsError: [WinError 183] Cannot create a file
-          # when that file already exists". The MSVC runtime is a system
-          # dependency, so not bundling it is correct anyway.
+          # must install. msvcp140.dll/msvcp140_atomic_wait.dll likewise:
+          # delvewheel leaves vcruntime140.dll to the system and they ship in
+          # the same redistributable, so bundling one without the other buys
+          # nothing.
+          #
+          # fenics_basix.libs is deliberately not on --add-path. It holds
+          # Basix's already-mangled dependencies, so delvewheel finds each of
+          # them twice, once mangled there and once unmangled on PATH, copies
+          # both in, then fails renaming the second onto the first:
+          # "FileExistsError: [WinError 183] Cannot create a file when that
+          # file already exists". Those libraries belong to Basix, which loads
+          # them itself. Only the directory holding basix.dll is needed.
+          #
+          # -v prints what was resolved and from where, as Basix's repair does.
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
-            python -c "import basix, os, subprocess; site_packages = os.path.dirname(os.path.dirname(basix.__file__)); paths = os.path.dirname(basix.__file__) + ';' + os.path.join(site_packages, 'fenics_basix.libs'); subprocess.run(['delvewheel', 'repair', '--exclude', 'impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll', '--add-path', paths + ';' + r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
+            python -c "import basix, os, subprocess; subprocess.run(['delvewheel', 'repair', '-v', '--exclude', 'impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll', '--add-path', os.path.dirname(basix.__file__) + ';' + r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
           CIBW_TEST_COMMAND_LINUX: >
