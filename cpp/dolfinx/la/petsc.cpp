@@ -54,7 +54,6 @@ Vec la::petsc::create_vector(const common::IndexMap& map, int bs)
 Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
                              std::span<const std::int64_t> ghosts, int bs)
 {
-  // Get local size
   assert(range[1] >= range[0]);
   std::int32_t local_size = range[1] - range[0];
 
@@ -135,7 +134,7 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
-  // Get ghost offset
+  // Offset to the first ghost entry, i.e. the total owned size
   int offset_owned = 0;
   for (auto& [map, bs] : maps)
     offset_owned += map.get().size_local() * bs;
@@ -150,7 +149,7 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
   common::petsc::check(VecGetArrayRead(x_local, &array), "VecGetArrayRead");
   std::span _x(array, n);
 
-  // Copy PETSc Vec data in to local vectors
+  // Copy PETSc Vec data into local vectors
   std::vector<std::vector<PetscScalar>> x_b;
   int offset = 0;
   int offset_ghost = offset_owned; // Ghost DoFs start after owned
@@ -184,7 +183,7 @@ void la::petsc::scatter_local_vectors(
   if (x_b.size() != maps.size())
     throw std::runtime_error("Mismatch in vector/map size.");
 
-  // Get ghost offset
+  // Offset to the first ghost entry, i.e. the total owned size
   int offset_owned = 0;
   for (auto& [map, bs] : maps)
     offset_owned += map.get().size_local() * bs;
@@ -584,7 +583,6 @@ void petsc::Matrix::set_from_options()
 //-----------------------------------------------------------------------------
 petsc::KrylovSolver::KrylovSolver(MPI_Comm comm) : _ksp(nullptr)
 {
-  // Create PETSc KSP object
   common::petsc::check(KSPCreate(comm, &_ksp), "KSPCreate");
 }
 //-----------------------------------------------------------------------------
