@@ -124,9 +124,6 @@ void assemble_cells_matrix(
   const std::size_t ndim1 = bs1 * num_dofs1;
   const auto num_x_dofs_cell = x_dofmap.extent(1);
 
-  const U* x_ptr = x.data_handle();
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-
   assert(Ab.size() == ndim0 * ndim1);
   assert(cdofs_b.size() == 3 * static_cast<std::size_t>(num_x_dofs_cell));
 
@@ -162,15 +159,7 @@ void assemble_cells_matrix(
         continue;
     }
 
-    // Get cell coordinates/geometry
-    const std::int32_t* xdofs
-        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * num_x_dofs_cell;
-    for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
-    {
-      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
-      for (std::size_t k = 0; k < 3; ++k)
-        cdofs_b[3 * i + k] = src[k];
-    }
+    gather_cell_coordinates(geometry, cell, cdofs_b.data());
 
     // Tabulate tensor
     std::ranges::fill(Ab, T(0));
@@ -331,9 +320,6 @@ void assemble_entities_matrix(
   assert(Ab.size() == ndim0 * ndim1);
   assert(cdofs_b.size() == 3 * static_cast<std::size_t>(num_x_dofs_cell));
 
-  const U* x_ptr = x.data_handle();
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-
   // P0/P1T do not change across entities in this call, so whether each is a
   // set (non-null) transform is loop-invariant -- checked once here rather
   // than on every entity.
@@ -365,15 +351,7 @@ void assemble_entities_matrix(
         continue;
     }
 
-    // Get cell coordinates/geometry
-    const std::int32_t* xdofs
-        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * num_x_dofs_cell;
-    for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
-    {
-      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
-      for (std::size_t k = 0; k < 3; ++k)
-        cdofs_b[3 * i + k] = src[k];
-    }
+    gather_cell_coordinates(geometry, cell, cdofs_b.data());
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
@@ -527,9 +505,6 @@ void assemble_interior_facets_matrix(
   U* cdofs0 = cdofs_b.data();
   U* cdofs1 = cdofs_b.data() + 3 * num_x_dofs_cell;
 
-  const U* x_ptr = x.data_handle();
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-
   const auto dmap0_size = dmap0.extent(1);
   const auto dmap1_size = dmap1.extent(1);
   // The joint (two-cell) dofmap length is a constant exactly when the
@@ -604,21 +579,8 @@ void assemble_interior_facets_matrix(
     std::array local_facet{facets(f, 0, 1), facets(f, 1, 1)};
 
     // Get cell geometry
-    const std::int32_t* xdofs0
-        = x_dofmap_ptr
-          + static_cast<std::ptrdiff_t>(cells[0]) * num_x_dofs_cell;
-    const std::int32_t* xdofs1
-        = x_dofmap_ptr
-          + static_cast<std::ptrdiff_t>(cells[1]) * num_x_dofs_cell;
-    for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
-    {
-      const U* src0 = x_ptr + static_cast<std::ptrdiff_t>(xdofs0[i]) * 3;
-      for (std::size_t k = 0; k < 3; ++k)
-        cdofs0[3 * i + k] = src0[k];
-      const U* src1 = x_ptr + static_cast<std::ptrdiff_t>(xdofs1[i]) * 3;
-      for (std::size_t k = 0; k < 3; ++k)
-        cdofs1[3 * i + k] = src1[k];
-    }
+    gather_cell_coordinates(geometry, cells[0], cdofs0);
+    gather_cell_coordinates(geometry, cells[1], cdofs1);
 
     // Get dof maps for cells and pack
     // When integrating over interfaces between two domains, the test function

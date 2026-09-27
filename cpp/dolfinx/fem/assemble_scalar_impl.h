@@ -44,8 +44,6 @@ T assemble_cells_scalar(
   const auto ndofs_x = x_dofmap.extent(1);
   assert(cdofs_b.size() == 3 * static_cast<std::size_t>(ndofs_x));
 
-  const U* x_ptr = geometry.x.data_handle();
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const T* coeffs_data = coeffs.data_handle();
   const auto cstride = coeffs.extent(1);
 
@@ -54,15 +52,7 @@ T assemble_cells_scalar(
   {
     std::int32_t c = cells[index];
 
-    // Get cell coordinates/geometry
-    const std::int32_t* xdofs
-        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * ndofs_x;
-    for (std::size_t i = 0; i < ndofs_x; ++i)
-    {
-      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
-      for (std::size_t k = 0; k < 3; ++k)
-        cdofs_b[3 * i + k] = src[k];
-    }
+    gather_cell_coordinates(geometry, c, cdofs_b.data());
     kernel(&value, coeffs_data + index * cstride, constants.data(),
            cdofs_b.data(), nullptr, nullptr, nullptr);
   }
@@ -104,8 +94,6 @@ T assemble_entities_scalar(
   const auto ndofs_x = x_dofmap.extent(1);
   assert(cdofs_b.size() == 3 * static_cast<std::size_t>(ndofs_x));
 
-  const U* x_ptr = geometry.x.data_handle();
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const T* coeffs_data = coeffs.data_handle();
   const auto cstride = coeffs.extent(1);
 
@@ -115,15 +103,7 @@ T assemble_entities_scalar(
     std::int32_t cell = entities(f, 0);
     std::int32_t local_entity = entities(f, 1);
 
-    // Get cell coordinates/geometry
-    const std::int32_t* xdofs
-        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * ndofs_x;
-    for (std::size_t i = 0; i < ndofs_x; ++i)
-    {
-      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
-      for (std::size_t k = 0; k < 3; ++k)
-        cdofs_b[3 * i + k] = src[k];
-    }
+    gather_cell_coordinates(geometry, cell, cdofs_b.data());
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
@@ -164,8 +144,6 @@ T assemble_interior_facets_scalar(
   U* cdofs0 = cdofs_b.data();
   U* cdofs1 = cdofs_b.data() + 3 * ndofs_x;
 
-  const U* x_ptr = geometry.x.data_handle();
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const T* coeffs_data = coeffs.data_handle();
   const auto cstride = 2 * coeffs.extent(2);
 
@@ -175,20 +153,8 @@ T assemble_interior_facets_scalar(
     std::array cells = {facets(f, 0, 0), facets(f, 1, 0)};
     std::array local_facet = {facets(f, 0, 1), facets(f, 1, 1)};
 
-    // Get cell geometry
-    const std::int32_t* xdofs0
-        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cells[0]) * ndofs_x;
-    const std::int32_t* xdofs1
-        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cells[1]) * ndofs_x;
-    for (std::size_t i = 0; i < ndofs_x; ++i)
-    {
-      const U* src0 = x_ptr + static_cast<std::ptrdiff_t>(xdofs0[i]) * 3;
-      for (std::size_t k = 0; k < 3; ++k)
-        cdofs0[3 * i + k] = src0[k];
-      const U* src1 = x_ptr + static_cast<std::ptrdiff_t>(xdofs1[i]) * 3;
-      for (std::size_t k = 0; k < 3; ++k)
-        cdofs1[3 * i + k] = src1[k];
-    }
+    gather_cell_coordinates(geometry, cells[0], cdofs0);
+    gather_cell_coordinates(geometry, cells[1], cdofs1);
 
     std::array perm = perms.empty()
                           ? std::array<std::uint8_t, 2>{0, 0}

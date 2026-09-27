@@ -98,8 +98,6 @@ void assemble_cells_vector(
   assert(be_b.size() == static_cast<std::size_t>(bs) * ndofs);
   assert(cdofs_b.size() == 3 * static_cast<std::size_t>(ndofs_x));
 
-  const U* x_ptr = x.data_handle();
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const std::int32_t* dmap_ptr = dmap.data_handle();
   const T* coeffs_data = coeffs.data_handle();
   const auto cstride = coeffs.extent(1);
@@ -123,19 +121,7 @@ void assemble_cells_vector(
     const std::int32_t c = cells[index];
     const std::int32_t c0 = same_cells ? c : cells0[index];
 
-    // Gather cell coordinates. A loop, not std::copy_n: for a
-    // trivially copyable type the latter goes through
-    // __builtin_memmove, emitted as a call even at this constant
-    // length, once per vertex.
-    const std::int32_t* xdofs
-        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(c) * ndofs_x;
-    for (std::size_t i = 0; i < ndofs_x; ++i)
-    {
-      const U* src
-          = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * x.extent(1);
-      for (std::size_t k = 0; k < x.extent(1); ++k)
-        cdofs_b[3 * i + k] = src[k];
-    }
+    gather_cell_coordinates(geometry, c, cdofs_b.data());
 
     // Tabulate vector for cell
     std::ranges::fill(be_b, T(0));
@@ -224,8 +210,6 @@ void assemble_entities_vector(
   assert(be_b.size() == static_cast<std::size_t>(bs) * num_dofs);
   assert(entities0.size() == entities.size());
 
-  const U* x_ptr = x.data_handle();
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const std::int32_t* dmap_ptr = dmap.data_handle();
 
   // P0 does not change across entities in this call, so whether it is a
@@ -244,15 +228,7 @@ void assemble_entities_vector(
     std::int32_t local_entity = entities(f, 1);
     std::int32_t cell0 = entities0(f, 0);
 
-    // Get cell coordinates/geometry
-    const std::int32_t* xdofs
-        = x_dofmap_ptr + static_cast<std::ptrdiff_t>(cell) * num_x_dofs_cell;
-    for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
-    {
-      const U* src = x_ptr + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
-      for (std::size_t k = 0; k < 3; ++k)
-        cdofs_b[3 * i + k] = src[k];
-    }
+    gather_cell_coordinates(geometry, cell, cdofs_b.data());
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
@@ -341,9 +317,6 @@ void assemble_interior_facets_vector(
   const T* coeffs_data = coeffs.data_handle();
   const auto cstride = 2 * coeffs.extent(2);
 
-  const U* x_ptr = x.data_handle();
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-
   // P0 does not change across facets in this call, so whether it is a
   // set (non-null) transform is loop-invariant -- checked once here rather
   // than on every facet.
@@ -358,22 +331,8 @@ void assemble_interior_facets_vector(
     // Local facet indices
     std::array<std::int32_t, 2> local_facet{facets(f, 0, 1), facets(f, 1, 1)};
 
-    // Get cell geometry
-    const std::int32_t* xdofs0
-        = x_dofmap_ptr
-          + static_cast<std::ptrdiff_t>(cells[0]) * num_x_dofs_cell;
-    const std::int32_t* xdofs1
-        = x_dofmap_ptr
-          + static_cast<std::ptrdiff_t>(cells[1]) * num_x_dofs_cell;
-    for (std::size_t i = 0; i < num_x_dofs_cell; ++i)
-    {
-      const U* src0 = x_ptr + static_cast<std::ptrdiff_t>(xdofs0[i]) * 3;
-      for (std::size_t k = 0; k < 3; ++k)
-        cdofs0[3 * i + k] = src0[k];
-      const U* src1 = x_ptr + static_cast<std::ptrdiff_t>(xdofs1[i]) * 3;
-      for (std::size_t k = 0; k < 3; ++k)
-        cdofs1[3 * i + k] = src1[k];
-    }
+    gather_cell_coordinates(geometry, cells[0], cdofs0);
+    gather_cell_coordinates(geometry, cells[1], cdofs1);
 
     // Get dofmaps for cells. When integrating over interfaces between
     // two domains, the test function might only be defined on one side,

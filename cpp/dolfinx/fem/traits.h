@@ -258,6 +258,34 @@ namespace impl
 /// passed to the assembly kernels.
 using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 
+/// @brief Gather a cell's geometry node coordinates into `cdofs`, with
+/// shape `(num_nodes_per_cell, 3)` and row-major storage.
+///
+/// A loop rather than `std::copy_n`: for a trivially copyable type the
+/// latter goes through `__builtin_memmove`, which gcc emits as a call
+/// even at this constant length, once per node.
+///
+/// @param[in] geometry Mesh geometry dofmap and coordinates.
+/// @param[in] cell Cell to gather, an index into `geometry.dofmap`.
+/// @param[out] cdofs Destination, of size at least
+/// `3 * geometry.dofmap.extent(1)`.
+template <class XD, std::floating_point U>
+void gather_cell_coordinates(GeometryPack<XD, U> geometry, std::int32_t cell,
+                             U* cdofs)
+{
+  const auto x_dofmap = geometry.dofmap;
+  const std::size_t ndofs_x = x_dofmap.extent(1);
+  const std::int32_t* xdofs
+      = x_dofmap.data_handle() + static_cast<std::ptrdiff_t>(cell) * ndofs_x;
+  const U* x = geometry.x.data_handle();
+  for (std::size_t i = 0; i < ndofs_x; ++i)
+  {
+    const U* src = x + static_cast<std::ptrdiff_t>(xdofs[i]) * 3;
+    for (std::size_t k = 0; k < 3; ++k)
+      cdofs[3 * i + k] = src[k];
+  }
+}
+
 /// @brief Call `f` with the dofmap block size as a compile-time
 /// constant for the common block sizes, and as a plain `int`
 /// otherwise.
