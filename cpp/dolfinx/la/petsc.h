@@ -139,6 +139,8 @@ void scatter_local_vectors(
 /// @param[in] clgmap Column local-to-global map to attach to the
 /// matrix. If `std::nullopt`, a map is built from the column index map
 /// of `sp`.
+/// @note A supplied map must be created on `comm`. `MATIS` requires
+/// the maps to share the matrix communicator and checks this.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
                   std::optional<std::string_view> type = std::nullopt,
                   std::optional<ISLocalToGlobalMapping> rlgmap = std::nullopt,

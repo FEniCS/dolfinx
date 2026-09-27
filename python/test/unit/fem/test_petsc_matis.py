@@ -12,14 +12,12 @@ import pytest
 
 import ufl
 from dolfinx.fem import Constant, form, functionspace
-from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
+from dolfinx.mesh import CellType, GhostMode, create_unit_square
 
 
 def _unit_mesh(cell_type, n):
     """Create a mesh without ghost cells, as MATIS requires."""
-    if cell_type in (CellType.triangle, CellType.quadrilateral):
-        return create_unit_square(MPI.COMM_WORLD, n, n, cell_type, ghost_mode=GhostMode.none)
-    return create_unit_cube(MPI.COMM_WORLD, n, n, n, cell_type, ghost_mode=GhostMode.none)
+    return create_unit_square(MPI.COMM_WORLD, n, n, cell_type, ghost_mode=GhostMode.none)
 
 
 @pytest.mark.petsc4py
