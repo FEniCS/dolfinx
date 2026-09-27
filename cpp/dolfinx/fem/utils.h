@@ -1079,7 +1079,8 @@ mesh::Mesh<T> interpolate_geometry(
       new_cmap.variant(), basix::element::dpc_variant::unset,
       new_cmap.is_discontinuous());
   auto element = std::make_shared<const FiniteElement<T>>(
-      b_element, std::vector<std::size_t>{static_cast<std::size_t>(gdim)});
+      b_element, gdim,
+      std::vector<std::size_t>{static_cast<std::size_t>(gdim)});
 
   FunctionSpace<T> V = create_functionspace(mesh, element, reorder_fn);
 

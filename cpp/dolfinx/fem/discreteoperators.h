@@ -390,6 +390,12 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   std::shared_ptr<const FiniteElement<U>> e1 = V1.element();
   assert(e1);
 
+  if (!std::ranges::equal(e0->value_shape(), e1->value_shape()))
+  {
+    throw std::invalid_argument(
+        "Interpolation operator: elements have different value dimensions");
+  }
+
   std::span<const std::uint32_t> cell_info;
   if (e1->needs_dof_transformations() or e0->needs_dof_transformations())
   {
@@ -416,7 +422,13 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const std::size_t space_dim1 = e1->space_dimension();
   const std::size_t dim0 = space_dim0 / bs0;
   const std::size_t value_size_ref0 = e0->reference_value_size();
-  const std::size_t value_size0 = V0.element()->reference_value_size();
+  // basis0 holds one block of V0's basis pushed forward to the physical
+  // cell; basis_values holds all bs0 blocks; mapped_values holds them
+  // pulled back to the reference cell of e1.
+  const std::size_t value_size0 = e0->physical_base_value_size();
+  const std::size_t value_size_phys = e0->value_size();
+  const std::size_t value_size_ref1
+      = e1->reference_value_size() * static_cast<std::size_t>(bs1);
 
   // Get geometry data
   const CoordinateElement<U>& cmap = mesh->geometry().cmaps().front();
@@ -477,14 +489,12 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 
   // Basis values of Lagrange space unrolled for block size
   // (num_quadrature_points, Lagrange dof, value_size)
-  std::vector<U> basis_values_b(Xshape[0] * bs0 * dim0
-                                * V1.element()->value_size());
+  std::vector<U> basis_values_b(Xshape[0] * bs0 * dim0 * value_size_phys);
   mdspan3_t basis_values(basis_values_b.data(), Xshape[0], bs0 * dim0,
-                         V1.element()->value_size());
-  std::vector<U> mapped_values_b(Xshape[0] * bs0 * dim0
-                                 * V1.element()->value_size());
+                         value_size_phys);
+  std::vector<U> mapped_values_b(Xshape[0] * bs0 * dim0 * value_size_ref1);
   mdspan3_t mapped_values(mapped_values_b.data(), Xshape[0], bs0 * dim0,
-                          V1.element()->value_size());
+                          value_size_ref1);
 
   auto pull_back_fn1
       = e1->basix_element().template map_fn<u_t, U_t, K_t, J_t>();
@@ -608,7 +618,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     if (interpolation_ident)
     {
       md::mdspan<T, md::dextents<std::size_t, 3>> A(
-          Ab.data(), Xshape[0], V1.element()->value_size(), space_dim0);
+          Ab.data(), Xshape[0], value_size_ref1, space_dim0);
       for (std::size_t i = 0; i < mapped_values.extent(0); ++i)
         for (std::size_t j = 0; j < mapped_values.extent(1); ++j)
           for (std::size_t k = 0; k < mapped_values.extent(2); ++k)
