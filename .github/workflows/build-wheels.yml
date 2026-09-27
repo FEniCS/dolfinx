@@ -287,17 +287,11 @@ jobs:
           CIBW_TEST_COMMAND_MACOS: >
             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}" &&
             python {project}/dolfinx/.github/scripts/cacheprobe.py ;
-            echo "=== cache entries BEFORE test ===" ;
-            ls -1 "$HOME/.cache/fenics" 2>/dev/null | wc -l ;
-            python -m pytest -q --durations=3 -k "2-hexahedron-AAE"
+            PYTHONPATH={project}/dolfinx/.github/scripts
+            python -m pytest -q -s -p jitlog --durations=3 -k "2-hexahedron-AAE"
             {project}/dolfinx/python/test/unit/fem/test_dof_permuting.py ;
             echo "pytest exit=$?" ;
-            echo "=== cache entries AFTER test ===" ;
-            ls -1 "$HOME/.cache/fenics" | wc -l ;
-            echo "=== distinct module names AFTER test ===" ;
-            ls -1 "$HOME/.cache/fenics" | sed -E 's/[.]c[.]cached$//; s/[.](c|so|o)$//' | sort -u | wc -l ;
-            echo "=== first few entries ===" ;
-            ls -1 "$HOME/.cache/fenics" | head -8
+            echo "cache entries: $(ls -1 "$HOME/.cache/fenics" | wc -l)"
 
       - name: Update temporary simple503 repository (Linux)
         if: runner.os == 'Linux'
