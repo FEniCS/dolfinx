@@ -1004,8 +1004,11 @@ class LinearProblem(typing.Generic[_U]):
         # For nest matrices kind can be a nested list.
         kind = "nest" if self.A.getType() == PETSc.Mat.Type.NEST else kind
         if kind == "is":
-            # MATIS has no Vec counterpart, so use the default vector type
-            kind = "mpi"
+            # MATIS has no Vec counterpart. A blocked problem still needs
+            # the monolithic "mpi" layout that matches the matrix, but a
+            # single form needs the default type - "mpi" would build a
+            # blocked vector and send the form down the blocked path.
+            kind = "mpi" if isinstance(self.L, Sequence) else None
         assert kind is None or isinstance(kind, str)
         self._b = _create_vector_from_form(self.L, kind=kind)
         self._x = _create_vector_from_form(self.L, kind=kind)
@@ -1518,8 +1521,11 @@ class NonlinearProblem(typing.Generic[_U]):
         # Determine the vector kind based on the matrix type
         kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind
         if kind == "is":
-            # MATIS has no Vec counterpart, so use the default vector type
-            kind = "mpi"
+            # MATIS has no Vec counterpart. A blocked problem still needs
+            # the monolithic "mpi" layout that matches the matrix, but a
+            # single form needs the default type - "mpi" would build a
+            # blocked vector and send the form down the blocked path.
+            kind = "mpi" if isinstance(self.F, Sequence) else None
         assert kind is None or isinstance(kind, str)
         self._b = _create_vector_from_form(self.F, kind=kind)
         self._x = _create_vector_from_form(self.F, kind=kind)
