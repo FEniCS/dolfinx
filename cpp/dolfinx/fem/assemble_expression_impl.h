@@ -88,7 +88,7 @@ void tabulate_expression(
 
   for (std::size_t e = 0; e < entities.extent(0); ++e)
   {
-    std::ranges::fill(values_local, 0);
+    std::ranges::fill(values_local, T(0));
     if constexpr (entities.rank() == 1)
     {
       std::int32_t entity = entities(e);
