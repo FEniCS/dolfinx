@@ -24,9 +24,14 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/dofmapbuilder.h>
+#include <dolfinx/fem/expression_evaluate.h>
+#include <dolfinx/fem/expression_factory.h>
+#include <dolfinx/fem/form_factory.h>
+#include <dolfinx/fem/functionspace_factory.h>
 #include <dolfinx/fem/interpolate.h>
+#include <dolfinx/fem/interpolate_geometry.h>
 #include <dolfinx/fem/sparsitybuild.h>
-#include <dolfinx/fem/utils.h>
+#include <dolfinx/fem/sparsitypattern.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <format>
@@ -751,11 +756,11 @@ void declare_objects(nb::module_& m, std::string type)
           {
             auto span = [](auto& x) { return std::span(x.data(), x.size()); };
             if (!cells0.has_value() and !cells1.has_value())
-              self.interpolate(e0);
+              dolfinx::fem::interpolate(self, e0);
             else if (cells0.has_value() and !cells1.has_value())
-              self.interpolate(e0, span(*cells0));
+              dolfinx::fem::interpolate(self, e0, span(*cells0));
             else if (cells0.has_value() and cells1.has_value())
-              self.interpolate(e0, span(*cells0), span(*cells1));
+              dolfinx::fem::interpolate(self, span(*cells1), e0, span(*cells0));
             else
             {
               throw std::runtime_error(
