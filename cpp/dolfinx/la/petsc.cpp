@@ -220,7 +220,9 @@ void la::petsc::scatter_local_vectors(
 }
 //-----------------------------------------------------------------------------
 Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                             std::optional<std::string_view> type)
+                             std::optional<std::string_view> type,
+                             std::optional<ISLocalToGlobalMapping> rlgmap,
+                             std::optional<ISLocalToGlobalMapping> clgmap)
 {
   Mat A;
   common::petsc::check(MatCreate(comm, &A), "MatCreate");
@@ -276,14 +278,26 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
                            { return bs[1] * sp.nnz_off_diag(i / bs[0]); });
   }
 
-  // Allocate space for matrix
-  common::petsc::check(MatXAIJSetPreallocation(A, _bs, _nnz_diag.data(),
-                                               _nnz_offdiag.data(), nullptr,
-                                               nullptr),
-                       "MatXAIJSetPreallocation");
+  // MATIS builds its preallocation from the local-to-global maps, so
+  // for it the maps must be attached first. For every other type the
+  // maps are attached last, because MatXAIJSetPreallocation resets the
+  // matrix block size and would downgrade an already-attached blocked
+  // map when the row and column block sizes differ.
+  PetscBool is_matis = PETSC_FALSE;
+  common::petsc::check(PetscObjectTypeCompare(reinterpret_cast<PetscObject>(A),
+                                              MATIS, &is_matis),
+                       "PetscObjectTypeCompare");
+  auto preallocate = [A, _bs, &_nnz_diag, &_nnz_offdiag, &bs]()
+  {
+    common::petsc::check(MatXAIJSetPreallocation(A, _bs, _nnz_diag.data(),
+                                                 _nnz_offdiag.data(), nullptr,
+                                                 nullptr),
+                         "MatXAIJSetPreallocation");
+    common::petsc::check(MatSetBlockSizes(A, bs[0], bs[1]), "MatSetBlockSizes");
+  };
 
-  // Set block sizes
-  common::petsc::check(MatSetBlockSizes(A, bs[0], bs[1]), "MatSetBlockSizes");
+  if (!is_matis)
+    preallocate();
 
   // Build a PETSc (PetscInt) local-to-global map directly from an
   // IndexMap's local range and ghosts, rather than going via
@@ -301,16 +315,28 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
     return l2g;
   };
 
-  // Create PETSc local-to-global map/index sets
-  ISLocalToGlobalMapping local_to_global0;
-  std::vector<PetscInt> _map0 = build_l2g(*maps[0]);
-  common::petsc::check(ISLocalToGlobalMappingCreate(
-                           MPI_COMM_SELF, bs[0], _map0.size(), _map0.data(),
-                           PETSC_COPY_VALUES, &local_to_global0),
-                       "ISLocalToGlobalMappingCreate");
+  // Create PETSc local-to-global maps and attach to the matrix. Maps
+  // are created on `comm` rather than MPI_COMM_SELF because MATIS
+  // requires them to share the matrix communicator.
+  ISLocalToGlobalMapping local_to_global0 = nullptr;
+  if (rlgmap)
+  {
+    common::petsc::check(
+        PetscObjectReference(reinterpret_cast<PetscObject>(*rlgmap)),
+        "PetscObjectReference");
+    local_to_global0 = *rlgmap;
+  }
+  else
+  {
+    std::vector<PetscInt> _map0 = build_l2g(*maps[0]);
+    common::petsc::check(
+        ISLocalToGlobalMappingCreate(comm, bs[0], _map0.size(), _map0.data(),
+                                     PETSC_COPY_VALUES, &local_to_global0),
+        "ISLocalToGlobalMappingCreate");
+  }
 
   // Check for common index maps
-  if (maps[0] == maps[1] and bs[0] == bs[1])
+  if (!clgmap and maps[0] == maps[1] and bs[0] == bs[1])
   {
     common::petsc::check(
         MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global0),
@@ -318,12 +344,22 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   }
   else
   {
-    ISLocalToGlobalMapping local_to_global1;
-    std::vector<PetscInt> _map1 = build_l2g(*maps[1]);
-    common::petsc::check(ISLocalToGlobalMappingCreate(
-                             MPI_COMM_SELF, bs[1], _map1.size(), _map1.data(),
-                             PETSC_COPY_VALUES, &local_to_global1),
-                         "ISLocalToGlobalMappingCreate");
+    ISLocalToGlobalMapping local_to_global1 = nullptr;
+    if (clgmap)
+    {
+      common::petsc::check(
+          PetscObjectReference(reinterpret_cast<PetscObject>(*clgmap)),
+          "PetscObjectReference");
+      local_to_global1 = *clgmap;
+    }
+    else
+    {
+      std::vector<PetscInt> _map1 = build_l2g(*maps[1]);
+      common::petsc::check(
+          ISLocalToGlobalMappingCreate(comm, bs[1], _map1.size(), _map1.data(),
+                                       PETSC_COPY_VALUES, &local_to_global1),
+          "ISLocalToGlobalMappingCreate");
+    }
     common::petsc::check(
         MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global1),
         "MatSetLocalToGlobalMapping");
@@ -335,11 +371,8 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   common::petsc::check(ISLocalToGlobalMappingDestroy(&local_to_global0),
                        "ISLocalToGlobalMappingDestroy");
 
-  // Note: This should be called after having set the local-to-global
-  // map for MATIS (this is a dummy call if A is not of type MATIS)
-  // ierr = MatISSetPreallocation(A, 0, _nnz_diag.data(), 0,
-  // _nnz_offdiag.data()); if (ierr != 0)
-  //   error(ierr, __FILE__, "MatISSetPreallocation");
+  if (is_matis)
+    preallocate();
 
   // Set some options on Mat object
   common::petsc::check(

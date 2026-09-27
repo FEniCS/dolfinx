@@ -129,16 +129,10 @@ Mat create_matrix_block(
   la::SparsityPattern pattern(mesh->comm(), p, maps, bs_dofs);
   pattern.finalize();
 
-  // FIXME: Add option to pass customised local-to-global map to PETSc
-  // Mat constructor
-
   // TODO: Index map concatenation has already been computed inside
   // the SparsityPattern constructor, but we also need it here to
   // build the PETSc local-to-global map. Compute outside and pass
   // into SparsityPattern constructor.
-
-  // Initialise matrix
-  Mat A = la::petsc::create_matrix(mesh->comm(), pattern, type);
 
   // Create row and column local-to-global maps (field0, field1, field2,
   // etc), i.e. ghosts of field0 appear before owned indices of field1
@@ -182,34 +176,38 @@ Mat create_matrix_block(
   }
 
   // Create PETSc local-to-global map/index sets and attach to matrix
-  ISLocalToGlobalMapping petsc_local_to_global0;
+  // Maps are created on the mesh communicator (rather than
+  // MPI_COMM_SELF) because MATIS requires them to share the matrix
+  // communicator.
+  ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
   common::petsc::check(ISLocalToGlobalMappingCreate(
-                           MPI_COMM_SELF, 1, _maps[0].size(), _maps[0].data(),
+                           mesh->comm(), 1, _maps[0].size(), _maps[0].data(),
                            PETSC_COPY_VALUES, &petsc_local_to_global0),
                        "ISLocalToGlobalMappingCreate");
   if (V[0] == V[1])
   {
-    common::petsc::check(MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
-                                                    petsc_local_to_global0),
-                         "MatSetLocalToGlobalMapping");
-    common::petsc::check(ISLocalToGlobalMappingDestroy(&petsc_local_to_global0),
-                         "ISLocalToGlobalMappingDestroy");
+    common::petsc::check(PetscObjectReference(reinterpret_cast<PetscObject>(
+                             petsc_local_to_global0)),
+                         "PetscObjectReference");
+    petsc_local_to_global1 = petsc_local_to_global0;
   }
   else
   {
-    ISLocalToGlobalMapping petsc_local_to_global1;
     common::petsc::check(ISLocalToGlobalMappingCreate(
-                             MPI_COMM_SELF, 1, _maps[1].size(), _maps[1].data(),
+                             mesh->comm(), 1, _maps[1].size(), _maps[1].data(),
                              PETSC_COPY_VALUES, &petsc_local_to_global1),
                          "ISLocalToGlobalMappingCreate");
-    common::petsc::check(MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
-                                                    petsc_local_to_global1),
-                         "MatSetLocalToGlobalMapping");
-    common::petsc::check(ISLocalToGlobalMappingDestroy(&petsc_local_to_global0),
-                         "ISLocalToGlobalMappingDestroy");
-    common::petsc::check(ISLocalToGlobalMappingDestroy(&petsc_local_to_global1),
-                         "ISLocalToGlobalMappingDestroy");
   }
+
+  // Initialise matrix. The local-to-global maps are passed in because
+  // MATIS requires them to be attached before preallocation.
+  Mat A = la::petsc::create_matrix(mesh->comm(), pattern, type,
+                                   petsc_local_to_global0,
+                                   petsc_local_to_global1);
+  common::petsc::check(ISLocalToGlobalMappingDestroy(&petsc_local_to_global0),
+                       "ISLocalToGlobalMappingDestroy");
+  common::petsc::check(ISLocalToGlobalMappingDestroy(&petsc_local_to_global1),
+                       "ISLocalToGlobalMappingDestroy");
 
   return A;
 }
