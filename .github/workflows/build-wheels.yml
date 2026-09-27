@@ -117,8 +117,7 @@ jobs:
         with:
           mpi: "intelmpi"
 
-      # Ninja needs cl.exe on PATH. The Visual Studio generator located it
-      # itself, so this was not needed before.
+      # Ninja needs cl.exe on PATH.
       - name: Set up MSVC (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
@@ -341,21 +340,10 @@ jobs:
             wheel pack {dest_dir}/unpacked/* -d {dest_dir} &&
             pipx run abi3audit --verbose --strict --report {wheel}
 
-          # impi.dll/libfabric.dll are excluded rather than bundled - user
-          # must install. msvcp140.dll/msvcp140_atomic_wait.dll likewise:
-          # delvewheel leaves vcruntime140.dll to the system and they ship in
-          # the same redistributable, so bundling one without the other buys
-          # nothing.
-          #
-          # basix.dll is excluded so delvewheel does not follow into it.
-          # Basix's dependencies are mangled by its own repair, and DOLFINx
-          # gets the same libraries unmangled from vcpkg, so following both
-          # gave two copies of each and a name clash when mangling the second:
-          # "FileExistsError: [WinError 183] Cannot create a file when that
-          # file already exists". dolfinx/__init__.py imports basix so that
-          # basix.dll is loaded before dolfinx.cpp needs it.
-          #
-          # -v prints what was resolved and from where, as Basix's repair does.
+          # impi.dll and libfabric.dll are the user's to install. The MSVC
+          # runtime is a system dependency, as vcruntime140 already is.
+          # Excluding basix.dll stops delvewheel vendoring a second copy of
+          # Basix's dependencies, which clash with DOLFINx's own when mangled.
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
             python -c "import subprocess; subprocess.run(['delvewheel', 'repair', '-v', '--exclude', 'impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll;basix.dll', '--add-path', r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
           CIBW_TEST_REQUIRES: pytest-xdist
