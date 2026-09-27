@@ -609,14 +609,15 @@ def _assemble_matrix_petsc(
         A.assemble(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
 
         # Set diagonal
-        for i, a_row in enumerate(a):
-            for j, a_sub in enumerate(a_row):
-                if a_sub is not None:
-                    Asub = A.getLocalSubMatrix(is0[i], is1[j])
-                    V0, V1 = (V._cpp_object for V in a_sub.function_spaces)
-                    if V0 is V1:
-                        _cpp.fem.petsc.insert_diagonal(Asub, V0, _bcs, diag)  # type: ignore[arg-type]
-                    A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
+        if len(_bcs) > 0:
+            for i, a_row in enumerate(a):
+                for j, a_sub in enumerate(a_row):
+                    if a_sub is not None:
+                        V0, V1 = (V._cpp_object for V in a_sub.function_spaces)
+                        if V0 is V1:
+                            Asub = A.getLocalSubMatrix(is0[i], is1[j])
+                            _cpp.fem.petsc.insert_diagonal(Asub, V0, _bcs, diag)  # type: ignore[arg-type]
+                            A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
     else:  # Non-blocked
         if constants is None:
             constants = pack_constants(a)
@@ -628,7 +629,8 @@ def _assemble_matrix_petsc(
         if V0 is V1:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
-            _cpp.fem.petsc.insert_diagonal(A, V0, _bcs, diag)  # type: ignore[arg-type]
+            if len(_bcs) > 0:
+                _cpp.fem.petsc.insert_diagonal(A, V0, _bcs, diag)  # type: ignore[arg-type]
 
     return A
 
@@ -1001,6 +1003,12 @@ class LinearProblem(typing.Generic[_U]):
 
         # For nest matrices kind can be a nested list.
         kind = "nest" if self.A.getType() == PETSc.Mat.Type.NEST else kind
+        if kind == "is":
+            # MATIS has no Vec counterpart. A blocked problem still needs
+            # the monolithic "mpi" layout that matches the matrix, but a
+            # single form needs the default type - "mpi" would build a
+            # blocked vector and send the form down the blocked path.
+            kind = "mpi" if isinstance(self.L, Sequence) else None
         assert kind is None or isinstance(kind, str)
         self._b = _create_vector_from_form(self.L, kind=kind)
         self._x = _create_vector_from_form(self.L, kind=kind)
@@ -1020,6 +1028,17 @@ class LinearProblem(typing.Generic[_U]):
 
         self._solver = PETSc.KSP().create(self.A.comm)
         self.solver.setOperators(self.A, self.P_mat)
+
+        # Attach problem information to a DM, which preconditioners such
+        # as PCBDDC and PCFIELDSPLIT use to split the problem into
+        # fields. The DM is attached to the preconditioner only, leaving
+        # the KSP operators untouched.
+        dm = PETSc.DMShell().create(self.A.comm)
+        dm.setCreateMatrix(functools.partial(_dm_create_matrix, self.A))  # type: ignore[missing-attribute]
+        dm.setCreateFieldDecomposition(  # type: ignore[missing-attribute]
+            functools.partial(_dm_create_field_decomposition, self._u, self.L)
+        )
+        self.solver.getPC().setDM(dm)
 
         if petsc_options_prefix == "":
             raise ValueError("PETSc options prefix cannot be empty.")
@@ -1501,6 +1520,12 @@ class NonlinearProblem(typing.Generic[_U]):
 
         # Determine the vector kind based on the matrix type
         kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind
+        if kind == "is":
+            # MATIS has no Vec counterpart. A blocked problem still needs
+            # the monolithic "mpi" layout that matches the matrix, but a
+            # single form needs the default type - "mpi" would build a
+            # blocked vector and send the form down the blocked path.
+            kind = "mpi" if isinstance(self.F, Sequence) else None
         assert kind is None or isinstance(kind, str)
         self._b = _create_vector_from_form(self.F, kind=kind)
         self._x = _create_vector_from_form(self.F, kind=kind)
@@ -1521,6 +1546,17 @@ class NonlinearProblem(typing.Generic[_U]):
         if (_blocks := self.b.getAttr("_blocks")) is not None:
             function_ctx["_blocks"] = _blocks  # type: ignore[assignment]
         self.solver.setFunction(assemble_residual, self.b, kargs=function_ctx)  # type: ignore[arg-type]
+
+        # Attach problem information to a DM, which preconditioners such
+        # as PCBDDC and PCFIELDSPLIT use to split the problem into
+        # fields. The DM is attached to the preconditioner only, leaving
+        # the SNES operators untouched.
+        dm = PETSc.DMShell().create(self.A.comm)
+        dm.setCreateMatrix(functools.partial(_dm_create_matrix, self.A))  # type: ignore[missing-attribute]
+        dm.setCreateFieldDecomposition(  # type: ignore[missing-attribute]
+            functools.partial(_dm_create_field_decomposition, self._u, self.F)
+        )
+        self.solver.getKSP().getPC().setDM(dm)
 
         if petsc_options_prefix == "":
             raise ValueError("PETSc options prefix cannot be empty.")
@@ -1796,6 +1832,57 @@ def assign(
 ) -> None:
     """Assign between function degrees-of-freedom and a PETSc vector."""
     _assign(u, x)
+
+
+# -- DMShell (default) helper functions --
+
+
+def _dm_create_field_decomposition(
+    u: _Function | Sequence[_Function],
+    form: Form | Sequence[Form],
+    _dm: PETSc.DM,
+):
+    """Return index sets for the fields and their associated names.
+
+    Args:
+        u: Function(s) tied to the solution vector.
+        form: Form of the residual or of the right-hand side. It can be
+            a sequence of forms.
+        _dm: The DM instance.
+
+    Returns:
+        Tuple of (field names, index sets in global numbering, sub-DMs).
+        Sub-DMs are not provided, so ``None`` is returned for them.
+    """
+    forms = form if isinstance(form, Sequence) else [form]
+    spaces = _extract_function_spaces(forms)
+    ises = _cpp.la.petsc.create_global_index_sets(
+        [
+            (V.dofmaps[0].index_map._cpp_object, V.dofmaps[0].index_map_bs)  # type: ignore[union-attr]
+            for V in spaces
+        ]
+    )
+    if isinstance(u, Sequence):
+        names = [f"{v.name + '_' if v.name != 'f' else ''}{i}" for i, v in enumerate(u)]
+    else:
+        names = [f"dolfinx_field_{i}" for i in range(len(forms))]
+    return names, ises, None
+
+
+def _dm_create_matrix(
+    J: PETSc.Mat,
+    _dm: PETSc.DM,
+):
+    """Return a copy of the matrix layout.
+
+    Args:
+        J: Matrix to duplicate.
+        _dm: The DM instance.
+
+    Returns:
+        A PETSc matrix.
+    """
+    return J.duplicate()
 
 
 def get_petsc_lib() -> pathlib.Path:

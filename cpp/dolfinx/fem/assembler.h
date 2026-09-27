@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "DofMap.h"
 #include "FunctionSpace.h"
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
@@ -15,6 +16,7 @@
 #include <algorithm>
 #include <basix/mdspan.hpp>
 #include <cstdint>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <memory>
@@ -541,6 +543,29 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
   }
 }
 
+/// @brief Sets values to the diagonal of a matrix for specified rows.
+///
+/// This function is typically called after assembly. The assembly
+/// function zeroes Dirichlet rows and columns. For block matrices, this
+/// function should normally be called only on the diagonal blocks, i.e.
+/// blocks for which the test and trial spaces are the same.
+///
+/// @param[in] set_fn The function for setting values to a matrix.
+/// @param[in] rows Row blocks, in local indices, for which to add a
+/// value to the diagonal.
+/// @param[in] diagonal Values to add to the diagonal for the specified
+/// rows.
+template <dolfinx::scalar T>
+void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
+                  std::span<const T> diagonal)
+{
+  assert(diagonal.size() == rows.size());
+  for (std::size_t i = 0; i < rows.size(); ++i)
+  {
+    set_fn(rows.subspan(i, 1), rows.subspan(i, 1), diagonal.subspan(i, 1));
+  }
+}
+
 /// @brief Sets a value to the diagonal of the matrix for rows with a
 /// Dirichlet boundary conditions applied.
 ///
@@ -553,15 +578,16 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 /// @param[in] set_fn The function for setting values to a matrix.
 /// @param[in] V The function space for the rows and columns of the
 /// matrix. It is used to extract only the Dirichlet boundary conditions
-/// that are define on V or subspaces of V.
+/// that are defined on V or subspaces of V.
 /// @param[in] bcs The Dirichlet boundary conditions.
 /// @param[in] diagonal Value to add to the diagonal for rows with a
 /// boundary condition applied.
+/// @param[in] unassembled Whether the matrix is in unassembled format
 template <dolfinx::scalar T, std::floating_point U>
 void set_diagonal(
     auto set_fn, const FunctionSpace<U>& V,
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs,
-    T diagonal = 1.0)
+    T diagonal = 1.0, bool unassembled = false)
 {
   spdlog::debug("Set diagonal");
   for (auto& bc : bcs)
@@ -569,7 +595,29 @@ void set_diagonal(
     if (V.contains(*bc.get().function_space()))
     {
       const auto [dofs, range] = bc.get().dof_indices();
-      set_diagonal(set_fn, dofs.first(range), diagonal);
+      if (unassembled)
+      {
+        // Ghost rows must be set too. MATIS does not support an
+        // INSERT_VALUES stage, so the diagonal value is split evenly
+        // between the ranks that share the dof.
+        // TODO: move the scaling factor computation to DirichletBC or
+        // IndexMap?
+        const DofMap& dofmap = *bc.get().function_space()->dofmap();
+        int bs = dofmap.index_map_bs();
+        const std::vector<std::int32_t> offsets
+            = dofmap.index_map->index_to_dest_ranks().second;
+        std::vector<T> data(dofs.size());
+        std::ranges::transform(
+            dofs, data.begin(),
+            [&offsets, bs, diagonal](std::int32_t dof)
+            {
+              std::int32_t block = dof / bs;
+              return diagonal / T(offsets[block + 1] - offsets[block] + 1);
+            });
+        set_diagonal(set_fn, dofs, std::span<const T>(data));
+      }
+      else
+        set_diagonal(set_fn, dofs.first(range), diagonal);
     }
   }
 }
