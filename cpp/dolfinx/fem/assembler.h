@@ -12,7 +12,6 @@
 #include "assemble_vector_impl.h"
 #include "pack.h"
 #include "traits.h"
-#include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
 #include <cstdint>

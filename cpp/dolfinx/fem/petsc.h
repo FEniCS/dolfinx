@@ -11,7 +11,7 @@
 #include "Form.h"
 #include "Function.h"
 #include "assembler.h"
-#include "utils.h"
+#include "sparsitypattern.h"
 #include <cassert>
 #include <concepts>
 #include <cstdint>
