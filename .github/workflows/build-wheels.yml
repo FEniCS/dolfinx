@@ -62,7 +62,7 @@ jobs:
   build_wheels:
     name: Build wheels ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 40
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -70,7 +70,7 @@ jobs:
           - os: macos-26
             cibw_build: cp312-macosx_arm64
             cxx_flags_init: "-fexperimental-library"
-            label: "(macos-26, profile test_integral)"
+            label: "(macos-26, JIT cache probe)"
 
     env:
       BASELINE_NANOBIND: "2.13.0"
@@ -286,23 +286,18 @@ jobs:
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
           CIBW_TEST_COMMAND_MACOS: >
             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}" &&
-            sysctl -n hw.ncpu hw.logicalcpu ;
-            python -m cProfile -o /tmp/prof.out -m pytest -q -p no:cacheprovider --durations=5
-            -k "2-hexahedron-AAE" {project}/dolfinx/python/test/unit/fem/test_dof_permuting.py & PROFPID=$! ;
-            echo "backgrounded python pid=$PROFPID" ; ps -p $PROFPID -o pid,comm ;
-            sleep 40 ;
-            sudo /usr/bin/sample $PROFPID 30 -file /tmp/sample.txt 2>&1 || echo "SAMPLE FAILED" ;
-            sleep 30 ;
-            sudo /usr/bin/sample $PROFPID 20 -file /tmp/sample2.txt 2>&1 || echo "SAMPLE2 FAILED" ;
-            wait $PROFPID ; echo "pytest exit=$?" ;
-            echo "=== cProfile: top 45 by cumulative ===" ;
-            python -c "import pstats;pstats.Stats('/tmp/prof.out').sort_stats('cumulative').print_stats(45)" ;
-            echo "=== cProfile: top 30 by tottime ===" ;
-            python -c "import pstats;pstats.Stats('/tmp/prof.out').sort_stats('tottime').print_stats(30)" ;
-            echo "=== native sample 1 (macOS sample, includes C++ frames) ===" ;
-            sed -n '1,160p' /tmp/sample.txt ;
-            echo "=== native sample 2 ===" ;
-            sed -n '1,120p' /tmp/sample2.txt
+            python {project}/dolfinx/.github/scripts/cacheprobe.py ;
+            echo "=== cache entries BEFORE test ===" ;
+            ls -1 "$HOME/.cache/fenics" 2>/dev/null | wc -l ;
+            python -m pytest -q --durations=3 -k "2-hexahedron-AAE"
+            {project}/dolfinx/python/test/unit/fem/test_dof_permuting.py ;
+            echo "pytest exit=$?" ;
+            echo "=== cache entries AFTER test ===" ;
+            ls -1 "$HOME/.cache/fenics" | wc -l ;
+            echo "=== distinct module names AFTER test ===" ;
+            ls -1 "$HOME/.cache/fenics" | sed -E 's/[.]c[.]cached$//; s/[.](c|so|o)$//' | sort -u | wc -l ;
+            echo "=== first few entries ===" ;
+            ls -1 "$HOME/.cache/fenics" | head -8
 
       - name: Update temporary simple503 repository (Linux)
         if: runner.os == 'Linux'
