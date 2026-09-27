@@ -557,10 +557,14 @@ void assemble(MPI_Comm comm)
       tabulate_tensor_load(b, w, c, coordinate_dofs, entity_local_index,
                            quadrature_permutation, d);
     };
+    // A span, not the vector itself: the cell list reaches the assembler
+    // by value, so it must be a view over the caller's storage rather
+    // than an owning container that would be copied.
+    std::span<const std::int32_t> cell_span(cells);
     const double norm_A2 = assemble_matrix1<T>(mesh->geometry(), *V->dofmap(),
-                                               kernel_a_ffcx, cells);
+                                               kernel_a_ffcx, cell_span);
     const double norm_b2 = assemble_vector1<T>(mesh->geometry(), *V->dofmap(),
-                                               kernel_L_ffcx, cells);
+                                               kernel_L_ffcx, cell_span);
     check_norm<T>(norm_A2, norm_A0);
     check_norm<T>(norm_b2, norm_b0);
   }

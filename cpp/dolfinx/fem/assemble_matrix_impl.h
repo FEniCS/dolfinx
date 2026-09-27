@@ -83,14 +83,14 @@ template <bool LiftingMode, typename AB, MDSpan2Int32 XD, std::floating_point U,
   requires ScratchBuffer<AB, T>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, GeometryPack<XD, U> geometry,
-    IndexList auto cells, const FormArgumentCells<T> auto& arg0,
+    const IndexList auto& cells, const FormArgumentCells<T> auto& arg0,
     const FormArgumentCells<T> auto& arg1, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, const FEkernel<T, U> auto& kernel,
     std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs, AB Ab,
     ScratchBuffer<U> auto cdofs_b)
 {
-  if (cells.empty())
+  if (std::ranges::empty(cells))
     return;
 
   // By value: the sizes below fold only if not read through a
@@ -137,9 +137,9 @@ void assemble_cells_matrix(
   const std::size_t cstride = coeffs.extent(1);
 
   // Iterate over active cells
-  assert(cells0.size() == cells.size());
-  assert(cells1.size() == cells.size());
-  for (std::size_t c = 0; c < cells.size(); ++c)
+  assert(std::ranges::size(cells0) == std::ranges::size(cells));
+  assert(std::ranges::size(cells1) == std::ranges::size(cells));
+  for (std::size_t c = 0; c < std::ranges::size(cells); ++c)
   {
     // Cell index in integration domain mesh (c), test function mesh
     // (c0) and trial function mesh (c1)

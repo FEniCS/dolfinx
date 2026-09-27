@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <array>
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
@@ -108,7 +109,9 @@ struct GeometryPack
 /// @tparam B Block size type, `int` or
 /// `std::integral_constant<int, N>`.
 /// @tparam E Entity index list type, constrained by the
-/// `DofMapPack*` concepts below.
+/// `DofMapPack*` concepts below. It must be a view (`std::span`,
+/// `std::views::iota`, an entity mdspan), not an owning container: the
+/// pack is copied into the kernels, which must not allocate.
 template <class D, class B, class E>
 struct DofMapPack
 {
@@ -118,7 +121,8 @@ struct DofMapPack
   /// Dofmap block size.
   B bs;
 
-  /// Entity indices in this argument's mesh.
+  /// Entity indices in this argument's mesh. A view over the caller's
+  /// storage, not an owning container.
   E entities;
 };
 
@@ -134,9 +138,14 @@ concept DofMapPackBase = requires(const std::remove_cvref_t<T>& t) {
 /// @brief Concept for the degree-of-freedom map data passed to the
 /// cell assembly kernel, whose entities are a flat, integer-indexable
 /// list of cell indices.
+///
+/// The entities must be a view, so that a caller cannot hand the
+/// kernels an owning container that would be copied on every call.
 template <class T>
 concept DofMapPackCells
     = DofMapPackBase<T> and requires(const std::remove_cvref_t<T>& t) {
+        requires std::ranges::view<std::remove_cvref_t<decltype(t.entities)>>;
+        requires std::ranges::sized_range<decltype(t.entities)>;
         { t.entities[0] } -> std::convertible_to<std::int32_t>;
       };
 
@@ -224,8 +233,22 @@ concept FormArgumentFacets
 /// index, which is what a caller assembling over every cell wants.
 template <class C>
 concept IndexList
-    = std::ranges::random_access_range<C>
-      and std::same_as<std::ranges::range_value_t<C>, std::int32_t>;
+    = std::ranges::random_access_range<C> and std::ranges::sized_range<C>
+      and std::same_as<std::ranges::range_value_t<C>, std::int32_t>
+      and requires(const std::remove_reference_t<C>& cells, std::size_t i) {
+            { cells[i] } -> std::convertible_to<std::int32_t>;
+          };
+
+/// @cond
+template <class B>
+inline constexpr bool is_scratch_buffer_type = false;
+
+template <class T, std::size_t N>
+inline constexpr bool is_scratch_buffer_type<std::array<T, N>> = true;
+
+template <class T, std::size_t N>
+inline constexpr bool is_scratch_buffer_type<std::span<T, N>> = true;
+/// @endcond
 
 /// @brief Concept for the mutable scratch buffers passed to the
 /// assembly kernels.
@@ -236,7 +259,8 @@ concept IndexList
 /// to run time and the storage to the caller.
 template <class B, class T>
 concept ScratchBuffer
-    = std::ranges::contiguous_range<B> and std::ranges::output_range<B, T>
+    = is_scratch_buffer_type<std::remove_cvref_t<B>>
+      and std::ranges::contiguous_range<B> and std::ranges::output_range<B, T>
       and std::same_as<std::ranges::range_value_t<B>, T> and requires(B& b) {
             { b.data() } -> std::same_as<T*>;
             { b.size() } -> std::convertible_to<std::size_t>;

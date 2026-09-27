@@ -31,13 +31,13 @@ namespace dolfinx::fem::impl
 /// sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, MDSpan2Int32 XD, std::floating_point U>
 T assemble_cells_scalar(
-    GeometryPack<XD, U> geometry, IndexList auto cells,
+    GeometryPack<XD, U> geometry, const IndexList auto& cells,
     const FEkernel<T, U> auto& kernel, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     ScratchBuffer<U> auto cdofs_b)
 {
   T value(0);
-  if (cells.empty())
+  if (std::ranges::empty(cells))
     return value;
 
   const auto x_dofmap = geometry.dofmap;
@@ -48,7 +48,7 @@ T assemble_cells_scalar(
   const auto cstride = coeffs.extent(1);
 
   // Iterate over all cells
-  for (std::size_t index = 0; index < cells.size(); ++index)
+  for (std::size_t index = 0; index < std::ranges::size(cells); ++index)
   {
     std::int32_t c = cells[index];
 

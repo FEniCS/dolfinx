@@ -120,9 +120,9 @@ std::vector<T> reference_vector(std::span<const std::int32_t> cells,
 /// Assemble `vector_kernel` with the given block size, cell lists and
 /// transformation, and return the result.
 template <int bs>
-std::vector<T> assemble(fem::IndexList auto cells, fem::IndexList auto cells0,
-                        const auto& transform,
-                        std::span<const std::uint32_t> info)
+std::vector<T>
+assemble(const fem::IndexList auto& cells, const fem::IndexList auto& cells0,
+         const auto& transform, std::span<const std::uint32_t> info)
 {
   std::vector<T> b(bs * num_dofs, 0);
   std::array<T, bs * num_dofs_cell> be_b;
@@ -180,8 +180,8 @@ TEST_CASE("Assembly kernel block size dispatch", "[assembly_kernels]")
   };
 
   CHECK(bs_of(1) == std::pair{1, true});
-  CHECK(bs_of(3) == std::pair{3, true});
   CHECK(bs_of(2) == std::pair{2, false});
+  CHECK(bs_of(3) == std::pair{3, true});
   CHECK(bs_of(7) == std::pair{7, false});
 
   // Only matching block sizes are specialised.
@@ -199,8 +199,8 @@ TEST_CASE("Assembly kernel block size dispatch", "[assembly_kernels]")
   };
 
   CHECK(bs_pair_of(1, 1) == std::pair{std::array{1, 1}, true});
-  CHECK(bs_pair_of(3, 3) == std::pair{std::array{3, 3}, true});
   CHECK(bs_pair_of(2, 2) == std::pair{std::array{2, 2}, false});
+  CHECK(bs_pair_of(3, 3) == std::pair{std::array{3, 3}, true});
   CHECK(bs_pair_of(3, 1) == std::pair{std::array{3, 1}, false});
   CHECK(bs_pair_of(1, 3) == std::pair{std::array{1, 3}, false});
 }

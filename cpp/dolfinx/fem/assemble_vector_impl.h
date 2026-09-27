@@ -71,13 +71,13 @@ template <typename V, MDSpan2Int32 XD, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires AssemblyVector<V, T>
 void assemble_cells_vector(
-    V&& b, GeometryPack<XD, U> geometry, IndexList auto cells,
+    V&& b, GeometryPack<XD, U> geometry, const IndexList auto& cells,
     const FormArgumentCells<T> auto& arg0, const FEkernel<T, U> auto& kernel,
     std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     ScratchBuffer<T> auto be_b, ScratchBuffer<U> auto cdofs_b)
 {
-  if (cells.empty())
+  if (std::ranges::empty(cells))
     return;
 
   // By value: the sizes below fold only if not read through a
@@ -106,6 +106,7 @@ void assemble_cells_vector(
   // set (non-null) transform is loop-invariant.
   const bool p0_set = is_transform_set(P0);
 
+  assert(std::ranges::size(cells0) == std::ranges::size(cells));
   // The integration-domain and argument cell lists are usually the same
   // span, making the second lookup redundant. Loop-invariant, so the
   // branch predicts perfectly.
@@ -120,7 +121,7 @@ void assemble_cells_vector(
   }
 
   // Iterate over active cells
-  for (std::size_t index = 0; index < cells.size(); ++index)
+  for (std::size_t index = 0; index < std::ranges::size(cells); ++index)
   {
     // Integration domain cell and test function cell
     const std::int32_t c = cells[index];
