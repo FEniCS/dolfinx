@@ -62,7 +62,7 @@ jobs:
   build_wheels:
     name: Build wheels ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -70,11 +70,7 @@ jobs:
           - os: macos-26
             cibw_build: cp312-macosx_arm64
             cxx_flags_init: "-fexperimental-library"
-            label: "(macos-26, with -fexperimental-library)"
-          - os: macos-26
-            cibw_build: cp312-macosx_arm64
-            cxx_flags_init: ""
-            label: "(macos-26, no -fexperimental-library)"
+            label: "(macos-26, profile test_integral)"
 
     env:
       BASELINE_NANOBIND: "2.13.0"
@@ -290,7 +286,20 @@ jobs:
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
           CIBW_TEST_COMMAND_MACOS: >
             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}" &&
-            mpiexec -n 1 python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
+            cd {project}/dolfinx/python &&
+            sysctl -n hw.ncpu hw.logicalcpu ;
+            python -m cProfile -o /tmp/prof.out -m pytest -q -p no:cacheprovider --durations=5
+            -k "2-hexahedron-AAE" test/unit/fem/test_dof_permuting.py & PROFPID=$! ;
+            echo "backgrounded python pid=$PROFPID" ; ps -p $PROFPID -o pid,comm ;
+            sleep 75 ;
+            sudo /usr/bin/sample $PROFPID 20 -file /tmp/sample.txt || echo "SAMPLE FAILED" ;
+            wait $PROFPID ; echo "pytest exit=$?" ;
+            echo "=== cProfile: top 45 by cumulative ===" ;
+            python -c "import pstats;pstats.Stats('/tmp/prof.out').sort_stats('cumulative').print_stats(45)" ;
+            echo "=== cProfile: top 30 by tottime ===" ;
+            python -c "import pstats;pstats.Stats('/tmp/prof.out').sort_stats('tottime').print_stats(30)" ;
+            echo "=== native sample (macOS sample, includes C++ frames) ===" ;
+            sed -n '1,200p' /tmp/sample.txt
 
       - name: Update temporary simple503 repository (Linux)
         if: runner.os == 'Linux'
