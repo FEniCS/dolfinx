@@ -117,6 +117,14 @@ jobs:
         with:
           mpi: "intelmpi"
 
+      # Ninja needs cl.exe on PATH. The Visual Studio generator located it
+      # itself, so this was not needed before.
+      - name: Set up MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - uses: actions/setup-python@v7
 
       - name: Install Python dependencies
@@ -206,6 +214,7 @@ jobs:
           CIBW_ENVIRONMENT_WINDOWS: >
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install
+            CMAKE_GENERATOR=Ninja
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -292,10 +301,10 @@ jobs:
             sudo cmake --install dolfinx-build-dir/
           CIBW_BEFORE_BUILD_WINDOWS: >
             pip -v install --pre fenics-basix fenics-ffcx &&
-            pip -v install mpi4py scikit-build-core[pyproject] nanobind delvewheel &&
-            cmake -S dolfinx/cpp -B dolfinx-build-dir/ -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
-            cmake --build dolfinx-build-dir/ --config Release &&
-            cmake --install dolfinx-build-dir/ --config Release --prefix %GITHUB_WORKSPACE%/dolfinx-install
+            pip -v install mpi4py ninja scikit-build-core[pyproject] nanobind delvewheel &&
+            cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
+            cmake --build dolfinx-build-dir/ &&
+            cmake --install dolfinx-build-dir/ --prefix %GITHUB_WORKSPACE%/dolfinx-install
           # As of 6/26 DOLFINx uses std::jthread which is only officially
           # supported in macOS SDK 26. -fexperimental-library enables
           # experimental std library support which allows the build to complete
