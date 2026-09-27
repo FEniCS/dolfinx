@@ -48,7 +48,8 @@ T assemble_cells_scalar(
   const auto cstride = coeffs.extent(1);
 
   // Iterate over all cells
-  for (std::size_t index = 0; index < std::ranges::size(cells); ++index)
+  const std::size_t num_cells = std::ranges::size(cells);
+  for (std::size_t index = 0; index < num_cells; ++index)
   {
     std::int32_t c = cells[index];
 

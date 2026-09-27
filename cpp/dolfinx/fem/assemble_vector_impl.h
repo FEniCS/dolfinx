@@ -27,7 +27,6 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
-#include <tuple>
 #include <type_traits>
 #include <vector>
 
@@ -51,6 +50,8 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// sized by the caller and passed in via `be_b`/`cdofs_b`.
 ///
 /// @tparam V Vector container type (i.e. the type of `b`).
+/// @tparam XD Geometry dofmap type.
+/// @tparam U Geometry (coordinate) scalar type.
 /// @tparam T Scalar type.
 /// @param[in,out] b Array to accumulate into.
 /// @param[in] geometry Mesh geometry dofmap and coordinates.
@@ -64,7 +65,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// `(cells.size(), num_cell_coeffs)`. `coeffs(i, j)` is the `j`th
 /// coefficient for cell `i`.
 /// @param[in] be_b Buffer for local element vector. Size must be
-/// exactly `bs * dmap.extent(1)`.
+/// exactly `bs * arg0.dofmap.map.extent(1)`.
 /// @param[in] cdofs_b Buffer for local element geometry. Size must be
 /// exactly `3 * geometry.dofmap.extent(1)`.
 template <typename V, MDSpan2Int32 XD, std::floating_point U,
@@ -81,9 +82,8 @@ void assemble_cells_vector(
     return;
 
   // By value: the sizes below fold only if not read through a
-  // reference. mdspan and span are two-word copies.
-  const auto x_dofmap = geometry.dofmap;
-  const auto x = geometry.x;
+  // reference (see fem::DofMapPack). mdspan and span are two-word
+  // copies.
   const auto dmap = arg0.dofmap.map;
   const auto bs = arg0.dofmap.bs;
   // By reference: a generated range (e.g. iota) does not convert to a
@@ -92,8 +92,7 @@ void assemble_cells_vector(
   const auto& P0 = arg0.transform;
   std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
 
-  static_assert(x.extent(1) == 3);
-  const auto ndofs_x = x_dofmap.extent(1);
+  const auto ndofs_x = geometry.dofmap.extent(1);
   const auto ndofs = dmap.extent(1);
   assert(be_b.size() == static_cast<std::size_t>(bs) * ndofs);
   assert(cdofs_b.size() == 3 * static_cast<std::size_t>(ndofs_x));
@@ -106,22 +105,22 @@ void assemble_cells_vector(
   // set (non-null) transform is loop-invariant.
   const bool p0_set = is_transform_set(P0);
 
-  assert(std::ranges::size(cells0) == std::ranges::size(cells));
+  const std::size_t num_cells = std::ranges::size(cells);
+  assert(std::ranges::size(cells0) == num_cells);
+
   // The integration-domain and argument cell lists are usually the same
   // span, making the second lookup redundant. Loop-invariant, so the
-  // branch predicts perfectly.
+  // branch predicts perfectly. Both concepts require a sized range.
   bool same_cells = false;
   if constexpr (std::ranges::contiguous_range<decltype(cells)>
-                and std::ranges::contiguous_range<decltype(cells0)>
-                and std::ranges::sized_range<decltype(cells)>
-                and std::ranges::sized_range<decltype(cells0)>)
+                and std::ranges::contiguous_range<decltype(cells0)>)
   {
     same_cells = std::ranges::data(cells0) == std::ranges::data(cells)
-                 and std::ranges::size(cells0) == std::ranges::size(cells);
+                 and std::ranges::size(cells0) == num_cells;
   }
 
   // Iterate over active cells
-  for (std::size_t index = 0; index < std::ranges::size(cells); ++index)
+  for (std::size_t index = 0; index < num_cells; ++index)
   {
     // Integration domain cell and test function cell
     const std::int32_t c = cells[index];
@@ -165,6 +164,8 @@ void assemble_cells_vector(
 /// must be sized by the caller and passed in via `be_b`/`cdofs_b`.
 ///
 /// @tparam V Vector container type (i.e. the type of `b`).
+/// @tparam XD Geometry dofmap type.
+/// @tparam U Geometry (coordinate) scalar type.
 /// @tparam T Scalar type.
 /// @param[in,out] b The vector to accumulate into.
 /// @param[in] geometry Mesh geometry dofmap and coordinates.
@@ -179,7 +180,7 @@ void assemble_cells_vector(
 /// @param[in] perms Entity permutation integer. Empty if entity
 /// permutations are not required.
 /// @param[in] be_b Buffer for local element vector. Size must be
-/// exactly `bs * dmap.extent(1)`.
+/// exactly `bs * arg0.dofmap.map.extent(1)`.
 /// @param[in] cdofs_b Buffer for local element geometry. Size must be
 /// exactly `3 * geometry.dofmap.extent(1)`.
 template <typename V, MDSpan2Int32 XD, std::floating_point U,
@@ -200,27 +201,22 @@ void assemble_entities_vector(
     return;
 
   // By value: the sizes below fold only if not read through a
-  // reference. mdspan and span are two-word copies.
-  const auto x_dofmap = geometry.dofmap;
-  const auto x = geometry.x;
+  // reference (see fem::DofMapPack). mdspan and span are two-word
+  // copies.
   const auto dmap = arg0.dofmap.map;
   const auto bs = arg0.dofmap.bs;
   const auto entities0 = arg0.dofmap.entities;
   const auto& P0 = arg0.transform;
   std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
 
-  static_assert(x.extent(1) == 3);
   const auto num_dofs = dmap.extent(1);
-  const auto num_x_dofs_cell = x_dofmap.extent(1);
+  const auto num_x_dofs_cell = geometry.dofmap.extent(1);
   assert(cdofs_b.size() == 3 * static_cast<std::size_t>(num_x_dofs_cell));
   assert(be_b.size() == static_cast<std::size_t>(bs) * num_dofs);
   assert(entities0.size() == entities.size());
 
   const std::int32_t* dmap_ptr = dmap.data_handle();
 
-  // P0 does not change across entities in this call, so whether it is a
-  // set (non-null) transform is loop-invariant -- checked once here rather
-  // than on every entity.
   const bool p0_set = is_transform_set(P0);
 
   const T* coeffs_data = coeffs.data_handle();
@@ -263,6 +259,8 @@ void assemble_entities_vector(
 /// sized by the caller and passed in via `be_b`/`cdofs_b`.
 ///
 /// @tparam V Vector container type (i.e. the type of `b`).
+/// @tparam XD Geometry dofmap type.
+/// @tparam U Geometry (coordinate) scalar type.
 /// @tparam T Scalar type.
 /// @param[in,out] b The vector to accumulate into.
 /// @param[in] geometry Mesh geometry dofmap and coordinates.
@@ -279,7 +277,7 @@ void assemble_entities_vector(
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
 /// @param[in] be_b Buffer for local element vector. Size must be
-/// exactly `2 * bs * dmap.extent(1)`.
+/// exactly `2 * bs * arg0.dofmap.map.extent(1)`.
 /// @param[in] cdofs_b Buffer for local element geometry. Size must be
 /// exactly `2 * 3 * geometry.dofmap.extent(1)`.
 template <typename V, MDSpan2Int32 XD, std::floating_point U,
@@ -302,17 +300,15 @@ void assemble_interior_facets_vector(
     return;
 
   // By value: the sizes below fold only if not read through a
-  // reference. mdspan and span are two-word copies.
-  const auto x_dofmap = geometry.dofmap;
-  const auto x = geometry.x;
+  // reference (see fem::DofMapPack). mdspan and span are two-word
+  // copies.
   const auto dmap = arg0.dofmap.map;
   const auto bs = arg0.dofmap.bs;
   const auto facets0 = arg0.dofmap.entities;
   const auto& P0 = arg0.transform;
   std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
 
-  static_assert(x.extent(1) == 3);
-  const auto num_x_dofs_cell = x_dofmap.extent(1);
+  const auto num_x_dofs_cell = geometry.dofmap.extent(1);
   const auto dmap_size = dmap.extent(1);
   assert(cdofs_b.size() == 2 * static_cast<std::size_t>(num_x_dofs_cell) * 3);
   assert(be_b.size() == static_cast<std::size_t>(bs) * 2 * dmap_size);
@@ -323,9 +319,6 @@ void assemble_interior_facets_vector(
   const T* coeffs_data = coeffs.data_handle();
   const auto cstride = 2 * coeffs.extent(2);
 
-  // P0 does not change across facets in this call, so whether it is a
-  // set (non-null) transform is loop-invariant -- checked once here rather
-  // than on every facet.
   const bool p0_set = is_transform_set(P0);
 
   for (std::size_t f = 0; f < facets.extent(0); ++f)

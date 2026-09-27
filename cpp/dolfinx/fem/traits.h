@@ -12,7 +12,6 @@
 #include <dolfinx/common/types.h>
 #include <ranges>
 #include <span>
-#include <tuple>
 #include <type_traits>
 
 namespace dolfinx::fem
@@ -79,6 +78,19 @@ concept MDSpan2Floating
     = std::floating_point<U> and dolfinx::MDSpanRank2<T>
       and std::same_as<typename std::remove_cvref_t<T>::value_type, U>;
 
+/// @brief Concept for a randomly-indexable list of process-local
+/// indices, as used for the cell lists passed to the assembly kernels.
+///
+/// Satisfied by `std::span<const std::int32_t>`, by a span or array of
+/// static extent, and by a generated range such as `std::views::iota`.
+template <class C>
+concept IndexList
+    = std::ranges::random_access_range<C> and std::ranges::sized_range<C>
+      and std::same_as<std::ranges::range_value_t<C>, std::int32_t>
+      and requires(const std::remove_reference_t<C>& cells, std::size_t i) {
+            { cells[i] } -> std::convertible_to<std::int32_t>;
+          };
+
 /// @brief Mesh geometry data passed to the assembly kernels.
 ///
 /// @tparam D Geometry dofmap type, a rank-2 mdspan of
@@ -108,10 +120,9 @@ struct GeometryPack
 /// @tparam D Dofmap type, a rank-2 mdspan of `const std::int32_t`.
 /// @tparam B Block size type, `int` or
 /// `std::integral_constant<int, N>`.
-/// @tparam E Entity index list type, constrained by the
-/// `DofMapPack*` concepts below. It must be a view (`std::span`,
-/// `std::views::iota`, an entity mdspan), not an owning container: the
-/// pack is copied into the kernels, which must not allocate.
+/// @tparam E Entity index list type. Its shape differs between the
+/// cell, entity and facet kernels; see the `DofMapPack*` concepts
+/// below for what each requires.
 template <class D, class B, class E>
 struct DofMapPack
 {
@@ -121,8 +132,7 @@ struct DofMapPack
   /// Dofmap block size.
   B bs;
 
-  /// Entity indices in this argument's mesh. A view over the caller's
-  /// storage, not an owning container.
+  /// Entity indices in this argument's mesh.
   E entities;
 };
 
@@ -136,17 +146,15 @@ concept DofMapPackBase = requires(const std::remove_cvref_t<T>& t) {
 /// @endcond
 
 /// @brief Concept for the degree-of-freedom map data passed to the
-/// cell assembly kernel, whose entities are a flat, integer-indexable
-/// list of cell indices.
+/// cell assembly kernel, whose entities are a list of cell indices.
 ///
-/// The entities must be a view, so that a caller cannot hand the
-/// kernels an owning container that would be copied on every call.
+/// The list must be a view: the pack is copied into the kernels, so an
+/// owning container would be copied on every call.
 template <class T>
 concept DofMapPackCells
     = DofMapPackBase<T> and requires(const std::remove_cvref_t<T>& t) {
         requires std::ranges::view<std::remove_cvref_t<decltype(t.entities)>>;
-        requires std::ranges::sized_range<decltype(t.entities)>;
-        { t.entities[0] } -> std::convertible_to<std::int32_t>;
+        requires IndexList<std::remove_cvref_t<decltype(t.entities)>>;
       };
 
 /// @brief Concept for the degree-of-freedom map data passed to the
@@ -181,8 +189,8 @@ struct FormArgument
   DofMapPack<D, B, E> dofmap;
 
   /// Dof transformation applied in-place to the element tensor. Held
-  /// by reference: it is a `std::function`, and the kernels must not
-  /// allocate.
+  /// by reference because it may be a `std::function`, whose copy
+  /// allocates.
   const P& transform;
 
   /// Cell permutations for this argument's mesh. Empty if the element
@@ -222,22 +230,6 @@ concept FormArgumentFacets
     = FormArgumentBase<A, T> and requires(const std::remove_cvref_t<A>& a) {
         requires DofMapPackFacets<decltype(a.dofmap)>;
       };
-
-/// @brief Concept for a randomly-indexable list of process-local
-/// indices, as used for the cell lists passed to the assembly kernels.
-///
-/// Satisfied by `std::span<const std::int32_t>`, by a span or array of
-/// static extent, which carries the list length in its type, and by a
-/// generated range such as `std::views::iota`. A generated range costs
-/// no memory traffic: the assembler's cell lookup folds to the loop
-/// index, which is what a caller assembling over every cell wants.
-template <class C>
-concept IndexList
-    = std::ranges::random_access_range<C> and std::ranges::sized_range<C>
-      and std::same_as<std::ranges::range_value_t<C>, std::int32_t>
-      and requires(const std::remove_reference_t<C>& cells, std::size_t i) {
-            { cells[i] } -> std::convertible_to<std::int32_t>;
-          };
 
 /// @cond
 template <class B>
@@ -281,6 +273,17 @@ namespace impl
 /// @brief Rank-2 mdspan of 32-bit indices, as used for the dofmaps
 /// passed to the assembly kernels.
 using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
+
+/// @brief Number of dofs per cell carried in a dofmap type, or
+/// `std::dynamic_extent` if the type does not carry it.
+///
+/// `mdspan::static_extent` is `dynamic_extent` for a dynamic rank,
+/// which is also the dynamic-span spelling, so one form serves both
+/// cases. CTAD from `(pointer, count)` would always give a dynamic
+/// extent.
+template <class D>
+inline constexpr std::size_t static_dofs_per_cell
+    = std::remove_cvref_t<D>::static_extent(1);
 
 /// @brief Gather a cell's geometry node coordinates into `cdofs`, with
 /// shape `(num_nodes_per_cell, 3)` and row-major storage.

@@ -21,7 +21,6 @@
 #include <iterator>
 #include <span>
 #include <stdexcept>
-#include <tuple>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -50,6 +49,8 @@ bool has_bc(auto& dofs, auto& bc, auto bs)
 /// with no `bc1`-marked column dofs are skipped, since they cannot
 /// contribute a lifting term, and the unmodified element tensor
 /// (including BC-marked columns) is passed to `mat_set`.
+/// @tparam AB Element matrix buffer type.
+/// @tparam XD Geometry dofmap type.
 /// @tparam T Matrix/form scalar type.
 /// @tparam U Geometry type.
 /// @param mat_set Function that accumulates computed entries into a
@@ -94,9 +95,8 @@ void assemble_cells_matrix(
     return;
 
   // By value: the sizes below fold only if not read through a
-  // reference. mdspan and span are two-word copies.
-  const auto x_dofmap = geometry.dofmap;
-  const auto x = geometry.x;
+  // reference (see fem::DofMapPack). mdspan and span are two-word
+  // copies.
   const auto& P0 = arg0.transform;
   const auto& P1T = arg1.transform;
   std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
@@ -110,26 +110,17 @@ void assemble_cells_matrix(
   const auto bs1 = arg1.dofmap.bs;
   const auto& cells1 = arg1.dofmap.entities;
 
-  static_assert(x.extent(1) == 3);
   const auto num_dofs0 = dmap0.extent(1);
   const auto num_dofs1 = dmap1.extent(1);
-  // static_extent is dynamic_extent for a dynamic rank, which is the
-  // dynamic-span spelling, so one form serves both cases. CTAD from
-  // (pointer, count) would always give a dynamic extent.
-  constexpr std::size_t nd0
-      = std::remove_cvref_t<decltype(dmap0)>::static_extent(1);
-  constexpr std::size_t nd1
-      = std::remove_cvref_t<decltype(dmap1)>::static_extent(1);
+  constexpr std::size_t nd0 = static_dofs_per_cell<decltype(dmap0)>;
+  constexpr std::size_t nd1 = static_dofs_per_cell<decltype(dmap1)>;
   const std::size_t ndim0 = bs0 * num_dofs0;
   const std::size_t ndim1 = bs1 * num_dofs1;
-  const auto num_x_dofs_cell = x_dofmap.extent(1);
+  const auto num_x_dofs_cell = geometry.dofmap.extent(1);
 
   assert(Ab.size() == ndim0 * ndim1);
   assert(cdofs_b.size() == 3 * static_cast<std::size_t>(num_x_dofs_cell));
 
-  // P0/P1T do not change across cells in this call, so whether each is a
-  // set (non-null) transform is loop-invariant -- checked once here
-  // rather than on every cell.
   const bool p0_set = is_transform_set(P0);
   const bool p1t_set = is_transform_set(P1T);
 
@@ -137,9 +128,10 @@ void assemble_cells_matrix(
   const std::size_t cstride = coeffs.extent(1);
 
   // Iterate over active cells
-  assert(std::ranges::size(cells0) == std::ranges::size(cells));
-  assert(std::ranges::size(cells1) == std::ranges::size(cells));
-  for (std::size_t c = 0; c < std::ranges::size(cells); ++c)
+  const std::size_t num_cells = std::ranges::size(cells);
+  assert(std::ranges::size(cells0) == num_cells);
+  assert(std::ranges::size(cells1) == num_cells);
+  for (std::size_t c = 0; c < num_cells; ++c)
   {
     // Cell index in integration domain mesh (c), test function mesh
     // (c0) and trial function mesh (c1)
@@ -239,6 +231,8 @@ void assemble_cells_matrix(
 /// with no `bc1`-marked column dofs are skipped, since they cannot
 /// contribute a lifting term, and the unmodified element tensor
 /// (including BC-marked columns) is passed to `mat_set`.
+/// @tparam AB Element matrix buffer type.
+/// @tparam XD Geometry dofmap type.
 /// @tparam T Matrix/form scalar type.
 /// @tparam U Geometry type.
 /// @param[in] mat_set Function that accumulates computed entries into a
@@ -288,9 +282,8 @@ void assemble_entities_matrix(
     return;
 
   // By value: the sizes below fold only if not read through a
-  // reference. mdspan and span are two-word copies.
-  const auto x_dofmap = geometry.dofmap;
-  const auto x = geometry.x;
+  // reference (see fem::DofMapPack). mdspan and span are two-word
+  // copies.
   const auto& P0 = arg0.transform;
   const auto& P1T = arg1.transform;
   std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
@@ -302,19 +295,13 @@ void assemble_entities_matrix(
   const auto bs1 = arg1.dofmap.bs;
   const auto entities1 = arg1.dofmap.entities;
 
-  static_assert(x.extent(1) == 3);
   const auto num_dofs0 = dmap0.extent(1);
   const auto num_dofs1 = dmap1.extent(1);
-  // static_extent is dynamic_extent for a dynamic rank, which is the
-  // dynamic-span spelling, so one form serves both cases. CTAD from
-  // (pointer, count) would always give a dynamic extent.
-  constexpr std::size_t nd0
-      = std::remove_cvref_t<decltype(dmap0)>::static_extent(1);
-  constexpr std::size_t nd1
-      = std::remove_cvref_t<decltype(dmap1)>::static_extent(1);
+  constexpr std::size_t nd0 = static_dofs_per_cell<decltype(dmap0)>;
+  constexpr std::size_t nd1 = static_dofs_per_cell<decltype(dmap1)>;
   const std::size_t ndim0 = bs0 * num_dofs0;
   const std::size_t ndim1 = bs1 * num_dofs1;
-  const auto num_x_dofs_cell = x_dofmap.extent(1);
+  const auto num_x_dofs_cell = geometry.dofmap.extent(1);
   assert(entities0.size() == entities.size());
   assert(entities1.size() == entities.size());
   assert(Ab.size() == ndim0 * ndim1);
@@ -415,8 +402,6 @@ void assemble_entities_matrix(
 /// so a per-call allocation would not be amortized. Buffers must be
 /// sized by the caller and passed in via `Ab`/`cdofs_b`/`dofs_b`.
 ///
-/// @tparam T Matrix/form scalar type.
-/// @tparam U Geometry type.
 /// @tparam LiftingMode Selects between matrix assembly and Dirichlet
 /// lifting semantics for this kernel-execution loop (see
 /// fem::impl::lift_bc). When `false` (default): standard assembly --
@@ -425,6 +410,10 @@ void assemble_entities_matrix(
 /// with no `bc1`-marked column dofs are skipped, since they cannot
 /// contribute a lifting term, and the unmodified element tensor
 /// (including BC-marked columns) is passed to `mat_set`.
+/// @tparam AB Element matrix buffer type.
+/// @tparam XD Geometry dofmap type.
+/// @tparam T Matrix/form scalar type.
+/// @tparam U Geometry type.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] geometry Mesh geometry dofmap and coordinates.
@@ -455,12 +444,12 @@ void assemble_entities_matrix(
 /// the number of rows and `bs1 * num_dofs1` is the number of columns in
 /// local element matrix.
 /// @param cdofs_b Buffer for local element geometry. Size must be
-/// least `2 * 3 * x_dofmap.extent(1))`.
+/// least `2 * 3 * geometry.dofmap.extent(1)`.
 /// @param dofs_b Buffer for degrees-of-freedom. Size must be at least
-/// `2 * dmap0.extent(1) + 2 * dmap1.extent(1)`.
+/// `2 * arg0.dofmap.map.extent(1) + 2 * arg1.dofmap.map.extent(1)`.
 /// @param Ae_block_b Buffer used to gather a single (test, trial) block
 /// of the local element matrix. Size must be at least `(bs0 *
-/// dmap0.extent(1)) * (bs1 * dmap1.extent(1))`.
+/// arg0.dofmap.map.extent(1)) * (bs1 * arg1.dofmap.map.extent(1))`.
 template <bool LiftingMode, typename AB, MDSpan2Int32 XD, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<AB>::value_type>
   requires ScratchBuffer<AB, T>
@@ -484,9 +473,8 @@ void assemble_interior_facets_matrix(
     return;
 
   // By value: the sizes below fold only if not read through a
-  // reference. mdspan and span are two-word copies.
-  const auto x_dofmap = geometry.dofmap;
-  const auto x = geometry.x;
+  // reference (see fem::DofMapPack). mdspan and span are two-word
+  // copies.
   const auto& P0 = arg0.transform;
   const auto& P1T = arg1.transform;
   std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
@@ -499,8 +487,7 @@ void assemble_interior_facets_matrix(
   const auto facets1 = arg1.dofmap.entities;
 
   // Data structures used in assembly
-  static_assert(x.extent(1) == 3);
-  const auto num_x_dofs_cell = x_dofmap.extent(1);
+  const auto num_x_dofs_cell = geometry.dofmap.extent(1);
   assert(cdofs_b.size() == 2 * 3 * static_cast<std::size_t>(num_x_dofs_cell));
   U* cdofs0 = cdofs_b.data();
   U* cdofs1 = cdofs_b.data() + 3 * num_x_dofs_cell;

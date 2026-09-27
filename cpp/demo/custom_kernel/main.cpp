@@ -350,7 +350,9 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   //
   // The buffers are passed by value as `std::array`, so the assembler sees
   // their size in the type and their addresses do not escape the inlined
-  // kernel, which lets the compiler keep them in registers.
+  // kernel, which lets the compiler keep them in registers. Copying an
+  // uninitialised element would be undefined, so they are zeroed here
+  // even though the kernels overwrite them.
   std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b{};
   std::array<T, p1_triangle_dofs_per_cell * p1_triangle_dofs_per_cell> Ab{};
   fem::FormArgument arg{
@@ -557,9 +559,8 @@ void assemble(MPI_Comm comm)
       tabulate_tensor_load(b, w, c, coordinate_dofs, entity_local_index,
                            quadrature_permutation, d);
     };
-    // A span, not the vector itself: the cell list reaches the assembler
-    // by value, so it must be a view over the caller's storage rather
-    // than an owning container that would be copied.
+    // A span, not the vector itself: `DofMapPack` stores the cell list
+    // by value, so it must be a view over the caller's storage.
     std::span<const std::int32_t> cell_span(cells);
     const double norm_A2 = assemble_matrix1<T>(mesh->geometry(), *V->dofmap(),
                                                kernel_a_ffcx, cell_span);
