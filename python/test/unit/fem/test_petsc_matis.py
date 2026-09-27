@@ -52,7 +52,8 @@ def test_matis_matches_aij(cell_type, degree, shape):
 
     A_converted = A_is.convert(PETSc.Mat.Type.AIJ)
     A_converted.axpy(-1.0, A_aij, PETSc.Mat.Structure.DIFFERENT_NONZERO_PATTERN)
-    assert A_converted.norm() == pytest.approx(0.0, abs=1e-10 * A_aij.norm())
+    eps = np.finfo(PETSc.ScalarType).eps
+    assert A_converted.norm() == pytest.approx(0.0, abs=100 * eps * A_aij.norm())
 
     A_is.destroy(), A_aij.destroy(), A_converted.destroy()
 
@@ -111,5 +112,5 @@ def test_blocked_matis(kind):
     A_ref.assemble()
 
     A_cmp = A.convert(PETSc.Mat.Type.AIJ) if kind == "is" else A
-    assert np.isclose(A_cmp.norm(), A_ref.norm(), rtol=1e-10)
+    assert np.isclose(A_cmp.norm(), A_ref.norm(), rtol=100 * np.finfo(PETSc.ScalarType).eps)
     A.destroy(), A_ref.destroy()
