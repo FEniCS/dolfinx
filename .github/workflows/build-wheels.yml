@@ -347,17 +347,17 @@ jobs:
           # the same redistributable, so bundling one without the other buys
           # nothing.
           #
-          # fenics_basix.libs is deliberately not on --add-path. It holds
-          # Basix's already-mangled dependencies, so delvewheel finds each of
-          # them twice, once mangled there and once unmangled on PATH, copies
-          # both in, then fails renaming the second onto the first:
+          # basix.dll is excluded so delvewheel does not follow into it.
+          # Basix's dependencies are mangled by its own repair, and DOLFINx
+          # gets the same libraries unmangled from vcpkg, so following both
+          # gave two copies of each and a name clash when mangling the second:
           # "FileExistsError: [WinError 183] Cannot create a file when that
-          # file already exists". Those libraries belong to Basix, which loads
-          # them itself. Only the directory holding basix.dll is needed.
+          # file already exists". dolfinx/__init__.py imports basix so that
+          # basix.dll is loaded before dolfinx.cpp needs it.
           #
           # -v prints what was resolved and from where, as Basix's repair does.
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
-            python -c "import basix, os, subprocess; subprocess.run(['delvewheel', 'repair', '-v', '--exclude', 'impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll', '--add-path', os.path.dirname(basix.__file__) + ';' + r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
+            python -c "import subprocess; subprocess.run(['delvewheel', 'repair', '-v', '--exclude', 'impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll;basix.dll', '--add-path', r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
           CIBW_TEST_COMMAND_LINUX: >

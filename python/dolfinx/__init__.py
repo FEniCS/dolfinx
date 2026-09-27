@@ -16,6 +16,11 @@ import mpi4py as _mpi4py
 
 del _mpi4py
 
+# Importing basix loads basix.dll before dolfinx.cpp, which links against it.
+import basix as _basix
+
+del _basix
+
 import typing as _typing
 
 import numpy as _np
