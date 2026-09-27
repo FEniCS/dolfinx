@@ -228,7 +228,6 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   Mat A;
   common::petsc::check(MatCreate(comm, &A), "MatCreate");
 
-  // Get IndexMaps from sparsity pattern, and block size
   std::array maps = {sp.index_map(0), sp.index_map(1)};
   const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
@@ -236,17 +235,16 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
     common::petsc::check(MatSetType(A, std::string(*type).c_str()),
                          "MatSetType");
 
-  // Get global and local dimensions
+  // Sizes in scalar, not block, terms
   const std::int64_t M = bs[0] * maps[0]->size_global();
   const std::int64_t N = bs[1] * maps[1]->size_global();
   const std::int32_t m = bs[0] * maps[0]->size_local();
   const std::int32_t n = bs[1] * maps[1]->size_local();
 
-  // Set matrix size
   common::petsc::check(MatSetSizes(A, m, n, M, N), "MatSetSizes");
 
-  // Apply PETSc options from the options database to the matrix (this
-  // includes changing the matrix type to one specified by the user)
+  // Apply the PETSc options database. This can change the matrix type,
+  // so anything type-dependent must follow
   common::petsc::check(MatSetFromOptions(A), "MatSetFromOptions");
 
   // BAIJ and SBAIJ store square blocks. Their preallocation applies a
@@ -290,12 +288,9 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   std::ranges::transform(rows, _nnz_offdiag.begin(),
                          [&sp](std::int32_t i) { return sp.nnz_off_diag(i); });
 
-  // Build a PETSc (PetscInt) local-to-global map directly from an
-  // IndexMap's local range and ghosts, rather than going via
-  // IndexMap::global_indices() (which materialises an intermediate
-  // std::int64_t array that would then need a second, full-size
-  // conversion pass -- wasteful for the large local sizes seen in
-  // practice)
+  // Build the map from the local range and ghosts rather than from
+  // IndexMap::global_indices(), which would materialise an intermediate
+  // std::int64_t array and convert it in a second, full-size pass
   auto build_l2g = [](const common::IndexMap& map) -> std::vector<PetscInt>
   {
     const std::int32_t size_local = map.size_local();
@@ -359,7 +354,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
                          "ISLocalToGlobalMappingDestroy");
   }
 
-  // Clean up local-to-global 0
+  // Release our reference; the matrix holds its own
   common::petsc::check(ISLocalToGlobalMappingDestroy(&local_to_global0),
                        "ISLocalToGlobalMappingDestroy");
 
@@ -370,7 +365,8 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
                               _nnz_offdiag.data(), nullptr, nullptr),
       "MatXAIJSetPreallocation");
 
-  // Set some options on Mat object
+  // Fail on insertion outside the sparsity pattern, and keep zeroed
+  // entries in the structure so that the matrix can be re-assembled
   common::petsc::check(
       MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE),
       "MatSetOption");
