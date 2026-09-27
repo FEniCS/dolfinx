@@ -175,9 +175,9 @@ Mat create_matrix_block(
     }
   }
 
-  // Create the PETSc local-to-global maps. They are created on the mesh
-  // communicator, rather than MPI_COMM_SELF, because MATIS requires
-  // them to share the matrix communicator
+  // Create the local-to-global maps on the mesh communicator, not
+  // MPI_COMM_SELF, because MATIS requires them to share the matrix
+  // communicator
   ISLocalToGlobalMapping l2g0 = nullptr, l2g1 = nullptr;
   common::petsc::check(
       ISLocalToGlobalMappingCreate(mesh->comm(), 1, _maps[0].size(),

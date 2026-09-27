@@ -27,9 +27,8 @@ def _unit_mesh(cell_type, n):
 def test_matis_matches_aij(cell_type, degree, shape):
     """A MATIS matrix must assemble to the same operator as an AIJ one.
 
-    MATIS holds one unassembled matrix per process, with the global
-    operator being the sum of the local contributions. Converting to AIJ
-    performs that sum, which must reproduce a directly assembled matrix.
+    Converting to AIJ sums the per-process contributions, which must
+    reproduce a directly assembled matrix.
     """
     from petsc4py import PETSc
 
@@ -74,8 +73,8 @@ def test_matis_local_to_global_map():
     A.assemble()
     rmap, cmap = A.getLGMap()
     assert rmap.getSize() == V.dofmap.index_map.size_local + V.dofmap.index_map.num_ghosts
-    assert rmap.getComm().getSize() == msh.comm.size
-    assert cmap.getComm().getSize() == msh.comm.size
+    assert rmap.getComm().getSize() == A.getComm().getSize()
+    assert cmap.getComm().getSize() == A.getComm().getSize()
     A.destroy()
 
 
@@ -84,9 +83,9 @@ def test_matis_local_to_global_map():
 def test_blocked_matis(kind):
     """A blocked matrix of kind ``kind`` must match the AIJ equivalent.
 
-    ``create_matrix_block`` builds field-concatenated local-to-global
-    maps and passes them to the matrix constructor, which for MATIS must
-    happen before preallocation.
+    ``create_matrix_block`` passes field-concatenated local-to-global
+    maps to the matrix constructor, which for MATIS must happen before
+    preallocation.
     """
     from petsc4py import PETSc
 
@@ -119,10 +118,10 @@ def test_blocked_matis(kind):
 def test_square_block_type_rejected(kind):
     """Block formats must reject differing row and column block sizes.
 
-    BAIJ and SBAIJ preallocation takes a single block size and applies
-    it to both rows and columns, so such an operator cannot be stored in
-    those formats. Rejecting it is better than letting PETSc reinterpret
-    the column layout.
+    BAIJ and SBAIJ preallocation applies a single block size to both
+    dimensions. PETSc raises an error only when the column count is not
+    divisible by the row block size; otherwise it overwrites the column
+    block size and builds a matrix with the wrong layout.
     """
     from dolfinx.fem.petsc import assemble_matrix
 

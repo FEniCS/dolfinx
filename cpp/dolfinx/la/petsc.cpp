@@ -249,10 +249,10 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   // includes changing the matrix type to one specified by the user)
   common::petsc::check(MatSetFromOptions(A), "MatSetFromOptions");
 
-  // BAIJ and SBAIJ store square blocks: their preallocation takes a
-  // single block size and applies it to both rows and columns, so an
-  // operator whose row and column block sizes differ cannot be stored
-  // in those formats
+  // BAIJ and SBAIJ store square blocks. Their preallocation applies a
+  // single block size to both dimensions, silently overwriting the
+  // column block size rather than raising an error, so reject unequal
+  // block sizes here
   if (bs[0] != bs[1])
   {
     PetscBool square_block = PETSC_FALSE;
@@ -274,15 +274,14 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
     }
   }
 
-  // Set the block sizes before attaching the local-to-global maps, so
-  // that PetscLayoutSetBlockSize sees no map to downgrade, and pass
-  // PETSC_DECIDE to MatXAIJSetPreallocation below so that it leaves
-  // them alone
+  // Set the block sizes up front. MatXAIJSetPreallocation is passed
+  // PETSC_DECIDE below so that it reads them from the matrix rather
+  // than resetting them, which would downgrade the attached
+  // local-to-global maps where the row and column block sizes differ
   common::petsc::check(MatSetBlockSizes(A, bs[0], bs[1]), "MatSetBlockSizes");
 
-  // Build data to initialise the sparsity pattern, counted per block
-  // row. MatXAIJSetPreallocation expands this to scalar rows where the
-  // matrix format requires it
+  // Non-zeros per block row. MatXAIJSetPreallocation expands this to
+  // scalar rows for the formats that need it
   const std::int32_t num_block_rows = maps[0]->size_local();
   std::vector<PetscInt> _nnz_diag(num_block_rows), _nnz_offdiag(num_block_rows);
   auto rows = std::views::iota(std::int32_t(0), num_block_rows);
@@ -327,7 +326,8 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
         "ISLocalToGlobalMappingCreate");
   }
 
-  // Check for common index maps
+  // Reuse the row map for the columns when the layouts match and the
+  // caller has not supplied one
   if (!clgmap and maps[0] == maps[1] and bs[0] == bs[1])
   {
     common::petsc::check(
@@ -363,11 +363,8 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   common::petsc::check(ISLocalToGlobalMappingDestroy(&local_to_global0),
                        "ISLocalToGlobalMappingDestroy");
 
-  // Allocate space for the matrix. The maps are attached first because
-  // MATIS derives its preallocation from them. PETSC_DECIDE keeps the
-  // block sizes set above -- passing an explicit size here would call
-  // MatSetBlockSize, which downgrades an attached blocked map when the
-  // row and column block sizes differ
+  // Allocate space for the matrix. This follows the local-to-global
+  // maps because MATIS builds its preallocation from them
   common::petsc::check(
       MatXAIJSetPreallocation(A, PETSC_DECIDE, _nnz_diag.data(),
                               _nnz_offdiag.data(), nullptr, nullptr),
