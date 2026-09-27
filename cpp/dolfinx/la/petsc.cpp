@@ -283,9 +283,9 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   // Build data to initialise the sparsity pattern, counted per block
   // row. MatXAIJSetPreallocation expands this to scalar rows where the
   // matrix format requires it
-  const std::int32_t size_local = maps[0]->size_local();
-  std::vector<PetscInt> _nnz_diag(size_local), _nnz_offdiag(size_local);
-  auto rows = std::views::iota(std::int32_t(0), size_local);
+  const std::int32_t num_block_rows = maps[0]->size_local();
+  std::vector<PetscInt> _nnz_diag(num_block_rows), _nnz_offdiag(num_block_rows);
+  auto rows = std::views::iota(std::int32_t(0), num_block_rows);
   std::ranges::transform(rows, _nnz_diag.begin(),
                          [&sp](std::int32_t i) { return sp.nnz_diag(i); });
   std::ranges::transform(rows, _nnz_offdiag.begin(),
