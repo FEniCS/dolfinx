@@ -35,6 +35,7 @@ target_sources(
         discreteoperators.h
         dofmapbuilder.h
         dolfinx_fem.h
+        expression_evaluate.h
         interpolate.h
         kernel.h
         pack.h

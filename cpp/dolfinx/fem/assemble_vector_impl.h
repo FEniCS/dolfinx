@@ -12,7 +12,6 @@
 #include "Form.h"
 #include "assemble_matrix_impl.h"
 #include "traits.h"
-#include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
 #include <concepts>
