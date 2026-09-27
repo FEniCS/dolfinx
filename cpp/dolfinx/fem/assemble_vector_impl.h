@@ -110,9 +110,14 @@ void assemble_cells_vector(
   // span, making the second lookup redundant. Loop-invariant, so the
   // branch predicts perfectly.
   bool same_cells = false;
-  if constexpr (std::ranges::contiguous_range<decltype(cells)>)
-    same_cells
-        = cells0.data() == cells.data() and cells0.size() == cells.size();
+  if constexpr (std::ranges::contiguous_range<decltype(cells)>
+                and std::ranges::contiguous_range<decltype(cells0)>
+                and std::ranges::sized_range<decltype(cells)>
+                and std::ranges::sized_range<decltype(cells0)>)
+  {
+    same_cells = std::ranges::data(cells0) == std::ranges::data(cells)
+                 and std::ranges::size(cells0) == std::ranges::size(cells);
+  }
 
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)

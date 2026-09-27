@@ -908,8 +908,8 @@ void assemble_matrix(
                              P1T, cell_info1},
                 bc0, bc1, fn, constants,
                 mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-                facet_perms, std::span(Ab), std::span(cdofs_b), dmap_b,
-                std::span(Ae_block_b));
+                facet_perms, std::span(Ab), std::span(cdofs_b),
+                std::span(dmap_b), std::span(Ae_block_b));
           });
     }
 

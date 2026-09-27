@@ -25,6 +25,7 @@
 #include <dolfinx/fem/assembler.h>
 #include <functional>
 #include <map>
+#include <ranges>
 #include <span>
 #include <type_traits>
 #include <utility>
@@ -119,8 +120,7 @@ std::vector<T> reference_vector(std::span<const std::int32_t> cells,
 /// Assemble `vector_kernel` with the given block size, cell lists and
 /// transformation, and return the result.
 template <int bs>
-std::vector<T> assemble(std::span<const std::int32_t> cells,
-                        std::span<const std::int32_t> cells0,
+std::vector<T> assemble(fem::IndexList auto cells, fem::IndexList auto cells0,
                         const auto& transform,
                         std::span<const std::uint32_t> info)
 {
@@ -238,6 +238,13 @@ TEST_CASE("Assemble cells into a vector (argument cell list differs)",
   // The swapped list must not give the same answer as the matched one,
   // or the check above would pass for an assembler that ignored cells0.
   CHECK(assemble<2>(c, c0, unset, none) != assemble<2>(c, c, unset, none));
+
+  // The argument list need not have the same range type or contiguity as the
+  // integration-domain list.
+  auto generated_cells0
+      = std::views::iota(std::int32_t(0), std::int32_t(cells0.size()));
+  CHECK(assemble<2>(c, generated_cells0, unset, none)
+        == reference_vector<2>(c, c, none));
 }
 
 TEST_CASE("Assemble cells into a vector (dof transformation)",

@@ -351,8 +351,8 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   // The buffers are passed by value as `std::array`, so the assembler sees
   // their size in the type and their addresses do not escape the inlined
   // kernel, which lets the compiler keep them in registers.
-  std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
-  std::array<T, p1_triangle_dofs_per_cell * p1_triangle_dofs_per_cell> Ab;
+  std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b{};
+  std::array<T, p1_triangle_dofs_per_cell * p1_triangle_dofs_per_cell> Ab{};
   fem::FormArgument arg{
       fem::DofMapPack{dmap, std::integral_constant<int, 1>{}, cells},
       ident,
@@ -394,8 +394,8 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 
   // Vector assembly needs a three-entry element vector rather than a 3-by-3
   // element matrix. Geometry storage is unchanged.
-  std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
-  std::array<T, p1_triangle_dofs_per_cell> be_b;
+  std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b{};
+  std::array<T, p1_triangle_dofs_per_cell> be_b{};
   auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
   fem::impl::assemble_cells_vector(
       b.array(), fem::GeometryPack{x_dofmap, x}, cells,
