@@ -112,3 +112,42 @@ def test_blocked_matis(kind):
     A_cmp = A.convert(PETSc.Mat.Type.AIJ) if kind == "is" else A
     assert np.isclose(A_cmp.norm(), A_ref.norm(), rtol=100 * np.finfo(PETSc.ScalarType).eps)
     A.destroy(), A_ref.destroy()
+
+
+@pytest.mark.petsc4py
+@pytest.mark.parametrize("kind", ["baij", "sbaij"])
+def test_square_block_type_rejected(kind):
+    """Block formats must reject differing row and column block sizes.
+
+    BAIJ and SBAIJ preallocation takes a single block size and applies
+    it to both rows and columns, so such an operator cannot be stored in
+    those formats. Rejecting it is better than letting PETSc reinterpret
+    the column layout.
+    """
+    from dolfinx.fem.petsc import assemble_matrix
+
+    msh = _unit_mesh(CellType.triangle, 4)
+    V = functionspace(msh, ("Lagrange", 1, (2,)))  # block size 2
+    W = functionspace(msh, ("Lagrange", 1))  # block size 1
+    u, v = ufl.TrialFunction(W), ufl.TestFunction(V)
+    a = form(ufl.inner(u, v[0]) * ufl.dx)
+
+    with pytest.raises(ValueError, match="square blocks"):
+        assemble_matrix(a, kind=kind)
+
+
+@pytest.mark.petsc4py
+@pytest.mark.parametrize("kind", ["baij", "aij"])
+def test_square_block_type_accepted(kind):
+    """Equal row and column block sizes remain valid for block formats."""
+    from dolfinx.fem.petsc import assemble_matrix
+
+    msh = _unit_mesh(CellType.triangle, 4)
+    V = functionspace(msh, ("Lagrange", 1, (2,)))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = form(ufl.inner(u, v) * ufl.dx)
+
+    A = assemble_matrix(a, kind=kind)
+    A.assemble()
+    assert A.norm() > 0.0
+    A.destroy()

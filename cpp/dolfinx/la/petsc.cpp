@@ -16,6 +16,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <format>
 #include <numeric>
 #include <ranges>
 #include <stdexcept>
@@ -247,6 +248,31 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   // Apply PETSc options from the options database to the matrix (this
   // includes changing the matrix type to one specified by the user)
   common::petsc::check(MatSetFromOptions(A), "MatSetFromOptions");
+
+  // BAIJ and SBAIJ store square blocks: their preallocation takes a
+  // single block size and applies it to both rows and columns, so an
+  // operator whose row and column block sizes differ cannot be stored
+  // in those formats
+  if (bs[0] != bs[1])
+  {
+    PetscBool square_block = PETSC_FALSE;
+    common::petsc::check(PetscObjectTypeCompareAny(
+                             reinterpret_cast<PetscObject>(A), &square_block,
+                             MATBAIJ, MATSEQBAIJ, MATMPIBAIJ, MATSBAIJ,
+                             MATSEQSBAIJ, MATMPISBAIJ, ""),
+                         "PetscObjectTypeCompareAny");
+    if (square_block)
+    {
+      MatType mat_type;
+      common::petsc::check(MatGetType(A, &mat_type), "MatGetType");
+      std::string message = std::format(
+          "PETSc matrix type '{}' stores square blocks and cannot represent "
+          "row and column block sizes {} and {}.",
+          mat_type, bs[0], bs[1]);
+      common::petsc::check(MatDestroy(&A), "MatDestroy");
+      throw std::invalid_argument(message);
+    }
+  }
 
   // Set the block sizes before attaching the local-to-global maps, so
   // that PetscLayoutSetBlockSize sees no map to downgrade, and pass
