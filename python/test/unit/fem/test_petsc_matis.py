@@ -6,14 +6,12 @@
 """Tests for assembly into PETSc's unassembled MATIS format."""
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 import pytest
 
 import ufl
 from dolfinx.fem import Constant, form, functionspace
-from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
 
 
@@ -35,6 +33,10 @@ def test_matis_matches_aij(cell_type, degree, shape):
     operator being the sum of the local contributions. Converting to AIJ
     performs that sum, which must reproduce a directly assembled matrix.
     """
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_matrix
+
     msh = _unit_mesh(cell_type, 6)
     V = functionspace(msh, ("Lagrange", degree, shape) if shape else ("Lagrange", degree))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -62,6 +64,8 @@ def test_matis_local_to_global_map():
     ``MatSetLocalToGlobalMapping_IS`` calls ``PetscCheckSameComm``, so a
     map built on ``MPI_COMM_SELF`` is rejected in a PETSc debug build.
     """
+    from dolfinx.fem.petsc import assemble_matrix
+
     msh = _unit_mesh(CellType.triangle, 4)
     V = functionspace(msh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -85,6 +89,10 @@ def test_blocked_matis(kind):
     maps and passes them to the matrix constructor, which for MATIS must
     happen before preallocation.
     """
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_matrix
+
     msh = _unit_mesh(CellType.triangle, 6)
     P1 = functionspace(msh, ("Lagrange", 1))
     P2 = functionspace(msh, ("Lagrange", 2))
