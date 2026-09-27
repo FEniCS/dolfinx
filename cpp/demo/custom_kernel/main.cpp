@@ -91,6 +91,18 @@
 // the corresponding compiler extension while the generated source is parsed as
 // C++.
 
+// The generated source asks for the XSI declarations in <math.h> and includes
+// the C headers below. Pull them in here, before `restrict` becomes a macro:
+// MSVC's <stdlib.h> declares allocators with `__declspec(restrict)`, which the
+// macro would rewrite into an unrecognised attribute.
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+#include <math.h>
+#include <stdalign.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "mass.h"
 
 // Include the generated C source to make its kernels visible to the compiler.
