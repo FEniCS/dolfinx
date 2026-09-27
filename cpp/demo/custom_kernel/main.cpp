@@ -138,6 +138,7 @@
 #include <map>
 #include <memory>
 #include <numeric>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <tuple>
@@ -310,7 +311,7 @@ double assemble_vector0(std::shared_ptr<const fem::FunctionSpace<T>> V,
 // permutations, so the corresponding views and callbacks are empty.
 //
 // The advantage is that `kernel` retains its concrete type as it passes into
-// `assemble_cells_matrix` or `assemble_cells`. Together with the static
+// `assemble_cells_matrix` or `assemble_cells_vector`. Together with the static
 // `mdspan` extents and compile-time block size, this allows the compiler to
 // specialise the cell loop for this element and kernel.
 
@@ -327,7 +328,7 @@ double assemble_vector0(std::shared_ptr<const fem::FunctionSpace<T>> V,
 /// @return Frobenius norm squared of the matrix.
 template <std::floating_point T>
 double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
-                        auto kernel, std::span<const std::int32_t> cells)
+                        auto kernel, auto cells)
 {
   auto sp = la::SparsityPattern(dofmap.index_map->comm(),
                                 {dofmap.index_map, dofmap.index_map},
@@ -353,16 +354,26 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 
   // The direct assembler does not allocate inside the cell loop. Supply
   // storage for the 3-by-3 element matrix and the three geometry points,
-  // each of which has three coordinate components. The dofmap tuples contain
-  // the dofmap, its block size and the cell indices. The scalar block size is
-  // represented by `integral_constant`, making it available at compile time.
-  std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
-  std::array<T, p1_triangle_dofs_per_cell * p1_triangle_dofs_per_cell> Ab;
+  // each of which has three coordinate components. Each `FormArgument`
+  // carries the dofmap, its block size, the cell indices, the
+  // degree-of-freedom transformation and the cell permutation data for one
+  // form argument. The scalar block size is represented by
+  // `integral_constant`, making it available at compile time.
+  //
+  // The buffers are passed by value as `std::array`, so the assembler sees
+  // their size in the type and their addresses do not escape the inlined
+  // kernel, which lets the compiler keep them in registers. Copying an
+  // uninitialised element would be undefined, so they are zeroed here
+  // even though the kernels overwrite them.
+  std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b{};
+  std::array<T, p1_triangle_dofs_per_cell * p1_triangle_dofs_per_cell> Ab{};
+  fem::FormArgument arg{
+      fem::DofMapPack{dmap, std::integral_constant<int, 1>{}, cells},
+      ident,
+      {}};
   fem::impl::assemble_cells_matrix<false>(
-      A.mat_add_values(), x_dofmap, x, cells,
-      std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, ident,
-      std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, ident, {}, {},
-      kernel, {}, {}, {}, {}, std::span<T>(Ab), std::span<T>(cdofs_b));
+      A.mat_add_values(), fem::GeometryPack{x_dofmap, x}, cells, arg, arg, {},
+      {}, kernel, {}, {}, Ab, cdofs_b);
   A.scatter_rev();
   return A.squared_norm();
 }
@@ -380,7 +391,7 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 /// @return l2 norm squared of the vector.
 template <std::floating_point T>
 double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
-                        auto kernel, const std::vector<std::int32_t>& cells)
+                        auto kernel, auto cells)
 {
   la::Vector<T> b(dofmap.index_map, 1);
 
@@ -397,12 +408,16 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 
   // Vector assembly needs a three-entry element vector rather than a 3-by-3
   // element matrix. Geometry storage is unchanged.
-  std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b;
-  std::array<T, p1_triangle_dofs_per_cell> be_b;
-  fem::impl::assemble_cells(
-      [](auto, auto, auto, auto) {}, b.array(), x_dofmap, x, cells,
-      std::tuple{dmap, std::integral_constant<int, 1>{}, cells}, kernel, {}, {},
-      {}, std::span<T>(be_b), std::span<T>(cdofs_b));
+  std::array<T, 3 * p1_triangle_dofs_per_cell> cdofs_b{};
+  std::array<T, p1_triangle_dofs_per_cell> be_b{};
+  auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
+  fem::impl::assemble_cells_vector(
+      b.array(), fem::GeometryPack{x_dofmap, x}, cells,
+      fem::FormArgument{
+          fem::DofMapPack{dmap, std::integral_constant<int, 1>{}, cells},
+          ident,
+          {}},
+      kernel, {}, {}, be_b, cdofs_b);
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }
@@ -518,10 +533,15 @@ void assemble(MPI_Comm comm)
 
   // Route 2: pass the concrete lambda types to the cell assembly templates.
   // This removes kernel type erasure and permits inlining into the cell loop.
-  const double norm_A1
-      = assemble_matrix1<T>(mesh->geometry(), *V->dofmap(), kernel_a, cells);
-  const double norm_b1
-      = assemble_vector1<T>(mesh->geometry(), *V->dofmap(), kernel_L, cells);
+  //
+  // The kernels are executed over every cell, so the cell list is passed as a
+  // generated range rather than the materialised vector. The assembler's
+  // per-cell lookup then folds to the loop index and costs no memory traffic.
+  auto all_cells = std::views::iota(std::int32_t(0), size_local);
+  const double norm_A1 = assemble_matrix1<T>(mesh->geometry(), *V->dofmap(),
+                                             kernel_a, all_cells);
+  const double norm_b1 = assemble_vector1<T>(mesh->geometry(), *V->dofmap(),
+                                             kernel_L, all_cells);
   check_norm<T>(norm_A1, norm_A0);
   check_norm<T>(norm_b1, norm_b0);
 
@@ -551,10 +571,13 @@ void assemble(MPI_Comm comm)
       tabulate_tensor_load(b, w, c, coordinate_dofs, entity_local_index,
                            quadrature_permutation, d);
     };
+    // A span, not the vector itself: `DofMapPack` stores the cell list
+    // by value, so it must be a view over the caller's storage.
+    std::span<const std::int32_t> cell_span(cells);
     const double norm_A2 = assemble_matrix1<T>(mesh->geometry(), *V->dofmap(),
-                                               kernel_a_ffcx, cells);
+                                               kernel_a_ffcx, cell_span);
     const double norm_b2 = assemble_vector1<T>(mesh->geometry(), *V->dofmap(),
-                                               kernel_L_ffcx, cells);
+                                               kernel_L_ffcx, cell_span);
     check_norm<T>(norm_A2, norm_A0);
     check_norm<T>(norm_b2, norm_b0);
   }
