@@ -156,7 +156,7 @@ def solve(n: int) -> tuple[fem.Function, int, int]:
         petsc_options={
             "ksp_type": "cg",
             "pc_type": "bddc",
-            "ksp_rtol": 1e-8,
+            "ksp_rtol": 1e-5 if np.finfo(dtype).bits == 32 else 1e-8,
             "ksp_error_if_not_converged": True,
         },
     )

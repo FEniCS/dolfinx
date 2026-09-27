@@ -36,6 +36,12 @@ from dolfinx.mesh import (
 )
 
 
+def _tols():
+    """Krylov tolerance and comparison bound for the scalar type in use."""
+    single = np.finfo(default_scalar_type).bits == 32
+    return (1.0e-5, 1.0e-4) if single else (1.0e-10, 1.0e-8)
+
+
 def _mesh(n=16):
     """Unit square without ghost cells, as MATIS requires."""
     msh = create_unit_square(MPI.COMM_WORLD, n, n, CellType.triangle, ghost_mode=GhostMode.none)
@@ -61,6 +67,7 @@ def test_bddc_poisson_shared_bc_dofs():
     P1 puts degrees of freedom at vertices, so wherever a subdomain
     interface meets the boundary the Dirichlet dof is shared.
     """
+    rtol, atol = _tols()
     from dolfinx.fem.petsc import LinearProblem
 
     msh = _mesh()
@@ -87,7 +94,7 @@ def test_bddc_poisson_shared_bc_dofs():
         petsc_options={
             "ksp_type": "cg",
             "pc_type": "bddc",
-            "ksp_rtol": 1.0e-10,
+            "ksp_rtol": rtol,
             "ksp_error_if_not_converged": True,
         },
     ).solve()
@@ -105,7 +112,7 @@ def test_bddc_poisson_shared_bc_dofs():
     diff = np.sqrt(
         msh.comm.allreduce(float(np.sum(np.abs(uh.x.array[:n] - u_ref.x.array[:n]) ** 2)), MPI.SUM)
     )
-    assert diff < 1.0e-8
+    assert diff < atol
 
     # ... and the system must be a sane discretisation of the problem
     u_exact = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
@@ -122,6 +129,7 @@ def test_bddc_component_wise_bc():
     and leaves the other free, so the boundary condition cannot be
     handled by dropping the whole node from the local space.
     """
+    rtol, atol = _tols()
     from dolfinx.fem.petsc import LinearProblem
 
     msh = _mesh()
@@ -151,7 +159,7 @@ def test_bddc_component_wise_bc():
         petsc_options={
             "ksp_type": "cg",
             "pc_type": "bddc",
-            "ksp_rtol": 1.0e-10,
+            "ksp_rtol": rtol,
             "ksp_error_if_not_converged": True,
         },
     ).solve()
@@ -168,7 +176,7 @@ def test_bddc_component_wise_bc():
     diff = np.sqrt(
         msh.comm.allreduce(float(np.sum(np.abs(uh.x.array[:n] - u_ref.x.array[:n]) ** 2)), MPI.SUM)
     )
-    assert diff < 1.0e-8
+    assert diff < atol
 
 
 @pytest.mark.petsc4py
@@ -203,6 +211,7 @@ def test_matis_bc_diagonal_matches_aij():
 
     A_cmp = A_is.convert(PETSc.Mat.Type.AIJ)
     A_cmp.axpy(-1.0, A_aij, PETSc.Mat.Structure.DIFFERENT_NONZERO_PATTERN)
-    assert A_cmp.norm() == pytest.approx(0.0, abs=1e-10 * A_aij.norm())
+    eps = np.finfo(default_scalar_type).eps
+    assert A_cmp.norm() == pytest.approx(0.0, abs=100 * eps * A_aij.norm())
 
     A_is.destroy(), A_aij.destroy(), A_cmp.destroy()
