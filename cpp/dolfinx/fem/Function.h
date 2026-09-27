@@ -9,7 +9,6 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
-#include "assembler.h"
 #include "interpolate.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
@@ -31,9 +30,6 @@
 
 namespace dolfinx::fem
 {
-template <dolfinx::scalar T, std::floating_point U>
-class Expression;
-
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
 ///
@@ -282,146 +278,6 @@ public:
     auto cmap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cmap);
     fem::interpolate(*this, u);
-  }
-
-  /// @brief Interpolate an Expression over a subset of cells.
-  ///
-  /// @param[in] e0 Expression to be interpolated. The Expression must
-  /// have been created using the reference coordinates created by
-  /// FiniteElement::interpolation_points for the element associated
-  /// with `this`.
-  /// @param[in] cells0 Cells in the mesh associated with `e0` to
-  /// interpolate from if `e0` has Function coefficients. If no mesh can
-  /// be associated with `e0` then the mesh associated with `this` is used.
-  /// @param[in] cells1 Cell indices associated with the mesh of `this`
-  /// that will be interpolated to. If `cells0[i]` is the index of a
-  /// cell in the mesh associated with `u0`, then `cells1[i]` is the
-  /// index of the *same* cell but in the mesh associated with `this`.
-  ///
-  /// @pre `cells0` `cells1` must have the same length.
-  void interpolate(const Expression<value_type, geometry_type>& e0,
-                   mesh::CellRange auto&& cells0, mesh::CellRange auto&& cells1)
-  {
-    // Extract mesh
-    const mesh::Mesh<geometry_type>* mesh0 = nullptr;
-    for (auto& c : e0.coefficients())
-    {
-      assert(c);
-      assert(c->function_space());
-      assert(c->function_space()->mesh());
-      if (auto mesh = c->function_space()->mesh().get(); !mesh0)
-        mesh0 = mesh;
-      else if (mesh != mesh0)
-      {
-        throw std::invalid_argument(
-            "Expression coefficient Functions have different meshes.");
-      }
-    }
-
-    // If Expression has no Function coefficients take mesh from `this`.
-    assert(_function_space);
-    assert(_function_space->mesh());
-    if (!mesh0)
-      mesh0 = _function_space->mesh().get();
-
-    if (cells0.size() != cells1.size())
-      throw std::invalid_argument("Cell lists have different lengths.");
-
-    // Check that Function and Expression spaces are compatible
-    assert(_function_space->element());
-    std::size_t value_size = e0.value_size();
-    if (e0.argument_space())
-      throw std::invalid_argument(
-          "Cannot interpolate Expression with Argument.");
-
-    if (value_size != (std::size_t)_function_space->element()->value_size())
-    {
-      throw std::invalid_argument(
-          "Function value size not equal to Expression value size.");
-    }
-
-    // Compatibility check
-    {
-      auto [X0, shape0] = e0.X();
-      auto [X1, shape1] = _function_space->element()->interpolation_points();
-      if (shape0 != shape1)
-      {
-        throw std::invalid_argument(
-            "Function element interpolation points has different shape to "
-            "Expression interpolation points");
-      }
-
-      for (std::size_t i = 0; i < X0.size(); ++i)
-      {
-        if (std::abs(X0[i] - X1[i]) > 1.0e-10)
-        {
-          throw std::invalid_argument(
-              "Function element interpolation points not "
-              "equal to Expression interpolation points");
-        }
-      }
-    }
-
-    // Array to hold evaluated Expression
-    std::size_t num_cells = cells0.size();
-    std::size_t num_points = e0.X().second[0];
-    std::vector<value_type> fdata(num_cells * num_points * value_size);
-    md::mdspan<const value_type, md::dextents<std::size_t, 3>> f(
-        fdata.data(), num_cells, num_points, value_size);
-
-    // Evaluate Expression at points
-    std::vector<std::int32_t> _cells0(cells0.begin(), cells0.end());
-    tabulate_expression(std::span(fdata), e0, *mesh0,
-                        md::mdspan(_cells0.data(), _cells0.size()));
-
-    // Reshape evaluated data to fit interpolate.
-    // Expression returns matrix of shape (num_cells, num_points *
-    // value_size), i.e. xyzxyz ordering of dof values per cell per
-    // point. The interpolation uses xxyyzz input, ordered for all
-    // points of each cell, i.e. (value_size, num_cells*num_points).
-    std::vector<value_type> fdata1(num_cells * num_points * value_size);
-    md::mdspan<value_type, md::dextents<std::size_t, 3>> f1(
-        fdata1.data(), value_size, num_cells, num_points);
-    for (std::size_t i = 0; i < f.extent(0); ++i)
-      for (std::size_t j = 0; j < f.extent(1); ++j)
-        for (std::size_t k = 0; k < f.extent(2); ++k)
-          f1(k, i, j) = f(i, j, k);
-
-    // Interpolate values into appropriate space
-    fem::interpolate(*this,
-                     std::span<const value_type>(fdata1.data(), fdata1.size()),
-                     {value_size, num_cells * num_points}, cells1);
-  }
-
-  /// @brief Interpolate an Expression over a subset of cells.
-  ///
-  /// @param[in] e0 Expression to be interpolated. The Expression must
-  /// have been created using the reference coordinates created by
-  /// FiniteElement::interpolation_points for the element associated
-  /// with `this`.
-  /// @param[in] cells Cells in the mesh associated with `e0` to
-  /// interpolate from if `e0` has Function coefficients. If no mesh can
-  /// be associated with `e0` then the mesh associated with `this` is used.
-  void interpolate(const Expression<value_type, geometry_type>& e0,
-                   mesh::CellRange auto&& cells)
-  {
-    interpolate(e0, cells, cells);
-  }
-
-  /// @brief Interpolate an Expression on all cells.
-  ///
-  /// @param[in] e Expression to be interpolated.
-  /// @pre If a mesh is associated with Function coefficients of `e`, it
-  /// must be the same as the mesh::Mesh associated with `this`.
-  void interpolate(const Expression<value_type, geometry_type>& e)
-  {
-    assert(_function_space);
-    assert(_function_space->mesh());
-    int tdim = _function_space->mesh()->topology()->dim();
-    auto map = _function_space->mesh()->topology()->index_map(tdim);
-    assert(map);
-    interpolate(
-        e, std::ranges::iota_view(0, map->size_local() + map->num_ghosts()));
   }
 
   /// @brief Interpolate a Function defined on a different mesh.

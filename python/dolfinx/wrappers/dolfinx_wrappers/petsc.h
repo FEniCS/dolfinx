@@ -26,7 +26,6 @@
 #include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/fem/sparsitybuild.h>
-#include <dolfinx/fem/utils.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
