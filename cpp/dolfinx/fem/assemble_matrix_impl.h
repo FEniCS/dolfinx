@@ -612,15 +612,18 @@ void assemble_interior_facets_matrix(
                           dmap1_size)
               : std::span<const std::int32_t>();
 
-    std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
-    std::ranges::copy(dmap1_cell1, std::next(dmapjoint1.begin(), dmap1_size));
-
-    // Check for BCs on column space
+    // Check for BCs on column space. The per-cell dofmaps are tested
+    // rather than the joint one: a side absent from the trial function
+    // domain leaves its half of the joint buffer holding the previous
+    // facet's dofs, which would spuriously run the kernel.
     if constexpr (LiftingMode)
     {
-      if (!has_bc(dmapjoint1, bc1, bs1))
+      if (!has_bc(dmap1_cell0, bc1, bs1) and !has_bc(dmap1_cell1, bc1, bs1))
         continue;
     }
+
+    std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
+    std::ranges::copy(dmap1_cell1, std::next(dmapjoint1.begin(), dmap1_size));
 
     // Tabulate tensor
     std::ranges::fill(Ab, T(0));
