@@ -271,9 +271,9 @@ void assemble_entities_vector(
 /// that don't exist in the test function domain should be marked with
 /// -1 in the facet indices list.
 /// @param[in] kernel Kernel function to execute over each cell.
-/// @param[in] constants The constant data
-/// @param[in] coeffs Coefficient data array, withshape (cells.size(),
-/// cstride).
+/// @param[in] constants Constant data.
+/// @param[in] coeffs Coefficient data array of shape
+/// `(facets.extent(0), 2, cstride)`.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
 /// @param[in] be_b Buffer for local element vector. Size must be

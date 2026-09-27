@@ -29,6 +29,20 @@ namespace dolfinx::fem::impl
 /// allocation. It may be called over only a small number of cells, so
 /// a per-call allocation would not be amortized. The buffer must be
 /// sized by the caller and passed in via `cdofs_b`.
+///
+/// @tparam T Scalar type.
+/// @tparam XD Geometry dofmap type.
+/// @tparam U Geometry (coordinate) scalar type.
+/// @param[in] geometry Mesh geometry dofmap and coordinates.
+/// @param[in] cells Cell indices to execute the kernel over. These are
+/// the indices into the geometry dofmap.
+/// @param[in] kernel Kernel function to execute over each cell.
+/// @param[in] constants Constant data.
+/// @param[in] coeffs Coefficient data array of shape `(cells.size(),
+/// cstride)`.
+/// @param[in] cdofs_b Buffer for local element geometry. Size must be
+/// exactly `3 * geometry.dofmap.extent(1)`.
+/// @return Sum of the kernel's contributions over `cells`.
 template <dolfinx::scalar T, MDSpan2Int32 XD, std::floating_point U>
 T assemble_cells_scalar(
     GeometryPack<XD, U> geometry, const IndexList auto& cells,
@@ -76,6 +90,22 @@ T assemble_cells_scalar(
 /// allocation. It may be called over only a small number of entities,
 /// so a per-call allocation would not be amortized. The buffer must
 /// be sized by the caller and passed in via `cdofs_b`.
+///
+/// @tparam T Scalar type.
+/// @tparam XD Geometry dofmap type.
+/// @tparam U Geometry (coordinate) scalar type.
+/// @param[in] geometry Mesh geometry dofmap and coordinates.
+/// @param[in] entities Entities (in the integration domain mesh) to
+/// execute the kernel over, as (cell, local entity index) pairs.
+/// @param[in] kernel Kernel function to execute over each entity.
+/// @param[in] constants Constant data.
+/// @param[in] coeffs Coefficient data array of shape
+/// `(entities.extent(0), cstride)`.
+/// @param[in] perms Entity permutation integer. Empty if entity
+/// permutations are not required.
+/// @param[in] cdofs_b Buffer for local element geometry. Size must be
+/// exactly `3 * geometry.dofmap.extent(1)`.
+/// @return Sum of the kernel's contributions over `entities`.
 template <dolfinx::scalar T, MDSpan2Int32 XD, std::floating_point U>
 T assemble_entities_scalar(
     GeometryPack<XD, U> geometry,
@@ -121,6 +151,23 @@ T assemble_entities_scalar(
 /// allocation. It may be called over only a small number of facets,
 /// so a per-call allocation would not be amortized. The buffer must
 /// be sized by the caller and passed in via `cdofs_b`.
+///
+/// @tparam T Scalar type.
+/// @tparam XD Geometry dofmap type.
+/// @tparam U Geometry (coordinate) scalar type.
+/// @param[in] geometry Mesh geometry dofmap and coordinates.
+/// @param[in] facets Facets (in the integration domain mesh) to execute
+/// the kernel over, as a (cell, local facet index) pair for each of the
+/// two attached cells.
+/// @param[in] kernel Kernel function to execute over each facet.
+/// @param[in] constants Constant data.
+/// @param[in] coeffs Coefficient data array of shape
+/// `(facets.extent(0), 2, cstride)`.
+/// @param[in] perms Facet permutation integer. Empty if facet
+/// permutations are not required.
+/// @param[in] cdofs_b Buffer for local element geometry. Size must be
+/// exactly `2 * 3 * geometry.dofmap.extent(1)`.
+/// @return Sum of the kernel's contributions over `facets`.
 template <dolfinx::scalar T, MDSpan2Int32 XD, std::floating_point U>
 T assemble_interior_facets_scalar(
     GeometryPack<XD, U> geometry,
@@ -168,7 +215,20 @@ T assemble_interior_facets_scalar(
   return value;
 }
 
-/// Assemble functional into an scalar with provided mesh geometry.
+/// @brief Assemble functional into a scalar, with the mesh geometry
+/// provided.
+///
+/// @tparam T Scalar type.
+/// @tparam U Geometry (coordinate) scalar type.
+/// @param[in] M Functional to assemble.
+/// @param[in] x_dofmap Dofmap for the mesh geometry.
+/// @param[in] x Mesh coordinates.
+/// @param[in] constants Packed constants that appear in `M`.
+/// @param[in] coefficients Packed coefficients that appear in `M`.
+/// @param[in] cell_type_idx Index of the cell type to assemble over.
+/// @return Contribution to the functional from this cell type on the
+/// local process. The caller accumulates over cell types and across
+/// processes.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_scalar(
     const fem::Form<T, U>& M, mdspan2_t x_dofmap,
