@@ -286,20 +286,23 @@ jobs:
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
           CIBW_TEST_COMMAND_MACOS: >
             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}" &&
-            cd {project}/dolfinx/python &&
             sysctl -n hw.ncpu hw.logicalcpu ;
             python -m cProfile -o /tmp/prof.out -m pytest -q -p no:cacheprovider --durations=5
-            -k "2-hexahedron-AAE" test/unit/fem/test_dof_permuting.py & PROFPID=$! ;
+            -k "2-hexahedron-AAE" {project}/dolfinx/python/test/unit/fem/test_dof_permuting.py & PROFPID=$! ;
             echo "backgrounded python pid=$PROFPID" ; ps -p $PROFPID -o pid,comm ;
-            sleep 75 ;
-            sudo /usr/bin/sample $PROFPID 20 -file /tmp/sample.txt || echo "SAMPLE FAILED" ;
+            sleep 40 ;
+            sudo /usr/bin/sample $PROFPID 30 -file /tmp/sample.txt 2>&1 || echo "SAMPLE FAILED" ;
+            sleep 30 ;
+            sudo /usr/bin/sample $PROFPID 20 -file /tmp/sample2.txt 2>&1 || echo "SAMPLE2 FAILED" ;
             wait $PROFPID ; echo "pytest exit=$?" ;
             echo "=== cProfile: top 45 by cumulative ===" ;
             python -c "import pstats;pstats.Stats('/tmp/prof.out').sort_stats('cumulative').print_stats(45)" ;
             echo "=== cProfile: top 30 by tottime ===" ;
             python -c "import pstats;pstats.Stats('/tmp/prof.out').sort_stats('tottime').print_stats(30)" ;
-            echo "=== native sample (macOS sample, includes C++ frames) ===" ;
-            sed -n '1,200p' /tmp/sample.txt
+            echo "=== native sample 1 (macOS sample, includes C++ frames) ===" ;
+            sed -n '1,160p' /tmp/sample.txt ;
+            echo "=== native sample 2 ===" ;
+            sed -n '1,120p' /tmp/sample2.txt
 
       - name: Update temporary simple503 repository (Linux)
         if: runner.os == 'Linux'
