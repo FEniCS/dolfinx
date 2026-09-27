@@ -223,19 +223,23 @@ void mesh(nb::module_& m)
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
            nb::arg("dim"), nb::arg("num_threads"))
       .def("create_entity_permutations",
-           &dolfinx::mesh::Topology::create_entity_permutations,
+           &dolfinx::mesh::Topology::create_entity_permutations, nb::arg("dim"),
+           nb::arg("num_threads"))
+      .def("create_cell_permutations",
+           &dolfinx::mesh::Topology::create_cell_permutations,
            nb::arg("num_threads"))
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity,
            nb::arg("d0"), nb::arg("d1"))
       .def(
-          "get_facet_permutations",
-          [](const dolfinx::mesh::Topology& self)
+          "get_entity_permutations",
+          [](const dolfinx::mesh::Topology& self, int dim)
           {
-            const std::vector<std::uint8_t>& p = self.get_facet_permutations();
+            const std::vector<std::uint8_t>& p
+                = self.get_entity_permutations(dim);
             return nb::ndarray<const std::uint8_t, nb::numpy>(p.data(),
                                                               {p.size()});
           },
-          nb::rv_policy::reference_internal)
+          nb::arg("dim"), nb::rv_policy::reference_internal)
       .def(
           "get_cell_permutation_info",
           [](const dolfinx::mesh::Topology& self)

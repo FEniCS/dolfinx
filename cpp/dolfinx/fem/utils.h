@@ -707,27 +707,7 @@ Form<T, U> create_form_factory(
     for (IntegralType itg_type : {IntegralType::exterior_facet,
                                   IntegralType::vertex, IntegralType::ridge})
     {
-      std::size_t dim;
-      switch (itg_type)
-      {
-      case IntegralType::exterior_facet:
-      {
-        dim = tdim - 1;
-        break;
-      }
-      case IntegralType::ridge:
-      {
-        dim = tdim - 2;
-        break;
-      }
-      case IntegralType::vertex:
-      {
-        dim = 0;
-        break;
-      }
-      default:
-        throw std::invalid_argument("Unsupported integral type");
-      }
+      const std::size_t dim = integral_entity_dim(itg_type, tdim);
 
       const std::function<std::vector<std::int32_t>(const mesh::Topology&,
                                                     IntegralType)>
@@ -1099,7 +1079,8 @@ mesh::Mesh<T> interpolate_geometry(
       new_cmap.variant(), basix::element::dpc_variant::unset,
       new_cmap.is_discontinuous());
   auto element = std::make_shared<const FiniteElement<T>>(
-      b_element, std::vector<std::size_t>{static_cast<std::size_t>(gdim)});
+      b_element, gdim,
+      std::vector<std::size_t>{static_cast<std::size_t>(gdim)});
 
   FunctionSpace<T> V = create_functionspace(mesh, element, reorder_fn);
 

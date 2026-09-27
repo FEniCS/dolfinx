@@ -96,7 +96,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
-    mesh->topology_mutable()->create_entity_permutations();
+    mesh->topology_mutable()->create_cell_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
@@ -175,6 +175,24 @@ template <std::floating_point T>
 bool is_cellwise(const fem::FiniteElement<T>& e)
 {
   return e.space_dimension() / e.block_size() == 1;
+}
+
+/// @brief Do two elements share a base element, ignoring any blocking?
+///
+/// VTK and VTX store a blocked field and its scalar base element
+/// identically, so a scalar and a vector Lagrange space of the same
+/// degree are interchangeable for output.
+/// fem::FiniteElement::operator== is stricter: it also compares value
+/// shapes, and so separates those two.
+///
+/// @throws std::invalid_argument if either element has no Basix
+/// element, i.e. is mixed or a quadrature element, matching what
+/// fem::FiniteElement::operator== did here previously.
+template <std::floating_point T>
+bool same_base_element(const fem::FiniteElement<T>& e0,
+                       const fem::FiniteElement<T>& e1)
+{
+  return e0.basix_element() == e1.basix_element();
 }
 
 } // namespace impl

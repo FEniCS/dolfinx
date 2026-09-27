@@ -7,13 +7,19 @@
 #include "graphbuild.h"
 #include "cell_types.h"
 #include <algorithm>
+#include <array>
 #include <boost/sort/sort.hpp>
+#include <cassert>
+#include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
+#include <iterator>
+#include <limits>
 #include <mpi.h>
 #include <numeric>
 #include <optional>
@@ -241,6 +247,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm comm_po_post;
+  dest.reserve(1);
   MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &comm_po_post);

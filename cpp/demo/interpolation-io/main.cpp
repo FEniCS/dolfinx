@@ -61,7 +61,8 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-      mesh, std::make_shared<fem::FiniteElement<U>>(e)));
+      mesh,
+      std::make_shared<fem::FiniteElement<U>>(e, mesh->geometry().dim())));
 
   // Create a finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
@@ -113,7 +114,8 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
 
   // Create a Nedelec function space
   auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-      mesh, std::make_shared<fem::FiniteElement<U>>(e)));
+      mesh,
+      std::make_shared<fem::FiniteElement<U>>(e, mesh->geometry().dim())));
 
   // Create a Nedelec finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
@@ -184,7 +186,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   auto V_l
       = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
           mesh, std::make_shared<fem::FiniteElement<U>>(
-                    e_l, std::vector<std::size_t>{2})));
+                    e_l, mesh->geometry().dim(), std::vector<std::size_t>{2})));
 
   auto u_l = std::make_shared<fem::Function<T>>(V_l);
 

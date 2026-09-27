@@ -8,9 +8,11 @@
 
 #include <array>
 #include <basix/cell.h>
+#include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>

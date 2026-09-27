@@ -17,6 +17,7 @@
 #include <complex>
 #include <concepts>
 #include <cstdint>
+#include <format>
 #include <iterator>
 #include <numeric>
 #include <ranges>
@@ -841,6 +842,23 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
   int err
       = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm0);
   dolfinx::MPI::check_error(comm0, err);
+
+#ifndef NDEBUG
+  {
+    int invalid_local = !std::ranges::all_of(indices, [shape0](std::int64_t i)
+                                             { return i >= 0 and i < shape0; });
+    int invalid = 0;
+    err = MPI_Allreduce(&invalid_local, &invalid, 1, MPI_INT, MPI_MAX, comm0);
+    dolfinx::MPI::check_error(comm0, err);
+    if (invalid)
+    {
+      throw std::out_of_range(
+          std::format("distribute_data: index outside the global row range "
+                      "[0, {}) of the distributed data.",
+                      shape0));
+    }
+  }
+#endif
 
   std::int64_t rank_offset = -1;
   if (comm1 != MPI_COMM_NULL)

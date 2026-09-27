@@ -1321,8 +1321,8 @@ def test_submesh_interpolation_mapped(ghost_mode):
     sub_cells = locate_entities(domain, tdim, lambda x: x[0] <= 0.5 + eps)
 
     submesh, sub_to_parent = create_submesh(domain, tdim, sub_cells)[:2]
-    submesh.topology.create_entity_permutations()
-    domain.topology.create_entity_permutations()
+    submesh.topology.create_cell_permutations()
+    domain.topology.create_cell_permutations()
 
     smsh_cell_imap = submesh.topology.index_map(tdim)
     smsh_cells = np.arange(smsh_cell_imap.size_local + smsh_cell_imap.num_ghosts)

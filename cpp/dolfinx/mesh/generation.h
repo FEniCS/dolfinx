@@ -16,12 +16,17 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <dolfinx/common/Timer.h>
+#include <dolfinx/common/local_range.h>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <limits>
 #include <mpi.h>
 #include <optional>
+#include <span>
 #include <stdexcept>
+#include <tuple>
 #include <utility>
 #include <vector>
 

@@ -64,6 +64,8 @@ struct scalar_classes
   static_assert(nothrow_move_c<fem::Constant<T>>);
   static_assert(nothrow_move_c<fem::DirichletBC<T>>);
   static_assert(nothrow_move_c<fem::Expression<T>>);
+  // Form's move constructor is explicitly noexcept: MSVC's std::map
+  // move constructor isn't noexcept (see Form.h).
   static_assert(nothrow_move_c<fem::Form<T>>);
   static_assert(nothrow_move_c<fem::Function<T>>);
   static_assert(nothrow_move_c<la::MatrixCSR<T>>);
@@ -125,6 +127,7 @@ static_assert(nothrow_move_c<common::IndexMap>);
 static_assert(nothrow_move_c<common::Scatterer<>>);
 static_assert(nothrow_move_c<dolfinx::MPI::Comm>);
 static_assert(nothrow_move_c<dolfinx::MPI::Datatype<double>>);
+// Explicitly noexcept, see Table.h.
 static_assert(nothrow_move_c<dolfinx::Table>);
 static_assert(nothrow_move_c<common::Timer<>>);
 static_assert(nothrow_move_c<fem::DofMap>);
@@ -135,6 +138,7 @@ static_assert(nothrow_move_c<io::VTKFile>);
 static_assert(nothrow_move_c<io::XDMFFile>);
 static_assert(nothrow_move_c<la::SparsityPattern>);
 static_assert(nothrow_move_c<mesh::EntityMap>);
+// Explicitly noexcept, see Topology.h.
 static_assert(nothrow_move_c<mesh::Topology>);
 
 static_assert(nothrow_move_a<common::IndexMap>);

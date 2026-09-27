@@ -118,6 +118,7 @@ from dolfinx.fem.petsc import (
     apply_lifting,
     assemble_matrix,
     assemble_vector,
+    create_matrix,
     create_vector,
     set_bc,
 )
@@ -215,6 +216,29 @@ a_p_ufl: list[list[ufl.Form | None]] = [[a_ufl[0][0], None], [None, a_p11_ufl]]
 a_p11 = form(a_p11_ufl)
 a_p: list[list[Form | None]] = form(a_p_ufl)  # type: ignore[assignment]
 
+# Omit zero entries to reduce storage. This is safe because these
+# matrices are assembled once. For re-assembly, enable the option after
+# the first assembly so that initially zero entries remain in the pattern.
+
+
+# +
+def ignore_zero_entries(A: PETSc.Mat) -> PETSc.Mat:
+    """Let PETSc drop zero-valued insertions into ``A``."""
+    if A.getType() == PETSc.Mat.Type.NEST:
+        # MATNEST does not support this option; apply it to each block.
+        nrow, ncol = A.getNestSize()
+        for i in range(nrow):
+            for j in range(ncol):
+                Aij = A.getNestSubMatrix(i, j)
+                if Aij.handle != 0:
+                    Aij.setOption(PETSc.Mat.Option.IGNORE_ZERO_ENTRIES, True)  # type: ignore[arg-type]
+    else:
+        A.setOption(PETSc.Mat.Option.IGNORE_ZERO_ENTRIES, True)  # type: ignore[arg-type]
+    return A
+
+
+# -
+
 
 # ### High-level nested matrix solver
 #
@@ -274,6 +298,10 @@ def nested_iterative_solver_high_level():
     P00.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
     P11.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
+    # LinearProblem assembles the operators during solve.
+    ignore_zero_entries(problem.A)
+    ignore_zero_entries(problem.P_mat)
+
     u_h, p_h = problem.solve()
     assert problem.solver.getConvergedReason() > 0  # type: ignore[operator]
     # Because left-hand side operator is only assembled during solve
@@ -305,7 +333,8 @@ def nested_iterative_solver_low_level():
     Used low-level DOLFINx routines.
     """
     # Assemble nested matrix operators
-    A = assemble_matrix(a, bcs=bcs, kind="nest")
+    A = ignore_zero_entries(create_matrix(a, kind="nest"))
+    assemble_matrix(A, a, bcs=bcs)
     A.assemble()
 
     # Create a nested matrix P to use as the preconditioner. The
@@ -420,9 +449,11 @@ def block_operators():
     """Block operators and block RHS vector for the Stokes problem."""
     # Assembler matrix operator, preconditioner and RHS vector into
     # single objects but preserving block structure
-    A = assemble_matrix(a, bcs=bcs)
+    A = ignore_zero_entries(create_matrix(a))
+    assemble_matrix(A, a, bcs=bcs)
     A.assemble()
-    P = assemble_matrix(a_p, bcs=bcs)
+    P = ignore_zero_entries(create_matrix(a_p))
+    assemble_matrix(P, a_p, bcs=bcs)
     P.assemble()
 
     b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
@@ -606,7 +637,8 @@ def mixed_direct():
     L = form(ufl.inner(f, v) * ufl.dx)
 
     # Assemble LHS matrix and RHS vector
-    A = assemble_matrix(a, bcs=bcs)
+    A = ignore_zero_entries(create_matrix(a))
+    assemble_matrix(A, a, bcs=bcs)
     A.assemble()
     b = assemble_vector(L)
 

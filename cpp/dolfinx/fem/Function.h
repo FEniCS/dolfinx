@@ -507,8 +507,10 @@ public:
     assert(element);
     const int bs_element = element->block_size();
     const std::size_t reference_value_size = element->reference_value_size();
-    const std::size_t value_size
-        = _function_space->element()->reference_value_size();
+    // Size of the push-forward output for one block. On a manifold a
+    // Piola-mapped element has gdim physical components and only tdim
+    // reference ones.
+    const std::size_t value_size = element->physical_base_value_size();
     const std::size_t space_dimension = element->space_dimension() / bs_element;
 
     // If the space has sub elements, concatenate the evaluations on the
@@ -531,7 +533,7 @@ public:
     std::span<const std::uint32_t> cell_info;
     if (element->needs_dof_transformations())
     {
-      mesh->topology_mutable()->create_entity_permutations();
+      mesh->topology_mutable()->create_cell_permutations();
       cell_info = std::span(mesh->topology()->get_cell_permutation_info());
     }
 

@@ -52,7 +52,7 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
   if (element->needs_dof_transformations())
   {
     auto mesh = coefficient.function_space()->mesh();
-    mesh->topology_mutable()->create_entity_permutations();
+    mesh->topology_mutable()->create_cell_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 

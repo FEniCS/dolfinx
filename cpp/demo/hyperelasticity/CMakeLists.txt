@@ -10,13 +10,12 @@ if(PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
 endif()
 
-# Included by path, as putting DOLFINX_DIR on CMAKE_MODULE_PATH lets the
-# installed FindUFCx.cmake shadow the ufcx CONFIG package on
-# case-insensitive filesystems.
 if(DOLFINX_DIR)
-  include("${DOLFINX_DIR}/DolfinxDemo.cmake")
-else()
-  include(DolfinxDemo)
+  list(APPEND CMAKE_MODULE_PATH ${DOLFINX_DIR})
+endif()
+include(DolfinxDemo)
+if(DOLFINX_DIR)
+  list(REMOVE_ITEM CMAKE_MODULE_PATH ${DOLFINX_DIR})
 endif()
 
 dolfinx_add_demo(hyperelasticity UFL hyperelasticity.py NO_COMPLEX)

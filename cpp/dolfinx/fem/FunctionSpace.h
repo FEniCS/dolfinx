@@ -304,7 +304,7 @@ public:
       std::span<const std::uint32_t> cell_info;
       if (_elements[i]->needs_dof_transformations())
       {
-        _mesh->topology_mutable()->create_entity_permutations();
+        _mesh->topology_mutable()->create_cell_permutations();
         cell_info = std::span(_mesh->topology()->get_cell_permutation_info());
       }
 

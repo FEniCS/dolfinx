@@ -184,7 +184,7 @@ void tabulate_expression(
     num_argument_dofs = element->second;
     if (element->first.get().needs_dof_transformations())
     {
-      mesh.topology_mutable()->create_entity_permutations();
+      mesh.topology_mutable()->create_cell_permutations();
       cell_info = std::span(topology->get_cell_permutation_info());
       post_dof_transform
           = element->first.get().template dof_transformation_right_fn<T>(
@@ -196,12 +196,12 @@ void tabulate_expression(
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
   if constexpr (std::remove_cvref_t<decltype(entities)>::rank() == 2)
   {
+    const int facet_dim = mesh.topology()->dim() - 1;
     mesh::CellType cell_type = mesh.topology()->cell_types()[0];
-    int num_facets_per_cell
-        = mesh::cell_num_entities(cell_type, mesh.topology()->dim() - 1);
-    mesh.topology_mutable()->create_entity_permutations();
+    int num_facets_per_cell = mesh::cell_num_entities(cell_type, facet_dim);
+    mesh.topology_mutable()->create_entity_permutations(facet_dim);
     const std::vector<std::uint8_t>& p
-        = mesh.topology()->get_facet_permutations();
+        = mesh.topology()->get_entity_permutations(facet_dim);
     facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
                              num_facets_per_cell);
   }

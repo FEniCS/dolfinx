@@ -61,7 +61,7 @@ fem::DofMap fem::create_dofmap(
   if (permute_inv)
   {
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
-    topology.create_entity_permutations();
+    topology.create_cell_permutations();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
     int dim = layout.num_dofs();
@@ -117,7 +117,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
           "DOF transformations not yet supported in mixed topology.");
     }
     std::int32_t num_cells = topology.connectivity(D, 0)->num_nodes();
-    topology.create_entity_permutations();
+    topology.create_cell_permutations();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
     std::int32_t dim = layouts.front().num_dofs();
@@ -157,28 +157,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
 {
   const int tdim = topology.dim();
 
-  int dim = -1;
-  switch (integral_type)
-  {
-  case IntegralType::cell:
-    dim = tdim;
-    break;
-  case IntegralType::exterior_facet:
-    dim = tdim - 1;
-    break;
-  case IntegralType::interior_facet:
-    dim = tdim - 1;
-    break;
-  case IntegralType::vertex:
-    dim = 0;
-    break;
-  case IntegralType::ridge:
-    dim = tdim - 2;
-    break;
-  default:
-    throw std::invalid_argument(
-        "Cannot compute integration domains. Integral type not supported.");
-  }
+  const int dim = integral_entity_dim(integral_type, tdim);
 
   {
     // Create span of the owned entities (leaves off any ghosts)

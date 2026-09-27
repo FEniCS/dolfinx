@@ -5,10 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "cell_types.h"
-#include <algorithm>
 #include <basix/cell.h>
 #include <cassert>
-#include <cfloat>
 #include <cstdlib>
 #include <format>
 #include <stdexcept>
