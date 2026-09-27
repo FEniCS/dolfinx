@@ -14,7 +14,6 @@ subdomain solves singular.
 """
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 import pytest
@@ -29,7 +28,6 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.fem.petsc import LinearProblem, assemble_matrix
 from dolfinx.mesh import (
     CellType,
     GhostMode,
@@ -63,6 +61,8 @@ def test_bddc_poisson_shared_bc_dofs():
     P1 puts degrees of freedom at vertices, so wherever a subdomain
     interface meets the boundary the Dirichlet dof is shared.
     """
+    from dolfinx.fem.petsc import LinearProblem
+
     msh = _mesh()
     V = functionspace(msh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -122,6 +122,8 @@ def test_bddc_component_wise_bc():
     and leaves the other free, so the boundary condition cannot be
     handled by dropping the whole node from the local space.
     """
+    from dolfinx.fem.petsc import LinearProblem
+
     msh = _mesh()
     V = functionspace(msh, ("Lagrange", 1, (2,)))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -177,6 +179,10 @@ def test_matis_bc_diagonal_matches_aij():
     contributions sum to the requested value, independently of how many
     processes share the degree of freedom.
     """
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_matrix
+
     msh = _mesh(8)
     V = functionspace(msh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
