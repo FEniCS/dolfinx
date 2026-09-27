@@ -1,14 +1,19 @@
 #=============================================================================
 # - Try to find ParMETIS
-# Once done this will define
 #
-#  PARMETIS_FOUND        - system has ParMETIS
-#  PARMETIS_INCLUDE_DIRS - include directories for ParMETIS
-#  PARMETIS_LIBRARIES    - libraries for ParMETIS
-#  PARMETIS_VERSION      - version for ParMETIS
+# Once done this will define:
+#
+#  ParMETIS_FOUND   - system has ParMETIS
+#  ParMETIS_VERSION - version of ParMETIS
+#
+# and the imported targets:
+#
+#  ParMETIS::ParMETIS
+#  GKLib::GKLib (if found)
+#  METIS::METIS (if found)
 #
 #=============================================================================
-# Copyright (C) 2010 Garth N. Wells, Anders Logg and Johannes Ring
+# Copyright (C) 2026 Garth N. Wells, Anders Logg, Johannes Ring, Jack S. Hale
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,131 +41,148 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-if(MPI_CXX_FOUND)
-  find_library(
-    PARMETIS_LIBRARY parmetis
-    DOC "Directory where the ParMETIS library is located."
-  )
+include(FindPackageHandleStandardArgs)
+include(CMakePushCheckState)
+include(CheckCXXSourceCompiles)
 
-  find_path(
-    PARMETIS_INCLUDE_DIRS parmetis.h
-    DOC "Directory where the ParMETIS header files are located."
-  )
+find_package(MPI 3 REQUIRED COMPONENTS CXX)
 
-  find_library(
-    METIS_LIBRARY metis
-    DOC "Directory where the METIS library is located."
-  )
+find_library(PARMETIS_LIBRARY parmetis DOC "Path to the ParMETIS library.")
 
-  # Newer METIS and ParMETIS build against separate GKLib
-  find_library(
-    GKLIB_LIBRARY gklib
-    DOC "Directory where the gklib library is located."
-  )
+find_path(
+  PARMETIS_INCLUDE_DIR
+  parmetis.h
+  DOC "Directory where the ParMETIS header files are located."
+)
 
-  set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY})
-  if(METIS_LIBRARY)
-    set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARIES} ${METIS_LIBRARY})
-  endif()
-  if(GKLIB_LIBRARY)
-    set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARIES} ${METIS_LIBRARY}
-                           ${GKLIB_LIBRARY}
-    )
-  endif()
+find_library(METIS_LIBRARY metis DOC "Path to the METIS library.")
 
-  # Try compiling and running test program
-  if(DOLFINX_SKIP_BUILD_TESTS)
-    set(PARMETIS_TEST_RUNS TRUE)
-    set(PARMETIS_VERSION "UNKNOWN")
-    set(PARMETIS_VERSION_OK TRUE)
-  elseif(PARMETIS_INCLUDE_DIRS AND PARMETIS_LIBRARY)
+# Newer METIS and ParMETIS build against separate GKLib
+find_library(GKLIB_LIBRARY gklib DOC "Path to the gklib library.")
 
-    # Set flags for building test program
-    set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIRS}
-                                ${MPI_CXX_INCLUDE_PATH}
-    )
-    set(CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARIES} ${MPI_CXX_LIBRARIES})
-    set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
+# Build the list of link libraries for the compile/link test
+set(_parmetis_link_libraries ${PARMETIS_LIBRARY})
+if(METIS_LIBRARY)
+  list(APPEND _parmetis_link_libraries ${METIS_LIBRARY})
+endif()
+if(GKLIB_LIBRARY)
+  list(APPEND _parmetis_link_libraries ${GKLIB_LIBRARY})
+endif()
 
-    # Check ParMETIS version
-    set(PARMETIS_CONFIG_TEST_VERSION_CPP
-        "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/parmetis_config_test_version.cpp"
-    )
+# Identify the ParMETIS version from the header. Read rather than compiled
+# and run, so that it also works when cross-compiling.
+if(PARMETIS_INCLUDE_DIR)
+  set(ParMETIS_VERSION "")
+  foreach(part MAJOR MINOR SUBMINOR)
     file(
-      WRITE ${PARMETIS_CONFIG_TEST_VERSION_CPP}
-      "
-#define MPICH_IGNORE_CXX_SEEK 1
-#include <iostream>
-#include \"parmetis.h\"
-
-int main() {
-#ifdef PARMETIS_SUBMINOR_VERSION
-  std::cout << PARMETIS_MAJOR_VERSION << \".\"
-	    << PARMETIS_MINOR_VERSION << \".\"
-            << PARMETIS_SUBMINOR_VERSION;
-#else
-  std::cout << PARMETIS_MAJOR_VERSION << \".\"
-	    << PARMETIS_MINOR_VERSION;
-#endif
-  return 0;
-}
-"
+      STRINGS "${PARMETIS_INCLUDE_DIR}/parmetis.h"
+      _line
+      REGEX "^[ \t]*#[ \t]*define[ \t]+PARMETIS_${part}_VERSION[ \t]+[0-9]+"
     )
-
-    try_run(
-      PARMETIS_CONFIG_TEST_VERSION_EXITCODE
-      PARMETIS_CONFIG_TEST_VERSION_COMPILED ${CMAKE_CURRENT_BINARY_DIR}
-      ${PARMETIS_CONFIG_TEST_VERSION_CPP}
-      CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-                  "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
-      COMPILE_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_COMPILE_OUTPUT
-      RUN_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_OUTPUT
-    )
-
-    if(PARMETIS_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
-      set(PARMETIS_VERSION ${PARMETIS_CONFIG_TEST_VERSION_OUTPUT})
-      mark_as_advanced(PARMETIS_VERSION)
-    endif()
-
-    if(ParMETIS_FIND_VERSION)
-      # Check if version found is >= required version
-      if(NOT "${PARMETIS_VERSION}" VERSION_LESS "${ParMETIS_FIND_VERSION}")
-        set(PARMETIS_VERSION_OK TRUE)
+    if(_line MATCHES "PARMETIS_${part}_VERSION[ \t]+([0-9]+)")
+      if(ParMETIS_VERSION)
+        string(APPEND ParMETIS_VERSION ".${CMAKE_MATCH_1}")
+      else()
+        set(ParMETIS_VERSION "${CMAKE_MATCH_1}")
       endif()
-    else()
-      # No specific version requested
-      set(PARMETIS_VERSION_OK TRUE)
     endif()
-    mark_as_advanced(PARMETIS_VERSION_OK)
+    unset(_line)
+  endforeach()
+  if(NOT ParMETIS_VERSION)
+    message(
+      WARNING
+      "ParMETIS: no PARMETIS_*_VERSION in ${PARMETIS_INCLUDE_DIR}/parmetis.h."
+    )
+  endif()
+endif()
 
-    # Build and run test program
-    include(CheckCXXSourceRuns)
-    check_cxx_source_runs(
-      "
+# Build and run a functional test program
+if(DOLFINX_SKIP_BUILD_TESTS)
+  # skip
+elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
+  cmake_push_check_state(RESET)
+  set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR})
+  set(CMAKE_REQUIRED_LIBRARIES MPI::MPI_CXX ${_parmetis_link_libraries})
+  check_cxx_source_compiles(
+    "
 #define MPICH_IGNORE_CXX_SEEK 1
+#include <stddef.h>
 #include <mpi.h>
 #include <parmetis.h>
 
 int main()
 {
-  // FIXME: Find a simple but sensible test for ParMETIS
-
+  MPI_Init(NULL, NULL);
+  MPI_Comm comm = MPI_COMM_WORLD;
+  idx_t vtxdist[2] = {0, 1}, xadj[2] = {0, 0}, adjncy[1] = {0};
+  idx_t ncon = 1, nparts = 1, wgtflag = 0, numflag = 0, edgecut = 0;
+  idx_t options[3] = {0, 0, 0}, part[1] = {0};
+  real_t tpwgts[1] = {1.0}, ubvec[1] = {1.05};
+  ParMETIS_V3_PartKway(vtxdist, xadj, adjncy, NULL, NULL, &wgtflag, &numflag,
+                       &ncon, &nparts, tpwgts, ubvec, options, &edgecut, part, &comm);
+  MPI_Finalize();
   return 0;
 }
 "
-      PARMETIS_TEST_RUNS
-    )
-
+    PARMETIS_TEST_COMPILES
+  )
+  if(NOT PARMETIS_TEST_COMPILES AND NOT ParMETIS_FIND_QUIETLY)
+    message(WARNING "ParMETIS: Simple test executable did not compile.")
   endif()
+  cmake_pop_check_state()
 endif()
 
-# Standard package handling
+# Standard package handling. The version comes from the header, so it is
+# checked either way; DOLFINX_SKIP_BUILD_TESTS only drops the requirement
+# that the functional test program builds.
+set(_parmetis_required_vars PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR)
+if(NOT DOLFINX_SKIP_BUILD_TESTS)
+  list(APPEND _parmetis_required_vars PARMETIS_TEST_COMPILES)
+endif()
 find_package_handle_standard_args(
   ParMETIS
-  "ParMETIS could not be found/configured."
-  PARMETIS_LIBRARIES
-  PARMETIS_TEST_RUNS
-  PARMETIS_INCLUDE_DIRS
-  PARMETIS_VERSION
-  PARMETIS_VERSION_OK
+  REQUIRED_VARS ${_parmetis_required_vars}
+  VERSION_VAR ParMETIS_VERSION
+  HANDLE_VERSION_RANGE
+  FAIL_MESSAGE "ParMETIS could not be found/configured."
+)
+unset(_parmetis_required_vars)
+
+if(ParMETIS_FOUND AND NOT TARGET ParMETIS::ParMETIS)
+  if(METIS_LIBRARY AND NOT TARGET METIS::METIS)
+    add_library(METIS::METIS UNKNOWN IMPORTED)
+    set_target_properties(
+      METIS::METIS
+      PROPERTIES IMPORTED_LOCATION "${METIS_LIBRARY}"
+    )
+  endif()
+  if(GKLIB_LIBRARY AND NOT TARGET GKLib::GKLib)
+    add_library(GKLib::GKLib UNKNOWN IMPORTED)
+    set_target_properties(
+      GKLib::GKLib
+      PROPERTIES IMPORTED_LOCATION "${GKLIB_LIBRARY}"
+    )
+  endif()
+
+  add_library(ParMETIS::ParMETIS UNKNOWN IMPORTED)
+  set_target_properties(
+    ParMETIS::ParMETIS
+    PROPERTIES
+      IMPORTED_LOCATION "${PARMETIS_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${PARMETIS_INCLUDE_DIR}"
+  )
+  target_link_libraries(
+    ParMETIS::ParMETIS
+    INTERFACE
+      MPI::MPI_CXX
+      $<$<BOOL:${METIS_LIBRARY}>:METIS::METIS>
+      $<$<BOOL:${GKLIB_LIBRARY}>:GKLib::GKLib>
+  )
+endif()
+
+mark_as_advanced(
+  PARMETIS_LIBRARY
+  PARMETIS_INCLUDE_DIR
+  METIS_LIBRARY
+  GKLIB_LIBRARY
 )

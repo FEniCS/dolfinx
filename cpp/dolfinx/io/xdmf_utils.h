@@ -13,12 +13,14 @@
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
+#include <format>
+#include <iterator>
 #include <numeric>
 #include <pugixml.hpp>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -42,6 +44,7 @@ namespace mesh
 template <std::floating_point T>
 class Mesh;
 class Topology;
+enum class CellType : std::int8_t;
 } // namespace mesh
 
 namespace io::xdmf_utils
@@ -70,9 +73,9 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// TODO: Document
 template <typename T>
 void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
-                   const std::string& h5_path, std::span<const T> x,
+                   std::string_view h5_path, std::span<const T> x,
                    std::int64_t offset, const std::vector<std::int64_t>& shape,
-                   const std::string& number_type, bool use_mpi_io)
+                   std::string_view number_type, bool use_mpi_io)
 {
   // Add DataItem node
   assert(xml_node);
@@ -82,31 +85,34 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
   // Add dimensions attribute
   std::string dims;
   for (auto d : shape)
-    dims += std::to_string(d) + std::string(" ");
+    std::format_to(std::back_inserter(dims), "{} ", d);
   dims.pop_back();
   data_item_node.append_attribute("Dimensions") = dims.c_str();
 
   // Set type for topology data (needed by XDMF to prevent default to
   // float)
   if (!number_type.empty())
-    data_item_node.append_attribute("NumberType") = number_type.c_str();
+  {
+    data_item_node.append_attribute("NumberType")
+        = std::string(number_type).c_str();
+  }
 
   // Add format attribute
   if (h5_id < 0)
   {
     data_item_node.append_attribute("Format") = "XML";
     assert(shape.size() == 2);
-    std::ostringstream s;
-    s.precision(16);
+    std::string s;
     for (std::size_t i = 0; i < x.size(); ++i)
     {
-      if ((i + 1) % shape[1] == 0 and shape[1] != 0)
-        s << x.data()[i] << std::endl;
+      if constexpr (std::floating_point<T>)
+        std::format_to(std::back_inserter(s), "{:.16}", x.data()[i]);
       else
-        s << x.data()[i] << " ";
+        std::format_to(std::back_inserter(s), "{}", x.data()[i]);
+      s += ((i + 1) % shape[1] == 0 and shape[1] != 0) ? '\n' : ' ';
     }
 
-    data_item_node.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+    data_item_node.append_child(pugi::node_pcdata).set_value(s.c_str());
   }
   else
   {
@@ -118,7 +124,7 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
 
     // Add HDF5 filename and HDF5 internal path to XML file
     const std::string xdmf_path
-        = filename.string() + std::string(":") + h5_path;
+        = std::format("{}:{}", filename.string(), h5_path);
     data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
 
     // Compute data offset and range of values
@@ -214,8 +220,8 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     {
       if (shape_xml == shape_hdf5)
       {
-        range = dolfinx::MPI::local_range(mpi_rank, shape_hdf5[0],
-                                          dolfinx::MPI::size(comm));
+        range = common::local_range(mpi_rank, shape_hdf5[0],
+                                    dolfinx::MPI::size(comm));
       }
       else if (!shape_xml.empty() and shape_hdf5.size() == 1)
       {
@@ -231,8 +237,8 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
         }
 
         // Compute data range to read
-        range = dolfinx::MPI::local_range(mpi_rank, shape_xml[0],
-                                          dolfinx::MPI::rank(comm));
+        range = common::local_range(mpi_rank, shape_xml[0],
+                                    dolfinx::MPI::rank(comm));
         range[0] *= d;
         range[1] *= d;
       }
@@ -255,7 +261,8 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     }
   }
   else
-    throw std::runtime_error("Storage format \"" + format + "\" is unknown");
+    throw std::runtime_error(
+        std::format("Storage format \"{}\" is unknown", format));
 
   // Get dimensions for consistency (if available in DataItem node)
   if (shape_xml.empty())

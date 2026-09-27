@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "cell_types.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -22,6 +21,7 @@ class IndexMap;
 namespace dolfinx::mesh
 {
 class Topology;
+enum class CellType : std::int8_t;
 
 /// @brief Compute mesh entities of given topological dimension by
 /// computing cell-to-entity `(tdim, i) -> `(dim, entity_type)` and
@@ -31,24 +31,35 @@ class Topology;
 /// Computed entities are oriented such that their local (to the
 /// process) orientation agrees with their global orientation
 ///
+/// @note Collective.
+///
 /// @param[in] topology Mesh topology.
 /// @param[in] dim Dimension of the entities to create.
 /// @param[in] entity_type Entity type in dimension `dim` to create.
 /// Entity type must be in the list returned by Topology::entity_types.
+/// @param[in] num_threads Number of threads to use for entity creation.
+/// Must be >= 1.
+///
 /// @return Tuple of (cell->entity connectivity, entity->vertex
 /// connectivity, index map for created entities, list of interprocess
 /// entities). Interprocess entities lie on the "true" boundary between
-/// owned cells of each process. If entities of type `entity_type`
-/// already exists, then {nullptr, nullptr, nullptr, std::vector()} is
-/// returned.
+/// owned cells of each process. If `dim` is 0, or if entities of type
+/// `entity_type` already exist, then {std::vector(), nullptr, nullptr,
+/// std::vector()} is returned.
 std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
-compute_entities(const Topology& topology, int dim, CellType entity_type);
+compute_entities(const Topology& topology, int dim, CellType entity_type,
+                 int num_threads = 1);
 
 /// @brief Compute connectivity (d0 -> d1) for given pair of entity
 /// types, given by topological dimension and index, as found in
 /// `Topology::entity_types()`
+///
+/// @note Not collective.
+/// @pre Entities of dimension `d0[0]` and `d1[0]` must already exist
+/// (see Topology::create_entities).
+///
 /// @param[in] topology The topology
 /// @param[in] d0 Dimension and index of the entities, `(dim0, i)`.
 /// @param[in] d1 Dimension and index of the incident entities, `(dim1,

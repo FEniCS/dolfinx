@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for the FunctionSpace class"""
+"""Unit tests for the FunctionSpace class."""
 
 from mpi4py import MPI
 
@@ -99,12 +99,17 @@ def test_equality(V, V2, W, W2):
 def test_sub(Q, W):
     X = Q.sub(0)
 
+    with pytest.raises(IndexError):
+        Q._cpp_object.sub([Q.num_sub_spaces])
+
     assert W.dofmap.dof_layout.num_dofs == X.dofmap.dof_layout.num_dofs
     for dim, entity_count in enumerate([4, 6, 4, 1]):
-        assert W.dofmap.dof_layout.num_entity_dofs(dim) == X.dofmap.dof_layout.num_entity_dofs(dim)
-        assert W.dofmap.dof_layout.num_entity_closure_dofs(
-            dim
-        ) == X.dofmap.dof_layout.num_entity_closure_dofs(dim)
+        assert len(W.dofmap.dof_layout.entity_dofs(dim, 0)) == len(
+            X.dofmap.dof_layout.entity_dofs(dim, 0)
+        )
+        assert len(W.dofmap.dof_layout.entity_closure_dofs(dim, 0)) == len(
+            X.dofmap.dof_layout.entity_closure_dofs(dim, 0)
+        )
         for i in range(entity_count):
             assert (
                 len(W.dofmap.dof_layout.entity_dofs(dim, i))
@@ -166,7 +171,7 @@ def test_clone(W):
 
 
 def test_collapse(W, V):
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         Function(W.sub(1))
 
     Ws = [W.sub(i).collapse() for i in range(W.num_sub_spaces)]
@@ -175,7 +180,7 @@ def test_collapse(W, V):
 
         # Number of collapsed dofs in W numbering must agree with the number of dofs
         # of the collapsed space
-        assert Wi.dofmap.index_map.size_local + Wi.dofmap.index_map.num_ghosts == dofs.size
+        assert Wi.dofmap.index_map.size_local + Wi.dofmap.index_map.num_ghosts == dofs[0].size
 
     msh = W.mesh
     cell_imap = msh.topology.index_map(msh.topology.dim)
@@ -186,7 +191,7 @@ def test_collapse(W, V):
         for i, dof in enumerate(cell_dofs):
             for k in range(bs):
                 new_dof = Ws[k][0].dofmap.cell_dofs(c)[i]
-                new_to_old = Ws[k][1]
+                new_to_old = Ws[k][1][0]
                 assert dof * bs + k == new_to_old[new_dof]
 
     f0 = Function(Ws[0][0])
@@ -196,7 +201,8 @@ def test_collapse(W, V):
 
 def test_argument_equality(mesh, V, V2, W, W2):
     """Placed this test here because it's mainly about detecting differing
-    function spaces"""
+    function spaces.
+    """
     mesh2 = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
     gdim = mesh2.geometry.dim
     V3 = functionspace(mesh2, ("Lagrange", 1))
@@ -212,8 +218,6 @@ def test_argument_equality(mesh, V, V2, W, W2):
         assert V2 != V3
         assert not v == v3
         assert not v2 == v3
-        assert v != v3
-        assert v2 != v3
         assert v != v3
         assert v2 != v3
 
@@ -245,7 +249,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
 
 
 def test_cell_mismatch(mesh):
-    """Test that cell mismatch raises early enough from UFL"""
+    """Test that cell mismatch raises early enough from UFL."""
     e = element("P", "triangle", 1, dtype=default_real_type)
     with pytest.raises(BaseException):
         functionspace(mesh, e)
@@ -260,14 +264,15 @@ def test_basix_element(V, W, Q, V2):
         )
 
     # Mixed spaces do not yet return a basix element
-    with pytest.raises(RuntimeError):
-        e = Q.element.basix_element
+    with pytest.raises(ValueError):
+        Q.element.basix_element
 
 
 @pytest.mark.skip_in_parallel
 def test_vector_function_space_cell_type():
     """Test that the UFL element cell of a vector function
-    space is correct on meshes where gdim > tdim"""
+    space is correct on meshes where gdim > tdim.
+    """
     comm = MPI.COMM_WORLD
     gdim = 2
 

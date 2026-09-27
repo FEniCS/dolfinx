@@ -1,7 +1,6 @@
 # DOLFINx
 
 [![DOLFINx CI](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml)
-[![Actions Spack build](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml)
 [![Actions Conda install](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml)
 [![Actions macOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
 [![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml)
@@ -15,19 +14,19 @@ DOLFIN and is actively developed.
 For questions about using DOLFINx, visit the [FEniCS
 Discourse](https://fenicsproject.discourse.group/) page or use the
 [FEniCS Slack channel](https://fenicsproject.slack.com/) (use
-[this](https://join.slack.com/t/fenicsproject/shared_invite/zt-1lraknsp1-6_3Js5kueDIyWgF192d3nA)
+[this](https://join.slack.com/t/fenicsproject/shared_invite/zt-2wa76d0xw-ecfxcPj25K8pc7q7~1AK8g)
 link to sign up to the Slack channel).
 
 ## Documentation
 
-Documentation can be viewed at <https://docs.fenicsproject.org>.
+Documentation can be viewed [here](https://docs.fenicsproject.org).
 
 ## Installation
 
 ### From source
 
 For detailed instructions and a list of dependencies, see
-<https://docs.fenicsproject.org/dolfinx/main/python/installation>.
+[here](https://docs.fenicsproject.org/dolfinx/main/python/installation).
 
 #### C++ core
 
@@ -46,7 +45,7 @@ To install the Python interface, first install the C++ core, and then in
 the `python/` directory run:
 
 ```shell
-pip install -r build-requirements.txt
+pip install --group pyproject.toml:build
 pip install --check-build-dependencies --no-build-isolation .
 ```
 
@@ -65,6 +64,16 @@ spack install --add py-fenics-dolfinx+petsc4py+slepc4py
 ```
 
 Spack is the recommended approach for HPC systems.
+
+Although Spack already contains FEniCS Project packages, we also maintain a
+separate [overlay package repository](https://github.com/FEniCS/spack-fenics)
+which may contain bug fixes and package specs for newer releases of the FEniCS
+Project components, particularly after a recent release.
+
+```shell
+spack repo add https://github.com/fenics/spack-fenics
+spack repo ls # shows fenics above builtin
+```
 
 ### Binary packages
 
@@ -92,10 +101,10 @@ conda install -c conda-forge fenics-dolfinx mpich pyvista # Linux and macOS
 conda install -c conda-forge fenics-dolfinx pyvista pyamg # Windows
 ```
 
-*Windows only*: Windows conda packages are currently in beta testing.
-PETSc and petsc4py are not available on Windows. Because FEniCS uses
-just-in-time compilation it necessary to install [Microsoft Visual
-Studio](https://visualstudio.microsoft.com/downloads/).
+*Windows only*: Windows conda packages are currently in beta testing. PETSc
+and petsc4py are not available on Windows. Because FEniCS uses just-in-time
+compilation it necessary to install
+[Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/).
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html). The recipe
@@ -104,7 +113,7 @@ is hosted on
 
 | Name | Downloads | Version | Platforms |
 | --- | --- | --- | --- |
-| [![Conda Recipe](https://img.shields.io/badge/recipe-fenics--dolfinx-green.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) |
+| [![Conda Recipe](https://img.shields.io/badge/recipe-fenics--dolfinx-green.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Downloads](https://anaconda.org/conda-forge/fenics-dolfinx/badges/downloads.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Version](https://anaconda.org/conda-forge/fenics-dolfinx/badges/version.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Platforms](https://anaconda.org/conda-forge/fenics-dolfinx/badges/platforms.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) |
 
 #### Ubuntu packages
 

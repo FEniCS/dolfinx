@@ -12,15 +12,25 @@
 #
 # Copyright (C) 2020-2023 Garth N. Wells and Jørgen S. Dokken
 #
-# This demo shows how to create meshes using the Gmsh Python interface.
-# It is implemented in {download}`demo_gmsh.py`.
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_gmsh.py>`
+# * {download}`Jupyter notebook <./demo_gmsh.ipynb>`
+# ```
+
+# This demo illustrates how to:
+# - Create meshes using the Gmsh Python interface
+# - Tag subentities of a mesh (peaks, ridges, facets and cells) with
+#   physical groups
+# - Read a mesh created with Gmsh, and its tags, into DOLFINx using
+#   {py:func}`model_to_mesh <dolfinx.io.gmsh.model_to_mesh>`
 #
 # The Gmsh module is required for this demo.
 
 # +
 from mpi4py import MPI
 
-import gmsh  # type: ignore
+import gmsh
 
 from dolfinx.io import XDMFFile
 from dolfinx.io import gmsh as gmshio
@@ -34,8 +44,10 @@ from dolfinx.io import gmsh as gmshio
 
 # +
 def gmsh_sphere(model: gmsh.model, name: str) -> gmsh.model:
-    """Create a Gmsh model of a sphere and tag sub entitites
-    from all co-dimensions (peaks, ridges, facets and cells).
+    """Create a Gmsh model of a sphere.
+
+    Tags sub entities for all co-dimensions (peaks, ridges, facets and
+    cells).
 
     Args:
         model: Gmsh model to add the mesh to.
@@ -43,7 +55,6 @@ def gmsh_sphere(model: gmsh.model, name: str) -> gmsh.model:
 
     Returns:
         Gmsh model with a sphere mesh added.
-
     """
     model.add(name)
     model.setCurrent(name)
@@ -157,7 +168,9 @@ def gmsh_ring(model: gmsh.model, name: str) -> gmsh.model:
 # +
 
 
-def create_mesh(comm: MPI.Comm, model: gmsh.model, name: str, filename: str, mode: str):
+def create_mesh(  # type: ignore[no-any-unimported]
+    comm: MPI.Comm, model: gmsh.model, name: str, filename: str, mode: str
+):
     """Create a DOLFINx from a Gmsh model and output to file.
 
     Args:

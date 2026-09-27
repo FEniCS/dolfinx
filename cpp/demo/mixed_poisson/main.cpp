@@ -10,8 +10,10 @@
 //   over subsets of the boundary.
 // * Use a submesh to represent boundary data
 //
-// The full implementation is in
-// {download}`demo_mixed_poisson/main.cpp`.
+// Running this demo requires the files:
+// {download}`demo_mixed_poisson/main.cpp`,
+// {download}`demo_mixed_poisson/mixed_poisson.py` and
+// {download}`demo_mixed_poisson/CMakeLists.txt`.
 //
 //
 // # Mixed formulation for the Poisson equation
@@ -19,8 +21,8 @@
 // ## Equation and problem definition
 //
 // A mixed formulation of Poisson equation can be formulated by
-// introducing an additional (vector) variable, namely the (negative)
-// flux: $\sigma = \nabla u$. The partial differential equations
+// introducing an additional vector variable, the gradient
+// $\sigma = \nabla u$. The partial differential equations
 // then read
 //
 // $$
@@ -71,15 +73,16 @@
 // polynomial order $k$ and $V_h$ be discontinuous elements of
 // polynomial order $k-1$.
 //
-// We will use the same definitions of functions and boundaries as in the
-// demo for {doc}`the Poisson equation <demo_poisson>`. These are:
+// We will use a similar definition of the boundaries as in the demo
+// for {doc}`the Poisson equation <demo_poisson>`, but here on a unit
+// square domain:
 //
 // * $\Omega = [0,1] \times [0,1]$ (a unit square)
-// * $\Gamma_{D} = \{(0, y) \cup (1, y) \in \partial \Omega\}$
-// * $\Gamma_{N} = \{(x, 0) \cup (x, 1) \in \partial \Omega\}$
+// * $\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}$
+// * $\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}$
 // * $u_0 = 20 y + 1$ on $\Gamma_{D}$
 // * $g = 10$ (flux) on $\Gamma_{N}$
-// * $f = \sin(5x - 0.5) + 1 (source term)
+// * $f = \sin(5x) + 1$ (source term)
 
 // ## UFL form file
 //
@@ -102,11 +105,13 @@
 #include <dolfinx/la/petsc.h>
 #include <map>
 #include <memory>
+#include <petscksp.h>
 #include <petscmat.h>
 #include <petscsys.h>
 #include <petscsystypes.h>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -117,7 +122,8 @@ using U = typename dolfinx::scalar_value_t<T>;
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  common::petsc::check(PetscInitialize(&argc, &argv, nullptr, nullptr),
+                       "PetscInitialize");
 
   {
     mesh::CellType cell_type = mesh::CellType::triangle;
@@ -140,7 +146,8 @@ int main(int argc, char* argv[])
 
     // Create DOLFINx mixed element
     auto ME = std::make_shared<fem::FiniteElement<U>>(
-        std::vector<fem::BasixElementData<U>>{{RT}, {P0}});
+        std::vector<fem::BasixElementData<U>>{{RT}, {P0}},
+        mesh->geometry().dim());
 
     // Create FunctionSpace
     auto V = std::make_shared<fem::FunctionSpace<U>>(
@@ -193,8 +200,8 @@ int main(int argc, char* argv[])
         *mesh, 1,
         [](auto x)
         {
-          using U = typename decltype(x)::value_type;
-          constexpr U eps = 1e-8;
+          using coord_t = typename decltype(x)::value_type;
+          constexpr coord_t eps = 1e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -213,10 +220,10 @@ int main(int argc, char* argv[])
     int tdim = mesh->topology()->dim();
     int fdim = tdim - 1;
 
-    auto submesh_data = [](auto& mesh, int tdim, auto&& dfacets)
+    auto submesh_data = [](auto& mesh, int dim, auto&& dfacets)
     {
       auto [submesh, e_map, v_map, g_map]
-          = mesh::create_submesh(mesh, tdim, dfacets);
+          = mesh::create_submesh(mesh, dim, dfacets);
       return std::pair(std::make_shared<mesh::Mesh<U>>(std::move(submesh)),
                        std::move(e_map));
     };
@@ -230,7 +237,8 @@ int main(int argc, char* argv[])
     auto Qe = std::make_shared<fem::FiniteElement<U>>(
         basix::create_element<U>(basix::element::family::P, submesh_cell_type,
                                  1, basix::element::lagrange_variant::unset,
-                                 basix::element::dpc_variant::unset, false));
+                                 basix::element::dpc_variant::unset, false),
+        submesh->geometry().dim());
 
     // Create a function space for `u_0` on the submesh
     auto Q = std::make_shared<fem::FunctionSpace<U>>(
@@ -261,8 +269,8 @@ int main(int argc, char* argv[])
         = fem::locate_dofs_topological(
             *mesh->topology(), {*V0->dofmap(), *W0->dofmap()}, 1, nfacets);
 
-    // Create boundary condition for $\sigma. $\sigma \cdot n$ will be
-    // constrained to to be equal to the normal component of $g$. The
+    // Create boundary condition for $\sigma$. $\sigma \cdot n$ will be
+    // constrained to be equal to the normal component of $g$. The
     // boundary conditions are applied to degrees-of-freedom ndofs, and
     // `V0` is the subspace that is constrained.
     fem::DirichletBC<T> bc(g, ndofs, V0);
@@ -314,17 +322,21 @@ int main(int argc, char* argv[])
 
     // Assemble the bilinear form into a matrix. The PETSc matrix is
     // 'flushed' so we can set values in it in the subsequent step.
-    MatZeroEntries(A.mat());
+    common::petsc::check(MatZeroEntries(A.mat()), "MatZeroEntries");
     fem::assemble_matrix(la::petsc::Matrix::set_fn(A.mat(), ADD_VALUES), a,
                          {bc});
-    MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyEnd");
 
     // Set '1' on diagonal for Dirichlet dofs
     fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
                          {bc});
-    MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyEnd");
 
     // Assemble the linear form `L` into RHS vector
     std::ranges::fill(b.array(), 0);
@@ -340,19 +352,27 @@ int main(int argc, char* argv[])
 
     // Create PETSc linear solver
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
-    la::petsc::options::set("ksp_type", "preonly");
-    la::petsc::options::set("pc_type", "lu");
+    common::petsc::set_option("ksp_type", "preonly");
+    common::petsc::set_option("pc_type", "lu");
     if (sizeof(PetscInt) == 4)
-      la::petsc::options::set("pc_factor_mat_solver_type", "mumps");
+      common::petsc::set_option("pc_factor_mat_solver_type", "mumps");
     else
-      la::petsc::options::set("pc_factor_mat_solver_type", "superlu_dist");
+      common::petsc::set_option("pc_factor_mat_solver_type", "superlu_dist");
     lu.set_from_options();
 
     // Solve linear system Ax = b
     lu.set_operator(A.mat());
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
-    lu.solve(_u.vec(), _b.vec());
+    if (lu.solve(_u.vec(), _b.vec()) < 0)
+      throw std::runtime_error("Linear solver did not converge.");
+
+    // The KSP object is available for anything the solver does not
+    // wrap, here the number of linear solver iterations
+    PetscInt num_it = 0;
+    common::petsc::check(KSPGetIterationNumber(lu.ksp(), &num_it),
+                         "KSPGetIterationNumber");
+    std::cout << "Number of linear solver iterations: " << num_it << std::endl;
 
     // Update ghost values before output
     u->x()->scatter_fwd();
@@ -372,7 +392,7 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  PetscFinalize();
+  common::petsc::check(PetscFinalize(), "PetscFinalize");
 
   return 0;
 }

@@ -9,17 +9,20 @@
 #include "Table.h"
 #include "timing.h"
 #include <chrono>
+#include <functional>
 #include <map>
 #include <mpi.h>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace dolfinx::common
 {
-/// @brief Time logger maintaining data collected by Timer, if registered.
+/// @brief Time logger maintaining data collected by Timer, if
+/// registered.
 ///
-/// @note This is a monotstate, i.e. the data members are static and thus
-/// timings are aggregated into a single map.
+/// @note This is a monotstate, i.e. the data members are static and
+/// thus timings are aggregated into a single map.
 class TimeLogger
 {
 public:
@@ -28,7 +31,7 @@ public:
   static TimeLogger& instance();
 
   /// Register timing (for later summary)
-  void register_timing(const std::string& task,
+  void register_timing(std::string_view task,
                        std::chrono::duration<double, std::ratio<1>> wall);
 
   /// Return a summary of timings and tasks in a Table
@@ -44,12 +47,13 @@ public:
   /// @param[in] task The task name to retrieve the timing for
   /// @return Values (count, total wall time) for given task.
   std::pair<int, std::chrono::duration<double, std::ratio<1>>>
-  timing(const std::string& task) const;
+  timing(std::string_view task) const;
 
   /// @brief Logged elapsed times.
   /// @return Elapsed [task id: (count, total wall time)].
   std::map<std::string,
-           std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+           std::pair<int, std::chrono::duration<double, std::ratio<1>>>,
+           std::less<>>
   timings() const;
 
 private:
@@ -68,7 +72,8 @@ private:
   // List of timings for tasks, map from string to (num_timings,
   // total_wall_time)
   std::map<std::string,
-           std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+           std::pair<int, std::chrono::duration<double, std::ratio<1>>>,
+           std::less<>>
       _timings;
 };
 } // namespace dolfinx::common

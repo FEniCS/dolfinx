@@ -19,9 +19,17 @@ Adjacency list builders
 Re-ordering
 -----------
 
-.. doxygenfunction:: dolfinx::graph::reorder_gps
+.. doxygenfunction:: dolfinx::graph::reorder_rcm
    :project: DOLFINx
 
+.. doxygenfunction:: dolfinx::graph::reorder_sfc_morton
+   :project: DOLFINx
+
+.. doxygenfunction:: dolfinx::graph::reorder_sfc_hilbert
+   :project: DOLFINx
+
+.. doxygentypedef:: dolfinx::graph::Reorder
+   :project: DOLFINx
 
 Partitioning
 ------------

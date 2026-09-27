@@ -129,10 +129,6 @@ def test_save_2d_vector(tempdir, cell_type):
 @pytest.mark.skip_in_parallel
 def test_save_2d_vector_CG2(tempdir):
     points = np.array(
-        [[0, 0], [1, 0], [1, 2], [0, 2], [1 / 2, 0], [1, 1], [1 / 2, 2], [0, 1], [1 / 2, 1]],
-        dtype=default_real_type,
-    )
-    points = np.array(
         [[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0], [1, 2], [0.5, 2], [1, 1]],
         dtype=default_real_type,
     )
@@ -203,7 +199,7 @@ def test_save_vector_element(tempdir, cell_type):
 
 
 def test_save_vtk_cell_point(tempdir):
-    """Test writing cell-wise and point-wise data"""
+    """Test writing cell-wise and point-wise data."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     P2 = element("Lagrange", mesh.basix_cell(), 1, shape=(3,), dtype=default_real_type)
     P1 = element("Discontinuous Lagrange", mesh.basix_cell(), 0, dtype=default_real_type)

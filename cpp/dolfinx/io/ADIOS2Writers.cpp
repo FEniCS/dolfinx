@@ -38,7 +38,7 @@ void ADIOS2Writer::close()
     _engine->Close();
 }
 //-----------------------------------------------------------------------------
-std::stringstream
+std::string
 io::impl_vtx::create_vtk_schema(const std::vector<std::string>& point_data,
                                 const std::vector<std::string>& cell_data)
 {
@@ -104,7 +104,7 @@ io::impl_vtx::create_vtk_schema(const std::vector<std::string>& point_data,
 
   std::stringstream ss;
   xml_schema.save(ss, "  ");
-  return ss;
+  return ss.str();
 }
 //-----------------------------------------------------------------------------
 

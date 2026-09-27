@@ -1,3 +1,5 @@
+"""Poisson problem."""
+
 from basix.ufl import element
 from ufl import (
     Coefficient,

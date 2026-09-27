@@ -3,11 +3,13 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Support functions for plotting"""
+"""Support functions for plotting."""
 
 import functools
+from typing import overload
 
 import numpy as np
+import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
 from dolfinx import fem, mesh
@@ -29,14 +31,29 @@ _first_order_vtk = {
 }
 
 
+@overload
+def vtk_mesh(
+    msh: mesh.Mesh, dim: int | None = None, entities: npt.NDArray[np.int32] | None = None
+) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.floating]]: ...
+
+
+@overload
+def vtk_mesh(
+    V: fem.FunctionSpace, entities: npt.NDArray[np.int32] | None = None
+) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.floating]]: ...
+
+
 @functools.singledispatch
-def vtk_mesh(msh: mesh.Mesh, dim: int | None = None, entities=None):
-    """Create vtk mesh topology data for mesh entities of a given
-    dimension. The vertex indices in the returned topology array are the
-    indices for the associated entry in the mesh geometry.
+def vtk_mesh(
+    msh: mesh.Mesh, dim: int | None = None, entities: npt.NDArray[np.int32] | None = None
+) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.floating]]:
+    """Create VTK mesh topology data for mesh entities.
+
+    The vertex indices in the returned topology array are the indices
+    for the associated entry in the mesh geometry.
 
     Args:
-        mesh: Mesh to extract data from.
+        msh: Mesh to extract data from.
         dim: Topological dimension of entities to extract.
         entities: Entities to extract. Extract all if ``None``.
 
@@ -73,10 +90,11 @@ def vtk_mesh(msh: mesh.Mesh, dim: int | None = None, entities=None):
     return topology.reshape(-1), cell_types, msh.geometry.x
 
 
-@vtk_mesh.register
-def _(V: fem.FunctionSpace, entities=None):  # type: ignore
-    """Creates a VTK mesh topology (topology array and array of cell
-    types) that is based on the degree-of-freedom coordinates.
+@vtk_mesh.register  # type: ignore[attr-defined]
+def _(
+    V: fem.FunctionSpace, entities: npt.NDArray[np.int32] | None = None
+) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.floating]]:
+    """Create VTK mesh topology based on the degree-of-freedom coordinates.
 
     This function supports visualisation when the degree of the finite
     element space is different from the geometric degree of the mesh.
@@ -91,7 +109,6 @@ def _(V: fem.FunctionSpace, entities=None):  # type: ignore
 
     Returns:
         Topology, type for each cell, and geometry in VTK-ready format.
-
     """
     if V.ufl_element().family_name not in [
         "Discontinuous Lagrange",
@@ -114,7 +131,7 @@ def _(V: fem.FunctionSpace, entities=None):  # type: ignore
     msh = V.mesh
     tdim = msh.topology.dim
     if entities is None:
-        entities = range(msh.topology.index_map(tdim).size_local)
+        entities = np.arange(msh.topology.index_map(tdim).size_local, dtype=np.int32)
 
     dofmap = V.dofmap
     num_dofs_per_cell = V.dofmap.dof_layout.num_dofs
@@ -124,9 +141,9 @@ def _(V: fem.FunctionSpace, entities=None):  # type: ignore
     vtk_type = (
         _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, tdim)
     )
-    cell_types = np.full(len(entities), vtk_type)
+    cell_types = np.full(entities.size, vtk_type)
 
-    topology = np.zeros((len(entities), num_dofs_per_cell + 1), dtype=np.int32)
+    topology = np.zeros((entities.size, num_dofs_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_dofs_per_cell
     dofmap_ = dofmap.list
     topology[:, 1:] = dofmap_[entities][:, perm]

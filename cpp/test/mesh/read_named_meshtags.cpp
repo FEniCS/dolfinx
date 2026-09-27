@@ -29,7 +29,7 @@ void test_read_named_meshtags()
   constexpr std::int32_t material_value = 2;
 
   // Create mesh
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
+  auto part = graph::partition_graph;
   auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {3, 3},
                              mesh::CellType::triangle, part));
@@ -39,15 +39,12 @@ void test_read_named_meshtags()
   std::iota(std::begin(indices), std::end(indices), 0);
 
   std::vector<std::int32_t> domain_values(n_cells, domain_value);
-  std::vector<std::int32_t> material_values(n_cells, material_value);
-
   mesh::MeshTags<std::int32_t> mt_domains(mesh->topology(), 2, indices,
-                                          domain_values);
-  mt_domains.name = "domain";
+                                          domain_values, "domain");
 
+  std::vector<std::int32_t> material_values(n_cells, material_value);
   mesh::MeshTags<std::int32_t> mt_materials(mesh->topology(), 2, indices,
-                                            material_values);
-  mt_materials.name = "material";
+                                            material_values, "material");
 
   io::XDMFFile file(mesh->comm(), mesh_file_name, "w",
                     io::XDMFFile::Encoding::HDF5);

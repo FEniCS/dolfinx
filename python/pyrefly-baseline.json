@@ -1,0 +1,109 @@
+{
+  "errors": [
+    {
+      "column": 39,
+      "path": "demo/demo_mixed-topology.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.fem.FunctionSpace_float64.__init__` called with arguments: (Mesh_float64, list[FiniteElement_float32 | FiniteElement_float64], list[DofMap])",
+      "severity": "error"
+    },
+    {
+      "column": 50,
+      "path": "dolfinx/common.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.common.Scatterer.scatter_fwd_begin` called with arguments: (ndarray[tuple[Any, ...], dtype[complex128 | complexfloating[_32Bit, _32Bit] | float64 | floating[_32Bit] | signedinteger[_64Bit]]], ndarray[tuple[Any, ...], dtype[complex128 | complexfloating[_32Bit, _32Bit] | float64 | floating[_32Bit] | signedinteger[_64Bit]]], int)",
+      "severity": "error"
+    },
+    {
+      "column": 50,
+      "path": "dolfinx/common.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.common.Scatterer.scatter_rev_begin` called with arguments: (ndarray[tuple[Any, ...], dtype[complex128 | complexfloating[_32Bit, _32Bit] | float64 | floating[_32Bit] | signedinteger[_64Bit]]], ndarray[tuple[Any, ...], dtype[complex128 | complexfloating[_32Bit, _32Bit] | float64 | floating[_32Bit] | signedinteger[_64Bit]]], int)",
+      "severity": "error"
+    },
+    {
+      "column": 37,
+      "path": "dolfinx/fem/function.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.fem.tabulate_expression` called with arguments: (ndarray[tuple[Any, ...], dtype[Scalar]] | ndarray, Expression_complex128 | Expression_complex64 | Expression_float32 | Expression_float64, ndarray[tuple[Any, ...], dtype[complex128]] | ndarray[tuple[Any, ...], dtype[complexfloating[_32Bit, _32Bit]]] | ndarray[tuple[Any, ...], dtype[float64]] | ndarray[tuple[Any, ...], dtype[floating[_32Bit]]], Unknown, Mesh_float32 | Mesh_float64, ndarray)",
+      "severity": "error"
+    },
+    {
+      "column": 44,
+      "path": "dolfinx/fem/function.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.fem.pack_coefficients` called with arguments: (Expression_complex128 | Expression_complex64 | Expression_float32 | Expression_float64, Mesh_float32 | Mesh_float64, ndarray)",
+      "severity": "error"
+    },
+    {
+      "column": 46,
+      "path": "dolfinx/fem/function.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.fem.interpolation_coords` called with arguments: (FiniteElement_float32 | FiniteElement_float64, Geometry_float32 | Geometry_float64, ndarray[tuple[Any, ...], dtype[signedinteger[_32Bit]]] | None)",
+      "severity": "error"
+    },
+    {
+      "column": 52,
+      "path": "dolfinx/fem/petsc.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `int` is not assignable to parameter `insert_mode` with type `InsertMode` in function `dolfinx.la.petsc._ghost_update`",
+      "severity": "error"
+    },
+    {
+      "column": 74,
+      "path": "dolfinx/fem/petsc.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `int` is not assignable to parameter `scatter_mode` with type `ScatterMode` in function `dolfinx.la.petsc._ghost_update`",
+      "severity": "error"
+    },
+    {
+      "column": 48,
+      "path": "dolfinx/geometry.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.geometry.compute_closest_entity` called with arguments: (BoundingBoxTree_float32 | BoundingBoxTree_float64, BoundingBoxTree_float32 | BoundingBoxTree_float64, Mesh_float32 | Mesh_float64, ndarray[tuple[Any, ...], dtype[Real]])",
+      "severity": "error"
+    },
+    {
+      "column": 48,
+      "path": "dolfinx/geometry.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.geometry.determine_point_ownership` called with arguments: (Mesh_float32 | Mesh_float64, ndarray[tuple[Any, ...], dtype[Real]], float, ndarray[tuple[Any, ...], dtype[signedinteger[_32Bit]]] | None, bool)",
+      "severity": "error"
+    },
+    {
+      "column": 41,
+      "path": "dolfinx/io/gmsh.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.mesh.create_mesh` called with arguments: (Comm, list[ndarray[tuple[int], dtype[signedinteger[_64Bit]]]], list[CoordinateElement_float32 | CoordinateElement_float64], ndarray, ((Comm, int, AdjacencyList_int64, ndarray[tuple[Any, ...], dtype[signedinteger[_32Bit]]] | None, ndarray[tuple[Any, ...], dtype[signedinteger[_32Bit]]] | None, bool) -> AdjacencyList_int32) | None, GhostMode, int, Literal[1], cell_weights=None, reorder_fn=None)",
+      "severity": "error"
+    },
+    {
+      "column": 25,
+      "path": "dolfinx/mesh.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.refinement.mark_maximum` called with arguments: (ndarray[tuple[Any, ...], dtype[Real]], IndexMap, float)",
+      "severity": "error"
+    },
+    {
+      "column": 34,
+      "path": "dolfinx/mesh.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.refinement.mark_equidistribution` called with arguments: (ndarray[tuple[Any, ...], dtype[Real]], IndexMap, float)",
+      "severity": "error"
+    },
+    {
+      "column": 43,
+      "path": "dolfinx/mesh.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.mesh.build_dual_graph` called with arguments: (Comm, CellType, AdjacencyList_int32 | AdjacencyList_int64 | AdjacencyList_int_sizet_int8__int32_int32, int | None, int)",
+      "severity": "error"
+    },
+    {
+      "column": 81,
+      "path": "dolfinx/mesh.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `dolfinx.cpp.mesh.create_mesh` called with arguments: (comm=Comm, cells=ndarray, element=CoordinateElement_float32 | CoordinateElement_float64, x=ndarray[tuple[Any, ...], dtype[floating]], partitioner=((...) -> Unknown) | None, ghost_mode=GhostMode, max_facet_to_cell_links=int, num_threads=int, cell_weights=ndarray | None, reorder_fn=((...) -> Unknown) | None)",
+      "severity": "error"
+    }
+  ]
+}

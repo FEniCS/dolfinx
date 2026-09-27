@@ -6,7 +6,6 @@
 """Unit tests for assembly."""
 
 import math
-from functools import partial
 
 from mpi4py import MPI
 
@@ -30,7 +29,7 @@ from ufl import derivative, dx, inner
 
 
 def nest_matrix_norm(A):
-    """Return norm of a MatNest matrix"""
+    """Return norm of a MatNest matrix."""
     assert A.getType() == "nest"
     norm = 0.0
     nrows, ncols = A.getNestSize()
@@ -45,10 +44,14 @@ def nest_matrix_norm(A):
 
 @pytest.mark.petsc4py
 class TestNLSPETSc:
+    """Test nonlinear solver functionality with PETSc."""
+
     def test_matrix_assembly_block_nl(self):
-        """Test assembly of block matrices and vectors into (a) monolithic
-        blocked structures, PETSc Nest structures, and monolithic structures
-        in the nonlinear setting."""
+        """Test assembly of block matrices and vectors.
+
+        Tests monolithic blocked structures, PETSc Nest structures, and
+        monolithic structures in the nonlinear setting.
+        """
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import (
@@ -109,7 +112,7 @@ class TestNLSPETSc:
         L_block = form([F0, F1])
 
         def blocked():
-            """Monolithic blocked"""
+            """Monolithic blocked."""
             x = create_vector([V0, V1], kind="mpi")
 
             assign((u, p), x)
@@ -135,7 +138,7 @@ class TestNLSPETSc:
 
         # Nested (MatNest)
         def nested():
-            """Nested (MatNest)"""
+            """Nested (MatNest)."""
             x = create_vector([V0, V1], kind=PETSc.Vec.Type.NEST)
 
             assign((u, p), x)
@@ -159,7 +162,7 @@ class TestNLSPETSc:
             return Anorm, bnorm
 
         def monolithic():
-            """Monolithic version"""
+            """Monolithic version."""
             E = mixed_element([P0, P1])
             W = functionspace(mesh, E)
             dU = ufl.TrialFunction(W)
@@ -196,22 +199,29 @@ class TestNLSPETSc:
             b.destroy()
             return Anorm, bnorm
 
+        # The blocked, nested and monolithic operators are assembled in
+        # different orders, so their norms differ by a few ulp. In single
+        # precision that exceeds the fixed tolerances below, hence the
+        # precision-dependent floor.
+        eps = float(np.finfo(default_real_type).eps)
+        rtol, rtol_mono = max(1.0e-6, 500 * eps), max(1.0e-5, 500 * eps)
+
         Anorm0, bnorm0 = blocked()
         Anorm1, bnorm1 = nested()
-        assert Anorm1 == pytest.approx(Anorm0, 1.0e-6)
-        assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
+        assert Anorm1 == pytest.approx(Anorm0, rtol)
+        assert bnorm1 == pytest.approx(bnorm0, rtol)
 
         Anorm2, bnorm2 = monolithic()
-        assert Anorm2 == pytest.approx(Anorm0, 1.0e-5)
-        assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
+        assert Anorm2 == pytest.approx(Anorm0, rtol_mono)
+        assert bnorm2 == pytest.approx(bnorm0, rtol)
 
     def test_assembly_solve_block_nl(self):
         """Solve a two-field nonlinear diffusion like problem with block
-        matrix approaches and test that solution is the same."""
+        matrix approaches and test that solution is the same.
+        """
         from petsc4py import PETSc
 
-        import dolfinx.fem.petsc
-        import dolfinx.nls.petsc
+        from dolfinx.fem import petsc as fem_petsc
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
         p = 1
@@ -261,7 +271,7 @@ class TestNLSPETSc:
         F, J = form(F), form(J)
 
         def blocked_solve():
-            """Blocked version
+            """Blocked version.
 
             Illustrates how to use high-level class and then drop down to SNES
             for options and solve.
@@ -269,7 +279,7 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            problem = dolfinx.fem.petsc.NonlinearProblem(
+            problem = fem_petsc.NonlinearProblem(
                 F,
                 [u, p],
                 J=J,
@@ -291,7 +301,7 @@ class TestNLSPETSc:
                 del opts[k]
 
             x = problem.x
-            dolfinx.fem.petsc.assign([u, p], x)
+            fem_petsc.assign([u, p], x)
             snes.solve(None, x)
 
             assert snes.getConvergedReason() > 0
@@ -299,39 +309,37 @@ class TestNLSPETSc:
 
             # NOTE: snes.solve does not assign x back into [u, p]
             # automatically.
-            dolfinx.fem.petsc.assign(x, [u, p])
+            fem_petsc.assign(x, [u, p])
             xnorm = x.norm()
 
             return xnorm
 
         def nested_solve():
-            """Nested version
+            """Nested version.
 
             Illustrates how to work directly with the SNES object (no NonlinearProblem).
             """
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
             snes = PETSc.SNES().create(mesh.comm)
-            residual = dolfinx.fem.form(F)
-            jacobian = dolfinx.fem.form(J)
-            A = dolfinx.fem.petsc.create_matrix(jacobian, "nest")
-            b = dolfinx.fem.petsc.create_vector([V0, V1], "nest")
-            x = dolfinx.fem.petsc.create_vector([V0, V1], "nest")
-            snes.setFunction(
-                partial(dolfinx.fem.petsc.assemble_residual, [u, p], residual, jacobian, bcs), b
-            )
-            snes.setJacobian(
-                partial(dolfinx.fem.petsc.assemble_jacobian, [u, p], jacobian, None, bcs), A, None
-            )
+            residual = form(F)
+            jacobian = form(J)
+            A = fem_petsc.create_matrix(jacobian, "nest")
+            b = fem_petsc.create_vector([V0, V1], "nest")
+            x = fem_petsc.create_vector([V0, V1], "nest")
+            ctx_func = {"u": [u, p], "residual": residual, "jacobian": jacobian, "bcs": bcs}
+            snes.setFunction(fem_petsc.assemble_residual, b, kargs=ctx_func)
+            ctx_jac = {"u": [u, p], "jacobian": jacobian, "preconditioner": None, "bcs": bcs}
+            snes.setJacobian(fem_petsc.assemble_jacobian, A, None, kargs=ctx_jac)
 
             nested_IS = snes.getJacobian()[0].getNestISs()
             snes.getKSP().setType("gmres")
             snes.getKSP().setTolerances(rtol=1e-12)
             snes.getKSP().getPC().setType("fieldsplit")
             snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
-            dolfinx.fem.petsc.assign([u, p], x)
+            fem_petsc.assign([u, p], x)
             snes.solve(None, x)
-            dolfinx.fem.petsc.assign(x, [u, p])
+            fem_petsc.assign(x, [u, p])
             assert snes.getConvergedReason() > 0
             assert snes.getKSP().getConvergedReason() > 0
             assert snes.getConvergedReason() > 0
@@ -340,7 +348,7 @@ class TestNLSPETSc:
             return xnorm
 
         def monolithic_solve():
-            """Monolithic version
+            """Monolithic version.
 
             Uses high level NonlinearProblem class only.
             """
@@ -375,7 +383,7 @@ class TestNLSPETSc:
             U.sub(0).interpolate(initial_guess_u)
             U.sub(1).interpolate(initial_guess_p)
 
-            problem = dolfinx.fem.petsc.NonlinearProblem(
+            problem = fem_petsc.NonlinearProblem(
                 F,
                 U,
                 J=J,
@@ -412,19 +420,18 @@ class TestNLSPETSc:
     )
     def test_assembly_solve_taylor_hood_nl(self, mesh):
         """Assemble Stokes problem with Taylor-Hood elements and solve."""
-        import dolfinx.fem.petsc
-        import dolfinx.nls.petsc
+        from dolfinx.fem import petsc as fem_petsc
 
         gdim = mesh.geometry.dim
         P2 = functionspace(mesh, ("Lagrange", 2, (gdim,)))
         P1 = functionspace(mesh, ("Lagrange", 1))
 
         def boundary0(x):
-            """Define boundary x = 0"""
+            """Define boundary x = 0."""
             return np.isclose(x[0], 0.0)
 
         def boundary1(x):
-            """Define boundary x = 1"""
+            """Define boundary x = 1."""
             return np.isclose(x[0], 1.0)
 
         def initial_guess_u(x):
@@ -466,7 +473,7 @@ class TestNLSPETSc:
         P = [[J[0][0], None], [None, inner(dp, q) * dx]]
 
         def blocked():
-            """Blocked and monolithic"""
+            """Blocked and monolithic."""
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
             petsc_options = {
@@ -475,7 +482,7 @@ class TestNLSPETSc:
                 "snes_monitor": None,
                 "ksp_type": "minres",
             }
-            problem = dolfinx.fem.petsc.NonlinearProblem(
+            problem = fem_petsc.NonlinearProblem(
                 F,
                 [u, p],
                 bcs=bcs,
@@ -492,14 +499,14 @@ class TestNLSPETSc:
             return Jnorm, Fnorm, xnorm
 
         def nested():
-            """Blocked and nested
+            """Blocked and nested.
 
-            Shows how to setup some SNES options programatically.
+            Shows how to setup some SNES options programmatically.
             """
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            problem = dolfinx.fem.petsc.NonlinearProblem(
+            problem = fem_petsc.NonlinearProblem(
                 F,
                 [u, p],
                 J=J,
@@ -525,7 +532,7 @@ class TestNLSPETSc:
             return Jnorm, Fnorm, xnorm
 
         def monolithic():
-            """Monolithic"""
+            """Monolithic."""
             P2_el = element(
                 "Lagrange",
                 mesh.basix_cell(),
@@ -566,7 +573,7 @@ class TestNLSPETSc:
                 "ksp_type": "minres",
                 "snes_monitor": None,
             }
-            problem = dolfinx.fem.petsc.NonlinearProblem(
+            problem = fem_petsc.NonlinearProblem(
                 F,
                 U,
                 J=J,

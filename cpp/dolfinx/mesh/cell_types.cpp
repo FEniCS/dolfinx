@@ -1,14 +1,14 @@
-// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "cell_types.h"
-#include <algorithm>
 #include <basix/cell.h>
-#include <cfloat>
+#include <cassert>
 #include <cstdlib>
+#include <format>
 #include <stdexcept>
 
 using namespace dolfinx;
@@ -35,11 +35,11 @@ std::string mesh::to_string(CellType type)
   case CellType::hexahedron:
     return "hexahedron";
   default:
-    throw std::runtime_error("Unknown cell type.");
+    throw std::invalid_argument("Unknown cell type.");
   }
 }
 //-----------------------------------------------------------------------------
-mesh::CellType mesh::to_type(const std::string& cell)
+mesh::CellType mesh::to_type(std::string_view cell)
 {
   if (cell == "point")
     return CellType::point;
@@ -58,56 +58,14 @@ mesh::CellType mesh::to_type(const std::string& cell)
   else if (cell == "hexahedron")
     return CellType::hexahedron;
   else
-    throw std::runtime_error("Unknown cell type (" + cell + ")");
-}
-//-----------------------------------------------------------------------------
-mesh::CellType mesh::cell_entity_type(CellType type, int d, int index)
-{
-  const int dim = cell_dim(type);
-  if (d == dim)
-    return type;
-  else if (d == 1)
-    return CellType::interval;
-  else if (d == (dim - 1))
-    return cell_facet_type(type, index);
-  else
-    return CellType::point;
-}
-//-----------------------------------------------------------------------------
-mesh::CellType mesh::cell_facet_type(CellType type, int index)
-{
-  switch (type)
-  {
-  case CellType::point:
-    return CellType::point;
-  case CellType::interval:
-    return CellType::point;
-  case CellType::triangle:
-    return CellType::interval;
-  case CellType::tetrahedron:
-    return CellType::triangle;
-  case CellType::quadrilateral:
-    return CellType::interval;
-  case CellType::pyramid:
-    if (index == 0)
-      return CellType::quadrilateral;
-    else
-      return CellType::triangle;
-  case CellType::prism:
-    if (index == 0 or index == 4)
-      return CellType::triangle;
-    else
-      return CellType::quadrilateral;
-  case CellType::hexahedron:
-    return CellType::quadrilateral;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
+    throw std::invalid_argument(std::format("Unknown cell type ({})", cell));
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> mesh::get_entity_vertices(CellType type, int dim)
 {
-  const std::vector<std::vector<int>> topology
+  if (dim < 0 or dim > cell_dim(type))
+    throw std::out_of_range("dim out of range for get_entity_vertices.");
+  std::vector<std::vector<int>> topology
       = basix::cell::topology(cell_type_to_basix_type(type))[dim];
   return graph::AdjacencyList<int>(topology);
 }
@@ -121,7 +79,12 @@ graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
   else if (type == CellType::point)
     return graph::AdjacencyList<int>(0);
 
-  const std::vector<std::vector<std::vector<int>>> connectivity
+  if (dim0 < 0 or dim0 > cell_dim(type))
+    throw std::out_of_range("dim0 out of range for get_sub_entities.");
+  if (dim1 < 0 or dim1 > dim0)
+    throw std::out_of_range("dim1 out of range for get_sub_entities.");
+
+  std::vector<std::vector<std::vector<int>>> connectivity
       = basix::cell::sub_entity_connectivity(
           cell_type_to_basix_type(type))[dim0];
   std::vector<std::vector<int>> subset;
@@ -131,14 +94,10 @@ graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
   return graph::AdjacencyList<int>(subset);
 }
 //-----------------------------------------------------------------------------
-int mesh::cell_dim(CellType type)
-{
-  return basix::cell::topological_dimension(cell_type_to_basix_type(type));
-}
-//-----------------------------------------------------------------------------
 int mesh::cell_num_entities(CellType type, int dim)
 {
-  assert(dim <= 3);
+  if (dim < 0 or dim > 3)
+    throw std::out_of_range("dim out of range for cell_num_entities.");
   return basix::cell::num_sub_entities(cell_type_to_basix_type(type), dim);
 }
 //-----------------------------------------------------------------------------
@@ -230,7 +189,7 @@ basix::cell::type mesh::cell_type_to_basix_type(CellType celltype)
   case CellType::pyramid:
     return basix::cell::type::pyramid;
   default:
-    throw std::runtime_error("Unrecognised cell type.");
+    throw std::invalid_argument("Unrecognised cell type.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -255,7 +214,7 @@ mesh::CellType mesh::cell_type_from_basix_type(basix::cell::type celltype)
   case basix::cell::type::pyramid:
     return CellType::pyramid;
   default:
-    throw std::runtime_error("Unrecognised cell type.");
+    throw std::invalid_argument("Unrecognised cell type.");
   }
 }
 //-----------------------------------------------------------------------------

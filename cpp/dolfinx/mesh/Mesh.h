@@ -9,7 +9,9 @@
 #include "Geometry.h"
 #include <concepts>
 #include <dolfinx/common/MPI.h>
+#include <memory>
 #include <string>
+#include <type_traits>
 
 namespace dolfinx::mesh
 {
@@ -17,7 +19,7 @@ class Topology;
 
 /// @brief A Mesh consists of a set of connected and numbered mesh
 /// topological entities, and geometry data.
-/// @tparam Floating point type for representing the geometry.
+/// @tparam T Floating point type for representing the geometry.
 template <std::floating_point T>
 class Mesh
 {
@@ -29,6 +31,8 @@ public:
   ///
   /// @note This constructor is not normally called by users. User code
   /// will normally use ::create_mesh.
+  ///
+  /// @note Collective.
   ///
   /// @param[in] comm MPI Communicator.
   /// @param[in] topology Mesh topology.
@@ -43,6 +47,7 @@ public:
   }
 
   /// Copy constructor
+  /// @note Collective.
   /// @param[in] mesh Mesh to be copied
   Mesh(const Mesh& mesh) = default;
 

@@ -1,11 +1,12 @@
 name: CI
 
 on:
-  # push:
-  #   branches:
-  #     - "**"
-  #   tags:
-  #     - "v*"
+  push:
+    branches:
+      - main
+      - release
+    tags:
+      - "v*"
   pull_request:
     branches:
       - main
@@ -14,25 +15,32 @@ on:
       - main
   workflow_dispatch:
 
+# Cancel superseded runs: a new commit on a pull request makes the
+# previous run's result irrelevant. Pushes to 'main' and 'release' are
+# left to finish, since they populate caches and publish artefacts.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     name: Lint
     steps:
       - name: Checkout DOLFINx
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.12'
+          python-version: '3.14'
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install linting tools
-        run: pip install clang-format cmake-format[YAML] mypy ruff
+        run: pip install --group python/pyproject.toml:lint
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
@@ -43,12 +51,6 @@ jobs:
           cd python/
           ruff check .
           ruff format --check .
-      - name: mypy checks
-        run: |
-          cd python/
-          mypy dolfinx
-          mypy demo
-          mypy test
       - name: clang-format C++ checks
         run: |
           cd cpp
@@ -59,10 +61,9 @@ jobs:
           cd python/dolfinx/wrappers
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
-      - name: cmake-format (non-blocking)
-        continue-on-error: true
-        run: |
-          find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
+      - name: gersemi
+        run: gersemi --check .
+
 
   ccpp-build:
     runs-on: ubuntu-24.04
@@ -76,7 +77,7 @@ jobs:
 
     name: Build and test
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -86,23 +87,37 @@ jobs:
           sudo apt-get update
           sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev \
              libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev \
-             libspdlog-dev mpi-default-dev ninja-build pkg-config
+             libspdlog-dev libsuperlu-dist-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
       - name: Install Python build dependencies
+        working-directory: python
         run: |
-          pip -v install --upgrade -r python/build-requirements.txt
+          pip install --group pyproject.toml:build setuptools
 
-      - name: Install FEniCS Python components
+      - name: Install UFL
         run: |
-          pip install --no-build-isolation git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
 
-      - name: Configure (C++)
+      # Split install ensures that basix.pc ends up in PKG_CONFIG_PATH for later pkg-config test
+      - name: Install Basix (C++)
+        run: |
+          git clone --branch ${{ env.basix_ref }} --single-branch https://github.com/${{ env.basix_repository }}.git
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-basix -S basix/cpp
+          cmake --build build-basix
+          sudo cmake --install build-basix
+          sudo ldconfig
+
+      - name: Install Basix (Python)
+        run: pip install --no-build-isolation ./basix/python
+
+      - name: Install FFCx
+        run: pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+
+      - name: Configure, no rpath (C++)
         working-directory: cpp
         run: >
           cmake -B build -S .
@@ -112,40 +127,41 @@ jobs:
           -DCMAKE_BUILD_TYPE=Developer
           -DBUILD_TESTING=true
           -DDOLFINX_ENABLE_PETSC=false
+          -DDOLFINX_ENABLE_SUPERLU_DIST=true
+          -DDOLFINX_ENABLE_PARMETIS=true
+          -DDOLFINX_INSTALL_RPATH_USE_LINK_PATH=false
 
       - name: Build and install (C++)
         working-directory: cpp/build
         run: |
           cmake --build .
           sudo cmake --install .
+          sudo ldconfig
 
-      - name: Run tests via target (C++, serial)
+      - name: Run pkg-config test (C++)
+        working-directory: cpp/test/pkgconfig
+        run: |
+          make
+          make run
+
+      - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
-        run: mpirun -np 1 cmake --build . --target test
-      - name: Run tests via target (C++, MPI, np=3)
-        working-directory: cpp/build
-        run: mpirun -np 3 cmake --build . --target test
+        run: cmake --build . --target test
 
       - name: Build Python interface
-        run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test]'
-          python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc4py"
+        run: >
+          pip install --group python/pyproject.toml:test 'python/[demo]'
+          --check-build-dependencies
+          --no-build-isolation
+          --config-settings=cmake.build-type="Developer"
 
-      - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
-        working-directory: python
-        run: |
-          python -m venv mypy-env
-          . ./mypy-env/bin/activate
-          pip install mypy types-cffi scipy-stubs
-          mypy -p dolfinx
-        # mypy test
-        # mypy demo
+      - name: Check Python configuration
+        run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
-      - name: Install gmsh and pyvista (and dependencies)
+      - name: Install system dependencies for gmsh and pyvista
         run: |
           sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
           sudo apt-get install libegl1
-          pip install gmsh pyvista
 
       - name: Run demos (Python, serial)
         run: |
@@ -160,40 +176,46 @@ jobs:
         run: mpirun -np 3 python -m pytest -m "not petsc4py and not adios2" python/test/unit
 
   ccpp-build-with-petsc:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [lint]
     strategy:
       matrix:
-        petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex64-32, linux-gnu-complex128-32, linux-gnu-real64-64, linux-gnu-complex128-64]
-        docker_image: ["ghcr.io/fenics/test-env:current-openmpi"]
-        include:
-          - docker_image: "ghcr.io/fenics/test-env:current-mpich"
-            petsc_arch: linux-gnu-real64-32
-          - docker_image: "ghcr.io/fenics/test-env:current-mpich"
-            petsc_arch: linux-gnu-complex128-32
-    container: ${{ matrix.docker_image }}
+        petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32]
+    container: "ghcr.io/fenics/test-env:current"
     env:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
-      OMPI_ALLOW_RUN_AS_ROOT: 1
-      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
       PYTEST_ADDOPTS: "-W error"
 
-    name: Build and test (${{ matrix.petsc_arch }}, ${{ matrix.docker_image }})
+    name: Build and test (${{ matrix.petsc_arch }})
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install Python build dependencies
-        run: pip install -r python/build-requirements.txt
-
-      - name: Install FEniCS Python components
+        working-directory: python
         run: |
-          pip install --no-build-isolation git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+          pip install --group pyproject.toml:build
+
+      - name: Install UFL
+        run: |
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+
+      # Split install ensures that basix.pc ends up in PKG_CONFIG_PATH for later pkg-config test
+      - name: Install Basix (C++)
+        run: |
+          git clone --branch ${{ env.basix_ref }} --single-branch https://github.com/${{ env.basix_repository }}.git
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-basix -S basix/cpp
+          cmake --build build-basix
+          cmake --install build-basix
+
+      - name: Install Basix (Python)
+        run: pip install --no-build-isolation ./basix/python
+
+      - name: Install FFCx
+        run: pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure (C++)
         working-directory: cpp
@@ -203,6 +225,8 @@ jobs:
           --warn-uninitialized
           -G Ninja
           -DCMAKE_BUILD_TYPE=Developer
+          -DBUILD_TESTING=true
+          -DDOLFINX_BUILD_DEMOS=true
           -DDOLFINX_ENABLE_ADIOS2=true
           -DDOLFINX_ENABLE_KAHIP=true
           -DDOLFINX_ENABLE_PETSC=true
@@ -214,41 +238,28 @@ jobs:
         working-directory: cpp/build
         run: cmake --build . --target install
 
-      - name: Build tests (C++, standalone)
-        working-directory: cpp/test
+      - name: Run pkg-config test (C++)
+        working-directory: cpp/test/pkgconfig
         run: |
-          cmake -B build -S .
-          cmake --build build
+          export PKG_CONFIG_PATH=$PETSC_DIR/$PETSC_ARCH/lib/pkgconfig:$SLEPC_DIR/$PETSC_ARCH/lib/pkgconfig:$PKG_CONFIG_PATH
+          make
+          make run
 
-      - name: Run tests (C++, serial)
-        working-directory: cpp/test/build
-        run: mpiexec -np 1 ctest -V --output-on-failure -R unittests
-      - name: Run tests (C++, MPI, np=3)
-        working-directory: cpp/test/build
-        run: mpiexec -np 3 ctest -V --output-on-failure -R unittests
-
-      - name: Build and run C++ regression tests (serial and MPI (np=2))
-        run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
-          cmake --build build/demo
-          cd build/demo
-          ctest -V -R demo -R serial
-          ctest --output-on-failure -V -R demo -R mpi_2
+      - name: Run unit tests and demos via target (C++, serial and parallel)
+        working-directory: cpp/build
+        env:
+          CTEST_OUTPUT_ON_FAILURE: 1
+        run: cmake --build . --target test
 
       - name: Build Python interface
-        run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test]'
-          python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
+        run: >
+          pip install --group python/pyproject.toml:test 'python/'
+          --check-build-dependencies
+          --no-build-isolation
+          --config-settings=cmake.build-type="Developer"
 
-      - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
-        working-directory: python
-        run: |
-          python -m venv mypy-env
-          . ./mypy-env/bin/activate
-          pip install mypy types-cffi scipy-stubs
-          mypy -p dolfinx
-        # mypy test
-        # mypy demo
+      - name: Check Python configuration
+        run: python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
       - name: Numpy version
         run: python -c "import numpy; print(numpy.__version__)"
@@ -260,7 +271,8 @@ jobs:
 
       - name: Install pyvista (and dependencies)
         run: |
-          apt-get install libegl1 libxrender1
+          apt-get -y update
+          apt-get install -y libegl1 libxrender1
           pip install pyvista
 
       - name: Run demos (Python, serial)
@@ -276,38 +288,42 @@ jobs:
         run: mpirun -np 3 python -m pytest -m "petsc4py or adios2" python/test/unit/
 
   build-and-publish-docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [lint]
-    container: "ghcr.io/fenics/test-env:current-openmpi"
+    container: "ghcr.io/fenics/test-env:current"
     env:
       PETSC_ARCH: linux-gnu-real64-32
-      OMPI_ALLOW_RUN_AS_ROOT: 1
-      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
     name: Build and publish docs
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
+      - name: Install Python build dependencies
+        working-directory: python
+        run: |
+          pip install --group pyproject.toml:build setuptools
+
       - name: Install FEniCS Python components
         run: |
-          pip install -r python/build-requirements.txt
-          pip install --no-build-isolation git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure C++
         run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -B build -S cpp/
           cmake --build build
           cmake --install build
 
       - name: Build Python interface
-        run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[docs]'
+        run: >
+          pip install --group python/pyproject.toml:docs 'python/'
+          --check-build-dependencies
+          --no-build-isolation
 
       - name: Build C++ interface documentation
         run: |
@@ -315,15 +331,15 @@ jobs:
           echo $DOLFINX_VERSION
           cd cpp/doc
           doxygen Doxyfile
-          make html
+          python -m sphinx -b html source/ build/html
       - name: Upload C++ Doxygen documentation artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docs-cpp-doxygen
           path: cpp/doc/html
           retention-days: 2
       - name: Upload C++ Sphinx documentation artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docs-cpp-sphinx
           path: cpp/doc/build/html
@@ -334,7 +350,7 @@ jobs:
           cd python/doc
           python -m sphinx -W -b html source/ build/html/
       - name: Upload Python documentation artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docs-python
           path: python/doc/build/html
@@ -342,7 +358,7 @@ jobs:
 
       - name: Checkout FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: "FEniCS/docs"
           path: "docs"

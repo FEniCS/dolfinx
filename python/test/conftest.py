@@ -15,8 +15,8 @@ from dolfinx.la import vector as dolfinx_vector
 
 def pytest_runtest_teardown(item):
     """Collect garbage after every test to force calling
-    destructors which might be collective"""
-
+    destructors which might be collective.
+    """
     # Do the normal teardown
     item.teardown()
 
@@ -25,7 +25,12 @@ def pytest_runtest_teardown(item):
     # NOTE: How are we sure that 'item' does not hold references to
     # temporaries and someone else does not hold a reference to 'item'?!
     # Well, it seems that it works...
-    gc.collect()
+    # Only the youngest generation is collected: the reference cycles left
+    # behind by a single test are created fresh each time and so are always
+    # in generation 0, and a full collection here is disproportionately
+    # expensive (measured ~170s of a ~700s full suite run) because it
+    # rescans the entire accumulated interpreter heap on every test.
+    gc.collect(0)
     comm = MPI.COMM_WORLD
     comm.Barrier()
 
@@ -43,7 +48,8 @@ def pytest_runtest_setup(item):
 @pytest.fixture(scope="module")
 def datadir(request):
     """Return the directory of the shared test data. Assumes run from
-    within repository filetree."""
+    within repository filetree.
+    """
     d = os.path.dirname(os.path.abspath(request.module.__file__))
     t = os.path.join(d, "data")
     while not os.path.isdir(t):
@@ -149,7 +155,8 @@ def tempdir(request):
 def cg_solver():
     """Conjugate Gradient solver for SPD problems, which can work in
     serial or parallel for testing use. Not suitable for large
-    problems."""
+    problems.
+    """
 
     def _cg(comm, A, b, x, maxit=500, rtol=None):
         rtol2 = 10 * np.finfo(x.array.dtype).eps if rtol is None else rtol**2

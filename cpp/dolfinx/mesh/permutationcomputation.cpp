@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Matthew Scroggs
+// Copyright (C) 2020-2026 Matthew Scroggs and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,15 +8,26 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
+#include <array>
 #include <bitset>
+#include <cstddef>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <format>
+#include <functional>
+#include <memory>
+#include <ranges>
+#include <stdexcept>
+#include <thread>
+#include <utility>
 
 namespace
 {
-constexpr int _BITSETSIZE = 32;
+constexpr int bitset_size = 32;
 } // namespace
 
 using namespace dolfinx;
@@ -29,8 +40,8 @@ compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
 {
 
   // Number of rotations
-  std::uint8_t min_v
-      = std::distance(e_vertices.begin(), std::ranges::min_element(e_vertices));
+  std::uint8_t min_v = std::ranges::distance(
+      e_vertices.begin(), std::ranges::min_element(e_vertices));
 
   // pre is the (local) number of the next vertex clockwise from the lowest
   // numbered vertex
@@ -40,8 +51,8 @@ compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
   // lowest numbered vertex
   const int post = e_vertices[(min_v + 1) % 3];
 
-  std::uint8_t g_min_v
-      = std::distance(vertices.begin(), std::ranges::min_element(vertices));
+  std::uint8_t g_min_v = std::ranges::distance(
+      vertices.begin(), std::ranges::min_element(vertices));
 
   // g_pre is the (global) number of the next vertex clockwise from the lowest
   // numbered vertex
@@ -65,8 +76,8 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
                          const std::vector<std::int64_t>& vertices)
 {
   // Find minimum local cell vertex on facet
-  std::uint8_t min_v
-      = std::distance(e_vertices.begin(), std::ranges::min_element(e_vertices));
+  std::uint8_t min_v = std::ranges::distance(
+      e_vertices.begin(), std::ranges::min_element(e_vertices));
 
   // Table of next and previous vertices
   // 0 - 2
@@ -93,8 +104,8 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
     min_v = 5 - min_v;
 
   // Find minimum global vertex in facet
-  std::uint8_t g_min_v
-      = std::distance(vertices.begin(), std::ranges::min_element(vertices));
+  std::uint8_t g_min_v = std::ranges::distance(
+      vertices.begin(), std::ranges::min_element(vertices));
 
   // rots is the number of rotations to get the lowest numbered
   // vertex to the origin
@@ -121,8 +132,9 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
 template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
 compute_triangle_quad_face_permutations(const mesh::Topology& topology,
-                                        int cell_index)
+                                        int cell_index, int num_threads)
 {
+  common::Timer t_perm("* Compute triangle/quad face permutations");
   const std::vector<mesh::CellType>& cell_types = topology.entity_types(3);
   mesh::CellType cell_type = cell_types.at(cell_index);
 
@@ -156,9 +168,56 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
 
   const std::int32_t num_cells = c_to_v->num_nodes();
   std::vector<std::bitset<BITSETSIZE>> face_perm(num_cells, 0);
-  std::vector<std::int64_t> cell_vertices, vertices;
-  std::vector<std::int32_t> e_vertices;
   auto im = topology.index_map(0);
+
+  auto process_thread
+      = [](std::array<std::int64_t, 2> range, auto&& im, auto&& face_perm,
+           auto&& face_type_indices, auto&& c_to_v, auto&& f_to_v,
+           auto&& c_to_f, auto&& compute_refl_rots)
+  {
+    std::vector<std::int64_t> cell_vertices, vertices;
+    std::vector<std::int32_t> e_vertices;
+    for (std::int64_t c = range[0]; c < range[1]; ++c)
+    {
+      cell_vertices.resize(c_to_v->links(c).size());
+      im->local_to_global(c_to_v->links(c), cell_vertices);
+      auto cell_faces = c_to_f->links(c);
+      for (std::size_t j = 0; j < cell_faces.size(); ++j)
+      {
+        // Get the face
+        const int face = cell_faces[j];
+        e_vertices.resize(f_to_v->num_links(face));
+        vertices.resize(f_to_v->num_links(face));
+        im->local_to_global(f_to_v->links(face), vertices);
+
+        // Orient that triangle or quadrilateral so the lowest
+        // numbered vertex is the origin, and the next vertex
+        // anticlockwise from the lowest has a lower number than the
+        // next vertex clockwise. Find the index of the lowest
+        // numbered vertex.
+
+        // Find iterators pointing to cell vertex given a vertex on
+        // facet
+        for (std::size_t k = 0; k < vertices.size(); ++k)
+        {
+          auto it = std::ranges::find(cell_vertices, vertices[k]);
+          assert(it != cell_vertices.end());
+
+          // Get the actual local vertex indices
+          e_vertices[k] = std::ranges::distance(cell_vertices.begin(), it);
+        }
+
+        // Compute reflections and rotations for this face type
+        auto [refl, rots] = compute_refl_rots(e_vertices, vertices);
+
+        // Store bits for this face
+        int fi = face_type_indices.get()[j];
+        face_perm.get()[c][3 * fi] = refl;
+        face_perm.get()[c][3 * fi + 1] = rots % 2;
+        face_perm.get()[c][3 * fi + 2] = rots / 2;
+      }
+    }
+  };
 
   for (std::size_t t = 0; t < face_type_indices.size(); ++t)
   {
@@ -168,44 +227,19 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
       auto compute_refl_rots = (mesh_face_types[t] == mesh::CellType::triangle)
                                    ? compute_triangle_rot_reflect
                                    : compute_quad_rot_reflect;
-      for (int c = 0; c < num_cells; ++c)
+      assert(num_threads > 0);
+      std::vector<std::jthread> threads;
+      for (int i : std::ranges::iota_view(1, num_threads))
       {
-        cell_vertices.resize(c_to_v->links(c).size());
-        im->local_to_global(c_to_v->links(c), cell_vertices);
-
-        auto cell_faces = c_to_f[t]->links(c);
-        for (std::size_t i = 0; i < cell_faces.size(); ++i)
-        {
-          // Get the face
-          const int face = cell_faces[i];
-          e_vertices.resize(f_to_v[t]->num_links(face));
-          vertices.resize(f_to_v[t]->num_links(face));
-          im->local_to_global(f_to_v[t]->links(face), vertices);
-
-          // Orient that triangle or quadrilateral so the lowest numbered
-          // vertex is the origin, and the next vertex anticlockwise from
-          // the lowest has a lower number than the next vertex clockwise.
-          // Find the index of the lowest numbered vertex.
-
-          // Find iterators pointing to cell vertex given a vertex on facet
-          for (std::size_t j = 0; j < vertices.size(); ++j)
-          {
-            auto it = std::find(cell_vertices.begin(), cell_vertices.end(),
-                                vertices[j]);
-            // Get the actual local vertex indices
-            e_vertices[j] = std::distance(cell_vertices.begin(), it);
-          }
-
-          // Compute reflections and rotations for this face type
-          auto [refl, rots] = compute_refl_rots(e_vertices, vertices);
-
-          // Store bits for this face
-          int fi = face_type_indices[t][i];
-          face_perm[c][3 * fi] = refl;
-          face_perm[c][3 * fi + 1] = rots % 2;
-          face_perm[c][3 * fi + 2] = rots / 2;
-        }
+        std::array range = common::local_range(i, num_cells, num_threads);
+        threads.emplace_back(process_thread, range, im, std::ref(face_perm),
+                             std::cref(face_type_indices[t]), c_to_v, f_to_v[t],
+                             c_to_f[t], compute_refl_rots);
       }
+      std::array range = common::local_range(0, num_cells, num_threads);
+      process_thread(range, im, std::ref(face_perm),
+                     std::cref(face_type_indices[t]), c_to_v, f_to_v[t],
+                     c_to_f[t], compute_refl_rots);
     }
   }
 
@@ -214,8 +248,10 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
 //-----------------------------------------------------------------------------
 template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
-compute_edge_reflections(const mesh::Topology& topology)
+compute_edge_reflections(const mesh::Topology& topology, int num_threads)
 {
+  common::Timer t_perm("* Compute edge reflections");
+
   mesh::CellType cell_type = topology.cell_type();
   const int tdim = topology.dim();
   const int edges_per_cell = cell_num_entities(cell_type, 1);
@@ -225,46 +261,72 @@ compute_edge_reflections(const mesh::Topology& topology)
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
   auto c_to_e = topology.connectivity(tdim, 1);
-  assert(c_to_e);
+  if (!c_to_e)
+    throw std::runtime_error("Edges have not been computed.");
   auto e_to_v = topology.connectivity(1, 0);
-  assert(e_to_v);
+  if (!e_to_v)
+  {
+    throw std::runtime_error(
+        "Edge-to-vertex connectivity has not been computed.");
+  }
 
   auto im = topology.index_map(0);
   assert(im);
 
-  std::vector<std::bitset<BITSETSIZE>> edge_perm(num_cells, 0);
-  std::vector<std::int64_t> cell_vertices, vertices;
-  for (int c = 0; c < c_to_v->num_nodes(); ++c)
+  std::vector<std::bitset<bitset_size>> edge_perm(num_cells, 0);
+  auto process_thread
+      = [](std::array<std::int64_t, 2> range, auto&& im, auto&& edge_perm,
+           auto&& c_to_v, auto&& e_to_v, auto&& c_to_e, int num_edges)
   {
-    cell_vertices.resize(c_to_v->num_links(c));
-    im->local_to_global(c_to_v->links(c), cell_vertices);
-    auto cell_edges = c_to_e->links(c);
-    for (int i = 0; i < edges_per_cell; ++i)
+    std::vector<std::int64_t> cell_vertices;
+    std::vector<std::int64_t> vertices;
+    for (int c = range[0]; c < range[1]; ++c)
     {
-      vertices.resize(e_to_v->links(cell_edges[i]).size());
-      im->local_to_global(e_to_v->links(cell_edges[i]), vertices);
+      cell_vertices.resize(c_to_v->num_links(c));
+      im->local_to_global(c_to_v->links(c), cell_vertices);
+      auto cell_edges = c_to_e->links(c);
+      for (int edge = 0; edge < num_edges; ++edge)
+      {
+        vertices.resize(e_to_v->links(cell_edges[edge]).size());
+        im->local_to_global(e_to_v->links(cell_edges[edge]), vertices);
 
-      // If the entity is an interval, it should be oriented pointing
-      // from the lowest numbered vertex to the highest numbered vertex.
+        // If the entity is an interval, it should be oriented pointing
+        // from the lowest numbered vertex to the highest numbered vertex.
 
-      // Find iterators pointing to cell vertex given a vertex on facet
-      auto it0
-          = std::find(cell_vertices.begin(), cell_vertices.end(), vertices[0]);
-      auto it1
-          = std::find(cell_vertices.begin(), cell_vertices.end(), vertices[1]);
+        // Find iterators pointing to cell vertex given a vertex on facet
+        auto it0 = std::ranges::find(cell_vertices, vertices[0]);
+        auto it1 = std::ranges::find(cell_vertices, vertices[1]);
 
-      // The number of reflections. Comparing iterators directly instead
-      // of values they point to is sufficient here.
-      edge_perm[c][i] = (it1 < it0) == (vertices[1] > vertices[0]);
+        // The number of reflections. Comparing iterators directly instead
+        // of values they point to is sufficient here.
+        edge_perm.get()[c][edge] = (it1 < it0) == (vertices[1] > vertices[0]);
+      }
     }
+  };
+
+  // Launch threads for computing edge reflections. The first thread is run in
+  // the main task.
+
+  std::vector<std::jthread> threads;
+  assert(num_threads > 0);
+  for (int i : std::ranges::iota_view(1, num_threads))
+  {
+    std::array<std::int64_t, 2> range
+        = common::local_range(i, c_to_v->num_nodes(), num_threads);
+    threads.emplace_back(process_thread, range, im, std::ref(edge_perm), c_to_v,
+                         e_to_v, c_to_e, edges_per_cell);
   }
+  std::array<std::int64_t, 2> range
+      = common::local_range(0, c_to_v->num_nodes(), num_threads);
+  process_thread(range, im, std::ref(edge_perm), c_to_v, e_to_v, c_to_e,
+                 edges_per_cell);
 
   return edge_perm;
 }
 //-----------------------------------------------------------------------------
 template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
-compute_face_permutations(const mesh::Topology& topology)
+compute_face_permutations(const mesh::Topology& topology, int num_threads)
 {
   if (topology.entity_types(3).size() > 1)
   {
@@ -278,66 +340,117 @@ compute_face_permutations(const mesh::Topology& topology)
     throw std::runtime_error("Faces have not been computed.");
 
   // Compute face permutations for first cell type in the topology
-  return compute_triangle_quad_face_permutations<BITSETSIZE>(topology, 0);
+  return compute_triangle_quad_face_permutations<BITSETSIZE>(topology, 0,
+                                                             num_threads);
 }
 //-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
-mesh::compute_entity_permutations(const mesh::Topology& topology)
+std::vector<std::uint8_t>
+mesh::compute_entity_permutations(const mesh::Topology& topology, int dim,
+                                  int num_threads)
 {
+  if (num_threads < 1)
+    throw std::invalid_argument("num_threads must be >= 1.");
+
+  const int tdim = topology.dim();
+  if (dim < 0 or dim >= tdim)
+  {
+    throw std::invalid_argument(
+        std::format("Cannot compute permutations for dimension {} entities of "
+                    "a topology of dimension {}.",
+                    dim, tdim));
+  }
+
+  // A vertex has no orientation, so there is nothing to permute.
+  if (dim == 0)
+    return {};
+
   common::Timer t_perm("Compute entity permutations");
+
+  CellType cell_type = topology.cell_type();
+  const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
+  const int entities_per_cell = cell_num_entities(cell_type, dim);
+  std::vector<std::uint8_t> perms(num_cells * entities_per_cell, 0);
+
+  switch (dim)
+  {
+  case 1:
+  {
+    spdlog::info("Compute edge permutations");
+    const std::vector<std::bitset<bitset_size>> edge_perm
+        = compute_edge_reflections<bitset_size>(topology, num_threads);
+    for (std::int32_t c = 0; c < num_cells; ++c)
+      for (int i = 0; i < entities_per_cell; ++i)
+        perms[c * entities_per_cell + i] = edge_perm[c][i];
+    break;
+  }
+  case 2:
+  {
+    spdlog::info("Compute face permutations");
+    const std::vector<std::bitset<bitset_size>> face_perm
+        = compute_face_permutations<bitset_size>(topology, num_threads);
+    // Three bits encode each face: one reflection bit and two rotation
+    // bits.
+    for (std::int32_t c = 0; c < num_cells; ++c)
+    {
+      for (int i = 0; i < entities_per_cell; ++i)
+      {
+        perms[c * entities_per_cell + i]
+            = (face_perm[c].to_ulong() >> (3 * i)) & 7;
+      }
+    }
+    break;
+  }
+  default:
+    throw std::invalid_argument(std::format(
+        "Permutations of dimension {} entities are not supported.", dim));
+  }
+
+  return perms;
+}
+//-----------------------------------------------------------------------------
+
+std::vector<std::uint32_t>
+mesh::compute_cell_permutations(const mesh::Topology& topology, int num_threads)
+{
+  if (num_threads < 1)
+    throw std::invalid_argument("num_threads must be >= 1.");
+
+  common::Timer t_perm("Compute cell permutations");
+
   const int tdim = topology.dim();
   CellType cell_type = topology.cell_type();
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
-  const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
   std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
-  std::vector<std::uint8_t> facet_permutations(num_cells * facets_per_cell);
   std::int32_t used_bits = 0;
   if (tdim > 2)
   {
+    // Each face occupies 3 bits: one reflection and two rotations. This
+    // will need increasing if faces with more than 4 sides are added.
     spdlog::info("Compute face permutations");
-    const int faces_per_cell = cell_num_entities(cell_type, 2);
-    const auto face_perm = compute_face_permutations<_BITSETSIZE>(topology);
-    for (int c = 0; c < num_cells; ++c)
+    const std::vector<std::bitset<bitset_size>> face_perm
+        = compute_face_permutations<bitset_size>(topology, num_threads);
+    for (std::int32_t c = 0; c < num_cells; ++c)
       cell_permutation_info[c] = face_perm[c].to_ulong();
 
-    // Currently, 3 bits are used for each face. If faces with more than
-    // 4 sides are implemented, this will need to be increased.
-    used_bits += faces_per_cell * 3;
-    assert(tdim == 3);
-    for (int c = 0; c < num_cells; ++c)
-    {
-      for (int i = 0; i < facets_per_cell; ++i)
-      {
-        facet_permutations[c * facets_per_cell + i]
-            = (cell_permutation_info[c] >> (3 * i)) & 7;
-      }
-    }
+    used_bits += cell_num_entities(cell_type, 2) * 3;
   }
 
   if (tdim > 1)
   {
     spdlog::info("Compute edge permutations");
-    const int edges_per_cell = cell_num_entities(cell_type, 1);
-    const auto edge_perm = compute_edge_reflections<_BITSETSIZE>(topology);
-    for (int c = 0; c < num_cells; ++c)
+    const std::vector<std::bitset<bitset_size>> edge_perm
+        = compute_edge_reflections<bitset_size>(topology, num_threads);
+    for (std::int32_t c = 0; c < num_cells; ++c)
       cell_permutation_info[c] |= edge_perm[c].to_ulong() << used_bits;
 
-    used_bits += edges_per_cell;
-    if (tdim == 2)
-    {
-      for (int c = 0; c < num_cells; ++c)
-      {
-        for (int i = 0; i < facets_per_cell; ++i)
-          facet_permutations[c * facets_per_cell + i] = edge_perm[c][i];
-      }
-    }
+    used_bits += cell_num_entities(cell_type, 1);
   }
-  assert(used_bits < _BITSETSIZE);
+  assert(used_bits < bitset_size);
 
-  return {std::move(facet_permutations), std::move(cell_permutation_info)};
+  return cell_permutation_info;
 }
 //-----------------------------------------------------------------------------
