@@ -280,6 +280,30 @@ def _assemble_vector_array(
 # -- Matrix assembly ------------------------------------------------------
 
 
+def _bc_dof_markers(V: FunctionSpace, bcs: Sequence[DirichletBC] | None) -> npt.NDArray[np.int8]:
+    """Mark the dofs of ``V`` constrained by a boundary condition.
+
+    Args:
+        V: Space whose dofs (owned and ghost) are marked.
+        bcs: Boundary conditions. Only those defined on ``V`` or a
+            subspace of it contribute.
+
+    Returns:
+        Array with entry ``1`` for constrained dofs and ``0``
+        otherwise, or an empty array if no boundary condition applies.
+    """
+    markers = None
+    for bc in bcs or []:
+        if V.contains(bc.function_space):
+            if markers is None:
+                dofmap = V.dofmaps[0]
+                imap = dofmap.index_map
+                size = dofmap.index_map_bs * (imap.size_local + imap.num_ghosts)
+                markers = np.zeros(size, dtype=np.int8)
+            markers[bc.dof_indices()[0]] = 1
+    return np.empty(0, dtype=np.int8) if markers is None else markers
+
+
 @functools.singledispatch
 def assemble_matrix(
     a: typing.Any,
@@ -354,15 +378,21 @@ def _assemble_matrix_csr(
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    _bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
-
     if constants is None:
         constants = pack_constants(a)
 
     if coeffs is None:
         coeffs = pack_coefficients(a)
 
-    _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, _bcs)  # type: ignore[arg-type]
+    V0, V1 = a.function_spaces
+    _cpp.fem.assemble_matrix(
+        A._cpp_object,
+        a._cpp_object,
+        constants,
+        coeffs,  # type: ignore[arg-type]
+        _bc_dof_markers(V0, bcs),
+        _bc_dof_markers(V1, bcs),
+    )
 
     # If matrix is a 'diagonal' block, set diagonal entry for
     # constrained dofs. The row list is computed once and passed to
@@ -448,8 +478,15 @@ def assemble_matrix_fn(
         bcs: Boundary conditions that affect the assembled matrix. Rows
             and columns constrained by a boundary condition are zeroed.
     """
-    _bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
-    typing.cast(typing.Any, _cpp.fem.assemble_matrix)(fn, a._cpp_object, _bcs)
+    V0, V1 = a.function_spaces
+    typing.cast(typing.Any, _cpp.fem.assemble_matrix)(
+        fn,
+        a._cpp_object,
+        pack_constants(a),
+        pack_coefficients(a),
+        _bc_dof_markers(V0, bcs),
+        _bc_dof_markers(V1, bcs),
+    )
 
 
 # -- Modifiers for Dirichlet conditions -----------------------------------

@@ -51,7 +51,7 @@ from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem import pack_coefficients, pack_constants
-from dolfinx.fem.assemble import _assemble_vector_array
+from dolfinx.fem.assemble import _assemble_vector_array, _bc_dof_markers
 from dolfinx.fem.assemble import apply_lifting as _apply_lifting
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
@@ -579,17 +579,18 @@ def _assemble_matrix_petsc(
             ]
         )
 
-        _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
         for i, a_row in enumerate(a):
             for j, a_sub in enumerate(a_row):
                 if a_sub is not None:
                     Asub = A.getLocalSubMatrix(is0[i], is1[j])
+                    V0, V1 = a_sub.function_spaces
                     _cpp.fem.petsc.assemble_matrix(
                         Asub,
                         a_sub._cpp_object,  # type: ignore[arg-type]
                         consts[i][j],
                         coeffs[i][j],  # type: ignore[index]
-                        _bcs,  # type: ignore[arg-type]
+                        _bc_dof_markers(V0, bcs),
+                        _bc_dof_markers(V1, bcs),
                         True,
                     )
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
@@ -615,10 +616,8 @@ def _assemble_matrix_petsc(
                     Asub = A.getLocalSubMatrix(is0[i], is1[j])
                     V0, V1 = a_sub.function_spaces
                     if V0._cpp_object is V1._cpp_object:
-                        # Combine the locally owned rows of the bcs
-                        # defined on this space, rather than the V/bcs
-                        # form of insert_diagonal, which would recompute
-                        # this on every call
+                        # Locally owned rows of the bcs defined on
+                        # this space
                         rows_ = []
                         for bc in bcs or []:
                             if V0.contains(bc.function_space):
@@ -632,15 +631,20 @@ def _assemble_matrix_petsc(
             constants = pack_constants(a)
         if coeffs is None:
             coeffs = pack_coefficients(a)
-        _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
-        _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs, False)  # type: ignore
         V0, V1 = a.function_spaces
+        _cpp.fem.petsc.assemble_matrix(
+            A,
+            a._cpp_object,
+            constants,
+            coeffs,  # type: ignore[arg-type]
+            _bc_dof_markers(V0, bcs),
+            _bc_dof_markers(V1, bcs),
+            False,
+        )
         if V0._cpp_object is V1._cpp_object:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
-            # Combine the locally owned rows of the bcs defined on this
-            # space, rather than the V/bcs form of insert_diagonal,
-            # which would recompute this on every call
+            # Locally owned rows of the bcs defined on this space
             rows_ = []
             for bc in bcs or []:
                 if V0.contains(bc.function_space):
