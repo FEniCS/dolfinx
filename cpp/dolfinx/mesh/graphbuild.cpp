@@ -517,28 +517,46 @@ compute_nonlocal_dual_graph(
 
   MPI_Comm_free(&comm_po_receive);
 
-  // --- Build global dual graph
-
-  // Compute adjacency list offsets
-  std::vector<std::int32_t> offsets(local_dual_graph.num_nodes() + 1, 0);
+  // Group received entries by attached local cell. Rows may contain
+  // duplicates and are not yet sorted; keep weights aligned with neighbours.
+  std::vector<std::int32_t> received_offsets(local_dual_graph.num_nodes() + 1,
+                                             0);
+  for (std::size_t i = 0; i < dedge_recv_count.size(); ++i)
   {
-    // Count number of adjacency list edges per node
-    std::vector<std::int32_t> num_edges(local_dual_graph.num_nodes(), 0);
-    std::adjacent_difference(std::next(local_dual_graph.offsets().begin()),
-                             local_dual_graph.offsets().end(),
-                             num_edges.begin());
+    const std::int32_t cell = cells[send_indx_to_pos[i]];
+    received_offsets[cell + 1] += dedge_recv_count[i];
+  }
+  std::partial_sum(received_offsets.begin(), received_offsets.end(),
+                   received_offsets.begin());
 
+  std::vector<std::int64_t> received_data(received_offsets.back());
+  std::vector<std::int32_t> received_weights;
+  if (weighted)
+    received_weights.resize(received_data.size());
+  {
+    std::vector<std::int32_t> cursor = received_offsets;
+    std::int32_t source = 0;
     for (std::size_t i = 0; i < dedge_recv_count.size(); ++i)
     {
-      std::size_t cell_idx = send_indx_to_pos[i];
-      std::size_t cell = cells[cell_idx];
-      num_edges[cell] += dedge_recv_count[i];
+      const std::int32_t cell = cells[send_indx_to_pos[i]];
+      for (std::int32_t j = 0; j < dedge_recv_count[i]; ++j)
+      {
+        const std::int32_t destination = cursor[cell]++;
+        received_data[destination] = recv_dual_edges[source];
+        if (weighted)
+          received_weights[destination] = recv_dual_weights[source];
+        ++source;
+      }
     }
-
-    // Compute adjacency list offsets
-    std::partial_sum(num_edges.cbegin(), num_edges.cend(),
-                     std::next(offsets.begin()));
+    assert(source == static_cast<std::int32_t>(recv_dual_edges.size()));
   }
+
+  // --- Build global dual graph
+
+  // Combined row offsets before duplicate removal.
+  std::vector<std::int32_t> offsets(local_dual_graph.num_nodes() + 1, 0);
+  for (std::size_t i = 0; i < offsets.size(); ++i)
+    offsets[i] = local_dual_graph.offsets()[i] + received_offsets[i];
 
   // Compute adjacency list data  and weights if any (edges)
   std::vector<std::int32_t> edge_weights;
@@ -563,23 +581,18 @@ compute_nonlocal_dual_graph(
       }
     }
 
-    // Add non-local data
-    int offset = 0;
-    for (std::size_t i = 0; i < dedge_recv_count.size(); i++)
+    // Append each cell's received row after its local entries.
+    for (std::int32_t cell = 0; cell < local_dual_graph.num_nodes(); ++cell)
     {
-      std::int32_t cell_idx = send_indx_to_pos[i];
-      std::int32_t cell = cells[cell_idx];
-
-      for (int j = 0; j < dedge_recv_count[i]; j++)
+      const std::int32_t begin = received_offsets[cell];
+      const std::int32_t count = received_offsets[cell + 1] - begin;
+      std::copy_n(std::next(received_data.begin(), begin), count,
+                  std::next(data.begin(), disp[cell]));
+      if (weighted)
       {
-        std::int32_t _cell_offset = disp[cell]++;
-        std::int64_t node = recv_dual_edges[offset + j];
-        data[_cell_offset] = node;
-        if (weighted)
-          edge_weights[_cell_offset] = recv_dual_weights[offset + j];
+        std::copy_n(std::next(received_weights.begin(), begin), count,
+                    std::next(edge_weights.begin(), disp[cell]));
       }
-
-      offset += dedge_recv_count[i];
     }
 
     // Local connections are possibly introduced again by remote ->
