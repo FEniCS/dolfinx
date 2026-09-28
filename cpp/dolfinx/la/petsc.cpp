@@ -270,9 +270,10 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
     }
   }
 
-  // Block sizes are set before the local-to-global maps are attached.
-  // MatXAIJSetPreallocation below takes PETSC_DECIDE so that it reads
-  // them from the matrix; an explicit value resets them, which
+  // Set the block sizes before attaching the local-to-global maps.
+  // MatXAIJSetPreallocation below is given PETSC_DECIDE as its block
+  // size argument so that it reads the sizes from the matrix; passing
+  // it an explicit block size instead calls MatSetBlockSize, which
   // downgrades an attached map whose block size exceeds one
   common::petsc::check(MatSetBlockSizes(A, bs[0], bs[1]), "MatSetBlockSizes");
 
