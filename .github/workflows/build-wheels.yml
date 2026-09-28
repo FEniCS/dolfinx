@@ -321,11 +321,11 @@ jobs:
 
           CIBW_BUILD_FRONTEND: "build; args: -nx"
 
-          # This comment applies to Linux and Windows.
-          # Excluding libbasix.so, libmpi.so and libfabric.dll stops delvewheel
-          # vendoring a copy of those dlls and all of their dependencies into
+          # This comment applies to Linux and Windows (.dlls).
+          # Excluding libbasix.so, libmpi.so and libfabric.so stops delvewheel
+          # vendoring a copy of those .so and all of their dependencies into
           # DOLFINx. DOLFINx's __init__.py does import basix and import mpi4py
-          # which add the needed DLLs to the runtime environment before `from
+          # which add the needed .so to the runtime environment before `from
           # dolfinx import cpp`.
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             auditwheel repair --exclude libmpi.so* --exclude libbasix.so* -w {dest_dir} {wheel} &&
