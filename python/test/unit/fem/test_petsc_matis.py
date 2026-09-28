@@ -158,3 +158,40 @@ def test_square_block_type_accepted(kind):
     A.assemble()
     assert A.norm() > 0.0
     A.destroy()
+
+
+@pytest.mark.petsc4py
+def test_matis_square_local_matrix():
+    """A square, single-space form must give a square MATIS local matrix.
+
+    The local-to-global maps set the local matrix dimensions, so they
+    must come from the maps the sparsity pattern was built with, not
+    from the column map grown by finalization.
+    """
+    from dolfinx.fem import create_sparsity_pattern
+    from dolfinx.fem.petsc import assemble_matrix
+
+    comm = MPI.COMM_WORLD
+    if comm.size < 2:
+        pytest.skip("Requires at least two MPI ranks")
+
+    msh = _unit_mesh(CellType.triangle, 16)
+    V = functionspace(msh, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
+
+    # The column ghost set must grow, or the test is vacuous
+    pattern = create_sparsity_pattern(a)
+    pattern.finalize()
+    col, col_grown = pattern.input_index_map(1), pattern.index_map(1)
+    assert col.num_ghosts == V.dofmap.index_map.num_ghosts
+    assert comm.allreduce(col_grown.num_ghosts - col.num_ghosts, MPI.SUM) > 0
+
+    A = assemble_matrix(a, kind="is")
+    A.assemble()
+    rmap, cmap = A.getLGMap()
+    assert rmap.getSize() == cmap.getSize()
+    assert np.array_equal(rmap.getIndices(), cmap.getIndices())
+    assert rmap.handle == cmap.handle
+    assert A.getISLocalMat().getSize() == (rmap.getSize(), rmap.getSize())
+    A.destroy()

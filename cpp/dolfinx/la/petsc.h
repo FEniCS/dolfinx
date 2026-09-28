@@ -139,10 +139,11 @@ void scatter_local_vectors(
 /// @param[in] type The PETSc Mat type to create. If `std::nullopt` or
 /// an empty string, the PETSc default is used.
 /// @param[in] rlgmap Row local-to-global map to attach to the matrix.
-/// If `std::nullopt`, a map is built from the row index map of `sp`.
+/// If `std::nullopt`, a map is built from the row input index map of
+/// `sp`.
 /// @param[in] clgmap Column local-to-global map to attach to the
-/// matrix. If `std::nullopt`, a map is built from the column index map
-/// of `sp`.
+/// matrix. If `std::nullopt`, a map is built from the column input
+/// index map of `sp`.
 /// @note A supplied map must be created on `comm`; `MATIS` requires the
 /// maps to share the matrix communicator.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
