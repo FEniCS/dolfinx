@@ -185,6 +185,41 @@ void test_sparsity_pattern_common_index_map()
   p.insert(5, 4);
   p.finalize();
   CHECK(p.index_map(0) == p.index_map(1));
+  CHECK(p.column_index_map() == p.index_map(1));
+}
+
+void test_sparsity_pattern_shared_map_column_ghost_growth()
+{
+  // A square pattern built from one IndexMap keeps that map for both
+  // dimensions, even where finalization adds column ghosts.
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const int rank = dolfinx::MPI::rank(comm);
+  if (dolfinx::MPI::size(comm) < 2)
+    return;
+
+  std::vector<std::int64_t> ghosts;
+  std::vector<int> ghost_owners;
+  if (rank == 1)
+  {
+    ghosts.push_back(0);
+    ghost_owners.push_back(0);
+  }
+  auto map = std::make_shared<common::IndexMap>(comm, 1, ghosts, ghost_owners);
+  la::SparsityPattern p(comm, {map, map}, {1, 1});
+
+  // Rank 1 adds to rank 0's row, at a column rank 0 does not hold
+  if (rank == 1)
+    p.insert(1, 0);
+  p.finalize();
+
+  CHECK(p.index_map(0) == map);
+  CHECK(p.index_map(1) == map);
+  CHECK(p.column_index_map() != map);
+  if (rank == 0)
+  {
+    CHECK(p.column_index_map()->ghosts().size() == 1);
+    CHECK(p.column_index_map()->ghosts().front() == 1);
+  }
 }
 
 void test_sparsity_pattern_asymmetric_column_ghost_growth()
@@ -215,13 +250,14 @@ void test_sparsity_pattern_asymmetric_column_ghost_growth()
   }
   p.finalize();
 
+  CHECK(p.index_map(1) == column_map);
   if (rank == 0)
   {
-    CHECK(p.index_map(1)->ghosts().size() == 1);
-    CHECK(p.index_map(1)->ghosts().front() == 1);
+    CHECK(p.column_index_map()->ghosts().size() == 1);
+    CHECK(p.column_index_map()->ghosts().front() == 1);
   }
   else
-    CHECK(p.index_map(1)->ghosts().empty());
+    CHECK(p.column_index_map()->ghosts().empty());
 }
 
 void test_sparsity_pattern_empty_columns()
@@ -290,6 +326,7 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_matrix_norm());
   CHECK_NOTHROW(test_matrix_cast());
   CHECK_NOTHROW(test_sparsity_pattern_common_index_map());
+  CHECK_NOTHROW(test_sparsity_pattern_shared_map_column_ghost_growth());
   CHECK_NOTHROW(test_sparsity_pattern_asymmetric_column_ghost_growth());
   CHECK_NOTHROW(test_sparsity_pattern_empty_columns());
   CHECK_NOTHROW(test_sparsity_pattern_duplicate_blocks());

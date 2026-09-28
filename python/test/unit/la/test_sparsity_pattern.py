@@ -7,6 +7,9 @@
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 from dolfinx.common import index_map as create_index_map
 from dolfinx.fem import functionspace, locate_dofs_topological
 from dolfinx.la import sparsity_pattern, sparsity_pattern_blocked
@@ -46,3 +49,35 @@ def test_blocked_pattern_with_empty_blocks():
     )
     blocked_pattern.finalize()
     assert blocked_pattern.num_nonzeros == 0
+
+
+def test_column_index_map_growth():
+    """Finalizing can add column ghosts without changing the input maps.
+
+    Rank 1 assembles an entry on a row it does not own, at a column the
+    row owner does not hold, so finalization adds a column ghost on
+    rank 0. ``index_map`` must still return the constructor's maps, so
+    that a pattern built from a single map is recognisable as such.
+    """
+    comm = MPI.COMM_WORLD
+    if comm.size < 2:
+        pytest.skip("Requires at least two MPI ranks")
+
+    ghosts = (
+        np.array([0] if comm.rank == 1 else [], dtype=np.int64),
+        np.array([0] if comm.rank == 1 else [], dtype=np.int32),
+    )
+    imap = create_index_map(comm, 1, ghosts)
+    pattern = sparsity_pattern(comm, [imap, imap], [1, 1])
+
+    # Rank 1 adds to rank 0's row, at a column rank 0 does not hold
+    if comm.rank == 1:
+        pattern.insert(1, 0)
+    pattern.finalize()
+
+    for dim in range(2):
+        assert pattern.index_map(dim).num_ghosts == imap.num_ghosts
+    assert pattern.column_index_map().size_local == imap.size_local
+    if comm.rank == 0:
+        assert pattern.column_index_map().num_ghosts == 1
+        assert pattern.column_index_map().ghosts[0] == 1

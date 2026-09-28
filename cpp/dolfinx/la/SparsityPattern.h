@@ -113,13 +113,31 @@ public:
   /// entries
   void finalize();
 
-  /// @brief Index map for given dimension. Returns the index
-  /// map for rows and columns that will be set by the current MPI rank.
-  /// @note After finalization, the column index map is updated to account for
-  /// additional column entries from other processes.
+  /// @brief Index map for the rows and columns set by the current MPI
+  /// rank, as passed to the constructor. Not modified by
+  /// SparsityPattern::finalize.
+  ///
+  /// @note Finalization can add column ghosts, so the column map does
+  /// not necessarily span the local column indices used by
+  /// SparsityPattern::graph. See SparsityPattern::column_index_map.
   /// @param[in] dim Requested map, row (0) or column (1).
   /// @return The index map.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
+
+  /// @brief Index map spanning the local column indices used by
+  /// SparsityPattern::graph.
+  ///
+  /// SparsityPattern::finalize sends an entry on an unowned row to the
+  /// row owner, which adds the entry's column as a ghost if its column
+  /// map does not hold it. The returned map covers these ghosts, so it
+  /// can be larger than `index_map(1)`; it is the same object when no
+  /// rank added one, which identifies a pattern built from a single
+  /// map.
+  ///
+  /// @note Added ghosts are known only after
+  /// SparsityPattern::finalize. Before then this is `index_map(1)`.
+  /// @return Column index map, including added ghost columns.
+  std::shared_ptr<const common::IndexMap> column_index_map() const;
 
   /// @brief Global column indices corresponding to the local column
   /// indices used by SparsityPattern::graph.
@@ -173,8 +191,12 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _comm;
 
-  // Index maps for each dimension
+  // Index maps for each dimension, as passed to the constructor
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
+
+  // Column map spanning the finalised pattern's local column indices.
+  // Aliases _index_maps[1] unless finalize() added ghosts.
+  std::shared_ptr<const common::IndexMap> _col_index_map;
 
   // Block size
   std::array<int, 2> _bs;
