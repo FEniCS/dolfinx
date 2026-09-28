@@ -475,8 +475,8 @@ jobs:
           python -m pip install --upgrade pip
           pip -v install --find-links wheelhouse pytest-xdist --group dolfinx/python/pyproject.toml:test ${{ matrix.mpi }} fenics-dolfinx
 
-      # impi-rt installs mpiexec under sys.prefix, where only its conda
-      # activate scripts would find it.
+      # pip does not run the conda activate script that adds impi-rt's
+      # mpiexec to PATH.
       - name: Put mpiexec on PATH (Windows)
         if: runner.os == 'Windows'
         shell: bash
