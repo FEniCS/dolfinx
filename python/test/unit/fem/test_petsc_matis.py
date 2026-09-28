@@ -107,8 +107,19 @@ def test_blocked_matis(kind):
     A_ref = assemble_matrix(a)
     A_ref.assemble()
 
+    if kind == "is" and msh.comm.size > 1:
+        # One monolithic local matrix per subdomain, covering only the
+        # dofs of that subdomain
+        lmat = A.getISLocalMat()
+        assert lmat.getType() == PETSc.Mat.Type.SEQAIJ
+        assert lmat.getSize()[0] < A.getSize()[0]
+        A.restoreISLocalMat(lmat)
+
+    # Mat.convert is in place, so A_cmp is A with a further reference
     A_cmp = A.convert(PETSc.Mat.Type.AIJ)
-    assert np.isclose(A_cmp.norm(), A_ref.norm(), rtol=100 * np.finfo(PETSc.ScalarType).eps)
+    A_cmp.axpy(-1.0, A_ref, PETSc.Mat.Structure.DIFFERENT_NONZERO_PATTERN)
+    eps = np.finfo(PETSc.ScalarType).eps
+    assert A_cmp.norm() == pytest.approx(0.0, abs=100 * eps * A_ref.norm())
     A.destroy(), A_ref.destroy(), A_cmp.destroy()
 
 
