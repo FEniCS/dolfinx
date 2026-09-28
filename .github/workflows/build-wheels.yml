@@ -94,8 +94,6 @@ jobs:
       VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/FEniCS/index.json,readwrite"
 
     steps:
-      # Windows only: cache vcpkg-built ports (e.g. Intel MPI) in a GitHub
-      # Packages NuGet feed, matching windows.yml.
       - name: Add NuGet sources (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -204,8 +202,8 @@ jobs:
           CIBW_ENVIRONMENT_LINUX: PIP_EXTRA_INDEX_URL=file:///project/simple
           # When using Homebrew the packaged .so are always built on the macOS
           # SDK version of the current system. Consequently
-          # MACOSX_DEPLOYMENT_TARGET must always be set to the SDK version of
-          # the current system.
+          # MACOSX_DEPLOYMENT_TARGET must be set to the SDK version of the
+          # current system.
           CIBW_ENVIRONMENT_MACOS: >
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
             MACOSX_DEPLOYMENT_TARGET=$(xcrun --sdk macosx --show-sdk-version)
@@ -320,17 +318,25 @@ jobs:
             cmake.args="-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake;-DVCPKG_OVERLAY_PORTS=../cpp/cmake/vcpkg-overlay"
             wheel.py-api=cp312
             cmake.build-type="Release"
+
           CIBW_BUILD_FRONTEND: "build; args: -nx"
-          # Excluding libbasix stops auditwheel vendoring a second copy of
-          # Basix's dependencies. dolfinx/__init__.py imports basix so that
-          # libbasix is loaded before dolfinx.cpp needs it.
+
+          # This comment applies to Linux and Windows.
+          # Excluding libbasix.so, libmpi.so and libfabric.dll stops delvewheel
+          # vendoring a copy of those dlls and all of their dependencies into
+          # DOLFINx. DOLFINx's __init__.py does import basix and import mpi4py
+          # which add the needed DLLs to the runtime environment before `from
+          # dolfinx import cpp`.
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             auditwheel repair --exclude libmpi.so* --exclude libbasix.so* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
-          # delocate leaves the install name of an excluded library alone, so
-          # each one is repointed at @rpath here. The two rpaths cover the two
-          # depths the binaries sit at, dolfinx/ and dolfinx/.dylibs/, and the
-          # one that does not apply simply fails to resolve.
+
+          # delocate leaves --excluded libraries loader entries in e.g.
+          # libdolfinx.so pointing at Homebrew. Here, we manually rewrite the
+          # rpath of the excluded libraries to the (relative) locations that
+          # contain those libraries. Not very pretty, would be nice to have
+          # this automated. Also have to re-code sign as crytographic hash
+          # broken by otool.
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             delocate-listdeps --depending {wheel} &&
             delocate-wheel --require-archs {delocate_archs} --exclude libmpi --exclude libbasix -w {dest_dir} {wheel} &&
@@ -341,10 +347,8 @@ jobs:
             wheel pack {dest_dir}/unpacked/* -d {dest_dir} &&
             pipx run abi3audit --verbose --strict --report {wheel}
 
-          # impi.dll and libfabric.dll are the user's to install. The MSVC
-          # runtime is a system dependency, as vcruntime140 already is.
-          # Excluding basix.dll stops delvewheel vendoring a second copy of
-          # Basix's dependencies, which clash with DOLFINx's own when mangled.
+          # msvcp140.dll and msvcp140_atomic_wait.dll shouldn't be included,
+          # check delvewheel issue #78.
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
             python -c "import subprocess; subprocess.run(['delvewheel', 'repair', '-v', '--exclude', 'impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll;basix.dll', '--add-path', r'%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin;C:/Program Files (x86)/Intel/oneAPI/mpi/latest/opt/mpi/libfabric/bin', '-w', r'{dest_dir}', r'{wheel}'], check=True)"
           CIBW_TEST_REQUIRES: pytest-xdist
@@ -429,6 +433,8 @@ jobs:
           name: simple503-${{ matrix.os }}
           path: simple/*
 
+  # Test the Windows and macOS wheels in 'clean' runners. They are not very
+  # clean, in reality...
   test_wheels:
     name: Test wheels on a clean ${{ matrix.os }}
     needs: build_wheels
@@ -449,9 +455,6 @@ jobs:
             jit_options: '{ "cffi_extra_compile_args": ["/Od" ] }'
 
     steps:
-      # A runner that built nothing, so Homebrew and vcpkg are absent and a
-      # dependency the wheel failed to bundle cannot resolve from the build
-      # tree instead.
       - name: Checkout DOLFINx for the test suite
         uses: actions/checkout@v7
         with:
@@ -475,8 +478,13 @@ jobs:
           python -m pip install --upgrade pip
           pip -v install --find-links wheelhouse pytest-xdist --group dolfinx/python/pyproject.toml:test ${{ matrix.mpi }} fenics-dolfinx
 
-      # pip does not run the conda activate script that adds impi-rt's
-      # mpiexec to PATH.
+      # The following are ideas and need full testing:
+      # cmd:
+      #   call "%VIRTUAL_ENV%\etc\conda\activate.d\mpivars.activate.bat"
+      # PowerShell:
+      #   $env:Path = "$env:VIRTUAL_ENV\Library\bin;$env:Path"
+      # Intel currently doesn't provide a nice script for Powershell.
+      # This job step is done with bash for ease, users don't usually use bash.
       - name: Put mpiexec on PATH (Windows)
         if: runner.os == 'Windows'
         shell: bash
