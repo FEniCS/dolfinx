@@ -102,7 +102,7 @@ Vec create_vector_wrap(const la::Vector<V>& x)
 /// @note The caller is responsible for destruction of each IS.
 ///
 /// @param[in] maps Vector of IndexMaps and corresponding block sizes
-/// @return Vector of PETSc Index Sets, created on` PETSC_COMM_SELF`
+/// @return Vector of PETSc Index Sets, created on `PETSC_COMM_SELF`
 std::vector<IS> create_index_sets(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
@@ -134,8 +134,17 @@ void scatter_local_vectors(
 /// non-zero structure of the matrix
 /// @param[in] type The PETSc Mat type to create. If `std::nullopt` or
 /// an empty string, the PETSc default is used.
+/// @param[in] rlgmap Row local-to-global map to attach to the matrix.
+/// If `std::nullopt`, a map is built from the row index map of `sp`.
+/// @param[in] clgmap Column local-to-global map to attach to the
+/// matrix. If `std::nullopt`, a map is built from the column index map
+/// of `sp`.
+/// @note A supplied map must be created on `comm`; `MATIS` requires the
+/// maps to share the matrix communicator.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                  std::optional<std::string_view> type = std::nullopt);
+                  std::optional<std::string_view> type = std::nullopt,
+                  std::optional<ISLocalToGlobalMapping> rlgmap = std::nullopt,
+                  std::optional<ISLocalToGlobalMapping> clgmap = std::nullopt);
 
 /// @brief Create PETSc MatNullSpace. Caller is responsible for
 /// destruction returned object.
