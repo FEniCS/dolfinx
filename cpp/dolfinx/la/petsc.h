@@ -10,15 +10,19 @@
 #ifdef HAS_PETSC
 
 #include "Vector.h"
+#include "utils.h"
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstdint>
 #include <dolfinx/common/petsc.h>
 #include <functional>
+#include <iterator>
 #include <optional>
 #include <petscksp.h>
 #include <petscmat.h>
 #include <petscvec.h>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -235,23 +239,26 @@ public:
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static auto set_fn(Mat A, InsertMode mode)
   {
-    return [A, mode, cache = std::vector<PetscInt>()](
-               std::span<const std::int32_t> rows,
-               std::span<const std::int32_t> cols,
-               std::span<const PetscScalar> vals) mutable -> int
+    return
+        [A, mode, cache = std::vector<PetscInt>()](
+            const LocalIndexRange auto& rows, const LocalIndexRange auto& cols,
+            std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
-      cache.resize(rows.size() + cols.size());
+      cache.resize(std::ranges::size(rows) + std::ranges::size(cols));
       std::ranges::copy(rows, cache.begin());
-      std::ranges::copy(cols, std::next(cache.begin(), rows.size()));
+      std::ranges::copy(cols,
+                        std::next(cache.begin(), std::ranges::size(rows)));
       const PetscInt* _rows = cache.data();
-      const PetscInt* _cols = cache.data() + rows.size();
-      ierr = MatSetValuesLocal(A, rows.size(), _rows, cols.size(), _cols,
-                               vals.data(), mode);
+      const PetscInt* _cols = cache.data() + std::ranges::size(rows);
+      ierr = MatSetValuesLocal(A, std::ranges::size(rows), _rows,
+                               std::ranges::size(cols), _cols, vals.data(),
+                               mode);
 #else
-      ierr = MatSetValuesLocal(A, rows.size(), rows.data(), cols.size(),
-                               cols.data(), vals.data(), mode);
+      ierr = MatSetValuesLocal(A, std::ranges::size(rows),
+                               std::ranges::data(rows), std::ranges::size(cols),
+                               std::ranges::data(cols), vals.data(), mode);
 #endif
 
 #ifndef NDEBUG
@@ -268,23 +275,26 @@ public:
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static auto set_block_fn(Mat A, InsertMode mode)
   {
-    return [A, mode, cache = std::vector<PetscInt>()](
-               std::span<const std::int32_t> rows,
-               std::span<const std::int32_t> cols,
-               std::span<const PetscScalar> vals) mutable -> int
+    return
+        [A, mode, cache = std::vector<PetscInt>()](
+            const LocalIndexRange auto& rows, const LocalIndexRange auto& cols,
+            std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
-      cache.resize(rows.size() + cols.size());
+      cache.resize(std::ranges::size(rows) + std::ranges::size(cols));
       std::ranges::copy(rows, cache.begin());
-      std::ranges::copy(cols, std::next(cache.begin(), rows.size()));
+      std::ranges::copy(cols,
+                        std::next(cache.begin(), std::ranges::size(rows)));
       const PetscInt* _rows = cache.data();
-      const PetscInt* _cols = cache.data() + rows.size();
-      ierr = MatSetValuesBlockedLocal(A, rows.size(), _rows, cols.size(), _cols,
+      const PetscInt* _cols = cache.data() + std::ranges::size(rows);
+      ierr = MatSetValuesBlockedLocal(A, std::ranges::size(rows), _rows,
+                                      std::ranges::size(cols), _cols,
                                       vals.data(), mode);
 #else
-      ierr = MatSetValuesBlockedLocal(A, rows.size(), rows.data(), cols.size(),
-                                      cols.data(), vals.data(), mode);
+      ierr = MatSetValuesBlockedLocal(
+          A, std::ranges::size(rows), std::ranges::data(rows),
+          std::ranges::size(cols), std::ranges::data(cols), vals.data(), mode);
 #endif
 
 #ifndef NDEBUG

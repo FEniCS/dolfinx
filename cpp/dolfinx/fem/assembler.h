@@ -534,10 +534,11 @@ template <dolfinx::scalar T>
 void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
                   T diagonal = 1.0)
 {
+  std::span<const T, 1> diag_span(&diagonal, 1);
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
-    std::span diag_span(&diagonal, 1);
-    set_fn(rows.subspan(i, 1), rows.subspan(i, 1), diag_span);
+    std::span<const std::int32_t, 1> row = rows.subspan(i).first<1>();
+    set_fn(row, row, diag_span);
   }
 }
 

@@ -220,15 +220,23 @@ void petsc_fem_module(nb::module_& m)
       nb::arg("dof_marker0"), nb::arg("dof_marker1"), nb::arg("unrolled"),
       "Assemble bilinear form into an existing PETSc matrix");
   m.def(
-      "insert_diagonal",
+      "set_diagonal",
       [](Mat A, nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-         PetscScalar diagonal)
+         PetscScalar diagonal, int mode)
       {
-        dolfinx::fem::set_diagonal(
-            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES),
-            std::span(rows.data(), rows.size()), diagonal);
+        // petsc4py passes InsertMode as a Python int
+        InsertMode _mode = static_cast<InsertMode>(mode);
+        if (_mode != INSERT_VALUES and _mode != ADD_VALUES)
+        {
+          throw std::invalid_argument(
+              "InsertMode must be INSERT_VALUES or ADD_VALUES.");
+        }
+
+        dolfinx::fem::set_diagonal(dolfinx::la::petsc::Matrix::set_fn(A, _mode),
+                                   std::span(rows.data(), rows.size()),
+                                   diagonal);
       },
-      nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"));
+      nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), nb::arg("mode"));
 }
 
 } // namespace

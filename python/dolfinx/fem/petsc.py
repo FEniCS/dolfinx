@@ -624,7 +624,7 @@ def _assemble_matrix_petsc(
                                 dofs, owned = bc.dof_indices()
                                 rows_.append(dofs[:owned])
                         rows = np.concatenate(rows_) if rows_ else np.empty(0, dtype=np.int32)
-                        _cpp.fem.petsc.insert_diagonal(Asub, rows, diag)  # type: ignore[arg-type]
+                        _cpp.fem.petsc.set_diagonal(Asub, rows, diag, PETSc.InsertMode.INSERT)  # type: ignore[arg-type]
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
     else:  # Non-blocked
         if constants is None:
@@ -651,7 +651,7 @@ def _assemble_matrix_petsc(
                     dofs, owned = bc.dof_indices()
                     rows_.append(dofs[:owned])
             rows = np.concatenate(rows_) if rows_ else np.empty(0, dtype=np.int32)
-            _cpp.fem.petsc.insert_diagonal(A, rows, diag)  # type: ignore[arg-type]
+            _cpp.fem.petsc.set_diagonal(A, rows, diag, PETSc.InsertMode.INSERT)  # type: ignore[arg-type]
 
     return A
 
