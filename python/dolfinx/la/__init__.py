@@ -292,13 +292,28 @@ class MatrixCSR(Generic[Scalar]):
         """
         self._cpp_object = A
 
+    @functools.cached_property
+    def _index_maps(self) -> tuple[IndexMap, IndexMap]:
+        """Wrappers for the row and column maps."""
+        return (
+            IndexMap(self._cpp_object.index_map(0)),
+            IndexMap(self._cpp_object.index_map(1)),
+        )
+
     def index_map(self, i: int) -> IndexMap:
         """Index map for row/column.
+
+        Note:
+            The maps are fixed at construction, so the wrappers are
+            built on first access and the same objects are returned
+            thereafter.
 
         Args:
             i: 0 for row map, 1 for column map.
         """
-        return IndexMap(self._cpp_object.index_map(i))
+        if i not in (0, 1):
+            raise IndexError(f"Matrix dimension must be 0 or 1, not {i}.")
+        return self._index_maps[i]
 
     def mult(self, x: Vector[Scalar], y: Vector[Scalar], transpose: bool = False) -> None:
         """Compute ``y += Ax`` or ``y += A^T x``.
