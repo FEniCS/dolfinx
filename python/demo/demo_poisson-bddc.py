@@ -133,7 +133,7 @@ def solve(n: int) -> tuple[fem.Function, int, int]:
     boundary_dofs = fem.locate_dofs_topological(
         V, tdim - 1, mesh.exterior_facet_indices(msh.topology)
     )
-    bcs = [fem.dirichletbc(dtype(0), boundary_dofs, V)]
+    bcs = [fem.dirichletbc(dtype(0), boundary_dofs, V)]  # type: ignore[operator]
 
     # Count the Dirichlet degrees of freedom that lie on a subdomain
     # interface. Filling a vector with ones and accumulating it onto
