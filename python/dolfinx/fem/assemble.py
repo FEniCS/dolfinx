@@ -373,7 +373,7 @@ def _assemble_matrix_csr_markers(
         coeffs = pack_coefficients(a)
 
     V0, V1 = a.function_spaces
-    _cpp.fem.assemble_matrix(
+    _cpp.fem.assemble_matrix(  # type: ignore[arg-type]
         A._cpp_object,
         a._cpp_object,
         constants,

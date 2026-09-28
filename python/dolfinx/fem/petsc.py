@@ -681,11 +681,11 @@ def _assemble_matrix_petsc_markers(
         V0, V1 = a.function_spaces
         _cpp.fem.petsc.assemble_matrix(
             A,
-            a._cpp_object,
-            constants,
+            a._cpp_object,  # type: ignore[arg-type]
+            constants,  # type: ignore[arg-type]
             coeffs,  # type: ignore[arg-type]
-            dof_marker0,
-            dof_marker1,
+            dof_marker0,  # type: ignore[arg-type]
+            dof_marker1,  # type: ignore[arg-type]
             False,
         )
         # Assembly zeroed the constrained rows, so adding sets the
@@ -693,7 +693,7 @@ def _assemble_matrix_petsc_markers(
         if V0._cpp_object is V1._cpp_object:
             set_diagonal(
                 A,
-                _owned_marked_rows(V0, dof_marker0),
+                _owned_marked_rows(V0, dof_marker0),  # type: ignore[arg-type]
                 diag,
                 PETSc.InsertMode.ADD,  # type: ignore[arg-type]
             )
@@ -705,7 +705,7 @@ def set_diagonal(
     A: PETSc.Mat,
     rows: npt.NDArray[np.int32],
     diagonal: float | complex | npt.NDArray = 1.0,
-    insert_mode: PETSc.InsertMode = PETSc.InsertMode.INSERT,
+    insert_mode: PETSc.InsertMode = PETSc.InsertMode.INSERT,  # type: ignore[arg-type]
 ) -> None:
     """Set values on the diagonal for given rows of a PETSc matrix.
 
@@ -804,7 +804,7 @@ def apply_lifting(
     _apply_lifting_petsc_markers(
         b,
         a,
-        *_lifting_bc_data(a, bcs),
+        *_lifting_bc_data(a, bcs),  # type: ignore[arg-type]
         x0,
         alpha,
         constants,
@@ -888,7 +888,7 @@ def _apply_lifting_petsc_markers(
             const_ = [np.array([], dtype=PETSc.ScalarType) if x is None else x for x in const]
             _apply_lifting_petsc_markers(
                 b_sub,
-                a_sub,
+                a_sub,  # type: ignore[arg-type]
                 bc_markers1,
                 bc_values1,
                 x0,  # type: ignore[arg-type]
