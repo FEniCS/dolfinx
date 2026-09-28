@@ -321,14 +321,11 @@ jobs:
             wheel.py-api=cp312
             cmake.build-type="Release"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
-          # The first line allows auditwheel to find and bundle libbasix.
-          # No --exclude for libbasix/libopenblas: DOLFINx bundles its own
-          # copy self-contained, same as macOS/Windows. There's no RPATH
-          # across wheels, so a copy shared with Basix's wheel wouldn't be
-          # resolvable in a plain pip install.
+          # Excluding libbasix stops auditwheel vendoring a second copy of
+          # Basix's dependencies. dolfinx/__init__.py imports basix so that
+          # libbasix is loaded before dolfinx.cpp needs it.
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
-            export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
-            auditwheel repair --exclude libmpi.so* -w {dest_dir} {wheel} &&
+            auditwheel repair --exclude libmpi.so* --exclude libbasix.so* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             delocate-listdeps --depending {wheel} &&
