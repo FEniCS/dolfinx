@@ -528,25 +528,13 @@ void declare_assembly_functions(nanobind::module_& m)
          const std::vector<
              std::map<std::pair<dolfinx::fem::IntegralType, int>,
                       nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>>& coeffs,
-         const std::vector<std::vector<const dolfinx::fem::DirichletBC<T, U>*>>&
-             bcs1,
+         const std::vector<nb::ndarray<const std::int8_t, nb::ndim<1>,
+                                       nb::c_contig>>& bc_markers1,
+         const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>&
+             bc_values1,
          const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>& x0,
          T alpha)
       {
-        std::vector<std::vector<
-            std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>>
-            _bcs;
-        for (auto& bc1 : bcs1)
-        {
-          auto& _bcs0 = _bcs.emplace_back();
-          for (auto bc : bc1)
-          {
-            if (!bc)
-              throw std::invalid_argument("bcs1 contains None.");
-            _bcs0.push_back(*bc);
-          }
-        }
-
         std::vector<std::optional<
             std::reference_wrapper<const dolfinx::fem::Form<T, U>>>>
             _a;
@@ -568,11 +556,13 @@ void declare_assembly_functions(nanobind::module_& m)
             coeffs, std::back_inserter(_coeffs),
             [](auto& c) { return dolfinx_wrappers::py_to_cpp_coeffs(c); });
 
-        dolfinx::fem::apply_lifting(std::span<T>(b.data(), b.size()), _a,
-                                    _constants, _coeffs, _bcs, _x0, alpha);
+        dolfinx::fem::apply_lifting(
+            std::span<T>(b.data(), b.size()), _a, _constants, _coeffs,
+            vec_of_spans(bc_markers1), vec_of_spans(bc_values1), _x0, alpha);
       },
       nb::arg("b").noconvert(), nb::arg("a"), nb::arg("constants"),
-      nb::arg("coeffs"), nb::arg("bcs1"), nb::arg("x0"), nb::arg("alpha"),
+      nb::arg("coeffs"), nb::arg("bc_markers1"), nb::arg("bc_values1"),
+      nb::arg("x0"), nb::arg("alpha"),
       "Modify vector for lifted boundary conditions");
 }
 

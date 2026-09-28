@@ -20,12 +20,17 @@ from dolfinx.fem import (
     DirichletBC,
     Form,
     Function,
-    apply_lifting,
     create_matrix,
     create_vector,
     form,
 )
-from dolfinx.fem.assemble import _assemble_matrix_csr, _assemble_vector_array
+from dolfinx.fem.assemble import (
+    _apply_lifting_markers,
+    _assemble_matrix_csr_markers,
+    _assemble_vector_array,
+    _bc_dof_markers,
+    _bc_lifting_data,
+)
 from dolfinx.la import InsertMode, MatrixCSR, Vector
 from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 from dolfinx.mesh import EntityMap as EntityMap
@@ -142,7 +147,10 @@ class LinearProblem:
         """
         # Assemble lhs
         self.A.set_value(self.A.data.dtype.type(0.0))
-        _assemble_matrix_csr(self.A, self.a, bcs=self.bcs)
+        V0, V1 = self.a.function_spaces
+        _assemble_matrix_csr_markers(
+            self.A, self.a, _bc_dof_markers(V0, self.bcs), _bc_dof_markers(V1, self.bcs)
+        )
         self.A.scatter_reverse()
 
         # SuperLU_DIST solves in-place, so a deep copy of A is required.
@@ -158,7 +166,10 @@ class LinearProblem:
 
         # Apply boundary conditions to the rhs
         if self.bcs:
-            apply_lifting(self.b.array, [self.a], bcs=[self.bcs])
+            bc_markers1, bc_values1 = _bc_lifting_data(
+                [self.a.function_spaces[1]], [self.bcs], self.b.array.dtype
+            )
+            _apply_lifting_markers(self.b.array, [self.a], bc_markers1, bc_values1)
             self.b.scatter_reverse(InsertMode.add)
             for bc in self.bcs:
                 bc.set(self.b.array)
