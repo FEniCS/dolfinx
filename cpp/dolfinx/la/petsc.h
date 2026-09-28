@@ -107,6 +107,20 @@ std::vector<IS> create_index_sets(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
+/// @brief Compute PETSc IndexSets (IS) for a stack of index maps.
+///
+/// This function stacks the owned part of the maps and returns
+/// indices in the global space. The maps must have the same communicator.
+///
+/// @note Collective
+/// @note The caller is responsible for destruction of each IS.
+///
+/// @param[in] maps Vector of IndexMaps and corresponding block sizes
+/// @return Vector of PETSc Index Sets, created on the index map communicators
+std::vector<IS> create_global_index_sets(
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+
 /// Copy blocks from Vec into local arrays
 std::vector<std::vector<PetscScalar>> get_local_vectors(
     const Vec x,

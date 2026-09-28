@@ -97,6 +97,16 @@ void petsc_la_module(nb::module_& m)
       nb::rv_policy::take_ownership, nb::arg("maps"));
 
   m.def(
+      "create_global_index_sets",
+      [](const std::vector<std::pair<const dolfinx::common::IndexMap*, int>>&
+             maps) -> std::vector<IS>
+      {
+        auto _maps = to_index_map_refs(maps);
+        return dolfinx::la::petsc::create_global_index_sets(_maps);
+      },
+      nb::rv_policy::take_ownership, nb::arg("maps"));
+
+  m.def(
       "scatter_local_vectors",
       [](Vec x,
          const std::vector<
@@ -274,9 +284,17 @@ void petsc_fem_module(nb::module_& m)
           _bcs.push_back(*bc);
         }
 
+        // MATIS holds unassembled local matrices, so the diagonal has
+        // to be set on ghost rows too
+        PetscBool is_matis = PETSC_FALSE;
+        dolfinx::common::petsc::check(
+            PetscObjectTypeCompare(reinterpret_cast<PetscObject>(A), MATIS,
+                                   &is_matis),
+            "PetscObjectTypeCompare");
+
         dolfinx::fem::set_diagonal(
             dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES), V, _bcs,
-            diagonal);
+            diagonal, is_matis == PETSC_TRUE);
       },
       nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"));
 }

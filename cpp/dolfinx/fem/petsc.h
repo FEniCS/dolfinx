@@ -15,6 +15,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/petsc.h>
 #include <format>
 #include <functional>
@@ -29,11 +30,6 @@
 #include <stdexcept>
 #include <utility>
 #include <vector>
-
-namespace dolfinx::common
-{
-class IndexMap;
-}
 
 namespace dolfinx::fem
 {
@@ -55,7 +51,58 @@ Mat create_matrix(const Form<PetscScalar, T>& a,
 {
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
   pattern.finalize();
-  return la::petsc::create_matrix(a.mesh()->comm(), pattern, type);
+
+  // Build the row and column local-to-global maps from the dofmaps'
+  // own index maps, not pattern.index_map(0)/(1). Finalising the
+  // pattern grows the column index map by communication to cover
+  // every column touched by a row assembled on this rank, which is
+  // required for AIJ preallocation but is wrong for MATIS: MATIS needs
+  // the local submatrix to be exactly the local dof space, so its row
+  // and column sizes must match when the row and column spaces do
+  // (see the equivalent map handling in create_matrix_block).
+  auto build_l2g = [](const common::IndexMap& map) -> std::vector<PetscInt>
+  {
+    const std::int32_t size_local = map.size_local();
+    std::vector<PetscInt> l2g(size_local + map.num_ghosts());
+    std::iota(l2g.begin(), std::next(l2g.begin(), size_local),
+              static_cast<PetscInt>(map.local_range()[0]));
+    std::ranges::copy(map.ghosts(), std::next(l2g.begin(), size_local));
+    return l2g;
+  };
+
+  std::shared_ptr<const FunctionSpace<T>> V0 = a.function_spaces()[0];
+  std::shared_ptr<const FunctionSpace<T>> V1 = a.function_spaces()[1];
+
+  std::vector<PetscInt> _map0 = build_l2g(*V0->dofmap()->index_map);
+  ISLocalToGlobalMapping l2g0;
+  common::petsc::check(
+      ISLocalToGlobalMappingCreate(a.mesh()->comm(),
+                                   V0->dofmap()->index_map_bs(), _map0.size(),
+                                   _map0.data(), PETSC_COPY_VALUES, &l2g0),
+      "ISLocalToGlobalMappingCreate");
+
+  ISLocalToGlobalMapping l2g1 = nullptr;
+  if (V0 != V1)
+  {
+    std::vector<PetscInt> _map1 = build_l2g(*V1->dofmap()->index_map);
+    common::petsc::check(
+        ISLocalToGlobalMappingCreate(a.mesh()->comm(),
+                                     V1->dofmap()->index_map_bs(), _map1.size(),
+                                     _map1.data(), PETSC_COPY_VALUES, &l2g1),
+        "ISLocalToGlobalMappingCreate");
+  }
+
+  Mat A = la::petsc::create_matrix(a.mesh()->comm(), pattern, type, l2g0,
+                                   l2g1 ? l2g1 : l2g0);
+  common::petsc::check(ISLocalToGlobalMappingDestroy(&l2g0),
+                       "ISLocalToGlobalMappingDestroy");
+  if (l2g1)
+  {
+    common::petsc::check(ISLocalToGlobalMappingDestroy(&l2g1),
+                         "ISLocalToGlobalMappingDestroy");
+  }
+
+  return A;
 }
 
 /// @brief Initialise a monolithic matrix for an array of bilinear
