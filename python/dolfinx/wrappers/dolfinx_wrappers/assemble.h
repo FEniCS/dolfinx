@@ -459,28 +459,7 @@ void declare_assembly_functions(nanobind::module_& m)
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
       nb::arg("dof_marker0"), nb::arg("dof_marker1"), "Experimental.");
   m.def(
-      "insert_diagonal",
-      [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::FunctionSpace<U>& V,
-         const std::vector<const dolfinx::fem::DirichletBC<T, U>*>& bcs,
-         T diagonal)
-      {
-        std::vector<
-            std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
-            _bcs;
-        for (auto bc : bcs)
-        {
-          if (!bc)
-            throw std::invalid_argument("bcs contains None.");
-          _bcs.push_back(*bc);
-        }
-
-        // NB block size of data ("diagonal") is (1, 1)
-        dolfinx::fem::set_diagonal(A.mat_set_values(), V, _bcs, diagonal);
-      },
-      nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"),
-      "Experimental.");
-  m.def(
-      "insert_diagonal",
+      "set_diagonal",
       [](dolfinx::la::MatrixCSR<T>& A,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
          T diagonal)

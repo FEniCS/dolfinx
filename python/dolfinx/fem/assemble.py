@@ -422,7 +422,7 @@ def set_diagonal(
         rows: Rows to set the diagonal value for.
         diagonal: Value to set on the diagonal.
     """
-    typing.cast(typing.Any, _cpp.fem.insert_diagonal)(A._cpp_object, rows, diagonal)
+    typing.cast(typing.Any, _cpp.fem.set_diagonal)(A._cpp_object, rows, diagonal)
 
 
 def set_bc_diagonal(
@@ -453,8 +453,13 @@ def set_bc_diagonal(
             set. If ``None``, no rows are set.
         diagonal: Value to set on the diagonal.
     """
-    _bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
-    typing.cast(typing.Any, _cpp.fem.insert_diagonal)(A._cpp_object, V._cpp_object, _bcs, diagonal)
+    rows_ = []
+    for bc in bcs or []:
+        if V.contains(bc.function_space):
+            dofs, owned = bc.dof_indices()
+            rows_.append(dofs[:owned])
+    rows = np.concatenate(rows_) if rows_ else np.empty(0, dtype=np.int32)
+    set_diagonal(A, rows, diagonal)
 
 
 def assemble_matrix_fn(
