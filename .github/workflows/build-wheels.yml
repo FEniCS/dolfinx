@@ -419,30 +419,6 @@ jobs:
             --env XDG_CONFIG_HOME=/config python:3.14 \
             /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
-      - name: Test in clean virtual environment with pypi OpenMPI (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          cd dolfinx && git clean -fdx && cd ../
-          python -m venv venv-test
-          source venv-test/bin/activate
-          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json
-          PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install --group dolfinx/python/pyproject.toml:test openmpi fenics-dolfinx
-          which mpiexec
-          mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
-
-      - name: Test in clean virtual environment with pypi Intel MPI (Windows)
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          cd dolfinx && git clean -fdx && cd ../
-          python -m venv venv-test
-          source venv-test/Scripts/activate
-          python -m pip install --upgrade pip
-          echo '{ "cffi_extra_compile_args": ["/Od" ] }' > dolfinx_jit_options.json
-          PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install --group dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx
-          python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
-          mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
-
       - name: Update FEniCS Project simple503 repository
         run: |
           python -m simple503 --base-url http://packages.fenicsproject.org/simple simple
@@ -452,6 +428,58 @@ jobs:
         with:
           name: simple503-${{ matrix.os }}
           path: simple/*
+
+  test_wheels:
+    name: Test wheels on a clean ${{ matrix.os }}
+    needs: build_wheels
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            mpi: openmpi
+            jit_options: '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }'
+          - os: macos-15-intel
+            mpi: openmpi
+            jit_options: '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }'
+          - os: windows-2022
+            mpi: impi-rt
+            jit_options: '{ "cffi_extra_compile_args": ["/Od" ] }'
+
+    steps:
+      # A runner that built nothing, so Homebrew and vcpkg are absent and a
+      # dependency the wheel failed to bundle cannot resolve from the build
+      # tree instead.
+      - name: Checkout DOLFINx for the test suite
+        uses: actions/checkout@v7
+        with:
+          path: dolfinx
+          ref: ${{ github.event.inputs.dolfinx_ref }}
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Download wheels
+        uses: actions/download-artifact@v7
+        with:
+          name: wheelhouse-${{ matrix.os }}
+          path: wheelhouse
+
+      - name: Install from the wheels
+        shell: bash
+        run: |
+          echo '${{ matrix.jit_options }}' > dolfinx_jit_options.json
+          python -m pip install --upgrade pip
+          pip -v install --find-links wheelhouse --group dolfinx/python/pyproject.toml:test ${{ matrix.mpi }} fenics-dolfinx
+
+      - name: Run tests
+        shell: bash
+        run: |
+          python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
+          mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
 
   combined_repository:
     name: Create combined simple503 repository
