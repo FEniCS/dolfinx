@@ -475,16 +475,19 @@ jobs:
           python -m pip install --upgrade pip
           pip -v install --find-links wheelhouse pytest-xdist --group dolfinx/python/pyproject.toml:test ${{ matrix.mpi }} fenics-dolfinx
 
-      # impi-rt installs mpiexec under sys.prefix rather than on PATH, which
-      # its conda activate scripts would otherwise handle.
+      # impi-rt installs mpiexec under sys.prefix, where only its conda
+      # activate scripts would find it.
+      - name: Put mpiexec on PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python -c "import pathlib, sys; print((pathlib.Path(sys.prefix) / 'Library' / 'bin').as_posix())" >> $GITHUB_PATH
+
       - name: Run tests
         shell: bash
         run: |
-          MPIEXEC=mpiexec
-          command -v mpiexec >/dev/null || MPIEXEC=$(python -c "import pathlib, sys; print((pathlib.Path(sys.prefix) / 'Library' / 'bin' / 'mpiexec.exe').as_posix())")
-          "$MPIEXEC" --version
+          mpiexec --version
           python -m pytest -n auto -m "not adios2 and not petsc4py" dolfinx/python/test/unit
-          "$MPIEXEC" -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
+          mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
 
   combined_repository:
     name: Create combined simple503 repository
