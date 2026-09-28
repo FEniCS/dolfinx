@@ -383,9 +383,9 @@ def _assemble_matrix_csr_markers(
     )
 
     # If matrix is a 'diagonal' block, set diagonal entry for
-    # constrained dofs
+    # constrained dofs. Assembly zeroed these rows, so adding sets it.
     if V0._cpp_object is V1._cpp_object:
-        set_diagonal(A, _owned_marked_rows(V0, dof_marker0), diag)
+        set_diagonal(A, _owned_marked_rows(V0, dof_marker0), diag, la.InsertMode.add)
     return A
 
 

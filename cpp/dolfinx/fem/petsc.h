@@ -727,12 +727,6 @@ void assemble_operator(Mat A, const Form<PetscScalar, T>& a,
   // indexed by the same space
   if (a.function_spaces()[0] == a.function_spaces()[1])
   {
-    // Flush to switch from adding to inserting
-    common::petsc::check(MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY),
-                         "MatAssemblyBegin");
-    common::petsc::check(MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY),
-                         "MatAssemblyEnd");
-
     // Locally owned constrained rows
     std::shared_ptr<const DofMap> dofmap0
         = a.function_spaces()[0]->dofmaps().front();
@@ -747,7 +741,9 @@ void assemble_operator(Mat A, const Form<PetscScalar, T>& a,
       if (dof_marker0[i])
         rows.push_back(i);
     }
-    fem::set_diagonal<PetscScalar>(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
+    // Assembly zeroed these rows, so adding sets the diagonal. Adding
+    // avoids a flush to switch from ADD_VALUES to INSERT_VALUES.
+    fem::set_diagonal<PetscScalar>(la::petsc::Matrix::set_fn(A, ADD_VALUES),
                                    rows);
   }
 

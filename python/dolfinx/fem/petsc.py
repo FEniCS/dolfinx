@@ -656,6 +656,16 @@ def _assemble_matrix_petsc_markers(
                         dof_marker1[j],
                         True,
                     )
+                    # Assembly zeroed the constrained rows, so adding
+                    # sets the diagonal (and needs no flush)
+                    V0, V1 = a_sub.function_spaces
+                    if V0._cpp_object is V1._cpp_object:
+                        set_diagonal(
+                            Asub,
+                            _owned_marked_rows(V0, dof_marker0[i]),
+                            diag,
+                            PETSc.InsertMode.ADD,  # type: ignore[arg-type]
+                        )
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
                 elif i == j and dof_marker0[i].size > 0:
                     raise RuntimeError(
@@ -663,19 +673,6 @@ def _assemble_matrix_petsc_markers(
                         " and have DirichletBC applied."
                         " Consider assembling a zero block."
                     )
-
-        # Flush to enable switch from add to set in the matrix
-        A.assemble(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
-
-        # Set diagonal
-        for i, a_row in enumerate(a):
-            for j, a_sub in enumerate(a_row):
-                if a_sub is not None:
-                    Asub = A.getLocalSubMatrix(is0[i], is1[j])
-                    V0, V1 = a_sub.function_spaces
-                    if V0._cpp_object is V1._cpp_object:
-                        set_diagonal(Asub, _owned_marked_rows(V0, dof_marker0[i]), diag)
-                    A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
     else:  # Non-blocked
         if constants is None:
             constants = pack_constants(a)
@@ -691,10 +688,15 @@ def _assemble_matrix_petsc_markers(
             dof_marker1,
             False,
         )
+        # Assembly zeroed the constrained rows, so adding sets the
+        # diagonal (and needs no flush)
         if V0._cpp_object is V1._cpp_object:
-            A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
-            A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
-            set_diagonal(A, _owned_marked_rows(V0, dof_marker0), diag)
+            set_diagonal(
+                A,
+                _owned_marked_rows(V0, dof_marker0),
+                diag,
+                PETSc.InsertMode.ADD,  # type: ignore[arg-type]
+            )
 
     return A
 
