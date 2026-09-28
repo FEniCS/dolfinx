@@ -654,8 +654,10 @@ void assemble_operator(
                          "MatAssemblyBegin");
     common::petsc::check(MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY),
                          "MatAssemblyEnd");
-    fem::set_diagonal(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
-                      *a.function_spaces()[0], bcs);
+    std::vector<std::int32_t> rows
+        = fem::bc_diagonal_rows(*a.function_spaces()[0], bcs);
+    fem::set_diagonal<PetscScalar>(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
+                                   rows);
   }
 
   common::petsc::check(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY),

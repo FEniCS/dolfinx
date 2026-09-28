@@ -364,10 +364,13 @@ def _assemble_matrix_csr(
 
     _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, _bcs)  # type: ignore[arg-type]
 
-    # If matrix is a 'diagonal'block, set diagonal entry for constrained
-    # dofs
+    # If matrix is a 'diagonal' block, set diagonal entry for
+    # constrained dofs. The row list is computed once and passed to
+    # the rows-based set_diagonal, rather than via set_bc_diagonal,
+    # which would recompute it from V and bcs on every call.
     if a.function_spaces[0]._cpp_object is a.function_spaces[1]._cpp_object:
-        set_bc_diagonal(A, a.function_spaces[0], bcs, diag)
+        rows = bc_diagonal_rows(a.function_spaces[0], bcs)
+        set_diagonal(A, rows, diag)
     return A
 
 
@@ -386,6 +389,36 @@ def set_diagonal(
     typing.cast(typing.Any, _cpp.fem.insert_diagonal)(A._cpp_object, rows, diagonal)
 
 
+def bc_diagonal_rows(
+    V: FunctionSpace, bcs: Sequence[DirichletBC[Scalar]] | None
+) -> npt.NDArray[np.int32]:
+    """Locally owned diagonal rows for Dirichlet boundary conditions.
+
+    Combines the locally owned dof indices of every boundary condition
+    in ``bcs`` whose function space is ``V`` or a subspace of ``V``.
+    The result is exactly what :func:`set_diagonal` and
+    :func:`dolfinx.fem.petsc.assemble_matrix`'s row-based diagonal
+    insertion take as ``rows``, so it can be computed once and reused
+    across repeated calls -- e.g. across the Newton iterations of a
+    nonlinear solve that reassembles the same operator with unchanged
+    boundary conditions -- rather than recomputed on every call, as
+    :func:`set_bc_diagonal` does.
+
+    Args:
+        V: Function space that the rows of the matrix are associated
+            with. Only boundary conditions defined on ``V`` or a
+            subspace of it contribute.
+        bcs: Boundary conditions that identify the diagonal rows. If
+            ``None``, an empty array is returned.
+
+    Returns:
+        Locally owned dof indices, in no particular order and not
+        de-duplicated.
+    """
+    _bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
+    return typing.cast(npt.NDArray[np.int32], _cpp.fem.bc_diagonal_rows(V._cpp_object, _bcs))
+
+
 def set_bc_diagonal(
     A: la.MatrixCSR[Scalar],
     V: FunctionSpace,
@@ -393,6 +426,16 @@ def set_bc_diagonal(
     diagonal: Scalar | float | complex = 1.0,
 ) -> None:
     """Set a value on the diagonal for Dirichlet boundary condition rows.
+
+    Note:
+        This is a convenience function for callers that have ``V`` and
+        ``bcs`` on hand but not the combined row list, and it
+        recomputes that list on every call. It should not be used
+        internally by the library: an internal caller either already
+        has the rows, or can call :func:`bc_diagonal_rows` once and
+        cache the result across repeated calls, which this function
+        cannot do on a caller's behalf. Call :func:`set_diagonal` with
+        the row list directly instead.
 
     Args:
         A: Matrix to modify. Must be associated with ``V`` on both its

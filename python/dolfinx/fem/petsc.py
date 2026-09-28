@@ -615,7 +615,8 @@ def _assemble_matrix_petsc(
                     Asub = A.getLocalSubMatrix(is0[i], is1[j])
                     V0, V1 = (V._cpp_object for V in a_sub.function_spaces)
                     if V0 is V1:
-                        _cpp.fem.petsc.insert_diagonal(Asub, V0, _bcs, diag)  # type: ignore[arg-type]
+                        rows = _cpp.fem.bc_diagonal_rows(V0, _bcs)
+                        _cpp.fem.petsc.insert_diagonal(Asub, rows, diag)  # type: ignore[arg-type]
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
     else:  # Non-blocked
         if constants is None:
@@ -628,7 +629,8 @@ def _assemble_matrix_petsc(
         if V0 is V1:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
-            _cpp.fem.petsc.insert_diagonal(A, V0, _bcs, diag)  # type: ignore[arg-type]
+            rows = _cpp.fem.bc_diagonal_rows(V0, _bcs)
+            _cpp.fem.petsc.insert_diagonal(A, rows, diag)  # type: ignore[arg-type]
 
     return A
 
