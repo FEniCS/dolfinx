@@ -6,6 +6,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "IndexMap.h"
+#include "Scatterer.h"
 #include "sort.h"
 #include <algorithm>
 #include <cassert>
@@ -925,6 +926,14 @@ common::stack_index_maps(
 
   return {process_offset, std::move(local_offset), std::move(ghosts_new),
           std::move(ghost_owners_new)};
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t>
+common::num_sharing_ranks(const IndexMap& map,
+                          std::span<const std::int32_t> indices, int bs)
+{
+  Scatterer sc(map);
+  return num_sharing_ranks(map, sc, indices, bs);
 }
 //-----------------------------------------------------------------------------
 std::tuple<IndexMap, std::vector<std::int32_t>, bool>

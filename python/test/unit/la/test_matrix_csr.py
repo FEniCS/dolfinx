@@ -13,7 +13,7 @@ import pytest
 import ufl
 from dolfinx import fem
 from dolfinx.common import index_map
-from dolfinx.la import BlockMode, matrix_csr, sparsity_pattern
+from dolfinx.la import BlockMode, InsertMode, matrix_csr, sparsity_pattern
 from dolfinx.mesh import GhostMode, create_unit_square
 
 
@@ -245,6 +245,52 @@ def test_set_diagonal_distributed(dtype):
     A.scatter_reverse()
     assert (As.diagonal()[nlocal:] == dtype(0.0)).all()
     assert (As.diagonal()[:nlocal] == dtype(1.0)).all()
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_set_diagonal_per_row(dtype):
+    """Test setting a different diagonal value for each row."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 6, 5, dtype=np.real(dtype(0)).dtype)
+    V = fem.functionspace(mesh, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = fem.form(ufl.inner(u, v) * ufl.dx, dtype=dtype)
+    A = fem.create_matrix(a)
+    As = A.to_scipy(ghosted=True)
+
+    # Every other owned row, with value rows[i] + 1 on row rows[i]
+    rows = np.arange(0, V.dofmap.index_map.size_local, 2, dtype=np.int32)
+    diagonals = (rows + 1).astype(dtype)
+    fem.set_diagonal(A, rows, diagonals)
+
+    diag = As.diagonal()
+    assert np.allclose(diag[rows], diagonals)
+    mask = np.ones(diag.shape[0], dtype=bool)
+    mask[rows] = False
+    assert np.allclose(diag[mask], 0.0)
+
+    # Adding the same values again doubles the diagonal
+    fem.set_diagonal(A, rows, diagonals, InsertMode.add)
+    assert np.allclose(As.diagonal()[rows], 2 * diagonals)
+
+    # Adding a single value to every row
+    fem.set_diagonal(A, rows, dtype(1), InsertMode.add)
+    assert np.allclose(As.diagonal()[rows], 2 * diagonals + 1)
+
+    # Inserting overwrites
+    fem.set_diagonal(A, rows, diagonals)
+    assert np.allclose(As.diagonal()[rows], diagonals)
+
+    # Number of values must match number of rows
+    with pytest.raises(ValueError):
+        fem.set_diagonal(A, rows, diagonals[:-1])
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])

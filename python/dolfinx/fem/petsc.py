@@ -51,8 +51,13 @@ from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem import pack_coefficients, pack_constants
-from dolfinx.fem.assemble import _assemble_vector_array
-from dolfinx.fem.assemble import apply_lifting as _apply_lifting
+from dolfinx.fem.assemble import (
+    _apply_lifting_markers,
+    _assemble_vector_array,
+    _bc_dof_markers,
+    _bc_lifting_data,
+    _owned_marked_rows,
+)
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
 from dolfinx.fem.forms import Form, derivative_block
@@ -80,6 +85,7 @@ __all__ = [
     "interpolation_matrix",
     "numba_utils",
     "set_bc",
+    "set_diagonal",
 ]
 
 
@@ -495,9 +501,14 @@ def assemble_matrix(
 
     Returns:
         Matrix representing the bilinear form.
+
+    Note:
+        Convenience function for callers that have boundary conditions.
+        It rebuilds the constrained dof markers on every call, and
+        should not be called internally by the library.
     """  # noqa: D301
     A = create_matrix(a, kind)
-    _assemble_matrix_petsc(A, a, bcs, diag, constants, coeffs)
+    _assemble_matrix_petsc_markers(A, a, *_matrix_bc_markers(a, bcs), diag, constants, coeffs)
     return A
 
 
@@ -522,6 +533,62 @@ def _assemble_matrix_petsc(
 
     The returned matrix is not finalised, i.e. ghost values are not
     accumulated.
+
+    Note:
+        Convenience function for callers that have boundary conditions.
+        It rebuilds the constrained dof markers on every call, and
+        should not be called internally by the library.
+    """
+    return _assemble_matrix_petsc_markers(
+        A, a, *_matrix_bc_markers(a, bcs), diag, constants, coeffs
+    )
+
+
+def _matrix_bc_markers(
+    a: Form | Sequence[Sequence[Form | None]], bcs: Sequence[DirichletBC] | None
+) -> (
+    tuple[npt.NDArray[np.int8], npt.NDArray[np.int8]]
+    | tuple[list[npt.NDArray[np.int8]], list[npt.NDArray[np.int8]]]
+):
+    """Constrained dof markers on the test and trial spaces of ``a``.
+
+    For a single form, returns the markers for its test and trial
+    spaces. For a 2D array of forms, returns a list of markers for the
+    test space of each row and a list for the trial space of each
+    column.
+    """
+
+    def markers(V: _FunctionSpace | None) -> npt.NDArray[np.int8]:
+        return np.empty(0, dtype=np.int8) if V is None else _bc_dof_markers(V, bcs)
+
+    if isinstance(a, Sequence):
+        V0 = _extract_function_spaces(a, 0)
+        V1 = _extract_function_spaces(a, 1)
+        return [markers(V) for V in V0], [markers(V) for V in V1]
+    V0, V1 = a.function_spaces
+    return markers(V0), markers(V1)
+
+
+def _assemble_matrix_petsc_markers(
+    A: PETSc.Mat,
+    a: Form | Sequence[Sequence[Form | None]],
+    dof_marker0: npt.NDArray[np.int8] | Sequence[npt.NDArray[np.int8]],
+    dof_marker1: npt.NDArray[np.int8] | Sequence[npt.NDArray[np.int8]],
+    diag: float = 1,
+    constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
+    coeffs: (
+        dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+        | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
+        | None
+    ) = None,
+) -> PETSc.Mat:
+    """Assemble bilinear form(s) into a matrix, given constrained dofs.
+
+    As :func:`_assemble_matrix_petsc`, with the constrained dofs given
+    as markers (see :func:`_matrix_bc_markers`) instead of boundary
+    conditions. For a 2D array of forms, ``dof_marker0[i]`` marks the
+    test space of row ``i`` and ``dof_marker1[j]`` the trial space of
+    column ``j``.
     """
     if A.getType() == PETSc.Mat.Type.NEST:
         if not isinstance(a, Sequence):
@@ -540,18 +607,15 @@ def _assemble_matrix_petsc(
             ):
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
-                    _assemble_matrix_petsc(Asub, a_block, bcs, diag, const, coeff)
-                elif i == j and bcs is not None:
-                    for bc in bcs:
-                        row_forms = [row_form for row_form in a_row if row_form is not None]
-                        if len(row_forms) == 0:
-                            raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0].contains(bc.function_space):
-                            raise RuntimeError(
-                                f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
-                                " and have DirichletBC applied."
-                                " Consider assembling a zero block."
-                            )
+                    _assemble_matrix_petsc_markers(
+                        Asub, a_block, dof_marker0[i], dof_marker1[j], diag, const, coeff
+                    )
+                elif i == j and dof_marker0[i].size > 0:
+                    raise RuntimeError(
+                        f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
+                        " and have DirichletBC applied."
+                        " Consider assembling a zero block."
+                    )
     elif isinstance(a, Sequence):  # Blocked
         consts = [pack_constants(forms) for forms in a] if constants is None else constants
         if coeffs is None:
@@ -579,7 +643,6 @@ def _assemble_matrix_petsc(
             ]
         )
 
-        _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
         for i, a_row in enumerate(a):
             for j, a_sub in enumerate(a_row):
                 if a_sub is not None:
@@ -589,48 +652,82 @@ def _assemble_matrix_petsc(
                         a_sub._cpp_object,  # type: ignore[arg-type]
                         consts[i][j],
                         coeffs[i][j],  # type: ignore[index]
-                        _bcs,  # type: ignore[arg-type]
+                        dof_marker0[i],
+                        dof_marker1[j],
                         True,
                     )
+                    # Assembly zeroed the constrained rows, so adding
+                    # sets the diagonal (and needs no flush)
+                    V0, V1 = a_sub.function_spaces
+                    if V0._cpp_object is V1._cpp_object:
+                        set_diagonal(
+                            Asub,
+                            _owned_marked_rows(V0, dof_marker0[i]),
+                            diag,
+                            PETSc.InsertMode.ADD,  # type: ignore[arg-type]
+                        )
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
-                elif i == j and bcs is not None:
-                    for bc in bcs:
-                        row_forms = [row_form for row_form in a_row if row_form is not None]
-                        if len(row_forms) == 0:
-                            raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0].contains(bc.function_space):
-                            raise RuntimeError(
-                                f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
-                                " and have DirichletBC applied."
-                                " Consider assembling a zero block."
-                            )
-
-        # Flush to enable switch from add to set in the matrix
-        A.assemble(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
-
-        # Set diagonal
-        for i, a_row in enumerate(a):
-            for j, a_sub in enumerate(a_row):
-                if a_sub is not None:
-                    Asub = A.getLocalSubMatrix(is0[i], is1[j])
-                    V0, V1 = (V._cpp_object for V in a_sub.function_spaces)
-                    if V0 is V1:
-                        _cpp.fem.petsc.insert_diagonal(Asub, V0, _bcs, diag)  # type: ignore[arg-type]
-                    A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
+                elif i == j and dof_marker0[i].size > 0:
+                    raise RuntimeError(
+                        f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
+                        " and have DirichletBC applied."
+                        " Consider assembling a zero block."
+                    )
     else:  # Non-blocked
         if constants is None:
             constants = pack_constants(a)
         if coeffs is None:
             coeffs = pack_coefficients(a)
-        _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
-        _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs, False)  # type: ignore
-        V0, V1 = (V._cpp_object for V in a.function_spaces)
-        if V0 is V1:
-            A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
-            A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
-            _cpp.fem.petsc.insert_diagonal(A, V0, _bcs, diag)  # type: ignore[arg-type]
+        V0, V1 = a.function_spaces
+        _cpp.fem.petsc.assemble_matrix(
+            A,
+            a._cpp_object,  # type: ignore[arg-type]
+            constants,  # type: ignore[arg-type]
+            coeffs,  # type: ignore[arg-type]
+            dof_marker0,  # type: ignore[arg-type]
+            dof_marker1,  # type: ignore[arg-type]
+            False,
+        )
+        # Assembly zeroed the constrained rows, so adding sets the
+        # diagonal (and needs no flush)
+        if V0._cpp_object is V1._cpp_object:
+            set_diagonal(
+                A,
+                _owned_marked_rows(V0, dof_marker0),  # type: ignore[arg-type]
+                diag,
+                PETSc.InsertMode.ADD,  # type: ignore[arg-type]
+            )
 
     return A
+
+
+def set_diagonal(
+    A: PETSc.Mat,
+    rows: npt.NDArray[np.int32],
+    diagonal: float | complex | npt.NDArray = 1.0,
+    insert_mode: PETSc.InsertMode = PETSc.InsertMode.INSERT,  # type: ignore[arg-type]
+) -> None:
+    """Set or add values on the diagonal for given rows of a PETSc matrix.
+
+    Args:
+        A: Matrix to modify.
+        rows: Rows, in local indices, to set the diagonal value for.
+        diagonal: Value to set on the diagonal, either a single value
+            for all rows or an array with ``diagonal[i]`` the value for
+            ``rows[i]``. An array must have the same length as
+            ``rows``.
+        insert_mode: ``PETSc.InsertMode.INSERT`` to overwrite the
+            diagonal entry, or ``PETSc.InsertMode.ADD`` to add to it.
+            The two agree on rows that assembly has already zeroed, and
+            ``ADD`` avoids the flush needed to take the matrix out of
+            add mode.
+
+    Note:
+        The matrix is not assembled.
+    """
+    if np.ndim(diagonal) > 0:
+        diagonal = np.asarray(diagonal, dtype=PETSc.ScalarType)
+    _cpp.fem.petsc.set_diagonal(A, rows, diagonal, insert_mode)  # type: ignore[arg-type]
 
 
 # -- Modifiers for Dirichlet conditions -----------------------------------
@@ -701,6 +798,76 @@ def apply_lifting(
         Boundary condition values are *not* set in ``b`` by this
         function. Use :func:`dolfinx.fem.DirichletBC.set` to set values
         in ``b``.
+
+    Note:
+        Convenience function for callers that have boundary conditions.
+        It rebuilds the constrained dof markers and values on every
+        call, and should not be called internally by the library.
+    """
+    _apply_lifting_petsc_markers(
+        b,
+        a,
+        *_lifting_bc_data(a, bcs),  # type: ignore[arg-type]
+        x0,
+        alpha,
+        constants,
+        coeffs,  # type: ignore[arg-type]
+    )
+
+
+def _lifting_bc_data(
+    a: Sequence[Form | None] | Sequence[Sequence[Form | None]],
+    bcs: Sequence[Sequence[DirichletBC]] | None,
+) -> tuple[list[npt.NDArray[np.int8]], list[npt.NDArray]]:
+    """Constrained dof markers and bc values for lifting, per column.
+
+    Builds the ``bc_markers1`` and ``bc_values1`` arguments of
+    :func:`_apply_lifting_petsc_markers`.
+
+    Args:
+        a: Bilinear forms: a 1D sequence with one form per column, or a
+            2D array of forms. The space of column ``j`` is the trial
+            space of ``a[j]`` (1D) or the common trial space of column
+            ``j`` (2D).
+        bcs: Boundary conditions on the space of each column, with
+            ``bcs[j]`` those for column ``j``. Must have one entry per
+            column. ``None`` means no boundary conditions.
+
+    Returns:
+        Markers and values, one array each per column. Markers are
+        ``int8``, ``1`` for constrained dofs (owned and ghost,
+        unrolled). Values hold the boundary condition values, as
+        ``PETSc.ScalarType``, where marked. Both arrays are empty for a
+        column with no space or no boundary conditions.
+    """
+    if len(a) > 0 and isinstance(a[0], Sequence):
+        spaces = _extract_function_spaces(a, 1)  # type: ignore[arg-type]
+    else:
+        spaces = [None if form is None else form.function_spaces[1] for form in a]  # type: ignore[union-attr]
+    if bcs is None:
+        bcs = [[] for _ in spaces]
+    return _bc_lifting_data(spaces, bcs, PETSc.ScalarType)
+
+
+def _apply_lifting_petsc_markers(
+    b: PETSc.Vec,
+    a: Sequence[Form | None] | Sequence[Sequence[Form | None]],
+    bc_markers1: Sequence[npt.NDArray[np.int8]],
+    bc_values1: Sequence[npt.NDArray],
+    x0: Sequence[PETSc.Vec] | None = None,
+    alpha: float = 1,
+    constants: Sequence[npt.NDArray] | Sequence[Sequence[npt.NDArray]] | None = None,
+    coeffs: (
+        dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+        | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
+        | None
+    ) = None,
+) -> None:
+    """Lifting (see :func:`apply_lifting`), given constrained dofs.
+
+    ``bc_markers1[j]`` and ``bc_values1[j]`` are the constrained dof
+    markers and boundary condition values on the trial space of column
+    ``j``, as returned by :func:`_lifting_bc_data`.
     """
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()  # type: ignore[attr-defined]
@@ -722,7 +889,16 @@ def apply_lifting(
             strict=True,
         ):
             const_ = [np.array([], dtype=PETSc.ScalarType) if x is None else x for x in const]
-            apply_lifting(b_sub, a_sub, bcs, x0, alpha, const_, coeff)  # type: ignore[arg-type]
+            _apply_lifting_petsc_markers(
+                b_sub,
+                a_sub,  # type: ignore[arg-type]
+                bc_markers1,
+                bc_values1,
+                x0,  # type: ignore[arg-type]
+                alpha,
+                const_,
+                coeff,  # type: ignore[arg-type]
+            )
     else:
         with contextlib.ExitStack() as stack:
             if b.getAttr("_blocks") is not None:
@@ -764,7 +940,16 @@ def apply_lifting(
                         ]
                         b_l_r = b_l.array_r
                         bx_ = np.concatenate((b_l_r[off0:off1], b_l_r[offg0:offg1]))
-                        _apply_lifting(bx_, a_, bcs, xlocal, float(alpha), const_, coeff)  # type: ignore[arg-type]
+                        _apply_lifting_markers(
+                            bx_,
+                            a_,  # type: ignore[arg-type]
+                            bc_markers1,
+                            bc_values1,
+                            xlocal,
+                            float(alpha),
+                            const_,
+                            coeff,  # type: ignore[arg-type]
+                        )
                         size = off1 - off0
                         b_l.array_w[off0:off1] = bx_[:size]
                         b_l.array_w[offg0:offg1] = bx_[size:]
@@ -774,7 +959,16 @@ def apply_lifting(
                 x0 = [stack.enter_context(x.localForm()) for x in x0]
                 x0_r = [x.array_r for x in x0]
                 b_local = stack.enter_context(b.localForm())
-                _apply_lifting(b_local.array_w, a, bcs, x0_r, alpha, constants, coeffs)  # type: ignore[arg-type]
+                _apply_lifting_markers(
+                    b_local.array_w,
+                    a,  # type: ignore[arg-type]
+                    bc_markers1,
+                    bc_values1,
+                    x0_r,
+                    alpha,
+                    constants,  # type: ignore[arg-type]
+                    coeffs,  # type: ignore[arg-type]
+                )
 
 
 def set_bc(
@@ -850,7 +1044,7 @@ class LinearProblem(typing.Generic[_U]):
         ``.destroy()`` on returned PETSc objects.
     """  # noqa: D301
 
-    @typing.overload
+    @overload
     def __init__(
         self: LinearProblem[_Function],
         a: ufl.Form,
@@ -866,7 +1060,7 @@ class LinearProblem(typing.Generic[_U]):
         jit_options: dict | None = None,
         entity_maps: Sequence[_EntityMap] | None = None,
     ) -> None: ...
-    @typing.overload
+    @overload
     def __init__(
         self: LinearProblem[Sequence[_Function]],
         a: Sequence[Sequence[ufl.Form | None]],
@@ -1084,14 +1278,18 @@ class LinearProblem(typing.Generic[_U]):
         """
         # Assemble lhs
         self.A.zeroEntries()
-        _assemble_matrix_petsc(self.A, self.a, bcs=self.bcs)
+        _assemble_matrix_petsc_markers(self.A, self.a, *_matrix_bc_markers(self.a, self.bcs))
         self.A.assemble()
 
         # Assemble preconditioner
         if self.preconditioner is not None:
             assert self.P_mat is not None
             self.P_mat.zeroEntries()
-            _assemble_matrix_petsc(self.P_mat, self.preconditioner, bcs=self.bcs)
+            _assemble_matrix_petsc_markers(
+                self.P_mat,
+                self.preconditioner,
+                *_matrix_bc_markers(self.preconditioner, self.bcs),  # type: ignore[arg-type]
+            )
             self.P_mat.assemble()
 
         # Assemble rhs
@@ -1105,7 +1303,7 @@ class LinearProblem(typing.Generic[_U]):
                 if not isinstance(a, Sequence) or not isinstance(L, Sequence):
                     raise ValueError("Expected a sequence of forms for a block/nest problem.")
                 bcs1 = _bcs_by_block(_extract_function_spaces(a, 1), self.bcs)
-                apply_lifting(self.b, a, bcs=bcs1)
+                _apply_lifting_petsc_markers(self.b, a, *_lifting_bc_data(a, bcs1))  # type: ignore[arg-type]
                 dolfinx.la.petsc._ghost_update(
                     self.b,
                     PETSc.InsertMode.ADD,  # type: ignore[arg-type]
@@ -1117,7 +1315,7 @@ class LinearProblem(typing.Generic[_U]):
                 a = self.a
                 if isinstance(a, Sequence):
                     raise ValueError("Expected a single form for a non-block/nest problem.")
-                apply_lifting(self.b, [a], bcs=[self.bcs])
+                _apply_lifting_petsc_markers(self.b, [a], *_lifting_bc_data([a], [self.bcs]))
                 dolfinx.la.petsc._ghost_update(
                     self.b,
                     PETSc.InsertMode.ADD,  # type: ignore[arg-type]
@@ -1261,13 +1459,21 @@ def assemble_residual(
         if not isinstance(residual, Sequence):
             raise ValueError("Expected a sequence of forms for a block/nest residual.")
         bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)
-        apply_lifting(b, jacobian, bcs=bcs1, x0=x, alpha=-1.0)  # type: ignore
+        _apply_lifting_petsc_markers(
+            b,
+            jacobian,
+            *_lifting_bc_data(jacobian, bcs1),  # type: ignore[arg-type]
+            x0=x,  # type: ignore[arg-type]
+            alpha=-1.0,
+        )
         dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
         bcs0 = _bcs_by_block(_extract_function_spaces(residual), bcs)
         set_bc(b, bcs0, x0=x, alpha=-1.0)
     else:
         # Single form lifting
-        apply_lifting(b, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)
+        _apply_lifting_petsc_markers(
+            b, [jacobian], *_lifting_bc_data([jacobian], [bcs]), x0=[x], alpha=-1.0
+        )
         dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
         set_bc(b, bcs, x0=x, alpha=-1.0)
     dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
@@ -1323,11 +1529,13 @@ def assemble_jacobian(
 
     # Assemble Jacobian
     J.zeroEntries()
-    _assemble_matrix_petsc(J, jacobian, bcs, diag=1.0)
+    _assemble_matrix_petsc_markers(J, jacobian, *_matrix_bc_markers(jacobian, bcs), diag=1.0)
     J.assemble()
     if preconditioner is not None:
         P_mat.zeroEntries()
-        _assemble_matrix_petsc(P_mat, preconditioner, bcs, diag=1.0)
+        _assemble_matrix_petsc_markers(
+            P_mat, preconditioner, *_matrix_bc_markers(preconditioner, bcs), diag=1.0
+        )
         P_mat.assemble()
 
 
@@ -1348,7 +1556,7 @@ class NonlinearProblem(typing.Generic[_U]):
     _P_mat: PETSc.Mat | None
     _preconditioner: Form | Sequence[Sequence[Form | None]] | None
 
-    @typing.overload
+    @overload
     def __init__(
         self: NonlinearProblem[_Function],
         F: ufl.form.Form,
@@ -1364,7 +1572,7 @@ class NonlinearProblem(typing.Generic[_U]):
         jit_options: dict | None = None,
         entity_maps: Sequence[_EntityMap] | None = None,
     ) -> None: ...
-    @typing.overload
+    @overload
     def __init__(
         self: NonlinearProblem[Sequence[_Function]],
         F: Sequence[ufl.form.Form],

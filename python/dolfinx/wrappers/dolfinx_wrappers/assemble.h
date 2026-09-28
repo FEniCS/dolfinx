@@ -7,11 +7,12 @@
 #pragma once
 
 #include "array.h"
+#include "la.h"
 #include "pycoeff.h"
 #include <array>
 #include <basix/mdspan.hpp>
 #include <cstdint>
-#include <dolfinx/fem/DirichletBC.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
@@ -361,17 +362,13 @@ void declare_assembly_functions(nanobind::module_& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
              coefficients,
-         const std::vector<const dolfinx::fem::DirichletBC<T, U>*>& bcs)
+         nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> dof_marker0,
+         nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> dof_marker1)
       {
-        std::vector<
-            std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
-            _bcs;
-        for (auto bc : bcs)
-        {
-          if (!bc)
-            throw std::invalid_argument("bcs contains None.");
-          _bcs.push_back(*bc);
-        }
+        std::span<const std::int8_t> _dof_marker0(dof_marker0.data(),
+                                                  dof_marker0.size());
+        std::span<const std::int8_t> _dof_marker1(dof_marker1.data(),
+                                                  dof_marker1.size());
 
         // Get index map block size. Note that mixed-topology meshes
         // will have multiple DOF maps, but the block sizes are the same.
@@ -390,100 +387,122 @@ void declare_assembly_functions(nanobind::module_& m)
           dolfinx::fem::assemble_matrix(
               A.mat_add_values(), a,
               std::span<const T>(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
+              _dof_marker1);
         }
         else if (data_bs[0] == 2)
         {
           auto mat_add = A.template mat_add_values<2, 2>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
+              _dof_marker1);
         }
         else if (data_bs[0] == 3)
         {
           auto mat_add = A.template mat_add_values<3, 3>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
+              _dof_marker1);
         }
         else if (data_bs[0] == 4)
         {
           auto mat_add = A.template mat_add_values<4, 4>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
+              _dof_marker1);
         }
         else if (data_bs[0] == 5)
         {
           auto mat_add = A.template mat_add_values<5, 5>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
+              _dof_marker1);
         }
         else if (data_bs[0] == 6)
         {
           auto mat_add = A.template mat_add_values<6, 6>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
+              _dof_marker1);
         }
         else if (data_bs[0] == 7)
         {
           auto mat_add = A.template mat_add_values<7, 7>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
+              _dof_marker1);
         }
         else if (data_bs[0] == 8)
         {
           auto mat_add = A.template mat_add_values<8, 8>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
+              _dof_marker1);
         }
         else if (data_bs[0] == 9)
         {
           auto mat_add = A.template mat_add_values<9, 9>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
+              _dof_marker1);
         }
         else
           throw std::invalid_argument("Block size not supported in Python.");
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
-      nb::arg("bcs"), "Experimental.");
+      nb::arg("dof_marker0"), nb::arg("dof_marker1"), "Experimental.");
   m.def(
-      "insert_diagonal",
-      [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::FunctionSpace<U>& V,
-         const std::vector<const dolfinx::fem::DirichletBC<T, U>*>& bcs,
-         T diagonal)
-      {
-        std::vector<
-            std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
-            _bcs;
-        for (auto bc : bcs)
-        {
-          if (!bc)
-            throw std::invalid_argument("bcs contains None.");
-          _bcs.push_back(*bc);
-        }
-
-        // NB block size of data ("diagonal") is (1, 1)
-        dolfinx::fem::set_diagonal(A.mat_set_values(), V, _bcs, diagonal);
-      },
-      nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"),
-      "Experimental.");
-  m.def(
-      "insert_diagonal",
+      "set_diagonal",
       [](dolfinx::la::MatrixCSR<T>& A,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-         T diagonal)
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> diagonals,
+         PyInsertMode mode)
       {
-        dolfinx::fem::set_diagonal(
-            A.mat_set_values(), std::span(rows.data(), rows.size()), diagonal);
+        std::span _rows(rows.data(), rows.size());
+        std::span<const T> _diagonals(diagonals.data(), diagonals.size());
+        switch (mode)
+        {
+        case PyInsertMode::insert:
+          dolfinx::fem::set_diagonal(A.mat_set_values(), _rows, _diagonals);
+          break;
+        case PyInsertMode::add:
+          dolfinx::fem::set_diagonal(A.mat_add_values(), _rows, _diagonals);
+          break;
+        default:
+          throw std::invalid_argument("InsertMode not recognized.");
+        }
       },
-      nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), "Experimental.");
+      nb::arg("A"), nb::arg("rows"), nb::arg("diagonals"), nb::arg("mode"),
+      "Experimental.");
+  m.def(
+      "set_diagonal",
+      [](dolfinx::la::MatrixCSR<T>& A,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+         T diagonal, PyInsertMode mode)
+      {
+        std::span _rows(rows.data(), rows.size());
+        switch (mode)
+        {
+        case PyInsertMode::insert:
+          dolfinx::fem::set_diagonal(A.mat_set_values(), _rows, diagonal);
+          break;
+        case PyInsertMode::add:
+          dolfinx::fem::set_diagonal(A.mat_add_values(), _rows, diagonal);
+          break;
+        default:
+          throw std::invalid_argument("InsertMode not recognized.");
+        }
+      },
+      nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), nb::arg("mode"),
+      "Experimental.");
   m.def(
       "assemble_matrix",
       [](std::function<int(
@@ -493,33 +512,36 @@ void declare_assembly_functions(nanobind::module_& m)
                          nb::numpy>,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>)>
              fin,
-         const dolfinx::fem::Form<T, U>& form,
-         const std::vector<const dolfinx::fem::DirichletBC<T, U>*>& bcs)
+         const dolfinx::fem::Form<T, U>& a,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
+         const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                        nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
+             coefficients,
+         nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> dof_marker0,
+         nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> dof_marker1)
       {
-        std::vector<
-            std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
-            _bcs;
-        for (auto bc : bcs)
-        {
-          if (!bc)
-            throw std::invalid_argument("bcs contains None.");
-          _bcs.push_back(*bc);
-        }
-
-        auto f = [&fin](std::span<const std::int32_t> rows,
-                        std::span<const std::int32_t> cols,
+        auto f = [&fin](const dolfinx::common::LocalIndexRange auto& rows,
+                        const dolfinx::common::LocalIndexRange auto& cols,
                         std::span<const T> data)
         {
-          return fin(nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                                 nb::numpy>(rows.data(), {rows.size()}),
-                     nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                                 nb::numpy>(cols.data(), {cols.size()}),
-                     nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
-                         data.data(), {rows.size(), cols.size()}));
+          const std::size_t num_rows = std::ranges::size(rows);
+          const std::size_t num_cols = std::ranges::size(cols);
+          return fin(
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                          nb::numpy>(std::ranges::data(rows), {num_rows}),
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                          nb::numpy>(std::ranges::data(cols), {num_cols}),
+              nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
+                  data.data(), {num_rows, num_cols}));
         };
-        dolfinx::fem::assemble_matrix(f, form, _bcs);
+        dolfinx::fem::assemble_matrix(
+            f, a, std::span(constants.data(), constants.size()),
+            dolfinx_wrappers::py_to_cpp_coeffs(coefficients),
+            std::span(dof_marker0.data(), dof_marker0.size()),
+            std::span(dof_marker1.data(), dof_marker1.size()));
       },
-      nb::arg("fin"), nb::arg("form"), nb::arg("bcs"),
+      nb::arg("fin"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
+      nb::arg("dof_marker0"), nb::arg("dof_marker1"),
       "Experimental assembly with Python insertion function. This will be "
       "slow. Use for testing only.");
 
@@ -533,25 +555,13 @@ void declare_assembly_functions(nanobind::module_& m)
          const std::vector<
              std::map<std::pair<dolfinx::fem::IntegralType, int>,
                       nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>>& coeffs,
-         const std::vector<std::vector<const dolfinx::fem::DirichletBC<T, U>*>>&
-             bcs1,
+         const std::vector<nb::ndarray<const std::int8_t, nb::ndim<1>,
+                                       nb::c_contig>>& bc_markers1,
+         const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>&
+             bc_values1,
          const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>& x0,
          T alpha)
       {
-        std::vector<std::vector<
-            std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>>
-            _bcs;
-        for (auto& bc1 : bcs1)
-        {
-          auto& _bcs0 = _bcs.emplace_back();
-          for (auto bc : bc1)
-          {
-            if (!bc)
-              throw std::invalid_argument("bcs1 contains None.");
-            _bcs0.push_back(*bc);
-          }
-        }
-
         std::vector<std::optional<
             std::reference_wrapper<const dolfinx::fem::Form<T, U>>>>
             _a;
@@ -573,11 +583,13 @@ void declare_assembly_functions(nanobind::module_& m)
             coeffs, std::back_inserter(_coeffs),
             [](auto& c) { return dolfinx_wrappers::py_to_cpp_coeffs(c); });
 
-        dolfinx::fem::apply_lifting(std::span<T>(b.data(), b.size()), _a,
-                                    _constants, _coeffs, _bcs, _x0, alpha);
+        dolfinx::fem::apply_lifting(
+            std::span<T>(b.data(), b.size()), _a, _constants, _coeffs,
+            vec_of_spans(bc_markers1), vec_of_spans(bc_values1), _x0, alpha);
       },
       nb::arg("b").noconvert(), nb::arg("a"), nb::arg("constants"),
-      nb::arg("coeffs"), nb::arg("bcs1"), nb::arg("x0"), nb::arg("alpha"),
+      nb::arg("coeffs"), nb::arg("bc_markers1"), nb::arg("bc_values1"),
+      nb::arg("x0"), nb::arg("alpha"),
       "Modify vector for lifted boundary conditions");
 }
 
