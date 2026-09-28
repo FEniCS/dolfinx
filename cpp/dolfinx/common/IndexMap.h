@@ -91,6 +91,8 @@ stack_index_maps(
 /// @return Number of sharing ranks, one entry per entry of `indices`.
 /// @throws std::out_of_range If an entry of `indices` is not a local
 /// index of `map`.
+/// @note An overload taking an existing Scatterer is declared in
+/// Scatterer.h, and avoids building one here.
 std::vector<std::int32_t>
 num_sharing_ranks(const IndexMap& map, std::span<const std::int32_t> indices,
                   int bs);

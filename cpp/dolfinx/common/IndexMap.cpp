@@ -932,47 +932,8 @@ std::vector<std::int32_t>
 common::num_sharing_ranks(const IndexMap& map,
                           std::span<const std::int32_t> indices, int bs)
 {
-  // One per block, counting this rank. A reverse scatter accumulates
-  // the ghost entries onto the owner, giving the owner the full count,
-  // and a forward scatter returns it to the ghosting ranks.
-  const std::int32_t size_local = map.size_local();
-  std::vector<std::int32_t> count(size_local + map.num_ghosts(), 1);
-
   Scatterer sc(map);
-  const std::vector<std::int32_t>& local = sc.local_indices_block();
-  const std::vector<std::int32_t>& remote = sc.remote_indices_block();
-  std::vector<std::int32_t> send(std::max(local.size(), remote.size()));
-  std::vector<std::int32_t> recv(std::max(local.size(), remote.size()));
-  MPI_Request request = MPI_REQUEST_NULL;
-
-  for (std::size_t i = 0; i < remote.size(); ++i)
-    send[i] = count[size_local + remote[i]];
-  sc.scatter_rev_begin(send.data(), recv.data(), 1, request);
-  sc.scatter_rev_end(request);
-  for (std::size_t i = 0; i < local.size(); ++i)
-    count[local[i]] += recv[i];
-
-  for (std::size_t i = 0; i < local.size(); ++i)
-    send[i] = count[local[i]];
-  sc.scatter_fwd_begin(send.data(), recv.data(), 1, request);
-  sc.scatter_fwd_end(request);
-  for (std::size_t i = 0; i < remote.size(); ++i)
-    count[size_local + remote[i]] = recv[i];
-
-  std::vector<std::int32_t> n(indices.size());
-  std::ranges::transform(indices, n.begin(),
-                         [&count, bs](std::int32_t i)
-                         {
-                           std::int32_t block = i / bs;
-                           if (block < 0 or block >= (std::int32_t)count.size())
-                           {
-                             throw std::out_of_range(
-                                 "Local index out of range in "
-                                 "num_sharing_ranks.");
-                           }
-                           return count[block];
-                         });
-  return n;
+  return num_sharing_ranks(map, sc, indices, bs);
 }
 //-----------------------------------------------------------------------------
 std::tuple<IndexMap, std::vector<std::int32_t>, bool>

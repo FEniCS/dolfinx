@@ -564,6 +564,12 @@ void test_num_sharing_ranks()
   for (std::int32_t i = 0; i < num_local; ++i)
     CHECK(count[i] == offsets[i + 1] - offsets[i] + 1);
 
+  // Reusing an existing Scatterer must give the same answer
+  common::Scatterer sc(map);
+  std::vector<std::int32_t> count_sc
+      = common::num_sharing_ranks(map, sc, indices, 1);
+  CHECK(count_sc == count);
+
   // A block size unrolls each block into bs consecutive entries, which
   // share the count of their block
   const int bs = 3;
