@@ -231,8 +231,10 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
   if (type and !type->empty())
+  {
     common::petsc::check(MatSetType(A, std::string(*type).c_str()),
                          "MatSetType");
+  }
 
   // Sizes in scalar, not block, terms
   const std::int64_t M = bs[0] * maps[0]->size_global();
