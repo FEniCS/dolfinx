@@ -12,15 +12,21 @@
 #include <basix/mdspan.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <cmath>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
 #include <functional>
+#include <limits>
+#include <memory>
 #include <mpi.h>
+#include <numeric>
 #include <span>
+#include <vector>
 
 using namespace dolfinx;
 
@@ -121,6 +127,72 @@ void test_matrix_apply()
 
   std::ranges::for_each(y.array(),
                         [](auto a) { REQUIRE(std::abs(a) < 1e-13); });
+}
+
+/// Adding 1 to the diagonal of owned rows must give the same matrix,
+/// after scatter_rev, as adding 1/n to the diagonal of every local row
+/// (owned and ghost), where n is the number of ranks sharing the row.
+template <std::floating_point T>
+void test_set_diagonal_shared()
+{
+  auto mesh = std::make_shared<mesh::Mesh<T>>(mesh::create_box<T>(
+      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {4, 5, 3},
+      mesh::CellType::tetrahedron, graph::partition_graph));
+  auto element = basix::create_element<T>(
+      basix::element::family::P, basix::cell::type::tetrahedron, 2,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false);
+  auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
+      mesh, std::make_shared<fem::FiniteElement<T>>(element,
+                                                    mesh->geometry().dim())));
+
+  // Sparsity pattern of the P2 dofmap over all local cells, including
+  // ghost cells; no form is needed as nothing is assembled
+  std::shared_ptr<const common::IndexMap> map = V->dofmap()->index_map;
+  const int bs = V->dofmap()->index_map_bs();
+  std::shared_ptr<const common::IndexMap> cmap
+      = mesh->topology()->index_map(mesh->topology()->dim());
+  std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts());
+  std::iota(cells.begin(), cells.end(), 0);
+  la::SparsityPattern sp(MPI_COMM_WORLD, {map, map}, {bs, bs});
+  fem::sparsitybuild::cells(sp, std::pair{std::span(cells), std::span(cells)},
+                            {{*V->dofmap(), *V->dofmap()}});
+  sp.finalize();
+  la::MatrixCSR<T> A0(sp);
+  la::MatrixCSR<T> A1(sp);
+
+  std::vector<std::int32_t> owned(bs * map->size_local());
+  std::iota(owned.begin(), owned.end(), 0);
+  std::vector<std::int32_t> local(bs * (map->size_local() + map->num_ghosts()));
+  std::iota(local.begin(), local.end(), 0);
+
+  // A0: 1 on owned rows
+  fem::set_diagonal(A0.mat_add_values(), owned, T(1));
+
+  // A1: 1/n on all local rows, n the number of sharing ranks
+  std::vector<std::int32_t> n = common::num_sharing_ranks(*map, local, bs);
+  std::vector<T> diagonals(n.size());
+  std::ranges::transform(n, diagonals.begin(),
+                         [](std::int32_t ni) { return T(1) / T(ni); });
+  fem::set_diagonal(A1.mat_add_values(), local, std::span<const T>(diagonals));
+
+  A0.scatter_rev();
+  A1.scatter_rev();
+
+  // In parallel, some rows must be shared for the test to be meaningful
+  const std::int32_t n_max_local = n.empty() ? 1 : std::ranges::max(n);
+  std::int32_t n_max = 0;
+  MPI_Allreduce(&n_max_local, &n_max, 1, MPI_INT32_T, MPI_MAX, MPI_COMM_WORLD);
+  if (dolfinx::MPI::size(MPI_COMM_WORLD) > 1)
+    CHECK(n_max > 1);
+
+  // Compare owned rows
+  const std::size_t num_owned_entries = A0.row_ptr()[owned.size()];
+  std::span<const T> v0(A0.values().data(), num_owned_entries);
+  std::span<const T> v1(A1.values().data(), num_owned_entries);
+  const T tol = 4 * std::numeric_limits<T>::epsilon();
+  for (std::size_t i = 0; i < num_owned_entries; ++i)
+    CHECK(std::abs(v1[i] - v0[i]) <= tol);
 }
 
 void test_matrix_cast()
@@ -294,4 +366,10 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_sparsity_pattern_empty_columns());
   CHECK_NOTHROW(test_sparsity_pattern_duplicate_blocks());
   CHECK_NOTHROW(test_stacked_sparsity_pattern_blocks());
+}
+
+TEST_CASE("Set diagonal on shared rows", "[la_matrix_set_diagonal_shared]")
+{
+  CHECK_NOTHROW(test_set_diagonal_shared<float>());
+  CHECK_NOTHROW(test_set_diagonal_shared<double>());
 }
