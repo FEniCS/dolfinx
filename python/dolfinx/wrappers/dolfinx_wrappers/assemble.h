@@ -485,25 +485,6 @@ void declare_assembly_functions(nanobind::module_& m)
       },
       nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), "Experimental.");
   m.def(
-      "bc_diagonal_rows",
-      [](const dolfinx::fem::FunctionSpace<U>& V,
-         const std::vector<const dolfinx::fem::DirichletBC<T, U>*>& bcs)
-      {
-        std::vector<
-            std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
-            _bcs;
-        for (auto bc : bcs)
-        {
-          if (!bc)
-            throw std::invalid_argument("bcs contains None.");
-          _bcs.push_back(*bc);
-        }
-
-        return dolfinx_wrappers::as_nbarray(
-            dolfinx::fem::bc_diagonal_rows(V, _bcs));
-      },
-      nb::arg("V"), nb::arg("bcs"), "Experimental.");
-  m.def(
       "assemble_matrix",
       [](std::function<int(
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,

@@ -654,8 +654,20 @@ void assemble_operator(
                          "MatAssemblyBegin");
     common::petsc::check(MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY),
                          "MatAssemblyEnd");
-    std::vector<std::int32_t> rows
-        = fem::bc_diagonal_rows(*a.function_spaces()[0], bcs);
+
+    // Combine the locally owned rows of the bcs defined on this space,
+    // rather than calling the V/bcs overload of set_diagonal, which
+    // would recompute this on every call
+    const FunctionSpace<T>& V = *a.function_spaces()[0];
+    std::vector<std::int32_t> rows;
+    for (auto& bc : bcs)
+    {
+      if (V.contains(*bc.get().function_space()))
+      {
+        const auto [dofs, range] = bc.get().dof_indices();
+        rows.insert(rows.end(), dofs.begin(), std::next(dofs.begin(), range));
+      }
+    }
     fem::set_diagonal<PetscScalar>(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
                                    rows);
   }

@@ -541,40 +541,6 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
   }
 }
 
-/// @brief Locally owned rows in `V` constrained by Dirichlet boundary
-/// conditions.
-///
-/// Combines the locally owned dof indices of every boundary condition
-/// in `bcs` whose function space is `V` or a subspace of `V`. The
-/// result is exactly the `rows` argument taken by the row-list
-/// overload of set_diagonal(), so it can be computed once and reused
-/// across repeated calls to that overload -- e.g. across the Newton
-/// iterations of a nonlinear solve that reassembles the same operator
-/// with unchanged boundary conditions -- rather than recomputed, as
-/// the V/bcs overload of set_diagonal() does, on every call.
-///
-/// @param[in] V The function space for the rows of the matrix. Only
-/// boundary conditions defined on `V` or a subspace of it contribute.
-/// @param[in] bcs The Dirichlet boundary conditions.
-/// @return Locally owned dof indices, in no particular order and not
-/// de-duplicated.
-template <dolfinx::scalar T, std::floating_point U>
-std::vector<std::int32_t> bc_diagonal_rows(
-    const FunctionSpace<U>& V,
-    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
-{
-  std::vector<std::int32_t> rows;
-  for (auto& bc : bcs)
-  {
-    if (V.contains(*bc.get().function_space()))
-    {
-      auto [dofs, range] = bc.get().dof_indices();
-      rows.insert(rows.end(), dofs.begin(), std::next(dofs.begin(), range));
-    }
-  }
-  return rows;
-}
-
 /// @brief Sets a value to the diagonal of the matrix for rows with a
 /// Dirichlet boundary conditions applied.
 ///
@@ -587,11 +553,13 @@ std::vector<std::int32_t> bc_diagonal_rows(
 ///
 /// @note This is a convenience overload for callers that have `V` and
 /// `bcs` on hand but not the combined row list, and it recomputes that
-/// list on every call via bc_diagonal_rows(). It should not be called
-/// internally by the library: an internal caller either already has
-/// the rows, or can call bc_diagonal_rows() itself and cache the
-/// result across repeated calls, which this overload cannot do on a
-/// caller's behalf. Call the row-list overload directly instead.
+/// list on every call. It should not be called internally by the
+/// library: an internal caller either already has the rows, or can
+/// compute and cache them itself (filter `bcs` by
+/// `V.contains(*bc.function_space())` and concatenate each surviving
+/// bc's `dof_indices()`) across repeated calls, which this overload
+/// cannot do on a caller's behalf. Call the row-list overload directly
+/// instead.
 ///
 /// @param[in] set_fn The function for setting values to a matrix.
 /// @param[in] V The function space for the rows and columns of the
@@ -607,8 +575,14 @@ void set_diagonal(
     T diagonal = 1.0)
 {
   spdlog::debug("Set diagonal");
-  std::vector<std::int32_t> rows = bc_diagonal_rows(V, bcs);
-  set_diagonal(set_fn, rows, diagonal);
+  for (auto& bc : bcs)
+  {
+    if (V.contains(*bc.get().function_space()))
+    {
+      const auto [dofs, range] = bc.get().dof_indices();
+      set_diagonal(set_fn, dofs.first(range), diagonal);
+    }
+  }
 }
 
 } // namespace dolfinx::fem

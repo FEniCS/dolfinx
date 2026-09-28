@@ -613,9 +613,18 @@ def _assemble_matrix_petsc(
             for j, a_sub in enumerate(a_row):
                 if a_sub is not None:
                     Asub = A.getLocalSubMatrix(is0[i], is1[j])
-                    V0, V1 = (V._cpp_object for V in a_sub.function_spaces)
-                    if V0 is V1:
-                        rows = _cpp.fem.bc_diagonal_rows(V0, _bcs)
+                    V0, V1 = a_sub.function_spaces
+                    if V0._cpp_object is V1._cpp_object:
+                        # Combine the locally owned rows of the bcs
+                        # defined on this space, rather than the V/bcs
+                        # form of insert_diagonal, which would recompute
+                        # this on every call
+                        rows_ = []
+                        for bc in bcs or []:
+                            if V0.contains(bc.function_space):
+                                dofs, owned = bc.dof_indices()
+                                rows_.append(dofs[:owned])
+                        rows = np.concatenate(rows_) if rows_ else np.empty(0, dtype=np.int32)
                         _cpp.fem.petsc.insert_diagonal(Asub, rows, diag)  # type: ignore[arg-type]
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
     else:  # Non-blocked
@@ -625,11 +634,19 @@ def _assemble_matrix_petsc(
             coeffs = pack_coefficients(a)
         _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
         _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs, False)  # type: ignore
-        V0, V1 = (V._cpp_object for V in a.function_spaces)
-        if V0 is V1:
+        V0, V1 = a.function_spaces
+        if V0._cpp_object is V1._cpp_object:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
-            rows = _cpp.fem.bc_diagonal_rows(V0, _bcs)
+            # Combine the locally owned rows of the bcs defined on this
+            # space, rather than the V/bcs form of insert_diagonal,
+            # which would recompute this on every call
+            rows_ = []
+            for bc in bcs or []:
+                if V0.contains(bc.function_space):
+                    dofs, owned = bc.dof_indices()
+                    rows_.append(dofs[:owned])
+            rows = np.concatenate(rows_) if rows_ else np.empty(0, dtype=np.int32)
             _cpp.fem.petsc.insert_diagonal(A, rows, diag)  # type: ignore[arg-type]
 
     return A
