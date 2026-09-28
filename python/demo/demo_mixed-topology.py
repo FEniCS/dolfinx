@@ -141,7 +141,7 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 dolfinx_elements = [
-    finiteelement(cell_type, basix.ufl.wrap_element(e), np.float64)
+    finiteelement(cell_type, basix.ufl.wrap_element(e), np.float64, mesh.geometry.dim)
     for cell_type, e in zip([CellType.hexahedron, CellType.prism], elements, strict=True)
 ]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs

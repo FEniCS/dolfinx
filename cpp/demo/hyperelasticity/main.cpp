@@ -114,8 +114,9 @@ int main(int argc, char* argv[])
 
     auto V
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-            mesh, std::make_shared<fem::FiniteElement<U>>(
-                      element, std::vector<std::size_t>{3})));
+            mesh,
+            std::make_shared<fem::FiniteElement<U>>(
+                element, mesh->geometry().dim(), std::vector<std::size_t>{3})));
 
     auto B = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
     auto traction = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
@@ -269,11 +270,12 @@ int main(int argc, char* argv[])
     auto S
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
             mesh, std::make_shared<fem::FiniteElement<U>>(
-                      S_element, std::vector<std::size_t>{3, 3})));
+                      S_element, mesh->geometry().dim(),
+                      std::vector<std::size_t>{3, 3})));
 
     fem::Function<T> sigma(S);
     sigma.name = "cauchy_stress";
-    sigma.interpolate(sigma_expression);
+    fem::interpolate(sigma, sigma_expression);
 
     // Save solution in VTK format
     io::VTKFile file_u(mesh->comm(), "u.pvd", "w");

@@ -24,9 +24,14 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/dofmapbuilder.h>
+#include <dolfinx/fem/expression_evaluate.h>
+#include <dolfinx/fem/expression_factory.h>
+#include <dolfinx/fem/form_factory.h>
+#include <dolfinx/fem/functionspace_factory.h>
 #include <dolfinx/fem/interpolate.h>
+#include <dolfinx/fem/interpolate_geometry.h>
 #include <dolfinx/fem/sparsitybuild.h>
-#include <dolfinx/fem/utils.h>
+#include <dolfinx/fem/sparsitypattern.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <format>
@@ -138,14 +143,14 @@ void declare_function_space(nb::module_& m, std::string type)
         .def(
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self,
-               basix::FiniteElement<T>& element,
+               basix::FiniteElement<T>& element, std::size_t gdim,
                const std::optional<std::vector<std::size_t>>& block_shape,
                bool symmetric)
             {
-              new (self) dolfinx::fem::FiniteElement<T>(element, block_shape,
-                                                        symmetric);
+              new (self) dolfinx::fem::FiniteElement<T>(element, gdim,
+                                                        block_shape, symmetric);
             },
-            nb::arg("element"), nb::arg("block_shape").none(),
+            nb::arg("element"), nb::arg("gdim"), nb::arg("block_shape").none(),
             nb::arg("symmetric"), "Single Basix element constructor.")
         .def(
             "__init__",
@@ -193,6 +198,21 @@ void declare_function_space(nb::module_& m, std::string type)
                                                                {vshape.size()});
             },
             nb::rv_policy::reference_internal)
+        .def_prop_ro(
+            "reference_value_shape",
+            [](const dolfinx::fem::FiniteElement<T>& self)
+            {
+              std::span<const std::size_t> vshape
+                  = self.reference_value_shape();
+              return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
+                                                               {vshape.size()});
+            },
+            nb::rv_policy::reference_internal)
+        .def_prop_ro("value_size", &dolfinx::fem::FiniteElement<T>::value_size)
+        .def_prop_ro("physical_base_value_size",
+                     &dolfinx::fem::FiniteElement<T>::physical_base_value_size)
+        .def_prop_ro("reference_value_size",
+                     &dolfinx::fem::FiniteElement<T>::reference_value_size)
         .def("interpolation_points",
              [](const dolfinx::fem::FiniteElement<T>& self)
              {
@@ -736,11 +756,11 @@ void declare_objects(nb::module_& m, std::string type)
           {
             auto span = [](auto& x) { return std::span(x.data(), x.size()); };
             if (!cells0.has_value() and !cells1.has_value())
-              self.interpolate(e0);
+              dolfinx::fem::interpolate(self, e0);
             else if (cells0.has_value() and !cells1.has_value())
-              self.interpolate(e0, span(*cells0));
+              dolfinx::fem::interpolate(self, e0, span(*cells0));
             else if (cells0.has_value() and cells1.has_value())
-              self.interpolate(e0, span(*cells0), span(*cells1));
+              dolfinx::fem::interpolate(self, span(*cells1), e0, span(*cells0));
             else
             {
               throw std::runtime_error(

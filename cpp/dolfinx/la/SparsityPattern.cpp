@@ -633,6 +633,8 @@ void SparsityPattern::finalize()
                        std::back_inserter(recv_disp));
 
       ghost_data_in.resize(recv_disp.back());
+      ghost_data.reserve(1);
+      ghost_data_in.reserve(1);
       MPI_Neighbor_alltoallv(ghost_data.data(), send_sizes.data(),
                              send_disp.data(), MPI_INT64_T,
                              ghost_data_in.data(), recv_sizes.data(),

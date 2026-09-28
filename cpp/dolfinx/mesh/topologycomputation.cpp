@@ -377,6 +377,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   all_ranks.erase(unique_end, range_end);
 
   MPI_Comm neighbor_comm;
+  all_ranks.reserve(1);
   MPI_Dist_graph_create_adjacent(comm, all_ranks.size(), all_ranks.data(),
                                  MPI_UNWEIGHTED, all_ranks.size(),
                                  all_ranks.data(), MPI_UNWEIGHTED,

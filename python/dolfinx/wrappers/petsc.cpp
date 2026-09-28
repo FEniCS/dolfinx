@@ -18,7 +18,6 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
-#include <dolfinx/fem/utils.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <functional>

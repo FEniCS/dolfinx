@@ -45,6 +45,7 @@ add_executable(
   common/index_map.cpp
   common/move_semantics.cpp
   common/sort.cpp
+  fem/assembly_kernels.cpp
   fem/form.cpp
   fem/functionspace.cpp
   mesh/branching_manifold.cpp
@@ -77,6 +78,15 @@ endif()
 # https://github.com/microsoft/vcpkg/issues/4481
 if(WIN32)
   target_link_libraries(unittests PRIVATE bcrypt)
+endif()
+
+# Windows defaults new threads to a 1 MiB stack, versus 8 MiB on
+# Linux/macOS. Mesh-partitioning tests that build a real mesh (e.g.
+# via SCOTCH's recursive bisection, whose working set scales with the
+# (sub)graph being partitioned) overflow the default Windows stack even
+# though they run fine elsewhere; match the other platforms' size.
+if(WIN32 AND MSVC)
+  target_link_options(unittests PRIVATE /STACK:8388608)
 endif()
 
 # Required to find FFCx generated headers.

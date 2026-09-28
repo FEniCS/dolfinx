@@ -483,7 +483,7 @@ def test_mixed_element_dof_transformation_right(ttype, dtype):
     # The transforming (Nedelec) sub-element is placed second, so it
     # sits at a non-zero DOF offset within the mixed element.
     ufl_e = mixed_element([lagrange, nedelec])
-    elem = finiteelement(CellType.triangle, ufl_e, np.float64)
+    elem = finiteelement(CellType.triangle, ufl_e, np.float64, gdim=2)
     assert elem.needs_dof_transformations
 
     ncols = elem.space_dimension
@@ -535,7 +535,7 @@ def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype):
         lagrange_variant=basix.LagrangeVariant.legendre,
     )
     ufl_e = mixed_element([nedelec, lagrange])
-    elem = finiteelement(CellType.triangle, ufl_e, np.float64)
+    elem = finiteelement(CellType.triangle, ufl_e, np.float64, gdim=2)
     assert elem.needs_dof_transformations
 
     ncols = elem.space_dimension
@@ -566,7 +566,7 @@ def test_non_mixed_element_dof_transformation_right(ttype, dtype):
         2,
         lagrange_variant=basix.LagrangeVariant.legendre,
     )
-    elem = finiteelement(CellType.triangle, ufl_e, np.float64)
+    elem = finiteelement(CellType.triangle, ufl_e, np.float64, gdim=2)
     assert elem.needs_dof_transformations
 
     ncols = elem.space_dimension

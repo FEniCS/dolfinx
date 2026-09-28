@@ -109,6 +109,11 @@ function(dolfinx_add_demo name)
   target_compile_features(${_target} PRIVATE cxx_std_20)
   set_target_properties(${_target} PROPERTIES CXX_EXTENSIONS OFF)
 
+  # Match Linux/macOS's 8 MiB stack (see cpp/test/CMakeLists.txt).
+  if(WIN32 AND MSVC)
+    target_link_options(${_target} PRIVATE /STACK:8388608)
+  endif()
+
   # Use the DOLFINx Developer compiler flags for Developer build types.
   # Included here rather than at module scope so that the flags land in
   # this function's scope, which is where they are used.

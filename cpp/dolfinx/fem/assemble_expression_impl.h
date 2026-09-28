@@ -6,10 +6,8 @@
 
 #pragma once
 
-#include "Expression.h"
-#include "FunctionSpace.h"
+#include "FiniteElement.h"
 #include "traits.h"
-#include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -77,6 +75,10 @@ void tabulate_expression(
 
   // Create data structures used in evaluation
   std::vector<U> coord_dofs(3 * x_dofmap.extent(1));
+  GeometryPack geometry{
+      x_dofmap,
+      md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>>(
+          x.data(), x.size() / 3, 3)};
 
   // Iterate over cells and 'assemble' into values
   int size0 = Xshape[0] * value_size;
@@ -88,16 +90,11 @@ void tabulate_expression(
 
   for (std::size_t e = 0; e < entities.extent(0); ++e)
   {
-    std::ranges::fill(values_local, 0);
+    std::ranges::fill(values_local, T(0));
     if constexpr (entities.rank() == 1)
     {
       std::int32_t entity = entities(e);
-      auto x_dofs = md::submdspan(x_dofmap, entity, md::full_extent);
-      for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      {
-        std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
-                    std::next(coord_dofs.begin(), 3 * i));
-      }
+      gather_cell_coordinates(geometry, entity, coord_dofs.data());
       fn(values_local.data(), coeffs_data + e * cstride, constants.data(),
          coord_dofs.data(), nullptr, nullptr, nullptr);
 
@@ -108,12 +105,7 @@ void tabulate_expression(
       std::int32_t entity = entities(e, 0);
       std::int32_t local_entity = entities(e, 1);
       std::uint8_t perm = perms.empty() ? 0 : perms(entity, local_entity);
-      auto x_dofs = md::submdspan(x_dofmap, entity, md::full_extent);
-      for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      {
-        std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
-                    std::next(coord_dofs.begin(), 3 * i));
-      }
+      gather_cell_coordinates(geometry, entity, coord_dofs.data());
       fn(values_local.data(), coeffs_data + e * cstride, constants.data(),
          coord_dofs.data(), &local_entity, &perm, nullptr);
       P0(values_local, cell_info, entity, size0);

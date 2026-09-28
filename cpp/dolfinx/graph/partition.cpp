@@ -104,6 +104,7 @@ DistributionPlan compute_distribution_plan(
   std::ranges::sort(plan.src);
 
   // Create neighbourhood communicator
+  plan.dest.reserve(1);
   MPI_Dist_graph_create_adjacent(
       comm, plan.src.size(), plan.src.data(), MPI_UNWEIGHTED, plan.dest.size(),
       plan.dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &plan.neigh_comm);
@@ -438,6 +439,8 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
 
   std::vector<int> in_edges
       = dolfinx::MPI::compute_graph_edges_pcx(comm, neighbors);
+  in_edges.reserve(1);
+  neighbors.reserve(1);
   MPI_Dist_graph_create_adjacent(comm, in_edges.size(), in_edges.data(),
                                  MPI_UNWEIGHTED, neighbors.size(),
                                  neighbors.data(), MPI_UNWEIGHTED,

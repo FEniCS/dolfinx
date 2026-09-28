@@ -120,8 +120,8 @@ else()
 endif()
 
 # UFCx
-if(TARGET UFCx::UFCx)
-  target_link_libraries(dolfinx PUBLIC UFCx::UFCx)
+if(TARGET UFCxPython::UFCxPython)
+  target_link_libraries(dolfinx PUBLIC UFCxPython::UFCxPython)
 elseif(TARGET ufcx::ufcx)
   target_link_libraries(dolfinx PUBLIC ufcx::ufcx)
 endif()
@@ -259,7 +259,7 @@ install(
   FILES
     ${PROJECT_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
     ${PROJECT_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
-    ${DOLFINX_SOURCE_DIR}/cmake/modules/FindUFCx.cmake
+    ${DOLFINX_SOURCE_DIR}/cmake/modules/FindUFCxPython.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxDeveloperCompilerFlags.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxDemo.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxPkgConfigHelpers.cmake

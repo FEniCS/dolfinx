@@ -137,6 +137,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
 
   // Create neighbourhood communicator
   MPI_Comm neigh_comm;
+  dest.reserve(1);
   MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &neigh_comm);

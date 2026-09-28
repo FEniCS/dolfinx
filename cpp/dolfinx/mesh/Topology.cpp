@@ -116,6 +116,8 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices,
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm neigh_comm0;
+  src.reserve(1);
+  dest.reserve(1);
   MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &neigh_comm0);
@@ -463,6 +465,8 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
   std::vector<std::int64_t> recv_data;
   {
     MPI_Comm comm0;
+    src.reserve(1);
+    dest.reserve(1);
     MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
                                    dest.size(), dest.data(), MPI_UNWEIGHTED,
                                    MPI_INFO_NULL, false, &comm0);
