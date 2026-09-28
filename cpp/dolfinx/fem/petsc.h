@@ -175,9 +175,8 @@ Mat create_matrix_block(
     }
   }
 
-  // Create the local-to-global maps on the mesh communicator, not
-  // MPI_COMM_SELF, because MATIS requires them to share the matrix
-  // communicator
+  // Create the local-to-global maps on the mesh communicator. MATIS
+  // requires them to share the matrix communicator
   ISLocalToGlobalMapping l2g0 = nullptr, l2g1 = nullptr;
   common::petsc::check(
       ISLocalToGlobalMappingCreate(mesh->comm(), 1, _maps[0].size(),
@@ -191,8 +190,8 @@ Mat create_matrix_block(
         "ISLocalToGlobalMappingCreate");
   }
 
-  // Initialise matrix. The maps are passed in, rather than attached
-  // afterwards, because MATIS builds its preallocation from them
+  // Initialise the matrix. MATIS builds its preallocation from the
+  // maps, so they are passed to the constructor
   Mat A = la::petsc::create_matrix(mesh->comm(), pattern, type, l2g0,
                                    l2g1 ? l2g1 : l2g0);
   common::petsc::check(ISLocalToGlobalMappingDestroy(&l2g0),

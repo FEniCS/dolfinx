@@ -57,10 +57,9 @@ def test_matis_matches_aij(cell_type, degree, shape):
 
 @pytest.mark.petsc4py
 def test_matis_local_to_global_map():
-    """MATIS requires the local-to-global maps on the matrix communicator.
+    """The local-to-global maps share the matrix communicator.
 
-    ``MatSetLocalToGlobalMapping_IS`` calls ``PetscCheckSameComm``, so a
-    map built on ``MPI_COMM_SELF`` is rejected in a PETSc debug build.
+    ``MatSetLocalToGlobalMapping_IS`` calls ``PetscCheckSameComm``.
     """
     from dolfinx.fem.petsc import assemble_matrix
 
@@ -81,11 +80,11 @@ def test_matis_local_to_global_map():
 @pytest.mark.petsc4py
 @pytest.mark.parametrize("kind", [None, "is"])
 def test_blocked_matis(kind):
-    """A blocked matrix of kind ``kind`` must match the AIJ equivalent.
+    """A blocked matrix of kind ``kind`` matches the AIJ equivalent.
 
-    ``create_matrix_block`` passes field-concatenated local-to-global
-    maps to the matrix constructor, which for MATIS must happen before
-    preallocation.
+    The blocked path builds field-concatenated local-to-global maps.
+    For MATIS the result is monolithic, with a sequential AIJ local
+    matrix.
     """
     from petsc4py import PETSc
 
@@ -108,20 +107,18 @@ def test_blocked_matis(kind):
     A_ref = assemble_matrix(a)
     A_ref.assemble()
 
-    A_cmp = A.convert(PETSc.Mat.Type.AIJ) if kind == "is" else A
+    A_cmp = A.convert(PETSc.Mat.Type.AIJ)
     assert np.isclose(A_cmp.norm(), A_ref.norm(), rtol=100 * np.finfo(PETSc.ScalarType).eps)
-    A.destroy(), A_ref.destroy()
+    A.destroy(), A_ref.destroy(), A_cmp.destroy()
 
 
 @pytest.mark.petsc4py
 @pytest.mark.parametrize("kind", ["baij", "sbaij"])
 def test_square_block_type_rejected(kind):
-    """Block formats must reject differing row and column block sizes.
+    """Block formats reject differing row and column block sizes.
 
-    BAIJ and SBAIJ preallocation applies a single block size to both
-    dimensions. PETSc raises an error only when the column count is not
-    divisible by the row block size; otherwise it overwrites the column
-    block size and builds a matrix with the wrong layout.
+    BAIJ and SBAIJ apply a single block size to both dimensions, so
+    such an operator has no representation in those formats.
     """
     from dolfinx.fem.petsc import assemble_matrix
 

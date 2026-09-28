@@ -246,10 +246,9 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   // so anything type-dependent must follow
   common::petsc::check(MatSetFromOptions(A), "MatSetFromOptions");
 
-  // BAIJ and SBAIJ store square blocks. Their preallocation applies a
-  // single block size to both dimensions, silently overwriting the
-  // column block size rather than raising an error, so reject unequal
-  // block sizes here
+  // BAIJ and SBAIJ store square blocks: preallocation applies one
+  // block size to both dimensions and overwrites the column block
+  // size. PETSc does not check this, so it is checked here
   if (bs[0] != bs[1])
   {
     PetscBool square_block = PETSC_FALSE;
@@ -271,10 +270,10 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
     }
   }
 
-  // Set the block sizes up front. MatXAIJSetPreallocation is passed
-  // PETSC_DECIDE below so that it reads them from the matrix rather
-  // than resetting them, which would downgrade the attached
-  // local-to-global maps where the row and column block sizes differ
+  // Block sizes are set before the local-to-global maps are attached.
+  // MatXAIJSetPreallocation below takes PETSC_DECIDE so that it reads
+  // them from the matrix; an explicit value resets them, which
+  // downgrades an attached map whose block size exceeds one
   common::petsc::check(MatSetBlockSizes(A, bs[0], bs[1]), "MatSetBlockSizes");
 
   // Non-zeros per block row. MatXAIJSetPreallocation expands this to
@@ -300,8 +299,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
     return l2g;
   };
 
-  // Create PETSc local-to-global maps and attach to the matrix. Maps
-  // are created on `comm` rather than MPI_COMM_SELF because MATIS
+  // Create the local-to-global maps on `comm` and attach them. MATIS
   // requires them to share the matrix communicator
   ISLocalToGlobalMapping local_to_global0 = nullptr;
   if (rlgmap)
