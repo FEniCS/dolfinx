@@ -485,13 +485,13 @@ void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
 std::shared_ptr<const common::IndexMap>
 SparsityPattern::index_map(int dim) const
 {
-  return _index_maps.at(dim);
+  return dim == 1 ? _col_index_map : _index_maps.at(dim);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
-SparsityPattern::column_index_map() const
+SparsityPattern::input_index_map(int dim) const
 {
-  return _col_index_map;
+  return _index_maps.at(dim);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> SparsityPattern::column_indices() const
@@ -810,8 +810,8 @@ void SparsityPattern::finalize()
 
   // _col_ghosts only appends to the column map's ghosts. Building an
   // IndexMap is collective, so build one only if ghosts changed on at
-  // least one rank; otherwise _col_index_map keeps aliasing
-  // _index_maps[1], which identifies a pattern built from a single map.
+  // least one rank; otherwise preserve pointer identity between the input
+  // and graph-spanning column maps.
   int ghosts_changed = _col_ghosts.size() != _index_maps[1]->ghosts().size();
   int ghosts_changed_global;
   const int ierr = MPI_Allreduce(&ghosts_changed, &ghosts_changed_global, 1,

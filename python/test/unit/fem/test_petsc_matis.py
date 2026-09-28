@@ -183,7 +183,7 @@ def test_matis_square_local_matrix():
     # The column ghost set must grow, or the test is vacuous
     pattern = create_sparsity_pattern(a)
     pattern.finalize()
-    col, col_grown = pattern.index_map(1), pattern.column_index_map()
+    col, col_grown = pattern.input_index_map(1), pattern.index_map(1)
     assert col.num_ghosts == V.dofmap.index_map.num_ghosts
     assert comm.allreduce(col_grown.num_ghosts - col.num_ghosts, MPI.SUM) > 0
 
@@ -191,5 +191,7 @@ def test_matis_square_local_matrix():
     A.assemble()
     rmap, cmap = A.getLGMap()
     assert rmap.getSize() == cmap.getSize()
+    assert np.array_equal(rmap.getIndices(), cmap.getIndices())
+    assert rmap.handle == cmap.handle
     assert A.getISLocalMat().getSize() == (rmap.getSize(), rmap.getSize())
     A.destroy()

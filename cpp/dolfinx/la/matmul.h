@@ -81,13 +81,6 @@ struct Sparsity
     return dim == 0 ? _row_map : _col_map;
   }
 
-  /// @brief Return the column `IndexMap` spanning the indices in
-  /// `_cols`. Built from an assembled graph, so same as `index_map(1)`.
-  std::shared_ptr<const common::IndexMap> column_index_map() const
-  {
-    return _col_map;
-  }
-
   /// @brief Return the block size.
   int block_size(int i) const { return _bs[i]; }
 

@@ -51,13 +51,13 @@ def test_blocked_pattern_with_empty_blocks():
     assert blocked_pattern.num_nonzeros == 0
 
 
-def test_column_index_map_growth():
+def test_index_map_column_growth():
     """Finalizing can add column ghosts without changing the input maps.
 
     Rank 1 assembles an entry on a row it does not own, at a column the
     row owner does not hold, so finalization adds a column ghost on
-    rank 0. ``index_map`` must still return the constructor's maps, so
-    that a pattern built from a single map is recognisable as such.
+    rank 0. ``input_index_map`` still returns the constructor's maps,
+    so that a pattern built from a single map is recognisable as such.
     """
     comm = MPI.COMM_WORLD
     if comm.size < 2:
@@ -76,8 +76,8 @@ def test_column_index_map_growth():
     pattern.finalize()
 
     for dim in range(2):
-        assert pattern.index_map(dim).num_ghosts == imap.num_ghosts
-    assert pattern.column_index_map().size_local == imap.size_local
+        assert pattern.input_index_map(dim).num_ghosts == imap.num_ghosts
+    assert pattern.index_map(1).size_local == imap.size_local
     if comm.rank == 0:
-        assert pattern.column_index_map().num_ghosts == 1
-        assert pattern.column_index_map().ghosts[0] == 1
+        assert pattern.index_map(1).num_ghosts == 1
+        assert pattern.index_map(1).ghosts[0] == 1

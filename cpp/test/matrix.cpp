@@ -185,13 +185,14 @@ void test_sparsity_pattern_common_index_map()
   p.insert(5, 4);
   p.finalize();
   CHECK(p.index_map(0) == p.index_map(1));
-  CHECK(p.column_index_map() == p.index_map(1));
+  CHECK(p.input_index_map(0) == p.index_map(0));
+  CHECK(p.input_index_map(1) == p.index_map(1));
 }
 
 void test_sparsity_pattern_shared_map_column_ghost_growth()
 {
-  // A square pattern built from one IndexMap keeps that map for both
-  // dimensions, even where finalization adds column ghosts.
+  // A square pattern built from one IndexMap keeps it as both input maps,
+  // even where finalization adds column ghosts to index_map(1).
   MPI_Comm comm = MPI_COMM_WORLD;
   const int rank = dolfinx::MPI::rank(comm);
   if (dolfinx::MPI::size(comm) < 2)
@@ -212,13 +213,14 @@ void test_sparsity_pattern_shared_map_column_ghost_growth()
     p.insert(1, 0);
   p.finalize();
 
+  CHECK(p.input_index_map(0) == map);
+  CHECK(p.input_index_map(1) == map);
   CHECK(p.index_map(0) == map);
-  CHECK(p.index_map(1) == map);
-  CHECK(p.column_index_map() != map);
+  CHECK(p.index_map(1) != map);
   if (rank == 0)
   {
-    CHECK(p.column_index_map()->ghosts().size() == 1);
-    CHECK(p.column_index_map()->ghosts().front() == 1);
+    CHECK(p.index_map(1)->ghosts().size() == 1);
+    CHECK(p.index_map(1)->ghosts().front() == 1);
   }
 }
 
@@ -250,14 +252,14 @@ void test_sparsity_pattern_asymmetric_column_ghost_growth()
   }
   p.finalize();
 
-  CHECK(p.index_map(1) == column_map);
+  CHECK(p.input_index_map(1) == column_map);
   if (rank == 0)
   {
-    CHECK(p.column_index_map()->ghosts().size() == 1);
-    CHECK(p.column_index_map()->ghosts().front() == 1);
+    CHECK(p.index_map(1)->ghosts().size() == 1);
+    CHECK(p.index_map(1)->ghosts().front() == 1);
   }
   else
-    CHECK(p.column_index_map()->ghosts().empty());
+    CHECK(p.index_map(1)->ghosts().empty());
 }
 
 void test_sparsity_pattern_empty_columns()

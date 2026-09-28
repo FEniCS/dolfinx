@@ -227,7 +227,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   Mat A;
   common::petsc::check(MatCreate(comm, &A), "MatCreate");
 
-  std::array maps = {sp.index_map(0), sp.index_map(1)};
+  std::array maps = {sp.input_index_map(0), sp.input_index_map(1)};
   const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
   if (type and !type->empty())

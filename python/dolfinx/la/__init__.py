@@ -175,32 +175,28 @@ class SparsityPattern:
         self._cpp_object = sp
 
     def index_map(self, dim: int) -> IndexMap:
-        """Index map for the rows or columns, as passed to the constructor.
+        """Index map for the rows or columns.
 
         Note:
-            Finalizing can add column ghosts, so the column map
-            (``dim=1``) does not necessarily span the local column
-            indices used by :attr:`graph`. See
-            :func:`column_index_map`.
+            Finalizing can add column ghosts to the column map
+            (``dim=1``).
 
         Args:
             dim: 0 for the row map, 1 for the column map.
         """
         return IndexMap(self._cpp_object.index_map(dim))
 
-    def column_index_map(self) -> IndexMap:
-        """Index map spanning the local column indices of :attr:`graph`.
+    def input_index_map(self, dim: int) -> IndexMap:
+        """Input index map used to construct the pattern.
 
-        Finalizing sends an entry on an unowned row to the row owner,
-        which adds the entry's column as a ghost if its column map does
-        not hold it, so the returned map can be larger than
-        ``index_map(1)``.
+        Finalizing can add column ghosts to ``index_map(1)``. When no
+        rank adds a column ghost, ``input_index_map(1)`` and
+        ``index_map(1)`` wrap the same C++ object.
 
-        Note:
-            Added ghosts are known only after :func:`finalize`. Before
-            then this is ``index_map(1)``.
+        Args:
+            dim: 0 for the row map, 1 for the column map.
         """
-        return IndexMap(self._cpp_object.column_index_map())
+        return IndexMap(self._cpp_object.input_index_map(dim))
 
     @property
     def num_nonzeros(self) -> int:

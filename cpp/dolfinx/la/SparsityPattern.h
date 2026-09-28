@@ -113,31 +113,24 @@ public:
   /// entries
   void finalize();
 
-  /// @brief Index map for the rows and columns set by the current MPI
-  /// rank, as passed to the constructor. Not modified by
-  /// SparsityPattern::finalize.
+  /// @brief Index map for the rows and columns that will be set by the
+  /// current MPI rank.
   ///
-  /// @note Finalization can add column ghosts, so the column map does
-  /// not necessarily span the local column indices used by
-  /// SparsityPattern::graph. See SparsityPattern::column_index_map.
+  /// @note After finalization, the column index map is updated to
+  /// account for additional column entries from other processes.
   /// @param[in] dim Requested map, row (0) or column (1).
   /// @return The index map.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// @brief Index map spanning the local column indices used by
-  /// SparsityPattern::graph.
+  /// @brief Input index map for the rows and columns used to construct
+  /// the pattern.
   ///
-  /// SparsityPattern::finalize sends an entry on an unowned row to the
-  /// row owner, which adds the entry's column as a ghost if its column
-  /// map does not hold it. The returned map covers these ghosts, so it
-  /// can be larger than `index_map(1)`; it is the same object when no
-  /// rank added one, which identifies a pattern built from a single
-  /// map.
-  ///
-  /// @note Added ghosts are known only after
-  /// SparsityPattern::finalize. Before then this is `index_map(1)`.
-  /// @return Column index map, including added ghost columns.
-  std::shared_ptr<const common::IndexMap> column_index_map() const;
+  /// @note Finalization can add column ghosts to `index_map(1)`. When
+  /// no rank adds a column ghost, `input_index_map(1)` and
+  /// `index_map(1)` return the same object.
+  /// @param[in] dim Requested map, row (0) or column (1).
+  /// @return The input index map.
+  std::shared_ptr<const common::IndexMap> input_index_map(int dim) const;
 
   /// @brief Global column indices corresponding to the local column
   /// indices used by SparsityPattern::graph.
@@ -191,7 +184,7 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _comm;
 
-  // Index maps for each dimension, as passed to the constructor
+  // Input index maps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
   // Column map spanning the finalised pattern's local column indices.
