@@ -814,11 +814,26 @@ def _lifting_bc_data(
     a: Sequence[Form | None] | Sequence[Sequence[Form | None]],
     bcs: Sequence[Sequence[DirichletBC]] | None,
 ) -> tuple[list[npt.NDArray[np.int8]], list[npt.NDArray]]:
-    """Constrained dof markers and values on each column trial space.
+    """Constrained dof markers and bc values for lifting, per column.
 
-    ``a`` is a 1D sequence of forms (one per column) or a 2D array of
-    forms, and ``bcs[j]`` are the boundary conditions on the trial
-    space of column ``j``.
+    Builds the ``bc_markers1`` and ``bc_values1`` arguments of
+    :func:`_apply_lifting_petsc_markers`.
+
+    Args:
+        a: Bilinear forms: a 1D sequence with one form per column, or a
+            2D array of forms. The space of column ``j`` is the trial
+            space of ``a[j]`` (1D) or the common trial space of column
+            ``j`` (2D).
+        bcs: Boundary conditions on the space of each column, with
+            ``bcs[j]`` those for column ``j``. Must have one entry per
+            column. ``None`` means no boundary conditions.
+
+    Returns:
+        Markers and values, one array each per column. Markers are
+        ``int8``, ``1`` for constrained dofs (owned and ghost,
+        unrolled). Values hold the boundary condition values, as
+        ``PETSc.ScalarType``, where marked. Both arrays are empty for a
+        column with no space or no boundary conditions.
     """
     if len(a) > 0 and isinstance(a[0], Sequence):
         spaces = _extract_function_spaces(a, 1)  # type: ignore[arg-type]
@@ -1024,7 +1039,7 @@ class LinearProblem(typing.Generic[_U]):
         ``.destroy()`` on returned PETSc objects.
     """  # noqa: D301
 
-    @typing.overload
+    @overload
     def __init__(
         self: LinearProblem[_Function],
         a: ufl.Form,
@@ -1040,7 +1055,7 @@ class LinearProblem(typing.Generic[_U]):
         jit_options: dict | None = None,
         entity_maps: Sequence[_EntityMap] | None = None,
     ) -> None: ...
-    @typing.overload
+    @overload
     def __init__(
         self: LinearProblem[Sequence[_Function]],
         a: Sequence[Sequence[ufl.Form | None]],
@@ -1536,7 +1551,7 @@ class NonlinearProblem(typing.Generic[_U]):
     _P_mat: PETSc.Mat | None
     _preconditioner: Form | Sequence[Sequence[Form | None]] | None
 
-    @typing.overload
+    @overload
     def __init__(
         self: NonlinearProblem[_Function],
         F: ufl.form.Form,
@@ -1552,7 +1567,7 @@ class NonlinearProblem(typing.Generic[_U]):
         jit_options: dict | None = None,
         entity_maps: Sequence[_EntityMap] | None = None,
     ) -> None: ...
-    @typing.overload
+    @overload
     def __init__(
         self: NonlinearProblem[Sequence[_Function]],
         F: Sequence[ufl.form.Form],
