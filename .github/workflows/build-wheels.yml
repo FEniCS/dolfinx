@@ -97,6 +97,8 @@ jobs:
       - name: Add NuGet sources (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
+        env:
+          NUGET_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           .$(${{ env.VCPKG_EXE }} fetch nuget) `
             sources add `
@@ -104,9 +106,9 @@ jobs:
             -StorePasswordInClearText `
             -Name GitHubPackages `
             -UserName "FEniCS" `
-            -Password "${{ secrets.GITHUB_TOKEN }}"
+            -Password "$env:NUGET_TOKEN"
           .$(${{ env.VCPKG_EXE }} fetch nuget) `
-            setapikey "${{ secrets.GITHUB_TOKEN }}" `
+            setapikey "$env:NUGET_TOKEN" `
             -Source "https://nuget.pkg.github.com/FEniCS/index.json"
 
       - name: Install Intel MPI (Windows)
