@@ -186,6 +186,14 @@ class SparsityPattern:
         """
         return IndexMap(self._cpp_object.index_map(dim))
 
+    @functools.cached_property
+    def _input_index_maps(self) -> tuple[IndexMap, IndexMap]:
+        """Wrappers for the maps passed to the constructor."""
+        return (
+            IndexMap(self._cpp_object.input_index_map(0)),
+            IndexMap(self._cpp_object.input_index_map(1)),
+        )
+
     def input_index_map(self, dim: int) -> IndexMap:
         """Input index map used to construct the pattern.
 
@@ -193,10 +201,18 @@ class SparsityPattern:
         rank adds a column ghost, ``input_index_map(1)`` and
         ``index_map(1)`` wrap the same C++ object.
 
+        Note:
+            The input maps are fixed at construction, so the wrappers
+            are built on first access and the same objects are returned
+            thereafter. :func:`index_map` is not cached, as
+            :func:`finalize` can replace the column map.
+
         Args:
             dim: 0 for the row map, 1 for the column map.
         """
-        return IndexMap(self._cpp_object.input_index_map(dim))
+        if dim not in (0, 1):
+            raise IndexError(f"Sparsity pattern dimension must be 0 or 1, not {dim}.")
+        return self._input_index_maps[dim]
 
     @property
     def num_nonzeros(self) -> int:
