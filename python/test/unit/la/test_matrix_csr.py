@@ -13,7 +13,7 @@ import pytest
 import ufl
 from dolfinx import fem
 from dolfinx.common import index_map
-from dolfinx.la import BlockMode, matrix_csr, sparsity_pattern
+from dolfinx.la import BlockMode, InsertMode, matrix_csr, sparsity_pattern
 from dolfinx.mesh import GhostMode, create_unit_square
 
 
@@ -275,6 +275,18 @@ def test_set_diagonal_per_row(dtype):
     mask = np.ones(diag.shape[0], dtype=bool)
     mask[rows] = False
     assert np.allclose(diag[mask], 0.0)
+
+    # Adding the same values again doubles the diagonal
+    fem.set_diagonal(A, rows, diagonals, InsertMode.add)
+    assert np.allclose(As.diagonal()[rows], 2 * diagonals)
+
+    # Adding a single value to every row
+    fem.set_diagonal(A, rows, dtype(1), InsertMode.add)
+    assert np.allclose(As.diagonal()[rows], 2 * diagonals + 1)
+
+    # Inserting overwrites
+    fem.set_diagonal(A, rows, diagonals)
+    assert np.allclose(As.diagonal()[rows], diagonals)
 
     # Number of values must match number of rows
     with pytest.raises(ValueError):

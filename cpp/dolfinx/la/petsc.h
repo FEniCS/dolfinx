@@ -318,20 +318,24 @@ public:
   {
     return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
             cache1 = std::vector<PetscInt>()](
-               std::span<const std::int32_t> rows,
-               std::span<const std::int32_t> cols,
+               const common::LocalIndexRange auto& rows,
+               const common::LocalIndexRange auto& cols,
                std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
-      cache0.resize(bs0 * rows.size());
-      cache1.resize(bs1 * cols.size());
-      for (std::size_t i = 0; i < rows.size(); ++i)
+      const std::int32_t* _rows = std::ranges::data(rows);
+      const std::int32_t* _cols = std::ranges::data(cols);
+      const std::size_t num_rows = std::ranges::size(rows);
+      const std::size_t num_cols = std::ranges::size(cols);
+      cache0.resize(bs0 * num_rows);
+      cache1.resize(bs1 * num_cols);
+      for (std::size_t i = 0; i < num_rows; ++i)
         for (int k = 0; k < bs0; ++k)
-          cache0[bs0 * i + k] = bs0 * rows[i] + k;
+          cache0[bs0 * i + k] = bs0 * _rows[i] + k;
 
-      for (std::size_t i = 0; i < cols.size(); ++i)
+      for (std::size_t i = 0; i < num_cols; ++i)
         for (int k = 0; k < bs1; ++k)
-          cache1[bs1 * i + k] = bs1 * cols[i] + k;
+          cache1[bs1 * i + k] = bs1 * _cols[i] + k;
 
       ierr = MatSetValuesLocal(A, cache0.size(), cache0.data(), cache1.size(),
                                cache1.data(), vals.data(), mode);

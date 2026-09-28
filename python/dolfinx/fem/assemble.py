@@ -483,8 +483,9 @@ def set_diagonal(
     A: la.MatrixCSR[Scalar],
     rows: npt.NDArray[np.int32],
     diagonal: Scalar | float | complex | npt.NDArray[Scalar] = 1.0,
+    insert_mode: la.InsertMode = la.InsertMode.insert,
 ) -> None:
-    """Set values on the diagonal for given rows of a matrix.
+    """Set or add values on the diagonal for given rows of a matrix.
 
     Args:
         A: Matrix to modify.
@@ -493,10 +494,12 @@ def set_diagonal(
             for all rows or an array with ``diagonal[i]`` the value for
             ``rows[i]``. An array must have the same length as
             ``rows``.
+        insert_mode: ``la.InsertMode.insert`` to set the diagonal
+            entries, or ``la.InsertMode.add`` to add to them.
     """
     if np.ndim(diagonal) > 0:
         diagonal = np.asarray(diagonal, dtype=A.data.dtype)
-    typing.cast(typing.Any, _cpp.fem.set_diagonal)(A._cpp_object, rows, diagonal)
+    typing.cast(typing.Any, _cpp.fem.set_diagonal)(A._cpp_object, rows, diagonal, insert_mode)
 
 
 def set_bc_diagonal(

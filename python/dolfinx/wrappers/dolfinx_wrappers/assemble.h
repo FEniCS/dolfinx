@@ -7,11 +7,12 @@
 #pragma once
 
 #include "array.h"
+#include "la.h"
 #include "pycoeff.h"
 #include <array>
 #include <basix/mdspan.hpp>
 #include <cstdint>
-#include <dolfinx/fem/DirichletBC.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
@@ -462,23 +463,46 @@ void declare_assembly_functions(nanobind::module_& m)
       "set_diagonal",
       [](dolfinx::la::MatrixCSR<T>& A,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> diagonals)
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> diagonals,
+         PyInsertMode mode)
       {
-        dolfinx::fem::set_diagonal(
-            A.mat_set_values(), std::span(rows.data(), rows.size()),
-            std::span<const T>(diagonals.data(), diagonals.size()));
+        std::span _rows(rows.data(), rows.size());
+        std::span<const T> _diagonals(diagonals.data(), diagonals.size());
+        switch (mode)
+        {
+        case PyInsertMode::insert:
+          dolfinx::fem::set_diagonal(A.mat_set_values(), _rows, _diagonals);
+          break;
+        case PyInsertMode::add:
+          dolfinx::fem::set_diagonal(A.mat_add_values(), _rows, _diagonals);
+          break;
+        default:
+          throw std::invalid_argument("InsertMode not recognized.");
+        }
       },
-      nb::arg("A"), nb::arg("rows"), nb::arg("diagonals"), "Experimental.");
+      nb::arg("A"), nb::arg("rows"), nb::arg("diagonals"), nb::arg("mode"),
+      "Experimental.");
   m.def(
       "set_diagonal",
       [](dolfinx::la::MatrixCSR<T>& A,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-         T diagonal)
+         T diagonal, PyInsertMode mode)
       {
-        dolfinx::fem::set_diagonal(
-            A.mat_set_values(), std::span(rows.data(), rows.size()), diagonal);
+        std::span _rows(rows.data(), rows.size());
+        switch (mode)
+        {
+        case PyInsertMode::insert:
+          dolfinx::fem::set_diagonal(A.mat_set_values(), _rows, diagonal);
+          break;
+        case PyInsertMode::add:
+          dolfinx::fem::set_diagonal(A.mat_add_values(), _rows, diagonal);
+          break;
+        default:
+          throw std::invalid_argument("InsertMode not recognized.");
+        }
       },
-      nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), "Experimental.");
+      nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), nb::arg("mode"),
+      "Experimental.");
   m.def(
       "assemble_matrix",
       [](std::function<int(
@@ -496,16 +520,19 @@ void declare_assembly_functions(nanobind::module_& m)
          nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> dof_marker0,
          nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> dof_marker1)
       {
-        auto f = [&fin](std::span<const std::int32_t> rows,
-                        std::span<const std::int32_t> cols,
+        auto f = [&fin](const dolfinx::common::LocalIndexRange auto& rows,
+                        const dolfinx::common::LocalIndexRange auto& cols,
                         std::span<const T> data)
         {
-          return fin(nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                                 nb::numpy>(rows.data(), {rows.size()}),
-                     nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                                 nb::numpy>(cols.data(), {cols.size()}),
-                     nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
-                         data.data(), {rows.size(), cols.size()}));
+          const std::size_t num_rows = std::ranges::size(rows);
+          const std::size_t num_cols = std::ranges::size(cols);
+          return fin(
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                          nb::numpy>(std::ranges::data(rows), {num_rows}),
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                          nb::numpy>(std::ranges::data(cols), {num_cols}),
+              nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
+                  data.data(), {num_rows, num_cols}));
         };
         dolfinx::fem::assemble_matrix(
             f, a, std::span(constants.data(), constants.size()),
