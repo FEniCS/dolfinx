@@ -431,16 +431,16 @@ class XDMFFile:
         # Build the mesh
         partitioner_fn, cell_weights = _get_mesh_partitioner(self.comm, None)
         msh = _cpp.mesh.create_mesh(
-            comm=self.comm,
-            cells=cells,
-            element=cmap,
-            x=x,
-            partitioner=partitioner_fn,
-            ghost_mode=ghost_mode,
-            max_facet_to_cell_links=max_facet_to_cell_links,
-            num_threads=num_threads,
-            cell_weights=cell_weights,
-            reorder_fn=None,
+            self.comm,
+            cells,
+            cmap,
+            x,
+            partitioner_fn,
+            ghost_mode,
+            max_facet_to_cell_links,
+            num_threads,
+            cell_weights,
+            None,
         )
         msh.name = name
         domain = ufl.Mesh(basix_el)
