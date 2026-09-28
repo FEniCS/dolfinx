@@ -10,12 +10,12 @@
 #ifdef HAS_PETSC
 
 #include "Vector.h"
-#include "utils.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstdint>
 #include <dolfinx/common/petsc.h>
+#include <dolfinx/common/types.h>
 #include <functional>
 #include <iterator>
 #include <optional>
@@ -239,10 +239,10 @@ public:
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static auto set_fn(Mat A, InsertMode mode)
   {
-    return
-        [A, mode, cache = std::vector<PetscInt>()](
-            const LocalIndexRange auto& rows, const LocalIndexRange auto& cols,
-            std::span<const PetscScalar> vals) mutable -> int
+    return [A, mode, cache = std::vector<PetscInt>()](
+               const common::LocalIndexRange auto& rows,
+               const common::LocalIndexRange auto& cols,
+               std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
@@ -275,10 +275,10 @@ public:
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static auto set_block_fn(Mat A, InsertMode mode)
   {
-    return
-        [A, mode, cache = std::vector<PetscInt>()](
-            const LocalIndexRange auto& rows, const LocalIndexRange auto& cols,
-            std::span<const PetscScalar> vals) mutable -> int
+    return [A, mode, cache = std::vector<PetscInt>()](
+               const common::LocalIndexRange auto& rows,
+               const common::LocalIndexRange auto& cols,
+               std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES

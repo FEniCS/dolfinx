@@ -71,6 +71,19 @@ bool unit_block_size(Mat A)
   return bs0 == 1 and bs1 == 1;
 }
 
+/// @brief Convert a petsc4py InsertMode, passed as a Python int, to a
+/// PETSc InsertMode for matrix insertion.
+InsertMode insert_mode(int mode)
+{
+  InsertMode _mode = static_cast<InsertMode>(mode);
+  if (_mode != INSERT_VALUES and _mode != ADD_VALUES)
+  {
+    throw std::invalid_argument(
+        "InsertMode must be INSERT_VALUES or ADD_VALUES.");
+  }
+  return _mode;
+}
+
 void petsc_la_module(nb::module_& m)
 {
   if (import_petsc4py() != 0)
@@ -222,19 +235,23 @@ void petsc_fem_module(nb::module_& m)
   m.def(
       "set_diagonal",
       [](Mat A, nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+         nb::ndarray<const PetscScalar, nb::ndim<1>, nb::c_contig> diagonals,
+         int mode)
+      {
+        dolfinx::fem::set_diagonal(
+            dolfinx::la::petsc::Matrix::set_fn(A, insert_mode(mode)),
+            std::span(rows.data(), rows.size()),
+            std::span<const PetscScalar>(diagonals.data(), diagonals.size()));
+      },
+      nb::arg("A"), nb::arg("rows"), nb::arg("diagonals"), nb::arg("mode"));
+  m.def(
+      "set_diagonal",
+      [](Mat A, nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
          PetscScalar diagonal, int mode)
       {
-        // petsc4py passes InsertMode as a Python int
-        InsertMode _mode = static_cast<InsertMode>(mode);
-        if (_mode != INSERT_VALUES and _mode != ADD_VALUES)
-        {
-          throw std::invalid_argument(
-              "InsertMode must be INSERT_VALUES or ADD_VALUES.");
-        }
-
-        dolfinx::fem::set_diagonal(dolfinx::la::petsc::Matrix::set_fn(A, _mode),
-                                   std::span(rows.data(), rows.size()),
-                                   diagonal);
+        dolfinx::fem::set_diagonal(
+            dolfinx::la::petsc::Matrix::set_fn(A, insert_mode(mode)),
+            std::span(rows.data(), rows.size()), diagonal);
       },
       nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), nb::arg("mode"));
 }

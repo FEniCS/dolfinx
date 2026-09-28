@@ -413,15 +413,20 @@ def _assemble_matrix_csr(
 def set_diagonal(
     A: la.MatrixCSR[Scalar],
     rows: npt.NDArray[np.int32],
-    diagonal: Scalar | float | complex = 1.0,
+    diagonal: Scalar | float | complex | npt.NDArray[Scalar] = 1.0,
 ) -> None:
-    """Set a value on the diagonal for given rows of a matrix.
+    """Set values on the diagonal for given rows of a matrix.
 
     Args:
         A: Matrix to modify.
         rows: Rows to set the diagonal value for.
-        diagonal: Value to set on the diagonal.
+        diagonal: Value to set on the diagonal, either a single value
+            for all rows or an array with ``diagonal[i]`` the value for
+            ``rows[i]``. An array must have the same length as
+            ``rows``.
     """
+    if np.ndim(diagonal) > 0:
+        diagonal = np.asarray(diagonal, dtype=A.data.dtype)
     typing.cast(typing.Any, _cpp.fem.set_diagonal)(A._cpp_object, rows, diagonal)
 
 

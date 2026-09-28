@@ -462,6 +462,17 @@ void declare_assembly_functions(nanobind::module_& m)
       "set_diagonal",
       [](dolfinx::la::MatrixCSR<T>& A,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> diagonals)
+      {
+        dolfinx::fem::set_diagonal(
+            A.mat_set_values(), std::span(rows.data(), rows.size()),
+            std::span<const T>(diagonals.data(), diagonals.size()));
+      },
+      nb::arg("A"), nb::arg("rows"), nb::arg("diagonals"), "Experimental.");
+  m.def(
+      "set_diagonal",
+      [](dolfinx::la::MatrixCSR<T>& A,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
          T diagonal)
       {
         dolfinx::fem::set_diagonal(

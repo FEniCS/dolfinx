@@ -80,6 +80,7 @@ __all__ = [
     "interpolation_matrix",
     "numba_utils",
     "set_bc",
+    "set_diagonal",
 ]
 
 
@@ -624,7 +625,7 @@ def _assemble_matrix_petsc(
                                 dofs, owned = bc.dof_indices()
                                 rows_.append(dofs[:owned])
                         rows = np.concatenate(rows_) if rows_ else np.empty(0, dtype=np.int32)
-                        _cpp.fem.petsc.set_diagonal(Asub, rows, diag, PETSc.InsertMode.INSERT)  # type: ignore[arg-type]
+                        set_diagonal(Asub, rows, diag)
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
     else:  # Non-blocked
         if constants is None:
@@ -651,9 +652,35 @@ def _assemble_matrix_petsc(
                     dofs, owned = bc.dof_indices()
                     rows_.append(dofs[:owned])
             rows = np.concatenate(rows_) if rows_ else np.empty(0, dtype=np.int32)
-            _cpp.fem.petsc.set_diagonal(A, rows, diag, PETSc.InsertMode.INSERT)  # type: ignore[arg-type]
+            set_diagonal(A, rows, diag)
 
     return A
+
+
+def set_diagonal(
+    A: PETSc.Mat,
+    rows: npt.NDArray[np.int32],
+    diagonal: float | complex | npt.NDArray = 1.0,
+    insert_mode: PETSc.InsertMode = PETSc.InsertMode.INSERT,
+) -> None:
+    """Set values on the diagonal for given rows of a PETSc matrix.
+
+    Args:
+        A: Matrix to modify.
+        rows: Rows, in local indices, to set the diagonal value for.
+        diagonal: Value to set on the diagonal, either a single value
+            for all rows or an array with ``diagonal[i]`` the value for
+            ``rows[i]``. An array must have the same length as
+            ``rows``.
+        insert_mode: ``PETSc.InsertMode.INSERT`` or
+            ``PETSc.InsertMode.ADD``.
+
+    Note:
+        The matrix is not assembled.
+    """
+    if np.ndim(diagonal) > 0:
+        diagonal = np.asarray(diagonal, dtype=PETSc.ScalarType)
+    _cpp.fem.petsc.set_diagonal(A, rows, diagonal, insert_mode)  # type: ignore[arg-type]
 
 
 # -- Modifiers for Dirichlet conditions -----------------------------------
