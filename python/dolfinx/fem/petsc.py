@@ -707,7 +707,7 @@ def set_diagonal(
     diagonal: float | complex | npt.NDArray = 1.0,
     insert_mode: PETSc.InsertMode = PETSc.InsertMode.INSERT,  # type: ignore[arg-type]
 ) -> None:
-    """Set values on the diagonal for given rows of a PETSc matrix.
+    """Set or add values on the diagonal for given rows of a PETSc matrix.
 
     Args:
         A: Matrix to modify.
@@ -716,8 +716,11 @@ def set_diagonal(
             for all rows or an array with ``diagonal[i]`` the value for
             ``rows[i]``. An array must have the same length as
             ``rows``.
-        insert_mode: ``PETSc.InsertMode.INSERT`` or
-            ``PETSc.InsertMode.ADD``.
+        insert_mode: ``PETSc.InsertMode.INSERT`` to overwrite the
+            diagonal entry, or ``PETSc.InsertMode.ADD`` to add to it.
+            The two agree on rows that assembly has already zeroed, and
+            ``ADD`` avoids the flush needed to take the matrix out of
+            add mode.
 
     Note:
         The matrix is not assembled.

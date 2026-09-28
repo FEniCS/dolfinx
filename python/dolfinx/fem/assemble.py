@@ -511,15 +511,9 @@ def set_bc_diagonal(
     """Set a value on the diagonal for Dirichlet boundary condition rows.
 
     Note:
-        This is a convenience function for callers that have ``V`` and
-        ``bcs`` on hand but not the combined row list, and it
-        recomputes that list on every call. It should not be used
-        internally by the library: an internal caller either already
-        has the rows, or can compute and cache them itself (filter
-        ``bcs`` by ``V.contains(bc.function_space)`` and concatenate
-        each surviving bc's ``dof_indices()``) across repeated calls,
-        which this function cannot do on a caller's behalf. Call
-        :func:`set_diagonal` with the row list directly instead.
+        Convenience interface for callers holding ``V`` and ``bcs``
+        rather than the row list, which it rebuilds on every call.
+        Library code passes the rows to :func:`set_diagonal` instead.
 
     Args:
         A: Matrix to modify. Must be associated with ``V`` on both its
