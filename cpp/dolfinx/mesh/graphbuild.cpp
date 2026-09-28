@@ -551,6 +551,35 @@ compute_nonlocal_dual_graph(
     assert(source == static_cast<std::int32_t>(recv_dual_edges.size()));
   }
 
+  // Sort received rows, retaining duplicate neighbours for the merge.
+  {
+    std::vector<std::pair<std::int64_t, std::int32_t>> row;
+    for (std::int32_t cell = 0; cell < local_dual_graph.num_nodes(); ++cell)
+    {
+      const std::int32_t begin = received_offsets[cell];
+      const std::int32_t count = received_offsets[cell + 1] - begin;
+      std::span neighbours = std::span(received_data).subspan(begin, count);
+      if (std::ranges::is_sorted(neighbours))
+        continue;
+
+      if (weighted)
+      {
+        row.clear();
+        row.reserve(count);
+        for (std::int32_t j = 0; j < count; ++j)
+          row.emplace_back(neighbours[j], received_weights[begin + j]);
+        std::ranges::sort(row, {}, &decltype(row)::value_type::first);
+        for (std::int32_t j = 0; j < count; ++j)
+        {
+          neighbours[j] = row[j].first;
+          received_weights[begin + j] = row[j].second;
+        }
+      }
+      else
+        std::ranges::sort(neighbours);
+    }
+  }
+
   // --- Build global dual graph
 
   // Combined row offsets before duplicate removal.
