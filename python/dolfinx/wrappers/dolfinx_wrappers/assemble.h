@@ -18,8 +18,8 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/discreteoperators.h>
+#include <dolfinx/fem/expression_evaluate.h>
 #include <dolfinx/fem/sparsitybuild.h>
-#include <dolfinx/fem/utils.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>

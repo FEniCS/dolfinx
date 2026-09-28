@@ -10,7 +10,6 @@
 #include "Form.h"
 #include "FunctionSpace.h"
 #include "traits.h"
-#include "utils.h"
 #include <algorithm>
 #include <concepts>
 #include <dolfinx/la/utils.h>
@@ -21,7 +20,6 @@
 #include <iterator>
 #include <span>
 #include <stdexcept>
-#include <tuple>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -50,82 +48,78 @@ bool has_bc(auto& dofs, auto& bc, auto bs)
 /// with no `bc1`-marked column dofs are skipped, since they cannot
 /// contribute a lifting term, and the unmodified element tensor
 /// (including BC-marked columns) is passed to `mat_set`.
+/// @tparam AB Element matrix buffer type.
+/// @tparam XD Geometry dofmap type.
 /// @tparam T Matrix/form scalar type.
 /// @tparam U Geometry type.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
-/// @param[in] x_dofmap Degree-of-freedom map for the mesh geometry.
-/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] geometry Mesh geometry dofmap and coordinates.
 /// @param[in] cells Cell indices to execute the kernel over. These are
-/// the indices into the geometry dofmap `x_dofmap`.
-/// @param[in] dofmap0 Test function (row) degree-of-freedom data
-/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices.
-/// @param[in] P0 Function that applies transformation `P_0 A` in-place
-/// to the computed tensor `A` to transform its test degrees-of-freedom.
-/// @param[in] dofmap1 Trial function (column) degree-of-freedom data
-/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices.
-/// @param[in] P1T Function that applies transformation `A P_1^T`
-/// in-place to the computed tensor `A` to transform trial
-/// degrees-of-freedom.
+/// the indices into the geometry dofmap `geometry.dofmap`.
+/// @param[in] arg0 Test function (row) data: dofmap, block size, cell
+/// indices, the dof transformation `P_0 A` applied in-place to the
+/// computed tensor `A`, and cell permutation information.
+/// @param[in] arg1 Trial function (column) data: dofmap, block size,
+/// cell indices, the dof transformation `A P_1^T` applied in-place to
+/// the computed tensor `A`, and cell permutation information.
 /// @param bc0 Marker for rows with Dirichlet boundary conditions
 /// applied.
 /// @param bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
 /// @param kernel Kernel function to execute over each cell.
+/// @param constants Constant data.
 /// @param[in] coeffs Coefficient data in the kernel. It has shape
 /// `(cells.size(), num_cell_coeffs)`. `coeffs(i, j)` is the `j`th
 /// coefficient for cell `i`.
-/// @param constants Constant data.
-/// @param cell_info0 Cell permutation information for the test
-/// function mesh.
-/// @param cell_info1 Cell permutation information for the trial
-/// function mesh.
 /// @param Ab Buffer for local element matrix. Size must be at least
 /// `(bs0 * num_dofs0) * (bs1 * num_dofs1)`, where `bs0 * num_dofs0` is
 /// the number of rows and `bs1 * num_dofs1` is the number of columns in
 /// local element matrix.
-/// @param cdofs_b Buffer for local element geometry. Size must be at
-/// least `3 * x_dofmap.extent(1))`.
-template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
+/// @param cdofs_b Buffer for local element geometry. Size must be
+/// exactly `3 * geometry.dofmap.extent(1))`.
+template <bool LiftingMode, typename AB, MDSpan2Int32 XD, std::floating_point U,
+          dolfinx::scalar T = typename std::remove_cvref_t<AB>::value_type>
+  requires ScratchBuffer<AB, T>
 void assemble_cells_matrix(
-    la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
-    MDSpan2Floating<U> auto x, std::span<const std::int32_t> cells,
-    const DofMapPackCells auto& dofmap0,
-    const fem::DofTransformKernel<T> auto& P0,
-    const DofMapPackCells auto& dofmap1,
-    const fem::DofTransformKernel<T> auto& P1T,
-    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
-    const FEkernel<T, U> auto& kernel,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1, std::span<T> Ab,
-    std::span<U> cdofs_b)
+    la::MatSet<T> auto mat_set, GeometryPack<XD, U> geometry,
+    const IndexList auto& cells, const FormArgumentCells<T> auto& arg0,
+    const FormArgumentCells<T> auto& arg1, std::span<const std::int8_t> bc0,
+    std::span<const std::int8_t> bc1, const FEkernel<T, U> auto& kernel,
+    std::span<const T> constants,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs, AB Ab,
+    ScratchBuffer<U> auto cdofs_b)
 {
-  if (cells.empty())
+  if (std::ranges::empty(cells))
     return;
 
-  const auto [dmap0, bs0, cells0] = dofmap0;
-  const auto [dmap1, bs1, cells1] = dofmap1;
+  // By value: the sizes below fold only if not read through a
+  // reference (see fem::DofMapPack). mdspan and span are two-word
+  // copies.
+  const auto& P0 = arg0.transform;
+  const auto& P1T = arg1.transform;
+  std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
+  std::span<const std::uint32_t> cell_info1 = arg1.cell_info;
+  const auto dmap0 = arg0.dofmap.map;
+  const auto bs0 = arg0.dofmap.bs;
+  // By reference: a generated range (e.g. iota) does not convert to a
+  // span, and a caller's std::vector must not be copied.
+  const auto& cells0 = arg0.dofmap.entities;
+  const auto dmap1 = arg1.dofmap.map;
+  const auto bs1 = arg1.dofmap.bs;
+  const auto& cells1 = arg1.dofmap.entities;
 
-  std::size_t num_dofs0 = dmap0.extent(1);
-  std::size_t num_dofs1 = dmap1.extent(1);
-  std::size_t ndim0 = bs0 * num_dofs0;
-  std::size_t ndim1 = bs1 * num_dofs1;
+  const auto num_dofs0 = dmap0.extent(1);
+  const auto num_dofs1 = dmap1.extent(1);
+  constexpr std::size_t nd0 = static_dofs_per_cell<decltype(dmap0)>;
+  constexpr std::size_t nd1 = static_dofs_per_cell<decltype(dmap1)>;
+  const std::size_t ndim0 = bs0 * num_dofs0;
+  const std::size_t ndim1 = bs1 * num_dofs1;
+  const auto num_x_dofs_cell = geometry.dofmap.extent(1);
 
-  const U* x_ptr = x.data_handle();
-  const std::int32_t gdim = x.extent(1);
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+  assert(Ab.size() == ndim0 * ndim1);
+  assert(cdofs_b.size() == 3 * static_cast<std::size_t>(num_x_dofs_cell));
 
-  assert(Ab.size() >= ndim0 * ndim1);
-  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
-  auto Ae = Ab.first(ndim0 * ndim1);
-
-  // P0/P1T do not change across cells in this call, so whether each is a
-  // set (non-null) transform is loop-invariant -- checked once here
-  // rather than on every cell.
   const bool p0_set = is_transform_set(P0);
   const bool p1t_set = is_transform_set(P1T);
 
@@ -133,9 +127,10 @@ void assemble_cells_matrix(
   const std::size_t cstride = coeffs.extent(1);
 
   // Iterate over active cells
-  assert(cells0.size() == cells.size());
-  assert(cells1.size() == cells.size());
-  for (std::size_t c = 0; c < cells.size(); ++c)
+  const std::size_t num_cells = std::ranges::size(cells);
+  assert(std::ranges::size(cells0) == num_cells);
+  assert(std::ranges::size(cells1) == num_cells);
+  for (std::size_t c = 0; c < num_cells; ++c)
   {
     // Cell index in integration domain mesh (c), test function mesh
     // (c0) and trial function mesh (c1)
@@ -143,8 +138,10 @@ void assemble_cells_matrix(
     std::int32_t cell0 = cells0[c];
     std::int32_t cell1 = cells1[c];
 
-    std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
-    std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
+    std::span<const std::int32_t, nd0> dofs0(
+        dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
+    std::span<const std::int32_t, nd1> dofs1(
+        dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
 
     // In "LiftingMode" only execute kernel if there are BCs on column space
     if constexpr (LiftingMode)
@@ -153,23 +150,18 @@ void assemble_cells_matrix(
         continue;
     }
 
-    // Get cell coordinates/geometry
-    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
-    {
-      const U* _x_ptr = x_ptr + x_dofmap_ptr[cell * num_x_dofs_cell + i] * gdim;
-      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
-    }
+    gather_cell_coordinates(geometry, cell, cdofs_b.data());
 
     // Tabulate tensor
-    std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), coeffs_data + c * cstride, constants.data(),
+    std::ranges::fill(Ab, T(0));
+    kernel(Ab.data(), coeffs_data + c * cstride, constants.data(),
            cdofs_b.data(), nullptr, nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
     if (p0_set)
-      P0(Ae, cell_info0, cell0, ndim1); // B = P0 \tilde{A}
+      P0(Ab, cell_info0, cell0, ndim1); // B = P0 \tilde{A}
     if (p1t_set)
-      P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
+      P1T(Ab, cell_info1, cell1, ndim0); // A =  B P1_T
 
     // In lifting mode only BC dofs are assembled, while in standard mode these
     // row/column dofs are zeroed.
@@ -186,7 +178,7 @@ void assemble_cells_matrix(
             {
               // Zero row bs0 * i + k
               const int row = bs0 * i + k;
-              std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
+              std::fill_n(std::next(Ab.begin(), ndim1 * row), ndim1, T(0));
             }
           }
         }
@@ -203,14 +195,14 @@ void assemble_cells_matrix(
               // Zero column bs1 * j + k
               int col = bs1 * j + k;
               for (std::size_t row = 0; row < ndim0; ++row)
-                Ae[row * ndim1 + col] = 0;
+                Ab[row * ndim1 + col] = 0;
             }
           }
         }
       }
     }
 
-    mat_set(dofs0, dofs1, Ae);
+    mat_set(dofs0, dofs1, Ab);
   }
 }
 
@@ -238,83 +230,81 @@ void assemble_cells_matrix(
 /// with no `bc1`-marked column dofs are skipped, since they cannot
 /// contribute a lifting term, and the unmodified element tensor
 /// (including BC-marked columns) is passed to `mat_set`.
+/// @tparam AB Element matrix buffer type.
+/// @tparam XD Geometry dofmap type.
 /// @tparam T Matrix/form scalar type.
 /// @tparam U Geometry type.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
-/// @param[in] x_dofmap Dofmap for the mesh geometry.
-/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] geometry Mesh geometry dofmap and coordinates.
 /// @param[in] entities Integration entities (in the integration domain mesh) to
 /// execute the kernel over. These are pairs (cell, local entity index)
-/// @param[in] dofmap0 Test function (row) degree-of-freedom data
-/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices.
-/// @param[in] P0 Function that applies transformation P0.A in-place to
-/// transform test degrees-of-freedom.
-/// @param[in] dofmap1 Trial function (column) degree-of-freedom data
-/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices.
-/// @param[in] P1T Function that applies transformation A.P1^T in-place
-/// to transform trial degrees-of-freedom.
+/// @param[in] arg0 Test function (row) data: dofmap, block size, entity
+/// indices, the dof transformation `P0.A` applied in-place to the
+/// computed tensor, and cell permutation information.
+/// @param[in] arg1 Trial function (column) data: dofmap, block size,
+/// entity indices, the dof transformation `A.P1^T` applied in-place to
+/// the computed tensor, and cell permutation information.
 /// @param[in] bc0 Marker for rows with Dirichlet boundary conditions
 /// applied.
 /// @param[in] bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
 /// @param[in] kernel Kernel function to execute over each cell.
+/// @param[in] constants Constant data.
 /// @param[in] coeffs Coefficient data array of shape `(cells.size(),
 /// cstride)`.
-/// @param[in] constants Constant data.
-/// @param[in] cell_info0 Cell permutation information for the test
-/// function mesh.
-/// @param[in] cell_info1 Cell permutation information for the trial
-/// function mesh.
 /// @param[in] perms Entity permutation integer. Empty if entity
 /// permutations are not required.
 /// @param Ab Buffer for local element matrix. Size must be at least
 /// `(bs0 * num_dofs0) * (bs1 * num_dofs1)`, where `bs0 * num_dofs0` is
 /// the number of rows and `bs1 * num_dofs1` is the number of columns in
 /// local element matrix.
-/// @param cdofs_b Buffer for local element geometry. Size must be at
-/// least `3 * x_dofmap.extent(1))`.
-template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
-void assemble_entities(
-    la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
-    MDSpan2Floating<U> auto x,
+/// @param cdofs_b Buffer for local element geometry. Size must be
+/// exactly `3 * geometry.dofmap.extent(1))`.
+template <bool LiftingMode, typename AB, MDSpan2Int32 XD, std::floating_point U,
+          dolfinx::scalar T = typename std::remove_cvref_t<AB>::value_type>
+  requires ScratchBuffer<AB, T>
+void assemble_entities_matrix(
+    la::MatSet<T> auto mat_set, GeometryPack<XD, U> geometry,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
-    const DofMapPackEntities auto& dofmap0,
-    const fem::DofTransformKernel<T> auto& P0,
-    const DofMapPackEntities auto& dofmap1,
-    const fem::DofTransformKernel<T> auto& P1T,
-    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
-    const FEkernel<T, U> auto& kernel,
+    const FormArgumentEntities<T> auto& arg0,
+    const FormArgumentEntities<T> auto& arg1, std::span<const std::int8_t> bc0,
+    std::span<const std::int8_t> bc1, const FEkernel<T, U> auto& kernel,
+    std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<T> Ab, std::span<U> cdofs_b)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms, AB Ab,
+    ScratchBuffer<U> auto cdofs_b)
 {
   if (entities.empty())
     return;
 
-  const auto [dmap0, bs0, entities0] = dofmap0;
-  const auto [dmap1, bs1, entities1] = dofmap1;
+  // By value: the sizes below fold only if not read through a
+  // reference (see fem::DofMapPack). mdspan and span are two-word
+  // copies.
+  const auto& P0 = arg0.transform;
+  const auto& P1T = arg1.transform;
+  std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
+  std::span<const std::uint32_t> cell_info1 = arg1.cell_info;
+  const auto dmap0 = arg0.dofmap.map;
+  const auto bs0 = arg0.dofmap.bs;
+  const auto entities0 = arg0.dofmap.entities;
+  const auto dmap1 = arg1.dofmap.map;
+  const auto bs1 = arg1.dofmap.bs;
+  const auto entities1 = arg1.dofmap.entities;
 
-  std::size_t num_dofs0 = dmap0.extent(1);
-  std::size_t num_dofs1 = dmap1.extent(1);
-  std::size_t ndim0 = bs0 * num_dofs0;
-  std::size_t ndim1 = bs1 * num_dofs1;
+  const auto num_dofs0 = dmap0.extent(1);
+  const auto num_dofs1 = dmap1.extent(1);
+  constexpr std::size_t nd0 = static_dofs_per_cell<decltype(dmap0)>;
+  constexpr std::size_t nd1 = static_dofs_per_cell<decltype(dmap1)>;
+  const std::size_t ndim0 = bs0 * num_dofs0;
+  const std::size_t ndim1 = bs1 * num_dofs1;
+  const auto num_x_dofs_cell = geometry.dofmap.extent(1);
   assert(entities0.size() == entities.size());
   assert(entities1.size() == entities.size());
-  assert(Ab.size() >= ndim0 * ndim1);
-  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
-  auto Ae = Ab.first(ndim0 * ndim1);
-
-  const U* x_ptr = x.data_handle();
-  const std::int32_t gdim = x.extent(1);
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+  assert(Ab.size() == ndim0 * ndim1);
+  assert(cdofs_b.size() == 3 * static_cast<std::size_t>(num_x_dofs_cell));
 
   // P0/P1T do not change across entities in this call, so whether each is a
   // set (non-null) transform is loop-invariant -- checked once here rather
@@ -335,8 +325,10 @@ void assemble_entities(
     std::int32_t cell0 = entities0(f, 0);
     std::int32_t cell1 = entities1(f, 0);
 
-    std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
-    std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
+    std::span<const std::int32_t, nd0> dofs0(
+        dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
+    std::span<const std::int32_t, nd1> dofs1(
+        dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
 
     // Check for BCs on column space
     if constexpr (LiftingMode)
@@ -345,24 +337,19 @@ void assemble_entities(
         continue;
     }
 
-    // Get cell coordinates/geometry
-    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
-    {
-      const U* _x_ptr = x_ptr + x_dofmap_ptr[cell * num_x_dofs_cell + i] * gdim;
-      std::copy_n(_x_ptr, gdim, cdofs_b.data() + 3 * i);
-    }
+    gather_cell_coordinates(geometry, cell, cdofs_b.data());
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
 
     // Tabulate tensor
-    std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), coeffs_data + f * cstride, constants.data(),
+    std::ranges::fill(Ab, T(0));
+    kernel(Ab.data(), coeffs_data + f * cstride, constants.data(),
            cdofs_b.data(), &local_entity, &perm, nullptr);
     if (p0_set)
-      P0(Ae, cell_info0, cell0, ndim1);
+      P0(Ab, cell_info0, cell0, ndim1);
     if (p1t_set)
-      P1T(Ae, cell_info1, cell1, ndim0);
+      P1T(Ab, cell_info1, cell1, ndim0);
 
     // Don't clear rows/cols in LiftingMode
     if constexpr (!LiftingMode)
@@ -378,7 +365,7 @@ void assemble_entities(
             {
               // Zero row bs0 * i + k
               const int row = bs0 * i + k;
-              std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
+              std::fill_n(std::next(Ab.begin(), ndim1 * row), ndim1, T(0));
             }
           }
         }
@@ -395,14 +382,14 @@ void assemble_entities(
               // Zero column bs1 * j + k
               int col = bs1 * j + k;
               for (std::size_t row = 0; row < ndim0; ++row)
-                Ae[row * ndim1 + col] = 0;
+                Ab[row * ndim1 + col] = 0;
             }
           }
         }
       }
     }
 
-    mat_set(dofs0, dofs1, Ae);
+    mat_set(dofs0, dofs1, Ab);
   }
 }
 
@@ -414,8 +401,6 @@ void assemble_entities(
 /// so a per-call allocation would not be amortized. Buffers must be
 /// sized by the caller and passed in via `Ab`/`cdofs_b`/`dofs_b`.
 ///
-/// @tparam T Matrix/form scalar type.
-/// @tparam U Geometry type.
 /// @tparam LiftingMode Selects between matrix assembly and Dirichlet
 /// lifting semantics for this kernel-execution loop (see
 /// fem::impl::lift_bc). When `false` (default): standard assembly --
@@ -424,125 +409,138 @@ void assemble_entities(
 /// with no `bc1`-marked column dofs are skipped, since they cannot
 /// contribute a lifting term, and the unmodified element tensor
 /// (including BC-marked columns) is passed to `mat_set`.
+/// @tparam AB Element matrix buffer type.
+/// @tparam XD Geometry dofmap type.
+/// @tparam T Matrix/form scalar type.
+/// @tparam U Geometry type.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
-/// @param[in] x_dofmap Dofmap for the mesh geometry.
-/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] geometry Mesh geometry dofmap and coordinates.
 /// @param[in] facets Facet indices (in the integration domain mesh) to
 /// execute the kernel over.
-/// @param[in] dofmap0 Test function (row) degree-of-freedom data
-/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices. Cells that don't exist in the test function domain should be
-/// marked with -1 in the cell indices list.
-/// @param[in] P0 Function that applies transformation P0.A in-place to
-/// transform test degrees-of-freedom.
-/// @param[in] dofmap1 Trial function (column) degree-of-freedom data
-/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices. Cells that don't exist in the trial function domain should be
-/// marked with -1 in the cell indices list.
-/// @param[in] P1T Function that applies transformation A.P1^T in-place
-/// to transform trial degrees-of-freedom.
+/// @param[in] arg0 Test function (row) data: dofmap, block size, facet
+/// indices, the dof transformation `P0.A` applied in-place to the
+/// computed tensor, and cell permutation information. Cells that don't
+/// exist in the test function domain should be marked with -1 in the
+/// facet indices list.
+/// @param[in] arg1 Trial function (column) data: dofmap, block size,
+/// facet indices, the dof transformation `A.P1^T` applied in-place to
+/// the computed tensor, and cell permutation information. Cells that
+/// don't exist in the trial function domain should be marked with -1 in
+/// the facet indices list.
 /// @param[in] bc0 Marker for rows with Dirichlet boundary conditions
 /// applied.
 /// @param[in] bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
 /// @param[in] kernel Kernel function to execute over each cell.
+/// @param[in] constants Constant data.
 /// @param[in] coeffs  The coefficient data array of shape (cells.size(),
 /// cstride).
-/// @param[in] constants Constant data.
-/// @param[in] cell_info0 Cell permutation information for the test
-/// function mesh.
-/// @param[in] cell_info1 Cell permutation information for the trial
-/// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
 /// @param Ab Buffer for local element matrix. Size must be at least `4
 /// * (bs0 * num_dofs0) * (bs1 * num_dofs1)`, where `bs0 * num_dofs0` is
 /// the number of rows and `bs1 * num_dofs1` is the number of columns in
 /// local element matrix.
-/// @param cdofs_b Buffer for local element geometry. Size must be at
-/// least `2 * 3 * x_dofmap.extent(1))`.
+/// @param cdofs_b Buffer for local element geometry. Size must be
+/// least `2 * 3 * geometry.dofmap.extent(1)`.
 /// @param dofs_b Buffer for degrees-of-freedom. Size must be at least
-/// `2 * dmap0.extent(1) + 2 * dmap1.extent(1)`.
+/// `2 * arg0.dofmap.map.extent(1) + 2 * arg1.dofmap.map.extent(1)`.
 /// @param Ae_block_b Buffer used to gather a single (test, trial) block
 /// of the local element matrix. Size must be at least `(bs0 *
-/// dmap0.extent(1)) * (bs1 * dmap1.extent(1))`.
-template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
-void assemble_interior_facets(
-    la::MatSet<T> auto mat_set, MDSpan2Int32 auto x_dofmap,
-    MDSpan2Floating<U> auto x,
+/// arg0.dofmap.map.extent(1)) * (bs1 * arg1.dofmap.map.extent(1))`.
+template <bool LiftingMode, typename AB, MDSpan2Int32 XD, std::floating_point U,
+          dolfinx::scalar T = typename std::remove_cvref_t<AB>::value_type>
+  requires ScratchBuffer<AB, T>
+void assemble_interior_facets_matrix(
+    la::MatSet<T> auto mat_set, GeometryPack<XD, U> geometry,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
-    const DofMapPackFacets auto& dofmap0,
-    const fem::DofTransformKernel<T> auto& P0,
-    const DofMapPackFacets auto& dofmap1,
-    const fem::DofTransformKernel<T> auto& P1T,
-    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
-    const FEkernel<T, U> auto& kernel,
+    const FormArgumentFacets<T> auto& arg0,
+    const FormArgumentFacets<T> auto& arg1, std::span<const std::int8_t> bc0,
+    std::span<const std::int8_t> bc1, const FEkernel<T, U> auto& kernel,
+    std::span<const T> constants,
     md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                     md::dynamic_extent>>
         coeffs,
-    std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<T> Ab, std::span<U> cdofs_b, std::span<std::int32_t> dofs_b,
-    std::span<T> Ae_block_b)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms, AB Ab,
+    ScratchBuffer<U> auto cdofs_b, ScratchBuffer<std::int32_t> auto dofs_b,
+    ScratchBuffer<T> auto Ae_block_b)
 {
   if (facets.empty())
     return;
 
-  const auto [dmap0, bs0, facets0] = dofmap0;
-  const auto [dmap1, bs1, facets1] = dofmap1;
+  // By value: the sizes below fold only if not read through a
+  // reference (see fem::DofMapPack). mdspan and span are two-word
+  // copies.
+  const auto& P0 = arg0.transform;
+  const auto& P1T = arg1.transform;
+  std::span<const std::uint32_t> cell_info0 = arg0.cell_info;
+  std::span<const std::uint32_t> cell_info1 = arg1.cell_info;
+  const auto dmap0 = arg0.dofmap.map;
+  const auto bs0 = arg0.dofmap.bs;
+  const auto facets0 = arg0.dofmap.entities;
+  const auto dmap1 = arg1.dofmap.map;
+  const auto bs1 = arg1.dofmap.bs;
+  const auto facets1 = arg1.dofmap.entities;
 
   // Data structures used in assembly
-  assert(cdofs_b.size() >= 2 * 3 * x_dofmap.extent(1));
-  auto cdofs0 = cdofs_b.first(3 * x_dofmap.extent(1));
-  auto cdofs1 = cdofs_b.last(3 * x_dofmap.extent(1));
+  const auto num_x_dofs_cell = geometry.dofmap.extent(1);
+  assert(cdofs_b.size() == 2 * 3 * static_cast<std::size_t>(num_x_dofs_cell));
+  U* cdofs0 = cdofs_b.data();
+  U* cdofs1 = cdofs_b.data() + 3 * num_x_dofs_cell;
 
-  const U* x_ptr = x.data_handle();
-  const std::int32_t gdim = x.extent(1);
-  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
-  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
-
-  std::size_t dmap0_size = dmap0.extent(1);
-  std::size_t dmap1_size = dmap1.extent(1);
+  const auto dmap0_size = dmap0.extent(1);
+  const auto dmap1_size = dmap1.extent(1);
+  // The joint (two-cell) dofmap length is a constant exactly when the
+  // per-cell one is; dynamic_extent propagates through otherwise.
+  constexpr std::size_t nd0
+      = std::remove_cvref_t<decltype(dmap0)>::static_extent(1);
+  constexpr std::size_t nd1
+      = std::remove_cvref_t<decltype(dmap1)>::static_extent(1);
+  constexpr std::size_t njoint0
+      = nd0 == md::dynamic_extent ? std::dynamic_extent : 2 * nd0;
+  constexpr std::size_t njoint1
+      = nd1 == md::dynamic_extent ? std::dynamic_extent : 2 * nd1;
   std::size_t num_rows = bs0 * 2 * dmap0_size;
   std::size_t num_cols = bs1 * 2 * dmap1_size;
 
   // Dofmap data structures
-  assert(dofs_b.size() >= (2 * dmap0_size) + (2 * dmap1_size));
-  auto dmapjoint0 = dofs_b.first(2 * dmap0_size);
-  auto dmapjoint1 = dofs_b.last(2 * dmap1_size);
+  assert(dofs_b.size() == (2 * dmap0_size) + (2 * dmap1_size));
+  std::span<std::int32_t> dofs_all(dofs_b);
+  std::span<std::int32_t, njoint0> dmapjoint0(dofs_all.data(), 2 * dmap0_size);
+  std::span<std::int32_t, njoint1> dmapjoint1(dofs_all.data() + 2 * dmap0_size,
+                                              2 * dmap1_size);
 
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
-  assert(Ab.size() >= num_rows * num_cols);
-  auto Ae = Ab.first(num_rows * num_cols);
+  assert(Ab.size() == num_rows * num_cols);
 
-  // Buffer used to gather a contiguous (test, trial) block of Ae when
+  // Buffer used to gather a contiguous (test, trial) block of Ab when
   // one of the two cells attached to the facet does not exist in the
   // test/trial function domain (e.g. an interface between two
   // domains) -- the sparsity pattern only holds entries for blocks
   // where both cells exist, so such blocks must be inserted
   // individually rather than as part of the full joint block.
-  assert(Ae_block_b.size() >= dmap0_size * bs0 * dmap1_size * bs1);
+  assert(Ae_block_b.size() == dmap0_size * bs0 * dmap1_size * bs1);
+  std::span<T> Ae_block_all(Ae_block_b);
 
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = 2 * coeffs.extent(2);
 
-  auto insert_block = [&Ae_block_b, &Ae, &bs0, &bs1, &num_cols,
+  auto insert_block = [&Ae_block_all, &Ab, &bs0, &bs1, &num_cols,
                        &mat_set](std::span<const std::int32_t> rdofs,
                                  std::span<const std::int32_t> cdofs,
                                  std::size_t row_offset, std::size_t col_offset)
   {
     if (rdofs.empty() or cdofs.empty())
       return;
-    auto Ae_block = Ae_block_b.first(rdofs.size() * bs0 * cdofs.size() * bs1);
+    auto Ae_block = Ae_block_all.first(rdofs.size() * bs0 * cdofs.size() * bs1);
     for (std::size_t i = 0; i < rdofs.size() * bs0; ++i)
     {
       auto row
-          = std::next(Ae.begin(), (row_offset + i) * num_cols + col_offset);
+          = std::next(Ab.begin(), (row_offset + i) * num_cols + col_offset);
       std::copy_n(row, cdofs.size() * bs1,
                   std::next(Ae_block.begin(), i * cdofs.size() * bs1));
     }
@@ -567,15 +565,8 @@ void assemble_interior_facets(
     std::array local_facet{facets(f, 0, 1), facets(f, 1, 1)};
 
     // Get cell geometry
-    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
-    {
-      const U* _x_ptr0
-          = x_ptr + x_dofmap_ptr[cells[0] * num_x_dofs_cell + i] * gdim;
-      std::copy_n(_x_ptr0, gdim, cdofs0.data() + 3 * i);
-      const U* _x_ptr1
-          = x_ptr + x_dofmap_ptr[cells[1] * num_x_dofs_cell + i] * gdim;
-      std::copy_n(_x_ptr1, gdim, cdofs1.data() + 3 * i);
-    }
+    gather_cell_coordinates(geometry, cells[0], cdofs0);
+    gather_cell_coordinates(geometry, cells[1], cdofs1);
 
     // Get dof maps for cells and pack
     // When integrating over interfaces between two domains, the test function
@@ -607,23 +598,26 @@ void assemble_interior_facets(
                           dmap1_size)
               : std::span<const std::int32_t>();
 
-    std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
-    std::ranges::copy(dmap1_cell1, std::next(dmapjoint1.begin(), dmap1_size));
-
-    // Check for BCs on column space
+    // Check for BCs on column space. The per-cell dofmaps are tested
+    // rather than the joint one: a side absent from the trial function
+    // domain leaves its half of the joint buffer holding the previous
+    // facet's dofs, which would spuriously run the kernel.
     if constexpr (LiftingMode)
     {
-      if (!has_bc(dmapjoint1, bc1, bs1))
+      if (!has_bc(dmap1_cell0, bc1, bs1) and !has_bc(dmap1_cell1, bc1, bs1))
         continue;
     }
 
+    std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
+    std::ranges::copy(dmap1_cell1, std::next(dmapjoint1.begin(), dmap1_size));
+
     // Tabulate tensor
-    std::ranges::fill(Ae, 0);
+    std::ranges::fill(Ab, T(0));
     std::array perm = perms.empty()
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    kernel(Ae.data(), coeffs_data + f * cstride, constants.data(),
+    kernel(Ab.data(), coeffs_data + f * cstride, constants.data(),
            cdofs_b.data(), local_facet.data(), perm.data(), nullptr);
 
     // Local element layout is a 2x2 block matrix with structure
@@ -635,15 +629,15 @@ void assemble_interior_facets(
 
     // Only apply transformation when cells exist
     if (p0_set and cells0[0] >= 0)
-      P0(Ae, cell_info0, cells0[0], num_cols);
+      P0(Ab, cell_info0, cells0[0], num_cols);
     if (p0_set and cells0[1] >= 0)
     {
-      std::span sub_Ae0(Ae.data() + bs0 * dmap0_size * num_cols,
+      std::span sub_Ae0(Ab.data() + bs0 * dmap0_size * num_cols,
                         bs0 * dmap0_size * num_cols);
       P0(sub_Ae0, cell_info0, cells0[1], num_cols);
     }
     if (p1t_set and cells1[0] >= 0)
-      P1T(Ae, cell_info1, cells1[0], num_rows);
+      P1T(Ab, cell_info1, cells1[0], num_rows);
 
     if (p1t_set and cells1[1] >= 0)
     {
@@ -651,7 +645,7 @@ void assemble_interior_facets(
       {
         // DOFs for dmap1 and cell1 are not stored contiguously in the
         // block matrix, so each row needs a separate span access
-        std::span sub_Ae1(Ae.data() + row * num_cols + bs1 * dmap1_size,
+        std::span sub_Ae1(Ab.data() + row * num_cols + bs1 * dmap1_size,
                           bs1 * dmap1_size);
         P1T(sub_Ae1, cell_info1, cells1[1], 1);
       }
@@ -670,8 +664,8 @@ void assemble_interior_facets(
             if (bc0[bs0 * dmapjoint0[i] + k])
             {
               // Zero row bs0 * i + k
-              std::fill_n(std::next(Ae.begin(), num_cols * (bs0 * i + k)),
-                          num_cols, 0);
+              std::fill_n(std::next(Ab.begin(), num_cols * (bs0 * i + k)),
+                          num_cols, T(0));
             }
           }
         }
@@ -687,7 +681,7 @@ void assemble_interior_facets(
             {
               // Zero column bs1 * j + k
               for (std::size_t m = 0; m < num_rows; ++m)
-                Ae[m * num_cols + bs1 * j + k] = 0;
+                Ab[m * num_cols + bs1 * j + k] = 0;
             }
           }
         }
@@ -701,7 +695,7 @@ void assemble_interior_facets(
     // corresponding to existing (test, trial) cell pairs are present
     // in the sparsity pattern, so each must be inserted individually.
     if (cells0[0] >= 0 and cells0[1] >= 0 and cells1[0] >= 0 and cells1[1] >= 0)
-      mat_set(dmapjoint0, dmapjoint1, Ae);
+      mat_set(dmapjoint0, dmapjoint1, Ab);
     else
     {
       insert_block(dmap0_cell0, dmap1_cell0, 0, 0);
@@ -773,6 +767,7 @@ void assemble_matrix(
   {
     // Geometry dofmap and data
     mdspan2_t x_dofmap = mesh->geometry().dofmaps().at(cell_type_idx);
+    GeometryPack geometry{x_dofmap, x};
 
     // Get dofmap data
     std::shared_ptr<const fem::DofMap> dofmap0
@@ -789,10 +784,15 @@ void assemble_matrix(
     const int bs1 = dofmap1->bs();
 
     // Buffers reused across all integral kernels for this cell type,
-    // sized for the worst case (interior facets, which touch two cells).
+    // sized for the worst case (interior facets, which touch two
+    // cells). The kernels require an exactly-sized buffer, so the
+    // one-cell integrals get a leading view.
     std::vector<T> Ab((2 * bs0 * dofs0.extent(1))
                       * (2 * bs1 * dofs1.extent(1)));
     std::vector<U> cdofs_b(2 * 3 * x_dofmap.extent(1));
+    std::span Ab1 = std::span(Ab).first((bs0 * dofs0.extent(1))
+                                        * (bs1 * dofs1.extent(1)));
+    std::span cdofs_b1 = std::span(cdofs_b).first(3 * x_dofmap.extent(1));
     std::size_t dmap0_size = dofmap0->map().extent(1);
     std::size_t dmap1_size = dofmap1->map().extent(1);
     std::vector<std::int32_t> dmap_b((2 * dmap0_size) + (2 * dmap1_size));
@@ -828,34 +828,20 @@ void assemble_matrix(
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
-      if (bs0 == 1 and bs1 == 1)
-      {
-        impl::assemble_cells_matrix<LiftingMode>(
-            mat_set, x_dofmap, x, cells,
-            std::tuple{dofs0, std::integral_constant<int, 1>{}, cells0}, P0,
-            std::tuple{dofs1, std::integral_constant<int, 1>{}, cells1}, P1T,
-            bc0, bc1, fn, md::mdspan(coeffs.data(), cells.size(), cstride),
-            constants, cell_info0, cell_info1, std::span(Ab),
-            std::span(cdofs_b));
-      }
-      else if (bs0 == 3 and bs1 == 3)
-      {
-        impl::assemble_cells_matrix<LiftingMode>(
-            mat_set, x_dofmap, x, cells,
-            std::tuple{dofs0, std::integral_constant<int, 3>{}, cells0}, P0,
-            std::tuple{dofs1, std::integral_constant<int, 3>{}, cells1}, P1T,
-            bc0, bc1, fn, md::mdspan(coeffs.data(), cells.size(), cstride),
-            constants, cell_info0, cell_info1, std::span(Ab),
-            std::span(cdofs_b));
-      }
-      else
-      {
-        impl::assemble_cells_matrix<LiftingMode>(
-            mat_set, x_dofmap, x, cells, std::tuple{dofs0, bs0, cells0}, P0,
-            std::tuple{dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
-            md::mdspan(coeffs.data(), cells.size(), cstride), constants,
-            cell_info0, cell_info1, std::span(Ab), std::span(cdofs_b));
-      }
+      impl::dispatch_bs(
+          bs0, bs1,
+          [&mat_set, &geometry, &cells, &dofs0, &cells0, &P0, &cell_info0,
+           &dofs1, &cells1, &P1T, &cell_info1, &bc0, &bc1, &fn, &coeffs,
+           cstride, &constants, &Ab1, &cdofs_b1](auto bs0, auto bs1)
+          {
+            impl::assemble_cells_matrix<LiftingMode>(
+                mat_set, geometry, cells,
+                FormArgument{DofMapPack{dofs0, bs0, cells0}, P0, cell_info0},
+                FormArgument{DofMapPack{dofs1, bs1, cells1}, P1T, cell_info1},
+                bc0, bc1, fn, constants,
+                md::mdspan(coeffs.data(), cells.size(), cstride), Ab1,
+                cdofs_b1);
+          });
     }
 
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
@@ -891,51 +877,29 @@ void assemble_matrix(
       std::span facets0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
       std::span facets1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
-      if (bs0 == 1 and bs1 == 1)
-      {
-        impl::assemble_interior_facets<LiftingMode>(
-            mat_set, x_dofmap, x,
-            mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-            std::tuple{dofs0, std::integral_constant<int, 1>{},
-                       mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
-            P0,
-            std::tuple{dofs1, std::integral_constant<int, 1>{},
-                       mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
-            P1T, bc0, bc1, fn,
-            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            constants, cell_info0, cell_info1, facet_perms, std::span(Ab),
-            std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
-      }
-      else if (bs0 == 3 and bs1 == 3)
-      {
-        impl::assemble_interior_facets<LiftingMode>(
-            mat_set, x_dofmap, x,
-            mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-            std::tuple{dofs0, std::integral_constant<int, 3>{},
-                       mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
-            P0,
-            std::tuple{dofs1, std::integral_constant<int, 3>{},
-                       mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
-            P1T, bc0, bc1, fn,
-            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            constants, cell_info0, cell_info1, facet_perms, std::span(Ab),
-            std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
-      }
-      else
-      {
-        impl::assemble_interior_facets<LiftingMode>(
-            mat_set, x_dofmap, x,
-            mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-            std::tuple{dofs0, bs0,
-                       mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
-            P0,
-            std::tuple{dofs1, bs1,
-                       mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
-            P1T, bc0, bc1, fn,
-            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            constants, cell_info0, cell_info1, facet_perms, std::span(Ab),
-            std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
-      }
+      impl::dispatch_bs(
+          bs0, bs1,
+          [&mat_set, &geometry, &facets, &dofs0, &facets0, &P0, &cell_info0,
+           &dofs1, &facets1, &P1T, &cell_info1, &bc0, &bc1, &fn, &coeffs,
+           cstride, &constants, &facet_perms, &Ab, &cdofs_b, &dmap_b,
+           &Ae_block_b](auto bs0, auto bs1)
+          {
+            impl::assemble_interior_facets_matrix<LiftingMode>(
+                mat_set, geometry,
+                mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
+                FormArgument{DofMapPack{dofs0, bs0,
+                                        mdspanx22_t(facets0.data(),
+                                                    facets0.size() / 4, 2, 2)},
+                             P0, cell_info0},
+                FormArgument{DofMapPack{dofs1, bs1,
+                                        mdspanx22_t(facets1.data(),
+                                                    facets1.size() / 4, 2, 2)},
+                             P1T, cell_info1},
+                bc0, bc1, fn, constants,
+                mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
+                facet_perms, std::span(Ab), std::span(cdofs_b),
+                std::span(dmap_b), std::span(Ae_block_b));
+          });
     }
 
     for (auto itg_type : {fem::IntegralType::exterior_facet,
@@ -979,36 +943,23 @@ void assemble_matrix(
         std::span e1 = a.domain_arg(itg_type, 1, i, 0);
         mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
         assert((entities.size() / 2) * cstride == coeffs.size());
-        if (bs0 == 1 and bs1 == 1)
-        {
-          impl::assemble_entities<LiftingMode>(
-              mat_set, x_dofmap, x, entities,
-              std::tuple{dofs0, std::integral_constant<int, 1>{}, entities0},
-              P0,
-              std::tuple{dofs1, std::integral_constant<int, 1>{}, entities1},
-              P1T, bc0, bc1, fn,
-              md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
-              cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b));
-        }
-        else if (bs0 == 3 and bs1 == 3)
-        {
-          impl::assemble_entities<LiftingMode>(
-              mat_set, x_dofmap, x, entities,
-              std::tuple{dofs0, std::integral_constant<int, 3>{}, entities0},
-              P0,
-              std::tuple{dofs1, std::integral_constant<int, 3>{}, entities1},
-              P1T, bc0, bc1, fn,
-              md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
-              cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b));
-        }
-        else
-        {
-          impl::assemble_entities<LiftingMode>(
-              mat_set, x_dofmap, x, entities, std::tuple{dofs0, bs0, entities0},
-              P0, std::tuple{dofs1, bs1, entities1}, P1T, bc0, bc1, fn,
-              md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
-              cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b));
-        }
+        impl::dispatch_bs(
+            bs0, bs1,
+            [&mat_set, &geometry, &entities, &dofs0, &entities0, &P0,
+             &cell_info0, &dofs1, &entities1, &P1T, &cell_info1, &bc0, &bc1,
+             &fn, &coeffs, cstride, &constants, &perms, &Ab1,
+             &cdofs_b1](auto bs0, auto bs1)
+            {
+              impl::assemble_entities_matrix<LiftingMode>(
+                  mat_set, geometry, entities,
+                  FormArgument{DofMapPack{dofs0, bs0, entities0}, P0,
+                               cell_info0},
+                  FormArgument{DofMapPack{dofs1, bs1, entities1}, P1T,
+                               cell_info1},
+                  bc0, bc1, fn, constants,
+                  md::mdspan(coeffs.data(), entities.extent(0), cstride), perms,
+                  Ab1, cdofs_b1);
+            });
       }
     }
   }
