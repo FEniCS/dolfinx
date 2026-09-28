@@ -471,63 +471,6 @@ void apply_lifting(
 /// @param[in,out] b Vector to modify by lifting.
 /// @param[in] a Bilinear forms, one per block `j`. A `std::nullopt`
 /// entry skips that block.
-/// @param[in] constants Constants that appear in each form in `a`, one
-/// entry per block `j`.
-/// @param[in] coeffs Coefficients that appear in each form in `a`, one
-/// entry per block `j`.
-/// @param[in] bcs1 Boundary conditions on the trial space `V_j` for
-/// each block `j`.
-/// @param[in] x0 Vectors used in the lifting, one per block `j`. If
-/// empty, `x0_j` is treated as zero for every block. Otherwise must
-/// have the same length as `a`.
-/// @param[in] alpha Scaling to apply.
-template <std::floating_point T>
-void apply_lifting(
-    Vec b,
-    const std::vector<
-        std::optional<std::reference_wrapper<const Form<PetscScalar, T>>>>& a,
-    const std::vector<std::span<const PetscScalar>>& constants,
-    const std::vector<std::map<std::pair<IntegralType, int>,
-                               std::pair<std::span<const PetscScalar>, int>>>&
-        coeffs,
-    const std::vector<
-        std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>>>&
-        bcs1,
-    const std::vector<Vec>& x0, PetscScalar alpha)
-{
-  auto [bc_markers1, bc_values1] = fem::impl::bc_lifting_data(a, bcs1);
-  apply_lifting(b, a, constants, coeffs,
-                std::vector<std::span<const std::int8_t>>(bc_markers1.begin(),
-                                                          bc_markers1.end()),
-                std::vector<std::span<const PetscScalar>>(bc_values1.begin(),
-                                                          bc_values1.end()),
-                x0, alpha);
-}
-
-/// @brief Modify RHS vector to account for Dirichlet boundary
-/// conditions.
-///
-/// Modify b such that:
-///
-///   b <- b - alpha * A_j (g_j - x0_j)
-///
-/// where j is a block (nest) index. For a non-blocked problem j = 0. The
-/// boundary conditions bcs1 are on the trial spaces V_j. The forms in
-/// [a] must have the same test space as L (from which b was built), but the
-/// trial space may differ. If x0 is not supplied, then it is treated as
-/// zero.
-///
-/// Ghost contributions are not accumulated (not sent to owner). Caller
-/// is responsible for calling VecGhostUpdateBegin/End.
-///
-/// @note Convenience overload for callers that have boundary
-/// conditions. It rebuilds the constrained dof markers and values on
-/// every call, and should not be called internally by the library;
-/// call the overload taking `bc_markers1` and `bc_values1` instead.
-///
-/// @param[in,out] b Vector to modify by lifting.
-/// @param[in] a Bilinear forms, one per block `j`. A `std::nullopt`
-/// entry skips that block.
 /// @param[in] bcs1 Boundary conditions on the trial space `V_j` for
 /// each block `j`.
 /// @param[in] x0 Vectors used in the lifting, one per block `j`. If

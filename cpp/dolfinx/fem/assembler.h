@@ -571,33 +571,6 @@ void assemble_matrix(
                                coefficients, dof_marker0, dof_marker1);
 }
 
-/// @brief Assemble bilinear form into a matrix
-/// @note Convenience overload for callers that have boundary
-/// conditions. It rebuilds the dof markers on every call, and should
-/// not be called internally by the library; call the overload taking
-/// `dof_marker0` and `dof_marker1` instead.
-///
-/// @param[in] mat_add The function for adding values into the matrix.
-/// @param[in] a The bilinear from to assemble.
-/// @param[in] constants Constants that appear in `a`.
-/// @param[in] coefficients Coefficients that appear in `a`.
-/// @param[in] bcs Boundary conditions to apply. For boundary condition
-/// dofs the row and column are zeroed. The diagonal  entry is not set.
-template <dolfinx::scalar T, std::floating_point U>
-void assemble_matrix(
-    auto mat_add, const Form<T, U>& a, std::span<const T> constants,
-    const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients,
-    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
-{
-  std::vector<std::int8_t> dof_marker0
-      = impl::bc_dof_markers(*a.function_spaces().at(0), bcs);
-  std::vector<std::int8_t> dof_marker1
-      = impl::bc_dof_markers(*a.function_spaces().at(1), bcs);
-  fem::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
-                       dof_marker1);
-}
-
 /// @brief Assemble bilinear form into a matrix.
 /// @note Convenience overload for callers that have boundary
 /// conditions. It rebuilds the dof markers on every call, and should
