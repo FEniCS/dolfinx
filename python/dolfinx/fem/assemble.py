@@ -290,12 +290,6 @@ def _unrolled_size(V: FunctionSpace) -> int:
 def _bc_dof_markers(V: FunctionSpace, bcs: Sequence[DirichletBC] | None) -> npt.NDArray[np.int8]:
     """Mark the dofs of ``V`` constrained by a boundary condition.
 
-    Note:
-        Markers depend only on the dofs a boundary condition
-        constrains, which are fixed when it is built. A caller that
-        assembles repeatedly with the same boundary conditions can
-        compute them once and reuse them.
-
     Args:
         V: Space whose dofs (owned and ghost) are marked.
         bcs: Boundary conditions. Only those defined on ``V`` or a
@@ -317,19 +311,12 @@ def _bc_dof_markers(V: FunctionSpace, bcs: Sequence[DirichletBC] | None) -> npt.
 def _bc_dof_markers_by_space(
     spaces: Sequence[FunctionSpace | None], bcs: Sequence[DirichletBC] | None
 ) -> list[npt.NDArray[np.int8]]:
-    """Constrained dof markers for each space, built once per space.
+    """Constrained dof markers, one array per entry of ``spaces``.
 
-    Markers depend only on the space, so spaces that repeat in
-    ``spaces`` share one array rather than marking the same dofs again.
-    The arrays are read-only to callers.
-
-    Args:
-        spaces: Spaces to mark, ``None`` for an entry without a space.
-        bcs: Boundary conditions, as for :func:`_bc_dof_markers`.
-
-    Returns:
-        One marker array per entry of ``spaces``, empty where the entry
-        is ``None`` or no boundary condition applies.
+    Markers depend only on the space, so a space repeated in ``spaces``
+    is marked once and the array shared. Callers must not modify them.
+    An entry is empty where the space is ``None`` or no boundary
+    condition applies.
     """
     built: list[tuple[typing.Any, npt.NDArray[np.int8]]] = []
     markers = []
@@ -366,20 +353,11 @@ def _bc_lifting_markers(
 ) -> list[npt.NDArray[np.int8]]:
     """Constrained dof markers on each trial space.
 
-    Note:
-        Unlike the values from :func:`_bc_lifting_values`, markers are
-        fixed once the boundary conditions are built, so a repeated
-        caller can compute them once and reuse them.
-
-    Args:
-        spaces: Trial space of each block ``j``, or ``None`` for a block
-            without a form.
-        bcs: Boundary conditions on each space in ``spaces``.
-
-    Returns:
-        Markers (``1`` for constrained dofs, owned and ghost) for each
-        block, empty if ``spaces[j]`` is ``None`` or ``bcs[j]`` is
-        empty.
+    Entry ``j`` is ``1`` for the constrained dofs of ``spaces[j]``
+    (owned and ghost), or empty if that space is ``None`` or has no
+    boundary conditions. Unlike the values from
+    :func:`_bc_lifting_values`, markers are fixed once the boundary
+    conditions are built, so a repeated caller may reuse them.
     """
     markers = []
     for V, bcs0 in zip(spaces, bcs, strict=True):
@@ -400,22 +378,12 @@ def _bc_lifting_values(
 ) -> list[npt.NDArray]:
     """Boundary condition values on each trial space.
 
-    Note:
-        Values are read from the boundary conditions on every call, as
-        the function or constant behind a condition may have been
-        changed since the last one. They must not be cached.
-
-    Args:
-        spaces: Trial space of each block ``j``, or ``None`` for a block
-            without a form.
-        bcs: Boundary conditions on each space in ``spaces``.
-        dtype: Scalar type of the values.
-
-    Returns:
-        Boundary condition values for each block, empty if
-        ``spaces[j]`` is ``None`` or ``bcs[j]`` is empty. Where more
-        than one condition constrains a dof, the last one in ``bcs[j]``
-        sets its value.
+    Entry ``j`` holds the values of ``bcs[j]`` where marked, as
+    ``dtype``, or is empty if that space is ``None`` or has no boundary
+    conditions. Where more than one condition constrains a dof, the
+    last one in ``bcs[j]`` sets its value. Values must not be cached:
+    the function or constant behind a condition may have changed since
+    the last call.
     """
     values = []
     for V, bcs0 in zip(spaces, bcs, strict=True):
