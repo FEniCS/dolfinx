@@ -574,13 +574,9 @@ def _matrix_diag_rows(
 ) -> npt.NDArray[np.int32] | list[npt.NDArray[np.int32]]:
     """Locally owned constrained rows of the test space of ``a``.
 
-    These are the rows that carry the diagonal value once assembly has
-    zeroed them. For a 2D array of forms, entry ``i`` holds the rows of
-    the test space of row ``i``.
-
-    Args:
-        a: Bilinear form, or a 2D array of forms.
-        dof_marker0: Test space markers from :func:`_matrix_bc_markers`.
+    These carry the diagonal value once assembly has zeroed them. For a
+    2D array of forms, entry ``i`` is for the test space of row ``i``.
+    ``dof_marker0`` comes from :func:`_matrix_bc_markers`.
     """
     if isinstance(a, Sequence):
         return [
@@ -605,10 +601,9 @@ def _matrix_bc_data(
 ) -> _MatrixBCData:
     """Constrained dof markers and diagonal rows for assembling ``a``.
 
-    Packs the three boundary-condition arguments of
-    :func:`_assemble_matrix_petsc_markers`. All three are fixed for the
-    lifetime of ``bcs``, so a caller that assembles ``a`` repeatedly
-    should build them once and reuse them.
+    The three boundary-condition arguments of
+    :func:`_assemble_matrix_petsc_markers`. All are fixed for the
+    lifetime of ``bcs``, so a repeated caller should build them once.
     """
     dof_marker0, dof_marker1 = _matrix_bc_markers(a, bcs)
     return dof_marker0, dof_marker1, _matrix_diag_rows(a, dof_marker0)
@@ -872,16 +867,10 @@ def apply_lifting(
 def _lifting_spaces(
     a: Sequence[Form | None] | Sequence[Sequence[Form | None]],
 ) -> list[_FunctionSpace | None]:
-    """Trial space of each column of ``a``.
+    """Trial space of each column of ``a``, ``None`` where it has no form.
 
-    Args:
-        a: Bilinear forms: a 1D sequence with one form per column, or a
-            2D array of forms. The space of column ``j`` is the trial
-            space of ``a[j]`` (1D) or the common trial space of column
-            ``j`` (2D).
-
-    Returns:
-        One space per column, ``None`` for a column without a form.
+    ``a`` is a 1D sequence with one form per column, or a 2D array of
+    forms whose columns share a trial space.
     """
     if len(a) > 0 and isinstance(a[0], Sequence):
         return _extract_function_spaces(a, 1)  # type: ignore[arg-type,return-value]
@@ -892,25 +881,14 @@ def _lifting_bc_markers(
     a: Sequence[Form | None] | Sequence[Sequence[Form | None]],
     bcs: Sequence[Sequence[DirichletBC]] | None,
 ) -> list[npt.NDArray[np.int8]]:
-    """Constrained dof markers for lifting, per column.
+    """Constrained dof markers for lifting, per column of ``a``.
 
-    Builds the ``bc_markers1`` argument of
-    :func:`_apply_lifting_petsc_markers`. The markers are fixed for the
-    lifetime of ``bcs``, so a caller that lifts repeatedly with the
-    same boundary conditions should build them once and reuse them,
-    pairing them with freshly built values from
+    The ``bc_markers1`` argument of
+    :func:`_apply_lifting_petsc_markers`, with ``bcs[j]`` the
+    conditions on column ``j`` (``None`` for none at all). Markers are
+    fixed for the lifetime of ``bcs``, so a repeated caller should
+    build them once and pair them with fresh values from
     :func:`_lifting_bc_values`.
-
-    Args:
-        a: Bilinear forms, as for :func:`_lifting_spaces`.
-        bcs: Boundary conditions on the space of each column, with
-            ``bcs[j]`` those for column ``j``. Must have one entry per
-            column. ``None`` means no boundary conditions.
-
-    Returns:
-        One ``int8`` array per column, ``1`` for constrained dofs
-        (owned and ghost, unrolled). Empty for a column with no space
-        or no boundary conditions.
     """
     spaces = _lifting_spaces(a)
     return _bc_lifting_markers(spaces, [[] for _ in spaces] if bcs is None else bcs)
@@ -920,23 +898,12 @@ def _lifting_bc_values(
     a: Sequence[Form | None] | Sequence[Sequence[Form | None]],
     bcs: Sequence[Sequence[DirichletBC]] | None,
 ) -> list[npt.NDArray]:
-    """Boundary condition values for lifting, per column.
+    """Boundary condition values for lifting, per column of ``a``.
 
-    Builds the ``bc_values1`` argument of
-    :func:`_apply_lifting_petsc_markers`. Values are read from ``bcs``
-    on every call and must not be cached, since the function or
-    constant behind a condition may have changed.
-
-    Args:
-        a: Bilinear forms, as for :func:`_lifting_spaces`.
-        bcs: Boundary conditions on the space of each column, with
-            ``bcs[j]`` those for column ``j``. Must have one entry per
-            column. ``None`` means no boundary conditions.
-
-    Returns:
-        One array per column, of ``PETSc.ScalarType``, holding the
-        boundary condition values where marked. Empty for a column with
-        no space or no boundary conditions.
+    The ``bc_values1`` argument of
+    :func:`_apply_lifting_petsc_markers`, as ``PETSc.ScalarType``.
+    Values are read from ``bcs`` on every call and must not be cached,
+    since the function or constant behind a condition may have changed.
     """
     spaces = _lifting_spaces(a)
     return _bc_lifting_values(
@@ -1452,18 +1419,25 @@ class LinearProblem(typing.Generic[_U]):
 
     @property
     def bcs(self) -> Sequence[DirichletBC]:
-        """Dirichlet boundary conditions applied to the problem."""
+        """Dirichlet boundary conditions applied to the problem.
+
+        Assigning to this property rebuilds the cached constrained dof
+        markers and diagonal rows, which :func:`solve` reuses rather
+        than rebuilding on every call. Caching them is safe because the
+        dofs a boundary condition constrains are fixed when it is
+        built. Mutating the returned sequence in place bypasses the
+        setter and leaves the cache stale; assign a new sequence
+        instead.
+
+        Boundary condition *values* are not cached. The function or
+        constant behind a condition may change between solves, so
+        :func:`solve` reads them afresh each time.
+        """
         return self._bcs
 
     @bcs.setter
     def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
         self._bcs = [] if bcs is None else bcs
-        # Which dofs a boundary condition constrains is fixed when it is
-        # built, so the markers and the rows that carry the diagonal are
-        # built once here rather than on every solve. Boundary condition
-        # *values* are not cached: the function or constant behind a
-        # condition may change between solves, so solve() reads them
-        # each time.
         self._a_bc_data = _matrix_bc_data(self.a, self._bcs)
         self._P_bc_data = (
             None if self.preconditioner is None else _matrix_bc_data(self.preconditioner, self._bcs)
@@ -1477,8 +1451,8 @@ class LinearProblem(typing.Generic[_U]):
     ) -> list[npt.NDArray[np.int8]]:
         """Constrained dof markers for lifting, built on first use.
 
-        Built lazily rather than in the ``bcs`` setter because the
-        column layout of ``a`` is only validated in :func:`solve`.
+        Built lazily rather than in the ``bcs`` setter, as the column
+        layout of ``a`` is only validated in :func:`solve`.
         """
         if self._cached_lifting_markers is None:
             self._cached_lifting_markers = _lifting_bc_markers(a, bcs1)
