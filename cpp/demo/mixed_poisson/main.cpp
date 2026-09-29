@@ -320,18 +320,16 @@ int main(int argc, char* argv[])
     la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
                     L.function_spaces()[0]->dofmap()->index_map_bs());
 
-    // Assemble the bilinear form into a matrix. The PETSc matrix is
-    // 'flushed' so we can set values in it in the subsequent step.
+    // Assemble the bilinear form into a matrix. Rows and columns of
+    // Dirichlet dofs are zeroed.
     common::petsc::check(MatZeroEntries(A.mat()), "MatZeroEntries");
     fem::assemble_matrix(la::petsc::Matrix::set_fn(A.mat(), ADD_VALUES), a,
                          {bc});
-    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY),
-                         "MatAssemblyBegin");
-    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY),
-                         "MatAssemblyEnd");
 
-    // Set '1' on diagonal for Dirichlet dofs
-    fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
+    // Set '1' on diagonal for Dirichlet dofs. Their rows were zeroed by
+    // assembly, so the value is added, which avoids flushing the matrix
+    // to switch from adding to inserting.
+    fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), ADD_VALUES), *V,
                          {bc});
     common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY),
                          "MatAssemblyBegin");
