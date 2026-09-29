@@ -693,15 +693,19 @@ void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
   }
 }
 
-/// @brief Sets a value to the diagonal of the matrix for rows with a
-/// Dirichlet boundary conditions applied.
+/// @brief Set a value on the diagonal of the locally owned rows that a
+/// Dirichlet boundary condition constrains.
 ///
-/// This function is typically called after assembly. The assembly
-/// function zeroes Dirichlet rows and columns. This function adds the
-/// value only to rows that are locally owned, and therefore does not
-/// create a need for parallel communication. For block matrices, this
-/// function should normally be called only on the diagonal blocks, i.e.
-/// blocks for which the test and trial spaces are the same.
+/// Only locally owned rows are set. A constrained degree-of-freedom
+/// that is a ghost on the calling rank is left untouched here and is
+/// set by the rank that owns it, so no communication is needed from
+/// this function. Setting ghost rows too would contribute once per
+/// sharing rank when `A` is finalised.
+///
+/// This function is typically called after assembly, which zeroes
+/// Dirichlet rows and columns. For block matrices, it should normally
+/// be called only on the diagonal blocks, i.e. blocks for which the
+/// test and trial spaces are the same.
 ///
 /// @note This is a convenience overload for callers that have `V` and
 /// `bcs` on hand but not the combined row list, and it recomputes that
@@ -721,9 +725,11 @@ void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
 /// @param[in] V The function space for the rows and columns of the
 /// matrix. It is used to extract only the Dirichlet boundary conditions
 /// that are define on V or subspaces of V.
-/// @param[in] bcs The Dirichlet boundary conditions.
-/// @param[in] diagonal Value to add to the diagonal for rows with a
-/// boundary condition applied.
+/// @param[in] bcs The Dirichlet boundary conditions. Only conditions
+/// defined on `V` or a subspace of it contribute, and of those only
+/// their locally owned dofs.
+/// @param[in] diagonal Value to set on the diagonal of each owned
+/// constrained row.
 template <dolfinx::scalar T, std::floating_point U>
 void set_diagonal(
     auto set_fn, const FunctionSpace<U>& V,
