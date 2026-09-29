@@ -333,3 +333,24 @@ def test_interpolation_function(dtype):
     uh.interpolate(u)
     # Interpolating a constant between identical spaces is exact.
     assert np.allclose(uh.x.array, 1, rtol=max(1.0e-5, 100 * np.finfo(dtype).eps))
+
+
+def test_shared_scatterer(W):
+    """Function built from a vector that shares a scatterer."""
+    u0 = Function(W)
+    x = la.vector(
+        W.dofmap.index_map, W.dofmap.index_map_bs, scatterer=u0.x.scatterer, dtype=u0.dtype
+    )
+    u1 = Function(W, x)
+    assert u1.x is x
+    assert u1.x.scatterer._cpp_object is u0.x.scatterer._cpp_object
+    assert u1.sub(0).x.scatterer._cpp_object is u0.x.scatterer._cpp_object
+
+    # The copy shares the scatterer
+    u2 = u1.copy()
+    assert u2.x.scatterer._cpp_object is u0.x.scatterer._cpp_object
+
+    # Block size mismatch
+    x_bs = la.vector(W.dofmap.index_map, 1, scatterer=u0.x.scatterer, dtype=u0.dtype)
+    with pytest.raises(ValueError):
+        Function(W, x_bs)

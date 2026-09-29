@@ -47,6 +47,7 @@ add_executable(
   common/sort.cpp
   fem/assembly_kernels.cpp
   fem/form.cpp
+  fem/function.cpp
   fem/functionspace.cpp
   mesh/branching_manifold.cpp
   mesh/distributed_mesh.cpp
