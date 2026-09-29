@@ -838,9 +838,9 @@ void assemble_jacobian(
                        "VecGhostUpdateEnd");
   impl::assign(x, u);
 
-  // The markers depend only on the space, so they are built once here
-  // and shared by the Jacobian and the preconditioner, which have the
-  // same spaces, and by the rows and columns of a square form
+  // Markers depend only on the space, so they are built once here. A
+  // square form shares one array between its rows and columns, and the
+  // preconditioner shares both with the Jacobian.
   const std::vector<std::int8_t> marker0
       = fem::impl::bc_dof_markers(*J.function_spaces()[0], bcs);
   const bool square = J.function_spaces()[0] == J.function_spaces()[1];

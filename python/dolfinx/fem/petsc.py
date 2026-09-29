@@ -1877,11 +1877,10 @@ class NonlinearProblem(typing.Generic[_U]):
         # Create the SNES solver and attach the corresponding Jacobian and
         # residual computation functions
         self._snes = PETSc.SNES().create(self.A.comm)
-        # Which dofs the boundary conditions constrain is fixed once
-        # they are built, so the markers and diagonal rows are built
-        # here and reused by every Newton step. Boundary condition
-        # values are not cached: the callbacks read them from ``bcs`` on
-        # every evaluation.
+        # The dofs a condition constrains are fixed once it is built,
+        # so the markers and diagonal rows are built here and reused by
+        # every Newton step. Values are not cached: the callbacks read
+        # them from bcs on every evaluation.
         if isinstance(self.J, Sequence):
             bcs1 = _bcs_by_block(_extract_function_spaces(self.J, 1), bcs)
             lifting_markers = _lifting_bc_markers(self.J, bcs1)
