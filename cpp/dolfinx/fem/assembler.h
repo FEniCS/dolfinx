@@ -16,6 +16,7 @@
 #include <basix/mdspan.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <format>
@@ -591,16 +592,22 @@ void assemble_matrix(
   auto coefficients = allocate_coefficient_storage(a);
   pack_coefficients(a, coefficients);
 
-  std::vector<std::int8_t> dof_marker0
+  const std::vector<std::int8_t> dof_marker0
       = impl::bc_dof_markers(*a.function_spaces().at(0), bcs);
-  std::vector<std::int8_t> dof_marker1
-      = impl::bc_dof_markers(*a.function_spaces().at(1), bcs);
+
+  // The markers depend only on the space, so a form with the same test
+  // and trial space needs them built once
+  const bool square = a.function_spaces().at(0) == a.function_spaces().at(1);
+  const std::vector<std::int8_t> dof_marker1
+      = square ? std::vector<std::int8_t>()
+               : impl::bc_dof_markers(*a.function_spaces().at(1), bcs);
 
   // Assemble
   assemble_matrix(mat_add, a, std::span<const T>(constants),
                   make_coefficients_span(coefficients),
                   std::span<const std::int8_t>(dof_marker0),
-                  std::span<const std::int8_t>(dof_marker1));
+                  square ? std::span<const std::int8_t>(dof_marker0)
+                         : std::span<const std::int8_t>(dof_marker1));
 }
 
 /// @brief Assemble bilinear form into a matrix. Matrix must already be
@@ -701,10 +708,14 @@ void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
 /// list on every call. It should not be called internally by the
 /// library: an internal caller either already has the rows, or can
 /// compute and cache them itself (filter `bcs` by
-/// `V.contains(*bc.function_space())` and concatenate each surviving
-/// bc's `dof_indices()`) across repeated calls, which this overload
-/// cannot do on a caller's behalf. Call the row-list overload directly
-/// instead.
+/// `V.contains(*bc.function_space())`, concatenate each surviving bc's
+/// `dof_indices()` and remove duplicates) across repeated calls, which
+/// this overload cannot do on a caller's behalf. Call the row-list
+/// overload directly instead.
+///
+/// @note Each row is set exactly once, even where several boundary
+/// conditions constrain the same degree-of-freedom, so `set_fn` may
+/// add rather than insert.
 ///
 /// @param[in] set_fn The function for setting values to a matrix.
 /// @param[in] V The function space for the rows and columns of the
@@ -720,14 +731,34 @@ void set_diagonal(
     T diagonal = T(1))
 {
   spdlog::debug("Set diagonal");
+  std::vector<std::int32_t> rows;
+  int num_runs = 0;
   for (auto& bc : bcs)
   {
     if (V.contains(*bc.get().function_space()))
     {
       const auto [dofs, range] = bc.get().dof_indices();
-      set_diagonal(set_fn, dofs.first(range), diagonal);
+      std::span<const std::int32_t> owned = dofs.first(range);
+      if (!owned.empty())
+      {
+        ++num_runs;
+        rows.insert(rows.end(), owned.begin(), owned.end());
+      }
     }
   }
+
+  // A condition's dofs are sorted (a DirichletBC precondition), so rows
+  // taken from one condition need no sort. Several conditions give
+  // sorted runs, which a comparison sort handles poorly, so they are
+  // checked (their ranges are often disjoint) and otherwise radix
+  // sorted.
+  if (num_runs > 1 and !std::ranges::is_sorted(rows))
+    dolfinx::radix_sort(rows);
+
+  // Conditions may overlap, and a condition may hold a repeated dof, so
+  // duplicates are dropped to set each row exactly once
+  rows.erase(std::ranges::unique(rows).begin(), rows.end());
+  set_diagonal(set_fn, rows, diagonal);
 }
 
 } // namespace dolfinx::fem
