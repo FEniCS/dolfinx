@@ -1589,9 +1589,9 @@ def assemble_residual(
             See :func:`dolfinx.fem.petsc.create_vector` for more details
             on the format of this argument.
         _lifting_markers: Constrained dof markers for lifting, per
-            column of ``jacobian``, as built by
-            :func:`_lifting_bc_markers`. They depend only on ``bcs`` and
-            are rebuilt on every call if not given, so a repeated caller
+            column of ``jacobian``, as built by the internal
+            ``_lifting_bc_markers``. They depend only on ``bcs`` and are
+            rebuilt on every call if not given, so a repeated caller
             such as :class:`NonlinearProblem` passes them in. Boundary
             condition values are always read afresh from ``bcs``.
     """
@@ -1695,9 +1695,9 @@ def assemble_jacobian(
         bcs: List of Dirichlet boundary conditions to apply to the Jacobian
             and preconditioner matrices.
         _J_bc_data: Constrained dof markers and diagonal rows for
-            ``jacobian``, as built by :func:`_matrix_bc_data`. They
-            depend only on ``bcs`` and are rebuilt on every call if not
-            given, so a repeated caller such as
+            ``jacobian``, as built by the internal ``_matrix_bc_data``.
+            They depend only on ``bcs`` and are rebuilt on every call if
+            not given, so a repeated caller such as
             :class:`NonlinearProblem` passes them in.
         _P_bc_data: The same for ``preconditioner``.
     """
