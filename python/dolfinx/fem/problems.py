@@ -28,7 +28,7 @@ from dolfinx.fem.assemble import (
     _apply_lifting_markers,
     _assemble_matrix_csr_markers,
     _assemble_vector_array,
-    _bc_dof_markers,
+    _bc_dof_markers_pair,
     _bc_lifting_data,
 )
 from dolfinx.la import InsertMode, MatrixCSR, Vector
@@ -148,9 +148,7 @@ class LinearProblem:
         # Assemble lhs
         self.A.set_value(self.A.data.dtype.type(0.0))
         V0, V1 = self.a.function_spaces
-        _assemble_matrix_csr_markers(
-            self.A, self.a, _bc_dof_markers(V0, self.bcs), _bc_dof_markers(V1, self.bcs)
-        )
+        _assemble_matrix_csr_markers(self.A, self.a, *_bc_dof_markers_pair(V0, V1, self.bcs))
         self.A.scatter_reverse()
 
         # SuperLU_DIST solves in-place, so a deep copy of A is required.
