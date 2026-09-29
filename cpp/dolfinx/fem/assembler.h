@@ -755,8 +755,8 @@ void set_diagonal(
   if (num_runs > 1 and !std::ranges::is_sorted(rows))
     dolfinx::radix_sort(rows);
 
-  // Conditions may overlap, and a condition may hold a repeated dof, so
-  // duplicates are dropped to set each row exactly once
+  // Conditions may overlap, so duplicates are dropped to set each row
+  // exactly once
   rows.erase(std::ranges::unique(rows).begin(), rows.end());
   set_diagonal(set_fn, rows, diagonal);
 }

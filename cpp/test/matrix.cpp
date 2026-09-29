@@ -229,11 +229,6 @@ void test_set_diagonal_duplicate_bc_rows()
   std::iota(dofs0.begin(), dofs0.end(), 0);
   std::vector<std::int32_t> dofs1(dofs0.begin(), dofs0.begin() + n / 2);
 
-  // Sorted, but holding each dof twice
-  std::vector<std::int32_t> dofs_repeated;
-  for (std::int32_t dof : dofs0)
-    dofs_repeated.insert(dofs_repeated.end(), 2, dof);
-
   // Adjoining ranges sharing their end point: the concatenation is
   // already sorted, but still holds a duplicate
   const std::int32_t mid = n / 2;
@@ -243,8 +238,6 @@ void test_set_diagonal_duplicate_bc_rows()
 
   auto bc0 = std::make_shared<const fem::DirichletBC<T, T>>(T(1), dofs0, V);
   auto bc1 = std::make_shared<const fem::DirichletBC<T, T>>(T(2), dofs1, V);
-  auto bc_repeated
-      = std::make_shared<const fem::DirichletBC<T, T>>(T(3), dofs_repeated, V);
   auto bc_lo = std::make_shared<const fem::DirichletBC<T, T>>(T(4), dofs_lo, V);
   auto bc_hi = std::make_shared<const fem::DirichletBC<T, T>>(T(5), dofs_hi, V);
 
@@ -265,14 +258,6 @@ void test_set_diagonal_duplicate_bc_rows()
       T(1));
   A_overlap.scatter_rev();
 
-  // A single condition holding each dof twice must also match
-  la::MatrixCSR<T> A_repeated(sp);
-  fem::set_diagonal<T>(
-      A_repeated.mat_add_values(), *V,
-      {std::cref(static_cast<const fem::DirichletBC<T, T>&>(*bc_repeated))},
-      T(1));
-  A_repeated.scatter_rev();
-
   // Two conditions covering the same rows as bc0, concatenating into a
   // sorted list with the shared row duplicated
   la::MatrixCSR<T> A_adjoining(sp);
@@ -286,20 +271,35 @@ void test_set_diagonal_duplicate_bc_rows()
   const std::size_t num_entries = A_ref.values().size();
   std::span<const T> ref = A_ref.values();
   std::span<const T> overlap = A_overlap.values();
-  std::span<const T> repeated = A_repeated.values();
   std::span<const T> adjoining = A_adjoining.values();
   const T tol = 4 * std::numeric_limits<T>::epsilon();
   T sum = 0;
   for (std::size_t i = 0; i < num_entries; ++i)
   {
     CHECK(std::abs(overlap[i] - ref[i]) <= tol);
-    CHECK(std::abs(repeated[i] - ref[i]) <= tol);
     CHECK(std::abs(adjoining[i] - ref[i]) <= tol);
     sum += ref[i];
   }
 
   // The reference must actually have set some rows
   CHECK(sum > T(0));
+
+#ifndef NDEBUG
+  // A non-unique or unsorted dof list violates the DirichletBC
+  // precondition, which is checked in Debug builds
+  if (n > 1)
+  {
+    std::vector<std::int32_t> dofs_repeated;
+    for (std::int32_t dof : dofs0)
+      dofs_repeated.insert(dofs_repeated.end(), 2, dof);
+    CHECK_THROWS_AS((fem::DirichletBC<T, T>(T(1), dofs_repeated, V)),
+                    std::invalid_argument);
+
+    std::vector<std::int32_t> dofs_unsorted(dofs0.rbegin(), dofs0.rend());
+    CHECK_THROWS_AS((fem::DirichletBC<T, T>(T(1), dofs_unsorted, V)),
+                    std::invalid_argument);
+  }
+#endif
 }
 
 void test_matrix_cast()
