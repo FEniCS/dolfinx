@@ -195,8 +195,9 @@ void test_set_diagonal_shared()
     CHECK(std::abs(v1[i] - v0[i]) <= tol);
 }
 
-/// @brief Test that set_diagonal() sets a row once when several
-/// boundary conditions constrain it, or one holds a repeated dof.
+/// @brief Test that set_diagonal() sets a row once when more than one
+/// boundary condition constrains it, and that DirichletBC rejects a dof
+/// list that is not strictly increasing.
 template <std::floating_point T>
 void test_set_diagonal_duplicate_bc_rows()
 {
@@ -223,7 +224,7 @@ void test_set_diagonal_duplicate_bc_rows()
   sp.finalize();
 
   // Constrain the first few owned dof blocks, with the second condition
-  // repeating dofs of the first
+  // covering a subset of the first
   const std::int32_t n = std::min<std::int32_t>(map->size_local(), 8);
   std::vector<std::int32_t> dofs0(n);
   std::iota(dofs0.begin(), dofs0.end(), 0);

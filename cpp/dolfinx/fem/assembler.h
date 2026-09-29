@@ -707,15 +707,12 @@ void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
 /// be called only on the diagonal blocks, i.e. blocks for which the
 /// test and trial spaces are the same.
 ///
-/// @note This is a convenience overload for callers that have `V` and
-/// `bcs` on hand but not the combined row list, and it recomputes that
-/// list on every call. It should not be called internally by the
-/// library: an internal caller either already has the rows, or can
-/// compute and cache them itself (filter `bcs` by
-/// `V.contains(*bc.function_space())`, concatenate each surviving bc's
-/// `dof_indices()` and remove duplicates) across repeated calls, which
-/// this overload cannot do on a caller's behalf. Call the row-list
-/// overload directly instead.
+/// @note Convenience overload for callers holding `V` and `bcs` rather
+/// than the row list, which it rebuilds on every call. Library code
+/// should call the row-list overload, caching the rows across repeated
+/// calls: filter `bcs` by `V.contains(*bc.function_space())`,
+/// concatenate each surviving bc's owned `dof_indices()` and remove
+/// duplicates.
 ///
 /// @note Each row is set exactly once, even where several boundary
 /// conditions constrain the same degree-of-freedom, so `set_fn` may
@@ -753,16 +750,14 @@ void set_diagonal(
     }
   }
 
-  // A condition's dofs are sorted (a DirichletBC precondition), so rows
-  // taken from one condition need no sort. Several conditions give
-  // sorted runs, which a comparison sort handles poorly, so they are
-  // checked (their ranges are often disjoint) and otherwise radix
-  // sorted.
+  // A condition's dofs are strictly increasing (a DirichletBC
+  // precondition), so one condition needs no sort. Several give sorted
+  // runs, which a comparison sort handles poorly and which are often
+  // already in order, hence the check before radix sorting.
   if (num_runs > 1 and !std::ranges::is_sorted(rows))
     dolfinx::radix_sort(rows);
 
-  // Conditions may overlap, so duplicates are dropped to set each row
-  // exactly once
+  // Overlapping conditions can repeat a row
   rows.erase(std::ranges::unique(rows).begin(), rows.end());
   set_diagonal(set_fn, rows, diagonal);
 }

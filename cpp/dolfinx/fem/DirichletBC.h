@@ -497,9 +497,8 @@ public:
   /// arrays over that space.
   ///
   /// The array is strictly increasing, following from the `dofs`
-  /// constructor precondition, which the owned/ghost split relies on.
-  /// That precondition is checked in Debug builds only, so a Release
-  /// build will not catch a caller that violates it.
+  /// constructor precondition that the owned/ghost split relies on.
+  /// That precondition is checked in Debug builds only.
   ///
   /// @return Dof indices, and the position `pos` of the first non-owned
   /// (ghost) index. Entries `dofs[:pos]` are owned and entries
