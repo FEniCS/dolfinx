@@ -646,7 +646,8 @@ def extract_function_spaces(
                 if Vi is None:
                     continue
                 for j in range(i):
-                    if spaces[j] is not None and spaces[j]._cpp_object is Vi._cpp_object:
+                    Vj = spaces[j]
+                    if Vj is not None and Vj._cpp_object is Vi._cpp_object:
                         raise ValueError(
                             f"Function space is shared by {what} {j} and {i} of a "
                             f"blocked form. Each of the {what} must have its own space."
