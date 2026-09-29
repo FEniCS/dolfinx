@@ -543,49 +543,6 @@ def _assemble_matrix_petsc(
     return _assemble_matrix_petsc_markers(A, a, *_matrix_bc_data(a, bcs), diag, constants, coeffs)
 
 
-def _matrix_bc_markers(
-    a: Form | Sequence[Sequence[Form | None]], bcs: Sequence[DirichletBC] | None
-) -> (
-    tuple[npt.NDArray[np.int8], npt.NDArray[np.int8]]
-    | tuple[list[npt.NDArray[np.int8]], list[npt.NDArray[np.int8]]]
-):
-    """Constrained dof markers on the test and trial spaces of ``a``.
-
-    For a single form, returns the markers for its test and trial
-    spaces. For a 2D array of forms, returns a list of markers for the
-    test space of each row and a list for the trial space of each
-    column. A space that appears more than once, as the test and trial
-    space of a square form or a diagonal block, is marked once and the
-    result shared.
-    """
-    if isinstance(a, Sequence):
-        V0 = _extract_function_spaces(a, 0)
-        V1 = _extract_function_spaces(a, 1)
-        markers = _bc_dof_markers_by_space([*V0, *V1], bcs)
-        return markers[: len(V0)], markers[len(V0) :]
-    V0, V1 = a.function_spaces
-    return _bc_dof_markers_pair(V0, V1, bcs)
-
-
-def _matrix_diag_rows(
-    a: Form | Sequence[Sequence[Form | None]],
-    dof_marker0: npt.NDArray[np.int8] | Sequence[npt.NDArray[np.int8]],
-) -> npt.NDArray[np.int32] | list[npt.NDArray[np.int32]]:
-    """Locally owned constrained rows of the test space of ``a``.
-
-    These carry the diagonal value once assembly has zeroed them. For a
-    2D array of forms, entry ``i`` is for the test space of row ``i``.
-    ``dof_marker0`` comes from :func:`_matrix_bc_markers`.
-    """
-    if isinstance(a, Sequence):
-        return [
-            np.empty(0, dtype=np.int32) if V is None else _owned_marked_rows(V, m)
-            for V, m in zip(_extract_function_spaces(a, 0), dof_marker0, strict=True)
-        ]
-    V0, _ = a.function_spaces
-    return _owned_marked_rows(V0, dof_marker0)  # type: ignore[arg-type]
-
-
 #: Constrained dof markers on the test and trial spaces, and the locally
 #: owned rows that carry the diagonal value. See :func:`_matrix_bc_data`.
 _MatrixBCData = tuple[
@@ -601,11 +558,32 @@ def _matrix_bc_data(
     """Constrained dof markers and diagonal rows for assembling ``a``.
 
     The three boundary-condition arguments of
-    :func:`_assemble_matrix_petsc_markers`. All are fixed for the
-    lifetime of ``bcs``, so a repeated caller should build them once.
+    :func:`_assemble_matrix_petsc_markers`: markers on the test space,
+    markers on the trial space, and the locally owned constrained rows
+    that carry the diagonal value once assembly has zeroed them.
+
+    For a 2D array of forms, each is a list with one entry per block
+    row or column. A space appearing more than once, as the test and
+    trial space of a square form or of a diagonal block, is marked once
+    and the result shared.
+
+    All three are fixed for the lifetime of ``bcs``, so a repeated
+    caller should build them once.
     """
-    dof_marker0, dof_marker1 = _matrix_bc_markers(a, bcs)
-    return dof_marker0, dof_marker1, _matrix_diag_rows(a, dof_marker0)
+    if isinstance(a, Sequence):
+        V0 = _extract_function_spaces(a, 0)
+        V1 = _extract_function_spaces(a, 1)
+        markers = _bc_dof_markers_by_space([*V0, *V1], bcs)
+        dof_marker0, dof_marker1 = markers[: len(V0)], markers[len(V0) :]
+        rows = [
+            np.empty(0, dtype=np.int32) if V is None else _owned_marked_rows(V, m)
+            for V, m in zip(V0, dof_marker0, strict=True)
+        ]
+        return dof_marker0, dof_marker1, rows
+
+    V0, V1 = a.function_spaces
+    dof_marker0, dof_marker1 = _bc_dof_markers_pair(V0, V1, bcs)
+    return dof_marker0, dof_marker1, _owned_marked_rows(V0, dof_marker0)
 
 
 def _assemble_matrix_petsc_markers(
