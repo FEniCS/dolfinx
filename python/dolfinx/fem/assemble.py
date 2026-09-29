@@ -632,7 +632,7 @@ def set_bc_diagonal(
         if V.contains(bc.function_space):
             dofs, owned = bc.dof_indices()
             rows_.append(dofs[:owned])
-    # Conditions may overlap, and one may hold a non-unique dof list
+    # Conditions may overlap, so the concatenation may hold duplicates
     rows = np.unique(np.concatenate(rows_)) if rows_ else np.empty(0, dtype=np.int32)
     set_diagonal(A, rows, diagonal)
 
