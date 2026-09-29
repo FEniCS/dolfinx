@@ -607,7 +607,12 @@ def set_bc_diagonal(
     bcs: Sequence[DirichletBC[Scalar]] | None,
     diagonal: Scalar | float | complex = 1.0,
 ) -> None:
-    """Set a value on the diagonal for Dirichlet boundary condition rows.
+    """Set a value on the diagonal of locally owned constrained rows.
+
+    Only rows owned by the calling rank are set. A constrained
+    degree-of-freedom that is a ghost here is left untouched and is
+    set by the rank that owns it, so this function needs no
+    communication.
 
     Note:
         Convenience interface for callers holding ``V`` and ``bcs``
@@ -620,8 +625,11 @@ def set_bc_diagonal(
         V: Function space that the rows/columns of ``A`` are associated
             with.
         bcs: Boundary conditions that identify the diagonal rows to
-            set. If ``None``, no rows are set.
-        diagonal: Value to set on the diagonal.
+            set. Only conditions defined on ``V`` or a subspace of it
+            contribute, and of those only their locally owned dofs. If
+            ``None``, no rows are set.
+        diagonal: Value to set on the diagonal of each owned
+            constrained row.
 
     Note:
         Each row is set exactly once, even where several boundary
