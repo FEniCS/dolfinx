@@ -457,12 +457,24 @@ public:
     return _g;
   }
 
-  /// Access dof indices (local indices, unrolled), including ghosts, to
-  /// which a Dirichlet condition is applied, and the index to the first
-  /// non-owned (ghost) index. The array of indices is sorted.
-  /// @return Sorted array of dof indices (unrolled) and index to the
-  /// first entry in the dof index array that is not owned. Entries
-  /// `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
+  /// @brief Dof indices constrained by this condition, and the position
+  /// of the first ghost index.
+  ///
+  /// Indices are process-local and unrolled (block size expanded), into
+  /// the dofmap of function_space(). For a condition on a sub-space
+  /// they are indices in the parent space, so they apply directly to
+  /// arrays over that space.
+  ///
+  /// The array is sorted, following from the `dofs` constructor
+  /// precondition, which the owned/ghost split relies on. It may hold
+  /// duplicates, as `dofs` is required to be sorted but not unique, so
+  /// a caller that accumulates per index rather than assigning must
+  /// remove them first.
+  ///
+  /// @return Dof indices, and the position `pos` of the first non-owned
+  /// (ghost) index. Entries `dofs[:pos]` are owned and entries
+  /// `dofs[pos:]` are ghosts.
+  /// @note The returned span is valid for the lifetime of this object.
   std::pair<std::span<const std::int32_t>, std::int32_t> dof_indices() const
   {
     return {_dofs0, _owned_indices0};
