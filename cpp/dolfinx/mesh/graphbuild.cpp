@@ -1066,6 +1066,35 @@ mesh::build_local_dual_graph(
       weights[pa] = weights[pb] = edge_weights[i];
   }
 
+  // Sort local neighbours with their weights for subsequent row merging.
+  using WeightedLocalEdge = std::pair<std::int32_t, std::int32_t>;
+  std::vector<WeightedLocalEdge> row;
+  for (std::int32_t cell = 0;
+       cell < static_cast<std::int32_t>(num_links.size()); ++cell)
+  {
+    const std::int32_t begin = offsets[cell];
+    const std::int32_t count = offsets[cell + 1] - begin;
+    std::span neighbours = std::span(data).subspan(begin, count);
+    if (std::ranges::is_sorted(neighbours))
+      continue;
+
+    if (weighted)
+    {
+      row.clear();
+      row.reserve(count);
+      for (std::int32_t j = 0; j < count; ++j)
+        row.emplace_back(neighbours[j], weights[begin + j]);
+      std::ranges::sort(row, {}, &WeightedLocalEdge::first);
+      for (std::int32_t j = 0; j < count; ++j)
+      {
+        neighbours[j] = row[j].first;
+        weights[begin + j] = row[j].second;
+      }
+    }
+    else
+      std::ranges::sort(neighbours);
+  }
+
   timer5.stop();
   timer5.flush();
 

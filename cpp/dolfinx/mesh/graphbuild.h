@@ -62,7 +62,7 @@ struct UnmatchedFacetData
 /// rounded down and assigned to both directions of every cell-pair edge.
 ///
 /// @return
-/// 1. Local dual graph.
+/// 1. Local dual graph, with each adjacency row sorted by local cell index.
 /// 2. Edge weights aligned with the adjacency entries in the graph's array().
 ///   Empty when the outer `facet_weights` span is empty.
 /// 3. UnmatchedFacetData for facets shared by fewer than

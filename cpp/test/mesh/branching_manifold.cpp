@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "catch2/matchers/catch_matchers.hpp"
+#include <algorithm>
 #include <array>
 #include <basix/finite-element.h>
 #include <catch2/catch_template_test_macros.hpp>
@@ -394,4 +395,33 @@ TEST_CASE("local_dual_graph_weight_validation")
   CHECK(empty.num_nodes() == 0);
   CHECK(eweights.capacity() == 0);
   CHECK(eunmatched.unmatched_weights.capacity() == 0);
+}
+
+TEST_CASE("local_dual_graph_sorted_rows")
+{
+  const std::vector<mesh::CellType> types{mesh::CellType::interval};
+  // Facet-key order gives cell 0 neighbours [2, 1], not cell-index order.
+  const std::vector<std::int64_t> cells{10, 20, 20, 30, 10, 5, 40, 50};
+  const std::vector<std::int32_t> values{2, 8, 12, 1, 6, 1, 1, 1};
+  const std::array<std::span<const std::int32_t>, 1> input{values};
+  for (int threads : {1, 2, 8})
+  {
+    auto [graph, weights, unmatched]
+        = mesh::build_local_dual_graph(types, {cells}, 2, threads, input);
+    REQUIRE(graph.num_nodes() == 4);
+    CHECK_THAT(graph.links(0), Catch::Matchers::RangeEquals(std::array{1, 2}));
+    CHECK_THAT(graph.links(1), Catch::Matchers::RangeEquals(std::array{0}));
+    CHECK_THAT(graph.links(2), Catch::Matchers::RangeEquals(std::array{0}));
+    CHECK(graph.links(3).empty());
+    CHECK_THAT(weights, Catch::Matchers::RangeEquals(std::array{10, 4, 10, 4}));
+    auto [plain, no_weights, no_unmatched]
+        = mesh::build_local_dual_graph(types, {cells}, 2, threads, {});
+    CHECK_THAT(plain.array(), Catch::Matchers::RangeEquals(graph.array()));
+    CHECK(no_weights.capacity() == 0);
+    for (std::int32_t cell = 0; cell < graph.num_nodes(); ++cell)
+    {
+      CHECK(std::ranges::is_sorted(graph.links(cell)));
+      CHECK(std::ranges::is_sorted(plain.links(cell)));
+    }
+  }
 }
