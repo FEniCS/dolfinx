@@ -558,25 +558,28 @@ compute_nonlocal_dual_graph(
     {
       const std::int32_t begin = received_offsets[cell];
       const std::int32_t count = received_offsets[cell + 1] - begin;
-      std::span neighbours = std::span(received_data).subspan(begin, count);
-      if (std::ranges::is_sorted(neighbours))
+      std::span neighbors = std::span(received_data).subspan(begin, count);
+      if (std::ranges::is_sorted(neighbors))
         continue;
 
       if (weighted)
       {
+        std::span neighbor_wt
+            = std::span(received_weights).subspan(begin, count);
+
         row.clear();
         row.reserve(count);
         for (std::int32_t j = 0; j < count; ++j)
-          row.emplace_back(neighbours[j], received_weights[begin + j]);
+          row.emplace_back(neighbors[j], received_weights[begin + j]);
         std::ranges::sort(row, {}, &decltype(row)::value_type::first);
         for (std::int32_t j = 0; j < count; ++j)
         {
-          neighbours[j] = row[j].first;
-          received_weights[begin + j] = row[j].second;
+          neighbors[j] = row[j].first;
+          neighbor_wt[j] = row[j].second;
         }
       }
       else
-        std::ranges::sort(neighbours);
+        std::ranges::sort(neighbors);
     }
   }
 
