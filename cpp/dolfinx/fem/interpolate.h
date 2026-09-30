@@ -749,6 +749,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
     std::size_t matrix_size = 0;
     while (matrix_size * matrix_size < fshape[0])
       ++matrix_size;
+    assert(matrix_size * matrix_size == fshape[0]);
 
     // Loop over cells
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
