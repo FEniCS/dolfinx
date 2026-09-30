@@ -1,3 +1,8 @@
+# Copyright (C) 2023 Matthew W. Scroggs
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
 from mpi4py import MPI
 
 import numpy as np
