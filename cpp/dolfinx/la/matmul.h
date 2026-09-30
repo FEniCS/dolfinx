@@ -121,16 +121,13 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
 
   // Serial fast-path: with a single rank there are no ghost columns and
   // no MPI communication to perform.
-  // No-neighbour parallel fast-path: A has no ghost columns (src empty) and
-  // no rank ghosts our A-owned columns (dest empty), so no remote rows of B
-  // are needed and no rank is waiting for us to participate in a collective.
-  // Symmetric topology guarantees the early return is safe without any global
-  // synchronisation (same argument as for transpose()).
+  // In parallel, even ranks without neighbours must participate in the
+  // communicator creation and IndexMap collectives below.
   // Use col_map_B — not col_map_A — for new_col_map so that any existing
   // ghost columns in B are preserved in the product's column map.
 
   int comm_size = dolfinx::MPI::size(col_map_A->comm());
-  if (comm_size == 1 or (src.empty() && dest.empty()))
+  if (comm_size == 1)
   {
     auto col_map_B = B.index_map(1);
     auto new_col_map = std::make_shared<dolfinx::common::IndexMap>(
@@ -168,8 +165,9 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
 
   for (int gh : ghost_owners)
     ++send_count[rank_to_nbr(gh)];
-  MPI_Neighbor_alltoall(send_count.data(), 1, MPI_INT, recv_count.data(), 1,
-                        MPI_INT, neigh_comm_fwd);
+  MPI_Neighbor_alltoall(send_count.data(), src.empty() ? 0 : 1, MPI_INT,
+                        recv_count.data(), dest.empty() ? 0 : 1, MPI_INT,
+                        neigh_comm_fwd);
 
   // Send and recv displacements
   std::vector<int> send_disp(src.size() + 1, 0);
@@ -229,8 +227,9 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   std::partial_sum(send_entry_count.begin(), send_entry_count.end(),
                    std::next(send_entry_disp.begin()));
 
-  MPI_Neighbor_alltoall(send_entry_count.data(), 1, MPI_INT,
-                        recv_entry_count.data(), 1, MPI_INT, neigh_comm_rev);
+  MPI_Neighbor_alltoall(send_entry_count.data(), dest.empty() ? 0 : 1, MPI_INT,
+                        recv_entry_count.data(), src.empty() ? 0 : 1, MPI_INT,
+                        neigh_comm_rev);
 
   std::partial_sum(recv_entry_count.begin(), recv_entry_count.end(),
                    std::next(recv_entry_disp.begin()));
