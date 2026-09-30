@@ -10,6 +10,7 @@
 #include <array>
 #include <boost/sort/sort.hpp>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -322,9 +323,12 @@ compute_nonlocal_dual_graph(
   std::vector<int> dedge_send_count(recv_disp.back());
   std::vector<std::int32_t> dedge_send_displs(dedge_send_count.size() + 1, 0);
   std::vector<std::int64_t> dedge_send_data;
-  // Counts/displacements use edge records; weighted records contain
-  // interleaved neighbour and weight values.
-  const std::size_t record_size = weighted ? 2 : 1;
+  struct WeightedEdge
+  {
+    std::int64_t neighbour;
+    std::int32_t weight;
+  };
+  std::vector<WeightedEdge> dedge_send_edges;
   {
     common::Timer timer0(
         "Compute non-local part of mesh dual graph: sort received facets");
@@ -422,23 +426,29 @@ compute_nonlocal_dual_graph(
 
     std::int32_t send_dual_edges_size
         = std::accumulate(dedge_send_count.begin(), dedge_send_count.end(), 0);
-    dedge_send_data.resize(record_size * send_dual_edges_size);
+    if (weighted)
+      dedge_send_edges.resize(send_dual_edges_size);
+    else
+      dedge_send_data.resize(send_dual_edges_size);
 
     // Iterate matching facets to store dual edges
     std::vector<std::int32_t> offset = dedge_send_displs;
     for_each_matched_pair(
-        [&dedge_send_data, record_size, weighted,
+        [&dedge_send_data, &dedge_send_edges, weighted,
          &offset](int facet_a, std::int64_t cell_a, int facet_b,
                   std::int64_t cell_b, std::int32_t mean_weight)
         {
-          const std::size_t pos_a = record_size * offset[facet_a];
-          const std::size_t pos_b = record_size * offset[facet_b];
-          dedge_send_data[pos_a] = cell_b;
-          dedge_send_data[pos_b] = cell_a;
+          const std::int32_t pos_a = offset[facet_a];
+          const std::int32_t pos_b = offset[facet_b];
           if (weighted)
           {
-            dedge_send_data[pos_a + 1] = mean_weight;
-            dedge_send_data[pos_b + 1] = mean_weight;
+            dedge_send_edges[pos_a] = {cell_b, mean_weight};
+            dedge_send_edges[pos_b] = {cell_a, mean_weight};
+          }
+          else
+          {
+            dedge_send_data[pos_a] = cell_b;
+            dedge_send_data[pos_b] = cell_a;
           }
           ++offset[facet_a];
           ++offset[facet_b];
@@ -495,27 +505,42 @@ compute_nonlocal_dual_graph(
   auto [dedge_recv_count_pp, dedge_recv_displs_pp]
       = collapse_counts_to_pp(dedge_recv_count, num_items_per_dest);
 
-  // Create a compound type if weights are also to be sent.
-  MPI_Datatype facet_mpi_type;
-  if (!weighted)
-    facet_mpi_type = dolfinx::MPI::mpi_t<std::int64_t>;
+  // Counts and displacements remain in edge records in both modes.
+  std::vector<std::int64_t> recv_dual_edges;
+  std::vector<WeightedEdge> recv_weighted_edges;
+  if (weighted)
+  {
+    const std::array<int, 2> lengths{1, 1};
+    const std::array<MPI_Aint, 2> displacements{
+        offsetof(WeightedEdge, neighbour), offsetof(WeightedEdge, weight)};
+    const std::array<MPI_Datatype, 2> types{dolfinx::MPI::mpi_t<std::int64_t>,
+                                            dolfinx::MPI::mpi_t<std::int32_t>};
+    MPI_Datatype fields_type, edge_type;
+    MPI_Type_create_struct(2, lengths.data(), displacements.data(),
+                           types.data(), &fields_type);
+    // Include trailing C++ padding in the stride between array elements.
+    MPI_Type_create_resized(fields_type, 0, sizeof(WeightedEdge), &edge_type);
+    MPI_Type_commit(&edge_type);
+    MPI_Type_free(&fields_type);
+
+    recv_weighted_edges.resize(dedge_recv_displs_pp.back());
+    MPI_Neighbor_alltoallv(
+        dedge_send_edges.data(), dedge_send_count_pp.data(),
+        dedge_send_displs_pp.data(), edge_type, recv_weighted_edges.data(),
+        dedge_recv_count_pp.data(), dedge_recv_displs_pp.data(), edge_type,
+        comm_po_receive);
+    MPI_Type_free(&edge_type);
+  }
   else
   {
-    MPI_Type_contiguous(2, dolfinx::MPI::mpi_t<std::int64_t>, &facet_mpi_type);
-    MPI_Type_commit(&facet_mpi_type);
+    recv_dual_edges.resize(dedge_recv_displs_pp.back());
+    MPI_Neighbor_alltoallv(dedge_send_data.data(), dedge_send_count_pp.data(),
+                           dedge_send_displs_pp.data(),
+                           dolfinx::MPI::mpi_t<std::int64_t>,
+                           recv_dual_edges.data(), dedge_recv_count_pp.data(),
+                           dedge_recv_displs_pp.data(),
+                           dolfinx::MPI::mpi_t<std::int64_t>, comm_po_receive);
   }
-
-  // Exchange list of matched facets
-  std::vector<std::int64_t> recv_dual_edges(record_size
-                                            * dedge_recv_displs_pp.back());
-  MPI_Neighbor_alltoallv(dedge_send_data.data(), dedge_send_count_pp.data(),
-                         dedge_send_displs_pp.data(), facet_mpi_type,
-                         recv_dual_edges.data(), dedge_recv_count_pp.data(),
-                         dedge_recv_displs_pp.data(), facet_mpi_type,
-                         comm_po_receive);
-
-  if (weighted)
-    MPI_Type_free(&facet_mpi_type);
   MPI_Comm_free(&comm_po_receive);
 
   // Group received entries by attached local cell. Rows may contain
@@ -530,10 +555,12 @@ compute_nonlocal_dual_graph(
   std::partial_sum(received_offsets.begin(), received_offsets.end(),
                    received_offsets.begin());
 
-  std::vector<std::int64_t> received_data(received_offsets.back());
-  std::vector<std::int32_t> received_weights;
+  std::vector<std::int64_t> received_data;
+  std::vector<WeightedEdge> received_edges;
   if (weighted)
-    received_weights.resize(received_data.size());
+    received_edges.resize(received_offsets.back());
+  else
+    received_data.resize(received_offsets.back());
   {
     std::vector<std::int32_t> cursor = received_offsets;
     std::size_t source = 0;
@@ -542,49 +569,35 @@ compute_nonlocal_dual_graph(
       const std::int32_t cell = cells[send_indx_to_pos[i]];
       for (std::int32_t j = 0; j < dedge_recv_count[i]; ++j)
       {
-        const std::int32_t destination = cursor[cell]++;
-        received_data[destination] = recv_dual_edges[source];
-        source++;
+        const std::int32_t destination = cursor[cell];
         if (weighted)
-        {
-          received_weights[destination]
-              = static_cast<std::int32_t>(recv_dual_edges[source]);
-          ++source;
-        }
+          received_edges[destination] = recv_weighted_edges[source];
+        else
+          received_data[destination] = recv_dual_edges[source];
+        ++cursor[cell];
+        ++source;
       }
     }
-    assert(source == recv_dual_edges.size());
+    assert(source
+           == (weighted ? recv_weighted_edges.size() : recv_dual_edges.size()));
   }
 
-  // Sort received rows, retaining duplicate neighbours for the merge.
+  // Sort complete records in place, retaining duplicates for the merge.
+  for (std::int32_t cell = 0; cell < local_dual_graph.num_nodes(); ++cell)
   {
-    std::vector<std::pair<std::int64_t, std::int32_t>> row;
-    for (std::int32_t cell = 0; cell < local_dual_graph.num_nodes(); ++cell)
+    const std::int32_t begin = received_offsets[cell];
+    const std::int32_t count = received_offsets[cell + 1] - begin;
+    if (weighted)
     {
-      const std::int32_t begin = received_offsets[cell];
-      const std::int32_t count = received_offsets[cell + 1] - begin;
-      std::span neighbors = std::span(received_data).subspan(begin, count);
-      if (std::ranges::is_sorted(neighbors))
-        continue;
-
-      if (weighted)
-      {
-        std::span neighbor_wt
-            = std::span(received_weights).subspan(begin, count);
-
-        row.clear();
-        row.reserve(count);
-        for (std::int32_t j = 0; j < count; ++j)
-          row.emplace_back(neighbors[j], received_weights[begin + j]);
-        std::ranges::sort(row, {}, &decltype(row)::value_type::first);
-        for (std::int32_t j = 0; j < count; ++j)
-        {
-          neighbors[j] = row[j].first;
-          neighbor_wt[j] = row[j].second;
-        }
-      }
-      else
-        std::ranges::sort(neighbors);
+      std::span row = std::span(received_edges).subspan(begin, count);
+      if (!std::ranges::is_sorted(row, {}, &WeightedEdge::neighbour))
+        std::ranges::sort(row, {}, &WeightedEdge::neighbour);
+    }
+    else
+    {
+      std::span row = std::span(received_data).subspan(begin, count);
+      if (!std::ranges::is_sorted(row))
+        std::ranges::sort(row);
     }
   }
 
@@ -623,12 +636,19 @@ compute_nonlocal_dual_graph(
     {
       const std::int32_t begin = received_offsets[cell];
       const std::int32_t count = received_offsets[cell + 1] - begin;
-      std::copy_n(std::next(received_data.begin(), begin), count,
-                  std::next(data.begin(), disp[cell]));
       if (weighted)
       {
-        std::copy_n(std::next(received_weights.begin(), begin), count,
-                    std::next(edge_weights.begin(), disp[cell]));
+        for (std::int32_t j = 0; j < count; ++j)
+        {
+          const auto& [neighbour, weight] = received_edges[begin + j];
+          data[disp[cell] + j] = neighbour;
+          edge_weights[disp[cell] + j] = weight;
+        }
+      }
+      else
+      {
+        std::copy_n(std::next(received_data.begin(), begin), count,
+                    std::next(data.begin(), disp[cell]));
       }
     }
 
