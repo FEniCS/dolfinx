@@ -340,8 +340,26 @@ def _bc_dof_markers_pair(
 ) -> tuple[npt.NDArray[np.int8], npt.NDArray[np.int8]]:
     """Constrained dof markers on the test and trial spaces of a form.
 
-    A form with the same test and trial space marks its dofs once and
-    uses the result for both the rows and the columns.
+    Assembly zeroes the rows marked in the first array and the columns
+    marked in the second, so the pair is what a matrix assembler needs
+    to apply a set of boundary conditions.
+
+    A form whose test and trial space are the same object marks its
+    dofs once and shares the result, so the two returned arrays are
+    then the same array rather than equal copies. Callers must
+    therefore treat them as read-only.
+
+    Args:
+        V0: Test space, indexing the rows.
+        V1: Trial space, indexing the columns.
+        bcs: Boundary conditions. Only those defined on a space or a
+            subspace of it mark that space, so a condition on neither
+            contributes to neither.
+
+    Returns:
+        Markers on ``V0`` and on ``V1``, each with entry ``1`` for a
+        constrained dof (owned and ghost, unrolled) and ``0``
+        otherwise, or empty where no boundary condition applies.
     """
     markers0, markers1 = _bc_dof_markers_by_space([V0, V1], bcs)
     return markers0, markers1
