@@ -100,6 +100,46 @@ def test_interpolation_tensor_to_sym(dim, symmetry):
     assert np.isclose(l2_error, 0.0, atol=atol)
 
 
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("symmetry", [True, False])
+def test_interpolation_sym_to_tensor(dim, symmetry):
+    """Test interpolation from a Regge function into a (symmetric) 2-tensor space."""
+    comm = MPI.COMM_WORLD
+    if dim == 2:
+        mesh = dolfinx.mesh.create_unit_square(comm, 5, 5)
+    else:
+        mesh = dolfinx.mesh.create_unit_cube(comm, 5, 5, 5)
+
+    def tensor(x):
+        # symmetric and linear tensor: a_ij = a_i + a_j + δ_ij
+        points = x[:dim, None]
+        A = points + points.swapaxes(0, 1) + np.eye(dim)[:, :, None]
+        return A.reshape(dim * dim, -1)
+
+    element = basix.ufl.element(
+        "Lagrange",
+        mesh.basix_cell(),
+        1,
+        shape=(dim, dim),
+        symmetry=symmetry,
+        dtype=dolfinx.default_real_type,
+    )
+    u_lagrange = dolfinx.fem.Function(dolfinx.fem.functionspace(mesh, element))
+    u_lagrange.interpolate(tensor)
+
+    regge_element = basix.ufl.element(
+        "Regge", mesh.basix_cell(), 1, dtype=dolfinx.default_real_type
+    )
+    u_regge = dolfinx.fem.Function(dolfinx.fem.functionspace(mesh, regge_element))
+    u_regge.interpolate(u_lagrange)
+
+    l2_error = comm.allreduce(
+        dolfinx.fem.assemble_scalar(dolfinx.fem.form((u_lagrange - u_regge) ** 2 * ufl.dx))
+    )
+    atol = 10 * np.finfo(dolfinx.default_scalar_type).resolution
+    assert np.isclose(l2_error, 0.0, atol=atol)
+
+
 def test_eval():
     """Test that eval is correct for a symmetric 3x3 2-tensor is correct."""
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
