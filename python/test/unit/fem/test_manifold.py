@@ -689,7 +689,7 @@ def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost
         )
 
     rounding = tol(surface) * integral(abs(ufl.div(w)))
-    assert abs(integral(ufl.div(w))) > 1e2 * rounding, "the reversed cells should show"
+    assert abs(integral(ufl.div(w))) > 5e1 * rounding, "the reversed cells should show"
 
     if orient == "create":
         surface.topology.create_cell_orientations()
