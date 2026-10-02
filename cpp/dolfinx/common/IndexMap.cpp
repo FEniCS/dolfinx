@@ -12,6 +12,7 @@
 #include <cassert>
 #include <cstdint>
 #include <functional>
+#include <iterator>
 #include <numeric>
 #include <ranges>
 #include <set>
@@ -1172,176 +1173,131 @@ std::pair<std::vector<int>, std::vector<std::int32_t>>
 IndexMap::index_to_dest_ranks() const
 {
   const std::int64_t offset = _local_range[0];
+  const std::int32_t size_local = this->size_local();
+  const std::int32_t num_ghosts = this->num_ghosts();
 
-  // Array (local idx, ghosting rank) pairs for owned indices
-  std::vector<std::pair<std::int32_t, int>> idx_to_rank;
+  // 1. Send ghosts to their owners, receiving from each rank in _dest
+  //    the owned indices it ghosts, and build from these the ranks
+  //    ghosting each owned index: the owned part of the result, and the
+  //    input for the replies in step 2
+  const std::vector<std::uint8_t> include_ghost(num_ghosts, 1);
+  const auto [send_indices, recv_indices, ghost_buffer_pos, send_sizes,
+              recv_sizes, send_disp, recv_disp]
+      = communicate_ghosts_to_owners(_comm.comm(), _src, _dest, _ghosts,
+                                     _owners, include_ghost);
 
-  // 1. Build adjacency list data for owned indices (index, [sharing
-  //    ranks])
-  std::vector<std::int32_t> offsets{0};
-  std::vector<int> data;
+  // Count the requests for each owned index, then fill. Visiting _dest
+  // in order keeps each list sorted. offsets spans all local indices;
+  // its ghost part is filled in step 3.
+  std::vector<std::int32_t> offsets(size_local + num_ghosts + 1, 0);
+  for (std::int64_t idx : recv_indices)
   {
-    // Send ghost indices to owners, and receive the owned indices
-    // ghosted by each rank in _dest
-    const std::vector<std::uint8_t> include_ghost(_ghosts.size(), 1);
-    const auto communication = communicate_ghosts_to_owners(
-        _comm.comm(), _src, _dest, _ghosts, _owners, include_ghost);
-    const std::vector<std::int64_t>& recv_buffer = std::get<1>(communication);
-    const std::vector<int>& recv_disp = std::get<6>(communication);
-
-    // Build array of (local index, ghosting local rank), and sort
-    idx_to_rank.reserve(recv_buffer.size());
-    for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
+    assert(idx >= offset and idx < offset + size_local);
+    ++offsets[idx - offset + 1];
+  }
+  std::partial_sum(offsets.begin(), std::next(offsets.begin(), size_local + 1),
+                   offsets.begin());
+  std::vector<int> data(offsets[size_local]);
+  {
+    // Next free position in data for each owned index, starting at the
+    // start of its list. A copy: advancing offsets would lose the starts.
+    std::vector<std::int32_t> pos(offsets.begin(),
+                                  std::next(offsets.begin(), size_local));
+    for (std::size_t r = 0; r < _dest.size(); ++r)
     {
       for (int j = recv_disp[r]; j < recv_disp[r + 1]; ++j)
       {
-        idx_to_rank.push_back(
-            {static_cast<std::int32_t>(recv_buffer[j] - offset),
-             static_cast<int>(r)});
-      }
-    }
-    std::ranges::sort(idx_to_rank);
-
-    // -- Send to ranks that ghost my indices all the sharing ranks
-
-    // Build adjacency list data for (owned index) -> (ghosting ranks)
-    data.reserve(idx_to_rank.size());
-    std::ranges::transform(idx_to_rank, std::back_inserter(data),
-                           [](auto x) { return x.second; });
-    offsets.reserve(this->size_local() + this->num_ghosts() + 1);
-    {
-      auto it_idx = idx_to_rank.begin();
-
-      // Loop over owned indices
-      for (std::int32_t i = 0; i < this->size_local(); ++i)
-      {
-        auto it1 = std::find_if(it_idx, idx_to_rank.end(),
-                                [i](auto x) { return x.first != i; });
-        offsets.push_back(offsets.back() + std::ranges::distance(it_idx, it1));
-        it_idx = it1;
+        const std::int32_t local_idx = recv_indices[j] - offset;
+        data[pos[local_idx]++] = _dest[r];
       }
     }
   }
 
-  // 2. Build and add adjacency list data for non-owned indices
-  //    (index, [sharing ranks]). Non-owned indices are ghosted but
-  //    not owned by this rank.
+  // 2. Reply to each request for an owned index from rank r with the
+  //    other ranks sharing the index: its ghosting ranks bar r, and this
+  //    rank. Replies are sent in request order, which lets r place them
+  //    without a search.
+  const int rank = dolfinx::MPI::rank(_comm.comm());
+  std::vector<std::int32_t> reply_sizes;
+  reply_sizes.reserve(recv_indices.size());
+  std::vector<int> reply, reply_counts(_dest.size()),
+      reply_disp(_dest.size() + 1, 0);
+  for (std::size_t r = 0; r < _dest.size(); ++r)
   {
-    // Send data for owned indices back to ghosting ranks (this is
-    // necessary to share with ghosting ranks all the ranks that also
-    // ghost a ghost index)
-    std::vector<std::int64_t> send_buffer;
-    std::vector<int> send_sizes;
+    for (int j = recv_disp[r]; j < recv_disp[r + 1]; ++j)
     {
-      const int mpi_rank = dolfinx::MPI::rank(_comm.comm());
-      std::vector<std::vector<std::int64_t>> dest_idx_to_rank(_dest.size());
-      for (std::size_t n = 0; n < offsets.size() - 1; ++n)
-      {
-        std::span<const std::int32_t> ranks(data.data() + offsets[n],
-                                            offsets[n + 1] - offsets[n]);
-        for (auto r0 : ranks)
-        {
-          for (auto r : ranks)
-          {
-            assert(r0 < static_cast<int>(dest_idx_to_rank.size()));
-            if (r0 != r)
-            {
-              dest_idx_to_rank[r0].push_back(n + offset);
-              dest_idx_to_rank[r0].push_back(_dest[r]);
-            }
-          }
-          dest_idx_to_rank[r0].push_back(n + offset);
-          dest_idx_to_rank[r0].push_back(mpi_rank);
-        }
-      }
-
-      // Count number of ghosts per destination and build send buffer
-      std::ranges::transform(dest_idx_to_rank, std::back_inserter(send_sizes),
-                             [](auto& x) -> int { return x.size(); });
-      send_buffer.reserve(
-          std::reduce(send_sizes.begin(), send_sizes.end(), std::size_t(0)));
-      for (auto& d : dest_idx_to_rank)
-        send_buffer.insert(send_buffer.end(), d.begin(), d.end());
-
-      // Create owner -> ghost comm
-      MPI_Comm comm;
-      int ierr = MPI_Dist_graph_create_adjacent(
-          _comm.comm(), _src.size(), _src.data(), MPI_UNWEIGHTED, _dest.size(),
-          _dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-      dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-      // Send how many indices I ghost to each owner, and receive how
-      // many of my indices other ranks ghost
-      std::vector<int> recv_sizes(_src.size(), 0);
-      send_sizes.reserve(1);
-      recv_sizes.reserve(1);
-      ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT,
-                                   recv_sizes.data(), 1, MPI_INT, comm);
-      dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-      // Prepare displacement vectors
-      std::vector<int> send_disp(_dest.size() + 1, 0);
-      std::vector<int> recv_disp(_src.size() + 1, 0);
-      std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                       std::next(send_disp.begin()));
-      std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                       std::next(recv_disp.begin()));
-
-      std::vector<std::int64_t> recv_indices(recv_disp.back());
-      ierr = MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
-                                    send_disp.data(), MPI_INT64_T,
-                                    recv_indices.data(), recv_sizes.data(),
-                                    recv_disp.data(), MPI_INT64_T, comm);
-      dolfinx::MPI::check_error(_comm.comm(), ierr);
-      ierr = MPI_Comm_free(&comm);
-      dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-      // Build list of (ghost index, ghost position) pairs for indices
-      // ghosted by this rank, and sort
-      std::vector<std::pair<std::int64_t, std::int32_t>> idx_to_pos;
-      idx_to_pos.reserve(2 * _ghosts.size());
-      for (auto idx : _ghosts)
-      {
-        idx_to_pos.push_back(
-            {idx, static_cast<std::int32_t>(idx_to_pos.size())});
-      }
-      std::ranges::sort(idx_to_pos);
-
-      // Build list of (local ghost position, sharing rank) pairs from
-      // the received data, and sort
-      std::vector<std::pair<std::int32_t, int>> idxpos_to_rank;
-      for (std::size_t i = 0; i < recv_indices.size(); i += 2)
-      {
-        std::int64_t idx = recv_indices[i];
-        auto it = std::ranges::lower_bound(
-            idx_to_pos, std::pair<std::int64_t, std::int32_t>{idx, 0},
-            [](auto a, auto b) { return a.first < b.first; });
-        assert(it != idx_to_pos.end() and it->first == idx);
-
-        int sharing_rank = recv_indices[i + 1];
-        idxpos_to_rank.push_back({it->second, sharing_rank});
-      }
-      std::ranges::sort(idxpos_to_rank);
-
-      // Add processed received data to adjacency list data array, and
-      // extend offset array
-      std::ranges::transform(idxpos_to_rank, std::back_inserter(data),
-                             [](auto x) { return x.second; });
-      auto it = idxpos_to_rank.begin();
-      for (std::size_t i = 0; i < _ghosts.size(); ++i)
-      {
-        auto it1
-            = std::find_if(it, idxpos_to_rank.end(), [i](auto x)
-                           { return x.first != static_cast<std::int32_t>(i); });
-        offsets.push_back(offsets.back() + std::ranges::distance(it, it1));
-        it = it1;
-      }
+      // The list of local_idx in data holds the ranks ghosting it: r
+      // included, this rank not. The reply drops r and merges in this
+      // rank, so it stays sorted and has the same length.
+      const std::int32_t local_idx = recv_indices[j] - offset;
+      std::span<const int> ranks(data.data() + offsets[local_idx],
+                                 offsets[local_idx + 1] - offsets[local_idx]);
+      reply_sizes.push_back(ranks.size());
+      std::ranges::merge(ranks
+                             | std::views::filter([requester = _dest[r]](int s)
+                                                  { return s != requester; }),
+                         std::array{rank}, std::back_inserter(reply));
     }
+    reply_disp[r + 1] = reply.size();
+    reply_counts[r] = reply_disp[r + 1] - reply_disp[r];
   }
 
-  // Convert ranks for owned indices from neighbour to global ranks
-  std::ranges::transform(idx_to_rank, data.begin(),
-                         [this](auto x) { return _dest[x.second]; });
+  // Create owner -> ghost comm
+  MPI_Comm comm;
+  int ierr = MPI_Dist_graph_create_adjacent(
+      _comm.comm(), _src.size(), _src.data(), MPI_UNWEIGHTED, _dest.size(),
+      _dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  // Receive the reply size for each ghost, in send_indices order
+  std::vector<std::int32_t> ghost_reply_sizes(send_disp.back());
+  reply_sizes.reserve(1);
+  ghost_reply_sizes.reserve(1);
+  ierr = MPI_Neighbor_alltoallv(reply_sizes.data(), recv_sizes.data(),
+                                recv_disp.data(), MPI_INT32_T,
+                                ghost_reply_sizes.data(), send_sizes.data(),
+                                send_disp.data(), MPI_INT32_T, comm);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  // Receive the replies. The sizes give each owner's block.
+  std::vector<std::int32_t> ghost_reply_offsets(ghost_reply_sizes.size() + 1,
+                                                0);
+  std::partial_sum(ghost_reply_sizes.begin(), ghost_reply_sizes.end(),
+                   std::next(ghost_reply_offsets.begin()));
+  std::vector<int> ghost_reply_disp;
+  std::ranges::transform(send_disp, std::back_inserter(ghost_reply_disp),
+                         [&ghost_reply_offsets](int d) -> int
+                         { return ghost_reply_offsets[d]; });
+  std::vector<int> ghost_reply_counts(_src.size());
+  for (std::size_t s = 0; s < _src.size(); ++s)
+    ghost_reply_counts[s] = ghost_reply_disp[s + 1] - ghost_reply_disp[s];
+  std::vector<int> ghost_reply(ghost_reply_offsets.back());
+  reply.reserve(1);
+  reply_counts.reserve(1);
+  ghost_reply.reserve(1);
+  ghost_reply_counts.reserve(1);
+  ierr = MPI_Neighbor_alltoallv(reply.data(), reply_counts.data(),
+                                reply_disp.data(), MPI_INT, ghost_reply.data(),
+                                ghost_reply_counts.data(),
+                                ghost_reply_disp.data(), MPI_INT, comm);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+  ierr = MPI_Comm_free(&comm);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  // 3. Ranks sharing each ghost: the reply to send_indices[k] belongs to
+  //    ghost ghost_buffer_pos[k]
+  for (std::size_t k = 0; k < ghost_buffer_pos.size(); ++k)
+    offsets[size_local + 1 + ghost_buffer_pos[k]] = ghost_reply_sizes[k];
+  std::partial_sum(std::next(offsets.begin(), size_local), offsets.end(),
+                   std::next(offsets.begin(), size_local));
+  data.resize(offsets.back());
+  for (std::size_t k = 0; k < ghost_buffer_pos.size(); ++k)
+  {
+    std::copy_n(
+        std::next(ghost_reply.begin(), ghost_reply_offsets[k]),
+        ghost_reply_sizes[k],
+        std::next(data.begin(), offsets[size_local + ghost_buffer_pos[k]]));
+  }
 
   return {std::move(data), std::move(offsets)};
 }
