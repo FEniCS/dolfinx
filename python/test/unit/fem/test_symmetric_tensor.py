@@ -63,7 +63,8 @@ def test_interpolation():
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("symmetry", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_interpolation_symmetric_tensor(dim, symmetry, dtype):
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_interpolation_symmetric_tensor(dim, symmetry, dtype, degree):
     comm = MPI.COMM_WORLD
     real_type = dtype(0).real.dtype
     if dim == 2:
@@ -88,7 +89,7 @@ def test_interpolation_symmetric_tensor(dim, symmetry, dtype):
     element = basix.ufl.element(
         "Lagrange",
         mesh.basix_cell(),
-        1,
+        degree,
         shape=(dim, dim),
         symmetry=symmetry,
         dtype=real_type,
