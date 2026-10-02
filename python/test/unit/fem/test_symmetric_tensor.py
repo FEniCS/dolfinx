@@ -88,7 +88,7 @@ def test_interpolation_symmetric_tensor(dim, symmetry, etype, degree, dtype):
         1,
         dtype=real_type,
     )
-    u_regge = dolfinx.fem.Function(dolfinx.fem.functionspace(mesh, matrix_element), dtype=dtype)
+    u_matrix = dolfinx.fem.Function(dolfinx.fem.functionspace(mesh, matrix_element), dtype=dtype)
 
     element = basix.ufl.element(
         "Lagrange",
@@ -103,20 +103,20 @@ def test_interpolation_symmetric_tensor(dim, symmetry, etype, degree, dtype):
     def check_norm():
         l2_error = comm.allreduce(
             dolfinx.fem.assemble_scalar(
-                dolfinx.fem.form((u_lagrange - u_regge) ** 2 * ufl.dx, dtype=dtype)
+                dolfinx.fem.form((u_lagrange - u_matrix) ** 2 * ufl.dx, dtype=dtype)
             )
         )
         assert np.isclose(l2_error, 0.0, atol=10 * np.finfo(dtype).resolution)
 
-    # Regge to (possibly symmetric) Lagrange
-    u_regge.interpolate(tensor)
-    u_lagrange.interpolate(u_regge)
+    # Tensor to (symmetric) Lagrange
+    u_matrix.interpolate(tensor)
+    u_lagrange.interpolate(u_matrix)
     check_norm()
 
-    # (possibly symmetric) Lagrange to Regge
+    # (symmetric) Lagrange to Tensor
     u_lagrange.interpolate(tensor)
-    u_regge.x.array[:] = 0
-    u_regge.interpolate(u_lagrange)
+    u_matrix.x.array[:] = 0
+    u_matrix.interpolate(u_lagrange)
     check_norm()
 
 
