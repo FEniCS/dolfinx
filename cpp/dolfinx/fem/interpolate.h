@@ -564,6 +564,8 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   if (symmetric0 or symmetric1)
   {
     assert(element0->value_shape().size() == 2);
+    assert(!symmetric0 or element0->physical_base_value_size() == 1);
+    assert(!symmetric1 or element1->physical_base_value_size() == 1);
     matrix_size = element1->value_shape().front();
   }
 
