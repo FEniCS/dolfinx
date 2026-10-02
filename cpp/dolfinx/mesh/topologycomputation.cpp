@@ -365,8 +365,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   // Create a symmetric neighbor_comm from vertex_ranks
   common::Timer timer_li_nc("Entity local indexing: neighbourhood setup");
 
-  // Ranks that share vertices, and the neighbourhood ranks sharing each
-  // vertex
+  // Ranks sharing an owned or ghost vertex with this rank, and for each
+  // vertex the sharing ranks as positions in all_ranks
   auto [all_ranks, data, offsets]
       = common::compute_sharing_neighbourhood(vertex_map);
   graph::AdjacencyList<int> vertex_ranks(std::move(data), std::move(offsets));

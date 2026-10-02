@@ -494,8 +494,8 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   if (!map_e)
     throw std::runtime_error("Edges must be initialised");
 
-  // Ranks that share edges, and the neighbourhood ranks sharing each
-  // edge
+  // Ranks sharing an owned or ghost edge with this rank, and for each
+  // edge the sharing ranks as positions in ranks
   auto [ranks, _data, _offsets] = common::compute_sharing_neighbourhood(*map_e);
   graph::AdjacencyList<int> edge_ranks(std::move(_data), std::move(_offsets));
 
