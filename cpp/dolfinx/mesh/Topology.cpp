@@ -1027,6 +1027,12 @@ void Topology::set_cell_orientations(std::span<const std::int8_t> orientations)
     else
       _cell_permutations[c] &= ~reversed_cell_bit;
   }
+  _has_cell_orientations = true;
+}
+//-----------------------------------------------------------------------------
+bool Topology::has_cell_orientations() const noexcept
+{
+  return _has_cell_orientations;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int8_t> Topology::get_cell_orientations() const

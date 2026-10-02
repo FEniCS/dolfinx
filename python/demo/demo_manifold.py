@@ -88,7 +88,8 @@ import ufl
 # and set the degree $k$ of the Raviart-Thomas space, which is also the
 # degree of the geometry, the mesh resolution, and how the cells are
 # oriented (see below): `"computed"` from the vertex orders, `"outward"`
-# from the geometry, or `None` to see what goes wrong without.
+# from the geometry, or `None` to keep each cell's own vertex order and
+# see what goes wrong.
 
 order = 3
 res = 0.2
@@ -142,7 +143,8 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 #
 # The orientation must be requested explicitly, as it is needed only by
 # $H(\mathrm{div})$ elements on surfaces. Lagrange and Nédélec elements
-# do not depend on it.
+# do not depend on it. Creating an $H(\mathrm{div})$ space on a surface
+# whose orientation has been neither computed nor set raises an error.
 #
 # A known orientation can be set instead with
 # {py:meth}`set_cell_orientations
@@ -159,28 +161,32 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 # that the orientation is consistent.
 
 # +
+cell_map = mesh.topology.index_map(2)
+num_cells = cell_map.size_local + cell_map.num_ghosts
 if orientation == "computed":
     mesh.topology.create_cell_orientations()
 elif orientation == "outward":
     # Evaluate n . x at the midpoint of each owned and ghost cell
-    cell_map = mesh.topology.index_map(2)
-    cells = np.arange(cell_map.size_local + cell_map.num_ghosts, dtype=np.int32)
+    cells = np.arange(num_cells, dtype=np.int32)
     midpoint = basix.geometry(mesh.basix_cell()).mean(axis=0, keepdims=True)
     x = ufl.SpatialCoordinate(mesh)
     n_dot_x = dolfinx.fem.Expression(
         ufl.dot(ufl.CellNormal(mesh), x), midpoint, dtype=dolfinx.default_real_type
     )
     mesh.topology.set_cell_orientations(np.where(n_dot_x.eval(mesh, cells).ravel() > 0, 1, -1))
+else:
+    # Keep each cell's own vertex order, which is not consistent here
+    mesh.topology.set_cell_orientations(np.ones(num_cells, dtype=np.int8))
 
 if orientation is not None:
     # Count the cells whose orientation is reversed relative to their
     # own vertex order. The count is nonzero, as the facets of the ball
     # are not consistently ordered.
     orientations = mesh.topology.get_cell_orientations()
-    num_owned = mesh.topology.index_map(2).size_local
+    num_owned = cell_map.size_local
     num_reversed = mesh.comm.allreduce(int(np.sum(orientations[:num_owned] < 0)), op=MPI.SUM)
     if mesh.comm.rank == 0:
-        print(f"{num_reversed} of {mesh.topology.index_map(2).size_global} cells reversed")
+        print(f"{num_reversed} of {cell_map.size_global} cells reversed")
 # -
 
 # ### Function spaces
@@ -271,8 +277,8 @@ if dolfinx.has_adios2:
 # $\sigma_h$ in the $L^2$ and $H(\mathrm{div})$ norms. As
 # $\nabla \cdot \sigma = g - r$ and $r = 0$, the divergence of the exact
 # flux is $g$. The computed and the outward orientation give the same
-# errors. Without an orientation, they are several orders of magnitude
-# larger.
+# errors. With the cells' own vertex orders, they are several orders of
+# magnitude larger.
 
 # +
 L2_error_u = dolfinx.fem.form(ufl.inner(u_h - u_exact, u_h - u_exact) * ufl.dx)

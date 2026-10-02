@@ -182,10 +182,11 @@ public:
   /// orientation. Instead, the vertex order of each cell fixes its
   /// normal, and elements mapped by the contravariant Piola map (e.g.
   /// Raviart-Thomas, Brezzi-Douglas-Marini) are conforming only between
-  /// cells whose normals agree. Such spaces need this call on a surface
-  /// whose cells may not be consistently ordered, e.g. one extracted
-  /// from a volume mesh with create_submesh. Lagrange and Nédélec spaces
-  /// do not need it.
+  /// cells whose normals agree. A function space with such an element
+  /// can therefore only be created on a manifold mesh once an
+  /// orientation has been computed with this call or set with
+  /// set_cell_orientations (see has_cell_orientations). Lagrange and
+  /// Nédélec spaces do not need it.
   ///
   /// The orientation is computed from the vertex orders alone (see
   /// compute_cell_orientations), and can be read back with
@@ -198,11 +199,9 @@ public:
   /// functions and, with them, the degrees-of-freedom, so the field they
   /// represent is unchanged.
   ///
-  /// @warning Call this before computing degrees-of-freedom on spaces
-  /// whose basis depends on the cell orientation, e.g. by
-  /// interpolation. Degrees-of-freedom computed beforehand follow the
-  /// cells' own vertex orders and are not corrected, so this call
-  /// invalidates existing Function data on such spaces.
+  /// @warning Changing the orientation after creating spaces whose basis
+  /// depends on it invalidates existing Function data on them, as their
+  /// degrees-of-freedom are not corrected.
   ///
   /// @note Collective.
   /// @throws std::invalid_argument If the topological dimension is not
@@ -217,11 +216,21 @@ public:
   ///
   /// @return For each owned and ghost cell, in local cell order, `-1`
   /// if its orientation is reversed and `1` otherwise. All are `1` if
-  /// create_cell_orientations has not been called.
+  /// no orientation has been computed or set (see
+  /// has_cell_orientations).
   /// @throws std::runtime_error If create_cell_permutations has not
   /// been called.
   /// @throws std::out_of_range If there is more than one cell type.
   std::vector<std::int8_t> get_cell_orientations() const;
+
+  /// @brief Check if a cell orientation has been computed or set (see
+  /// create_cell_orientations and set_cell_orientations).
+  ///
+  /// Function spaces whose basis depends on the cell orientation can
+  /// only be created once it has.
+  ///
+  /// @return True if the cell orientation has been computed or set.
+  bool has_cell_orientations() const noexcept;
 
   /// @brief Set the orientation of each cell relative to the
   /// orientation of its surface.
@@ -229,11 +238,13 @@ public:
   /// An alternative to create_cell_orientations for when a consistent
   /// orientation is known, e.g. the outward normal of a closed surface.
   /// It is stored in the same way, but not checked for consistency
-  /// between neighbouring cells.
+  /// between neighbouring cells. On a mesh whose cells are consistently
+  /// ordered, setting all orientations to `1` keeps each cell's own
+  /// vertex order.
   ///
-  /// @warning As for create_cell_orientations, call this before
-  /// computing degrees-of-freedom on spaces whose basis depends on the
-  /// cell orientation.
+  /// @warning As for create_cell_orientations, changing the orientation
+  /// after creating spaces whose basis depends on it invalidates existing
+  /// Function data on them.
   ///
   /// @note Collective, as it creates the cell permutation info if needed
   /// (see create_cell_permutations).
@@ -398,6 +409,10 @@ private:
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
   std::vector<std::uint32_t> _cell_permutations;
+
+  // Whether a cell orientation has been computed or set. Not encoded in
+  // _cell_permutations, where an unset orientation reads as all 1.
+  bool _has_cell_orientations = false;
 
   // List of facets that are on the inter-process boundary for each
   // facet type. _interprocess_facets[i] is the inter-process facets of

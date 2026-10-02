@@ -565,15 +565,13 @@ public:
   /// is reversed relative to the mesh (see
   /// mesh::Topology::create_cell_orientations).
   ///
-  /// True for elements mapped by the contravariant Piola map on a
-  /// manifold, and for mixed elements with such a sub-element.
-  ///
-  /// @note The sign change is applied by the DOF transformations (see
-  /// T_apply()). An element for which needs_dof_transformations() is
-  /// false therefore ignores the cell orientation, even if this returns
-  /// true. This is the case for discontinuous elements, where it is
-  /// harmless: with no continuity between cells to preserve, a sign per
-  /// cell changes the basis but not the space.
+  /// True for H(div)-conforming elements on a manifold, i.e. elements
+  /// mapped by the contravariant Piola map that need DOF transformations
+  /// (see T_apply(), which applies the sign), and for mixed elements with
+  /// such a sub-element. Discontinuous elements mapped by the
+  /// contravariant Piola map do not depend on it: with no continuity
+  /// between cells to preserve, a sign per cell changes the basis but not
+  /// the space.
   ///
   /// @return True if the basis depends on the cell orientation.
   bool depends_on_cell_orientation() const noexcept;

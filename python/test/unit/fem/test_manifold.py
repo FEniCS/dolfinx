@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 
 import ufl
-from basix.ufl import element
+from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
 from dolfinx.fem import (
     Constant,
@@ -55,7 +55,7 @@ TANGENTS = {2: (np.array([1.0, 0.0]), np.array([0.0, 1.0]))}
 TANGENTS[3] = (np.array([1.0, 0.0, 1.0]), np.array([0.0, 1.0, 0.0]))
 
 
-def plane_mesh(n, gdim, dtype=default_real_type, mixed_orientation=False):
+def plane_mesh(n, gdim, dtype=default_real_type, mixed_orientation=False, orient=True):
     """Triangulate the unit square with ``2 * n**2`` cells.
 
     For ``gdim == 3`` the square is embedded in R^3 as the plane
@@ -64,6 +64,8 @@ def plane_mesh(n, gdim, dtype=default_real_type, mixed_orientation=False):
 
     Every cell's vertices run anticlockwise, so all cell normals agree.
     With ``mixed_orientation`` every other cell is reversed instead.
+    With ``orient`` the cell orientation is computed, which
+    H(div) spaces on the manifold need.
     """
     if MPI.COMM_WORLD.rank == 0:
         s = np.linspace(0.0, 1.0, n + 1)
@@ -94,7 +96,10 @@ def plane_mesh(n, gdim, dtype=default_real_type, mixed_orientation=False):
         cells = np.zeros((0, 3), dtype=np.int64)
 
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(gdim,), dtype=dtype))
-    return create_mesh(MPI.COMM_WORLD, cells, domain, x.astype(dtype))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x.astype(dtype))
+    if orient:
+        mesh.topology.create_cell_orientations()
+    return mesh
 
 
 def tangential_constant(gdim):
@@ -477,6 +482,13 @@ def reversed_cells(mesh):
     return mesh.topology.get_cell_orientations() < 0
 
 
+def keep_vertex_orders(mesh):
+    """Set the orientation of every cell to ``1``, keeping its own vertex order."""
+    cell_map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = cell_map.size_local + cell_map.num_ghosts
+    mesh.topology.set_cell_orientations(np.ones(num_cells, dtype=np.int8))
+
+
 def cube_surface(ghost_mode, cell_type=CellType.tetrahedron):
     """The boundary of a cube, as a facet submesh.
 
@@ -571,12 +583,15 @@ def test_interpolate_on_mixed_cell_orientations(gdim, spec):
     cells are oriented.
     """
     family, degree, linear = spec
-    mesh = plane_mesh(2, gdim, mixed_orientation=True)
+    mesh = plane_mesh(2, gdim, mixed_orientation=True, orient=False)
+    contravariant_on_manifold = gdim == 3 and family in ("RT", "BDM")
+    if contravariant_on_manifold:
+        keep_vertex_orders(mesh)  # Inconsistent, but lets the space be created
     V = functionspace(mesh, element(family, "triangle", degree, dtype=default_real_type))
     f, f_ufl = tangential_field(mesh, linear)
 
     w = Function(V, dtype=default_real_type)
-    if gdim == 3 and family in ("RT", "BDM"):
+    if contravariant_on_manifold:
         w.interpolate(f)
         assert l2_error(mesh, w - f_ufl) > 0.1, "the reversed cells should show"
         mesh.topology.create_cell_orientations()
@@ -621,6 +636,7 @@ def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost
     outward one.
     """
     surface = cube_surface(ghost_mode, cell_type)
+    keep_vertex_orders(surface)  # Inconsistent, but lets the space be created
     V = functionspace(
         surface, element(family, surface.basix_cell(), degree, dtype=default_real_type)
     )
@@ -676,7 +692,7 @@ def test_cell_orientations_undo_mixed_vertex_orders():
     With ``mixed_orientation`` the even original cells are reversed.
     Which of the two groups is flagged depends on the partitioning.
     """
-    mesh = plane_mesh(2, 3, mixed_orientation=True)
+    mesh = plane_mesh(2, 3, mixed_orientation=True, orient=False)
     mesh.topology.create_cell_orientations()
     num_owned = mesh.topology.index_map(2).size_local
     even = np.asarray(mesh.topology.original_cell_index[:num_owned]) % 2 == 0
@@ -689,7 +705,7 @@ def test_cell_orientations_undo_mixed_vertex_orders():
 
 def test_get_cell_orientations():
     """All cells have orientation ``1`` until the cells are oriented, then ``1`` or ``-1``."""
-    mesh = plane_mesh(2, 3, mixed_orientation=True)
+    mesh = plane_mesh(2, 3, mixed_orientation=True, orient=False)
     mesh.topology.create_cell_permutations()
     cell_map = mesh.topology.index_map(2)
     num_cells = cell_map.size_local + cell_map.num_ghosts
@@ -708,7 +724,7 @@ def test_get_cell_orientations():
 
 def test_set_cell_orientations():
     """Set orientations are read back, and replace computed ones."""
-    mesh = plane_mesh(2, 3, mixed_orientation=True)
+    mesh = plane_mesh(2, 3, mixed_orientation=True, orient=False)
     mesh.topology.create_cell_orientations()
     cell_map = mesh.topology.index_map(2)
     num_cells = cell_map.size_local + cell_map.num_ghosts
@@ -729,7 +745,7 @@ def test_set_cell_orientations_need_one_per_cell():
 def test_cell_orientations_do_not_change_other_elements():
     """Orientations change no element off a manifold, nor covariant ones on it."""
     for gdim, family in [(2, "RT"), (3, "N1curl")]:
-        mesh = plane_mesh(2, gdim, mixed_orientation=True)
+        mesh = plane_mesh(2, gdim, mixed_orientation=True, orient=False)
         V = functionspace(mesh, element(family, "triangle", 1, dtype=default_real_type))
         f, _ = tangential_field(mesh, False)
         before = Function(V, dtype=default_real_type)
@@ -759,6 +775,30 @@ def test_cell_orientations_refuse_a_t_joint(dests):
     mesh = t_joint_mesh(dests)
     with pytest.raises(RuntimeError, match="more than two cells"):
         mesh.topology.create_cell_orientations()
+
+
+def test_function_space_needs_cell_orientations():
+    """H(div) spaces on a manifold need an orientation, other spaces do not."""
+
+    def make(family, degree=1, **kwargs):
+        return element(family, "triangle", degree, dtype=default_real_type, **kwargs)
+
+    mesh = plane_mesh(1, 3, orient=False)
+    assert not mesh.topology.has_cell_orientations()
+    needs = [make("RT"), make("BDM"), mixed_element([make("RT"), make("DG", degree=0)])]
+    for e in needs:
+        with pytest.raises(RuntimeError, match="create_cell_orientations"):
+            functionspace(mesh, e)
+    for e in [make("N1curl"), make("RT", discontinuous=True), make("Lagrange")]:
+        functionspace(mesh, e)
+    functionspace(plane_mesh(1, 2, orient=False), make("RT"))  # Not a manifold
+
+    keep_vertex_orders(mesh)
+    assert mesh.topology.has_cell_orientations()
+    for e in needs:
+        functionspace(mesh, e)
+    functionspace(mesh, needs[2]).sub(0).collapse()
+    assert plane_mesh(1, 3).topology.has_cell_orientations()
 
 
 def test_cell_orientations_need_a_surface():

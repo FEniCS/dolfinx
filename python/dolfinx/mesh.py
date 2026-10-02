@@ -454,20 +454,17 @@ class Topology:
         The cells are not modified. On a surface, elements mapped by the
         contravariant Piola map (e.g. Raviart-Thomas,
         Brezzi-Douglas-Marini) are conforming only between cells whose
-        vertex orders give the same normal. These spaces need this call
-        if the cells may not be consistently ordered, e.g. on a surface
-        extracted from a volume mesh with
-        :func:`dolfinx.mesh.create_submesh`. Lagrange and Nédélec spaces
+        vertex orders give the same normal. On a manifold, these spaces
+        can therefore only be created once an orientation has been
+        computed with this call or set with :meth:`set_cell_orientations`
+        (see :meth:`has_cell_orientations`). Lagrange and Nédélec spaces
         do not need it. The result is read with
-        :meth:`get_cell_orientations`, and a known orientation can be set
-        instead with :meth:`set_cell_orientations`.
+        :meth:`get_cell_orientations`.
 
         Warning:
-            Call this before computing degrees-of-freedom on such spaces,
-            e.g. by interpolation. Degrees-of-freedom computed beforehand
-            follow the cells' own vertex orders and are not corrected, so
-            this call invalidates existing
-            :class:`dolfinx.fem.Function` data on such spaces.
+            Changing the orientation after creating such spaces
+            invalidates existing :class:`dolfinx.fem.Function` data on
+            them, as their degrees-of-freedom are not corrected.
 
         Note:
             Collective.
@@ -490,8 +487,8 @@ class Topology:
 
         Returns:
             For each owned and ghost cell, ``-1`` if its orientation is
-            reversed and ``1`` otherwise. All ``1`` if
-            :meth:`create_cell_orientations` has not been called.
+            reversed and ``1`` otherwise. All ``1`` if no orientation has
+            been computed or set (see :meth:`has_cell_orientations`).
 
         Raises:
             RuntimeError: If the cell permutations have not been created
@@ -499,18 +496,31 @@ class Topology:
         """
         return self._cpp_object.get_cell_orientations()
 
+    def has_cell_orientations(self) -> bool:
+        """Check if a cell orientation has been computed or set.
+
+        Function spaces whose basis depends on the cell orientation, e.g.
+        Raviart-Thomas on a manifold, can only be created once it has
+        (see :meth:`create_cell_orientations` and
+        :meth:`set_cell_orientations`).
+        """
+        return self._cpp_object.has_cell_orientations()
+
     def set_cell_orientations(self, orientations: npt.ArrayLike) -> None:
         """Set the orientation of each cell relative to its surface.
 
         An alternative to :meth:`create_cell_orientations` for when a
         consistent orientation is known, e.g. the outward normal of a
         closed surface. It is stored in the same way, but not checked for
-        consistency between neighbouring cells.
+        consistency between neighbouring cells. On a mesh whose cells are
+        consistently ordered, setting all orientations to ``1`` keeps
+        each cell's own vertex order.
 
         Warning:
-            As for :meth:`create_cell_orientations`, call this before
-            computing degrees-of-freedom on spaces whose basis depends on
-            the cell orientation.
+            As for :meth:`create_cell_orientations`, changing the
+            orientation after creating spaces whose basis depends on it
+            invalidates existing :class:`dolfinx.fem.Function` data on
+            them.
 
         Note:
             Collective.

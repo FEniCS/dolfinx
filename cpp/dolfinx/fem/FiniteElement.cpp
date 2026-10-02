@@ -193,10 +193,13 @@ FiniteElement<T>::FiniteElement(
     _sub_elements = {};
 
   // On a manifold, the contravariant Piola map pushes the tdim reference
-  // components forward to gdim physical components
+  // components forward to gdim physical components. The sign is applied
+  // by the DOF transformations, so an element without them, e.g. a
+  // discontinuous one, does not depend on the orientation.
   _depends_on_cell_orientation
       = element.map_type() == basix::maps::type::contravariantPiola
-        and physical_base_value_size() != reference_value_size();
+        and physical_base_value_size() != reference_value_size()
+        and _needs_dof_transformations;
 
   std::string family;
   switch (_element->family())

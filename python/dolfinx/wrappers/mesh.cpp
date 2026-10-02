@@ -258,6 +258,9 @@ void mesh(nb::module_& m)
           "get_cell_orientations", [](const dolfinx::mesh::Topology& self)
           { return as_nbarray(self.get_cell_orientations()); },
           "Orientation (+1/-1) of each cell relative to its surface.")
+      .def("has_cell_orientations",
+           &dolfinx::mesh::Topology::has_cell_orientations,
+           "Check if a cell orientation has been computed or set.")
       .def(
           "set_cell_orientations",
           [](dolfinx::mesh::Topology& self,
