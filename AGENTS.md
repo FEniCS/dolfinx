@@ -52,10 +52,8 @@ disclosure process.
   mechanical check: configure with
   `-DCMAKE_VERIFY_INTERFACE_HEADER_SETS=ON` and build the
   `all_verify_interface_header_sets` target, which compiles each header
-  in the target's header sets on its own. Some `fem/` headers are known
-  to fail it because `fem/Function.h` and `fem/assembler.h` include one
-  another; that is a design issue rather than a missing include, so do
-  not "fix" it by adding includes.
+  in the target's header sets on its own. Every installed header is
+  expected to pass it.
 - **Namespaces**: library code lives in `dolfinx::<module>` (e.g.
   `dolfinx::io::hdf5`). In `.cpp` files, prefer `using namespace
   dolfinx;` at the top and qualify definitions with the remaining

@@ -348,13 +348,13 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 
   // Vertex global ids and ghost markers
   adios2::Variable orig_id = impl_adios2::define_variable<std::int64_t>(
-      io, "vtkOriginalPointIds", {}, {}, {num_vertices});
+      io, "vtkOriginalPointIds", {}, {}, {num_vertices, 1});
   engine.Put(orig_id, geometry.input_global_indices().data());
 
   std::vector<std::uint8_t> x_ghost(num_vertices, 0);
   std::fill(std::next(x_ghost.begin(), x_map->size_local()), x_ghost.end(), 1);
   adios2::Variable ghost = impl_adios2::define_variable<std::uint8_t>(
-      io, "vtkGhostType", {}, {}, {x_ghost.size()});
+      io, "vtkGhostType", {}, {}, {x_ghost.size(), 1});
   engine.Put(ghost, x_ghost.data());
   engine.PerformPuts();
 }
@@ -665,10 +665,10 @@ public:
       {
         // Node global ids
         adios2::Variable orig_id = impl_adios2::define_variable<std::int64_t>(
-            *_io, "vtkOriginalPointIds", {}, {}, {_x_id.size()});
+            *_io, "vtkOriginalPointIds", {}, {}, {_x_id.size(), 1});
         _engine->Put(orig_id, _x_id.data());
         adios2::Variable ghost = impl_adios2::define_variable<std::uint8_t>(
-            *_io, "vtkGhostType", {}, {}, {_x_ghost.size()});
+            *_io, "vtkGhostType", {}, {}, {_x_ghost.size(), 1});
         _engine->Put(ghost, _x_ghost.data());
         _engine->PerformPuts();
       }

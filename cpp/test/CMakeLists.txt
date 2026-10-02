@@ -45,6 +45,7 @@ add_executable(
   common/index_map.cpp
   common/move_semantics.cpp
   common/sort.cpp
+  fem/assembly_kernels.cpp
   fem/form.cpp
   fem/functionspace.cpp
   mesh/branching_manifold.cpp
