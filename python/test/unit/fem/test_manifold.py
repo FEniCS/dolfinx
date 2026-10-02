@@ -30,6 +30,7 @@ from dolfinx.fem import (
     Expression,
     Function,
     assemble_scalar,
+    assemble_vector,
     create_interpolation_data,
     discrete_gradient,
     form,
@@ -37,6 +38,7 @@ from dolfinx.fem import (
     interpolation_matrix,
 )
 from dolfinx.graph import adjacencylist
+from dolfinx.la import InsertMode
 from dolfinx.mesh import (
     CellType,
     GhostMode,
@@ -489,14 +491,16 @@ def keep_vertex_orders(mesh):
     mesh.topology.set_cell_orientations(np.ones(num_cells, dtype=np.int8))
 
 
-def cube_surface(ghost_mode, cell_type=CellType.tetrahedron):
+def cube_surface(ghost_mode, cell_type=CellType.tetrahedron, dtype=default_real_type):
     """The boundary of a cube, as a facet submesh.
 
     Its cells keep the vertex order of the cube's facets, so their
     normals point both inwards and outwards. They are triangles for a
     tetrahedral and quadrilaterals for a hexahedral cube.
     """
-    cube = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, cell_type=cell_type, ghost_mode=ghost_mode)
+    cube = create_unit_cube(
+        MPI.COMM_WORLD, 3, 3, 3, cell_type=cell_type, ghost_mode=ghost_mode, dtype=dtype
+    )
     cube.topology.create_connectivity(2, 3)
     return create_submesh(cube, 2, exterior_facet_indices(cube.topology))[0]
 
@@ -649,6 +653,7 @@ def test_interpolate_discontinuous_rt_on_mixed_cell_orientations(degree, linear)
     np.testing.assert_array_equal(w_oriented.x.array, w.x.array)
 
 
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("orient", ["create", "set_outward"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize(
@@ -662,34 +667,37 @@ def test_interpolate_discontinuous_rt_on_mixed_cell_orientations(degree, linear)
         (CellType.hexahedron, "BDMCF", 1),
     ],
 )
-def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost_mode, orient):
-    """``int div(w) dx = 0`` on a closed surface, for any conforming ``w``.
+def test_divergence_theorem_on_a_closed_surface(
+    cell_type, family, degree, ghost_mode, orient, dtype
+):
+    """``int div(phi) dx = 0`` on a closed surface, for every basis function.
 
-    Summed over the cells, the flux through each edge cancels between
-    the two cells sharing it, provided they agree about its direction.
-    The degrees-of-freedom are set from their global index, so the field
-    does not depend on the partition. The surface of a hexahedral cube
-    has quadrilateral cells, which run their edges in other directions
-    than triangles. The orientation is either computed or set to the
-    outward one.
+    Equivalently ``int div(w) dx = 0`` for any conforming ``w``. The flux
+    of a basis function through an edge cancels between the two cells
+    sharing it, provided they agree about its direction. Where they do
+    not, it adds up to ``+-2``. Checking each basis function rather than
+    one field avoids cancellation between edges. The surface of a
+    hexahedral cube has quadrilateral cells, which run their edges in
+    other directions than triangles. The orientation is either computed
+    or set to the outward one.
     """
-    surface = cube_surface(ghost_mode, cell_type)
+    surface = cube_surface(ghost_mode, cell_type, dtype)
     keep_vertex_orders(surface)  # Inconsistent, but lets the space be created
-    V = functionspace(
-        surface, element(family, surface.basix_cell(), degree, dtype=default_real_type)
-    )
-    w = Function(V, dtype=default_real_type)
-    imap = V.dofmap.index_map
-    indices = np.arange(imap.size_local + imap.num_ghosts, dtype=np.int32)
-    w.x.array[:] = np.sin(imap.local_to_global(indices).astype(default_real_type) + 0.3)
+    V = functionspace(surface, element(family, surface.basix_cell(), degree, dtype=dtype))
+    divergence = form(ufl.div(ufl.TestFunction(V)) * ufl.dx, dtype=dtype)
+    num_owned_dofs = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
 
-    def integral(e):
-        return surface.comm.allreduce(
-            assemble_scalar(form(e * ufl.dx, dtype=default_real_type)), op=MPI.SUM
-        )
+    def max_divergence_integral():
+        """``max_i |int div(phi_i) dx|`` over all basis functions."""
+        b = assemble_vector(divergence)
+        b.scatter_reverse(InsertMode.add)
+        local_max = np.max(np.abs(b.array[:num_owned_dofs]), initial=0)
+        return surface.comm.allreduce(local_max, op=MPI.MAX)
 
-    rounding = tol(surface) * integral(abs(ufl.div(w)))
-    assert abs(integral(ufl.div(w))) > 5e1 * rounding, "the reversed cells should show"
+    # A basis function's flux through an edge is O(1), so its rounding is
+    # O(tol)
+    before = max_divergence_integral()
+    assert before > 1e2 * tol(surface), "the reversed cells should show"
 
     if orient == "create":
         surface.topology.create_cell_orientations()
@@ -701,7 +709,7 @@ def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost
     )
     num_cells = surface.topology.index_map(2).size_global
     assert 0 < num_reversed < num_cells, "the test needs cells of both orientations"
-    assert abs(integral(ufl.div(w))) < rounding
+    assert max_divergence_integral() < tol(surface) * before
 
 
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
