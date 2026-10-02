@@ -62,9 +62,10 @@ def test_interpolation():
 
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("symmetry", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("etype", ["Regge", "HHJ"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def test_interpolation_symmetric_tensor(dim, symmetry, dtype, degree):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_interpolation_symmetric_tensor(dim, symmetry, etype, degree, dtype):
     comm = MPI.COMM_WORLD
     real_type = dtype(0).real.dtype
     if dim == 2:
@@ -78,13 +79,13 @@ def test_interpolation_symmetric_tensor(dim, symmetry, dtype, degree):
         A = points + points.swapaxes(0, 1) + np.eye(dim)[:, :, None]
         return A.reshape(dim * dim, -1)
 
-    regge_element = basix.ufl.element(
-        "Regge",
+    matrix_element = basix.ufl.element(
+        etype,
         mesh.basix_cell(),
         1,
         dtype=real_type,
     )
-    u_regge = dolfinx.fem.Function(dolfinx.fem.functionspace(mesh, regge_element), dtype=dtype)
+    u_regge = dolfinx.fem.Function(dolfinx.fem.functionspace(mesh, matrix_element), dtype=dtype)
 
     element = basix.ufl.element(
         "Lagrange",
