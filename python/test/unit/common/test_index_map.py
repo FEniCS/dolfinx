@@ -13,7 +13,7 @@ import pytest
 
 from dolfinx.common import create_sub_index_map, index_map, scatterer
 from dolfinx.fem import functionspace
-from dolfinx.mesh import GhostMode, create_unit_square
+from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square
 
 
 def test_sub_index_map():
@@ -295,3 +295,55 @@ def test_index_map_equality():
     # A distinct C++ index map, even with the same layout, is not equal
     assert imap != index_map(MPI.COMM_WORLD, imap.size_local)
     assert imap != msh.topology.index_map(msh.topology.dim)
+
+
+def _check_index_to_dest_ranks(imap):
+    """Check IndexMap.index_to_dest_ranks against a gather of all indices."""
+    comm = imap.comm
+    num_local = imap.size_local + imap.num_ghosts
+    global_indices = imap.local_to_global(np.arange(num_local, dtype=np.int32))
+
+    # Ranks holding each global index, as owner or ghost
+    holders: dict[int, set[int]] = {}
+    for rank, indices in enumerate(comm.allgather(global_indices)):
+        for idx in indices:
+            holders.setdefault(int(idx), set()).add(rank)
+
+    data, offsets = imap.index_to_dest_ranks()
+    assert offsets.shape == (num_local + 1,)
+    assert offsets[-1] == data.size
+    for i, idx in enumerate(global_indices):
+        sharing = np.sort(data[offsets[i] : offsets[i + 1]])
+        assert sharing.tolist() == sorted(holders[int(idx)] - {comm.rank})
+
+
+@pytest.mark.parametrize("seed", [0, 1, 2])
+def test_index_to_dest_ranks(seed):
+    """Sharing ranks of an index map with randomly chosen ghosts."""
+    comm = MPI.COMM_WORLD
+    local_size = 10
+
+    # Ghost random indices owned by other ranks, so ranks can ghost the
+    # same index and the source and destination ranks differ
+    rng = np.random.default_rng(seed + 100 * comm.rank)
+    owned = np.arange(local_size * comm.rank, local_size * (comm.rank + 1))
+    candidates = np.setdiff1d(np.arange(local_size * comm.size), owned)
+    ghosts = rng.choice(candidates, size=min(6, candidates.size), replace=False)
+    ghosts = ghosts.astype(np.int64)
+    owners = (ghosts // local_size).astype(np.int32)
+
+    imap = index_map(comm, local_size, (ghosts, owners))
+    _check_index_to_dest_ranks(imap)
+
+
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("tdim", [2, 3])
+def test_index_to_dest_ranks_mesh(ghost_mode, tdim):
+    """Sharing ranks of the index maps of all mesh entity dimensions."""
+    if tdim == 2:
+        msh = create_unit_square(MPI.COMM_WORLD, 8, 8, ghost_mode=ghost_mode)
+    else:
+        msh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, ghost_mode=ghost_mode)
+    for d in range(tdim + 1):
+        msh.topology.create_entities(d)
+        _check_index_to_dest_ranks(msh.topology.index_map(d))
