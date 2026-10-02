@@ -168,7 +168,12 @@ public:
   /// (see Topology::index_map).
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
-  /// @brief Orient the cells of a surface mesh consistently.
+  /// @brief Compute and store a per-cell marker for a consistent
+  /// orientation of a surface mesh.
+  ///
+  /// The cells are not modified. A marker is computed for each cell and
+  /// stored in the cell permutation info, where elements whose basis
+  /// depends on the cell orientation consume it.
   ///
   /// On a manifold mesh, whose topological dimension is less than its
   /// geometric dimension, the Jacobian of a cell is not square and its
