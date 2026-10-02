@@ -560,7 +560,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
       basis_reference0_b.data(), Xshape[0], dim0, value_size_ref0);
 
   // Size of (rank-2) tensor for symmetric elements
-  int matrix_size = 0;
+  std::size_t matrix_size = 0;
   if (symmetric0 or symmetric1)
   {
     assert(element0->value_shape().size() == 2);
