@@ -232,7 +232,8 @@ SparsityPattern::bucket_cache(std::int32_t num_rows,
 SparsityPattern::SparsityPattern(
     MPI_Comm comm, std::array<std::shared_ptr<const common::IndexMap>, 2> maps,
     std::array<int, 2> bs)
-    : _comm(comm), _index_maps(std::move(maps)), _bs(bs)
+    : _comm(comm), _index_maps(std::move(maps)), _col_index_map(_index_maps[1]),
+      _bs(bs)
 {
   assert(_index_maps[0]);
 }
@@ -279,6 +280,7 @@ SparsityPattern::SparsityPattern(
       comm, local_offset0.back(), ghosts0, ghost_owners0);
   _index_maps[1] = std::make_shared<common::IndexMap>(
       comm, local_offset1.back(), ghosts1, ghost_owners1);
+  _col_index_map = _index_maps[1];
 
   const std::int32_t num_rows_local_new = _index_maps[0]->size_local();
 
@@ -483,6 +485,12 @@ void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
 std::shared_ptr<const common::IndexMap>
 SparsityPattern::index_map(int dim) const
 {
+  return dim == 1 ? _col_index_map : _index_maps.at(dim);
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const common::IndexMap>
+SparsityPattern::input_index_map(int dim) const
+{
   return _index_maps.at(dim);
 }
 //-----------------------------------------------------------------------------
@@ -633,6 +641,8 @@ void SparsityPattern::finalize()
                        std::back_inserter(recv_disp));
 
       ghost_data_in.resize(recv_disp.back());
+      ghost_data.reserve(1);
+      ghost_data_in.reserve(1);
       MPI_Neighbor_alltoallv(ghost_data.data(), send_sizes.data(),
                              send_disp.data(), MPI_INT64_T,
                              ghost_data_in.data(), recv_sizes.data(),
@@ -798,9 +808,10 @@ void SparsityPattern::finalize()
     }
   }
 
-  // _col_ghosts only appends to the original column ghosts. Rebuild the
-  // collective IndexMap only if ghosts changed on at least one rank;
-  // otherwise preserve a shared row and column IndexMap.
+  // _col_ghosts only appends to the column map's ghosts. Building an
+  // IndexMap is collective, so build one only if ghosts changed on at
+  // least one rank; otherwise preserve pointer identity between the input
+  // and graph-spanning column maps.
   int ghosts_changed = _col_ghosts.size() != _index_maps[1]->ghosts().size();
   int ghosts_changed_global;
   const int ierr = MPI_Allreduce(&ghosts_changed, &ghosts_changed_global, 1,
@@ -810,7 +821,7 @@ void SparsityPattern::finalize()
   {
     spdlog::debug("Column ghost size increased from {} to {}",
                   _index_maps[1]->ghosts().size(), _col_ghosts.size());
-    _index_maps[1] = std::make_shared<common::IndexMap>(
+    _col_index_map = std::make_shared<common::IndexMap>(
         _comm.comm(), _index_maps[1]->size_local(), _col_ghosts,
         _col_ghost_owners);
   }

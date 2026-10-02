@@ -16,8 +16,16 @@
 #include <algorithm>
 #include <array>
 #include <basix/mdspan.hpp>
+#include <cassert>
 #include <concepts>
+#include <cstdint>
+#include <dolfinx/mesh/EntityMap.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <functional>
+#include <iterator>
+#include <memory>
+#include <numeric>
 #include <optional>
 #include <ranges>
 #include <span>
@@ -380,62 +388,7 @@ void pack_coefficients(const Form<T, U>& form,
   }
 }
 
-/// @brief Given a Function and a related mesh and its integration
-/// entities, extract the cell indices of the coefficient mesh.
-/// @tparam T Scalar type of the coefficient.
-/// @tparam U Floating point type of the mesh geometry.
-/// @param[in] coeff The coefficient to extract cell indices for.
-/// @param[in] mesh The mesh which the integration entities belong to.
-/// @param[in] entities The integration entities. Is either a sequence of local
-/// cell indices, or a sequence of (cell, local entity index) tuples.
-/// @param[in] edim Topological dimension of the integration entities,
-/// e.g. `mesh.topology()->dim() - 1` for facets.
-/// @param[in] entity_map The map between `mesh` and `coeff`'s mesh.
-/// Required (must have a value) whenever `coeff` is not defined on
-/// `mesh` itself.
-/// @return A vector of cell indices on the coefficient mesh corresponding to
-/// the integration entities.
-template <dolfinx::scalar T, std::floating_point U>
-std::vector<std::int32_t> extract_coefficient_cells_from_entities(
-    const fem::Function<T, U>& coeff, const mesh::Mesh<U>& mesh,
-    fem::MDSpan2 auto entities, int edim,
-    std::optional<std::reference_wrapper<const dolfinx::mesh::EntityMap>>
-        entity_map)
-{
-  auto mesh_c = coeff.function_space()->mesh();
-  assert(mesh_c);
-
-  if (mesh_c->topology() == mesh.topology())
-  {
-    // Same mesh, so no mapping is needed: the cell an integration
-    // entity belongs to is the cell to pack
-    std::vector<std::int32_t> cells;
-    cells.reserve(entities.extent(0));
-    for (std::size_t i = 0; i < entities.extent(0); ++i)
-    {
-      if constexpr (entities.rank() == 1)
-        cells.push_back(entities(i));
-      else
-        cells.push_back(entities(i, 0));
-    }
-
-    return cells;
-  }
-  else
-  {
-    assert(entity_map.has_value());
-    const mesh::EntityMap& emap = entity_map.value().get();
-
-    // Determine direction of the map. We need to map from `mesh` to
-    // `coeff`'s mesh, so if `emap.sub_topology()` isn't the source
-    // topology, we need the inverse map.
-    bool inverse = emap.sub_topology() == mesh_c->topology();
-    return impl::compute_domain_cells(*mesh.topology(), entities, edim,
-                                      mesh_c->topology()->dim(), emap, inverse);
-  }
-}
-
-/// @brief Pack coefficient data over a list of cells or facets.
+/// @brief Pack coefficient data over a list of cells, facets or ridges.
 ///
 /// Typically used to prepare coefficient data for an ::Expression.
 /// @tparam T Data type of coefficients
@@ -467,49 +420,28 @@ void pack_coefficients(
   if (c.size() < entities.extent(0) * offsets.back())
     throw std::runtime_error("Coefficient packing span is too small.");
 
-  // Helper function to get correct entity map. Note: `mesh` is
-  // captured by reference -- capturing it by value would copy the
-  // whole Mesh (including its Geometry's coordinate array) on every
-  // call.
-  auto get_entity_map
-      = [&mesh, &entity_maps](auto& mesh0) -> const mesh::EntityMap&
-  {
-    auto it = std::ranges::find_if(
-        entity_maps,
-        [&mesh, mesh0](const mesh::EntityMap& em)
-        {
-          return (em.topology() == mesh0->topology()
-                  and em.sub_topology() == mesh.topology())
-                 or (em.sub_topology() == mesh0->topology()
-                     and em.topology() == mesh.topology());
-        });
-
-    if (it == entity_maps.end())
-    {
-      throw std::invalid_argument(
-          "Incompatible mesh. argument entity_maps must be provided.");
-    }
-    return *it;
-  };
-
   // Iterate over coefficients
+  const mesh::Topology& topology = *mesh.topology();
   for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
   {
-    // Get mesh of coefficient and check if entity map is required
-    auto mesh_c = coeffs[coeff].get().function_space()->mesh();
+    // Get topology of coefficient and check if entity map is required
+    std::shared_ptr<const mesh::Mesh<U>> mesh_c
+        = coeffs[coeff].get().function_space()->mesh();
+    assert(mesh_c);
+    const mesh::Topology& topology_c = *mesh_c->topology();
     std::vector<std::int32_t> coefficient_cells;
-    if (mesh_c->topology() == mesh.topology())
+    if (&topology_c == &topology)
     {
-      coefficient_cells = extract_coefficient_cells_from_entities(
-          coeffs[coeff].get(), mesh, entities, edim, std::nullopt);
+      coefficient_cells = mesh::extract_cells_from_entities(
+          topology_c, topology, entities, std::nullopt);
     }
     else
     {
-      // Find correct entity map and determine direction of the map
-      const mesh::EntityMap& emap = get_entity_map(mesh_c);
-      coefficient_cells = extract_coefficient_cells_from_entities(
-          coeffs[coeff].get(), mesh, entities, edim,
-          std::reference_wrapper<const mesh::EntityMap>(emap));
+      impl::check_entity_mapping_dim(topology.dim(), edim, topology_c.dim());
+      const mesh::EntityMap& emap
+          = mesh::find_entity_map(entity_maps, topology, topology_c);
+      coefficient_cells = mesh::extract_cells_from_entities(
+          topology_c, topology, entities, std::cref(emap));
     }
 
     std::span<const std::uint32_t> cell_info

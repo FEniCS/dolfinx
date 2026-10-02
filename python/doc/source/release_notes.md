@@ -16,6 +16,11 @@ may live on a submesh of the entities being evaluated over.
 {py:class}`dolfinx.fem.Expression` also gained an `entity_dim` property, the topological
 dimension of the entities the Expression is evaluated on.
 
+In C++, `fem::pack_coefficients` for a list of coefficients takes the dimension of the
+entities as a new argument, e.g. `Expression::entity_dim()`. A coefficient or argument on
+another mesh must live on the entities being evaluated over; evaluating an Expression on
+entities of another dimension now raises `std::invalid_argument`.
+
 ### Assembly over ridges with data on a codimension-2 submesh
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)

@@ -1,4 +1,4 @@
-// Copyright (C) 2025-2026 Garth N. Wells
+// Copyright (C) 2025-2026 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,19 +6,23 @@
 
 #pragma once
 
-#include "Expression.h"
+#include "FiniteElement.h"
 #include "Form.h"
-#include "FunctionSpace.h"
 #include "traits.h"
-#include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
+#include <cassert>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <functional>
 #include <memory>
+#include <optional>
+#include <span>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -57,6 +61,9 @@ namespace dolfinx::fem::impl
 /// index and `entities[i, 1]` is the local index of the entity relative
 /// to the cell.
 /// @param[in] cell_info Cell orientation data for use in `P0`.
+/// @param[in] argument_cells Cell of the argument's mesh for each of
+/// `entities`, for use in `P0`. Empty if the argument is defined on the
+/// entities' mesh.
 /// @param[in] P0 Degree-of-freedom transformation function. Applied when
 /// expressions includes an argument function that requires a
 /// transformation.
@@ -71,6 +78,7 @@ void tabulate_expression(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, fem::MDSpan2 auto entities,
     std::span<const std::uint32_t> cell_info,
+    std::span<const std::int32_t> argument_cells,
     const fem::DofTransformKernel<T> auto& P0,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
 {
@@ -78,6 +86,10 @@ void tabulate_expression(
 
   // Create data structures used in evaluation
   std::vector<U> coord_dofs(3 * x_dofmap.extent(1));
+  GeometryPack geometry{
+      x_dofmap,
+      md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>>(
+          x.data(), x.size() / 3, 3)};
 
   // Iterate over cells and 'assemble' into values
   int size0 = Xshape[0] * value_size;
@@ -89,35 +101,27 @@ void tabulate_expression(
 
   for (std::size_t e = 0; e < entities.extent(0); ++e)
   {
-    std::ranges::fill(values_local, 0);
+    std::ranges::fill(values_local, T(0));
     if constexpr (entities.rank() == 1)
     {
       std::int32_t entity = entities(e);
-      auto x_dofs = md::submdspan(x_dofmap, entity, md::full_extent);
-      for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      {
-        std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
-                    std::next(coord_dofs.begin(), 3 * i));
-      }
+      gather_cell_coordinates(geometry, entity, coord_dofs.data());
       fn(values_local.data(), coeffs_data + e * cstride, constants.data(),
          coord_dofs.data(), nullptr, nullptr, nullptr);
 
-      P0(values_local, cell_info, entity, size0);
+      P0(values_local, cell_info,
+         argument_cells.empty() ? entity : argument_cells[e], size0);
     }
     else
     {
       std::int32_t entity = entities(e, 0);
       std::int32_t local_entity = entities(e, 1);
       std::uint8_t perm = perms.empty() ? 0 : perms(entity, local_entity);
-      auto x_dofs = md::submdspan(x_dofmap, entity, md::full_extent);
-      for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      {
-        std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
-                    std::next(coord_dofs.begin(), 3 * i));
-      }
+      gather_cell_coordinates(geometry, entity, coord_dofs.data());
       fn(values_local.data(), coeffs_data + e * cstride, constants.data(),
          coord_dofs.data(), &local_entity, &perm, nullptr);
-      P0(values_local, cell_info, entity, size0);
+      P0(values_local, cell_info,
+         argument_cells.empty() ? entity : argument_cells[e], size0);
     }
 
     for (std::size_t j = 0; j < values_local.size(); ++j)
@@ -157,6 +161,11 @@ void tabulate_expression(
 /// Used to computed a 1-form expression, e.g. can be used to create a
 /// matrix that when applied to a degree-of-freedom vector gives the
 /// expression values at the evaluation points.
+/// @param[in] cell_info Cell orientation data of the argument's mesh,
+/// for its dof transformations. Empty if the argument needs no dof
+/// transformations.
+/// @param[in] argument_cells Cell of the argument's mesh for each of
+/// `entities`. Empty if the argument is defined on `mesh`.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, const fem::FEkernel<T, U> auto& fn,
@@ -166,8 +175,12 @@ void tabulate_expression(
     fem::MDSpan2 auto entities,
     std::optional<
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
-        element)
+        element,
+    std::span<const std::uint32_t> cell_info,
+    std::span<const std::int32_t> argument_cells)
 {
+  assert(argument_cells.empty() or argument_cells.size() == entities.extent(0));
+
   std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
       post_dof_transform
@@ -176,17 +189,12 @@ void tabulate_expression(
     // Do nothing
   };
 
-  std::shared_ptr<const mesh::Topology> topology = mesh.topology();
-  assert(topology);
   std::size_t num_argument_dofs = 1;
-  std::span<const std::uint32_t> cell_info;
   if (element)
   {
     num_argument_dofs = element->second;
     if (element->first.get().needs_dof_transformations())
     {
-      mesh.topology_mutable()->create_cell_permutations();
-      cell_info = std::span(topology->get_cell_permutation_info());
       post_dof_transform
           = element->first.get().template dof_transformation_right_fn<T>(
               doftransform::transpose);
@@ -202,12 +210,12 @@ void tabulate_expression(
   {
     perms = entity_permutations(*mesh.topology_mutable(),
                                 static_cast<int>(Xshape[1]),
-                                topology->cell_types().front());
+                                mesh.topology()->cell_types().front());
   }
 
   tabulate_expression(values, fn, Xshape, value_size, num_argument_dofs,
                       mesh.geometry().dofmaps().front(), mesh.geometry().x(),
-                      coeffs, constants, entities, cell_info,
+                      coeffs, constants, entities, cell_info, argument_cells,
                       post_dof_transform, perms);
 }
 } // namespace dolfinx::fem::impl

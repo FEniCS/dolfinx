@@ -12,9 +12,11 @@
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
 #include <numeric>
+#include <ranges>
 #include <span>
 #include <utility>
 #include <vector>
@@ -93,13 +95,13 @@ public:
   /// typically used in finite element assembly functions.
   ///
   /// Create a function to set values in a MatrixCSR. The function
-  /// signature is `int mat_set_fn(std::span<const std::int32_t rows,
-  /// std::span<const std::int32_t cols, std::span<const value_type>
-  /// data)`. The rows and columns use process local indexing, and the
-  /// given rows and columns must pre-exist in the sparsity pattern of
-  /// the matrix. Insertion into "ghost" rows (in the ghost region of
-  /// the row `IndexMap`) is permitted, so long as there are correct
-  /// entries in the sparsity pattern.
+  /// signature is `int mat_set_fn(rows, cols, std::span<const value_type>
+  /// data)`, where `rows` and `cols` are common::LocalIndexRange, e.g.
+  /// `std::span<const std::int32_t>` of static or dynamic extent. The rows and
+  /// columns use process local indexing, and the given rows and columns must
+  /// pre-exist in the sparsity pattern of the matrix. Insertion into "ghost"
+  /// rows (in the ghost region of the row `IndexMap`) is permitted, so long as
+  /// there are correct entries in the sparsity pattern.
   ///
   /// @note Using rows or columns which are not in the sparsity will
   /// result in undefined behaviour (or an assert failure in Debug
@@ -122,11 +124,16 @@ public:
           "Cannot insert blocks of different size than matrix block size");
     }
 
-    return [this](std::span<const std::int32_t> rows,
-                  std::span<const std::int32_t> cols,
+    return [this](const common::LocalIndexRange auto& rows,
+                  const common::LocalIndexRange auto& cols,
                   std::span<const value_type> data) -> int
     {
-      this->set<BS0, BS1>(data, rows, cols);
+      this->set<BS0, BS1>(
+          data,
+          std::span<const std::int32_t>(std::ranges::data(rows),
+                                        std::ranges::size(rows)),
+          std::span<const std::int32_t>(std::ranges::data(cols),
+                                        std::ranges::size(cols)));
       return 0;
     };
   }
@@ -135,13 +142,13 @@ public:
   /// typically used in finite element assembly functions.
   ///
   /// Create a function to add values to a MatrixCSR. The function
-  /// signature is `int mat_add_fn(std::span<const std::int32_t rows,
-  /// std::span<const std::int32_t cols, std::span<const value_type>
-  /// data)`. The rows and columns use process local indexing, and the
-  /// given rows and columns must pre-exist in the sparsity pattern of
-  /// the matrix. Insertion into "ghost" rows (in the ghost region of
-  /// the row `IndexMap`) is permitted, so long as there are correct
-  /// entries in the sparsity pattern.
+  /// signature is `int mat_add_fn(rows, cols, std::span<const value_type>
+  /// data)`, where `rows` and `cols` are common::LocalIndexRange, e.g.
+  /// `std::span<const std::int32_t>` of static or dynamic extent. The rows and
+  /// columns use process local indexing, and the given rows and columns must
+  /// pre-exist in the sparsity pattern of the matrix. Insertion into "ghost"
+  /// rows (in the ghost region of the row `IndexMap`) is permitted, so long as
+  /// there are correct entries in the sparsity pattern.
   ///
   /// @note Using rows or columns which are not in the sparsity will
   /// result in undefined behaviour (or an assert failure in Debug
@@ -164,11 +171,16 @@ public:
           "Cannot insert blocks of different size than matrix block size");
     }
 
-    return [this](std::span<const std::int32_t> rows,
-                  std::span<const std::int32_t> cols,
+    return [this](const common::LocalIndexRange auto& rows,
+                  const common::LocalIndexRange auto& cols,
                   std::span<const value_type> data) -> int
     {
-      this->add<BS0, BS1>(data, rows, cols);
+      this->add<BS0, BS1>(
+          data,
+          std::span<const std::int32_t>(std::ranges::data(rows),
+                                        std::ranges::size(rows)),
+          std::span<const std::int32_t>(std::ranges::data(cols),
+                                        std::ranges::size(cols)));
       return 0;
     };
   }

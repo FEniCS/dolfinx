@@ -175,12 +175,44 @@ class SparsityPattern:
         self._cpp_object = sp
 
     def index_map(self, dim: int) -> IndexMap:
-        """Index map for the rows (``dim=0``) or columns (``dim=1``).
+        """Index map for the rows or columns.
+
+        Note:
+            Finalizing can add column ghosts to the column map
+            (``dim=1``).
 
         Args:
             dim: 0 for the row map, 1 for the column map.
         """
         return IndexMap(self._cpp_object.index_map(dim))
+
+    @functools.cached_property
+    def _input_index_maps(self) -> tuple[IndexMap, IndexMap]:
+        """Wrappers for the maps passed to the constructor."""
+        return (
+            IndexMap(self._cpp_object.input_index_map(0)),
+            IndexMap(self._cpp_object.input_index_map(1)),
+        )
+
+    def input_index_map(self, dim: int) -> IndexMap:
+        """Input index map used to construct the pattern.
+
+        Finalizing can add column ghosts to ``index_map(1)``. When no
+        rank adds a column ghost, ``input_index_map(1)`` and
+        ``index_map(1)`` wrap the same C++ object.
+
+        Note:
+            The input maps are fixed at construction, so the wrappers
+            are built on first access and the same objects are returned
+            thereafter. :func:`index_map` is not cached, as
+            :func:`finalize` can replace the column map.
+
+        Args:
+            dim: 0 for the row map, 1 for the column map.
+        """
+        if dim not in (0, 1):
+            raise IndexError(f"Sparsity pattern dimension must be 0 or 1, not {dim}.")
+        return self._input_index_maps[dim]
 
     @property
     def num_nonzeros(self) -> int:
@@ -260,13 +292,28 @@ class MatrixCSR(Generic[Scalar]):
         """
         self._cpp_object = A
 
+    @functools.cached_property
+    def _index_maps(self) -> tuple[IndexMap, IndexMap]:
+        """Wrappers for the row and column maps."""
+        return (
+            IndexMap(self._cpp_object.index_map(0)),
+            IndexMap(self._cpp_object.index_map(1)),
+        )
+
     def index_map(self, i: int) -> IndexMap:
         """Index map for row/column.
+
+        Note:
+            The maps are fixed at construction, so the wrappers are
+            built on first access and the same objects are returned
+            thereafter.
 
         Args:
             i: 0 for row map, 1 for column map.
         """
-        return IndexMap(self._cpp_object.index_map(i))
+        if i not in (0, 1):
+            raise IndexError(f"Matrix dimension must be 0 or 1, not {i}.")
+        return self._index_maps[i]
 
     def mult(self, x: Vector[Scalar], y: Vector[Scalar], transpose: bool = False) -> None:
         """Compute ``y += Ax`` or ``y += A^T x``.

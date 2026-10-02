@@ -247,6 +247,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm comm_po_post;
+  dest.reserve(1);
   MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &comm_po_post);

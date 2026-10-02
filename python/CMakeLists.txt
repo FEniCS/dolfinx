@@ -214,6 +214,7 @@ if(WIN32)
     INSTALL_TIME
     MODULE dolfinx.cpp
     RECURSIVE
+    INCLUDE_PRIVATE
     VERBOSE
     PATTERN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx/wrappers/stub_patterns.txt
     MARKER_FILE dolfinx/cpp/py.typed
@@ -247,6 +248,7 @@ else()
     PYTHON_PATH ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS cpp
     RECURSIVE
+    INCLUDE_PRIVATE
     VERBOSE
     PATTERN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx/wrappers/stub_patterns.txt
     MARKER_FILE dolfinx/cpp/py.typed

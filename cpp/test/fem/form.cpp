@@ -12,7 +12,10 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
-#include <dolfinx/fem/utils.h>
+#include <dolfinx/fem/expression_evaluate.h>
+#include <dolfinx/fem/expression_factory.h>
+#include <dolfinx/fem/form_factory.h>
+#include <dolfinx/fem/functionspace_factory.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
@@ -66,8 +69,9 @@ TEST_CASE("Create Expression/Form (mismatch of mesh geometry)",
 
   auto V = std::make_shared<fem::FunctionSpace<double>>(
       fem::create_functionspace<double>(
-          mesh, std::make_shared<fem::FiniteElement<double>>(
-                    element, std::vector<std::size_t>{3})));
+          mesh,
+          std::make_shared<fem::FiniteElement<double>>(
+              element, mesh->geometry().dim(), std::vector<std::size_t>{3})));
 
   test_form_cmap_compat(V);
   test_expression_cmap_compat(V);
@@ -102,8 +106,9 @@ TEST_CASE("Form with data on a mesh of the wrong dimension",
       basix::element::dpc_variant::unset, false);
   auto V = std::make_shared<fem::FunctionSpace<double>>(
       fem::create_functionspace<double>(
-          smesh, std::make_shared<fem::FiniteElement<double>>(
-                     element, std::vector<std::size_t>{})));
+          smesh,
+          std::make_shared<fem::FiniteElement<double>>(
+              element, mesh->geometry().dim(), std::vector<std::size_t>{})));
 
   auto kernel = [](double*, const double*, const double*, const double*,
                    const int*, const uint8_t*, void*) {};
@@ -120,4 +125,74 @@ TEST_CASE("Form with data on a mesh of the wrong dimension",
 
   CHECK_THROWS_WITH(build_form(), Catch::Matchers::ContainsSubstring(
                                       "integration entities of dimension"));
+}
+
+TEST_CASE("Expression with data on a mesh of the wrong dimension",
+          "[expression_entity_domain]")
+{
+  // As for `Form`, an Expression maps an evaluation entity to a *cell*
+  // of the mesh of a coefficient or argument, so an Expression on
+  // ridges cannot take data on a facet submesh. FFCx rejects the
+  // combination when compiling a kernel, so this is reached only by
+  // building an Expression directly, as here.
+  auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_box<double>(
+      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {2, 2, 2},
+      mesh::CellType::tetrahedron, graph::partition_graph));
+  const int tdim = mesh->topology()->dim();
+  mesh->topology_mutable()->create_entities(tdim - 1);
+  mesh->topology_mutable()->create_entities(tdim - 2);
+  mesh->topology_mutable()->create_connectivity(tdim, tdim - 2);
+
+  // A submesh of the facets, i.e. one dimension too high for a ridge
+  auto facets = mesh::locate_entities(
+      *mesh, tdim - 1,
+      [](auto x) { return std::vector<std::int8_t>(x.extent(1), 1); });
+  auto [submesh, e_map, v_map, g_map]
+      = mesh::create_submesh(*mesh, tdim - 1, facets);
+  auto smesh = std::make_shared<mesh::Mesh<double>>(std::move(submesh));
+
+  auto element = basix::create_element<double>(
+      basix::element::family::P, basix::cell::type::triangle, 1,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false);
+  auto V = std::make_shared<fem::FunctionSpace<double>>(
+      fem::create_functionspace<double>(
+          smesh,
+          std::make_shared<fem::FiniteElement<double>>(
+              element, mesh->geometry().dim(), std::vector<std::size_t>{})));
+
+  // Evaluate at the midpoint of the first ridge of cell 0
+  std::vector<double> X = {0.5};
+  std::vector<std::int32_t> ridges = {0, 0};
+  md::mdspan<const std::int32_t,
+             md::extents<std::size_t, md::dynamic_extent, 2>>
+      entities(ridges.data(), 1, 2);
+
+  auto kernel = [](double*, const double*, const double*, const double*,
+                   const int*, const uint8_t*, void*) {};
+  const std::uint64_t hash = mesh->geometry().cmaps().front().hash();
+
+  SECTION("coefficient")
+  {
+    auto u = std::make_shared<fem::Function<double>>(V);
+    fem::Expression<double> e({u}, {}, X, {1, 1}, kernel, {},
+                              {std::cref(e_map)}, hash);
+    std::vector<double> values(entities.extent(0));
+    CHECK_THROWS_WITH(
+        fem::tabulate_expression(std::span(values), e, *mesh, entities),
+        Catch::Matchers::ContainsSubstring(
+            "integration entities of dimension"));
+  }
+
+  SECTION("argument")
+  {
+    fem::Expression<double> e({}, {}, X, {1, 1}, kernel, {}, {std::cref(e_map)},
+                              hash, V);
+    std::vector<double> values(entities.extent(0)
+                               * V->dofmap()->element_dof_layout().num_dofs());
+    CHECK_THROWS_WITH(
+        fem::tabulate_expression(std::span(values), e, *mesh, entities),
+        Catch::Matchers::ContainsSubstring(
+            "integration entities of dimension"));
+  }
 }

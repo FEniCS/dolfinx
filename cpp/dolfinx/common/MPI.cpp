@@ -161,6 +161,9 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
                "of discovered edges {}",
                other_ranks.size());
 
+  // See comment in compute_graph_edges_nbx above.
+  other_ranks.reserve(1);
+
   return other_ranks;
 }
 //-----------------------------------------------------------------------------
@@ -303,6 +306,12 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
                "of discovered edges {}",
                src_ranks[0].size());
 
+  // Guarantee non-null data() when no edges were discovered: some MPI
+  // implementations require non-null count/rank array pointers even
+  // when the corresponding count is zero, e.g. for
+  // MPI_Dist_graph_create_adjacent.
+  src_ranks[0].reserve(1);
+
   return std::move(src_ranks[0]);
 }
 //-----------------------------------------------------------------------------
@@ -323,6 +332,10 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
   spdlog::info("Finished overlapped graph edge discovery using NBX "
                "algorithm. Number of discovered edges {}, {}",
                src_ranks[0].size(), src_ranks[1].size());
+
+  // See comment in the single-edge-set overload above.
+  src_ranks[0].reserve(1);
+  src_ranks[1].reserve(1);
 
   return {std::move(src_ranks[0]), std::move(src_ranks[1])};
 }

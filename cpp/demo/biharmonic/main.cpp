@@ -175,7 +175,8 @@ int main(int argc, char* argv[])
     //  Create function space
     auto V
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-            mesh, std::make_shared<fem::FiniteElement<U>>(element)));
+            mesh, std::make_shared<fem::FiniteElement<U>>(
+                      element, mesh->geometry().dim())));
 
     // The source function $f$ and the penalty term $\alpha$ are
     // declared:
@@ -233,11 +234,7 @@ int main(int argc, char* argv[])
     common::petsc::check(MatZeroEntries(A.mat()), "MatZeroEntries");
     fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
                          a, {bc});
-    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY),
-                         "MatAssemblyBegin");
-    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY),
-                         "MatAssemblyEnd");
-    fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
+    fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), ADD_VALUES), *V,
                          {bc});
     common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY),
                          "MatAssemblyBegin");
