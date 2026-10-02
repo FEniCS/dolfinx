@@ -196,7 +196,20 @@ function(dolfinx_enable_option name description)
   else()
     message(FATAL_ERROR "${name} must be AUTO, ON or OFF, not '${${name}}'.")
   endif()
-  add_feature_info(${name} ${use_var} "${description}")
+endfunction()
+
+# Report a switch to FeatureSummary after discovery, so a switch left at AUTO
+# whose package is missing is reported as disabled.
+function(dolfinx_feature_info name)
+  string(REPLACE "DOLFINX_ENABLE_" "_DOLFINX_USE_" use_var "${name}")
+  get_property(description CACHE ${name} PROPERTY HELPSTRING)
+  # Unquoted ARGN expands to the arguments after name, so the found check can
+  # be a multi-token if() condition like TARGET Foo::Bar.
+  if(${use_var} AND ${ARGN})
+    add_feature_info(${name} TRUE "${description}")
+  else()
+    add_feature_info(${name} FALSE "${description}")
+  endif()
 endfunction()
 
 dolfinx_enable_option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2.")
@@ -535,6 +548,16 @@ if(_DOLFINX_USE_SUPERLU_DIST)
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SuperLU_DIST)
   endif()
 endif()
+
+# ------------------------------------------------------------------------------
+# Report the optional packages that were actually found
+dolfinx_feature_info(DOLFINX_ENABLE_ADIOS2 ADIOS2_FOUND)
+dolfinx_feature_info(DOLFINX_ENABLE_PETSC TARGET PkgConfig::PETSC)
+dolfinx_feature_info(DOLFINX_ENABLE_SLEPC TARGET PkgConfig::SLEPC)
+dolfinx_feature_info(DOLFINX_ENABLE_SCOTCH TARGET SCOTCH::ptscotch)
+dolfinx_feature_info(DOLFINX_ENABLE_PARMETIS TARGET ParMETIS::ParMETIS)
+dolfinx_feature_info(DOLFINX_ENABLE_KAHIP TARGET KaHIP::KaHIP)
+dolfinx_feature_info(DOLFINX_ENABLE_SUPERLU_DIST TARGET PkgConfig::SUPERLU_DIST)
 
 # ------------------------------------------------------------------------------
 # Print summary of found and not found optional packages

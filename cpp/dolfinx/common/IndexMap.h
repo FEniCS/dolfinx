@@ -75,6 +75,28 @@ stack_index_maps(
     const std::vector<std::pair<std::reference_wrapper<const IndexMap>, int>>&
         maps);
 
+/// @brief Number of ranks that share each of the given local indices.
+///
+/// A rank shares an index if it owns it or ghosts it, so the count is
+/// one for an index that is not on a subdomain boundary, and the sum of
+/// the counts over all ranks that hold an index is the same on each of
+/// them.
+///
+/// @note Collective.
+///
+/// @param[in] map Index map describing the parallel layout.
+/// @param[in] indices Local indices, which may include ghosts. An index
+/// refers to block `i / bs` of `map`.
+/// @param[in] bs Block size relating `indices` to the blocks of `map`.
+/// @return Number of sharing ranks, one entry per entry of `indices`.
+/// @throws std::out_of_range If an entry of `indices` is not a local
+/// index of `map`.
+/// @note An overload taking an existing Scatterer is declared in
+/// Scatterer.h, and avoids building one here.
+std::vector<std::int32_t>
+num_sharing_ranks(const IndexMap& map, std::span<const std::int32_t> indices,
+                  int bs);
+
 /// @brief Create an index map from a subset of an existing map.
 ///
 /// @note Collective
