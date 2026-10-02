@@ -69,6 +69,8 @@ namespace dolfinx::fem
 /// @note An argument on a mesh other than `mesh` is mapped to its own
 /// cells through the Expression's entity maps, and its dof
 /// transformations use that mesh's cell orientation data.
+/// @pre If the argument is on a mesh other than `mesh` and needs dof
+/// transformations, each of `entities` has a cell in that mesh.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, const fem::Expression<T, U>& e,
@@ -86,25 +88,40 @@ void tabulate_expression(
         "Expression was created on a different mesh. Cannot tabulate.");
   }
 
+  // Topology providing the argument's cell orientation data and, when
+  // the argument is on another mesh, its cell for each of `entities`.
+  // `topology_v` and `argument_cells` back the spans passed to
+  // impl::tabulate_expression.
+  std::shared_ptr<mesh::Topology> topology_v = mesh.topology_mutable();
   std::vector<std::int32_t> argument_cells;
-  std::optional<std::pair<std::reference_wrapper<const mesh::Mesh<U>>,
-                          std::span<const std::int32_t>>>
-      argument;
-  if (std::shared_ptr<const FunctionSpace<U>> V = e.argument_space();
-      element and V and V->mesh()->topology() != mesh.topology()
-      and element->first.get().needs_dof_transformations())
+  std::span<const std::uint32_t> cell_info;
+  if (element and element->first.get().needs_dof_transformations())
   {
-    std::shared_ptr<const mesh::Mesh<U>> mesh_v = V->mesh();
-    const mesh::EntityMap& emap
-        = find_entity_map(e.entity_maps(), mesh, *mesh_v);
-    argument_cells
-        = extract_cells_from_entities(*mesh_v, mesh, entities, std::cref(emap));
-    argument.emplace(std::cref(*mesh_v), argument_cells);
+    if (std::shared_ptr<const FunctionSpace<U>> V = e.argument_space();
+        V and V->mesh()->topology() != mesh.topology())
+    {
+      const mesh::Topology& topology = *mesh.topology();
+      topology_v = V->mesh()->topology_mutable();
+      const mesh::EntityMap& emap
+          = mesh::find_entity_map(e.entity_maps(), topology, *topology_v);
+      argument_cells = mesh::extract_cells_from_entities(
+          *topology_v, topology, entities, std::cref(emap));
+#ifndef NDEBUG
+      if (std::ranges::find(argument_cells, -1) != argument_cells.end())
+      {
+        throw std::invalid_argument(
+            "An entity has no cell in the mesh of the argument.");
+      }
+#endif
+    }
+    topology_v->create_cell_permutations();
+    cell_info = topology_v->get_cell_permutation_info();
   }
 
   auto [X, Xshape] = e.X();
   impl::tabulate_expression(values, e.kernel(), Xshape, e.value_size(), coeffs,
-                            constants, mesh, entities, element, argument);
+                            constants, mesh, entities, element, cell_info,
+                            argument_cells);
 }
 
 /// @brief Evaluate an Expression on cells or facets.
