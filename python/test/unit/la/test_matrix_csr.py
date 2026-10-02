@@ -220,7 +220,7 @@ def test_set_diagonal_distributed(dtype):
     nlocal = index_map.size_local
     assert (diag[nlocal:] == dtype(0.0)).all()
 
-    data, offsets = index_map.index_to_dest_ranks(0)
+    data, offsets = index_map.index_to_dest_ranks()
     for dof in range(nlocal):
         owners = data[offsets[dof] : offsets[dof + 1]]
         assert diag[dof] == len(owners) + 1

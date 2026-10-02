@@ -155,19 +155,21 @@ class IndexMap:
         """
         return self._cpp_object.owners
 
-    def index_to_dest_ranks(self, tag: int) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32]]:
-        """Ranks that ghost each owned index, as an adjacency list.
+    def index_to_dest_ranks(self) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32]]:
+        """Ranks sharing each local index, as an adjacency list.
 
-        Args:
-            tag: MPI tag used by the consensus exchange. Must be the
-                same on all ranks, and must not clash with another
-                in-flight exchange.
+        For an owned index, these are the ranks that ghost it; for a
+        ghost index, its owner and the other ranks that ghost it. The
+        calling rank is excluded.
+
+        Note:
+            Collective.
 
         Returns:
-            Ghosting ranks of each owned index, as a (data, offsets)
+            Sharing ranks of each local index, as a (data, offsets)
             pair.
         """
-        return self._cpp_object.index_to_dest_ranks(tag)
+        return self._cpp_object.index_to_dest_ranks()
 
     def local_to_global(self, local: npt.NDArray[np.int32]) -> npt.NDArray[np.int64]:
         """Map local indices to global indices.
