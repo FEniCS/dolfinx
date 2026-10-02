@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells, Igor Baratta,
+// Copyright (C) 2015-2026 Chris Richardson, Garth N. Wells, Igor Baratta,
 // Joseph P. Dean and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -979,6 +979,32 @@ common::create_sub_index_map(const IndexMap& imap,
           std::move(sub_imap_to_imap), owners_changed};
 }
 //-----------------------------------------------------------------------------
+std::tuple<std::vector<int>, std::vector<int>, std::vector<std::int32_t>>
+common::compute_sharing_neighbourhood(const IndexMap& imap)
+{
+  auto [data, offsets] = imap.index_to_dest_ranks();
+
+  // Ranks sharing any local index. Reserve before erasing, which keeps
+  // the capacity: after it, GCC 14 wrongly reports
+  // -Wfree-nonheap-object.
+  std::vector<int> ranks = data;
+  ranks.reserve(1);
+  std::ranges::sort(ranks);
+  auto [unique_end, range_end] = std::ranges::unique(ranks);
+  ranks.erase(unique_end, range_end);
+
+  // Replace each rank by its position in ranks
+  std::ranges::transform(data, data.begin(),
+                         [&ranks](int r) -> int
+                         {
+                           auto it = std::ranges::lower_bound(ranks, r);
+                           assert(it != ranks.end() and *it == r);
+                           return std::ranges::distance(ranks.begin(), it);
+                         });
+
+  return {std::move(ranks), std::move(data), std::move(offsets)};
+}
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size) : _comm(comm, true)
 {
@@ -1143,18 +1169,9 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 MPI_Comm IndexMap::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<std::int32_t>>
-IndexMap::index_to_dest_ranks(int tag) const
+IndexMap::index_to_dest_ranks() const
 {
   const std::int64_t offset = _local_range[0];
-
-  // Build lists of src and dest ranks
-  std::vector<int> src = _owners;
-  std::ranges::sort(src);
-  auto [unique_end, range_end] = std::ranges::unique(src);
-  src.erase(unique_end, range_end);
-  std::vector<int> dest
-      = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src, tag);
-  std::ranges::sort(dest);
 
   // Array (local idx, ghosting rank) pairs for owned indices
   std::vector<std::pair<std::int32_t, int>> idx_to_rank;
@@ -1164,62 +1181,13 @@ IndexMap::index_to_dest_ranks(int tag) const
   std::vector<std::int32_t> offsets{0};
   std::vector<int> data;
   {
-    // Build list of (owner rank, index) pairs for each ghost index, and sort
-    std::vector<std::pair<int, std::int64_t>> owner_to_ghost;
-    std::ranges::transform(_ghosts, _owners, std::back_inserter(owner_to_ghost),
-                           [](auto idx, auto r) -> std::pair<int, std::int64_t>
-                           { return {r, idx}; });
-    std::ranges::sort(owner_to_ghost);
-
-    // Build send buffer (the second component of each pair in
-    // owner_to_ghost) to send to rank that owns the index
-    std::vector<std::int64_t> send_buffer;
-    send_buffer.reserve(owner_to_ghost.size());
-    std::ranges::transform(owner_to_ghost, std::back_inserter(send_buffer),
-                           [](auto x) { return x.second; });
-
-    // Compute send sizes and displacements
-    std::vector<int> send_sizes, send_disp{0};
-    auto it_own = owner_to_ghost.begin();
-    while (it_own != owner_to_ghost.end())
-    {
-      auto it1
-          = std::find_if(it_own, owner_to_ghost.end(),
-                         [r = it_own->first](auto x) { return x.first != r; });
-      send_sizes.push_back(std::ranges::distance(it_own, it1));
-      send_disp.push_back(send_disp.back() + send_sizes.back());
-      it_own = it1;
-    }
-
-    // Create ghost -> owner comm
-    MPI_Comm comm0;
-    int ierr = MPI_Dist_graph_create_adjacent(
-        _comm.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
-        src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-    dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-    // Exchange number of indices to send/receive from each rank
-    std::vector<int> recv_sizes(dest.size(), 0);
-    send_sizes.reserve(1);
-    recv_sizes.reserve(1);
-    ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT,
-                                 recv_sizes.data(), 1, MPI_INT, comm0);
-    dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-    // Prepare receive displacement array
-    std::vector<int> recv_disp(dest.size() + 1, 0);
-    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                     std::next(recv_disp.begin()));
-
-    // Send ghost indices to owner, and receive owned indices
-    std::vector<std::int64_t> recv_buffer(recv_disp.back());
-    ierr = MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
-                                  send_disp.data(), MPI_INT64_T,
-                                  recv_buffer.data(), recv_sizes.data(),
-                                  recv_disp.data(), MPI_INT64_T, comm0);
-    dolfinx::MPI::check_error(_comm.comm(), ierr);
-    ierr = MPI_Comm_free(&comm0);
-    dolfinx::MPI::check_error(_comm.comm(), ierr);
+    // Send ghost indices to owners, and receive the owned indices
+    // ghosted by each rank in _dest
+    const std::vector<std::uint8_t> include_ghost(_ghosts.size(), 1);
+    const auto communication = communicate_ghosts_to_owners(
+        _comm.comm(), _src, _dest, _ghosts, _owners, include_ghost);
+    const std::vector<std::int64_t>& recv_buffer = std::get<1>(communication);
+    const std::vector<int>& recv_disp = std::get<6>(communication);
 
     // Build array of (local index, ghosting local rank), and sort
     idx_to_rank.reserve(recv_buffer.size());
@@ -1266,7 +1234,7 @@ IndexMap::index_to_dest_ranks(int tag) const
     std::vector<int> send_sizes;
     {
       const int mpi_rank = dolfinx::MPI::rank(_comm.comm());
-      std::vector<std::vector<std::int64_t>> dest_idx_to_rank(dest.size());
+      std::vector<std::vector<std::int64_t>> dest_idx_to_rank(_dest.size());
       for (std::size_t n = 0; n < offsets.size() - 1; ++n)
       {
         std::span<const std::int32_t> ranks(data.data() + offsets[n],
@@ -1279,7 +1247,7 @@ IndexMap::index_to_dest_ranks(int tag) const
             if (r0 != r)
             {
               dest_idx_to_rank[r0].push_back(n + offset);
-              dest_idx_to_rank[r0].push_back(dest[r]);
+              dest_idx_to_rank[r0].push_back(_dest[r]);
             }
           }
           dest_idx_to_rank[r0].push_back(n + offset);
@@ -1298,13 +1266,13 @@ IndexMap::index_to_dest_ranks(int tag) const
       // Create owner -> ghost comm
       MPI_Comm comm;
       int ierr = MPI_Dist_graph_create_adjacent(
-          _comm.comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
-          dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+          _comm.comm(), _src.size(), _src.data(), MPI_UNWEIGHTED, _dest.size(),
+          _dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
       dolfinx::MPI::check_error(_comm.comm(), ierr);
 
       // Send how many indices I ghost to each owner, and receive how
       // many of my indices other ranks ghost
-      std::vector<int> recv_sizes(src.size(), 0);
+      std::vector<int> recv_sizes(_src.size(), 0);
       send_sizes.reserve(1);
       recv_sizes.reserve(1);
       ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT,
@@ -1312,8 +1280,8 @@ IndexMap::index_to_dest_ranks(int tag) const
       dolfinx::MPI::check_error(_comm.comm(), ierr);
 
       // Prepare displacement vectors
-      std::vector<int> send_disp(dest.size() + 1, 0);
-      std::vector<int> recv_disp(src.size() + 1, 0);
+      std::vector<int> send_disp(_dest.size() + 1, 0);
+      std::vector<int> recv_disp(_src.size() + 1, 0);
       std::partial_sum(send_sizes.begin(), send_sizes.end(),
                        std::next(send_disp.begin()));
       std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
@@ -1373,7 +1341,7 @@ IndexMap::index_to_dest_ranks(int tag) const
 
   // Convert ranks for owned indices from neighbour to global ranks
   std::ranges::transform(idx_to_rank, data.begin(),
-                         [&dest](auto x) { return dest[x.second]; });
+                         [this](auto x) { return _dest[x.second]; });
 
   return {std::move(data), std::move(offsets)};
 }
