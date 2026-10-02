@@ -177,13 +177,12 @@ public:
     return _x_ref;
   }
 
-  /// @brief Topological dimension of the mesh entities that the
-  /// Expression is evaluated on.
+  /// @brief Topological dimension of the entities the Expression is
+  /// evaluated on.
   ///
-  /// The evaluation points are given on the reference cell of the
-  /// entity, so this is the number of columns of ::X, e.g. the mesh
-  /// topological dimension for an Expression on cells, one less for one
-  /// on facets and two less for one on ridges.
+  /// The evaluation points (::X) are given on the reference entity, e.g.
+  /// on a triangle mesh this is 2 for cells, 1 for facets and 0 for
+  /// ridges (vertices).
   int entity_dim() const { return static_cast<int>(_x_ref.second[1]); }
 
   /// @brief Maps between entities of different meshes.

@@ -326,12 +326,11 @@ class Expression(Generic[Scalar]):
 
     @property
     def entity_dim(self) -> int:
-        """Dimension of the entities the Expression is evaluated on.
+        """Topological dimension of the entities evaluated on.
 
-        The evaluation points are given on the reference cell of the
-        entity, so this is the number of columns of :func:`X`, e.g. the
-        mesh topological dimension for an Expression on cells, one less
-        for one on facets and two less for one on ridges.
+        The evaluation points are given on the reference entity, e.g. on a
+        triangle mesh this is 2 for cells, 1 for facets and 0 for ridges
+        (vertices).
         """
         return self._cpp_object.entity_dim
 
