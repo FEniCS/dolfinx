@@ -697,7 +697,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
           {
             T acc = 0;
             for (std::size_t i = 0; i < dim0; ++i)
-              acc += coeffs0[bs0 * i + k] * static_cast<U>(basis0(p, i, j));
+              acc += coeffs0[bs0 * i + k] * static_cast<T>(basis0(p, i, j));
             values0(p, 0, j * bs0 + k) = acc;
           }
         }
@@ -719,7 +719,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
           }
           T acc = 0;
           for (std::size_t i = 0; i < dim0; ++i)
-            acc += coeffs0[bs0 * i + k] * static_cast<U>(basis0(p, i, 0));
+            acc += coeffs0[bs0 * i + k] * static_cast<T>(basis0(p, i, 0));
           values0(p, 0, row * matrix_size + k - rowstart) = acc;
           values0(p, 0, row + matrix_size * (k - rowstart)) = acc;
         }
@@ -745,7 +745,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
           for (std::size_t i = 0; i < dim0; ++i)
           {
             acc += coeffs0[bs0 * i + c % bs0]
-                   * static_cast<U>(basis0(p, i, c / bs0));
+                   * static_cast<T>(basis0(p, i, c / bs0));
           }
           values0(p, 0, k) = acc;
         }
