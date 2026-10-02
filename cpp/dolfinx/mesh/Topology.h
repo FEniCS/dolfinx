@@ -189,7 +189,8 @@ public:
   ///
   /// The orientation is computed from the vertex orders alone (see
   /// compute_cell_orientations), and can be read back with
-  /// get_cell_orientations. On cells whose vertex order disagrees with
+  /// get_cell_orientations. A known orientation can be set instead with
+  /// set_cell_orientations. On cells whose vertex order disagrees with
   /// it, such elements negate their basis in every later assembly,
   /// interpolation and evaluation. Which of its two orientations each
   /// connected surface gets is arbitrary, and depends on the
@@ -221,6 +222,30 @@ public:
   /// been called.
   /// @throws std::out_of_range If there is more than one cell type.
   std::vector<std::int8_t> get_cell_orientations() const;
+
+  /// @brief Set the orientation of each cell relative to the
+  /// orientation of its surface.
+  ///
+  /// An alternative to create_cell_orientations for when a consistent
+  /// orientation is known, e.g. the outward normal of a closed surface.
+  /// It is stored in the same way, but not checked for consistency
+  /// between neighbouring cells.
+  ///
+  /// @warning As for create_cell_orientations, call this before
+  /// computing degrees-of-freedom on spaces whose basis depends on the
+  /// cell orientation.
+  ///
+  /// @note Collective, as it creates the cell permutation info if needed
+  /// (see create_cell_permutations).
+  /// @pre A ghost cell has the same orientation as on its owner.
+  /// @param[in] orientations For each owned and ghost cell, in local cell
+  /// order, `-1` if its orientation is reversed relative to its vertex
+  /// order and `1` otherwise.
+  /// @throws std::invalid_argument If the topological dimension is not
+  /// 2, or `orientations` does not have one entry per owned and ghost
+  /// cell.
+  /// @throws std::out_of_range If there is more than one cell type.
+  void set_cell_orientations(std::span<const std::int8_t> orientations);
 
   /// @brief Get the numbers that encode the permutation to apply to
   /// each cell-local entity of a given dimension.

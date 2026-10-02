@@ -459,7 +459,8 @@ class Topology:
         extracted from a volume mesh with
         :func:`dolfinx.mesh.create_submesh`. Lagrange and Nédélec spaces
         do not need it. The result is read with
-        :meth:`get_cell_orientations`.
+        :meth:`get_cell_orientations`, and a known orientation can be set
+        instead with :meth:`set_cell_orientations`.
 
         Warning:
             Call this before computing degrees-of-freedom on such spaces,
@@ -497,6 +498,35 @@ class Topology:
                 (see :meth:`create_cell_permutations`).
         """
         return self._cpp_object.get_cell_orientations()
+
+    def set_cell_orientations(self, orientations: npt.ArrayLike) -> None:
+        """Set the orientation of each cell relative to its surface.
+
+        An alternative to :meth:`create_cell_orientations` for when a
+        consistent orientation is known, e.g. the outward normal of a
+        closed surface. It is stored in the same way, but not checked for
+        consistency between neighbouring cells.
+
+        Warning:
+            As for :meth:`create_cell_orientations`, call this before
+            computing degrees-of-freedom on spaces whose basis depends on
+            the cell orientation.
+
+        Note:
+            Collective.
+
+        Args:
+            orientations: For each owned and ghost cell, ``-1`` if its
+                orientation is reversed relative to its vertex order and
+                ``1`` otherwise. A ghost cell must have the same
+                orientation as on its owner.
+
+        Raises:
+            ValueError: If the topological dimension is not 2, or
+                ``orientations`` does not have one entry per owned and
+                ghost cell.
+        """
+        self._cpp_object.set_cell_orientations(np.asarray(orientations, dtype=np.int8))
 
     def get_entity_permutations(self, dim: int) -> npt.NDArray[np.uint8]:
         """Get the permutation integer for entities of a dimension.

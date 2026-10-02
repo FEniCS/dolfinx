@@ -86,11 +86,13 @@ import ufl
 # -
 
 # and set the degree $k$ of the Raviart-Thomas space, which is also the
-# degree of the geometry, and the mesh resolution.
+# degree of the geometry, the mesh resolution, and how the cells are
+# oriented (see below): `"computed"` from the vertex orders, `"outward"`
+# from the geometry, or `None` to see what goes wrong without.
 
 order = 3
 res = 0.2
-orient_cells = True  # Set to False to see what goes wrong on a mesh that is not oriented
+orientation: str | None = "computed"
 
 # ### The mesh
 #
@@ -140,11 +142,37 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 #
 # The orientation must be requested explicitly, as it is needed only by
 # $H(\mathrm{div})$ elements on surfaces. Lagrange and Nédélec elements
-# do not depend on it. In legacy FEniCS the cells were oriented relative
-# to a normal field given by the user {cite}`rognes2013manifolds`.
+# do not depend on it.
+#
+# A known orientation can be set instead with
+# {py:meth}`set_cell_orientations
+# <dolfinx.mesh.Topology.set_cell_orientations>`, which takes, for each
+# owned and ghost cell, $-1$ if the vertex order of the cell disagrees
+# with it and $1$ otherwise. On the sphere, the outward normal is such
+# an orientation. The cell normal {py:class}`ufl.CellNormal` is
+# computed from the Jacobian of each cell, so it follows the vertex
+# order, and its sign relative to the radius vector $x$ at the cell
+# midpoint tells whether the cell is reversed. This is close to legacy
+# FEniCS, where the cells were oriented relative to a normal field
+# given by the user {cite}`rognes2013manifolds`. Unlike
+# `create_cell_orientations`, `set_cell_orientations` does not check
+# that the orientation is consistent.
 
-if orient_cells:
+# +
+if orientation == "computed":
     mesh.topology.create_cell_orientations()
+elif orientation == "outward":
+    # Evaluate n . x at the midpoint of each owned and ghost cell
+    cell_map = mesh.topology.index_map(2)
+    cells = np.arange(cell_map.size_local + cell_map.num_ghosts, dtype=np.int32)
+    midpoint = basix.geometry(mesh.basix_cell()).mean(axis=0, keepdims=True)
+    x = ufl.SpatialCoordinate(mesh)
+    n_dot_x = dolfinx.fem.Expression(
+        ufl.dot(ufl.CellNormal(mesh), x), midpoint, dtype=dolfinx.default_real_type
+    )
+    mesh.topology.set_cell_orientations(np.where(n_dot_x.eval(mesh, cells).ravel() > 0, 1, -1))
+
+if orientation is not None:
     # Count the cells whose orientation is reversed relative to their
     # own vertex order. The count is nonzero, as the facets of the ball
     # are not consistently ordered.
@@ -153,6 +181,7 @@ if orient_cells:
     num_reversed = mesh.comm.allreduce(int(np.sum(orientations[:num_owned] < 0)), op=MPI.SUM)
     if mesh.comm.rank == 0:
         print(f"{num_reversed} of {mesh.topology.index_map(2).size_global} cells reversed")
+# -
 
 # ### Function spaces
 #
@@ -241,8 +270,9 @@ if dolfinx.has_adios2:
 # Finally, we compute the error of $u_h$ in the $L^2$ norm, and of
 # $\sigma_h$ in the $L^2$ and $H(\mathrm{div})$ norms. As
 # $\nabla \cdot \sigma = g - r$ and $r = 0$, the divergence of the exact
-# flux is $g$. Without the orientation, these errors are several orders
-# of magnitude larger.
+# flux is $g$. The computed and the outward orientation give the same
+# errors. Without an orientation, they are several orders of magnitude
+# larger.
 
 # +
 L2_error_u = dolfinx.fem.form(ufl.inner(u_h - u_exact, u_h - u_exact) * ufl.dx)

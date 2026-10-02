@@ -489,6 +489,20 @@ def cube_surface(ghost_mode, cell_type=CellType.tetrahedron):
     return create_submesh(cube, 2, exterior_facet_indices(cube.topology))[0]
 
 
+def outward_orientations(surface):
+    """The outward orientation of each owned and ghost cell of ``cube_surface``.
+
+    ``1`` if the normal given by the cell's vertex order points out of
+    the cube, ``-1`` otherwise. Ghost cells get the same value as on
+    their owner, as they have the same vertex order and geometry.
+    """
+    cell_map = surface.topology.index_map(2)
+    cells = np.arange(cell_map.size_local + cell_map.num_ghosts, dtype=np.int32)
+    normals = cell_normals(surface, 2, cells).reshape(-1, 3)
+    radial = compute_midpoints(surface, 2, cells) - 0.5
+    return np.where(np.einsum("ci,ci->c", normals, radial) > 0, 1, -1).astype(np.int8)
+
+
 def mobius_mesh(n, m, dtype=default_real_type):
     """A Moebius strip, ``n`` cells around and ``m`` across."""
     if MPI.COMM_WORLD.rank == 0:
@@ -582,6 +596,7 @@ def test_interpolate_on_mixed_cell_orientations(gdim, spec):
     np.testing.assert_allclose(values, f(midpoints.T).T, atol=tol(mesh))
 
 
+@pytest.mark.parametrize("orient", ["create", "set_outward"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize(
     "cell_type, family, degree",
@@ -594,7 +609,7 @@ def test_interpolate_on_mixed_cell_orientations(gdim, spec):
         (CellType.hexahedron, "BDMCF", 1),
     ],
 )
-def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost_mode):
+def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost_mode, orient):
     """``int div(w) dx = 0`` on a closed surface, for any conforming ``w``.
 
     Summed over the cells, the flux through each edge cancels between
@@ -602,7 +617,8 @@ def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost
     The degrees-of-freedom are set from their global index, so the field
     does not depend on the partition. The surface of a hexahedral cube
     has quadrilateral cells, which run their edges in other directions
-    than triangles.
+    than triangles. The orientation is either computed or set to the
+    outward one.
     """
     surface = cube_surface(ghost_mode, cell_type)
     V = functionspace(
@@ -621,7 +637,10 @@ def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost
     rounding = tol(surface) * integral(abs(ufl.div(w)))
     assert abs(integral(ufl.div(w))) > 1e2 * rounding, "the reversed cells should show"
 
-    surface.topology.create_cell_orientations()
+    if orient == "create":
+        surface.topology.create_cell_orientations()
+    else:
+        surface.topology.set_cell_orientations(outward_orientations(surface))
     num_owned = surface.topology.index_map(2).size_local
     num_reversed = surface.comm.allreduce(
         int(np.sum(reversed_cells(surface)[:num_owned])), op=MPI.SUM
@@ -643,18 +662,8 @@ def test_cell_orientations_agree_with_the_outward_normal(ghost_mode, cell_type):
     """
     surface = cube_surface(ghost_mode, cell_type)
     surface.topology.create_cell_orientations()
-    cell_map = surface.topology.index_map(2)
-    cells = np.arange(cell_map.size_local + cell_map.num_ghosts, dtype=np.int32)
-    own_outward = (
-        np.einsum(
-            "ci,ci->c",
-            cell_normals(surface, 2, cells).reshape(-1, 3),
-            compute_midpoints(surface, 2, cells) - 0.5,
-        )
-        > 0
-    )
     # Outward once the orientation is applied
-    outward = own_outward != reversed_cells(surface)
+    outward = outward_orientations(surface) * surface.topology.get_cell_orientations() > 0
     comm = surface.comm
     all_outward = comm.allreduce(bool(np.all(outward)), op=MPI.LAND)
     all_inward = comm.allreduce(not bool(np.any(outward)), op=MPI.LAND)
@@ -697,6 +706,26 @@ def test_get_cell_orientations():
     assert mesh.comm.allreduce(bool(np.any(orientations < 0)), op=MPI.LOR)
 
 
+def test_set_cell_orientations():
+    """Set orientations are read back, and replace computed ones."""
+    mesh = plane_mesh(2, 3, mixed_orientation=True)
+    mesh.topology.create_cell_orientations()
+    cell_map = mesh.topology.index_map(2)
+    num_cells = cell_map.size_local + cell_map.num_ghosts
+    even = np.asarray(mesh.topology.original_cell_index) % 2 == 0
+    for orientations in (np.ones(num_cells, dtype=np.int8), np.where(even, -1, 1)):
+        mesh.topology.set_cell_orientations(orientations)
+        np.testing.assert_array_equal(mesh.topology.get_cell_orientations(), orientations)
+
+
+def test_set_cell_orientations_need_one_per_cell():
+    mesh = plane_mesh(2, 3)
+    cell_map = mesh.topology.index_map(2)
+    num_cells = cell_map.size_local + cell_map.num_ghosts
+    with pytest.raises(ValueError, match="one per owned and ghost cell"):
+        mesh.topology.set_cell_orientations(np.ones(num_cells + 1, dtype=np.int8))
+
+
 def test_cell_orientations_do_not_change_other_elements():
     """Orientations change no element off a manifold, nor covariant ones on it."""
     for gdim, family in [(2, "RT"), (3, "N1curl")]:
@@ -736,3 +765,7 @@ def test_cell_orientations_need_a_surface():
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     with pytest.raises(ValueError, match="surface mesh"):
         mesh.topology.create_cell_orientations()
+    cell_map = mesh.topology.index_map(3)
+    num_cells = cell_map.size_local + cell_map.num_ghosts
+    with pytest.raises(ValueError, match="surface mesh"):
+        mesh.topology.set_cell_orientations(np.ones(num_cells, dtype=np.int8))

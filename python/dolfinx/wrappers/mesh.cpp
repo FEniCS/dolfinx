@@ -258,6 +258,18 @@ void mesh(nb::module_& m)
           "get_cell_orientations", [](const dolfinx::mesh::Topology& self)
           { return as_nbarray(self.get_cell_orientations()); },
           "Orientation (+1/-1) of each cell relative to its surface.")
+      .def(
+          "set_cell_orientations",
+          [](dolfinx::mesh::Topology& self,
+             nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>
+                 orientations)
+          {
+            self.set_cell_orientations(
+                std::span(orientations.data(), orientations.size()));
+          },
+          nb::arg("orientations"),
+          "Set the orientation (+1/-1) of each cell relative to its "
+          "surface.")
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
       .def_prop_rw(
