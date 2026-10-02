@@ -66,6 +66,7 @@ def test_interpolation():
 @pytest.mark.parametrize("degree", [1, 2, 3])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_interpolation_symmetric_tensor(dim, symmetry, etype, degree, dtype):
+    """Tests the interpolation path for non-matching maps of symmetric elements."""
     comm = MPI.COMM_WORLD
     real_type = dtype(0).real.dtype
     if dim == 2:
@@ -74,7 +75,9 @@ def test_interpolation_symmetric_tensor(dim, symmetry, etype, degree, dtype):
         mesh = dolfinx.mesh.create_unit_cube(comm, 5, 5, 5, dtype=real_type)
 
     def tensor(x):
-        # symmetric and linear tensor: a_ij = a_i + a_j + δ_ij
+        # Create symmetric linear tensor which is contained in all matrix element spaces exactly and
+        # thus perfectly reproducible by interpolation.
+        #   a_ij = a_i + a_j + δ_ij
         points = x[:dim, None]
         A = points + points.swapaxes(0, 1) + np.eye(dim)[:, :, None]
         return A.reshape(dim * dim, -1)
