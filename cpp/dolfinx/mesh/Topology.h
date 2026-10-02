@@ -168,6 +168,96 @@ public:
   /// (see Topology::index_map).
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
+  /// @brief Compute and store a per-cell marker for a consistent
+  /// orientation of a surface mesh.
+  ///
+  /// The cells are not modified. A marker is computed for each cell and
+  /// stored in the cell permutation info, where elements whose basis
+  /// depends on the cell orientation consume it.
+  ///
+  /// On a manifold mesh, whose topological dimension is less than its
+  /// geometric dimension, the contravariant Piola map scales by the
+  /// pseudo-determinant \f$\sqrt{\det(J^T J)}\f$ of the Jacobian
+  /// \f$J\f$. It is positive by construction, so it cannot encode an
+  /// orientation. Instead, the vertex order of each cell fixes its
+  /// normal, and elements mapped by the contravariant Piola map (e.g.
+  /// Raviart-Thomas, Brezzi-Douglas-Marini) are conforming only between
+  /// cells whose normals agree. A function space with such an element
+  /// can therefore only be created on a manifold mesh once an
+  /// orientation has been computed with this call or set with
+  /// set_cell_orientations (see has_cell_orientations). Lagrange and
+  /// Nédélec spaces do not need it.
+  ///
+  /// The orientation is computed from the vertex orders alone (see
+  /// compute_cell_orientations), and can be read back with
+  /// get_cell_orientations. A known orientation can be set instead with
+  /// set_cell_orientations. On cells whose vertex order disagrees with
+  /// it, such elements negate their basis in every later assembly,
+  /// interpolation and evaluation. Which of its two orientations each
+  /// connected surface gets is arbitrary, and depends on the
+  /// partitioning. Reversing all cells of a surface negates the basis
+  /// functions and, with them, the degrees-of-freedom, so the field they
+  /// represent is unchanged.
+  ///
+  /// @warning Changing the orientation after creating spaces whose basis
+  /// depends on it invalidates existing Function data on them, as their
+  /// degrees-of-freedom are not corrected.
+  ///
+  /// @note Collective.
+  /// @throws std::invalid_argument If the topological dimension is not
+  /// 2.
+  /// @throws std::runtime_error If the surface is not orientable, e.g. a
+  /// Möbius strip, or an edge is shared by more than two cells.
+  /// @throws std::out_of_range If there is more than one cell type.
+  void create_cell_orientations();
+
+  /// @brief Get the orientation of each cell relative to the
+  /// orientation of its surface (see create_cell_orientations).
+  ///
+  /// @return For each owned and ghost cell, in local cell order, `-1`
+  /// if its orientation is reversed and `1` otherwise. All are `1` if
+  /// no orientation has been computed or set (see
+  /// has_cell_orientations).
+  /// @throws std::runtime_error If create_cell_permutations has not
+  /// been called.
+  /// @throws std::out_of_range If there is more than one cell type.
+  std::vector<std::int8_t> get_cell_orientations() const;
+
+  /// @brief Check if a cell orientation has been computed or set (see
+  /// create_cell_orientations and set_cell_orientations).
+  ///
+  /// Function spaces whose basis depends on the cell orientation can
+  /// only be created once it has.
+  ///
+  /// @return True if the cell orientation has been computed or set.
+  bool has_cell_orientations() const noexcept;
+
+  /// @brief Set the orientation of each cell relative to the
+  /// orientation of its surface.
+  ///
+  /// An alternative to create_cell_orientations for when a consistent
+  /// orientation is known, e.g. the outward normal of a closed surface.
+  /// It is stored in the same way, but not checked for consistency
+  /// between neighbouring cells. On a mesh whose cells are consistently
+  /// ordered, setting all orientations to `1` keeps each cell's own
+  /// vertex order.
+  ///
+  /// @warning As for create_cell_orientations, changing the orientation
+  /// after creating spaces whose basis depends on it invalidates existing
+  /// Function data on them.
+  ///
+  /// @note Collective, as it creates the cell permutation info if needed
+  /// (see create_cell_permutations).
+  /// @pre A ghost cell has the same orientation as on its owner.
+  /// @param[in] orientations For each owned and ghost cell, in local cell
+  /// order, `-1` if its orientation is reversed relative to its vertex
+  /// order and `1` otherwise.
+  /// @throws std::invalid_argument If the topological dimension is not
+  /// 2, or `orientations` does not have one entry per owned and ghost
+  /// cell.
+  /// @throws std::out_of_range If there is more than one cell type.
+  void set_cell_orientations(std::span<const std::int8_t> orientations);
+
   /// @brief Get the numbers that encode the permutation to apply to
   /// each cell-local entity of a given dimension.
   ///
@@ -319,6 +409,10 @@ private:
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
   std::vector<std::uint32_t> _cell_permutations;
+
+  // Whether a cell orientation has been computed or set. Not encoded in
+  // _cell_permutations, where an unset orientation reads as all 1.
+  bool _has_cell_orientations = false;
 
   // List of facets that are on the inter-process boundary for each
   // facet type. _interprocess_facets[i] is the inter-process facets of

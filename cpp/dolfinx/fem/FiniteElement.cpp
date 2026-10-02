@@ -192,6 +192,15 @@ FiniteElement<T>::FiniteElement(
   else
     _sub_elements = {};
 
+  // On a manifold, the contravariant Piola map pushes the tdim reference
+  // components forward to gdim physical components. The sign is applied
+  // by the DOF transformations, so an element without them, e.g. a
+  // discontinuous one, does not depend on the orientation.
+  _depends_on_cell_orientation
+      = element.map_type() == basix::maps::type::contravariantPiola
+        and physical_base_value_size() != reference_value_size()
+        and _needs_dof_transformations;
+
   std::string family;
   switch (_element->family())
   {
@@ -223,7 +232,7 @@ FiniteElement<T>::FiniteElement(
       _cell_type(elements.front()->cell_type()), _space_dim(-1),
       _sub_elements(elements), _reference_value_shape(std::nullopt),
       _symmetric(false), _needs_dof_permutations(false),
-      _needs_dof_transformations(false)
+      _needs_dof_transformations(false), _depends_on_cell_orientation(false)
 {
   _signature = "Mixed element (";
 
@@ -247,6 +256,8 @@ FiniteElement<T>::FiniteElement(
       _needs_dof_permutations = true;
     if (e->needs_dof_transformations())
       _needs_dof_transformations = true;
+    if (e->depends_on_cell_orientation())
+      _depends_on_cell_orientation = true;
 
     const std::size_t sub_bs = e->block_size();
     for (std::size_t i = 0; i < _entity_dofs.size(); ++i)
@@ -287,7 +298,7 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
       _space_dim(pshape[0] * _bs), _sub_elements({}),
       _reference_value_shape(std::vector<std::size_t>()), _element(nullptr),
       _symmetric(symmetric), _needs_dof_permutations(false),
-      _needs_dof_transformations(false),
+      _needs_dof_transformations(false), _depends_on_cell_orientation(false),
       _entity_dofs(mesh::cell_dim(cell_type) + 1),
       _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
       _points(std::vector<T>(points.begin(), points.end()), pshape)
@@ -615,6 +626,12 @@ bool FiniteElement<T>::needs_dof_transformations() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
+bool FiniteElement<T>::depends_on_cell_orientation() const noexcept
+{
+  return _depends_on_cell_orientation;
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
 bool FiniteElement<T>::needs_dof_permutations() const noexcept
 {
   return _needs_dof_permutations;
@@ -624,14 +641,14 @@ template <std::floating_point T>
 void FiniteElement<T>::permute(std::span<std::int32_t> doflist,
                                std::uint32_t cell_permutation) const
 {
-  _element->permute(doflist, cell_permutation);
+  _element->permute(doflist, cell_permutation & ~mesh::reversed_cell_bit);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 void FiniteElement<T>::permute_inv(std::span<std::int32_t> doflist,
                                    std::uint32_t cell_permutation) const
 {
-  _element->permute_inv(doflist, cell_permutation);
+  _element->permute_inv(doflist, cell_permutation & ~mesh::reversed_cell_bit);
 }
 //-----------------------------------------------------------------------------
 /// @cond

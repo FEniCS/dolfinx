@@ -23,7 +23,9 @@
 #include <numeric>
 #include <random>
 #include <set>
+#include <stdexcept>
 #include <thread>
+#include <utility>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -828,6 +830,19 @@ build_entity_types(const std::vector<CellType>& cell_types)
   }
   return entity_types;
 }
+
+/// Throw unless `tdim` is that of a surface, which cell orientations
+/// need
+void check_surface_dim(int tdim)
+{
+  if (tdim != 2)
+  {
+    throw std::invalid_argument(
+        std::format("Cell orientations need a surface mesh (topological "
+                    "dimension 2), not dimension {}.",
+                    tdim));
+  }
+}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -967,6 +982,67 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
   }
 
   return _cell_permutations;
+}
+//-----------------------------------------------------------------------------
+void Topology::create_cell_orientations()
+{
+  // Check before the collective calls below
+  check_surface_dim(dim());
+
+  // Creates the edges, which the orientation is computed across, and
+  // their orientations relative to the cells
+  create_cell_permutations();
+  create_entity_permutations(1);
+  create_connectivity(1, 2);
+  set_cell_orientations(compute_cell_orientations(*this));
+}
+//-----------------------------------------------------------------------------
+void Topology::set_cell_orientations(std::span<const std::int8_t> orientations)
+{
+  // Check before the collective call below
+  check_surface_dim(dim());
+  std::shared_ptr<const common::IndexMap> cell_map = index_map(2);
+  if (const std::int32_t num_cells
+      = cell_map->size_local() + cell_map->num_ghosts();
+      std::cmp_not_equal(orientations.size(), num_cells))
+  {
+    throw std::invalid_argument(
+        std::format("Expected {} cell orientations, one per owned and ghost "
+                    "cell, not {}.",
+                    num_cells, orientations.size()));
+  }
+#ifndef NDEBUG
+  if (!std::ranges::all_of(orientations,
+                           [](std::int8_t o) { return o == 1 or o == -1; }))
+  {
+    throw std::invalid_argument("Cell orientations must be 1 or -1.");
+  }
+#endif
+
+  create_cell_permutations();
+  for (std::size_t c = 0; c < orientations.size(); ++c)
+  {
+    if (orientations[c] < 0)
+      _cell_permutations[c] |= reversed_cell_bit;
+    else
+      _cell_permutations[c] &= ~reversed_cell_bit;
+  }
+  _has_cell_orientations = true;
+}
+//-----------------------------------------------------------------------------
+bool Topology::has_cell_orientations() const noexcept
+{
+  return _has_cell_orientations;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int8_t> Topology::get_cell_orientations() const
+{
+  const std::vector<std::uint32_t>& info = get_cell_permutation_info();
+  std::vector<std::int8_t> orientations(info.size());
+  std::ranges::transform(info, orientations.begin(),
+                         [](std::uint32_t p) -> std::int8_t
+                         { return (p & reversed_cell_bit) ? -1 : 1; });
+  return orientations;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>&

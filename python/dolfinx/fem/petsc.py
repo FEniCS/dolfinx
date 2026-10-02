@@ -1048,7 +1048,7 @@ class LinearProblem(typing.Generic[_U]):
     def __init__(
         self: LinearProblem[_Function],
         a: ufl.Form,
-        L: ufl.Form,
+        L: ufl.Form | ufl.ZeroBaseForm,
         *,
         petsc_options_prefix: str,
         bcs: Sequence[DirichletBC] | None = None,
@@ -1063,13 +1063,13 @@ class LinearProblem(typing.Generic[_U]):
     @overload
     def __init__(
         self: LinearProblem[Sequence[_Function]],
-        a: Sequence[Sequence[ufl.Form | None]],
-        L: Sequence[ufl.Form],
+        a: Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]],
+        L: Sequence[ufl.Form | ufl.ZeroBaseForm],
         *,
         petsc_options_prefix: str,
         bcs: Sequence[DirichletBC] | None = None,
         u: Sequence[_Function] | None = None,
-        P: Sequence[Sequence[ufl.Form | None]] | None = None,
+        P: Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]] | None = None,
         kind: str | Sequence[Sequence[str]] | None = None,
         petsc_options: dict | None = None,
         form_compiler_options: dict | None = None,
@@ -1078,13 +1078,13 @@ class LinearProblem(typing.Generic[_U]):
     ) -> None: ...
     def __init__(
         self,
-        a: ufl.Form | Sequence[Sequence[ufl.Form | None]],
-        L: ufl.Form | Sequence[ufl.Form],
+        a: ufl.Form | Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]],
+        L: ufl.Form | ufl.ZeroBaseForm | Sequence[ufl.Form | ufl.ZeroBaseForm],
         *,
         petsc_options_prefix: str,
         bcs: Sequence[DirichletBC] | None = None,
         u: _Function | Sequence[_Function] | None = None,
-        P: ufl.Form | Sequence[Sequence[ufl.Form | None]] | None = None,
+        P: ufl.Form | Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]] | None = None,
         kind: str | Sequence[Sequence[str]] | None = None,
         petsc_options: dict | None = None,
         form_compiler_options: dict | None = None,

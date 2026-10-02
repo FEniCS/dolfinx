@@ -442,9 +442,101 @@ class Topology:
         The returned data is used for packing coefficients and
         assembling of tensors. The bits of each integer encodes the
         number of reflections and permutations for each sub-entity of
-        the cell to be able to map it to the reference element.
+        the cell to be able to map it to the reference element. The
+        most significant bit marks a reversed cell (see
+        :meth:`get_cell_orientations`).
         """
         return self._cpp_object.get_cell_permutation_info()
+
+    def create_cell_orientations(self) -> None:
+        """Compute and store consistent orientation markers for manifolds.
+
+        The cells are not modified. On a surface, elements mapped by the
+        contravariant Piola map (e.g. Raviart-Thomas,
+        Brezzi-Douglas-Marini) are conforming only between cells whose
+        vertex orders give the same normal. On a manifold, these spaces
+        can therefore only be created once an orientation has been
+        computed with this call or set with :meth:`set_cell_orientations`
+        (see :meth:`has_cell_orientations`). Lagrange and Nédélec spaces
+        do not need it. The result is read with
+        :meth:`get_cell_orientations`.
+
+        Warning:
+            Changing the orientation after creating such spaces
+            invalidates existing :class:`dolfinx.fem.Function` data on
+            them, as their degrees-of-freedom are not corrected.
+
+        Note:
+            Collective.
+
+        Raises:
+            ValueError: If the topological dimension is not 2.
+            RuntimeError: If the surface is not orientable, e.g. a Möbius
+                strip, or an edge is shared by more than two cells.
+        """
+        self._cpp_object.create_cell_orientations()
+
+    def get_cell_orientations(self) -> npt.NDArray[np.int8]:
+        """Get the orientation of each cell relative to its surface.
+
+        The orientation is set by :meth:`create_cell_orientations`.
+        Which of its two orientations each connected surface gets is
+        arbitrary, and depends on the partitioning. The basis functions
+        and the degrees-of-freedom change sign together, so the choice
+        changes no field.
+
+        Returns:
+            For each owned and ghost cell, ``-1`` if its orientation is
+            reversed and ``1`` otherwise. All ``1`` if no orientation has
+            been computed or set (see :meth:`has_cell_orientations`).
+
+        Raises:
+            RuntimeError: If the cell permutations have not been created
+                (see :meth:`create_cell_permutations`).
+        """
+        return self._cpp_object.get_cell_orientations()
+
+    def has_cell_orientations(self) -> bool:
+        """Check if a cell orientation has been computed or set.
+
+        Function spaces whose basis depends on the cell orientation, e.g.
+        Raviart-Thomas on a manifold, can only be created once it has
+        (see :meth:`create_cell_orientations` and
+        :meth:`set_cell_orientations`).
+        """
+        return self._cpp_object.has_cell_orientations()
+
+    def set_cell_orientations(self, orientations: npt.ArrayLike) -> None:
+        """Set the orientation of each cell relative to its surface.
+
+        An alternative to :meth:`create_cell_orientations` for when a
+        consistent orientation is known, e.g. the outward normal of a
+        closed surface. It is stored in the same way, but not checked for
+        consistency between neighbouring cells. On a mesh whose cells are
+        consistently ordered, setting all orientations to ``1`` keeps
+        each cell's own vertex order.
+
+        Warning:
+            As for :meth:`create_cell_orientations`, changing the
+            orientation after creating spaces whose basis depends on it
+            invalidates existing :class:`dolfinx.fem.Function` data on
+            them.
+
+        Note:
+            Collective.
+
+        Args:
+            orientations: For each owned and ghost cell, ``-1`` if its
+                orientation is reversed relative to its vertex order and
+                ``1`` otherwise. A ghost cell must have the same
+                orientation as on its owner.
+
+        Raises:
+            ValueError: If the topological dimension is not 2, or
+                ``orientations`` does not have one entry per owned and
+                ghost cell.
+        """
+        self._cpp_object.set_cell_orientations(np.asarray(orientations, dtype=np.int8))
 
     def get_entity_permutations(self, dim: int) -> npt.NDArray[np.uint8]:
         """Get the permutation integer for entities of a dimension.

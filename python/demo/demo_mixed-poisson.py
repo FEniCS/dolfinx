@@ -180,7 +180,7 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
         + ufl.inner(u_trial, ufl.div(tau)) * dx
         + ufl.inner(ufl.div(sigma_trial), v) * dx
     )
-    L: list[ufl.Form] = [  # type: ignore[list-item]
+    L: list[ufl.Form | ufl.ZeroBaseForm] = [
         ufl.ZeroBaseForm((tau,)),
         -ufl.inner(f, v) * dx,
     ]

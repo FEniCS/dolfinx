@@ -201,7 +201,7 @@ a_ufl: list[list[ufl.Form | None]] = [
     [ufl.inner(ufl.div(u), q) * ufl.dx, None],
 ]
 a: list[list[Form | None]] = form(a_ufl)  # type: ignore[assignment]
-L_ufl: list[ufl.Form] = [  # type: ignore[list-item]
+L_ufl: list[ufl.Form | ufl.ZeroBaseForm] = [
     ufl.inner(f, v) * ufl.dx,
     ufl.ZeroBaseForm((q,)),
 ]
