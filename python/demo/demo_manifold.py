@@ -137,7 +137,7 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 #
 # The orientation must be requested explicitly, as it is needed only by
 # $H(\mathrm{div})$ elements on surfaces. Lagrange and Nédélec elements
-# do not depend on it. In legacy FEniCs the cells were oriented relative
+# do not depend on it. In legacy FEniCS the cells were oriented relative
 # to a normal field given by the user {cite}`rognes2013manifolds`.
 
 if orient_cells:
