@@ -127,30 +127,55 @@ create_sub_index_map(const IndexMap& imap,
                      std::span<const std::int32_t> indices,
                      IndexMapOrder order = IndexMapOrder::any);
 
-/// @brief Compute the ranks that share indices with the caller.
+/// @brief Compute the symmetric neighbourhood of ranks that share an
+/// owned or ghost index with the caller.
 ///
-/// An index map stores source and destination ranks (IndexMap::src,
-/// IndexMap::dest), but not which ranks share each index. That per-index
-/// adjacency list, which also contains the other ranks that ghost a
-/// ghost index, can be large and vary greatly in length between indices,
-/// so it is computed on demand by IndexMap::index_to_dest_ranks rather
-/// than stored.
+/// A rank shares a local index with the caller if it also holds the
+/// index, as owner or ghost. For an owned index, the sharing ranks are
+/// the ranks that ghost it. For a ghost index, they are its owner and
+/// the other ranks that ghost it; the latter need not be in
+/// IndexMap::src or IndexMap::dest.
 ///
-/// This function returns that list with each rank replaced by its
-/// position in the sorted list of all sharing ranks, i.e. as a
-/// neighbourhood rank. Sharing is symmetric, rank `a` lists rank `b` if
-/// and only if `b` lists `a`, so the sharing ranks can be both the
-/// sources and the destinations of one neighbourhood communicator.
+/// The in-neighbourhood IndexMap::src (owners of the caller's ghosts)
+/// and the out-neighbourhood IndexMap::dest (ranks ghosting the
+/// caller's owned indices) differ in general. Sharing is symmetric:
+/// rank `a` shares an index with rank `b` if and only if `b` shares it
+/// with `a`. The returned ranks can therefore be both the sources and
+/// the destinations of a neighbourhood communicator.
+///
+/// Example on four ranks, where `|` separates owned and ghost entries:
+/// @code
+/// rank 0: local [0, 1]    | [2]    -> global [0, 1]    | [2]    (owner 1)
+/// rank 1: local [0, 1, 2] | [3]    -> global [2, 3, 4] | [6]    (owner 2)
+/// rank 2: local [0, 1]    | [2]    -> global [5, 6]    | [2]    (owner 1)
+/// rank 3: local [0]       | [1, 2] -> global [7]       | [1, 5] (owners 0, 2)
+/// @endcode
+/// The return values are:
+/// @code
+///         src     dest    unique_ranks  data          offsets
+/// rank 0: [1]     [3]     [1, 2, 3]     [2, 0, 1]     [0, 0, 1, 3]
+/// rank 1: [2]     [0, 2]  [0, 2]        [0, 1, 1]     [0, 2, 2, 2, 3]
+/// rank 2: [1]     [1, 3]  [0, 1, 3]     [2, 1, 0, 1]  [0, 1, 2, 4]
+/// rank 3: [0, 2]  []      [0, 2]        [0, 1]        [0, 0, 1, 2]
+/// @endcode
+/// Ranks 0 and 2 share global index 2, which both ghost, although
+/// neither is in the other's IndexMap::src or IndexMap::dest. Rank 3 is
+/// in IndexMap::dest of ranks 0 and 2, but its own IndexMap::dest is
+/// empty. On rank 0, local index 1 occupies entry `[offsets[1],
+/// offsets[2]) = [0, 1)` of `data`, whose value 2 is the position of
+/// rank 3 in `unique_ranks`.
 ///
 /// @note Collective.
 ///
 /// @param[in] imap Index map.
-/// @return (0) Sorted ranks that share an index with the caller, (1)
-/// the data of IndexMap::index_to_dest_ranks with each rank replaced by
-/// its position in (0), and (2) its offsets. The neighbourhood ranks
-/// sharing local index `i` occupy `[offsets[i], offsets[i + 1])`.
-/// `data()` of (0) is not null, as required by some MPI
-/// implementations, even if (0) is empty.
+/// @return (0) `unique_ranks`: sorted ranks, other than the caller,
+/// that share at least one index with the caller. (1) `data` and (2)
+/// `offsets`: adjacency list from each local index to the ranks sharing
+/// it, given as positions in (0). `offsets` has `imap.size_local() +
+/// imap.num_ghosts() + 1` entries, and the ranks sharing local index
+/// `i` occupy `[offsets[i], offsets[i + 1])` of `data`. `data()` of (0)
+/// is not null, as required by some MPI implementations, even if (0) is
+/// empty.
 std::tuple<std::vector<int>, std::vector<int>, std::vector<std::int32_t>>
 compute_sharing_neighbourhood(const IndexMap& imap);
 
@@ -338,15 +363,16 @@ public:
 
   /// @brief Compute sharing ranks for each local index.
   ///
+  /// Communicates over neighbourhoods built from src() and dest().
+  ///
   /// @note Collective
   ///
-  /// @param[in] tag Tag to pass to MPI calls.
-  /// @note See IndexMap(MPI_Comm, std::int32_t, std::span<const
-  /// std::int64_t>, std::span<const int>, int) for tag requirements.
   /// @return (0) Sharing-rank data and (1) offsets. Ranks sharing local
-  /// index `i` occupy `[offsets[i], offsets[i + 1])`.
-  std::pair<std::vector<int>, std::vector<std::int32_t>> index_to_dest_ranks(
-      int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx)) const;
+  /// index `i` occupy `[offsets[i], offsets[i + 1])`. For an owned
+  /// index, these are the ranks that ghost it; for a ghost index, its
+  /// owner and the other ranks that ghost it. The caller is excluded.
+  std::pair<std::vector<int>, std::vector<std::int32_t>>
+  index_to_dest_ranks() const;
 
   /// @brief Return owned indices ghosted by another rank.
   ///

@@ -53,8 +53,8 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   auto map_c = topology->index_map(1);
   assert(map_c);
 
-  // Ranks that share cells, and the neighbourhood ranks sharing each
-  // cell
+  // Ranks sharing an owned or ghost cell with this rank, and for each
+  // cell the sharing ranks as positions in ranks
   auto [ranks, _data, _offsets] = common::compute_sharing_neighbourhood(*map_c);
   graph::AdjacencyList<int> cell_ranks(std::move(_data), std::move(_offsets));
 
