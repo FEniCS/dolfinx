@@ -447,7 +447,7 @@ class Topology:
         return self._cpp_object.get_cell_permutation_info()
 
     def create_cell_orientations(self) -> None:
-        """Compute and store a per-cell marker for a consistent orientation of a surface mesh.
+        """Compute and store consistent orientation markers for manifolds.
 
         On a manifold mesh, whose topological dimension is less than its
         geometric dimension, the determinant of a cell's Jacobian has no
