@@ -21,7 +21,9 @@ class Topology;
 /// Set by Topology::create_cell_orientations. The sub-entity permutations
 /// packed into the same integer (see compute_cell_permutations) use at
 /// most 30 bits (hexahedron: three per face and one per edge), so this
-/// bit is free for every cell type.
+/// bit is free for every cell type. It is cleared
+/// (`info & ~reversed_cell_bit`) before the info is passed to Basix,
+/// which knows only the sub-entity permutations.
 constexpr std::uint32_t reversed_cell_bit = std::uint32_t(1) << 31;
 
 /// @brief Compute the permutation to apply to each cell-local entity of
@@ -112,16 +114,27 @@ std::vector<std::uint32_t> compute_cell_permutations(const Topology& topology,
 /// @brief Compute a consistent orientation of the cells of a surface
 /// mesh.
 ///
+/// See Topology::create_cell_orientations, which stores the result, for
+/// why it is needed.
+///
 /// Two cells sharing an edge are consistently oriented when, going
 /// round each cell in the order of its vertices, they run the edge in
-/// opposite directions. Each connected part of the surface, i.e. each
-/// set of cells connected through shared edges, is walked across its
-/// edges from its cell with the lowest global index, which keeps
-/// orientation `1`. Cells meeting only at a vertex are oriented
-/// independently. The geometry is not used. Which of its two
-/// orientations a part gets depends on the partitioning, but reversing
-/// all cells of a part negates all of its basis functions, which leaves
-/// every field unchanged.
+/// opposite directions. For example, cells `(0, 1, 2)` and `(1, 3, 2)`
+/// share edge `{1, 2}`. The first runs it from 1 to 2 and the second
+/// from 2 to 1, so they agree and get the same orientation. Had the
+/// second cell been `(1, 2, 3)`, both would run it from 1 to 2, so they
+/// would disagree and get opposite orientations, `1` and `-1`.
+///
+/// A part of the surface is a set of cells connected through shared
+/// edges. Cells meeting only at a vertex are not connected, so their
+/// parts are oriented independently. Each part keeps the orientation
+/// of its cell with the lowest global index, which gets `1`. Only the
+/// vertex orders are used, not the geometry.
+///
+/// Which of its two orientations a part gets therefore depends on the
+/// global cell numbering, and so on the partitioning. Reversing every
+/// cell of a part negates its basis functions and, with them, its
+/// degrees-of-freedom, so the field they represent is unchanged.
 ///
 /// @note Collective.
 /// @pre The edges, the connectivity between edges and cells, and the

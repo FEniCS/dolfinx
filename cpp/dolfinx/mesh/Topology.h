@@ -176,22 +176,32 @@ public:
   /// depends on the cell orientation consume it.
   ///
   /// On a manifold mesh, whose topological dimension is less than its
-  /// geometric dimension, the Jacobian of a cell is not square and its
-  /// determinant has no sign. The normal of each cell is then set by
-  /// the order of its vertices, and elements mapped by the
-  /// contravariant Piola map (e.g. Raviart-Thomas, Brezzi-Douglas-Marini)
-  /// are conforming only between cells whose normals agree. Call this
-  /// before creating such spaces on a surface whose cells may not be
-  /// consistently ordered, e.g. one extracted from a volume mesh with
-  /// create_submesh. Lagrange and Nédélec spaces do not need it.
+  /// geometric dimension, the contravariant Piola map scales by the
+  /// pseudo-determinant \f$\sqrt{\det(J^T J)}\f$ of the Jacobian
+  /// \f$J\f$. It is positive by construction, so it cannot encode an
+  /// orientation. Instead, the vertex order of each cell fixes its
+  /// normal, and elements mapped by the contravariant Piola map (e.g.
+  /// Raviart-Thomas, Brezzi-Douglas-Marini) are conforming only between
+  /// cells whose normals agree. Such spaces need this call on a surface
+  /// whose cells may not be consistently ordered, e.g. one extracted
+  /// from a volume mesh with create_submesh. Lagrange and Nédélec spaces
+  /// do not need it.
   ///
-  /// The orientation of each cell is computed from the vertex orders
-  /// alone (see compute_cell_orientations) and stored in the cell
-  /// permutation info (see ::reversed_cell_bit). Such elements change
-  /// the sign of their basis on the cells whose vertex order disagrees
-  /// with it, which applies to every later assembly, interpolation and
-  /// evaluation. Degrees-of-freedom computed before the call follow the
-  /// cells' own vertex orders.
+  /// The orientation is computed from the vertex orders alone (see
+  /// compute_cell_orientations), and can be read back with
+  /// get_cell_orientations. On cells whose vertex order disagrees with
+  /// it, such elements negate their basis in every later assembly,
+  /// interpolation and evaluation. Which of its two orientations each
+  /// connected surface gets is arbitrary, and depends on the
+  /// partitioning. Reversing all cells of a surface negates the basis
+  /// functions and, with them, the degrees-of-freedom, so the field they
+  /// represent is unchanged.
+  ///
+  /// @warning Call this before computing degrees-of-freedom on spaces
+  /// whose basis depends on the cell orientation, e.g. by
+  /// interpolation. Degrees-of-freedom computed beforehand follow the
+  /// cells' own vertex orders and are not corrected, so this call
+  /// invalidates existing Function data on such spaces.
   ///
   /// @note Collective.
   /// @throws std::invalid_argument If the topological dimension is not
@@ -200,6 +210,17 @@ public:
   /// Möbius strip, or an edge is shared by more than two cells.
   /// @throws std::out_of_range If there is more than one cell type.
   void create_cell_orientations();
+
+  /// @brief Get the orientation of each cell relative to the
+  /// orientation of its surface (see create_cell_orientations).
+  ///
+  /// @return For each owned and ghost cell, in local cell order, `-1`
+  /// if its orientation is reversed and `1` otherwise. All are `1` if
+  /// create_cell_orientations has not been called.
+  /// @throws std::runtime_error If create_cell_permutations has not
+  /// been called.
+  /// @throws std::out_of_range If there is more than one cell type.
+  std::vector<std::int8_t> get_cell_orientations() const;
 
   /// @brief Get the numbers that encode the permutation to apply to
   /// each cell-local entity of a given dimension.

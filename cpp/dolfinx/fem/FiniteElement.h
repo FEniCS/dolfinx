@@ -566,13 +566,14 @@ public:
   /// mesh::Topology::create_cell_orientations).
   ///
   /// True for elements mapped by the contravariant Piola map on a
-  /// manifold, whose field depends on the sign of the Jacobian
-  /// determinant, and for mixed elements with such a sub-element. The
-  /// sign change is applied by the DOF transformations
-  /// (see T_apply()), so it takes effect only if
-  /// needs_dof_transformations() is also true; for elements without DOF
-  /// transformations, e.g. discontinuous ones, a sign per cell is only a
-  /// change of basis.
+  /// manifold, and for mixed elements with such a sub-element.
+  ///
+  /// @note The sign change is applied by the DOF transformations (see
+  /// T_apply()). An element for which needs_dof_transformations() is
+  /// false therefore ignores the cell orientation, even if this returns
+  /// true. This is the case for discontinuous elements, where it is
+  /// harmless: with no continuity between cells to preserve, a sign per
+  /// cell changes the basis but not the space.
   ///
   /// @return True if the basis depends on the cell orientation.
   bool depends_on_cell_orientation() const noexcept;
@@ -876,7 +877,7 @@ public:
   void T_apply(std::span<U> data, std::uint32_t cell_permutation, int n) const
   {
     assert(_element);
-    _element->T_apply(data, n, cell_permutation);
+    _element->T_apply(data, n, cell_permutation & ~mesh::reversed_cell_bit);
     flip_reversed_cell(data, cell_permutation);
   }
 
@@ -894,7 +895,8 @@ public:
                     int n) const
   {
     assert(_element);
-    _element->Tt_inv_apply(data, n, cell_permutation);
+    _element->Tt_inv_apply(data, n,
+                           cell_permutation & ~mesh::reversed_cell_bit);
     flip_reversed_cell(data, cell_permutation);
   }
 
@@ -911,7 +913,7 @@ public:
   void Tt_apply(std::span<U> data, std::uint32_t cell_permutation, int n) const
   {
     assert(_element);
-    _element->Tt_apply(data, n, cell_permutation);
+    _element->Tt_apply(data, n, cell_permutation & ~mesh::reversed_cell_bit);
     flip_reversed_cell(data, cell_permutation);
   }
 
@@ -928,7 +930,7 @@ public:
                   int n) const
   {
     assert(_element);
-    _element->Tinv_apply(data, n, cell_permutation);
+    _element->Tinv_apply(data, n, cell_permutation & ~mesh::reversed_cell_bit);
     flip_reversed_cell(data, cell_permutation);
   }
 
@@ -945,7 +947,8 @@ public:
                      int n) const
   {
     assert(_element);
-    _element->T_apply_right(data, n, cell_permutation);
+    _element->T_apply_right(data, n,
+                            cell_permutation & ~mesh::reversed_cell_bit);
     flip_reversed_cell(data, cell_permutation);
   }
 
@@ -963,7 +966,8 @@ public:
                         int n) const
   {
     assert(_element);
-    _element->Tinv_apply_right(data, n, cell_permutation);
+    _element->Tinv_apply_right(data, n,
+                               cell_permutation & ~mesh::reversed_cell_bit);
     flip_reversed_cell(data, cell_permutation);
   }
 
@@ -981,7 +985,8 @@ public:
                       int n) const
   {
     assert(_element);
-    _element->Tt_apply_right(data, n, cell_permutation);
+    _element->Tt_apply_right(data, n,
+                             cell_permutation & ~mesh::reversed_cell_bit);
     flip_reversed_cell(data, cell_permutation);
   }
 
@@ -999,7 +1004,8 @@ public:
                           int n) const
   {
     assert(_element);
-    _element->Tt_inv_apply_right(data, n, cell_permutation);
+    _element->Tt_inv_apply_right(data, n,
+                                 cell_permutation & ~mesh::reversed_cell_bit);
     flip_reversed_cell(data, cell_permutation);
   }
 
@@ -1062,17 +1068,12 @@ private:
   // Negate data on a cell marked with mesh::reversed_cell_bit if the
   // basis depends on the cell orientation. A sign is its own inverse and
   // transpose, so every DOF transformation applies it the same way.
-  //
-  // The DOF transformations pass cell_permutation to Basix unmasked.
-  // Its last bit, mesh::reversed_cell_bit, is the cell orientation on a
-  // manifold, which Basix ignores as it reads only the sub-entity bits.
-  // If Basix changes this, the bit must be masked out.
   template <typename U>
   void flip_reversed_cell(std::span<U> data,
                           std::uint32_t cell_permutation) const
   {
-    if ((cell_permutation & mesh::reversed_cell_bit)
-        and depends_on_cell_orientation())
+    if (_depends_on_cell_orientation
+        and (cell_permutation & mesh::reversed_cell_bit))
     {
       std::ranges::transform(data, data.begin(), std::negate{});
     }
@@ -1117,6 +1118,9 @@ private:
   // Indicate whether the element needs permutations or transformations
   bool _needs_dof_permutations;
   bool _needs_dof_transformations;
+
+  // Indicate whether the basis depends on the cell orientation
+  bool _depends_on_cell_orientation;
 
   std::vector<std::vector<std::vector<int>>> _entity_dofs;
   std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;

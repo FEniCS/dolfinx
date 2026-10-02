@@ -121,7 +121,10 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 # from the reference cell, ties the direction of the normal flux across
 # each edge to this side. The normal component of $\sigma_h$ is thus
 # continuous across an edge only if the two cells sharing it agree on
-# the side, i.e. if the mesh is consistently oriented.
+# the side, i.e. if the mesh is consistently oriented. Two cells agree
+# when, going round each in the order of its vertices, they run their
+# shared edge in opposite directions, as cells $(0, 1, 2)$ and
+# $(1, 3, 2)$ do with edge $\{1, 2\}$.
 #
 # There is no guarantee that an input mesh has a consistent orientation.
 # An example is a submesh of the exterior boundary of a volume mesh:
@@ -142,13 +145,12 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 
 if orient_cells:
     mesh.topology.create_cell_orientations()
-    # The orientation information is stored in the last bit of the
-    # cell permutation info.
-    # We count the number of reversed cells, which should be zero for a
-    # consistently oriented mesh.
-    reversed_cells = mesh.topology.get_cell_permutation_info() >> 31
+    # Count the cells whose orientation is reversed relative to their
+    # own vertex order. The count is nonzero, as the facets of the ball
+    # are not consistently ordered.
+    orientations = mesh.topology.get_cell_orientations()
     num_owned = mesh.topology.index_map(2).size_local
-    num_reversed = mesh.comm.allreduce(int(reversed_cells[:num_owned].sum()), op=MPI.SUM)
+    num_reversed = mesh.comm.allreduce(int(np.sum(orientations[:num_owned] < 0)), op=MPI.SUM)
     if mesh.comm.rank == 0:
         print(f"{num_reversed} of {mesh.topology.index_map(2).size_global} cells reversed")
 

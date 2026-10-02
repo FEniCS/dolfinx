@@ -473,12 +473,8 @@ def tangential_field(mesh, linear):
 
 
 def reversed_cells(mesh):
-    """Whether the orientation of each owned and ghost cell is reversed.
-
-    Read from the bit ``create_cell_orientations`` sets in the cell
-    permutation info.
-    """
-    return (mesh.topology.get_cell_permutation_info() >> 31).astype(bool)
+    """Whether the orientation of each owned and ghost cell is reversed."""
+    return mesh.topology.get_cell_orientations() < 0
 
 
 def cube_surface(ghost_mode, cell_type=CellType.tetrahedron):
@@ -587,17 +583,31 @@ def test_interpolate_on_mixed_cell_orientations(gdim, spec):
 
 
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-@pytest.mark.parametrize("family, degree", [("RT", 1), ("RT", 2), ("BDM", 1)])
-def test_divergence_theorem_on_a_closed_surface(family, degree, ghost_mode):
+@pytest.mark.parametrize(
+    "cell_type, family, degree",
+    [
+        (CellType.tetrahedron, "RT", 1),
+        (CellType.tetrahedron, "RT", 2),
+        (CellType.tetrahedron, "BDM", 1),
+        (CellType.hexahedron, "RTCF", 1),
+        (CellType.hexahedron, "RTCF", 2),
+        (CellType.hexahedron, "BDMCF", 1),
+    ],
+)
+def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost_mode):
     """``int div(w) dx = 0`` on a closed surface, for any conforming ``w``.
 
     Summed over the cells, the flux through each edge cancels between
     the two cells sharing it, provided they agree about its direction.
     The degrees-of-freedom are set from their global index, so the field
-    does not depend on the partition.
+    does not depend on the partition. The surface of a hexahedral cube
+    has quadrilateral cells, which run their edges in other directions
+    than triangles.
     """
-    surface = cube_surface(ghost_mode)
-    V = functionspace(surface, element(family, "triangle", degree, dtype=default_real_type))
+    surface = cube_surface(ghost_mode, cell_type)
+    V = functionspace(
+        surface, element(family, surface.basix_cell(), degree, dtype=default_real_type)
+    )
     w = Function(V, dtype=default_real_type)
     imap = V.dofmap.index_map
     indices = np.arange(imap.size_local + imap.num_ghosts, dtype=np.int32)
@@ -668,17 +678,36 @@ def test_cell_orientations_undo_mixed_vertex_orders():
     assert even_flagged or odd_flagged
 
 
+def test_get_cell_orientations():
+    """All cells have orientation ``1`` until the cells are oriented, then ``1`` or ``-1``."""
+    mesh = plane_mesh(2, 3, mixed_orientation=True)
+    mesh.topology.create_cell_permutations()
+    cell_map = mesh.topology.index_map(2)
+    num_cells = cell_map.size_local + cell_map.num_ghosts
+
+    orientations = mesh.topology.get_cell_orientations()
+    assert orientations.dtype == np.int8
+    assert orientations.shape == (num_cells,)
+    np.testing.assert_array_equal(orientations, 1)
+
+    mesh.topology.create_cell_orientations()
+    orientations = mesh.topology.get_cell_orientations()
+    assert orientations.shape == (num_cells,)
+    assert np.all(np.abs(orientations) == 1)
+    assert mesh.comm.allreduce(bool(np.any(orientations < 0)), op=MPI.LOR)
+
+
 def test_cell_orientations_do_not_change_other_elements():
     """Orientations change no element off a manifold, nor covariant ones on it."""
     for gdim, family in [(2, "RT"), (3, "N1curl")]:
         mesh = plane_mesh(2, gdim, mixed_orientation=True)
         V = functionspace(mesh, element(family, "triangle", 1, dtype=default_real_type))
         f, _ = tangential_field(mesh, False)
-        before = Function(V)
+        before = Function(V, dtype=default_real_type)
         before.interpolate(f)
         mesh.topology.create_cell_orientations()
         assert mesh.comm.allreduce(bool(np.any(reversed_cells(mesh))), op=MPI.LOR)
-        after = Function(V)
+        after = Function(V, dtype=default_real_type)
         after.interpolate(f)
         np.testing.assert_array_equal(after.x.array, before.x.array)
 

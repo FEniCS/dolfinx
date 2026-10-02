@@ -442,31 +442,34 @@ class Topology:
         The returned data is used for packing coefficients and
         assembling of tensors. The bits of each integer encodes the
         number of reflections and permutations for each sub-entity of
-        the cell to be able to map it to the reference element.
+        the cell to be able to map it to the reference element. The
+        most significant bit marks a reversed cell (see
+        :meth:`get_cell_orientations`).
         """
         return self._cpp_object.get_cell_permutation_info()
 
     def create_cell_orientations(self) -> None:
         """Compute and store consistent orientation markers for manifolds.
 
-        On a manifold mesh, whose topological dimension is less than its
-        geometric dimension, the determinant of a cell's Jacobian has no
-        sign, so the order of a cell's vertices decides which way its
-        normal points. Elements mapped by the contravariant Piola map
-        (e.g. Raviart-Thomas, Brezzi-Douglas-Marini) are then conforming
-        only between cells whose normals agree. Call this before creating
-        such spaces on a surface whose cells may not be consistently
-        ordered, e.g. one extracted from a volume mesh with
+        The cells are not modified. On a surface, elements mapped by the
+        contravariant Piola map (e.g. Raviart-Thomas,
+        Brezzi-Douglas-Marini) are conforming only between cells whose
+        vertex orders give the same normal. These spaces need this call
+        if the cells may not be consistently ordered, e.g. on a surface
+        extracted from a volume mesh with
         :func:`dolfinx.mesh.create_submesh`. Lagrange and Nédélec spaces
-        do not need it.
+        do not need it. The result is read with
+        :meth:`get_cell_orientations`.
 
-        The orientations are computed from the cells' vertex orders, not
-        the geometry, and apply to every later assembly, interpolation
-        and evaluation. Which of its two orientations a connected surface
-        gets depends on the partitioning, which changes the signs of
-        degrees-of-freedom but no field.
-        Degrees-of-freedom computed before the call follow the cells' own
-        vertex orders. Collective.
+        Warning:
+            Call this before computing degrees-of-freedom on such spaces,
+            e.g. by interpolation. Degrees-of-freedom computed beforehand
+            follow the cells' own vertex orders and are not corrected, so
+            this call invalidates existing
+            :class:`dolfinx.fem.Function` data on such spaces.
+
+        Note:
+            Collective.
 
         Raises:
             ValueError: If the topological dimension is not 2.
@@ -474,6 +477,26 @@ class Topology:
                 strip, or an edge is shared by more than two cells.
         """
         self._cpp_object.create_cell_orientations()
+
+    def get_cell_orientations(self) -> npt.NDArray[np.int8]:
+        """Get the orientation of each cell relative to its surface.
+
+        The orientation is set by :meth:`create_cell_orientations`.
+        Which of its two orientations each connected surface gets is
+        arbitrary, and depends on the partitioning. The basis functions
+        and the degrees-of-freedom change sign together, so the choice
+        changes no field.
+
+        Returns:
+            For each owned and ghost cell, ``-1`` if its orientation is
+            reversed and ``1`` otherwise. All ``1`` if
+            :meth:`create_cell_orientations` has not been called.
+
+        Raises:
+            RuntimeError: If the cell permutations have not been created
+                (see :meth:`create_cell_permutations`).
+        """
+        return self._cpp_object.get_cell_orientations()
 
     def get_entity_permutations(self, dim: int) -> npt.NDArray[np.uint8]:
         """Get the permutation integer for entities of a dimension.

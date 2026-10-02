@@ -254,6 +254,10 @@ void mesh(nb::module_& m)
            &dolfinx::mesh::Topology::create_cell_orientations,
            "Compute and store a per-cell marker for a consistent "
            "orientation of a surface mesh.")
+      .def(
+          "get_cell_orientations", [](const dolfinx::mesh::Topology& self)
+          { return as_nbarray(self.get_cell_orientations()); },
+          "Orientation (+1/-1) of each cell relative to its surface.")
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
       .def_prop_rw(

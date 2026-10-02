@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <bitset>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -503,6 +504,14 @@ exchange_rows(MPI_Comm graph, std::vector<std::int64_t> send,
 // Why a consistent orientation could not be found, combined over ranks
 constexpr int not_orientable = 1;
 constexpr int not_manifold = 2;
+
+// Whether walking round a cell in its vertex order runs Basix edge
+// i = [p, q] from p to q. Round a triangle (0-1-2) the walk runs its
+// edges [1, 2], [0, 2], [0, 1] forward, back, forward, and round a
+// quadrilateral (0-1-3-2) its edges [0, 1], [0, 2], [1, 3], [2, 3]
+// forward, back, forward, back. Valid only for these two cell types, so
+// a new cell type of dimension 2 needs its own table.
+constexpr std::array<bool, 4> edge_runs_forward = {true, false, true, false};
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -536,25 +545,22 @@ mesh::compute_cell_orientations(const mesh::Topology& topology)
   // round c in its vertex order (anticlockwise on the reference cell)
   // runs e from its lower to its higher global vertex. The global vertex
   // numbering is shared by all cells and ranks, so values from different
-  // cells can be compared. forward[i] is whether the walk runs Basix edge
-  // i = [p, q] from p to q, and the reflection bit whether p to q runs
-  // from the higher to the lower global vertex. Round a triangle (0-1-2)
-  // the walk runs its edges [1, 2], [0, 2], [0, 1] forward, back,
-  // forward, and round a quadrilateral (0-1-3-2) its edges [0, 1],
-  // [0, 2], [1, 3], [2, 3] forward, back, forward, back.
+  // cells can be compared. The walk runs Basix edge i = [p, q] from p to
+  // q if edge_runs_forward[i], and the reflection bit is whether p to q
+  // runs from the higher to the lower global vertex.
   const std::vector<std::uint8_t>& edge_perms
       = topology.get_entity_permutations(1);
   const int edges_per_cell = mesh::cell_num_entities(topology.cell_type(), 1);
+  assert(std::cmp_less_equal(edges_per_cell, edge_runs_forward.size()));
   auto runs_up = [&c_to_e, &edge_perms, &edges_per_cell](std::int32_t c,
                                                          std::int32_t e) -> bool
   {
-    constexpr std::array<bool, 4> forward = {true, false, true, false};
     std::span<const std::int32_t> edges = c_to_e->links(c);
     const std::size_t i
         = std::ranges::distance(edges.begin(), std::ranges::find(edges, e));
     assert(i < edges.size());
     const bool reflected = edge_perms[c * edges_per_cell + i] % 2;
-    return forward[i] != reflected;
+    return edge_runs_forward[i] != reflected;
   };
 
   // Throw on every rank if any rank found a problem. Collective.

@@ -23,6 +23,7 @@
 #include <numeric>
 #include <random>
 #include <set>
+#include <stdexcept>
 #include <thread>
 
 using namespace dolfinx;
@@ -971,11 +972,20 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 //-----------------------------------------------------------------------------
 void Topology::create_cell_orientations()
 {
+  // Check before the collective calls below
+  if (dim() != 2)
+  {
+    throw std::invalid_argument(
+        std::format("Cell orientations need a surface mesh (topological "
+                    "dimension 2), not dimension {}.",
+                    dim()));
+  }
+
   // Creates the edges, which the orientation is computed across, and
   // their orientations relative to the cells
   create_cell_permutations();
   create_entity_permutations(1);
-  create_connectivity(dim() - 1, dim());
+  create_connectivity(1, 2);
   const std::vector<std::int8_t> orientations
       = compute_cell_orientations(*this);
   for (std::size_t c = 0; c < orientations.size(); ++c)
@@ -985,6 +995,16 @@ void Topology::create_cell_orientations()
     else
       _cell_permutations[c] &= ~reversed_cell_bit;
   }
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int8_t> Topology::get_cell_orientations() const
+{
+  const std::vector<std::uint32_t>& info = get_cell_permutation_info();
+  std::vector<std::int8_t> orientations(info.size());
+  std::ranges::transform(info, orientations.begin(),
+                         [](std::uint32_t p) -> std::int8_t
+                         { return (p & reversed_cell_bit) ? -1 : 1; });
+  return orientations;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>&
