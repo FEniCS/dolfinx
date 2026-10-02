@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Garth N. Wells, Chris Richardson, Joseph P. Dean and
+// Copyright (C) 2019-2026 Garth N. Wells, Chris Richardson, Joseph P. Dean and
 // Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -11,12 +11,12 @@
 #include "traits.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
-#include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <format>
 #include <functional>
@@ -224,7 +224,8 @@ public:
       const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
           entity_maps)
       : _function_spaces(V), _integrals(std::forward<X>(integrals)),
-        _mesh(mesh), _coefficients(coefficients), _constants(constants),
+        _mesh(std::move(mesh)), _coefficients(coefficients),
+        _constants(constants),
         _needs_facet_permutations(needs_facet_permutations)
   {
     if (!_mesh)
@@ -236,93 +237,23 @@ public:
     const mesh::Topology& topology = *_mesh->topology();
     const int tdim = topology.dim();
 
-    // A helper function to find the correct entity map for a given mesh
-    auto get_entity_map
-        = [mesh, &entity_maps](auto& mesh0) -> const mesh::EntityMap&
-    {
-      auto it = std::ranges::find_if(
-          entity_maps,
-          [mesh, mesh0](const mesh::EntityMap& em)
-          {
-            return ((em.topology() == mesh0->topology()
-                     and em.sub_topology() == mesh->topology()))
-                   or ((em.sub_topology() == mesh0->topology()
-                        and em.topology() == mesh->topology()));
-          });
-
-      if (it == entity_maps.end())
-      {
-        throw std::invalid_argument(
-            "Incompatible mesh. argument entity_maps must be provided.");
-      }
-      return *it;
-    };
-
-    // A helper function to compute the (cell, local_entity) pairs in the
-    // argument/coefficient domain from the (cell, local_entity) pairs in
-    // `this->mesh()`.
-    auto compute_entity_domains
-        = [](const auto& int_ents_mesh, int codim, const auto& c_to_e,
-             const auto& emap, bool inverse)
-    {
-      // TODO: This function would be much neater using
-      // `std::views::stride(2)` from C++ 23
-
-      // Get a list of entities to map to the argument/coefficient
-      // domain
-      std::vector<std::int32_t> entities;
-      entities.reserve(int_ents_mesh.size() / 2);
-      if (codim == 0)
-      {
-        // In the codim 0 case, we need to map from cells in
-        // `this->mesh()` to cells in the argument/coefficient mesh, so
-        // here we extract the cells.
-        for (std::size_t i = 0; i < int_ents_mesh.size(); i += 2)
-          entities.push_back(int_ents_mesh[i]);
-      }
-      else
-      {
-        // Otherwise the integration entities are sub-entities of the
-        // cells of `this->mesh()` and are themselves cells of the
-        // argument/coefficient mesh, so here we extract the entity
-        // index using the cell-to-entity connectivity.
-        for (std::size_t i = 0; i < int_ents_mesh.size(); i += 2)
-        {
-          entities.push_back(
-              c_to_e->links(int_ents_mesh[i])[int_ents_mesh[i + 1]]);
-        }
-      }
-
-      // Map from entity indices in `this->mesh()` to the corresponding
-      // cell indices in the argument/coefficient mesh
-      std::vector<std::int32_t> cells_mesh0
-          = emap.sub_topology_to_topology(entities, inverse);
-
-      // Create a list of (cell, local_entity_index) pairs in the
-      // argument/coefficient domain. Only the cell column is meaningful.
-      // For codim > 0 the entity is itself the cell, so it has
-      // no local index. The colummn is never used later on, but written
-      // like this for consistency for packing/assembly.
-      std::vector<std::int32_t> e = int_ents_mesh;
-      for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
-        e[2 * i] = cells_mesh0[i];
-
-      return e;
-    };
-
     // Map the integration entities of one integral to the
     // argument/coefficient domain, checking first that the mapping is
-    // expressible: `compute_entity_domains` maps an integration entity
-    // to a *cell* of that mesh, so unless the meshes have equal
-    // dimension the integral's entity dimension must be that mesh's.
-    auto map_entities = [tdim, &topology, &compute_entity_domains](
-                            IntegralType type, const auto& entities,
-                            const mesh::Mesh<geometry_type>& mesh0,
-                            const mesh::EntityMap& emap,
-                            bool inverse) -> std::vector<std::int32_t>
+    // expressible: an integration entity maps to a *cell* of that mesh,
+    // so unless the meshes have equal dimension the integral's entity
+    // dimension must be that mesh's.
+    auto map_entities
+        = [tdim,
+           &topology](IntegralType type, std::span<const std::int32_t> entities,
+                      const mesh::Topology& topology0,
+                      const mesh::EntityMap& emap) -> std::vector<std::int32_t>
     {
       if (type == IntegralType::cell)
-        return emap.sub_topology_to_topology(entities, inverse);
+      {
+        return mesh::extract_cells_from_entities(
+            topology0, topology, md::mdspan(entities.data(), entities.size()),
+            std::cref(emap));
+      }
 
       if (type == IntegralType::vertex)
       {
@@ -332,11 +263,9 @@ public:
             "exterior facet, interior facet and ridge.");
       }
 
-      const int dim0 = mesh0.topology()->dim();
-      const int codim = tdim - dim0;
+      const int dim0 = topology0.dim();
       const int edim = integral_entity_dim(type, tdim);
-      assert(codim >= 0);
-      if (codim > 0 and edim != dim0)
+      if (tdim > dim0 and edim != dim0)
       {
         throw std::invalid_argument(std::format(
             "Cannot map integration entities of dimension {} to cells of a "
@@ -345,10 +274,24 @@ public:
             edim, dim0));
       }
 
-      std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_to_e
-          = topology.connectivity(tdim, edim);
-      assert(codim == 0 or c_to_e);
-      return compute_entity_domains(entities, codim, c_to_e, emap, inverse);
+      // Map the (cell, local_entity) pairs, flattened (interior facets
+      // hold two pairs per entity), to cells of the argument/coefficient
+      // mesh
+      std::vector<std::int32_t> cells = mesh::extract_cells_from_entities(
+          topology0, topology,
+          md::mdspan<const std::int32_t,
+                     md::extents<std::size_t, md::dynamic_extent, 2>>(
+              entities.data(), entities.size() / 2, 2),
+          std::cref(emap));
+
+      // Replace the cell of each pair. Only the cell column is
+      // meaningful: for codim > 0 the entity is itself the cell, so it
+      // has no local index. The local index column is kept for the
+      // layout used in packing/assembly.
+      std::vector<std::int32_t> e(entities.begin(), entities.end());
+      for (std::size_t i = 0; i < cells.size(); ++i)
+        e[2 * i] = cells[i];
+      return e;
     };
 
     _edata.reserve(_function_spaces.size());
@@ -368,20 +311,14 @@ public:
       else
       {
         // Find correct entity map
-        const mesh::EntityMap& emap = get_entity_map(mesh0);
-
-        // Determine direction of the map. We need to map from
-        // `this->mesh()` to `mesh0`, so if `emap->sub_topology()` isn't
-        // the source topology, we need the inverse map
-        bool inverse = emap.sub_topology() == mesh0->topology();
+        const mesh::Topology& topology0 = *mesh0->topology();
+        const mesh::EntityMap& emap
+            = mesh::find_entity_map(entity_maps, topology, topology0);
         for (auto& [key, itg] : _integrals)
         {
           auto [type, idx, kernel_idx] = key;
-          std::vector<std::int32_t> e;
-          assert(mesh0);
-          e = map_entities(type, itg.entities, *mesh0, emap, inverse);
-
-          vdata.insert({key, std::move(e)});
+          vdata.insert(
+              {key, map_entities(type, itg.entities, topology0, emap)});
         }
       }
 
@@ -400,14 +337,13 @@ public:
         }
         else
         {
-          // Find correct entity map and determine direction of the map
-          const mesh::EntityMap& emap = get_entity_map(mesh0);
-          bool inverse = emap.sub_topology() == mesh0->topology();
-
-          std::vector<std::int32_t> e;
-          assert(mesh0);
-          e = map_entities(type, integral.entities, *mesh0, emap, inverse);
-          _cdata.insert({{type, idx, c}, std::move(e)});
+          // Find correct entity map
+          const mesh::Topology& topology0 = *mesh0->topology();
+          const mesh::EntityMap& emap
+              = mesh::find_entity_map(entity_maps, topology, topology0);
+          _cdata.insert(
+              {{type, idx, c},
+               map_entities(type, integral.entities, topology0, emap)});
         }
       }
     }
