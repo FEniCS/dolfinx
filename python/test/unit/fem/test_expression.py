@@ -654,21 +654,25 @@ def test_submesh_codim_one(dtype, qdegree):
     np.testing.assert_allclose(values, values_exact, atol=tol)
 
 
+@pytest.mark.parametrize("codim", [0, 1])
 @pytest.mark.parametrize("degree", [1, 2])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
-def test_submesh_codim_one_argument_dof_transformations(cell_type, degree):
-    """An argument on a facet submesh gets the dof transformations of its own cells.
+def test_submesh_argument_dof_transformations(cell_type, degree, codim):
+    """An argument on a submesh gets the dof transformations of its own cells.
 
     Contracting the tabulated argument with a function's dofs must give the function,
-    evaluated on the parent mesh's facets through the entity map.
+    evaluated on the parent mesh's entities through the entity map.
     """
-    # Create mesh and submesh of all exterior facets
+    # Create mesh and submesh of a subset of cells, or of all exterior facets
     rtype = default_real_type
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type, dtype=rtype)
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim - 1, tdim)
-    facets = exterior_facet_indices(mesh.topology)
-    submesh, entity_map, _, _ = create_submesh(mesh, tdim - 1, facets)
+    if codim == 0:
+        parent_entities = locate_entities(mesh, tdim, lambda x: x[0] <= 0.5 + 1e-10)
+    else:
+        parent_entities = exterior_facet_indices(mesh.topology)
+    submesh, entity_map, _, _ = create_submesh(mesh, tdim - codim, parent_entities)
 
     # Populate submesh function with random data
     V = functionspace(submesh, ("N1curl", degree))
@@ -676,34 +680,40 @@ def test_submesh_codim_one_argument_dof_transformations(cell_type, degree):
     u = Function(V, dtype=rtype)
     u.x.array[:] = np.random.default_rng(3).standard_normal(u.x.array.size)
 
-    # Extract integration entities (cell, local_facet_index) pairs) and
-    # And get some integration points on the reference facet
-    entities = fem.compute_integration_domains(
-        fem.IntegralType.exterior_facet, mesh.topology, facets
-    ).reshape(-1, 2)
-    facet_type = basix.cell.subentity_types(mesh.basix_cell())[tdim - 1][0]
-    points, _ = basix.make_quadrature(facet_type, 2)
+    if codim == 0:
+        # Integration entities are the cells, with points on the reference cell
+        entities = parent_entities
+        points, _ = basix.make_quadrature(mesh.basix_cell(), 2)
+        expr = u
+    else:
+        # Extract integration entities as (cell, local_facet_index) pairs, and
+        # get some integration points on the reference facet
+        entities = fem.compute_integration_domains(
+            fem.IntegralType.exterior_facet, mesh.topology, parent_entities
+        ).reshape(-1, 2)
+        facet_type = basix.cell.subentity_types(mesh.basix_cell())[tdim - 1][0]
+        points, _ = basix.make_quadrature(facet_type, 2)
+        expr = ufl.cross(ufl.FacetNormal(mesh), u)
 
     # Evaluate expression on parent mesh with submesh coefficient
-    n = ufl.FacetNormal(mesh)
-    expr = ufl.cross(n, u)
+    num_values = points.shape[0] * int(np.prod(expr.ufl_shape))
     values = Expression(expr, points, entity_maps=[entity_map], dtype=rtype).eval(mesh, entities)
 
-    # Evaluate the same expression use a ufl.Testfunction,
+    # Evaluate the same expression using a ufl.TestFunction,
     # which means that dof transformations are applied
     expr_arg = ufl.replace(expr, {u: ufl.TestFunction(V)})
     basis = Expression(expr_arg, points, entity_maps=[entity_map], dtype=rtype)
     basis_values = basis.eval(mesh, entities).reshape(
-        len(entities), -1, V.dofmap.dof_layout.num_dofs
+        len(entities), num_values, V.dofmap.dof_layout.num_dofs
     )
 
-    # The submesh cell of each parent facet; entities follow the order of facets
-    cells = entity_map.sub_topology_to_topology(facets, inverse=True)
+    # The submesh cell of each parent entity; entities follow the order of parent_entities
+    cells = entity_map.sub_topology_to_topology(parent_entities, inverse=True)
     dofs = u.x.array[V.dofmap.list[cells]]
     contracted = np.einsum("evd,ed->ev", basis_values, dofs)
     tol = float(5e2 * np.finfo(rtype).resolution)
 
-    np.testing.assert_allclose(contracted, values.reshape(len(entities), -1), atol=tol)
+    np.testing.assert_allclose(contracted, values.reshape(len(entities), num_values), atol=tol)
 
 
 @pytest.mark.parametrize(
