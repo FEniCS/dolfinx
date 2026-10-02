@@ -1404,14 +1404,15 @@ void declare_real_functions(nb::module_& m)
          const dolfinx::fem::FiniteElement<T>& element0,
          const dolfinx::mesh::Mesh<T>& mesh1,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
-         T padding, bool allow_extrapolation)
+         T padding, T tol_pb, int maxit_pb, bool allow_extrapolation)
       {
         return dolfinx::fem::create_interpolation_data(
             geometry0, element0, mesh1, std::span(cells.data(), cells.size()),
-            padding, allow_extrapolation);
+            padding, tol_pb, maxit_pb, allow_extrapolation);
       },
       nb::arg("geometry0"), nb::arg("element0"), nb::arg("mesh1"),
-      nb::arg("cells"), nb::arg("padding"), nb::arg("allow_extrapolation"));
+      nb::arg("cells"), nb::arg("padding"), nb::arg("tol_pb"),
+      nb::arg("maxit_pb"), nb::arg("allow_extrapolation"));
 }
 
 } // namespace dolfinx_wrappers

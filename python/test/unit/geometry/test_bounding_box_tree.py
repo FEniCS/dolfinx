@@ -10,6 +10,8 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import basix.ufl
+import ufl
 from dolfinx.geometry import (
     bb_tree,
     compute_closest_entity,
@@ -26,6 +28,7 @@ from dolfinx.mesh import (
     compute_incident_entities,
     compute_midpoints,
     create_box,
+    create_mesh,
     create_unit_cube,
     create_unit_interval,
     create_unit_square,
@@ -615,3 +618,153 @@ def test_determine_point_ownership(dim, affine, dtype):
     right_cells = np.delete(cells_local, left_cells)
     np.testing.assert_allclose(subset_po.src_owner[right_cells], -1)
     assert len(subset_po.dest_cells) == len(left_cells)
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_nonaffine_point_ownership(dtype):
+    """Check that point ownership works for non-affine cells.
+
+    The test checks that a non-convex cell does not own a point that is outside
+    of the cell but within its convex hull.
+
+    3-----------7-----------2
+    |             __..--/.  |
+    |        _.-'     .     |
+    |      5'      .        |
+    8     /  x  .           4
+    |    /   .              |
+    |  /  .                 |
+    |/.                     |
+    0-----------6-----------1
+    """
+    if MPI.COMM_WORLD.rank == 0:
+        x = np.array(
+            [
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [1.0, 1.0],
+                [0.0, 1.0],
+                [1.0, 0.5],
+                [0.4, 0.55],
+                [0.5, 0.0],
+                [0.5, 1.0],
+                [0.0, 0.5],
+            ],
+            dtype=dtype,
+        )
+        # cell 0 is convex, cell 1 is non-convex
+        cells = np.array([[0, 1, 2, 4, 5, 6], [0, 2, 3, 7, 8, 5]], dtype=np.int64)
+    else:
+        x = np.empty((0, 2), dtype=dtype)
+        cells = np.empty((0, 6), dtype=np.int64)
+
+    coordinate_element = basix.ufl.element("Lagrange", "triangle", 2, shape=(2,), dtype=dtype)
+    domain = ufl.Mesh(coordinate_element)
+
+    msh = create_mesh(MPI.COMM_WORLD, cells=cells, x=x, e=domain)
+
+    cell_indices = msh.topology.original_cell_index
+    num_cells = msh.topology.index_map(msh.topology.dim).size_local
+    local_cells = np.arange(num_cells, dtype=np.int32)
+    midpoint = compute_midpoints(msh, msh.topology.dim, local_cells)
+    # convex cell
+    convex_cell = np.flatnonzero(cell_indices == 0)[0]
+    assert midpoint[convex_cell][0] > 0.5
+    assert midpoint[convex_cell][1] < 0.5
+
+    # non-convex cell
+    non_convex_cell = np.flatnonzero(cell_indices == 1)[0]
+    assert midpoint[non_convex_cell][1] > 0.5
+    assert midpoint[non_convex_cell][0] < 0.5
+
+    # Point that lies within the convex cell
+    # It lies outside the non-convex cell but within its convex hull
+    point = np.array([[0.41, 0.52, 0.0]], dtype=msh.geometry.x.dtype)
+    ownership = determine_point_ownership(msh, point, 0.0, local_cells)
+    assert ownership.dest_cells[0] == convex_cell
+
+
+def dented_p2_mesh(dtype, offset=0.0):
+    """Two P2 triangles on the square [offset, offset + 1]^2 that share a curved edge.
+
+    The node of the shared edge between (1, 0) and (0, 1) is moved from
+    (0.5, 0.5) to (0.32, 0.32), which dents cell A (at the origin) and
+    makes cell B (at (1, 1)) bulge into the convex hull of A.
+
+    Returns:
+        The mesh, and the local indices of cell A and of cell B (empty on
+        ranks that do not own the cell).
+    """
+    if MPI.COMM_WORLD.rank == 0:
+        x = np.array(
+            [
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 1.0],
+                [0.32, 0.32],
+                [0.0, 0.5],
+                [0.5, 0.0],
+                [0.5, 1.0],
+                [1.0, 0.5],
+            ],
+            dtype=dtype,
+        )
+        x += offset
+        # P2 node ordering: vertices, then edges (1, 2), (0, 2), (0, 1)
+        cells = np.array([[0, 1, 2, 4, 5, 6], [1, 3, 2, 7, 4, 8]], dtype=np.int64)
+    else:
+        x = np.empty((0, 2), dtype=dtype)
+        cells = np.empty((0, 6), dtype=np.int64)
+    element = basix.ufl.element("Lagrange", "triangle", 2, shape=(2,), dtype=dtype)
+    msh = create_mesh(MPI.COMM_WORLD, cells=cells, x=x, e=ufl.Mesh(element))
+    num_cells = msh.topology.index_map(msh.topology.dim).size_local
+    original_index = msh.topology.original_cell_index[:num_cells]
+    cell_a = np.flatnonzero(original_index == 0).astype(np.int32)
+    cell_b = np.flatnonzero(original_index == 1).astype(np.int32)
+    return msh, cell_a, cell_b
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_nonaffine_point_ownership_no_preimage(dtype):
+    """A point in a curved cell's convex hull with no pre-image under the cell's map.
+
+    The pull-back to the dented cell A of the point (0.4, 0.4), which lies in
+    cell B, has no solution, so Newton's method cannot converge. Cell A must
+    not own the point, and determining ownership must not raise.
+    """
+    msh, cell_a, cell_b = dented_p2_mesh(dtype)
+    point = np.array([[0.4, 0.4, 0.0]], dtype=dtype)
+
+    po_a = determine_point_ownership(msh, point, 0.0, cell_a, find_closest_cell=False)
+    np.testing.assert_array_equal(po_a.src_owner, [-1])
+    assert len(po_a.dest_cells) == 0
+
+    po = determine_point_ownership(msh, point, 0.0)
+    np.testing.assert_array_equal(po.src_owner, [0])
+    np.testing.assert_array_equal(po.dest_cells, cell_b)
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_nonaffine_point_ownership_far_from_origin(dtype):
+    """Points inside a curved cell far from the origin, with the default pull-back tolerance.
+
+    Round-off in the physical coordinates, relative to the cell size, bounds
+    the Newton step of the pull-back from below. Points inside the cell must
+    be owned by it.
+    """
+    msh, cell_a, _ = dented_p2_mesh(dtype, offset=100.0)
+    gdim = msh.geometry.dim
+    X = np.array(
+        [[i / 10, j / 10] for i in range(1, 9) for j in range(1, 9) if i + j <= 9], dtype=dtype
+    )
+    nodes = msh.geometry.x[msh.geometry.dofmaps[0][cell_a[0]], :gdim]
+    points = np.zeros((X.shape[0], 3), dtype=dtype)
+    points[:, :gdim] = msh.geometry.cmaps[0].push_forward(X, nodes)
+
+    po = determine_point_ownership(msh, points, 0.0, cell_a, find_closest_cell=False)
+    np.testing.assert_array_equal(po.src_owner, 0)
+    np.testing.assert_array_equal(po.dest_cells, cell_a[0])

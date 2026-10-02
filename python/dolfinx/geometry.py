@@ -339,6 +339,8 @@ def determine_point_ownership(
     padding: float,
     cells: npt.NDArray[np.int32] | None = None,
     find_closest_cell: bool = True,
+    tol_pb: float | None = None,
+    max_iter_pb: int = 15,
 ) -> PointOwnershipData[Real]:
     """Determine, for each point, the owning process of a containing cell.
 
@@ -365,6 +367,10 @@ def determine_point_ownership(
             actually contained in any candidate cell is instead
             assigned to the process owning the candidate cell closest
             to it. If ``False``, such a point is left unowned.
+        tol_pb: Tolerance for pull back of non-affine cells.
+            If ``None`` then a default based on geometry dtype is used.
+        max_iter_pb: Maximum number of iterations for pull back of
+            non-affine cells.
 
     Returns:
         Point ownership data
@@ -382,11 +388,14 @@ def determine_point_ownership(
             magnitude. General advice is to use a padding on the scale
             of the cell size.
     """
+    tol_pb = tol_pb if tol_pb is not None else 10 * np.finfo(mesh.geometry.x.dtype).eps
     return PointOwnershipData(
         _cpp.geometry.determine_point_ownership(
             mesh._cpp_object,
             points,
             padding,
+            tol_pb,
+            max_iter_pb,
             cells,
             find_closest_cell,
         )
