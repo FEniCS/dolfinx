@@ -208,9 +208,9 @@ void tabulate_expression(
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
   if constexpr (std::remove_cvref_t<decltype(entities)>::rank() == 2)
   {
-    perms = entity_permutations(*mesh.topology_mutable(),
-                                static_cast<int>(Xshape[1]),
-                                mesh.topology()->cell_types().front());
+    perms = mesh::entity_permutations(*mesh.topology_mutable(),
+                                      static_cast<int>(Xshape[1]),
+                                      mesh.topology()->cell_types().front());
   }
 
   tabulate_expression(values, fn, Xshape, value_size, num_argument_dofs,

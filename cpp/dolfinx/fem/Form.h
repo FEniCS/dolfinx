@@ -74,30 +74,6 @@ constexpr int integral_entity_dim(IntegralType type, int tdim)
 
 namespace impl
 {
-/// @brief Permutations of the cell-local entities of a given dimension.
-///
-/// Computes the permutations on `topology` if they are not already
-/// available. Returns an empty mdspan when the entity has no
-/// orientation to permute: cells (`dim == topology.dim()`) and
-/// vertices.
-///
-/// @param[in,out] topology Mesh topology of the integration domain.
-/// @param[in] dim Topological dimension of the entities.
-/// @param[in] cell_type Cell type of the integration domain.
-/// @return Permutation of each cell-local entity, shape
-/// `(num_cells, entities_per_cell)`.
-inline md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
-entity_permutations(mesh::Topology& topology, int dim, mesh::CellType cell_type)
-{
-  if (dim == topology.dim())
-    return {};
-
-  topology.create_entity_permutations(dim);
-  const std::vector<std::uint8_t>& p = topology.get_entity_permutations(dim);
-  const int num_entities_per_cell = mesh::cell_num_entities(cell_type, dim);
-  return md::mdspan(p.data(), p.size() / num_entities_per_cell,
-                    num_entities_per_cell);
-}
 
 /// @brief Permutations of the cell-local entities that an integral of
 /// the given type is over.
@@ -111,7 +87,7 @@ inline md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
 entity_permutations(mesh::Topology& topology, IntegralType type,
                     mesh::CellType cell_type)
 {
-  return entity_permutations(
+  return mesh::entity_permutations(
       topology, integral_entity_dim(type, topology.dim()), cell_type);
 }
 
