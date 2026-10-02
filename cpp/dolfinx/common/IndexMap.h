@@ -1,4 +1,5 @@
-// Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells and Igor Baratta
+// Copyright (C) 2015-2026 Chris Richardson, Garth N. Wells, Igor Baratta
+// and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -125,6 +126,58 @@ std::tuple<IndexMap, std::vector<std::int32_t>, bool>
 create_sub_index_map(const IndexMap& imap,
                      std::span<const std::int32_t> indices,
                      IndexMapOrder order = IndexMapOrder::any);
+
+/// @brief Compute the symmetric neighbourhood of ranks that share an
+/// owned or ghost index with the caller.
+///
+/// A rank shares a local index with the caller if it also holds the
+/// index, as owner or ghost. For an owned index, the sharing ranks are
+/// the ranks that ghost it. For a ghost index, they are its owner and
+/// the other ranks that ghost it; the latter need not be in
+/// IndexMap::src or IndexMap::dest.
+///
+/// The in-neighbourhood IndexMap::src (owners of the caller's ghosts)
+/// and the out-neighbourhood IndexMap::dest (ranks ghosting the
+/// caller's owned indices) differ in general. Sharing is symmetric:
+/// rank `a` shares an index with rank `b` if and only if `b` shares it
+/// with `a`. The returned ranks can therefore be both the sources and
+/// the destinations of a neighbourhood communicator.
+///
+/// Example on four ranks, where `|` separates owned and ghost entries:
+/// @code
+/// rank 0: local [0, 1]    | [2]    -> global [0, 1]    | [2]    (owner 1)
+/// rank 1: local [0, 1, 2] | [3]    -> global [2, 3, 4] | [6]    (owner 2)
+/// rank 2: local [0, 1]    | [2]    -> global [5, 6]    | [2]    (owner 1)
+/// rank 3: local [0]       | [1, 2] -> global [7]       | [1, 5] (owners 0, 2)
+/// @endcode
+/// The return values are:
+/// @code
+///         src     dest    unique_ranks  data          offsets
+/// rank 0: [1]     [3]     [1, 2, 3]     [2, 0, 1]     [0, 0, 1, 3]
+/// rank 1: [2]     [0, 2]  [0, 2]        [0, 1, 1]     [0, 2, 2, 2, 3]
+/// rank 2: [1]     [1, 3]  [0, 1, 3]     [2, 1, 0, 1]  [0, 1, 2, 4]
+/// rank 3: [0, 2]  []      [0, 2]        [0, 1]        [0, 0, 1, 2]
+/// @endcode
+/// Ranks 0 and 2 share global index 2, which both ghost, although
+/// neither is in the other's IndexMap::src or IndexMap::dest. Rank 3 is
+/// in IndexMap::dest of ranks 0 and 2, but its own IndexMap::dest is
+/// empty. On rank 0, local index 1 occupies entry `[offsets[1],
+/// offsets[2]) = [0, 1)` of `data`, whose value 2 is the position of
+/// rank 3 in `unique_ranks`.
+///
+/// @note Collective.
+///
+/// @param[in] imap Index map.
+/// @return (0) `unique_ranks`: sorted ranks, other than the caller,
+/// that share at least one index with the caller. (1) `data` and (2)
+/// `offsets`: adjacency list from each local index to the ranks sharing
+/// it, given as positions in (0). `offsets` has `imap.size_local() +
+/// imap.num_ghosts() + 1` entries, and the ranks sharing local index
+/// `i` occupy `[offsets[i], offsets[i + 1])` of `data`. `data()` of (0)
+/// is not null, as required by some MPI implementations, even if (0) is
+/// empty.
+std::tuple<std::vector<int>, std::vector<int>, std::vector<std::int32_t>>
+compute_sharing_neighbourhood(const IndexMap& imap);
 
 /// @brief Distribution of a global index range `[0, N)` across MPI
 /// ranks.
@@ -310,15 +363,16 @@ public:
 
   /// @brief Compute sharing ranks for each local index.
   ///
+  /// Communicates over neighbourhoods built from src() and dest().
+  ///
   /// @note Collective
   ///
-  /// @param[in] tag Tag to pass to MPI calls.
-  /// @note See IndexMap(MPI_Comm, std::int32_t, std::span<const
-  /// std::int64_t>, std::span<const int>, int) for tag requirements.
   /// @return (0) Sharing-rank data and (1) offsets. Ranks sharing local
-  /// index `i` occupy `[offsets[i], offsets[i + 1])`.
-  std::pair<std::vector<int>, std::vector<std::int32_t>> index_to_dest_ranks(
-      int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx)) const;
+  /// index `i` occupy `[offsets[i], offsets[i + 1])`. For an owned
+  /// index, these are the ranks that ghost it; for a ghost index, its
+  /// owner and the other ranks that ghost it. The caller is excluded.
+  std::pair<std::vector<int>, std::vector<std::int32_t>>
+  index_to_dest_ranks() const;
 
   /// @brief Return owned indices ghosted by another rank.
   ///
