@@ -3,6 +3,8 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+import sys
+
 from mpi4py import MPI
 
 import numpy as np
@@ -64,7 +66,29 @@ def test_interpolation():
 @pytest.mark.parametrize("symmetry", [True, False])
 @pytest.mark.parametrize("etype", ["Regge", "HHJ"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
 def test_interpolation_symmetric_tensor(dim, symmetry, etype, degree, dtype):
     """Tests the interpolation path for non-matching maps of symmetric elements."""
     comm = MPI.COMM_WORLD
