@@ -611,6 +611,44 @@ def test_interpolate_on_mixed_cell_orientations(gdim, spec):
     np.testing.assert_allclose(values, f(midpoints.T).T, atol=tol(mesh))
 
 
+@pytest.mark.parametrize("degree, linear", [(1, False), (2, True)])
+def test_interpolate_discontinuous_rt_on_mixed_cell_orientations(degree, linear):
+    """Discontinuous RT on a manifold needs no cell orientation.
+
+    Every other cell is reversed. With no continuity between cells, the
+    field on each cell follows from that cell's basis alone, so the
+    space can be created and interpolated into without an orientation.
+    Computing one afterwards leaves the degrees-of-freedom unchanged.
+    """
+    mesh = plane_mesh(2, 3, mixed_orientation=True, orient=False)
+    V = functionspace(
+        mesh, element("RT", "triangle", degree, discontinuous=True, dtype=default_real_type)
+    )
+    f, f_ufl = tangential_field(mesh, linear)
+
+    # Interpolation of a callable, and of a compiled expression
+    w = Function(V, dtype=default_real_type)
+    w.interpolate(f)
+    assert l2_error(mesh, w - f_ufl) < tol(mesh)
+    w_expr = Function(V, dtype=default_real_type)
+    w_expr.interpolate(Expression(f_ufl, V.element.interpolation_points, dtype=default_real_type))
+    assert l2_error(mesh, w_expr - f_ufl) < tol(mesh)
+
+    # Function.eval, which pushes the basis forward in C++
+    num_cells = mesh.topology.index_map(2).size_local
+    cells = np.arange(num_cells, dtype=np.int32)
+    midpoints = compute_midpoints(mesh, 2, cells)
+    values = w.eval(midpoints, cells).reshape(num_cells, 3)
+    np.testing.assert_allclose(values, f(midpoints.T).T, atol=tol(mesh))
+
+    # The orientation is ignored
+    mesh.topology.create_cell_orientations()
+    assert mesh.comm.allreduce(bool(np.any(reversed_cells(mesh))), op=MPI.LOR)
+    w_oriented = Function(V, dtype=default_real_type)
+    w_oriented.interpolate(f)
+    np.testing.assert_array_equal(w_oriented.x.array, w.x.array)
+
+
 @pytest.mark.parametrize("orient", ["create", "set_outward"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize(
