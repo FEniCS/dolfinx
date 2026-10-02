@@ -2,9 +2,9 @@
 
 To build the documentation:
 
-1. Install DOLFINx Python interface using the ``docs`` optional dependency set, e.g.
+1. Install DOLFINx Python interface using the ``docs`` dependency group, e.g.
 
-       python -m pip install .[docs]
+       python -m pip install --group docs .
 
    It must be possible to import the module ``dolfinx`` to build the documentation.
 

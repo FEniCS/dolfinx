@@ -100,8 +100,6 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     if (!c_to_e)
       throw std::runtime_error("Mesh is missing cell-entity connectivity.");
 
-    mesh::CellType cell_type = topology.cell_type();
-
     // Tabulate geometry dofs for local entities
     std::vector<std::vector<int>> entity_dofs;
     int cellc_count = mesh::cell_num_entities(cell_type, dim);

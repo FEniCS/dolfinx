@@ -12,7 +12,8 @@ from dolfinx.mesh import CellType, Topology
 
 def create_element_dofmap(mesh, cell_types, degree):
     elements = [
-        finiteelement(ct, basix.ufl.element("P", ct, degree), np.float64) for ct in cell_types
+        finiteelement(ct, basix.ufl.element("P", ct, degree), np.float64, mesh.geometry.dim)
+        for ct in cell_types
     ]
     dofmaps = create_dofmaps(mesh.comm, Topology(mesh.topology), elements)
     return (elements, dofmaps)

@@ -6,8 +6,7 @@ Below is guidance for building the DOLFINx Python interface.
 
 2. Ensure the Python interface build requirements are installed:
 
-       pip install scikit-build-core
-       python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
+       pip install --group pyproject.toml:build
 
 3. Build DOLFINx Python interface:
 
@@ -19,16 +18,17 @@ To build in Developer and editable mode for development:
 
 Note that Developer mode is significantly stricter than CMake's default Debug mode.
 
-# Type checking with mypy
+# Type checking with Pyrefly
 
-1. Install DOLFINx Python with the `[mypy]` optional dependencies set, e.g.:
+1. Install DOLFINx Python with the `typing` extra, plus Pyrefly itself
+   (or any other type checker), e.g.:
 
-       pip install .[mypy]
+       pip install pyrefly '.[typing]'
 
-2. Check with mypy, e.g.:
+2. Check with Pyrefly:
 
-       mypy --config-file pyproject.toml -p dolfinx
+       pyrefly check
 
-   The `--config-file pyproject.toml` is mandatory to run mypy with the correct options.
-   The `-p` flag checks the built/installed package `dolfinx`, containing the C++
-   bindings and Python interface.
+   Run this command from the `python` directory. The `pyproject.toml` configuration
+   checks `dolfinx`, `demo`, and `test`, using the built/installed package to resolve
+   the C++ bindings.

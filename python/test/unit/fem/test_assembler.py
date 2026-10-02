@@ -15,10 +15,9 @@ import pytest
 import scipy.sparse
 
 import basix
-import dolfinx.cpp
+import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import cpp as _cpp
 from dolfinx import default_real_type, default_scalar_type, fem, graph, la, mesh
 from dolfinx.fem import (
     Constant,
@@ -39,6 +38,7 @@ from dolfinx.fem import (
 from dolfinx.mesh import (
     CellType,
     GhostMode,
+    cell_num_entities,
     create_mesh,
     create_rectangle,
     create_unit_cube,
@@ -856,6 +856,7 @@ class TestPETScAssemblers:
             ksp_u.setType("preonly")
             ksp_u.getPC().setType("lu")
             ksp_p.setType("preonly")
+            ksp_p.getPC().setType("lu")
 
             def monitor(ksp, its, rnorm):
                 pass
@@ -1344,10 +1345,10 @@ class TestPETScAssemblers:
             element("Lagrange", cell_type.name, 1, shape=(2,), dtype=default_real_type)
         )
 
-        def partitioner(comm, nparts, local_graph, num_ghost_nodes):
+        def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
             """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
-            return graph.adjacencylist(dest)._cpp_object
+            return graph.adjacencylist(dest)
 
         if comm.rank == 0:
             # Put cells on rank 0
@@ -1394,6 +1395,8 @@ class TestPETScAssemblers:
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_matrix_assembly_rectangular(self, mode):
         """Test assembly of block rectangular block matrices."""
+        from petsc4py import PETSc
+
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
 
         msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
@@ -1421,7 +1424,15 @@ class TestPETScAssemblers:
         assert A1.norm() == pytest.approx(np.sqrt(2) * A0.norm(), rel=1.0e-6, abs=1.0e-6)
         for row in range(2):
             A_sub = A2.getNestSubMatrix(row, 0)
-            assert A_sub.equal(A0)
+            assert A_sub.getSize() == A0.getSize()
+            # Mat.equal is exact, but in parallel the nest and monolithic
+            # paths accumulate off-process contributions separately.
+            inf = PETSc.NormType.INFINITY
+            D = A_sub.copy()
+            D.axpy(-1.0, A0, structure=PETSc.Mat.Structure.SAME_NONZERO_PATTERN)
+            tol = max(1.0e-12, 100 * np.finfo(PETSc.ScalarType).eps * A0.norm(inf))
+            assert D.norm(inf) == pytest.approx(0.0, abs=tol)
+            D.destroy()
 
         A0.destroy(), A1.destroy(), A2.destroy()
 
@@ -1514,7 +1525,7 @@ def test_lambda_assembler():
         cdata.append(list(np.tile(cols, len(rows))))
         return 0
 
-    _cpp.fem.assemble_matrix(mat_insert, a_form._cpp_object, [])
+    fem.assemble_matrix_fn(mat_insert, a_form)
     vdata = np.array(vdata).flatten()
     cdata = np.array(cdata).flatten()
     rdata = np.array(rdata).flatten()
@@ -1617,7 +1628,7 @@ def test_mixed_quadrature(dtype, method):
 def vertex_to_dof_map(V):
     """Create a map from the vertices of the mesh to the corresponding degree of freedom."""
     mesh = V.mesh
-    num_vertices_per_cell = dolfinx.cpp.mesh.cell_num_entities(mesh.topology.cell_type, 0)
+    num_vertices_per_cell = cell_num_entities(mesh.topology.cell_type, 0)
 
     dof_layout2 = np.empty((num_vertices_per_cell,), dtype=np.int32)
     for i in range(num_vertices_per_cell):
@@ -2149,7 +2160,8 @@ def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype, coefficient):
         x=nodes,
         cells=connectivity,
         e=c_el,
-        partitioner=dolfinx.mesh.create_cell_partitioner(ghost_mode, 2),
+        partitioner=graph.partitioner(),
+        ghost_mode=ghost_mode,
     )
 
     line_element = basix.ufl.element(

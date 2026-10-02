@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -295,9 +296,9 @@ void write_data(std::string_view point_or_cell,
       hid_t dset_id = hdf5::open_dataset(h5file, dataset_name);
       hdf5::set_attribute(dset_id, "NumberOfComponents", data_width);
       H5Dclose(dset_id);
-      hid_t vtk_group = H5Gopen(h5file, group_name.c_str(), H5P_DEFAULT);
-      hdf5::set_attribute(vtk_group, "Vectors", "u");
-      H5Gclose(vtk_group);
+      hid_t vec_group = H5Gopen(h5file, group_name.c_str(), H5P_DEFAULT);
+      hdf5::set_attribute(vec_group, "Vectors", "u");
+      H5Gclose(vec_group);
     }
   }
 
@@ -314,11 +315,13 @@ void write_data(std::string_view point_or_cell,
 /// 2D.
 /// @param max_facet_to_cell_links The maximum number of cells a
 /// facet can be connected to.
+/// @param num_threads Number threads to use in mesh construction.
 /// @return The mesh read from file.
 template <std::floating_point U>
 mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                         std::size_t gdim = 3,
-                        std::optional<std::int32_t> max_facet_to_cell_links = 2)
+                        std::optional<std::int32_t> max_facet_to_cell_links = 2,
+                        int num_threads = 1)
 {
   hid_t h5file = hdf5::open_file(comm, filename, "r", true);
 
@@ -441,8 +444,18 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                  [offset = offsets.front()](auto x) { return x - offset; });
   hdf5::close_file(h5file);
 
-  // Create cell topologies for each celltype in mesh
+  // Create cell topologies for each cell type.
   std::vector<std::vector<std::int64_t>> cells_local(recv_types.size());
+  {
+    std::vector<std::size_t> num_nodes_per_type(recv_types.size(), 0);
+    for (std::size_t j = 0; j < types.size(); ++j)
+    {
+      std::int32_t type_index = type_to_index.at({types[j], cell_degrees[j]});
+      num_nodes_per_type[type_index] += offsets[j + 1] - offsets[j];
+    }
+    for (std::size_t t = 0; t < cells_local.size(); ++t)
+      cells_local[t].reserve(num_nodes_per_type[t]);
+  }
   for (std::size_t j = 0; j < types.size(); ++j)
   {
     std::int32_t type_index = type_to_index.at({types[j], cell_degrees[j]});
@@ -466,13 +479,11 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
         return fem::CoordinateElement<U>(cell_type, cell_degree, variant);
       });
 
-  auto part = create_cell_partitioner(mesh::GhostMode::none,
-                                      dolfinx::graph::partition_graph,
-                                      max_facet_to_cell_links);
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());
   return mesh::create_mesh(comm, comm, cells_span, coordinate_elements, comm,
-                           points_pruned, {(std::size_t)x_shape[0], gdim}, part,
-                           max_facet_to_cell_links, 1);
+                           points_pruned, {(std::size_t)x_shape[0], gdim},
+                           graph::Partitioner{}, mesh::GhostMode::none,
+                           max_facet_to_cell_links, num_threads);
 }
 } // namespace dolfinx::io::VTKHDF

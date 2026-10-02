@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <concepts>
 #include <numeric>
 #include <span>

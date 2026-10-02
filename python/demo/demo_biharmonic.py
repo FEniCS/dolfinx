@@ -328,9 +328,9 @@ assert glob_error.real / scale.real < 1e-6
 # The solution can be written to a VTX-file using {py:class}`VTXWriter
 # <dolfinx.io.VTXWriter>` which can be opened with ParaView
 
+out_folder = Path("out_biharmonic")
+out_folder.mkdir(parents=True, exist_ok=True)
 if has_adios2:
-    out_folder = Path("out_biharmonic")
-    out_folder.mkdir(parents=True, exist_ok=True)
     with io.VTXWriter(msh.comm, out_folder / "biharmonic.bp", [uh]) as file:
         file.write(0.0)
 

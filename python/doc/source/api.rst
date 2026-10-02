@@ -25,7 +25,6 @@ Public user interface
    dolfinx.la.petsc
    dolfinx.la.superlu_dist
    dolfinx.mesh
-   dolfinx.nls.petsc
    dolfinx.plot
 
 
@@ -50,6 +49,4 @@ application-level use.
    dolfinx.cpp.la
    dolfinx.cpp.log
    dolfinx.cpp.mesh
-   dolfinx.cpp.nls
-   dolfinx.cpp.nls.petsc
    dolfinx.cpp.refinement

@@ -30,7 +30,7 @@ enum class CellType : std::int8_t;
 /// facets connected to less than `max_facet_to_cell_links` cells are
 /// considered *unmatched* and parallel communication will check for
 /// further connections. Equal to `2` for non-branching manifold meshes.
-/// Passing std::nullopt (no upper bound) corresponds.
+/// Passing std::nullopt (no upper bound) corresponds
 /// to `max_facet_to_cell_links`=∞, i.e. every facet is considered
 /// unmatched.
 /// @param[in] num_threads Number of threads to use. Must be greater
@@ -38,8 +38,8 @@ enum class CellType : std::int8_t;
 ///
 /// @return
 /// 1. Local dual graph
-/// 2. Facets, defined by their sorted vertices, that are shared by only
-///   `max_facet_to_cell_links` or less cells on this rank. The logically
+/// 2. Facets, defined by their sorted vertices, that are shared by fewer
+///   than `max_facet_to_cell_links` cells on this rank. The logically
 ///   2D array is flattened (row-major).
 /// 3. Facet data array (2) number of columns
 /// 4. Attached cell (local index) to each returned facet in (2).

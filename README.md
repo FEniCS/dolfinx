@@ -1,7 +1,6 @@
 # DOLFINx
 
 [![DOLFINx CI](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml)
-[![Actions Spack build](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml)
 [![Actions Conda install](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml)
 [![Actions macOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
 [![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml)
@@ -15,7 +14,7 @@ DOLFIN and is actively developed.
 For questions about using DOLFINx, visit the [FEniCS
 Discourse](https://fenicsproject.discourse.group/) page or use the
 [FEniCS Slack channel](https://fenicsproject.slack.com/) (use
-[this](https://join.slack.com/t/fenicsproject/shared_invite/zt-1lraknsp1-6_3Js5kueDIyWgF192d3nA)
+[this](https://join.slack.com/t/fenicsproject/shared_invite/zt-2wa76d0xw-ecfxcPj25K8pc7q7~1AK8g)
 link to sign up to the Slack channel).
 
 ## Documentation
@@ -46,8 +45,7 @@ To install the Python interface, first install the C++ core, and then in
 the `python/` directory run:
 
 ```shell
-pip install scikit-build-core
-python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
+pip install --group pyproject.toml:build
 pip install --check-build-dependencies --no-build-isolation .
 ```
 

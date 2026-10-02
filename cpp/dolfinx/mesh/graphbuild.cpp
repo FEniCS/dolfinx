@@ -7,13 +7,19 @@
 #include "graphbuild.h"
 #include "cell_types.h"
 #include <algorithm>
+#include <array>
 #include <boost/sort/sort.hpp>
+#include <cassert>
+#include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
+#include <iterator>
+#include <limits>
 #include <mpi.h>
 #include <numeric>
 #include <optional>
@@ -38,7 +44,7 @@ namespace
 /// before this function is called.
 ///
 /// @param[in] comm MPI communicator
-/// @param[in] facets Facets on this rank that are shared by only on
+/// @param[in] facets Facets on this rank that are shared by only one
 /// cell on this rank, i.e. candidates for possibly residing on other
 /// processes. Each row in `facets` corresponds to a facet, and the row
 /// data has the form `[v0, ..., v_{n-1}, -1, -1]`, where `v_i` are the
@@ -241,6 +247,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm comm_po_post;
+  dest.reserve(1);
   MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &comm_po_post);
@@ -303,7 +310,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Search for consecutive facets (-> dual graph edge between cells)
   // and pack into send buffer. We store for every cell the number of
   // matches, the offsets of each cell and the continuous data. Note:
-  // 'deges' is short for dual edges.
+  // 'dedges' is short for dual edges.
   std::vector<int> dedge_send_count(recv_disp.back());
   std::vector<std::int32_t> dedge_send_displs(dedge_send_count.size() + 1, 0);
   std::vector<std::int64_t> dedge_send_data;
@@ -419,46 +426,40 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                           num_items_per_dest.data(), send_disp.data(), MPI_INT,
                           comm_po_receive, &dedge_recv_count_request);
 
+  // Collapse per-facet-slot counts into per-neighbour-rank totals and
+  // the corresponding displacements. `counts` is indexed by facet
+  // slot (flat across all neighbours' facets); `group_sizes[i]` is
+  // the number of facet slots sent to/received from neighbour `i`.
+  // Note: pp in variable names is short for per-process.
+  auto collapse_counts_to_pp
+      = [](std::span<const int> counts, const auto& group_sizes)
+      -> std::pair<std::vector<int>, std::vector<std::int32_t>>
+  {
+    std::vector<int> pp_count(group_sizes.size(), 0);
+    std::vector<std::int32_t> pp_displs(pp_count.size() + 1, 0);
+    int index = 0;
+    for (std::size_t i = 0; i < group_sizes.size(); i++)
+    {
+      for (int j = 0; j < group_sizes[i]; j++)
+        pp_count[i] += counts[index++];
+    }
+
+    std::partial_sum(pp_count.begin(), pp_count.end(),
+                     std::next(pp_displs.begin()));
+    return {std::move(pp_count), std::move(pp_displs)};
+  };
+
   // Prepare send data for matched facets. Note, we have prepared
   // adjacency information for all cells. Here we retrieve the offset
   // and displacement data corresponding to the per process adjacency
   // lists.
-  // Note: pp in variable names is short for per-process.
-  std::vector<int> dedge_send_count_pp(num_items_recv.size(), 0);
-  std::vector<std::int32_t> dedge_send_displs_pp(dedge_send_count_pp.size() + 1,
-                                                 0);
-  {
-    int index = 0;
-    for (std::size_t i = 0; i < num_items_recv.size(); i++)
-    {
-      for (int j = 0; j < num_items_recv[i]; j++)
-        dedge_send_count_pp[i] += dedge_send_count[index + j];
-
-      index += num_items_recv[i];
-    }
-
-    std::partial_sum(dedge_send_count_pp.begin(), dedge_send_count_pp.end(),
-                     std::next(dedge_send_displs_pp.begin()));
-  }
+  auto [dedge_send_count_pp, dedge_send_displs_pp]
+      = collapse_counts_to_pp(dedge_send_count, num_items_recv);
 
   // Compute matched facet receive counts and displacements.
-  std::vector<int> dedge_recv_count_pp(num_items_per_dest.size(), 0);
-  std::vector<std::int32_t> dedge_recv_displs_pp(dedge_recv_count_pp.size() + 1,
-                                                 0);
   MPI_Wait(&dedge_recv_count_request, MPI_STATUS_IGNORE);
-  {
-    int index = 0;
-    for (std::size_t i = 0; i < num_items_per_dest.size(); i++)
-    {
-      for (int j = 0; j < num_items_per_dest[i]; j++)
-        dedge_recv_count_pp[i] += dedge_recv_count[index + j];
-
-      index += num_items_per_dest[i];
-    }
-
-    std::partial_sum(dedge_recv_count_pp.begin(), dedge_recv_count_pp.end(),
-                     std::next(dedge_recv_displs_pp.begin()));
-  }
+  auto [dedge_recv_count_pp, dedge_recv_displs_pp]
+      = collapse_counts_to_pp(dedge_recv_count, num_items_per_dest);
   // Exchange flattened list of matched facets
   std::vector<std::int64_t> recv_dual_edges(dedge_recv_displs_pp.back());
   MPI_Neighbor_alltoallv(dedge_send_data.data(), dedge_send_count_pp.data(),
@@ -569,10 +570,16 @@ mesh::build_local_dual_graph(
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
 {
   if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   spdlog::info("Build local part of mesh dual graph");
   common::Timer timer("Compute local part of mesh dual graph");
+
+  if (cells.size() != celltypes.size())
+  {
+    throw std::invalid_argument(
+        "Number of cell types must match number of cell arrays.");
+  }
 
   if (std::size_t ncells_local
       = std::accumulate(cells.begin(), cells.end(), 0,
@@ -584,12 +591,6 @@ mesh::build_local_dual_graph(
     return {graph::AdjacencyList<std::int32_t>(0), std::vector<std::int64_t>(),
             0, std::vector<std::int32_t>()};
   }
-
-  if (cells.size() != celltypes.size())
-  {
-    throw std::runtime_error(
-        "Number of cell types must match number of cell arrays.");
-  };
 
   int tdim = mesh::cell_dim(celltypes.front());
 
@@ -608,10 +609,19 @@ mesh::build_local_dual_graph(
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
     CellType cell_type = celltypes[j];
-    assert(tdim == mesh::cell_dim(cell_type));
+    if (tdim != mesh::cell_dim(cell_type))
+    {
+      throw std::invalid_argument(
+          "All cell types must have the same topological dimension.");
+    }
     int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
     int num_cell_facets = mesh::cell_num_entities(cell_type, tdim - 1);
 
+    if (cells[j].size() % num_cell_vertices != 0)
+    {
+      throw std::invalid_argument("Cell array size is not a multiple of the "
+                                  "number of vertices per cell.");
+    }
     std::int32_t num_cells = cells[j].size() / num_cell_vertices;
     cell_offsets.push_back(cell_offsets.back() + num_cells);
     facet_count += num_cell_facets * num_cells;

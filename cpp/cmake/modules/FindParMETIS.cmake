@@ -41,16 +41,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
+include(FindPackageHandleStandardArgs)
 include(CMakePushCheckState)
 include(CheckCXXSourceCompiles)
 
-find_package(MPI 3 REQUIRED)
+find_package(MPI 3 REQUIRED COMPONENTS CXX)
 
-find_library(
-  PARMETIS_LIBRARY
-  parmetis
-  DOC "Directory where the ParMETIS library is located."
-)
+find_library(PARMETIS_LIBRARY parmetis DOC "Path to the ParMETIS library.")
 
 find_path(
   PARMETIS_INCLUDE_DIR
@@ -58,18 +55,10 @@ find_path(
   DOC "Directory where the ParMETIS header files are located."
 )
 
-find_library(
-  METIS_LIBRARY
-  metis
-  DOC "Directory where the METIS library is located."
-)
+find_library(METIS_LIBRARY metis DOC "Path to the METIS library.")
 
 # Newer METIS and ParMETIS build against separate GKLib
-find_library(
-  GKLIB_LIBRARY
-  gklib
-  DOC "Directory where the gklib library is located."
-)
+find_library(GKLIB_LIBRARY gklib DOC "Path to the gklib library.")
 
 # Build the list of link libraries for the compile/link test
 set(_parmetis_link_libraries ${PARMETIS_LIBRARY})
@@ -80,47 +69,30 @@ if(GKLIB_LIBRARY)
   list(APPEND _parmetis_link_libraries ${GKLIB_LIBRARY})
 endif()
 
-# Identify ParMETIS version by compiling and running a small probe
-if(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY AND NOT DOLFINX_SKIP_BUILD_TESTS)
-  set(
-    PARMETIS_CONFIG_TEST_VERSION_CPP
-    "
-#define MPICH_IGNORE_CXX_SEEK 1
-#include <iostream>
-#include \"parmetis.h\"
-
-int main() {
-#ifdef PARMETIS_SUBMINOR_VERSION
-std::cout << PARMETIS_MAJOR_VERSION << \".\"
-    << PARMETIS_MINOR_VERSION << \".\"
-    << PARMETIS_SUBMINOR_VERSION;
-#else
-std::cout << PARMETIS_MAJOR_VERSION << \".\"
-    << PARMETIS_MINOR_VERSION;
-#endif
-return 0;
-}
-"
-  )
-
-  try_run(
-    PARMETIS_CONFIG_TEST_VERSION_EXITCODE
-    PARMETIS_CONFIG_TEST_VERSION_COMPILED
-    SOURCE_FROM_VAR parmetis_version_probe.cpp PARMETIS_CONFIG_TEST_VERSION_CPP
-    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${PARMETIS_INCLUDE_DIR}"
-    LINK_LIBRARIES MPI::MPI_CXX ${_parmetis_link_libraries}
-    COMPILE_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_COMPILE_OUTPUT
-    RUN_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_OUTPUT
-  )
-
-  if(NOT PARMETIS_CONFIG_TEST_VERSION_COMPILED)
+# Identify the ParMETIS version from the header. Read rather than compiled
+# and run, so that it also works when cross-compiling.
+if(PARMETIS_INCLUDE_DIR)
+  set(ParMETIS_VERSION "")
+  foreach(part MAJOR MINOR SUBMINOR)
+    file(
+      STRINGS "${PARMETIS_INCLUDE_DIR}/parmetis.h"
+      _line
+      REGEX "^[ \t]*#[ \t]*define[ \t]+PARMETIS_${part}_VERSION[ \t]+[0-9]+"
+    )
+    if(_line MATCHES "PARMETIS_${part}_VERSION[ \t]+([0-9]+)")
+      if(ParMETIS_VERSION)
+        string(APPEND ParMETIS_VERSION ".${CMAKE_MATCH_1}")
+      else()
+        set(ParMETIS_VERSION "${CMAKE_MATCH_1}")
+      endif()
+    endif()
+    unset(_line)
+  endforeach()
+  if(NOT ParMETIS_VERSION)
     message(
       WARNING
-      "ParMETIS: version check failed to compile, assuming 100.0.0:\n${PARMETIS_CONFIG_TEST_VERSION_COMPILE_OUTPUT}"
+      "ParMETIS: no PARMETIS_*_VERSION in ${PARMETIS_INCLUDE_DIR}/parmetis.h."
     )
-    set(ParMETIS_VERSION "100.0.0")
-  elseif(PARMETIS_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
-    set(ParMETIS_VERSION ${PARMETIS_CONFIG_TEST_VERSION_OUTPUT})
   endif()
 endif()
 
@@ -154,27 +126,27 @@ int main()
 "
     PARMETIS_TEST_COMPILES
   )
-  if(NOT PARMETIS_TEST_COMPILES)
+  if(NOT PARMETIS_TEST_COMPILES AND NOT ParMETIS_FIND_QUIETLY)
     message(WARNING "ParMETIS: Simple test executable did not compile.")
   endif()
   cmake_pop_check_state()
 endif()
 
-# Standard package handling
-if(DOLFINX_SKIP_BUILD_TESTS)
-  find_package_handle_standard_args(
-    ParMETIS
-    REQUIRED_VARS PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR
-    FAIL_MESSAGE "ParMETIS could not be found/configured."
-  )
-else()
-  find_package_handle_standard_args(
-    ParMETIS
-    REQUIRED_VARS PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR PARMETIS_TEST_COMPILES
-    VERSION_VAR ParMETIS_VERSION
-    FAIL_MESSAGE "ParMETIS could not be found/configured."
-  )
+# Standard package handling. The version comes from the header, so it is
+# checked either way; DOLFINX_SKIP_BUILD_TESTS only drops the requirement
+# that the functional test program builds.
+set(_parmetis_required_vars PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR)
+if(NOT DOLFINX_SKIP_BUILD_TESTS)
+  list(APPEND _parmetis_required_vars PARMETIS_TEST_COMPILES)
 endif()
+find_package_handle_standard_args(
+  ParMETIS
+  REQUIRED_VARS ${_parmetis_required_vars}
+  VERSION_VAR ParMETIS_VERSION
+  HANDLE_VERSION_RANGE
+  FAIL_MESSAGE "ParMETIS could not be found/configured."
+)
+unset(_parmetis_required_vars)
 
 if(ParMETIS_FOUND AND NOT TARGET ParMETIS::ParMETIS)
   if(METIS_LIBRARY AND NOT TARGET METIS::METIS)
@@ -206,13 +178,11 @@ if(ParMETIS_FOUND AND NOT TARGET ParMETIS::ParMETIS)
       $<$<BOOL:${METIS_LIBRARY}>:METIS::METIS>
       $<$<BOOL:${GKLIB_LIBRARY}>:GKLib::GKLib>
   )
-
-  mark_as_advanced(
-    PARMETIS_LIBRARY
-    PARMETIS_INCLUDE_DIR
-    METIS_LIBRARY
-    GKLIB_LIBRARY
-    PARMETIS_CONFIG_TEST_VERSION_EXITCODE
-    PARMETIS_CONFIG_TEST_VERSION_COMPILED
-  )
 endif()
+
+mark_as_advanced(
+  PARMETIS_LIBRARY
+  PARMETIS_INCLUDE_DIR
+  METIS_LIBRARY
+  GKLIB_LIBRARY
+)

@@ -125,8 +125,8 @@ def test_interpolation_blocked(degree):
 
 
 def extract_diagonal(mat):
-    num_rows = mat._cpp_object.index_map(0).size_local
-    num_cols = mat._cpp_object.index_map(1).size_local
+    num_rows = mat.index_map(0).size_local
+    num_cols = mat.index_map(1).size_local
     assert num_rows == num_cols, "Matrix must be square"
     bs = mat.block_size[0]
     diag = np.empty(num_rows * bs, dtype=mat.data.dtype)
@@ -206,4 +206,9 @@ def test_quadrature_assembly(degree):
     b_ref.scatter_reverse(dolfinx.la.InsertMode.add)
     b_ref.scatter_forward()
 
-    np.testing.assert_allclose(b.array, b_ref.array)
+    # Both forms use the same quadrature rule, so the vectors differ only
+    # by round-off. Set the tolerance from the scalar type: the
+    # assert_allclose default (1e-7) is below the float32 epsilon.
+    np.testing.assert_allclose(
+        b.array, b_ref.array, rtol=100 * np.finfo(dolfinx.default_scalar_type).eps
+    )
