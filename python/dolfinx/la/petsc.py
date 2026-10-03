@@ -305,6 +305,3 @@ def set_diagonal(
     if np.ndim(diagonal) > 0:
         diagonal = np.asarray(diagonal, dtype=PETSc.ScalarType)
     _cpp.la.petsc.set_diagonal(A, rows, diagonal, insert_mode)  # type: ignore[arg-type]
-
-
-# -- Modifiers for Dirichlet conditions -----------------------------------

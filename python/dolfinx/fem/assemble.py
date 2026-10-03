@@ -333,10 +333,14 @@ def _bc_dof_markers_by_space(
 ) -> list[npt.NDArray[np.int8]]:
     """Constrained dof markers, one array per entry of ``spaces``.
 
+    Each array has entry ``1`` for a constrained dof (owned and ghost,
+    unrolled) and ``0`` otherwise. An entry is empty where the space is
+    ``None`` or no boundary condition applies. Only conditions defined
+    on a space or a subspace of it mark that space.
+
     Markers depend only on the space, so a space repeated in ``spaces``
-    is marked once and the array shared. Callers must not modify them.
-    An entry is empty where the space is ``None`` or no boundary
-    condition applies.
+    is marked once and the array shared: two entries may be the same
+    array rather than equal copies. Callers must not modify them.
     """
     built: list[tuple[typing.Any, npt.NDArray[np.int8]]] = []
     markers = []
@@ -360,26 +364,10 @@ def _bc_dof_markers_pair(
 ) -> tuple[npt.NDArray[np.int8], npt.NDArray[np.int8]]:
     """Constrained dof markers on the test and trial spaces of a form.
 
-    Assembly zeroes the rows marked in the first array and the columns
-    marked in the second, so the pair is what a matrix assembler needs
-    to apply a set of boundary conditions.
-
-    A form whose test and trial space are the same object marks its
-    dofs once and shares the result, so the two returned arrays are
-    then the same array rather than equal copies. Callers must
-    therefore treat them as read-only.
-
-    Args:
-        V0: Test space, indexing the rows.
-        V1: Trial space, indexing the columns.
-        bcs: Boundary conditions. Only those defined on a space or a
-            subspace of it mark that space, so a condition on neither
-            contributes to neither.
-
-    Returns:
-        Markers on ``V0`` and on ``V1``, each with entry ``1`` for a
-        constrained dof (owned and ghost, unrolled) and ``0``
-        otherwise, or empty where no boundary condition applies.
+    :func:`_bc_dof_markers_by_space` with the arity pinned at two, which
+    is what a matrix assembler takes and what a type checker can check:
+    the rows marked by the first array are zeroed, and the columns
+    marked by the second.
     """
     markers0, markers1 = _bc_dof_markers_by_space([V0, V1], bcs)
     return markers0, markers1
@@ -433,19 +421,6 @@ def _bc_lifting_values(
             bc.set(v, None, 1)
         values.append(v)
     return values
-
-
-def _bc_lifting_data(
-    spaces: Sequence[FunctionSpace | None],
-    bcs: Sequence[Sequence[DirichletBC]],
-    dtype: npt.DTypeLike,
-) -> tuple[list[npt.NDArray[np.int8]], list[npt.NDArray]]:
-    """Constrained dof markers and values on each trial space.
-
-    Convenience wrapper around :func:`_bc_lifting_markers` and
-    :func:`_bc_lifting_values` for callers that hold neither.
-    """
-    return _bc_lifting_markers(spaces, bcs), _bc_lifting_values(spaces, bcs, dtype)
 
 
 def _owned_marked_rows(V: FunctionSpace, markers: npt.NDArray[np.int8]) -> npt.NDArray[np.int32]:
@@ -804,8 +779,16 @@ def apply_lifting(
         call, and should not be called internally by the library.
     """  # noqa: D301
     spaces = [None if form is None else form.function_spaces[1] for form in a]
-    bc_markers1, bc_values1 = _bc_lifting_data(spaces, bcs, b.dtype)
-    _apply_lifting_markers(b, a, bc_markers1, bc_values1, x0, alpha, constants, coeffs)
+    _apply_lifting_markers(
+        b,
+        a,
+        _bc_lifting_markers(spaces, bcs),
+        _bc_lifting_values(spaces, bcs, b.dtype),
+        x0,
+        alpha,
+        constants,
+        coeffs,
+    )
 
 
 def _apply_lifting_markers(
@@ -822,8 +805,9 @@ def _apply_lifting_markers(
 
     ``bc_markers1[j]`` and ``bc_values1[j]`` are the constrained dof
     markers and boundary condition values on the trial space of
-    ``a[j]``, as returned by :func:`_bc_lifting_data`. Empty arrays mean
-    block ``j`` has no constraints.
+    ``a[j]``, from :func:`_bc_lifting_markers` and
+    :func:`_bc_lifting_values`. Empty arrays mean block ``j`` has no
+    constraints.
     """
     if x0 is None:
         x0 = []
