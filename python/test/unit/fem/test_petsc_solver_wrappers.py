@@ -300,3 +300,126 @@ class TestPETScSolverWrappers:
 
         # The two orderings really do give different solutions
         assert not np.allclose(uh.x.array, uh_rev.x.array, atol=eps, rtol=eps)
+
+    @pytest.mark.parametrize("kind", [None, "mpi", "nest"])
+    def test_nonlinear_problem_bc_updates(self, kind):
+        """BC reassignment updates both callbacks; input lists are snapshots."""
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import NonlinearProblem
+
+        if MPI.COMM_WORLD.size == 1:
+            factor_type = "petsc"
+        elif PETSc.Sys().hasExternalPackage("mumps"):
+            factor_type = "mumps"
+        elif PETSc.Sys().hasExternalPackage("superlu_dist"):
+            factor_type = "superlu_dist"
+        else:
+            pytest.skip("No external solvers available in parallel")
+
+        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=PETSc.RealType)
+        V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+        spaces = [V] if kind is None else [V, V.clone()]
+        eps = 1000 * np.finfo(PETSc.RealType).eps
+        options = {"snes_atol": eps, "snes_rtol": eps, "snes_error_if_not_converged": True}
+        if kind == "nest":
+            options["pc_type"] = "fieldsplit"
+            options["pc_fieldsplit_type"] = "additive"
+            for i in range(len(spaces)):
+                options[f"fieldsplit_{i}_ksp_type"] = "preonly"
+                options[f"fieldsplit_{i}_pc_type"] = "lu"
+                options[f"fieldsplit_{i}_pc_factor_mat_solver_type"] = factor_type
+        else:
+            options.update(ksp_type="preonly", pc_type="lu", pc_factor_mat_solver_type=factor_type)
+
+        def make_problem(bcs, label):
+            functions = [dolfinx.fem.Function(space) for space in spaces]
+            residuals = [
+                ufl.inner(u - (i + 2), ufl.TestFunction(space)) * ufl.dx
+                for i, (u, space) in enumerate(zip(functions, spaces, strict=True))
+            ]
+            return NonlinearProblem(
+                residuals[0] if kind is None else residuals,
+                functions[0] if kind is None else functions,
+                bcs=bcs,
+                kind=kind,
+                petsc_options_prefix=f"test_nonlinear_bc_updates_{kind}_{label}_",
+                petsc_options=options,
+            )
+
+        left = dolfinx.fem.locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0))
+        right = dolfinx.fem.locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 1.0))
+        g = dolfinx.fem.Constant(msh, PETSc.ScalarType(5))
+        bc_left = dolfinx.fem.dirichletbc(g, left, V)
+        bc_right = dolfinx.fem.dirichletbc(PETSc.ScalarType(7), right, V)
+        bcs = [bc_left]
+        problem = make_problem(bcs, "updated")
+        bcs.clear()
+        assert problem.bcs == (bc_left,)
+
+        for step, conditions in enumerate([(bc_left,), (bc_right,), ()]):
+            if step > 0:
+                problem.bcs = conditions if conditions else None
+            for value in (5, 6):
+                g.value = PETSc.ScalarType(value)
+                problem.solve()
+                reference = make_problem(conditions, f"reference_{step}_{value}")
+                reference.solve()
+                actual = [problem.u] if kind is None else problem.u
+                expected = [reference.u] if kind is None else reference.u
+                for u, u_ref in zip(actual, expected, strict=True):
+                    assert np.allclose(u.x.array, u_ref.x.array, atol=eps, rtol=eps)
+
+    @pytest.mark.parametrize("blocked", [False, True])
+    def test_nonlinear_preconditioner_spaces(self, blocked):
+        """Reject incompatible preconditioner spaces in constructors and callbacks."""
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import NonlinearProblem, assemble_jacobian, create_matrix
+
+        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=PETSc.RealType)
+        V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+        W = V.clone()
+        u, w = dolfinx.fem.Function(V), dolfinx.fem.Function(W)
+        v, z = ufl.TestFunction(V), ufl.TestFunction(W)
+        aV = ufl.inner(ufl.TrialFunction(V), v) * ufl.dx
+        aW = ufl.inner(ufl.TrialFunction(W), z) * ufl.dx
+        residual = (
+            [ufl.inner(u, v) * ufl.dx, ufl.inner(w, z) * ufl.dx]
+            if blocked
+            else (ufl.inner(u, v) * ufl.dx)
+        )
+        unknown = [u, w] if blocked else u
+        invalid = [[aW, None], [None, aV]] if blocked else aW
+        message = "Preconditioner form must have the same function spaces"
+        with pytest.raises(ValueError, match=message):
+            NonlinearProblem(
+                residual,
+                unknown,
+                P=invalid,
+                petsc_options_prefix=f"test_invalid_preconditioner_{blocked}_",
+            )
+
+        problem = NonlinearProblem(
+            residual,
+            unknown,
+            P=[[aV, None], [None, aW]] if blocked else aV,
+            petsc_options_prefix=f"test_valid_preconditioner_{blocked}_",
+        )
+        incompatible = dolfinx.fem.form(invalid)
+        P_mat = create_matrix(incompatible)
+        try:
+            with pytest.raises(ValueError, match=message):
+                assemble_jacobian(
+                    problem.solver,
+                    problem.x,
+                    problem.A,
+                    P_mat,
+                    problem.u,
+                    problem.J,
+                    incompatible,
+                    ([], []),
+                    ([], 1.0),
+                )
+        finally:
+            P_mat.destroy()
