@@ -808,7 +808,7 @@ def _assemble_matrix_single(
 
 def _packed_constants(
     a: Form | Sequence[Sequence[Form | None]],
-) -> npt.NDArray | list[npt.NDArray]:
+) -> npt.NDArray | Sequence[Sequence[npt.NDArray]]:
     """Pack the constants of ``a``, one entry per block row."""
     if isinstance(a, Sequence):
         return [pack_constants(forms) for forms in a]
@@ -819,7 +819,7 @@ def _packed_coefficients(
     a: Form | Sequence[Sequence[Form | None]],
 ) -> (
     dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
-    | list[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]
+    | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
 ):
     """Pack the coefficients of ``a``, one entry per block row."""
     if isinstance(a, Sequence):
@@ -862,20 +862,37 @@ def _assemble_matrix_petsc(
             raise ValueError(
                 "Must provide a sequence of sequences of coefficients when assembling a nest matrix"
             )
-        return _assemble_matrix_nest(A, a, dof_markers, diag_rows, diag, constants, coeffs)
+        return _assemble_matrix_nest(
+            A,
+            a,
+            dof_markers,
+            diag_rows,  # type: ignore[arg-type]
+            diag,
+            constants,  # type: ignore[arg-type]
+            coeffs,
+        )
     elif isinstance(a, Sequence):
         return _assemble_matrix_block(
             A,
             a,
             dof_markers,
-            diag_rows,
+            diag_rows,  # type: ignore[arg-type]
             diag,
-            constants,
-            coeffs,
+            constants,  # type: ignore[arg-type]
+            coeffs,  # type: ignore[arg-type]
             _block_index_sets(a),
         )
     else:
-        return _assemble_matrix_single(A, a, dof_markers, diag_rows, diag, constants, coeffs, False)
+        return _assemble_matrix_single(
+            A,
+            a,
+            dof_markers,
+            diag_rows,  # type: ignore[arg-type]
+            diag,
+            constants,  # type: ignore[arg-type]
+            coeffs,  # type: ignore[arg-type]
+            False,
+        )
 
 
 def apply_lifting(
