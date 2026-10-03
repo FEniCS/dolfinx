@@ -111,6 +111,16 @@ void petsc_la_module(nb::module_& m)
       nb::rv_policy::take_ownership, nb::arg("maps"));
 
   m.def(
+      "create_global_index_sets",
+      [](const std::vector<std::pair<const dolfinx::common::IndexMap*, int>>&
+             maps) -> std::vector<IS>
+      {
+        auto _maps = to_index_map_refs(maps);
+        return dolfinx::la::petsc::create_global_index_sets(_maps);
+      },
+      nb::rv_policy::take_ownership, nb::arg("maps"));
+
+  m.def(
       "scatter_local_vectors",
       [](Vec x,
          const std::vector<

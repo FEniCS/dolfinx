@@ -249,6 +249,20 @@ void common(nb::module_& m)
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::flush,
            "Flush timer");
 
+  m.def(
+      "num_sharing_ranks",
+      [](const dolfinx::common::IndexMap& map,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
+         int bs)
+      {
+        std::vector<std::int32_t> n = dolfinx::common::num_sharing_ranks(
+            map, std::span(indices.data(), indices.size()), bs);
+        return dolfinx_wrappers::as_nbarray(std::move(n));
+      },
+      nb::arg("map"), nb::arg("indices"), nb::arg("bs"),
+      "Number of ranks sharing each index, counting the owner. "
+      "Collective.");
+
   m.def("timing", &dolfinx::timing, nb::arg("task"));
   m.def("timings", &dolfinx::timings);
 
