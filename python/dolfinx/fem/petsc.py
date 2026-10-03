@@ -600,6 +600,40 @@ def _matrix_bc_data(
     return dof_marker0, dof_marker1, _owned_marked_rows(V0, dof_marker0)
 
 
+def _block_index_sets(a: Sequence[Sequence[Form | None]]) -> tuple[list, list]:
+    """Index sets addressing the block rows and columns of ``a``.
+
+    :meth:`PETSc.Mat.getLocalSubMatrix` takes these to reach a block of
+    a blocked matrix. They follow from the function spaces, so a caller
+    assembling repeatedly can build them once.
+
+    Args:
+        a: 2D array of bilinear forms.
+
+    Returns:
+        One index set per block row, and one per block column.
+
+    Raises:
+        ValueError: If a block row or column holds no form, leaving its
+            space undetermined.
+    """
+
+    def sets(spaces, what):
+        if all(V is None for V in spaces):
+            raise ValueError(f"Cannot have an entire {what} of forms be 'None'.")
+        return _cpp.la.petsc.create_index_sets(
+            [
+                (V.dofmaps[0].index_map._cpp_object, V.dofmaps[0].index_map_bs)  # type: ignore
+                for V in spaces
+            ]
+        )
+
+    return (
+        sets(_extract_function_spaces(a, 0), "row"),
+        sets(_extract_function_spaces(a, 1), "column"),
+    )
+
+
 def _assemble_matrix_nest(
     A: PETSc.Mat,
     a: Sequence[Sequence[Form | None]],
@@ -666,6 +700,7 @@ def _assemble_matrix_block(
     diag: float,
     constants: Sequence[Sequence[npt.NDArray]],
     coeffs: Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]],
+    index_sets: tuple[Sequence, Sequence],
 ) -> PETSc.Mat:
     """Assemble forms into a blocked matrix, given constrained dofs.
 
@@ -686,33 +721,13 @@ def _assemble_matrix_block(
         diag: Value the constrained diagonal is to take.
         constants: Packed constants, one entry per block.
         coeffs: Packed coefficients, one entry per block.
+        index_sets: Index set of each block row and of each block
+            column, from :func:`_block_index_sets`.
 
     Returns:
         ``A``, for convenience.
     """
-    V = (_extract_function_spaces(a, 0), _extract_function_spaces(a, 1))
-    for index in range(2):
-        # the check below is to ensure that a .dofmaps attribute is
-        # available when creating is0 and is1 below
-        Vi = V[index]
-        assert isinstance(Vi, list)
-        if all(Vsub is None for Vsub in Vi):
-            raise ValueError(
-                f"Cannot have an entire {'row' if index == 0 else 'column'} of forms be 'None'."
-            )
-    is0 = _cpp.la.petsc.create_index_sets(
-        [
-            (Vsub.dofmaps[0].index_map._cpp_object, Vsub.dofmaps[0].index_map_bs)  # type: ignore
-            for Vsub in V[0]
-        ]
-    )
-    is1 = _cpp.la.petsc.create_index_sets(
-        [
-            (Vsub.dofmaps[0].index_map._cpp_object, Vsub.dofmaps[0].index_map_bs)  # type: ignore
-            for Vsub in V[1]
-        ]
-    )
-
+    is0, is1 = index_sets
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
@@ -856,7 +871,15 @@ def _assemble_matrix_petsc(
         )
     elif isinstance(a, Sequence):
         return _assemble_matrix_block(
-            A, a, dof_marker0, dof_marker1, diag_rows, diag, constants, coeffs
+            A,
+            a,
+            dof_marker0,
+            dof_marker1,
+            diag_rows,
+            diag,
+            constants,
+            coeffs,
+            _block_index_sets(a),
         )
     else:
         return _assemble_matrix_single(
