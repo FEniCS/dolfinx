@@ -607,10 +607,6 @@ def _matrix_bc_data(
     array, and column markers can also be used for lifting. Treat the
     arrays as read-only. Boundary condition values are not cached.
     """
-    # Declared, so that the single-form branch does not narrow the
-    # element type and make the two branches disagree
-    V0: list[_FunctionSpace | None]
-    V1: list[_FunctionSpace | None]
     if isinstance(a, Sequence):
         V0, V1 = _extract_block_spaces(a)
     else:
