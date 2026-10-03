@@ -472,7 +472,7 @@ def assemble_matrix(
         a: The bilinear form assemble.
         bcs: Boundary conditions that affect the assembled matrix.
             Degrees-of-freedom constrained by a boundary condition will
-            have their rows/columns zeroed and the value ``diagonal``
+            have their rows/columns zeroed and the value ``diag``
             set on the matrix diagonal.
         diag: Value to set on the matrix diagonal for Dirichlet
             boundary condition constrained degrees-of-freedom belonging
@@ -520,16 +520,18 @@ def _assemble_matrix_csr(
         a: The bilinear form assemble.
         bcs: Boundary conditions that affect the assembled matrix.
             Degrees-of-freedom constrained by a boundary condition will
-            have their rows/columns zeroed and the value ``diagonal``
+            have their rows/columns zeroed and the value ``diag``
             set on the diagonal.
         diag: Value to set on the matrix diagonal for Dirichlet
             boundary condition constrained degrees-of-freedom belonging
             to the same trial and test space.
         constants: Constants that appear in the form. If not provided,
-            any required constants will be computed. the matrix
-            diagonal.
+            any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
+
+    Returns:
+        ``A``, for convenience.
 
     Note:
         The returned matrix is not finalised, i.e. ghost values are not
@@ -555,13 +557,19 @@ def set_diagonal(
 
     Args:
         A: Matrix to modify.
-        rows: Rows to set the diagonal value for.
+        rows: Rows, in local indices, to set the diagonal value for.
         diagonal: Value to set on the diagonal, either a single value
             for all rows or an array with ``diagonal[i]`` the value for
             ``rows[i]``. An array must have the same length as
             ``rows``.
         insert_mode: ``la.InsertMode.insert`` to set the diagonal
             entries, or ``la.InsertMode.add`` to add to them.
+
+    Note:
+        A row that the calling rank does not own is accumulated into
+        the owner's entry when the matrix is finalised, so pass owned
+        rows unless that accumulation is intended. A row repeated in
+        ``rows`` is likewise written once per occurrence.
     """
     if np.ndim(diagonal) > 0:
         diagonal = np.asarray(diagonal, dtype=A.data.dtype)
@@ -581,11 +589,6 @@ def set_bc_diagonal(
     degree-of-freedom that is a ghost here is left untouched and is
     set by the rank that owns it, so this function needs no
     communication.
-
-    Note:
-        Convenience interface for callers holding ``V`` and ``bcs``
-        rather than the row list, which it rebuilds on every call.
-        Library code passes the rows to :func:`set_diagonal` instead.
 
     Args:
         A: Matrix to modify. Must be associated with ``V`` on both its
@@ -607,6 +610,11 @@ def set_bc_diagonal(
         ``la.InsertMode.add`` cannot double-count an overlap. Every
         condition sets the same ``diagonal`` value, so their order in
         ``bcs`` does not matter here.
+
+    Note:
+        Convenience interface for callers holding ``V`` and ``bcs``
+        rather than the row list, which it rebuilds on every call.
+        Library code passes the rows to :func:`set_diagonal` instead.
     """
     rows_ = []
     for bc in bcs or []:
@@ -729,11 +737,11 @@ def apply_lifting(
     Args:
         b: The array to modify inplace.
         a: List of bilinear forms, where ``a[i]`` is the form that
-            generates the matrix :math"`A_{i}`. All forms in ``a`` must
+            generates the matrix :math:`A_{i}`. All forms in ``a`` must
             share the same test function space. The trial function
             spaces can differ.
         bcs: Boundary conditions that provide the :math:`g_{i}` values.
-            ``bcs1[i]`` is the sequence of boundary conditions on
+            ``bcs[i]`` is the sequence of boundary conditions on
             :math:`u_{i}`. Helper functions exist to build a
             list-of-lists of `DirichletBC` from a list of forms ``a``
             and a flat list of `DirichletBC` objects ``bcs``::

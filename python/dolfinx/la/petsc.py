@@ -300,6 +300,12 @@ def set_diagonal(
             add mode.
 
     Note:
+        A row that the calling rank does not own is accumulated into
+        the owner's entry when the matrix is assembled, so pass owned
+        rows unless that accumulation is intended. A row repeated in
+        ``rows`` is likewise written once per occurrence.
+
+    Note:
         The matrix is not assembled.
     """
     if np.ndim(diagonal) > 0:

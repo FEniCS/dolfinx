@@ -32,18 +32,21 @@ template <class U, class T>
 concept MatSet
     = std::invocable<U, std::span<const std::int32_t>,
                      std::span<const std::int32_t>, std::span<const T>>;
-/// @brief Sets a value to the diagonal of a matrix for specified rows.
+/// @brief Set a value on the diagonal of a matrix for specified rows.
 ///
 /// This function is typically called after assembly. The assembly
 /// function zeroes Dirichlet rows and columns. For block matrices, this
 /// function should normally be called only on the diagonal blocks, i.e.
 /// blocks for which the test and trial spaces are the same.
 ///
+/// @note `set_fn` decides whether the value replaces the existing
+/// entry or is added to it. A row repeated in `rows` is passed to
+/// `set_fn` once per occurrence, which an adding `set_fn` accumulates.
+///
 /// @param[in] set_fn The function for setting values to a matrix.
-/// @param[in] rows Row blocks, in local indices, for which to add a
-/// value to the diagonal. May have static or dynamic extent.
-/// @param[in] diagonal Value to add to the diagonal for the specified
-/// rows.
+/// @param[in] rows Row blocks, in local indices, whose diagonal to
+/// set. May have static or dynamic extent.
+/// @param[in] diagonal Value for the diagonal of each row in `rows`.
 template <dolfinx::scalar T>
 void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
                   T diagonal = T(1))
@@ -56,14 +59,14 @@ void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
   }
 }
 
-/// @brief Sets values on the diagonal of a matrix for specified rows,
+/// @brief Set values on the diagonal of a matrix for specified rows,
 /// with a value per row.
 ///
 /// See the single-value set_diagonal for usage.
 ///
 /// @param[in] set_fn The function for setting values to a matrix.
-/// @param[in] rows Row blocks, in local indices, for which to set a
-/// value on the diagonal. May have static or dynamic extent.
+/// @param[in] rows Row blocks, in local indices, whose diagonal to
+/// set. May have static or dynamic extent.
 /// @param[in] diagonals Diagonal values, with `diagonals[i]` the value
 /// for `rows[i]`. Must have the same length as `rows`.
 template <dolfinx::scalar T>

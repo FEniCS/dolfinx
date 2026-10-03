@@ -141,14 +141,16 @@ class LinearProblem:
         """Dirichlet boundary conditions applied to the problem.
 
         Assigning to this property rebuilds the cached constrained dof
-        markers, which :func:`solve` reuses rather than rebuilding on
-        every call. Caching is safe because the dofs a boundary
-        condition constrains are fixed when it is built. The conditions
-        are copied to an immutable tuple, so modifying the caller's
-        sequence afterwards cannot leave the cache stale.
+        markers, which :meth:`solve` reuses rather than rebuilding on
+        every call. Caching them is safe because the
+        dofs a boundary condition constrains are fixed when it is
+        built. The conditions are copied to an immutable tuple, so
+        modifying the caller's sequence afterwards cannot leave the
+        cache stale.
 
-        Boundary condition *values* are not cached, as the function or
-        constant behind a condition may change between solves.
+        Boundary condition *values* are not cached: the function or
+        constant behind a condition may change between solves, so they
+        are read afresh each time.
         """
         return self._bcs
 

@@ -678,9 +678,7 @@ void assemble_matrix(auto mat_add, const Form<T, U>& a,
 /// @note Convenience overload for callers holding `V` and `bcs` rather
 /// than the row list, which it rebuilds on every call. Library code
 /// should cache the rows across repeated calls and set them with
-/// la::set_diagonal: filter `bcs` by
-/// `V.contains(*bc.function_space())`, concatenate each surviving bc's
-/// owned `dof_indices()` and remove duplicates.
+/// la::set_diagonal.
 ///
 /// @note Each row is set exactly once, even where several boundary
 /// conditions constrain the same degree-of-freedom, so `set_fn` may

@@ -391,7 +391,7 @@ class TestPETScSolverWrappers:
         )
         unknown = [u, w] if blocked else u
         invalid = [[aW, None], [None, aV]] if blocked else aW
-        message = "Preconditioner form must have the same function spaces"
+        message = "Preconditioner form must be over the same function space objects"
         with pytest.raises(ValueError, match=message):
             NonlinearProblem(
                 residual,

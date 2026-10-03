@@ -580,7 +580,16 @@ class _MatrixBCData(typing.NamedTuple):
 def _extract_block_spaces(
     a: Sequence[Sequence[Form | None]],
 ) -> tuple[list[_FunctionSpace | None], list[_FunctionSpace | None]]:
-    """Extract spaces and validate the blocked-assembly convention."""
+    """Test and trial spaces of a 2D array of forms.
+
+    Each block row and each block column must have its own function
+    space, so that the block a dof belongs to, and the blocks a
+    boundary condition on that space constrains, are unambiguous.
+
+    Raises:
+        ValueError: If one space is shared by two block rows or by two
+            block columns.
+    """
     row_spaces = _extract_function_spaces(a, 0)
     column_spaces = _extract_function_spaces(a, 1)
     for spaces, what in ((row_spaces, "rows"), (column_spaces, "columns")):
@@ -600,7 +609,7 @@ def _extract_block_spaces(
 def _matrix_bc_data(
     a: Form | Sequence[Sequence[Form | None]], bcs: Sequence[DirichletBC] | None
 ) -> _MatrixBCData:
-    """Build reusable row/column markers and owned constrained rows.
+    """Reusable markers, owned constrained rows and resolved spaces.
 
     Entries correspond to block rows and columns. A single form has one
     entry in each field. Markers for a shared test/trial space share an
@@ -1440,16 +1449,16 @@ class LinearProblem(typing.Generic[_U]):
         """Dirichlet boundary conditions applied to the problem.
 
         Assigning to this property rebuilds the cached constrained dof
-        markers and diagonal rows, which :func:`solve` reuses rather
+        markers and diagonal rows, which :meth:`solve` reuses rather
         than rebuilding on every call. Caching them is safe because the
         dofs a boundary condition constrains are fixed when it is
         built. The conditions are copied to an immutable tuple, so
         modifying the caller's sequence afterwards cannot leave the
         cache stale.
 
-        Boundary condition *values* are not cached. The function or
-        constant behind a condition may change between solves, so
-        :func:`solve` reads them afresh each time.
+        Boundary condition *values* are not cached: the function or
+        constant behind a condition may change between solves, so they
+        are read afresh each time.
         """
         return self._bcs
 
@@ -1584,14 +1593,12 @@ def _assemble_residual(
     _blocks: tuple[tuple[int, int, int], ...] | None,
     lifting_markers: Sequence[npt.NDArray[np.int8]] | None,
 ) -> None:
-    """Assemble the residual, optionally given the lifting markers.
+    """Assemble the residual with cached lifting markers.
 
-    As :func:`assemble_residual`. ``lifting_markers`` holds the
-    constrained dof markers per column of ``jacobian``, as
-    :func:`_lifting_bc_markers` builds them, or is ``None`` to build
-    them from ``bcs`` here. They must match ``bcs``, which is why the
-    public function does not take them. Boundary condition *values* are
-    always read afresh from ``bcs``.
+    As :func:`assemble_residual`, with ``lifting_markers`` from
+    :func:`_lifting_bc_markers`, or ``None`` to build them from
+    ``bcs`` here. They must match ``bcs``, which is why the public
+    function does not take them. Values are read afresh from ``bcs``.
     """
     # Update input vector before assigning
     dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
@@ -1652,10 +1659,21 @@ def _check_preconditioner_spaces(
     jacobian: Form | Sequence[Sequence[Form | None]],
     preconditioner: Form | Sequence[Sequence[Form | None]] | None,
 ) -> None:
-    """Check that Jacobian markers also apply to the preconditioner."""
+    """Check that the preconditioner is over the Jacobian's spaces.
+
+    The preconditioner is assembled with the Jacobian's constrained dof
+    markers, so the two must be over the same function space objects,
+    block for block. Equivalent spaces built separately are rejected.
+
+    Raises:
+        ValueError: If the shapes or the spaces differ.
+    """
     if preconditioner is None:
         return
-    message = "Preconditioner form must have the same function spaces as the Jacobian form."
+    message = (
+        "Preconditioner form must be over the same function space objects as the "
+        "Jacobian form, not separately built equivalents."
+    )
     if isinstance(jacobian, Sequence):
         if not isinstance(preconditioner, Sequence):
             raise ValueError(message)
@@ -1740,15 +1758,12 @@ def _assemble_jacobian(
     preconditioner: Form | Sequence[Sequence[Form]] | None,
     bc_data: _MatrixBCData,
 ) -> None:
-    """Assemble the Jacobian and preconditioner, given constrained dofs.
+    """Assemble the Jacobian and preconditioner with cached BC data.
 
-    As :func:`assemble_jacobian`, with the boundary conditions given as
-    markers and diagonal rows (see :func:`_matrix_bc_data`), so that a
-    SNES callback built once resolves them once rather than on every
-    Newton step.
-
-    ``preconditioner`` is assembled with the markers and rows of
-    ``jacobian``, so it must be over the same function spaces.
+    As :func:`assemble_jacobian`, with ``bc_data`` from
+    :func:`_matrix_bc_data` so that a SNES callback resolves it once
+    rather than on every Newton step. The preconditioner is assembled
+    with the Jacobian's markers, so it must be over the same spaces.
     """
     _check_preconditioner_spaces(jacobian, preconditioner)
 
@@ -2004,10 +2019,18 @@ class NonlinearProblem(typing.Generic[_U]):
     def bcs(self) -> tuple[DirichletBC, ...]:
         """Dirichlet boundary conditions applied to the problem.
 
-        Assign a new sequence to rebuild the cached markers and update
-        both SNES callbacks. The sequence is copied to an immutable tuple;
-        modifying the caller's sequence does not change the problem.
-        Boundary condition values are read afresh on every evaluation.
+        Assigning to this property rebuilds the cached constrained dof
+        markers and diagonal rows and re-registers both SNES
+        callbacks, which then reuse them rather than rebuilding on
+        every Newton step. Caching them is safe because the
+        dofs a boundary condition constrains are fixed when it is
+        built. The conditions are copied to an immutable tuple, so
+        modifying the caller's sequence afterwards cannot leave the
+        cache stale.
+
+        Boundary condition *values* are not cached: the function or
+        constant behind a condition may change between solves, so they
+        are read afresh each time.
         """
         return self._bcs
 
