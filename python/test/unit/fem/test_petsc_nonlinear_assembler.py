@@ -329,13 +329,11 @@ class TestNLSPETSc:
             x = fem_petsc.create_vector([V0, V1], "nest")
             ctx_func = {"u": [u, p], "residual": residual, "jacobian": jacobian, "bcs": bcs}
             snes.setFunction(fem_petsc.assemble_residual, b, kargs=ctx_func)
-            markers, rows = fem_petsc._matrix_bc_data(jacobian, bcs)
             ctx_jac = {
                 "u": [u, p],
                 "jacobian": jacobian,
                 "preconditioner": None,
-                "dof_markers": markers,
-                "diag_data": (rows, 1.0),
+                "bcs": bcs,
             }
             snes.setJacobian(fem_petsc.assemble_jacobian, A, None, kargs=ctx_jac)
 

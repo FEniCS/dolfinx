@@ -418,8 +418,7 @@ class TestPETScSolverWrappers:
                     problem.u,
                     problem.J,
                     incompatible,
-                    ([], []),
-                    ([], 1.0),
+                    [],
                 )
         finally:
             P_mat.destroy()

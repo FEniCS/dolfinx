@@ -138,15 +138,15 @@ class LinearProblem:
         self._superlu_dist_options = superlu_dist_options
 
     @property
-    def bcs(self) -> Sequence[DirichletBC]:
+    def bcs(self) -> tuple[DirichletBC, ...]:
         """Dirichlet boundary conditions applied to the problem.
 
         Assigning to this property rebuilds the cached constrained dof
         markers, which :func:`solve` reuses rather than rebuilding on
         every call. Caching is safe because the dofs a boundary
-        condition constrains are fixed when it is built. Mutating the
-        returned sequence in place bypasses the setter and leaves the
-        cache stale; assign a new sequence instead.
+        condition constrains are fixed when it is built. The conditions
+        are copied to an immutable tuple, so modifying the caller's
+        sequence afterwards cannot leave the cache stale.
 
         Boundary condition *values* are not cached, as the function or
         constant behind a condition may change between solves.
@@ -155,7 +155,7 @@ class LinearProblem:
 
     @bcs.setter
     def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
-        self._bcs = [] if bcs is None else bcs
+        self._bcs = tuple(bcs) if bcs is not None else ()
         V0, V1 = self.a.function_spaces
         self._bc_markers = _bc_dof_markers_pair(V0, V1, self._bcs)
         self._lifting_markers = _bc_lifting_markers([V1], [self._bcs])
