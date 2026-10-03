@@ -850,7 +850,6 @@ def _assemble_matrix_petsc(
             _block_index_sets(a),
         )
     else:
-        diag_rows, diag = diag_data
         _cpp.fem.petsc.assemble_matrix(
             A,
             a._cpp_object,  # type: ignore[arg-type]
@@ -861,6 +860,7 @@ def _assemble_matrix_petsc(
         )
         V0, V1 = a.function_spaces
         if V0._cpp_object is V1._cpp_object:
+            diag_rows, diag = diag_data
             # Assembly zeroed the constrained rows, so adding sets the
             # diagonal (and needs no flush)
             dolfinx.la.petsc.set_diagonal(
