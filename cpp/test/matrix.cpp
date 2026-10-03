@@ -282,8 +282,9 @@ void test_set_diagonal_duplicate_bc_rows()
     sum += ref[i];
   }
 
-  // The reference must actually have set some rows
-  CHECK(sum > T(0));
+  // Where this rank owns dofs, the reference must have set some rows
+  if (n > 0)
+    CHECK(sum > T(0));
 
 #ifndef NDEBUG
   // A non-unique or unsorted dof list violates the DirichletBC
