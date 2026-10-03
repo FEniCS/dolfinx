@@ -76,6 +76,9 @@ Linear solvers, preconditioners and matrix-free methods
 * :doc:`demos/demo_mixed-poisson` -- see *Mixed and hybridised
   formulations*: a block-preconditioned solver, including a Hypre AMS
   preconditioner for :math:`H(\mathrm{div})`.
+* :doc:`demos/demo_poisson-bddc` -- solve the Poisson equation with a
+  BDDC domain decomposition preconditioner, using PETSc's unassembled
+  ``MATIS`` matrix format.
 * :doc:`demos/demo_poisson-matrix-free` -- solve the Poisson equation
   with a matrix-free conjugate gradient solver.
 * :doc:`demos/demo_matrix-free-petsc` -- solve a blocked projection
@@ -148,6 +151,7 @@ PETSc scalars.
    demos/demo_axis.md
    demos/demo_elasticity.md
    demos/demo_pyamg.md
+   demos/demo_poisson-bddc.md
    demos/demo_poisson-matrix-free.md
    demos/demo_matrix-free-petsc.md
    demos/demo_types.md
