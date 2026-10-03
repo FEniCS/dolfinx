@@ -28,7 +28,7 @@ from dolfinx.fem.assemble import (
     _apply_lifting_markers,
     _assemble_matrix_csr_markers,
     _assemble_vector_array,
-    _bc_dof_markers_pair,
+    _bc_dof_markers_by_space,
     _bc_lifting_values,
 )
 from dolfinx.la import InsertMode, MatrixCSR, Vector
@@ -156,7 +156,8 @@ class LinearProblem:
     def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
         self._bcs = tuple(bcs) if bcs is not None else ()
         V0, V1 = self.a.function_spaces
-        self._bc_markers = _bc_dof_markers_pair(V0, V1, self._bcs)
+        marker0, marker1 = _bc_dof_markers_by_space([V0, V1], self._bcs)
+        self._bc_markers = (marker0, marker1)
 
     def solve(self) -> Function:
         """Solve the problem.

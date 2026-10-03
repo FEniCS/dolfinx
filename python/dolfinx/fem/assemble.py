@@ -359,20 +359,6 @@ def _bc_dof_markers_by_space(
     return markers
 
 
-def _bc_dof_markers_pair(
-    V0: FunctionSpace, V1: FunctionSpace, bcs: Sequence[DirichletBC] | None
-) -> tuple[npt.NDArray[np.int8], npt.NDArray[np.int8]]:
-    """Constrained dof markers on the test and trial spaces of a form.
-
-    :func:`_bc_dof_markers_by_space` with the arity pinned at two, which
-    is what a matrix assembler takes and what a type checker can check:
-    the rows marked by the first array are zeroed, and the columns
-    marked by the second.
-    """
-    markers0, markers1 = _bc_dof_markers_by_space([V0, V1], bcs)
-    return markers0, markers1
-
-
 def _bc_lifting_markers(
     spaces: Sequence[FunctionSpace | None],
     bcs: Sequence[Sequence[DirichletBC]],
@@ -512,7 +498,8 @@ def assemble_matrix(
     """
     A = create_matrix(a, block_mode)
     V0, V1 = a.function_spaces
-    _assemble_matrix_csr_markers(A, a, *_bc_dof_markers_pair(V0, V1, bcs), diag, constants, coeffs)
+    marker0, marker1 = _bc_dof_markers_by_space([V0, V1], bcs)
+    _assemble_matrix_csr_markers(A, a, marker0, marker1, diag, constants, coeffs)
     return A
 
 
@@ -554,9 +541,8 @@ def _assemble_matrix_csr(
         should not be called internally by the library.
     """
     V0, V1 = a.function_spaces
-    return _assemble_matrix_csr_markers(
-        A, a, *_bc_dof_markers_pair(V0, V1, bcs), diag, constants, coeffs
-    )
+    marker0, marker1 = _bc_dof_markers_by_space([V0, V1], bcs)
+    return _assemble_matrix_csr_markers(A, a, marker0, marker1, diag, constants, coeffs)
 
 
 def set_diagonal(
@@ -659,12 +645,14 @@ def assemble_matrix_fn(
         should not be called internally by the library.
     """
     V0, V1 = a.function_spaces
+    marker0, marker1 = _bc_dof_markers_by_space([V0, V1], bcs)
     typing.cast(typing.Any, _cpp.fem.assemble_matrix)(
         fn,
         a._cpp_object,
         pack_constants(a),
         pack_coefficients(a),
-        *_bc_dof_markers_pair(V0, V1, bcs),
+        marker0,
+        marker1,
     )
 
 
