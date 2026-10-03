@@ -509,12 +509,12 @@ def assemble_matrix(
         should not be called internally by the library.
     """  # noqa: D301
     A = create_matrix(a, kind)
-    _assemble_matrix_petsc_markers(A, a, *_matrix_bc_data(a, bcs), diag, constants, coeffs)
+    _assemble_matrix_petsc(A, a, *_matrix_bc_data(a, bcs), diag, constants, coeffs)
     return A
 
 
 @assemble_matrix.register  # type: ignore[attr-defined]
-def _assemble_matrix_petsc(
+def _assemble_matrix_mat(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
@@ -540,7 +540,7 @@ def _assemble_matrix_petsc(
         It rebuilds the constrained dof markers on every call, and
         should not be called internally by the library.
     """
-    return _assemble_matrix_petsc_markers(A, a, *_matrix_bc_data(a, bcs), diag, constants, coeffs)
+    return _assemble_matrix_petsc(A, a, *_matrix_bc_data(a, bcs), diag, constants, coeffs)
 
 
 #: Constrained dof markers on the test and trial spaces, and the locally
@@ -558,7 +558,7 @@ def _matrix_bc_data(
     """Constrained dof markers and diagonal rows for assembling ``a``.
 
     The three boundary-condition arguments of
-    :func:`_assemble_matrix_petsc_markers`: markers on the test space,
+    :func:`_assemble_matrix_petsc`: markers on the test space,
     markers on the trial space, and the locally owned constrained rows
     that carry the diagonal value once assembly has zeroed them.
 
@@ -586,7 +586,7 @@ def _matrix_bc_data(
     return dof_marker0, dof_marker1, _owned_marked_rows(V0, dof_marker0)
 
 
-def _assemble_matrix_nest_markers(
+def _assemble_matrix_nest(
     A: PETSc.Mat,
     a: Sequence[Sequence[Form | None]],
     dof_marker0: Sequence[npt.NDArray[np.int8]],
@@ -598,7 +598,7 @@ def _assemble_matrix_nest_markers(
 ) -> PETSc.Mat:
     """Assemble forms into a nest matrix, given constrained dofs.
 
-    Each block is assembled by :func:`_assemble_matrix_single_markers`
+    Each block is assembled by :func:`_assemble_matrix_single`
     into the sub-matrix that holds it.
 
     Args:
@@ -623,7 +623,7 @@ def _assemble_matrix_nest_markers(
         for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row, strict=True)):
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
-                _assemble_matrix_single_markers(
+                _assemble_matrix_single(
                     Asub,
                     a_block,
                     dof_marker0[i],
@@ -642,7 +642,7 @@ def _assemble_matrix_nest_markers(
     return A
 
 
-def _assemble_matrix_block_markers(
+def _assemble_matrix_block(
     A: PETSc.Mat,
     a: Sequence[Sequence[Form | None]],
     dof_marker0: Sequence[npt.NDArray[np.int8]],
@@ -731,7 +731,7 @@ def _assemble_matrix_block_markers(
     return A
 
 
-def _assemble_matrix_single_markers(
+def _assemble_matrix_single(
     A: PETSc.Mat,
     a: Form,
     dof_marker0: npt.NDArray[np.int8],
@@ -780,7 +780,7 @@ def _assemble_matrix_single_markers(
     return A
 
 
-def _assemble_matrix_petsc_markers(
+def _assemble_matrix_petsc(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form | None]],
     dof_marker0: npt.NDArray[np.int8] | Sequence[npt.NDArray[np.int8]],
@@ -796,7 +796,7 @@ def _assemble_matrix_petsc_markers(
 ) -> PETSc.Mat:
     """Assemble bilinear form(s) into a matrix, given constrained dofs.
 
-    As :func:`_assemble_matrix_petsc`, with the constrained dofs given
+    As :func:`_assemble_matrix_mat`, with the constrained dofs given
     as markers and diagonal rows (see :func:`_matrix_bc_data`) instead
     of boundary conditions. For a 2D array of forms, ``dof_marker0[i]``
     marks the test space of row ``i``, ``dof_marker1[j]`` the trial
@@ -804,9 +804,9 @@ def _assemble_matrix_petsc_markers(
     constrained rows of row ``i``.
 
     Dispatches on the type of ``A`` and the shape of ``a`` to
-    :func:`_assemble_matrix_nest_markers`,
-    :func:`_assemble_matrix_block_markers` or
-    :func:`_assemble_matrix_single_markers`, which document the
+    :func:`_assemble_matrix_nest`,
+    :func:`_assemble_matrix_block` or
+    :func:`_assemble_matrix_single`, which document the
     arguments.
     """
     if A.getType() == PETSc.Mat.Type.NEST:
@@ -820,7 +820,7 @@ def _assemble_matrix_petsc_markers(
             constants = [pack_constants(forms) for forms in a]
         if coeffs is None:
             coeffs = [pack_coefficients(forms) for forms in a]
-        return _assemble_matrix_nest_markers(
+        return _assemble_matrix_nest(
             A, a, dof_marker0, dof_marker1, diag_rows, diag, constants, coeffs
         )
     elif isinstance(a, Sequence):
@@ -828,7 +828,7 @@ def _assemble_matrix_petsc_markers(
             constants = [pack_constants(forms) for forms in a]
         if coeffs is None:
             coeffs = [pack_coefficients(forms) for forms in a]
-        return _assemble_matrix_block_markers(
+        return _assemble_matrix_block(
             A, a, dof_marker0, dof_marker1, diag_rows, diag, constants, coeffs
         )
     else:
@@ -836,7 +836,7 @@ def _assemble_matrix_petsc_markers(
             constants = pack_constants(a)
         if coeffs is None:
             coeffs = pack_coefficients(a)
-        return _assemble_matrix_single_markers(
+        return _assemble_matrix_single(
             A, a, dof_marker0, dof_marker1, diag_rows, diag, constants, coeffs
         )
 
@@ -912,7 +912,7 @@ def apply_lifting(
         It rebuilds the constrained dof markers and values on every
         call, and should not be called internally by the library.
     """
-    _apply_lifting_petsc_markers(
+    _apply_lifting_petsc(
         b,
         a,
         *_lifting_bc_data(a, bcs),  # type: ignore[arg-type]
@@ -943,7 +943,7 @@ def _lifting_bc_markers(
     """Constrained dof markers for lifting, per column of ``a``.
 
     The ``bc_markers1`` argument of
-    :func:`_apply_lifting_petsc_markers`, with ``bcs[j]`` the
+    :func:`_apply_lifting_petsc`, with ``bcs[j]`` the
     conditions on column ``j`` (``None`` for none at all). Markers are
     fixed for the lifetime of ``bcs``, so a repeated caller should
     build them once and pair them with fresh values from
@@ -960,7 +960,7 @@ def _lifting_bc_values(
     """Boundary condition values for lifting, per column of ``a``.
 
     The ``bc_values1`` argument of
-    :func:`_apply_lifting_petsc_markers`, as ``PETSc.ScalarType``.
+    :func:`_apply_lifting_petsc`, as ``PETSc.ScalarType``.
     Values are read from ``bcs`` on every call and must not be cached,
     since the function or constant behind a condition may have changed.
     """
@@ -982,7 +982,7 @@ def _lifting_bc_data(
     return _lifting_bc_markers(a, bcs), _lifting_bc_values(a, bcs)
 
 
-def _apply_lifting_petsc_markers(
+def _apply_lifting_petsc(
     b: PETSc.Vec,
     a: Sequence[Form | None] | Sequence[Sequence[Form | None]],
     bc_markers1: Sequence[npt.NDArray[np.int8]],
@@ -1022,7 +1022,7 @@ def _apply_lifting_petsc_markers(
             strict=True,
         ):
             const_ = [np.array([], dtype=PETSc.ScalarType) if x is None else x for x in const]
-            _apply_lifting_petsc_markers(
+            _apply_lifting_petsc(
                 b_sub,
                 a_sub,  # type: ignore[arg-type]
                 bc_markers1,
@@ -1411,7 +1411,7 @@ class LinearProblem(typing.Generic[_U]):
         """
         # Assemble lhs
         self.A.zeroEntries()
-        _assemble_matrix_petsc_markers(self.A, self.a, *self._a_bc_data)
+        _assemble_matrix_petsc(self.A, self.a, *self._a_bc_data)
         self.A.assemble()
 
         # Assemble preconditioner
@@ -1419,7 +1419,7 @@ class LinearProblem(typing.Generic[_U]):
             assert self.P_mat is not None
             self.P_mat.zeroEntries()
             assert self._P_bc_data is not None
-            _assemble_matrix_petsc_markers(
+            _assemble_matrix_petsc(
                 self.P_mat,
                 self.preconditioner,
                 *self._P_bc_data,  # type: ignore[arg-type]
@@ -1437,7 +1437,7 @@ class LinearProblem(typing.Generic[_U]):
                 if not isinstance(a, Sequence) or not isinstance(L, Sequence):
                     raise ValueError("Expected a sequence of forms for a block/nest problem.")
                 bcs1 = _bcs_by_block(_extract_function_spaces(a, 1), self.bcs)
-                _apply_lifting_petsc_markers(
+                _apply_lifting_petsc(
                     self.b,
                     a,  # type: ignore[arg-type]
                     self._lifting_markers(a, bcs1),  # type: ignore[arg-type]
@@ -1454,7 +1454,7 @@ class LinearProblem(typing.Generic[_U]):
                 a = self.a
                 if isinstance(a, Sequence):
                     raise ValueError("Expected a single form for a non-block/nest problem.")
-                _apply_lifting_petsc_markers(
+                _apply_lifting_petsc(
                     self.b,
                     [a],
                     self._lifting_markers([a], [self.bcs]),
@@ -1654,7 +1654,7 @@ def assemble_residual(
         markers = (
             _lifting_bc_markers(jacobian, bcs1) if _lifting_markers is None else _lifting_markers
         )
-        _apply_lifting_petsc_markers(
+        _apply_lifting_petsc(
             b,
             jacobian,
             markers,
@@ -1670,7 +1670,7 @@ def assemble_residual(
         markers = (
             _lifting_bc_markers([jacobian], [bcs]) if _lifting_markers is None else _lifting_markers
         )
-        _apply_lifting_petsc_markers(
+        _apply_lifting_petsc(
             b,
             [jacobian],
             markers,
@@ -1741,7 +1741,7 @@ def assemble_jacobian(
 
     # Assemble Jacobian
     J.zeroEntries()
-    _assemble_matrix_petsc_markers(
+    _assemble_matrix_petsc(
         J,
         jacobian,
         *(_matrix_bc_data(jacobian, bcs) if _J_bc_data is None else _J_bc_data),
@@ -1750,7 +1750,7 @@ def assemble_jacobian(
     J.assemble()
     if preconditioner is not None:
         P_mat.zeroEntries()
-        _assemble_matrix_petsc_markers(
+        _assemble_matrix_petsc(
             P_mat,
             preconditioner,
             *(_matrix_bc_data(preconditioner, bcs) if _P_bc_data is None else _P_bc_data),
