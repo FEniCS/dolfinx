@@ -191,7 +191,7 @@ def create_matrix(
     Args:
         a: A bilinear form or a nested sequence of bilinear forms. Each
             block row and column must use a distinct function space; use
-            :meth:`FunctionSpace.clone` for separate blocks on the same
+            ``FunctionSpace.clone()`` for separate blocks on the same
             finite element space.
         kind: The PETSc matrix type (``MatType``).
 
@@ -573,8 +573,8 @@ class _MatrixBCData(typing.NamedTuple):
     row_markers: list[npt.NDArray[np.int8]]
     column_markers: list[npt.NDArray[np.int8]]
     owned_rows: list[npt.NDArray[np.int32]]
-    row_spaces: list[_FunctionSpace | None]
-    column_spaces: list[_FunctionSpace | None]
+    row_spaces: Sequence[_FunctionSpace | None]
+    column_spaces: Sequence[_FunctionSpace | None]
 
 
 def _extract_block_spaces(
@@ -607,6 +607,10 @@ def _matrix_bc_data(
     array, and column markers can also be used for lifting. Treat the
     arrays as read-only. Boundary condition values are not cached.
     """
+    # Declared, so that the single-form branch does not narrow the
+    # element type and make the two branches disagree
+    V0: list[_FunctionSpace | None]
+    V1: list[_FunctionSpace | None]
     if isinstance(a, Sequence):
         V0, V1 = _extract_block_spaces(a)
     else:
