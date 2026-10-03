@@ -579,6 +579,41 @@ void test_num_sharing_ranks()
       = common::num_sharing_ranks(map, unrolled, bs);
   for (std::int32_t i = 0; i < bs * num_local; ++i)
     CHECK(count_bs[i] == count[i / bs]);
+
+  // The indices above are all shared alike, so a per-index count is
+  // indistinguishable from a constant. A star pattern is not.
+  std::vector<std::int64_t> star_ghosts;
+  std::vector<int> star_owners;
+  if (rank != 0)
+  {
+    star_ghosts.push_back(0);
+    star_owners.push_back(0);
+  }
+  const common::IndexMap star(MPI_COMM_WORLD, 1, star_ghosts, star_owners);
+  const std::int32_t num_star = star.size_local() + star.num_ghosts();
+  std::vector<std::int32_t> star_indices(num_star);
+  std::iota(star_indices.begin(), star_indices.end(), 0);
+  std::vector<std::int32_t> star_count
+      = common::num_sharing_ranks(star, star_indices, 1);
+  if (rank == 0)
+    CHECK(star_count[0] == size);
+  else
+  {
+    CHECK(star_count[0] == 1);
+    CHECK(star_count[1] == size);
+  }
+
+  // Precondition violations, on every rank together
+  CHECK_THROWS_AS(common::num_sharing_ranks(map, indices, 0),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(common::num_sharing_ranks(map, indices, -1),
+                  std::invalid_argument);
+  const std::vector<std::int32_t> past_end{num_local};
+  CHECK_THROWS_AS(common::num_sharing_ranks(map, past_end, 1),
+                  std::out_of_range);
+  const std::vector<std::int32_t> negative{-1};
+  CHECK_THROWS_AS(common::num_sharing_ranks(map, negative, 1),
+                  std::out_of_range);
 }
 
 } // namespace

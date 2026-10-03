@@ -90,6 +90,7 @@ stack_index_maps(
 /// refers to block `i / bs` of `map`.
 /// @param[in] bs Block size relating `indices` to the blocks of `map`.
 /// @return Number of sharing ranks, one entry per entry of `indices`.
+/// @throws std::invalid_argument If `bs` is less than one.
 /// @throws std::out_of_range If an entry of `indices` is not a local
 /// index of `map`.
 /// @note An overload taking an existing Scatterer is declared in
