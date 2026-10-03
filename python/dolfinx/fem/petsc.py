@@ -1726,6 +1726,36 @@ def assemble_residual(
     dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
 
 
+def _check_preconditioner_spaces(
+    jacobian: Form | Sequence[Sequence[Form | None]],
+    preconditioner: Form | Sequence[Sequence[Form | None]] | None,
+) -> None:
+    """Check that Jacobian markers also apply to the preconditioner."""
+    if preconditioner is None:
+        return
+    message = "Preconditioner form must have the same function spaces as the Jacobian form."
+    if isinstance(jacobian, Sequence):
+        if not isinstance(preconditioner, Sequence):
+            raise ValueError(message)
+        spaces = [
+            (_extract_function_spaces(jacobian, i), _extract_function_spaces(preconditioner, i))
+            for i in range(2)
+        ]
+    else:
+        if isinstance(preconditioner, Sequence):
+            raise ValueError(message)
+        spaces = [(jacobian.function_spaces, preconditioner.function_spaces)]
+    for J_spaces, P_spaces in spaces:
+        if len(J_spaces) != len(P_spaces):
+            raise ValueError(message)
+        for VJ, VP in zip(J_spaces, P_spaces, strict=True):
+            if VJ is None or VP is None:
+                if VJ is not VP:
+                    raise ValueError(message)
+            elif VJ._cpp_object is not VP._cpp_object:
+                raise ValueError(message)
+
+
 def assemble_jacobian(
     _snes: PETSc.SNES,
     x: PETSc.Vec,
@@ -1784,6 +1814,8 @@ def assemble_jacobian(
         ``preconditioner`` is assembled with the same markers and rows,
         so it must be over the spaces of ``jacobian``.
     """
+    _check_preconditioner_spaces(jacobian, preconditioner)
+
     # Copy existing solution into the function used in the residual and
     # Jacobian
     dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
@@ -1906,11 +1938,13 @@ class NonlinearProblem(typing.Generic[_U]):
         Args:
             F: UFL form(s) representing the residual :math:`F_i`.
             u: Function(s) used to define the residual and Jacobian.
-            bcs: Dirichlet boundary conditions.
+            bcs: Dirichlet boundary conditions, copied into an immutable
+                tuple. Assign to :attr:`bcs` to change the conditions.
             J: UFL form(s) representing the Jacobian
                 :math:`J_{ij} = dF_i/du_j`. If not passed, derived
                 automatically.
-            P: UFL form(s) representing the preconditioner.
+            P: UFL form(s) representing the preconditioner, over the
+                same function spaces as the Jacobian.
             kind: The PETSc matrix and vector kind. Common choices
                 are ``mpi`` and ``nest``. See
                 :func:`dolfinx.fem.petsc.create_matrix` and
@@ -1969,10 +2003,8 @@ class NonlinearProblem(typing.Generic[_U]):
         else:
             self._preconditioner = None
 
+        _check_preconditioner_spaces(self.J, self.preconditioner)
         self._u = u
-        # Set default values if not supplied
-        if bcs is None:
-            bcs = []
 
         # Create PETSc structures for the residual, Jacobian and solution
         # vector
@@ -1992,36 +2024,7 @@ class NonlinearProblem(typing.Generic[_U]):
         # Create the SNES solver and attach the corresponding Jacobian and
         # residual computation functions
         self._snes = PETSc.SNES().create(self.A.comm)
-        # The dofs a condition constrains are fixed once it is built,
-        # so the markers and diagonal rows are built here and reused by
-        # every Newton step. Values are not cached: the callbacks read
-        # them from bcs on every evaluation.
-        if isinstance(self.J, Sequence):
-            bcs1 = _bcs_by_block(_extract_function_spaces(self.J, 1), bcs)
-            lifting_markers = _lifting_bc_markers(self.J, bcs1)
-        else:
-            lifting_markers = _lifting_bc_markers([self.J], [bcs])
-        dof_markers, diag_rows = _matrix_bc_data(self.J, bcs)
-        jacobian_ctx = {
-            "u": self.u,
-            "jacobian": self.J,
-            "preconditioner": self.preconditioner,
-            "dof_markers": dof_markers,
-            "diag_data": (diag_rows, 1.0),
-        }
-        self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=jacobian_ctx)  # type: ignore[arg-type]
-        # Get potential attributes from the residual to pass to the
-        # residual assembly function, e.g. block layout for block assembly.
-        function_ctx = {
-            "u": self.u,
-            "residual": self.F,
-            "jacobian": self.J,
-            "bcs": bcs,
-            "_lifting_markers": lifting_markers,
-        }
-        if (_blocks := self.b.getAttr("_blocks")) is not None:
-            function_ctx["_blocks"] = _blocks  # type: ignore[assignment]
-        self.solver.setFunction(assemble_residual, self.b, kargs=function_ctx)  # type: ignore[arg-type]
+        self.bcs = bcs
 
         if petsc_options_prefix == "":
             raise ValueError("PETSc options prefix cannot be empty.")
@@ -2060,6 +2063,49 @@ class NonlinearProblem(typing.Generic[_U]):
                 ]
             )
             self.solver.getKSP().getPC().setFieldSplitIS(*fieldsplit_IS)
+
+    @property
+    def bcs(self) -> tuple[DirichletBC, ...]:
+        """Dirichlet boundary conditions applied to the problem.
+
+        Assign a new sequence to rebuild the cached markers and update
+        both SNES callbacks. The sequence is copied to an immutable tuple;
+        modifying the caller's sequence does not change the problem.
+        Boundary condition values are read afresh on every evaluation.
+        """
+        return self._bcs
+
+    @bcs.setter
+    def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
+        conditions = tuple(bcs) if bcs is not None else ()
+        if isinstance(self.J, Sequence):
+            bcs1 = _bcs_by_block(_extract_function_spaces(self.J, 1), conditions)
+            lifting_markers = _lifting_bc_markers(self.J, bcs1)
+        else:
+            lifting_markers = _lifting_bc_markers([self.J], [conditions])
+        dof_markers, diag_rows = _matrix_bc_data(self.J, conditions)
+        jacobian_ctx = {
+            "u": self.u,
+            "jacobian": self.J,
+            "preconditioner": self.preconditioner,
+            "dof_markers": dof_markers,
+            "diag_data": (diag_rows, 1.0),
+        }
+        self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=jacobian_ctx)  # type: ignore[arg-type]
+        # Get potential attributes from the residual to pass to the
+        # residual assembly function, e.g. block layout for block assembly.
+        function_ctx = {
+            "u": self.u,
+            "residual": self.F,
+            "jacobian": self.J,
+            "bcs": conditions,
+            "_lifting_markers": lifting_markers,
+        }
+        if (_blocks := self.b.getAttr("_blocks")) is not None:
+            function_ctx["_blocks"] = _blocks  # type: ignore[assignment]
+        self.solver.setFunction(assemble_residual, self.b, kargs=function_ctx)  # type: ignore[arg-type]
+
+        self._bcs = conditions
 
     def set_update(self, update: typing.Callable[[int], None]) -> None:
         """Set a function called before each nonlinear iteration.
