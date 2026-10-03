@@ -83,7 +83,8 @@ stack_index_maps(
 /// the counts over all ranks that hold an index is the same on each of
 /// them.
 ///
-/// @note Collective.
+/// @note Collective. Arguments must be locally valid on every rank.
+/// Invalid input on only some ranks may deadlock.
 ///
 /// @param[in] map Index map describing the parallel layout.
 /// @param[in] indices Local indices, which may include ghosts. An index

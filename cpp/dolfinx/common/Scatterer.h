@@ -640,7 +640,8 @@ private:
 /// Equivalent to the IndexMap overload, but avoids building a
 /// Scatterer, which duplicates MPI communicators.
 ///
-/// @note Collective.
+/// @note Collective. Arguments must be locally valid on every rank.
+/// Invalid input on only some ranks may deadlock.
 ///
 /// @param[in] map Index map describing the parallel layout.
 /// @param[in] sc Scatterer for `map`.

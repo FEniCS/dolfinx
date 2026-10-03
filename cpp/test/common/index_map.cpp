@@ -614,6 +614,8 @@ void test_num_sharing_ranks()
   const std::vector<std::int32_t> negative{-1};
   CHECK_THROWS_AS(common::num_sharing_ranks(map, negative, 1),
                   std::out_of_range);
+  CHECK_THROWS_AS(common::num_sharing_ranks(map, negative, bs),
+                  std::out_of_range);
 }
 
 } // namespace
