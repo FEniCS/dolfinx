@@ -19,6 +19,7 @@
 #include <dolfinx/la/petsc.h>
 #include <format>
 #include <functional>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <numeric>
@@ -670,15 +671,14 @@ void assemble_operator(Mat A, const Form<PetscScalar, T>& a,
               ? 0
               : dofmap0->index_map_bs() * dofmap0->index_map->size_local();
     std::vector<std::int32_t> rows;
-    for (std::int32_t i = 0; i < num_owned; ++i)
-    {
-      if (dof_marker0[i])
-        rows.push_back(i);
-    }
+    std::ranges::copy_if(
+        std::views::iota(std::int32_t(0), num_owned), std::back_inserter(rows),
+        [&dof_marker0](std::int32_t i) { return dof_marker0[i] != 0; });
+
     // Assembly zeroed these rows, so adding sets the diagonal. Adding
     // avoids a flush to switch from ADD_VALUES to INSERT_VALUES.
-    fem::set_diagonal<PetscScalar>(la::petsc::Matrix::set_fn(A, ADD_VALUES),
-                                   rows);
+    la::set_diagonal<PetscScalar>(la::petsc::Matrix::set_fn(A, ADD_VALUES),
+                                  rows);
   }
 
   common::petsc::check(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY),
@@ -815,6 +815,8 @@ void assemble_residual(
 /// degrees-of-freedom are set to `x` before assembly.
 /// @param[in] P Preconditioner form. If not given, `Pmat` is left
 /// alone and PETSc preconditions with the Jacobian.
+/// @pre `P`, if given, must have the same function spaces as `J`, so
+/// that the constrained dof markers built for `J` apply to it too.
 template <std::floating_point T>
 void assemble_jacobian(
     const Vec x, Mat Jmat, Mat Pmat, const Form<PetscScalar, T>& J,
@@ -822,21 +824,36 @@ void assemble_jacobian(
         std::reference_wrapper<const DirichletBC<PetscScalar, T>>>& bcs,
     Function<PetscScalar, T>& u, const Form<PetscScalar, T>* P = nullptr)
 {
+  // Checked before any collective call so that all ranks throw together
+  if (P and P->function_spaces() != J.function_spaces())
+  {
+    throw std::invalid_argument(
+        "Preconditioner form must have the same function spaces as the "
+        "Jacobian form.");
+  }
+
   common::petsc::check(VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD),
                        "VecGhostUpdateBegin");
   common::petsc::check(VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD),
                        "VecGhostUpdateEnd");
   impl::assign(x, u);
 
-  impl::assemble_operator(
-      Jmat, J, fem::impl::bc_dof_markers(*J.function_spaces()[0], bcs),
-      fem::impl::bc_dof_markers(*J.function_spaces()[1], bcs));
+  // Markers depend only on the space, so they are built once here. A
+  // square form shares one array between its rows and columns, and the
+  // preconditioner shares both with the Jacobian.
+  const std::vector<std::int8_t> marker0
+      = fem::impl::bc_dof_markers(*J.function_spaces()[0], bcs);
+  const bool square = J.function_spaces()[0] == J.function_spaces()[1];
+  const std::vector<std::int8_t> marker1
+      = square ? std::vector<std::int8_t>()
+               : fem::impl::bc_dof_markers(*J.function_spaces()[1], bcs);
+  std::span<const std::int8_t> dof_marker0(marker0);
+  std::span<const std::int8_t> dof_marker1
+      = square ? dof_marker0 : std::span<const std::int8_t>(marker1);
+
+  impl::assemble_operator(Jmat, J, dof_marker0, dof_marker1);
   if (P)
-  {
-    impl::assemble_operator(
-        Pmat, *P, fem::impl::bc_dof_markers(*P->function_spaces()[0], bcs),
-        fem::impl::bc_dof_markers(*P->function_spaces()[1], bcs));
-  }
+    impl::assemble_operator(Pmat, *P, dof_marker0, dof_marker1);
 }
 
 } // namespace petsc

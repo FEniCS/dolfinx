@@ -636,10 +636,26 @@ def extract_function_spaces(
                             raise ValueError("Cannot extract unique function spaces.")
             return V0
 
-        if index == 0:
-            return list(unique_spaces(V))
-        elif index == 1:
-            return list(unique_spaces(V.transpose()))
+        def check_distinct(spaces: list[FunctionSpace | None]) -> None:
+            # A space must not be shared between two rows, or between
+            # two columns: the block a dof belongs to would then be
+            # ambiguous, as would which blocks a boundary condition on
+            # that space constrains.
+            what = "rows" if index == 0 else "columns"
+            for i, Vi in enumerate(spaces):
+                if Vi is None:
+                    continue
+                for j in range(i):
+                    Vj = spaces[j]
+                    if Vj is not None and Vj._cpp_object is Vi._cpp_object:
+                        raise ValueError(
+                            f"Function space is shared by {what} {j} and {i} of a "
+                            f"blocked form. Each of the {what} must have its own space."
+                        )
+
+        spaces = list(unique_spaces(V if index == 0 else V.transpose()))
+        check_distinct(spaces)
+        return spaces
 
     raise RuntimeError("Unsupported array of forms")
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2024-2025 Jørgen S. Dokken
+# Copyright (C) 2024-2026 Jørgen S. Dokken and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -202,3 +202,101 @@ class TestPETScSolverWrappers:
         global_ph_L2 = np.sqrt(msh.comm.allreduce(local_ph_L2, op=MPI.SUM))
         tol = 500 * np.finfo(dolfinx.default_scalar_type).eps
         assert global_uh_L2 < tol and global_ph_L2 < tol
+
+    @pytest.mark.parametrize(
+        "mode", [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet]
+    )
+    def test_overlapping_dirichlet_bcs(self, mode):
+        """Test a LinearProblem with two non-zero bcs sharing degrees-of-freedom.
+
+        A dof constrained by more than one bc is set by the last bc in
+        the sequence that constrains it, in both ``apply_lifting`` and
+        ``set_bc``. The solve must therefore agree with the solve for a
+        single bc carrying the resolved values, and swapping the bc
+        order must change the solution accordingly.
+        """
+        from petsc4py import PETSc
+
+        import dolfinx.fem.petsc
+
+        sys = PETSc.Sys()
+        if MPI.COMM_WORLD.size == 1:
+            factor_type = "petsc"
+        elif sys.hasExternalPackage("mumps"):
+            factor_type = "mumps"
+        elif sys.hasExternalPackage("superlu_dist"):
+            factor_type = "superlu_dist"
+        else:
+            pytest.skip("No external solvers available in parallel")
+
+        msh = dolfinx.mesh.create_unit_square(
+            MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=PETSc.RealType
+        )
+        V = dolfinx.fem.functionspace(msh, ("Lagrange", 2))
+
+        u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+        x = ufl.SpatialCoordinate(msh)
+        a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+        L = ufl.inner(2 + x[0], v) * ufl.dx
+
+        tdim = msh.topology.dim
+        msh.topology.create_connectivity(tdim - 1, tdim)
+        bndry_facets = dolfinx.mesh.exterior_facet_indices(msh.topology)
+        left_facets = dolfinx.mesh.locate_entities_boundary(
+            msh, tdim - 1, lambda x: np.isclose(x[0], 0.0)
+        )
+        dofs_all = dolfinx.fem.locate_dofs_topological(V, tdim - 1, bndry_facets)
+        dofs_left = dolfinx.fem.locate_dofs_topological(V, tdim - 1, left_facets)
+        assert np.isin(dofs_left, dofs_all).all()
+
+        # Two non-zero, spatially varying boundary values. The left-edge
+        # dofs are constrained by both bcs.
+        g_all = dolfinx.fem.Function(V)
+        g_all.interpolate(lambda x: 1.0 + x[0] + 2.0 * x[1])
+        g_left = dolfinx.fem.Function(V)
+        g_left.interpolate(lambda x: 3.0 - x[1])
+        bc_all = dolfinx.fem.dirichletbc(g_all, dofs_all)
+        bc_left = dolfinx.fem.dirichletbc(g_left, dofs_left)
+
+        # Single bc holding the values that [bc_all, bc_left] resolves to
+        g_ref = dolfinx.fem.Function(V)
+        g_ref.x.array[:] = g_all.x.array
+        g_ref.x.array[dofs_left] = g_left.x.array[dofs_left]
+        bc_ref = dolfinx.fem.dirichletbc(g_ref, dofs_all)
+
+        def solve(bcs, label):
+            problem = dolfinx.fem.petsc.LinearProblem(
+                a,
+                L,
+                bcs=bcs,
+                petsc_options_prefix=f"test_overlapping_dirichlet_bcs_{mode}_{label}_",
+                petsc_options={
+                    "ksp_type": "preonly",
+                    "pc_type": "lu",
+                    "pc_factor_mat_solver_type": factor_type,
+                    "ksp_error_if_not_converged": True,
+                },
+            )
+            uh = problem.solve()
+            assert problem.solver.getConvergedReason() > 0
+            return uh
+
+        eps = 1000 * np.finfo(dolfinx.default_scalar_type).eps
+
+        # bc_left is applied last, so it wins on the shared dofs
+        uh = solve([bc_all, bc_left], "overlap")
+        assert np.allclose(uh.x.array[dofs_left], g_left.x.array[dofs_left], atol=eps, rtol=eps)
+        only_all = np.setdiff1d(dofs_all, dofs_left)
+        assert np.allclose(uh.x.array[only_all], g_all.x.array[only_all], atol=eps, rtol=eps)
+        uh_ref = solve([bc_ref], "resolved")
+        assert np.allclose(uh.x.array, uh_ref.x.array, atol=eps, rtol=eps)
+
+        # Reversing the order makes bc_all win everywhere, which is the
+        # same system as applying bc_all alone
+        uh_rev = solve([bc_left, bc_all], "reversed")
+        assert np.allclose(uh_rev.x.array[dofs_all], g_all.x.array[dofs_all], atol=eps, rtol=eps)
+        uh_all = solve([bc_all], "all")
+        assert np.allclose(uh_rev.x.array, uh_all.x.array, atol=eps, rtol=eps)
+
+        # The two orderings really do give different solutions
+        assert not np.allclose(uh.x.array, uh_rev.x.array, atol=eps, rtol=eps)

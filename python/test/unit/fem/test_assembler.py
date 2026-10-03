@@ -1130,13 +1130,17 @@ class TestPETScAssemblers:
         else:
             V = functionspace(mesh, ("Lagrange", 1))
             V2 = V.clone()
+            # Each block needs its own test space: a space shared by two
+            # rows leaves the block a dof belongs to ambiguous
+            V3 = V.clone()
             u = Function(V)
             u.interpolate(lambda x: x[0] * x[1])
             u2 = Function(V2)
             v2 = ufl.TestFunction(V2)
+            v3 = ufl.TestFunction(V3)
             c = Constant(mesh, PETSc.ScalarType(12.0))
             u2.interpolate(lambda x: x[0] + x[1])
-            F = [c**2 * ufl.inner(u * u2, v2) * dx, c * ufl.inner(u * u2 * u2, v2) * dx]
+            F = [c**2 * ufl.inner(u * u2, v2) * dx, c * ufl.inner(u * u2 * u2, v3) * dx]
             _F = form(F)
 
         # -- Test vector
