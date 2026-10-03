@@ -14,6 +14,7 @@
 #include "traits.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/sort.h>
@@ -696,11 +697,10 @@ void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
 /// @brief Set a value on the diagonal of the locally owned rows that a
 /// Dirichlet boundary condition constrains.
 ///
-/// Only locally owned rows are set. A constrained degree-of-freedom
-/// that is a ghost on the calling rank is left untouched here and is
-/// set by the rank that owns it, so no communication is needed from
-/// this function. Setting ghost rows too would contribute once per
-/// sharing rank when `A` is finalised.
+/// Set only locally owned rows to prevent accumulation when finalising
+/// `A`. A constrained degree-of-freedom that is a ghost on the calling
+/// rank is left untouched here and is set by the rank that owns it, so
+/// no communication is needed from this function.
 ///
 /// This function is typically called after assembly, which zeroes
 /// Dirichlet rows and columns. For block matrices, it should normally
@@ -716,7 +716,8 @@ void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
 ///
 /// @note Each row is set exactly once, even where several boundary
 /// conditions constrain the same degree-of-freedom, so `set_fn` may
-/// add rather than insert.
+/// add rather than insert. Every condition sets the same `diagonal`
+/// value, so their order in `bcs` does not matter here.
 ///
 /// @param[in] set_fn The function for setting values to a matrix.
 /// @param[in] V The function space for the rows and columns of the
@@ -734,8 +735,12 @@ void set_diagonal(
     T diagonal = T(1))
 {
   spdlog::debug("Set diagonal");
-  std::vector<std::int32_t> rows;
-  int num_runs = 0;
+
+  // Gather the owned dofs of the contributing conditions first, so that
+  // the concatenation is sized exactly
+  std::vector<std::span<const std::int32_t>> runs;
+  runs.reserve(bcs.size());
+  std::size_t num_rows = 0;
   for (auto& bc : bcs)
   {
     if (V.contains(*bc.get().function_space()))
@@ -744,17 +749,22 @@ void set_diagonal(
       std::span<const std::int32_t> owned = dofs.first(range);
       if (!owned.empty())
       {
-        ++num_runs;
-        rows.insert(rows.end(), owned.begin(), owned.end());
+        num_rows += owned.size();
+        runs.push_back(owned);
       }
     }
   }
+
+  std::vector<std::int32_t> rows;
+  rows.reserve(num_rows);
+  for (std::span<const std::int32_t> owned : runs)
+    rows.insert(rows.end(), owned.begin(), owned.end());
 
   // A condition's dofs are strictly increasing (a DirichletBC
   // precondition), so one condition needs no sort. Several give sorted
   // runs, which a comparison sort handles poorly and which are often
   // already in order, hence the check before radix sorting.
-  if (num_runs > 1 and !std::ranges::is_sorted(rows))
+  if (runs.size() > 1 and !std::ranges::is_sorted(rows))
     dolfinx::radix_sort(rows);
 
   // Overlapping conditions can repeat a row
