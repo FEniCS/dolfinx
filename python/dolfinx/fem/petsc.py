@@ -1520,16 +1520,16 @@ class LinearProblem(typing.Generic[_U]):
         return self.u
 
     @property
-    def bcs(self) -> Sequence[DirichletBC]:
+    def bcs(self) -> tuple[DirichletBC, ...]:
         """Dirichlet boundary conditions applied to the problem.
 
         Assigning to this property rebuilds the cached constrained dof
         markers and diagonal rows, which :func:`solve` reuses rather
         than rebuilding on every call. Caching them is safe because the
         dofs a boundary condition constrains are fixed when it is
-        built. Mutating the returned sequence in place bypasses the
-        setter and leaves the cache stale; assign a new sequence
-        instead.
+        built. The conditions are copied to an immutable tuple, so
+        modifying the caller's sequence afterwards cannot leave the
+        cache stale.
 
         Boundary condition *values* are not cached. The function or
         constant behind a condition may change between solves, so
@@ -1539,7 +1539,7 @@ class LinearProblem(typing.Generic[_U]):
 
     @bcs.setter
     def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
-        self._bcs = [] if bcs is None else bcs
+        self._bcs = tuple(bcs) if bcs is not None else ()
         self._a_bc_data = _matrix_bc_data(self.a, self._bcs)
         self._P_bc_data = (
             None if self.preconditioner is None else _matrix_bc_data(self.preconditioner, self._bcs)
@@ -1764,8 +1764,7 @@ def assemble_jacobian(
     u: Sequence[_Function] | _Function,
     jacobian: Form | Sequence[Sequence[Form]],
     preconditioner: Form | Sequence[Sequence[Form]] | None,
-    dof_markers: tuple,
-    diag_data: _MatrixDiagData,
+    bcs: Sequence[DirichletBC],
 ) -> None:
     """Assemble the Jacobian and preconditioner matrices.
 
@@ -1777,10 +1776,8 @@ def assemble_jacobian(
     Example::
 
         snes = PETSc.SNES().create(mesh.comm)
-        markers, rows = _matrix_bc_data(jacobian, bcs)
         cntx = {"u": u, "jacobian": jacobian,
-            "preconditioner": preconditioner, "dof_markers": markers,
-            "diag_data": (rows, 1.0)}
+            "preconditioner": preconditioner, "bcs": bcs}
         snes.setJacobian(assemble_jacobian, A, P_mat, kargs=cntx)
 
     Note:
@@ -1796,23 +1793,41 @@ def assemble_jacobian(
         u: Function tied to the solution vector within the residual and
             Jacobian.
         jacobian: Compiled form of the Jacobian.
-        preconditioner: Compiled form of the preconditioner.
-        dof_markers: Constrained dof markers on the test and trial
-            spaces of ``jacobian``, one per block row and per block
-            column if it is a 2D array, from the internal
-            ``_matrix_bc_data``.
-        diag_data: Locally owned constrained rows carrying the
-            diagonal, or one array per block row, and the value on
-            each.
+        preconditioner: Compiled form of the preconditioner, over the
+            function spaces of ``jacobian``.
+        bcs: Dirichlet boundary conditions to apply to the Jacobian and
+            preconditioner matrices.
 
     Note:
-        The boundary conditions enter as markers and rows rather than
-        as ``DirichletBC`` objects, so that they are built once rather
-        than on every Newton step. The internal ``_matrix_bc_data``
-        builds them.
+        The constrained dofs are resolved from ``bcs`` on every call.
+        :class:`NonlinearProblem` resolves them once and reuses them,
+        which it can do because the dofs a condition constrains are
+        fixed when it is built.
+    """
+    dof_markers, rows = _matrix_bc_data(jacobian, bcs)
+    _assemble_jacobian(_snes, x, J, P_mat, u, jacobian, preconditioner, dof_markers, (rows, 1.0))
 
-        ``preconditioner`` is assembled with the same markers and rows,
-        so it must be over the spaces of ``jacobian``.
+
+def _assemble_jacobian(
+    _snes: PETSc.SNES,
+    x: PETSc.Vec,
+    J: PETSc.Mat,
+    P_mat: PETSc.Mat,
+    u: Sequence[_Function] | _Function,
+    jacobian: Form | Sequence[Sequence[Form]],
+    preconditioner: Form | Sequence[Sequence[Form]] | None,
+    dof_markers: tuple,
+    diag_data: _MatrixDiagData,
+) -> None:
+    """Assemble the Jacobian and preconditioner, given constrained dofs.
+
+    As :func:`assemble_jacobian`, with the boundary conditions given as
+    markers and diagonal rows (see :func:`_matrix_bc_data`), so that a
+    SNES callback built once resolves them once rather than on every
+    Newton step.
+
+    ``preconditioner`` is assembled with the markers and rows of
+    ``jacobian``, so it must be over the same function spaces.
     """
     _check_preconditioner_spaces(jacobian, preconditioner)
 
@@ -2091,7 +2106,7 @@ class NonlinearProblem(typing.Generic[_U]):
             "dof_markers": dof_markers,
             "diag_data": (diag_rows, 1.0),
         }
-        self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=jacobian_ctx)  # type: ignore[arg-type]
+        self.solver.setJacobian(_assemble_jacobian, self.A, self.P_mat, kargs=jacobian_ctx)  # type: ignore[arg-type]
         # Get potential attributes from the residual to pass to the
         # residual assembly function, e.g. block layout for block assembly.
         function_ctx = {
