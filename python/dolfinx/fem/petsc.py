@@ -1407,20 +1407,19 @@ class LinearProblem(typing.Generic[_U]):
             a, L = self.a, self.L
             if not isinstance(a, Sequence) or not isinstance(L, Sequence):
                 raise ValueError("Expected a sequence of forms for a block/nest problem.")
-            bcs1 = _bcs_by_block(_extract_function_spaces(a, 1), self.bcs)
             _apply_lifting_petsc(
                 self.b,
                 a,  # type: ignore[arg-type]
                 self._a_bc_data.column_markers,
-                _lifting_bc_values(a, bcs1),  # type: ignore[arg-type]
+                _bc_lifting_values(self._a_bc_data.column_spaces, self._bcs1, PETSc.ScalarType),
             )
             dolfinx.la.petsc._ghost_update(
                 self.b,
                 PETSc.InsertMode.ADD,  # type: ignore[arg-type]
                 PETSc.ScatterMode.REVERSE,  # type: ignore[arg-type]
             )
-            bcs0 = _bcs_by_block(_extract_function_spaces(L), self.bcs)
-            dolfinx.fem.petsc.set_bc(self.b, bcs0)
+            assert self._bcs0 is not None
+            dolfinx.fem.petsc.set_bc(self.b, self._bcs0)
         else:  # single form
             a = self.a
             if isinstance(a, Sequence):
@@ -1429,7 +1428,7 @@ class LinearProblem(typing.Generic[_U]):
                 self.b,
                 [a],
                 self._a_bc_data.column_markers,
-                _lifting_bc_values([a], [self.bcs]),
+                _bc_lifting_values(self._a_bc_data.column_spaces, self._bcs1, PETSc.ScalarType),
             )
             dolfinx.la.petsc._ghost_update(
                 self.b,
@@ -1449,9 +1448,10 @@ class LinearProblem(typing.Generic[_U]):
         """Dirichlet boundary conditions applied to the problem.
 
         Assigning to this property rebuilds the cached constrained dof
-        markers and diagonal rows, which :meth:`solve` reuses rather
-        than rebuilding on every call. Caching them is safe because the
-        dofs a boundary condition constrains are fixed when it is
+        markers, diagonal rows and per-block grouping, which
+        :meth:`solve` reuses rather than rebuilding on every call.
+        Caching them is safe because the dofs a boundary condition
+        constrains, and the block it belongs to, are fixed when it is
         built. The conditions are copied to an immutable tuple, so
         modifying the caller's sequence afterwards cannot leave the
         cache stale.
@@ -1469,6 +1469,20 @@ class LinearProblem(typing.Generic[_U]):
         self._P_bc_data = (
             None if self.preconditioner is None else _matrix_bc_data(self.preconditioner, self._bcs)
         )
+        # Which block each condition belongs to follows from the spaces,
+        # so group once here and re-read only the values in solve().
+        L = self.L
+        if isinstance(self.u, Sequence):  # block or nest
+            self._bcs1 = _bcs_by_block(self._a_bc_data.column_spaces, self._bcs)
+            # A single form here is rejected by solve(), which reads these.
+            self._bcs0 = (
+                _bcs_by_block(_extract_function_spaces(L), self._bcs)
+                if isinstance(L, Sequence)
+                else None
+            )
+        else:  # single form, one column holding every condition
+            self._bcs1 = [list(self._bcs)]
+            self._bcs0 = None
 
     @property
     def L(self) -> Form | Sequence[Form]:
