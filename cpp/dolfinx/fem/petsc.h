@@ -13,6 +13,7 @@
 #include "assembler.h"
 #include "pack.h"
 #include "sparsitypattern.h"
+#include <array>
 #include <cassert>
 #include <concepts>
 #include <cstdint>
@@ -838,18 +839,11 @@ void assemble_jacobian(
                        "VecGhostUpdateEnd");
   impl::assign(x, u);
 
-  // Markers depend only on the space, so they are built once here. A
-  // square form shares one array between its rows and columns, and the
-  // preconditioner shares both with the Jacobian.
-  const std::vector<std::int8_t> marker0
-      = fem::impl::bc_dof_markers(*J.function_spaces()[0], bcs);
-  const bool square = J.function_spaces()[0] == J.function_spaces()[1];
-  const std::vector<std::int8_t> marker1
-      = square ? std::vector<std::int8_t>()
-               : fem::impl::bc_dof_markers(*J.function_spaces()[1], bcs);
-  std::span<const std::int8_t> dof_marker0(marker0);
-  std::span<const std::int8_t> dof_marker1
-      = square ? dof_marker0 : std::span<const std::int8_t>(marker1);
+  // Markers depend only on the space, so they are built once here and
+  // the preconditioner, over the same spaces, shares them
+  std::array<std::vector<std::int8_t>, 2> markers;
+  auto [dof_marker0, dof_marker1]
+      = fem::impl::bc_dof_markers_pair(J, bcs, markers);
 
   impl::assemble_operator(Jmat, J, dof_marker0, dof_marker1);
   if (P)

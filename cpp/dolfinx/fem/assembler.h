@@ -13,6 +13,7 @@
 #include "pack.h"
 #include "traits.h"
 #include <algorithm>
+#include <array>
 #include <basix/mdspan.hpp>
 #include <cstddef>
 #include <cstdint>
@@ -192,6 +193,36 @@ std::vector<std::int8_t> bc_dof_markers(
     }
   }
   return markers;
+}
+
+/// @brief Mark the dofs of the test and trial spaces of `a` that the
+/// boundary conditions in `bcs` constrain.
+///
+/// Markers depend only on the space, so a form whose test and trial
+/// spaces are the same marks its dofs once and shares the array
+/// between its rows and its columns. The two returned spans are then
+/// the same array rather than equal copies.
+///
+/// @param[in] a Bilinear form whose spaces are marked.
+/// @param[in] bcs Boundary conditions. Only those defined on a space
+/// or a subspace of it mark that space.
+/// @param[out] storage Backing storage for the returned spans, which
+/// are views into it and are valid for as long as it is.
+/// @return Markers on the test space, indexing the rows, and on the
+/// trial space, indexing the columns.
+template <dolfinx::scalar T, std::floating_point U>
+std::array<std::span<const std::int8_t>, 2> bc_dof_markers_pair(
+    const Form<T, U>& a,
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs,
+    std::array<std::vector<std::int8_t>, 2>& storage)
+{
+  storage[0] = bc_dof_markers(*a.function_spaces().at(0), bcs);
+  std::span<const std::int8_t> marker0(storage[0]);
+  if (a.function_spaces().at(0) == a.function_spaces().at(1))
+    return {marker0, marker0};
+
+  storage[1] = bc_dof_markers(*a.function_spaces().at(1), bcs);
+  return {marker0, std::span<const std::int8_t>(storage[1])};
 }
 
 /// @brief Constrained dof markers and boundary condition values on the
@@ -594,22 +625,13 @@ void assemble_matrix(
   auto coefficients = allocate_coefficient_storage(a);
   pack_coefficients(a, coefficients);
 
-  const std::vector<std::int8_t> dof_marker0
-      = impl::bc_dof_markers(*a.function_spaces().at(0), bcs);
-
-  // The markers depend only on the space, so a form with the same test
-  // and trial space needs them built once
-  const bool square = a.function_spaces().at(0) == a.function_spaces().at(1);
-  const std::vector<std::int8_t> dof_marker1
-      = square ? std::vector<std::int8_t>()
-               : impl::bc_dof_markers(*a.function_spaces().at(1), bcs);
+  std::array<std::vector<std::int8_t>, 2> markers;
+  auto [dof_marker0, dof_marker1] = impl::bc_dof_markers_pair(a, bcs, markers);
 
   // Assemble
   assemble_matrix(mat_add, a, std::span<const T>(constants),
-                  make_coefficients_span(coefficients),
-                  std::span<const std::int8_t>(dof_marker0),
-                  square ? std::span<const std::int8_t>(dof_marker0)
-                         : std::span<const std::int8_t>(dof_marker1));
+                  make_coefficients_span(coefficients), dof_marker0,
+                  dof_marker1);
 }
 
 /// @brief Assemble bilinear form into a matrix. Matrix must already be
@@ -655,10 +677,10 @@ void assemble_matrix(auto mat_add, const Form<T, U>& a,
 ///
 /// @note Convenience overload for callers holding `V` and `bcs` rather
 /// than the row list, which it rebuilds on every call. Library code
-/// should call the row-list overload, caching the rows across repeated
-/// calls: filter `bcs` by `V.contains(*bc.function_space())`,
-/// concatenate each surviving bc's owned `dof_indices()` and remove
-/// duplicates.
+/// should cache the rows across repeated calls and set them with
+/// la::set_diagonal: filter `bcs` by
+/// `V.contains(*bc.function_space())`, concatenate each surviving bc's
+/// owned `dof_indices()` and remove duplicates.
 ///
 /// @note Each row is set exactly once, even where several boundary
 /// conditions constrain the same degree-of-freedom, so `set_fn` may
