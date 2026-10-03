@@ -656,8 +656,7 @@ def _assemble_matrix_nest(
 ) -> PETSc.Mat:
     """Assemble forms into a nest matrix, given constrained dofs.
 
-    Each block is assembled by :func:`_assemble_matrix_single`
-    into the sub-matrix that holds it.
+    Each block is assembled into the sub-matrix that holds it.
 
     Args:
         A: Matrix to assemble into. Not zeroed first, and not assembled
@@ -682,15 +681,24 @@ def _assemble_matrix_nest(
         for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row, strict=True)):
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
-                _assemble_matrix_single(
+                _cpp.fem.petsc.assemble_matrix(
                     Asub,
-                    a_block,
-                    (dof_marker0[i], dof_marker1[j]),
-                    (diag_rows[i], diag),
+                    a_block._cpp_object,  # type: ignore[arg-type]
                     const,
                     coeff,
-                    False,
+                    (dof_marker0[i], dof_marker1[j]),
+                    unrolled=False,
                 )
+                V0, V1 = a_block.function_spaces
+                if V0._cpp_object is V1._cpp_object:
+                    # Assembly zeroed the constrained rows, so adding
+                    # sets the diagonal (and needs no flush)
+                    dolfinx.la.petsc.set_diagonal(
+                        Asub,
+                        diag_rows[i],
+                        diag,
+                        PETSc.InsertMode.ADD,  # type: ignore[arg-type]
+                    )
             elif i == j and dof_marker0[i].size > 0:
                 raise RuntimeError(
                     f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
@@ -742,15 +750,24 @@ def _assemble_matrix_block(
                 # A sub-matrix of a blocked matrix is addressed in
                 # scalar indices, hence the block-expanded insertion
                 Asub = A.getLocalSubMatrix(is0[i], is1[j])
-                _assemble_matrix_single(
+                _cpp.fem.petsc.assemble_matrix(
                     Asub,
-                    a_sub,
-                    (dof_marker0[i], dof_marker1[j]),
-                    (diag_rows[i], diag),
+                    a_sub._cpp_object,  # type: ignore[arg-type]
                     constants[i][j],
-                    coeffs[i][j],  # type: ignore[index]
-                    True,
+                    coeffs[i][j],
+                    (dof_marker0[i], dof_marker1[j]),
+                    unrolled=True,
                 )
+                V0, V1 = a_sub.function_spaces
+                if V0._cpp_object is V1._cpp_object:
+                    # Assembly zeroed the constrained rows, so adding
+                    # sets the diagonal (and needs no flush)
+                    dolfinx.la.petsc.set_diagonal(
+                        Asub,
+                        diag_rows[i],
+                        diag,
+                        PETSc.InsertMode.ADD,  # type: ignore[arg-type]
+                    )
                 A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
             elif i == j and dof_marker0[i].size > 0:
                 raise RuntimeError(
@@ -758,59 +775,6 @@ def _assemble_matrix_block(
                     " and have DirichletBC applied."
                     " Consider assembling a zero block."
                 )
-    return A
-
-
-def _assemble_matrix_single(
-    A: PETSc.Mat,
-    a: Form,
-    dof_markers: tuple[npt.NDArray[np.int8], npt.NDArray[np.int8]],
-    diag_data: tuple[npt.NDArray[np.int32], float],
-    constants: npt.NDArray,
-    coeffs: dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray],
-    unrolled: bool,
-) -> PETSc.Mat:
-    """Assemble a bilinear form into a matrix, given constrained dofs.
-
-    Args:
-        A: Matrix to assemble into. Not zeroed first, and not assembled
-            afterwards.
-        a: Bilinear form.
-        dof_markers: Constrained dof markers on the test and trial
-            spaces, from :func:`_matrix_bc_data`.
-        diag_data: Rows carrying the diagonal, from
-            :func:`_matrix_bc_data`, and the value on each. The rows
-            are used only where the test and trial spaces are the same.
-        constants: Packed constants of the form.
-        coeffs: Packed coefficients of the form.
-        unrolled: Insert with block-expanded indices. Needed for a
-            sub-matrix of a blocked matrix, which
-            ``Mat.getLocalSubMatrix`` addresses in scalar indices while
-            the dofmap stays blocked. ``False`` elsewhere, where the
-            cheaper non-blocked or blocked insertion applies.
-
-    Returns:
-        ``A``, for convenience.
-    """
-    diag_rows, diag = diag_data
-    V0, V1 = a.function_spaces
-    _cpp.fem.petsc.assemble_matrix(
-        A,
-        a._cpp_object,  # type: ignore[arg-type]
-        constants,  # type: ignore[arg-type]
-        coeffs,  # type: ignore[arg-type]
-        dof_markers,  # type: ignore[arg-type]
-        unrolled,
-    )
-    # Assembly zeroed the constrained rows, so adding sets the
-    # diagonal (and needs no flush)
-    if V0._cpp_object is V1._cpp_object:
-        dolfinx.la.petsc.set_diagonal(
-            A,
-            diag_rows,  # type: ignore[arg-type]
-            diag,
-            PETSc.InsertMode.ADD,  # type: ignore[arg-type]
-        )
     return A
 
 
@@ -857,10 +821,8 @@ def _assemble_matrix_petsc(
     row ``i``.
 
     Dispatches on the type of ``A`` and the shape of ``a`` to
-    :func:`_assemble_matrix_nest`,
-    :func:`_assemble_matrix_block` or
-    :func:`_assemble_matrix_single`, which document the
-    arguments.
+    :func:`_assemble_matrix_nest` or :func:`_assemble_matrix_block`,
+    which document the arguments, or assembles a single form here.
     """
     if A.getType() == PETSc.Mat.Type.NEST:
         if not isinstance(a, Sequence):
@@ -888,15 +850,26 @@ def _assemble_matrix_petsc(
             _block_index_sets(a),
         )
     else:
-        return _assemble_matrix_single(
+        diag_rows, diag = diag_data
+        _cpp.fem.petsc.assemble_matrix(
             A,
-            a,
-            dof_markers,
-            diag_data,  # type: ignore[arg-type]
+            a._cpp_object,  # type: ignore[arg-type]
             constants,  # type: ignore[arg-type]
             coeffs,  # type: ignore[arg-type]
-            False,
+            dof_markers,  # type: ignore[arg-type]
+            unrolled=False,
         )
+        V0, V1 = a.function_spaces
+        if V0._cpp_object is V1._cpp_object:
+            # Assembly zeroed the constrained rows, so adding sets the
+            # diagonal (and needs no flush)
+            dolfinx.la.petsc.set_diagonal(
+                A,
+                diag_rows,  # type: ignore[arg-type]
+                diag,
+                PETSc.InsertMode.ADD,  # type: ignore[arg-type]
+            )
+        return A
 
 
 def apply_lifting(
