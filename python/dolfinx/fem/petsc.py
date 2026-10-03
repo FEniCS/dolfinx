@@ -47,6 +47,7 @@ from numpy import typing as npt
 import dolfinx.cpp as _cpp
 import dolfinx.la.petsc
 import ufl
+from dolfinx.common import IndexMap
 from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
@@ -94,9 +95,7 @@ __all__ = [
 
 
 def create_vector(
-    V: _FunctionSpace | Sequence[_FunctionSpace | None],
-    /,
-    kind: str | None = None,
+    V: _FunctionSpace | Sequence[_FunctionSpace | None], /, kind: str | None = None
 ) -> PETSc.Vec:
     """Create a vector compatible with linear form(s) or function space(s).
 
@@ -164,7 +163,7 @@ def _create_vector_from_form(L: Form | Sequence[Form], kind: str | None = None) 
 
 def create_matrix(
     a: Form | Sequence[Sequence[Form | None]],
-    kind: str | Sequence[Sequence[str]] | None = None,
+    kind: str | Sequence[Sequence[str | None]] | None = None,
 ) -> PETSc.Mat:
     """Create a matrix compatible with a sequence of bilinear forms.
 
@@ -179,8 +178,8 @@ def create_matrix(
        with the forms ``a``.
     3. For a rectangular array of bilinear forms, it create a single
        (non-nested) matrix of type ``kind`` that is compatible with the
-       array of for forms ``a``. If ``kind`` is ``None`` or
-       ``PETSc.Vec.Type.MPI``, then the matrix is the default type.
+       array of forms ``a``. If ``kind`` is ``None`` or ``"mpi"``, then
+       the matrix is the default type.
 
        In this case, the matrix is arranged::
 
@@ -191,10 +190,18 @@ def create_matrix(
 
     Args:
         a: A bilinear form or a nested sequence of bilinear forms.
-        kind: The PETSc matrix type (``MatType``).
+        kind: The PETSc matrix type (``MatType``). An entry of an array
+            of types is unused, and may be ``None``, where ``a`` holds
+            no form.
 
     Returns:
         A PETSc matrix.
+
+    Raises:
+        ValueError: If ``kind`` is ``PETSc.Mat.Type.IS`` (MATIS) and the
+            mesh has ghost cells. MATIS requires each process to hold
+            one non-overlapping subdomain; build the mesh with
+            ``GhostMode.none``.
     """
     if isinstance(a, Sequence):
         _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
@@ -421,7 +428,7 @@ def assemble_matrix(
     coeffs: dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
     | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
     | None = None,
-    kind: str | Sequence[Sequence[str]] | None = None,
+    kind: str | Sequence[Sequence[str | None]] | None = None,
 ) -> PETSc.Mat: ...
 
 
@@ -451,7 +458,7 @@ def assemble_matrix(
         | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
-    kind: str | Sequence[Sequence[str]] | None = None,
+    kind: str | Sequence[Sequence[str | None]] | None = None,
 ) -> PETSc.Mat:
     """Assemble a bilinear form into a matrix.
 
@@ -480,6 +487,14 @@ def assemble_matrix(
     Rows/columns that are constrained by a Dirichlet boundary condition
     are zeroed, with the diagonal to set to ``diag``.
 
+    For a MATIS matrix (``kind`` of ``PETSc.Mat.Type.IS``), which holds
+    an unassembled local matrix per process, ``diag`` is the value of
+    the *assembled* diagonal. Each process sharing a constrained
+    degree-of-freedom writes an equal share of it, so a local matrix
+    holds ``diag`` divided by the number of processes sharing that
+    row. Inspecting a local matrix therefore shows a fraction of
+    ``diag`` on a shared row.
+
     Constant and coefficient data that appear in the form(s) can be
     packed outside of this function to avoid re-packing by this
     function. The functions :func:`dolfinx.fem.pack_constants` and
@@ -493,7 +508,7 @@ def assemble_matrix(
     Args:
         a: Bilinear form(s) to assembled into a matrix.
         bcs: Dirichlet boundary conditions applied to the system.
-        diag: Value to set on the matrix diagonal for Dirichlet
+        diag: Value the assembled matrix diagonal takes for Dirichlet
             boundary condition constrained degrees-of-freedom belonging
             to the same trial and test space.
         constants: Constants appearing in the form.
@@ -509,11 +524,12 @@ def assemble_matrix(
         should not be called internally by the library.
     """  # noqa: D301
     A = create_matrix(a, kind)
+    dof_markers = _matrix_bc_data(a, bcs)
     _assemble_matrix_petsc(
         A,
         a,
-        *_matrix_bc_data(a, bcs),
-        diag,
+        dof_markers,
+        _matrix_diag_data(a, dof_markers[0], diag, _diag_on_ghost_rows(A, a)),
         _packed_constants(a) if constants is None else constants,
         _packed_coefficients(a) if coeffs is None else coeffs,
     )
@@ -547,41 +563,43 @@ def _assemble_matrix_mat(
         It rebuilds the constrained dof markers on every call, and
         should not be called internally by the library.
     """
+    dof_markers = _matrix_bc_data(a, bcs)
     return _assemble_matrix_petsc(
         A,
         a,
-        *_matrix_bc_data(a, bcs),
-        diag,
+        dof_markers,
+        _matrix_diag_data(a, dof_markers[0], diag, _diag_on_ghost_rows(A, a)),
         _packed_constants(a) if constants is None else constants,
         _packed_coefficients(a) if coeffs is None else coeffs,
     )
 
 
-#: Constrained dof markers on the test and trial spaces, and the locally
-#: owned rows that carry the diagonal value. See :func:`_matrix_bc_data`.
-_MatrixBCData = tuple[
-    tuple[
-        npt.NDArray[np.int8] | list[npt.NDArray[np.int8]],
-        npt.NDArray[np.int8] | list[npt.NDArray[np.int8]],
-    ],
+#: Rows carrying the diagonal, and the value on each. See
+#: :func:`_matrix_diag_data`.
+_MatrixDiagData = tuple[
     npt.NDArray[np.int32] | list[npt.NDArray[np.int32]],
+    npt.NDArray | float | complex | list[npt.NDArray | float | complex],
+]
+
+#: Constrained dof markers on the test and trial spaces. See
+#: :func:`_matrix_bc_data`.
+_MatrixBCData = tuple[
+    npt.NDArray[np.int8] | list[npt.NDArray[np.int8]],
+    npt.NDArray[np.int8] | list[npt.NDArray[np.int8]],
 ]
 
 
 def _matrix_bc_data(
     a: Form | Sequence[Sequence[Form | None]], bcs: Sequence[DirichletBC] | None
 ) -> _MatrixBCData:
-    """Constrained dof markers and diagonal rows for assembling ``a``.
+    """Constrained dof markers for assembling ``a``.
 
-    The two boundary-condition arguments of
-    :func:`_assemble_matrix_petsc`: the markers on the test and trial
-    spaces, and the locally owned constrained rows that carry the
-    diagonal value once assembly has zeroed them.
-
-    For a 2D array of forms, each is a list with one entry per block
-    row or column. A space appearing more than once, as the test and
-    trial space of a square form or of a diagonal block, is marked once
-    and the result shared.
+    The ``dof_markers`` argument of
+    :func:`_assemble_matrix_petsc_markers`: markers on the test space
+    and on the trial space. For a 2D array of forms, each is a list
+    with one entry per block row or column. A space appearing more than
+    once, as the test and trial space of a square form or of a diagonal
+    block, is marked once and the result shared.
 
     Both are fixed for the lifetime of ``bcs``, so a repeated caller
     should build them once.
@@ -590,16 +608,189 @@ def _matrix_bc_data(
         V0 = _extract_function_spaces(a, 0)
         V1 = _extract_function_spaces(a, 1)
         markers = _bc_dof_markers_by_space([*V0, *V1], bcs)
-        dof_marker0, dof_marker1 = markers[: len(V0)], markers[len(V0) :]
-        rows = [
-            np.empty(0, dtype=np.int32) if V is None else _owned_marked_rows(V, m)
-            for V, m in zip(V0, dof_marker0, strict=True)
-        ]
-        return (dof_marker0, dof_marker1), rows
+        return markers[: len(V0)], markers[len(V0) :]
 
     V0, V1 = a.function_spaces
-    dof_marker0, dof_marker1 = _bc_dof_markers_pair(V0, V1, bcs)
-    return (dof_marker0, dof_marker1), _owned_marked_rows(V0, dof_marker0)
+    return _bc_dof_markers_pair(V0, V1, bcs)
+
+
+def _diag_on_ghost_rows(
+    A: PETSc.Mat, a: Form | Sequence[Sequence[Form | None]]
+) -> bool | list[bool]:
+    """Whether the diagonal is written on ghost rows as well as owned ones.
+
+    An assembled matrix has its constrained rows written by the process
+    owning them. An unassembled one (MATIS) has no insert stage in
+    which an owner could claim a row, so every process holding a
+    constrained row writes it, and a share of the value.
+
+    A nest holds a matrix per block, which may differ in type: a MATIS
+    velocity block beside an assembled pressure one, say. The diagonal
+    of block row ``i`` goes into the sub-matrix ``(i, i)``, so that is
+    the matrix governing it.
+
+    Args:
+        A: Matrix to be assembled into.
+        a: Bilinear form, or a 2D array of them.
+
+    Returns:
+        One flag per block row of a nest, or one for ``A``.
+    """
+    if A.getType() != PETSc.Mat.Type.NEST:
+        return A.getType() == PETSc.Mat.Type.IS
+
+    # A block row with no diagonal block, because it is 'None' or
+    # because the nest is rectangular, carries no Dirichlet diagonal
+    ncols = len(a[0]) if len(a) > 0 else 0  # type: ignore[arg-type,index]
+    flags = []
+    for i in range(len(a)):  # type: ignore[arg-type]
+        sub = A.getNestSubMatrix(i, i) if i < ncols else None
+        flags.append(
+            False if sub is None or sub.handle == 0 else sub.getType() == PETSc.Mat.Type.IS
+        )
+    return flags
+
+
+def _matis_diag_data(
+    index_map: IndexMap,
+    bs: int,
+    dof_marker: npt.NDArray[np.int8],
+    diagonal: float | complex,
+) -> tuple[npt.NDArray[np.int32], npt.NDArray]:
+    """Constrained rows, and this process's share of ``diagonal``.
+
+    A MATIS matrix holds an unassembled local matrix per process, with
+    no insert stage in which an owner could claim a row. Every
+    constrained row is therefore written, ghosts included, and each
+    process sharing a row writes ``diagonal`` divided by the number of
+    processes sharing it. Summing the local matrices then recovers
+    ``diagonal``, whatever the partition.
+
+    Args:
+        index_map: Parallel layout of the rows.
+        bs: Block size relating the rows to the blocks of ``index_map``.
+        dof_marker: Constrained dof markers, covering owned and ghost
+            dofs of ``index_map``, unrolled by ``bs``.
+        diagonal: Value the assembled diagonal is to take.
+
+    Returns:
+        The rows, and the value each is to be written with.
+
+    Note:
+        Collective, as the sharer counts are.
+    """
+    rows = np.flatnonzero(dof_marker).astype(np.int32)
+    sharers = _cpp.common.num_sharing_ranks(index_map._cpp_object, rows, bs)
+    return rows, (diagonal / sharers).astype(PETSc.ScalarType)
+
+
+def _matrix_diag_data(
+    a: Form | Sequence[Sequence[Form | None]],
+    dof_marker: npt.NDArray[np.int8] | Sequence[npt.NDArray[np.int8]],
+    diagonal: float | complex | npt.NDArray | Sequence[npt.NDArray],
+    include_ghosts: bool | Sequence[bool],
+) -> tuple[
+    npt.NDArray[np.int32] | list[npt.NDArray[np.int32]],
+    npt.NDArray | float | complex | list[npt.NDArray | float | complex],
+]:
+    """Diagonal rows and values for assembling ``a`` into a matrix.
+
+    The ``diag_rows`` and ``diag`` arguments of
+    :func:`_assemble_matrix_petsc_markers`. Each test space is resolved
+    to one of three cases:
+
+    1. ``diagonal`` already holds one value per row. The rows and
+       values have been resolved, by an earlier call or by the caller,
+       and are returned unchanged.
+    2. Only owned rows are written, so the owned marked rows take
+       ``diagonal``.
+    3. Ghost rows are written too, which :func:`_matis_diag_data`
+       resolves.
+
+    The result depends only on ``mat_type`` and on the dofs the
+    boundary conditions constrain, both fixed, so a repeated caller
+    should resolve once and reuse.
+
+    Args:
+        a: Bilinear form, or a 2D array of them.
+        dof_marker: Constrained dof markers on the test space, or one
+            per block row. The rows are derived from it.
+        diagonal: Value the assembled diagonal is to take, or an
+            already resolved diagonal to return unchanged. For a 2D
+            array of forms, a sequence with one entry per block row,
+            each entry being of either kind.
+        include_ghosts: Whether to write the diagonal on ghost rows as
+            well as owned ones, from :func:`_diag_on_ghost_rows`. One
+            per block row for a nest, whose blocks may differ.
+
+    Returns:
+        The rows, and the value on each, one entry per block row for a
+        2D array of forms. Both value forms are accepted by
+        ``dolfinx.la.petsc.set_diagonal``.
+
+    Note:
+        Case 3 is collective. ``include_ghosts`` follows from the
+        matrix, which every process sees alike, so all take the same
+        case.
+    """
+    blocked = isinstance(a, Sequence)
+    if blocked:
+        spaces = _extract_function_spaces(a, 0)
+        markers = list(dof_marker)
+        # A sequence holds one entry per block row, so that resolving an
+        # already resolved diagonal leaves it alone
+        values = [
+            diagonal[i] if isinstance(diagonal, Sequence) else diagonal for i in range(len(spaces))
+        ]
+        ghosts = (
+            [include_ghosts for _ in range(len(spaces))]
+            if isinstance(include_ghosts, bool)
+            else list(include_ghosts)
+        )
+    else:
+        spaces = [a.function_spaces[0]]  # type: ignore[union-attr]
+        markers, values, ghosts = [dof_marker], [diagonal], [include_ghosts]
+
+    out_rows, out_values = [], []
+    for V, marker, value, ghost in zip(spaces, markers, values, ghosts, strict=True):
+        if V is None:
+            # An empty block row carries no diagonal
+            rows, value = np.empty(0, dtype=np.int32), value
+        elif np.ndim(value) > 0 or not ghost:
+            rows, value = _owned_marked_rows(V, marker), value  # type: ignore[arg-type]
+        else:
+            dofmap = V.dofmaps[0]
+            rows, value = _matis_diag_data(
+                dofmap.index_map,
+                dofmap.index_map_bs,
+                marker,  # type: ignore[arg-type]
+                value,  # type: ignore[arg-type]
+            )
+        out_rows.append(rows)
+        out_values.append(value)
+
+    return (out_rows, out_values) if blocked else (out_rows[0], out_values[0])
+
+
+def _packed_constants(
+    a: Form | Sequence[Sequence[Form | None]],
+) -> npt.NDArray | list[list[npt.NDArray]]:
+    """Pack the constants of ``a``, one entry per block row."""
+    if isinstance(a, Sequence):
+        return [pack_constants(forms) for forms in a]
+    return pack_constants(a)
+
+
+def _packed_coefficients(
+    a: Form | Sequence[Sequence[Form | None]],
+) -> (
+    dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+    | list[list[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
+):
+    """Pack the coefficients of ``a``, one entry per block row."""
+    if isinstance(a, Sequence):
+        return [pack_coefficients(forms) for forms in a]
+    return pack_coefficients(a)
 
 
 def _block_index_sets(a: Sequence[Sequence[Form | None]]) -> tuple[list, list]:
@@ -640,15 +831,15 @@ def _assemble_matrix_nest(
     A: PETSc.Mat,
     a: Sequence[Sequence[Form | None]],
     dof_markers: tuple[Sequence[npt.NDArray[np.int8]], Sequence[npt.NDArray[np.int8]]],
-    diag_rows: Sequence[npt.NDArray[np.int32]],
-    diag: float,
+    diag_data: tuple[Sequence[npt.NDArray[np.int32]], float | complex | Sequence[npt.NDArray]],
     constants: Sequence[Sequence[npt.NDArray]],
-    coeffs: Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]],
+    coeffs: (Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]),
 ) -> PETSc.Mat:
     """Assemble forms into a nest matrix, given constrained dofs.
 
-    Each block is assembled by :func:`_assemble_matrix_single`
-    into the sub-matrix that holds it.
+    Each block is assembled by :func:`_assemble_matrix_single_markers`
+    into the sub-matrix that holds it, so a block whose type is MATIS
+    gets the shared diagonal that its own type calls for.
 
     Args:
         A: Matrix to assemble into. Not zeroed first, and not assembled
@@ -657,17 +848,18 @@ def _assemble_matrix_nest(
         dof_markers: Constrained dof markers on the test and trial
             spaces, one per block row and per block column, from
             :func:`_matrix_bc_data`.
-        diag_rows: Rows to put ``diag`` on, one array per block row.
-            Used only where the test and trial spaces of a block are
-            the same.
-        diag: Value the constrained diagonal is to take.
-        constants: Packed constants, one entry per block.
-        coeffs: Packed coefficients, one entry per block.
+        diag_data: Rows carrying the diagonal, one array per block
+            row, and the value on each, from :func:`_matrix_diag_data`.
+            The rows are used only where the test and trial spaces of a
+            block are the same.
+        constants: Packed constants, from :func:`_packed_constants`.
+        coeffs: Packed coefficients, from :func:`_packed_coefficients`.
 
     Returns:
         ``A``, for convenience.
     """
     dof_marker0, dof_marker1 = dof_markers
+    diag_rows, diag = diag_data
     for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs, strict=True)):
         for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row, strict=True)):
             if a_block is not None:
@@ -676,8 +868,7 @@ def _assemble_matrix_nest(
                     Asub,
                     a_block,
                     (dof_marker0[i], dof_marker1[j]),
-                    diag_rows[i],
-                    diag,
+                    (diag_rows[i], diag[i] if isinstance(diag, Sequence) else diag),
                     const,
                     coeff,
                     False,
@@ -695,10 +886,11 @@ def _assemble_matrix_block(
     A: PETSc.Mat,
     a: Sequence[Sequence[Form | None]],
     dof_markers: tuple[Sequence[npt.NDArray[np.int8]], Sequence[npt.NDArray[np.int8]]],
-    diag_rows: Sequence[npt.NDArray[np.int32]],
-    diag: float,
+    diag_data: tuple[
+        Sequence[npt.NDArray[np.int32]], float | complex | npt.NDArray | Sequence[npt.NDArray]
+    ],
     constants: Sequence[Sequence[npt.NDArray]],
-    coeffs: Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]],
+    coeffs: (Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]),
     index_sets: tuple[Sequence, Sequence],
 ) -> PETSc.Mat:
     """Assemble forms into a blocked matrix, given constrained dofs.
@@ -713,12 +905,12 @@ def _assemble_matrix_block(
         dof_markers: Constrained dof markers on the test and trial
             spaces, one per block row and per block column, from
             :func:`_matrix_bc_data`.
-        diag_rows: Rows to put ``diag`` on, one array per block row.
-            Used only where the test and trial spaces of a block are
-            the same.
-        diag: Value the constrained diagonal is to take.
-        constants: Packed constants, one entry per block.
-        coeffs: Packed coefficients, one entry per block.
+        diag_data: Rows carrying the diagonal, one array per block
+            row, and the value on each, from :func:`_matrix_diag_data`.
+            The rows are used only where the test and trial spaces of a
+            block are the same.
+        constants: Packed constants, from :func:`_packed_constants`.
+        coeffs: Packed coefficients, from :func:`_packed_coefficients`.
         index_sets: Index set of each block row and of each block
             column, from :func:`_block_index_sets`.
 
@@ -726,6 +918,7 @@ def _assemble_matrix_block(
         ``A``, for convenience.
     """
     dof_marker0, dof_marker1 = dof_markers
+    diag_rows, diag = diag_data
     is0, is1 = index_sets
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
@@ -737,8 +930,7 @@ def _assemble_matrix_block(
                     Asub,
                     a_sub,
                     (dof_marker0[i], dof_marker1[j]),
-                    diag_rows[i],
-                    diag,
+                    (diag_rows[i], diag[i]),  # type: ignore[index]
                     constants[i][j],
                     coeffs[i][j],  # type: ignore[index]
                     True,
@@ -757,10 +949,9 @@ def _assemble_matrix_single(
     A: PETSc.Mat,
     a: Form,
     dof_markers: tuple[npt.NDArray[np.int8], npt.NDArray[np.int8]],
-    diag_rows: npt.NDArray[np.int32],
-    diag: float,
+    diag_data: tuple[npt.NDArray[np.int32], float | complex | npt.NDArray],
     constants: npt.NDArray,
-    coeffs: dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray],
+    coeffs: (dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]),
     unrolled: bool,
 ) -> PETSc.Mat:
     """Assemble a bilinear form into a matrix, given constrained dofs.
@@ -771,11 +962,11 @@ def _assemble_matrix_single(
         a: Bilinear form.
         dof_markers: Constrained dof markers on the test and trial
             spaces, from :func:`_matrix_bc_data`.
-        diag_rows: Rows to put ``diag`` on. Used only where the test
-            and trial spaces are the same.
-        diag: Value the constrained diagonal is to take.
-        constants: Packed constants of the form.
-        coeffs: Packed coefficients of the form.
+        diag_data: Rows carrying the diagonal and the value on each,
+            from :func:`_matrix_diag_data`. The rows are used only
+            where the test and trial spaces are the same.
+        constants: Packed constants, from :func:`_packed_constants`.
+        coeffs: Packed coefficients, from :func:`_packed_coefficients`.
         unrolled: Insert with block-expanded indices. Needed for a
             sub-matrix of a blocked matrix, which
             ``Mat.getLocalSubMatrix`` addresses in scalar indices while
@@ -785,6 +976,7 @@ def _assemble_matrix_single(
     Returns:
         ``A``, for convenience.
     """
+    diag_rows, diag = diag_data
     V0, V1 = a.function_spaces
     _cpp.fem.petsc.assemble_matrix(
         A,
@@ -806,33 +998,11 @@ def _assemble_matrix_single(
     return A
 
 
-def _packed_constants(
-    a: Form | Sequence[Sequence[Form | None]],
-) -> npt.NDArray | Sequence[Sequence[npt.NDArray]]:
-    """Pack the constants of ``a``, one entry per block row."""
-    if isinstance(a, Sequence):
-        return [pack_constants(forms) for forms in a]
-    return pack_constants(a)
-
-
-def _packed_coefficients(
-    a: Form | Sequence[Sequence[Form | None]],
-) -> (
-    dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
-    | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
-):
-    """Pack the coefficients of ``a``, one entry per block row."""
-    if isinstance(a, Sequence):
-        return [pack_coefficients(forms) for forms in a]
-    return pack_coefficients(a)
-
-
 def _assemble_matrix_petsc(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form | None]],
-    dof_markers: tuple,
-    diag_rows: npt.NDArray[np.int32] | Sequence[npt.NDArray[np.int32]],
-    diag: float,
+    dof_markers: _MatrixBCData,
+    diag_data: _MatrixDiagData,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]],
     coeffs: (
         dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
@@ -842,17 +1012,13 @@ def _assemble_matrix_petsc(
     """Assemble bilinear form(s) into a matrix, given constrained dofs.
 
     As :func:`_assemble_matrix_mat`, with the constrained dofs given
-    as markers and diagonal rows (see :func:`_matrix_bc_data`) instead
-    of boundary conditions. For a 2D array of forms,
-    ``dof_markers[0][i]`` marks the test space of row ``i``,
-    ``dof_markers[1][j]`` the trial space of column ``j``, and
-    ``diag_rows[i]`` holds the locally owned constrained rows of row
-    ``i``.
+    as markers, rows and values (see :func:`_matrix_bc_data` and
+    :func:`_matrix_diag_data`) instead of boundary conditions.
 
     Dispatches on the type of ``A`` and the shape of ``a`` to
-    :func:`_assemble_matrix_nest`,
-    :func:`_assemble_matrix_block` or
-    :func:`_assemble_matrix_single`, which document the
+    :func:`_assemble_matrix_nest_markers`,
+    :func:`_assemble_matrix_block_markers` or
+    :func:`_assemble_matrix_single_markers`, which document the
     arguments.
     """
     if A.getType() == PETSc.Mat.Type.NEST:
@@ -865,9 +1031,8 @@ def _assemble_matrix_petsc(
         return _assemble_matrix_nest(
             A,
             a,
-            dof_markers,
-            diag_rows,  # type: ignore[arg-type]
-            diag,
+            dof_markers,  # type: ignore[arg-type]
+            diag_data,  # type: ignore[arg-type]
             constants,  # type: ignore[arg-type]
             coeffs,
         )
@@ -875,9 +1040,8 @@ def _assemble_matrix_petsc(
         return _assemble_matrix_block(
             A,
             a,
-            dof_markers,
-            diag_rows,  # type: ignore[arg-type]
-            diag,
+            dof_markers,  # type: ignore[arg-type]
+            diag_data,  # type: ignore[arg-type]
             constants,  # type: ignore[arg-type]
             coeffs,  # type: ignore[arg-type]
             _block_index_sets(a),
@@ -886,13 +1050,15 @@ def _assemble_matrix_petsc(
         return _assemble_matrix_single(
             A,
             a,
-            dof_markers,
-            diag_rows,  # type: ignore[arg-type]
-            diag,
+            dof_markers,  # type: ignore[arg-type]
+            diag_data,  # type: ignore[arg-type]
             constants,  # type: ignore[arg-type]
             coeffs,  # type: ignore[arg-type]
             False,
         )
+
+
+# -- Modifiers for Dirichlet conditions -----------------------------------
 
 
 def apply_lifting(
@@ -997,7 +1163,7 @@ def _lifting_bc_markers(
     """Constrained dof markers for lifting, per column of ``a``.
 
     The ``bc_markers1`` argument of
-    :func:`_apply_lifting_petsc`, with ``bcs[j]`` the
+    :func:`_apply_lifting_petsc_markers`, with ``bcs[j]`` the
     conditions on column ``j`` (``None`` for none at all). Markers are
     fixed for the lifetime of ``bcs``, so a repeated caller should
     build them once and pair them with fresh values from
@@ -1014,7 +1180,7 @@ def _lifting_bc_values(
     """Boundary condition values for lifting, per column of ``a``.
 
     The ``bc_values1`` argument of
-    :func:`_apply_lifting_petsc`, as ``PETSc.ScalarType``.
+    :func:`_apply_lifting_petsc_markers`, as ``PETSc.ScalarType``.
     Values are read from ``bcs`` on every call and must not be cached,
     since the function or constant behind a condition may have changed.
     """
@@ -1069,11 +1235,7 @@ def _apply_lifting_petsc(
             Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]], coeffs
         )
         for b_sub, a_sub, const, coeff in zip(
-            b.getNestSubVecs(),
-            a,
-            constants_,
-            coeffs_,
-            strict=True,
+            b.getNestSubVecs(), a, constants_, coeffs_, strict=True
         ):
             const_ = [np.array([], dtype=PETSc.ScalarType) if x is None else x for x in const]
             _apply_lifting_petsc(
@@ -1216,8 +1378,56 @@ def set_bc(
 _U = typing.TypeVar("_U", bound=_Function | Sequence[_Function])
 
 
+# -- DMShell helpers ------------------------------------------------------
+
+
+def _dm_create_field_decomposition(
+    u: _Function | Sequence[_Function],
+    form: Form | Sequence[Form],
+    _dm: PETSc.DM,
+):
+    """Index sets for the fields of a problem, and their names.
+
+    Preconditioners such as PCBDDC and PCFIELDSPLIT use these to split
+    the problem into fields.
+
+    Args:
+        u: Function(s) tied to the solution vector.
+        form: Form of the residual or of the right-hand side. It can be
+            a sequence of forms.
+        _dm: The DM instance.
+
+    Returns:
+        Field names, index sets in global numbering, and sub-DMs. No
+        sub-DMs are provided, so ``None`` is returned for them.
+    """
+    forms = form if isinstance(form, Sequence) else [form]
+    spaces = _extract_function_spaces(forms)
+    ises = _cpp.la.petsc.create_global_index_sets(
+        [
+            (V.dofmaps[0].index_map._cpp_object, V.dofmaps[0].index_map_bs)  # type: ignore[union-attr]
+            for V in spaces
+        ]
+    )
+    if isinstance(u, Sequence):
+        names = [f"{v.name + '_' if v.name != 'f' else ''}{i}" for i, v in enumerate(u)]
+    else:
+        names = [f"dolfinx_field_{i}" for i in range(len(forms))]
+    return names, ises, None
+
+
+def _dm_create_matrix(J: PETSc.Mat, _dm: PETSc.DM):
+    """Duplicate the matrix layout.
+
+    Args:
+        J: Matrix to duplicate.
+        _dm: The DM instance.
+    """
+    return J.duplicate()
+
+
 class LinearProblem(typing.Generic[_U]):
-    """High-level class for solving linears problem using a PETSc KSP.
+    """High-level class for solving a linear problem using a PETSc KSP.
 
     Solves problems of the form
     :math:`a_{ij}(u, v) = f_i(v), i,j=0,\\ldots,N\\
@@ -1257,7 +1467,7 @@ class LinearProblem(typing.Generic[_U]):
         bcs: Sequence[DirichletBC] | None = None,
         u: Sequence[_Function] | None = None,
         P: Sequence[Sequence[ufl.Form | None]] | None = None,
-        kind: str | Sequence[Sequence[str]] | None = None,
+        kind: str | Sequence[Sequence[str | None]] | None = None,
         petsc_options: dict | None = None,
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
@@ -1272,7 +1482,7 @@ class LinearProblem(typing.Generic[_U]):
         bcs: Sequence[DirichletBC] | None = None,
         u: _Function | Sequence[_Function] | None = None,
         P: ufl.Form | Sequence[Sequence[ufl.Form | None]] | None = None,
-        kind: str | Sequence[Sequence[str]] | None = None,
+        kind: str | Sequence[Sequence[str | None]] | None = None,
         petsc_options: dict | None = None,
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
@@ -1382,6 +1592,12 @@ class LinearProblem(typing.Generic[_U]):
 
         # For nest matrices kind can be a nested list.
         kind = "nest" if self.A.getType() == PETSc.Mat.Type.NEST else kind
+        if kind == "is":
+            # MATIS has no Vec counterpart. A blocked problem still needs
+            # the monolithic "mpi" layout that matches the matrix, but a
+            # single form needs the default type: "mpi" would build a
+            # blocked vector and send the form down the blocked path.
+            kind = "mpi" if isinstance(self.L, Sequence) else None
         assert kind is None or isinstance(kind, str)
         self._b = _create_vector_from_form(self.L, kind=kind)
         self._x = _create_vector_from_form(self.L, kind=kind)
@@ -1401,6 +1617,17 @@ class LinearProblem(typing.Generic[_U]):
 
         self._solver = PETSc.KSP().create(self.A.comm)
         self.solver.setOperators(self.A, self.P_mat)
+
+        # Attach problem information to a DM, which preconditioners such
+        # as PCBDDC and PCFIELDSPLIT use to split the problem into
+        # fields. The DM goes on the preconditioner only: on the KSP it
+        # would have PETSc rebuild the operators via DMCreateMatrix.
+        dm = PETSc.DMShell().create(self.A.comm)
+        dm.setCreateMatrix(functools.partial(_dm_create_matrix, self.A))  # type: ignore[missing-attribute]
+        dm.setCreateFieldDecomposition(  # type: ignore[missing-attribute]
+            functools.partial(_dm_create_field_decomposition, self._u, self.L)
+        )
+        self.solver.getPC().setDM(dm)
 
         if petsc_options_prefix == "":
             raise ValueError("PETSc options prefix cannot be empty.")
@@ -1468,8 +1695,8 @@ class LinearProblem(typing.Generic[_U]):
         _assemble_matrix_petsc(
             self.A,
             self.a,
-            *self._a_bc_data,
-            1,
+            self._a_bc_data,
+            self._a_diag,
             _packed_constants(self.a),
             _packed_coefficients(self.a),
         )
@@ -1479,12 +1706,12 @@ class LinearProblem(typing.Generic[_U]):
         if self.preconditioner is not None:
             assert self.P_mat is not None
             self.P_mat.zeroEntries()
-            assert self._P_bc_data is not None
+            assert self._P_bc_data is not None and self._P_diag is not None
             _assemble_matrix_petsc(
                 self.P_mat,
                 self.preconditioner,
-                *self._P_bc_data,  # type: ignore[arg-type]
-                1,
+                self._P_bc_data,  # type: ignore[arg-type]
+                self._P_diag,  # type: ignore[arg-type]
                 _packed_constants(self.preconditioner),
                 _packed_coefficients(self.preconditioner),
             )
@@ -1545,12 +1772,12 @@ class LinearProblem(typing.Generic[_U]):
         """Dirichlet boundary conditions applied to the problem.
 
         Assigning to this property rebuilds the cached constrained dof
-        markers and diagonal rows, which :func:`solve` reuses rather
-        than rebuilding on every call. Caching them is safe because the
-        dofs a boundary condition constrains are fixed when it is
-        built. Mutating the returned sequence in place bypasses the
-        setter and leaves the cache stale; assign a new sequence
-        instead.
+        markers, and the diagonal rows and values, which :func:`solve`
+        reuses rather than rebuilding on every call. Caching them is
+        safe because the dofs a boundary condition constrains are fixed
+        when it is built. Mutating the returned sequence in place
+        bypasses the setter and leaves the cache stale; assign a new
+        sequence instead.
 
         Boundary condition *values* are not cached. The function or
         constant behind a condition may change between solves, so
@@ -1565,6 +1792,15 @@ class LinearProblem(typing.Generic[_U]):
         self._P_bc_data = (
             None if self.preconditioner is None else _matrix_bc_data(self.preconditioner, self._bcs)
         )
+        # Resolving the diagonal here rather than on every solve keeps
+        # the collective sharer counts of a MATIS matrix out of the
+        # solve loop. The preconditioner is assembled over the spaces of
+        # `a` and into a matrix of the same type, so it resolves to the
+        # same rows and values
+        self._a_diag = _matrix_diag_data(
+            self.a, self._a_bc_data[0], 1.0, _diag_on_ghost_rows(self.A, self.a)
+        )
+        self._P_diag = None if self._P_bc_data is None else self._a_diag
         self._cached_lifting_markers = None
 
     def _lifting_markers(
@@ -1755,9 +1991,8 @@ def assemble_jacobian(
     u: Sequence[_Function] | _Function,
     jacobian: Form | Sequence[Sequence[Form]],
     preconditioner: Form | Sequence[Sequence[Form]] | None,
-    dof_markers: tuple,
-    diag_rows: npt.NDArray[np.int32] | Sequence[npt.NDArray[np.int32]],
-    diag: float,
+    dof_markers: _MatrixBCData,
+    diag_data: _MatrixDiagData,
 ) -> None:
     """Assemble the Jacobian and preconditioner matrices.
 
@@ -1771,10 +2006,12 @@ def assemble_jacobian(
     Example::
 
         snes = PETSc.SNES().create(mesh.comm)
-        markers, rows = _matrix_bc_data(jacobian, bcs)
+        m0, m1 = _matrix_bc_data(jacobian, bcs)
+        rows, diag = _matrix_diag_data(
+            jacobian, m0, 1.0, _diag_on_ghost_rows(A, jacobian))
         cntx = {"u": u, "jacobian": jacobian,
-            "preconditioner": preconditioner, "dof_markers": markers,
-            "diag_rows": rows, "diag": 1.0}
+            "preconditioner": preconditioner,
+            "dof_markers": (m0, m1), "diag_data": (rows, diag)}
         snes.setJacobian(assemble_jacobian, A, P_mat, kargs=cntx)
 
     Note:
@@ -1795,18 +2032,20 @@ def assemble_jacobian(
             spaces of ``jacobian``, one per block row and per block
             column if it is a 2D array, from the internal
             ``_matrix_bc_data``.
-        diag_rows: Locally owned constrained rows to put ``diag`` on,
-            or one array per block row.
-        diag: Value the constrained diagonal is to take.
+        diag_data: Rows carrying the diagonal and the value on each,
+            one entry per block row if ``jacobian`` is a 2D array, from
+            the internal ``_matrix_diag_data``.
 
     Note:
-        The boundary conditions enter as markers and rows rather than
-        as ``DirichletBC`` objects, so that they are built once rather
-        than on every Newton step. The internal ``_matrix_bc_data``
-        builds them.
+        The boundary conditions enter as markers, rows and values
+        rather than as ``DirichletBC`` objects, so that they are
+        built once rather than on every Newton step. The internal
+        ``_matrix_bc_data`` and ``_matrix_diag_data`` build them, the
+        latter collectively for a MATIS matrix.
 
-        ``preconditioner`` is assembled with the same markers and rows,
-        so it must be over the spaces of ``jacobian``.
+        ``preconditioner`` is assembled with the same four, so it must
+        be over the spaces of ``jacobian`` and into a matrix of the same
+        type.
     """
     # Copy existing solution into the function used in the residual and
     # Jacobian
@@ -1819,22 +2058,21 @@ def assemble_jacobian(
         J,
         jacobian,
         dof_markers,
-        diag_rows,
-        diag,
+        diag_data,
         _packed_constants(jacobian),
         _packed_coefficients(jacobian),
     )
     J.assemble()
     if preconditioner is not None:
-        # Assembled with the same markers and rows, which requires it
-        # to be over the spaces of the Jacobian
+        # Assembled with the same markers, rows and values, which
+        # requires it to be over the spaces of the Jacobian and into a
+        # matrix of the same type
         P_mat.zeroEntries()
         _assemble_matrix_petsc(
             P_mat,
             preconditioner,
             dof_markers,
-            diag_rows,
-            diag,
+            diag_data,
             _packed_constants(preconditioner),
             _packed_coefficients(preconditioner),
         )
@@ -1884,7 +2122,7 @@ class NonlinearProblem(typing.Generic[_U]):
         bcs: Sequence[DirichletBC] | None = None,
         J: Sequence[Sequence[ufl.form.Form]] | None = None,
         P: Sequence[Sequence[ufl.form.Form]] | None = None,
-        kind: str | Sequence[Sequence[str]] | None = None,
+        kind: str | Sequence[Sequence[str | None]] | None = None,
         petsc_options: dict | None = None,
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
@@ -1899,7 +2137,7 @@ class NonlinearProblem(typing.Generic[_U]):
         bcs: Sequence[DirichletBC] | None = None,
         J: ufl.form.Form | Sequence[Sequence[ufl.form.Form]] | None = None,
         P: ufl.form.Form | Sequence[Sequence[ufl.form.Form]] | None = None,
-        kind: str | Sequence[Sequence[str]] | None = None,
+        kind: str | Sequence[Sequence[str | None]] | None = None,
         petsc_options: dict | None = None,
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
@@ -2011,6 +2249,9 @@ class NonlinearProblem(typing.Generic[_U]):
 
         # Determine the vector kind based on the matrix type
         kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind
+        if kind == "is":
+            # MATIS has no Vec counterpart; see LinearProblem
+            kind = "mpi" if isinstance(self.F, Sequence) else None
         assert kind is None or isinstance(kind, str)
         self._b = _create_vector_from_form(self.F, kind=kind)
         self._x = _create_vector_from_form(self.F, kind=kind)
@@ -2027,14 +2268,20 @@ class NonlinearProblem(typing.Generic[_U]):
             lifting_markers = _lifting_bc_markers(self.J, bcs1)
         else:
             lifting_markers = _lifting_bc_markers([self.J], [bcs])
-        dof_markers, diag_rows = _matrix_bc_data(self.J, bcs)
+        # The markers and the diagonal follow from the dofs the
+        # conditions constrain, which are fixed, so they are built here
+        # rather than on every Newton step. That also keeps the
+        # collective sharer counts of a MATIS matrix out of the solve.
+        dof_markers = _matrix_bc_data(self.J, bcs)
+        diag_rows, diag = _matrix_diag_data(
+            self.J, dof_markers[0], 1.0, _diag_on_ghost_rows(self.A, self.J)
+        )
         jacobian_ctx = {
             "u": self.u,
             "jacobian": self.J,
             "preconditioner": self.preconditioner,
             "dof_markers": dof_markers,
-            "diag_rows": diag_rows,
-            "diag": 1.0,
+            "diag_data": (diag_rows, diag),
         }
         self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=jacobian_ctx)  # type: ignore[arg-type]
         # Get potential attributes from the residual to pass to the
@@ -2049,6 +2296,15 @@ class NonlinearProblem(typing.Generic[_U]):
         if (_blocks := self.b.getAttr("_blocks")) is not None:
             function_ctx["_blocks"] = _blocks  # type: ignore[assignment]
         self.solver.setFunction(assemble_residual, self.b, kargs=function_ctx)  # type: ignore[arg-type]
+
+        # See LinearProblem: the DM carries the field decomposition for
+        # PCBDDC and PCFIELDSPLIT, and goes on the preconditioner only
+        dm = PETSc.DMShell().create(self.A.comm)
+        dm.setCreateMatrix(functools.partial(_dm_create_matrix, self.A))  # type: ignore[missing-attribute]
+        dm.setCreateFieldDecomposition(  # type: ignore[missing-attribute]
+            functools.partial(_dm_create_field_decomposition, self._u, self.F)
+        )
+        self.solver.getKSP().getPC().setDM(dm)
 
         if petsc_options_prefix == "":
             raise ValueError("PETSc options prefix cannot be empty.")

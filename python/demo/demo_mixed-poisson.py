@@ -8,7 +8,8 @@
 #       jupytext_version: 1.14.1
 # ---
 
-# # Mixed formulation of the Poisson equation with a block preconditioner
+# # Mixed formulation of the Poisson equation with block and
+# monolithic preconditioners
 #
 # This demo illustrates how to solve the Poisson equation using a mixed
 # (two-field) formulation and a block-preconditioned iterative solver.
@@ -22,6 +23,9 @@
 #   PETSc/petsc4y.
 # * Construct a Hypre Auxiliary Maxwell Space (AMS) preconditioner for
 #   $H(\mathrm{div})$ problems in two-dimensions.
+# * Construct a monolithic Balancing Domain Decomposition by
+#   Constraints (BDDC) preconditioner, following this
+#   [paper](https://doi.org/10.1137/16M1080653).
 #
 # ```{admonition} Download sources
 # :class: download
@@ -85,6 +89,13 @@
 # iterative method with a block-diagonal preconditioner that is based on
 # the Riesz map, see for example this
 # [paper](https://doi.org/10.1002/(SICI)1099-1506(199601/02)3:1%3C1::AID-NLA67%3E3.0.CO;2-E).
+#
+# As an alternative, the demo also solves the same system
+# monolithically with a BDDC preconditioner. BDDC is a non-overlapping
+# domain decomposition method in which each MPI process owns one
+# subdomain. It therefore requires the operator in *unassembled* form,
+# i.e. assembled on each subdomain but not summed across processes.
+# PETSc stores such operators as `MATIS`.
 
 #
 # ## Implementation
@@ -101,7 +112,7 @@ import ufl
 from basix.ufl import element
 from dolfinx import fem, has_adios2, mesh
 from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
-from dolfinx.mesh import CellType, create_unit_square
+from dolfinx.mesh import CellType, GhostMode, create_unit_square
 
 # Solution scalar (e.g., float32, complex128) and geometry (float32/64)
 # types
@@ -109,19 +120,17 @@ dtype = PETSc.ScalarType
 xdtype = PETSc.RealType
 # -
 
-# Create a two-dimensional mesh. The iterative solver constructed later
-# requires special construction that is specific to two dimensions.
+# Create a two-dimensional mesh. The iterative solvers constructed later
+# require special construction that is specific to two dimensions.
 # Application in three-dimensions would require a number of changes to
-# the linear solver.
+# the linear solvers. The mesh is built without ghost cells, as BDDC
+# needs each process to own a single, non-overlapping subdomain. The
+# forms below have no interior facet integrals, so no ghosts are needed.
 
 # +
-msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle, dtype=xdtype)
-gdim = msh.geometry.dim
-fdim = msh.topology.dim - 1
-facets_top = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
-facets_bottom = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
-cells_top = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
-cells_bottom = mesh.compute_incident_entities(msh.topology, facets_bottom, fdim, fdim + 1)
+msh = create_unit_square(
+    MPI.COMM_WORLD, 96, 96, CellType.triangle, ghost_mode=GhostMode.none, dtype=xdtype
+)
 has_hypre = PETSc.Sys().hasExternalPackage("hypre")
 hypre_ams_compatible = not np.issubdtype(dtype, np.complexfloating)
 # -
@@ -134,37 +143,37 @@ hypre_ams_compatible = not np.issubdtype(dtype, np.complexfloating)
 # The $\mathbb{RT}_{k}$ element in DOLFINx/Basix is usually denoted as
 # $\mathbb{RT}_{k-1}$ in the literature.
 # ```
-# The lowest-order case is $k=1$. The solver below can be called with a
+# The lowest-order case is $k=1$. The solvers below can be called with a
 # higher degree, though convergence generally degrades as $k$ increases.
-# For each degree, `solve` constructs the function spaces, assembles the
-# blocked variational form, applies the essential flux boundary conditions,
-# and solves for both $\sigma$ and $u$.
+# For each degree, `build_forms` constructs the function spaces, the
+# blocked variational form and the essential flux boundary conditions.
 #
 # The source is $f = 10\exp(-((x_0 - 0.5)^2 + (x_1 - 0.5)^2) / 0.02)$.
 # The flux boundary condition $\sigma \cdot n = \sin(5x_0)$ is imposed on
-# the top and bottom boundaries. The $H({\rm div})$ block is preconditioned
-# using either Hypre AMS or LU; the discontinuous Lagrange mass block uses
-# PETSc's default preconditioner.
-#
-# Hypre AMS is available only for real scalar types. In two dimensions,
-# it can precondition this $H({\rm div})$ problem because $H({\rm div})$
-# and $H({\rm curl})$ are equivalent up to a rotation by $\pi/2$.
+# the top and bottom boundaries.
 
 
 # +
-def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
-    """Solve the mixed Poisson problem with Raviart-Thomas degree ``k``.
+def build_forms(msh: mesh.Mesh, k: int):
+    """Build the function spaces, forms and boundary conditions.
 
     Args:
+        msh: The mesh.
         k: Raviart-Thomas element degree.
-        use_hypre: Whether to use Hypre AMS rather than LU.
+
+    Returns:
+        The flux space, the blocked bilinear form, the blocked linear
+        form, the blocked Riesz-map preconditioner form, the boundary
+        conditions and the solution functions.
     """
     if k < 1:
         raise ValueError("Element degree must be at least 1.")
-    if use_hypre and not has_hypre:
-        raise RuntimeError("PETSc is not configured with Hypre.")
-    if use_hypre and not hypre_ams_compatible:
-        raise RuntimeError("Hypre AMS does not support complex scalar types.")
+
+    fdim = msh.topology.dim - 1
+    facets_top = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
+    facets_bottom = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
+    cells_top = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
+    cells_bottom = mesh.compute_incident_entities(msh.topology, facets_bottom, fdim, fdim + 1)
 
     V = fem.functionspace(msh, element("RT", msh.basix_cell(), k, dtype=xdtype))
     W = fem.functionspace(msh, element("DG", msh.basix_cell(), k - 1, dtype=xdtype))
@@ -201,6 +210,46 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
 
     sigma = fem.Function(V, name="sigma", dtype=dtype)
     u = fem.Function(W, name="u", dtype=dtype)
+    return V, a, L, a_p, bcs, sigma, u
+
+
+# -
+
+# The block solver uses a `"nest"` matrix so that PETSc's
+# [`fieldsplit`](https://petsc.org/release/manual/ksp/#sec-block-matrices)
+# preconditioner can treat the $\sigma$ and $u$ fields separately. The
+# $H({\rm div})$ block is preconditioned using either Hypre AMS or LU;
+# the discontinuous Lagrange mass block uses Jacobi.
+#
+# Hypre AMS is available only for real scalar types. In two dimensions,
+# it can precondition this $H({\rm div})$ problem because $H({\rm div})$
+# and $H({\rm curl})$ are equivalent up to a rotation by $\pi/2$.
+
+
+# +
+def residual_monitor(label: str):
+    """Build a KSP monitor that reports the residual on rank 0."""
+
+    def monitor(_ksp, its: int, rnorm: float) -> None:
+        if MPI.COMM_WORLD.rank == 0:
+            print(f"{label}: iteration {its:>4d}, residual: {rnorm:.3e}")
+
+    return monitor
+
+
+def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
+    """Solve the mixed Poisson problem with Raviart-Thomas degree ``k``.
+
+    Args:
+        k: Raviart-Thomas element degree.
+        use_hypre: Whether to use Hypre AMS rather than LU.
+    """
+    if use_hypre and not has_hypre:
+        raise RuntimeError("PETSc is not configured with Hypre.")
+    if use_hypre and not hypre_ams_compatible:
+        raise RuntimeError("Hypre AMS does not support complex scalar types.")
+
+    V, a, L, a_p, bcs, sigma, u = build_forms(msh, k)
     problem = fem.petsc.LinearProblem(
         a,
         L,
@@ -219,11 +268,7 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
     )
     ksp = problem.solver
     solver_label = f"k={k} ({'Hypre AMS' if use_hypre else 'LU'})"
-    ksp.setMonitor(
-        lambda _, its, rnorm: PETSc.Sys.Print(
-            f"{solver_label}: iteration {its:>4d}, residual: {rnorm:.3e}"
-        )
-    )
+    ksp.setMonitor(residual_monitor(solver_label))
 
     ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
     ksp_u.getPC().setType("jacobi")
@@ -271,29 +316,105 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
     return sigma, u
 
 
+# -
+
+# The monolithic solver assembles the same system into a single matrix of
+# kind `"is"` (PETSc `MATIS`), which stores the operator unassembled, and
+# preconditions it with BDDC. The saddle-point structure needs a few
+# non-default BDDC settings: the *benign trick* removes the pressure-like
+# null space from the local subproblems, and the local Dirichlet, local
+# Neumann and coarse solvers must handle symmetric indefinite matrices.
+# Where PETSc is built without a suitable direct solver, the demo falls
+# back to SVD, which is robust but only practical at this problem size.
+
+
+# +
+def solve_bddc(k: int) -> tuple[fem.Function, fem.Function]:
+    """Solve the mixed Poisson problem monolithically with BDDC.
+
+    Args:
+        k: Raviart-Thomas element degree.
+    """
+    # Pick the sub-solvers from what PETSc has been configured with. SVD
+    # is the fallback: it is robust but dense, and not a realistic choice
+    # for large subdomains.
+    local_solver, local_solver_type = "svd", "dummy"
+    coarse_solver, coarse_solver_type = "svd", "dummy"
+    if PETSc.Sys().hasExternalPackage("mumps"):
+        local_solver, local_solver_type = "cholesky", "mumps"
+        coarse_solver, coarse_solver_type = "cholesky", "mumps"
+    elif PETSc.Sys().hasExternalPackage("superlu"):
+        local_solver, local_solver_type = "lu", "superlu"
+    elif PETSc.Sys().hasExternalPackage("umfpack"):
+        local_solver, local_solver_type = "lu", "umfpack"
+    if coarse_solver == "svd" and PETSc.Sys().hasExternalPackage("superlu_dist"):
+        coarse_solver, coarse_solver_type = "lu", "superlu_dist"
+
+    _, a, L, _, bcs, sigma, u = build_forms(msh, k)
+    problem = fem.petsc.LinearProblem(
+        a,
+        L,
+        u=[sigma, u],
+        kind="is",
+        bcs=bcs,
+        petsc_options_prefix=f"demo_mixed_poisson_bddc_{k}_",
+        petsc_options={
+            "ksp_type": "gmres",
+            "ksp_rtol": 1e-5 if np.finfo(dtype).bits == 32 else 1e-7,
+            "ksp_error_if_not_converged": True,
+            "pc_type": "bddc",
+            "pc_bddc_use_local_mat_graph": False,
+            "pc_bddc_benign_trick": None,
+            "pc_bddc_nonetflux": None,
+            "pc_bddc_detect_disconnected": None,
+            "pc_bddc_dirichlet_pc_type": local_solver,
+            "pc_bddc_dirichlet_pc_factor_mat_solver_type": local_solver_type,
+            "pc_bddc_neumann_pc_type": local_solver,
+            "pc_bddc_neumann_pc_factor_mat_solver_type": local_solver_type,
+            "pc_bddc_coarse_pc_type": coarse_solver,
+            "pc_bddc_coarse_pc_factor_mat_solver_type": coarse_solver_type,
+        },
+    )
+    problem.solver.setMonitor(residual_monitor(f"k={k} (BDDC)"))
+    problem.solve()
+    return sigma, u
+
+
+# -
+
 # Solve and save the flux and scalar solutions for the lowest-order and
-# next-order cases.
+# next-order cases, using each solver in turn.
+
+# +
 if has_adios2:
     from dolfinx.io import VTXWriter
 else:
     VTXWriter = None
 
+
+def write(label: str, k: int, sigma: fem.Function, u: fem.Function) -> None:
+    """Write the solution for degree ``k`` in VTX format."""
+    if VTXWriter is None:
+        return
+    # VTX supports (discontinuous) Lagrange functions, so interpolate
+    # the flux
+    msh = sigma.function_space.mesh
+    V_sigma = fem.functionspace(
+        msh,
+        element("DG", msh.basix_cell(), k, shape=(msh.geometry.dim,), dtype=xdtype),
+    )
+    sigma_output = fem.Function(V_sigma, name="sigma", dtype=dtype)
+    sigma_output.interpolate(sigma)
+    with VTXWriter(msh.comm, f"output_mixed_poisson_{label}_sigma_{k}.bp", sigma_output) as f:
+        f.write(0.0)
+    with VTXWriter(msh.comm, f"output_mixed_poisson_{label}_{k}.bp", u) as f:
+        f.write(0.0)
+
+
 use_hypre = has_hypre and hypre_ams_compatible
 for k in (1, 2):
-    sigma, u = solve(k, use_hypre)
-    if VTXWriter is not None:
-        # VTX supports (discontinuous) Lagrange functions, so
-        # interpolate the flux
-        V_sigma = fem.functionspace(
-            msh,
-            element("DG", msh.basix_cell(), k, shape=(gdim,), dtype=xdtype),
-        )
-        sigma_output = fem.Function(V_sigma, name="sigma", dtype=dtype)
-        sigma_output.interpolate(sigma)
-        with VTXWriter(msh.comm, f"output_mixed_poisson_sigma_{k}.bp", sigma_output) as f:
-            f.write(0.0)
-        with VTXWriter(msh.comm, f"output_mixed_poisson_{k}.bp", u) as f:
-            f.write(0.0)
+    write("block", k, *solve(k, use_hypre))
+    write("bddc", k, *solve_bddc(k))
 
 if not has_adios2:
     print("ADIOS2 required for VTX output.")
