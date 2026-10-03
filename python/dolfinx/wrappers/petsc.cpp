@@ -142,6 +142,28 @@ void petsc_la_module(nb::module_& m)
       },
       nb::arg("x"), nb::arg("maps"),
       "Gather an (ordered) list of sub vectors from a block vector.");
+  m.def(
+      "set_diagonal",
+      [](Mat A, nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+         nb::ndarray<const PetscScalar, nb::ndim<1>, nb::c_contig> diagonals,
+         int mode)
+      {
+        dolfinx::la::set_diagonal(
+            dolfinx::la::petsc::Matrix::set_fn(A, insert_mode(mode)),
+            std::span(rows.data(), rows.size()),
+            std::span<const PetscScalar>(diagonals.data(), diagonals.size()));
+      },
+      nb::arg("A"), nb::arg("rows"), nb::arg("diagonals"), nb::arg("mode"));
+  m.def(
+      "set_diagonal",
+      [](Mat A, nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+         PetscScalar diagonal, int mode)
+      {
+        dolfinx::la::set_diagonal(
+            dolfinx::la::petsc::Matrix::set_fn(A, insert_mode(mode)),
+            std::span(rows.data(), rows.size()), diagonal);
+      },
+      nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), nb::arg("mode"));
 }
 
 void petsc_fem_module(nb::module_& m)
@@ -232,28 +254,6 @@ void petsc_fem_module(nb::module_& m)
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
       nb::arg("dof_marker0"), nb::arg("dof_marker1"), nb::arg("unrolled"),
       "Assemble bilinear form into an existing PETSc matrix");
-  m.def(
-      "set_diagonal",
-      [](Mat A, nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-         nb::ndarray<const PetscScalar, nb::ndim<1>, nb::c_contig> diagonals,
-         int mode)
-      {
-        dolfinx::fem::set_diagonal(
-            dolfinx::la::petsc::Matrix::set_fn(A, insert_mode(mode)),
-            std::span(rows.data(), rows.size()),
-            std::span<const PetscScalar>(diagonals.data(), diagonals.size()));
-      },
-      nb::arg("A"), nb::arg("rows"), nb::arg("diagonals"), nb::arg("mode"));
-  m.def(
-      "set_diagonal",
-      [](Mat A, nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-         PetscScalar diagonal, int mode)
-      {
-        dolfinx::fem::set_diagonal(
-            dolfinx::la::petsc::Matrix::set_fn(A, insert_mode(mode)),
-            std::span(rows.data(), rows.size()), diagonal);
-      },
-      nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), nb::arg("mode"));
 }
 
 } // namespace
