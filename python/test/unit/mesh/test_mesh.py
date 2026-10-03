@@ -37,6 +37,7 @@ from dolfinx.mesh import (
     create_unit_square,
     entities_to_geometry,
     exterior_facet_indices,
+    extract_cells_from_entities,
     is_simplex,
     locate_entities,
     locate_entities_boundary,
@@ -998,6 +999,49 @@ def test_transfer_to_submesh(codim):
         marked2 = sub_et.find(2)
         np.testing.assert_allclose(marked1, ref_one)
         np.testing.assert_allclose(marked2, ref_two)
+
+
+@pytest.mark.parametrize("codim", [0, 1])
+def test_extract_cells_from_entities(codim):
+    """Map integration entities of a mesh to the cells of a submesh."""
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2)
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    if codim == 0:
+        # Integration entities are cells
+        parent_entities = locate_entities(mesh, tdim, lambda x: x[0] <= 0.5)
+        entities = parent_entities
+        cells = entities
+    else:
+        # Integration entities are (cell, local facet index) pairs
+        parent_entities = exterior_facet_indices(mesh.topology)
+        entities = dolfinx.fem.compute_integration_domains(
+            dolfinx.fem.IntegralType.exterior_facet, mesh.topology, parent_entities
+        ).reshape(-1, 2)
+        cells = entities[:, 0]
+    submesh, entity_map, _, _ = create_submesh(mesh, tdim - codim, parent_entities)
+
+    # On the same topology, the cell of each entity
+    same_cells = extract_cells_from_entities(mesh.topology, mesh.topology, entities)
+    np.testing.assert_array_equal(same_cells, cells)
+
+    # On the submesh, the submesh cell of each entity
+    sub_cells = extract_cells_from_entities(submesh.topology, mesh.topology, entities, entity_map)
+    np.testing.assert_array_equal(
+        sub_cells, entity_map.sub_topology_to_topology(parent_entities, inverse=True)
+    )
+    assert np.all(sub_cells >= 0)
+
+    # An entity map is required between different topologies
+    with pytest.raises(ValueError, match="entity map is required"):
+        extract_cells_from_entities(submesh.topology, mesh.topology, entities)
+
+    if codim == 1:
+        # Cells of a facet submesh have no single cell in the parent mesh
+        sub_imap = submesh.topology.index_map(tdim - 1)
+        submesh_cells = np.arange(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int32)
+        with pytest.raises(ValueError, match="Cannot map cells"):
+            extract_cells_from_entities(mesh.topology, submesh.topology, submesh_cells, entity_map)
 
 
 @pytest.mark.parametrize("gdim", [1, 2, 3])

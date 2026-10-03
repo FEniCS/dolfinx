@@ -13,13 +13,14 @@ import pytest
 import basix
 import ufl
 from basix.ufl import quadrature_element
-from dolfinx import fem, la
+from dolfinx import default_real_type, fem, la
 from dolfinx.fem import Constant, Expression, Function, form, functionspace
 from dolfinx.mesh import (
     CellType,
     compute_midpoints,
     create_rectangle,
     create_submesh,
+    create_unit_cube,
     create_unit_square,
     exterior_facet_indices,
     locate_entities,
@@ -651,6 +652,68 @@ def test_submesh_codim_one(dtype, qdegree):
     expr_exact = fem.Expression(expr_exact, quadrature_points, dtype=dtype)
     values_exact = expr_exact.eval(mesh, entities.reshape(-1, 2))
     np.testing.assert_allclose(values, values_exact, atol=tol)
+
+
+@pytest.mark.parametrize("codim", [0, 1])
+@pytest.mark.parametrize("degree", [1, 2])
+@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+def test_submesh_argument_dof_transformations(cell_type, degree, codim):
+    """An argument on a submesh gets the dof transformations of its own cells.
+
+    Contracting the tabulated argument with a function's dofs must give the function,
+    evaluated on the parent mesh's entities through the entity map.
+    """
+    # Create mesh and submesh of a subset of cells, or of all exterior facets
+    rtype = default_real_type
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type, dtype=rtype)
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    if codim == 0:
+        parent_entities = locate_entities(mesh, tdim, lambda x: x[0] <= 0.5 + 1e-10)
+    else:
+        parent_entities = exterior_facet_indices(mesh.topology)
+    submesh, entity_map, _, _ = create_submesh(mesh, tdim - codim, parent_entities)
+
+    # Populate submesh function with random data
+    V = functionspace(submesh, ("N1curl", degree))
+    assert V.element.needs_dof_transformations
+    u = Function(V, dtype=rtype)
+    u.x.array[:] = np.random.default_rng(3).standard_normal(u.x.array.size)
+
+    if codim == 0:
+        # Integration entities are the cells, with points on the reference cell
+        entities = parent_entities
+        points, _ = basix.make_quadrature(mesh.basix_cell(), 2)
+        expr = u
+    else:
+        # Extract integration entities as (cell, local_facet_index) pairs, and
+        # get some integration points on the reference facet
+        entities = fem.compute_integration_domains(
+            fem.IntegralType.exterior_facet, mesh.topology, parent_entities
+        ).reshape(-1, 2)
+        facet_type = basix.cell.subentity_types(mesh.basix_cell())[tdim - 1][0]
+        points, _ = basix.make_quadrature(facet_type, 2)
+        expr = ufl.cross(ufl.FacetNormal(mesh), u)
+
+    # Evaluate expression on parent mesh with submesh coefficient
+    num_values = points.shape[0] * int(np.prod(expr.ufl_shape))
+    values = Expression(expr, points, entity_maps=[entity_map], dtype=rtype).eval(mesh, entities)
+
+    # Evaluate the same expression using a ufl.TestFunction,
+    # which means that dof transformations are applied
+    expr_arg = ufl.replace(expr, {u: ufl.TestFunction(V)})
+    basis = Expression(expr_arg, points, entity_maps=[entity_map], dtype=rtype)
+    basis_values = basis.eval(mesh, entities).reshape(
+        len(entities), num_values, V.dofmap.dof_layout.num_dofs
+    )
+
+    # The submesh cell of each parent entity; entities follow the order of parent_entities
+    cells = entity_map.sub_topology_to_topology(parent_entities, inverse=True)
+    dofs = u.x.array[V.dofmap.list[cells]]
+    contracted = np.einsum("evd,ed->ev", basis_values, dofs)
+    tol = float(5e2 * np.finfo(rtype).resolution)
+
+    np.testing.assert_allclose(contracted, values.reshape(len(entities), num_values), atol=tol)
 
 
 @pytest.mark.parametrize(
