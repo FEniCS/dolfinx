@@ -509,7 +509,14 @@ def assemble_matrix(
         should not be called internally by the library.
     """  # noqa: D301
     A = create_matrix(a, kind)
-    _assemble_matrix_petsc(A, a, *_matrix_bc_data(a, bcs), diag, constants, coeffs)
+    _assemble_matrix_petsc(
+        A,
+        a,
+        *_matrix_bc_data(a, bcs),
+        diag,
+        _packed_constants(a) if constants is None else constants,
+        _packed_coefficients(a) if coeffs is None else coeffs,
+    )
     return A
 
 
@@ -540,7 +547,14 @@ def _assemble_matrix_mat(
         It rebuilds the constrained dof markers on every call, and
         should not be called internally by the library.
     """
-    return _assemble_matrix_petsc(A, a, *_matrix_bc_data(a, bcs), diag, constants, coeffs)
+    return _assemble_matrix_petsc(
+        A,
+        a,
+        *_matrix_bc_data(a, bcs),
+        diag,
+        _packed_constants(a) if constants is None else constants,
+        _packed_coefficients(a) if coeffs is None else coeffs,
+    )
 
 
 #: Constrained dof markers on the test and trial spaces, and the locally
@@ -781,19 +795,39 @@ def _assemble_matrix_single(
     return A
 
 
+def _packed_constants(
+    a: Form | Sequence[Sequence[Form | None]],
+) -> npt.NDArray | list[npt.NDArray]:
+    """Pack the constants of ``a``, one entry per block row."""
+    if isinstance(a, Sequence):
+        return [pack_constants(forms) for forms in a]
+    return pack_constants(a)
+
+
+def _packed_coefficients(
+    a: Form | Sequence[Sequence[Form | None]],
+) -> (
+    dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+    | list[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]
+):
+    """Pack the coefficients of ``a``, one entry per block row."""
+    if isinstance(a, Sequence):
+        return [pack_coefficients(forms) for forms in a]
+    return pack_coefficients(a)
+
+
 def _assemble_matrix_petsc(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form | None]],
     dof_marker0: npt.NDArray[np.int8] | Sequence[npt.NDArray[np.int8]],
     dof_marker1: npt.NDArray[np.int8] | Sequence[npt.NDArray[np.int8]],
     diag_rows: npt.NDArray[np.int32] | Sequence[npt.NDArray[np.int32]],
-    diag: float = 1,
-    constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
+    diag: float,
+    constants: npt.NDArray | Sequence[Sequence[npt.NDArray]],
     coeffs: (
         dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
         | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
-        | None
-    ) = None,
+    ),
 ) -> PETSc.Mat:
     """Assemble bilinear form(s) into a matrix, given constrained dofs.
 
@@ -817,26 +851,14 @@ def _assemble_matrix_petsc(
             raise ValueError(
                 "Must provide a sequence of sequences of coefficients when assembling a nest matrix"
             )
-        if constants is None:
-            constants = [pack_constants(forms) for forms in a]
-        if coeffs is None:
-            coeffs = [pack_coefficients(forms) for forms in a]
         return _assemble_matrix_nest(
             A, a, dof_marker0, dof_marker1, diag_rows, diag, constants, coeffs
         )
     elif isinstance(a, Sequence):
-        if constants is None:
-            constants = [pack_constants(forms) for forms in a]
-        if coeffs is None:
-            coeffs = [pack_coefficients(forms) for forms in a]
         return _assemble_matrix_block(
             A, a, dof_marker0, dof_marker1, diag_rows, diag, constants, coeffs
         )
     else:
-        if constants is None:
-            constants = pack_constants(a)
-        if coeffs is None:
-            coeffs = pack_coefficients(a)
         return _assemble_matrix_single(
             A, a, dof_marker0, dof_marker1, diag_rows, diag, constants, coeffs, False
         )
@@ -1412,7 +1434,14 @@ class LinearProblem(typing.Generic[_U]):
         """
         # Assemble lhs
         self.A.zeroEntries()
-        _assemble_matrix_petsc(self.A, self.a, *self._a_bc_data)
+        _assemble_matrix_petsc(
+            self.A,
+            self.a,
+            *self._a_bc_data,
+            1,
+            _packed_constants(self.a),
+            _packed_coefficients(self.a),
+        )
         self.A.assemble()
 
         # Assemble preconditioner
@@ -1424,6 +1453,9 @@ class LinearProblem(typing.Generic[_U]):
                 self.P_mat,
                 self.preconditioner,
                 *self._P_bc_data,  # type: ignore[arg-type]
+                1,
+                _packed_constants(self.preconditioner),
+                _packed_coefficients(self.preconditioner),
             )
             self.P_mat.assemble()
 
@@ -1746,7 +1778,9 @@ def assemble_jacobian(
         J,
         jacobian,
         *(_matrix_bc_data(jacobian, bcs) if _J_bc_data is None else _J_bc_data),
-        diag=1.0,
+        1.0,
+        _packed_constants(jacobian),
+        _packed_coefficients(jacobian),
     )
     J.assemble()
     if preconditioner is not None:
@@ -1755,7 +1789,9 @@ def assemble_jacobian(
             P_mat,
             preconditioner,
             *(_matrix_bc_data(preconditioner, bcs) if _P_bc_data is None else _P_bc_data),
-            diag=1.0,
+            1.0,
+            _packed_constants(preconditioner),
+            _packed_coefficients(preconditioner),
         )
         P_mat.assemble()
 
