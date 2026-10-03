@@ -335,8 +335,7 @@ class TestNLSPETSc:
                 "jacobian": jacobian,
                 "preconditioner": None,
                 "dof_markers": markers,
-                "diag_rows": rows,
-                "diag": 1.0,
+                "diag_data": (rows, 1.0),
             }
             snes.setJacobian(fem_petsc.assemble_jacobian, A, None, kargs=ctx_jac)
 
