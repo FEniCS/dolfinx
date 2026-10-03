@@ -1,4 +1,4 @@
-# Copyright (C) 2026 Jack S. Hale
+# Copyright (C) 2026 Jack S. Hale and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -29,7 +29,6 @@ from dolfinx.fem.assemble import (
     _assemble_matrix_csr_markers,
     _assemble_vector_array,
     _bc_dof_markers_pair,
-    _bc_lifting_markers,
     _bc_lifting_values,
 )
 from dolfinx.la import InsertMode, MatrixCSR, Vector
@@ -158,7 +157,6 @@ class LinearProblem:
         self._bcs = tuple(bcs) if bcs is not None else ()
         V0, V1 = self.a.function_spaces
         self._bc_markers = _bc_dof_markers_pair(V0, V1, self._bcs)
-        self._lifting_markers = _bc_lifting_markers([V1], [self._bcs])
 
     def solve(self) -> Function:
         """Solve the problem.
@@ -190,7 +188,7 @@ class LinearProblem:
             bc_values1 = _bc_lifting_values(
                 [self.a.function_spaces[1]], [self.bcs], self.b.array.dtype
             )
-            _apply_lifting_markers(self.b.array, [self.a], self._lifting_markers, bc_values1)
+            _apply_lifting_markers(self.b.array, [self.a], [self._bc_markers[1]], bc_values1)
             self.b.scatter_reverse(InsertMode.add)
             for bc in self.bcs:
                 bc.set(self.b.array)

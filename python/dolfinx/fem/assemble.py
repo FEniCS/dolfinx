@@ -35,12 +35,22 @@ def pack_constants(form: Form) -> npt.NDArray: ...
 
 
 @typing.overload
-def pack_constants(form: Sequence[Form | None]) -> list[npt.NDArray]: ...
+def pack_constants(form: Sequence[Form]) -> list[npt.NDArray]: ...
+
+
+@typing.overload
+def pack_constants(form: Sequence[Form | None]) -> list[npt.NDArray | None]: ...
+
+
+@typing.overload
+def pack_constants(
+    form: Sequence[Sequence[Form | None]],
+) -> list[list[npt.NDArray | None]]: ...
 
 
 def pack_constants(
-    form: Form | Sequence[Form | None] | None,
-) -> npt.NDArray | list[npt.NDArray] | None:
+    form: Form | Sequence[Form | None] | Sequence[Sequence[Form | None]] | None,
+) -> npt.NDArray | Sequence[npt.NDArray | Sequence[npt.NDArray | None] | None] | None:
     """Pack form constants for use in assembly.
 
     Pack the 'constants' that appear in forms. The packed constants can
@@ -61,7 +71,7 @@ def pack_constants(
     if form is None:
         return None
     elif isinstance(form, Sequence):
-        return list(map(pack_constants, form))  # type: ignore
+        return [pack_constants(f) for f in form]
     else:
         return _pack_constants(form._cpp_object)
 
@@ -76,10 +86,20 @@ def pack_coefficients(
 ) -> list[dict[tuple[IntegralType, int], npt.NDArray]]: ...
 
 
+@typing.overload
 def pack_coefficients(
-    form: Form | Sequence[Form | None] | None,
+    form: Sequence[Sequence[Form | None]],
+) -> list[list[dict[tuple[IntegralType, int], npt.NDArray]]]: ...
+
+
+def pack_coefficients(
+    form: Form | Sequence[Form | None] | Sequence[Sequence[Form | None]] | None,
 ) -> (
-    dict[tuple[IntegralType, int], npt.NDArray] | list[dict[tuple[IntegralType, int], npt.NDArray]]
+    dict[tuple[IntegralType, int], npt.NDArray]
+    | Sequence[
+        dict[tuple[IntegralType, int], npt.NDArray]
+        | Sequence[dict[tuple[IntegralType, int], npt.NDArray]]
+    ]
 ):
     """Pack form coefficients for use in assembly.
 
@@ -101,7 +121,7 @@ def pack_coefficients(
     if form is None:
         return {}
     elif isinstance(form, Sequence):
-        return list(map(pack_coefficients, form))
+        return [pack_coefficients(f) for f in form]
     else:
         return _pack_coefficients(form._cpp_object)
 
