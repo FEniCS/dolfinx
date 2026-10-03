@@ -23,6 +23,8 @@
 #    ](#high-level-nested-matrix-solver)
 # 1. [Block preconditioner using PETSc Nest data structures using
 #    PETSc directly](#low-level-nested-matrix-solver)
+# 1. [BDDC preconditioning of the velocity block of a PETSc Nest
+#    matrix, using PETSc directly](#low-level-nested-matrix-bddc-solver)
 # 1. [Block preconditioner with the `u` and `p` fields stored block-wise
 #    in a single matrix](#monolithic-block-iterative-solver)
 # 1. [Direct solver with the `u` and `p` fields stored block-wise in a
@@ -124,7 +126,7 @@ from dolfinx.fem.petsc import (
 )
 from dolfinx.io import XDMFFile
 from dolfinx.la.petsc import create_vector_wrap
-from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
+from dolfinx.mesh import CellType, GhostMode, create_rectangle, locate_entities_boundary
 
 # -
 
@@ -133,9 +135,16 @@ from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 # for the  velocity on the lid:
 
 # +
-# Create mesh
+# Create mesh. The forms below have no interior facet integrals, so no
+# ghost cells are needed. Omitting them also gives each process a
+# single, non-overlapping subdomain, which is the setting BDDC is
+# designed for.
 msh = create_rectangle(
-    MPI.COMM_WORLD, [np.array([0, 0]), np.array([1, 1])], (32, 32), CellType.triangle
+    MPI.COMM_WORLD,
+    [np.array([0, 0]), np.array([1, 1])],
+    (32, 32),
+    CellType.triangle,
+    ghost_mode=GhostMode.none,
 )
 
 
@@ -438,6 +447,90 @@ def nested_iterative_solver_low_level():
     return norm_u, norm_p
 
 
+# ### Low-level nested matrix BDDC solver
+#
+# BDDC is a domain decomposition preconditioner: it solves a local
+# problem on each subdomain and couples them through a coarse problem
+# built from the interface degrees-of-freedom. PETSc's `PCBDDC`
+# requires its operator in the unassembled `MATIS` format, which keeps
+# a local matrix per process together with the map from local to global
+# degrees-of-freedom, rather than summing the contributions.
+#
+# Only the velocity block needs it here. It is requested by passing a
+# matrix type per block, leaving the pressure block in the default
+# format, and BDDC then replaces the algebraic multigrid used on the
+# velocity block in the solver above.
+
+
+def nested_bddc_solver_low_level():
+    """Solve Stokes problem using nest matrices and BDDC on the velocity.
+
+    Uses low-level DOLFINx routines.
+    """
+    # Assemble the velocity block in the unassembled MATIS format that
+    # PCBDDC requires, and the pressure block in the default format
+    A = create_matrix(a, kind=[["is", None], [None, "aij"]])
+    assemble_matrix(A, a, bcs=bcs)
+    A.assemble()
+
+    # Preconditioner as before: the velocity block of A, and a pressure
+    # mass matrix
+    P11 = assemble_matrix(a_p11, bcs=bcs)
+    P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])  # type: ignore[list-item]
+    P.assemble()
+
+    # Assemble the right-hand side vector and apply the boundary
+    # conditions, as for the solver above
+    b = assemble_vector(L, kind="nest")
+    bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
+    apply_lifting(b, a, bcs=bcs1)
+    for b_sub in b.getNestSubVecs():
+        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
+    bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
+    set_bc(b, bcs0)
+
+    # Set the nullspace for pressure
+    null_vec = create_vector(extract_function_spaces(L), "nest")
+    null_vecs = null_vec.getNestSubVecs()
+    null_vecs[0].set(0.0)
+    null_vecs[1].set(1.0)
+    null_vec.normalize()
+    nsp = PETSc.NullSpace().create(vectors=[null_vec])
+    assert nsp.test(A)
+    A.setNullSpace(nsp)
+
+    # MINRES with an additive fieldsplit preconditioner, as above
+    ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
+    ksp.setOperators(A, P)
+    ksp.setType("minres")
+    ksp.setTolerances(rtol=1e-9)
+    ksp.getPC().setType("fieldsplit")
+    ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)  # type: ignore[arg-type]
+    nested_IS = P.getNestISs()
+    ksp.getPC().setFieldSplitIS(("u", nested_IS[0][0]), ("p", nested_IS[0][1]))
+
+    # BDDC on the velocity block, in place of the algebraic multigrid
+    # used above, and a Jacobi preconditioner on the pressure block
+    ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
+    ksp_u.setType("preonly")
+    ksp_u.getPC().setType("bddc")
+    ksp_p.setType("preonly")
+    ksp_p.getPC().setType("jacobi")
+
+    u, p = Function(V), Function(Q)
+    x = PETSc.Vec().createNest([create_vector_wrap(u.x), create_vector_wrap(p.x)])
+    ksp.solve(b, x)
+
+    # Compute norms of the solution vectors
+    norm_u = la.norm(u.x)
+    norm_p = la.norm(p.x)
+    if MPI.COMM_WORLD.rank == 0:
+        print(f"(A) Norm of velocity coefficient vector (low-level nested, BDDC): {norm_u}")
+        print(f"(A) Norm of pressure coefficient vector (low-level nested, BDDC): {norm_p}")
+
+    return norm_u, norm_p
+
+
 # ### Monolithic block iterative solver
 #
 # We now solve the same Stokes problem, but using monolithic
@@ -711,6 +804,12 @@ norm_u_0, norm_p_0 = nested_iterative_solver_high_level()
 norm_u_1, norm_p_1 = nested_iterative_solver_low_level()
 np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
 np.testing.assert_allclose(norm_p_1, norm_p_0, rtol=1e-4)
+
+# Solve using PETSc MatNest with BDDC on the velocity block
+
+norm_u_bddc, norm_p_bddc = nested_bddc_solver_low_level()
+np.testing.assert_allclose(norm_u_bddc, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_p_bddc, norm_p_0, rtol=1e-4)
 
 # Solve using PETSc block matrices and an iterative solver
 
