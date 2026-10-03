@@ -422,3 +422,36 @@ class TestPETScSolverWrappers:
                 )
         finally:
             P_mat.destroy()
+
+    @pytest.mark.parametrize("kind", [None, "nest"])
+    @pytest.mark.parametrize("index", [0, 1])
+    def test_blocked_assembly_repeated_spaces(self, kind, index):
+        """Reject repeated spaces at matrix creation and assembly boundaries."""
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import assemble_matrix, create_matrix
+
+        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=PETSc.RealType)
+        V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+        W = V.clone()
+        tests = [ufl.TestFunction(V), ufl.TestFunction(V if index == 0 else W)]
+        trials = [ufl.TrialFunction(V), ufl.TrialFunction(V if index == 1 else W)]
+        repeated = dolfinx.fem.form([[ufl.inner(u, v) * ufl.dx for u in trials] for v in tests])
+        assert dolfinx.fem.extract_function_spaces(repeated, index) == [V, V]
+        what = "rows" if index == 0 else "columns"
+        message = f"Function space is shared by {what} 0 and 1"
+        with pytest.raises(ValueError, match=message):
+            create_matrix(repeated, kind=kind)
+
+        valid = dolfinx.fem.form(
+            [
+                [ufl.inner(ufl.TrialFunction(V), ufl.TestFunction(V)) * ufl.dx, None],
+                [None, ufl.inner(ufl.TrialFunction(W), ufl.TestFunction(W)) * ufl.dx],
+            ]
+        )
+        A = create_matrix(valid, kind=kind)
+        try:
+            with pytest.raises(ValueError, match=message):
+                assemble_matrix(A, repeated)
+        finally:
+            A.destroy()
