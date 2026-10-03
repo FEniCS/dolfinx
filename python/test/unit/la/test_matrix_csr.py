@@ -293,6 +293,50 @@ def test_set_diagonal_per_row(dtype) -> None:
         fem.set_diagonal(A, rows, diagonals[:-1])
 
 
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_set_bc_diagonal_duplicate_rows(dtype):
+    """A row constrained by more than one condition is set once.
+
+    Checked with ``InsertMode.add``, where a repeated row would
+    otherwise double the diagonal.
+    """
+    mesh = create_unit_square(MPI.COMM_WORLD, 6, 5, dtype=np.real(dtype(0)).dtype)
+    V = fem.functionspace(mesh, ("Lagrange", 2))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = fem.form(ufl.inner(u, v) * ufl.dx, dtype=dtype)
+
+    # Constrain the first few owned dofs, with the second condition
+    # covering a subset of the first
+    n = min(V.dofmap.index_map.size_local, 8)
+    dofs0 = np.arange(n, dtype=np.int32)
+    bc0 = fem.dirichletbc(dtype(1), dofs0, V)
+    bc1 = fem.dirichletbc(dtype(2), dofs0[: n // 2], V)
+
+    # Adjoining ranges sharing their end point: the concatenation is
+    # already sorted, but still holds a duplicate
+    bc_lo = fem.dirichletbc(dtype(4), dofs0[: n // 2 + 1], V)
+    bc_hi = fem.dirichletbc(dtype(5), dofs0[n // 2 :], V)
+
+    # Reference: the rows of bc0 alone
+    A_ref = fem.create_matrix(a)
+    fem.set_bc_diagonal(A_ref, V, [bc0], dtype(1), InsertMode.add)
+    reference = A_ref.to_scipy(ghosted=True).diagonal()
+    assert np.allclose(reference[dofs0], 1.0)
+
+    for bcs in ([bc0, bc1], [bc_lo, bc_hi]):
+        A = fem.create_matrix(a)
+        fem.set_bc_diagonal(A, V, bcs, dtype(1), InsertMode.add)
+        assert np.allclose(A.to_scipy(ghosted=True).diagonal(), reference)
+
+
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_bad_entry(dtype) -> None:
     sp = create_test_sparsity(6, 1)

@@ -574,6 +574,7 @@ def set_bc_diagonal(
     V: FunctionSpace,
     bcs: Sequence[DirichletBC[Scalar]] | None,
     diagonal: Scalar | float | complex = 1.0,
+    insert_mode: la.InsertMode = la.InsertMode.insert,
 ) -> None:
     """Set a value on the diagonal of locally owned constrained rows.
 
@@ -598,10 +599,15 @@ def set_bc_diagonal(
             ``None``, no rows are set.
         diagonal: Value to set on the diagonal of each owned
             constrained row.
+        insert_mode: ``la.InsertMode.insert`` to set the diagonal
+            entries, or ``la.InsertMode.add`` to add to them.
 
     Note:
         Each row is set exactly once, even where several boundary
-        conditions constrain the same degree-of-freedom.
+        conditions constrain the same degree-of-freedom, so
+        ``la.InsertMode.add`` cannot double-count an overlap. Every
+        condition sets the same ``diagonal`` value, so their order in
+        ``bcs`` does not matter here.
     """
     rows_ = []
     for bc in bcs or []:
@@ -610,7 +616,7 @@ def set_bc_diagonal(
             rows_.append(dofs[:owned])
     # Conditions may overlap, so the concatenation may hold duplicates
     rows = np.unique(np.concatenate(rows_)) if rows_ else np.empty(0, dtype=np.int32)
-    set_diagonal(A, rows, diagonal)
+    set_diagonal(A, rows, diagonal, insert_mode)
 
 
 def assemble_matrix_fn(
