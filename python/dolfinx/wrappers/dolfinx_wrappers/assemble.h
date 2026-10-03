@@ -471,10 +471,10 @@ void declare_assembly_functions(nanobind::module_& m)
         switch (mode)
         {
         case PyInsertMode::insert:
-          dolfinx::fem::set_diagonal(A.mat_set_values(), _rows, _diagonals);
+          dolfinx::la::set_diagonal(A.mat_set_values(), _rows, _diagonals);
           break;
         case PyInsertMode::add:
-          dolfinx::fem::set_diagonal(A.mat_add_values(), _rows, _diagonals);
+          dolfinx::la::set_diagonal(A.mat_add_values(), _rows, _diagonals);
           break;
         default:
           throw std::invalid_argument("InsertMode not recognized.");
@@ -492,10 +492,10 @@ void declare_assembly_functions(nanobind::module_& m)
         switch (mode)
         {
         case PyInsertMode::insert:
-          dolfinx::fem::set_diagonal(A.mat_set_values(), _rows, diagonal);
+          dolfinx::la::set_diagonal(A.mat_set_values(), _rows, diagonal);
           break;
         case PyInsertMode::add:
-          dolfinx::fem::set_diagonal(A.mat_add_values(), _rows, diagonal);
+          dolfinx::la::set_diagonal(A.mat_add_values(), _rows, diagonal);
           break;
         default:
           throw std::invalid_argument("InsertMode not recognized.");

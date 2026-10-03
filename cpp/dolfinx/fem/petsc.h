@@ -677,8 +677,8 @@ void assemble_operator(Mat A, const Form<PetscScalar, T>& a,
 
     // Assembly zeroed these rows, so adding sets the diagonal. Adding
     // avoids a flush to switch from ADD_VALUES to INSERT_VALUES.
-    fem::set_diagonal<PetscScalar>(la::petsc::Matrix::set_fn(A, ADD_VALUES),
-                                   rows);
+    la::set_diagonal<PetscScalar>(la::petsc::Matrix::set_fn(A, ADD_VALUES),
+                                  rows);
   }
 
   common::petsc::check(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY),

@@ -167,14 +167,14 @@ void test_set_diagonal_shared()
   std::iota(local.begin(), local.end(), 0);
 
   // A0: 1 on owned rows
-  fem::set_diagonal(A0.mat_add_values(), owned, T(1));
+  la::set_diagonal(A0.mat_add_values(), owned, T(1));
 
   // A1: 1/n on all local rows, n the number of sharing ranks
   std::vector<std::int32_t> n = common::num_sharing_ranks(*map, local, bs);
   std::vector<T> diagonals(n.size());
   std::ranges::transform(n, diagonals.begin(),
                          [](std::int32_t ni) { return T(1) / T(ni); });
-  fem::set_diagonal(A1.mat_add_values(), local, std::span<const T>(diagonals));
+  la::set_diagonal(A1.mat_add_values(), local, std::span<const T>(diagonals));
 
   A0.scatter_rev();
   A1.scatter_rev();

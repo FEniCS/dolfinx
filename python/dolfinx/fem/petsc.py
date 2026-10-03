@@ -87,7 +87,6 @@ __all__ = [
     "interpolation_matrix",
     "numba_utils",
     "set_bc",
-    "set_diagonal",
 ]
 
 
@@ -709,7 +708,7 @@ def _assemble_matrix_petsc_markers(
                     # sets the diagonal (and needs no flush)
                     V0, V1 = a_sub.function_spaces
                     if V0._cpp_object is V1._cpp_object:
-                        set_diagonal(
+                        dolfinx.la.petsc.set_diagonal(
                             Asub,
                             diag_rows[i],
                             diag,
@@ -740,7 +739,7 @@ def _assemble_matrix_petsc_markers(
         # Assembly zeroed the constrained rows, so adding sets the
         # diagonal (and needs no flush)
         if V0._cpp_object is V1._cpp_object:
-            set_diagonal(
+            dolfinx.la.petsc.set_diagonal(
                 A,
                 diag_rows,  # type: ignore[arg-type]
                 diag,
@@ -748,38 +747,6 @@ def _assemble_matrix_petsc_markers(
             )
 
     return A
-
-
-def set_diagonal(
-    A: PETSc.Mat,
-    rows: npt.NDArray[np.int32],
-    diagonal: float | complex | npt.NDArray = 1.0,
-    insert_mode: PETSc.InsertMode = PETSc.InsertMode.INSERT,  # type: ignore[arg-type]
-) -> None:
-    """Set or add values on the diagonal for given rows of a PETSc matrix.
-
-    Args:
-        A: Matrix to modify.
-        rows: Rows, in local indices, to set the diagonal value for.
-        diagonal: Value to set on the diagonal, either a single value
-            for all rows or an array with ``diagonal[i]`` the value for
-            ``rows[i]``. An array must have the same length as
-            ``rows``.
-        insert_mode: ``PETSc.InsertMode.INSERT`` to overwrite the
-            diagonal entry, or ``PETSc.InsertMode.ADD`` to add to it.
-            The two agree on rows that assembly has already zeroed, and
-            ``ADD`` avoids the flush needed to take the matrix out of
-            add mode.
-
-    Note:
-        The matrix is not assembled.
-    """
-    if np.ndim(diagonal) > 0:
-        diagonal = np.asarray(diagonal, dtype=PETSc.ScalarType)
-    _cpp.fem.petsc.set_diagonal(A, rows, diagonal, insert_mode)  # type: ignore[arg-type]
-
-
-# -- Modifiers for Dirichlet conditions -----------------------------------
 
 
 def apply_lifting(
