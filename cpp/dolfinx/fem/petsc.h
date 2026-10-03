@@ -17,6 +17,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/petsc.h>
 #include <format>
 #include <functional>
@@ -33,11 +34,6 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx::common
-{
-class IndexMap;
-}
-
 namespace dolfinx::fem
 {
 template <dolfinx::scalar T, std::floating_point U>
@@ -46,16 +42,60 @@ class DirichletBC;
 /// @brief Helper functions for assembly into PETSc data structures
 namespace petsc
 {
+namespace impl
+{
+/// @brief Throw if a MATIS matrix is requested on a mesh with ghost
+/// cells.
+///
+/// MATIS stores an unassembled matrix per process and requires each to
+/// hold one non-overlapping subdomain. Ghost cells overlap the
+/// subdomains, and a dof lying only on them is touched by no owned
+/// cell, so its row of the local matrix is empty. The subdomain solves
+/// that preconditioners such as PCBDDC perform are then singular.
+///
+/// @param[in] mesh Mesh the matrix is assembled over.
+/// @param[in] type Requested PETSc matrix type.
+/// @throws std::invalid_argument If `type` is MATIS and `mesh` has
+/// ghost cells.
+template <std::floating_point T>
+void check_matis_mesh(const mesh::Mesh<T>& mesh,
+                      const std::optional<std::string>& type)
+{
+  if (!type or *type != MATIS)
+    return;
+
+  auto topology = mesh.topology();
+  assert(topology);
+  std::shared_ptr<const common::IndexMap> cells
+      = topology->index_map(topology->dim());
+  assert(cells);
+  if (cells->num_ghosts() > 0)
+  {
+    throw std::invalid_argument(
+        "A MATIS matrix requires a mesh without ghost cells, so that each "
+        "process holds one non-overlapping subdomain. Degrees-of-freedom on "
+        "a ghost cell alone are assembled by no process, leaving empty rows "
+        "in the local matrix. Create the mesh with GhostMode::none.");
+  }
+}
+} // namespace impl
+
 /// @brief Create a matrix
 /// @param[in] a A bilinear form
 /// @param[in] type The PETSc matrix type to create
 /// @return A sparse matrix with a layout and sparsity that matches the
 /// bilinear form. The caller is responsible for destroying the Mat
 /// object.
+/// @throws std::invalid_argument If `type` is MATIS and the mesh of `a`
+/// has ghost cells.
+/// @note The MATIS check is local. The ghost mode is a property of the
+/// mesh, so a caller passing the same mesh on every process either
+/// throws on all of them or none.
 template <std::floating_point T>
 Mat create_matrix(const Form<PetscScalar, T>& a,
                   std::optional<std::string> type = std::nullopt)
 {
+  impl::check_matis_mesh(*a.mesh(), type);
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
   pattern.finalize();
   return la::petsc::create_matrix(a.mesh()->comm(), pattern, type);
@@ -108,6 +148,8 @@ Mat create_matrix_block(
 
   if (!mesh)
     throw std::invalid_argument("Could not find a Mesh.");
+
+  impl::check_matis_mesh(*mesh, type);
 
   // Compute offsets for the fields
   std::array<std::vector<std::pair<
