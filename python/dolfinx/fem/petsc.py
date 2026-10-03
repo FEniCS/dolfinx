@@ -509,11 +509,12 @@ def assemble_matrix(
         should not be called internally by the library.
     """  # noqa: D301
     A = create_matrix(a, kind)
+    dof_markers, rows = _matrix_bc_data(a, bcs)
     _assemble_matrix_petsc(
         A,
         a,
-        *_matrix_bc_data(a, bcs),
-        diag,
+        dof_markers,
+        (rows, diag),
         _packed_constants(a) if constants is None else constants,
         _packed_coefficients(a) if coeffs is None else coeffs,
     )
@@ -547,11 +548,12 @@ def _assemble_matrix_mat(
         It rebuilds the constrained dof markers on every call, and
         should not be called internally by the library.
     """
+    dof_markers, rows = _matrix_bc_data(a, bcs)
     return _assemble_matrix_petsc(
         A,
         a,
-        *_matrix_bc_data(a, bcs),
-        diag,
+        dof_markers,
+        (rows, diag),
         _packed_constants(a) if constants is None else constants,
         _packed_coefficients(a) if coeffs is None else coeffs,
     )
@@ -565,6 +567,14 @@ _MatrixBCData = tuple[
         npt.NDArray[np.int8] | list[npt.NDArray[np.int8]],
     ],
     npt.NDArray[np.int32] | list[npt.NDArray[np.int32]],
+]
+
+
+#: Rows that carry the Dirichlet diagonal, and the value they take.
+#: See :func:`_assemble_matrix_petsc`.
+_MatrixDiagData = tuple[
+    npt.NDArray[np.int32] | list[npt.NDArray[np.int32]],
+    float,
 ]
 
 
@@ -640,8 +650,7 @@ def _assemble_matrix_nest(
     A: PETSc.Mat,
     a: Sequence[Sequence[Form | None]],
     dof_markers: tuple[Sequence[npt.NDArray[np.int8]], Sequence[npt.NDArray[np.int8]]],
-    diag_rows: Sequence[npt.NDArray[np.int32]],
-    diag: float,
+    diag_data: tuple[Sequence[npt.NDArray[np.int32]], float],
     constants: Sequence[Sequence[npt.NDArray]],
     coeffs: Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]],
 ) -> PETSc.Mat:
@@ -657,10 +666,10 @@ def _assemble_matrix_nest(
         dof_markers: Constrained dof markers on the test and trial
             spaces, one per block row and per block column, from
             :func:`_matrix_bc_data`.
-        diag_rows: Rows to put ``diag`` on, one array per block row.
-            Used only where the test and trial spaces of a block are
-            the same.
-        diag: Value the constrained diagonal is to take.
+        diag_data: Rows carrying the diagonal, one array per block
+            row, from :func:`_matrix_bc_data`, and the value on each.
+            The rows are used only where the test and trial spaces of
+            a block are the same.
         constants: Packed constants, one entry per block.
         coeffs: Packed coefficients, one entry per block.
 
@@ -668,6 +677,7 @@ def _assemble_matrix_nest(
         ``A``, for convenience.
     """
     dof_marker0, dof_marker1 = dof_markers
+    diag_rows, diag = diag_data
     for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs, strict=True)):
         for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row, strict=True)):
             if a_block is not None:
@@ -676,8 +686,7 @@ def _assemble_matrix_nest(
                     Asub,
                     a_block,
                     (dof_marker0[i], dof_marker1[j]),
-                    diag_rows[i],
-                    diag,
+                    (diag_rows[i], diag),
                     const,
                     coeff,
                     False,
@@ -695,8 +704,7 @@ def _assemble_matrix_block(
     A: PETSc.Mat,
     a: Sequence[Sequence[Form | None]],
     dof_markers: tuple[Sequence[npt.NDArray[np.int8]], Sequence[npt.NDArray[np.int8]]],
-    diag_rows: Sequence[npt.NDArray[np.int32]],
-    diag: float,
+    diag_data: tuple[Sequence[npt.NDArray[np.int32]], float],
     constants: Sequence[Sequence[npt.NDArray]],
     coeffs: Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]],
     index_sets: tuple[Sequence, Sequence],
@@ -713,10 +721,10 @@ def _assemble_matrix_block(
         dof_markers: Constrained dof markers on the test and trial
             spaces, one per block row and per block column, from
             :func:`_matrix_bc_data`.
-        diag_rows: Rows to put ``diag`` on, one array per block row.
-            Used only where the test and trial spaces of a block are
-            the same.
-        diag: Value the constrained diagonal is to take.
+        diag_data: Rows carrying the diagonal, one array per block
+            row, from :func:`_matrix_bc_data`, and the value on each.
+            The rows are used only where the test and trial spaces of
+            a block are the same.
         constants: Packed constants, one entry per block.
         coeffs: Packed coefficients, one entry per block.
         index_sets: Index set of each block row and of each block
@@ -726,6 +734,7 @@ def _assemble_matrix_block(
         ``A``, for convenience.
     """
     dof_marker0, dof_marker1 = dof_markers
+    diag_rows, diag = diag_data
     is0, is1 = index_sets
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
@@ -737,8 +746,7 @@ def _assemble_matrix_block(
                     Asub,
                     a_sub,
                     (dof_marker0[i], dof_marker1[j]),
-                    diag_rows[i],
-                    diag,
+                    (diag_rows[i], diag),
                     constants[i][j],
                     coeffs[i][j],  # type: ignore[index]
                     True,
@@ -757,8 +765,7 @@ def _assemble_matrix_single(
     A: PETSc.Mat,
     a: Form,
     dof_markers: tuple[npt.NDArray[np.int8], npt.NDArray[np.int8]],
-    diag_rows: npt.NDArray[np.int32],
-    diag: float,
+    diag_data: tuple[npt.NDArray[np.int32], float],
     constants: npt.NDArray,
     coeffs: dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray],
     unrolled: bool,
@@ -771,9 +778,9 @@ def _assemble_matrix_single(
         a: Bilinear form.
         dof_markers: Constrained dof markers on the test and trial
             spaces, from :func:`_matrix_bc_data`.
-        diag_rows: Rows to put ``diag`` on. Used only where the test
-            and trial spaces are the same.
-        diag: Value the constrained diagonal is to take.
+        diag_data: Rows carrying the diagonal, from
+            :func:`_matrix_bc_data`, and the value on each. The rows
+            are used only where the test and trial spaces are the same.
         constants: Packed constants of the form.
         coeffs: Packed coefficients of the form.
         unrolled: Insert with block-expanded indices. Needed for a
@@ -785,6 +792,7 @@ def _assemble_matrix_single(
     Returns:
         ``A``, for convenience.
     """
+    diag_rows, diag = diag_data
     V0, V1 = a.function_spaces
     _cpp.fem.petsc.assemble_matrix(
         A,
@@ -831,8 +839,7 @@ def _assemble_matrix_petsc(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form | None]],
     dof_markers: tuple,
-    diag_rows: npt.NDArray[np.int32] | Sequence[npt.NDArray[np.int32]],
-    diag: float,
+    diag_data: _MatrixDiagData,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]],
     coeffs: (
         dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
@@ -846,8 +853,8 @@ def _assemble_matrix_petsc(
     of boundary conditions. For a 2D array of forms,
     ``dof_markers[0][i]`` marks the test space of row ``i``,
     ``dof_markers[1][j]`` the trial space of column ``j``, and
-    ``diag_rows[i]`` holds the locally owned constrained rows of row
-    ``i``.
+    ``diag_data[0][i]`` holds the locally owned constrained rows of
+    row ``i``.
 
     Dispatches on the type of ``A`` and the shape of ``a`` to
     :func:`_assemble_matrix_nest`,
@@ -866,8 +873,7 @@ def _assemble_matrix_petsc(
             A,
             a,
             dof_markers,
-            diag_rows,  # type: ignore[arg-type]
-            diag,
+            diag_data,  # type: ignore[arg-type]
             constants,  # type: ignore[arg-type]
             coeffs,
         )
@@ -876,8 +882,7 @@ def _assemble_matrix_petsc(
             A,
             a,
             dof_markers,
-            diag_rows,  # type: ignore[arg-type]
-            diag,
+            diag_data,  # type: ignore[arg-type]
             constants,  # type: ignore[arg-type]
             coeffs,  # type: ignore[arg-type]
             _block_index_sets(a),
@@ -887,8 +892,7 @@ def _assemble_matrix_petsc(
             A,
             a,
             dof_markers,
-            diag_rows,  # type: ignore[arg-type]
-            diag,
+            diag_data,  # type: ignore[arg-type]
             constants,  # type: ignore[arg-type]
             coeffs,  # type: ignore[arg-type]
             False,
@@ -1465,11 +1469,12 @@ class LinearProblem(typing.Generic[_U]):
         """
         # Assemble lhs
         self.A.zeroEntries()
+        dof_markers, rows = self._a_bc_data
         _assemble_matrix_petsc(
             self.A,
             self.a,
-            *self._a_bc_data,
-            1,
+            dof_markers,
+            (rows, 1),
             _packed_constants(self.a),
             _packed_coefficients(self.a),
         )
@@ -1480,11 +1485,12 @@ class LinearProblem(typing.Generic[_U]):
             assert self.P_mat is not None
             self.P_mat.zeroEntries()
             assert self._P_bc_data is not None
+            dof_markers, rows = self._P_bc_data
             _assemble_matrix_petsc(
                 self.P_mat,
                 self.preconditioner,
-                *self._P_bc_data,  # type: ignore[arg-type]
-                1,
+                dof_markers,
+                (rows, 1),
                 _packed_constants(self.preconditioner),
                 _packed_coefficients(self.preconditioner),
             )
@@ -1756,17 +1762,14 @@ def assemble_jacobian(
     jacobian: Form | Sequence[Sequence[Form]],
     preconditioner: Form | Sequence[Sequence[Form]] | None,
     dof_markers: tuple,
-    diag_rows: npt.NDArray[np.int32] | Sequence[npt.NDArray[np.int32]],
-    diag: float,
+    diag_data: _MatrixDiagData,
 ) -> None:
     """Assemble the Jacobian and preconditioner matrices.
 
     A function conforming to the interface expected by
-    ``SNES.setJacobian`` can be created by fixing the first four
-    A function conforming to the interface expected by
-    ``SNES.setJacobian`` can be created by setting all
-    arguments except `_snes`, `x`, `J` and `P_mat`
-    through the `kargs` argument e.g.:
+    ``SNES.setJacobian`` can be created by setting all arguments
+    except `_snes`, `x`, `J` and `P_mat` through the `kargs` argument
+    e.g.:
 
     Example::
 
@@ -1774,7 +1777,7 @@ def assemble_jacobian(
         markers, rows = _matrix_bc_data(jacobian, bcs)
         cntx = {"u": u, "jacobian": jacobian,
             "preconditioner": preconditioner, "dof_markers": markers,
-            "diag_rows": rows, "diag": 1.0}
+            "diag_data": (rows, 1.0)}
         snes.setJacobian(assemble_jacobian, A, P_mat, kargs=cntx)
 
     Note:
@@ -1795,9 +1798,9 @@ def assemble_jacobian(
             spaces of ``jacobian``, one per block row and per block
             column if it is a 2D array, from the internal
             ``_matrix_bc_data``.
-        diag_rows: Locally owned constrained rows to put ``diag`` on,
-            or one array per block row.
-        diag: Value the constrained diagonal is to take.
+        diag_data: Locally owned constrained rows carrying the
+            diagonal, or one array per block row, and the value on
+            each.
 
     Note:
         The boundary conditions enter as markers and rows rather than
@@ -1819,8 +1822,7 @@ def assemble_jacobian(
         J,
         jacobian,
         dof_markers,
-        diag_rows,
-        diag,
+        diag_data,
         _packed_constants(jacobian),
         _packed_coefficients(jacobian),
     )
@@ -1833,8 +1835,7 @@ def assemble_jacobian(
             P_mat,
             preconditioner,
             dof_markers,
-            diag_rows,
-            diag,
+            diag_data,
             _packed_constants(preconditioner),
             _packed_coefficients(preconditioner),
         )
@@ -2033,8 +2034,7 @@ class NonlinearProblem(typing.Generic[_U]):
             "jacobian": self.J,
             "preconditioner": self.preconditioner,
             "dof_markers": dof_markers,
-            "diag_rows": diag_rows,
-            "diag": 1.0,
+            "diag_data": (diag_rows, 1.0),
         }
         self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=jacobian_ctx)  # type: ignore[arg-type]
         # Get potential attributes from the residual to pass to the
