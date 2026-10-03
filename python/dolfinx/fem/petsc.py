@@ -1737,35 +1737,9 @@ def assemble_jacobian(
             function spaces of ``jacobian``.
         bcs: Dirichlet boundary conditions to apply to the Jacobian and
             preconditioner matrices.
-
-    Note:
-        The constrained dofs are resolved from ``bcs`` on every call.
-        :class:`NonlinearProblem` resolves them once and reuses them,
-        which it can do because the dofs a condition constrains are
-        fixed when it is built.
-    """
-    bc_data = _matrix_bc_data(jacobian, bcs)
-    _assemble_jacobian(_snes, x, J, P_mat, u, jacobian, preconditioner, bc_data)
-
-
-def _assemble_jacobian(
-    _snes: PETSc.SNES,
-    x: PETSc.Vec,
-    J: PETSc.Mat,
-    P_mat: PETSc.Mat,
-    u: Sequence[_Function] | _Function,
-    jacobian: Form | Sequence[Sequence[Form]],
-    preconditioner: Form | Sequence[Sequence[Form]] | None,
-    bc_data: _MatrixBCData,
-) -> None:
-    """Assemble the Jacobian and preconditioner with cached BC data.
-
-    As :func:`assemble_jacobian`, with ``bc_data`` from
-    :func:`_matrix_bc_data` so that a SNES callback resolves it once
-    rather than on every Newton step. The preconditioner is assembled
-    with the Jacobian's markers, so it must be over the same spaces.
     """
     _check_preconditioner_spaces(jacobian, preconditioner)
+    bc_data = _matrix_bc_data(jacobian, bcs)
 
     # Copy existing solution into the function used in the residual and
     # Jacobian
@@ -2019,14 +1993,13 @@ class NonlinearProblem(typing.Generic[_U]):
     def bcs(self) -> tuple[DirichletBC, ...]:
         """Dirichlet boundary conditions applied to the problem.
 
-        Assigning to this property rebuilds the cached constrained dof
-        markers and diagonal rows and re-registers both SNES
-        callbacks, which then reuse them rather than rebuilding on
-        every Newton step. Caching them is safe because the
-        dofs a boundary condition constrains are fixed when it is
-        built. The conditions are copied to an immutable tuple, so
-        modifying the caller's sequence afterwards cannot leave the
-        cache stale.
+        Assigning to this property rebuilds the cached lifting markers
+        and re-registers both SNES callbacks, so the residual reuses
+        the markers rather than rebuilding them on every Newton step.
+        Caching them is safe because the dofs a boundary condition
+        constrains are fixed when it is built. The conditions are
+        copied to an immutable tuple, so modifying the caller's
+        sequence afterwards cannot leave the cache stale.
 
         Boundary condition *values* are not cached: the function or
         constant behind a condition may change between solves, so they
@@ -2037,16 +2010,16 @@ class NonlinearProblem(typing.Generic[_U]):
     @bcs.setter
     def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
         conditions = tuple(bcs) if bcs is not None else ()
-        bc_data = _matrix_bc_data(self.J, conditions)
         jacobian_ctx = {
             "u": self.u,
             "jacobian": self.J,
             "preconditioner": self.preconditioner,
-            "bc_data": bc_data,
+            "bcs": conditions,
         }
-        self.solver.setJacobian(_assemble_jacobian, self.A, self.P_mat, kargs=jacobian_ctx)  # type: ignore[arg-type]
+        self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=jacobian_ctx)  # type: ignore[arg-type]
         # Get potential attributes from the residual to pass to the
         # residual assembly function, e.g. block layout for block assembly.
+        bc_data = _matrix_bc_data(self.J, conditions)
         function_ctx = {
             "u": self.u,
             "residual": self.F,
