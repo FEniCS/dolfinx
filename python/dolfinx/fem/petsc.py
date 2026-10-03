@@ -1724,9 +1724,10 @@ def assemble_jacobian(
     u: Sequence[_Function] | _Function,
     jacobian: Form | Sequence[Sequence[Form]],
     preconditioner: Form | Sequence[Sequence[Form]] | None,
-    bcs: Sequence[DirichletBC],
-    _J_bc_data: _MatrixBCData | None = None,
-    _P_bc_data: _MatrixBCData | None = None,
+    dof_marker0: npt.NDArray[np.int8] | Sequence[npt.NDArray[np.int8]],
+    dof_marker1: npt.NDArray[np.int8] | Sequence[npt.NDArray[np.int8]],
+    diag_rows: npt.NDArray[np.int32] | Sequence[npt.NDArray[np.int32]],
+    diag: float,
 ) -> None:
     """Assemble the Jacobian and preconditioner matrices.
 
@@ -1740,8 +1741,10 @@ def assemble_jacobian(
     Example::
 
         snes = PETSc.SNES().create(mesh.comm)
+        m0, m1, rows = _matrix_bc_data(jacobian, bcs)
         cntx = {"u": u, "jacobian": jacobian,
-            "preconditioner": preconditioner, "bcs": bcs}
+            "preconditioner": preconditioner, "dof_marker0": m0,
+            "dof_marker1": m1, "diag_rows": rows, "diag": 1.0}
         snes.setJacobian(assemble_jacobian, A, P_mat, kargs=cntx)
 
     Note:
@@ -1758,14 +1761,22 @@ def assemble_jacobian(
             Jacobian.
         jacobian: Compiled form of the Jacobian.
         preconditioner: Compiled form of the preconditioner.
-        bcs: List of Dirichlet boundary conditions to apply to the Jacobian
-            and preconditioner matrices.
-        _J_bc_data: Constrained dof markers and diagonal rows for
-            ``jacobian``, as built by the internal ``_matrix_bc_data``.
-            They depend only on ``bcs`` and are rebuilt on every call if
-            not given, so a repeated caller such as
-            :class:`NonlinearProblem` passes them in.
-        _P_bc_data: The same for ``preconditioner``.
+        dof_marker0: Constrained dof markers on the test space of
+            ``jacobian``, or one per block row.
+        dof_marker1: The same for the trial space, or one per block
+            column.
+        diag_rows: Locally owned constrained rows to put ``diag`` on,
+            or one array per block row.
+        diag: Value the constrained diagonal is to take.
+
+    Note:
+        The boundary conditions enter as markers and rows rather than
+        as ``DirichletBC`` objects, so that they are built once rather
+        than on every Newton step. The internal ``_matrix_bc_data``
+        builds them.
+
+        ``preconditioner`` is assembled with the same markers and rows,
+        so it must be over the spaces of ``jacobian``.
     """
     # Copy existing solution into the function used in the residual and
     # Jacobian
@@ -1777,19 +1788,25 @@ def assemble_jacobian(
     _assemble_matrix_petsc(
         J,
         jacobian,
-        *(_matrix_bc_data(jacobian, bcs) if _J_bc_data is None else _J_bc_data),
-        1.0,
+        dof_marker0,
+        dof_marker1,
+        diag_rows,
+        diag,
         _packed_constants(jacobian),
         _packed_coefficients(jacobian),
     )
     J.assemble()
     if preconditioner is not None:
+        # Assembled with the same markers and rows, which requires it
+        # to be over the spaces of the Jacobian
         P_mat.zeroEntries()
         _assemble_matrix_petsc(
             P_mat,
             preconditioner,
-            *(_matrix_bc_data(preconditioner, bcs) if _P_bc_data is None else _P_bc_data),
-            1.0,
+            dof_marker0,
+            dof_marker1,
+            diag_rows,
+            diag,
             _packed_constants(preconditioner),
             _packed_coefficients(preconditioner),
         )
@@ -1982,15 +1999,15 @@ class NonlinearProblem(typing.Generic[_U]):
             lifting_markers = _lifting_bc_markers(self.J, bcs1)
         else:
             lifting_markers = _lifting_bc_markers([self.J], [bcs])
+        dof_marker0, dof_marker1, diag_rows = _matrix_bc_data(self.J, bcs)
         jacobian_ctx = {
             "u": self.u,
             "jacobian": self.J,
             "preconditioner": self.preconditioner,
-            "bcs": bcs,
-            "_J_bc_data": _matrix_bc_data(self.J, bcs),
-            "_P_bc_data": (
-                None if self.preconditioner is None else _matrix_bc_data(self.preconditioner, bcs)
-            ),
+            "dof_marker0": dof_marker0,
+            "dof_marker1": dof_marker1,
+            "diag_rows": diag_rows,
+            "diag": 1.0,
         }
         self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=jacobian_ctx)  # type: ignore[arg-type]
         # Get potential attributes from the residual to pass to the
