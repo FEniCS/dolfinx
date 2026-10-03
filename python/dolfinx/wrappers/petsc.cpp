@@ -10,6 +10,7 @@
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/pycoeff.h"
 #include <algorithm>
+#include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/petsc.h>
 #include <dolfinx/fem/DofMap.h>
@@ -25,6 +26,7 @@
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/array.h>
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
@@ -211,14 +213,15 @@ void petsc_fem_module(nb::module_& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const PetscScalar, nb::ndim<2>,
                                     nb::c_contig>>& coefficients,
-         nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> dof_marker0,
-         nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> dof_marker1,
+         std::array<nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>,
+                    2>
+             dof_markers,
          bool unrolled)
       {
-        std::span<const std::int8_t> _dof_marker0(dof_marker0.data(),
-                                                  dof_marker0.size());
-        std::span<const std::int8_t> _dof_marker1(dof_marker1.data(),
-                                                  dof_marker1.size());
+        std::span<const std::int8_t> _dof_marker0(dof_markers[0].data(),
+                                                  dof_markers[0].size());
+        std::span<const std::int8_t> _dof_marker1(dof_markers[1].data(),
+                                                  dof_markers[1].size());
         if (unrolled)
         {
           auto set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
@@ -252,7 +255,7 @@ void petsc_fem_module(nb::module_& m)
         }
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
-      nb::arg("dof_marker0"), nb::arg("dof_marker1"), nb::arg("unrolled"),
+      nb::arg("dof_markers"), nb::arg("unrolled"),
       "Assemble bilinear form into an existing PETSc matrix");
 }
 
