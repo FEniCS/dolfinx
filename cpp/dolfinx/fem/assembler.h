@@ -13,10 +13,14 @@
 #include "pack.h"
 #include "traits.h"
 #include <algorithm>
+#include <array>
 #include <basix/mdspan.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/common/types.h>
+#include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <format>
 #include <functional>
@@ -189,6 +193,36 @@ std::vector<std::int8_t> bc_dof_markers(
     }
   }
   return markers;
+}
+
+/// @brief Mark the dofs of the test and trial spaces of `a` that the
+/// boundary conditions in `bcs` constrain.
+///
+/// Markers depend only on the space, so a form whose test and trial
+/// spaces are the same marks its dofs once and shares the array
+/// between its rows and its columns. The two returned spans are then
+/// the same array rather than equal copies.
+///
+/// @param[in] a Bilinear form whose spaces are marked.
+/// @param[in] bcs Boundary conditions. Only those defined on a space
+/// or a subspace of it mark that space.
+/// @param[out] storage Backing storage for the returned spans, which
+/// are views into it and are valid for as long as it is.
+/// @return Markers on the test space, indexing the rows, and on the
+/// trial space, indexing the columns.
+template <dolfinx::scalar T, std::floating_point U>
+std::array<std::span<const std::int8_t>, 2> bc_dof_markers_pair(
+    const Form<T, U>& a,
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs,
+    std::array<std::vector<std::int8_t>, 2>& storage)
+{
+  storage[0] = bc_dof_markers(*a.function_spaces().at(0), bcs);
+  std::span<const std::int8_t> marker0(storage[0]);
+  if (a.function_spaces().at(0) == a.function_spaces().at(1))
+    return {marker0, marker0};
+
+  storage[1] = bc_dof_markers(*a.function_spaces().at(1), bcs);
+  return {marker0, std::span<const std::int8_t>(storage[1])};
 }
 
 /// @brief Constrained dof markers and boundary condition values on the
@@ -591,16 +625,13 @@ void assemble_matrix(
   auto coefficients = allocate_coefficient_storage(a);
   pack_coefficients(a, coefficients);
 
-  std::vector<std::int8_t> dof_marker0
-      = impl::bc_dof_markers(*a.function_spaces().at(0), bcs);
-  std::vector<std::int8_t> dof_marker1
-      = impl::bc_dof_markers(*a.function_spaces().at(1), bcs);
+  std::array<std::vector<std::int8_t>, 2> markers;
+  auto [dof_marker0, dof_marker1] = impl::bc_dof_markers_pair(a, bcs, markers);
 
   // Assemble
   assemble_matrix(mat_add, a, std::span<const T>(constants),
-                  make_coefficients_span(coefficients),
-                  std::span<const std::int8_t>(dof_marker0),
-                  std::span<const std::int8_t>(dof_marker1));
+                  make_coefficients_span(coefficients), dof_marker0,
+                  dof_marker1);
 }
 
 /// @brief Assemble bilinear form into a matrix. Matrix must already be
@@ -631,88 +662,40 @@ void assemble_matrix(auto mat_add, const Form<T, U>& a,
                   dof_marker1);
 }
 
-/// @brief Sets a value to the diagonal of a matrix for specified rows.
+/// @brief Set a value on the diagonal of the locally owned rows that a
+/// Dirichlet boundary condition constrains.
 ///
-/// This function is typically called after assembly. The assembly
-/// function zeroes Dirichlet rows and columns. For block matrices, this
-/// function should normally be called only on the diagonal blocks, i.e.
-/// blocks for which the test and trial spaces are the same.
+/// Set only locally owned rows to prevent accumulation when finalising
+/// `A`. A constrained degree-of-freedom that is a ghost on the calling
+/// rank is left untouched here and is set by the rank that owns it, so
+/// no communication is needed from this function.
 ///
-/// @param[in] set_fn The function for setting values to a matrix.
-/// @param[in] rows Row blocks, in local indices, for which to add a
-/// value to the diagonal. May have static or dynamic extent.
-/// @param[in] diagonal Value to add to the diagonal for the specified
-/// rows.
-template <dolfinx::scalar T>
-void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
-                  T diagonal = T(1))
-{
-  std::span<const T, 1> diag_span(&diagonal, 1);
-  for (std::size_t i = 0; i < std::ranges::size(rows); ++i)
-  {
-    std::span<const std::int32_t, 1> row(std::ranges::data(rows) + i, 1);
-    set_fn(row, row, diag_span);
-  }
-}
-
-/// @brief Sets values on the diagonal of a matrix for specified rows,
-/// with a value per row.
+/// This function is typically called after assembly, which zeroes
+/// Dirichlet rows and columns. For block matrices, it should normally
+/// be called only on the diagonal blocks, i.e. blocks for which the
+/// test and trial spaces are the same.
 ///
-/// See the single-value set_diagonal for usage.
+/// @note Convenience overload for callers holding `V` and `bcs` rather
+/// than the row list, which it rebuilds on every call. Library code
+/// should cache the rows across repeated calls and set them with
+/// la::set_diagonal: filter `bcs` by
+/// `V.contains(*bc.function_space())`, concatenate each surviving bc's
+/// owned `dof_indices()` and remove duplicates.
 ///
-/// @param[in] set_fn The function for setting values to a matrix.
-/// @param[in] rows Row blocks, in local indices, for which to set a
-/// value on the diagonal. May have static or dynamic extent.
-/// @param[in] diagonals Diagonal values, with `diagonals[i]` the value
-/// for `rows[i]`. Must have the same length as `rows`.
-template <dolfinx::scalar T>
-void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
-                  std::span<const T> diagonals)
-{
-  if (diagonals.size() != std::ranges::size(rows))
-  {
-    throw std::invalid_argument(
-        std::format("Number of diagonal values ({}) does not match number "
-                    "of rows ({}).",
-                    diagonals.size(), std::ranges::size(rows)));
-  }
-
-  for (std::size_t i = 0; i < diagonals.size(); ++i)
-  {
-    set_diagonal(
-        set_fn,
-        std::span<const std::int32_t, 1>(std::ranges::data(rows) + i, 1),
-        diagonals[i]);
-  }
-}
-
-/// @brief Sets a value to the diagonal of the matrix for rows with a
-/// Dirichlet boundary conditions applied.
-///
-/// This function is typically called after assembly. The assembly
-/// function zeroes Dirichlet rows and columns. This function adds the
-/// value only to rows that are locally owned, and therefore does not
-/// create a need for parallel communication. For block matrices, this
-/// function should normally be called only on the diagonal blocks, i.e.
-/// blocks for which the test and trial spaces are the same.
-///
-/// @note This is a convenience overload for callers that have `V` and
-/// `bcs` on hand but not the combined row list, and it recomputes that
-/// list on every call. It should not be called internally by the
-/// library: an internal caller either already has the rows, or can
-/// compute and cache them itself (filter `bcs` by
-/// `V.contains(*bc.function_space())` and concatenate each surviving
-/// bc's `dof_indices()`) across repeated calls, which this overload
-/// cannot do on a caller's behalf. Call the row-list overload directly
-/// instead.
+/// @note Each row is set exactly once, even where several boundary
+/// conditions constrain the same degree-of-freedom, so `set_fn` may
+/// add rather than insert. Every condition sets the same `diagonal`
+/// value, so their order in `bcs` does not matter here.
 ///
 /// @param[in] set_fn The function for setting values to a matrix.
 /// @param[in] V The function space for the rows and columns of the
 /// matrix. It is used to extract only the Dirichlet boundary conditions
 /// that are define on V or subspaces of V.
-/// @param[in] bcs The Dirichlet boundary conditions.
-/// @param[in] diagonal Value to add to the diagonal for rows with a
-/// boundary condition applied.
+/// @param[in] bcs The Dirichlet boundary conditions. Only conditions
+/// defined on `V` or a subspace of it contribute, and of those only
+/// their locally owned dofs.
+/// @param[in] diagonal Value to set on the diagonal of each owned
+/// constrained row.
 template <dolfinx::scalar T, std::floating_point U>
 void set_diagonal(
     auto set_fn, const FunctionSpace<U>& V,
@@ -720,14 +703,41 @@ void set_diagonal(
     T diagonal = T(1))
 {
   spdlog::debug("Set diagonal");
+
+  // Gather the owned dofs of the contributing conditions first, so that
+  // the concatenation is sized exactly
+  std::vector<std::span<const std::int32_t>> runs;
+  runs.reserve(bcs.size());
+  std::size_t num_rows = 0;
   for (auto& bc : bcs)
   {
     if (V.contains(*bc.get().function_space()))
     {
       const auto [dofs, range] = bc.get().dof_indices();
-      set_diagonal(set_fn, dofs.first(range), diagonal);
+      std::span<const std::int32_t> owned = dofs.first(range);
+      if (!owned.empty())
+      {
+        num_rows += owned.size();
+        runs.push_back(owned);
+      }
     }
   }
+
+  std::vector<std::int32_t> rows;
+  rows.reserve(num_rows);
+  for (std::span<const std::int32_t> owned : runs)
+    rows.insert(rows.end(), owned.begin(), owned.end());
+
+  // A condition's dofs are strictly increasing (a DirichletBC
+  // precondition), so one condition needs no sort. Several give sorted
+  // runs, which a comparison sort handles poorly and which are often
+  // already in order, hence the check before radix sorting.
+  if (runs.size() > 1 and !std::ranges::is_sorted(rows))
+    dolfinx::radix_sort(rows);
+
+  // Overlapping conditions can repeat a row
+  rows.erase(std::ranges::unique(rows).begin(), rows.end());
+  la::set_diagonal(set_fn, rows, diagonal);
 }
 
 } // namespace dolfinx::fem

@@ -23,7 +23,8 @@ class TestPETScSetDiagonal:
         """Test setting a different diagonal value for each row."""
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import create_matrix, set_diagonal
+        from dolfinx.fem.petsc import create_matrix
+        from dolfinx.la.petsc import set_diagonal
 
         mesh = create_unit_square(MPI.COMM_WORLD, 6, 5)
         V = functionspace(mesh, ("Lagrange", 1))

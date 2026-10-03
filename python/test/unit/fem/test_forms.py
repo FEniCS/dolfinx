@@ -72,6 +72,19 @@ def test_extract_forms():
         extract_function_spaces(a, 1)
 
 
+@pytest.mark.parametrize("index", [0, 1])
+def test_extract_repeated_function_spaces(index):
+    """Space extraction accepts a space used by multiple block rows/columns."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    V = functionspace(msh, ("Lagrange", 1))
+    W = V.clone()
+    tests = [TestFunction(V), TestFunction(V if index == 0 else W)]
+    trials = [TrialFunction(V), TrialFunction(V if index == 1 else W)]
+    a = form([[inner(u, v) * dx for u in trials] for v in tests])
+    assert extract_function_spaces(a, index) == [V, V]
+    assert extract_function_spaces(a, 1 - index) == [V, W]
+
+
 def test_incorrect_element():
     """Test that an error is raised if an incorrect element is used."""
     msh = create_unit_square(MPI.COMM_WORLD, 32, 31)

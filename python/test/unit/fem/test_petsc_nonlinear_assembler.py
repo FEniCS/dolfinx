@@ -329,7 +329,12 @@ class TestNLSPETSc:
             x = fem_petsc.create_vector([V0, V1], "nest")
             ctx_func = {"u": [u, p], "residual": residual, "jacobian": jacobian, "bcs": bcs}
             snes.setFunction(fem_petsc.assemble_residual, b, kargs=ctx_func)
-            ctx_jac = {"u": [u, p], "jacobian": jacobian, "preconditioner": None, "bcs": bcs}
+            ctx_jac = {
+                "u": [u, p],
+                "jacobian": jacobian,
+                "preconditioner": None,
+                "bcs": bcs,
+            }
             snes.setJacobian(fem_petsc.assemble_jacobian, A, None, kargs=ctx_jac)
 
             nested_IS = snes.getJacobian()[0].getNestISs()
