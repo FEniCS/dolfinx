@@ -632,6 +632,7 @@ def _assemble_matrix_nest(
                     diag,
                     const,
                     coeff,
+                    False,
                 )
             elif i == j and dof_marker0[i].size > 0:
                 raise RuntimeError(
@@ -701,26 +702,20 @@ def _assemble_matrix_block(
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
+                # A sub-matrix of a blocked matrix is addressed in
+                # scalar indices, hence the block-expanded insertion
                 Asub = A.getLocalSubMatrix(is0[i], is1[j])
-                _cpp.fem.petsc.assemble_matrix(
+                _assemble_matrix_single(
                     Asub,
-                    a_sub._cpp_object,  # type: ignore[arg-type]
-                    constants[i][j],
-                    coeffs[i][j],  # type: ignore[index]
+                    a_sub,
                     dof_marker0[i],
                     dof_marker1[j],
+                    diag_rows[i],
+                    diag,
+                    constants[i][j],
+                    coeffs[i][j],  # type: ignore[index]
                     True,
                 )
-                # Assembly zeroed the constrained rows, so adding
-                # sets the diagonal (and needs no flush)
-                V0, V1 = a_sub.function_spaces
-                if V0._cpp_object is V1._cpp_object:
-                    dolfinx.la.petsc.set_diagonal(
-                        Asub,
-                        diag_rows[i],
-                        diag,
-                        PETSc.InsertMode.ADD,  # type: ignore[arg-type]
-                    )
                 A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
             elif i == j and dof_marker0[i].size > 0:
                 raise RuntimeError(
@@ -740,6 +735,7 @@ def _assemble_matrix_single(
     diag: float,
     constants: npt.NDArray,
     coeffs: dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray],
+    unrolled: bool,
 ) -> PETSc.Mat:
     """Assemble a bilinear form into a matrix, given constrained dofs.
 
@@ -754,6 +750,11 @@ def _assemble_matrix_single(
         diag: Value the constrained diagonal is to take.
         constants: Packed constants of the form.
         coeffs: Packed coefficients of the form.
+        unrolled: Insert with block-expanded indices. Needed for a
+            sub-matrix of a blocked matrix, which
+            ``Mat.getLocalSubMatrix`` addresses in scalar indices while
+            the dofmap stays blocked. ``False`` elsewhere, where the
+            cheaper non-blocked or blocked insertion applies.
 
     Returns:
         ``A``, for convenience.
@@ -766,7 +767,7 @@ def _assemble_matrix_single(
         coeffs,  # type: ignore[arg-type]
         dof_marker0,  # type: ignore[arg-type]
         dof_marker1,  # type: ignore[arg-type]
-        False,
+        unrolled,
     )
     # Assembly zeroed the constrained rows, so adding sets the
     # diagonal (and needs no flush)
@@ -837,7 +838,7 @@ def _assemble_matrix_petsc(
         if coeffs is None:
             coeffs = pack_coefficients(a)
         return _assemble_matrix_single(
-            A, a, dof_marker0, dof_marker1, diag_rows, diag, constants, coeffs
+            A, a, dof_marker0, dof_marker1, diag_rows, diag, constants, coeffs, False
         )
 
 
