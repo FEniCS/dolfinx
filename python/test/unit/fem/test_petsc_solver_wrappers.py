@@ -333,7 +333,14 @@ class TestPETScSolverWrappers:
         else:
             pytest.skip("No external solvers available in parallel")
 
-        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=PETSc.RealType)
+        # Dof coordinates are reference points pushed through the geometry
+        # map, so they carry roundoff of the order of the cell size times
+        # the geometry type's epsilon. On a mesh this coarse in single
+        # precision that roundoff reaches 1e-8, enough for a predicate
+        # locating the boundary to disagree between the owner of a dof and
+        # a process that ghosts it, which leaves the condition off the rows
+        # of the processes that do not see it.
+        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 16, 16, dtype=PETSc.RealType)
         V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
         spaces = [V] if kind is None else [V, V.clone()]
         eps = 1000 * np.finfo(PETSc.RealType).eps
@@ -363,8 +370,12 @@ class TestPETScSolverWrappers:
                 petsc_options=options,
             )
 
-        left = dolfinx.fem.locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0))
-        right = dolfinx.fem.locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 1.0))
+        # Compared against a tolerance well inside a cell, rather than with
+        # np.isclose, whose default atol of 1e-8 is all that is left when
+        # the target is zero and is of the order of the roundoff above.
+        tol = 1.0e-3
+        left = dolfinx.fem.locate_dofs_geometrical(V, lambda x: x[0] < tol)
+        right = dolfinx.fem.locate_dofs_geometrical(V, lambda x: x[0] > 1.0 - tol)
         g = dolfinx.fem.Constant(msh, PETSc.ScalarType(5))
         bc_left = dolfinx.fem.dirichletbc(g, left, V)
         bc_right = dolfinx.fem.dirichletbc(PETSc.ScalarType(7), right, V)
