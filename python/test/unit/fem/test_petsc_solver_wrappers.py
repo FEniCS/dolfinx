@@ -15,6 +15,17 @@ import dolfinx
 import ufl
 
 
+def close(comm, a, b, eps) -> bool:
+    """Whether ``a`` and ``b`` agree to ``eps`` on every process.
+
+    A comparison of process-local values can hold on one process and
+    not on another, which leaves the processes disagreeing on whether
+    the test failed. Where a collective call follows, the processes
+    that carry on then hang waiting for the one that left.
+    """
+    return comm.allreduce(bool(np.allclose(a, b, atol=eps, rtol=eps)), op=MPI.LAND)
+
+
 @pytest.mark.petsc4py
 class TestPETScSolverWrappers:
     """Test PETSc solver wrappers for linear and nonlinear problems."""
@@ -89,10 +100,10 @@ class TestPETScSolverWrappers:
         nonlinear_problem.solve()
         assert nonlinear_problem.solver.getConvergedReason() > 0
 
-        assert np.allclose(u_lin.x.array, u_nonlin.x.array, atol=eps, rtol=eps)
+        assert close(msh.comm, u_lin.x.array, u_nonlin.x.array, eps)
 
         with u_lin.x.petsc_vec.localForm() as _u_lin, u_nonlin.x.petsc_vec.localForm() as _u_nonlin:
-            assert np.allclose(_u_lin.array_r, _u_nonlin.array_r, atol=eps, rtol=eps)
+            assert close(msh.comm, _u_lin.array_r, _u_nonlin.array_r, eps)
 
     @pytest.mark.parametrize(
         "mode", [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet]
@@ -283,23 +294,28 @@ class TestPETScSolverWrappers:
 
         eps = 1000 * np.finfo(dolfinx.default_scalar_type).eps
 
-        # bc_left is applied last, so it wins on the shared dofs
+        # Every solve before the first comparison, so that no collective
+        # call follows an assertion
         uh = solve([bc_all, bc_left], "overlap")
-        assert np.allclose(uh.x.array[dofs_left], g_left.x.array[dofs_left], atol=eps, rtol=eps)
-        only_all = np.setdiff1d(dofs_all, dofs_left)
-        assert np.allclose(uh.x.array[only_all], g_all.x.array[only_all], atol=eps, rtol=eps)
         uh_ref = solve([bc_ref], "resolved")
-        assert np.allclose(uh.x.array, uh_ref.x.array, atol=eps, rtol=eps)
+        uh_rev = solve([bc_left, bc_all], "reversed")
+        uh_all = solve([bc_all], "all")
+
+        # bc_left is applied last, so it wins on the shared dofs
+        assert close(msh.comm, uh.x.array[dofs_left], g_left.x.array[dofs_left], eps)
+        only_all = np.setdiff1d(dofs_all, dofs_left)
+        assert close(msh.comm, uh.x.array[only_all], g_all.x.array[only_all], eps)
+        assert close(msh.comm, uh.x.array, uh_ref.x.array, eps)
 
         # Reversing the order makes bc_all win everywhere, which is the
         # same system as applying bc_all alone
-        uh_rev = solve([bc_left, bc_all], "reversed")
-        assert np.allclose(uh_rev.x.array[dofs_all], g_all.x.array[dofs_all], atol=eps, rtol=eps)
-        uh_all = solve([bc_all], "all")
-        assert np.allclose(uh_rev.x.array, uh_all.x.array, atol=eps, rtol=eps)
+        assert close(msh.comm, uh_rev.x.array[dofs_all], g_all.x.array[dofs_all], eps)
+        assert close(msh.comm, uh_rev.x.array, uh_all.x.array, eps)
 
-        # The two orderings really do give different solutions
-        assert not np.allclose(uh.x.array, uh_rev.x.array, atol=eps, rtol=eps)
+        # The two orderings really do give different solutions, which is
+        # a statement about the whole solution and not one process's
+        # share of it
+        assert not close(msh.comm, uh.x.array, uh_rev.x.array, eps)
 
     @pytest.mark.parametrize("kind", [None, "mpi", "nest"])
     def test_nonlinear_problem_bc_updates(self, kind):
@@ -368,7 +384,7 @@ class TestPETScSolverWrappers:
                 actual = [problem.u] if kind is None else problem.u
                 expected = [reference.u] if kind is None else reference.u
                 for u, u_ref in zip(actual, expected, strict=True):
-                    assert np.allclose(u.x.array, u_ref.x.array, atol=eps, rtol=eps)
+                    assert close(msh.comm, u.x.array, u_ref.x.array, eps)
 
     @pytest.mark.parametrize("blocked", [False, True])
     def test_nonlinear_preconditioner_spaces(self, blocked):
