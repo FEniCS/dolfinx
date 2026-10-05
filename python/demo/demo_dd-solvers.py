@@ -19,6 +19,9 @@
 #   subdomain.
 # - Attach the rigid body modes that BDDC needs to build an effective
 #   coarse space for elasticity.
+# - Solve the same elasticity problem with PCHPDDM, an overlapping
+#   Schwarz method whose coarse space is computed from local
+#   eigenproblems.
 #
 # ```{admonition} Download sources
 # :class: download
@@ -226,6 +229,53 @@ def solve_poisson(msh: mesh.Mesh) -> tuple[fem.Function, int, int]:
 # subdomain problems; without it those problems keep their rigid body
 # modes and the factorisation fails.
 
+bddc_options: dict[str, str | int | bool] = {
+    "pc_type": "bddc",
+    "pc_bddc_use_change_of_basis": True,
+    "pc_bddc_switch_static": single_precision,
+}
+
+# PCHPDDM, PETSc's interface to the HPDDM library, takes a different
+# route. It is an overlapping Schwarz method: each subdomain is extended
+# by one layer of degrees of freedom and the preconditioner solves on
+# every extended subdomain. Its coarse space comes from GenEO: each
+# process solves a generalised eigenproblem built from its local
+# Neumann matrix, and the eigenvectors with the smallest eigenvalues,
+# which include the rigid body modes of a subdomain the Dirichlet
+# condition does not touch, span the coarse space. No near null space
+# or primal constraints are needed. The Neumann matrices are the local
+# matrices $A_{i}$ of the `MATIS` operator, so the same operator serves
+# both methods.
+#
+# The options select:
+#
+# - `pc_hpddm_levels_1_pc_type` and `pc_hpddm_levels_1_pc_asm_overlap`:
+#   additive Schwarz on subdomains overlapping by one layer.
+# - `pc_hpddm_levels_1_sub_pc_type`: Cholesky factorisation for the
+#   subdomain solves.
+# - `pc_hpddm_levels_1_eps_nev`: the number of eigenvectors each
+#   subdomain contributes, which also switches the coarse level on.
+# - `pc_hpddm_levels_1_st_pc_factor_shift_type`: a shift for the
+#   factorisation inside the eigensolver, as the Neumann matrix of a
+#   floating subdomain is singular.
+# - `pc_hpddm_levels_1_pc_asm_type` and `pc_hpddm_coarse_correction`:
+#   symmetric variants of the Schwarz method and of the coarse
+#   correction, which CG requires.
+#
+# PCHPDDM is available only when PETSc is configured with HPDDM and
+# SLEPc.
+
+hpddm_options: dict[str, str | int | bool] = {
+    "pc_type": "hpddm",
+    "pc_hpddm_levels_1_pc_type": "asm",
+    "pc_hpddm_levels_1_pc_asm_overlap": 1,
+    "pc_hpddm_levels_1_sub_pc_type": "cholesky",
+    "pc_hpddm_levels_1_eps_nev": 10,
+    "pc_hpddm_levels_1_st_pc_factor_shift_type": "inblocks",
+    "pc_hpddm_levels_1_pc_asm_type": "basic",
+    "pc_hpddm_coarse_correction": "balanced",
+}
+
 
 def rigid_body_modes(V: fem.FunctionSpace) -> PETSc.NullSpace:
     """Build the rigid body modes of a displacement space.
@@ -248,14 +298,19 @@ def rigid_body_modes(V: fem.FunctionSpace) -> PETSc.NullSpace:
 # itself, rather than through
 # :class:`~dolfinx.fem.petsc.LinearProblem`, so that the near null
 # space can be attached to the matrix and the solver configured
-# directly.
+# directly. It solves with CG and the preconditioner described by
+# `pc_options`.
 
 
-def solve_elasticity(msh: mesh.Mesh) -> tuple[fem.Function, int, int]:
-    """Solve the elasticity problem on ``msh`` using BDDC.
+def solve_elasticity(
+    msh: mesh.Mesh, pc_options: dict[str, str | int | bool]
+) -> tuple[fem.Function, int, int]:
+    """Solve the elasticity problem on ``msh`` using CG.
 
     Args:
         msh: Mesh, which must have been built without ghost cells.
+        pc_options: PETSc options that select and configure the
+            preconditioner, without a prefix.
 
     Returns:
         The displacement, the number of Krylov iterations, and the
@@ -302,28 +357,25 @@ def solve_elasticity(msh: mesh.Mesh) -> tuple[fem.Function, int, int]:
     ksp.setOperators(A)
     ksp.setType("cg")
     ksp.setTolerances(rtol=rtol, max_it=100)
-    ksp.getPC().setType("bddc")
 
-    # Set under a prefix of this solver's own, so that nothing is left
-    # in the global options database for the next solve to inherit
-    prefix = f"demo_dd_elasticity_{V.dofmap.index_map.size_global}_"
+    # Set under a prefix of this solver's own. PCHPDDM reads some of its
+    # options only when it is first applied, so they are removed from
+    # the global options database after the solve rather than before.
+    pc_type = pc_options["pc_type"]
+    prefix = f"demo_dd_elasticity_{pc_type}_{V.dofmap.index_map.size_global}_"
     ksp.setOptionsPrefix(prefix)
-    options = {
-        "pc_bddc_use_change_of_basis": True,
-        "pc_bddc_switch_static": single_precision,
-    }
     opts = PETSc.Options(prefix)
-    for k, v in options.items():
+    for k, v in pc_options.items():
         opts[k] = v  # type: ignore[index]
     ksp.setFromOptions()
-    for k in options:
-        del opts[k]  # type: ignore[arg-type]
 
     uh = fem.Function(V, name="u", dtype=dtype)
     ksp.solve(b, uh.x.petsc_vec)
+    for k in pc_options:
+        del opts[k]  # type: ignore[arg-type]
     uh.x.scatter_forward()
     if ksp.getConvergedReason() < 0:  # type: ignore[operator]
-        raise RuntimeError(f"Elasticity solve failed: {ksp.getConvergedReason()}")
+        raise RuntimeError(f"Elasticity solve ({pc_type}) failed: {ksp.getConvergedReason()}")
 
     its = ksp.getIterationNumber()
     num_shared = num_shared_dofs(V, dofs)
@@ -340,10 +392,18 @@ def solve_elasticity(msh: mesh.Mesh) -> tuple[fem.Function, int, int]:
 # The number of BDDC iterations is close to independent of the mesh
 # size, so refining the mesh does not slow convergence the way it would
 # for a one-level method. Solving on a sequence of meshes shows this.
-# Each mesh is built once and handed to both solvers.
+# The PCHPDDM iteration count grows slowly under refinement, as the
+# overlap stays one layer thick while the subdomains gain layers.
+# Each mesh is built once and handed to every solver. The elasticity
+# problem is also solved with PCHPDDM when PETSc provides it and there
+# is more than one process; with one there is no decomposition.
 
 # +
 comm = MPI.COMM_WORLD
+elasticity_pcs = [bddc_options]
+if PETSc.Sys.hasExternalPackage("hpddm") and comm.size > 1:
+    elasticity_pcs.append(hpddm_options)
+
 for n in (32, 64):
     # BDDC requires one non-overlapping subdomain per process, so the
     # mesh is built without ghost cells
@@ -364,17 +424,19 @@ for n in (32, 64):
             f"L2 error = {l2_error:.3e}, shared Dirichlet dofs = {shared}"
         )
 
-    uh, its, shared = solve_elasticity(msh)
-    V = uh.function_space
-    energy = fem.form(0.5 * ufl.inner(uh, uh) * ufl.dx, dtype=dtype)
-    norm = np.sqrt(comm.allreduce(fem.assemble_scalar(energy), MPI.SUM).real)
-    num_dofs = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
-    shared = comm.allreduce(shared, MPI.SUM)
-    if comm.rank == 0:
-        print(
-            f"Elasticity, n = {n:>3d}: {num_dofs:>7d} dofs, {its:>3d} CG iterations, "
-            f"|u|_L2 = {norm:.3e}, shared Dirichlet dofs = {shared}"
-        )
+    for pc_options in elasticity_pcs:
+        uh, its, shared = solve_elasticity(msh, pc_options)
+        V = uh.function_space
+        energy = fem.form(0.5 * ufl.inner(uh, uh) * ufl.dx, dtype=dtype)
+        norm = np.sqrt(comm.allreduce(fem.assemble_scalar(energy), MPI.SUM).real)
+        num_dofs = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
+        shared = comm.allreduce(shared, MPI.SUM)
+        if comm.rank == 0:
+            pc_name = str(pc_options["pc_type"]).upper()
+            print(
+                f"Elasticity, n = {n:>3d}: {num_dofs:>7d} dofs, {its:>3d} CG iterations "
+                f"({pc_name}), |u|_L2 = {norm:.3e}, shared Dirichlet dofs = {shared}"
+            )
 # -
 
 # With more than one process, `shared Dirichlet dofs` is non-zero: those
