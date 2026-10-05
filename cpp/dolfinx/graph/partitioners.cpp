@@ -286,6 +286,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     if (err != 0)
       throw std::runtime_error("Error initializing SCOTCH graph");
 
+    // Handle node weights
     std::vector<SCOTCH_Num> vload;
     if (node_weights)
     {
@@ -294,6 +295,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       std::ranges::copy(*node_weights, vload.begin());
     }
 
+    // Handle edge weights
     std::vector<SCOTCH_Num> edload;
     if (edge_weights)
     {
