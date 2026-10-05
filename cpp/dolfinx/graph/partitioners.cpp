@@ -273,9 +273,9 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 
     const std::size_t edgelocnbr = graph.array().size();
 
-    // guarantee no nullptr
-    std::vector<SCOTCH_Num> edgeloctab(std::max<std::size_t>(edgelocnbr, 1));
-    std::ranges::copy(graph.array(), edgeloctab.begin());
+    std::vector<SCOTCH_Num> edgeloctab(graph.array().begin(),
+                                       graph.array().end());
+    edgeloctab.reserve(1); // guarantee no nullptr
 
     std::vector<SCOTCH_Num> vertloctab(graph.offsets().begin(),
                                        graph.offsets().end());
@@ -290,18 +290,16 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     std::vector<SCOTCH_Num> vload;
     if (node_weights)
     {
-      // guarantee no nullptr
-      vload.resize(std::max<std::size_t>(node_weights->size(), 1));
-      std::ranges::copy(*node_weights, vload.begin());
+      vload.assign(node_weights->begin(), node_weights->end());
+      vload.reserve(1); // guarantee no nullptr
     }
 
     // Handle edge weights
     std::vector<SCOTCH_Num> edload;
     if (edge_weights)
     {
-      // guarantee no nullptr
-      edload.resize(std::max<std::size_t>(edge_weights->size(), 1));
-      std::ranges::copy(*edge_weights, edload.begin());
+      edload.assign(edge_weights->begin(), edge_weights->end());
+      edload.reserve(1); // guarantee no nullptr
     }
 
     // Set seed and reset SCOTCH random number generator to produce
