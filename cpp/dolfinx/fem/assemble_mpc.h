@@ -50,7 +50,11 @@ void assemble_matrix_mpc(
         "Non-matching FunctionSpace on cols for Form and MPC");
   }
 
-  // Check that DirichletBCs and MPC constraints do not conflict
+  // Check that DirichletBCs and MPC constraints do not conflict.
+  // A dof that is both Dirichlet-constrained and MPC-constrained leads to
+  // undefined behaviour: apply_lifting modifies the MPC-zeroed RHS row and
+  // apply_mpc_solution overwrites the BC value post-solve.  Reject early
+  // rather than silently producing wrong answers.
   for (auto bc : bcs)
   {
     if (bc.get().function_space().get() != mpc_col.V().get())
@@ -58,8 +62,16 @@ void assemble_matrix_mpc(
     for (std::int32_t dof : bc.get().dof_indices().first)
     {
       spdlog::debug("BC dof {}", dof);
-      if (mpc_col.constraints().num_links(dof) != 0)
-        throw std::runtime_error("Clashing MPC constraint and DirichletBC");
+      if (mpc_row.constraints().num_links(dof) != 0
+          or mpc_col.constraints().num_links(dof) != 0)
+      {
+        throw std::runtime_error(
+            "DirichletBC and MPC constraint on the same dof ("
+            + std::to_string(dof)
+            + ") — this combination is not supported. Apply the Dirichlet "
+              "condition to a reference dof, or eliminate the constrained "
+              "dof before constructing the MPC.");
+      }
     }
   }
 
