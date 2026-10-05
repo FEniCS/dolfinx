@@ -19,9 +19,8 @@
 #   subdomain.
 # - Attach the rigid body modes that BDDC needs to build an effective
 #   coarse space for elasticity.
-# - Solve the same elasticity problem with PCHPDDM, an algebraic
-#   overlapping Schwarz method whose coarse space is computed from
-#   local eigenproblems.
+# - Solve both problems with PCHPDDM, an algebraic overlapping Schwarz
+#   method whose coarse space is computed from local eigenproblems.
 #
 # ```{admonition} Download sources
 # :class: download
@@ -154,6 +153,12 @@ PCOptions = dict[str, str | int | bool]
 # :func:`~dolfinx.common.num_sharing_ranks` answers directly.
 
 
+def norm_L2(v) -> float:
+    """L2 norm of a UFL expression over the whole mesh."""
+    form = fem.form(ufl.inner(v, v) * ufl.dx, dtype=dtype)
+    return np.sqrt(form.mesh.comm.allreduce(fem.assemble_scalar(form), MPI.SUM).real)
+
+
 def num_shared_dofs(V: fem.FunctionSpace, dofs: np.ndarray) -> int:
     """Count the entries of ``dofs`` held by more than one process.
 
@@ -264,10 +269,10 @@ bddc_options: PCOptions = {
 #   `pc_hpddm_levels_1_eps_threshold_relative`: at most `eps_nev`
 #   eigenvectors per subdomain, filtered by a relative threshold on
 #   their eigenvalues. More eigenvectors give a stronger but costlier
-#   coarse space, so the vector-valued elasticity problem, with twice
-#   the degrees of freedom per subdomain, asks for more than the scalar
-#   Poisson one. Asking for more than a subdomain can supply makes the
-#   eigensolver fail.
+#   coarse space. A subdomain cannot supply more modes than it has
+#   degrees of freedom, and asking for more makes the eigensolver fail,
+#   so the vector-valued elasticity problem can afford a larger request
+#   than the scalar Poisson one on the same mesh.
 # - `pc_hpddm_levels_1_st_pc_type` and `pc_hpddm_levels_1_eps_pc_type`:
 #   Cholesky factorisations inside the eigensolver.
 # - `pc_hpddm_levels_1_pc_type` and `pc_hpddm_levels_1_pc_asm_overlap`:
@@ -316,16 +321,18 @@ def rigid_body_modes(V: fem.FunctionSpace) -> PETSc.NullSpace:
     num_owned = V.dofmap.index_map.size_local
     x = V.tabulate_dof_coordinates()[:num_owned, :gdim].copy()
     coords = PETSc.Vec().createWithArray(x.ravel(), bsize=gdim, comm=V.mesh.comm)  # type: ignore[arg-type]
-    return PETSc.NullSpace().createRigidBody(coords)
+    modes = PETSc.NullSpace().createRigidBody(coords)
+    coords.destroy()
+    return modes
 
 
 # `solve_elasticity` assembles the operator and the right-hand side
-# itself, rather than through
-# :class:`~dolfinx.fem.petsc.LinearProblem`, so that the near null
-# space can be attached to the matrix and the solver configured
-# directly. It solves with CG and the preconditioner described by
-# `pc_options`, on a matrix of the kind that preconditioner needs:
-# `MATIS` for BDDC, the default assembled matrix for PCHPDDM.
+# itself and drives a `PETSc.KSP` directly, rather than going through
+# :class:`~dolfinx.fem.petsc.LinearProblem` as the Poisson solver does,
+# to show what that class does on your behalf. It solves with CG and
+# the preconditioner described by `pc_options`, on a matrix of the kind
+# that preconditioner needs: `MATIS` for BDDC, the default assembled
+# matrix for PCHPDDM.
 
 
 def solve_elasticity(
@@ -381,45 +388,47 @@ def solve_elasticity(
     # finds them itself, from the eigenproblems it solves on each
     # subdomain, so they are neither built nor attached for it.
     pc_type = pc_options["pc_type"]
-    near_nullspace = rigid_body_modes(V) if pc_type == "bddc" else None
-    if near_nullspace is not None:
-        A.setNearNullSpace(near_nullspace)
+    if pc_type == "bddc":
+        # PETSc holds a reference once the modes are attached, so this
+        # side keeps none
+        modes = rigid_body_modes(V)
+        A.setNearNullSpace(modes)
+        modes.destroy()
     A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
+    # Everything, Krylov method included, goes through the options
+    # database under a prefix of this solver's own, so that nothing is
+    # left behind for the next solve to inherit
+    options: PCOptions = {
+        "ksp_type": "cg",
+        "ksp_rtol": rtol,
+        "ksp_max_it": 100,
+        "ksp_error_if_not_converged": True,
+        **pc_options,
+    }
+    prefix = f"demo_dd_elasticity_{pc_type}_{V.dofmap.index_map.size_global}_"
     ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
     ksp.setOperators(A)
-    ksp.setType("cg")
-    ksp.setTolerances(rtol=rtol, max_it=100)
-
-    # Under a prefix of this solver's own, so that nothing is left in
-    # the global options database for the next solve to inherit. They
-    # are removed after the solve rather than before: PCHPDDM reads
-    # some of its options when it is first applied, not at
-    # setFromOptions, and loses them if they are cleared earlier.
-    prefix = f"demo_dd_elasticity_{pc_type}_{V.dofmap.index_map.size_global}_"
     ksp.setOptionsPrefix(prefix)
     opts = PETSc.Options(prefix)
-    for key, value in pc_options.items():
+    for key, value in options.items():
         opts[key] = value  # type: ignore[index]
     ksp.setFromOptions()
 
     uh = fem.Function(V, name="u", dtype=dtype)
     ksp.solve(b, uh.x.petsc_vec)
-    for key in pc_options:
+
+    # Cleared after the solve, not before: PCHPDDM reads some of its
+    # options when it is first applied rather than at setFromOptions
+    for key in options:
         del opts[key]  # type: ignore[arg-type]
     uh.x.scatter_forward()
-    if ksp.getConvergedReason() < 0:  # type: ignore[operator]
-        raise RuntimeError(f"Elasticity solve ({pc_type}) failed: {ksp.getConvergedReason()}")
 
     its = ksp.getIterationNumber()
     num_shared = num_shared_dofs(V, dofs)
     ksp.destroy()
     A.destroy()
     b.destroy()
-    # The modes hold the vectors they were built from, so releasing
-    # them here keeps the solve free of residue
-    if near_nullspace is not None:
-        near_nullspace.destroy()
     return uh, its, num_shared
 
 
@@ -430,7 +439,21 @@ def solve_elasticity(
 # problems are also solved with PCHPDDM when PETSc provides it and
 # there is more than one process; with one there is no decomposition.
 
+
 # +
+def report(label, n, uh, its, shared, pc_options, metric, value) -> None:
+    """Print one solver's result, on rank 0 only."""
+    V = uh.function_space
+    num_dofs = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
+    shared = V.mesh.comm.allreduce(shared, MPI.SUM)
+    if V.mesh.comm.rank == 0:
+        pc_name = str(pc_options["pc_type"]).upper()
+        print(
+            f"{label}, n = {n:>3d}: {num_dofs:>7d} dofs, {its:>3d} CG iterations "
+            f"({pc_name}), {metric} = {value:.3e}, shared Dirichlet dofs = {shared}"
+        )
+
+
 comm = MPI.COMM_WORLD
 poisson_pcs: list[tuple[str | None, PCOptions]] = [("is", bddc_options)]
 elasticity_pcs: list[tuple[str | None, PCOptions]] = [("is", bddc_options)]
@@ -449,30 +472,11 @@ for n in (32, 64):
     u_exact = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
     for kind, pc_options in poisson_pcs:
         uh, its, shared = solve_poisson(msh, kind, pc_options)
-        error = fem.form(ufl.inner(uh - u_exact, uh - u_exact) * ufl.dx, dtype=dtype)
-        l2_error = np.sqrt(comm.allreduce(fem.assemble_scalar(error), MPI.SUM).real)
-        num_dofs = uh.function_space.dofmap.index_map.size_global
-        shared = comm.allreduce(shared, MPI.SUM)
-        if comm.rank == 0:
-            pc_name = str(pc_options["pc_type"]).upper()
-            print(
-                f"Poisson,    n = {n:>3d}: {num_dofs:>7d} dofs, {its:>3d} CG iterations "
-                f"({pc_name}), L2 error = {l2_error:.3e}, shared Dirichlet dofs = {shared}"
-            )
+        report("Poisson   ", n, uh, its, shared, pc_options, "L2 error", norm_L2(uh - u_exact))
 
     for kind, pc_options in elasticity_pcs:
         uh, its, shared = solve_elasticity(msh, kind, pc_options)
-        V = uh.function_space
-        energy = fem.form(0.5 * ufl.inner(uh, uh) * ufl.dx, dtype=dtype)
-        norm = np.sqrt(comm.allreduce(fem.assemble_scalar(energy), MPI.SUM).real)
-        num_dofs = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
-        shared = comm.allreduce(shared, MPI.SUM)
-        if comm.rank == 0:
-            pc_name = str(pc_options["pc_type"]).upper()
-            print(
-                f"Elasticity, n = {n:>3d}: {num_dofs:>7d} dofs, {its:>3d} CG iterations "
-                f"({pc_name}), |u|_L2 = {norm:.3e}, shared Dirichlet dofs = {shared}"
-            )
+        report("Elasticity", n, uh, its, shared, pc_options, "|u|_L2", norm_L2(uh))
 # -
 
 # With more than one process, `shared Dirichlet dofs` is non-zero: those
