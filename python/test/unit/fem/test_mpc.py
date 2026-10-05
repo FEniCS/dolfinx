@@ -95,24 +95,27 @@ def test_mpc():
     f.interpolate(lambda x: 50 * np.sin(np.pi * x[1] * 10) * np.exp(-30 * (x[0] - 0.05) ** 2))
     L = form(inner(f, v) * dx)
 
+    # Assemble RHS with MPC transformation:
+    #   1. scatter_rev so constrained dof entries are complete from ghost contributions
+    #   2. apply_mpc_vector: b[ref] += c * b[constrained], b[constrained] = 0  (P^T step)
+    #   3. scatter_rev to accumulate P^T ghost writes back to owning ranks
+    #   4. apply_lifting and set Dirichlet BC values
     b = dolfinx.fem.assemble_vector(L)
+    b.scatter_reverse(dolfinx.la.InsertMode.add)
+    dolfinx.cpp.fem.apply_mpc_vector(b.array, mpc)
+    b.scatter_reverse(dolfinx.la.InsertMode.add)
     dolfinx.fem.apply_lifting(b.array, [a], [[bc]])
     b.scatter_reverse(dolfinx.la.InsertMode.add)
     bc.set(b.array)
-    offsets, _, _ = mpc.constraints()
-    for i in range(V_new.dofmap.index_map.size_local):
-        nc = offsets[i + 1] - offsets[i]
-        if nc > 0:
-            b.array[i] = 0.0
 
     # Solve
     u = Function(V_new)
     solver.solve(b, u.x)
 
-    xdmf = dolfinx.io.XDMFFile(mesh.comm, "demo.xdmf", "w")
-    xdmf.write_mesh(mesh)
-    u.name = "u"
-    xdmf.write_function(u)
+    # Recover constrained dof values: u[constrained] = sum c_k * u[ref_k].
+    # scatter_fwd first so reference ghost dof values are current.
+    u.x.scatter_forward()
+    dolfinx.cpp.fem.apply_mpc_solution(u.x.array, mpc)
 
     # Verify periodicity: u on left edge should equal u on right edge at matching y
     u_arr = u.x.array

@@ -51,31 +51,14 @@ print(
 )
 
 
-ltog = V.dofmap.index_map.local_to_global(dofsR)
-globalR = np.concatenate(mesh.comm.allgather(ltog))
-globalR_coords = np.concatenate(mesh.comm.allgather(coords[dofsR]))
-
-
-def cfun(p0, p1):
-    """Find matching dofs on left and right side of the mesh.
-
-    The right side is shifted by 1.0 in x-direction.
-    """
-    p1t = p1 + np.array([-1.0, 0, 0.0])
-    if np.linalg.norm(p0 - p1t) < 1e-9:
-        return True
-    return False
+globalL = V.dofmap.index_map.local_to_global(dofsL)
 
 
 # Creating mapping of left side to right side dofs
 # using local index for left, global for right.
 map_LR = {}
-for dofL in dofsL:
-    xL = coords[dofL]
-    for dofR, xR in zip(globalR, globalR_coords):
-        if cfun(xL, xR):
-            map_LR[int(dofL) * 2] = (int(dofR * 2), 1.0)
-            map_LR[int(dofL) * 2 + 1] = (int(dofR * 2 + 1), -1.0)
+for dofL,refL in zip(dofsL, globalL):
+    map_LR[int(dofL) * 2] = (int(refL * 2 + 1), 1.0)
 
 print(map_LR)
 
@@ -83,10 +66,11 @@ print(map_LR)
 local_dofs = np.array([k for k in map_LR.keys()], dtype=np.int32)
 global_dofs = [np.array([map_LR[k][0]], dtype=np.int64) for k in map_LR.keys()]
 global_coeffs = [np.array([map_LR[k][1]], dtype=np.float64) for k in map_LR.keys()]
+consts = np.zeros_like(local_dofs, dtype=np.float64)
 
 print(local_dofs)
 
-mpc = dolfinx.cpp.fem.MPC_float64(V._cpp_object, local_dofs, global_dofs, global_coeffs)
+mpc = dolfinx.cpp.fem.MPC_float64(V._cpp_object, local_dofs, global_dofs, global_coeffs, consts)
 for cell in mpc.cells():
     dofs = mpc.V().dofmap.cell_dofs(cell)
     bs = mpc.V().dofmap.bs
@@ -125,7 +109,7 @@ bc = dirichletbc(value=np.array([0.0, 0.0], dtype=np.float64), dofs=dofsbc, V=V_
 # Create SparsityPattern
 sp = create_sparsity_pattern(a)
 # Add extra sparsity for MPC connections
-dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc, mpc)
+dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc)
 sp.finalize()
 
 A = dolfinx.cpp.la.petsc.create_matrix(mesh.comm, sp)
