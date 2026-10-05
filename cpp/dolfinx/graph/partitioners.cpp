@@ -258,6 +258,10 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     spdlog::info("Compute graph partition using PT-SCOTCH");
     common::Timer timer("Compute graph partition (SCOTCH)");
 
+    // Note: SCOTCH requires an array to be null on all ranks or on none, ref.
+    // SCOTCH docs of SCOTCH_dgraphBuild. C++ standard does not give a guarantee
+    // what an empty vector holds as data pointer.
+
     std::int64_t offset_global = 0;
     const std::int64_t num_owned = graph.num_nodes();
     MPI_Request request_offset_scan;
@@ -267,8 +271,9 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // C-style array indexing
     constexpr SCOTCH_Num baseval = 0;
 
-    // SCOTCH requires an array to be null on all ranks or on none.
     const std::size_t edgelocnbr = graph.array().size();
+
+    // guarantee no nullptr
     std::vector<SCOTCH_Num> edgeloctab(std::max<std::size_t>(edgelocnbr, 1));
     std::ranges::copy(graph.array(), edgeloctab.begin());
 
@@ -281,11 +286,10 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     if (err != 0)
       throw std::runtime_error("Error initializing SCOTCH graph");
 
-    // Handle node and edge weights, with a dummy entry for ranks without
-    // nodes/edges (see edgeloctab)
     std::vector<SCOTCH_Num> vload;
     if (node_weights)
     {
+      // guarantee no nullptr
       vload.resize(std::max<std::size_t>(node_weights->size(), 1));
       std::ranges::copy(*node_weights, vload.begin());
     }
@@ -293,6 +297,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     std::vector<SCOTCH_Num> edload;
     if (edge_weights)
     {
+      // guarantee no nullptr
       edload.resize(std::max<std::size_t>(edge_weights->size(), 1));
       std::ranges::copy(*edge_weights, edload.begin());
     }
