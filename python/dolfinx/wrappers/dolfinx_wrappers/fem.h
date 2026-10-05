@@ -576,6 +576,47 @@ void declare_objects(nb::module_& m, std::string type)
                                                    {mpc_row, mpc_col});
         });
 
+  m.def(
+      "apply_mpc_vector",
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
+         const dolfinx::fem::MPC<T, U>& mpc)
+      {
+        dolfinx::fem::apply_mpc_vector<T, U>(
+            std::span<T>(b.data(), b.size()), mpc);
+      },
+      nb::arg("b"), nb::arg("mpc"),
+      "Apply MPC constraints to an assembled RHS vector (P^T b, zero slave "
+      "rows). Call after assemble_vector and scatter_rev; a further "
+      "scatter_rev is required afterwards.");
+
+  m.def(
+      "apply_mpc_residual",
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> F,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> u,
+         const dolfinx::fem::MPC<T, U>& mpc)
+      {
+        dolfinx::fem::apply_mpc_residual<T, U>(
+            std::span<T>(F.data(), F.size()),
+            std::span<const T>(u.data(), u.size()), mpc);
+      },
+      nb::arg("F"), nb::arg("u"), nb::arg("mpc"),
+      "Apply MPC to a nonlinear residual: distribute slave row to reference "
+      "dofs, then set slave row to the constraint residual u_i - sum c_k "
+      "u_{ref_k}.");
+
+  m.def(
+      "assemble_vector_mpc",
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
+         const dolfinx::fem::Form<T, U>& L,
+         const dolfinx::fem::MPC<T, U>& mpc)
+      {
+        dolfinx::fem::assemble_vector_mpc<T, U>(
+            std::span<T>(b.data(), b.size()), L, mpc);
+      },
+      nb::arg("b"), nb::arg("L"), nb::arg("mpc"),
+      "Assemble linear form with MPC constraints (assemble_vector + "
+      "apply_mpc_vector). Caller must scatter_rev afterwards.");
+
   // dolfinx::fem::DirichletBC
   pyclass_name = std::string("DirichletBC_") + type;
   nb::class_<dolfinx::fem::DirichletBC<T, U>> dirichletbc(
