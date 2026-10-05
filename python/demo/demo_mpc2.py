@@ -65,11 +65,10 @@ print(map_LR)
 local_dofs = np.array([k for k in map_LR.keys()], dtype=np.int32)
 global_dofs = [np.array([map_LR[k][0]], dtype=np.int64) for k in map_LR.keys()]
 global_coeffs = [np.array([map_LR[k][1]], dtype=np.float64) for k in map_LR.keys()]
-consts = np.zeros_like(local_dofs, dtype=np.float64)
 
 print(local_dofs)
 
-mpc = dolfinx.cpp.fem.MPC_float64(V._cpp_object, local_dofs, global_dofs, global_coeffs, consts)
+mpc = dolfinx.cpp.fem.MPC_float64(V._cpp_object, local_dofs, global_dofs, global_coeffs)
 for cell in mpc.cells():
     dofs = mpc.V().dofmap.cell_dofs(cell)
     bs = mpc.V().dofmap.bs
