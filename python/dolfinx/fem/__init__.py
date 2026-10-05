@@ -22,7 +22,6 @@ from dolfinx.fem.assemble import (
     pack_coefficients,
     pack_constants,
     set_bc_diagonal,
-    set_diagonal,
 )
 from dolfinx.fem.bcs import (
     DirichletBC,
@@ -112,6 +111,5 @@ __all__ = [
     "pack_coefficients",
     "pack_constants",
     "set_bc_diagonal",
-    "set_diagonal",
     "transpose_dofmap",
 ]

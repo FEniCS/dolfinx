@@ -13,7 +13,7 @@ import pytest
 import ufl
 from dolfinx import fem
 from dolfinx.common import index_map
-from dolfinx.la import BlockMode, InsertMode, matrix_csr, sparsity_pattern
+from dolfinx.la import BlockMode, InsertMode, matrix_csr, set_diagonal, sparsity_pattern
 from dolfinx.mesh import GhostMode, create_unit_square
 
 
@@ -205,7 +205,7 @@ def test_set_diagonal_distributed(dtype) -> None:
 
     # set diagonal values
     value = dtype(1.0)
-    fem.set_diagonal(A, dofs, value)
+    set_diagonal(A, dofs, value)
 
     # check diagonal values: they should be 1.0, including ghost dofs
     diag = As.diagonal()
@@ -268,7 +268,7 @@ def test_set_diagonal_per_row(dtype) -> None:
     # Every other owned row, with value rows[i] + 1 on row rows[i]
     rows = np.arange(0, V.dofmap.index_map.size_local, 2, dtype=np.int32)
     diagonals = (rows + 1).astype(dtype)
-    fem.set_diagonal(A, rows, diagonals)
+    set_diagonal(A, rows, diagonals)
 
     diag = As.diagonal()
     assert np.allclose(diag[rows], diagonals)
@@ -277,20 +277,20 @@ def test_set_diagonal_per_row(dtype) -> None:
     assert np.allclose(diag[mask], 0.0)
 
     # Adding the same values again doubles the diagonal
-    fem.set_diagonal(A, rows, diagonals, InsertMode.add)
+    set_diagonal(A, rows, diagonals, InsertMode.add)
     assert np.allclose(As.diagonal()[rows], 2 * diagonals)
 
     # Adding a single value to every row
-    fem.set_diagonal(A, rows, dtype(1), InsertMode.add)
+    set_diagonal(A, rows, dtype(1), InsertMode.add)
     assert np.allclose(As.diagonal()[rows], 2 * diagonals + 1)
 
     # Inserting overwrites
-    fem.set_diagonal(A, rows, diagonals)
+    set_diagonal(A, rows, diagonals)
     assert np.allclose(As.diagonal()[rows], diagonals)
 
     # Number of values must match number of rows
     with pytest.raises(ValueError):
-        fem.set_diagonal(A, rows, diagonals[:-1])
+        set_diagonal(A, rows, diagonals[:-1])
 
 
 @pytest.mark.parametrize(

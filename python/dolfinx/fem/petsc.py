@@ -1211,7 +1211,8 @@ class LinearProblem(typing.Generic[_U]):
                  the variational problem and the preconditioner matrix.
             u: Solution function. It is created if not provided.
             P: Bilinear UFL form or a sequence of sequence of bilinear
-                forms, used as a preconditioner.
+                forms, used as a preconditioner. Must be over the same
+                function spaces as ``a``.
             kind: The PETSc matrix and vector kind. Common choices
                 are ``mpi`` and ``nest``. See
                 :func:`dolfinx.fem.petsc.create_matrix` and
@@ -1263,6 +1264,7 @@ class LinearProblem(typing.Generic[_U]):
             jit_options=jit_options,
             entity_maps=entity_maps,
         )
+        _check_preconditioner_spaces(self._a, self._preconditioner)
         self._P_mat = (
             create_matrix(self._preconditioner, kind=kind)
             if self._preconditioner is not None
@@ -1368,11 +1370,12 @@ class LinearProblem(typing.Generic[_U]):
         if self.preconditioner is not None:
             assert self.P_mat is not None
             self.P_mat.zeroEntries()
-            assert self._P_bc_data is not None
+            # The preconditioner is over the same spaces as ``a``, so
+            # it constrains the same dofs
             _assemble_matrix_petsc(
                 self.P_mat,
                 self.preconditioner,
-                self._P_bc_data,
+                self._a_bc_data,
                 1,
                 pack_constants(self.preconditioner),
                 pack_coefficients(self.preconditioner),
@@ -1429,9 +1432,6 @@ class LinearProblem(typing.Generic[_U]):
     def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
         self._bcs = tuple(bcs) if bcs is not None else ()
         self._a_bc_data = _matrix_bc_data(self.a, self._bcs)
-        self._P_bc_data = (
-            None if self.preconditioner is None else _matrix_bc_data(self.preconditioner, self._bcs)
-        )
         # Which block each condition belongs to follows from the spaces,
         # so group once here and re-read only the values in solve().
         L = self.L
@@ -1633,14 +1633,19 @@ def _assemble_residual(
 
 
 def _check_preconditioner_spaces(
-    jacobian: Form | Sequence[Sequence[Form | None]],
+    a: Form | Sequence[Sequence[Form | None]],
     preconditioner: Form | Sequence[Sequence[Form | None]] | None,
 ) -> None:
-    """Check that the preconditioner is over the Jacobian's spaces.
+    """Check that the preconditioner is over the operator's spaces.
 
-    The preconditioner is assembled with the Jacobian's constrained dof
+    The preconditioner is assembled with the operator's constrained dof
     markers, so the two must be over the same function space objects,
     block for block. Equivalent spaces built separately are rejected.
+
+    Args:
+        a: Form(s) of the operator, i.e. the left-hand side of a linear
+            problem or the Jacobian of a nonlinear one.
+        preconditioner: Form(s) of the preconditioner, or ``None``.
 
     Raises:
         ValueError: If the shapes or the spaces differ.
@@ -1649,27 +1654,27 @@ def _check_preconditioner_spaces(
         return
     message = (
         "Preconditioner form must be over the same function space objects as the "
-        "Jacobian form, not separately built equivalents."
+        "operator it preconditions, not separately built equivalents."
     )
-    if isinstance(jacobian, Sequence):
+    if isinstance(a, Sequence):
         if not isinstance(preconditioner, Sequence):
             raise ValueError(message)
         spaces = [
-            (_extract_function_spaces(jacobian, i), _extract_function_spaces(preconditioner, i))
+            (_extract_function_spaces(a, i), _extract_function_spaces(preconditioner, i))
             for i in range(2)
         ]
     else:
         if isinstance(preconditioner, Sequence):
             raise ValueError(message)
-        spaces = [(jacobian.function_spaces, preconditioner.function_spaces)]
-    for J_spaces, P_spaces in spaces:
-        if len(J_spaces) != len(P_spaces):
+        spaces = [(a.function_spaces, preconditioner.function_spaces)]
+    for A_spaces, P_spaces in spaces:
+        if len(A_spaces) != len(P_spaces):
             raise ValueError(message)
-        for VJ, VP in zip(J_spaces, P_spaces, strict=True):
-            if VJ is None or VP is None:
-                if VJ is not VP:
+        for VA, VP in zip(A_spaces, P_spaces, strict=True):
+            if VA is None or VP is None:
+                if VA is not VP:
                     raise ValueError(message)
-            elif VJ._cpp_object is not VP._cpp_object:
+            elif VA._cpp_object is not VP._cpp_object:
                 raise ValueError(message)
 
 

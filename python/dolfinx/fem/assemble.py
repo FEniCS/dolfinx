@@ -447,7 +447,7 @@ def _assemble_matrix_csr_markers(
     # If matrix is a 'diagonal' block, set diagonal entry for
     # constrained dofs. Assembly zeroed these rows, so adding sets it.
     if V0._cpp_object is V1._cpp_object:
-        set_diagonal(A, _owned_marked_rows(V0, dof_marker0), diag, la.InsertMode.add)
+        la.set_diagonal(A, _owned_marked_rows(V0, dof_marker0), diag, la.InsertMode.add)
     return A
 
 
@@ -541,35 +541,6 @@ def _assemble_matrix_csr(
     return _assemble_matrix_csr_markers(A, a, marker0, marker1, diag, constants, coeffs)
 
 
-def set_diagonal(
-    A: la.MatrixCSR[Scalar],
-    rows: npt.NDArray[np.int32],
-    diagonal: Scalar | float | complex | npt.NDArray[Scalar] = 1.0,
-    insert_mode: la.InsertMode = la.InsertMode.insert,
-) -> None:
-    """Set or add values on the diagonal for given rows of a matrix.
-
-    Args:
-        A: Matrix to modify.
-        rows: Rows, in local indices, to set the diagonal value for.
-        diagonal: Value to set on the diagonal, either a single value
-            for all rows or an array with ``diagonal[i]`` the value for
-            ``rows[i]``. An array must have the same length as
-            ``rows``.
-        insert_mode: ``la.InsertMode.insert`` to set the diagonal
-            entries, or ``la.InsertMode.add`` to add to them.
-
-    Note:
-        A row that the calling rank does not own is accumulated into
-        the owner's entry when the matrix is finalised, so pass owned
-        rows unless that accumulation is intended. A row repeated in
-        ``rows`` is likewise written once per occurrence.
-    """
-    if np.ndim(diagonal) > 0:
-        diagonal = np.asarray(diagonal, dtype=A.data.dtype)
-    typing.cast(typing.Any, _cpp.fem.set_diagonal)(A._cpp_object, rows, diagonal, insert_mode)
-
-
 def set_bc_diagonal(
     A: la.MatrixCSR[Scalar],
     V: FunctionSpace,
@@ -608,13 +579,14 @@ def set_bc_diagonal(
     Note:
         Convenience interface for callers holding ``V`` and ``bcs``
         rather than the row list, which it rebuilds on every call.
-        Library code passes the rows to :func:`set_diagonal` instead.
+        Library code passes the rows to :func:`dolfinx.la.set_diagonal`
+        instead.
     """
     # Marking rather than concatenating makes the rows sorted and
     # duplicate-free by construction, so overlapping conditions need no
     # separate deduplication
     rows = _owned_marked_rows(V, _bc_dof_markers(V, bcs))
-    set_diagonal(A, rows, diagonal, insert_mode)
+    la.set_diagonal(A, rows, diagonal, insert_mode)
 
 
 def assemble_matrix_fn(

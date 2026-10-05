@@ -450,6 +450,32 @@ class TestPETScSolverWrappers:
         finally:
             P_mat.destroy()
 
+    @pytest.mark.parametrize("blocked", [False, True])
+    def test_linear_preconditioner_spaces(self, blocked):
+        """Reject a preconditioner not over the left-hand side's spaces."""
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import LinearProblem
+
+        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=PETSc.RealType)
+        V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+        W = V.clone()
+        u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+        w, z = ufl.TrialFunction(W), ufl.TestFunction(W)
+        aV = ufl.inner(u, v) * ufl.dx
+        aW = ufl.inner(w, z) * ufl.dx
+        LV = ufl.inner(1.0, v) * ufl.dx
+        LW = ufl.inner(1.0, z) * ufl.dx
+        a = [[aV, None], [None, aW]] if blocked else aV
+        L = [LV, LW] if blocked else LV
+        invalid = [[aW, None], [None, aV]] if blocked else aW
+        with pytest.raises(
+            ValueError, match="Preconditioner form must be over the same function space objects"
+        ):
+            LinearProblem(
+                a, L, P=invalid, petsc_options_prefix=f"test_invalid_lhs_preconditioner_{blocked}_"
+            )
+
     @pytest.mark.parametrize("kind", [None, "nest"])
     @pytest.mark.parametrize("index", [0, 1])
     def test_blocked_assembly_repeated_spaces(self, kind, index):
