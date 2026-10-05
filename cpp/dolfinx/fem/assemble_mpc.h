@@ -144,7 +144,7 @@ void assemble_matrix_mpc(
       int bs = mpc.V()->dofmap()->bs();
 
       // Resolve each block-expanded dof to its reference dof(s): unconstrained
-      // maps to itself (coeff 1), constrained maps to its masters.
+      // maps to itself (coeff 1), constrained maps to its reference dofs.
       std::vector<std::int32_t> offsets = {0};
       std::vector<std::int32_t> refs;
       std::vector<T> coeffs;
@@ -331,7 +331,7 @@ void assemble_matrix_mpc(
 
 /// @brief Apply MPC constraints to an assembled vector.
 ///
-/// For each locally-owned constrained (slave) dof @p i this function:
+/// For each locally-owned constrained dof @p i this function:
 ///   1. Distributes @p b[i] to every reference dof via
 ///      `b[ref_k] += c_k * b[i]`  (the Pᵀ b step).
 ///   2. Sets `b[i] = 0`  (homogeneous constraint row RHS).
@@ -341,11 +341,11 @@ void assemble_matrix_mpc(
 /// `b[ref_k]` is correct whether `ref_k` is an owned dof or an extra ghost
 /// added by the MPC.
 ///
-/// @pre  A scatter_rev (ghost → owner accumulation) must already have been
-///       applied to @p b so that each slave dof slot holds the full assembled
-///       value.  (In the common case where slave dofs are interior to a single
-///       process this scatter is not strictly necessary, but it is needed for
-///       correctness when a slave dof lies on a process boundary.)
+/// @pre  scatter_rev (ghost → owner accumulation) must already have been
+///       applied to @p b so that each constrained dof slot holds the full
+///       assembled value.  Constrained dofs commonly sit on process
+///       boundaries (e.g. periodic BCs, tied interfaces), so this scatter
+///       should be treated as always required.
 ///
 /// @post A further scatter_rev is required after this call to push the
 ///       Pᵀ contributions that landed in ghost slots back to their owning
@@ -373,38 +373,38 @@ void apply_mpc_vector(std::span<T> b, const MPC<T, U>& mpc)
     if (links.empty())
       continue;
 
-    // P^T step: distribute b[slave] to each reference dof.
-    const T b_slave = b[dof];
+    // P^T step: distribute b[constrained] to each reference dof.
+    const T b_constrained = b[dof];
     for (auto [ref_dof, coeff] : links)
-      b[ref_dof] += coeff * b_slave;
+      b[ref_dof] += coeff * b_constrained;
 
-    // Slave row: set to 0 for a homogeneous constraint.
+    // Constrained row: set to 0 for a homogeneous constraint.
     // TODO: for inhomogeneous constraints set b[dof] = g_i (the constant
-    // stored per slave dof in MPC::_constants, not yet implemented).
+    // stored per constrained dof in MPC::_constants, not yet implemented).
     b[dof] = T(0);
   }
 }
 
 /// @brief Apply MPC constraints to a nonlinear residual vector.
 ///
-/// Variant of apply_mpc_vector for Newton iteration, where the slave row
-/// must hold the constraint *residual* rather than zero:
+/// Variant of apply_mpc_vector for Newton iteration, where the constrained
+/// row must hold the constraint *residual* rather than zero:
 ///
 ///   F[i] ← u[i] − Σ_k c_k u[ref_k]
 ///
 /// and the reference dof rows still receive the Pᵀ distribution of F[i]
-/// before it is overwritten.  The rest of the residual (non-slave dofs) is
-/// unchanged.
+/// before it is overwritten.  The rest of the residual (non-constrained
+/// dofs) is unchanged.
 ///
 /// @note The standard sequence for a nonlinear residual step is:
 /// @code
-///   assemble_vector(F.span(), L);          // standard residual assembly
-///   F.scatter_rev(std::plus<T>());         // accumulate ghosts
-///   apply_mpc_residual(F.span(), u.span(), mpc);
-///   F.scatter_rev(std::plus<T>());         // accumulate P^T ghost contributions
+///   assemble_vector(F, L);
+///   index_map.scatter_rev(F, std::plus<T>());  // constrained dofs complete
+///   apply_mpc_residual(F, u, mpc);
+///   index_map.scatter_rev(F, std::plus<T>());  // accumulate P^T ghosts
 /// @endcode
 ///
-/// @param[in,out] F  Residual vector (extended IndexMap).
+/// @param[in,out] F  Residual vector (extended IndexMap of mpc.V()).
 /// @param[in]    u   Current solution vector (extended IndexMap, same size).
 /// @param[in]    mpc Multipoint constraint.
 template <dolfinx::scalar T, std::floating_point U>
@@ -422,67 +422,18 @@ void apply_mpc_residual(std::span<T> F, std::span<const T> u,
     if (links.empty())
       continue;
 
-    // P^T step: distribute the assembled residual F[slave] to reference dofs
-    // before overwriting it.
-    const T F_slave = F[dof];
+    // P^T step: distribute the assembled residual F[constrained] to
+    // reference dofs before overwriting it.
+    const T F_constrained = F[dof];
     for (auto [ref_dof, coeff] : links)
-      F[ref_dof] += coeff * F_slave;
+      F[ref_dof] += coeff * F_constrained;
 
-    // Slave row: constraint residual u_i − Σ c_k u_{ref_k}.
+    // Constrained row: constraint residual u_i − Σ c_k u_{ref_k}.
     T constraint_res = u[dof];
     for (auto [ref_dof, coeff] : links)
       constraint_res -= coeff * u[ref_dof];
     F[dof] = constraint_res;
   }
 }
-
-/// @brief Assemble a linear form with MPC constraints into a vector.
-///
-/// Calls the standard assemble_vector followed by apply_mpc_vector.  Because
-/// there is no insertion lambda for vectors (unlike matrices), the MPC
-/// transformation is applied as a post-processing step.
-///
-/// @note The recommended parallel usage is:
-/// @code
-///   // 1. Assemble (fills owned and ghost slots).
-///   std::fill(b.begin(), b.end(), T(0));
-///   assemble_vector_mpc(b, L, mpc);
-///
-///   // 2. Single scatter_rev accumulates both the standard ghost
-///   //    contributions and the P^T ghost contributions from apply_mpc_vector.
-///   mpc.V()->dofmap()->index_map->scatter_rev(b_span, std::plus<T>());
-///
-///   // 3. Apply Dirichlet BCs if any.
-///   fem::set_bc(b, bcs);
-/// @endcode
-///
-/// @note In the (unusual) case where a slave dof lies on a process boundary
-///       (i.e. it is a ghost on a neighbouring process that contributes to
-///       its assembled value), a scatter_rev should be called between
-///       assemble_vector and apply_mpc_vector.  For interior slave dofs —
-///       the common case — the single post-assembly scatter_rev is sufficient.
-///
-/// @param[in,out] b  Pre-zeroed vector (extended IndexMap of mpc.V()).
-/// @param[in]    L   Linear form.
-/// @param[in]    mpc Multipoint constraint.
-template <dolfinx::scalar T, std::floating_point U>
-void assemble_vector_mpc(std::span<T> b, const Form<T, U>& L,
-                         const MPC<T, U>& mpc)
-{
-  if (L.function_spaces().size() != 1)
-    throw std::runtime_error("assemble_vector_mpc: linear form required");
-
-  if (L.function_spaces()[0].get() != mpc.V().get())
-    throw std::runtime_error(
-        "assemble_vector_mpc: form function space does not match mpc.V()");
-
-  // Standard vector assembly using the extended function space.
-  assemble_vector(b, L);
-
-  // P^T step: distribute slave contributions to reference dofs and
-  // zero slave rows.
-  apply_mpc_vector(b, mpc);
-}
-
 
 } // namespace dolfinx::fem
