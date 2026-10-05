@@ -1,5 +1,9 @@
 from mpi4py import MPI
 
+import dolfinx
+import dolfinx.fem
+import dolfinx.la
+
 import numpy as np
 
 from dolfinx.fem import (
