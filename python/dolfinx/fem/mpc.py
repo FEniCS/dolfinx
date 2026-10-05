@@ -41,13 +41,11 @@ _mpc_types: dict = {
 
 
 class MPC:
-    """A Multi-Point Constraint of the form
+    """Multi-Point Constraint of the form u = Σ c_k u_ref + g.
 
-        u[constrained] = Σ_k c_k · u[ref_k] + g
-
-    where reference dofs are given as global indices and coefficients,
-    and an optional scalar constant *g* is expressed by pairing a
-    negative global dof index with the constant value.
+    Reference dofs are supplied as global indices with matching
+    coefficients.  A constant term *g* is encoded as a reference with
+    a negative global dof index; its coefficient is the constant value.
 
     See :func:`apply_mpc_solution` and :func:`apply_mpc_vector`.
     """

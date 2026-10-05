@@ -5,7 +5,6 @@ import numpy as np
 import dolfinx
 import dolfinx.fem
 import dolfinx.la
-
 from dolfinx.fem import (
     Function,
     FunctionSpace,
