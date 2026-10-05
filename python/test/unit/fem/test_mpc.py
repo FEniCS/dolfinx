@@ -77,12 +77,12 @@ def test_mpc():
     a = form(a)
 
     # Create SparsityPattern
-    sp = create_sparsity_pattern(a)
+    sp = create_sparsity_pattern(a)._cpp_object
     # Add extra MPC links to sparsity
-    dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp._cpp_object, a._cpp_object, mpc, mpc)
+    dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc, mpc)
     sp.finalize()
 
-    A = matrix_csr(sp)
+    A = dolfinx.la.MatrixCSR(dolfinx.cpp.la.MatrixCSR_float64(sp, dolfinx.la.BlockMode.compact))
     dolfinx.cpp.fem.assemble_matrix_mpc(mpc, A._cpp_object, a._cpp_object, [bc._cpp_object])
     dolfinx.fem.set_bc_diagonal(A, V_new, [bc], 1.0)
     A.scatter_reverse()
