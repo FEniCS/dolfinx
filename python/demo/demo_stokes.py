@@ -596,8 +596,8 @@ def block_iterative_solver():
     # cannot infer the correct near-nullspace from the matrix block
     # size. Therefore, we set block size on the top-left block of the
     # preconditioner so that GAMG can infer the appropriate near
-    # nullspace. The block is also marked SPD, as in the MatNest case,
-    # which the extracted submatrix does not inherit.
+    # nullspace. The extracted block does not inherit the SPD flag, so
+    # it is set explicitly.
     ksp.getPC().setUp()
     Pu, _ = ksp_u.getPC().getOperators()
     Pu.setBlockSize(msh.topology.dim)

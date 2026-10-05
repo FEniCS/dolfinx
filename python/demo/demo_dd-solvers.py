@@ -134,13 +134,11 @@ dtype = PETSc.ScalarType
 xdtype = PETSc.RealType
 # -
 
-# Both solvers use CG, for which BDDC by default solves the subdomain
-# interior problems once up front and then assumes the interior
-# residual stays zero. In single precision rounding breaks that
-# assumption, the preconditioner turns indefinite and CG breaks down.
-# `pc_bddc_switch_static` keeps the interior solves in every
-# application, at the cost of one more local solve per iteration, so
-# it is enabled in single precision only.
+# With CG, BDDC solves the subdomain interior problems once up front
+# and assumes the interior residual then stays zero. In single
+# precision rounding breaks this and CG breaks down, so both solvers
+# set `pc_bddc_switch_static` there, which redoes the interior
+# correction in every application at the cost of an extra local solve.
 
 # +
 single_precision = np.finfo(dtype).bits == 32
@@ -310,12 +308,16 @@ def solve_elasticity(msh: mesh.Mesh) -> tuple[fem.Function, int, int]:
     # in the global options database for the next solve to inherit
     prefix = f"demo_dd_elasticity_{V.dofmap.index_map.size_global}_"
     ksp.setOptionsPrefix(prefix)
-    opts = PETSc.Options()
-    opts[f"{prefix}pc_bddc_use_change_of_basis"] = True  # type: ignore[index]
-    opts[f"{prefix}pc_bddc_switch_static"] = single_precision  # type: ignore[index]
+    options = {
+        "pc_bddc_use_change_of_basis": True,
+        "pc_bddc_switch_static": single_precision,
+    }
+    opts = PETSc.Options(prefix)
+    for k, v in options.items():
+        opts[k] = v  # type: ignore[index]
     ksp.setFromOptions()
-    del opts[f"{prefix}pc_bddc_use_change_of_basis"]  # type: ignore[arg-type]
-    del opts[f"{prefix}pc_bddc_switch_static"]  # type: ignore[arg-type]
+    for k in options:
+        del opts[k]  # type: ignore[arg-type]
 
     uh = fem.Function(V, name="u", dtype=dtype)
     ksp.solve(b, uh.x.petsc_vec)
