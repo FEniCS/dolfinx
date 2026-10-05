@@ -134,6 +134,19 @@ dtype = PETSc.ScalarType
 xdtype = PETSc.RealType
 # -
 
+# Both solvers use CG, for which BDDC by default solves the subdomain
+# interior problems once up front and then assumes the interior
+# residual stays zero. In single precision rounding breaks that
+# assumption, the preconditioner turns indefinite and CG breaks down.
+# `pc_bddc_switch_static` keeps the interior solves in every
+# application, at the cost of one more local solve per iteration, so
+# it is enabled in single precision only.
+
+# +
+single_precision = np.finfo(dtype).bits == 32
+rtol = 1e-5 if single_precision else 1e-8
+# -
+
 # Both solvers report how many of their constrained degrees of freedom
 # lie on a subdomain interface, which
 # :func:`~dolfinx.common.num_sharing_ranks` answers directly.
@@ -190,8 +203,9 @@ def solve_poisson(msh: mesh.Mesh) -> tuple[fem.Function, int, int]:
         petsc_options={
             "ksp_type": "cg",
             "pc_type": "bddc",
-            "ksp_rtol": 1e-5 if np.finfo(dtype).bits == 32 else 1e-8,
+            "ksp_rtol": rtol,
             "ksp_error_if_not_converged": True,
+            "pc_bddc_switch_static": single_precision,
         },
     )
     problem.solve()
@@ -289,7 +303,7 @@ def solve_elasticity(msh: mesh.Mesh) -> tuple[fem.Function, int, int]:
     ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
     ksp.setOperators(A)
     ksp.setType("cg")
-    ksp.setTolerances(rtol=1e-5 if np.finfo(dtype).bits == 32 else 1e-8, max_it=100)
+    ksp.setTolerances(rtol=rtol, max_it=100)
     ksp.getPC().setType("bddc")
 
     # Set under a prefix of this solver's own, so that nothing is left
@@ -298,8 +312,10 @@ def solve_elasticity(msh: mesh.Mesh) -> tuple[fem.Function, int, int]:
     ksp.setOptionsPrefix(prefix)
     opts = PETSc.Options()
     opts[f"{prefix}pc_bddc_use_change_of_basis"] = True  # type: ignore[index]
+    opts[f"{prefix}pc_bddc_switch_static"] = single_precision  # type: ignore[index]
     ksp.setFromOptions()
     del opts[f"{prefix}pc_bddc_use_change_of_basis"]  # type: ignore[arg-type]
+    del opts[f"{prefix}pc_bddc_switch_static"]  # type: ignore[arg-type]
 
     uh = fem.Function(V, name="u", dtype=dtype)
     ksp.solve(b, uh.x.petsc_vec)

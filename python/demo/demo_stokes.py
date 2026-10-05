@@ -596,10 +596,12 @@ def block_iterative_solver():
     # cannot infer the correct near-nullspace from the matrix block
     # size. Therefore, we set block size on the top-left block of the
     # preconditioner so that GAMG can infer the appropriate near
-    # nullspace.
+    # nullspace. The block is also marked SPD, as in the MatNest case,
+    # which the extracted submatrix does not inherit.
     ksp.getPC().setUp()
     Pu, _ = ksp_u.getPC().getOperators()
     Pu.setBlockSize(msh.topology.dim)
+    Pu.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
     # Create a block vector (x) to store the full solution and solve
     x = A.createVecRight()
