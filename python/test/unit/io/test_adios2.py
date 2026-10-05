@@ -188,10 +188,10 @@ class TestVTX:
             element("Lagrange", cell_type.name, 1, shape=(2,), dtype=default_real_type)
         )
 
-        def partitioner(comm, nparts, cell_types, cell_topology, cell_weights, edge_weights):
+        def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
             """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
-            return adjacencylist(dest)._cpp_object
+            return adjacencylist(dest)
 
         if comm.rank == 0:
             cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)

@@ -119,5 +119,5 @@ def test_single_element_in_mixed_element(rtype):
     w.interpolate(f)
     np.testing.assert_allclose(u.x.array, w.x.array)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         u.interpolate(f)

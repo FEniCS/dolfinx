@@ -59,6 +59,8 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_float32
         | _cpp.fem.Form_float64
     )
+    _mesh: Mesh
+    _spaces: tuple[FunctionSpace, ...]
     _code: str | list[str] | None
 
     def __init__(
@@ -67,6 +69,8 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_complex128
         | _cpp.fem.Form_float32
         | _cpp.fem.Form_float64,
+        msh: Mesh,
+        spaces: list[FunctionSpace],
         ufcx_form: typing.Any = None,
         code: str | list[str] | None = None,
         module: types.ModuleType | list[types.ModuleType] | None = None,
@@ -81,13 +85,18 @@ class Form(typing.Generic[Scalar]):
 
         Args:
             form: Compiled form object.
+            msh: Mesh that form is defined on.
+            spaces: Function spaces that the form arguments are defined
+                on, one per argument.
             ufcx_form: UFCx form.
             code: Form C++ code.
             module: CFFI module.
         """
+        self._cpp_object = form
+        self._mesh = msh
+        self._spaces = tuple(spaces)
         self._code = code
         self._ufcx_form = ufcx_form
-        self._cpp_object = form
         self._module = module
 
     @property
@@ -111,9 +120,9 @@ class Form(typing.Generic[Scalar]):
         return self._cpp_object.rank
 
     @property
-    def function_spaces(self) -> list[FunctionSpace]:
+    def function_spaces(self) -> tuple[FunctionSpace, ...]:
         """Function spaces on which this form is defined."""
-        return self._cpp_object.function_spaces  # type: ignore[return-value]
+        return self._spaces
 
     @property
     def dtype(self) -> np.dtype:
@@ -121,9 +130,9 @@ class Form(typing.Generic[Scalar]):
         return np.dtype(self._cpp_object.dtype)
 
     @property
-    def mesh(self) -> _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64:
+    def mesh(self) -> Mesh:
         """Mesh on which this form is defined."""
-        return self._cpp_object.mesh
+        return self._mesh
 
     @property
     def integral_types(self) -> set[IntegralType]:
@@ -178,25 +187,27 @@ def get_integration_domains(
     else:
         domains = []
         if not isinstance(subdomain, list):
+            topology = subdomain.topology
+            tdim = topology.dim
+            # Only assigned when needed below, but declared unconditionally
+            # so the type checker can see it is always bound.
+            exterior_facets = np.empty(0, dtype=np.int32)
             if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
-                tdim = subdomain.topology.dim
-                subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
-                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
+                topology.create_connectivity(tdim - 1, tdim)
+                topology.create_connectivity(tdim, tdim - 1)
 
             if integral_type is IntegralType.vertex:
-                tdim = subdomain.topology.dim
-                subdomain._cpp_object.topology.create_connectivity(0, tdim)
-                subdomain._cpp_object.topology.create_connectivity(tdim, 0)
+                topology.create_connectivity(0, tdim)
+                topology.create_connectivity(tdim, 0)
 
             if integral_type is IntegralType.ridge:
-                tdim = subdomain.topology.dim
-                subdomain._cpp_object.topology.create_connectivity(tdim - 2, tdim)
-                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 2)
+                topology.create_connectivity(tdim - 2, tdim)
+                topology.create_connectivity(tdim, tdim - 2)
 
             # Special handling for exterior facets, compared to other
             # one-sided entity integrals
             if integral_type is IntegralType.exterior_facet:
-                exterior_facets = _cpp.mesh.exterior_facet_indices(subdomain.topology)
+                exterior_facets = _cpp.mesh.exterior_facet_indices(topology._cpp_object)
 
             # Compute integration domains only for each subdomain id in
             # the integrals. If a process has no integral entities,
@@ -209,7 +220,7 @@ def get_integration_domains(
 
                 integration_entities = _cpp.fem.compute_integration_domains(
                     integral_type,
-                    subdomain._cpp_object.topology,
+                    topology._cpp_object,
                     entities,
                 )
                 domains.append((id, integration_entities))
@@ -226,13 +237,26 @@ def form_cpp_class(
     | type[_cpp.fem.Form_complex64]
     | type[_cpp.fem.Form_complex128]
 ):
-    """Wrapped C++ class of a variational form of a specific scalar type.
+    """Look up the wrapped C++ ``Form`` class for a given scalar type.
+
+    DOLFINx's C++ ``Form`` is templated on the scalar type and, for
+    complex scalars, on the geometry (coordinate) type. This resolves
+    ``dtype`` to the matching entry in :attr:`Form.cpp_types`, using
+    matched precision between the scalar and geometry types, e.g.
+    ``np.complex64`` maps to the class with ``np.float32`` geometry
+    and ``np.complex128`` to the class with ``np.float64`` geometry.
 
     Args:
-        dtype: Scalar type of the required form class.
+        dtype: Scalar type of the required form class, e.g.
+            ``np.float64`` or ``np.complex128``.
 
     Returns:
-        Wrapped C++ form class of the requested type.
+        Wrapped C++ form class matching ``dtype``.
+
+    Raises:
+        KeyError: If ``dtype`` is not one of the supported scalar
+            types (``np.float32``, ``np.float64``, ``np.complex64``,
+            ``np.complex128``).
 
     Note:
         This function is for advanced usage, typically when writing
@@ -299,13 +323,13 @@ def mixed_topology_form(
         if not all(d is data[0] for d in data if d is not None):
             raise ValueError("Subdomain data must be the same for each integral type.")
 
-    mesh = domain.ufl_cargo()
-    if mesh is None:
-        raise RuntimeError("Expecting to find a Mesh in the form.")
-    comm = mesh.comm if jit_comm is None else jit_comm
+    from dolfinx.mesh import _mesh_from_ufl_domain
+
+    msh = _mesh_from_ufl_domain(domain)
+    comm = msh.comm if jit_comm is None else jit_comm
 
     # Geometry type is fixed by the mesh.
-    ftype = Form.cpp_types[np.dtype(dtype), mesh.geometry.x.dtype]
+    ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
 
     ufcx_forms = []
     modules = []
@@ -321,9 +345,9 @@ def mixed_topology_form(
         modules.append(module)
         codes.append(code)
 
-    # In a mixed-topology mesh, each form has the same C++ function
-    # space, so we can extract it from any of them
-    V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+    # In a mixed-topology mesh, each form has the same function space,
+    # so we can extract it from any of them
+    spaces = [arg.ufl_function_space() for arg in form.arguments()]
 
     # TODO coeffs, constants, subdomains, entity_maps
     f = ftype(
@@ -331,14 +355,14 @@ def mixed_topology_form(
             int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))
             for ufcx_form in ufcx_forms
         ],
-        V,
+        [V._cpp_object for V in spaces],
         [],
         [],
         {},
         [],
-        mesh,
+        typing.cast(typing.Any, msh._cpp_object),
     )
-    return Form(f, ufcx_forms, codes, modules)
+    return Form(f, msh, spaces, ufcx_forms, codes, modules)
 
 
 @typing.overload
@@ -436,12 +460,12 @@ def form(
             if not all(d is data[0] for d in data if d is not None):
                 raise ValueError("Subdomain data must be the same for each integral type.")
 
-        msh = domain.ufl_cargo()
-        if msh is None:
-            raise RuntimeError("Expecting to find a Mesh in the form.")
+        from dolfinx.mesh import _mesh_from_ufl_domain
+
+        msh = _mesh_from_ufl_domain(domain)
         comm = msh.comm if jit_comm is None else jit_comm
 
-        # Geometry type is fixed by the mesh.
+        # Geometry type is fixed by the mesh
         ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
 
         ufcx_form, module, code = jit.ffcx_jit(
@@ -449,10 +473,10 @@ def form(
         )
 
         # For each argument in form extract its function space
-        V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+        spaces = [arg.ufl_function_space() for arg in form.arguments()]
         part = form_compiler_options.get("part", "full")
         if part == "diagonal":
-            V = [V[0]]
+            spaces = [spaces[0]]
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
@@ -483,37 +507,37 @@ def form(
 
         f = ftype(
             [int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))],
-            V,
+            [V._cpp_object for V in spaces],
             coeffs,
             constants,
             subdomains,
             _entity_maps,
-            msh,
+            typing.cast(typing.Any, msh._cpp_object),
         )
-        return Form(f, ufcx_form, code, module)
+        return Form(f, msh, spaces, ufcx_form, code, module)
 
     def _zero_form(form: ufl.ZeroBaseForm) -> Form:
         """Compile a single 'zero' UFL form.
 
         I.e. a form with no integrals.
         """
-        V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
-        assert len(V) > 0
-        msh = V[0].mesh
+        spaces = [arg.ufl_function_space() for arg in form.arguments()]
+        assert len(spaces) > 0
+        msh = spaces[0].mesh
 
         # Geometry type is fixed by the mesh.
         ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
 
         f = ftype(
-            spaces=V,
+            spaces=[V._cpp_object for V in spaces],
             integrals={},
             coefficients=[],
             constants=[],
             need_permutation_data=False,
             entity_maps=_entity_maps,
-            mesh=msh,
+            mesh=msh._cpp_object,
         )
-        return Form(f)
+        return Form(f, msh, spaces)
 
     def _create_form(
         form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
@@ -765,7 +789,7 @@ def create_form(
         _entity_maps,
         msh._cpp_object,
     )
-    return Form(f, form.ufcx_form, form.code)
+    return Form(f, msh, list(V), form.ufcx_form, form.code)
 
 
 def _derive_univariate_residual(

@@ -1,6 +1,14 @@
-#include <dolfinx/mesh/Mesh.h>
+// Copyright (C) 2025-2026 Chris Richardson and Garth N. Wells
+//
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
+
+#include <dolfinx/graph/partition.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/types.h>
 
 namespace dolfinx::refinement
 {
@@ -14,11 +22,13 @@ namespace dolfinx::refinement
 /// @tparam T Scalar type of the mesh geometry
 /// @param mesh Input mesh
 /// @param partitioner Function to partition new mesh across processes.
+/// @param ghost_mode Ghost mode of the refined mesh, passed to
+/// `partitioner` if it is callable.
 /// @returns Uniformly refined mesh
 template <typename T>
 mesh::Mesh<T>
 uniform_refine(const mesh::Mesh<T>& mesh,
-               const mesh::CellPartitionFunction& partitioner
-               = mesh::create_cell_partitioner(mesh::GhostMode::none, 2));
+               const graph::partition_fn& partitioner = graph::partition_graph,
+               mesh::GhostMode ghost_mode = mesh::GhostMode::none);
 
 } // namespace dolfinx::refinement

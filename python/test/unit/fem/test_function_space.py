@@ -99,6 +99,9 @@ def test_equality(V, V2, W, W2):
 def test_sub(Q, W):
     X = Q.sub(0)
 
+    with pytest.raises(IndexError):
+        Q._cpp_object.sub([Q.num_sub_spaces])
+
     assert W.dofmap.dof_layout.num_dofs == X.dofmap.dof_layout.num_dofs
     for dim, entity_count in enumerate([4, 6, 4, 1]):
         assert len(W.dofmap.dof_layout.entity_dofs(dim, 0)) == len(
@@ -168,7 +171,7 @@ def test_clone(W):
 
 
 def test_collapse(W, V):
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         Function(W.sub(1))
 
     Ws = [W.sub(i).collapse() for i in range(W.num_sub_spaces)]
@@ -261,7 +264,7 @@ def test_basix_element(V, W, Q, V2):
         )
 
     # Mixed spaces do not yet return a basix element
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         Q.element.basix_element
 
 

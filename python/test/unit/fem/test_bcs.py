@@ -42,7 +42,7 @@ def test_locate_dofs_geometrical():
     W = functionspace(mesh, mixed_element([P0, P1]))
     V = W.sub(0).collapse()[0]
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         locate_dofs_geometrical(W, lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
 
     dofs = locate_dofs_geometrical((W.sub(0), V), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
@@ -366,7 +366,7 @@ def test_mixed_blocked_constant():
 
     # Check that vector space throws error
     c1 = default_scalar_type((5, 7))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         dofs1 = locate_dofs_topological(W.sub(1), tdim - 1, boundary_facets)
         dirichletbc(c1, dofs1, W.sub(1))
 

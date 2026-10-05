@@ -8,6 +8,7 @@
 #ifdef HAS_PETSC
 
 #include "petsc.h"
+#include "petscsystypes.h"
 #include <cassert>
 #include <dolfinx/common/log.h>
 #include <format>
@@ -26,17 +27,16 @@ void common::petsc::error(PetscErrorCode error_code,
 
   // Fetch PETSc error description
   const char* desc;
-  PetscErrorMessage(error_code, &desc, nullptr);
+  PetscErrorCode error_msg = PetscErrorMessage(error_code, &desc, nullptr);
 
-  // Log detailed error info
-  spdlog::error("PETSc error in '{}:{}', '{}'", loc.file_name(), loc.line(),
-                petsc_function);
-  spdlog::error("PETSc error code '{}' '{}'", static_cast<int>(error_code),
-                desc);
-  throw std::runtime_error(
-      std::format("Failed to successfully call PETSc function '{}'. PETSc "
-                  "error code is: {}, {}",
-                  petsc_function, static_cast<int>(error_code), desc));
+  std::string msg = std::format(
+      "PETSc error in '{}' at {}:{}: call to '{}' failed with code {}, {}",
+      loc.function_name(), loc.file_name(), loc.line(), petsc_function,
+      static_cast<int>(error_code),
+      (error_msg == PETSC_SUCCESS) ? desc
+                                   : "(could not retrieve error description)");
+  spdlog::error("{}", msg);
+  throw std::runtime_error(msg);
 }
 //-----------------------------------------------------------------------------
 void common::petsc::set_option(std::string option)

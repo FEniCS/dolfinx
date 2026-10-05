@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import functools
 import typing
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -23,6 +23,7 @@ from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.forms import Form
 from dolfinx.fem.function import FunctionSpace
 from dolfinx.fem.utils import create_sparsity_pattern
+from dolfinx.typing import Scalar
 
 
 @typing.overload
@@ -279,6 +280,115 @@ def _assemble_vector_array(
 # -- Matrix assembly ------------------------------------------------------
 
 
+def _bc_dof_markers(V: FunctionSpace, bcs: Sequence[DirichletBC] | None) -> npt.NDArray[np.int8]:
+    """Mark the dofs of ``V`` constrained by a boundary condition.
+
+    Args:
+        V: Space whose dofs (owned and ghost) are marked.
+        bcs: Boundary conditions. Only those defined on ``V`` or a
+            subspace of it contribute.
+
+    Returns:
+        Array with entry ``1`` for constrained dofs and ``0``
+        otherwise, or an empty array if no boundary condition applies.
+    """
+    markers = None
+    for bc in bcs or []:
+        if V.contains(bc.function_space):
+            if markers is None:
+                dofmap = V.dofmaps[0]
+                imap = dofmap.index_map
+                size = dofmap.index_map_bs * (imap.size_local + imap.num_ghosts)
+                markers = np.zeros(size, dtype=np.int8)
+            markers[bc.dof_indices()[0]] = 1
+    return np.empty(0, dtype=np.int8) if markers is None else markers
+
+
+def _bc_lifting_data(
+    spaces: Sequence[FunctionSpace | None],
+    bcs: Sequence[Sequence[DirichletBC]],
+    dtype: npt.DTypeLike,
+) -> tuple[list[npt.NDArray[np.int8]], list[npt.NDArray]]:
+    """Constrained dof markers and values on each trial space.
+
+    Args:
+        spaces: Trial space of each block ``j``, or ``None`` for a block
+            without a form.
+        bcs: Boundary conditions on each space in ``spaces``.
+        dtype: Scalar type of the values.
+
+    Returns:
+        Markers (``1`` for constrained dofs, owned and ghost) and
+        boundary condition values for each block. Both are empty if
+        ``spaces[j]`` is ``None`` or ``bcs[j]`` is empty.
+    """
+    markers, values = [], []
+    for V, bcs0 in zip(spaces, bcs, strict=True):
+        if V is None or len(bcs0) == 0:
+            markers.append(np.empty(0, dtype=np.int8))
+            values.append(np.empty(0, dtype=dtype))
+            continue
+        dofmap = V.dofmaps[0]
+        imap = dofmap.index_map
+        size = dofmap.index_map_bs * (imap.size_local + imap.num_ghosts)
+        m = np.zeros(size, dtype=np.int8)
+        v = np.zeros(size, dtype=dtype)
+        for bc in bcs0:
+            m[bc.dof_indices()[0]] = 1
+            bc.set(v, None, 1)
+        markers.append(m)
+        values.append(v)
+    return markers, values
+
+
+def _owned_marked_rows(V: FunctionSpace, markers: npt.NDArray[np.int8]) -> npt.NDArray[np.int32]:
+    """Locally owned dofs of ``V`` that are marked in ``markers``."""
+    if markers.size == 0:
+        return np.empty(0, dtype=np.int32)
+    dofmap = V.dofmaps[0]
+    num_owned = dofmap.index_map_bs * dofmap.index_map.size_local
+    return np.flatnonzero(markers[:num_owned]).astype(np.int32)
+
+
+def _assemble_matrix_csr_markers(
+    A: la.MatrixCSR,
+    a: Form,
+    dof_marker0: npt.NDArray[np.int8],
+    dof_marker1: npt.NDArray[np.int8],
+    diag: float = 1.0,
+    constants: npt.NDArray | None = None,
+    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
+) -> la.MatrixCSR:
+    """Assemble a bilinear form into a matrix, given constrained dofs.
+
+    Rows marked in ``dof_marker0`` and columns marked in
+    ``dof_marker1`` are zeroed. If the test and trial spaces are the
+    same, ``diag`` is set on the diagonal of locally owned marked rows.
+    See :func:`_bc_dof_markers` for the marker format; an empty array
+    marks nothing.
+    """
+    if constants is None:
+        constants = pack_constants(a)
+    if coeffs is None:
+        coeffs = pack_coefficients(a)
+
+    V0, V1 = a.function_spaces
+    _cpp.fem.assemble_matrix(  # type: ignore[arg-type]
+        A._cpp_object,
+        a._cpp_object,
+        constants,
+        coeffs,  # type: ignore[arg-type]
+        dof_marker0,
+        dof_marker1,
+    )
+
+    # If matrix is a 'diagonal' block, set diagonal entry for
+    # constrained dofs. Assembly zeroed these rows, so adding sets it.
+    if V0._cpp_object is V1._cpp_object:
+        set_diagonal(A, _owned_marked_rows(V0, dof_marker0), diag, la.InsertMode.add)
+    return A
+
+
 @functools.singledispatch
 def assemble_matrix(
     a: typing.Any,
@@ -312,12 +422,17 @@ def assemble_matrix(
     Note:
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
-    """
-    if bcs is None:
-        bcs = []
 
+    Note:
+        Convenience function for callers that have boundary conditions.
+        It rebuilds the constrained dof markers on every call, and
+        should not be called internally by the library.
+    """
     A = create_matrix(a, block_mode)
-    _assemble_matrix_csr(A, a, bcs, diag, constants, coeffs)
+    V0, V1 = a.function_spaces
+    _assemble_matrix_csr_markers(
+        A, a, _bc_dof_markers(V0, bcs), _bc_dof_markers(V1, bcs), diag, constants, coeffs
+    )
     return A
 
 
@@ -352,24 +467,107 @@ def _assemble_matrix_csr(
     Note:
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
+
+    Note:
+        Convenience function for callers that have boundary conditions.
+        It rebuilds the constrained dof markers on every call, and
+        should not be called internally by the library.
     """
-    _bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
+    V0, V1 = a.function_spaces
+    return _assemble_matrix_csr_markers(
+        A, a, _bc_dof_markers(V0, bcs), _bc_dof_markers(V1, bcs), diag, constants, coeffs
+    )
 
-    if constants is None:
-        constants = pack_constants(a)
 
-    if coeffs is None:
-        coeffs = pack_coefficients(a)
+def set_diagonal(
+    A: la.MatrixCSR[Scalar],
+    rows: npt.NDArray[np.int32],
+    diagonal: Scalar | float | complex | npt.NDArray[Scalar] = 1.0,
+    insert_mode: la.InsertMode = la.InsertMode.insert,
+) -> None:
+    """Set or add values on the diagonal for given rows of a matrix.
 
-    _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, _bcs)  # type: ignore[arg-type]
+    Args:
+        A: Matrix to modify.
+        rows: Rows to set the diagonal value for.
+        diagonal: Value to set on the diagonal, either a single value
+            for all rows or an array with ``diagonal[i]`` the value for
+            ``rows[i]``. An array must have the same length as
+            ``rows``.
+        insert_mode: ``la.InsertMode.insert`` to set the diagonal
+            entries, or ``la.InsertMode.add`` to add to them.
+    """
+    if np.ndim(diagonal) > 0:
+        diagonal = np.asarray(diagonal, dtype=A.data.dtype)
+    typing.cast(typing.Any, _cpp.fem.set_diagonal)(A._cpp_object, rows, diagonal, insert_mode)
 
-    # If matrix is a 'diagonal'block, set diagonal entry for constrained
-    # dofs
-    if a.function_spaces[0] is a.function_spaces[1]:
-        typing.cast(typing.Any, _cpp.fem.insert_diagonal)(
-            A._cpp_object, a.function_spaces[0], _bcs, diag
-        )
-    return A
+
+def set_bc_diagonal(
+    A: la.MatrixCSR[Scalar],
+    V: FunctionSpace,
+    bcs: Sequence[DirichletBC[Scalar]] | None,
+    diagonal: Scalar | float | complex = 1.0,
+) -> None:
+    """Set a value on the diagonal for Dirichlet boundary condition rows.
+
+    Note:
+        Convenience interface for callers holding ``V`` and ``bcs``
+        rather than the row list, which it rebuilds on every call.
+        Library code passes the rows to :func:`set_diagonal` instead.
+
+    Args:
+        A: Matrix to modify. Must be associated with ``V`` on both its
+            row and column function spaces.
+        V: Function space that the rows/columns of ``A`` are associated
+            with.
+        bcs: Boundary conditions that identify the diagonal rows to
+            set. If ``None``, no rows are set.
+        diagonal: Value to set on the diagonal.
+    """
+    rows_ = []
+    for bc in bcs or []:
+        if V.contains(bc.function_space):
+            dofs, owned = bc.dof_indices()
+            rows_.append(dofs[:owned])
+    rows = np.concatenate(rows_) if rows_ else np.empty(0, dtype=np.int32)
+    set_diagonal(A, rows, diagonal)
+
+
+def assemble_matrix_fn(
+    fn: Callable[[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray], int],
+    a: Form,
+    bcs: Sequence[DirichletBC] | None = None,
+) -> None:
+    """Assemble a bilinear form, inserting element matrices via ``fn``.
+
+    Rather than assembling into a :class:`~dolfinx.la.MatrixCSR` or a
+    PETSc matrix, ``fn`` is called once per cell/facet contribution with
+    the local-to-global row indices, column indices, and the element
+    matrix values, and is responsible for inserting them into a
+    caller-owned matrix representation.
+
+    Args:
+        fn: Called as ``fn(rows, cols, vals)`` for each contribution,
+            where ``vals`` has shape ``(len(rows), len(cols))``. Return
+            ``0`` on success.
+        a: Bilinear form to assemble.
+        bcs: Boundary conditions that affect the assembled matrix. Rows
+            and columns constrained by a boundary condition are zeroed.
+
+    Note:
+        Convenience function for callers that have boundary conditions.
+        It rebuilds the constrained dof markers on every call, and
+        should not be called internally by the library.
+    """
+    V0, V1 = a.function_spaces
+    typing.cast(typing.Any, _cpp.fem.assemble_matrix)(
+        fn,
+        a._cpp_object,
+        pack_constants(a),
+        pack_coefficients(a),
+        _bc_dof_markers(V0, bcs),
+        _bc_dof_markers(V1, bcs),
+    )
 
 
 # -- Modifiers for Dirichlet conditions -----------------------------------
@@ -476,7 +674,34 @@ def apply_lifting(
         Boundary condition values are *not* set in ``b`` by this
         function. Use :func:`dolfinx.fem.DirichletBC.set` to set values
         in ``b``.
+
+    Note:
+        Convenience function for callers that have boundary conditions.
+        It rebuilds the constrained dof markers and values on every
+        call, and should not be called internally by the library.
     """  # noqa: D301
+    spaces = [None if form is None else form.function_spaces[1] for form in a]
+    bc_markers1, bc_values1 = _bc_lifting_data(spaces, bcs, b.dtype)
+    _apply_lifting_markers(b, a, bc_markers1, bc_values1, x0, alpha, constants, coeffs)
+
+
+def _apply_lifting_markers(
+    b: npt.NDArray,
+    a: Sequence[Form | None],
+    bc_markers1: Sequence[npt.NDArray[np.int8]],
+    bc_values1: Sequence[npt.NDArray],
+    x0: Sequence[npt.NDArray] | None = None,
+    alpha: float = 1,
+    constants: Sequence[npt.NDArray] | None = None,
+    coeffs: Sequence[dict[tuple[IntegralType, int], npt.NDArray]] | None = None,
+) -> None:
+    """Lifting (see :func:`apply_lifting`), given constrained dofs.
+
+    ``bc_markers1[j]`` and ``bc_values1[j]`` are the constrained dof
+    markers and boundary condition values on the trial space of
+    ``a[j]``, as returned by :func:`_bc_lifting_data`. Empty arrays mean
+    block ``j`` has no constraints.
+    """
     if x0 is None:
         x0 = []
 
@@ -486,8 +711,7 @@ def apply_lifting(
         ]
 
     if coeffs is None:
-        coeffs = [pack_coefficients(form) for form in a]
+        coeffs = [pack_coefficients(form) if form is not None else {} for form in a]
 
     _a = [None if form is None else form._cpp_object for form in a]
-    _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
-    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)  # type: ignore[arg-type]
+    _cpp.fem.apply_lifting(b, _a, constants, coeffs, bc_markers1, bc_values1, x0, alpha)  # type: ignore[arg-type]

@@ -16,6 +16,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <format>
 #include <numeric>
 #include <ranges>
 #include <stdexcept>
@@ -53,7 +54,6 @@ Vec la::petsc::create_vector(const common::IndexMap& map, int bs)
 Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
                              std::span<const std::int64_t> ghosts, int bs)
 {
-  // Get local size
   assert(range[1] >= range[0]);
   std::int32_t local_size = range[1] - range[0];
 
@@ -134,7 +134,7 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
-  // Get ghost offset
+  // Offset to the first ghost entry, i.e. the total owned size
   int offset_owned = 0;
   for (auto& [map, bs] : maps)
     offset_owned += map.get().size_local() * bs;
@@ -149,7 +149,7 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
   common::petsc::check(VecGetArrayRead(x_local, &array), "VecGetArrayRead");
   std::span _x(array, n);
 
-  // Copy PETSc Vec data in to local vectors
+  // Copy PETSc Vec data into local vectors
   std::vector<std::vector<PetscScalar>> x_b;
   int offset = 0;
   int offset_ghost = offset_owned; // Ghost DoFs start after owned
@@ -183,7 +183,7 @@ void la::petsc::scatter_local_vectors(
   if (x_b.size() != maps.size())
     throw std::runtime_error("Mismatch in vector/map size.");
 
-  // Get ghost offset
+  // Offset to the first ghost entry, i.e. the total owned size
   int offset_owned = 0;
   for (auto& [map, bs] : maps)
     offset_owned += map.get().size_local() * bs;
@@ -220,77 +220,78 @@ void la::petsc::scatter_local_vectors(
 }
 //-----------------------------------------------------------------------------
 Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                             std::optional<std::string_view> type)
+                             std::optional<std::string_view> type,
+                             std::optional<ISLocalToGlobalMapping> rlgmap,
+                             std::optional<ISLocalToGlobalMapping> clgmap)
 {
   Mat A;
   common::petsc::check(MatCreate(comm, &A), "MatCreate");
 
-  // Get IndexMaps from sparsity pattern, and block size
-  std::array maps = {sp.index_map(0), sp.index_map(1)};
+  std::array maps = {sp.input_index_map(0), sp.input_index_map(1)};
   const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
   if (type and !type->empty())
+  {
     common::petsc::check(MatSetType(A, std::string(*type).c_str()),
                          "MatSetType");
+  }
 
-  // Get global and local dimensions
+  // Sizes in scalar, not block, terms
   const std::int64_t M = bs[0] * maps[0]->size_global();
   const std::int64_t N = bs[1] * maps[1]->size_global();
   const std::int32_t m = bs[0] * maps[0]->size_local();
   const std::int32_t n = bs[1] * maps[1]->size_local();
 
-  // Set matrix size
   common::petsc::check(MatSetSizes(A, m, n, M, N), "MatSetSizes");
 
-  // Apply PETSc options from the options database to the matrix (this
-  // includes changing the matrix type to one specified by the user)
+  // Apply the PETSc options database. This can change the matrix type,
+  // so anything type-dependent must follow
   common::petsc::check(MatSetFromOptions(A), "MatSetFromOptions");
 
-  // Find a common block size across rows/columns
-  const int _bs = (bs[0] == bs[1] ? bs[0] : 1);
-
-  // Build data to initialise sparsity pattern (modify for block size)
-  std::vector<PetscInt> _nnz_diag, _nnz_offdiag;
-  if (bs[0] == bs[1])
+  // BAIJ and SBAIJ store square blocks: preallocation applies one
+  // block size to both dimensions and overwrites the column block
+  // size. PETSc does not check this, so it is checked here
+  if (bs[0] != bs[1])
   {
-    const std::int32_t size_local = maps[0]->size_local();
-    _nnz_diag.resize(size_local);
-    _nnz_offdiag.resize(size_local);
-    auto rows = std::views::iota(std::int32_t(0), size_local);
-    std::ranges::transform(rows, _nnz_diag.begin(),
-                           [&sp](std::int32_t i) { return sp.nnz_diag(i); });
-    std::ranges::transform(rows, _nnz_offdiag.begin(), [&sp](std::int32_t i)
-                           { return sp.nnz_off_diag(i); });
-  }
-  else
-  {
-    // Expand for block size 1
-    const std::int32_t n = maps[0]->size_local() * bs[0];
-    _nnz_diag.resize(n);
-    _nnz_offdiag.resize(n);
-    auto rows = std::views::iota(std::int32_t(0), n);
-    std::ranges::transform(rows, _nnz_diag.begin(), [&sp, &bs](std::int32_t i)
-                           { return bs[1] * sp.nnz_diag(i / bs[0]); });
-    std::ranges::transform(rows, _nnz_offdiag.begin(),
-                           [&sp, &bs](std::int32_t i)
-                           { return bs[1] * sp.nnz_off_diag(i / bs[0]); });
+    PetscBool square_block = PETSC_FALSE;
+    common::petsc::check(PetscObjectTypeCompareAny(
+                             reinterpret_cast<PetscObject>(A), &square_block,
+                             MATBAIJ, MATSEQBAIJ, MATMPIBAIJ, MATSBAIJ,
+                             MATSEQSBAIJ, MATMPISBAIJ, ""),
+                         "PetscObjectTypeCompareAny");
+    if (square_block)
+    {
+      MatType mat_type;
+      common::petsc::check(MatGetType(A, &mat_type), "MatGetType");
+      std::string message = std::format(
+          "PETSc matrix type '{}' stores square blocks and cannot represent "
+          "row and column block sizes {} and {}.",
+          mat_type, bs[0], bs[1]);
+      common::petsc::check(MatDestroy(&A), "MatDestroy");
+      throw std::invalid_argument(message);
+    }
   }
 
-  // Allocate space for matrix
-  common::petsc::check(MatXAIJSetPreallocation(A, _bs, _nnz_diag.data(),
-                                               _nnz_offdiag.data(), nullptr,
-                                               nullptr),
-                       "MatXAIJSetPreallocation");
-
-  // Set block sizes
+  // Set the block sizes before attaching the local-to-global maps.
+  // MatXAIJSetPreallocation below is given PETSC_DECIDE as its block
+  // size argument so that it reads the sizes from the matrix; passing
+  // it an explicit block size instead calls MatSetBlockSize, which
+  // downgrades an attached map whose block size exceeds one
   common::petsc::check(MatSetBlockSizes(A, bs[0], bs[1]), "MatSetBlockSizes");
 
-  // Build a PETSc (PetscInt) local-to-global map directly from an
-  // IndexMap's local range and ghosts, rather than going via
-  // IndexMap::global_indices() (which materialises an intermediate
-  // std::int64_t array that would then need a second, full-size
-  // conversion pass -- wasteful for the large local sizes seen in
-  // practice)
+  // Non-zeros per block row. MatXAIJSetPreallocation expands this to
+  // scalar rows for the formats that need it
+  const std::int32_t num_block_rows = maps[0]->size_local();
+  std::vector<PetscInt> _nnz_diag(num_block_rows), _nnz_offdiag(num_block_rows);
+  auto rows = std::views::iota(std::int32_t(0), num_block_rows);
+  std::ranges::transform(rows, _nnz_diag.begin(),
+                         [&sp](std::int32_t i) { return sp.nnz_diag(i); });
+  std::ranges::transform(rows, _nnz_offdiag.begin(),
+                         [&sp](std::int32_t i) { return sp.nnz_off_diag(i); });
+
+  // Build the map from the local range and ghosts rather than from
+  // IndexMap::global_indices(), which would materialise an intermediate
+  // std::int64_t array and convert it in a second, full-size pass
   auto build_l2g = [](const common::IndexMap& map) -> std::vector<PetscInt>
   {
     const std::int32_t size_local = map.size_local();
@@ -301,16 +302,28 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
     return l2g;
   };
 
-  // Create PETSc local-to-global map/index sets
-  ISLocalToGlobalMapping local_to_global0;
-  std::vector<PetscInt> _map0 = build_l2g(*maps[0]);
-  common::petsc::check(ISLocalToGlobalMappingCreate(
-                           MPI_COMM_SELF, bs[0], _map0.size(), _map0.data(),
-                           PETSC_COPY_VALUES, &local_to_global0),
-                       "ISLocalToGlobalMappingCreate");
+  // Create the local-to-global maps on `comm` and attach them. MATIS
+  // requires them to share the matrix communicator
+  ISLocalToGlobalMapping local_to_global0 = nullptr;
+  if (rlgmap)
+  {
+    common::petsc::check(
+        PetscObjectReference(reinterpret_cast<PetscObject>(*rlgmap)),
+        "PetscObjectReference");
+    local_to_global0 = *rlgmap;
+  }
+  else
+  {
+    std::vector<PetscInt> _map0 = build_l2g(*maps[0]);
+    common::petsc::check(
+        ISLocalToGlobalMappingCreate(comm, bs[0], _map0.size(), _map0.data(),
+                                     PETSC_COPY_VALUES, &local_to_global0),
+        "ISLocalToGlobalMappingCreate");
+  }
 
-  // Check for common index maps
-  if (maps[0] == maps[1] and bs[0] == bs[1])
+  // Reuse the row map for the columns when the layouts match and the
+  // caller has not supplied one
+  if (!clgmap and maps[0] == maps[1] and bs[0] == bs[1])
   {
     common::petsc::check(
         MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global0),
@@ -318,12 +331,22 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   }
   else
   {
-    ISLocalToGlobalMapping local_to_global1;
-    std::vector<PetscInt> _map1 = build_l2g(*maps[1]);
-    common::petsc::check(ISLocalToGlobalMappingCreate(
-                             MPI_COMM_SELF, bs[1], _map1.size(), _map1.data(),
-                             PETSC_COPY_VALUES, &local_to_global1),
-                         "ISLocalToGlobalMappingCreate");
+    ISLocalToGlobalMapping local_to_global1 = nullptr;
+    if (clgmap)
+    {
+      common::petsc::check(
+          PetscObjectReference(reinterpret_cast<PetscObject>(*clgmap)),
+          "PetscObjectReference");
+      local_to_global1 = *clgmap;
+    }
+    else
+    {
+      std::vector<PetscInt> _map1 = build_l2g(*maps[1]);
+      common::petsc::check(
+          ISLocalToGlobalMappingCreate(comm, bs[1], _map1.size(), _map1.data(),
+                                       PETSC_COPY_VALUES, &local_to_global1),
+          "ISLocalToGlobalMappingCreate");
+    }
     common::petsc::check(
         MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global1),
         "MatSetLocalToGlobalMapping");
@@ -331,17 +354,19 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
                          "ISLocalToGlobalMappingDestroy");
   }
 
-  // Clean up local-to-global 0
+  // Release our reference; the matrix holds its own
   common::petsc::check(ISLocalToGlobalMappingDestroy(&local_to_global0),
                        "ISLocalToGlobalMappingDestroy");
 
-  // Note: This should be called after having set the local-to-global
-  // map for MATIS (this is a dummy call if A is not of type MATIS)
-  // ierr = MatISSetPreallocation(A, 0, _nnz_diag.data(), 0,
-  // _nnz_offdiag.data()); if (ierr != 0)
-  //   error(ierr, __FILE__, "MatISSetPreallocation");
+  // Allocate space for the matrix. This follows the local-to-global
+  // maps because MATIS builds its preallocation from them
+  common::petsc::check(
+      MatXAIJSetPreallocation(A, PETSC_DECIDE, _nnz_diag.data(),
+                              _nnz_offdiag.data(), nullptr, nullptr),
+      "MatXAIJSetPreallocation");
 
-  // Set some options on Mat object
+  // Fail on insertion outside the sparsity pattern, and keep zeroed
+  // entries in the structure so that the matrix can be re-assembled
   common::petsc::check(
       MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE),
       "MatSetOption");
@@ -559,7 +584,6 @@ void petsc::Matrix::set_from_options()
 //-----------------------------------------------------------------------------
 petsc::KrylovSolver::KrylovSolver(MPI_Comm comm) : _ksp(nullptr)
 {
-  // Create PETSc KSP object
   common::petsc::check(KSPCreate(comm, &_ksp), "KSPCreate");
 }
 //-----------------------------------------------------------------------------
@@ -605,7 +629,8 @@ void petsc::KrylovSolver::set_operators(const Mat A, const Mat P)
   common::petsc::check(KSPSetOperators(_ksp, A, P), "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
-PetscInt petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
+KSPConvergedReason petsc::KrylovSolver::solve(Vec x, const Vec b,
+                                              bool transpose)
 {
   common::Timer timer("PETSc Krylov solver");
   assert(_ksp);
@@ -627,9 +652,8 @@ PetscInt petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
                        "KSPGetIterationNumber");
 
   // Check if the solution converged and warn if not. Note: this does
-  // not throw on non-convergence -- the caller is responsible for
-  // checking the convergence reason (via ksp()) if this matters for
-  // its use case.
+  // not throw on non-convergence -- the caller must check the
+  // returned convergence reason if this matters for its use case.
   KSPConvergedReason reason;
   common::petsc::check(KSPGetConvergedReason(_ksp, &reason),
                        "KSPGetConvergedReason");
@@ -643,7 +667,7 @@ PetscInt petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
                  num_iterations, reason_str);
   }
 
-  return num_iterations;
+  return reason;
 }
 //-----------------------------------------------------------------------------
 void petsc::KrylovSolver::set_options_prefix(std::string_view options_prefix)

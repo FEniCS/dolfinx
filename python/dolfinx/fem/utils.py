@@ -1,5 +1,5 @@
-# Copyright (C) 2013-2026 Johan Hake, Jan Blechta, Garth N. Wells and
-# Jack S. Hale
+# Copyright (C) 2013-2026 Johan Hake, Jan Blechta, Garth N. Wells,
+# Jack S. Hale and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -24,18 +24,25 @@ from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
-from dolfinx.cpp.la import SparsityPattern
 from dolfinx.fem.element import CoordinateElement
 from dolfinx.fem.function import FunctionSpace
 from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
 from dolfinx.la import MatrixCSR as _MatrixCSR
+from dolfinx.la import SparsityPattern as _SparsityPattern
 
 if typing.TYPE_CHECKING:
+    # 'dolfinx.la.SparsityPattern' is spelled out in the annotations
+    # below because a bare 'SparsityPattern' is ambiguous in the
+    # generated docs, matching 'dolfinx.cpp.la.SparsityPattern' too.
+    # 'dolfinx.la' itself is not imported here: 'dolfinx.mesh' below
+    # already binds the 'dolfinx' package name, and 'dolfinx/__init__.py'
+    # imports 'la', so 'dolfinx.la.SparsityPattern' resolves without a
+    # second, conflicting import style for the same module.
     import dolfinx.mesh
     from dolfinx.cpp.fem import IntegralType as IntegralType
 
 
-def create_sparsity_pattern(a: dolfinx.fem.forms.Form) -> SparsityPattern:
+def create_sparsity_pattern(a: dolfinx.fem.forms.Form) -> dolfinx.la.SparsityPattern:
     """Create a sparsity pattern from a bilinear form.
 
     Args:
@@ -46,26 +53,25 @@ def create_sparsity_pattern(a: dolfinx.fem.forms.Form) -> SparsityPattern:
 
     Note:
         The pattern is not finalised, i.e. the caller is responsible for
-        calling ``assemble`` on the sparsity pattern.
+        calling :meth:`SparsityPattern.finalize
+        <dolfinx.la.SparsityPattern.finalize>`.
     """
-    return _create_sparsity_pattern(a._cpp_object)
+    return _SparsityPattern(_create_sparsity_pattern(a._cpp_object))
 
 
-def build_sparsity_pattern(pattern: SparsityPattern, a: dolfinx.fem.forms.Form) -> None:
+def build_sparsity_pattern(pattern: dolfinx.la.SparsityPattern, a: dolfinx.fem.forms.Form) -> None:
     """Build a sparsity pattern from a bilinear form.
 
     Args:
         pattern: The sparsity pattern to add to
         a: Bilinear form to build a sparsity pattern for.
 
-    Returns:
-        Sparsity pattern for the form ``a``.
-
     Note:
         The pattern is not finalised, i.e. the caller is responsible for
-        calling ``assemble`` on the sparsity pattern.
+        calling :meth:`SparsityPattern.finalize
+        <dolfinx.la.SparsityPattern.finalize>`.
     """
-    return _build_sparsity_pattern(pattern, a._cpp_object)
+    _build_sparsity_pattern(pattern._cpp_object, a._cpp_object)
 
 
 def create_interpolation_data(
@@ -73,6 +79,7 @@ def create_interpolation_data(
     V_from: FunctionSpace,
     cells: npt.NDArray[np.int32],
     padding: float = 1e-14,
+    allow_extrapolation: bool = True,
 ) -> _PointOwnershipData:
     """Generate data for interpolating functions on different meshes.
 
@@ -81,8 +88,18 @@ def create_interpolation_data(
         V_from: Function space to interpolate from.
         cells: Indices of the cells associated with `V_to` on which to
             interpolate into.
-        padding: Absolute padding of bounding boxes of all entities on
-            mesh_to.
+        padding: Absolute padding applied to the bounding box of each
+            cell in `V_from`'s mesh before searching for candidate
+            cells. Increasing ``padding`` increases the number of
+            cells considered as candidates for an interpolation point;
+            it does not by itself decide whether a point with no
+            actually-containing cell is assigned an owner, which is
+            controlled by ``allow_extrapolation``.
+        allow_extrapolation: If ``True`` (default), a point from
+            `V_to`'s mesh not actually contained in any candidate cell
+            of `V_from`'s mesh is instead assigned the candidate cell
+            closest to it (relevant e.g. if the two meshes do not fully
+            overlap). If ``False``, such points are left unowned.
 
     Returns:
         Data needed to interpolation functions defined on function
@@ -95,7 +112,9 @@ def create_interpolation_data(
             _cpp.mesh.Mesh_float32() as mesh1,
         ):
             return _PointOwnershipData(
-                _create_interpolation_data(geometry0, element0, mesh1, cells, padding)
+                _create_interpolation_data(
+                    geometry0, element0, mesh1, cells, padding, allow_extrapolation
+                )
             )
         case (
             _cpp.mesh.Geometry_float64() as geometry0,
@@ -103,7 +122,9 @@ def create_interpolation_data(
             _cpp.mesh.Mesh_float64() as mesh1,
         ):
             return _PointOwnershipData(
-                _create_interpolation_data(geometry0, element0, mesh1, cells, padding)
+                _create_interpolation_data(
+                    geometry0, element0, mesh1, cells, padding, allow_extrapolation
+                )
             )
         case _:
             raise TypeError(
@@ -245,8 +266,19 @@ def interpolate_geometry(msh: dolfinx.mesh.Mesh, cmap: CoordinateElement) -> dol
     Useful for creating a higher-order mesh from a lower-order one for
     computation, or vice-versa, for IO.
 
+    If ``cmap`` is discontinuous, the new geometry is discontinuous: each
+    cell has its own coordinate nodes, which are not shared with
+    neighbouring cells, so cell geometries can be moved independently of
+    each other. This is required, e.g., for periodic meshes.
+
     Note:
         The topology is shared between ``msh`` and the returned mesh.
+
+    Note:
+        A discontinuous geometry has no coordinate degrees-of-freedom
+        associated with the sub-entities of a cell, so functions that
+        extract the geometry of a sub-entity, e.g.
+        :func:`dolfinx.mesh.entities_to_geometry`, do not support it.
 
     Args:
         msh: Input mesh.
@@ -271,12 +303,14 @@ def interpolate_geometry(msh: dolfinx.mesh.Mesh, cmap: CoordinateElement) -> dol
             new_msh = _cpp.fem.interpolate_geometry(cpp_msh, cpp_cmap)
         case _:
             raise TypeError("interpolate_geometry requires msh and cmap to have the same dtype.")
+    new_cmap = new_msh.geometry.cmaps[0]
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
             _mesh.to_string(new_msh.topology.cell_type),
-            new_msh.geometry.cmaps[0].degree,
-            basix.LagrangeVariant(new_msh.geometry.cmaps[0].variant),
+            new_cmap.degree,
+            basix.LagrangeVariant(new_cmap.variant),
+            discontinuous=new_cmap.is_discontinuous,
             shape=(new_msh.geometry.dim,),
             dtype=new_msh.geometry.x.dtype,
         )

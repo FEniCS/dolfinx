@@ -1,40 +1,8 @@
-set(
-  HEADERS_fem
-  ${CMAKE_CURRENT_SOURCE_DIR}/Constant.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateElement.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/DirichletBC.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/DofMap.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Expression.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Form.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Function.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/MPC.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/assembler.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/assemble_mpc.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/assemble_expression_impl.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/assemble_matrix_impl.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/assemble_scalar_impl.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/assemble_vector_impl.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/discreteoperators.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_fem.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/interpolate.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/kernel.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pack.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/traits.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
-  PARENT_SCOPE
-)
-
 target_sources(
   dolfinx
   PRIVATE
-    DirichletBC.cpp
     CoordinateElement.cpp
+    DirichletBC.cpp
     DofMap.cpp
     ElementDofLayout.cpp
     FiniteElement.cpp
@@ -43,4 +11,45 @@ target_sources(
     petsc.cpp
     sparsitybuild.cpp
     utils.cpp
+)
+
+target_sources(
+  dolfinx
+  PUBLIC
+    FILE_SET HEADERS
+      FILES
+        Constant.h
+        CoordinateElement.h
+        DirichletBC.h
+        DofMap.h
+        ElementDofLayout.h
+        Expression.h
+        FiniteElement.h
+        Form.h
+        Function.h
+        FunctionSpace.h
+        MPC.h
+        assemble_mpc.h
+        assemble_expression_impl.h
+        assemble_matrix_impl.h
+        assemble_scalar_impl.h
+        assemble_vector_impl.h
+        assembler.h
+        discreteoperators.h
+        dofmapbuilder.h
+        dolfinx_fem.h
+        expression_evaluate.h
+        expression_factory.h
+        form_factory.h
+        functionspace_factory.h
+        integration_domains.h
+        interpolate.h
+        interpolate_geometry.h
+        kernel.h
+        pack.h
+        petsc.h
+        sparsitybuild.h
+        sparsitypattern.h
+        traits.h
+        utils.h
 )

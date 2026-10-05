@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Tormod Landet
+// Copyright (C) 2017-2026 Tormod Landet and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -36,5 +36,33 @@ public:
 private:
   // The underlying communicator
   MPI_Comm _comm;
+};
+
+/// This class wraps the MPI_Request type for use in the nanobind
+/// generation of python wrappers. MPI_Request is either a pointer or
+/// an int (MPICH vs OpenMPI) and this cannot be wrapped in a type safe
+/// way with nanobind.
+
+class MPIRequestWrapper
+{
+public:
+  MPIRequestWrapper() : _request(MPI_REQUEST_NULL) {}
+
+  /// Wrap an MPI_Request object
+  explicit MPIRequestWrapper(MPI_Request request) : _request(request) {}
+
+  /// Assignment operator
+  MPIRequestWrapper& operator=(const MPI_Request request)
+  {
+    this->_request = request;
+    return *this;
+  }
+
+  /// Get the underlying MPI request
+  MPI_Request get() const { return _request; }
+
+private:
+  // The underlying request
+  MPI_Request _request;
 };
 } // namespace dolfinx_wrappers

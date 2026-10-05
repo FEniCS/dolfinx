@@ -11,7 +11,7 @@
 #include <concepts>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/utils.h>
+#include <dolfinx/fem/functionspace_factory.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
@@ -38,7 +38,8 @@ void test_vtx_reuse_mesh()
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
-      mesh, std::make_shared<fem::FiniteElement<T>>(e)));
+      mesh,
+      std::make_shared<fem::FiniteElement<T>>(e, mesh->geometry().dim())));
 
   // Create a finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);

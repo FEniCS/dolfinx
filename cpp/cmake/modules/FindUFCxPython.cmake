@@ -2,10 +2,10 @@
 # - Try to find UFCx by interrogating the Python module FFCx
 # Once done this will define
 #
-#  UFCx_FOUND     - system has UFCx
-#  UFCx::UFCx     - imported interface target
-#  UFCX_SIGNATURE - SHA1 hash of ufcx.h
-#  UFCX_VERSION   - version for UFCx
+#  UFCxPython_FOUND       - system has UFCx
+#  UFCxPython::UFCxPython - imported interface target
+#  UFCX_SIGNATURE         - SHA1 hash of ufcx.h
+#  UFCX_VERSION           - version for UFCx
 #
 #=============================================================================
 # Copyright (C) 2010-2026 Johannes Ring, Garth N. Wells, Jack S. Hale
@@ -36,9 +36,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
+include(FindPackageHandleStandardArgs)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
-message(STATUS "Asking Python module FFCx for location of ufcx.h...")
+if(NOT UFCxPython_FIND_QUIETLY)
+  message(STATUS "Asking Python module FFCx for location of ufcx.h...")
+endif()
 
 # Get include path
 execute_process(
@@ -68,17 +71,17 @@ endif()
 
 mark_as_advanced(UFCX_VERSION UFCX_SIGNATURE)
 find_package_handle_standard_args(
-  UFCx
+  UFCxPython
   REQUIRED_VARS _UFCX_INCLUDE_DIR UFCX_SIGNATURE UFCX_VERSION
   VERSION_VAR UFCX_VERSION
   HANDLE_VERSION_RANGE
   REASON_FAILURE_MESSAGE "UFCx could not be found."
 )
 
-if(UFCx_FOUND AND NOT TARGET UFCx::UFCx)
-  add_library(UFCx::UFCx INTERFACE IMPORTED)
+if(UFCxPython_FOUND AND NOT TARGET UFCxPython::UFCxPython)
+  add_library(UFCxPython::UFCxPython INTERFACE IMPORTED)
   set_target_properties(
-    UFCx::UFCx
+    UFCxPython::UFCxPython
     PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${_UFCX_INCLUDE_DIR}"
   )
 endif()

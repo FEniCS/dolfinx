@@ -12,6 +12,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace dolfinx::common
 {
@@ -51,6 +52,20 @@ public:
   {
   }
 
+  // Copy constructor (deleted). Both copies would register `_task` when
+  // destroyed, counting it twice.
+  Timer(const Timer& timer) = delete;
+
+  /// @brief Move constructor.
+  /// @note Resets the moved-from timer explicitly. A moved-from
+  /// `std::optional` stays engaged, so a defaulted move would leave the
+  /// source registering an empty task name.
+  Timer(Timer&& timer) noexcept
+      : _task(std::exchange(timer._task, std::nullopt)), _acc(timer._acc),
+        _start_time(std::exchange(timer._start_time, std::nullopt))
+  {
+  }
+
   /// If timer is still running, it is stopped. Elapsed time is
   /// registered in the logger.
   ~Timer()
@@ -58,8 +73,29 @@ public:
     if (_start_time.has_value() and _task.has_value())
     {
       _acc += T::now() - *_start_time;
-      TimeLogger::instance().register_timing(*_task, _acc);
+      try
+      {
+        TimeLogger::instance().register_timing(*_task, _acc);
+      }
+      catch (...)
+      {
+        // Destructor is noexcept; discard the timing rather than terminate.
+      }
     }
+  }
+
+  // Copy assignment (deleted)
+  Timer& operator=(const Timer& timer) = delete;
+
+  /// @brief Move assignment.
+  /// @note Any elapsed time not yet registered by the target is
+  /// discarded. See the move constructor for why the source is reset.
+  Timer& operator=(Timer&& timer) noexcept
+  {
+    _task = std::exchange(timer._task, std::nullopt);
+    _acc = timer._acc;
+    _start_time = std::exchange(timer._start_time, std::nullopt);
+    return *this;
   }
 
   /// Reset elapsed time and (re-)start timer.

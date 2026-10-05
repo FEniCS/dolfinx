@@ -9,11 +9,12 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx.cpp.mesh import cell_entity_type, cell_num_entities
 from dolfinx.graph import adjacencylist
 from dolfinx.io import distribute_entity_data
 from dolfinx.mesh import (
     CellType,
+    cell_entity_type,
+    cell_num_entities,
     create_unit_cube,
     entities_to_geometry,
     locate_entities,

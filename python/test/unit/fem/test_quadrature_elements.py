@@ -125,8 +125,8 @@ def test_interpolation_blocked(degree):
 
 
 def extract_diagonal(mat):
-    num_rows = mat._cpp_object.index_map(0).size_local
-    num_cols = mat._cpp_object.index_map(1).size_local
+    num_rows = mat.index_map(0).size_local
+    num_cols = mat.index_map(1).size_local
     assert num_rows == num_cols, "Matrix must be square"
     bs = mat.block_size[0]
     diag = np.empty(num_rows * bs, dtype=mat.data.dtype)

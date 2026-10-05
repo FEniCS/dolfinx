@@ -77,7 +77,7 @@ auto det(U A)
     return w4;
   }
   default:
-    throw std::runtime_error(
+    throw std::invalid_argument(
         std::format("math::det is not implemented for {}x{} matrices.",
                     A.extent(0), A.extent(1)));
   }
@@ -133,7 +133,7 @@ void inv(U A, V B)
     break;
   }
   default:
-    throw std::runtime_error(
+    throw std::invalid_argument(
         std::format("math::inv is not implemented for {}x{} matrices.",
                     A.extent(0), A.extent(1)));
   }
@@ -223,7 +223,7 @@ void pinv(U A, V P)
   }
   else
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         std::format("math::pinv is not implemented for {}x{} matrices.",
                     A.extent(0), A.extent(1)));
   }

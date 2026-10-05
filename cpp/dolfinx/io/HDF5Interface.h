@@ -255,8 +255,7 @@ void write_dataset(hid_t file_handle, std::string_view dataset_path,
   const hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
   if (use_mpi_io)
   {
-    if (herr_t status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-        status < 0)
+    if (herr_t err = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE); err < 0)
     {
       throw std::runtime_error(
           "Failed to set HDF5 data transfer property list.");

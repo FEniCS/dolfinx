@@ -11,17 +11,15 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.common import IndexMap
-from dolfinx.cpp.la import BlockMode, SparsityPattern
-from dolfinx.la import matrix_csr
+from dolfinx.common import index_map
+from dolfinx.la import BlockMode, InsertMode, matrix_csr, sparsity_pattern
 from dolfinx.mesh import GhostMode, create_unit_square
 
 
 def create_test_sparsity(n, bs):
-    im = IndexMap(MPI.COMM_WORLD, n)
-    sp = SparsityPattern(MPI.COMM_WORLD, [im, im], [bs, bs])
+    im = index_map(MPI.COMM_WORLD, n)
+    sp = sparsity_pattern(MPI.COMM_WORLD, [im, im], [bs, bs])
     if bs == 1:
         for i in range(2):
             for j in range(2):
@@ -122,8 +120,8 @@ def test_distributed_csr(dtype):
     ghosts = np.array(range(n * nbr, n * nbr + nghost), dtype=np.int64)
     owner = np.ones_like(ghosts, dtype=np.int32) * nbr
 
-    im = IndexMap(MPI.COMM_WORLD, n, ghosts, owner, 0)
-    sp = SparsityPattern(MPI.COMM_WORLD, [im, im], [1, 1])
+    im = index_map(MPI.COMM_WORLD, n, (ghosts, owner), tag=0)
+    sp = sparsity_pattern(MPI.COMM_WORLD, [im, im], [1, 1])
     for i in range(n):
         for j in range(n + nghost):
             sp.insert(i, j)
@@ -207,7 +205,7 @@ def test_set_diagonal_distributed(dtype):
 
     # set diagonal values
     value = dtype(1.0)
-    _cpp.fem.insert_diagonal(A._cpp_object, dofs, value)
+    fem.set_diagonal(A, dofs, value)
 
     # check diagonal values: they should be 1.0, including ghost dofs
     diag = As.diagonal()
@@ -222,7 +220,7 @@ def test_set_diagonal_distributed(dtype):
     nlocal = index_map.size_local
     assert (diag[nlocal:] == dtype(0.0)).all()
 
-    data, offsets = index_map.index_to_dest_ranks(0)
+    data, offsets = index_map.index_to_dest_ranks()
     for dof in range(nlocal):
         owners = data[offsets[dof] : offsets[dof + 1]]
         assert diag[dof] == len(owners) + 1
@@ -234,7 +232,7 @@ def test_set_diagonal_distributed(dtype):
     # set diagonal values using dirichlet bc: this will set diagonal values of
     # owned rows only
     bc = fem.dirichletbc(dtype(0.0), dofs, V)
-    _cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], [bc._cpp_object], value)
+    fem.set_bc_diagonal(A, a.function_spaces[0], [bc], value)
 
     # check diagonal values: they should be 1.0, except ghost dofs
     diag = As.diagonal()
@@ -247,6 +245,52 @@ def test_set_diagonal_distributed(dtype):
     A.scatter_reverse()
     assert (As.diagonal()[nlocal:] == dtype(0.0)).all()
     assert (As.diagonal()[:nlocal] == dtype(1.0)).all()
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_set_diagonal_per_row(dtype):
+    """Test setting a different diagonal value for each row."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 6, 5, dtype=np.real(dtype(0)).dtype)
+    V = fem.functionspace(mesh, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = fem.form(ufl.inner(u, v) * ufl.dx, dtype=dtype)
+    A = fem.create_matrix(a)
+    As = A.to_scipy(ghosted=True)
+
+    # Every other owned row, with value rows[i] + 1 on row rows[i]
+    rows = np.arange(0, V.dofmap.index_map.size_local, 2, dtype=np.int32)
+    diagonals = (rows + 1).astype(dtype)
+    fem.set_diagonal(A, rows, diagonals)
+
+    diag = As.diagonal()
+    assert np.allclose(diag[rows], diagonals)
+    mask = np.ones(diag.shape[0], dtype=bool)
+    mask[rows] = False
+    assert np.allclose(diag[mask], 0.0)
+
+    # Adding the same values again doubles the diagonal
+    fem.set_diagonal(A, rows, diagonals, InsertMode.add)
+    assert np.allclose(As.diagonal()[rows], 2 * diagonals)
+
+    # Adding a single value to every row
+    fem.set_diagonal(A, rows, dtype(1), InsertMode.add)
+    assert np.allclose(As.diagonal()[rows], 2 * diagonals + 1)
+
+    # Inserting overwrites
+    fem.set_diagonal(A, rows, diagonals)
+    assert np.allclose(As.diagonal()[rows], diagonals)
+
+    # Number of values must match number of rows
+    with pytest.raises(ValueError):
+        fem.set_diagonal(A, rows, diagonals[:-1])
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
@@ -390,8 +434,8 @@ def test_eliminate_zeros_blocked_whole_block(dtype):
     bs0*bs1 entries is within tolerance; a block with even one entry
     above tolerance is kept in full, byte-for-byte.
     """
-    im = IndexMap(MPI.COMM_WORLD, 4)
-    sp = SparsityPattern(MPI.COMM_WORLD, [im, im], [2, 2])
+    im = index_map(MPI.COMM_WORLD, 4)
+    sp = sparsity_pattern(MPI.COMM_WORLD, [im, im], [2, 2])
     sp.insert(0, 1)
     sp.insert(2, 3)
     sp.finalize()

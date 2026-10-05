@@ -6,14 +6,11 @@
 
 #include "EntityMap.h"
 #include "Topology.h"
-#include <span>
-#include <unordered_map>
-#include <vector>
 
 namespace dolfinx::mesh
 {
 //-----------------------------------------------------------------------------
-std::size_t EntityMap::dim() const { return _dim; }
+int EntityMap::dim() const { return _dim; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const Topology> EntityMap::topology() const
 {

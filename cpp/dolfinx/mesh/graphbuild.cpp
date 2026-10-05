@@ -7,13 +7,19 @@
 #include "graphbuild.h"
 #include "cell_types.h"
 #include <algorithm>
+#include <array>
 #include <boost/sort/sort.hpp>
+#include <cassert>
+#include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
+#include <iterator>
+#include <limits>
 #include <mpi.h>
 #include <numeric>
 #include <optional>
@@ -241,6 +247,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm comm_po_post;
+  dest.reserve(1);
   MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &comm_po_post);
@@ -563,10 +570,16 @@ mesh::build_local_dual_graph(
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
 {
   if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   spdlog::info("Build local part of mesh dual graph");
   common::Timer timer("Compute local part of mesh dual graph");
+
+  if (cells.size() != celltypes.size())
+  {
+    throw std::invalid_argument(
+        "Number of cell types must match number of cell arrays.");
+  }
 
   if (std::size_t ncells_local
       = std::accumulate(cells.begin(), cells.end(), 0,
@@ -578,12 +591,6 @@ mesh::build_local_dual_graph(
     return {graph::AdjacencyList<std::int32_t>(0), std::vector<std::int64_t>(),
             0, std::vector<std::int32_t>()};
   }
-
-  if (cells.size() != celltypes.size())
-  {
-    throw std::runtime_error(
-        "Number of cell types must match number of cell arrays.");
-  };
 
   int tdim = mesh::cell_dim(celltypes.front());
 
@@ -602,10 +609,19 @@ mesh::build_local_dual_graph(
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
     CellType cell_type = celltypes[j];
-    assert(tdim == mesh::cell_dim(cell_type));
+    if (tdim != mesh::cell_dim(cell_type))
+    {
+      throw std::invalid_argument(
+          "All cell types must have the same topological dimension.");
+    }
     int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
     int num_cell_facets = mesh::cell_num_entities(cell_type, tdim - 1);
 
+    if (cells[j].size() % num_cell_vertices != 0)
+    {
+      throw std::invalid_argument("Cell array size is not a multiple of the "
+                                  "number of vertices per cell.");
+    }
     std::int32_t num_cells = cells[j].size() / num_cell_vertices;
     cell_offsets.push_back(cell_offsets.back() + num_cells);
     facet_count += num_cell_facets * num_cells;

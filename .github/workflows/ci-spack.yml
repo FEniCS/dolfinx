@@ -58,9 +58,9 @@ jobs:
         uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
         with:
           spack_ref: v1.2.2
-          # spack-packages 'develop' at 2026-08-17. Bumping re-solves the
+          # spack-packages 'develop' at 2026-09-14. Bumping re-solves the
           # graph and can invalidate cached binaries; warm the cache first.
-          packages_ref: 1ccf95574922e2a7f7ef0351bd67758ad4634b7a
+          packages_ref: 43144421c9973da2bfc47c56b30ecaec45d6fc6c
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v7

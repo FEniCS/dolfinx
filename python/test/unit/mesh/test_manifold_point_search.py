@@ -5,10 +5,9 @@ import pytest
 
 import ufl
 from basix.ufl import element
-from dolfinx import cpp as _cpp
 from dolfinx import default_real_type, geometry
 from dolfinx.geometry import bb_tree
-from dolfinx.mesh import create_mesh
+from dolfinx.mesh import create_mesh, entities_to_geometry
 
 
 @pytest.mark.skip_in_parallel
@@ -26,8 +25,8 @@ def test_manifold_point_search():
     colliding_cells = geometry.compute_colliding_cells(mesh, cell_candidates, points)
 
     # Extract vertices of cell
-    indices = _cpp.mesh.entities_to_geometry(
-        mesh._cpp_object,
+    indices = entities_to_geometry(
+        mesh,
         mesh.topology.dim,
         np.array([colliding_cells.links(0)[0], colliding_cells.links(1)[0]]),
         False,

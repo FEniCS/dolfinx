@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2024 Chris N. Richardson, Garth N. Wells and Paul T.
+// Copyright (C) 2018-2026 Chris N. Richardson, Garth N. Wells and Paul T.
 // Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -51,10 +51,10 @@ void refinement(nb::module_& m)
       {
         int tdim = parent_meshtag.topology()->dim();
         if (parent_meshtag.dim() != tdim - 1)
-          throw std::runtime_error("Input meshtag is not facet-based");
+          throw std::invalid_argument("Input meshtag is not facet-based.");
         if (parent_facet.size() != parent_cell.size() * (tdim + 1))
         {
-          throw std::runtime_error(
+          throw std::invalid_argument(
               "parent_facet size must equal parent_cell size * (tdim + 1).");
         }
 
@@ -66,7 +66,7 @@ void refinement(nb::module_& m)
           {
             if (parent_cell.data()[i] < 0 or parent_cell.data()[i] >= num_cells)
             {
-              throw std::runtime_error(
+              throw std::out_of_range(
                   "Index out of range in parent_cell array.");
             }
           }
@@ -80,8 +80,8 @@ void refinement(nb::module_& m)
             topology1, tdim - 1, std::move(entities), std::move(values),
             parent_meshtag.name());
       },
-      nb::arg("parent_meshtag"), nb::arg("refined_mesh"),
-      nb::arg("parent_cell"), nb::arg("parent_facet"));
+      nb::arg("parent_meshtag"), nb::arg("topology1"), nb::arg("parent_cell"),
+      nb::arg("parent_facet"));
   m.def(
       "transfer_cell_meshtag",
       [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
@@ -90,10 +90,10 @@ void refinement(nb::module_& m)
       {
         int tdim = parent_meshtag.topology()->dim();
         if (parent_meshtag.dim() != tdim)
-          throw std::runtime_error("Input meshtag is not cell-based");
+          throw std::invalid_argument("Input meshtag is not cell-based.");
 
         if (parent_meshtag.topology()->index_map(tdim)->num_ghosts() > 0)
-          throw std::runtime_error("Ghosted meshes are not supported");
+          throw std::invalid_argument("Ghosted meshes are not supported.");
 
         {
           auto index_map = parent_meshtag.topology()->index_map(tdim);
@@ -103,7 +103,7 @@ void refinement(nb::module_& m)
           {
             if (parent_cell.data()[i] < 0 or parent_cell.data()[i] >= num_cells)
             {
-              throw std::runtime_error(
+              throw std::out_of_range(
                   "Index out of range in parent_cell array.");
             }
           }
@@ -115,8 +115,7 @@ void refinement(nb::module_& m)
             topology1, tdim, std::move(entities), std::move(values),
             parent_meshtag.name());
       },
-      nb::arg("parent_meshtag"), nb::arg("refined_mesh"),
-      nb::arg("parent_cell"));
+      nb::arg("parent_meshtag"), nb::arg("topology1"), nb::arg("parent_cell"));
 }
 
 } // namespace dolfinx_wrappers

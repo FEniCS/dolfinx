@@ -7,7 +7,7 @@ installed. On Unix systems the built-in OpenMPI or MPICH ports can be used.
 
 From the root of this repository it can be activated by e.g.:
 
-    cmake -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build-dir -S cpp/
+    cmake -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/cmake/vcpkg-overlay" -B build-dir -S cpp/
 
 This overlay port was adapted from the original at:
 
