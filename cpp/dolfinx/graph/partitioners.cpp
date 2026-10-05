@@ -270,6 +270,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // C-style array indexing
     constexpr SCOTCH_Num baseval = 0;
 
+    // Copy graph data to get the required type (SCOTCH_Num)
     std::vector<SCOTCH_Num> edgeloctab(graph.array().begin(),
                                        graph.array().end());
     edgeloctab.reserve(1); // guarantee no nullptr
