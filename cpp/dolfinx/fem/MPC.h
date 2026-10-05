@@ -28,12 +28,13 @@ public:
   /// @param constrained_dofs_local List of local constrained dofs
   /// @param reference_dofs_global List of global reference dofs with
   /// weights for each local constrained dof
-  /// @note u_constrained = sum(u_ref * coeff_ref)
+  /// @note u_constrained = sum(u_ref * coeff_ref) + u_const
   /// @note If the FunctionSpace V has a block size, then the dofs in
   /// constrained_dofs_local and reference_dofs_global must be the fully
   /// expanded dof indices.
-  /// @todo Add a constant term to the constraint, i.e. u_constrained =
-  /// sum(u_ref * coeff_ref) + constant
+  /// @note A constant value can be added to the constraint by adding a
+  /// reference dof with a negative global index (e.g. -1) and the constant
+  /// value as the weight.
 
   MPC(const FunctionSpace<U>& V,
       const std::vector<std::int32_t>& constrained_dofs_local,
@@ -50,10 +51,17 @@ public:
 
     // Get unique list of global dofs
     std::vector<std::int64_t> gl_dofs;
+    std::vector<std::pair<std::int32_t, T>> const_list;
     for (std::size_t i = 0; i < reference_dofs_global.size(); ++i)
     {
       for (auto r : reference_dofs_global[i])
-        gl_dofs.push_back(r.second);
+      {
+        if (r.second >= 0)
+          gl_dofs.push_back(r.second);
+
+        else
+          const_list.push_back({constrained_dofs_local[i], r.first});
+      }
     }
     std::sort(gl_dofs.begin(), gl_dofs.end());
     gl_dofs.erase(std::unique(gl_dofs.begin(), gl_dofs.end()), gl_dofs.end());
@@ -114,12 +122,15 @@ public:
                                        index_map_bs, cell_dofs, bs));
 
     // Compute offsets for flattened arrays of reference dofs and weights
+    // (constants with negative global index are excluded from _constraints)
     std::vector<std::int32_t> count(
         index_map_bs
             * (dm->index_map->size_local() + dm->index_map->num_ghosts()),
         0);
     for (std::size_t i = 0; i < constrained_dofs_local.size(); ++i)
-      count[constrained_dofs_local[i]] += reference_dofs_global[i].size();
+      for (auto& r : reference_dofs_global[i])
+        if (r.second >= 0)
+          ++count[constrained_dofs_local[i]];
     std::vector<std::int32_t> dof_to_ref(count.size() + 1, 0);
     std::partial_sum(count.begin(), count.end(), std::next(dof_to_ref.begin()));
 
@@ -133,18 +144,15 @@ public:
     {
       std::int32_t index = dof_to_ref[constrained_dofs_local[i]];
       const auto& refs_i = reference_dofs_global[i];
+      std::int32_t k = 0;
       for (std::size_t j = 0; j < refs_i.size(); ++j)
       {
-        ref_coeffs_flat[index + j] = refs_i[j].first;
-        // Remove and store the component, reapply after converting to local
-        // index
-        spdlog::info(
-            "ref_dofs_tmp[{}] = {} / {}, ref_dofs_component[{}] = {} % {}",
-            index + j, refs_i[j].second, index_map_bs, index + j,
-            refs_i[j].second, index_map_bs);
-
-        ref_dofs_tmp[index + j] = refs_i[j].second / index_map_bs;
-        ref_dofs_component[index + j] = refs_i[j].second % index_map_bs;
+        if (refs_i[j].second < 0)
+          continue; // constant term, handled separately in _constants
+        ref_coeffs_flat[index + k] = refs_i[j].first;
+        ref_dofs_tmp[index + k] = refs_i[j].second / index_map_bs;
+        ref_dofs_component[index + k] = refs_i[j].second % index_map_bs;
+        ++k;
       }
     }
 
@@ -160,6 +168,29 @@ public:
     _constraints
         = std::make_unique<graph::AdjacencyList<std::pair<std::int32_t, T>>>(
             constraints_flat, dof_to_ref);
+
+    // Build _constants AdjacencyList from const_list.
+    // const_list holds {local_constrained_dof, constant_value} pairs.
+    {
+      const std::int32_t total_dofs
+          = index_map_bs
+            * (dm->index_map->size_local() + dm->index_map->num_ghosts());
+      std::vector<std::int32_t> ccount(total_dofs, 0);
+      for (auto& [dof, val] : const_list)
+        ++ccount[dof];
+      std::vector<std::int32_t> coffsets(total_dofs + 1, 0);
+      std::partial_sum(ccount.begin(), ccount.end(),
+                       std::next(coffsets.begin()));
+      std::vector<T> cvalues(coffsets.back());
+      std::fill(ccount.begin(), ccount.end(), 0);
+      for (auto& [dof, val] : const_list)
+      {
+        cvalues[coffsets[dof] + ccount[dof]] = val;
+        ++ccount[dof];
+      }
+      _constants
+          = std::make_unique<graph::AdjacencyList<T>>(cvalues, coffsets);
+    }
   }
 
   /// @brief Get modified FunctionSpace containing reference dofs as ghosts
@@ -203,6 +234,14 @@ public:
   const graph::AdjacencyList<std::pair<std::int32_t, T>>& constraints() const
   {
     return *_constraints;
+  }
+
+  /// @brief Return constant contributions for each local dof (if any).
+  /// For each local constrained dof, the list contains the constant values
+  /// to be added: u[i] = sum(c_k * u[ref_k]) + sum(const_j)
+  const graph::AdjacencyList<T>& constants() const
+  {
+    return *_constants;
   }
 
 private:

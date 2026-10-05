@@ -365,6 +365,7 @@ template <dolfinx::scalar T, std::floating_point U>
 void apply_mpc_solution(std::span<T> u, const MPC<T, U>& mpc)
 {
   const auto& C = mpc.constraints();
+  const auto& K = mpc.constants();
   const std::int32_t index_map_bs = mpc.V()->dofmap()->index_map_bs();
   const std::int32_t num_owned
       = mpc.V()->dofmap()->index_map->size_local() * index_map_bs;
@@ -372,11 +373,14 @@ void apply_mpc_solution(std::span<T> u, const MPC<T, U>& mpc)
   for (std::int32_t dof = 0; dof < num_owned; ++dof)
   {
     auto links = C.links(dof);
-    if (links.empty())
+    auto clinks = K.links(dof);
+    if (links.empty() and clinks.empty())
       continue;
     u[dof] = T(0);
     for (auto [ref_dof, coeff] : links)
       u[dof] += coeff * u[ref_dof];
+    for (auto c : clinks)
+      u[dof] += c;
   }
 }
 
