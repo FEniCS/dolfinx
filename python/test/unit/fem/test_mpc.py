@@ -2,7 +2,6 @@ from mpi4py import MPI
 
 import numpy as np
 
-import dolfinx.cpp
 from dolfinx.fem import (
     Function,
     FunctionSpace,
@@ -12,7 +11,13 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.la import matrix_csr
+from dolfinx.fem.mpc import (
+    MPC,
+    apply_mpc_solution,
+    apply_mpc_vector,
+    assemble_matrix_mpc,
+    build_sparsity_pattern_mpc,
+)
 from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 from dolfinx.mesh import create_unit_square, locate_entities_boundary
 from ufl import TestFunction, TrialFunction, dx, grad, inner
@@ -66,8 +71,8 @@ def test_mpc():
     local_dofs = np.array([k for k in map_LR.keys()], dtype=np.int32)
     global_dofs = [np.array([map_LR[k]], dtype=np.int64) for k in map_LR.keys()]
     global_coeffs = [np.array([1.0], dtype=np.float64) for k in map_LR.keys()]
-    mpc = dolfinx.cpp.fem.MPC_float64(V._cpp_object, local_dofs, global_dofs, global_coeffs)
-    V_new = FunctionSpace(mesh, V.ufl_element(), mpc.V())
+    mpc = MPC(V, local_dofs, global_dofs, global_coeffs)
+    V_new = FunctionSpace(mesh, V.ufl_element(), mpc.V)
     bc = dirichletbc(value=0.0, dofs=dofsbc, V=V_new)
 
     # Standard Poisson problem
@@ -77,13 +82,13 @@ def test_mpc():
     a = form(a)
 
     # Create SparsityPattern
-    sp = create_sparsity_pattern(a)._cpp_object
+    sp = create_sparsity_pattern(a)
     # Add extra MPC links to sparsity
-    dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc, mpc)
+    build_sparsity_pattern_mpc(sp, a, mpc, mpc)
     sp.finalize()
 
-    A = dolfinx.la.MatrixCSR(dolfinx.cpp.la.MatrixCSR_float64(sp, dolfinx.la.BlockMode.compact))
-    dolfinx.cpp.fem.assemble_matrix_mpc(mpc, A._cpp_object, a._cpp_object, [bc._cpp_object])
+    A = dolfinx.la.matrix_csr(sp)
+    assemble_matrix_mpc(mpc, A, a, [bc])
     dolfinx.fem.set_bc_diagonal(A, V_new, [bc], 1.0)
     A.scatter_reverse()
 
@@ -102,7 +107,7 @@ def test_mpc():
     #   4. apply_lifting and set Dirichlet BC values
     b = dolfinx.fem.assemble_vector(L)
     b.scatter_reverse(dolfinx.la.InsertMode.add)
-    dolfinx.cpp.fem.apply_mpc_vector(b.array, mpc)
+    apply_mpc_vector(b.array, mpc)
     b.scatter_reverse(dolfinx.la.InsertMode.add)
     dolfinx.fem.apply_lifting(b.array, [a], [[bc]])
     b.scatter_reverse(dolfinx.la.InsertMode.add)
@@ -115,7 +120,7 @@ def test_mpc():
     # Recover constrained dof values: u[constrained] = sum c_k * u[ref_k].
     # scatter_fwd first so reference ghost dof values are current.
     u.x.scatter_forward()
-    dolfinx.cpp.fem.apply_mpc_solution(u.x.array, mpc)
+    apply_mpc_solution(u.x.array, mpc)
 
     # Verify periodicity: u on left edge should equal u on right edge at matching y
     u_arr = u.x.array
