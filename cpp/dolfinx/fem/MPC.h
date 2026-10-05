@@ -337,7 +337,8 @@ void build_sparsity_pattern_mpc(
         ref_dofs.resize(c.size());
         for (std::size_t i = 0; i < c.size(); ++i)
           ref_dofs[i] = c[i].first / bs;
-        ref_dofs.push_back(dof);
+        // Only (ref_k, ref_j) cross-entries are needed; the constrained dof
+        // diagonal is always present and no constraint row/column is inserted.
         pattern.insert(ref_dofs, ref_dofs);
       }
     }

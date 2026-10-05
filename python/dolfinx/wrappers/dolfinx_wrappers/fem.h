@@ -604,6 +604,19 @@ void declare_objects(nb::module_& m, std::string type)
       "reference dofs, then set constrained row to the constraint "
       "residual u_i - sum c_k u_{ref_k}.");
 
+  m.def(
+      "apply_mpc_solution",
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> u,
+         const dolfinx::fem::MPC<T, U>& mpc)
+      {
+        dolfinx::fem::apply_mpc_solution<T, U>(
+            std::span<T>(u.data(), u.size()), mpc);
+      },
+      nb::arg("u"), nb::arg("mpc"),
+      "Recover constrained dof values after a linear solve: "
+      "u[i] = sum c_k u[ref_k]. Call after scatter_fwd so reference "
+      "ghost values are current.");
+
   // dolfinx::fem::DirichletBC
   pyclass_name = std::string("DirichletBC_") + type;
   nb::class_<dolfinx::fem::DirichletBC<T, U>> dirichletbc(

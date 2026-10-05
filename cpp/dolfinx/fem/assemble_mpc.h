@@ -254,74 +254,24 @@ void assemble_matrix_mpc(
   spdlog::info("Assemble MPC");
   assemble_matrix(mat_add_mpc, a, bcs);
 
-  // If different spaces, skip this step
-  if (a.function_spaces()[0].get() != a.function_spaces()[1].get())
-    return;
-
-  spdlog::info("Apply MPC constraints, bs = {}", bs_row);
-  // Insert constraint u_i = sum(a_j u_j)
-  // N.B. assumes b_i = 0 (make sure this is done in RHS)
-
-  // Check each dof individually, and add to matrix if it has constraints
+  // Set diagonal = 1 for each locally-owned constrained dof so the row is
+  // non-singular.  The P^T A P step has already zeroed these rows/columns,
+  // so no other entry needs touching here.  The correct solution value
+  // u[i] = sum(c_k * u[ref_k]) is recovered by apply_mpc_solution after
+  // the linear solve.
+  spdlog::info("Apply MPC diagonal, bs = {}", bs_row);
   for (int dof = 0;
        dof < bs_row * mpc_row.V()->dofmap()->index_map->size_local(); ++dof)
   {
     if (mpc_row.constraints().num_links(dof) == 0)
       continue;
 
-    // Compile list of block dofs required.
-    std::vector<std::int32_t> dofs0 = {dof / bs_row};
-    for (auto [ref_dof, ref_coeff] : mpcs[0].get().constraints().links(dof))
-      dofs0.push_back(ref_dof / bs_row);
-    std::sort(dofs0.begin(), dofs0.end());
-    dofs0.erase(std::unique(dofs0.begin(), dofs0.end()), dofs0.end());
-
-    // Expand dofs0 to include block size
-    std::vector<std::int32_t> dofs1;
-    for (int d : dofs0)
-    {
-      for (int k = 0; k < bs_row; ++k)
-        dofs1.push_back(d * bs_row + k);
-    }
-
-    spdlog::debug("dof: {}", dof);
-
-    std::vector<T> v(dofs1.size() * dofs1.size(), T(0));
-    // Find constrained dof in dofs1 and set diagonal to 1.0
-    auto it = std::lower_bound(dofs1.begin(), dofs1.end(), dof);
-    if (it == dofs1.end() || *it != dof)
-      throw std::runtime_error("Constrained dof not found in dofs1");
-    std::size_t jdof = std::distance(dofs1.begin(), it);
-    v[jdof + dofs1.size() * jdof] = T(1.0);
-
-    spdlog::debug("jdof: {}", jdof);
-
-    // Find coefficients for each reference dof
-    for (auto [ref_dof, ref_coeff] : mpc_row.constraints().links(dof))
-    {
-      auto it = std::lower_bound(dofs1.begin(), dofs1.end(), ref_dof);
-      if (it == dofs1.end() || *it != ref_dof)
-        throw std::runtime_error("Reference dof not found in dofs1");
-      std::size_t m = std::distance(dofs1.begin(), it);
-      if constexpr (std::is_same_v<T, double>)
-        spdlog::debug("  m: {}, ref_coeff: {}", m, ref_coeff);
-      v[m + dofs1.size() * jdof] = -ref_coeff;
-    }
-
-    for (std::size_t i = 0; i < dofs1.size(); ++i)
-    {
-      if (i == jdof)
-        continue;
-      for (std::size_t j = 0; j < dofs1.size(); ++j)
-      {
-        v[i * dofs1.size() + j]
-            = v[jdof * dofs1.size() + i] * v[jdof * dofs1.size() + j];
-      }
-    }
-
-    mat_add(dofs0, dofs0, v);
-
-    debug_matrix("assemble_matrix_mpc: constraint row", dofs1, dofs1, v);
+    std::int32_t block_dof = dof / bs_row;
+    int component = dof % bs_row;
+    std::vector<T> v(bs_row * bs_row, T(0));
+    v[component * bs_row + component] = T(1);
+    mat_add(std::span<const std::int32_t>({&block_dof, 1}),
+            std::span<const std::int32_t>({&block_dof, 1}), v);
   }
 }
 
@@ -382,6 +332,39 @@ void apply_mpc_vector(std::span<T> b, const MPC<T, U>& mpc)
     // TODO: for inhomogeneous constraints set b[dof] = g_i (the constant
     // stored per constrained dof in MPC::_constants, not yet implemented).
     b[dof] = T(0);
+  }
+}
+
+/// @brief Recover constrained dof values from the solution after a linear solve.
+///
+/// After solving the linear system assembled with assemble_matrix_mpc, the
+/// constrained dof slots hold whatever the solver placed there (typically 0,
+/// since those rows were set to a unit diagonal with zero RHS).  This
+/// function overwrites each such slot with the correct constraint value:
+///
+///   u[i] ← Σ_k c_k u[ref_k]
+///
+/// @note In parallel, scatter_fwd must be called on @p u before this
+///       function so that ghost values of reference dofs are current.
+///
+/// @param[in,out] u  Solution vector (extended IndexMap of mpc.V()).
+/// @param[in]    mpc Multipoint constraint.
+template <dolfinx::scalar T, std::floating_point U>
+void apply_mpc_solution(std::span<T> u, const MPC<T, U>& mpc)
+{
+  const auto& C = mpc.constraints();
+  const std::int32_t index_map_bs = mpc.V()->dofmap()->index_map_bs();
+  const std::int32_t num_owned
+      = mpc.V()->dofmap()->index_map->size_local() * index_map_bs;
+
+  for (std::int32_t dof = 0; dof < num_owned; ++dof)
+  {
+    auto links = C.links(dof);
+    if (links.empty())
+      continue;
+    u[dof] = T(0);
+    for (auto [ref_dof, coeff] : links)
+      u[dof] += coeff * u[ref_dof];
   }
 }
 
