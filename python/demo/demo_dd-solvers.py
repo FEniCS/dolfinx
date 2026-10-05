@@ -139,16 +139,17 @@ xdtype = PETSc.RealType
 
 # With CG, BDDC solves the subdomain interior problems once up front
 # and assumes the interior residual then stays zero. In single
-# precision rounding breaks this and CG breaks down, so both solvers
-# set `pc_bddc_switch_static` there, which redoes the interior
+# precision rounding breaks this and CG breaks down, so both BDDC
+# solves set `pc_bddc_switch_static` there, which redoes the interior
 # correction in every application at the cost of an extra local solve.
 
 # +
 single_precision = np.finfo(dtype).bits == 32
 rtol = 1e-5 if single_precision else 1e-8
+PCOptions = dict[str, str | int | bool]
 # -
 
-# Both solvers report how many of their constrained degrees of freedom
+# Both problems report how many of their constrained degrees of freedom
 # lie on a subdomain interface, which
 # :func:`~dolfinx.common.num_sharing_ranks` answers directly.
 
@@ -229,7 +230,7 @@ def solve_poisson(msh: mesh.Mesh) -> tuple[fem.Function, int, int]:
 # subdomain problems; without it those problems keep their rigid body
 # modes and the factorisation fails.
 
-bddc_options: dict[str, str | int | bool] = {
+bddc_options: PCOptions = {
     "pc_type": "bddc",
     "pc_bddc_use_change_of_basis": True,
     "pc_bddc_switch_static": single_precision,
@@ -243,12 +244,7 @@ bddc_options: dict[str, str | int | bool] = {
 # of GenEO: the eigenvectors with the smallest eigenvalues, which
 # include the rigid body modes of a subdomain the Dirichlet condition
 # does not touch, span the coarse space. No near null space or primal
-# constraints are needed. With `pc_hpddm_harmonic_overlap` the
-# eigenproblems are built from the assembled matrix alone, so the
-# method needs nothing beyond the operator. PCHPDDM can instead take
-# the local matrices $A_{i}$ of a `MATIS` operator, but here that gives
-# a much weaker coarse space, whose iteration count grows with the
-# number of processes.
+# constraints are needed.
 #
 # The options select:
 #
@@ -276,7 +272,7 @@ bddc_options: dict[str, str | int | bool] = {
 # PCHPDDM is available only when PETSc is configured with HPDDM and
 # SLEPc.
 
-hpddm_options: dict[str, str | int | bool] = {
+hpddm_options: PCOptions = {
     "pc_type": "hpddm",
     "pc_hpddm_harmonic_overlap": 1,
     "pc_hpddm_levels_1_eps_nev": 30,
@@ -319,7 +315,7 @@ def rigid_body_modes(V: fem.FunctionSpace) -> PETSc.NullSpace:
 
 
 def solve_elasticity(
-    msh: mesh.Mesh, kind: str | None, pc_options: dict[str, str | int | bool]
+    msh: mesh.Mesh, kind: str | None, pc_options: PCOptions
 ) -> tuple[fem.Function, int, int]:
     """Solve the elasticity problem on ``msh`` using CG.
 
@@ -367,6 +363,7 @@ def solve_elasticity(
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
     set_bc(b, [bc])
 
+    # Used by BDDC only; PCHPDDM finds the modes itself
     near_nullspace = rigid_body_modes(V)
     A.setNearNullSpace(near_nullspace)
     A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
@@ -417,7 +414,7 @@ def solve_elasticity(
 
 # +
 comm = MPI.COMM_WORLD
-elasticity_pcs: list[tuple[str | None, dict[str, str | int | bool]]] = [("is", bddc_options)]
+elasticity_pcs: list[tuple[str | None, PCOptions]] = [("is", bddc_options)]
 if PETSc.Sys.hasExternalPackage("hpddm") and comm.size > 1:
     elasticity_pcs.append((None, hpddm_options))
 
