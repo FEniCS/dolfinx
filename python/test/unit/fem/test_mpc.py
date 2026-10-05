@@ -79,7 +79,7 @@ def test_mpc():
     # Create SparsityPattern
     sp = create_sparsity_pattern(a)
     # Add extra MPC links to sparsity
-    dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc, mpc)
+    dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp._cpp_object, a._cpp_object, mpc, mpc)
     sp.finalize()
 
     A = matrix_csr(sp)
