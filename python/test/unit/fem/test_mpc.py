@@ -1,10 +1,10 @@
 from mpi4py import MPI
 
+import numpy as np
+
 import dolfinx
 import dolfinx.fem
 import dolfinx.la
-
-import numpy as np
 
 from dolfinx.fem import (
     Function,

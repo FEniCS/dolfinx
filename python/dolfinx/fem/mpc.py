@@ -12,8 +12,6 @@ user code never needs to import that private module directly.
 
 from __future__ import annotations
 
-import typing
-
 import numpy as np
 import numpy.typing as npt
 
@@ -25,12 +23,12 @@ from dolfinx.la import BlockMode, MatrixCSR, SparsityPattern
 
 __all__ = [
     "MPC",
-    "assemble_matrix_mpc",
-    "apply_mpc_vector",
     "apply_mpc_solution",
+    "apply_mpc_vector",
+    "assemble_matrix_mpc",
+    "assemble_matrix_mpc_petsc",
     "build_sparsity_pattern_mpc",
     "matrix_csr_mpc",
-    "assemble_matrix_mpc_petsc",
 ]
 
 # Maps geometry dtype → (cpp MPC type, scalar dtype).
@@ -50,6 +48,8 @@ class MPC:
     where reference dofs are given as global indices and coefficients,
     and an optional scalar constant *g* is expressed by pairing a
     negative global dof index with the constant value.
+
+    See :func:`apply_mpc_solution` and :func:`apply_mpc_vector`.
     """
 
     def __init__(
@@ -85,20 +85,23 @@ class MPC:
 
     @property
     def V(self) -> _cpp.fem.FunctionSpace_float64:  # type: ignore[return]
-        """The (extended) FunctionSpace, including extra ghost reference dofs."""
+        """The (extended) FunctionSpace.
+
+        Includes extra ghost reference dofs beyond the original V.
+        """
         return self._cpp_object.V()
     def cells(self) -> npt.NDArray[np.int32]:
         """Return cells that contain at least one constrained dof."""
         return self._cpp_object.cells()
 
     def constraints(self):
-        """Return (offsets, ref_dof_local, ref_coeff) arrays for all constrained dofs.
+        """Return constraint data for every local dof.
 
         Returns:
-            A tuple ``(offsets, ref_dof, ref_coeff)`` where ``offsets`` is a
-            prefix-sum array of length *num_dofs + 1*, ``ref_dof`` contains
-            local reference dof indices, and ``ref_coeff`` the matching
-            coefficients.
+            Tuple ``(offsets, ref_dof, ref_coeff)``.  ``offsets`` is a
+            prefix-sum array of length *num_dofs + 1*;
+            ``ref_dof`` holds local reference dof indices;
+            ``ref_coeff`` holds matching coefficients.
         """
         return self._cpp_object.constraints()
 
@@ -127,11 +130,10 @@ def matrix_csr_mpc(
     block_mode: BlockMode = BlockMode.compact,
     dtype: npt.DTypeLike = np.float64,
 ) -> MatrixCSR:
-    """Create a :class:`~dolfinx.la.MatrixCSR` from an MPC sparsity pattern.
+    """Create a :class:`~dolfinx.la.MatrixCSR` from an MPC pattern.
 
-    This is the same as :func:`dolfinx.la.matrix_csr` but accepts a
-    *raw* (already-finalised) sparsity pattern so the caller does not
-    have to unwrap ``._cpp_object``.
+    Same as :func:`dolfinx.la.matrix_csr` but accepts a finalised
+    sparsity pattern so the caller does not unwrap ``._cpp_object``.
 
     Args:
         sp: A finalised :class:`~dolfinx.la.SparsityPattern`.
@@ -175,11 +177,12 @@ def assemble_matrix_mpc_petsc(
     a: Form,
     bcs: list[DirichletBC],
 ) -> None:
-    """Assemble a bilinear form into a PETSc *A* matrix with MPC row replacement.
+    """Assemble a bilinear form into a PETSc matrix with MPC.
 
-    This variant targets PETSc matrices created with
-    :func:`dolfinx.fem.petsc.create_matrix`.  The matrix must have been
-    configured to accept new non-zero locations (``NEW_NONZERO_LOCATIONS``).
+    Targets PETSc matrices from
+    :func:`dolfinx.fem.petsc.create_matrix`.  The matrix must be
+    configured to allow new non-zero locations
+    (``NEW_NONZERO_LOCATIONS``).
 
     Args:
         mpc: The multipoint constraint.
