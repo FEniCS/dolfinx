@@ -259,8 +259,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     common::Timer timer("Compute graph partition (SCOTCH)");
 
     // Note: SCOTCH requires an array to be null on all ranks or on none, ref.
-    // SCOTCH docs of SCOTCH_dgraphBuild. C++ standard does not give a guarantee
-    // what an empty vector holds as data pointer.
+    // SCOTCH docs of SCOTCH_dgraphBuild.
 
     std::int64_t offset_global = 0;
     const std::int64_t num_owned = graph.num_nodes();
