@@ -326,7 +326,7 @@ def solve_elasticity(msh: mesh.Mesh) -> tuple[fem.Function, int, int]:
     uh = fem.Function(V, name="u", dtype=dtype)
     ksp.solve(b, uh.x.petsc_vec)
     uh.x.scatter_forward()
-    if ksp.getConvergedReason() < 0:
+    if ksp.getConvergedReason() < 0:  # type: ignore[operator]
         raise RuntimeError(f"Elasticity solve failed: {ksp.getConvergedReason()}")
 
     its = ksp.getIterationNumber()
