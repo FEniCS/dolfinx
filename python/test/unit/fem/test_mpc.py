@@ -84,7 +84,7 @@ def test_mpc():
 
     A = matrix_csr(sp)
     dolfinx.cpp.fem.assemble_matrix_mpc(mpc, A._cpp_object, a._cpp_object, [bc._cpp_object])
-    dolfinx.cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], [bc._cpp_object], 1.0)
+    dolfinx.fem.set_bc_diagonal(A, V_new, [bc], 1.0)
     A.scatter_reverse()
 
     A_superlu = superlu_dist_matrix(A)

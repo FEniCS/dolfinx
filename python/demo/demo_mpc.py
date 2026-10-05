@@ -131,7 +131,7 @@ sp.finalize()
 A = dolfinx.cpp.la.petsc.create_matrix(mesh.comm, sp)
 dolfinx.cpp.fem.petsc.assemble_matrix_mpc(mpc, A, a._cpp_object, [bc._cpp_object])
 A.assemble()
-dolfinx.cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], [bc._cpp_object], 1.0)
+dolfinx.fem.petsc.set_diagonal(A, bc.dof_indices()[0], 1.0)
 A.assemble()
 
 offsets, ref_dof, ref_coeff = mpc.constraints()
