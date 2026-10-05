@@ -139,7 +139,11 @@ std::vector<IS> la::petsc::create_global_index_sets(
     return is;
 
   MPI_Comm comm = maps.front().first.get().comm();
-  std::int64_t merged_local_size = 0;
+
+  // Offset of this rank's block of the stacked problem. Ownership in an
+  // index map is contiguous by rank, so a scan over the ranks would
+  // reproduce what local_range() already holds
+  std::int64_t offset = 0;
   for (auto& [map, bs] : maps)
   {
     int result;
@@ -148,14 +152,8 @@ std::vector<IS> la::petsc::create_global_index_sets(
     {
       throw std::invalid_argument("All index maps must share a communicator.");
     }
-    merged_local_size += bs * map.get().size_local();
+    offset += bs * map.get().local_range()[0];
   }
-
-  // Offset of this rank's block of the merged index map
-  std::int64_t offset = 0;
-  int ierr
-      = MPI_Exscan(&merged_local_size, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
-  dolfinx::MPI::check_error(comm, ierr);
 
   is.reserve(maps.size());
   for (auto& [map, bs] : maps)

@@ -225,27 +225,6 @@ a_p_ufl: list[list[ufl.Form | None]] = [[a_ufl[0][0], None], [None, a_p11_ufl]]
 a_p11 = form(a_p11_ufl)
 a_p: list[list[Form | None]] = form(a_p_ufl)  # type: ignore[assignment]
 
-# Omit zero entries to reduce storage. This is safe because these
-# matrices are assembled once. For re-assembly, enable the option after
-# the first assembly so that initially zero entries remain in the pattern.
-
-
-# +
-def ignore_zero_entries(A: PETSc.Mat) -> PETSc.Mat:
-    """Let PETSc drop zero-valued insertions into ``A``."""
-    if A.getType() == PETSc.Mat.Type.NEST:
-        # MATNEST does not support this option; apply it to each block.
-        nrow, ncol = A.getNestSize()
-        for i in range(nrow):
-            for j in range(ncol):
-                Aij = A.getNestSubMatrix(i, j)
-                if Aij.handle != 0:
-                    Aij.setOption(PETSc.Mat.Option.IGNORE_ZERO_ENTRIES, True)  # type: ignore[arg-type]
-    else:
-        A.setOption(PETSc.Mat.Option.IGNORE_ZERO_ENTRIES, True)  # type: ignore[arg-type]
-    return A
-
-
 # -
 
 
@@ -308,8 +287,6 @@ def nested_iterative_solver_high_level():
     P11.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
     # LinearProblem assembles the operators during solve.
-    ignore_zero_entries(problem.A)
-    ignore_zero_entries(problem.P_mat)
 
     u_h, p_h = problem.solve()
     assert problem.solver.getConvergedReason() > 0  # type: ignore[operator]
@@ -342,7 +319,7 @@ def nested_iterative_solver_low_level():
     Used low-level DOLFINx routines.
     """
     # Assemble nested matrix operators
-    A = ignore_zero_entries(create_matrix(a, kind="nest"))
+    A = create_matrix(a, kind="nest")
     assemble_matrix(A, a, bcs=bcs)
     A.assemble()
 
@@ -542,10 +519,10 @@ def block_operators():
     """Block operators and block RHS vector for the Stokes problem."""
     # Assembler matrix operator, preconditioner and RHS vector into
     # single objects but preserving block structure
-    A = ignore_zero_entries(create_matrix(a))
+    A = create_matrix(a)
     assemble_matrix(A, a, bcs=bcs)
     A.assemble()
-    P = ignore_zero_entries(create_matrix(a_p))
+    P = create_matrix(a_p)
     assemble_matrix(P, a_p, bcs=bcs)
     P.assemble()
 
@@ -730,7 +707,7 @@ def mixed_direct():
     L = form(ufl.inner(f, v) * ufl.dx)
 
     # Assemble LHS matrix and RHS vector
-    A = ignore_zero_entries(create_matrix(a))
+    A = create_matrix(a)
     assemble_matrix(A, a, bcs=bcs)
     A.assemble()
     b = assemble_vector(L)

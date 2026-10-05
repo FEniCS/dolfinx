@@ -121,7 +121,7 @@ from petsc4py import PETSc
 import numpy as np
 
 import ufl
-from dolfinx import fem, la, mesh
+from dolfinx import common, fem, mesh
 from dolfinx.fem.petsc import (
     LinearProblem,
     apply_lifting,
@@ -135,9 +135,8 @@ xdtype = PETSc.RealType
 # -
 
 # Both solvers report how many of their constrained degrees of freedom
-# lie on a subdomain interface. Filling a vector with ones and
-# accumulating it onto the owning process gives, for each degree of
-# freedom, the number of processes that hold it.
+# lie on a subdomain interface, which
+# :func:`~dolfinx.common.num_sharing_ranks` answers directly.
 
 
 def num_shared_dofs(V: fem.FunctionSpace, dofs: np.ndarray) -> int:
@@ -145,16 +144,13 @@ def num_shared_dofs(V: fem.FunctionSpace, dofs: np.ndarray) -> int:
 
     Args:
         V: Space the degrees of freedom belong to.
-        dofs: Degrees of freedom to test, as local indices.
+        dofs: Degrees of freedom to test, as local block indices.
 
     Returns:
         How many of ``dofs`` this process shares with another.
     """
-    sharers = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.int32)
-    sharers.array[:] = 1
-    sharers.scatter_reverse(la.InsertMode.add)
-    sharers.scatter_forward()
-    return int(np.count_nonzero(sharers.array[dofs] > 1))
+    sharers = common.num_sharing_ranks(V.dofmap.index_map, dofs)
+    return int(np.count_nonzero(sharers > 1))
 
 
 # `solve_poisson` builds the Poisson problem on a given mesh and solves
@@ -220,40 +216,20 @@ def solve_poisson(msh: mesh.Mesh) -> tuple[fem.Function, int, int]:
 
 
 def rigid_body_modes(V: fem.FunctionSpace) -> PETSc.NullSpace:
-    """Build the rigid body modes of a 2D displacement space.
+    """Build the rigid body modes of a displacement space.
 
     Args:
         V: Vector-valued displacement space.
 
     Returns:
-        The two translations and one rotation, orthonormalised.
+        The translations and rotations, which PETSc builds from the
+        coordinates of the owned degrees of freedom.
     """
-    bs = V.dofmap.index_map_bs
-    basis = [la.vector(V.dofmap.index_map, bs=bs, dtype=dtype) for _ in range(3)]
-    b = [mode.array for mode in basis]
-    dofs = [V.sub(i).dofmap.list.flatten() for i in range(2)]
-
-    # Two translations
-    b[0][dofs[0]] = 1.0
-    b[1][dofs[1]] = 1.0
-
-    # One rotation, about the origin
-    x = V.tabulate_dof_coordinates()
-    blocks = V.dofmap.list.flatten()
-    b[2][dofs[0]] = -x[blocks, 1]
-    b[2][dofs[1]] = x[blocks, 0]
-
-    la.orthonormalize(basis)
-
-    # Copied into PETSc vectors rather than wrapped, so that the null
-    # space does not outlive the arrays it was built from
-    num_owned = bs * V.dofmap.index_map.size_local
-    vectors = []
-    for mode in b:
-        vec = PETSc.Vec().createMPI((num_owned, None), bsize=bs, comm=V.mesh.comm)  # type: ignore[arg-type]
-        vec.array_w[:] = mode[:num_owned]
-        vectors.append(vec)
-    return PETSc.NullSpace().create(vectors=vectors)
+    gdim = V.mesh.geometry.dim
+    num_owned = V.dofmap.index_map.size_local
+    x = V.tabulate_dof_coordinates()[:num_owned, :gdim].copy()
+    coords = PETSc.Vec().createWithArray(x.ravel(), bsize=gdim, comm=V.mesh.comm)  # type: ignore[arg-type]
+    return PETSc.NullSpace().createRigidBody(coords)
 
 
 # `solve_elasticity` assembles the operator and the right-hand side
@@ -316,12 +292,14 @@ def solve_elasticity(msh: mesh.Mesh) -> tuple[fem.Function, int, int]:
     ksp.setTolerances(rtol=1e-5 if np.finfo(dtype).bits == 32 else 1e-8, max_it=100)
     ksp.getPC().setType("bddc")
 
-    # Read once into the PC, then removed so that the two solves in the
-    # loop below do not inherit each other's settings
+    # Set under a prefix of this solver's own, so that nothing is left
+    # in the global options database for the next solve to inherit
+    prefix = f"demo_dd_elasticity_{V.dofmap.index_map.size_global}_"
+    ksp.setOptionsPrefix(prefix)
     opts = PETSc.Options()
-    opts["pc_bddc_use_change_of_basis"] = True  # type: ignore[index]
+    opts[f"{prefix}pc_bddc_use_change_of_basis"] = True  # type: ignore[index]
     ksp.setFromOptions()
-    del opts["pc_bddc_use_change_of_basis"]  # type: ignore[arg-type]
+    del opts[f"{prefix}pc_bddc_use_change_of_basis"]  # type: ignore[arg-type]
 
     uh = fem.Function(V, name="u", dtype=dtype)
     ksp.solve(b, uh.x.petsc_vec)

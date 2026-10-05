@@ -45,13 +45,8 @@ namespace petsc
 namespace impl
 {
 /// @brief Throw if a MATIS matrix is requested on a mesh with ghost
-/// cells.
-///
-/// MATIS stores an unassembled matrix per process and requires each to
-/// hold one non-overlapping subdomain. Ghost cells overlap the
-/// subdomains, and a dof lying only on them is touched by no owned
-/// cell, so its row of the local matrix is empty. The subdomain solves
-/// that preconditioners such as PCBDDC perform are then singular.
+/// cells, which would leave empty rows in the local matrix and so make
+/// the subdomain solves of PCBDDC singular.
 ///
 /// @param[in] mesh Mesh the matrix is assembled over.
 /// @param[in] type Requested PETSc matrix type.
@@ -72,10 +67,8 @@ void check_matis_mesh(const mesh::Mesh<T>& mesh,
   if (cells->num_ghosts() > 0)
   {
     throw std::invalid_argument(
-        "A MATIS matrix requires a mesh without ghost cells, so that each "
-        "process holds one non-overlapping subdomain. Degrees-of-freedom on "
-        "a ghost cell alone are assembled by no process, leaving empty rows "
-        "in the local matrix. Create the mesh with GhostMode::none.");
+        "A MATIS matrix requires one non-overlapping subdomain per process. "
+        "Create the mesh with GhostMode::none.");
   }
 }
 } // namespace impl
@@ -87,10 +80,8 @@ void check_matis_mesh(const mesh::Mesh<T>& mesh,
 /// bilinear form. The caller is responsible for destroying the Mat
 /// object.
 /// @throws std::invalid_argument If `type` is MATIS and the mesh of `a`
-/// has ghost cells.
-/// @note The MATIS check is local. The ghost mode is a property of the
-/// mesh, so a caller passing the same mesh on every process either
-/// throws on all of them or none.
+/// has ghost cells. The check is local, but the ghost mode is a mesh
+/// property, so every process throws or none does.
 template <std::floating_point T>
 Mat create_matrix(const Form<PetscScalar, T>& a,
                   std::optional<std::string> type = std::nullopt)
@@ -111,6 +102,8 @@ Mat create_matrix(const Form<PetscScalar, T>& a,
 /// @return A sparse matrix  with a layout and sparsity that matches the
 /// bilinear forms. The caller is responsible for destroying the Mat
 /// object.
+/// @throws std::invalid_argument If `type` is MATIS and the mesh has
+/// ghost cells.
 template <std::floating_point T>
 Mat create_matrix_block(
     const std::vector<std::vector<const Form<PetscScalar, T>*>>& a,

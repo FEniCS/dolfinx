@@ -561,6 +561,54 @@ def _assemble_matrix_mat(
     )
 
 
+def _vector_kind(A: PETSc.Mat, kind, L) -> str | None:
+    """PETSc vector type matching a matrix built with ``kind``.
+
+    "nest" names both a matrix and a vector type, but MATIS has no Vec
+    counterpart: a blocked problem needs the monolithic "mpi" layout
+    that matches the matrix, and a single form the default type, since
+    "mpi" would build a blocked vector and send the form down the
+    blocked path.
+
+    Args:
+        A: Assembled matrix, whose type settles the nest case.
+        kind: Matrix kind the problem was created with.
+        L: Linear form(s), a sequence for a blocked problem.
+
+    Returns:
+        The vector type, or ``None`` for the default.
+    """
+    kind = "nest" if A.getType() == PETSc.Mat.Type.NEST else kind
+    if kind == "is":
+        kind = "mpi" if isinstance(L, Sequence) else None
+    assert kind is None or isinstance(kind, str)
+    return kind
+
+
+def _field_dm(A: PETSc.Mat, u, forms) -> PETSc.DMShell:
+    """DM carrying the field decomposition of a problem.
+
+    Preconditioners such as PCBDDC and PCFIELDSPLIT use it to split the
+    problem into fields. The caller attaches it to the preconditioner
+    only: on the KSP it would have PETSc rebuild the operators via
+    DMCreateMatrix.
+
+    Args:
+        A: Matrix the problem is assembled into.
+        u: Solution function(s).
+        forms: Form(s) giving the field layout.
+
+    Returns:
+        The DM, ready to attach.
+    """
+    dm = PETSc.DMShell().create(A.comm)
+    dm.setCreateMatrix(functools.partial(_dm_create_matrix, A))  # type: ignore[missing-attribute]
+    dm.setCreateFieldDecomposition(  # type: ignore[missing-attribute]
+        functools.partial(_dm_create_field_decomposition, u, forms)
+    )
+    return dm
+
+
 class _MatrixBCData(typing.NamedTuple):
     """Cached constrained dofs, with one entry per block row/column.
 
@@ -571,7 +619,6 @@ class _MatrixBCData(typing.NamedTuple):
 
     row_markers: list[npt.NDArray[np.int8]]
     column_markers: list[npt.NDArray[np.int8]]
-    owned_rows: list[npt.NDArray[np.int32]]
     row_spaces: Sequence[_FunctionSpace | None]
     column_spaces: Sequence[_FunctionSpace | None]
 
@@ -622,11 +669,7 @@ def _matrix_bc_data(
         V0, V1 = [test_space], [trial_space]
     markers = _bc_dof_markers_by_space([*V0, *V1], bcs)
     row_markers, column_markers = markers[: len(V0)], markers[len(V0) :]
-    rows = [
-        np.empty(0, dtype=np.int32) if V is None else _owned_marked_rows(V, m)
-        for V, m in zip(V0, row_markers, strict=True)
-    ]
-    return _MatrixBCData(row_markers, column_markers, rows, V0, V1)
+    return _MatrixBCData(row_markers, column_markers, V0, V1)
 
 
 def _block_index_sets(bc_data: _MatrixBCData) -> tuple[list, list]:
@@ -673,9 +716,7 @@ class _MatrixDiagData(typing.NamedTuple):
     values: list[npt.NDArray | float | complex]
 
 
-def _diag_on_ghost_rows(
-    A: PETSc.Mat, a: Form | Sequence[Sequence[Form | None]]
-) -> bool | list[bool]:
+def _diag_on_ghost_rows(A: PETSc.Mat, a: Form | Sequence[Sequence[Form | None]]) -> list[bool]:
     """Whether the diagonal is written on ghost rows as well as owned ones.
 
     An assembled matrix has its constrained rows written by the process
@@ -693,10 +734,11 @@ def _diag_on_ghost_rows(
         a: Bilinear form, or a 2D array of them.
 
     Returns:
-        One flag per block row of a nest, or one for ``A``.
+        One flag per block row.
     """
     if A.getType() != PETSc.Mat.Type.NEST:
-        return A.getType() == PETSc.Mat.Type.IS
+        n = len(a) if isinstance(a, Sequence) else 1
+        return [A.getType() == PETSc.Mat.Type.IS] * n
 
     # A block row with no diagonal block, because it is 'None' or
     # because the nest is rectangular, carries no Dirichlet diagonal
@@ -739,14 +781,14 @@ def _matis_diag_data(
         Collective, as the sharer counts are.
     """
     rows = np.flatnonzero(dof_marker).astype(np.int32)
-    sharers = _cpp.common.num_sharing_ranks(index_map._cpp_object, rows, bs)
+    sharers = dolfinx.common.num_sharing_ranks(index_map, rows, bs)
     return rows, (diagonal / sharers).astype(PETSc.ScalarType)
 
 
 def _matrix_diag_data(
     bc_data: _MatrixBCData,
     diagonal: float | complex,
-    include_ghosts: bool | Sequence[bool],
+    include_ghosts: Sequence[bool],
 ) -> _MatrixDiagData:
     """Resolve ``diagonal`` to the rows it is written on, and the values.
 
@@ -763,8 +805,8 @@ def _matrix_diag_data(
         bc_data: Constrained dofs, from :func:`_matrix_bc_data`.
         diagonal: Value the assembled diagonal is to take.
         include_ghosts: Whether to write the diagonal on ghost rows as
-            well as owned ones, from :func:`_diag_on_ghost_rows`. One
-            per block row for a nest, whose blocks may differ.
+            well as owned ones, one per block row, from
+            :func:`_diag_on_ghost_rows`.
 
     Returns:
         The rows and values, one entry per block row.
@@ -774,17 +816,13 @@ def _matrix_diag_data(
         ``include_ghosts`` follows from the matrix, which every process
         sees alike, so all take the same branch.
     """
-    spaces = bc_data.row_spaces
-    ghosts = (
-        [include_ghosts] * len(spaces) if isinstance(include_ghosts, bool) else list(include_ghosts)
-    )
     rows: list[npt.NDArray[np.int32]] = []
     values: list[npt.NDArray | float | complex] = []
-    for V, marker, owned, ghost in zip(
-        spaces, bc_data.row_markers, bc_data.owned_rows, ghosts, strict=True
+    for V, marker, ghost in zip(
+        bc_data.row_spaces, bc_data.row_markers, include_ghosts, strict=True
     ):
         if V is None or not ghost:
-            rows.append(owned)
+            rows.append(np.empty(0, dtype=np.int32) if V is None else _owned_marked_rows(V, marker))
             values.append(diagonal)
         else:
             dofmap = V.dofmaps[0]
@@ -1285,6 +1323,9 @@ def _dm_create_field_decomposition(
         ]
     )
     if isinstance(u, Sequence):
+        # These become PETSc option prefixes, so an unnamed Function
+        # (the default name is "f") contributes only its index, giving
+        # the conventional "fieldsplit_0_" rather than "fieldsplit_f_0_"
         names = [f"{v.name + '_' if v.name != 'f' else ''}{i}" for i, v in enumerate(u)]
     else:
         names = [f"dolfinx_field_{i}" for i in range(len(forms))]
@@ -1467,15 +1508,7 @@ class LinearProblem(typing.Generic[_U]):
             else None
         )
 
-        # For nest matrices kind can be a nested list.
-        kind = "nest" if self.A.getType() == PETSc.Mat.Type.NEST else kind
-        if kind == "is":
-            # MATIS has no Vec counterpart. A blocked problem still needs
-            # the monolithic "mpi" layout that matches the matrix, but a
-            # single form needs the default type: "mpi" would build a
-            # blocked vector and send the form down the blocked path.
-            kind = "mpi" if isinstance(self.L, Sequence) else None
-        assert kind is None or isinstance(kind, str)
+        kind = _vector_kind(self.A, kind, self.L)
         self._b = _create_vector_from_form(self.L, kind=kind)
         self._x = _create_vector_from_form(self.L, kind=kind)
 
@@ -1495,16 +1528,7 @@ class LinearProblem(typing.Generic[_U]):
         self._solver = PETSc.KSP().create(self.A.comm)
         self.solver.setOperators(self.A, self.P_mat)
 
-        # Attach problem information to a DM, which preconditioners such
-        # as PCBDDC and PCFIELDSPLIT use to split the problem into
-        # fields. The DM goes on the preconditioner only: on the KSP it
-        # would have PETSc rebuild the operators via DMCreateMatrix.
-        dm = PETSc.DMShell().create(self.A.comm)
-        dm.setCreateMatrix(functools.partial(_dm_create_matrix, self.A))  # type: ignore[missing-attribute]
-        dm.setCreateFieldDecomposition(  # type: ignore[missing-attribute]
-            functools.partial(_dm_create_field_decomposition, self._u, self.L)
-        )
-        self.solver.getPC().setDM(dm)
+        self.solver.getPC().setDM(_field_dm(self.A, self._u, self.L))
 
         if petsc_options_prefix == "":
             raise ValueError("PETSc options prefix cannot be empty.")
@@ -1583,15 +1607,14 @@ class LinearProblem(typing.Generic[_U]):
         if self.preconditioner is not None:
             assert self.P_mat is not None
             self.P_mat.zeroEntries()
-            # The preconditioner is over the same spaces as ``a``, so
-            # it constrains the same dofs. The diagonal still depends on
-            # the matrix, which may differ in type.
-            assert self._P_diag_data is not None
+            # Built from the same 'kind' as A and forced onto the same
+            # spaces, so the preconditioner constrains the same dofs and
+            # writes the same diagonal
             _assemble_matrix_petsc(
                 self.P_mat,
                 self.preconditioner,
                 self._a_bc_data,
-                self._P_diag_data,
+                self._a_diag_data,
                 pack_constants(self.preconditioner),
                 pack_coefficients(self.preconditioner),
             )
@@ -1652,14 +1675,6 @@ class LinearProblem(typing.Generic[_U]):
         self._a_diag_data = _matrix_diag_data(
             self._a_bc_data, 1, _diag_on_ghost_rows(self.A, self.a)
         )
-        if self.preconditioner is None:
-            self._P_diag_data = None
-        else:
-            P_mat = self.P_mat
-            assert P_mat is not None
-            self._P_diag_data = _matrix_diag_data(
-                self._a_bc_data, 1, _diag_on_ghost_rows(P_mat, self.preconditioner)
-            )
         # Which block each condition belongs to follows from the spaces,
         # so group once here and re-read only the values in solve().
         L = self.L
@@ -2152,12 +2167,7 @@ class NonlinearProblem(typing.Generic[_U]):
         else:
             self._P_mat = None
 
-        # Determine the vector kind based on the matrix type
-        kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind
-        if kind == "is":
-            # MATIS has no Vec counterpart; see LinearProblem
-            kind = "mpi" if isinstance(self.F, Sequence) else None
-        assert kind is None or isinstance(kind, str)
+        kind = _vector_kind(self._A, kind, self.F)
         self._b = _create_vector_from_form(self.F, kind=kind)
         self._x = _create_vector_from_form(self.F, kind=kind)
 
@@ -2165,14 +2175,7 @@ class NonlinearProblem(typing.Generic[_U]):
         # residual computation functions
         self._snes = PETSc.SNES().create(self.A.comm)
 
-        # See LinearProblem: the DM carries the field decomposition for
-        # PCBDDC and PCFIELDSPLIT, and goes on the preconditioner only
-        dm = PETSc.DMShell().create(self.A.comm)
-        dm.setCreateMatrix(functools.partial(_dm_create_matrix, self.A))  # type: ignore[missing-attribute]
-        dm.setCreateFieldDecomposition(  # type: ignore[missing-attribute]
-            functools.partial(_dm_create_field_decomposition, self._u, self.F)
-        )
-        self.solver.getKSP().getPC().setDM(dm)
+        self.solver.getKSP().getPC().setDM(_field_dm(self.A, self._u, self.F))
 
         self.bcs = bcs
 

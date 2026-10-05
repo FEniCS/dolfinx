@@ -130,8 +130,6 @@ std::vector<IS> create_index_sets(
 ///
 /// @see create_index_sets for rank-local sets that include ghosts.
 ///
-/// @note Collective, as a rank's offset into the stacked problem is
-/// found by a scan over the ranks.
 /// @note The caller is responsible for destruction of each IS.
 ///
 /// @param[in] maps Index maps and corresponding block sizes. All maps

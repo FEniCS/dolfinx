@@ -227,6 +227,25 @@ def build_forms(msh: mesh.Mesh, k: int):
 
 
 # +
+def direct_solver(prefix: str, candidates: list[tuple[str, str]]) -> dict:
+    """PETSc options selecting the first available direct solver.
+
+    Args:
+        prefix: Option prefix of the sub-solver to configure.
+        candidates: ``(pc_type, package)`` pairs, in order of
+            preference.
+
+    Returns:
+        Options for the first candidate PETSc was configured with, or
+        SVD, which is robust but dense and not a realistic choice for
+        large subdomains.
+    """
+    for pc, package in candidates:
+        if PETSc.Sys().hasExternalPackage(package):
+            return {f"{prefix}_pc_type": pc, f"{prefix}_pc_factor_mat_solver_type": package}
+    return {f"{prefix}_pc_type": "svd"}
+
+
 def residual_monitor(label: str):
     """Build a KSP monitor that reports the residual on rank 0."""
 
@@ -237,19 +256,21 @@ def residual_monitor(label: str):
     return monitor
 
 
-def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
+def solve(k: int, use_hypre: bool, forms) -> tuple[fem.Function, fem.Function]:
     """Solve the mixed Poisson problem with Raviart-Thomas degree ``k``.
 
     Args:
         k: Raviart-Thomas element degree.
         use_hypre: Whether to use Hypre AMS rather than LU.
+        forms: Spaces, forms and boundary conditions, from
+            :func:`build_forms`.
     """
     if use_hypre and not has_hypre:
         raise RuntimeError("PETSc is not configured with Hypre.")
     if use_hypre and not hypre_ams_compatible:
         raise RuntimeError("Hypre AMS does not support complex scalar types.")
 
-    V, a, L, a_p, bcs, sigma, u = build_forms(msh, k)
+    V, a, L, a_p, bcs, sigma, u = forms
     problem = fem.petsc.LinearProblem(
         a,
         L,
@@ -329,28 +350,20 @@ def solve(k: int, use_hypre: bool) -> tuple[fem.Function, fem.Function]:
 
 
 # +
-def solve_bddc(k: int) -> tuple[fem.Function, fem.Function]:
+def solve_bddc(k: int, forms) -> tuple[fem.Function, fem.Function]:
     """Solve the mixed Poisson problem monolithically with BDDC.
 
     Args:
         k: Raviart-Thomas element degree.
+        forms: Spaces, forms and boundary conditions, from
+            :func:`build_forms`.
     """
-    # Pick the sub-solvers from what PETSc has been configured with. SVD
-    # is the fallback: it is robust but dense, and not a realistic choice
-    # for large subdomains.
-    local_solver, local_solver_type = "svd", "dummy"
-    coarse_solver, coarse_solver_type = "svd", "dummy"
-    if PETSc.Sys().hasExternalPackage("mumps"):
-        local_solver, local_solver_type = "cholesky", "mumps"
-        coarse_solver, coarse_solver_type = "cholesky", "mumps"
-    elif PETSc.Sys().hasExternalPackage("superlu"):
-        local_solver, local_solver_type = "lu", "superlu"
-    elif PETSc.Sys().hasExternalPackage("umfpack"):
-        local_solver, local_solver_type = "lu", "umfpack"
-    if coarse_solver == "svd" and PETSc.Sys().hasExternalPackage("superlu_dist"):
-        coarse_solver, coarse_solver_type = "lu", "superlu_dist"
+    # Sub-solvers, from what PETSc has been configured with. The coarse
+    # problem is distributed, so it needs a parallel package.
+    local = [("cholesky", "mumps"), ("lu", "superlu"), ("lu", "umfpack")]
+    coarse = [("cholesky", "mumps"), ("lu", "superlu_dist")]
 
-    _, a, L, _, bcs, sigma, u = build_forms(msh, k)
+    _, a, L, _, bcs, sigma, u = forms
     problem = fem.petsc.LinearProblem(
         a,
         L,
@@ -367,12 +380,9 @@ def solve_bddc(k: int) -> tuple[fem.Function, fem.Function]:
             "pc_bddc_benign_trick": None,
             "pc_bddc_nonetflux": None,
             "pc_bddc_detect_disconnected": None,
-            "pc_bddc_dirichlet_pc_type": local_solver,
-            "pc_bddc_dirichlet_pc_factor_mat_solver_type": local_solver_type,
-            "pc_bddc_neumann_pc_type": local_solver,
-            "pc_bddc_neumann_pc_factor_mat_solver_type": local_solver_type,
-            "pc_bddc_coarse_pc_type": coarse_solver,
-            "pc_bddc_coarse_pc_factor_mat_solver_type": coarse_solver_type,
+            **direct_solver("pc_bddc_dirichlet", local),
+            **direct_solver("pc_bddc_neumann", local),
+            **direct_solver("pc_bddc_coarse", coarse),
         },
     )
     problem.solver.setMonitor(residual_monitor(f"k={k} (BDDC)"))
@@ -413,8 +423,9 @@ def write(label: str, k: int, sigma: fem.Function, u: fem.Function) -> None:
 
 use_hypre = has_hypre and hypre_ams_compatible
 for k in (1, 2):
-    write("block", k, *solve(k, use_hypre))
-    write("bddc", k, *solve_bddc(k))
+    forms = build_forms(msh, k)
+    write("block", k, *solve(k, use_hypre, forms))
+    write("bddc", k, *solve_bddc(k, forms))
 
 if not has_adios2:
     print("ADIOS2 required for VTX output.")

@@ -54,6 +54,7 @@ __all__ = [
     "index_map",
     "list_timings",
     "local_range",
+    "num_sharing_ranks",
     "scatterer",
     "timed",
     "timing",
@@ -463,6 +464,28 @@ def create_sub_index_map(
         imap._cpp_object, indices
     )
     return IndexMap(submap), submap_to_map, owners_changed
+
+
+def num_sharing_ranks(
+    imap: IndexMap, indices: npt.NDArray[np.int32], bs: int = 1
+) -> npt.NDArray[np.int32]:
+    """Number of processes sharing each of ``indices``, counting the owner.
+
+    A process shares an index if it owns it or ghosts it. The count is
+    one for an index held by a single process.
+
+    Note:
+        Collective.
+
+    Args:
+        imap: Index map the indices belong to.
+        indices: Local indices to count, unrolled by ``bs``.
+        bs: Block size relating ``indices`` to the blocks of ``imap``.
+
+    Returns:
+        The number of sharing processes, one per entry of ``indices``.
+    """
+    return _cpp.common.num_sharing_ranks(imap._cpp_object, indices, bs)
 
 
 def scatterer(index_map: IndexMap) -> Scatterer:

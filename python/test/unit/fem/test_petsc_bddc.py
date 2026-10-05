@@ -19,7 +19,8 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx import default_scalar_type, la
+from dolfinx import default_scalar_type
+from dolfinx.common import num_sharing_ranks
 from dolfinx.fem import (
     Function,
     assemble_scalar,
@@ -63,15 +64,14 @@ def _mesh(n=16):
     return msh
 
 
-def _num_shared(V, dofs):
-    """Count the dofs in ``dofs`` that are held by more than one process."""
-    imap, bs = V.dofmap.index_map, V.dofmap.index_map_bs
-    count = la.vector(imap, bs, dtype=np.int32)
-    count.array[:] = 1
-    count.scatter_reverse(la.InsertMode.add)
-    count.scatter_forward()
-    local = int(np.count_nonzero(count.array[dofs] > 1))
-    return V.mesh.comm.allreduce(local, MPI.SUM)
+def _num_shared(V, dofs, bs=1):
+    """Count the dofs in ``dofs`` that are held by more than one process.
+
+    ``bs`` relates ``dofs`` to the blocks of the index map: 1 for block
+    indices, and the dofmap block size for unrolled ones.
+    """
+    sharers = num_sharing_ranks(V.dofmap.index_map, dofs, bs)
+    return V.mesh.comm.allreduce(int(np.count_nonzero(sharers > 1)), MPI.SUM)
 
 
 @pytest.mark.petsc4py
@@ -170,7 +170,7 @@ def test_bddc_component_wise_bc():
     bcs = [dirichletbc(gx, dofs, V.sub(0))]
     assert np.abs(gx.x.array[dofs[1]]).max() > 0.0
     if msh.comm.size > 1:
-        assert _num_shared(V, dofs[0]) > 0
+        assert _num_shared(V, dofs[0], V.dofmap.index_map_bs) > 0
 
     uh, u_ref = Function(V), Function(V)
     LinearProblem(
