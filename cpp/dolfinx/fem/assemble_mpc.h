@@ -313,9 +313,9 @@ void assemble_matrix_mpc(
 ///       Pᵀ contributions that landed in ghost slots back to their owning
 ///       processes.
 ///
-/// @note For inhomogeneous constraints (u_i = Σ c_k u_j_k + g_i), replace
-///       `b[dof] = T(0)` with `b[dof] = g_i` once the constant term is
-///       stored in MPC (currently a @todo in MPC.h).
+/// @note For inhomogeneous constraints (u_i = Σ c_k u_j_k + g_i), the
+///       constant g_i is read from `mpc.constants()` and placed in
+///       `b[dof]` so the linear system RHS enforces the inhomogeneous value.
 ///
 /// @param[in,out] b  Assembled vector using the extended IndexMap of
 ///                   `mpc.V()`.  Size must be at least
@@ -325,6 +325,7 @@ template <dolfinx::scalar T, std::floating_point U>
 void apply_mpc_vector(std::span<T> b, const MPC<T, U>& mpc)
 {
   const auto& C = mpc.constraints();
+  const auto& K = mpc.constants();
   const std::int32_t index_map_bs = mpc.V()->dofmap()->index_map_bs();
   const std::int32_t num_owned
       = mpc.V()->dofmap()->index_map->size_local() * index_map_bs;
@@ -332,7 +333,8 @@ void apply_mpc_vector(std::span<T> b, const MPC<T, U>& mpc)
   for (std::int32_t dof = 0; dof < num_owned; ++dof)
   {
     auto links = C.links(dof);
-    if (links.empty())
+    auto clinks = K.links(dof);
+    if (links.empty() and clinks.empty())
       continue;
 
     // P^T step: distribute b[constrained] to each reference dof.
@@ -340,10 +342,11 @@ void apply_mpc_vector(std::span<T> b, const MPC<T, U>& mpc)
     for (auto [ref_dof, coeff] : links)
       b[ref_dof] += coeff * b_constrained;
 
-    // Constrained row: set to 0 for a homogeneous constraint.
-    // TODO: for inhomogeneous constraints set b[dof] = g_i (the constant
-    // stored per constrained dof in MPC::_constants, not yet implemented).
+    // Constrained row: for a homogeneous constraint g_i = 0;
+    // for inhomogeneous constraints sum the constant contributions.
     b[dof] = T(0);
+    for (auto c : clinks)
+      b[dof] += c;
   }
 }
 

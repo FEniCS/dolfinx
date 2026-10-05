@@ -171,6 +171,16 @@ public:
 
     // Build _constants AdjacencyList from const_list.
     // const_list holds {local_constrained_dof, constant_value} pairs.
+    // Validate: at most one constant contribution per constrained dof.
+    {
+      std::vector<std::pair<std::int32_t, T>> sorted_consts = const_list;
+      std::sort(sorted_consts.begin(), sorted_consts.end(),
+                [](const auto& a, const auto& b) { return a.first < b.first; });
+      for (std::size_t i = 1; i < sorted_consts.size(); ++i)
+        if (sorted_consts[i].first == sorted_consts[i - 1].first)
+          throw std::runtime_error(
+              "MPC: more than one constant term for the same constrained dof");
+    }
     {
       const std::int32_t total_dofs
           = index_map_bs
