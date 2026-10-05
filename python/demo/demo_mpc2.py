@@ -1,4 +1,10 @@
 from mpi4py import MPI
+
+import dolfinx
+import dolfinx.fem
+import dolfinx.fem.petsc
+import dolfinx.io
+import dolfinx.la
 from petsc4py import PETSc
 
 import numpy as np
