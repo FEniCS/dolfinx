@@ -7,7 +7,6 @@ import dolfinx.cpp
 from dolfinx.fem import (
     Function,
     FunctionSpace,
-    create_sparsity_pattern,
     dirichletbc,
     form,
     functionspace,
@@ -106,13 +105,10 @@ L = form(inner(f, v) * dx)
 
 bc = dirichletbc(value=np.array([0.0, 0.0], dtype=np.float64), dofs=dofsbc, V=V_new)
 
-# Create SparsityPattern
-sp = create_sparsity_pattern(a)._cpp_object
-# Add extra sparsity for MPC connections
-dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc, mpc)
-sp.finalize()
-
-A = dolfinx.cpp.la.petsc.create_matrix(mesh.comm, sp)
+# Create PETSc matrix using standard sparsity pattern, then allow MPC entries.
+from dolfinx.fem.petsc import create_matrix as _create_matrix
+A = _create_matrix(a)
+A.setOption(PETSc.Mat.Option.NEW_NONZERO_LOCATIONS, True)
 dolfinx.cpp.fem.petsc.assemble_matrix_mpc(mpc, A, a._cpp_object, [bc._cpp_object])
 A.assemble()
 dolfinx.fem.petsc.set_diagonal(A, bc.dof_indices()[0], 1.0)
