@@ -265,14 +265,12 @@ bddc_options: PCOptions = {
 #   on subdomains extended by one layer. It is required here: with only
 #   an assembled matrix, PCHPDDM otherwise has no local operator to
 #   build the eigenproblems from and falls back to one-level Schwarz.
-# - `pc_hpddm_levels_1_eps_nev` and
-#   `pc_hpddm_levels_1_eps_threshold_relative`: at most `eps_nev`
-#   eigenvectors per subdomain, filtered by a relative threshold on
-#   their eigenvalues. More eigenvectors give a stronger but costlier
-#   coarse space. A subdomain cannot supply more modes than it has
-#   degrees of freedom, and asking for more makes the eigensolver fail,
-#   so the vector-valued elasticity problem can afford a larger request
-#   than the scalar Poisson one on the same mesh.
+# - `pc_hpddm_levels_1_eps_threshold_relative`: keep the eigenvectors
+#   whose eigenvalues fall below a relative threshold, which is what
+#   sizes the coarse space. How many to compute is left to PCHPDDM:
+#   capping it with `pc_hpddm_levels_1_eps_nev` only costs iterations
+#   here, and a cap too large for a subdomain makes the eigensolver
+#   stall.
 # - `pc_hpddm_levels_1_st_pc_type` and `pc_hpddm_levels_1_eps_pc_type`:
 #   Cholesky factorisations inside the eigensolver.
 # - `pc_hpddm_levels_1_pc_type` and `pc_hpddm_levels_1_pc_asm_overlap`:
@@ -289,22 +287,19 @@ bddc_options: PCOptions = {
 # SLEPc.
 
 
-def hpddm_options(eps_nev: int) -> PCOptions:
-    """PCHPDDM options asking for ``eps_nev`` modes per subdomain."""
-    return {
-        "pc_type": "hpddm",
-        "pc_hpddm_harmonic_overlap": 1,
-        "pc_hpddm_levels_1_eps_nev": eps_nev,
-        "pc_hpddm_levels_1_eps_threshold_relative": 100,
-        "pc_hpddm_levels_1_st_pc_type": "cholesky",
-        "pc_hpddm_levels_1_eps_pc_type": "cholesky",
-        "pc_hpddm_define_subdomains": False,
-        "pc_hpddm_levels_1_pc_type": "asm",
-        "pc_hpddm_levels_1_pc_asm_overlap": 2,
-        "pc_hpddm_levels_1_sub_pc_type": "cholesky",
-        "pc_hpddm_levels_1_pc_asm_type": "basic",
-        "pc_hpddm_coarse_correction": "balanced",
-    }
+hpddm_options: PCOptions = {
+    "pc_type": "hpddm",
+    "pc_hpddm_harmonic_overlap": 1,
+    "pc_hpddm_levels_1_eps_threshold_relative": 100,
+    "pc_hpddm_levels_1_st_pc_type": "cholesky",
+    "pc_hpddm_levels_1_eps_pc_type": "cholesky",
+    "pc_hpddm_define_subdomains": False,
+    "pc_hpddm_levels_1_pc_type": "asm",
+    "pc_hpddm_levels_1_pc_asm_overlap": 2,
+    "pc_hpddm_levels_1_sub_pc_type": "cholesky",
+    "pc_hpddm_levels_1_pc_asm_type": "basic",
+    "pc_hpddm_coarse_correction": "balanced",
+}
 
 
 def rigid_body_modes(V: fem.FunctionSpace) -> PETSc.NullSpace:
@@ -455,11 +450,9 @@ def report(label, n, uh, its, shared, pc_options, metric, value) -> None:
 
 
 comm = MPI.COMM_WORLD
-poisson_pcs: list[tuple[str | None, PCOptions]] = [("is", bddc_options)]
-elasticity_pcs: list[tuple[str | None, PCOptions]] = [("is", bddc_options)]
+preconditioners: list[tuple[str | None, PCOptions]] = [("is", bddc_options)]
 if PETSc.Sys.hasExternalPackage("hpddm") and comm.size > 1:
-    poisson_pcs.append((None, hpddm_options(10)))
-    elasticity_pcs.append((None, hpddm_options(30)))
+    preconditioners.append((None, hpddm_options))
 
 for n in (32, 64):
     # BDDC requires one non-overlapping subdomain per process, so the
@@ -470,11 +463,11 @@ for n in (32, 64):
 
     x = ufl.SpatialCoordinate(msh)
     u_exact = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
-    for kind, pc_options in poisson_pcs:
+    for kind, pc_options in preconditioners:
         uh, its, shared = solve_poisson(msh, kind, pc_options)
         report("Poisson   ", n, uh, its, shared, pc_options, "L2 error", norm_L2(uh - u_exact))
 
-    for kind, pc_options in elasticity_pcs:
+    for kind, pc_options in preconditioners:
         uh, its, shared = solve_elasticity(msh, kind, pc_options)
         report("Elasticity", n, uh, its, shared, pc_options, "|u|_L2", norm_L2(uh))
 # -
