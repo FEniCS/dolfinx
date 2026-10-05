@@ -3,7 +3,6 @@ from petsc4py import PETSc
 
 import numpy as np
 
-import dolfinx.cpp
 from dolfinx.fem import (
     Function,
     FunctionSpace,
@@ -12,8 +11,12 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.la import matrix_csr
-from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
+from dolfinx.fem.mpc import (
+    MPC,
+    apply_mpc_solution,
+    apply_mpc_vector,
+    assemble_matrix_mpc_petsc,
+)
 from dolfinx.mesh import create_unit_square, locate_entities_boundary
 
 # ruff: noqa
@@ -85,10 +88,10 @@ global_coeffs = [np.array([map_LR[k][1]], dtype=np.float64) for k in map_LR.keys
 
 print(local_dofs)
 
-mpc = dolfinx.cpp.fem.MPC_float64(V._cpp_object, local_dofs, global_dofs, global_coeffs)
+mpc = MPC(V, local_dofs, global_dofs, global_coeffs)
 for cell in mpc.cells():
-    dofs = mpc.V().dofmap.cell_dofs(cell)
-    bs = mpc.V().dofmap.bs
+    dofs = mpc.V.dofmap.cell_dofs(cell)
+    bs = mpc.V.dofmap.bs
     s = ""
     for d in dofs:
         if d * bs in local_dofs:
@@ -98,7 +101,7 @@ for cell in mpc.cells():
     print(f"cell {cell} dofs {s}")
 
 ufl_e = V.ufl_element()
-V_new = FunctionSpace(mesh, ufl_e, mpc.V())
+V_new = FunctionSpace(mesh, ufl_e, mpc.V)
 
 E = 100.0
 ν = 0.3
@@ -128,7 +131,7 @@ bc = dirichletbc(value=np.array([0.0, 0.0], dtype=np.float64), dofs=dofsbc, V=V_
 from dolfinx.fem.petsc import create_matrix as _create_matrix
 A = _create_matrix(a)
 A.setOption(PETSc.Mat.Option.NEW_NONZERO_LOCATIONS, True)
-dolfinx.cpp.fem.petsc.assemble_matrix_mpc(mpc, A, a._cpp_object, [bc._cpp_object])
+assemble_matrix_mpc_petsc(mpc, A, a, [bc])
 A.assemble()
 dolfinx.fem.petsc.set_diagonal(A, bc.dof_indices()[0], 1.0)
 A.assemble()
@@ -150,7 +153,7 @@ for i in range(V_new.dofmap.index_map.size_local * bs):
 #   → scatter_rev → apply_lifting → scatter_rev → bc.set
 b = dolfinx.fem.assemble_vector(L)
 b.scatter_reverse(dolfinx.la.InsertMode.add)
-dolfinx.cpp.fem.apply_mpc_vector(b.array, mpc)
+apply_mpc_vector(b.array, mpc)
 b.scatter_reverse(dolfinx.la.InsertMode.add)
 dolfinx.fem.apply_lifting(b.array, [a], [[bc]])
 b.scatter_reverse(dolfinx.la.InsertMode.add)
@@ -169,7 +172,7 @@ ksp.solve(b.petsc_vec, u.x.petsc_vec)
 # Recover constrained dof values: u[i] = sum c_k * u[ref_k].
 # scatter_fwd first so reference ghost dof values are current.
 u.x.scatter_forward()
-dolfinx.cpp.fem.apply_mpc_solution(u.x.array, mpc)
+apply_mpc_solution(u.x.array, mpc)
 
 xdmf = dolfinx.io.XDMFFile(mesh.comm, "demo_mpc.xdmf", "w")
 xdmf.write_mesh(mesh)

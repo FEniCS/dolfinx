@@ -30,6 +30,7 @@ __all__ = [
     "apply_mpc_solution",
     "build_sparsity_pattern_mpc",
     "matrix_csr_mpc",
+    "assemble_matrix_mpc_petsc",
 ]
 
 # Maps geometry dtype → (cpp MPC type, scalar dtype).
@@ -86,6 +87,20 @@ class MPC:
     def V(self) -> _cpp.fem.FunctionSpace_float64:  # type: ignore[return]
         """The (extended) FunctionSpace, including extra ghost reference dofs."""
         return self._cpp_object.V()
+    def cells(self) -> npt.NDArray[np.int32]:
+        """Return cells that contain at least one constrained dof."""
+        return self._cpp_object.cells()
+
+    def constraints(self):
+        """Return (offsets, ref_dof_local, ref_coeff) arrays for all constrained dofs.
+
+        Returns:
+            A tuple ``(offsets, ref_dof, ref_coeff)`` where ``offsets`` is a
+            prefix-sum array of length *num_dofs + 1*, ``ref_dof`` contains
+            local reference dof indices, and ``ref_coeff`` the matching
+            coefficients.
+        """
+        return self._cpp_object.constraints()
 
 
 def build_sparsity_pattern_mpc(
@@ -152,6 +167,32 @@ def assemble_matrix_mpc(
         [bc._cpp_object for bc in bcs],
     )
 
+
+
+def assemble_matrix_mpc_petsc(
+    mpc: MPC,
+    A,
+    a: Form,
+    bcs: list[DirichletBC],
+) -> None:
+    """Assemble a bilinear form into a PETSc *A* matrix with MPC row replacement.
+
+    This variant targets PETSc matrices created with
+    :func:`dolfinx.fem.petsc.create_matrix`.  The matrix must have been
+    configured to accept new non-zero locations (``NEW_NONZERO_LOCATIONS``).
+
+    Args:
+        mpc: The multipoint constraint.
+        A: PETSc ``Mat`` to assemble into.
+        a: Bilinear form.
+        bcs: Dirichlet boundary conditions.
+    """
+    _cpp.fem.petsc.assemble_matrix_mpc(
+        mpc._cpp_object,
+        A,
+        a._cpp_object,
+        [bc._cpp_object for bc in bcs],
+    )
 
 def apply_mpc_vector(b: npt.NDArray, mpc: MPC) -> None:
     """Apply the MPC P^T transformation to an assembled RHS vector.
