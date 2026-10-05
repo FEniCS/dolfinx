@@ -267,9 +267,11 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // C-style array indexing
     constexpr SCOTCH_Num baseval = 0;
 
-    // Copy  graph data to get the required type (SCOTCH_Num)
-    std::vector<SCOTCH_Num> edgeloctab(graph.array().begin(),
-                                       graph.array().end());
+    // SCOTCH requires an array to be null on all ranks or on none.
+    const std::size_t edgelocnbr = graph.array().size();
+    std::vector<SCOTCH_Num> edgeloctab(std::max<std::size_t>(edgelocnbr, 1));
+    std::ranges::copy(graph.array(), edgeloctab.begin());
+
     std::vector<SCOTCH_Num> vertloctab(graph.offsets().begin(),
                                        graph.offsets().end());
 
@@ -279,18 +281,21 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     if (err != 0)
       throw std::runtime_error("Error initializing SCOTCH graph");
 
-    // FIXME: If the nodes have weights but this rank has no nodes, then
-    //        SCOTCH may deadlock since vload.data() will be nullptr on
-    //        this rank but not null on all other ranks.
-    // Handle node weights
+    // Handle node and edge weights, with a dummy entry for ranks without
+    // nodes/edges (see edgeloctab)
     std::vector<SCOTCH_Num> vload;
     if (node_weights)
-      vload.assign(node_weights->begin(), node_weights->end());
+    {
+      vload.resize(std::max<std::size_t>(node_weights->size(), 1));
+      std::ranges::copy(*node_weights, vload.begin());
+    }
 
-    // Handle edge weights
     std::vector<SCOTCH_Num> edload;
     if (edge_weights)
-      edload.assign(edge_weights->begin(), edge_weights->end());
+    {
+      edload.resize(std::max<std::size_t>(edge_weights->size(), 1));
+      std::ranges::copy(*edge_weights, edload.begin());
+    }
 
     // Set seed and reset SCOTCH random number generator to produce
     // deterministic partitions on repeated calls
@@ -300,10 +305,11 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // Build SCOTCH distributed graph (SCOTCH is not const-correct, so
     // we throw away constness and trust SCOTCH)
     common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
-    err = SCOTCH_dgraphBuild(
-        &dgrafdat, baseval, graph.num_nodes(), graph.num_nodes(),
-        vertloctab.data(), nullptr, vload.data(), nullptr, edgeloctab.size(),
-        edgeloctab.size(), edgeloctab.data(), nullptr, edload.data());
+    err = SCOTCH_dgraphBuild(&dgrafdat, baseval, graph.num_nodes(),
+                             graph.num_nodes(), vertloctab.data(), nullptr,
+                             node_weights ? vload.data() : nullptr, nullptr,
+                             edgelocnbr, edgelocnbr, edgeloctab.data(), nullptr,
+                             edge_weights ? edload.data() : nullptr);
     if (err != 0)
       throw std::runtime_error("Error building SCOTCH graph");
     timer1.stop();
