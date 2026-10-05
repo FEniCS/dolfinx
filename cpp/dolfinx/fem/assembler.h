@@ -702,35 +702,22 @@ void set_diagonal(
 {
   spdlog::debug("Set diagonal");
 
-  // Gather the owned dofs of the contributing conditions first, so that
-  // the concatenation is sized exactly
-  std::vector<std::span<const std::int32_t>> runs;
-  runs.reserve(bcs.size());
-  std::size_t num_rows = 0;
+  std::vector<std::int32_t> rows;
   for (auto& bc : bcs)
   {
     if (V.contains(*bc.get().function_space()))
     {
       const auto [dofs, range] = bc.get().dof_indices();
       std::span<const std::int32_t> owned = dofs.first(range);
-      if (!owned.empty())
-      {
-        num_rows += owned.size();
-        runs.push_back(owned);
-      }
+      rows.insert(rows.end(), owned.begin(), owned.end());
     }
   }
-
-  std::vector<std::int32_t> rows;
-  rows.reserve(num_rows);
-  for (std::span<const std::int32_t> owned : runs)
-    rows.insert(rows.end(), owned.begin(), owned.end());
 
   // A condition's dofs are strictly increasing (a DirichletBC
   // precondition), so one condition needs no sort. Several give sorted
   // runs, which a comparison sort handles poorly and which are often
   // already in order, hence the check before radix sorting.
-  if (runs.size() > 1 and !std::ranges::is_sorted(rows))
+  if (!std::ranges::is_sorted(rows))
     dolfinx::radix_sort(rows);
 
   // Overlapping conditions can repeat a row

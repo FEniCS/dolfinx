@@ -371,16 +371,10 @@ def _bc_lifting_markers(
     :func:`_bc_lifting_values`, markers are fixed once the boundary
     conditions are built, so a repeated caller may reuse them.
     """
-    markers = []
-    for V, bcs0 in zip(spaces, bcs, strict=True):
-        if V is None or len(bcs0) == 0:
-            markers.append(np.empty(0, dtype=np.int8))
-            continue
-        m = np.zeros(_unrolled_size(V), dtype=np.int8)
-        for bc in bcs0:
-            m[bc.dof_indices()[0]] = 1
-        markers.append(m)
-    return markers
+    return [
+        np.empty(0, dtype=np.int8) if V is None else _bc_dof_markers(V, bcs0)
+        for V, bcs0 in zip(spaces, bcs, strict=True)
+    ]
 
 
 def _bc_lifting_values(
@@ -616,13 +610,10 @@ def set_bc_diagonal(
         rather than the row list, which it rebuilds on every call.
         Library code passes the rows to :func:`set_diagonal` instead.
     """
-    rows_ = []
-    for bc in bcs or []:
-        if V.contains(bc.function_space):
-            dofs, owned = bc.dof_indices()
-            rows_.append(dofs[:owned])
-    # Conditions may overlap, so the concatenation may hold duplicates
-    rows = np.unique(np.concatenate(rows_)) if rows_ else np.empty(0, dtype=np.int32)
+    # Marking rather than concatenating makes the rows sorted and
+    # duplicate-free by construction, so overlapping conditions need no
+    # separate deduplication
+    rows = _owned_marked_rows(V, _bc_dof_markers(V, bcs))
     set_diagonal(A, rows, diagonal, insert_mode)
 
 

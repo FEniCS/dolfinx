@@ -273,9 +273,11 @@ private:
   }
 
   // Throw if dofs are not strictly increasing, i.e. are unsorted or
-  // hold duplicates. O(dofs.size()), so called in Debug builds only.
-  static void check_dofs_strictly_increasing(std::span<const std::int32_t> dofs)
+  // hold duplicates. O(dofs.size()), so compiled away in Release.
+  static void check_dofs_strictly_increasing(
+      [[maybe_unused]] std::span<const std::int32_t> dofs)
   {
+#ifndef NDEBUG
     auto it = std::ranges::adjacent_find(dofs, std::ranges::greater_equal());
     if (it != dofs.end())
     {
@@ -284,6 +286,7 @@ private:
           "{} ({}) does not exceed the preceding entry ({}).",
           std::ranges::distance(dofs.begin(), it) + 1, *(it + 1), *it));
     }
+#endif
   }
 
   /// Unroll dofs for block size.
@@ -377,9 +380,7 @@ public:
     if (const int bs = V->dofmaps().front()->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
 
-#ifndef NDEBUG
     check_dofs_strictly_increasing(_dofs0);
-#endif
 
     _owned_indices0 = num_owned(*_function_space->dofmaps().front(), _dofs0);
   }
@@ -410,9 +411,7 @@ public:
     if (const int bs = _function_space->dofmaps().front()->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
 
-#ifndef NDEBUG
     check_dofs_strictly_increasing(_dofs0);
-#endif
 
     _owned_indices0 = num_owned(*_function_space->dofmaps().front(), _dofs0);
   }
@@ -449,9 +448,7 @@ public:
             V_g_dofs[1])),
         _owned_indices0(num_owned(*_function_space->dofmap(), _dofs0))
   {
-#ifndef NDEBUG
     check_dofs_strictly_increasing(_dofs0);
-#endif
   }
 
   /// Copy constructor

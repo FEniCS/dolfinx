@@ -48,8 +48,8 @@ concept MatSet
 /// set. May have static or dynamic extent.
 /// @param[in] diagonal Value for the diagonal of each row in `rows`.
 template <dolfinx::scalar T>
-void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
-                  T diagonal = T(1))
+void set_diagonal(MatSet<T> auto&& set_fn,
+                  const common::LocalIndexRange auto& rows, T diagonal = T(1))
 {
   std::span<const T, 1> diag_span(&diagonal, 1);
   for (std::size_t i = 0; i < std::ranges::size(rows); ++i)
@@ -70,7 +70,8 @@ void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
 /// @param[in] diagonals Diagonal values, with `diagonals[i]` the value
 /// for `rows[i]`. Must have the same length as `rows`.
 template <dolfinx::scalar T>
-void set_diagonal(auto&& set_fn, const common::LocalIndexRange auto& rows,
+void set_diagonal(MatSet<T> auto&& set_fn,
+                  const common::LocalIndexRange auto& rows,
                   std::span<const T> diagonals)
 {
   if (diagonals.size() != std::ranges::size(rows))

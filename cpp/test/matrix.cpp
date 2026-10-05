@@ -129,11 +129,12 @@ void test_matrix_apply()
                         [](auto a) { REQUIRE(std::abs(a) < 1e-13); });
 }
 
-/// Adding 1 to the diagonal of owned rows must give the same matrix,
-/// after scatter_rev, as adding 1/n to the diagonal of every local row
-/// (owned and ghost), where n is the number of ranks sharing the row.
+/// @brief P2 space on a unit cube, and the sparsity pattern of its
+/// dofmap over all local cells including ghost cells. No form is needed
+/// as nothing is assembled into the pattern.
 template <std::floating_point T>
-void test_set_diagonal_shared()
+std::pair<std::shared_ptr<fem::FunctionSpace<T>>, la::SparsityPattern>
+create_p2_space_and_pattern()
 {
   auto mesh = std::make_shared<mesh::Mesh<T>>(mesh::create_box<T>(
       MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {4, 5, 3},
@@ -146,8 +147,6 @@ void test_set_diagonal_shared()
       mesh, std::make_shared<fem::FiniteElement<T>>(element,
                                                     mesh->geometry().dim())));
 
-  // Sparsity pattern of the P2 dofmap over all local cells, including
-  // ghost cells; no form is needed as nothing is assembled
   std::shared_ptr<const common::IndexMap> map = V->dofmap()->index_map;
   const int bs = V->dofmap()->index_map_bs();
   std::shared_ptr<const common::IndexMap> cmap
@@ -158,6 +157,18 @@ void test_set_diagonal_shared()
   fem::sparsitybuild::cells(sp, std::pair{std::span(cells), std::span(cells)},
                             {{*V->dofmap(), *V->dofmap()}});
   sp.finalize();
+  return {std::move(V), std::move(sp)};
+}
+
+/// Adding 1 to the diagonal of owned rows must give the same matrix,
+/// after scatter_rev, as adding 1/n to the diagonal of every local row
+/// (owned and ghost), where n is the number of ranks sharing the row.
+template <std::floating_point T>
+void test_set_diagonal_shared()
+{
+  auto [V, sp] = create_p2_space_and_pattern<T>();
+  std::shared_ptr<const common::IndexMap> map = V->dofmap()->index_map;
+  const int bs = V->dofmap()->index_map_bs();
   la::MatrixCSR<T> A0(sp);
   la::MatrixCSR<T> A1(sp);
 
@@ -201,27 +212,8 @@ void test_set_diagonal_shared()
 template <std::floating_point T>
 void test_set_diagonal_duplicate_bc_rows()
 {
-  auto mesh = std::make_shared<mesh::Mesh<T>>(mesh::create_box<T>(
-      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {4, 5, 3},
-      mesh::CellType::tetrahedron, graph::partition_graph));
-  auto element = basix::create_element<T>(
-      basix::element::family::P, basix::cell::type::tetrahedron, 2,
-      basix::element::lagrange_variant::unset,
-      basix::element::dpc_variant::unset, false);
-  auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
-      mesh, std::make_shared<fem::FiniteElement<T>>(element,
-                                                    mesh->geometry().dim())));
-
+  auto [V, sp] = create_p2_space_and_pattern<T>();
   std::shared_ptr<const common::IndexMap> map = V->dofmap()->index_map;
-  const int bs = V->dofmap()->index_map_bs();
-  std::shared_ptr<const common::IndexMap> cmap
-      = mesh->topology()->index_map(mesh->topology()->dim());
-  std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts());
-  std::iota(cells.begin(), cells.end(), 0);
-  la::SparsityPattern sp(MPI_COMM_WORLD, {map, map}, {bs, bs});
-  fem::sparsitybuild::cells(sp, std::pair{std::span(cells), std::span(cells)},
-                            {{*V->dofmap(), *V->dofmap()}});
-  sp.finalize();
 
   // Constrain the first few owned dof blocks, with the second condition
   // covering a subset of the first

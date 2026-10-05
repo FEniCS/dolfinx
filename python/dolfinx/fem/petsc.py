@@ -511,17 +511,7 @@ def assemble_matrix(
         It rebuilds the constrained dof markers on every call, and
         should not be called internally by the library.
     """  # noqa: D301
-    A = create_matrix(a, kind)
-    bc_data = _matrix_bc_data(a, bcs)
-    _assemble_matrix_petsc(
-        A,
-        a,
-        bc_data,
-        diag,
-        pack_constants(a) if constants is None else constants,
-        pack_coefficients(a) if coeffs is None else coeffs,
-    )
-    return A
+    return _assemble_matrix_mat(create_matrix(a, kind), a, bcs, diag, constants, coeffs)
 
 
 @assemble_matrix.register  # type: ignore[attr-defined]
@@ -688,55 +678,47 @@ def _assemble_matrix_single(
         dolfinx.la.petsc.set_diagonal(A, rows, diag, PETSc.InsertMode.ADD)  # type: ignore[arg-type]
 
 
-def _assemble_matrix_nest(
+def _assemble_matrix_blocked(
     A: PETSc.Mat,
     a: Sequence[Sequence[Form | None]],
     bc_data: _MatrixBCData,
     diag: float,
     constants: Sequence[Sequence[npt.NDArray | None]],
     coeffs: Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]],
+    index_sets: tuple[Sequence, Sequence] | None,
 ) -> PETSc.Mat:
-    """Assemble nest sub-matrices; do not zero or finalise ``A``."""
+    """Assemble a form array block by block; do not zero or finalise ``A``.
+
+    ``index_sets`` is ``None`` for a nest matrix, whose blocks are
+    sub-matrices in their own right, and otherwise addresses the blocks
+    of ``A`` as local sub-matrices, which are indexed by scalar rather
+    than by block.
+    """
+    if index_sets is None:
+
+        @contextlib.contextmanager
+        def sub_matrix(i, j):
+            yield A.getNestSubMatrix(i, j)
+
+        unrolled = False
+    else:
+        is0, is1 = index_sets
+
+        @contextlib.contextmanager
+        def sub_matrix(i, j):
+            Asub = A.getLocalSubMatrix(is0[i], is1[j])
+            try:
+                yield Asub
+            finally:
+                A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
+
+        unrolled = True
+
     for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs, strict=True)):
         for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row, strict=True)):
             if a_block is not None:
                 assert const is not None
-                _assemble_matrix_single(
-                    A.getNestSubMatrix(i, j),
-                    a_block,
-                    (bc_data.row_markers[i], bc_data.column_markers[j]),
-                    bc_data.owned_rows[i],
-                    diag,
-                    const,
-                    coeff,
-                    unrolled=False,
-                )
-            elif i == j and bc_data.row_markers[i].size > 0:
-                raise RuntimeError(
-                    f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
-                    " and have DirichletBC applied. Consider assembling a zero block."
-                )
-    return A
-
-
-def _assemble_matrix_block(
-    A: PETSc.Mat,
-    a: Sequence[Sequence[Form | None]],
-    bc_data: _MatrixBCData,
-    diag: float,
-    constants: Sequence[Sequence[npt.NDArray | None]],
-    coeffs: Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]],
-    index_sets: tuple[Sequence, Sequence],
-) -> PETSc.Mat:
-    """Assemble local sub-matrices; do not zero or finalise ``A``."""
-    is0, is1 = index_sets
-    for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs, strict=True)):
-        for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row, strict=True)):
-            if a_block is not None:
-                assert const is not None
-                Asub = A.getLocalSubMatrix(is0[i], is1[j])
-                try:
-                    # Local sub-matrices use scalar indices.
+                with sub_matrix(i, j) as Asub:
                     _assemble_matrix_single(
                         Asub,
                         a_block,
@@ -745,10 +727,8 @@ def _assemble_matrix_block(
                         diag,
                         const,
                         coeff,
-                        unrolled=True,
+                        unrolled=unrolled,
                     )
-                finally:
-                    A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
             elif i == j and bc_data.row_markers[i].size > 0:
                 raise RuntimeError(
                     f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
@@ -781,16 +761,17 @@ def _assemble_matrix_petsc(
             raise ValueError(
                 "Must provide a sequence of sequences of coefficients when assembling a nest matrix"
             )
-        return _assemble_matrix_nest(
+        return _assemble_matrix_blocked(
             A,
             a,
             bc_data,
             diag,
             constants,  # type: ignore[arg-type]
             coeffs,  # type: ignore[arg-type]
+            None,
         )
     elif isinstance(a, Sequence):
-        return _assemble_matrix_block(
+        return _assemble_matrix_blocked(
             A,
             a,
             bc_data,
@@ -1403,38 +1384,27 @@ class LinearProblem(typing.Generic[_U]):
         _assemble_vector_petsc(self.b, self.L)
 
         # Apply boundary conditions to the rhs
-        if isinstance(self.u, Sequence):  # block or nest
-            a, L = self.a, self.L
-            if not isinstance(a, Sequence) or not isinstance(L, Sequence):
-                raise ValueError("Expected a sequence of forms for a block/nest problem.")
-            _apply_lifting_petsc(
-                self.b,
-                a,  # type: ignore[arg-type]
-                self._a_bc_data.column_markers,
-                _bc_lifting_values(self._a_bc_data.column_spaces, self._bcs1, PETSc.ScalarType),
-            )
-            dolfinx.la.petsc._ghost_update(
-                self.b,
-                PETSc.InsertMode.ADD,  # type: ignore[arg-type]
-                PETSc.ScatterMode.REVERSE,  # type: ignore[arg-type]
-            )
+        a, L = self.a, self.L
+        block = isinstance(self.u, Sequence)  # block or nest
+        if block and not (isinstance(a, Sequence) and isinstance(L, Sequence)):
+            raise ValueError("Expected a sequence of forms for a block/nest problem.")
+        elif not block and isinstance(a, Sequence):
+            raise ValueError("Expected a single form for a non-block/nest problem.")
+        _apply_lifting_petsc(
+            self.b,
+            a if block else [a],  # type: ignore[arg-type]
+            self._a_bc_data.column_markers,
+            _bc_lifting_values(self._a_bc_data.column_spaces, self._bcs1, PETSc.ScalarType),
+        )
+        dolfinx.la.petsc._ghost_update(
+            self.b,
+            PETSc.InsertMode.ADD,  # type: ignore[arg-type]
+            PETSc.ScatterMode.REVERSE,  # type: ignore[arg-type]
+        )
+        if block:
             assert self._bcs0 is not None
             dolfinx.fem.petsc.set_bc(self.b, self._bcs0)
-        else:  # single form
-            a = self.a
-            if isinstance(a, Sequence):
-                raise ValueError("Expected a single form for a non-block/nest problem.")
-            _apply_lifting_petsc(
-                self.b,
-                [a],
-                self._a_bc_data.column_markers,
-                _bc_lifting_values(self._a_bc_data.column_spaces, self._bcs1, PETSc.ScalarType),
-            )
-            dolfinx.la.petsc._ghost_update(
-                self.b,
-                PETSc.InsertMode.ADD,  # type: ignore[arg-type]
-                PETSc.ScatterMode.REVERSE,  # type: ignore[arg-type]
-            )
+        else:
             for bc in self.bcs:
                 bc.set(self.b.array_w)
         # Solve linear system and update ghost values in the solution
@@ -1447,18 +1417,11 @@ class LinearProblem(typing.Generic[_U]):
     def bcs(self) -> tuple[DirichletBC, ...]:
         """Dirichlet boundary conditions applied to the problem.
 
-        Assigning to this property rebuilds the cached constrained dof
-        markers, diagonal rows and per-block grouping, which
-        :meth:`solve` reuses rather than rebuilding on every call.
-        Caching them is safe because the dofs a boundary condition
-        constrains, and the block it belongs to, are fixed when it is
-        built. The conditions are copied to an immutable tuple, so
-        modifying the caller's sequence afterwards cannot leave the
-        cache stale.
-
-        Boundary condition *values* are not cached: the function or
-        constant behind a condition may change between solves, so they
-        are read afresh each time.
+        Assigning rebuilds the cached dof markers, diagonal rows and
+        per-block grouping that :meth:`solve` reuses. These follow from
+        the dofs a condition constrains, which are fixed once it is
+        built, and the sequence is copied, so the cache cannot go
+        stale. Condition *values* are re-read on every solve.
         """
         return self._bcs
 
@@ -2007,17 +1970,12 @@ class NonlinearProblem(typing.Generic[_U]):
     def bcs(self) -> tuple[DirichletBC, ...]:
         """Dirichlet boundary conditions applied to the problem.
 
-        Assigning to this property rebuilds the cached lifting markers
-        and re-registers both SNES callbacks, so the residual reuses
-        the markers rather than rebuilding them on every Newton step.
-        Caching them is safe because the dofs a boundary condition
-        constrains are fixed when it is built. The conditions are
-        copied to an immutable tuple, so modifying the caller's
-        sequence afterwards cannot leave the cache stale.
-
-        Boundary condition *values* are not cached: the function or
-        constant behind a condition may change between solves, so they
-        are read afresh each time.
+        Assigning rebuilds the cached lifting markers and re-registers
+        both SNES callbacks, so the residual reuses the markers rather
+        than rebuilding them each Newton step. The markers follow from
+        the dofs a condition constrains, which are fixed once it is
+        built, and the sequence is copied, so the cache cannot go
+        stale. Condition *values* are re-read on every step.
         """
         return self._bcs
 

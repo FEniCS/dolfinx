@@ -140,17 +140,11 @@ class LinearProblem:
     def bcs(self) -> tuple[DirichletBC, ...]:
         """Dirichlet boundary conditions applied to the problem.
 
-        Assigning to this property rebuilds the cached constrained dof
-        markers, which :meth:`solve` reuses rather than rebuilding on
-        every call. Caching them is safe because the
-        dofs a boundary condition constrains are fixed when it is
-        built. The conditions are copied to an immutable tuple, so
-        modifying the caller's sequence afterwards cannot leave the
-        cache stale.
-
-        Boundary condition *values* are not cached: the function or
-        constant behind a condition may change between solves, so they
-        are read afresh each time.
+        Assigning rebuilds the cached dof markers that :meth:`solve`
+        reuses. These follow from the dofs a condition constrains,
+        which are fixed once it is built, and the sequence is copied,
+        so the cache cannot go stale. Condition *values* are re-read on
+        every solve.
         """
         return self._bcs
 
