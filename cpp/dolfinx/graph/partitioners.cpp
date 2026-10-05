@@ -270,8 +270,6 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // C-style array indexing
     constexpr SCOTCH_Num baseval = 0;
 
-    const std::size_t edgelocnbr = graph.array().size();
-
     std::vector<SCOTCH_Num> edgeloctab(graph.array().begin(),
                                        graph.array().end());
     edgeloctab.reserve(1); // guarantee no nullptr
@@ -309,11 +307,11 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // Build SCOTCH distributed graph (SCOTCH is not const-correct, so
     // we throw away constness and trust SCOTCH)
     common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
-    err = SCOTCH_dgraphBuild(&dgrafdat, baseval, graph.num_nodes(),
-                             graph.num_nodes(), vertloctab.data(), nullptr,
-                             node_weights ? vload.data() : nullptr, nullptr,
-                             edgelocnbr, edgelocnbr, edgeloctab.data(), nullptr,
-                             edge_weights ? edload.data() : nullptr);
+    err = SCOTCH_dgraphBuild(
+        &dgrafdat, baseval, graph.num_nodes(), graph.num_nodes(),
+        vertloctab.data(), nullptr, node_weights ? vload.data() : nullptr,
+        nullptr, edgeloctab.size(), edgeloctab.size(), edgeloctab.data(),
+        nullptr, edge_weights ? edload.data() : nullptr);
     if (err != 0)
       throw std::runtime_error("Error building SCOTCH graph");
     timer1.stop();
