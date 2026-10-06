@@ -345,7 +345,7 @@ class TestPETScAssemblers:
         A.destroy(), b.destroy()
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-    def test_matrix_assembly_block(self, mode):
+    def test_matrix_assembly_block(self, mode) -> None:
         """Test assembly of block matrices and vectors.
 
         Tests assembly into (a) monolithic blocked structures, PETSc
@@ -489,7 +489,7 @@ class TestPETScAssemblers:
         A_monolithic.destroy(), b_monolithic.destroy()
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-    def test_matrix_assembly_block_vector(self, mode):
+    def test_matrix_assembly_block_vector(self, mode) -> None:
         """Test assembly of block matrices and vectors.
 
         Tests assembly into (a) monolithic blocked structures, PETSc
