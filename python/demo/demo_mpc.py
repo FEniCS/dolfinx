@@ -24,7 +24,15 @@
 # the left boundary to corresponding dofs on the right boundary with a
 # sign flip between the two displacement components.
 
+import sys
+
 from mpi4py import MPI
+
+import dolfinx
+
+if not dolfinx.has_petsc4py:
+    print("This demo requires DOLFINx to be built with petsc4py. Exiting.")
+    sys.exit(0)
 
 from petsc4py import PETSc
 
