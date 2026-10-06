@@ -840,7 +840,7 @@ def test_de_rahm_2D(order) -> None:
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("affine", [True, False])
 @pytest.mark.parametrize("callable_", [True, False])
-def test_interpolate_subset(order, dim, affine, callable_):
+def test_interpolate_subset(order, dim, affine, callable_) -> None:
     if dim == 2:
         ct = CellType.triangle if affine else CellType.quadrilateral
         mesh = create_unit_square(MPI.COMM_WORLD, 3, 4, ct)
@@ -863,7 +863,7 @@ def test_interpolate_subset(order, dim, affine, callable_):
         u.interpolate(lambda x: x[1] ** order, cells_local)
     mt = meshtags(mesh, mesh.topology.dim, cells_local, np.ones(cells_local.size, dtype=np.int32))
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=mt)
-    assert np.abs(form(assemble_scalar(form(ufl.inner(u - f, u - f) * dx(1))))) == pytest.approx(0)
+    assert np.abs(assemble_scalar(form(ufl.inner(u - f, u - f) * dx(1)))) == pytest.approx(0)
     integral = mesh.comm.allreduce(assemble_scalar(form(u * dx)), op=MPI.SUM)
     assert integral == pytest.approx(1 / (order + 1) * 0.5 ** (order + 1), abs=1.0e-6)
 
