@@ -278,7 +278,7 @@ def test_custom_element_quadrilateral_degree1(dtype, cg_solver):
         basix.ElementFamily.BDM,
     ],
 )
-def test_vector_copy_degree1(cell_type, element_family, dtype):
+def test_vector_copy_degree1(cell_type, element_family, dtype) -> None:
     if cell_type in [CellType.triangle, CellType.quadrilateral]:
         tdim = 2
         mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, cell_type, dtype=dtype)
@@ -291,17 +291,17 @@ def test_vector_copy_degree1(cell_type, element_family, dtype):
 
     e1 = basix.ufl.element(element_family, getattr(basix.CellType, cell_type.name), 1, dtype=dtype)
     e2 = basix.ufl.custom_element(
-        e1._element.cell_type,
-        e1._element.value_shape,
-        e1._element.wcoeffs,
-        e1._element.x,
-        e1._element.M,
+        e1.basix_element.cell_type,
+        e1.basix_element.value_shape,
+        e1.basix_element.wcoeffs,
+        e1.basix_element.x,
+        e1.basix_element.M,
         0,
-        e1._element.map_type,
-        e1._element.sobolev_space,
-        e1._element.discontinuous,
-        e1._element.embedded_subdegree,
-        e1._element.embedded_superdegree,
+        e1.basix_element.map_type,
+        e1.basix_element.sobolev_space,
+        e1.basix_element.discontinuous,
+        e1.basix_element.embedded_subdegree,
+        e1.basix_element.embedded_superdegree,
         dtype=dtype,
     )
 
@@ -324,7 +324,7 @@ def test_vector_copy_degree1(cell_type, element_family, dtype):
     [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
 )
 @pytest.mark.parametrize("element_family", [basix.ElementFamily.P, basix.ElementFamily.serendipity])
-def test_scalar_copy_degree1(cell_type, element_family, dtype):
+def test_scalar_copy_degree1(cell_type, element_family, dtype) -> None:
     if element_family == basix.ElementFamily.serendipity and cell_type in [
         CellType.triangle,
         CellType.tetrahedron,
@@ -341,17 +341,17 @@ def test_scalar_copy_degree1(cell_type, element_family, dtype):
 
     e1 = basix.ufl.element(element_family, getattr(basix.CellType, cell_type.name), 1, dtype=dtype)
     e2 = basix.ufl.custom_element(
-        e1._element.cell_type,
-        e1._element.value_shape,
-        e1._element.wcoeffs,
-        e1._element.x,
-        e1._element.M,
+        e1.basix_element.cell_type,
+        e1.basix_element.value_shape,
+        e1.basix_element.wcoeffs,
+        e1.basix_element.x,
+        e1.basix_element.M,
         0,
-        e1._element.map_type,
-        e1._element.sobolev_space,
-        e1._element.discontinuous,
-        e1._element.embedded_subdegree,
-        e1._element.embedded_superdegree,
+        e1.basix_element.map_type,
+        e1.basix_element.sobolev_space,
+        e1.basix_element.discontinuous,
+        e1.basix_element.embedded_subdegree,
+        e1.basix_element.embedded_superdegree,
         dtype=dtype,
     )
 
