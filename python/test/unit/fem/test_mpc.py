@@ -2,18 +2,19 @@ from mpi4py import MPI
 
 import numpy as np
 
-import dolfinx
-import dolfinx.fem
-import dolfinx.la
 from dolfinx.fem import (
     Function,
     FunctionSpace,
+    apply_lifting,
+    assemble_vector,
     create_sparsity_pattern,
     dirichletbc,
     form,
     functionspace,
     locate_dofs_topological,
+    set_bc_diagonal,
 )
+from dolfinx.la import InsertMode, matrix_csr
 from dolfinx.fem.mpc import (
     MPC,
     apply_mpc_solution,
@@ -90,9 +91,9 @@ def test_mpc():
     build_sparsity_pattern_mpc(sp, a, mpc, mpc)
     sp.finalize()
 
-    A = dolfinx.la.matrix_csr(sp)
+    A = matrix_csr(sp)
     assemble_matrix_mpc(mpc, A, a, [bc])
-    dolfinx.fem.set_bc_diagonal(A, V_new, [bc], 1.0)
+    set_bc_diagonal(A, V_new, [bc], 1.0)
     A.scatter_reverse()
 
     A_superlu = superlu_dist_matrix(A)
@@ -108,12 +109,12 @@ def test_mpc():
     #   2. apply_mpc_vector: b[ref] += c * b[constrained], b[constrained] = 0  (P^T step)
     #   3. scatter_rev to accumulate P^T ghost writes back to owning ranks
     #   4. apply_lifting and set Dirichlet BC values
-    b = dolfinx.fem.assemble_vector(L)
-    b.scatter_reverse(dolfinx.la.InsertMode.add)
+    b = assemble_vector(L)
+    b.scatter_reverse(InsertMode.add)
     apply_mpc_vector(b.array, mpc)
-    b.scatter_reverse(dolfinx.la.InsertMode.add)
-    dolfinx.fem.apply_lifting(b.array, [a], [[bc]])
-    b.scatter_reverse(dolfinx.la.InsertMode.add)
+    b.scatter_reverse(InsertMode.add)
+    apply_lifting(b.array, [a], [[bc]])
+    b.scatter_reverse(InsertMode.add)
     bc.set(b.array)
 
     # Solve
