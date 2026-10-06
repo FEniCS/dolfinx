@@ -1,3 +1,29 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
+
+# # Multi-point constraints
+#
+# Copyright © 2024 Chris Richardson
+#
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_mpc.py>`
+# * {download}`Jupyter notebook <./demo_mpc.ipynb>`
+# ```
+#
+# This demo illustrates multi-point constraints (MPCs) of the form
+# :math:`u_i = \sum_k c_k u_{\mathrm{ref},k} + g`.  It solves a linear
+# elasticity problem on the unit square and couples degrees of freedom on
+# the left boundary to corresponding dofs on the right boundary with a
+# sign flip between the two displacement components.
+
 from mpi4py import MPI
 
 import dolfinx
