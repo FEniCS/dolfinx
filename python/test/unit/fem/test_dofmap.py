@@ -5,8 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the fem interface."""
 
-import sys
-
 from mpi4py import MPI
 
 import numpy as np
@@ -39,7 +37,6 @@ from dolfinx.mesh import (
     CellType,
     create_mesh,
     create_unit_cube,
-    create_unit_interval,
     create_unit_square,
 )
 
@@ -49,42 +46,6 @@ xfail = pytest.mark.xfail(strict=True)
 @pytest.fixture
 def mesh():
     return create_unit_square(MPI.COMM_WORLD, 4, 4)
-
-
-@pytest.mark.skip
-@pytest.mark.parametrize(
-    "mesh_factory",
-    [
-        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-        (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-    ],
-)
-def test_tabulate_dofs(mesh_factory):
-    func, args = mesh_factory
-    mesh = func(*args)
-    W0 = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
-    W1 = element(
-        "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
-    )
-    W = functionspace(mesh, W0 * W1)
-
-    L0 = W.sub(0)
-    L1 = W.sub(1)
-    L01 = L1.sub(0)
-    L11 = L1.sub(1)
-
-    map = mesh.topology.index_map(mesh.topology.dim)
-    num_cells = map.size_local + map.num_ghosts
-    for c in range(num_cells):
-        dofs0 = L0.dofmap.cell_dofs(c)
-        dofs1 = L01.dofmap.cell_dofs(c)
-        dofs2 = L11.dofmap.cell_dofs(c)
-        dofs3 = L1.dofmap.cell_dofs(c)
-        assert len(np.intersect1d(dofs0, dofs1)) == 0
-        assert len(np.intersect1d(dofs0, dofs2)) == 0
-        assert len(np.intersect1d(dofs1, dofs2)) == 0
-        combined_dofs = np.append(dofs1, dofs2)
-        assert np.array_equal(combined_dofs, dofs3)
 
 
 def test_entity_dofs(mesh) -> None:
@@ -140,52 +101,6 @@ def test_dofmaps_is_immutable(mesh) -> None:
     assert V.dofmaps[0] is dofmaps[0]
 
 
-@pytest.mark.skip
-@pytest.mark.skip_in_parallel
-@pytest.mark.parametrize(
-    "mesh_factory",
-    [
-        (create_unit_square, (MPI.COMM_WORLD, 2, 2)),
-        (create_unit_square, (MPI.COMM_WORLD, 2, 2, CellType.quadrilateral)),
-    ],
-)
-def test_entity_closure_dofs(mesh_factory):
-    func, args = mesh_factory
-    mesh = func(*args)
-    tdim = mesh.topology.dim
-
-    for degree in (1, 2, 3):
-        V = functionspace(mesh, ("Lagrange", degree))
-        for d in range(tdim + 1):
-            map = mesh.topology.index_map(d)
-            num_entities = map.size_local + map.num_ghosts
-            covered = set()
-            covered2 = set()
-            all_entities = np.array([entity for entity in range(num_entities)], dtype=np.uintp)
-            for entity in all_entities:
-                entities = np.array([entity], dtype=np.uintp)
-                dofs_on_this_entity = V.dofmap.entity_dofs(mesh, d, entities)
-                closure_dofs = V.dofmap.entity_closure_dofs(mesh, d, entities)
-                assert len(dofs_on_this_entity) == len(V.dofmap.dof_layout.entity_dofs(d, 0))
-                assert len(dofs_on_this_entity) <= len(closure_dofs)
-                covered.update(dofs_on_this_entity)
-                covered2.update(closure_dofs)
-            dofs_on_all_entities = V.dofmap.entity_dofs(mesh, d, all_entities)
-            closure_dofs_on_all_entities = V.dofmap.entity_closure_dofs(mesh, d, all_entities)
-            assert (
-                len(dofs_on_all_entities)
-                == len(V.dofmap.dof_layout.entity_dofs(d, 0)) * num_entities
-            )
-            assert covered == set(dofs_on_all_entities)
-            assert covered2 == set(closure_dofs_on_all_entities)
-
-        d = tdim
-        map = mesh.topology.index_map(d)
-        num_entities = map.size_local + map.num_ghosts
-        all_cells = np.array([entity for entity in range(num_entities)], dtype=np.uintp)
-        assert set(V.dofmap.entity_closure_dofs(mesh, d, all_cells)) == set(range(V.dim))
-
-
 def test_block_size():
     meshes = [
         create_unit_square(MPI.COMM_WORLD, 8, 8),
@@ -209,72 +124,6 @@ def test_block_size():
         gdim = mesh.geometry.dim
         V = functionspace(mesh, ("Lagrange", 2, (gdim,)))
         assert V.dofmap.index_map_bs == mesh.geometry.dim
-
-
-@pytest.mark.skip
-def test_block_size_real():
-    mesh = create_unit_interval(MPI.COMM_WORLD, 12)
-    V = element("DG", mesh.basix_cell(), 0, dtype=default_real_type)
-    R = element("R", mesh.basix_cell(), 0, dtype=default_real_type)
-    X = functionspace(mesh, V * R)
-    assert X.dofmap.index_map_bs == 1
-
-
-@pytest.mark.skip
-@pytest.mark.parametrize(
-    "mesh_factory",
-    [
-        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-        (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-    ],
-)
-def test_local_dimension(mesh_factory):
-    func, args = mesh_factory
-    mesh = func(*args)
-
-    v = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
-    q = element(
-        "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
-    )
-    w = v * q
-
-    V = functionspace(mesh, v)
-    Q = functionspace(mesh, q)
-    W = functionspace(mesh, w)
-    for space in [V, Q, W]:
-        dofmap = space.dofmap
-        local_to_global_map = dofmap.tabulate_local_to_global_dofs()
-        ownership_range = dofmap.index_set.size_local * dofmap.index_set.block_size
-        dim1 = dofmap().index_map.size_local()
-        dim2 = dofmap().index_map.num_ghosts()
-        assert dim1 == ownership_range[1] - ownership_range[0]
-        assert dim1 + dim2 == local_to_global_map.size
-
-
-@pytest.mark.skip
-def test_readonly_view_local_to_global_unwoned(mesh):
-    """Test that local_to_global_unwoned() returns readonly
-    view into the data; in particular test lifetime of data owner.
-    """
-    V = functionspace(mesh, ("P", 1))
-    dofmap = V.dofmap
-    index_map = dofmap().index_map
-
-    rc = sys.getrefcount(dofmap)
-    l2gu = dofmap.local_to_global_unowned()
-    assert sys.getrefcount(dofmap) == rc + 1 if l2gu.size else rc
-    assert not l2gu.flags.writeable
-    assert all(l2gu < V.dofmap.global_dimension())
-    del l2gu
-    assert sys.getrefcount(dofmap) == rc
-
-    rc = sys.getrefcount(index_map)
-    l2gu = index_map.local_to_global_unowned()
-    assert sys.getrefcount(index_map) == rc + 1 if l2gu.size else rc
-    assert not l2gu.flags.writeable
-    assert all(l2gu < V.dofmap.global_dimension())
-    del l2gu
-    assert sys.getrefcount(index_map) == rc
 
 
 @pytest.mark.skip_in_parallel

@@ -514,7 +514,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2, dtype) -> None:
 @pytest.mark.parametrize("order", [1, 2])
 @pytest.mark.parametrize("space_type", ["N1curl", "N2curl"])
 @parametrize_dtypes
-def test_curl(space_type, order, dtype):
+def test_curl(space_type, order, dtype) -> None:
     """Test that curl is consistent for different cell permutations of a tetrahedron."""
     xtype = np.real(dtype(0)).dtype
     tdim = dolfinx.mesh.cell_dim(CellType.tetrahedron)
@@ -551,7 +551,7 @@ def test_curl(space_type, order, dtype):
 
         # Get assembled values on edge
         values0 = sorted(
-            [result[V0.dofmap.cell_dofs(0)[a]] for a in V0.dofmap.dof_layout.entity_dofs(1, i)]
+            [results[0][V0.dofmap.cell_dofs(0)[a]] for a in V0.dofmap.dof_layout.entity_dofs(1, i)]
         )
 
         for V, result in zip(spaces[1:], results[1:], strict=True):
