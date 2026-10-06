@@ -441,7 +441,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
     def eval(
         self,
         x: npt.ArrayLike,
-        cells: npt.NDArray[np.int32],
+        cells: npt.ArrayLike,
         u: npt.NDArray[Scalar] | None = None,
         tol: float = 1.0e-6,
         maxit: int = 15,

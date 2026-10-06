@@ -144,7 +144,7 @@ def test_interpolation_symmetric_tensor(dim, symmetry, etype, degree, dtype) -> 
     check_norm()
 
 
-def test_eval():
+def test_eval() -> None:
     """Test that eval is correct for a symmetric 3x3 2-tensor is correct."""
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 

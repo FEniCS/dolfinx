@@ -155,7 +155,7 @@ def test_eval(dtype) -> None:
         ),
     ],
 )
-def test_eval_manifold(dtype):
+def test_eval_manifold(dtype) -> None:
     xdtype = dtype(0).real.dtype
     # Simple two-triangle surface in 3d
     vertices = np.array(
