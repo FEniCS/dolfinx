@@ -15,7 +15,7 @@ from dolfinx.io.vtkhdf import read_mesh, write_cell_data, write_mesh, write_poin
 from dolfinx.mesh import CellType, Mesh, create_unit_cube, create_unit_square
 
 
-def test_read_write_vtkhdf_mesh2d():
+def test_read_write_vtkhdf_mesh2d() -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=np.float32)
     write_mesh("example2d.vtkhdf", mesh)
     mesh2 = read_mesh(MPI.COMM_WORLD, "example2d.vtkhdf", np.float32)
@@ -25,7 +25,7 @@ def test_read_write_vtkhdf_mesh2d():
     assert mesh.topology.index_map(2).size_global == mesh2.topology.index_map(2).size_global
 
 
-def test_read_write_vtkhdf_mesh3d():
+def test_read_write_vtkhdf_mesh3d() -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type=CellType.prism)
     write_mesh("example3d.vtkhdf", mesh)
     mesh2 = read_mesh(MPI.COMM_WORLD, "example3d.vtkhdf")
@@ -34,7 +34,7 @@ def test_read_write_vtkhdf_mesh3d():
 
 
 @pytest.mark.parametrize("num_threads", [1, 4])
-def test_read_write_vtkhdf_num_threads(num_threads):
+def test_read_write_vtkhdf_num_threads(num_threads) -> None:
     filename = "example_num_threads.vtkhdf"
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5)
     write_mesh(filename, mesh)
@@ -64,7 +64,7 @@ def test_read_write_vtkhdf_num_threads(num_threads):
     assert np.isclose(vol_1, vol_n)
 
 
-def test_read_vtkhdf_num_threads_invalid():
+def test_read_vtkhdf_num_threads_invalid() -> None:
     filename = "example_num_threads_invalid.vtkhdf"
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     write_mesh(filename, mesh)
@@ -73,7 +73,7 @@ def test_read_vtkhdf_num_threads_invalid():
         read_mesh(MPI.COMM_WORLD, filename, num_threads=0)
 
 
-def test_read_write_mixed_topology(mixed_topology_mesh):
+def test_read_write_mixed_topology(mixed_topology_mesh) -> None:
     mesh = Mesh(mixed_topology_mesh, None)
     write_mesh("mixed_mesh.vtkhdf", mesh)
 
@@ -157,7 +157,7 @@ def test_read_write_higher_order():
 
 
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_read_write_higher_order_mesh(order):
+def test_read_write_higher_order_mesh(order) -> None:
     try:
         import gmsh
     except ImportError:
@@ -236,7 +236,7 @@ def test_read_write_higher_order_mesh(order):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_write_point_data(dtype):
+def test_write_point_data(dtype) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     filename = "point_data.vtkhdf"
     write_mesh(filename, mesh)
@@ -247,7 +247,7 @@ def test_write_point_data(dtype):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("width", [1, 3])
-def test_write_cell_data(dtype, width):
+def test_write_cell_data(dtype, width) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     filename = "cell_data.vtkhdf"
     write_mesh(filename, mesh)
@@ -256,7 +256,7 @@ def test_write_cell_data(dtype, width):
         write_cell_data(filename, mesh, cell_data, float(j))
 
 
-def test_write_mixed_topology_data(mixed_topology_mesh):
+def test_write_mixed_topology_data(mixed_topology_mesh) -> None:
     mesh = Mesh(mixed_topology_mesh, None)
     filename = "mixed_point_data.vtkhdf"
     write_mesh(filename, mesh)

@@ -31,7 +31,7 @@ def create_test_sparsity(n, bs):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_add(dtype):
+def test_add(dtype) -> None:
     # Regular CSR Matrix 6x6 with bs=1
     sp = create_test_sparsity(6, 1)
     mat1 = matrix_csr(sp, dtype=dtype)
@@ -75,7 +75,7 @@ def test_add(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_set(dtype):
+def test_set(dtype) -> None:
     mpi_size = MPI.COMM_WORLD.size
     # Regular CSR Matrix 6x6 with bs=1
     sp = create_test_sparsity(6, 1)
@@ -93,7 +93,7 @@ def test_set(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_set_blocked(dtype):
+def test_set_blocked(dtype) -> None:
     mpi_size = MPI.COMM_WORLD.size
     # Blocked CSR Matrix 3x3 with bs=2
     sp = create_test_sparsity(3, 2)
@@ -106,7 +106,7 @@ def test_set_blocked(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_distributed_csr(dtype):
+def test_distributed_csr(dtype) -> None:
     size = MPI.COMM_WORLD.size
     rank = MPI.COMM_WORLD.rank
     if size == 1:
@@ -175,7 +175,7 @@ def test_set_block_matrix(dtype):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_set_diagonal_distributed(dtype):
+def test_set_diagonal_distributed(dtype) -> None:
     mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=ghost_mode, dtype=mesh_dtype)
@@ -256,7 +256,7 @@ def test_set_diagonal_distributed(dtype):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_set_diagonal_per_row(dtype):
+def test_set_diagonal_per_row(dtype) -> None:
     """Test setting a different diagonal value for each row."""
     mesh = create_unit_square(MPI.COMM_WORLD, 6, 5, dtype=np.real(dtype(0)).dtype)
     V = fem.functionspace(mesh, ("Lagrange", 1))
@@ -294,7 +294,7 @@ def test_set_diagonal_per_row(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_bad_entry(dtype):
+def test_bad_entry(dtype) -> None:
     sp = create_test_sparsity(6, 1)
     mat1 = matrix_csr(sp, dtype=dtype)
 
@@ -314,7 +314,7 @@ def test_bad_entry(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_eliminate_zeros_tolerance(dtype):
+def test_eliminate_zeros_tolerance(dtype) -> None:
     """Entries are removed from storage iff |value| <= tol (i.e. kept iff
     strictly greater than tol), and storage is compacted accordingly.
     """
@@ -357,7 +357,7 @@ def test_eliminate_zeros_tolerance(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_eliminate_zeros_default_tolerance(dtype):
+def test_eliminate_zeros_default_tolerance(dtype) -> None:
     """With no tolerance supplied, only exact structural zeros are removed;
     small-but-nonzero entries must survive.
 
@@ -392,7 +392,7 @@ def test_eliminate_zeros_default_tolerance(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_eliminate_zeros_no_change_when_nothing_within_tolerance(dtype):
+def test_eliminate_zeros_no_change_when_nothing_within_tolerance(dtype) -> None:
     """eliminate_zeros must be a no-op (and not corrupt data) when no
     entries fall within the given tolerance.
     """
@@ -410,7 +410,7 @@ def test_eliminate_zeros_no_change_when_nothing_within_tolerance(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_eliminate_zeros_blocked_partial(dtype):
+def test_eliminate_zeros_blocked_partial(dtype) -> None:
     """A block with any entry above tolerance must be kept in full, even
     though some of its other entries are within tolerance.
     """
@@ -429,7 +429,7 @@ def test_eliminate_zeros_blocked_partial(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_eliminate_zeros_blocked_whole_block(dtype):
+def test_eliminate_zeros_blocked_whole_block(dtype) -> None:
     """A block is only dropped from storage when *every* one of its
     bs0*bs1 entries is within tolerance; a block with even one entry
     above tolerance is kept in full, byte-for-byte.
@@ -462,7 +462,7 @@ def test_eliminate_zeros_blocked_whole_block(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_eliminate_zeros_finalizes(dtype):
+def test_eliminate_zeros_finalizes(dtype) -> None:
     """eliminate_zeros() can shrink the sparsity, which invalidates the
     precomputed ghost-row communication pattern. Once called, further
     modification of the matrix must be rejected rather than silently

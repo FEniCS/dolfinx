@@ -23,7 +23,7 @@ from dolfinx.mesh import create_unit_square
         element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type),
     ],
 )
-def test_scatter_forward(e):
+def test_scatter_forward(e) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     V = functionspace(mesh, e)
     u = Function(V)
@@ -55,7 +55,7 @@ def test_scatter_forward(e):
         element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type),
     ],
 )
-def test_scatter_reverse(e):
+def test_scatter_reverse(e) -> None:
     comm = MPI.COMM_WORLD
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     V = functionspace(mesh, e)
@@ -97,7 +97,7 @@ def test_scatter_reverse(e):
         np.int64,
     ],
 )
-def test_vector_from_index_map_scatter_forward(dtype):
+def test_vector_from_index_map_scatter_forward(dtype) -> None:
     comm = MPI.COMM_WORLD
     mesh = create_unit_square(comm, 5, 5)
 
@@ -113,7 +113,7 @@ def test_vector_from_index_map_scatter_forward(dtype):
         assert np.all(vector.array == global_idxs)
 
 
-def test_vector_from_scatterer():
+def test_vector_from_scatterer() -> None:
     """Test creating vectors that share a scatterer."""
     comm = MPI.COMM_WORLD
     mesh = create_unit_square(comm, 5, 5)

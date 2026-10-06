@@ -11,7 +11,7 @@ from dolfinx.graph import adjacencylist
 
 
 @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-def test_create_adj2d(dtype):
+def test_create_adj2d(dtype) -> None:
     data = np.zeros([2, 4], dtype=dtype)
     adj = adjacencylist(data)
     num_nodes, num_links = data.shape[0], data.shape[1]
@@ -29,7 +29,7 @@ def test_create_adj2d(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-def test_equality_is_unhashable(dtype):
+def test_equality_is_unhashable(dtype) -> None:
     """Structurally equal adjacency lists must not have identity hashes."""
     data = np.array([[1, 2], [0, 2]], dtype=dtype)
     adj0 = adjacencylist(data)

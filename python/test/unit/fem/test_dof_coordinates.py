@@ -15,7 +15,7 @@ from dolfinx.mesh import create_unit_cube, create_unit_square
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", range(1, 5))
-def test_dof_coords_2d(degree, dtype):
+def test_dof_coords_2d(degree, dtype) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype)
     V = functionspace(mesh, ("Lagrange", degree))
     u = Function(V, dtype=dtype)
@@ -27,7 +27,7 @@ def test_dof_coords_2d(degree, dtype):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", range(1, 5))
-def test_dof_coords_3d(degree, dtype):
+def test_dof_coords_3d(degree, dtype) -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 10, 10, 10, dtype=dtype)
     V = functionspace(mesh, ("Lagrange", degree))
     u = Function(V, dtype=dtype)

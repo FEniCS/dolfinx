@@ -64,7 +64,7 @@ dtype_parametrize = pytest.mark.parametrize(
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 @dtype_parametrize
-def test_assemble_functional_dx(mode, dtype):
+def test_assemble_functional_dx(mode, dtype) -> None:
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=xtype)
     M = form(1.0 * dx(domain=mesh), dtype=dtype)
@@ -80,7 +80,7 @@ def test_assemble_functional_dx(mode, dtype):
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 @dtype_parametrize
-def test_assemble_functional_ds(mode, dtype):
+def test_assemble_functional_ds(mode, dtype) -> None:
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=xtype)
     M = form(1.0 * ds(domain=mesh), dtype=dtype)
@@ -90,7 +90,7 @@ def test_assemble_functional_ds(mode, dtype):
 
 
 @dtype_parametrize
-def test_assemble_derivatives(dtype):
+def test_assemble_derivatives(dtype) -> None:
     """Test the original_coefficient_positions.
 
     Positions  may change under differentiation (some coefficients and
@@ -121,7 +121,7 @@ def test_assemble_derivatives(dtype):
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 @dtype_parametrize
-def test_basic_assembly(mode, dtype):
+def test_basic_assembly(mode, dtype) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=dtype(0).real.dtype)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -180,7 +180,7 @@ def nest_matrix_norm(A):
 
 
 @pytest.mark.petsc4py
-def test_vector_single_space_as_block():
+def test_vector_single_space_as_block() -> None:
     from dolfinx.fem.petsc import create_vector as petsc_create_vector
 
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
@@ -195,7 +195,7 @@ class TestPETScAssemblers:
     """Test PETSc-based assemblers for matrices and vectors."""
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-    def test_basic_assembly_petsc_matrixcsr(self, mode):
+    def test_basic_assembly_petsc_matrixcsr(self, mode) -> None:
         """Test basic assembly of PETSc Mat and compare with MatrixCSR assembly."""
         from petsc4py import PETSc
 
@@ -774,7 +774,7 @@ class TestPETScAssemblers:
             create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.shared_facet),
         ],
     )
-    def test_assembly_solve_taylor_hood(self, mesh):
+    def test_assembly_solve_taylor_hood(self, mesh) -> None:
         """Assemble Stokes problem with Taylor-Hood elements and solve."""
         from petsc4py import PETSc
 
@@ -980,7 +980,7 @@ class TestPETScAssemblers:
         assert Anorm2 == pytest.approx(Anorm1, 1.0e-4)
         assert Pnorm2 == pytest.approx(Pnorm1, 1.0e-6)
 
-    def test_basic_interior_facet_assembly(self):
+    def test_basic_interior_facet_assembly(self) -> None:
         """Test basic assembly of interior facet terms."""
         from petsc4py import PETSc
 
@@ -1280,7 +1280,7 @@ class TestPETScAssemblers:
 
         np.testing.assert_allclose(b.array_r, b_ref.array_r, rtol=1e-12)
 
-    def test_coefficents_non_constant(self):
+    def test_coefficents_non_constant(self) -> None:
         """Test packing coefficients with non-constant values."""
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
 
@@ -1393,7 +1393,7 @@ class TestPETScAssemblers:
         ksp.destroy(), b.destroy(), A.destroy()
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-    def test_matrix_assembly_rectangular(self, mode):
+    def test_matrix_assembly_rectangular(self, mode) -> None:
         """Test assembly of block rectangular block matrices."""
         from petsc4py import PETSc
 
@@ -1451,7 +1451,7 @@ class TestPETScAssemblers:
         b = petsc_assemble_vector(L, kind=PETSc.Vec.Type.MPI)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    def test_zero_diagonal_block_no_bcs(self):
+    def test_zero_diagonal_block_no_bcs(self) -> None:
         """Test assembly of block matrix with a zero diagonal block and no BCs."""
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
 
@@ -1469,7 +1469,7 @@ class TestPETScAssemblers:
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 @dtype_parametrize
-def test_basic_assembly_constant(mode, dtype):
+def test_basic_assembly_constant(mode, dtype) -> None:
     """Tests assembly with Constant.
 
     The following test should be sensitive to order of flattening the
@@ -1504,7 +1504,7 @@ def test_basic_assembly_constant(mode, dtype):
     assert np.linalg.norm(b1.array * 3.0 - b2.array * 5.0) == pytest.approx(0.0, abs=1.0e-5)
 
 
-def test_lambda_assembler():
+def test_lambda_assembler() -> None:
     """Tests assembly with a lambda function."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     V = functionspace(mesh, ("Lagrange", 1))
@@ -1576,7 +1576,7 @@ def test_vector_types():
 
 @dtype_parametrize
 @pytest.mark.parametrize("method", ["degree", "metadata"])
-def test_mixed_quadrature(dtype, method):
+def test_mixed_quadrature(dtype, method) -> None:
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, dtype=xtype)
 
@@ -1957,7 +1957,7 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
         ),
     ],
 )
-def test_ridge_integrals_rank1_2D(cell_type, ghost_mode, dtype):
+def test_ridge_integrals_rank1_2D(cell_type, ghost_mode, dtype) -> None:
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
@@ -2013,7 +2013,7 @@ def test_ridge_integrals_rank1_2D(cell_type, ghost_mode, dtype):
         ),
     ],
 )
-def test_ridge_integrals_rank0(cell_type, ghost_mode, dtype):
+def test_ridge_integrals_rank0(cell_type, ghost_mode, dtype) -> None:
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
@@ -2087,7 +2087,7 @@ def test_ridge_integrals_rank0(cell_type, ghost_mode, dtype):
         ),
     ],
 )
-def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype, coefficient):
+def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype, coefficient) -> None:
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 

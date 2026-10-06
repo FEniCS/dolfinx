@@ -40,7 +40,7 @@ def _assert_close_up_to_row_permutation(a, b, atol):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_interpolate_geometry_p1_to_p2(dtype):
+def test_interpolate_geometry_p1_to_p2(dtype) -> None:
     msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
     cmap = coordinate_element(CellType.triangle, 2, dtype=dtype)
 
@@ -64,7 +64,7 @@ def test_interpolate_geometry_p1_to_p2(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_interpolate_geometry_p1_roundtrip(dtype):
+def test_interpolate_geometry_p1_roundtrip(dtype) -> None:
     msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
     cmap = coordinate_element(CellType.triangle, 1, dtype=dtype)
 
@@ -138,7 +138,7 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type, lagrange_variant):
 @pytest.mark.parametrize(
     "lagrange_variant", [LagrangeVariant.equispaced, LagrangeVariant.gll_isaac]
 )
-def test_curve_mesh(degree, dtype, R, cell_type, lagrange_variant):
+def test_curve_mesh(degree, dtype, R, cell_type, lagrange_variant) -> None:
     Ns = [4, 8, 16, 32]
     errors = [_curve_mesh_errors(N, degree, dtype, R, cell_type, lagrange_variant) for N in Ns]
 
@@ -178,7 +178,7 @@ def _discontinuous_cmap(cell_type, degree, dtype, variant=LagrangeVariant.gll_is
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", [1, 2])
-def test_interpolate_geometry_discontinuous(dtype, degree):
+def test_interpolate_geometry_discontinuous(dtype, degree) -> None:
     """A discontinuous coordinate element gives each cell its own nodes."""
     msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
     cmap = _discontinuous_cmap(basix.CellType.triangle, degree, dtype)
@@ -210,7 +210,7 @@ def test_interpolate_geometry_discontinuous(dtype, degree):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_interpolate_geometry_discontinuous_assembly(dtype):
+def test_interpolate_geometry_discontinuous_assembly(dtype) -> None:
     """Integrals over a discontinuous geometry, before and after moving cells."""
     msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
     new_msh = interpolate_geometry(msh, _discontinuous_cmap(basix.CellType.triangle, 1, dtype))
@@ -233,7 +233,7 @@ def test_interpolate_geometry_discontinuous_assembly(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_interpolate_geometry_discontinuous_no_entity_geometry(dtype):
+def test_interpolate_geometry_discontinuous_no_entity_geometry(dtype) -> None:
     """Sub-entity geometry is undefined for a discontinuous geometry."""
     msh = create_unit_square(MPI.COMM_WORLD, 2, 2, dtype=dtype)
     new_msh = interpolate_geometry(msh, _discontinuous_cmap(basix.CellType.triangle, 1, dtype))

@@ -12,7 +12,7 @@ from dolfinx.fem import assemble_matrix, form, functionspace
 from dolfinx.mesh import create_unit_square
 
 
-def test_vector_assemble_matrix_exterior():
+def test_vector_assemble_matrix_exterior() -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
     gdim = mesh.geometry.dim
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
@@ -22,7 +22,7 @@ def test_vector_assemble_matrix_exterior():
     A.scatter_reverse()
 
 
-def test_vector_assemble_matrix_interior():
+def test_vector_assemble_matrix_interior() -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
     gdim = mesh.geometry.dim
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))

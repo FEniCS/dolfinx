@@ -27,7 +27,7 @@ def square():
     return create_unit_square(MPI.COMM_WORLD, 5, 5)
 
 
-def test_normals(cube, square):
+def test_normals(cube, square) -> None:
     """Test cell normals for a subset of facets."""
 
     def left_side(x):

@@ -138,7 +138,7 @@ def test_submesh(order, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", range(1, 5))
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_triangle_mesh(order, dtype):
+def test_triangle_mesh(order, dtype) -> None:
     points = []
     points += [[i / order, 0] for i in range(order + 1)]
     for j in range(1, order):
@@ -178,7 +178,7 @@ def test_triangle_mesh(order, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", range(1, 5))
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_tetrahedron_mesh(order, dtype):
+def test_tetrahedron_mesh(order, dtype) -> None:
     points = []
     points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
     for k in range(1, order):
@@ -251,7 +251,7 @@ def test_tetrahedron_mesh(order, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_quadrilateral_mesh(order, dtype):
+def test_quadrilateral_mesh(order, dtype) -> None:
     random.seed(13)
 
     points = []
@@ -295,7 +295,7 @@ def test_quadrilateral_mesh(order, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_hexahedron_mesh(order, dtype):
+def test_hexahedron_mesh(order, dtype) -> None:
     random.seed(13)
     points = []
     points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1)]
@@ -392,7 +392,7 @@ def test_hexahedron_mesh(order, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", range(1, 5))
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_triangle_mesh_vtk(order, dtype):
+def test_triangle_mesh_vtk(order, dtype) -> None:
     points = []
     points += [[i / order, 0] for i in range(order + 1)]
     for j in range(1, order):
@@ -439,7 +439,7 @@ def test_triangle_mesh_vtk(order, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", range(1, 5))
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_tetrahedron_mesh_vtk(order, dtype):
+def test_tetrahedron_mesh_vtk(order, dtype) -> None:
     points = []
     points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
     for k in range(1, order):
@@ -545,7 +545,7 @@ def test_tetrahedron_mesh_vtk(order, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_quadrilateral_mesh_vtk(order, dtype):
+def test_quadrilateral_mesh_vtk(order, dtype) -> None:
     random.seed(13)
 
     points = []
@@ -591,7 +591,7 @@ def test_quadrilateral_mesh_vtk(order, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_hexahedron_mesh_vtk(order, dtype):
+def test_hexahedron_mesh_vtk(order, dtype) -> None:
     random.seed(13)
 
     points = []
@@ -702,7 +702,7 @@ def test_hexahedron_mesh_vtk(order, dtype):
     ],
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_map_vtk_to_dolfin(vtk, dolfin, cell_type, dtype):
+def test_map_vtk_to_dolfin(vtk, dolfin, cell_type, dtype) -> None:
     p = cell_perm_vtk(cell_type, len(vtk))
     cell_p = np.array(vtk)[p]
     assert (cell_p == dolfin).all()
@@ -715,7 +715,7 @@ def test_map_vtk_to_dolfin(vtk, dolfin, cell_type, dtype):
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("dtype", [np.float64])
-def test_xdmf_input_tri(datadir, dtype):
+def test_xdmf_input_tri(datadir, dtype) -> None:
     with XDMFFile(
         MPI.COMM_WORLD, Path(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII
     ) as xdmf:
@@ -727,7 +727,7 @@ def test_xdmf_input_tri(datadir, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_gmsh_mixed_mesh_2d(order, dtype):
+def test_gmsh_mixed_mesh_2d(order, dtype) -> None:
     try:
         import gmsh
     except ImportError:
@@ -782,7 +782,7 @@ def test_gmsh_mixed_mesh_2d(order, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_gmsh_input_2d(order, dtype):
+def test_gmsh_input_2d(order, dtype) -> None:
     try:
         import gmsh
     except ImportError:
@@ -815,7 +815,7 @@ def test_gmsh_input_2d(order, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_gmsh_mixed_mesh_3d(order, dtype):
+def test_gmsh_mixed_mesh_3d(order, dtype) -> None:
     try:
         import gmsh
     except ImportError:
@@ -907,7 +907,7 @@ def test_gmsh_mixed_mesh_3d(order, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_gmsh_tetra(order, dtype):
+def test_gmsh_tetra(order, dtype) -> None:
     try:
         import gmsh
     except ImportError:
@@ -942,7 +942,7 @@ def test_gmsh_tetra(order, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_quadrilateral_cell_order_3(dtype):
+def test_quadrilateral_cell_order_3(dtype) -> None:
     points = [
         [0.0, 0.0],
         [1.0, 0.0],
@@ -976,7 +976,7 @@ def test_quadrilateral_cell_order_3(dtype):
 
 
 @pytest.mark.parametrize("order", range(1, 11))
-def test_vtk_perm_tetrahedron(order):
+def test_vtk_perm_tetrahedron(order) -> None:
     size = (order + 1) * (order + 2) * (order + 3) // 6
     p = cell_perm_vtk(CellType.tetrahedron, size)
 
@@ -1983,7 +1983,7 @@ def test_vtk_perm_tetrahedron(order):
 
 
 @pytest.mark.parametrize("order", range(1, 7))
-def test_vtk_perm_hexahedron(order):
+def test_vtk_perm_hexahedron(order) -> None:
     size = (order + 1) ** 3
     p = cell_perm_vtk(CellType.hexahedron, size)
 

@@ -16,7 +16,7 @@ from dolfinx.la import sparsity_pattern
 
 @pytest.mark.petsc4py
 @pytest.mark.parametrize("mat_type", ["aij", "is"])
-def test_shared_index_map_shares_lgmap(mat_type):
+def test_shared_index_map_shares_lgmap(mat_type) -> None:
     """One index map for both dimensions gives one local-to-global map.
 
     ``la::petsc::create_matrix`` attaches the row mapping to both

@@ -31,7 +31,7 @@ from ufl import (
 )
 
 
-def test_extract_forms():
+def test_extract_forms() -> None:
     """Test extraction on unique function spaces for rows and columns of
     a block system.
     """
@@ -129,7 +129,7 @@ def test_incorrect_element():
         dolfinx.fem.Form(f, msh, [incorrect_space, incorrect_space], ufcx_form, code)
 
 
-def test_multiple_measures_one_subdomain_data():
+def test_multiple_measures_one_subdomain_data() -> None:
     comm = MPI.COMM_WORLD
     msh = dolfinx.mesh.create_unit_interval(comm, 10)
     x = SpatialCoordinate(msh)
@@ -150,7 +150,7 @@ def test_multiple_measures_one_subdomain_data():
     assert np.isclose(J_global, 1 / 3 + 1 / 2)
 
 
-def test_derivative_block():
+def test_derivative_block() -> None:
     """Test the function derivative_block."""
     msh = dolfinx.mesh.create_unit_interval(MPI.COMM_WORLD, 10)
     V0 = functionspace(msh, ("Lagrange", 1))
