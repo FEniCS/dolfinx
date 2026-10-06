@@ -47,7 +47,6 @@ from dolfinx.fem.mpc import (
     MPC,
     apply_mpc_solution,
     apply_mpc_vector,
-    assemble_matrix_mpc_petsc,
 )
 from dolfinx.mesh import create_unit_square, locate_entities_boundary
 
@@ -160,11 +159,11 @@ bc = dirichletbc(value=np.array([0.0, 0.0], dtype=np.float64), dofs=dofsbc, V=V_
 # NEW_NONZERO_LOCATIONS lets the MPC assembly insert off-diagonal MPC links
 # without a pre-computed extended sparsity pattern, at the cost of PETSc
 # having to reallocate internally (fine for a demo).
-from dolfinx.fem.petsc import create_matrix as _create_matrix
+from dolfinx.fem.petsc import assemble_matrix_mpc, create_matrix as _create_matrix
 
 A = _create_matrix(a)
 A.setOption(PETSc.Mat.Option.NEW_NONZERO_LOCATIONS, True)
-assemble_matrix_mpc_petsc(mpc, A, a, [bc])
+assemble_matrix_mpc(mpc, A, a, [bc])
 A.assemble()
 dolfinx.fem.petsc.set_diagonal(A, bc.dof_indices()[0], 1.0)
 A.assemble()

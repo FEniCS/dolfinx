@@ -77,6 +77,7 @@ __all__ = [
     "assemble_vector",
     "assign",
     "cffi_utils",
+    "assemble_matrix_mpc",
     "create_matrix",
     "create_vector",
     "ctypes_utils",
@@ -699,6 +700,41 @@ def _assemble_matrix_petsc_markers(
             )
 
     return A
+
+
+
+def assemble_matrix_mpc(
+    mpc,
+    A: PETSc.Mat,
+    a: Form,
+    bcs: Sequence[DirichletBC] | None = None,
+) -> None:
+    """Assemble a bilinear form into a PETSc matrix with MPC row/column replacement.
+
+    The matrix must be configured to allow new non-zero locations
+    (``A.setOption(PETSc.Mat.Option.NEW_NONZERO_LOCATIONS, True)``) before
+    calling this function, because the MPC transformation may introduce
+    entries outside the standard sparsity pattern.
+
+    Args:
+        mpc: The :class:`~dolfinx.fem.mpc.MPC` multipoint constraint.
+        A: PETSc ``Mat`` to assemble into, created e.g. by
+            :func:`dolfinx.fem.petsc.create_matrix`.
+        a: Bilinear form.
+        bcs: Dirichlet boundary conditions to apply.
+    """
+    from dolfinx.fem.mpc import MPC as _MPC
+
+    if bcs is None:
+        bcs = []
+    if not isinstance(mpc, _MPC):
+        raise TypeError(f"Expected MPC, got {type(mpc)}")
+    _cpp.fem.petsc.assemble_matrix_mpc(
+        mpc._cpp_object,
+        A,
+        a._cpp_object,
+        [bc._cpp_object for bc in bcs],
+    )
 
 
 def set_diagonal(

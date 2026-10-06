@@ -26,7 +26,6 @@ __all__ = [
     "apply_mpc_solution",
     "apply_mpc_vector",
     "assemble_matrix_mpc",
-    "assemble_matrix_mpc_petsc",
     "build_sparsity_pattern_mpc",
     "matrix_csr_mpc",
 ]
@@ -164,33 +163,6 @@ def assemble_matrix_mpc(
     _cpp.fem.assemble_matrix_mpc(
         mpc._cpp_object,
         A._cpp_object,
-        a._cpp_object,
-        [bc._cpp_object for bc in bcs],
-    )
-
-
-def assemble_matrix_mpc_petsc(
-    mpc: MPC,
-    A,
-    a: Form,
-    bcs: list[DirichletBC],
-) -> None:
-    """Assemble a bilinear form into a PETSc matrix with MPC.
-
-    Targets PETSc matrices from
-    :func:`dolfinx.fem.petsc.create_matrix`.  The matrix must be
-    configured to allow new non-zero locations
-    (``NEW_NONZERO_LOCATIONS``).
-
-    Args:
-        mpc: The multipoint constraint.
-        A: PETSc ``Mat`` to assemble into.
-        a: Bilinear form.
-        bcs: Dirichlet boundary conditions.
-    """
-    _cpp.fem.petsc.assemble_matrix_mpc(
-        mpc._cpp_object,
-        A,
         a._cpp_object,
         [bc._cpp_object for bc in bcs],
     )
