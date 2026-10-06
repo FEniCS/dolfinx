@@ -14,7 +14,6 @@ from dolfinx.fem import (
     locate_dofs_topological,
     set_bc_diagonal,
 )
-from dolfinx.la import InsertMode, matrix_csr
 from dolfinx.fem.mpc import (
     MPC,
     apply_mpc_solution,
@@ -22,6 +21,7 @@ from dolfinx.fem.mpc import (
     assemble_matrix_mpc,
     build_sparsity_pattern_mpc,
 )
+from dolfinx.la import InsertMode, matrix_csr
 from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 from dolfinx.mesh import create_unit_square, locate_entities_boundary
 from ufl import TestFunction, TrialFunction, dx, grad, inner
