@@ -134,11 +134,13 @@ def test_constant_bc_constructions():
         dtype = np.complex64
 
     bc0 = dirichletbc(dtype(1.0 + 2.2j), boundary_dofs0, V0)
+    assert isinstance(bc0.g, Constant)
     assert bc0.g.value.dtype == dtype
     assert bc0.g.value.shape == tuple()
     assert bc0.g.value == dtype(1.0 + 2.2j)
 
     bc1 = dirichletbc(np.array([1.0 + 2.2j, 3.0 + 2.2j], dtype=dtype), boundary_dofs1, V1)
+    assert isinstance(bc1.g, Constant)
     assert bc1.g.value.dtype == dtype
     assert bc1.g.value.shape == (tdim,)
     assert (bc1.g.value == [dtype(1.0 + 2.2j), dtype(3.0 + 2.2j)]).all()
@@ -146,6 +148,7 @@ def test_constant_bc_constructions():
     bc2 = dirichletbc(
         np.array([[1.0, 3.0], [3.0, -2.0]], dtype=default_real_type), boundary_dofs2, V2
     )
+    assert isinstance(bc2.g, Constant)
     assert bc2.g.value.dtype == default_real_type
     assert bc2.g.value.shape == (tdim, tdim)
     assert (bc2.g.value == [[1.0, 3.0], [3.0, -2.0]]).all()

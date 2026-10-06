@@ -60,7 +60,7 @@ def test_ufl_id() -> None:
     assert isinstance(a.subdomain_data(), dict)
 
 
-def test_distribute_entity_data():
+def test_distribute_entity_data() -> None:
     comm = MPI.COMM_WORLD
 
     msh = create_unit_cube(comm, 6, 6, 6, cell_type=CellType.tetrahedron)
@@ -101,6 +101,7 @@ def test_distribute_entity_data():
     facet_type = cell_entity_type(msh.topology.cell_type, msh.topology.dim - 1, 0)
     num_vertices_per_facet = cell_num_entities(facet_type, 0)
     if msh.comm.rank == 0:
+        assert input_facets_as_vertices is not None and input_values is not None
         input_facets_as_vertices = np.vstack(input_facets_as_vertices)
         input_values = np.hstack(input_values)
     else:

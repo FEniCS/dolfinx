@@ -28,7 +28,7 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_3d(tempdir, cell_type, encoding):
+def test_3d(tempdir, cell_type, encoding) -> None:
     filename = Path(tempdir, "meshtags_3d.xdmf")
     comm = MPI.COMM_WORLD
     mesh = create_unit_cube(comm, 4, 4, 4, cell_type)
@@ -95,8 +95,8 @@ def test_3d(tempdir, cell_type, encoding):
     )
     parser = ET.XMLParser()
     tree = ET.parse(Path(tempdir, "meshtags_3d_out.xdmf"), parser)
-    num_lines = int(tree.findall(".//Grid[@Name='lines']/Topology")[0].get("NumberOfElements"))
-    num_facets = int(tree.findall(".//Grid[@Name='facets']/Topology")[0].get("NumberOfElements"))
+    num_lines = int(tree.findall(".//Grid[@Name='lines']/Topology")[0].attrib["NumberOfElements"])
+    num_facets = int(tree.findall(".//Grid[@Name='facets']/Topology")[0].attrib["NumberOfElements"])
     assert num_lines == lines_local
     assert num_facets == facets_local
 

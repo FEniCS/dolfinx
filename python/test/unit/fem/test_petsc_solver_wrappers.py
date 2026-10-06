@@ -149,6 +149,7 @@ class TestPETScSolverWrappers:
         p_bc.interpolate(g_expr)
 
         if kind is None:
+            assert isinstance(W, dolfinx.fem.FunctionSpace)
             a = a00 + a11
             L = L0 + L1
             dofs_V = dolfinx.fem.locate_dofs_topological(
@@ -191,6 +192,7 @@ class TestPETScSolverWrappers:
         wh = problem.solve()
         assert problem.solver.getConvergedReason() > 0
         if kind is None:
+            assert isinstance(wh, dolfinx.fem.Function)
             uh, ph = wh.split()
         else:
             uh, ph = wh
