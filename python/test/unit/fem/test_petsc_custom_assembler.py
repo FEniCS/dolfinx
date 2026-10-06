@@ -123,7 +123,7 @@ def assemble_petsc_matrix(A, mesh, dofmap, num_cells, set_vals, mode):
         (set_vals_cffi, "cffi_abi"),
     ],
 )
-def test_custom_mesh_loop_petsc_rank2(set_vals, backend):
+def test_custom_mesh_loop_petsc_rank2(set_vals, backend) -> None:
     """Test numba assembler for a bilinear form."""
     mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
     V = functionspace(mesh, ("Lagrange", 1))
@@ -160,7 +160,8 @@ def test_custom_mesh_loop_petsc_rank2(set_vals, backend):
     # The two assemblies differ only in summation order, so the residual
     # scales with eps * ||A||.
     tol = max(1.0e-9, 10 * np.finfo(PETSc.ScalarType).eps * A0.norm())
-    assert (A1 - A0).norm() == pytest.approx(0.0, abs=tol)
+    A1.axpy(-1.0, A0)
+    assert A1.norm() == pytest.approx(0.0, abs=tol)
 
     A0.destroy()
     A1.destroy()

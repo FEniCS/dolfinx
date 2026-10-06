@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 import ufl
+from dolfinx import default_scalar_type
 from dolfinx.fem import Constant, form, functionspace
 from dolfinx.mesh import CellType, GhostMode, create_unit_square
 
@@ -24,7 +25,7 @@ def _unit_mesh(cell_type, n):
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
 @pytest.mark.parametrize("degree", [1, 2])
 @pytest.mark.parametrize("shape", [None, (2,)])
-def test_matis_matches_aij(cell_type, degree, shape):
+def test_matis_matches_aij(cell_type, degree, shape) -> None:
     """A MATIS matrix must assemble to the same operator as an AIJ one.
 
     Converting to AIJ sums the per-process contributions, which must
@@ -37,7 +38,7 @@ def test_matis_matches_aij(cell_type, degree, shape):
     msh = _unit_mesh(cell_type, 6)
     V = functionspace(msh, ("Lagrange", degree, shape) if shape else ("Lagrange", degree))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    k = Constant(msh, PETSc.ScalarType(2.5))
+    k = Constant(msh, default_scalar_type(2.5))
     a = form(k * ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx + ufl.inner(u, v) * ufl.dx)
 
     A_is = assemble_matrix(a, kind="is")
@@ -48,7 +49,7 @@ def test_matis_matches_aij(cell_type, degree, shape):
     A_aij.assemble()
 
     A_converted = A_is.convert(PETSc.Mat.Type.AIJ)
-    A_converted.axpy(-1.0, A_aij, PETSc.Mat.Structure.DIFFERENT_NONZERO_PATTERN)
+    A_converted.axpy(-1.0, A_aij)  # default structure: DIFFERENT_NONZERO_PATTERN
     eps = np.finfo(PETSc.ScalarType).eps
     assert A_converted.norm() == pytest.approx(0.0, abs=100 * eps * A_aij.norm())
 
@@ -145,7 +146,7 @@ def test_square_block_type_rejected(kind) -> None:
 
 @pytest.mark.petsc4py
 @pytest.mark.parametrize("kind", ["baij", "aij"])
-def test_square_block_type_accepted(kind):
+def test_square_block_type_accepted(kind) -> None:
     """Equal row and column block sizes remain valid for block formats."""
     from dolfinx.fem.petsc import assemble_matrix
 
@@ -156,7 +157,7 @@ def test_square_block_type_accepted(kind):
 
     A = assemble_matrix(a, kind=kind)
     A.assemble()
-    assert A.norm() > 0.0
+    assert A.norm() != 0.0
     A.destroy()
 
 

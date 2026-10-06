@@ -23,7 +23,7 @@ class TestPETScSolverWrappers:
         "mode",
         [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet],
     )
-    def test_compare_solution_linear_vs_nonlinear_problem(self, mode):
+    def test_compare_solution_linear_vs_nonlinear_problem(self, mode) -> None:
         """Test that the wrapper for Linear problem and NonlinearProblem give the same result."""
         from petsc4py import PETSc
 
@@ -64,7 +64,7 @@ class TestPETScSolverWrappers:
             petsc_options=petsc_options_linear,
         )
         u_lin = linear_problem.solve()
-        assert linear_problem.solver.getConvergedReason() > 0
+        assert linear_problem.solver.is_converged
 
         eps = 100 * np.finfo(dolfinx.default_scalar_type).eps
 
@@ -87,7 +87,7 @@ class TestPETScSolverWrappers:
             petsc_options=petsc_options_nonlinear,
         )
         nonlinear_problem.solve()
-        assert nonlinear_problem.solver.getConvergedReason() > 0
+        assert nonlinear_problem.solver.is_converged
 
         assert np.allclose(u_lin.x.array, u_nonlin.x.array, atol=eps, rtol=eps)
 
@@ -98,7 +98,7 @@ class TestPETScSolverWrappers:
         "mode", [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet]
     )
     @pytest.mark.parametrize("kind", [None, "mpi", "nest", [["aij", None], [None, "baij"]]])
-    def test_mixed_system(self, mode, kind):
+    def test_mixed_system(self, mode, kind) -> None:
         """Test solving a mixed system using different PETSc matrix layouts."""
         from petsc4py import PETSc
 
@@ -190,7 +190,7 @@ class TestPETScSolverWrappers:
             petsc_options=petsc_options,
         )
         wh = problem.solve()
-        assert problem.solver.getConvergedReason() > 0
+        assert problem.solver.is_converged
         if kind is None:
             assert isinstance(wh, dolfinx.fem.Function)
             uh, ph = wh.split()

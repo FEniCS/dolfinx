@@ -270,7 +270,7 @@ class TestPETScAssemblers:
         L = form(inner(1.0, v) * dx)
 
         bdofsV = locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0))
-        bc = dirichletbc(PETSc.ScalarType(1), bdofsV, V)
+        bc = dirichletbc(default_scalar_type(1), bdofsV, V)
 
         # Assemble and apply 'global' lifting of bcs
         A = petsc_assemble_matrix(a)
@@ -283,7 +283,8 @@ class TestPETScAssemblers:
         petsc_set_bc(g, [bc])
         # f = b - A * g
         f = b.duplicate()
-        A.multAdd(-g, b, f)
+        A.mult(g, f)
+        f.aypx(-1.0, b)
         petsc_set_bc(f, [bc])
 
         # Assemble vector and apply lifting of bcs during assembly
@@ -291,16 +292,15 @@ class TestPETScAssemblers:
         petsc_apply_lifting(b_bc, [a], [[bc]])
         b_bc.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         petsc_set_bc(b_bc, [bc])
-        assert (f - b_bc).norm() == pytest.approx(0.0, rel=1e-6, abs=1e-6)
+        f.axpy(-1.0, b_bc)
+        assert f.norm() == pytest.approx(0.0, rel=1e-6, abs=1e-6)
         A.destroy(), b.destroy(), g.destroy()
 
     @pytest.mark.skip_in_parallel
-    def test_petsc_assemble_manifold(self):
+    def test_petsc_assemble_manifold(self) -> None:
         """Test assembly of poisson problem on a mesh with topological
         dimension 1 but embedded in 2D (gdim=2).
         """
-        from petsc4py import PETSc
-
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
@@ -332,7 +332,7 @@ class TestPETScAssemblers:
         L = form(L)
 
         bcdofs = locate_dofs_geometrical(U, lambda x: np.isclose(x[0], 0.0))
-        bcs = [dirichletbc(PETSc.ScalarType(0), bcdofs, U)]
+        bcs = [dirichletbc(default_scalar_type(0), bcdofs, U)]
         A = petsc_assemble_matrix(a, bcs=bcs)
         A.assemble()
 
@@ -373,7 +373,7 @@ class TestPETScAssemblers:
             mesh, facetdim, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
         )
         bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
-        u_bc = PETSc.ScalarType(50.0)
+        u_bc = default_scalar_type(50.0)
         bc = dirichletbc(u_bc, bdofsV1, V1)
 
         # Define variational problem
@@ -515,7 +515,7 @@ class TestPETScAssemblers:
             mesh, facetdim, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
         )
         bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
-        u_bc = PETSc.ScalarType(50.0)
+        u_bc = default_scalar_type(50.0)
         bc = dirichletbc(u_bc, bdofsV1, V1)
 
         # Define variational problem
@@ -607,7 +607,7 @@ class TestPETScAssemblers:
         A_monolithic.destroy(), b_monolithic.destroy()
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-    def test_assembly_solve_block(self, mode):
+    def test_assembly_solve_block(self, mode) -> None:
         """Solve a two-field mass-matrix like problem with block matrix approaches."""
         from petsc4py import PETSc
 
@@ -630,8 +630,8 @@ class TestPETScAssemblers:
         bdofsV0 = locate_dofs_topological(V0, facetdim, bndry_facets)
         bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
 
-        u0_bc = PETSc.ScalarType(50.0)
-        u1_bc = PETSc.ScalarType(20.0)
+        u0_bc = default_scalar_type(50.0)
+        u1_bc = default_scalar_type(20.0)
         bcs = [dirichletbc(u0_bc, bdofsV0, V0), dirichletbc(u1_bc, bdofsV1, V1)]
 
         # Variational problem
@@ -1111,8 +1111,6 @@ class TestPETScAssemblers:
     @pytest.mark.parametrize("kind", ["nest", "mpi", None])
     def test_pack_coefficients(self, kind):
         """Test packing of form coefficients ahead of main assembly call."""
-        from petsc4py import PETSc
-
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
 
@@ -1123,7 +1121,7 @@ class TestPETScAssemblers:
             V = functionspace(mesh, ("Lagrange", 1))
             u = Function(V)
             v = ufl.TestFunction(V)
-            c = Constant(mesh, PETSc.ScalarType(12.0))
+            c = Constant(mesh, default_scalar_type(12.0))
             F = ufl.inner(c, v) * dx - c * ufl.sqrt(u * u) * ufl.inner(u, v) * dx
             u.x.array[:] = 10.0
             _F = form(F)
@@ -1134,7 +1132,7 @@ class TestPETScAssemblers:
             u.interpolate(lambda x: x[0] * x[1])
             u2 = Function(V2)
             v2 = ufl.TestFunction(V2)
-            c = Constant(mesh, PETSc.ScalarType(12.0))
+            c = Constant(mesh, default_scalar_type(12.0))
             u2.interpolate(lambda x: x[0] + x[1])
             F = [c**2 * ufl.inner(u * u2, v2) * dx, c * ufl.inner(u * u2 * u2, v2) * dx]
             _F = form(F)
@@ -1170,7 +1168,7 @@ class TestPETScAssemblers:
             b.assemble()
             diff = b0.copy()
             diff.axpy(-1.0, b)
-            assert diff.norm() > 1.0e-5
+            assert diff.norm() != pytest.approx(0.0, abs=1.0e-5)
 
         # -- Test matrix
         if kind is None:
@@ -1199,11 +1197,13 @@ class TestPETScAssemblers:
                     for j in range(2):
                         Asub = A.getNestSubMatrix(i, j)
                         A0sub = A0.getNestSubMatrix(i, j)
-                        assert 0.0 == pytest.approx((Asub - A0sub).norm(), abs=tol)  # /NOSONAR
+                        Asub.axpy(-1.0, A0sub)
+                        assert 0.0 == pytest.approx(Asub.norm(), abs=tol)  # /NOSONAR
                         Asub.destroy()
                         A0sub.destroy()
             else:
-                assert 0.0 == pytest.approx((A - A0).norm(), abs=tol)  # /NOSONAR
+                A.axpy(-1.0, A0)
+                assert 0.0 == pytest.approx(A.norm(), abs=tol)  # /NOSONAR
 
         # Change coefficients and constants
         if kind is None:
@@ -1231,11 +1231,13 @@ class TestPETScAssemblers:
                     for j in range(2):
                         Asub = A.getNestSubMatrix(i, j)
                         A0sub = A0.getNestSubMatrix(i, j)
-                        assert (Asub - A0sub).norm() > 1.0e-5  # /NOSONAR
+                        Asub.axpy(-1.0, A0sub)
+                        assert Asub.norm() != pytest.approx(0.0, abs=1.0e-5)  # /NOSONAR
                         Asub.destroy()
                         A0sub.destroy()
             else:
-                assert (A - A0).norm() > 1.0e-5  # /NOSONAR
+                A.axpy(-1.0, A0)
+                assert A.norm() != pytest.approx(0.0, abs=1.0e-5)  # /NOSONAR
             A.destroy()
         A0.destroy()
 
@@ -1383,7 +1385,7 @@ class TestPETScAssemblers:
 
         # Solve
         ksp = PETSc.KSP()
-        ksp.create(mesh.comm)
+        ksp.create(A.comm)
         ksp.setOperators(A)
         ksp.setTolerances(rtol=1.0e-9, max_it=50)
         ksp.setFromOptions()

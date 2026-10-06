@@ -108,13 +108,13 @@ class TestNLS:
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         snes.solve(None, x)
-        assert snes.getConvergedReason() > 0
+        assert snes.is_converged
         assert snes.getIterationNumber() < 6
 
         # Modify boundary condition and solve again
         u_bc.x.array[:] = 0.6
         snes.solve(None, x)
-        assert snes.getConvergedReason() > 0
+        assert snes.is_converged
         assert snes.getIterationNumber() < 6
         # print(snes.getIterationNumber())
         # print(snes.getFunctionNorm())
