@@ -16,6 +16,7 @@ import numpy as np
 import numpy.typing as npt
 
 import dolfinx.cpp as _cpp
+from dolfinx import default_scalar_type as _default_scalar_type
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.forms import Form
 from dolfinx.fem.function import FunctionSpace
@@ -70,10 +71,8 @@ class MPC:
                 entry (negative global index) the coefficient is the
                 constant value *g*.
         """
-        import dolfinx as _dolfinx
-
         gdtype = np.dtype(V.mesh.geometry.x.dtype)
-        sdtype = np.dtype(_dolfinx.default_scalar_type)
+        sdtype = np.dtype(_default_scalar_type)
         cpp_type = _mpc_types.get((gdtype, sdtype))
         if cpp_type is None:
             raise TypeError(f"No MPC type for geometry dtype={gdtype}, scalar dtype={sdtype}")
