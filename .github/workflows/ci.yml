@@ -3,8 +3,8 @@ name: CI (Spack-based)
 on:
   # Uncomment the below 'push' to trigger on push
   push:
-    branches:
-      - release
+    # branches:
+    #   - release
   pull_request:
     branches:
       - main
