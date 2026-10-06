@@ -265,7 +265,7 @@ class TestPETScDiscreteOperators:
         "cell_type",
         [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
     )
-    def test_discrete_interpolation(self, cell_type, ghost_mode):
+    def test_discrete_interpolation(self, cell_type, ghost_mode) -> None:
         """Test discrete interpolation operator."""
         from dolfinx.fem.petsc import interpolation_matrix
 
@@ -313,4 +313,4 @@ class TestPETScDiscreteOperators:
         q_ref.interpolate(u)
 
         atol = 100 * np.finfo(default_real_type).resolution
-        np.testing.assert_allclose(q.x.array, q_ref.x.array, atol=atol)
+        np.testing.assert_allclose(q.x.array, q_ref.x.array, atol=float(atol))

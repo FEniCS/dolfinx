@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 import basix
+import basix._basixcpp
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
 from dolfinx.fem import Function, FunctionSpace, functionspace
@@ -256,7 +257,7 @@ def test_cell_mismatch(mesh) -> None:
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-def test_basix_element(V, W, Q, V2):
+def test_basix_element(V, W, Q, V2) -> None:
     for V_ in (V, W, V2):
         e = V_.element.basix_element
         assert isinstance(

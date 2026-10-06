@@ -811,7 +811,7 @@ def test_mixed_measures() -> None:
         ),
     ],
 )
-def test_interior_facet_codim_1(msh):
+def test_interior_facet_codim_1(msh) -> None:
     """Check that assembly on an interior facet with coefficients defined on a co-dim 1
     mesh gives the correct result.
     """
@@ -875,7 +875,7 @@ def test_interior_facet_codim_1(msh):
     # Ensure both are equivalent
     tol = 100 * np.finfo(default_scalar_type()).eps
     assert np.isclose(J_submesh, J_ref, atol=tol)
-    np.testing.assert_allclose(b_submesh.array, b_ref.array, atol=tol)
+    np.testing.assert_allclose(b_submesh.array, b_ref.array, atol=float(tol))
 
 
 def test_interior_interface() -> None:

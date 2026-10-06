@@ -330,7 +330,7 @@ def test_mixed_constant_bc(mesh_factory) -> None:
         assert np.allclose(u.x.array, u_func.x.array)
 
 
-def test_mixed_blocked_constant():
+def test_mixed_blocked_constant() -> None:
     """Check that mixed space with blocked component cannot have
     Dirichlet BC based on a vector valued Constant.
     """
@@ -368,7 +368,7 @@ def test_mixed_blocked_constant():
     assert np.allclose(u.x.array, u_func.x.array)
 
     # Check that vector space throws error
-    c1 = default_scalar_type((5, 7))
+    c1 = np.array([5, 7], dtype=default_scalar_type)
     with pytest.raises(ValueError):
         dofs1 = locate_dofs_topological(W.sub(1), tdim - 1, boundary_facets)
         dirichletbc(c1, dofs1, W.sub(1))

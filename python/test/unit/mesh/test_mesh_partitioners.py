@@ -244,7 +244,7 @@ def test_mixed_topology_partitioning():
     if MPI.COMM_WORLD.rank == 0:
         cells_np = [np.array(c) for c in cells]
     else:
-        cells_np = [np.zeros(0) for c in cells]
+        cells_np = [np.zeros(0, dtype=np.int64) for c in cells]
 
     nparts = 4
     cell_types = [CellType.hexahedron, CellType.pyramid, CellType.tetrahedron]
