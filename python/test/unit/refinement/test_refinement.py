@@ -207,11 +207,13 @@ def test_refine_cell_meshtag(tdim, refine_plaza_wrapper) -> None:
     assert len(new_meshtag.indices) == (tdim * 4 - 4) * len(meshtag.indices)
 
 
-def test_refine_ufl_cargo():
+def test_refine_ufl_cargo() -> None:
     msh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 3)
     msh.topology.create_entities(1)
     msh1, _, _ = refine(msh)
-    assert msh1.ufl_domain().ufl_cargo() != msh.ufl_domain().ufl_cargo()
+    domain, domain1 = msh.ufl_domain(), msh1.ufl_domain()
+    assert domain is not None and domain1 is not None
+    assert domain1.ufl_cargo() != domain.ufl_cargo()
 
 
 @pytest.mark.parametrize("tdim", [1, 2, 3])
