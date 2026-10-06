@@ -350,7 +350,7 @@ def test_assembly_into_quadrature_function(dtype) -> None:
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_expression_eval_cells_subset(dtype):
+def test_expression_eval_cells_subset(dtype) -> None:
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 4, dtype=xtype)
     V = fem.functionspace(mesh, ("DG", 0))

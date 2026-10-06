@@ -731,7 +731,7 @@ def test_create_mesh_node_index_out_of_range() -> None:
 
 
 @pytest.mark.skip_in_parallel
-def test_topology_connectivity_dimension_types():
+def test_topology_connectivity_dimension_types() -> None:
     """Dimensions may be any integer type, but the forms cannot be mixed."""
     msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
     msh.topology.create_connectivity(2, 0)

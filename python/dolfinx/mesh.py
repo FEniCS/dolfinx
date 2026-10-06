@@ -318,7 +318,7 @@ class Topology:
         return to_string(self._cpp_object.cell_type)
 
     def connectivity(
-        self, d0: int | tuple[int, int], d1: int | tuple[int, int]
+        self, d0: int | np.integer | tuple[int, int], d1: int | np.integer | tuple[int, int]
     ) -> AdjacencyList[np.int32]:
         """Return connectivity.
 
@@ -331,11 +331,11 @@ class Topology:
             d1: Dimension of entity one is mapping to.
         """
         # The C++ method is overloaded on the single/mixed-topology
-        # forms. The two calls below are identical at runtime, but the
-        # isinstance test narrows the argument types so that each picks
-        # the matching overload of the generated stub. Test for a pair
-        # rather than for an int, so that a dimension given as e.g. a
-        # NumPy integer is still treated as a dimension.
+        # forms. The isinstance test narrows the argument types so that
+        # each call below picks the matching overload of the generated
+        # stub. Test for a pair rather than for an int, so that a
+        # dimension given as e.g. a NumPy integer is still treated as a
+        # dimension; int() gives it the type the stub declares.
         if isinstance(d0, tuple):
             if not isinstance(d1, tuple):
                 raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
@@ -343,7 +343,7 @@ class Topology:
         else:
             if isinstance(d1, tuple):
                 raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
-            conn = self._cpp_object.connectivity(d0, d1)
+            conn = self._cpp_object.connectivity(int(d0), int(d1))
         if conn is not None:
             return AdjacencyList(conn)
         else:

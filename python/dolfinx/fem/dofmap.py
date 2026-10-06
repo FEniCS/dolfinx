@@ -48,7 +48,7 @@ class DofMap:
         """Hash of the wrapped dofmap."""
         return hash(self._cpp_object)
 
-    def cell_dofs(self, cell_index: int) -> npt.NDArray[np.int32]:
+    def cell_dofs(self, cell_index: int | np.integer) -> npt.NDArray[np.int32]:
         """Cell local-global dof map.
 
         Args:
@@ -58,7 +58,7 @@ class DofMap:
             Local-global dof map for the cell (using process-local
             indices).
         """
-        return self._cpp_object.cell_dofs(cell_index)
+        return self._cpp_object.cell_dofs(int(cell_index))
 
     @property
     def bs(self) -> int:
