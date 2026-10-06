@@ -6,7 +6,6 @@ target_sources(
     DofMap.cpp
     ElementDofLayout.cpp
     FiniteElement.cpp
-    MPC.cpp
     dofmapbuilder.cpp
     petsc.cpp
     sparsitybuild.cpp
