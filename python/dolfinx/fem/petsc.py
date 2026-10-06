@@ -716,7 +716,7 @@ def assemble_matrix_mpc(
     entries outside the standard sparsity pattern.
 
     Args:
-        mpc: The :class:`~dolfinx.fem.mpc.MPC` multipoint constraint.
+        mpc: The ``MPC`` multipoint constraint (see :mod:`dolfinx.fem.mpc`).
         A: PETSc ``Mat`` to assemble into, created e.g. by
             :func:`dolfinx.fem.petsc.create_matrix`.
         a: Bilinear form.
