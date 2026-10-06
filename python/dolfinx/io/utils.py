@@ -6,6 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data and post-processing file output."""
 
+from collections.abc import Sequence
 from pathlib import Path
 from types import TracebackType
 from typing import Self
@@ -169,7 +170,7 @@ class VTKFile:
         """Write mesh to file for a given time."""
         self._cpp_object.write(mesh._cpp_object, t)
 
-    def write_function(self, u: list[Function] | Function, t: float = 0.0) -> None:
+    def write_function(self, u: Sequence[Function] | Function, t: float = 0.0) -> None:
         """Write a functions to file with a given time."""
         cpp_objects = [u._cpp_object] if isinstance(u, Function) else [_u._cpp_object for _u in u]
         self._cpp_object.write(cpp_objects, t)  # type: ignore[arg-type]
