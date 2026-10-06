@@ -65,7 +65,7 @@ class NonlinearPDE_SNESProblem:
 class TestNLS:
     """Test SNES nonlinear solver for PDEs."""
 
-    def test_nonlinear_pde_snes(self):
+    def test_nonlinear_pde_snes(self) -> None:
         """Test SNES solver for a simple nonlinear PDE."""
         from petsc4py import PETSc
 

@@ -38,7 +38,7 @@ class TestPETScDiscreteOperators:
             create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet),
         ],
     )
-    def test_gradient_petsc(self, mesh):
+    def test_gradient_petsc(self, mesh) -> None:
         """Test discrete gradient computation for lowest order elements."""
         from petsc4py import PETSc
 

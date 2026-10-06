@@ -43,20 +43,6 @@
       "severity": "error"
     },
     {
-      "column": 52,
-      "path": "dolfinx/fem/petsc.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `int` is not assignable to parameter `insert_mode` with type `InsertMode` in function `dolfinx.la.petsc._ghost_update`",
-      "severity": "error"
-    },
-    {
-      "column": 74,
-      "path": "dolfinx/fem/petsc.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `int` is not assignable to parameter `scatter_mode` with type `ScatterMode` in function `dolfinx.la.petsc._ghost_update`",
-      "severity": "error"
-    },
-    {
       "column": 48,
       "path": "dolfinx/geometry.py",
       "name": "no-matching-overload",

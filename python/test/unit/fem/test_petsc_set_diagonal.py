@@ -19,7 +19,7 @@ from dolfinx.mesh import create_unit_square
 class TestPETScSetDiagonal:
     """Test setting diagonal values of PETSc matrices."""
 
-    def test_set_diagonal_per_row(self):
+    def test_set_diagonal_per_row(self) -> None:
         """Test setting a different diagonal value for each row."""
         from petsc4py import PETSc
 

@@ -229,7 +229,7 @@ class TestPETScAssemblers:
         A1.destroy()
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-    def test_assembly_bcs(self, mode):
+    def test_assembly_bcs(self, mode) -> None:
         """Test assembly with boundary conditions and lifting."""
         from petsc4py import PETSc
 
@@ -1016,7 +1016,7 @@ class TestPETScAssemblers:
             create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, ghost_mode=GhostMode.shared_facet),
         ],
     )
-    def test_symmetry_interior_facet_assembly(self, mesh):
+    def test_symmetry_interior_facet_assembly(self, mesh) -> None:
         """Test that assembled matrices from interior facet terms are symmetric."""
         from petsc4py import PETSc
 
@@ -1334,7 +1334,7 @@ class TestPETScAssemblers:
 
         b0.destroy()
 
-    def test_assemble_empty_rank_mesh(self):
+    def test_assemble_empty_rank_mesh(self) -> None:
         """Assembly on mesh where some ranks are empty."""
         from petsc4py import PETSc
 
@@ -1438,7 +1438,7 @@ class TestPETScAssemblers:
 
         A0.destroy(), A1.destroy(), A2.destroy()
 
-    def test_block_null_lifting(self):
+    def test_block_null_lifting(self) -> None:
         """Test assembly of block vector with a zero block in the form."""
         from petsc4py import PETSc
 

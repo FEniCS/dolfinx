@@ -742,7 +742,7 @@ def test_disjoint_submeshes() -> None:
 
 
 @pytest.mark.petsc4py
-def test_mixed_measures():
+def test_mixed_measures() -> None:
     """Test block assembly of forms where the integration measure in each
     block may be different.
     """
