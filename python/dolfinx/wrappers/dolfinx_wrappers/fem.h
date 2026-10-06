@@ -581,8 +581,8 @@ void declare_objects(nb::module_& m, std::string type)
       [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const dolfinx::fem::MPC<T, U>& mpc)
       {
-        dolfinx::fem::apply_mpc_vector<T, U>(
-            std::span<T>(b.data(), b.size()), mpc);
+        dolfinx::fem::apply_mpc_vector<T, U>(std::span<T>(b.data(), b.size()),
+                                             mpc);
       },
       nb::arg("b"), nb::arg("mpc"),
       "Apply MPC constraints to an assembled RHS vector (P^T b, zero "
@@ -609,8 +609,8 @@ void declare_objects(nb::module_& m, std::string type)
       [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> u,
          const dolfinx::fem::MPC<T, U>& mpc)
       {
-        dolfinx::fem::apply_mpc_solution<T, U>(
-            std::span<T>(u.data(), u.size()), mpc);
+        dolfinx::fem::apply_mpc_solution<T, U>(std::span<T>(u.data(), u.size()),
+                                               mpc);
       },
       nb::arg("u"), nb::arg("mpc"),
       "Recover constrained dof values after a linear solve: "
