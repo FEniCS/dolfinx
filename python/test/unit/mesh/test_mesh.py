@@ -830,7 +830,7 @@ def test_boundary_facets(n, d, ghost_mode, dtype) -> None:
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_submesh_codim_0_boundary_facets(n, d, ghost_mode, dtype):
+def test_submesh_codim_0_boundary_facets(n, d, ghost_mode, dtype) -> None:
     """Test that the correct number of boundary facets are computed
     for a submesh of codim 0.
     """

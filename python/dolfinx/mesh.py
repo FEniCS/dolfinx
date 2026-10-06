@@ -1660,7 +1660,7 @@ def create_unit_square(
 
 def create_box(
     comm: _MPI.Comm,
-    points: list[npt.ArrayLike],
+    points: npt.ArrayLike,
     n: Sequence[int],
     cell_type: CellType = CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,

@@ -96,7 +96,7 @@ def test_partition_box_mesh(gpart, Nx, cell_type) -> None:
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("Nx", [3, 10, 13])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
-def test_custom_partitioner(tempdir, Nx, cell_type):
+def test_custom_partitioner(tempdir, Nx, cell_type) -> None:
     mpi_comm = MPI.COMM_WORLD
     Lx = mpi_comm.size
     points = [np.array([0, 0, 0]), np.array([Lx, Lx, Lx])]

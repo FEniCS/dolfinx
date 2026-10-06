@@ -72,7 +72,7 @@ def assemble(mesh, space, k):
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
+def test_submesh_cell_assembly(d, n, k, space, ghost_mode) -> None:
     """Check that assembling a form over a unit square gives the same
     result as assembling over half of a 2x1 rectangle with the same
     triangulation.
