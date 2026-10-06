@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import functools
 import math
 import sys
 import typing
@@ -1141,21 +1142,19 @@ def test_cell_assembly_computes_only_cell_permutations() -> None:
 
 
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
-def test_entity_permutations_unpacked_from_cell_info(cell_type):
+def test_entity_permutations_unpacked_from_cell_info(cell_type) -> None:
     """Asking for permutations after the packed info exists unpacks it.
 
     The result must equal what the independent per-dimension computation
     produces, so that the reuse is a pure saving.
     """
     if cell_type == CellType.triangle:
-        args = (MPI.COMM_WORLD, 3, 3)
-        make = create_unit_square
+        make = functools.partial(create_unit_square, MPI.COMM_WORLD, 3, 3, cell_type=cell_type)
     else:
-        args = (MPI.COMM_WORLD, 2, 2, 2)
-        make = create_unit_cube
+        make = functools.partial(create_unit_cube, MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
 
-    computed = make(*args, cell_type=cell_type)
-    unpacked = make(*args, cell_type=cell_type)
+    computed = make()
+    unpacked = make()
     unpacked.topology.create_cell_permutations()
 
     for dim in range(1, computed.topology.dim):
