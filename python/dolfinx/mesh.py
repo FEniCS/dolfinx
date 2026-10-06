@@ -1235,7 +1235,7 @@ def _wrap_cell_reorder(
 
 
 def _create_mesh_coordinate_element(
-    e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
+    e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._ElementBase | _CoordinateElement,
     gdim: int,
 ) -> tuple[_CoordinateElement, ufl.Mesh | None]:
     """Create a coordinate element and UFL domain from a mesh element."""
@@ -1261,7 +1261,7 @@ def _create_mesh_coordinate_element(
 def create_mesh(
     comm: _MPI.Comm,
     cells: npt.ArrayLike,
-    e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
+    e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._ElementBase | _CoordinateElement,
     x: npt.NDArray[np.floating],
     partitioner: _MeshPartitioner = None,
     ghost_mode: GhostMode = GhostMode.none,

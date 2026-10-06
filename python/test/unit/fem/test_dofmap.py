@@ -304,7 +304,7 @@ def test_transpose_dofmap() -> None:
     assert np.array_equal(transpose.array, [0, 2, 5, 8, 1, 4, 3, 7, 6])
 
 
-def test_empty_rank_collapse():
+def test_empty_rank_collapse() -> None:
     """Test that dofmap with no dofs on a rank can be collapsed."""
     if MPI.COMM_WORLD.rank == 0:
         nodes = np.array([[0.0], [1.0], [2.0]], dtype=np.float64)
