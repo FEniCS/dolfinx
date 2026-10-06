@@ -76,9 +76,7 @@ class MPC:
         sdtype = np.dtype(_dolfinx.default_scalar_type)
         cpp_type = _mpc_types.get((gdtype, sdtype))
         if cpp_type is None:
-            raise TypeError(
-                f"No MPC type for geometry dtype={gdtype}, scalar dtype={sdtype}"
-            )
+            raise TypeError(f"No MPC type for geometry dtype={gdtype}, scalar dtype={sdtype}")
         self._cpp_object = cpp_type(
             V._cpp_object,
             np.asarray(constrained_dofs_local, dtype=np.int32),
