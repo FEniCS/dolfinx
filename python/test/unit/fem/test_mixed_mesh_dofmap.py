@@ -3,6 +3,7 @@ from mpi4py import MPI
 import numpy as np
 
 import basix
+from dolfinx.cpp.fem import CoordinateElement_float64
 from dolfinx.cpp.mesh import Mesh_float64, create_geometry, create_topology
 from dolfinx.fem import coordinate_element, create_dofmaps
 from dolfinx.fem.element import finiteelement
@@ -19,7 +20,7 @@ def create_element_dofmap(mesh, cell_types, degree):
     return (elements, dofmaps)
 
 
-def test_dofmap_mixed_topology():
+def test_dofmap_mixed_topology() -> None:
     rank = MPI.COMM_WORLD.Get_rank()
 
     # Two triangles and one quadrilateral
@@ -59,6 +60,8 @@ def test_dofmap_mixed_topology():
     x[:, 1] += 1.0 * rank
 
     set_log_level(LogLevel.INFO)
+    assert isinstance(tri._cpp_object, CoordinateElement_float64)
+    assert isinstance(quad._cpp_object, CoordinateElement_float64)
     geom = create_geometry(
         topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x.flatten(), 2
     )
@@ -88,7 +91,7 @@ def test_dofmap_mixed_topology():
     assert len(q1.dof_layout.entity_dofs(2, 0)) == 1
 
 
-def test_dofmap_prism_mesh():
+def test_dofmap_prism_mesh() -> None:
     # Prism mesh
     cells = [np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)]
     # cells with global indexing
@@ -122,6 +125,7 @@ def test_dofmap_prism_mesh():
     )
 
     set_log_level(LogLevel.INFO)
+    assert isinstance(prism._cpp_object, CoordinateElement_float64)
     geom = create_geometry(topology._cpp_object, [prism._cpp_object], nodes, xdofs, x.flatten(), 3)
     mesh = Mesh_float64(MPI.COMM_WORLD, topology._cpp_object, geom)
 

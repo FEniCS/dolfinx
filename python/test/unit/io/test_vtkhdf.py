@@ -82,7 +82,7 @@ def test_read_write_mixed_topology(mixed_topology_mesh) -> None:
         assert t in mesh.topology.entity_types[-1]
 
 
-def test_read_write_higher_order():
+def test_read_write_higher_order() -> None:
     # Create a simple, 2 cell mesh consisting of a second order quadrilateral and
     # a second order triangle.
     geom = np.array(
@@ -122,12 +122,17 @@ def test_read_write_higher_order():
         for cell in [dolfinx.mesh.CellType.quadrilateral, dolfinx.mesh.CellType.triangle]
     ]
 
+    cpp_elements = []
+    for e in coordinate_elements:
+        assert isinstance(e._cpp_object, dolfinx.cpp.fem.CoordinateElement_float64)
+        cpp_elements.append(e._cpp_object)
+
     max_cells_per_facet = 2
     part = dolfinx.graph.partitioner()
     mesh = dolfinx.cpp.mesh._create_mixed_mesh(
         MPI.COMM_WORLD,
         cells_np,
-        [e._cpp_object for e in coordinate_elements],
+        cpp_elements,
         geom,
         part,
         dolfinx.mesh.GhostMode.none,

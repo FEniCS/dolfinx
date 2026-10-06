@@ -80,7 +80,7 @@ def tabulate_rank1_coeff(dtype, xdtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_numba_assembly(dtype):
+def test_numba_assembly(dtype) -> None:
     xdtype = np.real(dtype(0)).dtype
     k2 = tabulate_rank2(dtype, xdtype)
     k1 = tabulate_rank1(dtype, xdtype)
@@ -122,7 +122,7 @@ def test_numba_assembly(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_coefficient(dtype):
+def test_coefficient(dtype) -> None:
     xdtype = np.real(dtype(0)).dtype
     k1 = tabulate_rank1_coeff(dtype, xdtype)
 

@@ -229,6 +229,23 @@ def get_integration_domains(
             return [(s[0], np.array(s[1])) for s in sorted(subdomain)]
 
 
+@typing.overload
+def form_cpp_class(dtype: type[np.float32]) -> type[_cpp.fem.Form_float32]: ...
+@typing.overload
+def form_cpp_class(dtype: type[np.float64]) -> type[_cpp.fem.Form_float64]: ...
+@typing.overload
+def form_cpp_class(dtype: type[np.complex64]) -> type[_cpp.fem.Form_complex64]: ...
+@typing.overload
+def form_cpp_class(dtype: type[np.complex128]) -> type[_cpp.fem.Form_complex128]: ...
+@typing.overload
+def form_cpp_class(
+    dtype: npt.DTypeLike,
+) -> (
+    type[_cpp.fem.Form_float32]
+    | type[_cpp.fem.Form_float64]
+    | type[_cpp.fem.Form_complex64]
+    | type[_cpp.fem.Form_complex128]
+): ...
 def form_cpp_class(
     dtype: npt.DTypeLike,
 ) -> (
