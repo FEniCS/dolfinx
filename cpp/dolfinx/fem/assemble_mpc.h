@@ -350,7 +350,8 @@ void apply_mpc_vector(std::span<T> b, const MPC<T, U>& mpc)
   }
 }
 
-/// @brief Recover constrained dof values from the solution after a linear solve.
+/// @brief Recover constrained dof values from the solution after a linear
+/// solve.
 ///
 /// After solving the linear system assembled with assemble_matrix_mpc, the
 /// constrained dof slots hold whatever the solver placed there (typically 0,

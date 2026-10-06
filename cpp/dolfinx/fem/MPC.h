@@ -198,8 +198,7 @@ public:
         cvalues[coffsets[dof] + ccount[dof]] = val;
         ++ccount[dof];
       }
-      _constants
-          = std::make_unique<graph::AdjacencyList<T>>(cvalues, coffsets);
+      _constants = std::make_unique<graph::AdjacencyList<T>>(cvalues, coffsets);
     }
   }
 
@@ -249,10 +248,7 @@ public:
   /// @brief Return constant contributions for each local dof (if any).
   /// For each local constrained dof, the list contains the constant values
   /// to be added: u[i] = sum(c_k * u[ref_k]) + sum(const_j)
-  const graph::AdjacencyList<T>& constants() const
-  {
-    return *_constants;
-  }
+  const graph::AdjacencyList<T>& constants() const { return *_constants; }
 
 private:
   // Modified FunctionSpace with additional ghost dofs
