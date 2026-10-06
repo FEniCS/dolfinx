@@ -259,7 +259,7 @@ def test_interpolation_rank1(W) -> None:
 
 
 @pytest.mark.parametrize("dtype,cdtype", [(np.float32, "float"), (np.float64, "double")])
-def test_cffi_expression(dtype, cdtype):
+def test_cffi_expression(dtype, cdtype) -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=dtype)
     V = functionspace(mesh, ("Lagrange", 1))
 

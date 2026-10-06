@@ -522,15 +522,15 @@ class Function(ufl.Coefficient, Generic[Scalar]):
 
     def interpolate(
         self,
-        u0: Callable | Expression[Scalar] | Function[Scalar],
+        u0: Callable | Expression[Scalar] | Function[Scalar] | int,
         cells0: npt.NDArray[np.int32] | None = None,
         cells1: npt.NDArray[np.int32] | None = None,
     ) -> None:
         """Interpolate an expression.
 
         Args:
-            u0: Callable function, Expression or Function to
-               interpolate.
+            u0: Callable function, Expression, Function or the
+               address (``int``) of a compiled function to interpolate.
             cells0: Cells in mesh associated with ``u0`` to interpolate
                 over. If ``None`` then all cells are interpolated over.
             cells1: Cells in the mesh associated with ``self`` to
