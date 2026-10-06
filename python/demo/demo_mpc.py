@@ -135,6 +135,7 @@ bc = dirichletbc(value=np.array([0.0, 0.0], dtype=np.float64), dofs=dofsbc, V=V_
 # without a pre-computed extended sparsity pattern, at the cost of PETSc
 # having to reallocate internally (fine for a demo).
 from dolfinx.fem.petsc import create_matrix as _create_matrix
+
 A = _create_matrix(a)
 A.setOption(PETSc.Mat.Option.NEW_NONZERO_LOCATIONS, True)
 assemble_matrix_mpc_petsc(mpc, A, a, [bc])

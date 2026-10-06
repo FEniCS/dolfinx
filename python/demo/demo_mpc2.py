@@ -65,7 +65,7 @@ globalL = V.dofmap.index_map.local_to_global(dofsL)
 # Creating mapping of left side to right side dofs
 # using local index for left, global for right.
 map_LR = {}
-for dofL,refL in zip(dofsL, globalL):
+for dofL, refL in zip(dofsL, globalL):
     map_LR[int(dofL) * 2] = (int(refL * 2 + 1), 1.0)
 
 print(map_LR)
@@ -115,6 +115,7 @@ bc = dirichletbc(value=np.array([0.0, 0.0], dtype=np.float64), dofs=dofsbc, V=V_
 
 # Create PETSc matrix using standard sparsity pattern, then allow MPC entries.
 from dolfinx.fem.petsc import create_matrix as _create_matrix
+
 A = _create_matrix(a)
 A.setOption(PETSc.Mat.Option.NEW_NONZERO_LOCATIONS, True)
 assemble_matrix_mpc_petsc(mpc, A, a, [bc])

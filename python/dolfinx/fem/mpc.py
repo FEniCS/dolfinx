@@ -88,6 +88,7 @@ class MPC:
         Includes extra ghost reference dofs beyond the original V.
         """
         return self._cpp_object.V()
+
     def cells(self) -> npt.NDArray[np.int32]:
         """Return cells that contain at least one constrained dof."""
         return self._cpp_object.cells()
@@ -168,7 +169,6 @@ def assemble_matrix_mpc(
     )
 
 
-
 def assemble_matrix_mpc_petsc(
     mpc: MPC,
     A,
@@ -194,6 +194,7 @@ def assemble_matrix_mpc_petsc(
         a._cpp_object,
         [bc._cpp_object for bc in bcs],
     )
+
 
 def apply_mpc_vector(b: npt.NDArray, mpc: MPC) -> None:
     """Apply the MPC P^T transformation to an assembled RHS vector.
