@@ -9,7 +9,7 @@ from packaging.version import parse
 import dolfinx
 
 
-def test_version():
+def test_version() -> None:
     """Test that installed Python version matches C++ version.
 
     Python DOLFINx follows `major.minor.micro` with the append of `.devx`

@@ -21,3 +21,7 @@ dolfinx.cpp.fem.__prefix__:
 
 dolfinx.cpp.io.__prefix__:
     # mypy: disable-error-code="overload-overlap"
+
+# stubgen skips __version__, which the extension module sets.
+dolfinx.cpp.__suffix__:
+    __version__: str
