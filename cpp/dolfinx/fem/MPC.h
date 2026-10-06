@@ -300,7 +300,7 @@ void assemble_mpc(
 /// @tparam U Mesh geometry type
 /// @param pattern Sparsity pattern to build
 /// @param form Form for which to build sparsity pattern
-/// @param mpc Multipoint constraint
+/// @param mpcs Multipoint constraints for row and column spaces.
 /// @note The pattern is not finalised, i.e. the caller is responsible
 /// for calling SparsityPattern::assemble.
 template <dolfinx::scalar T, std::floating_point U>
