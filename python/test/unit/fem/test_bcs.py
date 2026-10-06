@@ -67,7 +67,7 @@ def test_locate_dofs_geometrical() -> None:
         assert np.isclose(coords_V[dofs[0][1]], [0, 0, 0]).all()
 
 
-def test_overlapping_bcs():
+def test_overlapping_bcs() -> None:
     """Test that, when boundaries condition overlap, the last provided
     boundary condition is applied.
     """

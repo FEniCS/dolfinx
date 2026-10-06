@@ -1538,7 +1538,7 @@ def test_lambda_assembler() -> None:
 
 
 @pytest.mark.xfail_win32_complex
-def test_vector_types():
+def test_vector_types() -> None:
     """Assemble form using different types."""
     mesh0 = create_unit_square(MPI.COMM_WORLD, 3, 5, dtype=np.float32)
     mesh1 = create_unit_square(MPI.COMM_WORLD, 3, 5, dtype=np.float64)

@@ -367,7 +367,7 @@ def test_push_forward_pull_back(gdim: int, is_affine: bool) -> None:
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", [1, 2])
-def test_discontinuous_coordinate_element(dtype, degree):
+def test_discontinuous_coordinate_element(dtype, degree) -> None:
     """A discontinuous coordinate element maps a single cell as usual."""
     cmap = coordinate_element(
         create_element(

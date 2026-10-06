@@ -7,7 +7,7 @@
 """Finite elements."""
 
 from functools import singledispatch
-from typing import ClassVar, Generic, cast
+from typing import ClassVar, Generic, cast, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -237,6 +237,20 @@ class CoordinateElement(Generic[Real]):
         return self._cpp_object.pull_back_working_size(gdim)
 
 
+@overload
+def coordinate_element(
+    celltype: _cpp.mesh.CellType,
+    degree: int,
+    variant: int = int(basix.LagrangeVariant.unset),
+    dtype: npt.DTypeLike = np.float64,
+    discontinuous: bool = False,
+) -> CoordinateElement: ...
+
+
+@overload
+def coordinate_element(e: basix.finite_element.FiniteElement, /) -> CoordinateElement: ...
+
+
 @singledispatch
 def coordinate_element(
     celltype: _cpp.mesh.CellType | basix.finite_element.FiniteElement,
@@ -263,7 +277,7 @@ def coordinate_element(
     return CoordinateElement(cpp_type(celltype, degree, variant, discontinuous))
 
 
-@coordinate_element.register(basix.finite_element.FiniteElement)
+@coordinate_element.register(basix.finite_element.FiniteElement)  # type: ignore[attr-defined]
 def _coordinate_element_from_basix(e: basix.finite_element.FiniteElement) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from a Basix finite element.
 
