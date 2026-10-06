@@ -30,12 +30,14 @@ __all__ = [
     "matrix_csr_mpc",
 ]
 
-# Maps geometry dtype → (cpp MPC type, scalar dtype).
-# For real-valued meshes the scalar type equals the geometry type;
-# for complex problems a complex scalar lives on a real-geometry mesh.
+# Maps (geometry dtype, scalar dtype) → cpp MPC type.
+# In a real PETSc build scalar == geometry type; in a complex build
+# the scalar is complex while the geometry remains real-valued.
 _mpc_types: dict = {
-    np.dtype(np.float32): (_cpp.fem.MPC_float32, np.dtype(np.float32)),
-    np.dtype(np.float64): (_cpp.fem.MPC_float64, np.dtype(np.float64)),
+    (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.MPC_float32,
+    (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.MPC_float64,
+    (np.dtype(np.float32), np.dtype(np.complex64)): _cpp.fem.MPC_complex64,
+    (np.dtype(np.float64), np.dtype(np.complex128)): _cpp.fem.MPC_complex128,
 }
 
 
@@ -68,16 +70,20 @@ class MPC:
                 entry (negative global index) the coefficient is the
                 constant value *g*.
         """
-        gdtype = V.mesh.geometry.x.dtype
-        entry = _mpc_types.get(np.dtype(gdtype))
-        if entry is None:
-            raise TypeError(f"No MPC type for geometry dtype={gdtype}")
-        cpp_type, dtype = entry
+        import dolfinx as _dolfinx
+
+        gdtype = np.dtype(V.mesh.geometry.x.dtype)
+        sdtype = np.dtype(_dolfinx.default_scalar_type)
+        cpp_type = _mpc_types.get((gdtype, sdtype))
+        if cpp_type is None:
+            raise TypeError(
+                f"No MPC type for geometry dtype={gdtype}, scalar dtype={sdtype}"
+            )
         self._cpp_object = cpp_type(
             V._cpp_object,
             np.asarray(constrained_dofs_local, dtype=np.int32),
             [np.asarray(d, dtype=np.int64) for d in global_dofs],
-            [np.asarray(c, dtype=dtype) for c in global_coeffs],
+            [np.asarray(c, dtype=sdtype) for c in global_coeffs],
         )
 
     @property
