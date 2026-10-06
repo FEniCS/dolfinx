@@ -146,8 +146,8 @@ def σ(v):
     return 2.0 * μ * sym(grad(v)) + λ * tr(sym(grad(v))) * Identity(len(v))
 
 
-u = TestFunction(V_new)
-v = TrialFunction(V_new)
+v = TestFunction(V_new)
+u = TrialFunction(V_new)
 a = form(inner(σ(u), grad(v)) * dx)
 
 f = Function(V_new)
