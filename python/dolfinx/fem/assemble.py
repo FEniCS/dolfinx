@@ -38,9 +38,13 @@ def pack_constants(form: Form) -> npt.NDArray: ...
 def pack_constants(form: Sequence[Form | None]) -> list[npt.NDArray]: ...
 
 
+@typing.overload
+def pack_constants(form: Sequence[Sequence[Form | None]]) -> list[list[npt.NDArray]]: ...
+
+
 def pack_constants(
-    form: Form | Sequence[Form | None] | None,
-) -> npt.NDArray | list[npt.NDArray] | None:
+    form: Form | Sequence[Form | None] | Sequence[Sequence[Form | None]] | None,
+) -> npt.NDArray | list[npt.NDArray] | list[list[npt.NDArray]] | None:
     """Pack form constants for use in assembly.
 
     Pack the 'constants' that appear in forms. The packed constants can
@@ -76,10 +80,18 @@ def pack_coefficients(
 ) -> list[dict[tuple[IntegralType, int], npt.NDArray]]: ...
 
 
+@typing.overload
 def pack_coefficients(
-    form: Form | Sequence[Form | None] | None,
+    form: Sequence[Sequence[Form | None]],
+) -> list[list[dict[tuple[IntegralType, int], npt.NDArray]]]: ...
+
+
+def pack_coefficients(
+    form: Form | Sequence[Form | None] | Sequence[Sequence[Form | None]] | None,
 ) -> (
-    dict[tuple[IntegralType, int], npt.NDArray] | list[dict[tuple[IntegralType, int], npt.NDArray]]
+    dict[tuple[IntegralType, int], npt.NDArray]
+    | list[dict[tuple[IntegralType, int], npt.NDArray]]
+    | list[list[dict[tuple[IntegralType, int], npt.NDArray]]]
 ):
     """Pack form coefficients for use in assembly.
 

@@ -1242,7 +1242,7 @@ class TestPETScAssemblers:
         A0.destroy()
 
     @pytest.mark.parametrize("kind", ["nest", "mpi"])
-    def test_lifting_coefficients(self, kind):
+    def test_lifting_coefficients(self, kind) -> None:
         """Test applying lifting with packed coefficients."""
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
         from dolfinx.fem.petsc import create_vector as petsc_create_vector
