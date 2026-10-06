@@ -242,7 +242,7 @@ def test_additivity(mode) -> None:
     assert (J1 + J2 + J3) == pytest.approx(J123)
 
 
-def test_manual_integration_domains():
+def test_manual_integration_domains() -> None:
     """Test that specifying integration domains manually i.e.
     by passing a list of cell indices or (cell, local facet) pairs to
     form gives the same result as the usual approach of tagging.
@@ -258,7 +258,7 @@ def test_manual_integration_domains():
     tdim = msh.topology.dim
     cell_map = msh.topology.index_map(tdim)
     num_cells = cell_map.size_local + cell_map.num_ghosts
-    cell_indices = np.arange(0, num_cells)
+    cell_indices = np.arange(0, num_cells, dtype=np.int32)
     cell_values = np.zeros_like(cell_indices, dtype=np.intc)
     marked_cells = locate_entities(msh, tdim, lambda x: x[0] < 0.75)
     cell_values[marked_cells] = 7
@@ -268,7 +268,7 @@ def test_manual_integration_domains():
     msh.topology.create_entities(tdim - 1)
     facet_map = msh.topology.index_map(tdim - 1)
     num_facets = facet_map.size_local + facet_map.num_ghosts
-    facet_indices = np.arange(0, num_facets)
+    facet_indices = np.arange(0, num_facets, dtype=np.int32)
     facet_values = np.zeros_like(facet_indices, dtype=np.intc)
     marked_ext_facets = locate_entities_boundary(msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
     marked_int_facets = locate_entities(msh, tdim - 1, lambda x: x[0] < 0.75)

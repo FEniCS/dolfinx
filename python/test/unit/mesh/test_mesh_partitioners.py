@@ -142,7 +142,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     )
     num_cells = new_mesh.topology.index_map(tdim).size_local
     new_mesh.topology.create_connectivity(tdim, tdim)
-    cell_midpoints = compute_midpoints(new_mesh, tdim, np.arange(num_cells))
+    cell_midpoints = compute_midpoints(new_mesh, tdim, np.arange(num_cells, dtype=np.int32))
     assert num_cells > 0
     assert np.all(cell_midpoints[:, 0] >= mpi_comm.rank)
     assert np.all(cell_midpoints[:, 0] <= mpi_comm.rank + 1)
@@ -289,7 +289,7 @@ def _structured_triangle_grid(n):
 
 
 @pytest.mark.parametrize("gpart", weighted_partitioners)
-def test_partition_respects_cell_weights(gpart):
+def test_partition_respects_cell_weights(gpart) -> None:
     """Weight the cells in the left half of a structured triangle mesh
     twice as heavily as those in the right half, and check that a
     weight-aware graph partitioner balances the *sum of cell weights*
@@ -337,7 +337,7 @@ def test_partition_respects_cell_weights(gpart):
     new_mesh.topology.create_connectivity(tdim, tdim)
     num_local = new_mesh.topology.index_map(tdim).size_local
     if num_local > 0:
-        midpoints = compute_midpoints(new_mesh, tdim, np.arange(num_local))
+        midpoints = compute_midpoints(new_mesh, tdim, np.arange(num_local, dtype=np.int32))
         local_weight = float(np.sum(np.where(midpoints[:, 0] < 0.5, 2, 1)))
     else:
         local_weight = 0.0

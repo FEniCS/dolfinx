@@ -547,7 +547,7 @@ def test_codim_1_spatial_coordinate(cell_type, expected) -> None:
     "cell_type",
     [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
 )
-def test_codim_1_gradient_interior_facet(cell_type):
+def test_codim_1_gradient_interior_facet(cell_type) -> None:
     """Grad of a codimension-1 submesh coefficient under `dS`, on both
     restrictions.
 
@@ -569,7 +569,7 @@ def test_codim_1_gradient_interior_facet(cell_type):
     facet_vector.array[facet_imap.size_local :] = 0
     facet_vector.array[exterior_facets] = 0
     facet_vector.scatter_forward()
-    interior_facets = np.flatnonzero(facet_vector.array)
+    interior_facets = np.flatnonzero(facet_vector.array).astype(np.int32)
 
     smsh, entity_map = create_submesh(msh, fdim, interior_facets)[:2]
     g = fem.Function(fem.functionspace(smsh, ("Lagrange", 1)))
@@ -827,7 +827,7 @@ def test_interior_facet_codim_1(msh):
     facet_vector.array[facet_imap.size_local :] = 0
     facet_vector.array[exterior_facet_indices(msh.topology)] = 0
     facet_vector.scatter_forward()
-    interior_facets = np.flatnonzero(facet_vector.array)
+    interior_facets = np.flatnonzero(facet_vector.array).astype(np.int32)
 
     # Create submesh with all owned and ghosted interior facets
     submesh, entity_map, _, _ = create_submesh(msh, fdim, interior_facets)

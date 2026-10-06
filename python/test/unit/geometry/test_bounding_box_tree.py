@@ -473,7 +473,7 @@ def test_serial_global_bb_tree(dtype, comm) -> None:
 @pytest.mark.parametrize("ct", [CellType.hexahedron, CellType.tetrahedron])
 @pytest.mark.parametrize("N", [7, 13])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_sub_bbtree_box(ct, N, dtype):
+def test_sub_bbtree_box(ct, N, dtype) -> None:
     """Test that the bounding box of the stem of the bounding box tree is what we expect."""
     mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=ct, dtype=dtype)
     tdim = mesh.topology.dim
@@ -481,7 +481,7 @@ def test_sub_bbtree_box(ct, N, dtype):
 
     facets = locate_entities_boundary(mesh, fdim, lambda x: np.isclose(x[1], 1.0))
     f_to_c = mesh.topology.connectivity(fdim, tdim)
-    cells = np.int32(np.unique([f_to_c.links(f)[0] for f in facets]))
+    cells = np.unique([f_to_c.links(f)[0] for f in facets]).astype(np.int32)
     bbtree = bb_tree(mesh, tdim, padding=0.0, entities=cells)
     num_boxes = bbtree.num_bboxes
     if num_boxes > 0:

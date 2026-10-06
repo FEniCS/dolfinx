@@ -1199,7 +1199,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype) -> None:
     assert np.isclose(l2_error, 0.0, rtol=np.finfo(xtype).eps, atol=np.finfo(xtype).eps)
 
 
-def test_submesh_interpolation():
+def test_submesh_interpolation() -> None:
     """Test interpolation of a function between a sub-mesh and its parent mesh."""
     mesh = create_unit_square(MPI.COMM_WORLD, 6, 7)
 
@@ -1220,7 +1220,7 @@ def test_submesh_interpolation():
     u1 = Function(V1)
 
     smsh_cell_imap = submesh.topology.index_map(tdim)
-    smsh_cells = np.arange(smsh_cell_imap.size_local + smsh_cell_imap.num_ghosts)
+    smsh_cells = np.arange(smsh_cell_imap.size_local + smsh_cell_imap.num_ghosts, dtype=np.int32)
     parent_cells = entity_map.sub_topology_to_topology(smsh_cells, inverse=False)
 
     # Interpolate u0 (defined on 'full' mesh) into u0 (defined on
@@ -1238,7 +1238,9 @@ def test_submesh_interpolation():
 
     # Interpolate Function defined on sub-mesh (u1_exact) to the part of
     # a Function on the full mesh (w)
-    w.interpolate(u1_exact, cells0=np.arange(len(parent_cells)), cells1=parent_cells)
+    w.interpolate(
+        u1_exact, cells0=np.arange(len(parent_cells), dtype=np.int32), cells1=parent_cells
+    )
     w_exact = Function(W)
     w_exact.interpolate(ref_func, cells0=cells)
     np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=atol)
@@ -1309,7 +1311,7 @@ def xtest_submesh_expression_interpolation():
 
 
 @pytest.mark.parametrize("ghost_mode", [GhostMode.shared_facet, GhostMode.none])
-def test_submesh_interpolation_mapped(ghost_mode):
+def test_submesh_interpolation_mapped(ghost_mode) -> None:
     """Test interpolation of Piola mapped cells with submeshes."""
     comm = MPI.COMM_WORLD
 
@@ -1325,7 +1327,7 @@ def test_submesh_interpolation_mapped(ghost_mode):
     domain.topology.create_cell_permutations()
 
     smsh_cell_imap = submesh.topology.index_map(tdim)
-    smsh_cells = np.arange(smsh_cell_imap.size_local + smsh_cell_imap.num_ghosts)
+    smsh_cells = np.arange(smsh_cell_imap.size_local + smsh_cell_imap.num_ghosts, dtype=np.int32)
     parent_cells = sub_to_parent.sub_topology_to_topology(smsh_cells, inverse=False)
 
     degree = 1

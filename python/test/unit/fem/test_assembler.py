@@ -1681,7 +1681,7 @@ def vertex_to_dof_map(V):
         ),
     ],
 )
-def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
+def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype) -> None:
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
@@ -1742,7 +1742,7 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V, dtype=dtype)
     vertex_to_dof = vertex_to_dof_map(V)
-    vertices = np.arange(num_vertices + vertex_map.num_ghosts)
+    vertices = np.arange(num_vertices + vertex_map.num_ghosts, dtype=np.int32)
     u.x.array[vertex_to_dof[vertices]] = vertex_map.local_to_global(vertices)
 
     check_vertex_integral_against_sum(u * x[0] * ufl.dP, np.arange(num_vertices), True)
@@ -1818,7 +1818,7 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
         ),
     ],
 )
-def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
+def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype) -> None:
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
@@ -1880,9 +1880,11 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
 
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V, dtype=dtype)
-    u.x.array[:] = vertex_map.local_to_global(np.arange(num_vertices + vertex_map.num_ghosts))
+    u.x.array[:] = vertex_map.local_to_global(
+        np.arange(num_vertices + vertex_map.num_ghosts, dtype=np.int32)
+    )
     vertex_to_dof = vertex_to_dof_map(V)
-    vertices = np.arange(num_vertices + vertex_map.num_ghosts)
+    vertices = np.arange(num_vertices + vertex_map.num_ghosts, dtype=np.int32)
     u.x.array[vertex_to_dof[vertices]] = vertex_map.local_to_global(vertices)
 
     check_vertex_integral_against_sum(u * x[0] * v * ufl.dP, np.arange(num_vertices), True)

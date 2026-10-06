@@ -965,7 +965,7 @@ def test_create_submesh_empty_on_some_ranks() -> None:
 
 
 @pytest.mark.parametrize("codim", [0, 1, 2, 3])
-def test_transfer_to_submesh(codim):
+def test_transfer_to_submesh(codim) -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 4, 5)
     tdim = mesh.topology.dim
     assert tdim - codim >= 0
@@ -985,7 +985,7 @@ def test_transfer_to_submesh(codim):
         values = np.zeros(num_parent_entities, dtype=np.int32)
         values[locate_entities(mesh, i, marker1)] = 1
         values[locate_entities(mesh, i, marker2)] = 2
-        et_indices = np.flatnonzero(values)
+        et_indices = np.flatnonzero(values).astype(np.int32)
         et_values = values[et_indices]
         et = dolfinx.mesh.meshtags(mesh, i, et_indices, et_values)
 
