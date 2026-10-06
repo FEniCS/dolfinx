@@ -328,8 +328,6 @@ void build_sparsity_pattern_mpc(
   // Insert extra connectivity for cells containing constrained dofs
   // NB - only works if row and column function spaces are the same, which is
   // the case for now.
-  int bs_row = mpc_row.V()->dofmap()->bs();
-  int bs_col = mpc_col.V()->dofmap()->bs();
 
   auto get_dofs1 = [](const fem::MPC<T, U>& mpc, std::int32_t cell)
   {
@@ -375,7 +373,7 @@ void build_sparsity_pattern_mpc(
   auto constraints = mpc_row.constraints();
   int bs = mpc_row.V()->dofmap()->bs();
   std::vector<std::int32_t> ref_dofs;
-  for (std::size_t dof = 0;
+  for (std::int32_t dof = 0;
        dof < mpc_row.V()->dofmap()->index_map->size_local(); ++dof)
   {
     for (int k = 0; k < bs; ++k)
