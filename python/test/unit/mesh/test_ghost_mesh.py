@@ -56,7 +56,7 @@ def test_ghost_3d() -> None:
         GhostMode.shared_facet,
     ],
 )
-def test_ghost_connectivities(mode):
+def test_ghost_connectivities(mode) -> None:
     # Ghosted mesh
     meshG = create_unit_square(MPI.COMM_WORLD, 4, 4, ghost_mode=mode)
     meshG.topology.create_connectivity(1, 2)
@@ -74,9 +74,9 @@ def test_ghost_connectivities(mode):
     num_facets = map_f.size_local + map_f.num_ghosts
 
     meshR.topology.create_connectivity(tdim - 1, tdim)
-    facet_mp = compute_midpoints(meshR, tdim - 1, np.arange(num_facets))
+    facet_mp = compute_midpoints(meshR, tdim - 1, np.arange(num_facets, dtype=np.int32))
     meshR.topology.create_connectivity(tdim, tdim)
-    cell_mp = compute_midpoints(meshR, tdim, np.arange(num_cells))
+    cell_mp = compute_midpoints(meshR, tdim, np.arange(num_cells, dtype=np.int32))
     reference = {tuple(row): [] for row in facet_mp}
     for i in range(num_facets):
         for cidx in meshR.topology.connectivity(1, 2).links(i):
@@ -94,9 +94,9 @@ def test_ghost_connectivities(mode):
     num_facets_ghost = map_f.num_ghosts
     allowable_cell_indices = range(num_cells)
     meshG.topology.create_connectivity(tdim - 1, tdim)
-    facet_mp = compute_midpoints(meshG, tdim - 1, np.arange(num_facets))
+    facet_mp = compute_midpoints(meshG, tdim - 1, np.arange(num_facets, dtype=np.int32))
     meshG.topology.create_connectivity(tdim, tdim)
-    cell_mp = compute_midpoints(meshG, tdim, np.arange(num_cells))
+    cell_mp = compute_midpoints(meshG, tdim, np.arange(num_cells, dtype=np.int32))
     for i in range(num_facets_ghost):
         assert tuple(facet_mp[i]) in reference
         for cidx in meshG.topology.connectivity(1, 2).links(i):

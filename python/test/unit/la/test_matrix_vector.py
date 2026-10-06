@@ -15,7 +15,7 @@ from dolfinx.fem import functionspace
 from dolfinx.mesh import create_unit_square
 
 
-def test_create_matrix_csr():
+def test_create_matrix_csr() -> None:
     """Test creation of CSR matrix with specified types."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 11)
     V = functionspace(mesh, ("Lagrange", 1))
@@ -23,8 +23,8 @@ def test_create_matrix_csr():
     bs = V.dofmap.index_map_bs
 
     pattern = la.sparsity_pattern(mesh.comm, [map, map], [bs, bs])
-    rows = np.arange(0, bs * map.size_local)
-    cols = np.arange(0, bs * map.size_local)
+    rows = np.arange(0, bs * map.size_local, dtype=np.int32)
+    cols = np.arange(0, bs * map.size_local, dtype=np.int32)
     pattern.insert(rows, cols)
     pattern.finalize()
 

@@ -103,7 +103,7 @@ def test_3d(tempdir, cell_type, encoding):
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_read_named_meshtags(tempdir, cell_type, encoding):
+def test_read_named_meshtags(tempdir, cell_type, encoding) -> None:
     domain_value = 1
     material_value = 2
 
@@ -111,7 +111,7 @@ def test_read_named_meshtags(tempdir, cell_type, encoding):
     comm = MPI.COMM_WORLD
     mesh = create_unit_cube(comm, 4, 4, 4, cell_type)
 
-    indices = np.arange(mesh.topology.index_map(3).size_local)
+    indices = np.arange(mesh.topology.index_map(3).size_local, dtype=np.int32)
     domain_values = np.full(indices.shape, domain_value, dtype=np.int32)
     mt_domains = meshtags(mesh, 3, indices, domain_values)
     mt_domains.name = "domain"
