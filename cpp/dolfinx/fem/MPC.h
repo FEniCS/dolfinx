@@ -19,7 +19,8 @@
 namespace dolfinx::fem
 {
 
-/// @brief Multi-point constraint of the form u_constrained = sum(c_k * u_ref_k) + g.
+/// @brief Multi-point constraint of the form u_constrained = sum(c_k * u_ref_k)
+/// + g.
 /// @tparam T Scalar type
 /// @tparam U Floating-point type for geometry
 template <typename T, std::floating_point U>
