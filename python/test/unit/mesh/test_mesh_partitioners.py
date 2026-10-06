@@ -254,8 +254,8 @@ def test_mixed_topology_partitioning():
         MPI.COMM_WORLD,
         nparts,
         dual_graph._cpp_object,
-        np.array([], dtype=np.int32),
-        np.array([], dtype=np.int32),
+        None,
+        None,
         False,
     )
 
