@@ -26,11 +26,6 @@
 
 from mpi4py import MPI
 
-import dolfinx
-import dolfinx.fem
-import dolfinx.fem.petsc
-import dolfinx.io
-import dolfinx.la
 from petsc4py import PETSc
 
 import numpy as np
@@ -38,6 +33,8 @@ import numpy as np
 from dolfinx.fem import (
     Function,
     FunctionSpace,
+    apply_lifting,
+    assemble_vector,
     dirichletbc,
     form,
     functionspace,
@@ -48,6 +45,13 @@ from dolfinx.fem.mpc import (
     apply_mpc_solution,
     apply_mpc_vector,
 )
+from dolfinx.fem.petsc import (
+    assemble_matrix_mpc,
+    create_matrix,
+    set_diagonal,
+)
+from dolfinx.io import XDMFFile
+from dolfinx.la import InsertMode
 from dolfinx.mesh import create_unit_square, locate_entities_boundary
 
 # ruff: noqa
@@ -159,13 +163,11 @@ bc = dirichletbc(value=np.array([0.0, 0.0], dtype=np.float64), dofs=dofsbc, V=V_
 # NEW_NONZERO_LOCATIONS lets the MPC assembly insert off-diagonal MPC links
 # without a pre-computed extended sparsity pattern, at the cost of PETSc
 # having to reallocate internally (fine for a demo).
-from dolfinx.fem.petsc import assemble_matrix_mpc, create_matrix as _create_matrix
-
-A = _create_matrix(a)
+A = create_matrix(a)
 A.setOption(PETSc.Mat.Option.NEW_NONZERO_LOCATIONS, True)
 assemble_matrix_mpc(mpc, A, a, [bc])
 A.assemble()
-dolfinx.fem.petsc.set_diagonal(A, bc.dof_indices()[0], 1.0)
+set_diagonal(A, bc.dof_indices()[0], 1.0)
 A.assemble()
 
 offsets, ref_dof, ref_coeff = mpc.constraints()
@@ -183,12 +185,12 @@ for i in range(V_new.dofmap.index_map.size_local * bs):
 # Assemble RHS with MPC transformation:
 #   scatter_rev → apply_mpc_vector (P^T: b[ref] += c*b[constrained], b[constrained]=0)
 #   → scatter_rev → apply_lifting → scatter_rev → bc.set
-b = dolfinx.fem.assemble_vector(L)
-b.scatter_reverse(dolfinx.la.InsertMode.add)
+b = assemble_vector(L)
+b.scatter_reverse(InsertMode.add)
 apply_mpc_vector(b.array, mpc)
-b.scatter_reverse(dolfinx.la.InsertMode.add)
-dolfinx.fem.apply_lifting(b.array, [a], [[bc]])
-b.scatter_reverse(dolfinx.la.InsertMode.add)
+b.scatter_reverse(InsertMode.add)
+apply_lifting(b.array, [a], [[bc]])
+b.scatter_reverse(InsertMode.add)
 bc.set(b.array)
 
 u = Function(V_new)
@@ -206,7 +208,7 @@ ksp.solve(b.petsc_vec, u.x.petsc_vec)
 u.x.scatter_forward()
 apply_mpc_solution(u.x.array, mpc)
 
-xdmf = dolfinx.io.XDMFFile(mesh.comm, "demo_mpc.xdmf", "w")
+xdmf = XDMFFile(mesh.comm, "demo_mpc.xdmf", "w")
 xdmf.write_mesh(mesh)
 u.name = "u"
 xdmf.write_function(u)
