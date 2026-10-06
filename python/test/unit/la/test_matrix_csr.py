@@ -154,7 +154,9 @@ def test_distributed_csr(dtype) -> None:
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_set_block_matrix(dtype):
+def test_set_block_matrix(dtype) -> None:
+    from scipy.sparse import bsr_matrix
+
     mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 4, ghost_mode=ghost_mode, dtype=mesh_dtype)
@@ -163,6 +165,7 @@ def test_set_block_matrix(dtype):
     a = fem.form(ufl.inner(u, v) * ufl.dx, dtype=dtype)
     A = fem.create_matrix(a)
     As = A.to_scipy(ghosted=True)
+    assert isinstance(As, bsr_matrix)
     assert As.blocksize == (2, 2)
 
 

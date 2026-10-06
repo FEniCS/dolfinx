@@ -121,8 +121,10 @@ def test_discrete_curl_map_raises(elements) -> None:
         (CellType.hexahedron, "Nedelec 1st kind H(curl)", "Raviart-Thomas"),
     ],
 )
-def test_discrete_curl(element_data, p, dtype):
+def test_discrete_curl(element_data, p, dtype) -> None:
     """Compute discrete curl operator, with verification using Expression."""
+    from scipy.sparse import csr_matrix
+
     xdtype = dtype(0).real.dtype
 
     celltype, E0, E1 = element_data
@@ -163,6 +165,7 @@ def test_discrete_curl(element_data, p, dtype):
     # accumulate data for ghost entries.
     G = discrete_curl(V0, V1)
     Glocal = G.to_scipy(ghosted=True)
+    assert isinstance(Glocal, csr_matrix)
 
     # Apply discrete curl operator to the u0 vector
     u1 = Function(V1, dtype=dtype)
