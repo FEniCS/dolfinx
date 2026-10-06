@@ -917,7 +917,7 @@ if dolfinx.has_parmetis:
 
 
 @pytest.mark.parametrize("partitioner", avail_partitioners)
-def test_mesh_single_process_distribution(partitioner):
+def test_mesh_single_process_distribution(partitioner) -> None:
     comm = MPI.COMM_WORLD
 
     if comm.rank == 0:

@@ -290,7 +290,7 @@ def test_vector_function_space_cell_type() -> None:
 
 
 @pytest.mark.skip_in_parallel
-def test_manifold_spaces():
+def test_manifold_spaces() -> None:
     vertices = np.array(
         [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)],
         dtype=default_real_type,

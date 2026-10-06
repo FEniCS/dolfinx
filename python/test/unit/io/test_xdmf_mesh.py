@@ -144,7 +144,7 @@ def test_read_write_num_threads(tempdir, num_threads) -> None:
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("encoding", encodings)
-def test_read_write_p2_mesh(tempdir, encoding):
+def test_read_write_p2_mesh(tempdir, encoding) -> None:
     try:
         import gmsh
     except ImportError:

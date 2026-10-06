@@ -1260,7 +1260,7 @@ def _create_mesh_coordinate_element(
 
 def create_mesh(
     comm: _MPI.Comm,
-    cells: npt.NDArray[np.int64],
+    cells: npt.ArrayLike,
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     x: npt.NDArray[np.floating],
     partitioner: _MeshPartitioner = None,

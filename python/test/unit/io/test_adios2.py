@@ -51,7 +51,7 @@ class TestVTX:
     """Test VTXWriter functionality."""
 
     @pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")
-    def test_second_order_vtx(self, tempdir):
+    def test_second_order_vtx(self, tempdir) -> None:
         """Test saving a simple second order mesh with VTXWriter."""
         from dolfinx.io import VTXWriter
 

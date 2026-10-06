@@ -191,7 +191,7 @@ class TestPETScDiscreteOperators:
         G.destroy()
 
     @pytest.mark.skip_in_parallel
-    def test_nonaffine_discrete_operator_petsc(self):
+    def test_nonaffine_discrete_operator_petsc(self) -> None:
         """Test non-affine discrete operator.
 
         Check that discrete operator is consistent with normal
