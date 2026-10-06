@@ -14,7 +14,7 @@ from dolfinx.fem import Constant
 from dolfinx.mesh import create_unit_cube
 
 
-def test_scalar_constant():
+def test_scalar_constant() -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     c = Constant(mesh, 1.0)
     assert c.value.shape == ()
