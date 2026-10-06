@@ -283,7 +283,7 @@ void assemble_mpc(
 {
   if (mpc.V()->dofmap()->bs() == BS)
   {
-    spdlog::info("Assemble MPC with bs={}", BS);
+    spdlog::debug("Assemble MPC with bs={}", BS);
     auto mat_add = A.template mat_add_values<BS, BS>();
     assemble_matrix_mpc({mpc, mpc}, mat_add, a, bcs);
   }

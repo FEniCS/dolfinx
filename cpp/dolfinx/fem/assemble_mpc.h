@@ -263,7 +263,7 @@ void assemble_matrix_mpc(
   pack_coefficients(a, coefficients);
 
   // Main assembly
-  spdlog::info("Assemble MPC");
+  spdlog::debug("Assemble MPC");
   assemble_matrix(mat_add_mpc, a, bcs);
 
   // Set diagonal = 1 for each locally-owned constrained dof so the row is
@@ -271,7 +271,7 @@ void assemble_matrix_mpc(
   // so no other entry needs touching here.  The correct solution value
   // u[i] = sum(c_k * u[ref_k]) is recovered by apply_mpc_solution after
   // the linear solve.
-  spdlog::info("Apply MPC diagonal, bs = {}", bs_row);
+  spdlog::debug("Apply MPC diagonal, bs = {}", bs_row);
   for (int dof = 0;
        dof < bs_row * mpc_row.V()->dofmap()->index_map->size_local(); ++dof)
   {
