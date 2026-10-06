@@ -23,7 +23,8 @@ namespace dolfinx::fem
 /// @brief Assemble bilinear form with a multipoint constraint into a matrix.
 /// Matrix must already be initialised, with suitable sparsity.
 /// Does not zero or finalise the matrix.
-/// @param[in] mpc Multipoint constraints for row and column spaces.
+/// @param[in] mpcs Multipoint constraints for row and column spaces (row,
+/// column).
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear form to assemble.
 /// @param[in] bcs Dirichlet boundary conditions.
