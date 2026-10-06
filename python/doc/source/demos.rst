@@ -125,6 +125,14 @@ PETSc scalars.
   scattering from a sphere using an axisymmetric PML.
 
 
+
+Constrained problems
+--------------------
+
+* :doc:`demos/demo_mpc` -- solve a linear elasticity problem with
+  multi-point constraints coupling degrees of freedom on the left and right
+  boundaries with a sign flip between displacement components.
+
 ..
    The following hidden toctree serves as the master site map for Sphinx.
    It ensures the left sidebar populates cleanly without duplicating items.
@@ -159,3 +167,4 @@ PETSc scalars.
    demos/demo_partition.md
    demos/demo_comm-pattern.md
    demos/demo_mixed-topology.md
+   demos/demo_mpc.md
