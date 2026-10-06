@@ -33,7 +33,7 @@ from dolfinx.mesh import (
         (3, CellType.tetrahedron),
     ],
 )
-def test_edge_skeleton_mesh(dim, cell_type):
+def test_edge_skeleton_mesh(dim, cell_type) -> None:
     """Creates the edge skeleton mesh of a regular unit square/cube and checks for correct
     connectivity information.
 
@@ -92,7 +92,7 @@ def test_edge_skeleton_mesh(dim, cell_type):
 
 
 @pytest.mark.parametrize("cell_type", [CellType.hexahedron, CellType.tetrahedron])
-def test_facet_skeleton_mesh(cell_type):
+def test_facet_skeleton_mesh(cell_type) -> None:
     comm = MPI.COMM_WORLD
     if comm.rank == 0:
         mesh = create_unit_cube(MPI.COMM_SELF, 4, 4, 4, cell_type=cell_type)

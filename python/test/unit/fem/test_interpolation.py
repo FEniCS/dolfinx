@@ -650,7 +650,7 @@ def test_interpolation_vector_elements(order1, order2) -> None:
 
 
 @pytest.mark.skip_in_parallel
-def test_interpolation_non_affine():
+def test_interpolation_non_affine() -> None:
     points = np.array(
         [
             [0, 0, 0],
@@ -695,7 +695,7 @@ def test_interpolation_non_affine():
 
 
 @pytest.mark.skip_in_parallel
-def test_interpolation_non_affine_nonmatching_maps():
+def test_interpolation_non_affine_nonmatching_maps() -> None:
     points = np.array(
         [
             [0, 0, 0],

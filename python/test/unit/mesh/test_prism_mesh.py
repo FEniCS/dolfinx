@@ -9,7 +9,7 @@ from dolfinx.mesh import CellType, create_mesh
 
 
 @pytest.mark.skip_in_parallel
-def test_prism_mesh():
+def test_prism_mesh() -> None:
     cells = [np.arange(6)]
     x = np.array(
         [
@@ -32,7 +32,7 @@ def test_prism_mesh():
 
 
 @pytest.mark.skip_in_parallel
-def test_quadratic_prism_mesh():
+def test_quadratic_prism_mesh() -> None:
     # Work out geometry for quadratic cell
     layout = basix.cell.sub_entity_connectivity(basix.cell.CellType.prism)
     x = np.array(

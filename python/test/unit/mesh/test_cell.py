@@ -26,7 +26,7 @@ def test_distance_interval() -> None:
 
 
 @pytest.mark.skip_in_parallel
-def test_distance_triangle():
+def test_distance_triangle() -> None:
     shape, degree = "triangle", 1
     domain = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree)
     x = np.array([[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]], dtype=np.float64)
@@ -41,7 +41,7 @@ def test_distance_triangle():
 
 
 @pytest.mark.skip_in_parallel
-def test_distance_tetrahedron():
+def test_distance_tetrahedron() -> None:
     shape = "tetrahedron"
     degree = 1
     domain = ufl.Mesh(element("Lagrange", shape, degree, shape=(3,), dtype=np.float64))
