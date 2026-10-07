@@ -81,8 +81,8 @@ def test_mpc():
     bc = dirichletbc(value=default_scalar_type(0), dofs=dofsbc, V=V_new)
 
     # Standard Poisson problem
-    u = TestFunction(V_new)
-    v = TrialFunction(V_new)
+    u = TrialFunction(V_new)
+    v = TestFunction(V_new)
     a = inner(grad(u), grad(v)) * dx
     a = form(a)
 
@@ -92,7 +92,7 @@ def test_mpc():
     build_sparsity_pattern_mpc(sp, a, mpc, mpc)
     sp.finalize()
 
-    A = matrix_csr(sp)
+    A = matrix_csr(sp, dtype=default_scalar_type)
     assemble_matrix_mpc(mpc, A, a, [bc])
     set_bc_diagonal(A, V_new, [bc], 1.0)
     A.scatter_reverse()
