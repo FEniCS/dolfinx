@@ -20,7 +20,7 @@ from dolfinx.mesh import create_mesh
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("space_type", ["RT"])
 @pytest.mark.parametrize("order", [1, 2, 3, 4, 5])
-def test_div_conforming_triangle(space_type, order):
+def test_div_conforming_triangle(space_type, order) -> None:
     """Checks that the vectors in div conforming spaces on a triangle are correctly oriented."""
 
     # Create simple triangle mesh
@@ -51,7 +51,7 @@ def test_div_conforming_triangle(space_type, order):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("space_type", ["RT"])
 @pytest.mark.parametrize("order", [1, 2, 3, 4, 5])
-def test_div_conforming_tetrahedron(space_type, order):
+def test_div_conforming_tetrahedron(space_type, order) -> None:
     """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented."""
 
     # Create simple tetrahedron cell mesh

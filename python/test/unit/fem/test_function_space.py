@@ -63,7 +63,7 @@ def W2(g):
     return g.function_space
 
 
-def test_python_interface(V, V2, W, W2, Q):
+def test_python_interface(V, V2, W, W2, Q) -> None:
     # Test Python interface of cpp generated functionspace
     assert isinstance(V, FunctionSpace)
     assert isinstance(W, FunctionSpace)
@@ -80,7 +80,7 @@ def test_python_interface(V, V2, W, W2, Q):
     assert V is V2
 
 
-def test_component(V, W, Q):
+def test_component(V, W, Q) -> None:
     assert not W.component()
     assert not V.component()
     assert W.sub(0).component()[0] == 0
@@ -89,14 +89,14 @@ def test_component(V, W, Q):
     assert Q.sub(1).component()[0] == 1
 
 
-def test_equality(V, V2, W, W2):
+def test_equality(V, V2, W, W2) -> None:
     assert V == V  # /NOSONAR
     assert V == V2
     assert W == W  # /NOSONAR
     assert W == W2
 
 
-def test_sub(Q, W):
+def test_sub(Q, W) -> None:
     X = Q.sub(0)
 
     with pytest.raises(IndexError):
@@ -132,7 +132,7 @@ def test_sub(Q, W):
     assert W.element == X.element
 
 
-def test_inclusion(V, Q):
+def test_inclusion(V, Q) -> None:
     assert V.contains(V)
     assert not Q.contains(V)
 
@@ -161,16 +161,16 @@ def test_inclusion(V, Q):
     assert not Q.sub(0).sub(0).contains(Q.sub(0).sub(1))
 
 
-def test_not_equal(W, V, W2, V2):
+def test_not_equal(W, V, W2, V2) -> None:
     assert W != V
     assert W2 != V2
 
 
-def test_clone(W):
+def test_clone(W) -> None:
     assert W.clone() is not W
 
 
-def test_collapse(W, V):
+def test_collapse(W, V) -> None:
     with pytest.raises(ValueError):
         Function(W.sub(1))
 
@@ -199,7 +199,7 @@ def test_collapse(W, V):
     assert f0.x.index_map.size_global == f1.x.index_map.size_global
 
 
-def test_argument_equality(mesh, V, V2, W, W2):
+def test_argument_equality(mesh, V, V2, W, W2) -> None:
     """Placed this test here because it's mainly about detecting differing
     function spaces.
     """
@@ -248,7 +248,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
         assert grad(v) != grad(v3)
 
 
-def test_cell_mismatch(mesh):
+def test_cell_mismatch(mesh) -> None:
     """Test that cell mismatch raises early enough from UFL."""
     e = element("P", "triangle", 1, dtype=default_real_type)
     with pytest.raises(BaseException):
@@ -269,7 +269,7 @@ def test_basix_element(V, W, Q, V2):
 
 
 @pytest.mark.skip_in_parallel
-def test_vector_function_space_cell_type():
+def test_vector_function_space_cell_type() -> None:
     """Test that the UFL element cell of a vector function
     space is correct on meshes where gdim > tdim.
     """

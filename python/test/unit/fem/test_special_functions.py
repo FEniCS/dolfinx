@@ -16,7 +16,7 @@ from dolfinx.fem import Constant, assemble_scalar, form
 from dolfinx.mesh import create_unit_cube, create_unit_interval, create_unit_square
 
 
-def test_facet_area1D():
+def test_facet_area1D() -> None:
     mesh = create_unit_interval(MPI.COMM_WORLD, 10)
 
     # NOTE: Area of a vertex is defined to 1 in ufl
@@ -41,7 +41,7 @@ def test_facet_area1D():
         #   (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron), 1. / 9)
     ],
 )
-def test_facet_area(mesh_factory):
+def test_facet_area(mesh_factory) -> None:
     """Compute facet area of cell. UFL currently only supports affine
     cells for this computation.
     """

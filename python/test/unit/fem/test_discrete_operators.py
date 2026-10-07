@@ -32,7 +32,7 @@ from dolfinx.mesh import CellType, GhostMode, cell_dim, create_unit_cube, create
         ),
     ],
 )
-def test_gradient(mesh):
+def test_gradient(mesh) -> None:
     """Test discrete gradient computation for lowest order elements."""
     V = functionspace(mesh, ("Lagrange", 1))
     W = functionspace(mesh, ("Nedelec 1st kind H(curl)", 1))
@@ -49,7 +49,7 @@ def test_gradient(mesh):
 
 
 @pytest.mark.parametrize("cell", [CellType.triangle, CellType.quadrilateral])
-def test_discrete_curl_gdim_raises(cell):
+def test_discrete_curl_gdim_raises(cell) -> None:
     """Test that discrete curl function raises for gdim != 3."""
     msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type=cell, dtype=np.float64)
     E0 = element("N1curl", msh.basix_cell(), 2, dtype=np.float64)
@@ -80,7 +80,7 @@ def test_discrete_curl_gdim_raises(cell):
         ),
     ],
 )
-def test_discrete_curl_map_raises(elements):
+def test_discrete_curl_map_raises(elements) -> None:
     """Test that discrete curl function raises for incorrect spaces."""
     msh = create_unit_cube(
         MPI.COMM_WORLD, 3, 3, 3, cell_type=CellType.tetrahedron, dtype=np.float64
@@ -285,7 +285,7 @@ def test_discrete_curl(element_data, p, dtype):
         ),
     ],
 )
-def test_gradient_interpolation(cell_type, p, q):
+def test_gradient_interpolation(cell_type, p, q) -> None:
     """Test discrete gradient computation with verification using Expression."""
     mesh, family0, family1 = cell_type
     dtype = mesh.geometry.x.dtype
@@ -327,7 +327,7 @@ def test_gradient_interpolation(cell_type, p, q):
     "cell_type",
     [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron],
 )
-def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange):
+def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange) -> None:
     """Test that discrete interpolation matrix yields the same result as interpolation."""
     from dolfinx.fem import interpolation_matrix
 
@@ -398,7 +398,7 @@ def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange):
     "cell_type",
     [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
 )
-def test_discrete_interpolation(cell_type, dtype):
+def test_discrete_interpolation(cell_type, dtype) -> None:
     tdim = cell_dim(cell_type)
     if tdim == 2:
         mesh = dolfinx.mesh.create_unit_square(

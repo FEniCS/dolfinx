@@ -87,7 +87,7 @@ def test_tabulate_dofs(mesh_factory):
         assert np.array_equal(combined_dofs, dofs3)
 
 
-def test_entity_dofs(mesh):
+def test_entity_dofs(mesh) -> None:
     """Test that num entity dofs is correctly wrapped to dolfinx::DofMap."""
     gdim = mesh.geometry.dim
 
@@ -129,7 +129,7 @@ def test_entity_dofs(mesh):
         assert all(d == cd for d, cd in zip(dofs, cdofs, strict=True))
 
 
-def test_dofmaps_is_immutable(mesh):
+def test_dofmaps_is_immutable(mesh) -> None:
     """Test that the returned dofmaps cannot be used to modify the space."""
     V = functionspace(mesh, ("Lagrange", 1))
     dofmaps = V.dofmaps
@@ -350,7 +350,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
         ),
     ],
 )
-def test_higher_order_coordinate_map(points, celltype, order):
+def test_higher_order_coordinate_map(points, celltype, order) -> None:
     """Computes physical coordinates of a cell, based on the coordinate map."""
     cells = np.array([range(len(points))])
     domain = ufl.Mesh(
@@ -381,7 +381,7 @@ def test_higher_order_coordinate_map(points, celltype, order):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2])
-def test_higher_order_tetra_coordinate_map(order):
+def test_higher_order_tetra_coordinate_map(order) -> None:
     """Compute physical coordinates of a cell from the coordinate map."""
     celltype = CellType.tetrahedron
     points = np.array(
@@ -449,7 +449,7 @@ def test_higher_order_tetra_coordinate_map(order):
 
 
 @pytest.mark.skip_in_parallel
-def test_transpose_dofmap():
+def test_transpose_dofmap() -> None:
     dofmap = np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]], dtype=np.int32)
     transpose = transpose_dofmap(dofmap, 3)
     assert np.array_equal(transpose.array, [0, 2, 5, 8, 1, 4, 3, 7, 6])
@@ -480,7 +480,7 @@ def test_empty_rank_collapse():
 
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("is_affine", [True, False])
-def test_push_forward_pull_back(gdim: int, is_affine: bool):
+def test_push_forward_pull_back(gdim: int, is_affine: bool) -> None:
     if gdim == 2:
         ct = CellType.triangle if is_affine else CellType.quadrilateral
         mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, ct)
@@ -556,7 +556,7 @@ def test_discontinuous_coordinate_element(dtype, degree):
 
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("is_affine", [True, False])
-def test_undersized_working_array(gdim: int, is_affine: bool):
+def test_undersized_working_array(gdim: int, is_affine: bool) -> None:
     """Test that an error is raised when the working memory is too small."""
     if gdim == 2:
         ct = CellType.triangle if is_affine else CellType.quadrilateral
@@ -582,7 +582,7 @@ def test_undersized_working_array(gdim: int, is_affine: bool):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_discontinuous_coordinate_element_assembly(dtype):
+def test_discontinuous_coordinate_element_assembly(dtype) -> None:
     """Test that a discontinuous coordinate element can be used in assembly."""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
 

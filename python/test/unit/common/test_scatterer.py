@@ -14,7 +14,7 @@ from dolfinx.common import index_map, scatterer
 
 
 @pytest.mark.parametrize("dtype", [np.int64, np.float32, np.float64, np.complex64, np.complex128])
-def test_scatter_forward(dtype):
+def test_scatter_forward(dtype) -> None:
     """Test forward scatter."""
     comm = MPI.COMM_WORLD
 
@@ -48,7 +48,7 @@ def test_scatter_forward(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.int64, np.float32, np.float64, np.complex64, np.complex128])
-def test_scatter_reverse(dtype):
+def test_scatter_reverse(dtype) -> None:
     """Test reverse scatter."""
     comm = MPI.COMM_WORLD
 

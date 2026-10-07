@@ -62,7 +62,7 @@ class TestPETScDiscreteOperators:
         "cell_type",
         [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron],
     )
-    def test_gradient_interpolation_petsc(self, cell_type, p, q):
+    def test_gradient_interpolation_petsc(self, cell_type, p, q) -> None:
         """Test discrete gradient computation with verification using Expression."""
         from dolfinx.fem.petsc import discrete_gradient
 
@@ -132,7 +132,7 @@ class TestPETScDiscreteOperators:
         "cell_type",
         [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron],
     )
-    def test_interpolation_matrix_petsc(self, cell_type, p, q, from_lagrange):
+    def test_interpolation_matrix_petsc(self, cell_type, p, q, from_lagrange) -> None:
         """Test that discrete interpolation matrix yields the same result as interpolation."""
         from dolfinx.fem.petsc import interpolation_matrix
 
