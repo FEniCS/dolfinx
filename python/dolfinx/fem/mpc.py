@@ -163,7 +163,7 @@ def assemble_matrix_mpc(
         a: Bilinear form.
         bcs: Dirichlet boundary conditions.
     """
-    _cpp.fem.assemble_matrix_mpc(
+    _cpp.fem.assemble_matrix_mpc(  # type: ignore[no-matching-overload]
         mpc._cpp_object,
         A._cpp_object,
         a._cpp_object,

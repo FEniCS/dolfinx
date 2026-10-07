@@ -727,8 +727,8 @@ def assemble_matrix_mpc(
     _cpp.fem.petsc.assemble_matrix_mpc(
         mpc._cpp_object,
         A,
-        a._cpp_object,
-        [bc._cpp_object for bc in bcs],
+        a._cpp_object,  # type: ignore[arg-type]
+        [bc._cpp_object for bc in bcs],  # type: ignore[arg-type]
     )
 
 

@@ -205,7 +205,7 @@ bc.set(b.array)
 
 u = Function(V_new)
 
-ksp = PETSc.KSP().create(mesh.comm)
+ksp = PETSc.KSP().create(mesh.comm)  # type: ignore[arg-type]
 ksp.setOperators(A)
 ksp.setType("preonly")
 pc = ksp.getPC()
