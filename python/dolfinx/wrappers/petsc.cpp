@@ -238,8 +238,8 @@ void petsc_fem_module(nb::module_& m)
   m.def("assemble_matrix_mpc",
         [](const dolfinx::fem::MPC<PetscScalar, PetscReal>& mpc, Mat A,
            const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
-           const std::vector<
-               const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>& bcs)
+           const std::vector<std::shared_ptr<
+               const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>& bcs)
         {
           auto mat_add
               = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
@@ -247,10 +247,11 @@ void petsc_fem_module(nb::module_& m)
           std::vector<std::reference_wrapper<
               const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>
               _bcs;
-          for (auto bc : bcs)
+          _bcs.reserve(bcs.size());
+          for (auto& bc : bcs)
           {
             assert(bc);
-            _bcs.push_back(*bc);
+            _bcs.emplace_back(*bc);
           }
           dolfinx::fem::assemble_matrix_mpc({mpc, mpc}, mat_add, a, _bcs);
         });

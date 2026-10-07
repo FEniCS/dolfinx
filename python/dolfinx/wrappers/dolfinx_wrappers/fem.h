@@ -553,15 +553,17 @@ void declare_objects(nb::module_& m, std::string type)
   m.def("assemble_matrix_mpc",
         [](dolfinx::fem::MPC<T, U>& mpc, dolfinx::la::MatrixCSR<T>& A,
            const dolfinx::fem::Form<T, U>& a,
-           const std::vector<const dolfinx::fem::DirichletBC<T, U>*>& bcs)
+           const std::vector<
+               std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
         {
           std::vector<
               std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
               _bcs;
-          for (auto bc : bcs)
+          _bcs.reserve(bcs.size());
+          for (auto& bc : bcs)
           {
             assert(bc);
-            _bcs.push_back(*bc);
+            _bcs.emplace_back(*bc);
           }
           dolfinx::fem::assemble_mpc<T, U>(mpc, A, a, _bcs);
         });
