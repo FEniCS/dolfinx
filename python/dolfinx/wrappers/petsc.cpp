@@ -101,6 +101,14 @@ void petsc_la_module(nb::module_& m)
       nb::arg("type").none(), "Create a PETSc Mat from sparsity pattern.");
 
   m.def(
+      "create_matrix",
+      [](const dolfinx::la::SparsityPattern& p,
+         std::optional<std::string> type) -> Mat
+      { return dolfinx::la::petsc::create_matrix(p.comm(), p, type); },
+      nb::rv_policy::take_ownership, nb::arg("p"), nb::arg("type").none(),
+      "Create a PETSc Mat from sparsity pattern (comm taken from pattern).");
+
+  m.def(
       "create_index_sets",
       [](const std::vector<std::pair<const dolfinx::common::IndexMap*, int>>&
              maps) -> std::vector<IS>

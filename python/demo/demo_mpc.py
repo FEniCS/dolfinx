@@ -10,7 +10,7 @@
 
 # # Multi-point constraints
 #
-# Copyright © 2024 Chris Richardson
+# Copyright © 2024-2026 Chris Richardson
 #
 # ```{admonition} Download sources
 # :class: download
@@ -57,11 +57,11 @@ from dolfinx.fem.mpc import (
 )
 from dolfinx.fem.petsc import (
     assemble_matrix_mpc,
-    create_matrix,
     set_diagonal,
 )
 from dolfinx.io import XDMFFile
 from dolfinx.la import InsertMode
+from dolfinx.la.petsc import create_matrix as petsc_create_matrix
 from dolfinx.mesh import create_unit_square, locate_entities_boundary
 
 # ruff: noqa
@@ -169,16 +169,12 @@ L = form(inner(f, v) * dx)
 
 bc = dirichletbc(value=np.array([0.0, 0.0], dtype=PETSc.ScalarType), dofs=dofsbc, V=V_new)
 
-# Build the MPC-extended sparsity pattern. On a fully MPI-capable PETSc
-# build this can be used to pre-allocate the PETSc matrix directly with
-# dolfinx.cpp.la.petsc.create_matrix(mesh.comm, sp._cpp_object, None),
-# avoiding any runtime reallocation. For portability the demo falls back
-# to create_matrix(a) + NEW_NONZERO_LOCATIONS.
+# Create PETSc matrix from the MPC-extended sparsity pattern so PETSc
+# allocates exactly the right nonzero structure with no runtime reallocation.
 sp = create_sparsity_pattern(a)
 build_sparsity_pattern_mpc(sp, a, mpc, mpc)
 sp.finalize()
-A = create_matrix(a)
-A.setOption(PETSc.Mat.Option.NEW_NONZERO_LOCATIONS, True)
+A = petsc_create_matrix(sp)
 assemble_matrix_mpc(mpc, A, a, [bc])
 A.assemble()
 set_diagonal(A, bc.dof_indices()[0], 1.0)
