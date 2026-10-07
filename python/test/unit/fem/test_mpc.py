@@ -2,6 +2,8 @@ from mpi4py import MPI
 
 import numpy as np
 
+import dolfinx
+
 from dolfinx.fem import (
     Function,
     FunctionSpace,
@@ -77,7 +79,7 @@ def test_mpc():
     global_coeffs = [np.array([1.0], dtype=np.float64) for k in map_LR.keys()]
     mpc = MPC(V, local_dofs, global_dofs, global_coeffs)
     V_new = FunctionSpace(mesh, V.ufl_element(), mpc.V)
-    bc = dirichletbc(value=0.0, dofs=dofsbc, V=V_new)
+    bc = dirichletbc(value=dolfinx.default_scalar_type(0), dofs=dofsbc, V=V_new)
 
     # Standard Poisson problem
     u = TestFunction(V_new)

@@ -127,7 +127,7 @@ print(map_LR)
 # Create MPC
 local_dofs = np.array([k for k in map_LR.keys()], dtype=np.int32)
 global_dofs = [np.array([map_LR[k][0]], dtype=np.int64) for k in map_LR.keys()]
-global_coeffs = [np.array([map_LR[k][1]], dtype=np.float64) for k in map_LR.keys()]
+global_coeffs = [np.array([map_LR[k][1]], dtype=PETSc.ScalarType) for k in map_LR.keys()]
 
 print(local_dofs)
 
@@ -165,7 +165,7 @@ f = Function(V_new)
 f.interpolate(lambda x: [(x[0] - 0.1) ** 2 + (x[1] - 0.5) ** 2, np.zeros_like(x[1])])
 L = form(inner(f, v) * dx)
 
-bc = dirichletbc(value=np.array([0.0, 0.0], dtype=np.float64), dofs=dofsbc, V=V_new)
+bc = dirichletbc(value=np.array([0.0, 0.0], dtype=PETSc.ScalarType), dofs=dofsbc, V=V_new)
 
 # Create PETSc matrix using standard sparsity pattern, then allow MPC entries.
 # NEW_NONZERO_LOCATIONS lets the MPC assembly insert off-diagonal MPC links
