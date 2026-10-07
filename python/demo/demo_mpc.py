@@ -57,11 +57,11 @@ from dolfinx.fem.mpc import (
 )
 from dolfinx.fem.petsc import (
     assemble_matrix_mpc,
+    create_matrix,
     set_diagonal,
 )
 from dolfinx.io import XDMFFile
 from dolfinx.la import InsertMode
-from dolfinx.cpp.la.petsc import create_matrix as petsc_create_matrix
 from dolfinx.mesh import create_unit_square, locate_entities_boundary
 
 # ruff: noqa
@@ -169,11 +169,16 @@ L = form(inner(f, v) * dx)
 
 bc = dirichletbc(value=np.array([0.0, 0.0], dtype=PETSc.ScalarType), dofs=dofsbc, V=V_new)
 
-# Create PETSc matrix from the MPC-extended sparsity pattern.
+# Build the MPC-extended sparsity pattern. On a fully MPI-capable PETSc
+# build this can be used to pre-allocate the PETSc matrix directly with
+# dolfinx.cpp.la.petsc.create_matrix(mesh.comm, sp._cpp_object, None),
+# avoiding any runtime reallocation. For portability the demo falls back
+# to create_matrix(a) + NEW_NONZERO_LOCATIONS.
 sp = create_sparsity_pattern(a)
 build_sparsity_pattern_mpc(sp, a, mpc, mpc)
 sp.finalize()
-A = petsc_create_matrix(mesh.comm, sp._cpp_object, None)
+A = create_matrix(a)
+A.setOption(PETSc.Mat.Option.NEW_NONZERO_LOCATIONS, True)
 assemble_matrix_mpc(mpc, A, a, [bc])
 A.assemble()
 set_diagonal(A, bc.dof_indices()[0], 1.0)
