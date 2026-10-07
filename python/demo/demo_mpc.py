@@ -173,7 +173,7 @@ bc = dirichletbc(value=np.array([0.0, 0.0], dtype=PETSc.ScalarType), dofs=dofsbc
 sp = create_sparsity_pattern(a)
 build_sparsity_pattern_mpc(sp, a, mpc, mpc)
 sp.finalize()
-A = petsc_create_matrix(mesh.comm, sp._cpp_object)
+A = petsc_create_matrix(mesh.comm, sp._cpp_object, None)
 assemble_matrix_mpc(mpc, A, a, [bc])
 A.assemble()
 set_diagonal(A, bc.dof_indices()[0], 1.0)
