@@ -1,7 +1,9 @@
 from mpi4py import MPI
 
 import numpy as np
+import pytest
 
+import dolfinx
 from dolfinx import default_scalar_type
 from dolfinx.fem import (
     Function,
@@ -28,6 +30,10 @@ from dolfinx.mesh import create_unit_square, locate_entities_boundary
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 
+@pytest.mark.skipif(
+    dolfinx.default_scalar_type == np.complex64,
+    reason="superlu_dist is not compiled for single-precision complex",
+)
 def test_mpc():
     mesh = create_unit_square(MPI.COMM_WORLD, 50, 50)
     facets_bc = locate_entities_boundary(
