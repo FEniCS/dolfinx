@@ -33,16 +33,6 @@ except (ImportError, RuntimeError):
     pytest.skip("dolfinx.la.superlu_dist not available", allow_module_level=True)
 
 
-@pytest.mark.xfail(
-    default_scalar_type in (np.float32, np.complex64),
-    reason=(
-        "Single-precision MPC periodicity error is O(1e-2) rather than the expected"
-        " O(machine_epsilon); root cause unknown — may be a bug in float32 MPC"
-        " assembly or solution recovery. Marked xfail so CI still exercises the"
-        " float32 code path."
-    ),
-    strict=True,
-)
 def test_mpc():
     mesh = create_unit_square(MPI.COMM_WORLD, 50, 50)
     facets_bc = locate_entities_boundary(
