@@ -145,7 +145,7 @@ xdtype = PETSc.RealType
 # +
 single_precision = np.finfo(dtype).bits == 32
 rtol = 1e-5 if single_precision else 1e-8
-PCOptions = dict[str, str | int | bool]
+PCOptions = dict[str, str | int | float | bool]
 # -
 
 # Both problems report how many of their constrained degrees of freedom
