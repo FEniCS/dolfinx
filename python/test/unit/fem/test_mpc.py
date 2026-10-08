@@ -34,8 +34,8 @@ except (ImportError, RuntimeError):
 
 
 @pytest.mark.skipif(
-    default_scalar_type == np.complex64,
-    reason="superlu_dist is not compiled for single-precision complex",
+    default_scalar_type in (np.float32, np.complex64),
+    reason="superlu_dist is not compiled for single-precision scalars",
 )
 def test_mpc():
     mesh = create_unit_square(MPI.COMM_WORLD, 50, 50)
