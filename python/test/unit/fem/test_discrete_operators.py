@@ -12,6 +12,7 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import basix
 import dolfinx.la
 import ufl
 from basix.ufl import element
@@ -434,3 +435,65 @@ def test_discrete_interpolation(cell_type, dtype) -> None:
 
     atol = 100 * np.finfo(dtype).resolution
     np.testing.assert_allclose(q.x.array, q_ref.x.array, atol=atol)
+
+
+@pytest.mark.parametrize(
+    "cell_type,degree",
+    [
+        # Up to the degree that first carries interior (cell) dofs: 2 on
+        # a triangle, 3 on a tetrahedron
+        (CellType.triangle, 1),
+        (CellType.triangle, 2),
+        (CellType.tetrahedron, 1),
+        (CellType.tetrahedron, 2),
+        (CellType.tetrahedron, 3),
+    ],
+)
+def test_gradient_sparsity(cell_type, degree) -> None:
+    """Rows hold the Lagrange dofs on the closure of their entity.
+
+    A Nedelec degree-of-freedom on an entity is a moment over that
+    entity, so it can only see the Lagrange degrees-of-freedom on its
+    closure. Entries that happen to evaluate to zero are part of that
+    structure and are stored: the lowest edge moment of a gradient
+    telescopes to the difference of the endpoint values, leaving the
+    edge-interior coefficients zero, and consumers that read the
+    sparsity rather than the values (PCBDDC's Nedelec support) need
+    them.
+    """
+    if cell_type == CellType.triangle:
+        msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type, ghost_mode=GhostMode.none)
+    else:
+        msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, ghost_mode=GhostMode.none)
+
+    V = functionspace(msh, ("Lagrange", degree))
+    W = functionspace(msh, ("Nedelec 1st kind H(curl)", degree))
+    G = discrete_gradient(V, W)
+
+    tdim = msh.topology.dim
+    num_entities = [len(e) for e in basix.topology(msh.basix_cell())]
+    layout_v, layout_w = V.dofmap.dof_layout, W.dofmap.dof_layout
+    dofs_v, dofs_w = V.dofmap.list, W.dofmap.list
+    indptr, indices = G.indptr, G.indices
+    num_owned = W.dofmap.index_map.size_local
+
+    seen = set()
+    for c in range(dofs_w.shape[0]):
+        for dim in range(tdim + 1):
+            for e in range(num_entities[dim]):
+                rdofs = layout_w.entity_dofs(dim, e)
+                if len(rdofs) == 0:
+                    continue
+                seen.add(dim)
+                cols = set(dofs_v[c][layout_v.entity_closure_dofs(dim, e)])
+                for row in dofs_w[c][rdofs]:
+                    if row < num_owned:
+                        assert set(indices[indptr[row] : indptr[row + 1]]) == cols
+
+    # The case is only interesting if it reaches the dimensions it
+    # claims to: edges always, interior dofs at the highest degree here
+    assert 1 in seen
+    if (cell_type == CellType.triangle and degree > 1) or (
+        cell_type == CellType.tetrahedron and degree > 2
+    ):
+        assert tdim in seen

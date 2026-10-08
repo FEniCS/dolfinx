@@ -19,6 +19,7 @@
 #include <memory>
 #include <span>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::fem
@@ -261,9 +262,12 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
 /// algebraic multigrid solvers for \f$H({\rm curl})\f$ and \f$H({\rm
 /// div})\f$ problems.
 ///
-/// @note The sparsity pattern for a discrete operator can be
-/// initialised using sparsitybuild::cells. The space `V1` should be
-/// used for the rows of the sparsity pattern, `V0` for the columns.
+/// @note Values are inserted one mesh entity at a time: the `V1`
+/// degrees-of-freedom on an entity against the `V0` degrees-of-freedom
+/// on its closure. The sparsity pattern must hold at least those
+/// couplings, `V1` for its rows and `V0` for its columns;
+/// sparsitybuild::cells gives a pattern that is wide enough, at the
+/// cost of entries the operator cannot occupy.
 ///
 /// @warning This function relies on the user supplying appropriate
 /// input and output spaces. See parameter descriptions.
@@ -343,17 +347,58 @@ void discrete_gradient(mesh::Topology& topology,
     math::dot(_Pi, dphi_reshaped, A);
   }
 
+  // Blocks of the element matrix to insert, one per mesh entity. A
+  // degree-of-freedom of V1 attached to an entity E is a moment over E,
+  // so it sees only V0 restricted to E, which the V0
+  // degrees-of-freedom on the closure of E determine. Inserting
+  // entity-wise rather than cell-wise therefore gives the operator its
+  // exact sparsity, keeping the couplings whose value happens to
+  // vanish. Consumers that read the structure rather than the values,
+  // such as PCBDDC's Nedelec support, require those to be present.
+  const std::vector<std::vector<std::vector<int>>>& edofs1
+      = dofmap1.element_dof_layout().entity_dofs_all();
+  const std::vector<std::vector<std::vector<int>>>& cdofs0
+      = dofmap0.element_dof_layout().entity_closure_dofs_all();
+  std::vector<std::pair<std::span<const int>, std::span<const int>>> blocks;
+  std::size_t rmax = 0, cmax = 0;
+  for (std::size_t d = 0; d < edofs1.size(); ++d)
+  {
+    for (std::size_t e = 0; e < edofs1[d].size(); ++e)
+    {
+      if (edofs1[d][e].empty())
+        continue;
+      blocks.emplace_back(edofs1[d][e], cdofs0[d][e]);
+      rmax = std::max(rmax, edofs1[d][e].size());
+      cmax = std::max(cmax, cdofs0[d][e].size());
+    }
+  }
+
   // Insert local interpolation matrix for each cell
   auto cell_map = topology.index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
-  std::vector<T> Ae(Ab.size());
+  std::vector<T> Ae(Ab.size()), Ab_e(rmax * cmax);
+  std::vector<std::int32_t> rows(rmax), cols(cmax);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     std::ranges::copy(Ab, Ae.begin());
     if (apply_inverse_dof_transform)
       apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
-    mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
+    std::span<const std::int32_t> cell0 = dofmap0.cell_dofs(c);
+    std::span<const std::int32_t> cell1 = dofmap1.cell_dofs(c);
+    for (const auto& [rdofs, cdofs] : blocks)
+    {
+      for (std::size_t i = 0; i < rdofs.size(); ++i)
+        rows[i] = cell1[rdofs[i]];
+      for (std::size_t j = 0; j < cdofs.size(); ++j)
+        cols[j] = cell0[cdofs[j]];
+      for (std::size_t i = 0; i < rdofs.size(); ++i)
+        for (std::size_t j = 0; j < cdofs.size(); ++j)
+          Ab_e[i * cdofs.size() + j] = Ae[rdofs[i] * ndofs0 + cdofs[j]];
+      mat_set(std::span(rows.data(), rdofs.size()),
+              std::span(cols.data(), cdofs.size()),
+              std::span(Ab_e.data(), rdofs.size() * cdofs.size()));
+    }
   }
 }
 
