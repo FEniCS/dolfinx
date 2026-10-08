@@ -34,7 +34,16 @@ class TestPETScDiscreteOperators:
         from dolfinx.fem.petsc import discrete_gradient
 
         msh = create_unit_square(MPI.COMM_WORLD, 2, 2)
-        V = functionspace(msh, element(family, msh.basix_cell(), 1, discontinuous=discontinuous))
+        V = functionspace(
+            msh,
+            element(
+                family,
+                msh.basix_cell(),
+                1,
+                discontinuous=discontinuous,
+                dtype=default_real_type,
+            ),
+        )
         W = functionspace(msh, ("N1curl", 1))
         with pytest.raises(ValueError, match="Source element must be H1-conforming"):
             discrete_gradient(V, W)
@@ -44,7 +53,10 @@ class TestPETScDiscreteOperators:
         from dolfinx.fem.petsc import discrete_curl
 
         msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
-        V = functionspace(msh, element("N1curl", msh.basix_cell(), 1, discontinuous=True))
+        V = functionspace(
+            msh,
+            element("N1curl", msh.basix_cell(), 1, discontinuous=True, dtype=default_real_type),
+        )
         W = functionspace(msh, ("RT", 1))
         with pytest.raises(ValueError, match=r"Source element must be H\(curl\)-conforming"):
             discrete_curl(V, W)

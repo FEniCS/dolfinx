@@ -15,6 +15,7 @@ import pytest
 import dolfinx.la
 import ufl
 from basix.ufl import element
+from dolfinx import default_real_type
 from dolfinx.fem import Expression, Function, discrete_curl, discrete_gradient, functionspace
 from dolfinx.mesh import (
     CellType,
@@ -74,7 +75,10 @@ def test_discrete_gradient_nonconforming_source_raises(cell_type, family, discon
         msh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type=cell_type)
     else:
         msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
-    V = functionspace(msh, element(family, msh.basix_cell(), 1, discontinuous=discontinuous))
+    V = functionspace(
+        msh,
+        element(family, msh.basix_cell(), 1, discontinuous=discontinuous, dtype=default_real_type),
+    )
     W = functionspace(msh, ("N1curl", 1))
     with pytest.raises(ValueError, match="Source element must be H1-conforming"):
         discrete_gradient(V, W)
@@ -84,7 +88,10 @@ def test_discrete_gradient_nonconforming_source_raises(cell_type, family, discon
 def test_discrete_curl_discontinuous_source_raises(cell_type) -> None:
     """Reject discontinuous source elements before applying the closure stencil."""
     msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
-    V = functionspace(msh, element("N1curl", msh.basix_cell(), 1, discontinuous=True))
+    V = functionspace(
+        msh,
+        element("N1curl", msh.basix_cell(), 1, discontinuous=True, dtype=default_real_type),
+    )
     W = functionspace(msh, ("RT", 1))
     with pytest.raises(ValueError, match=r"Source element must be H\(curl\)-conforming"):
         discrete_curl(V, W)
