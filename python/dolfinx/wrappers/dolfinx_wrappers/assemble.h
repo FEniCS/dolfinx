@@ -152,7 +152,8 @@ void declare_discrete_operators(nanobind::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
+        dolfinx::la::SparsityPattern sp
+            = dolfinx::fem::create_discrete_curl_sparsity(V0, V1);
 
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);

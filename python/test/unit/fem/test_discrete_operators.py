@@ -444,33 +444,38 @@ def test_discrete_interpolation(cell_type, dtype) -> None:
 
 
 @pytest.mark.parametrize(
-    "cell_type,degree,entity_dims",
+    "cell_type,family0,family1,degree,entity_dims",
     [
-        (CellType.triangle, 1, {1}),
-        (CellType.triangle, 2, {1, 2}),
-        (CellType.tetrahedron, 1, {1}),
-        (CellType.tetrahedron, 2, {1, 2}),
-        (CellType.tetrahedron, 3, {1, 2, 3}),
+        # Each operator from lowest order up to the degree that first
+        # carries interior (cell) degrees-of-freedom
+        (CellType.triangle, "Lagrange", "N1curl", 1, {1}),
+        (CellType.triangle, "Lagrange", "N1curl", 2, {1, 2}),
+        (CellType.tetrahedron, "Lagrange", "N1curl", 1, {1}),
+        (CellType.tetrahedron, "Lagrange", "N1curl", 2, {1, 2}),
+        (CellType.tetrahedron, "Lagrange", "N1curl", 3, {1, 2, 3}),
+        (CellType.tetrahedron, "N1curl", "RT", 1, {2}),
+        (CellType.tetrahedron, "N1curl", "RT", 2, {2, 3}),
     ],
 )
-def test_gradient_sparsity(cell_type, degree, entity_dims) -> None:
-    """Rows hold the Lagrange dofs on the closure of their entity.
+def test_derivative_sparsity(cell_type, family0, family1, degree, entity_dims) -> None:
+    """Rows hold the V0 dofs on the closure of their entity.
 
-    A Nedelec degree-of-freedom on an entity is a moment over that
-    entity, so it can only see the Lagrange degrees-of-freedom on its
-    closure. Entries that happen to evaluate to zero are part of that
-    structure and are stored: the lowest edge moment of a gradient
-    telescopes to the difference of the endpoint values, leaving the
-    edge-interior coefficients zero.
+    A degree-of-freedom of V1 on an entity is a moment over that
+    entity, so it can only see V0 there: the lowest edge moment of a
+    gradient is the difference of the endpoint values, and a facet
+    moment of a curl is, by Stokes' theorem, a circulation around the
+    facet boundary. Entries that happen to evaluate to zero are part of
+    that structure and are stored, since consumers such as PCBDDC read
+    the sparsity rather than the values.
     """
     if cell_type == CellType.triangle:
         msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type, ghost_mode=GhostMode.none)
     else:
         msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, ghost_mode=GhostMode.none)
 
-    V = functionspace(msh, ("Lagrange", degree))
-    W = functionspace(msh, ("Nedelec 1st kind H(curl)", degree))
-    G = discrete_gradient(V, W)
+    V = functionspace(msh, (family0, degree))
+    W = functionspace(msh, (family1, degree))
+    G = discrete_gradient(V, W) if family0 == "Lagrange" else discrete_curl(V, W)
 
     tdim = msh.topology.dim
     layout_v, layout_w = V.dofmap.dof_layout, W.dofmap.dof_layout

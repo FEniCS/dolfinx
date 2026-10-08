@@ -57,16 +57,16 @@ void declare_petsc_discrete_operators(nb::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
+        dolfinx::la::SparsityPattern sp
+            = dolfinx::fem::create_discrete_curl_sparsity(V0, V1);
 
-        // Build operator
+        // Build operator. As for the gradient, zeros are kept: the
+        // sparsity is the operator's exact one, so a stored zero
+        // records a coupling the operator may occupy.
         MPI_Comm comm = V0.mesh()->comm();
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         try
         {
-          dolfinx::common::petsc::check(
-              MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE),
-              "MatSetOption");
           dolfinx::fem::discrete_curl<U, T>(
               V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
         }
