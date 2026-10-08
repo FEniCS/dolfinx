@@ -21,6 +21,7 @@
 #   coarse space for elasticity.
 # - Solve both problems with PCHPDDM, an algebraic overlapping Schwarz
 #   method whose coarse space is computed from local eigenproblems.
+# - Precondition a curl-curl problem in $H({\rm curl})$ on a cube.
 #
 # ```{admonition} Download sources
 # :class: download
@@ -427,6 +428,79 @@ def solve_elasticity(
     return uh, its, num_shared
 
 
+# The third problem is a curl-curl, or definite Maxwell, operator on a
+# cube,
+#
+# $$
+# \int_{\Omega} \nabla \times u \cdot \nabla \times v
+# + u \cdot v \, {\rm d} x
+# = \int_{\Omega} f \cdot v \, {\rm d} x
+# \quad \forall \ v \in V,
+# $$
+#
+# discretised with lowest-order Nedelec elements of the first kind, and
+# with the tangential component of $u$ set to zero on the boundary. It
+# is solved in 3D, where $\nabla \times$ is a vector.
+#
+# The curl of a gradient vanishes, so the curl-curl term alone has the
+# whole range of the gradient in its kernel. The mass term makes the
+# operator positive definite, which is what lets CG and the two
+# preconditioners here work on it unaided. Without it — or as the mass
+# term is made small — that near-kernel is what makes Maxwell problems
+# hard, and PCBDDC has dedicated support for it, taking the discrete
+# gradient through `PCBDDCSetDiscreteGradient`. See the note at the end
+# of this demo.
+
+
+def solve_curl_curl(
+    msh: mesh.Mesh, kind: str | None, pc_options: PCOptions
+) -> tuple[fem.Function, int, int]:
+    """Solve the curl-curl problem on ``msh`` using CG.
+
+    Args:
+        msh: Mesh, which must have been built without ghost cells.
+        kind: PETSc matrix kind, ``"is"`` for ``MATIS`` or ``None``
+            for the default assembled matrix.
+        pc_options: PETSc options that select and configure the
+            preconditioner, without a prefix.
+
+    Returns:
+        The solution, the number of Krylov iterations, and the number
+        of constrained degrees of freedom shared with another process.
+    """
+    V = fem.functionspace(msh, ("N1curl", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    x = ufl.SpatialCoordinate(msh)
+    f = ufl.as_vector((ufl.sin(ufl.pi * x[1]), ufl.sin(ufl.pi * x[2]), ufl.sin(ufl.pi * x[0])))
+    a = (ufl.inner(ufl.curl(u), ufl.curl(v)) + ufl.inner(u, v)) * ufl.dx
+    L = ufl.inner(f, v) * ufl.dx
+
+    # Zero tangential component on the boundary
+    tdim = msh.topology.dim
+    msh.topology.create_connectivity(tdim - 1, tdim)
+    dofs = fem.locate_dofs_topological(V, tdim - 1, mesh.exterior_facet_indices(msh.topology))
+    bcs = [fem.dirichletbc(fem.Function(V, dtype=dtype), dofs)]
+
+    uh = fem.Function(V, name="u", dtype=dtype)
+    pc_type = pc_options["pc_type"]
+    problem = LinearProblem(
+        a,
+        L,
+        u=uh,
+        bcs=bcs,
+        kind=kind,
+        petsc_options_prefix=f"demo_dd_curl_{pc_type}_{V.dofmap.index_map.size_global}_",
+        petsc_options={
+            "ksp_type": "cg",
+            "ksp_rtol": rtol,
+            "ksp_error_if_not_converged": True,
+            **pc_options,
+        },
+    )
+    problem.solve()
+    return uh, problem.solver.getIterationNumber(), num_shared_dofs(V, dofs)
+
+
 # The number of iterations of both methods is close to independent of
 # the mesh size, so refining the mesh does not slow convergence the way
 # it would for a one-level method. Solving on a sequence of meshes
@@ -470,6 +544,15 @@ for n in (32, 64):
     for kind, pc_options in preconditioners:
         uh, its, shared = solve_elasticity(msh, kind, pc_options)
         report("Elasticity", n, uh, its, shared, pc_options, "|u|_L2", norm_L2(uh))
+
+# The curl-curl problem is posed in 3D, so it gets meshes of its own.
+for n in (8, 12):
+    msh = mesh.create_unit_cube(
+        comm, n, n, n, mesh.CellType.tetrahedron, ghost_mode=mesh.GhostMode.none, dtype=xdtype
+    )
+    for kind, pc_options in preconditioners:
+        uh, its, shared = solve_curl_curl(msh, kind, pc_options)
+        report("Curl-curl ", n, uh, its, shared, pc_options, "|u|_L2", norm_L2(uh))
 # -
 
 # With more than one process, `shared Dirichlet dofs` is non-zero: those
@@ -479,3 +562,25 @@ for n in (32, 64):
 # rather than written by the owner alone. The Poisson problem is
 # constrained on the whole boundary and the elasticity problem on one
 # edge, so the counts differ.
+
+# ## A note on PCBDDC's Nedelec support
+#
+# The curl-curl operator above carries a mass term, so it is positive
+# definite and BDDC handles it with no extra information. For the
+# singular curl-curl operator, and for the definite one as the mass
+# term shrinks, the kernel of the curl has to enter the coarse space.
+# PCBDDC supports this: it takes the discrete gradient, which DOLFINx
+# assembles with
+# :func:`~dolfinx.fem.petsc.discrete_gradient`, through
+# `PCBDDCSetDiscreteGradient`:
+#
+# ```python
+# G = discrete_gradient(fem.functionspace(msh, ("Lagrange", 1)), V)
+# ksp.getPC().setBDDCDiscreteGradient(G, order=1)
+# ```
+#
+# That path places topological requirements on the subdomains which a
+# general graph partition of an unstructured mesh does not meet, and
+# PCBDDC rejects the decomposition used here with "Unexpected SIZE OF
+# EDGE > EXTCOL SECOND PASS" from `PCBDDCNedelecSupport`. It is left
+# out of the demo for that reason.
