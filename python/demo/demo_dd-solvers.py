@@ -130,6 +130,7 @@ from dolfinx.fem.petsc import (
     apply_lifting,
     assemble_matrix,
     assemble_vector,
+    discrete_gradient,
     set_bc,
 )
 
@@ -460,8 +461,11 @@ def solve_elasticity(
 # Reading the iteration count alone would suggest the opposite.
 #
 # That near-kernel is what makes Maxwell problems hard, and PCBDDC has
-# dedicated support for it, taking the discrete gradient through
-# `PCBDDCSetDiscreteGradient`. See the note at the end of this demo.
+# dedicated support for it. It takes the discrete gradient, whose
+# range is the kernel of the curl, and puts that kernel in its coarse
+# space. :func:`~dolfinx.fem.petsc.discrete_gradient` assembles the
+# matrix, and the solver below passes it on. See the note at the end
+# of this demo for the one argument that needs care.
 
 
 def solve_curl_curl(
@@ -495,24 +499,59 @@ def solve_curl_curl(
     dofs = fem.locate_dofs_topological(V, tdim - 1, mesh.exterior_facet_indices(msh.topology))
     bcs = [fem.dirichletbc(fem.Function(V, dtype=dtype), dofs)]
 
-    uh = fem.Function(V, name="u", dtype=dtype)
+    bc = bcs[0]
+    a_form = fem.form(a, dtype=dtype)
+    L_form = fem.form(L, dtype=dtype)
+    A = assemble_matrix(a_form, bcs=[bc], kind=kind)
+    A.assemble()
+    A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
+    b = assemble_vector(L_form)
+    apply_lifting(b, [a_form], bcs=[[bc]])
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
+    set_bc(b, [bc])
+
     pc_type = pc_options["pc_type"]
-    problem = LinearProblem(
-        a,
-        L,
-        u=uh,
-        bcs=bcs,
-        kind=kind,
-        petsc_options_prefix=f"demo_dd_curl_{pc_type}_{V.dofmap.index_map.size_global}_",
-        petsc_options={
-            "ksp_type": "cg",
-            "ksp_rtol": rtol,
-            "ksp_error_if_not_converged": True,
-            **pc_options,
-        },
-    )
-    problem.solve()
-    return uh, problem.solver.getIterationNumber(), num_shared_dofs(V, dofs)
+    options: PCOptions = {
+        "ksp_type": "cg",
+        "ksp_rtol": rtol,
+        "ksp_max_it": 100,
+        "ksp_error_if_not_converged": True,
+        **pc_options,
+    }
+    prefix = f"demo_dd_curl_{pc_type}_{V.dofmap.index_map.size_global}_"
+    ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
+    ksp.setOperators(A)
+    ksp.setOptionsPrefix(prefix)
+    opts = PETSc.Options(prefix)
+    for key, value in options.items():
+        opts[key] = value  # type: ignore[index]
+    ksp.setFromOptions()
+
+    # The discrete gradient spans the kernel of the curl, and BDDC uses
+    # it to put that kernel in its coarse space. PCBDDC analyses the
+    # subdomain edges with it; `conforming=False` selects the general
+    # analysis, which a graph partition of a tetrahedral mesh needs.
+    G = None
+    if pc_type == "bddc":
+        W = fem.functionspace(msh, ("Lagrange", 1))
+        G = discrete_gradient(W, V)
+        G.assemble()
+        ksp.getPC().setBDDCDiscreteGradient(G, order=1, conforming=False)
+
+    uh = fem.Function(V, name="u", dtype=dtype)
+    ksp.solve(b, uh.x.petsc_vec)
+    for key in options:
+        del opts[key]  # type: ignore[arg-type]
+    uh.x.scatter_forward()
+
+    its = ksp.getIterationNumber()
+    num_shared = num_shared_dofs(V, dofs)
+    ksp.destroy()
+    A.destroy()
+    b.destroy()
+    if G is not None:
+        G.destroy()
+    return uh, its, num_shared
 
 
 # The number of iterations of both methods is close to independent of
@@ -579,29 +618,30 @@ for n in (8, 12):
 
 # ## A note on PCBDDC's Nedelec support
 #
-# The curl-curl operator above carries a mass term, so it is positive
-# definite and BDDC handles it with no extra information. For the
-# singular curl-curl operator, and for the definite one as the mass
-# term shrinks, the kernel of the curl has to enter the coarse space.
-# PCBDDC supports this: it takes the discrete gradient, which DOLFINx
-# assembles with
-# :func:`~dolfinx.fem.petsc.discrete_gradient`, through
-# `PCBDDCSetDiscreteGradient`:
+# `PCBDDCSetDiscreteGradient` takes an `order` and a `field`, which
+# describe the Nedelec space, and two flags. One of them,
+# `conforming`, is documented as "`PETSC_TRUE` if the mesh is
+# conforming". The mesh here is conforming, but passing `True` makes
+# PCBDDC stop with "Unexpected SIZE OF EDGE > EXTCOL SECOND PASS" from
+# `PCBDDCNedelecSupport` as soon as three subdomains meet along an
+# edge: on two processes it is fine, on three it is not. The check it
+# fails requires each subdomain edge to be a simple chain of Nedelec
+# dofs between two subdomain corners, which a graph partition of a
+# tetrahedral mesh does not give. `conforming=False` selects a general
+# analysis and runs on any partition, so that is what is used here.
 #
-# ```python
-# G = discrete_gradient(fem.functionspace(msh, ("Lagrange", 1)), V)
-# ksp.getPC().setBDDCDiscreteGradient(G, order=1)
-# ```
+# The documentation also asks that the discrete gradient hold no
+# explicitly stored zeros. DOLFINx's does hold some, but removing them
+# does not change the outcome above.
 #
-# Its default algorithm needs each subdomain edge to be a simple chain
-# of Nedelec dofs running between two subdomain corners. A graph
-# partition of an unstructured mesh does not give that, and PCBDDC
-# stops with "Unexpected SIZE OF EDGE > EXTCOL SECOND PASS" from
-# `PCBDDCNedelecSupport`. The check only runs where three or more
-# subdomains meet, so two processes are fine and three or more are not.
+# For an operator this well conditioned the coarse space the gradient
+# buys does not change the iteration count. It does improve the answer:
+# against a direct solve on a mesh of 12 cells per side, the relative
+# error is 9.5e-07 with it and 1.7e-06 without on three processes, and
+# 7.1e-07 against 1.3e-06 on six.
 #
-# `-pc_bddc_nedelec_field_primal`, Toselli's algorithm C, runs on any
-# partition, but it reaches that by making every degree-of-freedom
-# shared by three or more subdomains primal and never using the
-# structure of the discrete gradient, so it is a fallback rather than
-# the method above. It leaves the iteration count here unchanged.
+# `-pc_bddc_nedelec_field_primal`, Toselli's algorithm C, is a third
+# option. It runs on any partition, but it reaches that by making
+# every degree-of-freedom shared by three or more subdomains primal
+# and returning before the discrete gradient is read at all, so it is
+# a fallback rather than the method above.
