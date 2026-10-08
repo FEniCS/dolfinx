@@ -154,4 +154,5 @@ def test_mpc():
     left_u = left_u[np.argsort(left_y)]
     right_u = right_u[np.argsort(right_y)]
 
-    assert np.allclose(left_u, right_u, atol=1e-10)
+    atol = 1e-5 if default_scalar_type in (np.float32, np.complex64) else 1e-10
+    assert np.allclose(left_u, right_u, atol=atol)
