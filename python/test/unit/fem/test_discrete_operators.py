@@ -444,20 +444,20 @@ def test_discrete_interpolation(cell_type, dtype) -> None:
 
 
 @pytest.mark.parametrize(
-    "cell_type,family0,family1,degree,entity_dims",
+    "cell_type,op,family0,family1,degree,entity_dims",
     [
         # Each operator from lowest order up to the degree that first
         # carries interior (cell) degrees-of-freedom
-        (CellType.triangle, "Lagrange", "N1curl", 1, {1}),
-        (CellType.triangle, "Lagrange", "N1curl", 2, {1, 2}),
-        (CellType.tetrahedron, "Lagrange", "N1curl", 1, {1}),
-        (CellType.tetrahedron, "Lagrange", "N1curl", 2, {1, 2}),
-        (CellType.tetrahedron, "Lagrange", "N1curl", 3, {1, 2, 3}),
-        (CellType.tetrahedron, "N1curl", "RT", 1, {2}),
-        (CellType.tetrahedron, "N1curl", "RT", 2, {2, 3}),
+        (CellType.triangle, discrete_gradient, "Lagrange", "N1curl", 1, {1}),
+        (CellType.triangle, discrete_gradient, "Lagrange", "N1curl", 2, {1, 2}),
+        (CellType.tetrahedron, discrete_gradient, "Lagrange", "N1curl", 1, {1}),
+        (CellType.tetrahedron, discrete_gradient, "Lagrange", "N1curl", 2, {1, 2}),
+        (CellType.tetrahedron, discrete_gradient, "Lagrange", "N1curl", 3, {1, 2, 3}),
+        (CellType.tetrahedron, discrete_curl, "N1curl", "RT", 1, {2}),
+        (CellType.tetrahedron, discrete_curl, "N1curl", "RT", 2, {2, 3}),
     ],
 )
-def test_derivative_sparsity(cell_type, family0, family1, degree, entity_dims) -> None:
+def test_derivative_sparsity(cell_type, op, family0, family1, degree, entity_dims) -> None:
     """Rows hold the V0 dofs on the closure of their entity.
 
     A degree-of-freedom of V1 on an entity is a moment over that
@@ -475,15 +475,15 @@ def test_derivative_sparsity(cell_type, family0, family1, degree, entity_dims) -
 
     V = functionspace(msh, (family0, degree))
     W = functionspace(msh, (family1, degree))
-    G = discrete_gradient(V, W) if family0 == "Lagrange" else discrete_curl(V, W)
+    G = op(V, W)
 
     tdim = msh.topology.dim
     layout_v, layout_w = V.dofmap.dof_layout, W.dofmap.dof_layout
     blocks = [
-        (dim, layout_w.entity_dofs(dim, e), layout_v.entity_closure_dofs(dim, e))
+        (dim, rdofs, layout_v.entity_closure_dofs(dim, e))
         for dim in range(tdim + 1)
         for e in range(cell_num_entities(msh.topology.cell_type, dim))
-        if len(layout_w.entity_dofs(dim, e)) > 0
+        if len(rdofs := layout_w.entity_dofs(dim, e)) > 0
     ]
 
     # The degrees are chosen to reach the interior of the cell, so a

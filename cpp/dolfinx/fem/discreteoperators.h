@@ -10,13 +10,13 @@
 #include "ElementDofLayout.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
+#include "sparsitybuild.h"
 #include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
-#include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
@@ -28,161 +28,45 @@
 namespace dolfinx::fem
 {
 
-/// @brief Element-matrix blocks of a discrete derivative operator.
-///
-/// A degree-of-freedom of `V1` attached to a mesh entity is a moment
-/// over that entity, so for the operators here it sees only `V0`
-/// restricted to the entity, which the `V0` degrees-of-freedom on its
-/// closure determine. The blocks are therefore the operator's exact
-/// structure, including the couplings whose value happens to vanish.
-///
-/// @param[in] layout1 Dof layout of the space of the rows.
-/// @param[in] layout0 Dof layout of the space of the columns.
-/// @return For each entity carrying `layout1` degrees-of-freedom, the
-/// cell-local `layout1` degrees-of-freedom on the entity and the
-/// cell-local `layout0` degrees-of-freedom on its closure. The spans
-/// point into the layouts, which must outlive the return value.
-inline std::vector<std::pair<std::span<const int>, std::span<const int>>>
-entity_closure_blocks(const ElementDofLayout& layout1,
-                      const ElementDofLayout& layout0)
-{
-  const std::vector<std::vector<std::vector<int>>>& edofs1
-      = layout1.entity_dofs_all();
-  const std::vector<std::vector<std::vector<int>>>& cdofs0
-      = layout0.entity_closure_dofs_all();
-  if (edofs1.size() != cdofs0.size())
-  {
-    throw std::invalid_argument(
-        "Discrete operator spaces have different reference cells.");
-  }
-
-  std::vector<std::pair<std::span<const int>, std::span<const int>>> blocks;
-  for (std::size_t d = 0; d < edofs1.size(); ++d)
-  {
-    if (edofs1[d].size() != cdofs0[d].size())
-    {
-      throw std::invalid_argument(
-          "Discrete operator spaces have different reference cells.");
-    }
-
-    for (std::size_t e = 0; e < edofs1[d].size(); ++e)
-      if (!edofs1[d][e].empty())
-        blocks.emplace_back(edofs1[d][e], cdofs0[d][e]);
-  }
-
-  return blocks;
-}
-
 namespace impl
 {
-/// @brief Sparsity holding the entity-closure blocks of `V1` against
-/// `V0`. The caller checks that the spaces make that the operator's
-/// exact sparsity.
-template <std::floating_point U>
-la::SparsityPattern entity_closure_sparsity(const FunctionSpace<U>& V0,
-                                            const FunctionSpace<U>& V1)
+/// @brief Gather and insert the entity-closure blocks of one cell's
+/// element matrix.
+///
+/// @param[in] blocks Entity blocks, from
+/// sparsitybuild::entity_closure_blocks.
+/// @param[in] A Element matrix, its rows indexed by the space of
+/// `cell1`.
+/// @param[in] ncols Row stride of `A`.
+/// @param[in] cell0 Column-space degrees-of-freedom of the cell.
+/// @param[in] cell1 Row-space degrees-of-freedom of the cell.
+/// @param[out] rows,cols,Ae Scratch, each at least as large as the
+/// element matrix dimension it indexes.
+/// @param[in] mat_set Functor that sets values in a matrix.
+template <dolfinx::scalar T>
+void insert_entity_blocks(
+    std::span<const std::pair<std::span<const int>, std::span<const int>>>
+        blocks,
+    std::span<const T> A, std::size_t ncols,
+    std::span<const std::int32_t> cell0, std::span<const std::int32_t> cell1,
+    std::span<std::int32_t> rows, std::span<std::int32_t> cols, std::span<T> Ae,
+    auto&& mat_set)
 {
-  std::shared_ptr<const mesh::Mesh<U>> mesh = V0.mesh();
-  if (!mesh or mesh != V1.mesh())
-    throw std::invalid_argument("V0 and V1 must share a mesh.");
-
-  std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();
-  std::shared_ptr<const DofMap> dofmap1 = V1.dofmap();
-  assert(dofmap0);
-  assert(dofmap1);
-  la::SparsityPattern sp(mesh->comm(), {dofmap1->index_map, dofmap0->index_map},
-                         {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-  const std::vector<std::pair<std::span<const int>, std::span<const int>>>
-      blocks = entity_closure_blocks(dofmap1->element_dof_layout(),
-                                     dofmap0->element_dof_layout());
-  std::shared_ptr<const common::IndexMap> cell_map
-      = mesh->topology()->index_map(mesh->topology()->dim());
-  assert(cell_map);
-  const std::int32_t num_cells = cell_map->size_local();
-
-  std::size_t nrows = 0, ncols = 0;
   for (const auto& [rdofs, cdofs] : blocks)
   {
-    nrows += rdofs.size();
-    ncols += cdofs.size();
-  }
-  sp.reserve_blocks(num_cells * blocks.size(), num_cells * nrows,
-                    num_cells * ncols);
-
-  std::vector<std::int32_t> rows(dofmap1->element_dof_layout().num_dofs()),
-      cols(dofmap0->element_dof_layout().num_dofs());
-  for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    std::span<const std::int32_t> cell0 = dofmap0->cell_dofs(c);
-    std::span<const std::int32_t> cell1 = dofmap1->cell_dofs(c);
-    for (const auto& [rdofs, cdofs] : blocks)
+    std::ranges::transform(cdofs, cols.begin(),
+                           [cell0](int d) { return cell0[d]; });
+    for (std::size_t i = 0; i < rdofs.size(); ++i)
     {
-      std::ranges::transform(rdofs, rows.begin(),
-                             [cell1](int d) { return cell1[d]; });
-      std::ranges::transform(cdofs, cols.begin(),
-                             [cell0](int d) { return cell0[d]; });
-      sp.insert(std::span(rows).first(rdofs.size()),
-                std::span(cols).first(cdofs.size()));
+      rows[i] = cell1[rdofs[i]];
+      for (std::size_t j = 0; j < cdofs.size(); ++j)
+        Ae[i * cdofs.size() + j] = A[rdofs[i] * ncols + cdofs[j]];
     }
+    mat_set(rows.first(rdofs.size()), cols.first(cdofs.size()),
+            Ae.first(rdofs.size() * cdofs.size()));
   }
-  sp.finalize();
-
-  return sp;
 }
 } // namespace impl
-
-/// @brief Build a sparsity pattern for a discrete gradient operator.
-///
-/// The pattern holds exactly the couplings fem::discrete_gradient
-/// inserts, which is what that function requires and narrower than
-/// sparsitybuild::cells gives.
-///
-/// @param[in] V0 H1 space to interpolate the gradient from, used for
-/// the columns.
-/// @param[in] V1 H(curl) space to interpolate into, used for the rows.
-/// @return Finalized sparsity pattern.
-template <std::floating_point U>
-la::SparsityPattern
-create_discrete_gradient_sparsity(const FunctionSpace<U>& V0,
-                                  const FunctionSpace<U>& V1)
-{
-  // The entity-closure stencil is the operator's only for the spaces
-  // discrete_gradient itself accepts; for anything else it would be a
-  // silently too narrow pattern
-  if (V0.element()->map_type() != basix::maps::type::identity)
-    throw std::invalid_argument("Wrong finite element space for V0.");
-  if (V1.element()->map_type() != basix::maps::type::covariantPiola)
-    throw std::invalid_argument("Wrong finite element space for V1.");
-  if (V0.element()->block_size() != 1 or V1.element()->block_size() != 1)
-    throw std::invalid_argument("Block size is greater than 1.");
-
-  return impl::entity_closure_sparsity(V0, V1);
-}
-
-/// @brief Build a sparsity pattern for a discrete curl operator.
-///
-/// The pattern holds exactly the couplings fem::discrete_curl inserts,
-/// which is what that function requires and narrower than
-/// sparsitybuild::cells gives.
-///
-/// @param[in] V0 H(curl) space to take the curl of, used for the
-/// columns.
-/// @param[in] V1 H(div) space to interpolate into, used for the rows.
-/// @return Finalized sparsity pattern.
-template <std::floating_point U>
-la::SparsityPattern create_discrete_curl_sparsity(const FunctionSpace<U>& V0,
-                                                  const FunctionSpace<U>& V1)
-{
-  // As for the gradient: the stencil is the operator's only for the
-  // spaces discrete_curl itself accepts
-  if (V0.element()->map_type() != basix::maps::type::covariantPiola)
-    throw std::invalid_argument("Wrong finite element space for V0.");
-  if (V1.element()->map_type() != basix::maps::type::contravariantPiola)
-    throw std::invalid_argument("Wrong finite element space for V1.");
-
-  return impl::entity_closure_sparsity(V0, V1);
-}
 
 /// @brief Assemble a discrete curl operator.
 ///
@@ -234,7 +118,7 @@ la::SparsityPattern create_discrete_curl_sparsity(const FunctionSpace<U>& V0,
 /// \f$n \cdot \nabla \times u\f$ over the facet, which by Stokes'
 /// theorem is a circulation of \f$u\f$ around its boundary, so it sees
 /// only `V0` on the closure of that facet. Build the sparsity pattern
-/// with create_discrete_curl_sparsity, which holds exactly those
+/// with sparsitybuild::entity_closure, which holds exactly those
 /// couplings. sparsitybuild::cells is wide enough too, at the cost of
 /// entries the operator cannot occupy.
 ///
@@ -354,8 +238,8 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   // Insert the element matrix one mesh entity at a time, so that the
   // operator gets its exact sparsity
   const std::vector<std::pair<std::span<const int>, std::span<const int>>>
-      blocks = entity_closure_blocks(dofmap1->element_dof_layout(),
-                                     dofmap0->element_dof_layout());
+      blocks = sparsitybuild::entity_closure_blocks(
+          dofmap1->element_dof_layout(), dofmap0->element_dof_layout());
   std::vector<U> Ab_e(Ab.size());
   std::vector<std::int32_t> rows(space_dim1), cols(space_dim0);
 
@@ -423,24 +307,9 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
     if (apply_inverse_dof_transform1)
       apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
 
-    std::span<const std::int32_t> cell0 = dofmap0->cell_dofs(c);
-    std::span<const std::int32_t> cell1 = dofmap1->cell_dofs(c);
-    for (const auto& [rdofs, cdofs] : blocks)
-    {
-      std::ranges::transform(cdofs, cols.begin(),
-                             [cell0](int d) { return cell0[d]; });
-      for (std::size_t i = 0; i < rdofs.size(); ++i)
-      {
-        rows[i] = cell1[rdofs[i]];
-        std::span<const U> Ab_row(Ab.data() + rdofs[i] * space_dim0,
-                                  space_dim0);
-        for (std::size_t j = 0; j < cdofs.size(); ++j)
-          Ab_e[i * cdofs.size() + j] = Ab_row[cdofs[j]];
-      }
-      mat_set(std::span(rows).first(rdofs.size()),
-              std::span(cols).first(cdofs.size()),
-              std::span(Ab_e).first(rdofs.size() * cdofs.size()));
-    }
+    impl::insert_entity_blocks<U>(blocks, Ab, space_dim0, dofmap0->cell_dofs(c),
+                                  dofmap1->cell_dofs(c), rows, cols, Ab_e,
+                                  mat_set);
   }
 }
 
@@ -460,9 +329,9 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
 /// @note Values are inserted one mesh entity at a time: the `V1`
 /// degrees-of-freedom on an entity against the `V0` degrees-of-freedom
 /// on its closure. Build the sparsity pattern with
-/// create_discrete_gradient_sparsity, which holds exactly those
-/// couplings. sparsitybuild::cells is wide enough too, at the cost of
-/// entries the operator cannot occupy.
+/// sparsitybuild::entity_closure, which holds exactly those couplings.
+/// sparsitybuild::cells is wide enough too, at the cost of entries the
+/// operator cannot occupy.
 ///
 /// @warning This function relies on the user supplying appropriate
 /// input and output spaces. See parameter descriptions.
@@ -545,8 +414,8 @@ void discrete_gradient(mesh::Topology& topology,
   // Insert the element matrix one mesh entity at a time, so that the
   // operator gets its exact sparsity
   const std::vector<std::pair<std::span<const int>, std::span<const int>>>
-      blocks = entity_closure_blocks(dofmap1.element_dof_layout(),
-                                     dofmap0.element_dof_layout());
+      blocks = sparsitybuild::entity_closure_blocks(
+          dofmap1.element_dof_layout(), dofmap0.element_dof_layout());
   auto cell_map = topology.index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
@@ -557,23 +426,9 @@ void discrete_gradient(mesh::Topology& topology,
     std::ranges::copy(Ab, Ae.begin());
     if (apply_inverse_dof_transform)
       apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
-    std::span<const std::int32_t> cell0 = dofmap0.cell_dofs(c);
-    std::span<const std::int32_t> cell1 = dofmap1.cell_dofs(c);
-    for (const auto& [rdofs, cdofs] : blocks)
-    {
-      std::ranges::transform(cdofs, cols.begin(),
-                             [cell0](int d) { return cell0[d]; });
-      for (std::size_t i = 0; i < rdofs.size(); ++i)
-      {
-        rows[i] = cell1[rdofs[i]];
-        std::span<const T> Ae_row(Ae.data() + rdofs[i] * ndofs0, ndofs0);
-        for (std::size_t j = 0; j < cdofs.size(); ++j)
-          Ab_e[i * cdofs.size() + j] = Ae_row[cdofs[j]];
-      }
-      mat_set(std::span(rows).first(rdofs.size()),
-              std::span(cols).first(cdofs.size()),
-              std::span(Ab_e).first(rdofs.size() * cdofs.size()));
-    }
+    impl::insert_entity_blocks<T>(blocks, Ae, ndofs0, dofmap0.cell_dofs(c),
+                                  dofmap1.cell_dofs(c), rows, cols, Ab_e,
+                                  mat_set);
   }
 }
 
@@ -588,9 +443,10 @@ void discrete_gradient(mesh::Topology& topology,
 /// @note The sparsity pattern for a discrete operator can be
 /// initialised using sparsitybuild::cells. The space `V1` should be
 /// used for the rows of the sparsity pattern, `V0` for the columns.
-/// Unlike discrete_gradient there is no narrower pattern: `V0` is
-/// general here, so its restriction to an entity need not be
-/// determined by the degrees-of-freedom on that entity's closure.
+/// Unlike discrete_gradient and discrete_curl there is no narrower
+/// pattern: `V0` is general here, so its restriction to an entity need
+/// not be determined by the degrees-of-freedom on that entity's
+/// closure, and sparsitybuild::entity_closure does not apply.
 ///
 /// @param[in] V0 Space to interpolate from.
 /// @param[in] V1 Space to interpolate to.
