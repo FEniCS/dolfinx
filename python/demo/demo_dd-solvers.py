@@ -579,8 +579,15 @@ for n in (8, 12):
 # ksp.getPC().setBDDCDiscreteGradient(G, order=1)
 # ```
 #
-# That path places topological requirements on the subdomains which a
-# general graph partition of an unstructured mesh does not meet, and
-# PCBDDC rejects the decomposition used here with "Unexpected SIZE OF
-# EDGE > EXTCOL SECOND PASS" from `PCBDDCNedelecSupport`. It is left
-# out of the demo for that reason.
+# Its default algorithm needs each subdomain edge to be a simple chain
+# of Nedelec dofs running between two subdomain corners. A graph
+# partition of an unstructured mesh does not give that, and PCBDDC
+# stops with "Unexpected SIZE OF EDGE > EXTCOL SECOND PASS" from
+# `PCBDDCNedelecSupport`. The check only runs where three or more
+# subdomains meet, so two processes are fine and three or more are not.
+#
+# `-pc_bddc_nedelec_field_primal`, Toselli's algorithm C, makes every
+# edge dof primal rather than relying on that structure, and runs on
+# any partition. It is left out here because it does not change the
+# iteration count for an operator this well conditioned: 11 and 13
+# iterations on three and four processes, with or without it.
