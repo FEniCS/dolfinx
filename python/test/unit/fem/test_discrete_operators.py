@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2025 Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2015-2026 Garth N. Wells, Jørgen S. Dokken and OpenAI
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -64,6 +64,30 @@ def test_discrete_curl_gdim_raises(cell) -> None:
     V0, V1 = functionspace(msh, E0), functionspace(msh, E1)
     with pytest.raises(ValueError):
         discrete_curl(V0, V1)
+
+
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+@pytest.mark.parametrize("family,discontinuous", [("Lagrange", True), ("CR", False)])
+def test_discrete_gradient_nonconforming_source_raises(cell_type, family, discontinuous) -> None:
+    """Reject source layouts whose entity dofs do not determine their trace."""
+    if cell_type == CellType.triangle:
+        msh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type=cell_type)
+    else:
+        msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
+    V = functionspace(msh, element(family, msh.basix_cell(), 1, discontinuous=discontinuous))
+    W = functionspace(msh, ("N1curl", 1))
+    with pytest.raises(ValueError, match="Source element must be H1-conforming"):
+        discrete_gradient(V, W)
+
+
+@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+def test_discrete_curl_discontinuous_source_raises(cell_type) -> None:
+    """Reject discontinuous source elements before applying the closure stencil."""
+    msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
+    V = functionspace(msh, element("N1curl", msh.basix_cell(), 1, discontinuous=True))
+    W = functionspace(msh, ("RT", 1))
+    with pytest.raises(ValueError, match=r"Source element must be H\(curl\)-conforming"):
+        discrete_curl(V, W)
 
 
 @pytest.mark.parametrize(

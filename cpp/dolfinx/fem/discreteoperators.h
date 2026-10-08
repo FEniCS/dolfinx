@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2026 Garth N. Wells, Jørgen S. Dokken
+// Copyright (C) 2015-2026 Garth N. Wells, Jørgen S. Dokken, OpenAI
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -13,6 +13,7 @@
 #include "sparsitybuild.h"
 #include <algorithm>
 #include <array>
+#include <basix/sobolev-spaces.h>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -30,6 +31,28 @@ namespace dolfinx::fem
 
 namespace impl
 {
+/// @brief Check source conformity for an entity-closure derivative stencil.
+/// @param[in] element Source element.
+template <std::floating_point T>
+void check_derivative_source(const FiniteElement<T>& element)
+{
+  const basix::sobolev::space space = element.basix_element().sobolev_space();
+  const bool h1
+      = basix::sobolev::space_intersection(space, basix::sobolev::space::H1)
+        == basix::sobolev::space::H1;
+  if (element.map_type() == basix::maps::type::identity and !h1)
+  {
+    throw std::invalid_argument(
+        "Source element must be H1-conforming for the discrete gradient.");
+  }
+  if (element.map_type() == basix::maps::type::covariantPiola and !h1
+      and space != basix::sobolev::space::HCurl)
+  {
+    throw std::invalid_argument(
+        "Source element must be H(curl)-conforming for the discrete curl.");
+  }
+}
+
 /// @brief Gather and insert the entity-closure blocks of one cell's
 /// element matrix.
 ///
@@ -111,6 +134,7 @@ void insert_entity_blocks(
 ///
 /// @pre `V0` and `V1` must be vector-valued, in three spatial
 /// dimensions, and use covariant and contravariant maps, respectively.
+/// `V0` must be H(curl)-conforming.
 ///
 /// @note Values are inserted one mesh entity at a time: the `V1`
 /// degrees-of-freedom on an entity against the `V0` degrees-of-freedom
@@ -165,6 +189,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
     throw std::invalid_argument(
         "Finite element for parent space must be covariant Piola.");
   }
+  impl::check_derivative_source(*e0);
 
   std::shared_ptr<const FiniteElement<T>> e1 = V1.element();
   assert(e1);
@@ -338,7 +363,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
 ///
 /// @param[in] topology Mesh topology
 /// @param[in] V0 Lagrange element and dofmap for corresponding space to
-/// interpolate the gradient from.
+/// interpolate the gradient from. The element must be H1-conforming.
 /// @param[in] V1 Nédélec (first kind) element and dofmap for
 /// corresponding space to interpolate into.
 /// @param[in] mat_set A functor that sets values in a matrix
@@ -367,6 +392,7 @@ void discrete_gradient(mesh::Topology& topology,
     throw std::invalid_argument("Block size is greater than 1 for V0.");
   if (e0.reference_value_size() != 1)
     throw std::invalid_argument("Wrong value size for V0.");
+  impl::check_derivative_source(e0);
 
   if (e1.map_type() != basix::maps::type::covariantPiola)
     throw std::invalid_argument("Wrong finite element space for V1.");

@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson, Garth N. Wells and OpenAI
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -93,6 +93,7 @@ dolfinx::la::SparsityPattern
 create_sparsity_entity_closure(const dolfinx::fem::FunctionSpace<U>& V0,
                                const dolfinx::fem::FunctionSpace<U>& V1)
 {
+  dolfinx::fem::impl::check_derivative_source(*V0.element());
   std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh = V0.mesh();
   if (!mesh or mesh != V1.mesh())
     throw std::invalid_argument("V0 and V1 must share a mesh.");
