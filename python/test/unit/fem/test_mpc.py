@@ -33,9 +33,15 @@ except (ImportError, RuntimeError):
     pytest.skip("dolfinx.la.superlu_dist not available", allow_module_level=True)
 
 
-@pytest.mark.skipif(
+@pytest.mark.xfail(
     default_scalar_type in (np.float32, np.complex64),
-    reason="superlu_dist is not compiled for single-precision scalars",
+    reason=(
+        "Single-precision MPC periodicity error is O(1e-2) rather than the expected"
+        " O(machine_epsilon); root cause unknown — may be a bug in float32 MPC"
+        " assembly or solution recovery. Marked xfail so CI still exercises the"
+        " float32 code path."
+    ),
+    strict=True,
 )
 def test_mpc():
     mesh = create_unit_square(MPI.COMM_WORLD, 50, 50)
@@ -64,9 +70,11 @@ def test_mpc():
     globalR = np.concatenate(mesh.comm.allgather(ltog))
     globalR_coords = np.concatenate(mesh.comm.allgather(coords[dofsR]))
 
+    coord_tol = 1e-6 if coords.dtype == np.float32 else 1e-9
+
     def cfun(p0, p1):
         p1t = p1 + np.array([-1.0, 0, 0.0])
-        if np.linalg.norm(p0 - p1t) < 1e-9:
+        if np.linalg.norm(p0 - p1t) < coord_tol:
             return True
         return False
 
