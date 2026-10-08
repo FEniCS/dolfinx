@@ -19,8 +19,9 @@
 #   subdomain.
 # - Attach the rigid body modes that BDDC needs to build an effective
 #   coarse space for elasticity.
-# - Solve both problems with PCHPDDM, an algebraic overlapping Schwarz
-#   method whose coarse space is computed from local eigenproblems.
+# - Solve the Poisson and elasticity problems with PCHPDDM, an
+#   algebraic overlapping Schwarz method whose coarse space is computed
+#   from local eigenproblems.
 # - Precondition a curl-curl problem in $H({\rm curl})$ on a cube.
 #
 # ```{admonition} Download sources
@@ -31,9 +32,10 @@
 #
 # ## Equations and problem definitions
 #
-# Two problems are solved on the same mesh of the unit square, each by
-# its own function, so that the parts specific to a problem are
-# separated from the domain decomposition machinery they share.
+# Three problems are solved, each by its own function, so that the
+# parts specific to a problem are separated from the domain
+# decomposition machinery they share. The first two share a mesh of
+# the unit square; the third is posed in 3D and has its own.
 #
 # The first is the Poisson equation with homogeneous Dirichlet
 # conditions on the whole boundary,
@@ -126,7 +128,6 @@ import numpy as np
 import ufl
 from dolfinx import common, fem, mesh
 from dolfinx.fem.petsc import (
-    LinearProblem,
     apply_lifting,
     assemble_matrix,
     assemble_vector,
@@ -155,9 +156,26 @@ PCOptions = dict[str, str | int | float | bool]
 # :func:`~dolfinx.common.num_sharing_ranks` answers directly.
 
 
-def norm_L2(v) -> float:
-    """L2 norm of a UFL expression over the whole mesh."""
-    form = fem.form(ufl.inner(v, v) * ufl.dx, dtype=dtype)
+def norm_L2(v, quadrature_degree: int = 6) -> float:
+    """L2 norm of a UFL expression over the whole mesh.
+
+    The quadrature degree is set rather than estimated. The estimate
+    is adequate for the expressions here, but it is a heuristic, and
+    the integrands are not all polynomial: the Poisson error measures
+    a piecewise linear solution against a product of sines, and the
+    curl-curl norm squares a second-order Nedelec function. Degree 4
+    already moves the Poisson error in its sixth digit; 6 agrees with
+    every higher degree tried.
+
+    Args:
+        v: Expression to measure.
+        quadrature_degree: Degree of the quadrature rule.
+
+    Returns:
+        The L2 norm over the whole mesh.
+    """
+    dx = ufl.dx(metadata={"quadrature_degree": quadrature_degree})
+    form = fem.form(ufl.inner(v, v) * dx, dtype=dtype)
     return np.sqrt(form.mesh.comm.allreduce(fem.assemble_scalar(form), MPI.SUM).real)
 
 
@@ -173,6 +191,93 @@ def num_shared_dofs(V: fem.FunctionSpace, dofs: np.ndarray) -> int:
     """
     sharers = common.num_sharing_ranks(V.dofmap.index_map, dofs)
     return int(np.count_nonzero(sharers > 1))
+
+
+# All three problems are assembled and solved the same way: build the
+# operator in the format the preconditioner needs, carry the boundary
+# conditions over to the right-hand side, and run CG under an options
+# prefix of the solver's own. Only `prepare` differs, and only where a
+# preconditioner needs more than the operator itself.
+
+
+def solve_cg(
+    V: fem.FunctionSpace,
+    a: ufl.Form,
+    L: ufl.Form,
+    bcs: list,
+    dofs: np.ndarray,
+    kind: str | None,
+    pc_options: PCOptions,
+    name: str,
+    prepare=None,
+) -> tuple[fem.Function, int, int]:
+    """Assemble a problem and solve it by CG.
+
+    Args:
+        V: Space the solution lives in.
+        a: Bilinear form.
+        L: Linear form.
+        bcs: Dirichlet boundary conditions.
+        dofs: Constrained degrees-of-freedom, for the shared count.
+        kind: PETSc matrix kind, ``"is"`` for ``MATIS`` or ``None``
+            for the default assembled matrix.
+        pc_options: PETSc options that select and configure the
+            preconditioner, without a prefix.
+        name: Names this solver's options prefix.
+        prepare: Called with the matrix and the solver once both
+            exist and before the solve, for whatever the
+            preconditioner needs beyond the operator.
+
+    Returns:
+        The solution, the number of Krylov iterations, and the number
+        of constrained degrees-of-freedom shared with another process.
+    """
+    a_form, L_form = fem.form(a, dtype=dtype), fem.form(L, dtype=dtype)
+    A = assemble_matrix(a_form, bcs=bcs, kind=kind)
+    A.assemble()
+    A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
+    b = assemble_vector(L_form)
+    apply_lifting(b, [a_form], bcs=[bcs])
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
+    set_bc(b, bcs)
+
+    # Everything, Krylov method included, goes through the options
+    # database under a prefix of this solver's own, so that nothing is
+    # left behind for the next solve to inherit
+    pc_type = pc_options["pc_type"]
+    options: PCOptions = {
+        "ksp_type": "cg",
+        "ksp_rtol": rtol,
+        "ksp_max_it": 100,
+        "ksp_error_if_not_converged": True,
+        **pc_options,
+    }
+    prefix = f"demo_dd_{name}_{pc_type}_{V.dofmap.index_map.size_global}_"
+    ksp = PETSc.KSP().create(V.mesh.comm)  # type: ignore[arg-type]
+    ksp.setOperators(A)
+    ksp.setOptionsPrefix(prefix)
+    opts = PETSc.Options(prefix)
+    for key, value in options.items():
+        opts[key] = value  # type: ignore[index]
+    ksp.setFromOptions()
+    if prepare is not None:
+        prepare(A, ksp)
+
+    uh = fem.Function(V, name="u", dtype=dtype)
+    ksp.solve(b, uh.x.petsc_vec)
+
+    # Cleared after the solve, not before: PCHPDDM reads some of its
+    # options when it is first applied rather than at setFromOptions
+    for key in options:
+        del opts[key]  # type: ignore[arg-type]
+    uh.x.scatter_forward()
+
+    its = ksp.getIterationNumber()
+    num_shared = num_shared_dofs(V, dofs)
+    ksp.destroy()
+    A.destroy()
+    b.destroy()
+    return uh, its, num_shared
 
 
 # `solve_poisson` builds the Poisson problem on a given mesh and solves
@@ -209,24 +314,7 @@ def solve_poisson(
     dofs = fem.locate_dofs_topological(V, tdim - 1, mesh.exterior_facet_indices(msh.topology))
     bcs = [fem.dirichletbc(dtype(0), dofs, V)]  # type: ignore[operator]
 
-    uh = fem.Function(V, name="u", dtype=dtype)
-    pc_type = pc_options["pc_type"]
-    problem = LinearProblem(
-        a,
-        L,
-        u=uh,
-        bcs=bcs,
-        kind=kind,
-        petsc_options_prefix=f"demo_dd_poisson_{pc_type}_{V.dofmap.index_map.size_global}_",
-        petsc_options={
-            "ksp_type": "cg",
-            "ksp_rtol": rtol,
-            "ksp_error_if_not_converged": True,
-            **pc_options,
-        },
-    )
-    problem.solve()
-    return uh, problem.solver.getIterationNumber(), num_shared_dofs(V, dofs)
+    return solve_cg(V, a, L, bcs, dofs, kind, pc_options, "poisson")
 
 
 # Elasticity needs more than this. The rigid body modes — the
@@ -373,60 +461,20 @@ def solve_elasticity(
     dofs = fem.locate_dofs_topological(V, tdim - 1, facets)
     bc = fem.dirichletbc(np.zeros(gdim, dtype=dtype), dofs, V)
 
-    # Assemble the operator and the right-hand side
-    A = assemble_matrix(a, bcs=[bc], kind=kind)
-    A.assemble()
-    b = assemble_vector(L)
-    apply_lifting(b, [a], bcs=[[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
-    set_bc(b, [bc])
+    def prepare(A, _ksp) -> None:
+        """Give BDDC the rigid body modes.
 
-    # BDDC builds its coarse space from the rigid body modes. PCHPDDM
-    # finds them itself, from the eigenproblems it solves on each
-    # subdomain, so they are neither built nor attached for it.
-    pc_type = pc_options["pc_type"]
-    if pc_type == "bddc":
-        # PETSc holds a reference once the modes are attached, so this
-        # side keeps none
-        modes = rigid_body_modes(V)
-        A.setNearNullSpace(modes)
-        modes.destroy()
-    A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
+        PCHPDDM recovers them itself, from the eigenproblems it solves
+        on each subdomain, so they are neither built nor attached for
+        it. PETSc takes its own reference on attachment, so this side
+        keeps none.
+        """
+        if pc_options["pc_type"] == "bddc":
+            modes = rigid_body_modes(V)
+            A.setNearNullSpace(modes)
+            modes.destroy()
 
-    # Everything, Krylov method included, goes through the options
-    # database under a prefix of this solver's own, so that nothing is
-    # left behind for the next solve to inherit
-    options: PCOptions = {
-        "ksp_type": "cg",
-        "ksp_rtol": rtol,
-        "ksp_max_it": 100,
-        "ksp_error_if_not_converged": True,
-        **pc_options,
-    }
-    prefix = f"demo_dd_elasticity_{pc_type}_{V.dofmap.index_map.size_global}_"
-    ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
-    ksp.setOperators(A)
-    ksp.setOptionsPrefix(prefix)
-    opts = PETSc.Options(prefix)
-    for key, value in options.items():
-        opts[key] = value  # type: ignore[index]
-    ksp.setFromOptions()
-
-    uh = fem.Function(V, name="u", dtype=dtype)
-    ksp.solve(b, uh.x.petsc_vec)
-
-    # Cleared after the solve, not before: PCHPDDM reads some of its
-    # options when it is first applied rather than at setFromOptions
-    for key in options:
-        del opts[key]  # type: ignore[arg-type]
-    uh.x.scatter_forward()
-
-    its = ksp.getIterationNumber()
-    num_shared = num_shared_dofs(V, dofs)
-    ksp.destroy()
-    A.destroy()
-    b.destroy()
-    return uh, its, num_shared
+    return solve_cg(V, a, L, [bc], dofs, kind, pc_options, "elasticity", prepare)
 
 
 # The third problem is a curl-curl, or definite Maxwell, operator on a
@@ -439,7 +487,7 @@ def solve_elasticity(
 # \quad \forall \ v \in V,
 # $$
 #
-# discretised with lowest-order Nedelec elements of the first kind, and
+# discretised with second-order Nedelec elements of the first kind, and
 # with the tangential component of $u$ set to zero on the boundary. It
 # is solved in 3D, where $\nabla \times$ is a vector. The source is
 # taken as the curl of a smooth field, so it has no component along the
@@ -454,18 +502,17 @@ def solve_elasticity(
 #
 # $\varepsilon$ cannot be taken much further without a word of warning.
 # CG stops on the relative residual, and as the operator approaches the
-# singular one a small residual stops implying a small error: at
-# $\varepsilon = 10^{-6}$ this problem "converges" in two iterations
-# with a solution 2% away from a direct one, where at
-# $\varepsilon = 10^{-2}$ it takes eight and lands within $10^{-6}$.
+# singular one a small residual stops implying a small error: on three
+# processes at `n = 8`, $\varepsilon = 10^{-6}$ "converges" in three
+# iterations with a solution almost 1% away from a direct one, where
+# $\varepsilon = 10^{-2}$ takes eight and lands within $10^{-5}$.
 # Reading the iteration count alone would suggest the opposite.
 #
 # That near-kernel is what makes Maxwell problems hard, and PCBDDC has
 # dedicated support for it. It takes the discrete gradient, whose
 # range is the kernel of the curl, and puts that kernel in its coarse
 # space. :func:`~dolfinx.fem.petsc.discrete_gradient` assembles the
-# matrix, and the solver below passes it on. See the note at the end
-# of this demo for the one argument that needs care.
+# matrix, and the solver below passes it on.
 
 
 def solve_curl_curl(
@@ -484,7 +531,7 @@ def solve_curl_curl(
         The solution, the number of Krylov iterations, and the number
         of constrained degrees of freedom shared with another process.
     """
-    V = fem.functionspace(msh, ("N1curl", 1))
+    V = fem.functionspace(msh, ("N1curl", 2))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     x = ufl.SpatialCoordinate(msh)
     g = ufl.as_vector((ufl.sin(ufl.pi * x[1]), ufl.sin(ufl.pi * x[2]), ufl.sin(ufl.pi * x[0])))
@@ -499,67 +546,33 @@ def solve_curl_curl(
     dofs = fem.locate_dofs_topological(V, tdim - 1, mesh.exterior_facet_indices(msh.topology))
     bcs = [fem.dirichletbc(fem.Function(V, dtype=dtype), dofs)]
 
-    bc = bcs[0]
-    a_form = fem.form(a, dtype=dtype)
-    L_form = fem.form(L, dtype=dtype)
-    A = assemble_matrix(a_form, bcs=[bc], kind=kind)
-    A.assemble()
-    A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
-    b = assemble_vector(L_form)
-    apply_lifting(b, [a_form], bcs=[[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
-    set_bc(b, [bc])
+    def prepare(_A, ksp) -> None:
+        """Give BDDC the discrete gradient.
 
-    pc_type = pc_options["pc_type"]
-    options: PCOptions = {
-        "ksp_type": "cg",
-        "ksp_rtol": rtol,
-        "ksp_max_it": 100,
-        "ksp_error_if_not_converged": True,
-        **pc_options,
-    }
-    prefix = f"demo_dd_curl_{pc_type}_{V.dofmap.index_map.size_global}_"
-    ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
-    ksp.setOperators(A)
-    ksp.setOptionsPrefix(prefix)
-    opts = PETSc.Options(prefix)
-    for key, value in options.items():
-        opts[key] = value  # type: ignore[index]
-    ksp.setFromOptions()
+        Its range is the kernel of the curl, which BDDC puts into its
+        coarse space. PCBDDC analyses the subdomain edges with it, and
+        `conforming=False` selects the general analysis that a graph
+        partition of a tetrahedral mesh needs. PETSc takes its own
+        reference, so this side keeps none.
+        """
+        if pc_options["pc_type"] == "bddc":
+            # The gradient maps the H1 space of the same degree into V
+            W = fem.functionspace(msh, ("Lagrange", 2))
+            G = discrete_gradient(W, V)
+            G.assemble()
+            ksp.getPC().setBDDCDiscreteGradient(G, order=2, conforming=False)
+            G.destroy()
 
-    # The discrete gradient spans the kernel of the curl, and BDDC uses
-    # it to put that kernel in its coarse space. PCBDDC analyses the
-    # subdomain edges with it; `conforming=False` selects the general
-    # analysis, which a graph partition of a tetrahedral mesh needs.
-    G = None
-    if pc_type == "bddc":
-        W = fem.functionspace(msh, ("Lagrange", 1))
-        G = discrete_gradient(W, V)
-        G.assemble()
-        ksp.getPC().setBDDCDiscreteGradient(G, order=1, conforming=False)
-
-    uh = fem.Function(V, name="u", dtype=dtype)
-    ksp.solve(b, uh.x.petsc_vec)
-    for key in options:
-        del opts[key]  # type: ignore[arg-type]
-    uh.x.scatter_forward()
-
-    its = ksp.getIterationNumber()
-    num_shared = num_shared_dofs(V, dofs)
-    ksp.destroy()
-    A.destroy()
-    b.destroy()
-    if G is not None:
-        G.destroy()
-    return uh, its, num_shared
+    return solve_cg(V, a, L, bcs, dofs, kind, pc_options, "curl", prepare)
 
 
 # The number of iterations of both methods is close to independent of
 # the mesh size, so refining the mesh does not slow convergence the way
 # it would for a one-level method. Solving on a sequence of meshes
-# shows this. Each mesh is built once and handed to every solver. Both
-# problems are also solved with PCHPDDM when PETSc provides it and
-# there is more than one process; with one there is no decomposition.
+# shows this. Each mesh is built once and handed to every solver on it.
+# The Poisson and elasticity problems are also solved with PCHPDDM when
+# PETSc provides it and there is more than one process; with one there
+# is no decomposition.
 
 
 # +
@@ -576,10 +589,41 @@ def report(label, n, uh, its, shared, pc_options, metric, value) -> None:
         )
 
 
+def has_hpddm() -> bool:
+    """Whether a PCHPDDM preconditioner can be created.
+
+    PETSc reporting HPDDM among its packages is not enough: PCHPDDM
+    loads SLEPc from ``$SLEPC_DIR/lib`` when it is first created, and
+    that fails for a SLEPc built in place, whose library sits under
+    ``$PETSC_ARCH``. Creating one is the only reliable test.
+    """
+    if not PETSc.Sys.hasExternalPackage("hpddm"):
+        return False
+    pc = PETSc.PC().create(PETSc.COMM_SELF)  # type: ignore[arg-type]
+    try:
+        # PETSc reports the failure to load before raising, so an
+        # error here is printed once and then explained below
+        pc.setType("hpddm")
+        return True
+    except PETSc.Error:
+        return False
+    finally:
+        pc.destroy()
+
+
 comm = MPI.COMM_WORLD
 preconditioners: list[tuple[str | None, PCOptions]] = [("is", bddc_options)]
-if PETSc.Sys.hasExternalPackage("hpddm") and comm.size > 1:
+# PCHPDDM has nothing to decompose on one process: it builds only its
+# coarse level, leaving the Schwarz options unused, so it is added only
+# in parallel.
+if has_hpddm() and comm.size > 1:
     preconditioners.append((None, hpddm_options))
+elif comm.rank == 0 and comm.size > 1:
+    print(
+        "PCHPDDM could not be created, so only BDDC is shown. PCHPDDM loads "
+        "SLEPc from $SLEPC_DIR/lib when first created; for a SLEPc built in "
+        "place that is $SLEPC_DIR/$PETSC_ARCH/lib."
+    )
 
 for n in (32, 64):
     # BDDC requires one non-overlapping subdomain per process, so the
@@ -598,14 +642,14 @@ for n in (32, 64):
         uh, its, shared = solve_elasticity(msh, kind, pc_options)
         report("Elasticity", n, uh, its, shared, pc_options, "|u|_L2", norm_L2(uh))
 
-# The curl-curl problem is posed in 3D, so it gets meshes of its own.
+# The curl-curl problem is posed in 3D, so it gets meshes of its own,
+# and it is solved with BDDC alone.
 for n in (8, 12):
     msh = mesh.create_unit_cube(
         comm, n, n, n, mesh.CellType.tetrahedron, ghost_mode=mesh.GhostMode.none, dtype=xdtype
     )
-    for kind, pc_options in preconditioners:
-        uh, its, shared = solve_curl_curl(msh, kind, pc_options)
-        report("Curl-curl ", n, uh, its, shared, pc_options, "|u|_L2", norm_L2(uh))
+    uh, its, shared = solve_curl_curl(msh, "is", bddc_options)
+    report("Curl-curl ", n, uh, its, shared, bddc_options, "|u|_L2", norm_L2(uh))
 # -
 
 # With more than one process, `shared Dirichlet dofs` is non-zero: those
@@ -634,11 +678,14 @@ for n in (8, 12):
 # explicitly stored zeros. DOLFINx's does hold some, but removing them
 # does not change the outcome above.
 #
-# For an operator this well conditioned the coarse space the gradient
-# buys does not change the iteration count. It does improve the answer:
-# against a direct solve on a mesh of 12 cells per side, the relative
-# error is 9.5e-07 with it and 1.7e-06 without on three processes, and
-# 7.1e-07 against 1.3e-06 on six.
+# How much the gradient buys depends on the degree of the space. For
+# the lowest-order space it changes nothing measurable: the coarse
+# space grows, from 16 primal degrees-of-freedom per subdomain to about
+# 26 on three processes, but the iteration count is unmoved at every
+# mesh, process count and $\varepsilon$ tried, and for every source
+# tried, including one lying entirely in the kernel of the curl. For
+# the second-order space used here it is the difference between a
+# solver that works and one that does not.
 #
 # `-pc_bddc_nedelec_field_primal`, Toselli's algorithm C, is a third
 # option. It runs on any partition, but it reaches that by making
