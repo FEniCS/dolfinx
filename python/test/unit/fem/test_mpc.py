@@ -27,9 +27,10 @@ from dolfinx.la import InsertMode, matrix_csr
 from dolfinx.mesh import create_unit_square, locate_entities_boundary
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
-superlu_dist = pytest.importorskip("dolfinx.la.superlu_dist")
-superlu_dist_matrix = superlu_dist.superlu_dist_matrix
-superlu_dist_solver = superlu_dist.superlu_dist_solver
+try:
+    from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
+except (ImportError, RuntimeError):
+    pytest.skip("dolfinx.la.superlu_dist not available", allow_module_level=True)
 
 
 @pytest.mark.skipif(
