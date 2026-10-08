@@ -151,7 +151,7 @@ rtol = 1e-5 if single_precision else 1e-8
 PCOptions = dict[str, str | int | float | bool]
 # -
 
-# Both problems report how many of their constrained degrees of freedom
+# Each problem reports how many of its constrained degrees of freedom
 # lie on a subdomain interface, which
 # :func:`~dolfinx.common.num_sharing_ranks` answers directly.
 
@@ -159,13 +159,11 @@ PCOptions = dict[str, str | int | float | bool]
 def norm_L2(v, quadrature_degree: int = 6) -> float:
     """L2 norm of a UFL expression over the whole mesh.
 
-    The quadrature degree is set rather than estimated. The estimate
-    is adequate for the expressions here, but it is a heuristic, and
-    the integrands are not all polynomial: the Poisson error measures
-    a piecewise linear solution against a product of sines, and the
-    curl-curl norm squares a second-order Nedelec function. Degree 4
-    already moves the Poisson error in its sixth digit; 6 agrees with
-    every higher degree tried.
+    The quadrature degree is set rather than estimated, because the
+    integrands are not all polynomial: the Poisson error measures a
+    piecewise linear solution against a product of sines, and the
+    curl-curl norm squares a second-order Nedelec function. Degree 6
+    agrees with every higher degree tried.
 
     Args:
         v: Expression to measure.
@@ -357,10 +355,7 @@ bddc_options: PCOptions = {
 #   build the eigenproblems from and falls back to one-level Schwarz.
 # - `pc_hpddm_levels_1_eps_threshold_relative`: keep the eigenvectors
 #   whose eigenvalues fall below a relative threshold, which is what
-#   sizes the coarse space. How many to compute is left to PCHPDDM:
-#   capping it with `pc_hpddm_levels_1_eps_nev` only costs iterations
-#   here, and a cap too large for a subdomain makes the eigensolver
-#   stall.
+#   sizes the coarse space. How many to compute is left to PCHPDDM.
 # - `pc_hpddm_levels_1_st_pc_type` and `pc_hpddm_levels_1_eps_pc_type`:
 #   Cholesky factorisations inside the eigensolver.
 # - `pc_hpddm_levels_1_pc_type` and `pc_hpddm_levels_1_pc_asm_overlap`:
@@ -411,13 +406,8 @@ def rigid_body_modes(V: fem.FunctionSpace) -> PETSc.NullSpace:
     return modes
 
 
-# `solve_elasticity` assembles the operator and the right-hand side
-# itself and drives a `PETSc.KSP` directly, rather than going through
-# :class:`~dolfinx.fem.petsc.LinearProblem` as the Poisson solver does,
-# to show what that class does on your behalf. It solves with CG and
-# the preconditioner described by `pc_options`, on a matrix of the kind
-# that preconditioner needs: `MATIS` for BDDC, the default assembled
-# matrix for PCHPDDM.
+# `solve_elasticity` is assembled and solved like the Poisson problem,
+# with a `prepare` step that hands BDDC the rigid body modes.
 
 
 def solve_elasticity(
@@ -499,14 +489,6 @@ def solve_elasticity(
 # the smaller it is, the closer the operator is to the singular one and
 # the harder the problem. It is set well below one here, so the
 # curl-curl term dominates.
-#
-# $\varepsilon$ cannot be taken much further without a word of warning.
-# CG stops on the relative residual, and as the operator approaches the
-# singular one a small residual stops implying a small error: on three
-# processes at `n = 8`, $\varepsilon = 10^{-6}$ "converges" in three
-# iterations with a solution almost 1% away from a direct one, where
-# $\varepsilon = 10^{-2}$ takes eight and lands within $10^{-5}$.
-# Reading the iteration count alone would suggest the opposite.
 #
 # That near-kernel is what makes Maxwell problems hard, and PCBDDC has
 # dedicated support for it. It takes the discrete gradient, whose
@@ -675,20 +657,9 @@ for n in (8, 12):
 # analysis and runs on any partition, so that is what is used here.
 #
 # The documentation also asks that the discrete gradient hold no
-# explicitly stored zeros. DOLFINx's does hold some, but removing them
-# does not change the outcome above.
+# explicitly stored zeros. The one assembled here does hold some, and
+# PCBDDC accepts it.
 #
-# How much the gradient buys depends on the degree of the space. For
-# the lowest-order space it changes nothing measurable: the coarse
-# space grows, from 16 primal degrees-of-freedom per subdomain to about
-# 26 on three processes, but the iteration count is unmoved at every
-# mesh, process count and $\varepsilon$ tried, and for every source
-# tried, including one lying entirely in the kernel of the curl. For
-# the second-order space used here it is the difference between a
-# solver that works and one that does not.
-#
-# `-pc_bddc_nedelec_field_primal`, Toselli's algorithm C, is a third
-# option. It runs on any partition, but it reaches that by making
-# every degree-of-freedom shared by three or more subdomains primal
-# and returning before the discrete gradient is read at all, so it is
-# a fallback rather than the method above.
+# The gradient matters for the second-order space used here:
+# without it the solve takes an order of magnitude more iterations,
+# and on the finer mesh it exceeds the cap set above.
