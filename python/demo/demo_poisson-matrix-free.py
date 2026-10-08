@@ -205,6 +205,8 @@ def action_A(x, y):
 # operator, `x` as an initial guess of the solution, and `b` as the
 # right hand side vector. `comm` is the MPI Communicator, `max_iter` is
 # the maximum number of iterations, `rtol` is the relative tolerance.
+# The work vectors share the scatterer of `b` rather than each creating
+# their own (and its MPI communicators).
 
 
 def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int = 200, rtol: float = 1e-6):
@@ -218,12 +220,12 @@ def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int = 200, rtol: fl
         return comm.allreduce(np.vdot(v0[:nr], v1[:nr]), MPI.SUM)
 
     # Get initial y = A.x
-    y = la.vector(b.index_map, 1, dtype=dtype)
+    y = la.vector(b.index_map, 1, b.scatterer, dtype=dtype)
     action_A(x, y)
 
     # Copy residual to p
     r = b.array - y.array
-    p = la.vector(b.index_map, 1, dtype=dtype)
+    p = la.vector(b.index_map, 1, b.scatterer, dtype=dtype)
     p.array[:] = r
 
     # Iterations of CG

@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cmath>
 #include <complex>
+#include <cstddef>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/types.h>
@@ -17,6 +19,7 @@
 #include <memory>
 #include <numeric>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -171,10 +174,18 @@ public:
 
   /// @brief Create a distributed vector using an existing scatterer.
   ///
+  /// The scatterer is shared, not copied, so construction is not
+  /// collective. A scatterer holds no block size, so it can be shared by
+  /// vectors of different block size and scalar type on the same index
+  /// map, e.g. `Vector<T> y(x.index_map(), bs, x.scatterer())`.
+  ///
   /// @param[in] map Index map that describes the parallel layout of
   /// the data.
   /// @param[in] bs Number of entries per index map 'index' (block size).
-  /// @param[in] scatterer Scatterer compatible with `map`.
+  /// @param[in] scatterer Scatterer created from `*map`.
+  /// @throws std::invalid_argument if `scatterer` is not compatible
+  /// with `map`. The scatterer indices are compared against `map` only
+  /// in Debug builds.
   Vector(std::shared_ptr<const common::IndexMap> map, int bs,
          std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer)
       : _map(std::move(map)), _bs(bs),
@@ -183,6 +194,34 @@ public:
         _buffer_local(bs * _scatterer->local_indices_block().size()),
         _buffer_remote(bs * _scatterer->remote_indices_block().size())
   {
+    const auto& remote = _scatterer->remote_indices_block();
+    if (remote.size() != static_cast<std::size_t>(_map->num_ghosts()))
+      throw std::invalid_argument("Scatterer does not match the index map.");
+
+#ifndef NDEBUG
+    // Remote indices are a permutation of the ghost positions
+    std::vector<std::int32_t> idx(remote.begin(), remote.end());
+    std::ranges::sort(idx);
+    std::vector<std::int32_t> ghost_pos(_map->num_ghosts());
+    std::iota(ghost_pos.begin(), ghost_pos.end(), 0);
+    if (idx != ghost_pos)
+    {
+      throw std::invalid_argument(
+          "Scatterer ghost indices do not match the index map.");
+    }
+
+    // Local indices are the owned indices that are ghosted elsewhere
+    const auto& local = _scatterer->local_indices_block();
+    idx.assign(local.begin(), local.end());
+    std::ranges::sort(idx);
+    auto [first, last] = std::ranges::unique(idx);
+    idx.erase(first, last);
+    if (idx != _map->shared_indices())
+    {
+      throw std::invalid_argument(
+          "Scatterer owned indices do not match the index map.");
+    }
+#endif
   }
 
   /// Copy constructor

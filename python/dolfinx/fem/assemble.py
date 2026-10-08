@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2022 Garth N. Wells, Jack S. Hale and Paul T. Kühner
+# Copyright (C) 2018-2026 Garth N. Wells, Jack S. Hale and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -16,6 +16,7 @@ import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, la
+from dolfinx.common import Scatterer
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.fem import IntegralType
@@ -109,12 +110,21 @@ def pack_coefficients(
 # -- Vector and matrix instantiation --------------------------------------
 
 
-def create_vector(V: FunctionSpace, dtype: npt.DTypeLike = default_scalar_type) -> la.Vector:
+def create_vector(
+    V: FunctionSpace,
+    dtype: npt.DTypeLike = default_scalar_type,
+    *,
+    scatterer: Scatterer | None = None,
+) -> la.Vector:
     """Create a Vector that is compatible with the given function space.
 
     Args:
         V: A function space.
         dtype: Data type of the vector.
+        scatterer: Scatterer of an existing vector or
+            :class:`dolfinx.fem.Function` on ``V`` (e.g.
+            ``u.x.scatterer``), to share it rather than create a new
+            one. See :func:`dolfinx.la.vector`.
 
     Returns:
         A vector compatible with the function space.
@@ -122,7 +132,7 @@ def create_vector(V: FunctionSpace, dtype: npt.DTypeLike = default_scalar_type) 
     # Can just take the first dofmap here, since all dof maps have the same
     # index map in mixed-topology meshes
     dofmap = V.dofmaps[0]
-    return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=dtype)
+    return la.vector(dofmap.index_map, dofmap.index_map_bs, scatterer, dtype=dtype)
 
 
 def create_matrix(a: Form, block_mode: la.BlockMode | None = None) -> la.MatrixCSR:
