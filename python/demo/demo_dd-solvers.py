@@ -433,23 +433,35 @@ def solve_elasticity(
 #
 # $$
 # \int_{\Omega} \nabla \times u \cdot \nabla \times v
-# + u \cdot v \, {\rm d} x
+# + \varepsilon \, u \cdot v \, {\rm d} x
 # = \int_{\Omega} f \cdot v \, {\rm d} x
 # \quad \forall \ v \in V,
 # $$
 #
 # discretised with lowest-order Nedelec elements of the first kind, and
 # with the tangential component of $u$ set to zero on the boundary. It
-# is solved in 3D, where $\nabla \times$ is a vector.
+# is solved in 3D, where $\nabla \times$ is a vector. The source is
+# taken as the curl of a smooth field, so it has no component along the
+# gradients.
 #
 # The curl of a gradient vanishes, so the curl-curl term alone has the
-# whole range of the gradient in its kernel. The mass term makes the
-# operator positive definite, which is what lets CG and the two
-# preconditioners here work on it unaided. Without it — or as the mass
-# term is made small — that near-kernel is what makes Maxwell problems
-# hard, and PCBDDC has dedicated support for it, taking the discrete
-# gradient through `PCBDDCSetDiscreteGradient`. See the note at the end
-# of this demo.
+# whole range of the gradient in its kernel. The mass term is what
+# makes the operator positive definite, and $\varepsilon$ weights it:
+# the smaller it is, the closer the operator is to the singular one and
+# the harder the problem. It is set well below one here, so the
+# curl-curl term dominates.
+#
+# $\varepsilon$ cannot be taken much further without a word of warning.
+# CG stops on the relative residual, and as the operator approaches the
+# singular one a small residual stops implying a small error: at
+# $\varepsilon = 10^{-6}$ this problem "converges" in two iterations
+# with a solution 2% away from a direct one, where at
+# $\varepsilon = 10^{-2}$ it takes eight and lands within $10^{-6}$.
+# Reading the iteration count alone would suggest the opposite.
+#
+# That near-kernel is what makes Maxwell problems hard, and PCBDDC has
+# dedicated support for it, taking the discrete gradient through
+# `PCBDDCSetDiscreteGradient`. See the note at the end of this demo.
 
 
 def solve_curl_curl(
@@ -471,8 +483,10 @@ def solve_curl_curl(
     V = fem.functionspace(msh, ("N1curl", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     x = ufl.SpatialCoordinate(msh)
-    f = ufl.as_vector((ufl.sin(ufl.pi * x[1]), ufl.sin(ufl.pi * x[2]), ufl.sin(ufl.pi * x[0])))
-    a = (ufl.inner(ufl.curl(u), ufl.curl(v)) + ufl.inner(u, v)) * ufl.dx
+    g = ufl.as_vector((ufl.sin(ufl.pi * x[1]), ufl.sin(ufl.pi * x[2]), ufl.sin(ufl.pi * x[0])))
+    f = ufl.curl(g)
+    eps = 1.0e-2
+    a = (ufl.inner(ufl.curl(u), ufl.curl(v)) + eps * ufl.inner(u, v)) * ufl.dx
     L = ufl.inner(f, v) * ufl.dx
 
     # Zero tangential component on the boundary
@@ -586,8 +600,8 @@ for n in (8, 12):
 # `PCBDDCNedelecSupport`. The check only runs where three or more
 # subdomains meet, so two processes are fine and three or more are not.
 #
-# `-pc_bddc_nedelec_field_primal`, Toselli's algorithm C, makes every
-# edge dof primal rather than relying on that structure, and runs on
-# any partition. It is left out here because it does not change the
-# iteration count for an operator this well conditioned: 11 and 13
-# iterations on three and four processes, with or without it.
+# `-pc_bddc_nedelec_field_primal`, Toselli's algorithm C, runs on any
+# partition, but it reaches that by making every degree-of-freedom
+# shared by three or more subdomains primal and never using the
+# structure of the discrete gradient, so it is a fallback rather than
+# the method above. It leaves the iteration count here unchanged.
