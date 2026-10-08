@@ -89,7 +89,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
         dolfinx::la::SparsityPattern sp
-            = create_sparsity_entity_closure(V0, V1);
+            = dolfinx::fem::create_discrete_gradient_sparsity(V0, V1);
 
         // Build operator. Unlike the other discrete operators, zeros
         // are kept: the sparsity is the operator's exact one, so a

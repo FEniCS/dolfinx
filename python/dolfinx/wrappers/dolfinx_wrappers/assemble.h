@@ -84,70 +84,6 @@ create_sparsity(const dolfinx::fem::FunctionSpace<U>& V0,
   return sp;
 }
 
-/// Sparsity of a discrete gradient: the V1 degrees-of-freedom on each
-/// mesh entity against the V0 degrees-of-freedom on its closure. This
-/// is the operator's exact sparsity, narrower than the cell-wise one
-/// and, unlike a pattern derived from the values, it holds the
-/// couplings whose value vanishes.
-template <typename U>
-dolfinx::la::SparsityPattern
-create_sparsity_entity_closure(const dolfinx::fem::FunctionSpace<U>& V0,
-                               const dolfinx::fem::FunctionSpace<U>& V1)
-{
-  std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh = V0.mesh();
-  if (!mesh or mesh != V1.mesh())
-    throw std::invalid_argument("V0 and V1 must share a mesh.");
-
-  std::shared_ptr<const dolfinx::fem::DofMap> dofmap0 = V0.dofmap();
-  std::shared_ptr<const dolfinx::fem::DofMap> dofmap1 = V1.dofmap();
-  assert(dofmap0);
-  assert(dofmap1);
-
-  dolfinx::la::SparsityPattern sp(
-      mesh->comm(), {dofmap1->index_map, dofmap0->index_map},
-      {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-  const std::vector<std::vector<std::vector<int>>>& edofs1
-      = dofmap1->element_dof_layout().entity_dofs_all();
-  const std::vector<std::vector<std::vector<int>>>& cdofs0
-      = dofmap0->element_dof_layout().entity_closure_dofs_all();
-  std::vector<std::pair<std::span<const int>, std::span<const int>>> blocks;
-  std::size_t rmax = 0, cmax = 0;
-  for (std::size_t d = 0; d < edofs1.size(); ++d)
-  {
-    for (std::size_t e = 0; e < edofs1[d].size(); ++e)
-    {
-      if (edofs1[d][e].empty())
-        continue;
-      blocks.emplace_back(edofs1[d][e], cdofs0[d][e]);
-      rmax = std::max(rmax, edofs1[d][e].size());
-      cmax = std::max(cmax, cdofs0[d][e].size());
-    }
-  }
-
-  int tdim = mesh->topology()->dim();
-  auto map = mesh->topology()->index_map(tdim);
-  assert(map);
-  std::vector<std::int32_t> rows(rmax), cols(cmax);
-  for (std::int32_t c = 0; c < map->size_local(); ++c)
-  {
-    std::span<const std::int32_t> cell0 = dofmap0->cell_dofs(c);
-    std::span<const std::int32_t> cell1 = dofmap1->cell_dofs(c);
-    for (const auto& [rdofs, cdofs] : blocks)
-    {
-      for (std::size_t i = 0; i < rdofs.size(); ++i)
-        rows[i] = cell1[rdofs[i]];
-      for (std::size_t j = 0; j < cdofs.size(); ++j)
-        cols[j] = cell0[cdofs[j]];
-      sp.insert(std::span(rows.data(), rdofs.size()),
-                std::span(cols.data(), cdofs.size()));
-    }
-  }
-  sp.finalize();
-
-  return sp;
-}
-
 // Declare assembler function that have multiple scalar types
 template <typename T, typename U>
 void declare_discrete_operators(nanobind::module_& m)
@@ -231,7 +167,7 @@ void declare_discrete_operators(nanobind::module_& m)
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
         dolfinx::la::SparsityPattern sp
-            = create_sparsity_entity_closure(V0, V1);
+            = dolfinx::fem::create_discrete_gradient_sparsity(V0, V1);
 
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);
