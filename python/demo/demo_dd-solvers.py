@@ -542,7 +542,7 @@ def solve_curl_curl(
             W = fem.functionspace(msh, ("Lagrange", 2))
             G = discrete_gradient(W, V)
             G.assemble()
-            ksp.getPC().setBDDCDiscreteGradient(G, order=2, conforming=False)
+            ksp.getPC().setBDDCDiscreteGradient(G, order=2, conforming=True)
             G.destroy()
 
     return solve_cg(V, a, L, bcs, dofs, kind, pc_options, "curl", prepare)
@@ -645,16 +645,21 @@ for n in (8, 12):
 # ## A note on PCBDDC's Nedelec support
 #
 # `PCBDDCSetDiscreteGradient` takes an `order` and a `field`, which
-# describe the Nedelec space, and two flags. One of them,
-# `conforming`, is documented as "`PETSC_TRUE` if the mesh is
-# conforming". The mesh here is conforming, but passing `True` makes
-# PCBDDC stop with "Unexpected SIZE OF EDGE > EXTCOL SECOND PASS" from
-# `PCBDDCNedelecSupport` as soon as three subdomains meet along an
-# edge: on two processes it is fine, on three it is not. The check it
-# fails requires each subdomain edge to be a simple chain of Nedelec
-# dofs between two subdomain corners, which a graph partition of a
-# tetrahedral mesh does not give. `conforming=False` selects a general
-# analysis and runs on any partition, so that is what is used here.
+# describe the Nedelec space, and two flags. One of them, `conforming`,
+# is documented as "`PETSC_TRUE` if the mesh is conforming". The mesh
+# here is conforming, so it is set.
+#
+# PCBDDC asks for more than the mesh under that flag: each subdomain
+# edge must be a simple chain of Nedelec degrees-of-freedom between two
+# subdomain corners, every row of the gradient along it listing
+# `order + 1` nodal degrees-of-freedom. That is a property of the
+# partition rather than of the mesh, and a graph partition of a
+# tetrahedral mesh does not always give it. Where it does not,
+# `PCBDDCNedelecSupport` stops with "Unexpected SIZE OF EDGE > EXTCOL
+# SECOND PASS"; the space used here runs on two to four processes and
+# stops on six. `conforming=False` is the fallback: it adds a pass
+# that makes the offending degrees-of-freedom primal, and runs on any
+# partition tried, in one or two fewer iterations.
 #
 # The documentation also asks that the discrete gradient hold no
 # explicitly stored zeros. The one assembled here does hold some, and
