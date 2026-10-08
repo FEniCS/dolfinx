@@ -36,10 +36,10 @@ namespace impl
 /// @param[in] blocks Entity blocks, from
 /// sparsitybuild::entity_closure_blocks.
 /// @param[in] A Element matrix, its rows indexed by the space of
-/// `cell1`.
+/// `cell_rows`.
 /// @param[in] ncols Row stride of `A`.
-/// @param[in] cell0 Column-space degrees-of-freedom of the cell.
-/// @param[in] cell1 Row-space degrees-of-freedom of the cell.
+/// @param[in] cell_rows Row-space degrees-of-freedom of the cell.
+/// @param[in] cell_cols Column-space degrees-of-freedom of the cell.
 /// @param[out] rows,cols,Ae Scratch, each at least as large as the
 /// element matrix dimension it indexes.
 /// @param[in] mat_set Functor that sets values in a matrix.
@@ -48,17 +48,17 @@ void insert_entity_blocks(
     std::span<const std::pair<std::span<const int>, std::span<const int>>>
         blocks,
     std::span<const T> A, std::size_t ncols,
-    std::span<const std::int32_t> cell0, std::span<const std::int32_t> cell1,
-    std::span<std::int32_t> rows, std::span<std::int32_t> cols, std::span<T> Ae,
-    auto&& mat_set)
+    std::span<const std::int32_t> cell_rows,
+    std::span<const std::int32_t> cell_cols, std::span<std::int32_t> rows,
+    std::span<std::int32_t> cols, std::span<T> Ae, auto&& mat_set)
 {
   for (const auto& [rdofs, cdofs] : blocks)
   {
     std::ranges::transform(cdofs, cols.begin(),
-                           [cell0](int d) { return cell0[d]; });
+                           [cell_cols](int d) { return cell_cols[d]; });
     for (std::size_t i = 0; i < rdofs.size(); ++i)
     {
-      rows[i] = cell1[rdofs[i]];
+      rows[i] = cell_rows[rdofs[i]];
       for (std::size_t j = 0; j < cdofs.size(); ++j)
         Ae[i * cdofs.size() + j] = A[rdofs[i] * ncols + cdofs[j]];
     }
@@ -307,8 +307,8 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
     if (apply_inverse_dof_transform1)
       apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
 
-    impl::insert_entity_blocks<U>(blocks, Ab, space_dim0, dofmap0->cell_dofs(c),
-                                  dofmap1->cell_dofs(c), rows, cols, Ab_e,
+    impl::insert_entity_blocks<U>(blocks, Ab, space_dim0, dofmap1->cell_dofs(c),
+                                  dofmap0->cell_dofs(c), rows, cols, Ab_e,
                                   mat_set);
   }
 }
@@ -426,8 +426,8 @@ void discrete_gradient(mesh::Topology& topology,
     std::ranges::copy(Ab, Ae.begin());
     if (apply_inverse_dof_transform)
       apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
-    impl::insert_entity_blocks<T>(blocks, Ae, ndofs0, dofmap0.cell_dofs(c),
-                                  dofmap1.cell_dofs(c), rows, cols, Ab_e,
+    impl::insert_entity_blocks<T>(blocks, Ae, ndofs0, dofmap1.cell_dofs(c),
+                                  dofmap0.cell_dofs(c), rows, cols, Ab_e,
                                   mat_set);
   }
 }

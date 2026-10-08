@@ -17,13 +17,13 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::span<const int>, std::span<const int>>>
-sparsitybuild::entity_closure_blocks(const ElementDofLayout& layout1,
-                                     const ElementDofLayout& layout0)
+sparsitybuild::entity_closure_blocks(const ElementDofLayout& layout_rows,
+                                     const ElementDofLayout& layout_cols)
 {
   const std::vector<std::vector<std::vector<int>>>& edofs1
-      = layout1.entity_dofs_all();
+      = layout_rows.entity_dofs_all();
   const std::vector<std::vector<std::vector<int>>>& cdofs0
-      = layout0.entity_closure_dofs_all();
+      = layout_cols.entity_closure_dofs_all();
   auto size = [](const std::vector<std::vector<int>>& e) { return e.size(); };
   if (!std::ranges::equal(edofs1, cdofs0, {}, size, size))
     throw std::invalid_argument("Dof layouts have different reference cells.");
@@ -41,11 +41,12 @@ void sparsitybuild::entity_closure(
     la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
 {
-  const DofMap& dofmap1 = dofmaps[0];
-  const DofMap& dofmap0 = dofmaps[1];
+  // As elsewhere in sparsitybuild, dofmaps[0] gives the rows
+  const DofMap& map0 = dofmaps[0];
+  const DofMap& map1 = dofmaps[1];
   const std::vector<std::pair<std::span<const int>, std::span<const int>>>
-      blocks = entity_closure_blocks(dofmap1.element_dof_layout(),
-                                     dofmap0.element_dof_layout());
+      blocks = entity_closure_blocks(map0.element_dof_layout(),
+                                     map1.element_dof_layout());
   if (blocks.empty())
     return;
 
@@ -53,17 +54,17 @@ void sparsitybuild::entity_closure(
   // the same block, so insert each one once. A block's rows are the
   // degrees-of-freedom of one entity, so its first row identifies it.
   std::vector<std::int8_t> seen(
-      dofmap1.index_map->size_local() + dofmap1.index_map->num_ghosts(), 0);
+      map0.index_map->size_local() + map0.index_map->num_ghosts(), 0);
 
   // Count what will be inserted, so that the pattern's cache is sized
   // once. Only the first row of each block is needed to count.
   std::size_t nblocks = 0, nrows = 0, ncols = 0;
   for (std::int32_t c : cells)
   {
-    std::span<const std::int32_t> cell1 = dofmap1.cell_dofs(c);
+    std::span<const std::int32_t> cell_rows = map0.cell_dofs(c);
     for (const auto& [rdofs, cdofs] : blocks)
     {
-      if (std::int32_t r = cell1[rdofs[0]]; !seen[r])
+      if (std::int32_t r = cell_rows[rdofs[0]]; !seen[r])
       {
         seen[r] = 1;
         ++nblocks;
@@ -75,22 +76,22 @@ void sparsitybuild::entity_closure(
   pattern.reserve_blocks(nblocks, nrows, ncols);
 
   std::ranges::fill(seen, 0);
-  std::vector<std::int32_t> rows(dofmap1.element_dof_layout().num_dofs()),
-      cols(dofmap0.element_dof_layout().num_dofs());
+  std::vector<std::int32_t> rows(map0.element_dof_layout().num_dofs()),
+      cols(map1.element_dof_layout().num_dofs());
   for (std::int32_t c : cells)
   {
-    std::span<const std::int32_t> cell0 = dofmap0.cell_dofs(c);
-    std::span<const std::int32_t> cell1 = dofmap1.cell_dofs(c);
+    std::span<const std::int32_t> cell_cols = map1.cell_dofs(c);
+    std::span<const std::int32_t> cell_rows = map0.cell_dofs(c);
     for (const auto& [rdofs, cdofs] : blocks)
     {
-      std::int32_t r = cell1[rdofs[0]];
+      std::int32_t r = cell_rows[rdofs[0]];
       if (seen[r])
         continue;
       seen[r] = 1;
       std::ranges::transform(rdofs, rows.begin(),
-                             [cell1](int d) { return cell1[d]; });
+                             [cell_rows](int d) { return cell_rows[d]; });
       std::ranges::transform(cdofs, cols.begin(),
-                             [cell0](int d) { return cell0[d]; });
+                             [cell_cols](int d) { return cell_cols[d]; });
       pattern.insert(std::span(rows).first(rdofs.size()),
                      std::span(cols).first(cdofs.size()));
     }

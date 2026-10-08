@@ -65,16 +65,16 @@ void cells(la::SparsityPattern& pattern, const std::pair<R0, R1>& cells,
 
 /// @brief Element-matrix blocks of an entity-closure stencil.
 ///
-/// @param[in] layout1 Dof layout of the space of the rows.
-/// @param[in] layout0 Dof layout of the space of the columns.
-/// @return For each reference-cell entity carrying `layout1`
-/// degrees-of-freedom, the cell-local `layout1` degrees-of-freedom on
-/// the entity and the cell-local `layout0` degrees-of-freedom on its
-/// closure. The spans point into the layouts, which must outlive the
+/// @param[in] layout_rows Dof layout of the space of the rows.
+/// @param[in] layout_cols Dof layout of the space of the columns.
+/// @return For each reference-cell entity carrying `layout_rows`
+/// degrees-of-freedom, the cell-local `layout_rows` degrees-of-freedom
+/// on the entity and the cell-local `layout_cols` degrees-of-freedom on
+/// its closure. The spans point into the layouts, which must outlive the
 /// return value.
 std::vector<std::pair<std::span<const int>, std::span<const int>>>
-entity_closure_blocks(const ElementDofLayout& layout1,
-                      const ElementDofLayout& layout0);
+entity_closure_blocks(const ElementDofLayout& layout_rows,
+                      const ElementDofLayout& layout_cols);
 
 /// @brief Iterate over cells and insert the entity-closure blocks into
 /// a sparsity pattern.
