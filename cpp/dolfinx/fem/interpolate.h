@@ -1199,6 +1199,10 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 /// considered as candidates for an interpolation point; it does not by
 /// itself decide whether a point with no actually-containing cell is
 /// assigned an owner, which is controlled by `allow_extrapolation`.
+/// @param[in] tol_pb Tolerance for convergence in Newton method for non-affine
+/// pullbacks. If the mesh geometry is affine this argument is ignored.
+/// @param[in] maxit_pb Maximum number of Newton iterations in non-affine
+/// pull-back. If the mesh geometry is affine this argument is ignored.
 /// @param[in] allow_extrapolation If `true` (default), a point from
 /// `mesh0` not actually contained in any candidate cell of `mesh1` is
 /// instead assigned the candidate cell closest to it (relevant e.g. if
@@ -1213,7 +1217,7 @@ template <std::floating_point T>
 geometry::PointOwnershipData<T> create_interpolation_data(
     const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
     const mesh::Mesh<T>& mesh1, mesh::CellRange auto&& cells, T padding,
-    bool allow_extrapolation = true)
+    T tol_pb, int maxit_pb, bool allow_extrapolation = true)
 {
   // Collect all the points at which values are needed to define the
   // interpolating function
@@ -1227,8 +1231,8 @@ geometry::PointOwnershipData<T> create_interpolation_data(
       x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
-  return geometry::determine_point_ownership<T>(mesh1, x, padding, std::nullopt,
-                                                allow_extrapolation);
+  return geometry::determine_point_ownership<T>(
+      mesh1, x, padding, tol_pb, maxit_pb, std::nullopt, allow_extrapolation);
 }
 
 template <dolfinx::scalar T, std::floating_point U>
