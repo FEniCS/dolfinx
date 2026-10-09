@@ -20,6 +20,7 @@
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
+#include <dolfinx/la/utils.h>
 #include <functional>
 #include <iterator>
 #include <map>
@@ -107,6 +108,16 @@ void petsc_la_module(nb::module_& m)
       {
         auto _maps = to_index_map_refs(maps);
         return dolfinx::la::petsc::create_index_sets(_maps);
+      },
+      nb::rv_policy::take_ownership, nb::arg("maps"));
+
+  m.def(
+      "create_global_index_sets",
+      [](const std::vector<std::pair<const dolfinx::common::IndexMap*, int>>&
+             maps) -> std::vector<IS>
+      {
+        auto _maps = to_index_map_refs(maps);
+        return dolfinx::la::petsc::create_global_index_sets(_maps);
       },
       nb::rv_policy::take_ownership, nb::arg("maps"));
 
