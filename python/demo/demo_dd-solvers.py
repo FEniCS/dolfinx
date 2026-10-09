@@ -583,10 +583,11 @@ def solve_curl_curl(
         """Give BDDC the discrete gradient.
 
         Its range is the kernel of the curl, which BDDC puts into its
-        coarse space. PCBDDC analyses the subdomain edges with it, and
-        `conforming=False` selects the general analysis that a graph
-        partition of a tetrahedral mesh needs. PETSc takes its own
-        reference, so this side keeps none.
+        coarse space. PCBDDC analyses the subdomain edges with it;
+        `conforming` says the edges are simple chains of
+        degrees-of-freedom, which holds for the partitions this demo is
+        run on. See the note at the end on when it does not. PETSc
+        takes its own reference, so this side keeps none.
         """
         if pc_options["pc_type"] == "bddc":
             # The gradient maps the H1 space of the same degree into V
