@@ -31,7 +31,7 @@ following the rules below, so that wrapper identity is predictable:
 step with the C++ object the library would hand back.
 
 Python objects supplied by the caller
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When a Python object is passed to an initialiser, store it and return it
 unchanged. Re-wrapping the corresponding C++ object would hand back a
@@ -76,7 +76,7 @@ index map:
         return _cached(self._wrappers, IndexMap, self._cpp_object.index_map(dim))
 
 Accessors that build a new C++ object
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Methods such as ``FunctionSpace.sub``, ``MatrixCSR.transpose`` and
 ``CoordinateElement.create_dof_layout`` build a new C++ object on each
