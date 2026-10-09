@@ -1,0 +1,241 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
+
+# # Multi-point constraints
+#
+# Copyright © 2024-2026 Chris Richardson
+#
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_mpc.py>`
+# * {download}`Jupyter notebook <./demo_mpc.ipynb>`
+# ```
+#
+# This demo illustrates multi-point constraints (MPCs) of the form
+# :math:`u_i = \sum_k c_k u_{\mathrm{ref},k} + g`.  It solves a linear
+# elasticity problem on the unit square and couples degrees of freedom on
+# the left boundary to corresponding dofs on the right boundary with a
+# sign flip between the two displacement components.
+
+import sys
+
+from mpi4py import MPI
+
+import dolfinx
+
+if not dolfinx.has_petsc4py:
+    print("This demo requires DOLFINx to be built with petsc4py. Exiting.")
+    sys.exit(0)
+
+from petsc4py import PETSc
+
+import numpy as np
+
+from dolfinx.fem import (
+    Function,
+    FunctionSpace,
+    apply_lifting,
+    assemble_vector,
+    create_sparsity_pattern,
+    dirichletbc,
+    form,
+    functionspace,
+    locate_dofs_topological,
+)
+from dolfinx.fem.mpc import (
+    MPC,
+    apply_mpc_solution,
+    apply_mpc_vector,
+    build_sparsity_pattern_mpc,
+)
+from dolfinx.fem.petsc import (
+    assemble_matrix_mpc,
+    set_diagonal,
+)
+from dolfinx.io import XDMFFile
+from dolfinx.la import InsertMode
+from dolfinx.la.petsc import create_matrix as petsc_create_matrix
+from dolfinx.mesh import create_unit_square, locate_entities_boundary
+
+# ruff: noqa
+from ufl import TestFunction, TrialFunction, dx, grad, inner, sym, tr, Identity
+
+mesh = create_unit_square(MPI.COMM_WORLD, 50, 50)
+facets_bc = locate_entities_boundary(
+    mesh,
+    dim=mesh.topology.dim - 1,
+    marker=lambda x: np.isclose(x[1], 0.0) & np.isclose(x[0], 0.5, 0.5),
+)
+
+facets_left = locate_entities_boundary(
+    mesh, dim=(mesh.topology.dim - 1), marker=lambda x: np.isclose(x[0], 0.0)
+)
+
+facets_right = locate_entities_boundary(
+    mesh, dim=(mesh.topology.dim - 1), marker=lambda x: np.isclose(x[0], 1.0)
+)
+
+V = functionspace(mesh, ("Lagrange", 1, (2,)))
+dofsbc = locate_dofs_topological(V=V, entity_dim=1, entities=facets_bc)
+
+dofsL = locate_dofs_topological(V=V, entity_dim=1, entities=facets_left)
+dofsR = locate_dofs_topological(V=V, entity_dim=1, entities=facets_right)
+coords = V.tabulate_dof_coordinates()
+
+print(
+    "V block size=",
+    V.dofmap.bs,
+    V.dofmap.index_map_bs,
+    V.dofmap.list,
+    V.dofmap.index_map.size_local,
+)
+
+
+ltog = V.dofmap.index_map.local_to_global(dofsR)
+globalR = np.concatenate(mesh.comm.allgather(ltog))
+globalR_coords = np.concatenate(mesh.comm.allgather(coords[dofsR]))
+
+
+def cfun(p0, p1):
+    """Find matching dofs on left and right side of the mesh.
+
+    The right side is shifted by 1.0 in x-direction.
+    """
+    p1t = p1 + np.array([-1.0, 0, 0.0])
+    if np.linalg.norm(p0 - p1t) < 1e-9:
+        return True
+    return False
+
+
+# Creating mapping of left side to right side dofs
+# using local index for left, global for right.
+map_LR = {}
+for dofL in dofsL:
+    xL = coords[dofL]
+    for dofR, xR in zip(globalR, globalR_coords):
+        if cfun(xL, xR):
+            map_LR[int(dofL) * 2] = (int(dofR * 2), 1.0)
+            map_LR[int(dofL) * 2 + 1] = (int(dofR * 2 + 1), -1.0)
+
+print(map_LR)
+
+# Create MPC
+local_dofs = np.array([k for k in map_LR.keys()], dtype=np.int32)
+global_dofs = [np.array([map_LR[k][0]], dtype=np.int64) for k in map_LR.keys()]
+global_coeffs = [np.array([map_LR[k][1]], dtype=PETSc.ScalarType) for k in map_LR.keys()]
+
+print(local_dofs)
+
+mpc = MPC(V, local_dofs, global_dofs, global_coeffs)
+for cell in mpc.cells():
+    dofs = mpc.V.dofmap.cell_dofs(cell)
+    bs = mpc.V.dofmap.bs
+    s = ""
+    for d in dofs:
+        if d * bs in local_dofs:
+            s += f" {d * bs}*"
+        else:
+            s += f" {d * bs}"
+    print(f"cell {cell} dofs {s}")
+
+ufl_e = V.ufl_element()
+V_new = FunctionSpace(mesh, ufl_e, mpc.V)
+
+E = 100.0
+ν = 0.3
+μ = E / (2.0 * (1.0 + ν))
+λ = E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
+
+
+def σ(v):
+    """Return an expression for the stress σ given a displacement field."""
+    return 2.0 * μ * sym(grad(v)) + λ * tr(sym(grad(v))) * Identity(len(v))
+
+
+v = TestFunction(V_new)
+u = TrialFunction(V_new)
+a = form(inner(σ(u), grad(v)) * dx)
+
+f = Function(V_new)
+f.interpolate(lambda x: [(x[0] - 0.1) ** 2 + (x[1] - 0.5) ** 2, np.zeros_like(x[1])])
+L = form(inner(f, v) * dx)
+
+bc = dirichletbc(value=np.array([0.0, 0.0], dtype=PETSc.ScalarType), dofs=dofsbc, V=V_new)
+
+# Create PETSc matrix from the MPC-extended sparsity pattern so PETSc
+# allocates exactly the right nonzero structure with no runtime reallocation.
+sp = create_sparsity_pattern(a)
+build_sparsity_pattern_mpc(sp, a, mpc, mpc)
+sp.finalize()
+A = petsc_create_matrix(sp)
+assemble_matrix_mpc(mpc, A, a, [bc])
+A.assemble()
+set_diagonal(A, bc.dof_indices()[0], 1.0)
+A.assemble()
+
+offsets, ref_dof, ref_coeff = mpc.constraints()
+bs = V_new.dofmap.bs
+for i in range(V_new.dofmap.index_map.size_local * bs):
+    if offsets[i + 1] - offsets[i] > 0:
+        print(
+            i,
+            "is constrained to ",
+            ref_dof[offsets[i] : offsets[i + 1]],
+            "with coeffs",
+            ref_coeff[offsets[i] : offsets[i + 1]],
+        )
+
+# Assemble RHS with MPC transformation:
+#   scatter_rev → apply_mpc_vector (P^T: b[ref] += c*b[constrained], b[constrained]=0)
+#   → scatter_rev → apply_lifting → scatter_rev → bc.set
+b = assemble_vector(L)
+b.scatter_reverse(InsertMode.add)
+apply_mpc_vector(b.array, mpc)
+b.scatter_reverse(InsertMode.add)
+apply_lifting(b.array, [a], [[bc]])
+b.scatter_reverse(InsertMode.add)
+bc.set(b.array)
+
+u = Function(V_new)
+
+ksp = PETSc.KSP().create(mesh.comm)  # type: ignore[arg-type]
+ksp.setOperators(A)
+ksp.setType("preonly")
+pc = ksp.getPC()
+pc.setType("lu")
+ksp.setFromOptions()
+ksp.solve(b.petsc_vec, u.x.petsc_vec)
+
+# Recover constrained dof values: u[i] = sum c_k * u[ref_k].
+# scatter_fwd first so reference ghost dof values are current.
+u.x.scatter_forward()
+apply_mpc_solution(u.x.array, mpc)
+
+xdmf = XDMFFile(mesh.comm, "demo_mpc.xdmf", "w")
+xdmf.write_mesh(mesh)
+u.name = "u"
+xdmf.write_function(u)
+
+# Check that each constrained dof actually matches the linear combination
+# of its reference dofs, i.e. u_i = sum_j coeff_j * u_{ref_j}
+# Only owned dofs are checked, but reference dofs may be ghosts owned by
+# another rank, so u.x must have up-to-date ghost values (scatter_forward
+# above) for this to be valid when running in parallel.
+for i in range(V_new.dofmap.index_map.size_local * bs):
+    n0, n1 = offsets[i], offsets[i + 1]
+    if n1 > n0:
+        expected = np.dot(ref_coeff[n0:n1], u.x.array[ref_dof[n0:n1]])
+        actual = u.x.array[i]
+        assert np.isclose(actual, expected), (
+            f"dof {i}: value {actual} does not match expected {expected} "
+            f"from reference dofs {ref_dof[n0:n1]}"
+        )
+if mesh.comm.rank == 0:
+    print("Constrained dofs match their reference values")

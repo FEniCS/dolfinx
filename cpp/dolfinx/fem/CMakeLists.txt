@@ -27,6 +27,8 @@ target_sources(
         Form.h
         Function.h
         FunctionSpace.h
+        MPC.h
+        assemble_mpc.h
         assemble_expression_impl.h
         assemble_matrix_impl.h
         assemble_scalar_impl.h

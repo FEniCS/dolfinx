@@ -73,6 +73,7 @@ __all__ = [
     "apply_lifting",
     "assemble_jacobian",
     "assemble_matrix",
+    "assemble_matrix_mpc",
     "assemble_residual",
     "assemble_vector",
     "assign",
@@ -699,6 +700,36 @@ def _assemble_matrix_petsc_markers(
             )
 
     return A
+
+
+def assemble_matrix_mpc(
+    mpc,
+    A: PETSc.Mat,
+    a: Form,
+    bcs: Sequence[DirichletBC] | None = None,
+) -> None:
+    """Assemble a bilinear form into a PETSc matrix with MPC replacement.
+
+    The matrix must be configured to allow new non-zero locations
+    (``A.setOption(PETSc.Mat.Option.NEW_NONZERO_LOCATIONS, True)``) before
+    calling this function, because the MPC transformation may introduce
+    entries outside the standard sparsity pattern.
+
+    Args:
+        mpc: The ``MPC`` multipoint constraint.
+        A: PETSc ``Mat`` to assemble into, created e.g. by
+            :func:`dolfinx.fem.petsc.create_matrix`.
+        a: Bilinear form.
+        bcs: Dirichlet boundary conditions to apply.
+    """
+    if bcs is None:
+        bcs = []
+    _cpp.fem.petsc.assemble_matrix_mpc(
+        mpc._cpp_object,
+        A,
+        a._cpp_object,  # type: ignore[arg-type]
+        [bc._cpp_object for bc in bcs],  # type: ignore[arg-type]
+    )
 
 
 def set_diagonal(

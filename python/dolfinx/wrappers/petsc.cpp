@@ -15,6 +15,8 @@
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/fem/MPC.h>
+#include <dolfinx/fem/assemble_mpc.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -97,6 +99,14 @@ void petsc_la_module(nb::module_& m)
       { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
       nb::rv_policy::take_ownership, nb::arg("comm"), nb::arg("p"),
       nb::arg("type").none(), "Create a PETSc Mat from sparsity pattern.");
+
+  m.def(
+      "create_matrix",
+      [](const dolfinx::la::SparsityPattern& p,
+         std::optional<std::string> type) -> Mat
+      { return dolfinx::la::petsc::create_matrix(p.comm(), p, type); },
+      nb::rv_policy::take_ownership, nb::arg("p"), nb::arg("type").none(),
+      "Create a PETSc Mat from sparsity pattern (comm taken from pattern).");
 
   m.def(
       "create_index_sets",
@@ -232,6 +242,28 @@ void petsc_fem_module(nb::module_& m)
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
       nb::arg("dof_marker0"), nb::arg("dof_marker1"), nb::arg("unrolled"),
       "Assemble bilinear form into an existing PETSc matrix");
+
+  m.def("assemble_matrix_mpc",
+        [](const dolfinx::fem::MPC<PetscScalar, PetscReal>& mpc, Mat A,
+           const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
+           const std::vector<std::shared_ptr<
+               const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>& bcs)
+        {
+          auto mat_add
+              = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
+
+          std::vector<std::reference_wrapper<
+              const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>
+              _bcs;
+          _bcs.reserve(bcs.size());
+          for (auto& bc : bcs)
+          {
+            assert(bc);
+            _bcs.emplace_back(*bc);
+          }
+          dolfinx::fem::assemble_matrix_mpc({mpc, mpc}, mat_add, a, _bcs);
+        });
+
   m.def(
       "set_diagonal",
       [](Mat A, nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,

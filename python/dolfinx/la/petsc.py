@@ -25,12 +25,12 @@ import numpy.typing as npt
 
 import dolfinx
 from dolfinx.common import IndexMap
-from dolfinx.la import Vector
+from dolfinx.la import SparsityPattern, Vector
 
 if not dolfinx.has_petsc4py:
     raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
-__all__ = ["assign", "create_vector", "create_vector_wrap"]
+__all__ = ["assign", "create_matrix", "create_vector", "create_vector_wrap"]
 
 
 def _ghost_update(
@@ -77,6 +77,26 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:
         bsize=bs,
         comm=index_map.comm,  # type: ignore[arg-type]
     )
+
+
+def create_matrix(p: SparsityPattern, kind: str | None = None) -> PETSc.Mat:
+    """Create a PETSc matrix from a sparsity pattern.
+
+    The MPI communicator is taken from the sparsity pattern itself, so
+    no separate communicator argument is required.
+
+    Args:
+        p: The sparsity pattern that describes the matrix layout. The
+            pattern must be finalised (see
+            :meth:`dolfinx.la.SparsityPattern.finalize`) before calling
+            this function.
+        kind: The PETSc matrix type (``MatType``). If ``None``, the
+            default PETSc type is used.
+
+    Returns:
+        A PETSc matrix with the sparsity described by ``p``.
+    """
+    return dolfinx.cpp.la.petsc.create_matrix(p._cpp_object, kind)  # type: ignore[attr-defined]
 
 
 def create_vector(

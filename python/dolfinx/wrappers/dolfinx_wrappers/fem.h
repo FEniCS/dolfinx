@@ -23,6 +23,8 @@
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/fem/MPC.h>
+#include <dolfinx/fem/assemble_mpc.h>
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/expression_evaluate.h>
 #include <dolfinx/fem/expression_factory.h>
@@ -32,6 +34,7 @@
 #include <dolfinx/fem/interpolate_geometry.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/sparsitypattern.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <format>
@@ -487,8 +490,137 @@ void declare_constant(nb::module_& m, std::string type)
 template <typename T, std::floating_point U = dolfinx::scalar_value_t<T>>
 void declare_objects(nb::module_& m, std::string type)
 {
+  std::string pyclass_name = std::string("MPC_") + type;
+  nb::class_<dolfinx::fem::MPC<T, U>> mpc(m, pyclass_name.c_str(),
+                                          "Multipoint constraint");
+  mpc.def("__init__",
+          [](dolfinx::fem::MPC<T, U>* mpc,
+             const dolfinx::fem::FunctionSpace<U>& V,
+             nb::ndarray<const std::int32_t, nb::c_contig> local_dofs,
+             const std::vector<nb::ndarray<const std::int64_t, nb::c_contig>>&
+                 global_dofs,
+             const std::vector<nb::ndarray<const T, nb::c_contig>>&
+                 global_coeffs)
+          {
+            if (global_dofs.size() != global_coeffs.size())
+              throw std::runtime_error("Mismatch global dofs/coeffs");
+            std::vector<std::vector<std::pair<T, std::int64_t>>> ref_globals;
+            for (std::size_t j = 0; j < global_dofs.size(); ++j)
+            {
+              const auto& v = global_dofs[j];
+              const auto& vcoeff = global_coeffs[j];
+              if (v.size() != vcoeff.size())
+                throw std::runtime_error("Mismatch global dofs/coeffs");
+              std::vector<std::pair<T, std::int64_t>> vec;
+              for (std::size_t i = 0; i < v.size(); ++i)
+                vec.push_back({vcoeff.data()[i], v.data()[i]});
+              ref_globals.push_back(vec);
+            }
+            new (mpc) dolfinx::fem::MPC<T, U>(
+                V,
+                std::vector<std::int32_t>(
+                    local_dofs.data(), local_dofs.data() + local_dofs.size()),
+                ref_globals);
+          })
+      .def("V", &dolfinx::fem::MPC<T, U>::V)
+      .def(
+          "constraints",
+          [](const dolfinx::fem::MPC<T, U>& self)
+          {
+            // `constraints()` returns an AdjacencyList<pair<int32_t, T>>,
+            // which has no nanobind binding. Flatten it into an
+            // (offsets, ref_dofs, coeffs) tuple of arrays instead, with
+            // offsets[i]:offsets[i + 1] indexing into ref_dofs/coeffs for
+            // the constraints on local dof i.
+            const auto& c = self.constraints();
+            const std::vector<std::pair<std::int32_t, T>>& array = c.array();
+            std::vector<std::int32_t> dofs(array.size());
+            std::vector<T> coeffs(array.size());
+            for (std::size_t i = 0; i < array.size(); ++i)
+              std::tie(dofs[i], coeffs[i]) = array[i];
+            std::vector<std::int32_t> offsets(c.offsets().begin(),
+                                              c.offsets().end());
+            return std::tuple(dolfinx_wrappers::as_nbarray(std::move(offsets)),
+                              dolfinx_wrappers::as_nbarray(std::move(dofs)),
+                              dolfinx_wrappers::as_nbarray(std::move(coeffs)));
+          },
+          "Return (offsets, reference_dofs, coefficients) describing the "
+          "constraints for each local dof. offsets[i]:offsets[i + 1] index "
+          "into reference_dofs/coefficients for the constraints on local "
+          "dof i.")
+      .def("cells", &dolfinx::fem::MPC<T, U>::cells);
+
+  m.def("assemble_matrix_mpc",
+        [](dolfinx::fem::MPC<T, U>& mpc, dolfinx::la::MatrixCSR<T>& A,
+           const dolfinx::fem::Form<T, U>& a,
+           const std::vector<
+               std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
+        {
+          std::vector<
+              std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
+              _bcs;
+          _bcs.reserve(bcs.size());
+          for (auto& bc : bcs)
+          {
+            assert(bc);
+            _bcs.emplace_back(*bc);
+          }
+          dolfinx::fem::assemble_mpc<T, U>(mpc, A, a, _bcs);
+        });
+
+  m.def("build_sparsity_pattern_mpc",
+        [](dolfinx::la::SparsityPattern& pattern,
+           const dolfinx::fem::Form<T, U>& a,
+           const dolfinx::fem::MPC<T, U>& mpc_row,
+           const dolfinx::fem::MPC<T, U>& mpc_col)
+        {
+          dolfinx::fem::build_sparsity_pattern_mpc(pattern, a,
+                                                   {mpc_row, mpc_col});
+        });
+
+  m.def(
+      "apply_mpc_vector",
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
+         const dolfinx::fem::MPC<T, U>& mpc)
+      {
+        dolfinx::fem::apply_mpc_vector<T, U>(std::span<T>(b.data(), b.size()),
+                                             mpc);
+      },
+      nb::arg("b"), nb::arg("mpc"),
+      "Apply MPC constraints to an assembled RHS vector (P^T b, zero "
+      "constrained rows). Call after assemble_vector and scatter_rev; "
+      "a further scatter_rev is required afterwards.");
+
+  m.def(
+      "apply_mpc_residual",
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> F,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> u,
+         const dolfinx::fem::MPC<T, U>& mpc)
+      {
+        dolfinx::fem::apply_mpc_residual<T, U>(
+            std::span<T>(F.data(), F.size()),
+            std::span<const T>(u.data(), u.size()), mpc);
+      },
+      nb::arg("F"), nb::arg("u"), nb::arg("mpc"),
+      "Apply MPC to a nonlinear residual: distribute constrained row to "
+      "reference dofs, then set constrained row to the constraint "
+      "residual u_i - sum c_k u_{ref_k}.");
+
+  m.def(
+      "apply_mpc_solution",
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> u,
+         const dolfinx::fem::MPC<T, U>& mpc)
+      {
+        dolfinx::fem::apply_mpc_solution<T, U>(std::span<T>(u.data(), u.size()),
+                                               mpc);
+      },
+      nb::arg("u"), nb::arg("mpc"),
+      "Recover constrained dof values after a linear solve: "
+      "u[i] = sum c_k u[ref_k]. Call after scatter_fwd so reference "
+      "ghost values are current.");
+
   // dolfinx::fem::DirichletBC
-  std::string pyclass_name = std::string("DirichletBC_") + type;
+  pyclass_name = std::string("DirichletBC_") + type;
   nb::class_<dolfinx::fem::DirichletBC<T, U>> dirichletbc(
       m, pyclass_name.c_str(),
       "Object for representing Dirichlet (essential) boundary "

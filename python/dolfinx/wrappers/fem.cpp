@@ -15,10 +15,13 @@
 #include <dolfinx/fem/integration_domains.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/graph/ordering.h>
+#include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <format>
 #include <functional>
+#include <iostream>
+#include <map>
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
