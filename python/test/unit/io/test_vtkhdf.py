@@ -213,8 +213,10 @@ def test_read_write_higher_order_mesh(order, dtype) -> None:
     mesh_mt = read_mesh(comm, filename, dtype=dtype, num_threads=4)
 
     for m in (mesh, mesh_mt):
+        domain = m.ufl_domain()
+        assert domain is not None
         assert m.geometry.x.dtype == dtype
-        assert m.ufl_domain().ufl_coordinate_element().basix_element.dtype == dtype
+        assert domain.ufl_coordinate_element().basix_element.dtype == dtype
         assert m.geometry.cmaps[0].degree == order
         np.testing.assert_array_equal(
             m.geometry.x[m.geometry.dofmaps[0]],
