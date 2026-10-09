@@ -7,6 +7,7 @@
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/io/HDF5Interface.h>
 #include <filesystem>
 #include <format>
@@ -24,9 +25,7 @@ namespace
 /// Per-rank filename, so that each test writes a file of its own
 std::filesystem::path test_file(std::string_view name)
 {
-  int rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  return std::format("hdf5_{}_{}.h5", name, rank);
+  return std::format("hdf5_{}_{}.h5", name, dolfinx::MPI::rank(MPI_COMM_WORLD));
 }
 
 /// Number of HDF5 identifiers that are currently open
@@ -57,13 +56,11 @@ TEST_CASE("HDF5 attributes are replaced, not truncated", "[hdf5]")
     io::hdf5::set_attribute(handle, "Type", "abc");
     io::hdf5::set_attribute(handle, "Type", "UnstructuredGrid");
 
-    hid_t attr = H5Aopen(handle, "Type", H5P_DEFAULT);
-    hid_t type = H5Aget_type(attr);
+    io::hdf5::Handle attr(H5Aopen(handle, "Type", H5P_DEFAULT), H5Aclose);
+    io::hdf5::Handle type(H5Aget_type(attr), H5Tclose);
     std::string value(H5Tget_size(type) + 1, '\0');
     REQUIRE(H5Aread(attr, type, value.data()) >= 0);
     CHECK(std::string(value.c_str()) == "UnstructuredGrid");
-    H5Tclose(type);
-    H5Aclose(attr);
   }
 
   SECTION("array attribute shrinks")
@@ -75,8 +72,8 @@ TEST_CASE("HDF5 attributes are replaced, not truncated", "[hdf5]")
                             std::vector<std::int32_t>{1, 2, 3, 4, 5});
     io::hdf5::set_attribute(handle, "Version", std::vector<std::int32_t>{2, 2});
 
-    hid_t attr = H5Aopen(handle, "Version", H5P_DEFAULT);
-    hid_t space = H5Aget_space(attr);
+    io::hdf5::Handle attr(H5Aopen(handle, "Version", H5P_DEFAULT), H5Aclose);
+    io::hdf5::Handle space(H5Aget_space(attr), H5Sclose);
     hsize_t dim = 0;
     H5Sget_simple_extent_dims(space, &dim, nullptr);
     CHECK(dim == 2);
@@ -84,8 +81,6 @@ TEST_CASE("HDF5 attributes are replaced, not truncated", "[hdf5]")
     std::array<std::int32_t, 2> value{0, 0};
     REQUIRE(H5Aread(attr, H5T_NATIVE_INT32, value.data()) >= 0);
     CHECK(value == std::array<std::int32_t, 2>{2, 2});
-    H5Sclose(space);
-    H5Aclose(attr);
   }
 
   io::hdf5::close_file(handle);

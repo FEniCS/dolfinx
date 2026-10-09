@@ -264,14 +264,15 @@ void write_data(std::string_view point_or_cell,
     {
       // Read and increment attribute
       std::int32_t nsteps = 0;
-      hdf5::Handle attr_id(H5Aopen(vtk_group, "NSteps", H5P_DEFAULT), H5Aclose);
-      if (attr_id < 0)
-        throw std::runtime_error("Failed to open HDF5 attribute \"NSteps\".");
-      if (H5Aread(attr_id, H5T_NATIVE_INT32, &nsteps) < 0)
-        throw std::runtime_error("Failed to read HDF5 attribute \"NSteps\".");
-      ++nsteps;
-      if (H5Awrite(attr_id, H5T_NATIVE_INT32, &nsteps) < 0)
-        throw std::runtime_error("Failed to write HDF5 attribute \"NSteps\".");
+      {
+        hdf5::Handle attr_id(H5Aopen(vtk_group, "NSteps", H5P_DEFAULT),
+                             H5Aclose);
+        if (attr_id < 0)
+          throw std::runtime_error("Failed to open HDF5 attribute \"NSteps\".");
+        if (H5Aread(attr_id, H5T_NATIVE_INT32, &nsteps) < 0)
+          throw std::runtime_error("Failed to read HDF5 attribute \"NSteps\".");
+      }
+      hdf5::set_attribute(vtk_group, "NSteps", nsteps + 1);
 
       std::vector<std::int64_t> data_shape
           = hdf5::get_dataset_shape(h5file, dataset_name);

@@ -255,7 +255,8 @@ void write_dataset(hid_t file_handle, std::string_view dataset_path,
     std::vector<hsize_t> maxdims(dimsf.begin(), dimsf.end());
 
     // Set chunking parameters
-    Handle chunking_properties(H5Pcreate(H5P_DATASET_CREATE), H5Pclose);
+    Handle chunking_properties(
+        use_chunking ? H5Pcreate(H5P_DATASET_CREATE) : H5P_DEFAULT, H5Pclose);
     if (chunking_properties < 0)
       throw std::runtime_error("Failed to create HDF5 dataset property list.");
     if (use_chunking)
@@ -263,11 +264,11 @@ void write_dataset(hid_t file_handle, std::string_view dataset_path,
       // Make array extensible, if chunking is set
       std::ranges::fill(maxdims, H5S_UNLIMITED);
 
-      // Set chunk size and limit to 1kB min/1MB max
-      hsize_t chunk_size
-          = std::clamp(dimsf[0] / 2, hsize_t(1024), hsize_t(1048576));
-      std::vector<hsize_t> chunk_dims(dimsf.begin(), dimsf.end());
-      chunk_dims[0] = chunk_size;
+      // Set chunk size and limit to 1kB min/1MB max. Only the first
+      // `rank` entries are read.
+      std::array<hsize_t, 2> chunk_dims{
+          std::clamp(dimsf[0] / 2, hsize_t(1024), hsize_t(1048576)),
+          rank == 2 ? dimsf[1] : hsize_t(1)};
       if (H5Pset_chunk(chunking_properties, rank, chunk_dims.data()) < 0)
         throw std::runtime_error("Failed to set HDF5 chunk size.");
     }
@@ -325,7 +326,7 @@ void write_dataset(hid_t file_handle, std::string_view dataset_path,
 /// each process.
 ///
 /// @tparam T The data type to read into.
-/// @param[in] dset_id HDF5 file handle.
+/// @param[in] dset_id HDF5 dataset handle.
 /// @param[in] range The local range on this processor.
 /// @param[in] allow_cast If true, allow casting from HDF5 type to type `T`.
 /// @return Flattened 1D array of values. If range = {-1, -1}, then all data
@@ -363,17 +364,12 @@ std::vector<T> read_dataset(hid_t dset_id, std::array<std::int64_t, 2> range,
   else if (rank > 2)
     spdlog::warn("io::hdf5::read_dataset untested for rank > 2.");
 
-  // Get size in each dimension
-  std::vector<hsize_t> shape(rank);
-  if (int ndims = H5Sget_simple_extent_dims(dataspace, shape.data(), nullptr);
-      ndims != rank)
-  {
-    throw std::runtime_error("Failed to get dimensionality of dataspace.");
-  }
-
-  // Hyperslab selection
+  // Hyperslab selection, defaulting to the full extent in each
+  // dimension
   std::vector<hsize_t> offset(rank, 0);
-  std::vector<hsize_t> count = shape;
+  std::vector<hsize_t> count(rank);
+  if (H5Sget_simple_extent_dims(dataspace, count.data(), nullptr) != rank)
+    throw std::runtime_error("Failed to get dimensionality of dataspace.");
   if (range[0] != -1 and range[1] != -1)
   {
     offset[0] = range[0];
@@ -395,8 +391,8 @@ std::vector<T> read_dataset(hid_t dset_id, std::array<std::int64_t, 2> range,
   if (memspace < 0)
     throw std::runtime_error("Failed to create HDF5 dataspace.");
 
-  // Create local data to read into. The extents are hsize_t, so the
-  // product is accumulated in std::size_t to avoid narrowing.
+  // Create local data to read into, accumulating in std::size_t so that
+  // the product of the hsize_t extents does not narrow
   std::vector<T> data(std::reduce(count.begin(), count.end(), std::size_t(1),
                                   std::multiplies{}));
 

@@ -75,15 +75,15 @@ public:
 
   /// Move constructor
   /// @note Defined in the source file, where pugi::xml_document is
-  /// complete. The HDF5 identifier is an integer handle and is
-  /// transferred explicitly: a defaulted move would leave both objects
-  /// referring to the same file, and both would close it.
+  /// complete.
   XDMFFile(XDMFFile&& file) noexcept;
 
   /// Destructor
   /// @note Any failure to close the HDF5 file is logged rather than
   /// thrown, since a throwing destructor would terminate. Call ::close
   /// explicitly where the failure must be reported.
+  /// @note Defined in the source file, where pugi::xml_document is
+  /// complete.
   ~XDMFFile();
 
   // Copy assignment (deleted)
@@ -234,8 +234,9 @@ private:
   // File mode
   std::string _file_mode;
 
-  // HDF5 file handle
-  hid_t _h5_id;
+  // HDF5 file handle. Owning, so that the identifier is released if the
+  // constructor throws after opening the file, and on destruction.
+  hdf5::Handle _h5_id{H5I_INVALID_HID, H5Fclose};
 
   // The XML document currently representing the XDMF which needs to be
   // kept open for time series etc.

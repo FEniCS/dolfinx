@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -79,6 +80,24 @@ void write_attribute(hid_t handle, const std::string& name, hid_t type,
     throw std::runtime_error("Failed to create HDF5 attribute.");
   if (H5Awrite(attr_id, type, value) < 0)
     throw std::runtime_error("Failed to write HDF5 attribute.");
+}
+
+/// @brief Replace an attribute with a 1D array of 32-bit integers.
+/// @param[in] handle Dataset or group handle.
+/// @param[in] name Name of attribute.
+/// @param[in] value Values to write.
+void set_attribute_int32(hid_t handle, const std::string& name,
+                         std::span<const std::int32_t> value)
+{
+  delete_attribute(handle, name);
+
+  hsize_t dims = value.size();
+  const io::hdf5::Handle space_id(H5Screate_simple(1, &dims, nullptr),
+                                  H5Sclose);
+  if (space_id < 0)
+    throw std::runtime_error("Failed to create HDF5 attribute dataspace.");
+
+  write_attribute(handle, name, H5T_NATIVE_INT32, space_id, value.data());
 }
 } // namespace
 
@@ -166,13 +185,13 @@ void io::hdf5::flush_file(hid_t handle)
 //-----------------------------------------------------------------------------
 std::filesystem::path io::hdf5::get_filename(hid_t handle)
 {
-  // Get length of filename, excluding the null terminator
+  // Length excludes the null terminator
   const ssize_t length = H5Fget_name(handle, nullptr, 0);
   if (length < 0)
     throw std::runtime_error("Failed to get HDF5 filename from handle.");
 
-  // Retrieve filename. Construct the path from the null-terminated
-  // buffer, so that the terminator is not part of the path.
+  // Build the path from the null-terminated buffer, so that the
+  // terminator is not part of the path
   std::vector<char> name(length + 1);
   if (H5Fget_name(handle, name.data(), name.size()) < 0)
     throw std::runtime_error("Failed to get HDF5 filename from handle.");
@@ -213,29 +232,13 @@ void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
 void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
                              std::int32_t value)
 {
-  const std::string name(attr_name);
-  delete_attribute(handle, name);
-
-  hsize_t dims = 1;
-  const Handle space_id(H5Screate_simple(1, &dims, nullptr), H5Sclose);
-  if (space_id < 0)
-    throw std::runtime_error("Failed to create HDF5 attribute dataspace.");
-
-  write_attribute(handle, name, H5T_NATIVE_INT32, space_id, &value);
+  set_attribute_int32(handle, std::string(attr_name), {&value, 1});
 }
 //-----------------------------------------------------------------------------
 void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
                              const std::vector<std::int32_t>& value)
 {
-  const std::string name(attr_name);
-  delete_attribute(handle, name);
-
-  hsize_t dims = value.size();
-  const Handle space_id(H5Screate_simple(1, &dims, nullptr), H5Sclose);
-  if (space_id < 0)
-    throw std::runtime_error("Failed to create HDF5 attribute dataspace.");
-
-  write_attribute(handle, name, H5T_NATIVE_INT32, space_id, value.data());
+  set_attribute_int32(handle, std::string(attr_name), value);
 }
 //-----------------------------------------------------------------------------
 hid_t io::hdf5::open_dataset(hid_t handle, std::string_view path)
