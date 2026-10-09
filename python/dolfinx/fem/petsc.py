@@ -610,7 +610,7 @@ def _field_dm(A: PETSc.Mat, u, forms) -> PETSc.DMShell:
 
 
 class _MatrixBCData(typing.NamedTuple):
-    """Cached constrained dofs, with one entry per block row/column.
+    """Cached constrained dof markers, one entry per block row/column.
 
     The spaces the markers were built from are kept so that a repeated
     caller resolves them once: :func:`_block_index_sets` needs the same
@@ -655,7 +655,7 @@ def _extract_block_spaces(
 def _matrix_bc_data(
     a: Form | Sequence[Sequence[Form | None]], bcs: Sequence[DirichletBC] | None
 ) -> _MatrixBCData:
-    """Reusable markers, owned constrained rows and resolved spaces.
+    """Reusable constrained dof markers and resolved spaces.
 
     Entries correspond to block rows and columns. A single form has one
     entry in each field. Markers for a shared test/trial space share an
@@ -716,6 +716,20 @@ class _MatrixDiagData(typing.NamedTuple):
     values: list[npt.NDArray | float | complex]
 
 
+def _check_nest_forms(A: PETSc.Mat, a: Form | Sequence[Sequence[Form | None]]) -> None:
+    """Raise if a nest matrix is to be assembled from a single form.
+
+    Args:
+        A: Matrix to be assembled into.
+        a: Bilinear form, or a 2D array of them.
+
+    Raises:
+        ValueError: If ``A`` is a nest and ``a`` is a single form.
+    """
+    if A.getType() == PETSc.Mat.Type.NEST and not isinstance(a, Sequence):
+        raise ValueError("Must provide a sequence of forms when assembling a nest matrix")
+
+
 def _diag_on_ghost_rows(A: PETSc.Mat, a: Form | Sequence[Sequence[Form | None]]) -> list[bool]:
     """Whether the diagonal is written on ghost rows as well as owned ones.
 
@@ -735,7 +749,11 @@ def _diag_on_ghost_rows(A: PETSc.Mat, a: Form | Sequence[Sequence[Form | None]])
 
     Returns:
         One flag per block row.
+
+    Raises:
+        ValueError: If ``A`` is a nest and ``a`` is a single form.
     """
+    _check_nest_forms(A, a)
     if A.getType() != PETSc.Mat.Type.NEST:
         n = len(a) if isinstance(a, Sequence) else 1
         return [A.getType() == PETSc.Mat.Type.IS] * n
@@ -940,9 +958,8 @@ def _assemble_matrix_petsc(
     for the lifetime of the boundary conditions. Constants and
     coefficients are supplied afresh by the caller.
     """
+    _check_nest_forms(A, a)
     if A.getType() == PETSc.Mat.Type.NEST:
-        if not isinstance(a, Sequence):
-            raise ValueError("Must provide a sequence of forms when assembling a nest matrix")
         if isinstance(coeffs, dict):
             raise ValueError(
                 "Must provide a sequence of sequences of coefficients when assembling a nest matrix"

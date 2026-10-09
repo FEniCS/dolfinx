@@ -20,6 +20,7 @@
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
+#include <dolfinx/la/utils.h>
 #include <functional>
 #include <iterator>
 #include <map>
