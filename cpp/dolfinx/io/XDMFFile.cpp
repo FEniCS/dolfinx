@@ -9,7 +9,6 @@
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
-#include <H5Fpublic.h>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/Function.h>
@@ -142,7 +141,32 @@ XDMFFile::XDMFFile(XDMFFile&& file) noexcept
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XDMFFile::~XDMFFile() { close(); }
+XDMFFile::~XDMFFile()
+{
+  // A destructor must not throw, so report rather than propagate a
+  // failure to close
+  if (_h5_id > 0 and H5Fclose(_h5_id) < 0)
+    spdlog::warn("Failed to close HDF5 file with id \"{}\".", _h5_id);
+  _h5_id = -1;
+}
+//-----------------------------------------------------------------------------
+XDMFFile& XDMFFile::operator=(XDMFFile&& file) noexcept
+{
+  if (this != &file)
+  {
+    if (_h5_id > 0 and H5Fclose(_h5_id) < 0)
+      spdlog::warn("Failed to close HDF5 file with id \"{}\".", _h5_id);
+
+    _comm = std::move(file._comm);
+    _filename = std::move(file._filename);
+    _file_mode = std::move(file._file_mode);
+    _h5_id = std::exchange(file._h5_id, -1);
+    _xml_doc = std::move(file._xml_doc);
+    _encoding = file._encoding;
+  }
+
+  return *this;
+}
 //-----------------------------------------------------------------------------
 void XDMFFile::close()
 {
@@ -500,7 +524,8 @@ std::string XDMFFile::read_information(std::string_view name,
 void XDMFFile::flush()
 {
   // _xml_doc already flushed after every write
-  H5Fflush(_h5_id, H5F_SCOPE_GLOBAL);
+  if (_h5_id > 0)
+    io::hdf5::flush_file(_h5_id);
 }
 //-----------------------------------------------------------------------------
 MPI_Comm XDMFFile::comm() const { return _comm.comm(); }

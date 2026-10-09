@@ -70,6 +70,9 @@ public:
   XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
            std::string_view file_mode, Encoding encoding = Encoding::HDF5);
 
+  // Copy constructor (deleted)
+  XDMFFile(const XDMFFile& file) = delete;
+
   /// Move constructor
   /// @note Defined in the source file, where pugi::xml_document is
   /// complete. The HDF5 identifier is an integer handle and is
@@ -78,13 +81,25 @@ public:
   XDMFFile(XDMFFile&& file) noexcept;
 
   /// Destructor
+  /// @note Any failure to close the HDF5 file is logged rather than
+  /// thrown, since a throwing destructor would terminate. Call ::close
+  /// explicitly where the failure must be reported.
   ~XDMFFile();
+
+  // Copy assignment (deleted)
+  XDMFFile& operator=(const XDMFFile& file) = delete;
+
+  /// Move assignment
+  /// @note Defined in the source file, where pugi::xml_document is
+  /// complete.
+  XDMFFile& operator=(XDMFFile&& file) noexcept;
 
   /// Close the file
   ///
   /// This closes open underlying HDF5 file. In ASCII mode the XML file
   /// is closed each time it is written to or read from, so close() has
   /// no effect.
+  /// @throws std::runtime_error if the HDF5 file cannot be closed.
   void close();
 
   /// Save Mesh

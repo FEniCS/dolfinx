@@ -4,18 +4,34 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#pragma once
+
 #include "HDF5Interface.h"
 #include <algorithm>
+#include <array>
+#include <cassert>
 #include <concepts>
+#include <cstddef>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
+#include <filesystem>
 #include <format>
+#include <limits>
 #include <map>
+#include <memory>
+#include <numeric>
+#include <optional>
+#include <span>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -32,14 +48,18 @@ template <std::floating_point U>
 void write_mesh(const std::filesystem::path& filename,
                 const mesh::Mesh<U>& mesh)
 {
-  hid_t h5file = hdf5::open_file(mesh.comm(), filename, "w", true);
+  hdf5::Handle h5file(hdf5::open_file(mesh.comm(), filename, "w", true),
+                      H5Fclose);
 
   // Create VTKHDF group
   hdf5::add_group(h5file, "VTKHDF");
-  hid_t vtk_group = H5Gopen(h5file, "VTKHDF", H5P_DEFAULT);
-  hdf5::set_attribute(vtk_group, "Version", std::vector{2, 2});
-  hdf5::set_attribute(vtk_group, "Type", "UnstructuredGrid");
-  H5Gclose(vtk_group);
+  {
+    hdf5::Handle vtk_group(H5Gopen(h5file, "VTKHDF", H5P_DEFAULT), H5Gclose);
+    if (vtk_group < 0)
+      throw std::runtime_error("Failed to open HDF5 group \"VTKHDF\".");
+    hdf5::set_attribute(vtk_group, "Version", std::vector{2, 2});
+    hdf5::set_attribute(vtk_group, "Type", "UnstructuredGrid");
+  }
 
   // Extract topology information for each cell type
   std::vector<mesh::CellType> cell_types
@@ -113,22 +133,22 @@ void write_mesh(const std::filesystem::path& filename,
   }
 
   // Compute overall cell offset from offsets for each cell type
-  std::int64_t offset_start_position
-      = std::accumulate(cell_start_pos.begin(), cell_start_pos.end(), 0);
-  std::int64_t offset_stop_position
-      = std::accumulate(cell_stop_pos.begin(), cell_stop_pos.end(), 0);
+  std::int64_t offset_start_position = std::accumulate(
+      cell_start_pos.begin(), cell_start_pos.end(), std::int64_t(0));
+  std::int64_t offset_stop_position = std::accumulate(
+      cell_stop_pos.begin(), cell_stop_pos.end(), std::int64_t(0));
 
   // Compute overall topology offset from offsets for each cell type
   std::int64_t topology_start
       = std::inner_product(num_nodes_per_cell.begin(), num_nodes_per_cell.end(),
-                           cell_start_pos.begin(), 0);
+                           cell_start_pos.begin(), std::int64_t(0));
 
-  std::transform(topology_offsets.cbegin(), topology_offsets.cend(),
-                 topology_offsets.begin(),
-                 [topology_start](auto x) { return x + topology_start; });
+  std::ranges::transform(topology_offsets, topology_offsets.begin(),
+                         [topology_start](std::int64_t x)
+                         { return x + topology_start; });
 
-  std::int64_t num_all_cells_global
-      = std::accumulate(num_cells_global.begin(), num_cells_global.end(), 0);
+  std::int64_t num_all_cells_global = std::accumulate(
+      num_cells_global.begin(), num_cells_global.end(), std::int64_t(0));
   hdf5::write_dataset(h5file, "/VTKHDF/Offsets", topology_offsets.data(),
                       {offset_start_position + 1, offset_stop_position + 1},
                       {num_all_cells_global + 1}, true, false);
@@ -136,7 +156,7 @@ void write_mesh(const std::filesystem::path& filename,
   // Store global mesh connectivity
   std::int64_t topology_size_global
       = std::inner_product(num_nodes_per_cell.begin(), num_nodes_per_cell.end(),
-                           num_cells_global.begin(), 0);
+                           num_cells_global.begin(), std::int64_t(0));
 
   std::int64_t topology_stop = topology_start + topology_flattened.size();
   hdf5::write_dataset(h5file, "/VTKHDF/Connectivity", topology_flattened.data(),
@@ -151,7 +171,7 @@ void write_mesh(const std::filesystem::path& filename,
                       &topology_size_global, {0, 1}, {1}, true, false);
   hdf5::write_dataset(h5file, "/VTKHDF/NumberOfCells", &num_all_cells_global,
                       {0, 1}, {1}, true, false);
-  hdf5::close_file(h5file);
+  hdf5::close_file(h5file.release());
 }
 
 /// @brief Write Point or Cell data to VTKHDF.
@@ -187,46 +207,78 @@ void write_data(std::string_view point_or_cell,
   else if (point_or_cell == "Cell")
     index_maps = mesh.topology()->index_maps(mesh.topology()->dim());
   else
-    throw std::runtime_error("Selection must be Point or Cell");
+    throw std::invalid_argument("Selection must be Point or Cell.");
 
   const std::string poc(point_or_cell);
   std::string dataset_name = std::format("/VTKHDF/{}Data/u", poc);
-  int npoints
-      = std::accumulate(index_maps.begin(), index_maps.end(), 0,
-                        [](int a, auto im) { return a + im->size_local(); });
-  int data_width = data.size() / npoints;
-  if (data.size() % npoints != 0)
+  std::int32_t npoints = std::accumulate(
+      index_maps.begin(), index_maps.end(), std::int32_t(0),
+      [](std::int32_t a, auto& im) { return a + im->size_local(); });
+  if (npoints == 0 and !data.empty())
+  {
+    throw std::invalid_argument(
+        "Data supplied on a process with no local vertices/cells.");
+  }
+  if (npoints > 0 and data.size() % npoints != 0)
+  {
+    throw std::invalid_argument(
+        "Data size mismatch with number of local vertices/cells.");
+  }
+
+  // A process with no local entities cannot determine the data width
+  // from its (empty) data, but every process must build the same global
+  // dataset shape. Take the width from the processes that do have data,
+  // reducing (max width, -min width) so that an inconsistent width is
+  // detected identically on all processes.
+  const std::int32_t width_local = npoints == 0 ? 0 : data.size() / npoints;
+  std::array<std::int32_t, 2> width_local_pair{
+      width_local,
+      npoints == 0 ? std::numeric_limits<std::int32_t>::min() : -width_local};
+  std::array<std::int32_t, 2> width{0, 0};
+  MPI_Allreduce(width_local_pair.data(), width.data(), 2, MPI_INT32_T, MPI_MAX,
+                mesh.comm());
+  const std::int32_t data_width = width[0];
+  if (data_width == 0 or data_width != -width[1])
   {
     throw std::runtime_error(
-        "Data size mismatch with number of local vertices/cells");
+        "Data width is zero, or differs between processes.");
   }
   spdlog::debug("Data vector width={}", data_width);
 
-  hid_t h5file = hdf5::open_file(mesh.comm(), filename, "a", true);
+  hdf5::Handle h5file(hdf5::open_file(mesh.comm(), filename, "a", true),
+                      H5Fclose);
   hdf5::add_group(h5file, "VTKHDF/Steps");
-  hid_t vtk_group = H5Gopen(h5file, "VTKHDF/Steps", H5P_DEFAULT);
 
   std::int64_t point_data_offset = 0;
-  if (htri_t attr_exists = H5Aexists(vtk_group, "NSteps"); attr_exists < 0)
-    throw std::runtime_error("Error checking attribute");
-  else if (attr_exists == 0)
-    hdf5::set_attribute(vtk_group, "NSteps", 1);
-  else
   {
-    // Read and increment attribute
-    std::int32_t nsteps = 0;
-    hid_t attr_id = H5Aopen(vtk_group, "NSteps", H5P_DEFAULT);
-    H5Aread(attr_id, H5T_NATIVE_INT32, &nsteps);
-    nsteps++;
-    H5Awrite(attr_id, H5T_NATIVE_INT32, &nsteps);
-    H5Aclose(attr_id);
+    hdf5::Handle vtk_group(H5Gopen(h5file, "VTKHDF/Steps", H5P_DEFAULT),
+                           H5Gclose);
+    if (vtk_group < 0)
+      throw std::runtime_error("Failed to open HDF5 group \"VTKHDF/Steps\".");
 
-    std::vector<std::int64_t> data_shape
-        = hdf5::get_dataset_shape(h5file, dataset_name);
-    assert(data_shape.size() == 2);
-    point_data_offset = data_shape[0];
+    if (htri_t attr_exists = H5Aexists(vtk_group, "NSteps"); attr_exists < 0)
+      throw std::runtime_error("Error checking attribute");
+    else if (attr_exists == 0)
+      hdf5::set_attribute(vtk_group, "NSteps", 1);
+    else
+    {
+      // Read and increment attribute
+      std::int32_t nsteps = 0;
+      hdf5::Handle attr_id(H5Aopen(vtk_group, "NSteps", H5P_DEFAULT), H5Aclose);
+      if (attr_id < 0)
+        throw std::runtime_error("Failed to open HDF5 attribute \"NSteps\".");
+      if (H5Aread(attr_id, H5T_NATIVE_INT32, &nsteps) < 0)
+        throw std::runtime_error("Failed to read HDF5 attribute \"NSteps\".");
+      ++nsteps;
+      if (H5Awrite(attr_id, H5T_NATIVE_INT32, &nsteps) < 0)
+        throw std::runtime_error("Failed to write HDF5 attribute \"NSteps\".");
+
+      std::vector<std::int64_t> data_shape
+          = hdf5::get_dataset_shape(h5file, dataset_name);
+      assert(data_shape.size() == 2);
+      point_data_offset = data_shape[0];
+    }
   }
-  H5Gclose(vtk_group);
 
   // Add a single value to end of a 1D dataset
   auto append_dataset
@@ -265,14 +317,14 @@ void write_data(std::string_view point_or_cell,
 
   // Add point/cell data into dataset, extending each time by
   // global_size with each process writing its own part.
-  std::int64_t range0 = std::accumulate(index_maps.begin(), index_maps.end(), 0,
-                                        [](int a, auto im)
-                                        { return a + im->local_range()[0]; });
+  std::int64_t range0 = std::accumulate(
+      index_maps.begin(), index_maps.end(), std::int64_t(0),
+      [](std::int64_t a, auto& im) { return a + im->local_range()[0]; });
   std::array<std::int64_t, 2> range{range0, range0 + npoints};
 
   std::int64_t global_size = std::accumulate(
-      index_maps.begin(), index_maps.end(), 0,
-      [](std::int64_t a, auto im) { return a + im->size_global(); });
+      index_maps.begin(), index_maps.end(), std::int64_t(0),
+      [](std::int64_t a, auto& im) { return a + im->size_global(); });
 
   std::vector<std::int64_t> shape0 = {global_size, data_width};
   if (hdf5::has_dataset(h5file, dataset_name))
@@ -293,16 +345,17 @@ void write_data(std::string_view point_or_cell,
                         true);
     if (data_width > 1)
     {
-      hid_t dset_id = hdf5::open_dataset(h5file, dataset_name);
+      hdf5::Handle dset_id(hdf5::open_dataset(h5file, dataset_name), H5Dclose);
       hdf5::set_attribute(dset_id, "NumberOfComponents", data_width);
-      H5Dclose(dset_id);
-      hid_t vec_group = H5Gopen(h5file, group_name.c_str(), H5P_DEFAULT);
+      hdf5::Handle vec_group(H5Gopen(h5file, group_name.c_str(), H5P_DEFAULT),
+                             H5Gclose);
+      if (vec_group < 0)
+        throw std::runtime_error("Failed to open HDF5 group for vector data.");
       hdf5::set_attribute(vec_group, "Vectors", "u");
-      H5Gclose(vec_group);
     }
   }
 
-  hdf5::close_file(h5file);
+  hdf5::close_file(h5file.release());
 }
 
 /// @brief Read a mesh from a VTKHDF format file.
@@ -323,7 +376,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                         std::optional<std::int32_t> max_facet_to_cell_links = 2,
                         int num_threads = 1)
 {
-  hid_t h5file = hdf5::open_file(comm, filename, "r", true);
+  hdf5::Handle h5file(hdf5::open_file(comm, filename, "r", true), H5Fclose);
 
   std::vector<std::int64_t> shape
       = hdf5::get_dataset_shape(h5file, "/VTKHDF/Types");
@@ -332,16 +385,13 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   std::array<std::int64_t, 2> local_cell_range
       = common::local_range(rank, shape[0], mpi_size);
 
-  hid_t dset_id = hdf5::open_dataset(h5file, "/VTKHDF/Types");
-  std::vector<std::uint8_t> types
-      = hdf5::read_dataset<std::uint8_t>(dset_id, local_cell_range, true);
-  H5Dclose(dset_id);
+  std::vector<std::uint8_t> types = hdf5::read_dataset<std::uint8_t>(
+      h5file, "/VTKHDF/Types", local_cell_range, true);
 
   // Read in offsets to determine the different cell-types in the mesh
-  dset_id = hdf5::open_dataset(h5file, "/VTKHDF/Offsets");
   std::vector<std::int64_t> offsets = hdf5::read_dataset<std::int64_t>(
-      dset_id, {local_cell_range[0], local_cell_range[1] + 1}, true);
-  H5Dclose(dset_id);
+      h5file, "/VTKHDF/Offsets", {local_cell_range[0], local_cell_range[1] + 1},
+      true);
 
   // Convert cell offsets to cell type and cell degree tuples
   std::vector<std::array<std::uint8_t, 2>> types_unique;
@@ -408,19 +458,16 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
     dolfinx_cell_type.push_back(cell_type);
   }
 
-  dset_id = hdf5::open_dataset(h5file, "/VTKHDF/NumberOfPoints");
-  std::vector npoints = hdf5::read_dataset<std::int64_t>(dset_id, {0, 1}, true);
-  H5Dclose(dset_id);
+  std::vector npoints = hdf5::read_dataset<std::int64_t>(
+      h5file, "/VTKHDF/NumberOfPoints", {0, 1}, true);
   spdlog::info("Mesh with {} points", npoints[0]);
   std::array<std::int64_t, 2> local_point_range
       = common::local_range(rank, npoints[0], mpi_size);
 
   std::vector<std::int64_t> x_shape
       = hdf5::get_dataset_shape(h5file, "/VTKHDF/Points");
-  dset_id = hdf5::open_dataset(h5file, "/VTKHDF/Points");
-  std::vector<U> points_local
-      = hdf5::read_dataset<U>(dset_id, local_point_range, true);
-  H5Dclose(dset_id);
+  std::vector<U> points_local = hdf5::read_dataset<U>(h5file, "/VTKHDF/Points",
+                                                      local_point_range, true);
 
   // Remove coordinates if gdim != 3
   if (gdim > 3)
@@ -436,13 +483,12 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                 points_pruned.begin() + i * gdim);
   }
 
-  dset_id = hdf5::open_dataset(h5file, "/VTKHDF/Connectivity");
   std::vector<std::int64_t> topology = hdf5::read_dataset<std::int64_t>(
-      dset_id, {offsets.front(), offsets.back()}, true);
-  H5Dclose(dset_id);
-  std::transform(offsets.cbegin(), offsets.cend(), offsets.begin(),
-                 [offset = offsets.front()](auto x) { return x - offset; });
-  hdf5::close_file(h5file);
+      h5file, "/VTKHDF/Connectivity", {offsets.front(), offsets.back()}, true);
+  std::ranges::transform(offsets, offsets.begin(),
+                         [offset = offsets.front()](std::int64_t x)
+                         { return x - offset; });
+  hdf5::close_file(h5file.release());
 
   // Create cell topologies for each cell type.
   std::vector<std::vector<std::int64_t>> cells_local(recv_types.size());
@@ -468,10 +514,10 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
 
   // Make coordinate elements
   std::vector<fem::CoordinateElement<U>> coordinate_elements;
-  std::transform(
-      dolfinx_cell_type.cbegin(), dolfinx_cell_type.cend(),
-      dolfinx_cell_degree.cbegin(), std::back_inserter(coordinate_elements),
-      [](auto cell_type, auto cell_degree)
+  std::ranges::transform(
+      dolfinx_cell_type, dolfinx_cell_degree,
+      std::back_inserter(coordinate_elements),
+      [](mesh::CellType cell_type, std::uint8_t cell_degree)
       {
         basix::element::lagrange_variant variant
             = (cell_degree > 2) ? basix::element::lagrange_variant::equispaced
