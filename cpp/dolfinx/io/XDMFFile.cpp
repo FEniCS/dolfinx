@@ -135,8 +135,9 @@ XDMFFile& XDMFFile::operator=(XDMFFile&& file) noexcept = default;
 //-----------------------------------------------------------------------------
 void XDMFFile::close()
 {
-  if (_h5_id > 0)
-    io::hdf5::close_file(_h5_id.release());
+  // Closes before giving up ownership, so that a failure leaves the
+  // identifier with the handle rather than leaking it
+  _h5_id.close();
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point U>

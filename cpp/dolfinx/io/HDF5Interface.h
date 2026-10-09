@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <dolfinx/common/log.h>
 #include <filesystem>
+#include <format>
 #include <functional>
 #include <hdf5.h>
 #include <mpi.h>
@@ -33,8 +34,7 @@ namespace dolfinx::io::hdf5
 /// handles, and the `H5P_DEFAULT`-style constants) are never closed.
 ///
 /// @note A close failure during destruction is logged rather than
-/// thrown. Use ::release and close explicitly where the failure must be
-/// reported.
+/// thrown. Call ::close where the failure must be reported.
 class Handle
 {
 public:
@@ -53,7 +53,7 @@ public:
   }
 
   /// Destructor
-  ~Handle() { close(); }
+  ~Handle() { close_or_warn(); }
 
   // Copy assignment (deleted)
   Handle& operator=(const Handle&) = delete;
@@ -63,7 +63,7 @@ public:
   {
     if (this != &h)
     {
-      close();
+      close_or_warn();
       _id = std::exchange(h._id, H5I_INVALID_HID);
       _close = h._close;
     }
@@ -77,8 +77,28 @@ public:
   /// @return The identifier, which the caller must close.
   hid_t release() noexcept { return std::exchange(_id, H5I_INVALID_HID); }
 
+  /// @brief Close the identifier, reporting a failure.
+  ///
+  /// Ownership is given up only once the identifier is closed, so a
+  /// failure leaves it with the handle, to be closed again on
+  /// destruction. Does nothing if no identifier is held.
+  ///
+  /// @throws std::runtime_error if the identifier cannot be closed.
+  void close()
+  {
+    if (_id > 0)
+    {
+      if (_close(_id) < 0)
+      {
+        throw std::runtime_error(
+            std::format("Failed to close HDF5 identifier {}.", _id));
+      }
+      _id = H5I_INVALID_HID;
+    }
+  }
+
 private:
-  void close() noexcept
+  void close_or_warn() noexcept
   {
     if (_id > 0 and _close(_id) < 0)
       spdlog::warn("Failed to close HDF5 identifier {}.", _id);

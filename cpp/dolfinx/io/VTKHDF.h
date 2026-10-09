@@ -171,7 +171,7 @@ void write_mesh(const std::filesystem::path& filename,
                       &topology_size_global, {0, 1}, {1}, true, false);
   hdf5::write_dataset(h5file, "/VTKHDF/NumberOfCells", &num_all_cells_global,
                       {0, 1}, {1}, true, false);
-  hdf5::close_file(h5file.release());
+  h5file.close();
 }
 
 /// @brief Write Point or Cell data to VTKHDF.
@@ -356,7 +356,7 @@ void write_data(std::string_view point_or_cell,
     }
   }
 
-  hdf5::close_file(h5file.release());
+  h5file.close();
 }
 
 /// @brief Read a mesh from a VTKHDF format file.
@@ -489,7 +489,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   std::ranges::transform(offsets, offsets.begin(),
                          [offset = offsets.front()](std::int64_t x)
                          { return x - offset; });
-  hdf5::close_file(h5file.release());
+  h5file.close();
 
   // Create cell topologies for each cell type.
   std::vector<std::vector<std::int64_t>> cells_local(recv_types.size());

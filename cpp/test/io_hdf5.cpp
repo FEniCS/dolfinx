@@ -161,6 +161,24 @@ TEST_CASE("HDF5 identifiers are not leaked", "[hdf5]")
   CHECK(open_ids() == before);
 }
 
+TEST_CASE("HDF5 scope guard closes its identifier", "[hdf5]")
+{
+  const ssize_t before = open_ids();
+  {
+    io::hdf5::Handle file(
+        io::hdf5::open_file(MPI_COMM_SELF, test_file("close"), "w", false),
+        H5Fclose);
+    CHECK(open_ids() == before + 1);
+
+    // close() empties the handle, so destruction does not close again
+    file.close();
+    CHECK(open_ids() == before);
+    CHECK(file < 0);
+    CHECK_NOTHROW(file.close());
+  }
+  CHECK(open_ids() == before);
+}
+
 TEST_CASE("HDF5 scope guard releases its identifier", "[hdf5]")
 {
   const ssize_t before = open_ids();
