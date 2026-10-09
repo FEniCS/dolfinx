@@ -44,21 +44,21 @@ jobs:
       matrix:
         include:
           - {mpi: openmpi, petsc: true, scalar: float32, index: int32,
-             petsc_dep: "^petsc+mpi+metis+mumps+ptscotch+scalapack+superlu-dist~hypre~suite-sparse~double~complex~int64"}
+             petsc_dep: "^petsc+mpi+hpddm+metis+mumps+ptscotch+scalapack+superlu-dist~hypre~suite-sparse~double~complex~int64 ^slepc+hpddm"}
           - {mpi: openmpi, petsc: true, scalar: float64, index: int32,
-             petsc_dep: "^petsc+mpi+hypre+metis+mumps+ptscotch+scalapack+suite-sparse+superlu-dist+double~complex~int64"}
+             petsc_dep: "^petsc+mpi+hpddm+hypre+metis+mumps+ptscotch+scalapack+suite-sparse+superlu-dist+double~complex~int64 ^slepc+hpddm"}
           - {mpi: openmpi, petsc: true, scalar: complex64, index: int32,
-             petsc_dep: "^petsc+mpi+metis+mumps+ptscotch+scalapack~hypre~suite-sparse~superlu-dist~double+complex~int64"}
+             petsc_dep: "^petsc+mpi+hpddm+metis+mumps+ptscotch+scalapack~hypre~suite-sparse~superlu-dist~double+complex~int64 ^slepc+hpddm"}
           - {mpi: openmpi, petsc: true, scalar: complex128, index: int32,
-             petsc_dep: "^petsc+mpi+hypre+metis+mumps+ptscotch+scalapack+suite-sparse+superlu-dist+double+complex~int64"}
+             petsc_dep: "^petsc+mpi+hpddm+hypre+metis+mumps+ptscotch+scalapack+suite-sparse+superlu-dist+double+complex~int64 ^slepc+hpddm"}
           - {mpi: openmpi, petsc: true, scalar: float64, index: int64,
-             petsc_dep: "^petsc+mpi+hypre+mumps+ptscotch+scalapack+suite-sparse+superlu-dist~metis+double~complex+int64"}
+             petsc_dep: "^petsc+mpi+hpddm+hypre+mumps+ptscotch+scalapack+suite-sparse+superlu-dist~metis+double~complex+int64 ^slepc+hpddm"}
           - {mpi: openmpi, petsc: true, scalar: complex128, index: int64,
-             petsc_dep: "^petsc+mpi+hypre+mumps+ptscotch+scalapack+suite-sparse+superlu-dist~metis+double+complex+int64"}
+             petsc_dep: "^petsc+mpi+hpddm+hypre+mumps+ptscotch+scalapack+suite-sparse+superlu-dist~metis+double+complex+int64 ^slepc+hpddm"}
           - {mpi: mpich, petsc: true, scalar: float64, index: int32,
-             petsc_dep: "^petsc+mpi+hypre+metis+mumps+ptscotch+scalapack+suite-sparse+superlu-dist+double~complex~int64"}
+             petsc_dep: "^petsc+mpi+hpddm+hypre+metis+mumps+ptscotch+scalapack+suite-sparse+superlu-dist+double~complex~int64 ^slepc+hpddm"}
           - {mpi: mpich, petsc: true, scalar: complex128, index: int32,
-             petsc_dep: "^petsc+mpi+hypre+metis+mumps+ptscotch+scalapack+suite-sparse+superlu-dist+double+complex~int64"}
+             petsc_dep: "^petsc+mpi+hpddm+hypre+metis+mumps+ptscotch+scalapack+suite-sparse+superlu-dist+double+complex~int64 ^slepc+hpddm"}
           - {mpi: openmpi, petsc: false}
 
     steps:
@@ -76,9 +76,9 @@ jobs:
         uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
         with:
           spack_ref: v1.2.2
-          # spack-packages 'develop' at 2026-09-14. Bumping re-solves the
+          # spack-packages 'develop' at 2026-10-05. Bumping re-solves the
           # graph and can invalidate cached binaries; warm the cache first.
-          packages_ref: 43144421c9973da2bfc47c56b30ecaec45d6fc6c
+          packages_ref: c0109598cd38b30d9af1d4fbbbbba23eb2efa828
 
       # Pinned, like spack itself and its packages repo above: an unpinned
       # 'main' changes what CI builds with no commit here, which makes a
@@ -244,6 +244,17 @@ jobs:
         run: |
           spack env activate ci
           python -c "import dolfinx; assert dolfinx.has_petsc is ${{ matrix.petsc && 'True' || 'False' }}, dolfinx.has_petsc"
+
+      # PETSc is built without SLEPc, so PCHPDDM loads libhpddm_petsc,
+      # built by slepc+hpddm, from $SLEPC_DIR/lib at run time. Check it is
+      # in place, rather than leaving the HPDDM demo solve to fail later.
+      - name: Check PCHPDDM is available
+        if: ${{ matrix.petsc }}
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          python -c "from petsc4py import PETSc; assert PETSc.Sys.hasExternalPackage('hpddm')"
+          ls "$SLEPC_DIR"/lib/libhpddm_petsc.*
 
       # This leg has the dependencies needed to check PETSc-enabled modules,
       # as well as the package, demos and tests. One leg only: the result does

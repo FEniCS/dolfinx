@@ -51,7 +51,7 @@ def mesh_factory(tdim, n, ghost_mode=GhostMode.shared_facet, dtype=default_real_
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_1d_mesh(tempdir, encoding):
+def test_save_and_load_1d_mesh(tempdir, encoding) -> None:
     filename = Path(tempdir, "mesh.xdmf")
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
@@ -68,7 +68,7 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
+def test_save_and_load_2d_mesh(tempdir, encoding, cell_type) -> None:
     filename = Path(tempdir, "mesh.xdmf")
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type)
     mesh.name = "square"
@@ -91,7 +91,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
+def test_save_and_load_3d_mesh(tempdir, encoding, cell_type) -> None:
     filename = Path(tempdir, "mesh.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 12, 12, 8, cell_type)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
@@ -109,7 +109,7 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
 
 
 @pytest.mark.parametrize("num_threads", [1, 4])
-def test_read_write_num_threads(tempdir, num_threads):
+def test_read_write_num_threads(tempdir, num_threads) -> None:
     filename = Path(tempdir, "mesh_num_threads.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4)
     with XDMFFile(mesh.comm, filename, "w") as file:
@@ -213,7 +213,7 @@ def test_read_write_p2_mesh(tempdir, encoding):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_submesh(tempdir, d, n, codim, ghost_mode, encoding, dtype):
+def test_submesh(tempdir, d, n, codim, ghost_mode, encoding, dtype) -> None:
     mesh = mesh_factory(d, n, ghost_mode, dtype=dtype)
     edim = d - codim
     entities = locate_entities(mesh, edim, lambda x: x[0] > 0.4999)

@@ -258,6 +258,9 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     spdlog::info("Compute graph partition using PT-SCOTCH");
     common::Timer timer("Compute graph partition (SCOTCH)");
 
+    // Note: SCOTCH requires an array to be null on all ranks or on none, ref.
+    // SCOTCH docs of SCOTCH_dgraphBuild.
+
     std::int64_t offset_global = 0;
     const std::int64_t num_owned = graph.num_nodes();
     MPI_Request request_offset_scan;
@@ -267,9 +270,11 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // C-style array indexing
     constexpr SCOTCH_Num baseval = 0;
 
-    // Copy  graph data to get the required type (SCOTCH_Num)
+    // Copy graph data to get the required type (SCOTCH_Num)
     std::vector<SCOTCH_Num> edgeloctab(graph.array().begin(),
                                        graph.array().end());
+    edgeloctab.reserve(1); // guarantee no nullptr
+
     std::vector<SCOTCH_Num> vertloctab(graph.offsets().begin(),
                                        graph.offsets().end());
 
@@ -279,18 +284,21 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     if (err != 0)
       throw std::runtime_error("Error initializing SCOTCH graph");
 
-    // FIXME: If the nodes have weights but this rank has no nodes, then
-    //        SCOTCH may deadlock since vload.data() will be nullptr on
-    //        this rank but not null on all other ranks.
     // Handle node weights
     std::vector<SCOTCH_Num> vload;
     if (node_weights)
+    {
       vload.assign(node_weights->begin(), node_weights->end());
+      vload.reserve(1); // guarantee no nullptr
+    }
 
     // Handle edge weights
     std::vector<SCOTCH_Num> edload;
     if (edge_weights)
+    {
       edload.assign(edge_weights->begin(), edge_weights->end());
+      edload.reserve(1); // guarantee no nullptr
+    }
 
     // Set seed and reset SCOTCH random number generator to produce
     // deterministic partitions on repeated calls
@@ -302,8 +310,9 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
     err = SCOTCH_dgraphBuild(
         &dgrafdat, baseval, graph.num_nodes(), graph.num_nodes(),
-        vertloctab.data(), nullptr, vload.data(), nullptr, edgeloctab.size(),
-        edgeloctab.size(), edgeloctab.data(), nullptr, edload.data());
+        vertloctab.data(), nullptr, node_weights ? vload.data() : nullptr,
+        nullptr, edgeloctab.size(), edgeloctab.size(), edgeloctab.data(),
+        nullptr, edge_weights ? edload.data() : nullptr);
     if (err != 0)
       throw std::runtime_error("Error building SCOTCH graph");
     timer1.stop();

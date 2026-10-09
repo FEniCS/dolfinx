@@ -12,7 +12,7 @@ from mpi4py import MPI
 from dolfinx.mesh import create_unit_square
 
 
-def test_mpi_comm_wrapper():
+def test_mpi_comm_wrapper() -> None:
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion."""
     comm0 = MPI.COMM_WORLD
     m = create_unit_square(comm0, 4, 4)
@@ -21,7 +21,7 @@ def test_mpi_comm_wrapper():
     assert isinstance(comm1, MPI.Comm)
 
 
-def test_mpi_comm_refcount():
+def test_mpi_comm_refcount() -> None:
     """Test MPICommWrapper <-> mpi4py.MPI.Comm reference counting."""
     comm0 = MPI.COMM_WORLD
     m = create_unit_square(comm0, 4, 4)

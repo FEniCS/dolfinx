@@ -1,5 +1,5 @@
-// Copyright (C) 2020-2026 Garth N. Wells, Igor A. Baratta, Massimiliano Leoni
-// and Jørgen S.Dokken
+// Copyright (C) 2020-2026 Garth N. Wells, Igor A. Baratta, Massimiliano Leoni,
+// Jørgen S.Dokken and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -23,6 +23,7 @@
 #include <ranges>
 #include <span>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::fem
@@ -496,6 +497,10 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
     cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
   }
 
+  // Get symmetry
+  const bool symmetric0 = V0->symmetric();
+  const bool symmetric1 = V1->symmetric();
+
   // Get dofmaps
   auto dofmap0 = V0->dofmap();
   auto dofmap1 = V1->dofmap();
@@ -554,11 +559,22 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   md::mdspan<U, std::dextents<std::size_t, 3>> basis_reference0(
       basis_reference0_b.data(), Xshape[0], dim0, value_size_ref0);
 
-  // values0 holds physical values (the value shapes of the two elements
-  // have been checked to be equal); mapped_values0 holds them pulled
-  // back to the reference cell of element 1, where each of its bs1
-  // blocks has reference_value_size components.
-  const std::size_t value_size1 = V1->element()->value_size();
+  // Size of (rank-2) tensor for symmetric elements
+  std::size_t matrix_size = 0;
+  if (symmetric0 or symmetric1)
+  {
+    assert(element0->value_shape().size() == 2);
+    assert(!symmetric0 or element0->physical_base_value_size() == 1);
+    assert(!symmetric1 or element1->physical_base_value_size() == 1);
+    matrix_size = element1->value_shape().front();
+  }
+
+  // values0 holds physical values in the block layout of element 1;
+  // mapped_values0 holds them pulled back to the reference
+  // cell of element 1, where each of its bs1 blocks has
+  // reference_value_size components.
+  const std::size_t value_size1
+      = element1->physical_base_value_size() * static_cast<std::size_t>(bs1);
   const std::size_t value_size_ref1
       = element1->reference_value_size() * static_cast<std::size_t>(bs1);
   std::vector<T> values0_b(Xshape[0] * 1 * value_size1);
@@ -669,18 +685,69 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
       for (int k = 0; k < dof_bs0; ++k)
         coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
 
-    // Evaluate v at the interpolation points (physical space values)
-    using X = U; // geometry (real) type, independent of the value scalar T
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    // Evaluate v at the interpolation points (physical space values).
+    if (symmetric0 == symmetric1)
     {
-      for (int k = 0; k < bs0; ++k)
+      // Same block layout: both or neither symmetric
+      for (std::size_t p = 0; p < Xshape[0]; ++p)
       {
-        for (std::size_t j = 0; j < value_size0; ++j)
+        for (int k = 0; k < bs0; ++k)
         {
+          for (std::size_t j = 0; j < value_size0; ++j)
+          {
+            T acc = 0;
+            for (std::size_t i = 0; i < dim0; ++i)
+              acc += coeffs0[bs0 * i + k] * static_cast<T>(basis0(p, i, j));
+            values0(p, 0, j * bs0 + k) = acc;
+          }
+        }
+      }
+    }
+    else if (symmetric0 and !symmetric1)
+    {
+      // Expand the stored components of v to the full matrix
+      for (std::size_t p = 0; p < Xshape[0]; ++p)
+      {
+        int row = 0;
+        int rowstart = 0;
+        for (int k = 0; k < bs0; ++k)
+        {
+          if (k - rowstart > row)
+          {
+            ++row;
+            rowstart = k;
+          }
           T acc = 0;
           for (std::size_t i = 0; i < dim0; ++i)
-            acc += coeffs0[bs0 * i + k] * static_cast<X>(basis0(p, i, j));
-          values0(p, 0, j * bs0 + k) = acc;
+            acc += coeffs0[bs0 * i + k] * static_cast<T>(basis0(p, i, 0));
+          values0(p, 0, row * matrix_size + k - rowstart) = acc;
+          values0(p, 0, row + matrix_size * (k - rowstart)) = acc;
+        }
+      }
+    }
+    else // if (!symmetric0 and symmetric1)
+    {
+      // Evaluate only the components of v stored by u1. Physical
+      // component c of v is value component c / bs0 of block c % bs0.
+      for (std::size_t p = 0; p < Xshape[0]; ++p)
+      {
+        int row = 0;
+        int rowstart = 0;
+        for (int k = 0; k < bs1; ++k)
+        {
+          if (k - rowstart > row)
+          {
+            ++row;
+            rowstart = k;
+          }
+          const int c = row * matrix_size + k - rowstart;
+          T acc = 0;
+          for (std::size_t i = 0; i < dim0; ++i)
+          {
+            acc += coeffs0[bs0 * i + c % bs0]
+                   * static_cast<T>(basis0(p, i, c / bs0));
+          }
+          values0(p, 0, k) = acc;
         }
       }
     }
@@ -749,6 +816,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
     std::size_t matrix_size = 0;
     while (matrix_size * matrix_size < fshape[0])
       ++matrix_size;
+    assert(matrix_size * matrix_size == fshape[0]);
 
     // Loop over cells
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)

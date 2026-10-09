@@ -149,7 +149,7 @@ def randomly_ordered_mesh(cell_type):
 
 @pytest.mark.parametrize("space_type", [("P", 1), ("P", 2), ("P", 3), ("P", 4)])
 @pytest.mark.parametrize("cell_type", ["triangle", "tetrahedron", "quadrilateral", "hexahedron"])
-def test_dof_positions(cell_type, space_type):
+def test_dof_positions(cell_type, space_type) -> None:
     """Checks that dofs on shared triangle edges match up."""
     mesh = randomly_ordered_mesh(cell_type)
 
@@ -292,7 +292,7 @@ def random_evaluation_mesh(cell_type, dtype=default_real_type):
     + [("hexahedron", s) for s in ["Q", "S", "NCE", "NCF", "AAE", "AAF"]],
 )
 @pytest.mark.parametrize("space_order", range(1, 4))
-def test_evaluation(cell_type, space_type, space_order):
+def test_evaluation(cell_type, space_type, space_order) -> None:
     if cell_type == "hexahedron" and space_order > 3:
         pytest.skip("Skipping expensive test on hexahedron")
 
@@ -369,7 +369,7 @@ def test_evaluation(cell_type, space_type, space_order):
         ),
     ],
 )
-def test_integral(cell_type, space_type, space_order, dtype):
+def test_integral(cell_type, space_type, space_order, dtype) -> None:
     if cell_type == "hexahedron" and space_order >= 3:
         pytest.skip("Skipping expensive test on hexahedron")
 
@@ -436,7 +436,7 @@ def test_integral(cell_type, space_type, space_order, dtype):
     ],
 )
 @pytest.mark.parametrize("space_order", range(3, 5))
-def test_permutation_wrappers(space_order, data_types):
+def test_permutation_wrappers(space_order, data_types) -> None:
     s_type, d_type = data_types
     domain = create_unit_cube(MPI.COMM_WORLD, 5, 3, 4, dtype=s_type)
     V = functionspace(domain, ("N1curl", space_order))
@@ -456,7 +456,7 @@ def test_permutation_wrappers(space_order, data_types):
 
 @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
 @pytest.mark.parametrize("ttype", [0, 1, 2, 3])  # doftransform: standard/transpose/inverse/...
-def test_mixed_element_dof_transformation_right(ttype, dtype):
+def test_mixed_element_dof_transformation_right(ttype, dtype) -> None:
     """Check a mixed element's right (post-)transformation is row-consistent.
 
     Each row of (block_size, ndofs) data must be transformed over its own
@@ -516,7 +516,7 @@ def test_mixed_element_dof_transformation_right(ttype, dtype):
 
 @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
 @pytest.mark.parametrize("ttype", [0, 1, 2, 3])
-def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype):
+def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype) -> None:
     """As above, but with the transforming sub-element first, at offset 0.
 
     This is the case that the pre-fix sub-span slicing got right, so it
@@ -558,7 +558,7 @@ def test_mixed_element_dof_transformation_right_zero_offset(ttype, dtype):
 
 @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
 @pytest.mark.parametrize("ttype", [0, 1, 2, 3])
-def test_non_mixed_element_dof_transformation_right(ttype, dtype):
+def test_non_mixed_element_dof_transformation_right(ttype, dtype) -> None:
     """As above, but for the leaf (non-mixed) code path, for contrast."""
     ufl_e = element(
         basix.ElementFamily.N1E,

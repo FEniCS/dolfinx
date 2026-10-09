@@ -57,7 +57,7 @@ def build_elastic_nullspace(V, dtype):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("degree", [1, 2])
-def test_nullspace_orthogonal(gdim, degree, dtype):
+def test_nullspace_orthogonal(gdim, degree, dtype) -> None:
     """Test null spaces orthogonalisation."""
     xtype = dtype(0).real.dtype
     if gdim == 2:
@@ -83,7 +83,7 @@ def test_nullspace_orthogonal(gdim, degree, dtype):
 )
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("degree", [1, 2])
-def test_nullspace_check(gdim, degree, dtype):
+def test_nullspace_check(gdim, degree, dtype) -> None:
     """Test that elasticity nullspace is actually a nullspace."""
     # TODO: Once we support SpMV, run on MPI.COMM_WORLD
     comm = MPI.COMM_SELF

@@ -95,19 +95,49 @@ Vec create_vector_wrap(const la::Vector<V>& x)
   return create_vector_wrap(*x.index_map(), x.bs(), x.array());
 }
 
-/// @brief Compute PETSc IndexSets (IS) for a stack of index maps.
+/// @brief Index sets addressing a stack of index maps in the calling
+/// rank's local numbering.
 ///
-/// If `map[0] = {0, 1, 2, 3, 4, 5, 6}` and `map[1] = {0, 1, 2, 4}` (in
-/// local indices) then `IS[0] = {0, 1, 2, 3, 4, 5, 6}` and
-/// `IS[1] = {7, 8, 9, 10}`.
+/// Each set covers one map's owned *and ghost* entries, at the offset
+/// that map occupies in the stack, so the sets address a rank's local
+/// block of a stacked problem, such as a sub-block of a blocked matrix.
+///
+/// If `map[0]` has 7 local entries (owned plus ghost) and `map[1]` has
+/// 4, then `IS[0] = {0, 1, 2, 3, 4, 5, 6}` and `IS[1] = {7, 8, 9, 10}`.
+/// The sets are rank-private: every rank numbers from zero.
+///
+/// @see create_global_index_sets for sets that describe a field of the
+/// distributed problem in global numbering.
 ///
 /// @todo This function could take just the local sizes.
 ///
 /// @note The caller is responsible for destruction of each IS.
 ///
-/// @param[in] maps Vector of IndexMaps and corresponding block sizes
-/// @return Vector of PETSc Index Sets, created on `PETSC_COMM_SELF`
+/// @param[in] maps Index maps and corresponding block sizes.
+/// @return One index set per map, created on `PETSC_COMM_SELF`.
 std::vector<IS> create_index_sets(
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+
+/// @brief Index sets describing each field of a stack of index maps in
+/// the global numbering of the stacked problem.
+///
+/// Each set covers one map's *owned* entries. Ghosts are excluded, as
+/// each is owned by exactly one rank, so the sets of all ranks
+/// partition the stacked problem. Preconditioners that split a problem
+/// into fields, such as PCBDDC and PCFIELDSPLIT, take sets of this
+/// form.
+///
+/// @see create_index_sets for rank-local sets that include ghosts.
+///
+/// @note The caller is responsible for destruction of each IS.
+///
+/// @param[in] maps Index maps and corresponding block sizes. All maps
+/// must share a communicator.
+/// @return One index set per map, created on the maps' communicator.
+/// @throws std::invalid_argument If the maps do not share a
+/// communicator.
+std::vector<IS> create_global_index_sets(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 

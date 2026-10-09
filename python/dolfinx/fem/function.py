@@ -70,12 +70,12 @@ class Constant(ufl.Constant, Generic[Scalar]):
         self._cpp_object = cpp_type(c)
 
     @property
-    def value(self) -> npt.NDArray:
+    def value(self) -> npt.NDArray[Scalar]:
         """The value of the constant."""
-        return self._cpp_object.value
+        return typing.cast(npt.NDArray[Scalar], self._cpp_object.value)
 
     @value.setter
-    def value(self, v: npt.NDArray[Scalar]) -> None:
+    def value(self, v: npt.ArrayLike) -> None:
         np.copyto(self._cpp_object.value, np.asarray(v))
 
     @property

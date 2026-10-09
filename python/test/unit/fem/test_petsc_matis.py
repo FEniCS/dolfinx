@@ -56,7 +56,7 @@ def test_matis_matches_aij(cell_type, degree, shape):
 
 
 @pytest.mark.petsc4py
-def test_matis_local_to_global_map():
+def test_matis_local_to_global_map() -> None:
     """The local-to-global maps share the matrix communicator.
 
     ``MatSetLocalToGlobalMapping_IS`` calls ``PetscCheckSameComm``.
@@ -125,7 +125,7 @@ def test_blocked_matis(kind):
 
 @pytest.mark.petsc4py
 @pytest.mark.parametrize("kind", ["baij", "sbaij"])
-def test_square_block_type_rejected(kind):
+def test_square_block_type_rejected(kind) -> None:
     """Block formats reject differing row and column block sizes.
 
     BAIJ and SBAIJ apply a single block size to both dimensions, so
@@ -161,7 +161,7 @@ def test_square_block_type_accepted(kind):
 
 
 @pytest.mark.petsc4py
-def test_matis_square_local_matrix():
+def test_matis_square_local_matrix() -> None:
     """A square, single-space form must give a square MATIS local matrix.
 
     The local-to-global maps set the local matrix dimensions, so they

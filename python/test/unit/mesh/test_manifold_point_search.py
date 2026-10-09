@@ -11,7 +11,7 @@ from dolfinx.mesh import create_mesh, entities_to_geometry
 
 
 @pytest.mark.skip_in_parallel
-def test_manifold_point_search():
+def test_manifold_point_search() -> None:
     # Simple two-triangle surface in 3d
     vertices = np.array([[0.0, 0.0, 1.0], [1.0, 1.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     cells = np.array([[0, 1, 2], [0, 1, 3]], dtype=np.int64)

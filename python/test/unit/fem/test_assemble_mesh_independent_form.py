@@ -23,7 +23,7 @@ import ufl
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_compiled_form(dtype):
+def test_compiled_form(dtype) -> None:
     """Compile a form without an associated mesh and assemble a form over a sequence of meshes."""
     real_type = dtype(0).real.dtype
     c_el = basix.ufl.element("Lagrange", "triangle", 1, shape=(2,), dtype=real_type)
@@ -69,7 +69,7 @@ def test_compiled_form(dtype):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_submesh_assembly(dtype):
+def test_submesh_assembly(dtype) -> None:
     """Compile a form without an associated mesh and assemble a form over a sequence of meshes."""
     real_type = dtype(0).real.dtype
     c_el = basix.ufl.element("Lagrange", "triangle", 1, shape=(2,), dtype=real_type)
@@ -160,7 +160,7 @@ def test_submesh_assembly(dtype):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_eliminated_data(dtype):
+def test_eliminated_data(dtype) -> None:
     """Test that mesh independent compilation handles the re-ordering of coefficients and constants
     when removed through differentiation.
     """

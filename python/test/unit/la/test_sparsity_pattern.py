@@ -16,7 +16,7 @@ from dolfinx.la import sparsity_pattern, sparsity_pattern_blocked
 from dolfinx.mesh import create_unit_square, exterior_facet_indices
 
 
-def test_add_diagonal():
+def test_add_diagonal() -> None:
     """Test adding entries to diagonal of sparsity pattern."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     gdim = mesh.geometry.dim
@@ -34,7 +34,7 @@ def test_add_diagonal():
     assert len(blocks) == pattern.num_nonzeros
 
 
-def test_blocked_pattern_with_empty_blocks():
+def test_blocked_pattern_with_empty_blocks() -> None:
     """Test creation of a blocked pattern with structural zero blocks."""
     # COMM_SELF: the block structure under test is process-local and
     # involves no cross-rank communication, so the test runs unmodified
@@ -51,7 +51,7 @@ def test_blocked_pattern_with_empty_blocks():
     assert blocked_pattern.num_nonzeros == 0
 
 
-def test_index_map_column_growth():
+def test_index_map_column_growth() -> None:
     """Finalizing can add column ghosts without changing the input maps.
 
     Rank 1 assembles an entry on a row it does not own, at a column the

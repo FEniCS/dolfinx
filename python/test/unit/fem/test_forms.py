@@ -31,7 +31,7 @@ from ufl import (
 )
 
 
-def test_extract_forms():
+def test_extract_forms() -> None:
     """Test extraction on unique function spaces for rows and columns of
     a block system.
     """
@@ -70,6 +70,19 @@ def test_extract_forms():
     assert Vr[1] is V1
     with pytest.raises(ValueError):
         extract_function_spaces(a, 1)
+
+
+@pytest.mark.parametrize("index", [0, 1])
+def test_extract_repeated_function_spaces(index):
+    """Space extraction accepts a space used by multiple block rows/columns."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    V = functionspace(msh, ("Lagrange", 1))
+    W = V.clone()
+    tests = [TestFunction(V), TestFunction(V if index == 0 else W)]
+    trials = [TrialFunction(V), TrialFunction(V if index == 1 else W)]
+    a = form([[inner(u, v) * dx for u in trials] for v in tests])
+    assert extract_function_spaces(a, index) == [V, V]
+    assert extract_function_spaces(a, 1 - index) == [V, W]
 
 
 def test_incorrect_element():
@@ -129,7 +142,7 @@ def test_incorrect_element():
         dolfinx.fem.Form(f, msh, [incorrect_space, incorrect_space], ufcx_form, code)
 
 
-def test_multiple_measures_one_subdomain_data():
+def test_multiple_measures_one_subdomain_data() -> None:
     comm = MPI.COMM_WORLD
     msh = dolfinx.mesh.create_unit_interval(comm, 10)
     x = SpatialCoordinate(msh)
@@ -150,7 +163,7 @@ def test_multiple_measures_one_subdomain_data():
     assert np.isclose(J_global, 1 / 3 + 1 / 2)
 
 
-def test_derivative_block():
+def test_derivative_block() -> None:
     """Test the function derivative_block."""
     msh = dolfinx.mesh.create_unit_interval(MPI.COMM_WORLD, 10)
     V0 = functionspace(msh, ("Lagrange", 1))

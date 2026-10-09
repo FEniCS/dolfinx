@@ -77,7 +77,7 @@ except ImportError:
 @pytest.mark.parametrize("gpart", partitioners)
 @pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron, CellType.prism])
-def test_partition_box_mesh(gpart, Nx, cell_type):
+def test_partition_box_mesh(gpart, Nx, cell_type) -> None:
     mesh = create_box(
         MPI.COMM_WORLD,
         [np.array([0, 0, 0]), np.array([1, 1, 1])],
@@ -148,7 +148,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     assert np.all(cell_midpoints[:, 0] <= mpi_comm.rank + 1)
 
 
-def test_asymmetric_partitioner():
+def test_asymmetric_partitioner() -> None:
     mpi_comm = MPI.COMM_WORLD
     n = mpi_comm.Get_size()
     r = mpi_comm.Get_rank()
@@ -254,8 +254,8 @@ def test_mixed_topology_partitioning():
         MPI.COMM_WORLD,
         nparts,
         dual_graph._cpp_object,
-        np.array([], dtype=np.int32),
-        np.array([], dtype=np.int32),
+        None,
+        None,
         False,
     )
 

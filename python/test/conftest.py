@@ -12,6 +12,27 @@ import pytest
 
 from dolfinx.la import vector as dolfinx_vector
 
+# A cycle still referenced at the generation 0 collection below is
+# promoted, and no later generation 0 collection reaches it. Only the
+# periodic full collection frees it.
+_tests_since_full_gc = 0
+
+# Tests between full collections, which cost in proportion to the whole
+# heap. Override with DOLFINX_TEST_GC_INTERVAL.
+_FULL_GC_INTERVAL = int(os.environ.get("DOLFINX_TEST_GC_INTERVAL", 50))
+
+
+def pytest_configure(config):
+    """Stop the garbage collector from running inside a test.
+
+    The problem classes destroy PETSc objects in __del__, which is
+    collective. Automatic collection runs on allocation counts, which
+    differ between processes, so it would call those destructors at a
+    different point on each and deadlock. Teardown, below, is a point
+    every process reaches together.
+    """
+    gc.disable()
+
 
 def pytest_runtest_teardown(item):
     """Collect garbage after every test to force calling
@@ -25,12 +46,13 @@ def pytest_runtest_teardown(item):
     # NOTE: How are we sure that 'item' does not hold references to
     # temporaries and someone else does not hold a reference to 'item'?!
     # Well, it seems that it works...
-    # Only the youngest generation is collected: the reference cycles left
-    # behind by a single test are created fresh each time and so are always
-    # in generation 0, and a full collection here is disproportionately
-    # expensive (measured ~170s of a ~700s full suite run) because it
-    # rescans the entire accumulated interpreter heap on every test.
-    gc.collect(0)
+    global _tests_since_full_gc
+    _tests_since_full_gc += 1
+    if _tests_since_full_gc >= _FULL_GC_INTERVAL:
+        _tests_since_full_gc = 0
+        gc.collect()
+    else:
+        gc.collect(0)
     comm = MPI.COMM_WORLD
     comm.Barrier()
 

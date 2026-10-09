@@ -16,7 +16,7 @@ def to_adj(cells, dtype):
     return adj
 
 
-def test_dgrsph_1d():
+def test_dgrsph_1d() -> None:
     rank = MPI.COMM_WORLD.Get_rank()
     size = MPI.COMM_WORLD.Get_size()
     n0 = rank * 3

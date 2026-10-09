@@ -636,10 +636,7 @@ def extract_function_spaces(
                             raise ValueError("Cannot extract unique function spaces.")
             return V0
 
-        if index == 0:
-            return list(unique_spaces(V))
-        elif index == 1:
-            return list(unique_spaces(V.transpose()))
+        return list(unique_spaces(V if index == 0 else V.transpose()))
 
     raise RuntimeError("Unsupported array of forms")
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2024-2025 Jørgen S. Dokken
+# Copyright (C) 2024-2026 Jørgen S. Dokken and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -13,6 +13,17 @@ import pytest
 import basix.ufl
 import dolfinx
 import ufl
+
+
+def close(comm, a, b, eps) -> bool:
+    """Whether ``a`` and ``b`` agree to ``eps`` on every process.
+
+    A comparison of process-local values can hold on one process and
+    not on another, which leaves the processes disagreeing on whether
+    the test failed. Where a collective call follows, the processes
+    that carry on then hang waiting for the one that left.
+    """
+    return comm.allreduce(bool(np.allclose(a, b, atol=eps, rtol=eps)), op=MPI.LAND)
 
 
 @pytest.mark.petsc4py
@@ -89,10 +100,10 @@ class TestPETScSolverWrappers:
         nonlinear_problem.solve()
         assert nonlinear_problem.solver.getConvergedReason() > 0
 
-        assert np.allclose(u_lin.x.array, u_nonlin.x.array, atol=eps, rtol=eps)
+        assert close(msh.comm, u_lin.x.array, u_nonlin.x.array, eps)
 
         with u_lin.x.petsc_vec.localForm() as _u_lin, u_nonlin.x.petsc_vec.localForm() as _u_nonlin:
-            assert np.allclose(_u_lin.array_r, _u_nonlin.array_r, atol=eps, rtol=eps)
+            assert close(msh.comm, _u_lin.array_r, _u_nonlin.array_r, eps)
 
     @pytest.mark.parametrize(
         "mode", [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet]
@@ -202,3 +213,298 @@ class TestPETScSolverWrappers:
         global_ph_L2 = np.sqrt(msh.comm.allreduce(local_ph_L2, op=MPI.SUM))
         tol = 500 * np.finfo(dolfinx.default_scalar_type).eps
         assert global_uh_L2 < tol and global_ph_L2 < tol
+
+    @pytest.mark.parametrize(
+        "mode", [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet]
+    )
+    def test_overlapping_dirichlet_bcs(self, mode):
+        """Test a LinearProblem with two non-zero bcs sharing degrees-of-freedom.
+
+        A dof constrained by more than one bc is set by the last bc in
+        the sequence that constrains it, in both ``apply_lifting`` and
+        ``set_bc``. The solve must therefore agree with the solve for a
+        single bc carrying the resolved values, and swapping the bc
+        order must change the solution accordingly.
+        """
+        from petsc4py import PETSc
+
+        import dolfinx.fem.petsc
+
+        sys = PETSc.Sys()
+        if MPI.COMM_WORLD.size == 1:
+            factor_type = "petsc"
+        elif sys.hasExternalPackage("mumps"):
+            factor_type = "mumps"
+        elif sys.hasExternalPackage("superlu_dist"):
+            factor_type = "superlu_dist"
+        else:
+            pytest.skip("No external solvers available in parallel")
+
+        msh = dolfinx.mesh.create_unit_square(
+            MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=PETSc.RealType
+        )
+        V = dolfinx.fem.functionspace(msh, ("Lagrange", 2))
+
+        u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+        x = ufl.SpatialCoordinate(msh)
+        a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+        L = ufl.inner(2 + x[0], v) * ufl.dx
+
+        tdim = msh.topology.dim
+        msh.topology.create_connectivity(tdim - 1, tdim)
+        bndry_facets = dolfinx.mesh.exterior_facet_indices(msh.topology)
+        left_facets = dolfinx.mesh.locate_entities_boundary(
+            msh, tdim - 1, lambda x: np.isclose(x[0], 0.0)
+        )
+        dofs_all = dolfinx.fem.locate_dofs_topological(V, tdim - 1, bndry_facets)
+        dofs_left = dolfinx.fem.locate_dofs_topological(V, tdim - 1, left_facets)
+        assert np.isin(dofs_left, dofs_all).all()
+
+        # Two non-zero, spatially varying boundary values. The left-edge
+        # dofs are constrained by both bcs.
+        g_all = dolfinx.fem.Function(V)
+        g_all.interpolate(lambda x: 1.0 + x[0] + 2.0 * x[1])
+        g_left = dolfinx.fem.Function(V)
+        g_left.interpolate(lambda x: 3.0 - x[1])
+        bc_all = dolfinx.fem.dirichletbc(g_all, dofs_all)
+        bc_left = dolfinx.fem.dirichletbc(g_left, dofs_left)
+
+        # Single bc holding the values that [bc_all, bc_left] resolves to
+        g_ref = dolfinx.fem.Function(V)
+        g_ref.x.array[:] = g_all.x.array
+        g_ref.x.array[dofs_left] = g_left.x.array[dofs_left]
+        bc_ref = dolfinx.fem.dirichletbc(g_ref, dofs_all)
+
+        def solve(bcs, label):
+            problem = dolfinx.fem.petsc.LinearProblem(
+                a,
+                L,
+                bcs=bcs,
+                petsc_options_prefix=f"test_overlapping_dirichlet_bcs_{mode}_{label}_",
+                petsc_options={
+                    "ksp_type": "preonly",
+                    "pc_type": "lu",
+                    "pc_factor_mat_solver_type": factor_type,
+                    "ksp_error_if_not_converged": True,
+                },
+            )
+            uh = problem.solve()
+            assert problem.solver.getConvergedReason() > 0
+            return uh
+
+        eps = 1000 * np.finfo(dolfinx.default_scalar_type).eps
+
+        # Every solve before the first comparison, so that no collective
+        # call follows an assertion
+        uh = solve([bc_all, bc_left], "overlap")
+        uh_ref = solve([bc_ref], "resolved")
+        uh_rev = solve([bc_left, bc_all], "reversed")
+        uh_all = solve([bc_all], "all")
+
+        # bc_left is applied last, so it wins on the shared dofs
+        assert close(msh.comm, uh.x.array[dofs_left], g_left.x.array[dofs_left], eps)
+        only_all = np.setdiff1d(dofs_all, dofs_left)
+        assert close(msh.comm, uh.x.array[only_all], g_all.x.array[only_all], eps)
+        assert close(msh.comm, uh.x.array, uh_ref.x.array, eps)
+
+        # Reversing the order makes bc_all win everywhere, which is the
+        # same system as applying bc_all alone
+        assert close(msh.comm, uh_rev.x.array[dofs_all], g_all.x.array[dofs_all], eps)
+        assert close(msh.comm, uh_rev.x.array, uh_all.x.array, eps)
+
+        # The two orderings really do give different solutions, which is
+        # a statement about the whole solution and not one process's
+        # share of it
+        assert not close(msh.comm, uh.x.array, uh_rev.x.array, eps)
+
+    @pytest.mark.parametrize("kind", [None, "mpi", "nest"])
+    def test_nonlinear_problem_bc_updates(self, kind):
+        """BC reassignment updates both callbacks; input lists are snapshots."""
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import NonlinearProblem
+
+        if MPI.COMM_WORLD.size == 1:
+            factor_type = "petsc"
+        elif PETSc.Sys().hasExternalPackage("mumps"):
+            factor_type = "mumps"
+        elif PETSc.Sys().hasExternalPackage("superlu_dist"):
+            factor_type = "superlu_dist"
+        else:
+            pytest.skip("No external solvers available in parallel")
+
+        # Dof coordinates are reference points pushed through the geometry
+        # map, so they carry roundoff of the order of the cell size times
+        # the geometry type's epsilon. On a mesh this coarse in single
+        # precision that roundoff reaches 1e-8, enough for a predicate
+        # locating the boundary to disagree between the owner of a dof and
+        # a process that ghosts it, which leaves the condition off the rows
+        # of the processes that do not see it.
+        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 16, 16, dtype=PETSc.RealType)
+        V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+        spaces = [V] if kind is None else [V, V.clone()]
+        eps = 1000 * np.finfo(PETSc.RealType).eps
+        options = {"snes_atol": eps, "snes_rtol": eps, "snes_error_if_not_converged": True}
+        if kind == "nest":
+            options["pc_type"] = "fieldsplit"
+            options["pc_fieldsplit_type"] = "additive"
+            for i in range(len(spaces)):
+                options[f"fieldsplit_{i}_ksp_type"] = "preonly"
+                options[f"fieldsplit_{i}_pc_type"] = "lu"
+                options[f"fieldsplit_{i}_pc_factor_mat_solver_type"] = factor_type
+        else:
+            options.update(ksp_type="preonly", pc_type="lu", pc_factor_mat_solver_type=factor_type)
+
+        def make_problem(bcs, label):
+            functions = [dolfinx.fem.Function(space) for space in spaces]
+            residuals = [
+                ufl.inner(u - (i + 2), ufl.TestFunction(space)) * ufl.dx
+                for i, (u, space) in enumerate(zip(functions, spaces, strict=True))
+            ]
+            return NonlinearProblem(
+                residuals[0] if kind is None else residuals,
+                functions[0] if kind is None else functions,
+                bcs=bcs,
+                kind=kind,
+                petsc_options_prefix=f"test_nonlinear_bc_updates_{kind}_{label}_",
+                petsc_options=options,
+            )
+
+        # Compared against a tolerance well inside a cell, rather than with
+        # np.isclose, whose default atol of 1e-8 is all that is left when
+        # the target is zero and is of the order of the roundoff above.
+        tol = 1.0e-3
+        left = dolfinx.fem.locate_dofs_geometrical(V, lambda x: x[0] < tol)
+        right = dolfinx.fem.locate_dofs_geometrical(V, lambda x: x[0] > 1.0 - tol)
+        g = dolfinx.fem.Constant(msh, PETSc.ScalarType(5))
+        bc_left = dolfinx.fem.dirichletbc(g, left, V)
+        bc_right = dolfinx.fem.dirichletbc(PETSc.ScalarType(7), right, V)
+        bcs = [bc_left]
+        problem = make_problem(bcs, "updated")
+        bcs.clear()
+        assert problem.bcs == (bc_left,)
+
+        for step, conditions in enumerate([(bc_left,), (bc_right,), ()]):
+            if step > 0:
+                problem.bcs = conditions if conditions else None
+            for value in (5, 6):
+                g.value = PETSc.ScalarType(value)
+                problem.solve()
+                reference = make_problem(conditions, f"reference_{step}_{value}")
+                reference.solve()
+                actual = [problem.u] if kind is None else problem.u
+                expected = [reference.u] if kind is None else reference.u
+                for u, u_ref in zip(actual, expected, strict=True):
+                    assert close(msh.comm, u.x.array, u_ref.x.array, eps)
+
+    @pytest.mark.parametrize("blocked", [False, True])
+    def test_nonlinear_preconditioner_spaces(self, blocked):
+        """Reject incompatible preconditioner spaces in constructors and callbacks."""
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import NonlinearProblem, assemble_jacobian, create_matrix
+
+        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=PETSc.RealType)
+        V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+        W = V.clone()
+        u, w = dolfinx.fem.Function(V), dolfinx.fem.Function(W)
+        v, z = ufl.TestFunction(V), ufl.TestFunction(W)
+        aV = ufl.inner(ufl.TrialFunction(V), v) * ufl.dx
+        aW = ufl.inner(ufl.TrialFunction(W), z) * ufl.dx
+        residual = (
+            [ufl.inner(u, v) * ufl.dx, ufl.inner(w, z) * ufl.dx]
+            if blocked
+            else (ufl.inner(u, v) * ufl.dx)
+        )
+        unknown = [u, w] if blocked else u
+        invalid = [[aW, None], [None, aV]] if blocked else aW
+        message = "Preconditioner form must be over the same function space objects"
+        with pytest.raises(ValueError, match=message):
+            NonlinearProblem(
+                residual,
+                unknown,
+                P=invalid,
+                petsc_options_prefix=f"test_invalid_preconditioner_{blocked}_",
+            )
+
+        problem = NonlinearProblem(
+            residual,
+            unknown,
+            P=[[aV, None], [None, aW]] if blocked else aV,
+            petsc_options_prefix=f"test_valid_preconditioner_{blocked}_",
+        )
+        incompatible = dolfinx.fem.form(invalid)
+        P_mat = create_matrix(incompatible)
+        try:
+            with pytest.raises(ValueError, match=message):
+                assemble_jacobian(
+                    problem.solver,
+                    problem.x,
+                    problem.A,
+                    P_mat,
+                    problem.u,
+                    problem.J,
+                    incompatible,
+                    [],
+                )
+        finally:
+            P_mat.destroy()
+
+    @pytest.mark.parametrize("blocked", [False, True])
+    def test_linear_preconditioner_spaces(self, blocked):
+        """Reject a preconditioner not over the left-hand side's spaces."""
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import LinearProblem
+
+        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=PETSc.RealType)
+        V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+        W = V.clone()
+        u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+        w, z = ufl.TrialFunction(W), ufl.TestFunction(W)
+        aV = ufl.inner(u, v) * ufl.dx
+        aW = ufl.inner(w, z) * ufl.dx
+        LV = ufl.inner(1.0, v) * ufl.dx
+        LW = ufl.inner(1.0, z) * ufl.dx
+        a = [[aV, None], [None, aW]] if blocked else aV
+        L = [LV, LW] if blocked else LV
+        invalid = [[aW, None], [None, aV]] if blocked else aW
+        with pytest.raises(
+            ValueError, match="Preconditioner form must be over the same function space objects"
+        ):
+            LinearProblem(
+                a, L, P=invalid, petsc_options_prefix=f"test_invalid_lhs_preconditioner_{blocked}_"
+            )
+
+    @pytest.mark.parametrize("kind", [None, "nest"])
+    @pytest.mark.parametrize("index", [0, 1])
+    def test_blocked_assembly_repeated_spaces(self, kind, index):
+        """Reject repeated spaces at matrix creation and assembly boundaries."""
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import assemble_matrix, create_matrix
+
+        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=PETSc.RealType)
+        V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+        W = V.clone()
+        tests = [ufl.TestFunction(V), ufl.TestFunction(V if index == 0 else W)]
+        trials = [ufl.TrialFunction(V), ufl.TrialFunction(V if index == 1 else W)]
+        repeated = dolfinx.fem.form([[ufl.inner(u, v) * ufl.dx for u in trials] for v in tests])
+        assert dolfinx.fem.extract_function_spaces(repeated, index) == [V, V]
+        what = "rows" if index == 0 else "columns"
+        message = f"Function space is shared by {what} 0 and 1"
+        with pytest.raises(ValueError, match=message):
+            create_matrix(repeated, kind=kind)
+
+        valid = dolfinx.fem.form(
+            [
+                [ufl.inner(ufl.TrialFunction(V), ufl.TestFunction(V)) * ufl.dx, None],
+                [None, ufl.inner(ufl.TrialFunction(W), ufl.TestFunction(W)) * ufl.dx],
+            ]
+        )
+        A = create_matrix(valid, kind=kind)
+        try:
+            with pytest.raises(ValueError, match=message):
+                assemble_matrix(A, repeated)
+        finally:
+            A.destroy()

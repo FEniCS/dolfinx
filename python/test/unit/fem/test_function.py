@@ -44,7 +44,7 @@ def Q(mesh):
     return functionspace(mesh, ("Lagrange", 1, (gdim, gdim)))
 
 
-def test_name_argument(W):
+def test_name_argument(W) -> None:
     u = Function(W)
     v = Function(W, name="v")
     assert u.name == "f"
@@ -52,7 +52,7 @@ def test_name_argument(W):
     assert str(v) == "v"
 
 
-def test_copy(V):
+def test_copy(V) -> None:
     u = Function(V)
     u.interpolate(lambda x: x[0] + 2 * x[1])
     v = u.copy()
@@ -84,7 +84,7 @@ def test_copy(V):
         ),
     ],
 )
-def test_eval(dtype):
+def test_eval(dtype) -> None:
     xdtype = dtype(0).real.dtype
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=xdtype)
     gdim = mesh.geometry.dim
@@ -173,13 +173,13 @@ def test_eval_manifold(dtype):
     assert np.isclose(u.eval([0.75, 0.25, 0.5], 0)[0], 1.0, rtol=rtol)
 
 
-def test_interpolation_mismatch_rank0(W):
+def test_interpolation_mismatch_rank0(W) -> None:
     u = Function(W)
     with pytest.raises(ValueError):
         u.interpolate(lambda x: np.ones(x.shape[1]))
 
 
-def test_interpolation_mismatch_rank1(W):
+def test_interpolation_mismatch_rank1(W) -> None:
     u = Function(W)
     with pytest.raises(ValueError):
         u.interpolate(lambda x: np.ones((2, x.shape[1])))
@@ -208,7 +208,7 @@ def test_interpolation_mismatch_rank1(W):
         ),
     ],
 )
-def test_mixed_element_interpolation(dtype):
+def test_mixed_element_interpolation(dtype) -> None:
     xdtype = dtype(0).real.dtype
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=xdtype)
     el = element("Lagrange", mesh.basix_cell(), 1, dtype=xdtype)
@@ -218,7 +218,7 @@ def test_mixed_element_interpolation(dtype):
         u.interpolate(lambda x: np.ones(2, x.shape[1]))
 
 
-def test_interpolation_rank0(V):
+def test_interpolation_rank0(V) -> None:
     class MyExpression:
         def __init__(self):
             self.t = 0.0
@@ -240,7 +240,7 @@ def test_interpolation_rank0(V):
     assert (w.x.array[:] == 2.0).all()  # /NOSONAR
 
 
-def test_interpolation_rank1(W):
+def test_interpolation_rank1(W) -> None:
     def f(x):
         values = np.empty((3, x.shape[1]))
         values[0] = 1.0
@@ -322,7 +322,7 @@ def test_cffi_expression(dtype, cdtype):
         ),
     ],
 )
-def test_interpolation_function(dtype):
+def test_interpolation_function(dtype) -> None:
     xdtype = dtype(0).real.dtype
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=xdtype)
     V = functionspace(mesh, ("Lagrange", 1))

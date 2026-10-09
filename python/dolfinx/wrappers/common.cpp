@@ -175,15 +175,13 @@ void common(nb::module_& m)
             return std::make_pair(range[0], range[1]);
           },
           "Range of indices owned by this map")
-      .def(
-          "index_to_dest_ranks",
-          [](const dolfinx::common::IndexMap& self, int tag)
-          {
-            auto [data, offsets] = self.index_to_dest_ranks(tag);
-            return std::pair{dolfinx_wrappers::as_nbarray(std::move(data)),
-                             dolfinx_wrappers::as_nbarray(std::move(offsets))};
-          },
-          nb::arg("tag"))
+      .def("index_to_dest_ranks",
+           [](const dolfinx::common::IndexMap& self)
+           {
+             auto [data, offsets] = self.index_to_dest_ranks();
+             return std::pair{dolfinx_wrappers::as_nbarray(std::move(data)),
+                              dolfinx_wrappers::as_nbarray(std::move(offsets))};
+           })
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
@@ -250,6 +248,20 @@ void common(nb::module_& m)
       .def("flush",
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::flush,
            "Flush timer");
+
+  m.def(
+      "num_sharing_ranks",
+      [](const dolfinx::common::IndexMap& map,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
+         int bs)
+      {
+        std::vector<std::int32_t> n = dolfinx::common::num_sharing_ranks(
+            map, std::span(indices.data(), indices.size()), bs);
+        return dolfinx_wrappers::as_nbarray(std::move(n));
+      },
+      nb::arg("map"), nb::arg("indices"), nb::arg("bs"),
+      "Number of ranks sharing each index, counting the owner. "
+      "Collective.");
 
   m.def("timing", &dolfinx::timing, nb::arg("task"));
   m.def("timings", &dolfinx::timings);

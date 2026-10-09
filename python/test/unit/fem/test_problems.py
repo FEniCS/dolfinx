@@ -32,7 +32,7 @@ from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, i
     ],
 )
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_problem(dtype):
+def test_superlu_problem(dtype) -> None:
     """Manufactured Poisson and screened problem with exact solution u = x[1]**3."""
     from dolfinx.fem.problems import LinearProblem
 
@@ -79,7 +79,7 @@ def test_superlu_problem(dtype):
 
 
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_problem_default_args():
+def test_superlu_problem_default_args() -> None:
     from dolfinx.fem.problems import LinearProblem
 
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)

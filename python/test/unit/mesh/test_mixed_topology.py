@@ -101,7 +101,7 @@ def test_mixed_topology_mesh(dtype):
     set_log_level(LogLevel.WARNING)
 
 
-def test_mixed_topology_mesh_3d():
+def test_mixed_topology_mesh_3d() -> None:
     # Mesh = 2 tets, 1 prism, 1 hex, joined.
     cells = [
         np.array([0, 1, 2, 3, 1, 2, 3, 4], dtype=np.int64),
@@ -293,7 +293,7 @@ def test_parallel_mixed_mesh(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_create_entities(dtype):
+def test_create_entities(dtype) -> None:
     mesh = create_unit_cube(
         MPI.COMM_WORLD, 2, 2, 2, CellType.prism, ghost_mode=GhostMode.none, dtype=dtype
     )
@@ -408,7 +408,7 @@ def test_locate_entities(dtype):
     assert MPI.Comm.allreduce(comm, len(facets), MPI.SUM) == 0
 
 
-def test_mixed_cell_pairs(mixed_topology_mesh):
+def test_mixed_cell_pairs(mixed_topology_mesh) -> None:
     mesh = Mesh(mixed_topology_mesh, None)
     mesh.topology.create_entities(2, dolfinx.hardware_concurrency())
     mesh.topology.create_connectivity(2, 3)

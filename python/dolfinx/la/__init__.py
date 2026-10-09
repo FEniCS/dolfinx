@@ -37,6 +37,7 @@ __all__ = [
     "matrix_csr",
     "norm",
     "orthonormalize",
+    "set_diagonal",
     "sparsity_pattern",
     "sparsity_pattern_blocked",
     "vector",
@@ -649,3 +650,32 @@ def norm(x: Vector[_T], type: _cpp.la.Norm = _cpp.la.Norm.l2) -> float:
         Computed norm.
     """
     return _cpp.la.norm(x._cpp_object, type)  # type: ignore[arg-type]
+
+
+def set_diagonal(
+    A: MatrixCSR[Scalar],
+    rows: npt.NDArray[np.int32],
+    diagonal: Scalar | float | complex | npt.NDArray[Scalar] = 1.0,
+    insert_mode: InsertMode = InsertMode.insert,
+) -> None:
+    """Set or add values on the diagonal for given rows of a matrix.
+
+    Args:
+        A: Matrix to modify.
+        rows: Rows, in local indices, to set the diagonal value for.
+        diagonal: Value to set on the diagonal, either a single value
+            for all rows or an array with ``diagonal[i]`` the value for
+            ``rows[i]``. An array must have the same length as
+            ``rows``.
+        insert_mode: ``InsertMode.insert`` to set the diagonal entries,
+            or ``InsertMode.add`` to add to them.
+
+    Note:
+        A row that the calling rank does not own is accumulated into
+        the owner's entry when the matrix is finalised, so pass owned
+        rows unless that accumulation is intended. A row repeated in
+        ``rows`` is likewise written once per occurrence.
+    """
+    if np.ndim(diagonal) > 0:
+        diagonal = np.asarray(diagonal, dtype=A.data.dtype)
+    _cpp.la.set_diagonal(A._cpp_object, rows, diagonal, insert_mode)  # type: ignore[arg-type]

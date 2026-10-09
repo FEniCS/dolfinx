@@ -26,7 +26,7 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
-def test_create(cell_type):
+def test_create(cell_type) -> None:
     comm = MPI.COMM_WORLD
     mesh = create_unit_cube(comm, 6, 6, 6, cell_type)
 
@@ -44,7 +44,7 @@ def test_create(cell_type):
     assert mt.name == "my-name"
 
 
-def test_ufl_id():
+def test_ufl_id() -> None:
     """Test that UFL can process MeshTags (tests ufl_id attribute)."""
     comm = MPI.COMM_WORLD
     msh = create_unit_cube(comm, 6, 6, 6)
