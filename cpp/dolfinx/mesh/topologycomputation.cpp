@@ -17,7 +17,9 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/parallel.h>
 #include <dolfinx/common/sort.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <format>
 #include <functional>
@@ -335,8 +337,8 @@ int get_ownership(const U& processes, const V& vertices)
 /// @param[in] vertex_ranks Neighbourhood ranks sharing each vertex.
 /// @param[in] vertex_map Index map for the vertex distribution.
 /// @param[in] ghost_status Ghost status of each entity.
-/// @param[out] entity_to_local_idx Rows of `[global vertices..., entity
-/// index]`, one per (entity, sharing rank) candidate.
+/// @param[out] entity_to_local_idx_out Rows of `[global vertices...,
+/// entity index]`, one per (entity, sharing rank) candidate.
 /// @param[out] send_entities Global vertices of the candidates to send
 /// to each neighbourhood rank.
 /// @param[out] send_index Entity index of each entry of
@@ -348,10 +350,14 @@ void build_candidates(std::int32_t e0, std::int32_t e1,
                       const graph::AdjacencyList<int>& vertex_ranks,
                       const common::IndexMap& vertex_map,
                       std::span<const std::int8_t> ghost_status,
-                      std::vector<std::int64_t>& entity_to_local_idx,
+                      std::vector<std::int64_t>& entity_to_local_idx_out,
                       std::vector<std::vector<std::int64_t>>& send_entities,
                       std::vector<std::vector<std::int32_t>>& send_index)
 {
+  // Appended to locally and moved out at the end, to keep stores off a
+  // vector header shared with the neighbouring ranges' buffers
+  std::vector<std::int64_t> entity_to_local_idx;
+
   std::vector<std::int64_t> vglobal(num_vertices_per_e);
   std::vector<int> entity_ranks;
   for (std::int32_t id = e0; id < e1; ++id)
@@ -374,7 +380,10 @@ void build_candidates(std::int32_t e0, std::int32_t e1,
       std::ranges::sort(entity_ranks);
 
     // If the number of vertices shared with a rank is
-    // 'num_vertices_per_e', then add entity data to the send buffer
+    // 'num_vertices_per_e', then add entity data to the send buffer.
+    // `vglobal` depends only on the entity, so it is built at most once
+    // per entity however many ranks share it
+    bool have_vglobal = false;
     auto it = entity_ranks.begin();
     while (it != entity_ranks.end())
     {
@@ -382,8 +391,13 @@ void build_candidates(std::int32_t e0, std::int32_t e1,
                               [r0 = *it](auto r1) { return r1 != r0; });
       if (std::ranges::distance(it, it1) == num_vertices_per_e)
       {
-        vertex_map.local_to_global(entity, vglobal);
-        std::ranges::sort(vglobal);
+        if (!have_vglobal)
+        {
+          vertex_map.local_to_global(entity, vglobal);
+          std::ranges::sort(vglobal);
+          have_vglobal = true;
+        }
+
         entity_to_local_idx.insert(entity_to_local_idx.end(), vglobal.begin(),
                                    vglobal.end());
         entity_to_local_idx.push_back(id);
@@ -402,26 +416,8 @@ void build_candidates(std::int32_t e0, std::int32_t e1,
       it = it1;
     }
   }
-}
-//-----------------------------------------------------------------------------
 
-/// @brief Map the entity index of instances `[p0, p1)` through
-/// `local_index`.
-///
-/// This code is thread-safe: calls write only their own range.
-///
-/// @param[in] p0 First instance to map.
-/// @param[in] p1 One past the last instance to map.
-/// @param[in] entity_index Entity index of each instance.
-/// @param[in] local_index New index of each entity.
-/// @param[out] new_entity_index New entity index of each instance.
-void renumber_instances(std::size_t p0, std::size_t p1,
-                        std::span<const std::int32_t> entity_index,
-                        std::span<const std::int32_t> local_index,
-                        std::span<std::int32_t> new_entity_index)
-{
-  for (std::size_t p = p0; p < p1; ++p)
-    new_entity_index[p] = local_index[entity_index[p]];
+  entity_to_local_idx_out = std::move(entity_to_local_idx);
 }
 //-----------------------------------------------------------------------------
 
@@ -440,11 +436,11 @@ void renumber_instances(std::size_t p0, std::size_t p1,
 /// `entity_list`
 /// @param[in] entity_index Initial numbering for each row in
 /// `entity_list`
-/// @param[in] entity_count Number of entities.
 /// @param[in] first_instance An instance of each entity, i.e. a row of
-/// `entity_list` holding its vertices. All instances of an entity have
-/// the same (globally oriented) vertex list, so any one of them will
-/// do; the caller has them to hand from the labelling.
+/// `entity_list` holding its vertices, in entity index order. All
+/// instances of an entity have the same (globally oriented) vertex
+/// list, so any one of them will do; the caller has them to hand from
+/// the labelling. Its size is the number of entities.
 /// @param[in] num_threads Number of threads to use.
 /// @returns Local indices, the index map and shared entities
 std::tuple<std::vector<int>, common::IndexMap, std::vector<std::int32_t>>
@@ -453,10 +449,12 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
                    int num_vertices_per_e,
                    std::span<const std::int8_t> ghost_status,
                    std::span<const std::int32_t> entity_index,
-                   std::int32_t entity_count,
                    std::span<const std::int32_t> first_instance,
                    int num_threads)
 {
+  const std::int32_t entity_count
+      = static_cast<std::int32_t>(first_instance.size());
+
   // entity_list contains all the entities for all the cells,
   // listed as local vertex indices, and entity_index contains
   // the initial numbering of the entities.
@@ -508,28 +506,23 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
         num_threads, std::vector<std::vector<std::int64_t>>(all_ranks.size()));
     std::vector<std::vector<std::vector<std::int32_t>>> send_index_t(
         num_threads, std::vector<std::vector<std::int32_t>>(all_ranks.size()));
-    {
-      std::vector<std::jthread> threads;
-      for (int i = 1; i < num_threads; ++i)
-      {
-        auto [e0, e1] = common::local_range(i, entity_count, num_threads);
-        threads.emplace_back(
-            build_candidates, e0, e1, first_instance, entity_list,
-            num_vertices_per_e, std::cref(vertex_ranks), std::cref(vertex_map),
-            ghost_status, std::ref(e2l_t[i]), std::ref(send_entities_t[i]),
-            std::ref(send_index_t[i]));
-      }
-      auto [e0, e1] = common::local_range(0, entity_count, num_threads);
-      build_candidates(e0, e1, first_instance, entity_list, num_vertices_per_e,
-                       vertex_ranks, vertex_map, ghost_status, e2l_t[0],
-                       send_entities_t[0], send_index_t[0]);
-    }
+    common::parallel_for(
+        entity_count, num_threads,
+        [&first_instance, &entity_list, num_vertices_per_e, &vertex_ranks,
+         &vertex_map, ghost_status, &e2l_t, &send_entities_t,
+         &send_index_t](int i, std::size_t e0, std::size_t e1)
+        {
+          build_candidates(static_cast<std::int32_t>(e0),
+                           static_cast<std::int32_t>(e1), first_instance,
+                           entity_list, num_vertices_per_e, vertex_ranks,
+                           vertex_map, ghost_status, e2l_t[i],
+                           send_entities_t[i], send_index_t[i]);
+        });
 
-    for (int i = 0; i < num_threads; ++i)
+    entity_to_local_idx = common::concatenate<std::int64_t>(e2l_t);
+    for (std::size_t r = 0; r < all_ranks.size(); ++r)
     {
-      entity_to_local_idx.insert(entity_to_local_idx.end(), e2l_t[i].begin(),
-                                 e2l_t[i].end());
-      for (std::size_t r = 0; r < all_ranks.size(); ++r)
+      for (int i = 0; i < num_threads; ++i)
       {
         send_entities[r].insert(send_entities[r].end(),
                                 send_entities_t[i][r].begin(),
@@ -783,18 +776,13 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   // Create map from initial numbering to new local indices
   common::Timer timer_li_rn("Entity local indexing: renumber");
   std::vector<std::int32_t> new_entity_index(entity_index.size());
-  {
-    std::vector<std::jthread> threads;
-    for (int i = 1; i < num_threads; ++i)
-    {
-      auto [p0, p1] = common::local_range(i, entity_index.size(), num_threads);
-      threads.emplace_back(renumber_instances, p0, p1, entity_index,
-                           std::span<const std::int32_t>(local_index),
-                           std::span<std::int32_t>(new_entity_index));
-    }
-    auto [p0, p1] = common::local_range(0, entity_index.size(), num_threads);
-    renumber_instances(p0, p1, entity_index, local_index, new_entity_index);
-  }
+  common::parallel_for(entity_index.size(), num_threads,
+                       [entity_index, &local_index,
+                        &new_entity_index](int, std::size_t p0, std::size_t p1)
+                       {
+                         for (std::size_t p = p0; p < p1; ++p)
+                           new_entity_index[p] = local_index[entity_index[p]];
+                       });
   timer_li_rn.stop();
   timer_li_rn.flush();
 
@@ -810,8 +798,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 /// Instances of one entity share a key and are therefore consecutive
 /// in `sort_order`. A run of instances that begins before `p0` is
 /// labelled -1, one less than the first entity labelled here, so that
-/// ::shift_labels maps it onto the label the preceding range gave the
-/// same run.
+/// the shift pass below maps it onto the label the preceding range
+/// gave the same run.
 ///
 /// This code is thread-safe. `sort_order` is a permutation, so a call
 /// writes only the `entity_index` entries its own range of
@@ -823,17 +811,19 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 /// @param[in] keys Sorted vertex key of each instance, stored
 /// column-major (one span per vertex).
 /// @param[out] entity_index Entity label of each instance.
-/// @param[out] representatives First instance of each entity labelled,
-/// in label order. Collected here, rather than by a later pass over
-/// `sort_order`, because this loop already has the label of each
-/// instance to hand -- recovering it afterwards costs a random read
-/// per instance (see ::build_entity_vertices).
+/// @param[out] representatives_out First instance of each entity
+/// labelled, in label order. Collected here because this loop already
+/// has each instance's label to hand.
 void label_entities(std::span<const std::int32_t> sort_order, std::size_t p0,
                     std::size_t p1,
                     std::span<const std::span<std::int32_t>> keys,
                     std::span<std::int32_t> entity_index,
-                    std::vector<std::int32_t>& representatives)
+                    std::vector<std::int32_t>& representatives_out)
 {
+  // Appended to locally and moved out at the end, to keep stores off a
+  // vector header shared with the neighbouring ranges' buffers
+  std::vector<std::int32_t> representatives;
+
   auto same_key = [keys](std::int32_t i0, std::int32_t i1)
   {
     for (std::span<const std::int32_t> key : keys)
@@ -844,7 +834,6 @@ void label_entities(std::span<const std::int32_t> sort_order, std::size_t p0,
     return true;
   };
 
-  representatives.clear();
   std::size_t p = p0;
 
   // A run that started before p0 is labelled -1, and its
@@ -865,25 +854,8 @@ void label_entities(std::span<const std::int32_t> sort_order, std::size_t p0,
     while (p < p1 and same_key(idx0, sort_order[p]))
       entity_index[sort_order[p++]] = label;
   }
-}
-//-----------------------------------------------------------------------------
 
-/// @brief Shift the labels ::label_entities wrote at positions
-/// `[p0, p1)` of `sort_order` onto the global entity numbering.
-///
-/// Thread-safe for the same reason as ::label_entities.
-///
-/// @param[in] sort_order Entity instances, ordered by vertex key.
-/// @param[in] p0 First position in `sort_order` to shift.
-/// @param[in] p1 One past the last position in `sort_order` to shift.
-/// @param[in] offset Number of entities labelled by preceding ranges.
-/// @param[in,out] entity_index Entity label of each instance.
-void shift_labels(std::span<const std::int32_t> sort_order, std::size_t p0,
-                  std::size_t p1, std::int32_t offset,
-                  std::span<std::int32_t> entity_index)
-{
-  for (std::size_t p = p0; p < p1; ++p)
-    entity_index[sort_order[p]] += offset;
+  representatives_out = std::move(representatives);
 }
 //-----------------------------------------------------------------------------
 
@@ -896,7 +868,7 @@ void shift_labels(std::span<const std::int32_t> sort_order, std::size_t p0,
 /// are skipped.
 ///
 /// This code is thread-safe: each entity appears in exactly one
-/// `representatives` list, and so is written once.
+/// `representatives` range, and so is written once.
 ///
 /// @param[in] representatives First instance of each entity to build.
 /// @param[in] local_index Local entity index of each instance.
@@ -974,14 +946,10 @@ compute_entities_by_key_matching(
 
   int num_vertices_per_entity = num_cell_vertices(entity_type);
 
-  // Note: these scratch arrays are allocated without initialisation,
-  // via std::unique_ptr rather than std::vector. Every element is
-  // written by `build_entity_list` below before it is read, so
-  // value-initialising them first is pure cost -- several GB, and
-  // seconds, for a mesh with tens of millions of cells. Leaving the
-  // pages untouched here also moves their first touch into the
-  // threaded loop that fills them, where the faults are taken in
-  // parallel and the pages land near the thread that will use them.
+  // Allocated without initialisation (hence std::unique_ptr, not
+  // std::vector): `build_entity_list` writes every element before any
+  // read, and first touch then happens on the thread that will use the
+  // page.
   const std::size_t entity_list_size
       = static_cast<std::size_t>(cell_type_offsets.back())
         * num_vertices_per_entity;
@@ -1069,10 +1037,15 @@ compute_entities_by_key_matching(
                                        cell_type_offsets.back());
   std::int32_t entity_count = 0;
 
-  // First instance of each entity, grouped by the thread that
-  // labelled it (see ::label_entities)
-  std::vector<std::vector<std::int32_t>> representatives(num_threads);
+  // An instance of each entity, in entity index order. All instances of
+  // an entity hold the same (globally oriented) vertex list, so any one
+  // of them describes the entity (see ::label_entities)
+  std::vector<std::int32_t> first_instance;
   {
+    // First instance of each entity, grouped by the range that labelled
+    // it
+    std::vector<std::vector<std::int32_t>> representatives(num_threads);
+
     common::Timer timer_number(
         "Compute entities by key matching: number entities");
 
@@ -1117,27 +1090,19 @@ compute_entities_by_key_matching(
       }
     }();
 
-    // Label uniquely. Each thread labels its own range of the sorted
-    // order, numbering the entities that start in it from zero, and a
-    // second pass shifts each range's labels past the entities found by
-    // the ranges before it. Counting the entities per range first and
-    // only then labelling would instead need a second pass over the
-    // (randomly accessed) keys; the shift pass touches only the labels.
-    {
-      std::vector<std::jthread> threads;
-      for (int i = 1; i < num_threads; ++i)
-      {
-        auto [p0, p1] = common::local_range(i, sort_order.size(), num_threads);
-        threads.emplace_back(
-            label_entities, std::span<const std::int32_t>(sort_order), p0, p1,
-            std::span<const std::span<std::int32_t>>(entity_list_sorted),
-            std::span<std::int32_t>(entity_index),
-            std::ref(representatives[i]));
-      }
-      auto [p0, p1] = common::local_range(0, sort_order.size(), num_threads);
-      label_entities(sort_order, p0, p1, entity_list_sorted, entity_index,
-                     representatives[0]);
-    }
+    // Label uniquely. Each range numbers the entities starting in it
+    // from zero, then a second pass shifts its labels past those found
+    // by the ranges before it. Counting first instead would need a
+    // second pass over the randomly accessed keys; the shift pass
+    // touches only the labels.
+    common::parallel_for(
+        sort_order.size(), num_threads,
+        [&sort_order, &entity_list_sorted, entity_index,
+         &representatives](int i, std::size_t p0, std::size_t p1)
+        {
+          label_entities(sort_order, p0, p1, entity_list_sorted, entity_index,
+                         representatives[i]);
+        });
 
     std::vector<std::int32_t> label_offsets(num_threads + 1, 0);
     std::ranges::transform(representatives, std::next(label_offsets.begin()),
@@ -1147,20 +1112,21 @@ compute_entities_by_key_matching(
                      std::next(label_offsets.begin()));
     entity_count = label_offsets.back();
 
-    {
-      // Range 0 is already numbered from zero, so needs no shift
-      std::vector<std::jthread> threads;
-      for (int i = 1; i < num_threads; ++i)
-      {
-        if (label_offsets[i] == 0)
-          continue;
-        auto [p0, p1] = common::local_range(i, sort_order.size(), num_threads);
-        threads.emplace_back(
-            shift_labels, std::span<const std::int32_t>(sort_order), p0, p1,
-            label_offsets[i], std::span<std::int32_t>(entity_index));
-      }
-    }
+    // Range 0 is already numbered from zero, so needs no shift
+    common::parallel_for(sort_order.size(), num_threads,
+                         [&sort_order, &label_offsets,
+                          entity_index](int i, std::size_t p0, std::size_t p1)
+                         {
+                           if (label_offsets[i] == 0)
+                             return;
+                           for (std::size_t p = p0; p < p1; ++p)
+                             entity_index[sort_order[p]] += label_offsets[i];
+                         });
+
+    // Range `i` numbered entities [label_offsets[i], label_offsets[i+1])
+    first_instance = common::concatenate<std::int32_t>(representatives);
   }
+  assert(first_instance.size() == static_cast<std::size_t>(entity_count));
 
   //---------
   // Set ghost status array values
@@ -1194,37 +1160,22 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-  // An instance of each entity, in entity index order: the labelling
-  // recorded the first instance of every entity it numbered, and
-  // range `i` numbered entities [label_offsets[i], label_offsets[i+1])
-  std::vector<std::int32_t> first_instance;
-  first_instance.reserve(entity_count);
-  for (const std::vector<std::int32_t>& r : representatives)
-    first_instance.insert(first_instance.end(), r.begin(), r.end());
-  assert(first_instance.size() == static_cast<std::size_t>(entity_count));
-
   auto [local_index, index_map, interprocess_entities] = get_local_indexing(
       comm, vertex_index_map, entity_list, num_vertices_per_entity,
-      ghost_status, entity_index, entity_count, first_instance, num_threads);
+      ghost_status, entity_index, first_instance, num_threads);
 
-  // Entity-vertex connectivity. All instances of an entity hold the
-  // same, globally oriented, vertex list, so each row is built once,
-  // from the first instance of its entity in `sort_order`
+  // Entity-vertex connectivity, built once per entity from the
+  // instance of it recorded above
   std::vector<std::int32_t> ev_array(entity_count * num_vertices_per_entity);
-  {
-    std::vector<std::jthread> threads;
-    for (int i = 1; i < num_threads; ++i)
-    {
-      threads.emplace_back(build_entity_vertices,
-                           std::span<const std::int32_t>(representatives[i]),
-                           std::span<const std::int32_t>(local_index),
-                           std::span<const std::int32_t>(entity_list),
-                           num_vertices_per_entity,
-                           std::span<std::int32_t>(ev_array));
-    }
-    build_entity_vertices(representatives[0], local_index, entity_list,
-                          num_vertices_per_entity, ev_array);
-  }
+  common::parallel_for(
+      first_instance.size(), num_threads,
+      [&first_instance, &local_index, entity_list, num_vertices_per_entity,
+       &ev_array](int, std::size_t e0, std::size_t e1)
+      {
+        build_entity_vertices(
+            std::span<const std::int32_t>(first_instance).subspan(e0, e1 - e0),
+            local_index, entity_list, num_vertices_per_entity, ev_array);
+      });
   graph::AdjacencyList ev = graph::regular_adjacency_list(
       std::move(ev_array), num_vertices_per_entity);
 

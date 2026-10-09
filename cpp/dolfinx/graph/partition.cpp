@@ -15,12 +15,12 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/parallel.h>
 #include <dolfinx/common/sort.h>
 #include <memory>
 #include <numeric>
 #include <span>
 #include <stdexcept>
-#include <thread>
 #include <vector>
 
 using namespace dolfinx;
@@ -171,17 +171,18 @@ void pack_send_rows(std::span<const std::array<int, 3>> dest_to_index,
 /// @param[in] q0 First received row to count.
 /// @param[in] q1 One past the last received row to count.
 /// @param[in] rank This rank.
-/// @param[out] count Number of rows in `[q0, q1)` owned by `rank`.
-void count_owned_rows(std::span<const std::int64_t> recv_buffer,
-                      std::size_t buffer_shape1, std::size_t q0, std::size_t q1,
-                      int rank, std::int32_t& count)
+/// @return Number of rows in `[q0, q1)` owned by `rank`.
+std::int32_t count_owned_rows(std::span<const std::int64_t> recv_buffer,
+                              std::size_t buffer_shape1, std::size_t q0,
+                              std::size_t q1, int rank)
 {
-  count = 0;
+  std::int32_t count = 0;
   for (std::size_t q = q0; q < q1; ++q)
   {
     if (recv_buffer[q * buffer_shape1 + buffer_shape1 - 2] == rank)
       ++count;
   }
+  return count;
 }
 //-----------------------------------------------------------------------------
 
@@ -202,29 +203,33 @@ void count_owned_rows(std::span<const std::int64_t> recv_buffer,
 /// @param[in] rank This rank.
 /// @param[in] recv_disp Receive displacements, one per source rank.
 /// @param[in] src Source ranks.
-/// @param[in] owned_pos Output row for the first owned row found.
-/// @param[in] ghost_pos Ghost row index for the first ghost row found.
+/// @param[in] owned_pos Output row for the first owned row found,
+/// i.e. the number of owned rows in `[0, q0)`. The first ghost row
+/// found then goes at ghost index `q0 - owned_pos`, the number of rows
+/// before `q0` that were not owned.
 /// @param[in] num_owned Total number of owned rows, i.e. the output
 /// row at which the ghost rows start.
 /// @param[out] data Unpacked rows, flattened row-major.
 /// @param[out] global_indices Original global index of each row.
 /// @param[out] src_ranks Source rank of each row.
 /// @param[out] ghost_index_owner Owning rank of each ghost row.
-void unpack_recv_rows(
-    std::span<const std::int64_t> recv_buffer, std::size_t buffer_shape1,
-    std::size_t shape1, std::size_t q0, std::size_t q1, int rank,
-    std::span<const std::int32_t> recv_disp, std::span<const int> src,
-    std::int32_t owned_pos, std::int32_t ghost_pos, std::int32_t num_owned,
-    std::span<std::int64_t> data, std::span<std::int64_t> global_indices,
-    std::span<int> src_ranks, std::span<int> ghost_index_owner)
+void unpack_recv_rows(std::span<const std::int64_t> recv_buffer,
+                      std::size_t buffer_shape1, std::size_t shape1,
+                      std::size_t q0, std::size_t q1, int rank,
+                      std::span<const std::int32_t> recv_disp,
+                      std::span<const int> src, std::int32_t owned_pos,
+                      std::int32_t num_owned, std::span<std::int64_t> data,
+                      std::span<std::int64_t> global_indices,
+                      std::span<int> src_ranks,
+                      std::span<int> ghost_index_owner)
 {
+  std::int32_t ghost_pos = static_cast<std::int32_t>(q0) - owned_pos;
+
   // Index of the source rank that sent row q0
-  std::size_t p = 0;
-  while (p + 1 < recv_disp.size() - 1
-         and static_cast<std::size_t>(recv_disp[p + 1]) <= q0)
-  {
-    ++p;
-  }
+  std::size_t p = std::ranges::distance(
+      recv_disp.begin(),
+      std::ranges::upper_bound(recv_disp, static_cast<std::int32_t>(q0)));
+  p = p > 0 ? p - 1 : 0;
 
   for (std::size_t q = q0; q < q1; ++q)
   {
@@ -443,31 +448,22 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
 
   DistributionPlan plan = compute_distribution_plan(comm, destinations);
 
-  // Pack send buffer. The buffer is allocated without initialisation
-  // (and so via std::unique_ptr, not std::vector) because every entry
-  // of every row is written below before it is sent -- the fill is GBs
-  // of pure cost for a mesh with tens of millions of cells.
+  // Pack send buffer. Allocated without initialisation (hence
+  // std::unique_ptr, not std::vector): every entry of every row is
+  // written below before it is sent.
   assert(plan.send_disp.back() == (std::int32_t)plan.dest_to_index.size());
   const std::size_t send_size = buffer_shape1 * plan.send_disp.back();
   std::unique_ptr<std::int64_t[]> send_storage
       = std::make_unique_for_overwrite<std::int64_t[]>(send_size);
   std::span<std::int64_t> send_buffer(send_storage.get(), send_size);
-  {
-    std::vector<std::jthread> threads;
-    for (int i = 1; i < num_threads; ++i)
-    {
-      auto [i0, i1]
-          = common::local_range(i, plan.dest_to_index.size(), num_threads);
-      threads.emplace_back(
-          pack_send_rows,
-          std::span<const std::array<int, 3>>(plan.dest_to_index), i0, i1, list,
-          shape[1], buffer_shape1, offset_global, send_buffer);
-    }
-    auto [i0, i1]
-        = common::local_range(0, plan.dest_to_index.size(), num_threads);
-    pack_send_rows(plan.dest_to_index, i0, i1, list, shape[1], buffer_shape1,
-                   offset_global, send_buffer);
-  }
+  common::parallel_for(plan.dest_to_index.size(), num_threads,
+                       [&plan, &list, shape, buffer_shape1, offset_global,
+                        send_buffer](int, std::size_t i0, std::size_t i1)
+                       {
+                         pack_send_rows(plan.dest_to_index, i0, i1, list,
+                                        shape[1], buffer_shape1, offset_global,
+                                        send_buffer);
+                       });
 
   // Prepare receive displacement
   MPI_Wait(&plan.request, MPI_STATUS_IGNORE);
@@ -493,25 +489,19 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   spdlog::debug("Received {} data on {} [{}]", recv_disp.back(), rank,
                 shape[1]);
 
-  // Unpack receive buffer. Owned rows are counted first so that the
-  // output arrays can be sized and written exactly once, in place:
-  // appending owned and ghost rows to separate vectors and joining
-  // them afterwards instead copies (and, via shrink_to_fit,
-  // reallocates) every row a second time.
+  // Unpack receive buffer. Counting the owned rows first lets the
+  // output arrays be sized and written exactly once, in place;
+  // appending to separate vectors and joining them afterwards would
+  // copy, and reallocate, every row a second time.
   const std::size_t num_recv = recv_disp.back();
   std::vector<std::int32_t> num_owned_t(num_threads, 0);
-  {
-    std::vector<std::jthread> threads;
-    for (int i = 1; i < num_threads; ++i)
-    {
-      auto [q0, q1] = common::local_range(i, num_recv, num_threads);
-      threads.emplace_back(
-          count_owned_rows, std::span<const std::int64_t>(recv_buffer),
-          buffer_shape1, q0, q1, rank, std::ref(num_owned_t[i]));
-    }
-    auto [q0, q1] = common::local_range(0, num_recv, num_threads);
-    count_owned_rows(recv_buffer, buffer_shape1, q0, q1, rank, num_owned_t[0]);
-  }
+  common::parallel_for(num_recv, num_threads,
+                       [recv_buffer, buffer_shape1, rank,
+                        &num_owned_t](int i, std::size_t q0, std::size_t q1)
+                       {
+                         num_owned_t[i] = count_owned_rows(
+                             recv_buffer, buffer_shape1, q0, q1, rank);
+                       });
 
   std::vector<std::int32_t> owned_offsets(num_threads + 1, 0);
   std::partial_sum(num_owned_t.begin(), num_owned_t.end(),
@@ -525,27 +515,16 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   std::vector<std::int64_t> global_indices(num_recv);
   std::vector<int> src_ranks(num_recv);
   std::vector<int> ghost_index_owner(num_recv - num_owned_rows);
-  {
-    std::vector<std::jthread> threads;
-    for (int i = 1; i < num_threads; ++i)
-    {
-      auto [q0, q1] = common::local_range(i, num_recv, num_threads);
-      threads.emplace_back(
-          unpack_recv_rows, std::span<const std::int64_t>(recv_buffer),
-          buffer_shape1, shape[1], q0, q1, rank,
-          std::span<const std::int32_t>(recv_disp),
-          std::span<const int>(plan.src), owned_offsets[i],
-          static_cast<std::int32_t>(q0) - owned_offsets[i], num_owned_rows,
-          std::span<std::int64_t>(data),
-          std::span<std::int64_t>(global_indices), std::span<int>(src_ranks),
-          std::span<int>(ghost_index_owner));
-    }
-    auto [q0, q1] = common::local_range(0, num_recv, num_threads);
-    unpack_recv_rows(
-        recv_buffer, buffer_shape1, shape[1], q0, q1, rank, recv_disp, plan.src,
-        owned_offsets[0], static_cast<std::int32_t>(q0) - owned_offsets[0],
-        num_owned_rows, data, global_indices, src_ranks, ghost_index_owner);
-  }
+  common::parallel_for(
+      num_recv, num_threads,
+      [recv_buffer, buffer_shape1, shape, rank, &recv_disp, &plan,
+       &owned_offsets, num_owned_rows, &data, &global_indices, &src_ranks,
+       &ghost_index_owner](int i, std::size_t q0, std::size_t q1)
+      {
+        unpack_recv_rows(recv_buffer, buffer_shape1, shape[1], q0, q1, rank,
+                         recv_disp, plan.src, owned_offsets[i], num_owned_rows,
+                         data, global_indices, src_ranks, ghost_index_owner);
+      });
 
   return {std::move(data), std::move(src_ranks), std::move(global_indices),
           std::move(ghost_index_owner)};

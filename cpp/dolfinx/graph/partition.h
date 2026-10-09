@@ -198,6 +198,8 @@ namespace build
 /// 4. Owning rank of the ghost nodes among (1). This has one entry per
 ///    ghost node -- the trailing entries of (1) -- not one entry per
 ///    node of (1).
+/// @note This overload is serial. Use the fixed-degree overload below
+/// for a threaded distribution.
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,

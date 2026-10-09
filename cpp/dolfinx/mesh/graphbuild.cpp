@@ -15,7 +15,9 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/parallel.h>
 #include <dolfinx/common/sort.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <iterator>
@@ -589,10 +591,17 @@ void match_facets(std::span<const std::int32_t> perm, std::size_t p0,
                   std::span<const std::span<std::int64_t>> facets,
                   int max_vertices_per_facet,
                   std::optional<std::int32_t> max_facet_to_cell_links,
-                  std::vector<std::int64_t>& unmatched_facets,
-                  std::vector<std::int32_t>& local_cells,
-                  std::vector<std::array<std::int32_t, 2>>& edges)
+                  std::vector<std::int64_t>& unmatched_facets_out,
+                  std::vector<std::int32_t>& local_cells_out,
+                  std::vector<std::array<std::int32_t, 2>>& edges_out)
 {
+  // Appended to locally and moved out at the end: appending straight to
+  // the caller's buffers would store into a vector header that shares a
+  // cache line with the headers of the neighbouring ranges' buffers
+  std::vector<std::int64_t> unmatched_facets;
+  std::vector<std::int32_t> local_cells;
+  std::vector<std::array<std::int32_t, 2>> edges;
+
   auto facets_equal
       = [facets, max_vertices_per_facet](std::int32_t idx0, std::int32_t idx1)
   {
@@ -649,6 +658,10 @@ void match_facets(std::span<const std::int32_t> perm, std::size_t p0,
         edges.push_back({cell_a, facet_cell(perm[b])});
     }
   }
+
+  unmatched_facets_out = std::move(unmatched_facets);
+  local_cells_out = std::move(local_cells);
+  edges_out = std::move(edges);
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -906,44 +919,24 @@ mesh::build_local_dual_graph(
   std::vector<std::vector<std::int64_t>> unmatched_facets_t(num_threads);
   std::vector<std::vector<std::int32_t>> local_cells_t(num_threads);
   std::vector<std::vector<std::array<std::int32_t, 2>>> edges_t(num_threads);
-  {
-    std::vector<std::jthread> threads;
-    for (int i = 1; i < num_threads; ++i)
-    {
-      auto [p0, p1] = common::local_range(i, perm.size(), num_threads);
-      threads.emplace_back(match_facets, std::span<const std::int32_t>(perm),
-                           p0, p1,
-                           std::span<const std::span<std::int64_t>>(facets),
-                           max_vertices_per_facet, max_facet_to_cell_links,
-                           std::ref(unmatched_facets_t[i]),
-                           std::ref(local_cells_t[i]), std::ref(edges_t[i]));
-    }
-    auto [p0, p1] = common::local_range(0, perm.size(), num_threads);
-    match_facets(perm, p0, p1, facets, max_vertices_per_facet,
-                 max_facet_to_cell_links, unmatched_facets_t[0],
-                 local_cells_t[0], edges_t[0]);
-  }
+  common::parallel_for(
+      perm.size(), num_threads,
+      [&perm, &facets, max_vertices_per_facet, max_facet_to_cell_links,
+       &unmatched_facets_t, &local_cells_t,
+       &edges_t](int i, std::size_t p0, std::size_t p1)
+      {
+        match_facets(perm, p0, p1, facets, max_vertices_per_facet,
+                     max_facet_to_cell_links, unmatched_facets_t[i],
+                     local_cells_t[i], edges_t[i]);
+      });
 
   // Concatenate the unmatched facets. The dual graph edges are left
   // as they are and consumed range by range below, which needs no
   // copy at all.
-  std::vector<std::int64_t> unmatched_facets;
-  std::vector<std::int32_t> local_cells;
-  {
-    std::size_t num_unmatched = 0;
-    for (const std::vector<std::int32_t>& c : local_cells_t)
-      num_unmatched += c.size();
-    unmatched_facets.reserve(num_unmatched * max_vertices_per_facet);
-    local_cells.reserve(num_unmatched);
-    for (int i = 0; i < num_threads; ++i)
-    {
-      unmatched_facets.insert(unmatched_facets.end(),
-                              unmatched_facets_t[i].begin(),
-                              unmatched_facets_t[i].end());
-      local_cells.insert(local_cells.end(), local_cells_t[i].begin(),
-                         local_cells_t[i].end());
-    }
-  }
+  std::vector<std::int64_t> unmatched_facets
+      = common::concatenate<std::int64_t>(unmatched_facets_t);
+  std::vector<std::int32_t> local_cells
+      = common::concatenate<std::int32_t>(local_cells_t);
 
   timer4.stop();
   timer4.flush();
@@ -956,13 +949,10 @@ mesh::build_local_dual_graph(
   common::Timer timer5("Compute local part of mesh dual graph: 5");
 
   std::vector<std::int32_t> num_links(cell_offsets.back(), 0);
-  for (const std::vector<std::array<std::int32_t, 2>>& e_t : edges_t)
+  for (auto [a, b] : edges_t | std::views::join)
   {
-    for (auto [a, b] : e_t)
-    {
-      ++num_links[a];
-      ++num_links[b];
-    }
+    ++num_links[a];
+    ++num_links[b];
   }
 
   std::vector<std::int32_t> offsets(num_links.size() + 1, 0);
@@ -971,13 +961,10 @@ mesh::build_local_dual_graph(
   std::vector<std::int32_t> data(offsets.back());
   {
     std::vector<std::int32_t> pos = offsets;
-    for (const std::vector<std::array<std::int32_t, 2>>& e_t : edges_t)
+    for (auto [a, b] : edges_t | std::views::join)
     {
-      for (auto e : e_t)
-      {
-        data[pos[e[0]]++] = e[1];
-        data[pos[e[1]]++] = e[0];
-      }
+      data[pos[a]++] = b;
+      data[pos[b]++] = a;
     }
   }
 
