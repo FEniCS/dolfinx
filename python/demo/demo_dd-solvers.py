@@ -583,11 +583,12 @@ def solve_curl_curl(
         """Give BDDC the discrete gradient.
 
         Its range is the kernel of the curl, which BDDC puts into its
-        coarse space. PCBDDC analyses the subdomain edges with it;
-        `conforming` says the edges are simple chains of
-        degrees-of-freedom, which holds for the partitions this demo is
-        run on. See the note at the end on when it does not. PETSc
-        takes its own reference, so this side keeps none.
+        coarse space. PCBDDC analyses the subdomain edges with it, and
+        `conforming` asserts that each is a simple chain of
+        degrees-of-freedom between two subdomain corners. That is a
+        property of the partition rather than of the mesh, and holds
+        for the partitions this demo is run on. PETSc takes its own
+        reference, so this side keeps none.
         """
         if pc_options["pc_type"] == "bddc":
             # The gradient maps the H1 space of the same degree into V
@@ -693,30 +694,3 @@ for n in (8, 12):
 # rather than written by the owner alone. The Poisson problem is
 # constrained on the whole boundary and the elasticity problem on one
 # edge, so the counts differ.
-
-# ## A note on PCBDDC's Nedelec support
-#
-# `PCBDDCSetDiscreteGradient` takes an `order` and a `field`, which
-# describe the Nedelec space, and two flags. One of them, `conforming`,
-# is documented as "`PETSC_TRUE` if the mesh is conforming". The mesh
-# here is conforming, so it is set.
-#
-# PCBDDC asks for more than the mesh under that flag: each subdomain
-# edge must be a simple chain of Nedelec degrees-of-freedom between two
-# subdomain corners, every row of the gradient along it listing
-# `order + 1` nodal degrees-of-freedom. That is a property of the
-# partition rather than of the mesh, and a graph partition of a
-# tetrahedral mesh does not always give it. Where it does not,
-# `PCBDDCNedelecSupport` stops with "Unexpected SIZE OF EDGE > EXTCOL
-# SECOND PASS"; the space used here runs on two to four processes and
-# stops on six. `conforming=False` is the fallback: it adds a pass
-# that makes the offending degrees-of-freedom primal, and runs on any
-# partition tried, in one or two fewer iterations.
-#
-# The documentation also asks that the discrete gradient hold no
-# explicitly stored zeros. The one assembled here does hold some, and
-# PCBDDC accepts it.
-#
-# The gradient matters for the second-order space used here:
-# without it the solve takes an order of magnitude more iterations,
-# and on the finer mesh it exceeds the cap set above.
