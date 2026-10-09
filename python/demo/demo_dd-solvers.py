@@ -151,6 +151,47 @@ rtol = 1e-5 if single_precision else 1e-8
 PCOptions = dict[str, str | int | float | bool]
 # -
 
+# Every subdomain and coarse problem below is factorised on a single
+# process, and all of them are symmetric positive definite. PETSc's own
+# factorisation is always available, but an external package is usually
+# faster, so the first one PETSc has is used instead, paired with
+# Cholesky where it offers one. SuperLU_DIST's Cholesky is an LU with a
+# symmetric ordering, and sequential SuperLU has no Cholesky at all, so
+# both rank below SuiteSparse, whose Cholesky solver is named CHOLMOD.
+
+# +
+factor_pc_type, mat_solver_type = "cholesky", "petsc"
+for pc, solver, package in (
+    ("cholesky", "mumps", "mumps"),
+    ("cholesky", "cholmod", "suitesparse"),
+    ("lu", "superlu_dist", "superlu_dist"),
+    ("lu", "superlu", "superlu"),
+):
+    if PETSc.Sys.hasExternalPackage(package):
+        factor_pc_type, mat_solver_type = pc, solver
+        break
+
+if MPI.COMM_WORLD.rank == 0:
+    print(f"Direct solver for the local problems: {mat_solver_type}")
+
+
+def direct_solver(prefix: str) -> PCOptions:
+    """PETSc options pointing a sub-solver at the selected direct solver.
+
+    Args:
+        prefix: Option prefix of the sub-solver to configure.
+
+    Returns:
+        Factorisation type and solver package for ``prefix``.
+    """
+    return {
+        f"{prefix}_pc_type": factor_pc_type,
+        f"{prefix}_pc_factor_mat_solver_type": mat_solver_type,
+    }
+
+
+# -
+
 # Each problem reports how many of its constrained degrees of freedom
 # lie on a subdomain interface, which
 # :func:`~dolfinx.common.num_sharing_ranks` answers directly.
@@ -330,11 +371,19 @@ def solve_poisson(
 # explicit primal degrees of freedom, which are then removed from the
 # subdomain problems; without it those problems keep their rigid body
 # modes and the factorisation fails.
+#
+# BDDC factorises three problems of its own: the subdomain interior
+# (`dirichlet`) and correction (`neumann`) problems, and the coarse
+# problem, which it solves redundantly on every process. Each takes the
+# direct solver selected above, in place of BDDC's default LU.
 
 bddc_options: PCOptions = {
     "pc_type": "bddc",
     "pc_bddc_use_change_of_basis": True,
     "pc_bddc_switch_static": single_precision,
+    **direct_solver("pc_bddc_dirichlet"),
+    **direct_solver("pc_bddc_neumann"),
+    **direct_solver("pc_bddc_coarse_redundant"),
 }
 
 # PCHPDDM, PETSc's interface to the HPDDM library, takes a different
@@ -357,16 +406,18 @@ bddc_options: PCOptions = {
 #   whose eigenvalues fall below a relative threshold, which is what
 #   sizes the coarse space. How many to compute is left to PCHPDDM.
 # - `pc_hpddm_levels_1_st_pc_type` and `pc_hpddm_levels_1_eps_pc_type`:
-#   Cholesky factorisations inside the eigensolver.
+#   the factorisations inside the eigensolver.
 # - `pc_hpddm_levels_1_pc_type` and `pc_hpddm_levels_1_pc_asm_overlap`:
 #   additive Schwarz on subdomains overlapping by two layers, solved by
-#   Cholesky factorisation (`pc_hpddm_levels_1_sub_pc_type`).
+#   direct factorisation (`pc_hpddm_levels_1_sub_pc_type`).
 #   `pc_hpddm_define_subdomains` is off so that the Schwarz method
 #   builds these subdomains itself, rather than reusing those of the
 #   eigenproblems.
 # - `pc_hpddm_levels_1_pc_asm_type` and `pc_hpddm_coarse_correction`:
 #   symmetric variants of the Schwarz method and of the coarse
 #   correction, which CG requires.
+# - the `_pc_factor_mat_solver_type` entries: the direct solver behind
+#   each of those factorisations.
 #
 # PCHPDDM is available only when PETSc is configured with HPDDM and
 # SLEPc.
@@ -376,12 +427,12 @@ hpddm_options: PCOptions = {
     "pc_type": "hpddm",
     "pc_hpddm_harmonic_overlap": 1,
     "pc_hpddm_levels_1_eps_threshold_relative": 100,
-    "pc_hpddm_levels_1_st_pc_type": "cholesky",
-    "pc_hpddm_levels_1_eps_pc_type": "cholesky",
+    **direct_solver("pc_hpddm_levels_1_st"),
+    **direct_solver("pc_hpddm_levels_1_eps"),
     "pc_hpddm_define_subdomains": False,
     "pc_hpddm_levels_1_pc_type": "asm",
     "pc_hpddm_levels_1_pc_asm_overlap": 2,
-    "pc_hpddm_levels_1_sub_pc_type": "cholesky",
+    **direct_solver("pc_hpddm_levels_1_sub"),
     "pc_hpddm_levels_1_pc_asm_type": "basic",
     "pc_hpddm_coarse_correction": "balanced",
 }
