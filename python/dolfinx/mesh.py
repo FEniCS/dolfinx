@@ -23,6 +23,7 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
+from dolfinx._wrapper import cached as _cached
 from dolfinx.common import IndexMap as _IndexMap
 from dolfinx.common import index_map as _index_map
 from dolfinx.cpp.mesh import (
@@ -289,6 +290,7 @@ class Topology:
     """Topology for a :class:`dolfinx.mesh.Mesh`."""
 
     _cpp_object: _cpp.mesh.Topology
+    _wrappers: dict[int, tuple[typing.Any, typing.Any]]
 
     def __init__(self, topology: _cpp.mesh.Topology):
         """Initialize a topology from a C++ topology.
@@ -302,6 +304,7 @@ class Topology:
             initializer.
         """
         self._cpp_object = topology
+        self._wrappers = {}
 
     def __eq__(self, other: object) -> bool:
         """Check that two wrappers hold the same topology."""
@@ -345,7 +348,7 @@ class Topology:
                 raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
             conn = self._cpp_object.connectivity(d0, d1)
         if conn is not None:
-            return AdjacencyList(conn)
+            return _cached(self._wrappers, AdjacencyList, conn)
         else:
             raise RuntimeError(
                 f"Connectivity between dimension {d0} and {d1} has not been computed.",
@@ -475,7 +478,7 @@ class Topology:
         Returns:
             Index map for the entities of dimension ``dim``.
         """
-        return _IndexMap(self._cpp_object.index_map(dim))
+        return _cached(self._wrappers, _IndexMap, self._cpp_object.index_map(dim))
 
     def index_maps(self, dim: int) -> list[_IndexMap]:
         """Index maps for parallel distribution of the mesh entities.
@@ -487,7 +490,7 @@ class Topology:
             Index maps for the entities of dimension ``dim``. May be
             empty if not yet computed.
         """
-        return [_IndexMap(m) for m in self._cpp_object.index_maps(dim)]
+        return [_cached(self._wrappers, _IndexMap, m) for m in self._cpp_object.index_maps(dim)]
 
     def interprocess_facets(self) -> npt.NDArray[np.int32]:
         """List of inter-process facets.
@@ -511,6 +514,7 @@ class Geometry(typing.Generic[Real]):
     """The geometry of a :class:`dolfinx.mesh.Mesh`."""
 
     _cpp_object: _cpp.mesh.Geometry_float32 | _cpp.mesh.Geometry_float64
+    _wrappers: dict[int, tuple[typing.Any, typing.Any]]
 
     def __init__(self, geometry: _cpp.mesh.Geometry_float32 | _cpp.mesh.Geometry_float64):
         """Initialize a geometry from a C++ geometry.
@@ -525,6 +529,7 @@ class Geometry(typing.Generic[Real]):
             classes that depend on the scalar type used in the Geometry.
         """
         self._cpp_object = geometry
+        self._wrappers = {}
 
     def __eq__(self, other: object) -> bool:
         """Check that two wrappers hold the same geometry."""
@@ -576,7 +581,7 @@ class Geometry(typing.Generic[Real]):
 
     def index_map(self) -> _IndexMap:
         """Index map for the geometry points (nodes) distribution."""
-        return _IndexMap(self._cpp_object.index_map())
+        return _cached(self._wrappers, _IndexMap, self._cpp_object.index_map())
 
     @property
     def input_global_indices(self) -> npt.NDArray[np.int64]:
@@ -596,8 +601,6 @@ class Mesh(typing.Generic[Real]):
     """A mesh."""
 
     _mesh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
-    _topology: Topology
-    _geometry: Geometry[Real]
     _ufl_domain: ufl.Mesh | None
 
     def __init__(
@@ -618,8 +621,6 @@ class Mesh(typing.Generic[Real]):
             depend on the scalar type used in the Mesh.
         """
         self._cpp_object = msh
-        self._topology = Topology(self._cpp_object.topology)
-        self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
             self._ufl_domain._ufl_cargo = self._cpp_object
@@ -675,15 +676,15 @@ class Mesh(typing.Generic[Real]):
         """
         return _cpp.mesh.h(self._cpp_object, dim, entities)  # type: ignore[return-value]
 
-    @property
+    @cached_property
     def topology(self) -> Topology:
         """Mesh topology."""
-        return self._topology
+        return Topology(self._cpp_object.topology)
 
-    @property
+    @cached_property
     def geometry(self) -> Geometry[Real]:
         """Mesh geometry."""
-        return self._geometry
+        return Geometry(self._cpp_object.geometry)
 
 
 def _mesh_from_ufl_domain(domain: ufl.Mesh) -> Mesh:
@@ -729,16 +730,15 @@ class MeshTags:
             mesh.
         """
         self._cpp_object = meshtags
-        self._topology = Topology(self._cpp_object.topology)
 
     def ufl_id(self) -> int:
         """Identiftying integer used by UFL."""
         return id(self)
 
-    @property
+    @cached_property
     def topology(self) -> Topology:
         """Mesh topology with which the tags are associated."""
-        return self._topology
+        return Topology(self._cpp_object.topology)
 
     @property
     def dim(self) -> int:
@@ -790,8 +790,6 @@ class EntityMap:
             entity_map: A C++ `EntityMap` object.
         """
         self._cpp_object = entity_map
-        self._topology = Topology(self._cpp_object.topology)
-        self._sub_topology = Topology(self._cpp_object.sub_topology)
 
     def sub_topology_to_topology(
         self, entities: npt.NDArray[np.int32], inverse: bool
@@ -829,15 +827,15 @@ class EntityMap:
         """Topological dimension of the entities."""
         return self._cpp_object.dim
 
-    @property
+    @cached_property
     def topology(self) -> Topology:
         """The topology."""
-        return self._topology
+        return Topology(self._cpp_object.topology)
 
-    @property
+    @cached_property
     def sub_topology(self) -> Topology:
         """The sub-topology."""
-        return self._sub_topology
+        return Topology(self._cpp_object.sub_topology)
 
 
 def entity_map(

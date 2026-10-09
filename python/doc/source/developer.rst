@@ -13,3 +13,4 @@ page <https://fenicsproject.org/community/>`_.
    :maxdepth: 2
 
    styleguide_cpp
+   styleguide_python
