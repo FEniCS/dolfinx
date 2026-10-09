@@ -22,7 +22,9 @@
 # - Solve the Poisson and elasticity problems with PCHPDDM, an
 #   algebraic overlapping Schwarz method whose coarse space is computed
 #   from local eigenproblems.
-# - Precondition a curl-curl problem in $H({\rm curl})$ on a cube.
+# - Precondition a curl-curl problem in $H({\rm curl})$ on a cube,
+#   giving BDDC the discrete gradient so that the near-kernel of the
+#   curl goes into its coarse space.
 #
 # ```{admonition} Download sources
 # :class: download
@@ -109,13 +111,15 @@
 # receive no contribution from its own cells, leaving empty rows in
 # $A_{i}$ and making the subdomain solves singular.
 #
-# Dirichlet degrees of freedom on a subdomain interface are shared. For
-# $P_{1}$ elements the degrees of freedom sit at vertices, so wherever
-# an interface meets the constrained boundary the vertex there is held
-# by every process meeting at that point. Each of them must place a
-# value on its local diagonal, or $A_{i}$ is again singular — but those
-# values are summed, so each contributes a share rather than the whole
-# value. The demo reports how many such degrees of freedom there are.
+# Dirichlet degrees of freedom on a subdomain interface are shared.
+# Wherever an interface meets the constrained boundary, the degrees of
+# freedom on the entities they have in common are held by every process
+# meeting there: the vertices for the $P_{1}$ problems below, and the
+# edges and faces for the Nedelec one. Each of those processes must
+# place a value on its local diagonal, or $A_{i}$ is again singular —
+# but those values are summed, so each contributes a share rather than
+# the whole value. The demo reports how many such degrees of freedom
+# there are.
 #
 # ## Implementation
 
@@ -595,6 +599,9 @@ def solve_curl_curl(
             W = fem.functionspace(msh, ("Lagrange", 2))
             G = discrete_gradient(W, V)
             G.assemble()
+            # `conforming=False` is the fallback where the partition
+            # does not give simple edges: PCBDDC otherwise stops with
+            # "Unexpected SIZE OF EDGE > EXTCOL SECOND PASS"
             ksp.getPC().setBDDCDiscreteGradient(G, order=2, conforming=True)
             G.destroy()
 
@@ -688,9 +695,13 @@ for n in (8, 12):
 # -
 
 # With more than one process, `shared Dirichlet dofs` is non-zero: those
-# are the constrained vertices where a subdomain interface meets the
-# Dirichlet boundary, and they are the reason the boundary condition
-# value has to be distributed across the processes that share them
-# rather than written by the owner alone. The Poisson problem is
-# constrained on the whole boundary and the elasticity problem on one
-# edge, so the counts differ.
+# are the constrained degrees of freedom where a subdomain interface
+# meets the Dirichlet boundary, and they are the reason the boundary
+# condition value has to be distributed across the processes that share
+# them rather than written by the owner alone. How many there are
+# follows from how much of the boundary is constrained and from the
+# element: the Poisson problem is constrained on the whole boundary and
+# the elasticity problem on one edge, while the curl-curl problem
+# constrains the tangential component over the whole boundary of a 3D
+# mesh, where an interface meets it along a line of edges rather than
+# at a point.
