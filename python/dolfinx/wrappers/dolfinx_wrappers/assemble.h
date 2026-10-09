@@ -7,7 +7,6 @@
 #pragma once
 
 #include "array.h"
-#include "la.h"
 #include "pycoeff.h"
 #include <array>
 #include <basix/mdspan.hpp>
@@ -494,50 +493,6 @@ void declare_assembly_functions(nanobind::module_& m)
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
       nb::arg("dof_marker0"), nb::arg("dof_marker1"), "Experimental.");
-  m.def(
-      "set_diagonal",
-      [](dolfinx::la::MatrixCSR<T>& A,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> diagonals,
-         PyInsertMode mode)
-      {
-        std::span _rows(rows.data(), rows.size());
-        std::span<const T> _diagonals(diagonals.data(), diagonals.size());
-        switch (mode)
-        {
-        case PyInsertMode::insert:
-          dolfinx::fem::set_diagonal(A.mat_set_values(), _rows, _diagonals);
-          break;
-        case PyInsertMode::add:
-          dolfinx::fem::set_diagonal(A.mat_add_values(), _rows, _diagonals);
-          break;
-        default:
-          throw std::invalid_argument("InsertMode not recognized.");
-        }
-      },
-      nb::arg("A"), nb::arg("rows"), nb::arg("diagonals"), nb::arg("mode"),
-      "Experimental.");
-  m.def(
-      "set_diagonal",
-      [](dolfinx::la::MatrixCSR<T>& A,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-         T diagonal, PyInsertMode mode)
-      {
-        std::span _rows(rows.data(), rows.size());
-        switch (mode)
-        {
-        case PyInsertMode::insert:
-          dolfinx::fem::set_diagonal(A.mat_set_values(), _rows, diagonal);
-          break;
-        case PyInsertMode::add:
-          dolfinx::fem::set_diagonal(A.mat_add_values(), _rows, diagonal);
-          break;
-        default:
-          throw std::invalid_argument("InsertMode not recognized.");
-        }
-      },
-      nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), nb::arg("mode"),
-      "Experimental.");
   m.def(
       "assemble_matrix",
       [](std::function<int(

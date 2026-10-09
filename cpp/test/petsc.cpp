@@ -469,15 +469,15 @@ TEST_CASE("MATIS diagonal sums the contributions of the sharing ranks",
   PetscBool is_matis = PETSC_FALSE;
   CHECK(PetscObjectTypeCompare((PetscObject)A_is, MATIS, &is_matis) == 0);
   CHECK(is_matis == PETSC_TRUE);
-  fem::set_diagonal(la::petsc::Matrix::set_fn(A_is, ADD_VALUES), local,
-                    std::span<const PetscScalar>(diagonals));
+  la::set_diagonal(la::petsc::Matrix::set_fn(A_is, ADD_VALUES), local,
+                   std::span<const PetscScalar>(diagonals));
   CHECK(MatAssemblyBegin(A_is, MAT_FINAL_ASSEMBLY) == 0);
   CHECK(MatAssemblyEnd(A_is, MAT_FINAL_ASSEMBLY) == 0);
 
   // 1 on the owned rows of an AIJ matrix
   Mat A_aij = la::petsc::create_matrix(comm, sp, MATAIJ);
-  fem::set_diagonal(la::petsc::Matrix::set_fn(A_aij, ADD_VALUES), owned,
-                    PetscScalar(1));
+  la::set_diagonal(la::petsc::Matrix::set_fn(A_aij, ADD_VALUES), owned,
+                   PetscScalar(1));
   CHECK(MatAssemblyBegin(A_aij, MAT_FINAL_ASSEMBLY) == 0);
   CHECK(MatAssemblyEnd(A_aij, MAT_FINAL_ASSEMBLY) == 0);
 
