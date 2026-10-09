@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Garth N. Wells and Chris N. Richardson
+// Copyright (C) 2021-2026 Garth N. Wells and Chris N. Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -218,9 +218,8 @@ public:
   MatrixCSR(const MatrixCSR& A) = delete;
 
   /// Move constructor
-  /// @note ::_request is left set in the moved-from matrix. That is
-  /// harmless because a moved-from matrix must not be used further, but
-  /// it means a scatter in flight is completed by the target only.
+  /// @note A scatter in flight transfers to the new matrix, which must
+  /// complete it with scatter_rev_end().
   MatrixCSR(MatrixCSR&& A) = default;
 
   /// Destructor
@@ -230,8 +229,9 @@ public:
   MatrixCSR& operator=(const MatrixCSR& A) = delete;
 
   /// Move assignment
-  /// @note The target must not have a scatter in flight, i.e. a prior
-  /// scatter_rev_begin() must already have a matching
+  /// @note A scatter in flight on `A` transfers to this matrix. Any
+  /// scatter in flight on this matrix is dropped, so a prior
+  /// scatter_rev_begin() on it must already have a matching
   /// scatter_rev_end().
   MatrixCSR& operator=(MatrixCSR&& A) = default;
 
@@ -258,7 +258,7 @@ public:
         _row_ptr(A.row_ptr().begin(), A.row_ptr().end()),
         _off_diagonal_offset(A.off_diag_offset().begin(),
                              A.off_diag_offset().end()),
-        _comm(A.comm()), _request(MPI_REQUEST_NULL), _unpack_pos(A._unpack_pos),
+        _comm(A.comm()), _unpack_pos(A._unpack_pos),
         _val_send_disp(A._val_send_disp), _val_recv_disp(A._val_recv_disp),
         _ghost_row_to_rank(A._ghost_row_to_rank), _finalized(A._finalized)
   {
@@ -466,7 +466,7 @@ public:
         _ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
         dolfinx::MPI::mpi_t<value_type>, _ghost_value_data_in.data(),
         val_recv_count.data(), _val_recv_disp.data(),
-        dolfinx::MPI::mpi_t<value_type>, _comm.comm(), &_request);
+        dolfinx::MPI::mpi_t<value_type>, _comm.comm(), &_request.value);
     dolfinx::MPI::check_error(_comm.comm(), status);
   }
 
@@ -478,7 +478,7 @@ public:
   void scatter_rev_end()
   {
     check_not_finalized();
-    int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
+    int status = MPI_Wait(&_request.value, MPI_STATUS_IGNORE);
     dolfinx::MPI::check_error(_comm.comm(), status);
 
     _ghost_value_data.clear();
@@ -709,8 +709,44 @@ private:
 
   // -- Precomputed data for scatter_rev/update
 
-  // Request in non-blocking communication
-  MPI_Request _request;
+  // Owner of the request for a scatter in flight. MPI_Request is a
+  // plain handle, so a defaulted move would leave the moved-from matrix
+  // naming the same request as the target. Clearing the source here
+  // keeps MatrixCSR's own move operations `= default`, and correct as
+  // members are added.
+  struct Request
+  {
+    MPI_Request value = MPI_REQUEST_NULL;
+
+    // Constructor
+    Request() = default;
+
+    // Copy constructor. Copies share the request; MatrixCSR's copy
+    // operations are deleted, so this is not reachable from a matrix.
+    Request(const Request& r) = default;
+
+    // Move constructor
+    Request(Request&& r) noexcept
+        : value(std::exchange(r.value, MPI_REQUEST_NULL))
+    {
+    }
+
+    // Destructor. The handle is owned by the in-flight communication,
+    // which scatter_rev_end() completes, so there is nothing to release.
+    ~Request() = default;
+
+    // Copy assignment
+    Request& operator=(const Request& r) = default;
+
+    // Move assignment
+    Request& operator=(Request&& r) noexcept
+    {
+      value = std::exchange(r.value, MPI_REQUEST_NULL);
+      return *this;
+    }
+  };
+
+  Request _request;
 
   // Position in _data to add received data
   std::vector<std::size_t> _unpack_pos;
