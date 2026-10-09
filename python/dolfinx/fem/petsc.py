@@ -960,6 +960,7 @@ def _assemble_matrix_petsc(
     """
     _check_nest_forms(A, a)
     if A.getType() == PETSc.Mat.Type.NEST:
+        assert isinstance(a, Sequence)  # _check_nest_forms has ruled out a single form
         if isinstance(coeffs, dict):
             raise ValueError(
                 "Must provide a sequence of sequences of coefficients when assembling a nest matrix"
