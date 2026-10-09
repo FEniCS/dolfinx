@@ -26,6 +26,7 @@
 #include <mpi.h>
 #include <numeric>
 #include <span>
+#include <utility>
 #include <vector>
 
 using namespace dolfinx;
@@ -299,30 +300,17 @@ void test_set_diagonal_duplicate_bc_rows()
 /// A matrix moved between scatter_rev_begin() and scatter_rev_end()
 /// carries the in-flight request to the target, which completes the
 /// scatter and gets the same values as a matrix that was not moved.
-template <std::floating_point T>
+///
+/// The request transfer itself is asserted directly in
+/// common/mpi.cpp; this checks that a moved matrix still delivers the
+/// scattered values. The scalar type is irrelevant to the transfer, so
+/// one type is enough.
 void test_move_scatter_in_flight()
 {
-  auto mesh = std::make_shared<mesh::Mesh<T>>(mesh::create_box<T>(
-      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {4, 5, 3},
-      mesh::CellType::tetrahedron, graph::partition_graph));
-  auto element = basix::create_element<T>(
-      basix::element::family::P, basix::cell::type::tetrahedron, 2,
-      basix::element::lagrange_variant::unset,
-      basix::element::dpc_variant::unset, false);
-  auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
-      mesh, std::make_shared<fem::FiniteElement<T>>(element,
-                                                    mesh->geometry().dim())));
-
+  using T = double;
+  auto [V, sp] = create_p2_space_and_pattern<T>();
   std::shared_ptr<const common::IndexMap> map = V->dofmap()->index_map;
   const int bs = V->dofmap()->index_map_bs();
-  std::shared_ptr<const common::IndexMap> cmap
-      = mesh->topology()->index_map(mesh->topology()->dim());
-  std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts());
-  std::iota(cells.begin(), cells.end(), 0);
-  la::SparsityPattern sp(MPI_COMM_WORLD, {map, map}, {bs, bs});
-  fem::sparsitybuild::cells(sp, std::pair{std::span(cells), std::span(cells)},
-                            {{*V->dofmap(), *V->dofmap()}});
-  sp.finalize();
 
   // Put 1 on every local row, owned and ghost, so that ghost rows carry
   // data for the scatter to deliver
@@ -351,16 +339,13 @@ void test_move_scatter_in_flight()
   C1 = std::move(C);
   C1.scatter_rev_end();
 
-  const std::size_t num_owned_entries = A.row_ptr()[bs * map->size_local()];
-  std::span<const T> v(A.values().data(), num_owned_entries);
-  std::span<const T> v1(B1.values().data(), num_owned_entries);
-  std::span<const T> v2(C1.values().data(), num_owned_entries);
-  const T tol = 4 * std::numeric_limits<T>::epsilon();
-  for (std::size_t i = 0; i < num_owned_entries; ++i)
-  {
-    CHECK(std::abs(v1[i] - v[i]) <= tol);
-    CHECK(std::abs(v2[i] - v[i]) <= tol);
-  }
+  // Every value is a sum of T(1) accumulated in the same order from the
+  // same buffers, so the comparison is exact
+  const std::size_t n = A.row_ptr()[bs * map->size_local()];
+  CHECK(std::ranges::equal(std::span(A.values()).first(n),
+                           std::span(B1.values()).first(n)));
+  CHECK(std::ranges::equal(std::span(A.values()).first(n),
+                           std::span(C1.values()).first(n)));
 }
 
 void test_matrix_cast()
@@ -567,8 +552,7 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_matrix_apply());
   CHECK_NOTHROW(test_matrix_norm());
   CHECK_NOTHROW(test_matrix_cast());
-  CHECK_NOTHROW(test_move_scatter_in_flight<float>());
-  CHECK_NOTHROW(test_move_scatter_in_flight<double>());
+  CHECK_NOTHROW(test_move_scatter_in_flight());
   CHECK_NOTHROW(test_sparsity_pattern_common_index_map());
   CHECK_NOTHROW(test_sparsity_pattern_shared_map_column_ghost_growth());
   CHECK_NOTHROW(test_sparsity_pattern_asymmetric_column_ghost_growth());

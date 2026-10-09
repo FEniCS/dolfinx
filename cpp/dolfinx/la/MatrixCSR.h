@@ -212,9 +212,7 @@ public:
   MatrixCSR(const T& p, BlockMode mode = BlockMode::compact);
 
   // Copy constructor (deleted). Copying deep-copies the matrix data and
-  // duplicates the communicator, which is collective. Both matrices
-  // would also share ::_request, so a copy taken while a scatter is in
-  // flight would wait on data delivered into the original's buffer.
+  // duplicates the communicator, which is collective.
   MatrixCSR(const MatrixCSR& A) = delete;
 
   /// Move constructor
@@ -466,7 +464,7 @@ public:
         _ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
         dolfinx::MPI::mpi_t<value_type>, _ghost_value_data_in.data(),
         val_recv_count.data(), _val_recv_disp.data(),
-        dolfinx::MPI::mpi_t<value_type>, _comm.comm(), &_request.value);
+        dolfinx::MPI::mpi_t<value_type>, _comm.comm(), &_request.request());
     dolfinx::MPI::check_error(_comm.comm(), status);
   }
 
@@ -478,7 +476,7 @@ public:
   void scatter_rev_end()
   {
     check_not_finalized();
-    int status = MPI_Wait(&_request.value, MPI_STATUS_IGNORE);
+    int status = MPI_Wait(&_request.request(), MPI_STATUS_IGNORE);
     dolfinx::MPI::check_error(_comm.comm(), status);
 
     _ghost_value_data.clear();
@@ -709,44 +707,9 @@ private:
 
   // -- Precomputed data for scatter_rev/update
 
-  // Owner of the request for a scatter in flight. MPI_Request is a
-  // plain handle, so a defaulted move would leave the moved-from matrix
-  // naming the same request as the target. Clearing the source here
-  // keeps MatrixCSR's own move operations `= default`, and correct as
-  // members are added.
-  struct Request
-  {
-    MPI_Request value = MPI_REQUEST_NULL;
-
-    // Constructor
-    Request() = default;
-
-    // Copy constructor. Copies share the request; MatrixCSR's copy
-    // operations are deleted, so this is not reachable from a matrix.
-    Request(const Request& r) = default;
-
-    // Move constructor
-    Request(Request&& r) noexcept
-        : value(std::exchange(r.value, MPI_REQUEST_NULL))
-    {
-    }
-
-    // Destructor. The handle is owned by the in-flight communication,
-    // which scatter_rev_end() completes, so there is nothing to release.
-    ~Request() = default;
-
-    // Copy assignment
-    Request& operator=(const Request& r) = default;
-
-    // Move assignment
-    Request& operator=(Request&& r) noexcept
-    {
-      value = std::exchange(r.value, MPI_REQUEST_NULL);
-      return *this;
-    }
-  };
-
-  Request _request;
+  // Request for a scatter in flight. Transfers on move, so that the
+  // moved-from matrix does not name the target's request.
+  dolfinx::MPI::Request _request;
 
   // Position in _data to add received data
   std::vector<std::size_t> _unpack_pos;
