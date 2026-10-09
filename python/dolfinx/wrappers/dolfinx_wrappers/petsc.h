@@ -57,16 +57,16 @@ void declare_petsc_discrete_operators(nb::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
+        dolfinx::la::SparsityPattern sp
+            = create_sparsity_entity_closure(V0, V1);
 
-        // Build operator
+        // Build operator. As for the gradient, zeros are kept: the
+        // sparsity is the operator's exact one, so a stored zero
+        // records a coupling the operator may occupy.
         MPI_Comm comm = V0.mesh()->comm();
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         try
         {
-          dolfinx::common::petsc::check(
-              MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE),
-              "MatSetOption");
           dolfinx::fem::discrete_curl<U, T>(
               V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
         }
@@ -88,16 +88,17 @@ void declare_petsc_discrete_operators(nb::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
+        dolfinx::la::SparsityPattern sp
+            = create_sparsity_entity_closure(V0, V1);
 
-        // Build operator
+        // Build operator. Unlike the other discrete operators, zeros
+        // are kept: the sparsity is the operator's exact one, so a
+        // stored zero records a coupling the operator may occupy, which
+        // is what PCBDDC's Nedelec support reads the matrix for.
         MPI_Comm comm = V0.mesh()->comm();
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         try
         {
-          dolfinx::common::petsc::check(
-              MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE),
-              "MatSetOption");
           dolfinx::fem::discrete_gradient<T, U>(
               *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
               {*V1.element(), *V1.dofmap()},
