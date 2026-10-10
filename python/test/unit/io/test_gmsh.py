@@ -19,7 +19,7 @@ import pytest
         pytest.param(3, marks=pytest.mark.xfail(raises=RuntimeError)),
     ],
 )
-def test_physical_tags(marker_mode):
+def test_physical_tags(marker_mode) -> None:
     """Test that we catch partially tagged meshes and not tagged
     meshes as errors.
     """

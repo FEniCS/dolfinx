@@ -65,7 +65,7 @@ class TestVTX:
 
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_vtx_mesh(self, tempdir, dim, simplex):
+    def test_vtx_mesh(self, tempdir, dim, simplex) -> None:
         """Test saving mesh with VTXWriter."""
         from dolfinx.io import VTXWriter
 
@@ -78,7 +78,7 @@ class TestVTX:
 
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_vtx_functions_fail(self, tempdir, dim, simplex):
+    def test_vtx_functions_fail(self, tempdir, dim, simplex) -> None:
         """Test for error when elements differ."""
         from dolfinx.io import VTXWriter
 
@@ -92,7 +92,7 @@ class TestVTX:
 
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_vtx_names_fail(self, tempdir, dim, simplex):
+    def test_vtx_names_fail(self, tempdir, dim, simplex) -> None:
         """Test for error when elements differ."""
         from dolfinx.io import VTXWriter
 
@@ -105,7 +105,7 @@ class TestVTX:
             VTXWriter(mesh.comm, filename, [v, w])
 
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_vtx_different_meshes_function(self, tempdir, simplex):
+    def test_vtx_different_meshes_function(self, tempdir, simplex) -> None:
         """Test for error when functions do not share a mesh."""
         from dolfinx.io import VTXWriter
 
@@ -120,7 +120,7 @@ class TestVTX:
     @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_vtx_functions(self, tempdir, dtype, dim, simplex):
+    def test_vtx_functions(self, tempdir, dtype, dim, simplex) -> None:
         """Test saving high order Lagrange functions."""
         from dolfinx.io import VTXWriter
 
@@ -161,7 +161,7 @@ class TestVTX:
 
         f.close()
 
-    def test_save_vtkx_cell_point(self, tempdir):
+    def test_save_vtkx_cell_point(self, tempdir) -> None:
         """Test writing point-wise data."""
         from dolfinx.io import VTXWriter
 
@@ -178,7 +178,7 @@ class TestVTX:
         f.write(0)
         f.close()
 
-    def test_empty_rank_mesh(self, tempdir):
+    def test_empty_rank_mesh(self, tempdir) -> None:
         """Test VTXWriter on mesh where some ranks have no cells."""
         from dolfinx.io import VTXWriter
 
@@ -212,7 +212,7 @@ class TestVTX:
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
     @pytest.mark.parametrize("reuse", [True, False])
-    def test_vtx_reuse_mesh(self, tempdir, dim, simplex, reuse):
+    def test_vtx_reuse_mesh(self, tempdir, dim, simplex, reuse) -> None:
         """Test reusage of mesh by VTXWriter."""
         from dolfinx.io import VTXMeshPolicy, VTXWriter
 
@@ -249,7 +249,7 @@ class TestVTX:
                 assert int(var["AvailableStepsCount"]) == target_all
         adios_file.close()
 
-    def test_dg_0_data(self, tempdir):
+    def test_dg_0_data(self, tempdir) -> None:
         """Test that we can mix DG-0 and other Lagrange functions."""
         from dolfinx.io import VTXWriter
 

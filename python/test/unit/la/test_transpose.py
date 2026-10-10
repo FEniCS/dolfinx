@@ -18,7 +18,7 @@ import pytest
         np.complex128,
     ],
 )
-def test_transpose_square(dtype, mat_random, mat_gather):
+def test_transpose_square(dtype, mat_random, mat_gather) -> None:
     # Create random square MatrixCSR
     A = mat_random(0, 0, 12345, dtype)
 
@@ -46,7 +46,7 @@ def test_transpose_square(dtype, mat_random, mat_gather):
         np.complex128,
     ],
 )
-def test_transpose_block(dtype, bs, mat_random, mat_gather):
+def test_transpose_block(dtype, bs, mat_random, mat_gather) -> None:
     # Create random rectangular MatrixCSR with various block sizes
     A = mat_random(0, 1, 12345, dtype, bs)
     Ascipy = mat_gather(A)

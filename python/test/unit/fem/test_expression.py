@@ -36,7 +36,7 @@ from dolfinx.mesh import (
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_rank0(dtype):
+def test_rank0(dtype) -> None:
     """Test evaluation of UFL expression.
 
     This test evaluates gradient of P2 function at interpolation points
@@ -89,7 +89,7 @@ def test_rank0(dtype):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_rank1_hdiv(dtype):
+def test_rank1_hdiv(dtype) -> None:
     """Test rank-1 Expression, i.e. Expression containing Argument
     (TrialFunction).
 
@@ -157,7 +157,7 @@ def test_rank1_hdiv(dtype):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_simple_evaluation(dtype):
+def test_simple_evaluation(dtype) -> None:
     """Test evaluation of UFL Expression.
 
     This test evaluates a UFL Expression on cells of the mesh and
@@ -248,7 +248,7 @@ def test_simple_evaluation(dtype):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_assembly_into_quadrature_function(dtype):
+def test_assembly_into_quadrature_function(dtype) -> None:
     """Test assembly into a Quadrature function.
 
     This test evaluates a UFL Expression into a Quadrature function
@@ -391,7 +391,7 @@ def test_expression_eval_cells_subset(dtype):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_expression_comm(dtype):
+def test_expression_comm(dtype) -> None:
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=xtype)
     v = Constant(mesh, dtype(1))
@@ -428,7 +428,7 @@ def compute_exterior_facet_entities(mesh, facets):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_facet_expression(dtype):
+def test_facet_expression(dtype) -> None:
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=xtype)
     n = ufl.FacetNormal(mesh)
@@ -497,7 +497,7 @@ def test_facet_expression(dtype):
         assert np.allclose(values, exact_expr, atol=atol)
 
 
-def test_rank1_blocked():
+def test_rank1_blocked() -> None:
     """Check that a test function with tensor shape is unrolled as
     (num_cells, num_points, num_dofs, bs) when evaluated as an
     expression.
@@ -545,7 +545,7 @@ def test_rank1_blocked():
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_submesh_codim_zero(dtype, qdegree):
+def test_submesh_codim_zero(dtype, qdegree) -> None:
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=xtype)
 
@@ -597,7 +597,7 @@ def test_submesh_codim_zero(dtype, qdegree):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_submesh_codim_one(dtype, qdegree):
+def test_submesh_codim_one(dtype, qdegree) -> None:
     xtype = dtype(0).real.dtype
     L = 2.1
     mesh = create_rectangle(
@@ -722,7 +722,7 @@ def test_submesh_argument_dof_transformations(cell_type, degree, codim):
         np.float64,
     ],
 )
-def test_skewed_quadrature(dtype):
+def test_skewed_quadrature(dtype) -> None:
     xtype = dtype(0).real.dtype
     L = 2.1
     mesh = create_rectangle(

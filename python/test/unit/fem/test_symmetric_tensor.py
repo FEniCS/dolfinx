@@ -17,7 +17,7 @@ import ufl
 
 @pytest.mark.parametrize("degree", range(1, 4))
 @pytest.mark.parametrize("symmetry", [True, False])
-def test_transpose(degree, symmetry):
+def test_transpose(degree, symmetry) -> None:
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
     e = basix.ufl.element(
         "Lagrange",
@@ -35,7 +35,7 @@ def test_transpose(degree, symmetry):
     assert np.isclose(dolfinx.fem.assemble_scalar(form), 0) == symmetry
 
 
-def test_interpolation():
+def test_interpolation() -> None:
     """Test that a symmetric 3x3 2-tensor is correctly interpolated."""
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
@@ -89,7 +89,7 @@ def test_interpolation():
         ),
     ],
 )
-def test_interpolation_symmetric_tensor(dim, symmetry, etype, degree, dtype):
+def test_interpolation_symmetric_tensor(dim, symmetry, etype, degree, dtype) -> None:
     """Tests the interpolation path for non-matching maps of symmetric elements."""
     comm = MPI.COMM_WORLD
     real_type = dtype(0).real.dtype

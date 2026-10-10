@@ -58,9 +58,9 @@ jobs:
         uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
         with:
           spack_ref: v1.2.2
-          # spack-packages 'develop' at 2026-09-14. Bumping re-solves the
+          # spack-packages 'develop' at 2026-10-05. Bumping re-solves the
           # graph and can invalidate cached binaries; warm the cache first.
-          packages_ref: 43144421c9973da2bfc47c56b30ecaec45d6fc6c
+          packages_ref: c0109598cd38b30d9af1d4fbbbbba23eb2efa828
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v7
@@ -72,7 +72,7 @@ jobs:
 
       - name: Add dependencies to environment
         run: |
-          spack -e py add mpi petsc+mpi+shared+mumps+superlu-dist slepc parmetis pkgconfig \
+          spack -e py add mpi petsc+mpi+shared+mumps+superlu-dist+suite-sparse slepc parmetis pkgconfig \
             hdf5+mpi boost pugixml spdlog
           spack -e py add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py \
             py-scikit-build-core@1+pyproject py-setuptools py-cffi

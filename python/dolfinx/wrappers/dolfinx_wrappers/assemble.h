@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson, Garth N. Wells and OpenAI
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,7 +7,6 @@
 #pragma once
 
 #include "array.h"
-#include "la.h"
 #include "pycoeff.h"
 #include <array>
 #include <basix/mdspan.hpp>
@@ -39,6 +38,7 @@
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
+#include <numeric>
 #include <ranges>
 #include <span>
 #include <stdexcept>
@@ -79,6 +79,38 @@ create_sparsity(const dolfinx::fem::FunctionSpace<U>& V0,
   assert(map);
   auto c = std::views::iota(0, map->size_local());
   dolfinx::fem::sparsitybuild::cells(sp, std::pair{c, c}, {*dofmap1, *dofmap0});
+  sp.finalize();
+
+  return sp;
+}
+
+/// Sparsity of a discrete derivative operator: the V1
+/// degrees-of-freedom on each mesh entity against the V0
+/// degrees-of-freedom on its closure.
+template <typename U>
+dolfinx::la::SparsityPattern
+create_sparsity_entity_closure(const dolfinx::fem::FunctionSpace<U>& V0,
+                               const dolfinx::fem::FunctionSpace<U>& V1)
+{
+  dolfinx::fem::impl::check_derivative_source(*V0.element());
+  std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh = V0.mesh();
+  if (!mesh or mesh != V1.mesh())
+    throw std::invalid_argument("V0 and V1 must share a mesh.");
+
+  std::shared_ptr<const dolfinx::fem::DofMap> dofmap0 = V0.dofmap();
+  std::shared_ptr<const dolfinx::fem::DofMap> dofmap1 = V1.dofmap();
+  assert(dofmap0);
+  assert(dofmap1);
+  dolfinx::la::SparsityPattern sp(
+      mesh->comm(), {dofmap1->index_map, dofmap0->index_map},
+      {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
+
+  int tdim = mesh->topology()->dim();
+  auto map = mesh->topology()->index_map(tdim);
+  assert(map);
+  std::vector<std::int32_t> cells(map->size_local());
+  std::iota(cells.begin(), cells.end(), 0);
+  dolfinx::fem::sparsitybuild::entity_closure(sp, cells, {*dofmap1, *dofmap0});
   sp.finalize();
 
   return sp;
@@ -152,7 +184,8 @@ void declare_discrete_operators(nanobind::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
+        dolfinx::la::SparsityPattern sp
+            = create_sparsity_entity_closure(V0, V1);
 
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);
@@ -166,7 +199,8 @@ void declare_discrete_operators(nanobind::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
+        dolfinx::la::SparsityPattern sp
+            = create_sparsity_entity_closure(V0, V1);
 
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);
@@ -459,50 +493,6 @@ void declare_assembly_functions(nanobind::module_& m)
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
       nb::arg("dof_marker0"), nb::arg("dof_marker1"), "Experimental.");
-  m.def(
-      "set_diagonal",
-      [](dolfinx::la::MatrixCSR<T>& A,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> diagonals,
-         PyInsertMode mode)
-      {
-        std::span _rows(rows.data(), rows.size());
-        std::span<const T> _diagonals(diagonals.data(), diagonals.size());
-        switch (mode)
-        {
-        case PyInsertMode::insert:
-          dolfinx::fem::set_diagonal(A.mat_set_values(), _rows, _diagonals);
-          break;
-        case PyInsertMode::add:
-          dolfinx::fem::set_diagonal(A.mat_add_values(), _rows, _diagonals);
-          break;
-        default:
-          throw std::invalid_argument("InsertMode not recognized.");
-        }
-      },
-      nb::arg("A"), nb::arg("rows"), nb::arg("diagonals"), nb::arg("mode"),
-      "Experimental.");
-  m.def(
-      "set_diagonal",
-      [](dolfinx::la::MatrixCSR<T>& A,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-         T diagonal, PyInsertMode mode)
-      {
-        std::span _rows(rows.data(), rows.size());
-        switch (mode)
-        {
-        case PyInsertMode::insert:
-          dolfinx::fem::set_diagonal(A.mat_set_values(), _rows, diagonal);
-          break;
-        case PyInsertMode::add:
-          dolfinx::fem::set_diagonal(A.mat_add_values(), _rows, diagonal);
-          break;
-        default:
-          throw std::invalid_argument("InsertMode not recognized.");
-        }
-      },
-      nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), nb::arg("mode"),
-      "Experimental.");
   m.def(
       "assemble_matrix",
       [](std::function<int(

@@ -24,13 +24,14 @@ import numpy as np
 import numpy.typing as npt
 
 import dolfinx
+from dolfinx import cpp as _cpp
 from dolfinx.common import IndexMap
 from dolfinx.la import Vector
 
 if not dolfinx.has_petsc4py:
     raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
-__all__ = ["assign", "create_vector", "create_vector_wrap"]
+__all__ = ["assign", "create_vector", "create_vector_wrap", "set_diagonal"]
 
 
 def _ghost_update(
@@ -275,3 +276,38 @@ def _assign_block_data(maps: Iterable[tuple[IndexMap, int]], vec: PETSc.Vec) -> 
         )
     )
     vec.setAttr("_blocks", (off_owned, off_ghost))
+
+
+def set_diagonal(
+    A: PETSc.Mat,
+    rows: npt.NDArray[np.int32],
+    diagonal: float | complex | npt.NDArray = 1.0,
+    insert_mode: PETSc.InsertMode = PETSc.InsertMode.INSERT,  # type: ignore[arg-type]
+) -> None:
+    """Set or add values on the diagonal for given rows of a PETSc matrix.
+
+    Args:
+        A: Matrix to modify.
+        rows: Rows, in local indices, to set the diagonal value for.
+        diagonal: Value to set on the diagonal, either a single value
+            for all rows or an array with ``diagonal[i]`` the value for
+            ``rows[i]``. An array must have the same length as
+            ``rows``.
+        insert_mode: ``PETSc.InsertMode.INSERT`` to overwrite the
+            diagonal entry, or ``PETSc.InsertMode.ADD`` to add to it.
+            The two agree on rows that assembly has already zeroed, and
+            ``ADD`` avoids the flush needed to take the matrix out of
+            add mode.
+
+    Note:
+        A row that the calling rank does not own is accumulated into
+        the owner's entry when the matrix is assembled, so pass owned
+        rows unless that accumulation is intended. A row repeated in
+        ``rows`` is likewise written once per occurrence.
+
+    Note:
+        The matrix is not assembled.
+    """
+    if np.ndim(diagonal) > 0:
+        diagonal = np.asarray(diagonal, dtype=PETSc.ScalarType)
+    _cpp.la.petsc.set_diagonal(A, rows, diagonal, insert_mode)  # type: ignore[arg-type]

@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2025 Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2015-2026 Garth N. Wells, Jørgen S. Dokken and OpenAI
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -15,8 +15,16 @@ import pytest
 import dolfinx.la
 import ufl
 from basix.ufl import element
+from dolfinx import default_real_type
 from dolfinx.fem import Expression, Function, discrete_curl, discrete_gradient, functionspace
-from dolfinx.mesh import CellType, GhostMode, cell_dim, create_unit_cube, create_unit_square
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    cell_dim,
+    cell_num_entities,
+    create_unit_cube,
+    create_unit_square,
+)
 
 
 @pytest.mark.parametrize(
@@ -32,7 +40,7 @@ from dolfinx.mesh import CellType, GhostMode, cell_dim, create_unit_cube, create
         ),
     ],
 )
-def test_gradient(mesh):
+def test_gradient(mesh) -> None:
     """Test discrete gradient computation for lowest order elements."""
     V = functionspace(mesh, ("Lagrange", 1))
     W = functionspace(mesh, ("Nedelec 1st kind H(curl)", 1))
@@ -49,7 +57,7 @@ def test_gradient(mesh):
 
 
 @pytest.mark.parametrize("cell", [CellType.triangle, CellType.quadrilateral])
-def test_discrete_curl_gdim_raises(cell):
+def test_discrete_curl_gdim_raises(cell) -> None:
     """Test that discrete curl function raises for gdim != 3."""
     msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type=cell, dtype=np.float64)
     E0 = element("N1curl", msh.basix_cell(), 2, dtype=np.float64)
@@ -57,6 +65,36 @@ def test_discrete_curl_gdim_raises(cell):
     V0, V1 = functionspace(msh, E0), functionspace(msh, E1)
     with pytest.raises(ValueError):
         discrete_curl(V0, V1)
+
+
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+@pytest.mark.parametrize("family,discontinuous", [("Lagrange", True), ("CR", False)])
+def test_discrete_gradient_nonconforming_source_raises(cell_type, family, discontinuous) -> None:
+    """Reject source layouts whose entity dofs do not determine their trace."""
+    if cell_type == CellType.triangle:
+        msh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type=cell_type)
+    else:
+        msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
+    V = functionspace(
+        msh,
+        element(family, msh.basix_cell(), 1, discontinuous=discontinuous, dtype=default_real_type),
+    )
+    W = functionspace(msh, ("N1curl", 1))
+    with pytest.raises(ValueError, match="Source element must be H1-conforming"):
+        discrete_gradient(V, W)
+
+
+@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+def test_discrete_curl_discontinuous_source_raises(cell_type) -> None:
+    """Reject discontinuous source elements before applying the closure stencil."""
+    msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
+    V = functionspace(
+        msh,
+        element("N1curl", msh.basix_cell(), 1, discontinuous=True, dtype=default_real_type),
+    )
+    W = functionspace(msh, ("RT", 1))
+    with pytest.raises(ValueError, match=r"Source element must be H\(curl\)-conforming"):
+        discrete_curl(V, W)
 
 
 @pytest.mark.parametrize(
@@ -80,7 +118,7 @@ def test_discrete_curl_gdim_raises(cell):
         ),
     ],
 )
-def test_discrete_curl_map_raises(elements):
+def test_discrete_curl_map_raises(elements) -> None:
     """Test that discrete curl function raises for incorrect spaces."""
     msh = create_unit_cube(
         MPI.COMM_WORLD, 3, 3, 3, cell_type=CellType.tetrahedron, dtype=np.float64
@@ -285,7 +323,7 @@ def test_discrete_curl(element_data, p, dtype):
         ),
     ],
 )
-def test_gradient_interpolation(cell_type, p, q):
+def test_gradient_interpolation(cell_type, p, q) -> None:
     """Test discrete gradient computation with verification using Expression."""
     mesh, family0, family1 = cell_type
     dtype = mesh.geometry.x.dtype
@@ -327,7 +365,7 @@ def test_gradient_interpolation(cell_type, p, q):
     "cell_type",
     [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron],
 )
-def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange):
+def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange) -> None:
     """Test that discrete interpolation matrix yields the same result as interpolation."""
     from dolfinx.fem import interpolation_matrix
 
@@ -398,7 +436,7 @@ def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange):
     "cell_type",
     [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
 )
-def test_discrete_interpolation(cell_type, dtype):
+def test_discrete_interpolation(cell_type, dtype) -> None:
     tdim = cell_dim(cell_type)
     if tdim == 2:
         mesh = dolfinx.mesh.create_unit_square(
@@ -434,3 +472,61 @@ def test_discrete_interpolation(cell_type, dtype):
 
     atol = 100 * np.finfo(dtype).resolution
     np.testing.assert_allclose(q.x.array, q_ref.x.array, atol=atol)
+
+
+@pytest.mark.parametrize(
+    "cell_type,op,family0,family1,degree,entity_dims",
+    [
+        # Each operator from lowest order up to the degree that first
+        # carries interior (cell) degrees-of-freedom
+        (CellType.triangle, discrete_gradient, "Lagrange", "N1curl", 1, {1}),
+        (CellType.triangle, discrete_gradient, "Lagrange", "N1curl", 2, {1, 2}),
+        (CellType.tetrahedron, discrete_gradient, "Lagrange", "N1curl", 1, {1}),
+        (CellType.tetrahedron, discrete_gradient, "Lagrange", "N1curl", 2, {1, 2}),
+        (CellType.tetrahedron, discrete_gradient, "Lagrange", "N1curl", 3, {1, 2, 3}),
+        (CellType.tetrahedron, discrete_curl, "N1curl", "RT", 1, {2}),
+        (CellType.tetrahedron, discrete_curl, "N1curl", "RT", 2, {2, 3}),
+    ],
+)
+def test_derivative_sparsity(cell_type, op, family0, family1, degree, entity_dims) -> None:
+    """Rows hold the V0 dofs on the closure of their entity.
+
+    A degree-of-freedom of V1 on an entity is a moment over that
+    entity, so it can only see V0 there: the lowest edge moment of a
+    gradient is the difference of the endpoint values, and a facet
+    moment of a curl is, by Stokes' theorem, a circulation around the
+    facet boundary. Entries that happen to evaluate to zero are part of
+    that structure and are stored, since consumers such as PCBDDC read
+    the sparsity rather than the values.
+    """
+    if cell_type == CellType.triangle:
+        msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type, ghost_mode=GhostMode.none)
+    else:
+        msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, ghost_mode=GhostMode.none)
+
+    V = functionspace(msh, (family0, degree))
+    W = functionspace(msh, (family1, degree))
+    G = op(V, W)
+
+    tdim = msh.topology.dim
+    layout_v, layout_w = V.dofmap.dof_layout, W.dofmap.dof_layout
+    blocks = [
+        (dim, rdofs, layout_v.entity_closure_dofs(dim, e))
+        for dim in range(tdim + 1)
+        for e in range(cell_num_entities(msh.topology.cell_type, dim))
+        if len(rdofs := layout_w.entity_dofs(dim, e)) > 0
+    ]
+
+    # The degrees are chosen to reach the interior of the cell, so a
+    # parametrisation that stopped covering it would be caught here
+    assert {dim for dim, _, _ in blocks} == entity_dims
+
+    dofs_v, dofs_w = V.dofmap.list, W.dofmap.list
+    indptr, indices = G.indptr, G.indices
+    num_owned = W.dofmap.index_map.size_local
+    for c in range(dofs_w.shape[0]):
+        for _, rdofs, cdofs in blocks:
+            cols = set(dofs_v[c][cdofs])
+            for row in dofs_w[c][rdofs]:
+                if row < num_owned:
+                    assert set(indices[indptr[row] : indptr[row + 1]]) == cols

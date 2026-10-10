@@ -52,8 +52,7 @@ namespace
 template <typename T>
 constexpr bool nothrow_move_c = std::is_nothrow_move_constructible_v<T>;
 
-/// @brief Non-throwing move assignment. Not asserted for io::XDMFFile,
-/// which does not provide a move assignment operator.
+/// @brief Non-throwing move assignment, required of every type.
 template <typename T>
 constexpr bool nothrow_move_a = std::is_nothrow_move_assignable_v<T>;
 
@@ -127,6 +126,7 @@ static_assert(nothrow_move_c<common::IndexMap>);
 static_assert(nothrow_move_c<common::Scatterer<>>);
 static_assert(nothrow_move_c<dolfinx::MPI::Comm>);
 static_assert(nothrow_move_c<dolfinx::MPI::Datatype<double>>);
+static_assert(nothrow_move_c<dolfinx::MPI::Request>);
 // Explicitly noexcept, see Table.h.
 static_assert(nothrow_move_c<dolfinx::Table>);
 static_assert(nothrow_move_c<common::Timer<>>);
@@ -145,6 +145,7 @@ static_assert(nothrow_move_a<common::IndexMap>);
 static_assert(nothrow_move_a<common::Scatterer<>>);
 static_assert(nothrow_move_a<dolfinx::MPI::Comm>);
 static_assert(nothrow_move_a<dolfinx::MPI::Datatype<double>>);
+static_assert(nothrow_move_a<dolfinx::MPI::Request>);
 static_assert(nothrow_move_a<dolfinx::Table>);
 static_assert(nothrow_move_a<common::Timer<>>);
 static_assert(nothrow_move_a<fem::DofMap>);
@@ -152,6 +153,7 @@ static_assert(nothrow_move_a<fem::ElementDofLayout>);
 static_assert(nothrow_move_a<graph::AdjacencyList<std::int32_t>>);
 static_assert(nothrow_move_a<graph::AdjacencyList<std::int64_t>>);
 static_assert(nothrow_move_a<io::VTKFile>);
+static_assert(nothrow_move_a<io::XDMFFile>);
 static_assert(nothrow_move_a<la::SparsityPattern>);
 static_assert(nothrow_move_a<mesh::EntityMap>);
 static_assert(nothrow_move_a<mesh::Topology>);
