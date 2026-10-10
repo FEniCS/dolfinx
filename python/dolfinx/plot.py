@@ -84,7 +84,7 @@ def vtk_mesh(
     topology[:, 1:] = vtk_topology
 
     # Array holding the cell type (shape) for each cell
-    vtk_type = _cpp.io.get_vtk_cell_type(cell_type, dim)
+    vtk_type = _cpp.io.get_vtk_cell_type(cell_type, dim, num_nodes_per_cell)
     cell_types = np.full(len(entities), vtk_type)
 
     return topology.reshape(-1), cell_types, msh.geometry.x
@@ -139,7 +139,9 @@ def _(
     perm = np.argsort(_cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
 
     vtk_type = (
-        _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, tdim)
+        _first_order_vtk[cell_type]
+        if degree == 1
+        else _cpp.io.get_vtk_cell_type(cell_type, tdim, num_dofs_per_cell)
     )
     cell_types = np.full(entities.size, vtk_type)
 
