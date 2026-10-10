@@ -204,8 +204,9 @@
 #
 # Continuation runs from $\lambda = 0$ until $\lambda$ reaches
 # `-snes_newtonal_lambda_max`, here $1$, so the reference load is the
-# load finally carried. The path in between is free to rise above that
-# value and fall back, which is exactly what happens here.
+# load finally carried. In between, $\lambda$ is free to move either
+# way: here it climbs to the limit load, falls back to about a sixth of
+# it along the unstable branch, and only then rises to $1$.
 #
 # ### The Newton step and the Dirichlet conditions
 #
@@ -303,6 +304,7 @@
 # ## Implementation
 
 # +
+import sys
 from pathlib import Path
 
 from mpi4py import MPI
@@ -312,7 +314,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import ufl
-from dolfinx import default_scalar_type, fem, mesh, plot
+from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
 from dolfinx.fem.petsc import (
     apply_lifting,
     assemble_matrix,
@@ -323,6 +325,16 @@ from dolfinx.fem.petsc import (
     set_bc,
 )
 from dolfinx.io import XDMFFile
+
+# The problem is real-valued, and the continuation is run to tolerances
+# below single precision, so skip the builds this demo does not support
+# rather than reporting a result it cannot reach.
+if np.issubdtype(PETSc.ScalarType, np.complexfloating):
+    print("Demo should only be executed with real PETSc scalars.")
+    sys.exit(0)
+if np.issubdtype(default_real_type, np.float32):
+    print("float32 not yet supported for this demo.")
+    sys.exit(0)
 
 # -
 
@@ -527,10 +539,13 @@ def compute_tangent_load(_snes: PETSc.SNES, x: PETSc.Vec, Q: PETSc.Vec) -> None:
     Q.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
 
-# The matrix and vector the callbacks assemble into are created from the
-# forms. The solution vector shares its data with the
-# degrees-of-freedom of `u`, so `u` holds the initial guess on entry and
-# the solution on return.
+# The matrix and vector the callbacks assemble into are created from
+# the forms, along with a vector for the solver to iterate on. That
+# vector is kept separate from `u`'s own storage: the callbacks copy
+# the point they are given into `u`, and were `u` to share storage with
+# the solver's vector, a callback evaluated at a work vector would
+# overwrite the iterate. The initial guess is copied in before the
+# solve and the solution copied back after.
 #
 # The solver type is set here rather than through the options database
 # because `SNES.setNewtonALFunction` reaches a method that only exists
@@ -541,7 +556,7 @@ def compute_tangent_load(_snes: PETSc.SNES, x: PETSc.Vec, Q: PETSc.Vec) -> None:
 # +
 A = create_matrix(jacobian)
 b = create_vector(V)
-x_vec = u.x.petsc_vec
+x_vec = create_vector(V)
 
 snes = PETSc.SNES().create(msh.comm)  # type: ignore[arg-type]
 snes.setType(PETSc.SNES.Type.NEWTONAL)
@@ -665,12 +680,15 @@ def draw_frame(n: int, lam: float) -> None:
 #
 # There is no time in this problem, so the series is indexed by the arc
 # length $s = n \Delta s$ travelled along the equilibrium path, which is
-# the parameter the continuation actually marches in. Indexing by
-# $\lambda$ would not do: it rises, falls and rises again, so it does
-# not order the states. The undeformed arch is written at $s = 0$ so
-# that the history starts from the reference configuration. Opening the
-# result and warping by the displacement replays the arch flattening,
-# snapping through and inverting.
+# the index of the continuation increment. Indexing by $\lambda$ would
+# not do: it rises, falls and rises again, so it does not order the
+# states. Arc length would order them, but the increments are not all
+# the same length — `SNESNEWTONAL` shortens the last one so that it
+# lands exactly on $\lambda_{\max}$ — and it is not reported, so the
+# increment count is used instead. The undeformed arch is written at
+# increment $0$ so that the history starts from the reference
+# configuration. Opening the result and warping by the displacement
+# replays the arch flattening, snapping through and inverting.
 
 # +
 arc_step = 0.6  # Arc length of a continuation increment
@@ -694,14 +712,14 @@ draw_frame(0, 0.0)
 def record(snes: PETSc.SNES, _its: int, _fnorm: float) -> None:
     """Record the state at the end of a converged increment."""
     if snes.getConvergedReason() > 0:  # type: ignore[operator]
-        s = (len(path) + 1) * arc_step
+        n = len(path) + 1
         w = msh.comm.allreduce(fem.assemble_scalar(deflection), op=MPI.SUM) / volume
         lam = snes.getNewtonALLoadParameter()
-        path.append((s, lam, w))
+        path.append((n, lam, w))
         snapshots.append(u.x.array.real.copy())
         u_linear.interpolate(u)
-        history.write_function(u_linear, s)
-        draw_frame(len(path), lam)
+        history.write_function(u_linear, float(n))
+        draw_frame(n, lam)
 
 
 snes.setMonitor(record)
@@ -758,8 +776,10 @@ opts.prefixPop()
 # parameter.
 
 # +
+assign(u, x_vec)
 snes.solve(None, x_vec)
 x_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+assign(x_vec, u)
 history.close()
 assert snes.getConvergedReason() > 0  # type: ignore[operator]
 # -
@@ -773,12 +793,12 @@ assert snes.getConvergedReason() > 0  # type: ignore[operator]
 # point straight to the inverted shape at the same $\lambda$.
 #
 # The path is written alongside the deformation history, so that the
-# load-deflection curve can be plotted against the same arc length that
-# indexes the states in the time series.
+# load-deflection curve can be matched up with the states in the time
+# series by increment number.
 
 # +
 history_data = np.array(path)
-arc_length, load_path, mean_deflection = history_data.T
+increment, load_path, mean_deflection = history_data.T
 descending = np.nonzero(np.diff(load_path) < 0)[0]
 assert len(descending) > 0, "no limit point found: the arch did not snap through"
 limit = int(descending[0])
@@ -789,16 +809,16 @@ if msh.comm.rank == 0:
         "out_snap-through/equilibrium-path.csv",
         history_data,
         delimiter=",",
-        header="arc_length,load_parameter,mean_vertical_displacement",
+        header="increment,load_parameter,mean_vertical_displacement",
         comments="",
     )
     print(f"Continuation increments: {len(path)}")
-    print(f"Limit load:   lambda = {load_path[limit]:.4f} at s = {arc_length[limit]:.1f}")
+    print(f"Limit load:   lambda = {load_path[limit]:.4f} at increment {int(increment[limit])}")
     print(f"Unstable to:  lambda = {load_path[limit:].min():.4f}")
     print(f"Final state:  lambda = {load_path[-1]:.4f}, mean w = {mean_deflection[-1]:.4f}")
-    print("\n      s    lambda    mean w")
-    for s, lam, w in path:
-        print(f"  {s:5.1f}  {lam:8.4f}  {w:8.4f}")
+    print("\n      n    lambda    mean w")
+    for n, lam, w in path:
+        print(f"  {n:5d}  {lam:8.4f}  {w:8.4f}")
 # -
 
 # ## The load-displacement curve
@@ -920,4 +940,5 @@ if plotter is not None:
 snes.destroy()
 A.destroy()
 b.destroy()
+x_vec.destroy()
 # -
