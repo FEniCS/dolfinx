@@ -127,6 +127,7 @@ static_assert(nothrow_move_c<common::IndexMap>);
 static_assert(nothrow_move_c<common::Scatterer<>>);
 static_assert(nothrow_move_c<dolfinx::MPI::Comm>);
 static_assert(nothrow_move_c<dolfinx::MPI::Datatype<double>>);
+static_assert(nothrow_move_c<dolfinx::MPI::Request>);
 // Explicitly noexcept, see Table.h.
 static_assert(nothrow_move_c<dolfinx::Table>);
 static_assert(nothrow_move_c<common::Timer<>>);
@@ -145,6 +146,7 @@ static_assert(nothrow_move_a<common::IndexMap>);
 static_assert(nothrow_move_a<common::Scatterer<>>);
 static_assert(nothrow_move_a<dolfinx::MPI::Comm>);
 static_assert(nothrow_move_a<dolfinx::MPI::Datatype<double>>);
+static_assert(nothrow_move_a<dolfinx::MPI::Request>);
 static_assert(nothrow_move_a<dolfinx::Table>);
 static_assert(nothrow_move_a<common::Timer<>>);
 static_assert(nothrow_move_a<fem::DofMap>);
