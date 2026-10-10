@@ -36,14 +36,17 @@ template <std::floating_point U>
 void write_mesh(const std::filesystem::path& filename,
                 const mesh::Mesh<U>& mesh)
 {
-  std::vector<mesh::CellType> cell_types
-      = mesh.topology()->entity_types(mesh.topology()->dim());
+  const int tdim = mesh.topology()->dim();
+  std::vector<mesh::CellType> cell_types = mesh.topology()->entity_types(tdim);
+
+  // Mapped before the file is opened so that an unsupported cell layout
+  // throws on every rank before any collective IO has happened
   std::vector<std::int8_t> vtk_types;
+  vtk_types.reserve(cell_types.size());
   for (std::size_t i = 0; i < cell_types.size(); ++i)
   {
-    vtk_types.push_back(
-        cells::get_vtk_cell_type(cell_types[i], mesh.topology()->dim(),
-                                 mesh.geometry().cmaps()[i].dim()));
+    vtk_types.push_back(cells::get_vtk_cell_type(
+        cell_types[i], tdim, mesh.geometry().cmaps().at(i).dim()));
   }
 
   hid_t h5file = hdf5::open_file(mesh.comm(), filename, "w", true);

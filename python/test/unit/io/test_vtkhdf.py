@@ -4,11 +4,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from pathlib import Path
+
 from mpi4py import MPI
 
 import numpy as np
 import pytest
 
+import basix
+import basix.ufl
 import dolfinx
 import ufl
 from dolfinx.io.vtkhdf import read_mesh, write_cell_data, write_mesh, write_point_data
@@ -289,11 +293,6 @@ def test_write_mixed_topology_data(mixed_topology_mesh) -> None:
 @pytest.mark.parametrize("degree", [1, 2])
 def test_read_write_prism(degree, tempdir) -> None:
     """Full quadratic prisms retain their coordinate element and geometry."""
-    from pathlib import Path
-
-    import basix
-    import basix.ufl
-
     element = basix.ufl.element(
         "Lagrange", "prism", degree, basix.LagrangeVariant.equispaced, shape=(3,), dtype=np.float64
     )
@@ -323,11 +322,6 @@ def test_read_write_prism(degree, tempdir) -> None:
 
 def test_write_quadratic_pyramid_rejected(tempdir) -> None:
     """Unsupported pyramids must not be labelled as linear VTK cells."""
-    from pathlib import Path
-
-    import basix
-    import basix.ufl
-
     element = basix.ufl.element(
         "Lagrange", "pyramid", 2, basix.LagrangeVariant.equispaced, shape=(3,), dtype=np.float64
     )

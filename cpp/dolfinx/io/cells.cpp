@@ -757,9 +757,10 @@ std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
 std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim,
                                          int num_nodes)
 {
-  const std::int8_t vtk_type = get_vtk_cell_type(cell, dim);
-  if (vtk_type != 14)
-    return vtk_type;
+  // Every shape except the pyramid has an arbitrary-degree Lagrange
+  // type in VTK, so only the pyramid needs the node count
+  if (mesh::cell_entity_type(cell, dim, 0) != mesh::CellType::pyramid)
+    return get_vtk_cell_type(cell, dim);
 
   switch (num_nodes)
   {
