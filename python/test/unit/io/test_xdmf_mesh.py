@@ -11,14 +11,16 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import basix.ufl
 import dolfinx
 import ufl
-from dolfinx import default_real_type
+from dolfinx import default_real_type, fem
 from dolfinx.io import XDMFFile
 from dolfinx.io.gmsh import cell_perm_array, ufl_mesh
 from dolfinx.mesh import (
     CellType,
     GhostMode,
+    compute_midpoints,
     create_mesh,
     create_submesh,
     create_unit_cube,
@@ -205,6 +207,79 @@ def test_read_write_p2_mesh(tempdir, encoding):
         topology.index_map(topology.dim).size_global
         == topology2.index_map(topology.dim).size_global
     )
+
+
+# A degree-2 serendipity cell carries a node on each vertex and each
+# edge, and none inside
+_num_vertices = {CellType.quadrilateral: 4, CellType.hexahedron: 8}
+_num_edges = {CellType.quadrilateral: 4, CellType.hexahedron: 12}
+
+
+def _serendipity_mesh(comm, cell_type):
+    """Build a degree-2 serendipity mesh from a linear one.
+
+    A serendipity cell has a node on each vertex and each edge and none
+    inside, so the geometry is the linear one plus the edge midpoints.
+    """
+    gdim = 2 if cell_type == CellType.quadrilateral else 3
+    num_nodes = _num_vertices[cell_type] + _num_edges[cell_type]
+    if comm.rank == 0:
+        if cell_type == CellType.quadrilateral:
+            msh = create_unit_square(MPI.COMM_SELF, 4, 5, cell_type=cell_type)
+        else:
+            msh = create_unit_cube(MPI.COMM_SELF, 2, 3, 2, cell_type=cell_type)
+        tdim = msh.topology.dim
+        msh.topology.create_connectivity(tdim, 1)
+        msh.topology.create_connectivity(1, tdim)
+        x = msh.geometry.x
+        midpoints = compute_midpoints(
+            msh, 1, np.arange(msh.topology.index_map(1).size_local, dtype=np.int32)
+        )
+        edges = msh.topology.connectivity(tdim, 1).array.reshape(-1, _num_edges[cell_type])
+        cells = np.hstack([msh.geometry.dofmaps[0], edges + x.shape[0]]).astype(np.int64)
+        nodes = np.vstack([x, midpoints])[:, :gdim]
+    else:
+        cells = np.empty((0, num_nodes), dtype=np.int64)
+        nodes = np.empty((0, gdim), dtype=default_real_type)
+
+    e = basix.ufl.element(
+        basix.ElementFamily.serendipity,
+        cell_type.name,
+        2,
+        lagrange_variant=basix.LagrangeVariant.equispaced,
+        dpc_variant=basix.DPCVariant.simplex_equispaced,
+        shape=(gdim,),
+    )
+    return create_mesh(comm, cells, e, nodes)
+
+
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
+@pytest.mark.parametrize("cell_type", [CellType.quadrilateral, CellType.hexahedron])
+@pytest.mark.parametrize("encoding", encodings)
+def test_read_write_serendipity_mesh(tempdir, encoding, cell_type) -> None:
+    """A degree-2 serendipity geometry survives a round-trip.
+
+    Its node count belongs to no Lagrange element, so the layout needs
+    its own entry in the VTK node ordering map that XDMF uses.
+    """
+    msh = _serendipity_mesh(MPI.COMM_WORLD, cell_type)
+
+    filename = Path(tempdir, f"serendipity_{cell_type.name}.xdmf")
+    with XDMFFile(msh.comm, filename, "w", encoding=encoding) as file:
+        file.write_mesh(msh)
+    with XDMFFile(msh.comm, filename, "r", encoding=encoding) as file:
+        msh2 = file.read_mesh()
+
+    assert msh2.geometry.dofmaps[0].shape[1] == msh.geometry.dofmaps[0].shape[1]
+    for dim in (0, msh.topology.dim):
+        assert msh2.topology.index_map(dim).size_global == msh.topology.index_map(dim).size_global
+
+    # The midpoints lie on straight edges, so the cells are undistorted
+    # and the measure is still that of the unit square/cube. A mismatched
+    # node ordering curves them and changes it.
+    for m in (msh, msh2):
+        volume = m.comm.allreduce(fem.assemble_scalar(fem.form(1.0 * ufl.dx(domain=m))), op=MPI.SUM)
+        assert np.isclose(volume, 1.0)
 
 
 @pytest.mark.parametrize("d", [2, 3])

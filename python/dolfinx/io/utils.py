@@ -389,11 +389,14 @@ class XDMFFile:
             # evaluations on edges
             geometry = basix.cell.geometry(s_el.basix_element.cell_type)
             topology = basix.cell.topology(s_el.basix_element.cell_type)
+            # Points are given on the reference cell, so a quadrilateral
+            # takes two coordinates per point and a hexahedron three
+            tdim = len(topology) - 1
             e_x: list[list[npt.NDArray[np.floating]]] = [
                 [np.array([p]) for p in geometry],
                 [np.array([(geometry[edge[0]] + geometry[edge[1]]) / 2]) for edge in topology[1]],
-                [np.zeros((0, 3)) for _ in s_el.basix_element.x[2]],
-                [np.zeros((0, 3)) for _ in s_el.basix_element.x[3]],
+                [np.zeros((0, tdim)) for _ in s_el.basix_element.x[2]],
+                [np.zeros((0, tdim)) for _ in s_el.basix_element.x[3]],
             ]
             e_m: list[list[npt.NDArray[np.floating]]] = [
                 [np.ones((1, 1, 1, 1)) for _ in s_el.basix_element.M[0]],
