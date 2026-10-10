@@ -42,13 +42,17 @@ public:
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] element Finite element for the space.
   /// @param[in] dofmap Degree-of-freedom map for the space.
+  /// @throws std::runtime_error If an element depends on the cell
+  /// orientation (see FiniteElement::depends_on_cell_orientation) and
+  /// none has been computed or set on the mesh (see
+  /// mesh::Topology::has_cell_orientations).
   FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _elements{element}, _dofmaps{std::move(dofmap)},
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
-    // Do nothing
+    check_cell_orientations();
   }
 
   /// @brief Create function space for given mesh, elements and
@@ -59,6 +63,10 @@ public:
   /// mesh::topology::cell_types.
   /// @param[in] dofmaps Degree-of-freedom maps for the space, one for each
   /// element. The dofmaps must be ordered in the same way as the elements.
+  /// @throws std::runtime_error If an element depends on the cell
+  /// orientation (see FiniteElement::depends_on_cell_orientation) and
+  /// none has been computed or set on the mesh (see
+  /// mesh::Topology::has_cell_orientations).
   FunctionSpace(
       std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
       std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements,
@@ -84,6 +92,7 @@ public:
         throw std::invalid_argument(
             "Element cell types must match mesh cell types");
     }
+    check_cell_orientations();
   }
 
   // Copy constructor (deleted)
@@ -411,6 +420,27 @@ public:
   }
 
 private:
+  // Throw if an element depends on the cell orientation of the mesh and
+  // none has been computed or set. The check is local, and its outcome
+  // is the same on all ranks.
+  void check_cell_orientations() const
+  {
+    if (_mesh->topology()->has_cell_orientations())
+      return;
+    for (const std::shared_ptr<const FiniteElement<geometry_type>>& e :
+         _elements)
+    {
+      if (e->depends_on_cell_orientation())
+      {
+        throw std::runtime_error(
+            "The basis of this element, e.g. Raviart-Thomas on a manifold, "
+            "depends on the cell orientation, which has not been computed or "
+            "set. Call Topology::create_cell_orientations before creating the "
+            "function space.");
+      }
+    }
+  }
+
   // The mesh
   std::shared_ptr<const mesh::Mesh<geometry_type>> _mesh;
 

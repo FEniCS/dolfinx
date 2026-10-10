@@ -250,6 +250,28 @@ void mesh(nb::module_& m)
                                                                {p.size()});
           },
           nb::rv_policy::reference_internal)
+      .def(
+          "create_cell_orientations",
+          [](dolfinx::mesh::Topology& self,
+             std::optional<
+                 nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>>
+                 orientations)
+          {
+            self.create_cell_orientations(
+                orientations ? std::optional(std::span<const std::int8_t>(
+                                   orientations->data(), orientations->size()))
+                             : std::nullopt);
+          },
+          nb::arg("orientations").none(),
+          "Compute, or set from the given markers, a per-cell marker for "
+          "a consistent orientation of a surface mesh.")
+      .def(
+          "cell_orientations", [](const dolfinx::mesh::Topology& self)
+          { return as_nbarray(self.cell_orientations()); },
+          "Orientation (+1/-1) of each cell relative to its surface.")
+      .def("has_cell_orientations",
+           &dolfinx::mesh::Topology::has_cell_orientations,
+           "Check if a cell orientation has been computed or set.")
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
       .def_prop_rw(
