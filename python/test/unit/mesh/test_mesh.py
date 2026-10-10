@@ -1023,7 +1023,8 @@ def test_point_mesh(gdim, dtype) -> None:
         CellType.hexahedron,
     ],
 )
-def test_cell_permutation_info_matches_entity_permutations(cell_type) -> None:
+@pytest.mark.parametrize("num_threads", [1, 4])
+def test_cell_permutation_info_matches_entity_permutations(cell_type, num_threads) -> None:
     """The packed cell permutation info is the per-dimension permutations.
 
     ``get_cell_permutation_info`` packs three bits per face followed by
@@ -1044,7 +1045,7 @@ def test_cell_permutation_info_matches_entity_permutations(cell_type) -> None:
     # them after the packed info exists unpacks it instead
     for dim in range(1, tdim):
         topology.create_entity_permutations(dim)
-    topology.create_cell_permutations()
+    topology.create_cell_permutations(num_threads)
 
     info = topology.get_cell_permutation_info()
     num_cells = len(info)
@@ -1065,6 +1066,61 @@ def test_cell_permutation_info_matches_entity_permutations(cell_type) -> None:
     assert edges.any()
     if tdim > 2:
         assert faces.any()
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        CellType.interval,
+        CellType.triangle,
+        CellType.quadrilateral,
+        CellType.tetrahedron,
+        CellType.hexahedron,
+        CellType.prism,
+    ],
+)
+@pytest.mark.parametrize("num_threads", [1, 4])
+def test_cell_permutations_do_not_create_entities(cell_type, num_threads) -> None:
+    """Packed orientations need only the cell vertices, including ghost cells."""
+    if cell_type == CellType.interval:
+        msh = create_unit_interval(MPI.COMM_WORLD, 4)
+    elif cell_type in (CellType.triangle, CellType.quadrilateral):
+        msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type=cell_type)
+    else:
+        msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
+    topology = msh.topology
+    tdim = topology.dim
+
+    # Entities of dimension dim exist iff they have an index map. The
+    # connectivity accessor is not a usable check here: for a prism it
+    # throws whatever has been created, the facets having two types
+    for dim in range(1, tdim):
+        assert topology.index_maps(dim) == []
+
+    topology.create_cell_permutations(num_threads)
+    info = topology.get_cell_permutation_info()
+    cell_map = topology.index_map(tdim)
+    assert len(info) == cell_map.size_local + cell_map.num_ghosts
+    if tdim > 1:
+        assert info.any()
+    else:
+        assert not info.any()
+    for dim in range(1, tdim):
+        assert topology.index_maps(dim) == []
+
+
+def test_entity_permutations_on_a_rank_without_cells() -> None:
+    """Unpacking must be taken by every rank, or none.
+
+    Unpacking the packed cell permutations is local, but the fallback
+    that computes them from scratch creates entities, which is
+    collective. A rank holding no cells must not be the only one to take
+    the fallback.
+    """
+    msh = create_unit_square(MPI.COMM_WORLD, 1, 1)
+    msh.topology.create_cell_permutations()
+    msh.topology.create_entity_permutations(1)
+    assert msh.topology.index_maps(1) == []
 
 
 def test_entity_permutations_are_computed_per_dimension() -> None:
