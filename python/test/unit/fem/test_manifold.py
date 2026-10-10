@@ -481,14 +481,14 @@ def tangential_field(mesh, linear):
 
 def reversed_cells(mesh):
     """Whether the orientation of each owned and ghost cell is reversed."""
-    return mesh.topology.get_cell_orientations() < 0
+    return mesh.topology.cell_orientations() < 0
 
 
 def keep_vertex_orders(mesh):
     """Set the orientation of every cell to ``1``, keeping its own vertex order."""
     cell_map = mesh.topology.index_map(mesh.topology.dim)
     num_cells = cell_map.size_local + cell_map.num_ghosts
-    mesh.topology.set_cell_orientations(np.ones(num_cells, dtype=np.int8))
+    mesh.topology.create_cell_orientations(np.ones(num_cells, dtype=np.int8))
 
 
 def cube_surface(ghost_mode, cell_type=CellType.tetrahedron, dtype=default_real_type):
@@ -702,7 +702,7 @@ def test_divergence_theorem_on_a_closed_surface(
     if orient == "create":
         surface.topology.create_cell_orientations()
     else:
-        surface.topology.set_cell_orientations(outward_orientations(surface))
+        surface.topology.create_cell_orientations(outward_orientations(surface))
     num_owned = surface.topology.index_map(2).size_local
     num_reversed = surface.comm.allreduce(
         int(np.sum(reversed_cells(surface)[:num_owned])), op=MPI.SUM
@@ -725,7 +725,7 @@ def test_cell_orientations_agree_with_the_outward_normal(ghost_mode, cell_type):
     surface = cube_surface(ghost_mode, cell_type)
     surface.topology.create_cell_orientations()
     # Outward once the orientation is applied
-    outward = outward_orientations(surface) * surface.topology.get_cell_orientations() > 0
+    outward = outward_orientations(surface) * surface.topology.cell_orientations() > 0
     comm = surface.comm
     all_outward = comm.allreduce(bool(np.all(outward)), op=MPI.LAND)
     all_inward = comm.allreduce(not bool(np.any(outward)), op=MPI.LAND)
@@ -749,26 +749,26 @@ def test_cell_orientations_undo_mixed_vertex_orders():
     assert even_flagged or odd_flagged
 
 
-def test_get_cell_orientations():
+def test_cell_orientations():
     """All cells have orientation ``1`` until the cells are oriented, then ``1`` or ``-1``."""
     mesh = plane_mesh(2, 3, mixed_orientation=True, orient=False)
     mesh.topology.create_cell_permutations()
     cell_map = mesh.topology.index_map(2)
     num_cells = cell_map.size_local + cell_map.num_ghosts
 
-    orientations = mesh.topology.get_cell_orientations()
+    orientations = mesh.topology.cell_orientations()
     assert orientations.dtype == np.int8
     assert orientations.shape == (num_cells,)
     np.testing.assert_array_equal(orientations, 1)
 
     mesh.topology.create_cell_orientations()
-    orientations = mesh.topology.get_cell_orientations()
+    orientations = mesh.topology.cell_orientations()
     assert orientations.shape == (num_cells,)
     assert np.all(np.abs(orientations) == 1)
     assert mesh.comm.allreduce(bool(np.any(orientations < 0)), op=MPI.LOR)
 
 
-def test_set_cell_orientations():
+def test_create_cell_orientations_given():
     """Set orientations are read back, and replace computed ones."""
     mesh = plane_mesh(2, 3, mixed_orientation=True, orient=False)
     mesh.topology.create_cell_orientations()
@@ -776,16 +776,16 @@ def test_set_cell_orientations():
     num_cells = cell_map.size_local + cell_map.num_ghosts
     even = np.asarray(mesh.topology.original_cell_index) % 2 == 0
     for orientations in (np.ones(num_cells, dtype=np.int8), np.where(even, -1, 1)):
-        mesh.topology.set_cell_orientations(orientations)
-        np.testing.assert_array_equal(mesh.topology.get_cell_orientations(), orientations)
+        mesh.topology.create_cell_orientations(orientations)
+        np.testing.assert_array_equal(mesh.topology.cell_orientations(), orientations)
 
 
-def test_set_cell_orientations_need_one_per_cell():
+def test_create_cell_orientations_need_one_per_cell():
     mesh = plane_mesh(2, 3)
     cell_map = mesh.topology.index_map(2)
     num_cells = cell_map.size_local + cell_map.num_ghosts
     with pytest.raises(ValueError, match="one per owned and ghost cell"):
-        mesh.topology.set_cell_orientations(np.ones(num_cells + 1, dtype=np.int8))
+        mesh.topology.create_cell_orientations(np.ones(num_cells + 1, dtype=np.int8))
 
 
 def test_cell_orientations_do_not_change_other_elements():
@@ -854,4 +854,4 @@ def test_cell_orientations_need_a_surface():
     cell_map = mesh.topology.index_map(3)
     num_cells = cell_map.size_local + cell_map.num_ghosts
     with pytest.raises(ValueError, match="surface mesh"):
-        mesh.topology.set_cell_orientations(np.ones(num_cells, dtype=np.int8))
+        mesh.topology.create_cell_orientations(np.ones(num_cells, dtype=np.int8))

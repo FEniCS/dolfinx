@@ -435,9 +435,8 @@ private:
         throw std::runtime_error(
             "The basis of this element, e.g. Raviart-Thomas on a manifold, "
             "depends on the cell orientation, which has not been computed or "
-            "set. Call Topology::create_cell_orientations or "
-            "Topology::set_cell_orientations before creating the function "
-            "space.");
+            "set. Call Topology::create_cell_orientations before creating the "
+            "function space.");
       }
     }
   }

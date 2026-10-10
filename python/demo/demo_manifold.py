@@ -146,19 +146,17 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 # do not depend on it. Creating an $H(\mathrm{div})$ space on a surface
 # whose orientation has been neither computed nor set raises an error.
 #
-# A known orientation can be set instead with
-# {py:meth}`set_cell_orientations
-# <dolfinx.mesh.Topology.set_cell_orientations>`, which takes, for each
-# owned and ghost cell, $-1$ if the vertex order of the cell disagrees
-# with it and $1$ otherwise. On the sphere, the outward normal is such
-# an orientation. The cell normal {py:class}`ufl.CellNormal` is
-# computed from the Jacobian of each cell, so it follows the vertex
-# order, and its sign relative to the radius vector $x$ at the cell
-# midpoint tells whether the cell is reversed. This is close to legacy
-# FEniCS, where the cells were oriented relative to a normal field
-# given by the user {cite}`rognes2013manifolds`. Unlike
-# `create_cell_orientations`, `set_cell_orientations` does not check
-# that the orientation is consistent.
+# A known orientation can be passed to the same method instead, as
+# `orientations`: for each owned and ghost cell, $-1$ if the vertex
+# order of the cell disagrees with it and $1$ otherwise. On the sphere,
+# the outward normal is such an orientation. The cell normal
+# {py:class}`ufl.CellNormal` is computed from the Jacobian of each cell,
+# so it follows the vertex order, and its sign relative to the radius
+# vector $x$ at the cell midpoint tells whether the cell is reversed.
+# This is close to legacy FEniCS, where the cells were oriented relative
+# to a normal field given by the user {cite}`rognes2013manifolds`. A
+# supplied orientation is not checked for consistency, and needs none of
+# the edge entities the computed one builds.
 
 # +
 cell_map = mesh.topology.index_map(2)
@@ -173,16 +171,16 @@ elif orientation == "outward":
     n_dot_x = dolfinx.fem.Expression(
         ufl.dot(ufl.CellNormal(mesh), x), midpoint, dtype=dolfinx.default_real_type
     )
-    mesh.topology.set_cell_orientations(np.where(n_dot_x.eval(mesh, cells).ravel() > 0, 1, -1))
+    mesh.topology.create_cell_orientations(np.where(n_dot_x.eval(mesh, cells).ravel() > 0, 1, -1))
 else:
     # Keep each cell's own vertex order, which is not consistent here
-    mesh.topology.set_cell_orientations(np.ones(num_cells, dtype=np.int8))
+    mesh.topology.create_cell_orientations(np.ones(num_cells, dtype=np.int8))
 
 if orientation is not None:
     # Count the cells whose orientation is reversed relative to their
     # own vertex order. The count is nonzero, as the facets of the ball
     # are not consistently ordered.
-    orientations = mesh.topology.get_cell_orientations()
+    orientations = mesh.topology.cell_orientations()
     num_owned = cell_map.size_local
     num_reversed = mesh.comm.allreduce(int(np.sum(orientations[:num_owned] < 0)), op=MPI.SUM)
     if mesh.comm.rank == 0:

@@ -16,14 +16,12 @@ The orientation is now stored on the topology:
   <dolfinx.mesh.Topology.create_cell_orientations>` computes a consistent
   orientation from the vertex orders, in serial and in parallel. It raises an
   error for a non-orientable surface (e.g. a Möbius strip) or for an edge
-  shared by more than two cells (e.g. a T-joint).
-- {py:meth}`Topology.set_cell_orientations
-  <dolfinx.mesh.Topology.set_cell_orientations>` sets a known orientation
-  instead, e.g. from the outward normal of a closed surface. It takes `1` or
-  `-1` for each owned and ghost cell, and does not check the orientation for
+  shared by more than two cells (e.g. a T-joint). Passing `orientations` sets
+  a known orientation instead, e.g. from the outward normal of a closed
+  surface: `1` or `-1` for each owned and ghost cell, not checked for
   consistency.
-- {py:meth}`Topology.get_cell_orientations
-  <dolfinx.mesh.Topology.get_cell_orientations>` returns the orientation, and
+- {py:meth}`Topology.cell_orientations
+  <dolfinx.mesh.Topology.cell_orientations>` returns the orientation, and
   {py:meth}`Topology.has_cell_orientations
   <dolfinx.mesh.Topology.has_cell_orientations>` whether one has been
   computed or set.
@@ -38,8 +36,8 @@ of orienting the cells.
 Creating an H(div) space on a manifold now raises a `RuntimeError` unless an
 orientation has been computed or set. Code that relied on consistently ordered
 cells should call `mesh.topology.create_cell_orientations()` before creating
-the space. Alternatively, `set_cell_orientations` with all orientations `1`
-keeps each cell's own vertex order. Changing the orientation after creating
+the space. Alternatively, passing all orientations `1` keeps each cell's own
+vertex order. Changing the orientation after creating
 such spaces invalidates existing {py:class}`dolfinx.fem.Function` data on
 them.
 

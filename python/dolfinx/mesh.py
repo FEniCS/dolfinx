@@ -444,22 +444,31 @@ class Topology:
         number of reflections and permutations for each sub-entity of
         the cell to be able to map it to the reference element. The
         most significant bit marks a reversed cell (see
-        :meth:`get_cell_orientations`).
+        :meth:`cell_orientations`).
         """
         return self._cpp_object.get_cell_permutation_info()
 
-    def create_cell_orientations(self) -> None:
-        """Compute and store consistent orientation markers for manifolds.
+    def create_cell_orientations(self, orientations: npt.ArrayLike | None = None) -> None:
+        """Compute or set consistent orientation markers for manifolds.
 
         The cells are not modified. On a surface, elements mapped by the
         contravariant Piola map (e.g. Raviart-Thomas,
         Brezzi-Douglas-Marini) are conforming only between cells whose
         vertex orders give the same normal. On a manifold, these spaces
         can therefore only be created once an orientation has been
-        computed with this call or set with :meth:`set_cell_orientations`
-        (see :meth:`has_cell_orientations`). Lagrange and Nédélec spaces
-        do not need it. The result is read with
-        :meth:`get_cell_orientations`.
+        computed or set with this call (see
+        :meth:`has_cell_orientations`). Lagrange and Nédélec spaces do
+        not need it. The result is read with :meth:`cell_orientations`.
+
+        If ``orientations`` is ``None``, one is computed from the vertex
+        orders alone, which additionally creates the edges it is computed
+        across. Which of its two orientations each connected surface gets
+        is then arbitrary, and depends on the partitioning. Pass
+        ``orientations`` when a consistent orientation is already known,
+        e.g. the outward normal of a closed surface; it is stored in the
+        same way, but is not checked for consistency between neighbouring
+        cells. On a mesh whose cells are consistently ordered, passing
+        all ``1`` keeps each cell's own vertex order.
 
         Warning:
             Changing the orientation after creating such spaces
@@ -467,16 +476,29 @@ class Topology:
             them, as their degrees-of-freedom are not corrected.
 
         Note:
-            Collective.
+            Collective. The two branches do different collective work, so
+            ``orientations`` must be given on every rank or on none.
+
+        Args:
+            orientations: For each owned and ghost cell, ``-1`` if its
+                orientation is reversed relative to its vertex order and
+                ``1`` otherwise. A ghost cell must have the same
+                orientation as on its owner. If ``None``, a consistent
+                orientation is computed instead.
 
         Raises:
-            ValueError: If the topological dimension is not 2.
-            RuntimeError: If the surface is not orientable, e.g. a Möbius
-                strip, or an edge is shared by more than two cells.
+            ValueError: If the topological dimension is not 2, or
+                ``orientations`` does not have one entry per owned and
+                ghost cell.
+            RuntimeError: If no orientation is given and the surface is
+                not orientable, e.g. a Möbius strip, or an edge is shared
+                by more than two cells.
         """
-        self._cpp_object.create_cell_orientations()
+        self._cpp_object.create_cell_orientations(
+            None if orientations is None else np.asarray(orientations, dtype=np.int8)
+        )
 
-    def get_cell_orientations(self) -> npt.NDArray[np.int8]:
+    def cell_orientations(self) -> npt.NDArray[np.int8]:
         """Get the orientation of each cell relative to its surface.
 
         The orientation is set by :meth:`create_cell_orientations`.
@@ -494,49 +516,16 @@ class Topology:
             RuntimeError: If the cell permutations have not been created
                 (see :meth:`create_cell_permutations`).
         """
-        return self._cpp_object.get_cell_orientations()
+        return self._cpp_object.cell_orientations()
 
     def has_cell_orientations(self) -> bool:
         """Check if a cell orientation has been computed or set.
 
         Function spaces whose basis depends on the cell orientation, e.g.
         Raviart-Thomas on a manifold, can only be created once it has
-        (see :meth:`create_cell_orientations` and
-        :meth:`set_cell_orientations`).
+        (see :meth:`create_cell_orientations`).
         """
         return self._cpp_object.has_cell_orientations()
-
-    def set_cell_orientations(self, orientations: npt.ArrayLike) -> None:
-        """Set the orientation of each cell relative to its surface.
-
-        An alternative to :meth:`create_cell_orientations` for when a
-        consistent orientation is known, e.g. the outward normal of a
-        closed surface. It is stored in the same way, but not checked for
-        consistency between neighbouring cells. On a mesh whose cells are
-        consistently ordered, setting all orientations to ``1`` keeps
-        each cell's own vertex order.
-
-        Warning:
-            As for :meth:`create_cell_orientations`, changing the
-            orientation after creating spaces whose basis depends on it
-            invalidates existing :class:`dolfinx.fem.Function` data on
-            them.
-
-        Note:
-            Collective.
-
-        Args:
-            orientations: For each owned and ghost cell, ``-1`` if its
-                orientation is reversed relative to its vertex order and
-                ``1`` otherwise. A ghost cell must have the same
-                orientation as on its owner.
-
-        Raises:
-            ValueError: If the topological dimension is not 2, or
-                ``orientations`` does not have one entry per owned and
-                ghost cell.
-        """
-        self._cpp_object.set_cell_orientations(np.asarray(orientations, dtype=np.int8))
 
     def get_entity_permutations(self, dim: int) -> npt.NDArray[np.uint8]:
         """Get the permutation integer for entities of a dimension.
