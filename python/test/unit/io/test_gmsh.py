@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Jørgen S. Dokken
+# Copyright (C) 2025-2026 Jørgen S. Dokken and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -8,6 +8,84 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+
+import basix
+import dolfinx
+import ufl
+
+
+@pytest.fixture
+def gmsh_session():
+    gmsh = pytest.importorskip("gmsh")
+    gmsh.initialize()
+    gmsh.option.setNumber("General.Terminal", 0)
+    try:
+        yield gmsh
+    finally:
+        gmsh.finalize()
+
+
+@pytest.fixture
+def gmsh_model(gmsh_session):
+    gmsh_session.model.add("cell")
+    return gmsh_session.model
+
+
+@pytest.mark.parametrize(
+    "cell_name,vertex_order",
+    [
+        ("Hexahedron", [0, 1, 3, 2, 4, 5, 7, 6]),
+        ("Prism", [0, 1, 2, 3, 4, 5]),
+        ("Pyramid", [0, 1, 3, 2, 4]),
+    ],
+)
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_cell_import(gmsh_model, cell_name, vertex_order, degree):
+    """Check Gmsh node ordering and import against Basix reference cells."""
+    from dolfinx.io import gmsh as gmshio
+
+    model = gmsh_model
+    basix_cell = getattr(basix.CellType, cell_name.lower())
+    vertices = basix.geometry(basix_cell)[vertex_order]
+    entity = model.addDiscreteEntity(3)
+    node_tags = np.arange(1, len(vertices) + 1)
+    model.mesh.addNodes(3, entity, node_tags, vertices.flatten())
+    model.mesh.addElementsByType(entity, model.mesh.getElementType(cell_name, 1), [1], node_tags)
+    model.addPhysicalGroup(3, [entity], tag=1)
+    peak = model.addDiscreteEntity(0)
+    model.mesh.addElementsByType(peak, model.mesh.getElementType("Point", 1), [2], [1])
+    model.addPhysicalGroup(0, [peak], tag=2)
+    model.mesh.setOrder(degree)
+    element_types, _, element_nodes = model.mesh.getElements(3, entity)
+    all_node_tags, coordinates, _ = model.mesh.getNodes()
+    nodes = dict(zip(all_node_tags, coordinates.reshape(-1, 3), strict=True))
+    points = np.array([nodes[tag] for tag in element_nodes[0]])
+
+    domain = gmshio.ufl_mesh(element_types[0], 3, np.float64)
+    element = domain.ufl_coordinate_element().basix_element
+    assert element.degree == degree
+    assert element.cell_type.name == cell_name.lower()
+    cell_type = getattr(dolfinx.mesh.CellType, cell_name.lower())
+    permutation = gmshio.cell_perm_array(cell_type, element.dim)
+    np.testing.assert_allclose(points[permutation], element.points, atol=1e-14, rtol=0)
+
+    comm = MPI.COMM_WORLD
+
+    def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
+        return dolfinx.graph.adjacencylist(np.zeros((dual_graph.num_nodes, 1), dtype=np.int32))
+
+    data = gmshio.model_to_mesh(model, comm, 0, partitioner=partitioner)
+    assert data.mesh.geometry.cmaps[0].degree == degree
+    assert data.mesh.topology.index_map(3).size_global == 1
+    assert data.cell_tags is not None
+    assert np.all(data.cell_tags.values == 1)
+    assert data.peak_tags is not None
+    assert np.all(data.peak_tags.values == 2)
+    assert comm.allreduce(len(data.peak_tags.values), op=MPI.SUM) == 1
+    volume = comm.allreduce(
+        dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=data.mesh))), op=MPI.SUM
+    )
+    assert np.isclose(volume, basix.cell.volume(basix_cell))
 
 
 @pytest.mark.parametrize(
@@ -19,15 +97,13 @@ import pytest
         pytest.param(3, marks=pytest.mark.xfail(raises=RuntimeError)),
     ],
 )
-def test_physical_tags(marker_mode) -> None:
+def test_physical_tags(gmsh_session, marker_mode) -> None:
     """Test that we catch partially tagged meshes and not tagged
     meshes as errors.
     """
-    gmsh = pytest.importorskip("gmsh")
+    gmsh = gmsh_session
 
     from dolfinx.io import gmsh as gmshio
-
-    gmsh.initialize()
 
     def gmsh_tet_model(order):
         gmsh.option.setNumber("General.Terminal", 0)
@@ -60,5 +136,3 @@ def test_physical_tags(marker_mode) -> None:
     local_values = np.unique(cell_tags.values)
     all_values = np.unique(np.hstack(msh.comm.allgather(local_values)))
     assert len(all_values) == 2
-
-    gmsh.finalize()

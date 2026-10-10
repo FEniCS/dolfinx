@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2026 Matthew Scroggs and Jørgen S. Dokken
+// Copyright (C) 2020-2026 Matthew Scroggs, Jørgen S. Dokken and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -336,7 +336,7 @@ compute_face_permutations(const mesh::Topology& topology, int num_threads)
 
   [[maybe_unused]] const int tdim = topology.dim();
   assert(tdim > 2);
-  if (!topology.index_map(2))
+  if (topology.index_maps(2).size() != topology.entity_types(2).size())
     throw std::runtime_error("Faces have not been computed.");
 
   // Compute face permutations for first cell type in the topology
