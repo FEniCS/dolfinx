@@ -722,20 +722,11 @@ io::cells::apply_permutation(std::span<const std::int64_t> cells,
   return cells_new;
 }
 //-----------------------------------------------------------------------------
-std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
+std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int num_nodes)
 {
-  if ((cell == mesh::CellType::prism or cell == mesh::CellType::pyramid)
-      and dim == 2)
-    throw std::invalid_argument(
-        "Prism and pyramid facets have different cell types. Specify the "
-        "facet cell type directly.");
-
-  // Get cell type
-  mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
-
-  // Determine VTK cell type (arbitrary Lagrange elements)
+  // Arbitrary-degree Lagrange types where VTK has them
   // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
-  switch (cell_type)
+  switch (cell)
   {
   case mesh::CellType::point:
     return 1;
@@ -749,34 +740,20 @@ std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
     return 71;
   case mesh::CellType::hexahedron:
     return 72;
-  case mesh::CellType::pyramid:
-    return 14;
   case mesh::CellType::prism:
     return 73;
-  default:
-    throw std::runtime_error("Unknown cell type");
-  }
-}
-//-----------------------------------------------------------------------------
-std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim,
-                                         int num_nodes)
-{
-  // Every shape except the pyramid has an arbitrary-degree Lagrange
-  // type in VTK, so only the pyramid needs the node count
-  if (mesh::cell_entity_type(cell, dim, 0) != mesh::CellType::pyramid)
-    return get_vtk_cell_type(cell, dim);
-
-  switch (num_nodes)
-  {
-  case 5:
-    return 14;
-  case 13:
-    return 27;
-  default:
+  case mesh::CellType::pyramid:
+    // VTK has no arbitrary-degree Lagrange pyramid to fall back on, and
+    // its quadratic pyramid (27) is the 13-node serendipity cell, which
+    // basix has no element for, so it cannot be written or read back
+    if (num_nodes == 5)
+      return 14;
     throw std::invalid_argument(
-        std::format("VTK pyramid output supports 5 or 13 nodes, got {}. "
+        std::format("VTK pyramid output supports 5 nodes, got {}. "
                     "Lagrange pyramids are not implemented in VTK.",
                     num_nodes));
+  default:
+    throw std::runtime_error("Unknown cell type");
   }
 }
 //----------------------------------------------------------------------------

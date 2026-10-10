@@ -51,15 +51,9 @@ void io(nb::module_& m)
   declare_data_types<std::complex<double>>(m);
 
   // dolfinx::io::cell vtk cell type converter
-  m.def("get_vtk_cell_type",
-        nb::overload_cast<dolfinx::mesh::CellType, int>(
-            &dolfinx::io::cells::get_vtk_cell_type),
-        nb::arg("cell"), nb::arg("dim"), "Get VTK cell identifier");
-  m.def("get_vtk_cell_type",
-        nb::overload_cast<dolfinx::mesh::CellType, int, int>(
-            &dolfinx::io::cells::get_vtk_cell_type),
-        nb::arg("cell"), nb::arg("dim"), nb::arg("num_nodes"),
-        "Get VTK cell identifier for a node layout");
+  m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type,
+        nb::arg("cell"), nb::arg("num_nodes"),
+        "Get VTK cell identifier for a cell type and node layout");
 
   m.def(
       "extract_vtk_connectivity",
