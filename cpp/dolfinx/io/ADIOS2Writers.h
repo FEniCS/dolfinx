@@ -317,7 +317,6 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
       geometry.dofmaps().front(), topology->cell_type());
 
   // Add cell metadata
-  int tdim = topology->dim();
   adios2::Variable cell_var = impl_adios2::define_variable<std::uint32_t>(
       io, "NumberOfCells", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(cell_var, shape[0]);
@@ -326,8 +325,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable celltype_var
       = impl_adios2::define_variable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(
-      celltype_var,
-      cells::get_vtk_cell_type(topology->cell_type(), tdim, shape[1]));
+      celltype_var, cells::get_vtk_cell_type(topology->cell_type(), shape[1]));
 
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
@@ -376,7 +374,6 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   assert(mesh);
   auto topology = mesh->topology();
   assert(topology);
-  int tdim = topology->dim();
 
   // Get a VTK mesh with points at the 'nodes'
   auto [x, xshape, x_id, x_ghost, vtk, vtkshape] = io::vtk_mesh_from_space(V);
@@ -422,8 +419,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
-      cell_type,
-      cells::get_vtk_cell_type(topology->cell_type(), tdim, vtkshape[1]));
+      cell_type, cells::get_vtk_cell_type(topology->cell_type(), vtkshape[1]));
   engine.Put(local_geometry, x.data());
   engine.Put(local_topology, cells.data());
 
