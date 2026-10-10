@@ -607,11 +607,18 @@ except ImportError:
     # installed but no Qt binding is
     pyvistaqt = None
 
+# The documentation build executes this file, because it saves a
+# Matplotlib figure, in a container that has no OpenGL. Creating a
+# render window there crashes rather than raising, so the 3-D
+# rendering is skipped unless the file is run as a script: the
+# documentation tooling runs it through runpy, which leaves __name__
+# set to something other than "__main__".
+rendering = __name__ == "__main__"
+
 rank_suffix = f"_{msh.comm.rank}" if msh.comm.size > 1 else ""
-cells, types, points = plot.vtk_mesh(V)
 block_size = V.dofmap.index_map_bs
 frame_dir = Path("out_snap-through/frames")
-undeformed = deformed = plotter = None
+undeformed = deformed = plotter = points = None
 colour_bar = {
     "title": "u_z",
     "vertical": True,
@@ -623,7 +630,8 @@ colour_bar = {
     "label_font_size": 12,
 }
 
-if pyvista is not None:
+if pyvista is not None and rendering:
+    cells, types, points = plot.vtk_mesh(V)
     undeformed = pyvista.UnstructuredGrid(cells, types, points)
     deformed = undeformed.copy()
     deformed.point_data["u_z"] = np.zeros(points.shape[0])
@@ -653,7 +661,7 @@ def draw_frame(n: int, lam: float) -> None:
     """Draw the current deformation as frame ``n`` of the animation."""
     if plotter is None:
         return
-    assert deformed is not None and undeformed is not None
+    assert deformed is not None and undeformed is not None and points is not None
     values = u.x.array.real.reshape(points.shape[0], block_size)
     deformed.points = undeformed.points + values
     deformed.point_data["u_z"] = values[:, 2]
@@ -897,7 +905,7 @@ if msh.comm.rank == 0:
 
 # +
 if plotter is not None:
-    assert pyvista is not None and undeformed is not None
+    assert pyvista is not None and undeformed is not None and points is not None
     plotter.close()
 
     states = {
