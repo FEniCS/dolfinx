@@ -15,6 +15,7 @@
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
+#include <numeric>
 
 using namespace dolfinx;
 
@@ -36,7 +37,8 @@ constexpr int N = 8;
   file.write_mesh(*mesh);
 }
 
-[[maybe_unused]] void test_create_box(const graph::partition_fn& part)
+[[maybe_unused]] void test_create_box(const graph::partition_fn& part,
+                                      mesh::CellType celltype)
 {
   MPI_Comm comm;
   MPI_Comm_dup(MPI_COMM_WORLD, &comm);
@@ -50,15 +52,17 @@ constexpr int N = 8;
   // Create mesh on comm and distribute to all ranks in comm
   mesh::Mesh<double> mesh0
       = mesh::create_box(comm, comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
-                         {12, 12, 12}, mesh::CellType::hexahedron, part);
+                         {12, 12, 12}, celltype, part);
   int tdim = mesh0.topology()->dim();
   mesh0.topology()->create_entities(tdim - 1);
 
   // Create mesh on even ranks (subcomm) and distribute to all ranks in
-  // comm
+  // comm. Regression test for a bug where build_prism took its cell
+  // range from `comm` instead of `subcomm`, silently dropping the cells
+  // not owned by an even rank.
   mesh::Mesh<double> mesh1
       = mesh::create_box(comm, subcomm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
-                         {12, 12, 12}, mesh::CellType::hexahedron, part);
+                         {12, 12, 12}, celltype, part);
   int tdim1 = mesh1.topology()->dim();
   mesh1.topology()->create_entities(tdim1 - 1);
 
@@ -67,13 +71,23 @@ constexpr int N = 8;
   MPI_Comm_compare(mesh0.comm(), mesh1.comm(), &equal);
   CHECK(equal != MPI_UNEQUAL);
 
-  // Check global sizes for topology and geometry
+  // Check global sizes for topology and geometry. Facets are summed
+  // across entity types via index_maps(), since a prism's facets are a
+  // mix of triangles and quadrilaterals and index_map() throws for a
+  // dimension with more than one entity type.
   auto t0 = mesh0.topology();
   auto t1 = mesh1.topology();
   CHECK(t0->index_map(tdim)->size_global()
         == t1->index_map(tdim)->size_global());
-  CHECK(t0->index_map(tdim - 1)->size_global()
-        == t1->index_map(tdim - 1)->size_global());
+  auto sum_size_global
+      = [](const std::vector<std::shared_ptr<const common::IndexMap>>& maps)
+  {
+    return std::accumulate(maps.begin(), maps.end(), std::int64_t(0),
+                           [](std::int64_t s, const auto& map)
+                           { return s + map->size_global(); });
+  };
+  CHECK(sum_size_global(t0->index_maps(tdim - 1))
+        == sum_size_global(t1->index_maps(tdim - 1)));
   CHECK(t0->index_map(0)->size_global() == t1->index_map(0)->size_global());
   CHECK(mesh0.geometry().index_map()->size_global()
         == mesh1.geometry().index_map()->size_global());
@@ -160,10 +174,16 @@ void test_distributed_mesh(const graph::partition_fn& partitioner)
 TEST_CASE("Create box", "[create_box]")
 {
 #ifdef HAS_PTSCOTCH
-  CHECK_NOTHROW(test_create_box(graph::scotch::partitioner()));
+  CHECK_NOTHROW(test_create_box(graph::scotch::partitioner(),
+                                mesh::CellType::hexahedron));
+  CHECK_NOTHROW(
+      test_create_box(graph::scotch::partitioner(), mesh::CellType::prism));
 #endif
 #ifdef HAS_PARMETIS
-  CHECK_NOTHROW(test_create_box(graph::parmetis::partitioner()));
+  CHECK_NOTHROW(test_create_box(graph::parmetis::partitioner(),
+                                mesh::CellType::hexahedron));
+  CHECK_NOTHROW(
+      test_create_box(graph::parmetis::partitioner(), mesh::CellType::prism));
 #endif
   // #ifdef HAS_KAHIP
   //   CHECK_NOTHROW(

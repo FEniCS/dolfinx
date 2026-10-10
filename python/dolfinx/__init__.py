@@ -11,6 +11,16 @@ import sys
 # Template placeholder for injecting Windows dll directories in CI
 # WINDOWSDLL
 
+# The wheels do not bundle MPI, so import mpi4py to load it first.
+import mpi4py as _mpi4py
+
+del _mpi4py
+
+# The wheels do not bundle Basix, so import basix to load it first.
+import basix as _basix
+
+del _basix
+
 import typing as _typing
 
 import numpy as _np

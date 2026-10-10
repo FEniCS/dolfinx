@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "MPICommWrapper.h"
 #include "array.h"
 #include "caster_mpi.h"
 #include "graph.h"
 #include "mesh.h"
+#include "mpi_wrappers.h"
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -32,12 +32,11 @@
 
 namespace dolfinx_wrappers
 {
+namespace nb = nanobind;
 
 template <std::floating_point T>
 void declare_refinement(nanobind::module_& m)
 {
-  namespace nb = nanobind;
-
   m.def(
       "uniform_refine",
       [](const dolfinx::mesh::Mesh<T>& mesh,
@@ -76,7 +75,7 @@ void declare_refinement(nanobind::module_& m)
           auto index_map = mesh.topology()->index_map(1);
           if (!index_map)
           {
-            throw std::runtime_error(
+            throw std::invalid_argument(
                 "Edge entities have not been created on the mesh topology.");
           }
 
@@ -86,7 +85,7 @@ void declare_refinement(nanobind::module_& m)
           {
             std::int32_t e = edges.value().data()[i];
             if (e < 0 or e >= num_edges)
-              throw std::runtime_error("Index out of range in edges array.");
+              throw std::out_of_range("Index out of range in edges array.");
           }
           cpp_edges.emplace(
               std::span(edges.value().data(), edges.value().size()));
@@ -142,6 +141,18 @@ void declare_refinement(nanobind::module_& m)
         return dolfinx_wrappers::as_nbarray(dolfinx::refinement::mark_maximum(
             std::span<const T>(values.data(), values.size()), index_map,
             theta));
+      },
+      nb::arg("values"), nb::arg("index_map"), nb::arg("theta"));
+
+  m.def(
+      "mark_equidistribution",
+      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values,
+         const dolfinx::common::IndexMap& index_map, T theta)
+      {
+        return dolfinx_wrappers::as_nbarray(
+            dolfinx::refinement::mark_equidistribution(
+                std::span<const T>(values.data(), values.size()), index_map,
+                theta));
       },
       nb::arg("values"), nb::arg("index_map"), nb::arg("theta"));
 }

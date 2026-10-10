@@ -13,7 +13,7 @@ import pytest
 from dolfinx import common
 
 
-def test_timer():
+def test_timer() -> None:
     """Test that named Timer works."""
     dt = 0.05
     task = "test_named_str"
@@ -34,7 +34,7 @@ def test_timer():
     assert t[1].total_seconds() > 0.045
 
 
-def test_timer_flush_stop():
+def test_timer_flush_stop() -> None:
     """Test stop/flush."""
     t = common.Timer()
     t.start()
@@ -48,7 +48,7 @@ def test_timer_flush_stop():
     t.flush()
 
 
-def test_context_manager_named():
+def test_context_manager_named() -> None:
     """Test that named Timer works as context manager."""
     task = "test_context_manager_named_str"
     with common.Timer(task):
@@ -57,7 +57,7 @@ def test_context_manager_named():
     assert delta[1].total_seconds() > 0.045
 
 
-def test_context_manager_anonymous():
+def test_context_manager_anonymous() -> None:
     """Test that anonymous Timer works with context manager."""
     timer = common.Timer()
     with timer:

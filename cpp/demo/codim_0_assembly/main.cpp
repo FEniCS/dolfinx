@@ -5,6 +5,18 @@
 // * Create a submesh of co-dimension 0
 // * Assemble a mixed formulation with function spaces defined on the sub mesh
 // and parent mesh
+//
+// Running this demo requires the files:
+// {download}`demo_codim_0_assembly/main.cpp`,
+// {download}`demo_codim_0_assembly/mixed_codim0.py` and
+// {download}`demo_codim_0_assembly/CMakeLists.txt`.
+//
+// The UFL code is implemented in
+// {download}`demo_codim_0_assembly/mixed_codim0.py`.
+// ````{admonition} UFL code implemented in Python
+// :class: dropdown
+// ![ufl-code]
+// ````
 
 #include "mixed_codim0.h"
 #include <basix/finite-element.h>
@@ -45,7 +57,8 @@ int main(int argc, char* argv[])
 
     auto V
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-            mesh, std::make_shared<fem::FiniteElement<U>>(element)));
+            mesh, std::make_shared<fem::FiniteElement<U>>(
+                      element, mesh->geometry().dim())));
 
     // Next we find all cells of the mesh with y<0.5
     const int tdim = mesh->topology()->dim();
@@ -53,8 +66,8 @@ int main(int argc, char* argv[])
         *mesh, tdim,
         [](auto x)
         {
-          using U = typename decltype(x)::value_type;
-          constexpr U eps = 1.0e-8;
+          using coord_t = typename decltype(x)::value_type;
+          constexpr coord_t eps = 1.0e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -83,10 +96,10 @@ int main(int argc, char* argv[])
     // `EntityMap` object, which relates entities in the submesh to
     // entities in the original mesh. We will need this to assemble our
     // mixed-domain form.
-    auto submesh_data = [](auto& mesh, int tdim, auto&& subcells)
+    auto submesh_data = [](auto& mesh, int dim, auto&& subcells)
     {
       auto [submesh, emap, v_map, g_map]
-          = mesh::create_submesh(mesh, tdim, subcells);
+          = mesh::create_submesh(mesh, dim, subcells);
       return std::pair(std::make_shared<mesh::Mesh<U>>(std::move(submesh)),
                        std::move(emap));
     };
@@ -95,7 +108,8 @@ int main(int argc, char* argv[])
     // We create the function space used for the trial space
     auto W
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-            submesh, std::make_shared<fem::FiniteElement<U>>(element)));
+            submesh, std::make_shared<fem::FiniteElement<U>>(
+                         element, submesh->geometry().dim())));
 
     // Next we compute the integration entities on the integration
     // domain `mesh`

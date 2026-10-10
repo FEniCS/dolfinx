@@ -27,14 +27,16 @@
 #include <dolfinx/graph/partition.h>
 #include <exception>
 #include <format>
+#include <iterator>
+#include <memory>
 #include <mpi.h>
 #include <numeric>
 #include <optional>
 #include <ranges>
 #include <span>
 #include <stdexcept>
-#include <string>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -99,7 +101,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
   const int tdim = topology->dim();
   if (dim == tdim)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cannot use mesh::locate_entities_boundary (boundary) for cells.");
   }
 
@@ -176,7 +178,11 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
 /// An exterior facet (co-dimension 1) is one that is connected globally
 /// to only one cell of co-dimension 0).
 ///
-/// @note Collective.
+/// @note Not collective.
+/// @pre `topology.create_connectivity(tdim - 1, tdim)` and
+/// `topology.create_entities(tdim - 1)` (which populates the
+/// interprocess facets used to distinguish an exterior facet from an
+/// inter-process one) must already have been called.
 ///
 /// @param[in] topology Mesh topology.
 /// @param[in] facet_type_idx The index of the facet type in
@@ -192,7 +198,11 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology,
 /// An exterior facet (co-dimension 1) is one that is connected globally
 /// to only one cell of co-dimension 0).
 ///
-/// @note Collective.
+/// @note Not collective.
+/// @pre `topology.create_connectivity(tdim - 1, tdim)` and
+/// `topology.create_entities(tdim - 1)` (which populates the
+/// interprocess facets used to distinguish an exterior facet from an
+/// inter-process one) must already have been called.
 ///
 /// @param[in] topology Mesh topology.
 /// @return Sorted list of owned facet indices that are exterior facets
@@ -272,13 +282,18 @@ std::vector<std::int64_t> extract_topology(CellType cell_type,
 bool is_vertex_dof_layout(CellType cell_type,
                           const fem::ElementDofLayout& layout);
 
-/// @brief Compute greatest distance between any two vertices of the
-/// mesh entities (`h`).
+/// @brief Compute greatest distance between any two geometry nodes of
+/// the mesh entities (`h`).
+///
+/// @note For a straight-sided (affine) mesh the geometry nodes of an
+/// entity are exactly its vertices. For a curved (higher-order) mesh
+/// all geometry nodes of the entity are used, not only its vertices.
+///
 /// @param[in] mesh Mesh that the entities belong to.
 /// @param[in] entities Indices (local to process) of entities to
 /// compute `h` for.
 /// @param[in] dim Topological dimension of the entities.
-/// @returns Greatest distance between any two vertices, `h[i]`
+/// @returns Greatest distance between any two geometry nodes, `h[i]`
 /// corresponds to the entity `entities[i]`.
 template <std::floating_point T>
 std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
@@ -343,7 +358,7 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
   assert(topology);
   if (topology->cell_type() == CellType::prism and dim == 2)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cell normal computation for prism cells not yet supported.");
   }
 
@@ -447,6 +462,12 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 }
 
 /// @brief Compute the midpoints for mesh entities of a given dimension.
+///
+/// The midpoint is the mean of all geometry nodes of the entity. For a
+/// straight-sided (affine) mesh this is the mean of its vertices; for a
+/// curved (higher-order) mesh it also includes the non-vertex geometry
+/// nodes.
+///
 /// @returns The entity midpoints. The shape is `(entities.size(), 3)`
 /// and the storage is row-major.
 template <std::floating_point T>
@@ -545,6 +566,8 @@ concept MarkerFn = std::is_invocable_r<
 /// An entity is considered marked if the marker function evaluates to true
 /// for all of its vertices.
 ///
+/// @note Collective.
+///
 /// @param[in] mesh Mesh to mark entities on.
 /// @param[in] dim Topological dimension of the entities to be
 /// considered.
@@ -568,11 +591,19 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
   cmdspan3x_t x(xdata.data(), xshape);
   const std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
-    throw std::runtime_error("Length of array of markers is wrong.");
+    throw std::invalid_argument("Length of array of markers is wrong.");
 
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();
+
+  if (entity_type_idx < 0
+      or static_cast<std::size_t>(entity_type_idx)
+             >= topology->entity_types(dim).size())
+  {
+    throw std::out_of_range(
+        "entity_type_idx out of range for Topology::entity_types(dim).");
+  }
 
   mesh.topology_mutable()->create_entities(dim);
   if (dim < tdim)
@@ -609,6 +640,8 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// An entity is considered marked if the marker function evaluates to true
 /// for all of its vertices.
 ///
+/// @note Collective.
+///
 /// @param[in] mesh Mesh to mark entities on.
 /// @param[in] dim Topological dimension of the entities to be
 /// considered.
@@ -636,6 +669,8 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// An entity is considered marked if the marker function evaluates to
 /// true for all of its vertices.
 ///
+/// @note Collective.
+///
 /// @note For vertices and edges, in parallel this function will not
 /// necessarily mark all entities that are on the exterior boundary. For
 /// example, it is possible for a process to have a vertex that lies on
@@ -650,8 +685,9 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// considered. Must be less than the topological dimension of the mesh.
 /// @param[in] marker Marking function, returns `true` for a point that
 /// is 'marked', and `false` otherwise.
-/// @returns List of marked entity indices (indices local to the
-/// process).
+/// @returns Sorted list of marked entity indices (indices local to the
+/// process); may include ghost entities attached to an owned boundary
+/// facet.
 template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
                                                    U marker)
@@ -662,7 +698,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   int tdim = topology->dim();
   if (dim == tdim)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cannot use mesh::locate_entities_boundary (boundary) for cells.");
   }
 
@@ -670,6 +706,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   mesh.topology_mutable()->create_entities(tdim - 1);
   mesh.topology_mutable()->create_connectivity(tdim - 1, tdim);
   std::vector<std::int32_t> boundary_facets = exterior_facet_indices(*topology);
+  mesh.topology_mutable()->create_entities(dim);
 
   using cmdspan3x_t
       = md::mdspan<const T, md::extents<std::size_t, 3, md::dynamic_extent>>;
@@ -680,10 +717,9 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   cmdspan3x_t x(xdata.data(), 3, xdata.size() / 3);
   std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
-    throw std::runtime_error("Length of array of markers is wrong.");
+    throw std::invalid_argument("Length of array of markers is wrong.");
 
   // Loop over entities and check vertex markers
-  mesh.topology_mutable()->create_entities(dim);
   auto e_to_v = topology->connectivity(dim, 0);
   assert(e_to_v);
   std::vector<std::int32_t> entities;
@@ -717,7 +753,6 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @param[in] entities Entity indices (local to process).
 /// @param[in] permute If `true`, permute the DOFs such that they are
 /// consistent with the orientation of `dim`-dimensional mesh entities.
-/// This requires `create_entity_permutations` to be called first.
 /// @return Geometry DOFs associated with the closure of each entity in
 /// `entities` and the shape. The shape is `(num_entities,
 /// num_xdofs_per_entity)` and the storage is row-major. The index
@@ -725,8 +760,14 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// vertex of the `entity[i]`.
 ///
 /// @pre Mesh connectivities `dim -> mesh.topology().dim()` and
-/// `mesh.topology().dim() -> dim` must have been computed. Otherwise an
-/// exception is thrown.
+/// `mesh.topology().dim() -> dim` must have been computed, and, if
+/// `permute` is `true`,
+/// `mesh.topology().create_cell_permutations()` must have been called.
+/// Otherwise `std::runtime_error` is thrown.
+///
+/// @note A discontinuous geometry has no coordinate degrees-of-freedom
+/// associated with sub-entities of a cell, so only `dim ==
+/// mesh.topology().dim()` is supported for such a mesh.
 template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::array<std::size_t, 2>>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
@@ -739,8 +780,8 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   if ((cell_type == CellType::prism or cell_type == CellType::pyramid)
       and dim == 2)
   {
-    throw std::runtime_error("mesh::entities_to_geometry for prism/pyramid "
-                             "cell facets not yet supported.");
+    throw std::invalid_argument("mesh::entities_to_geometry for prism/pyramid "
+                                "cell facets not yet supported.");
   }
 
   const int tdim = topology->dim();
@@ -749,6 +790,14 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
   // Get the DOF layout and the number of DOFs per entity
   const fem::CoordinateElement<T>& coord_ele = geometry.cmaps().front();
+  if (dim < tdim and coord_ele.is_discontinuous())
+  {
+    throw std::invalid_argument(
+        "mesh::entities_to_geometry for sub-entities of a cell is not "
+        "supported for a discontinuous geometry, which has no coordinate "
+        "degrees-of-freedom associated with sub-entities.");
+  }
+
   const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
   const std::size_t num_entity_dofs = layout.entity_closure_dofs(dim, 0).size();
   std::vector<std::int32_t> entity_xdofs;
@@ -798,10 +847,15 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   if (permute)
     cell_info = std::span(mesh.topology()->get_cell_permutation_info());
 
+  // Closure DOF count is the same for every local entity of dimension
+  // `dim` (the one case where it isn't, prism/pyramid facets, is
+  // rejected above), so size once and reuse across entities.
+  std::vector<std::int32_t> closure_dofs(num_entity_dofs);
   for (std::int32_t e : entities)
   {
     // Get a cell connected to the entity
-    assert(!e_to_c->links(e).empty());
+    if (e_to_c->links(e).empty())
+      throw std::runtime_error("No cell incident to entity.");
     std::int32_t c = e_to_c->links(e).front();
 
     // Get the local index of the entity
@@ -812,7 +866,10 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
     // Cell sub-entities must be permuted so that their local
     // orientation agrees with their global orientation
-    std::vector<std::int32_t> closure_dofs(closure_dofs_all[dim][local_entity]);
+    const std::vector<int>& e_closure_dofs
+        = closure_dofs_all[dim][local_entity];
+    assert(e_closure_dofs.size() == closure_dofs.size());
+    std::ranges::copy(e_closure_dofs, closure_dofs.begin());
     if (permute)
     {
       mesh::CellType entity_type
@@ -835,8 +892,9 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// @param[in] entities List of indices of topological dimension `d0`.
 /// @param[in] d0 Topological dimension.
 /// @param[in] d1 Topological dimension.
-/// @return List of entities of topological dimension `d1` that are
-/// incident to entities in `entities` (topological dimension `d0`).
+/// @return Sorted, unique list of entities of topological dimension
+/// `d1` that are incident to entities in `entities` (topological
+/// dimension `d0`); may include ghost entities.
 std::vector<std::int32_t>
 compute_incident_entities(const Topology& topology,
                           std::span<const std::int32_t> entities, int d0,
@@ -1141,7 +1199,7 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
     if (std::holds_alternative<graph::geom_partition_fn>(partitioner.fn))
     {
       try_locally(
-          [&]
+          [&dest, &comm, &centroid, &partitioner, &xshape]
           {
             int size = dolfinx::MPI::size(comm);
             const auto& p = std::get<graph::geom_partition_fn>(partitioner.fn);
@@ -1163,37 +1221,58 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
       // rank reaches the graph::build::distribute collective, or a throw
       // here would leave the rest of comm blocked on it forever.
       try_locally(
-          [&]
+          [&dest, &comm, &commt, &celltypes, &topology_view,
+           &max_facet_to_cell_links, &num_threads, &partitioner, &centroid,
+           &ghosting]
           {
             int size = dolfinx::MPI::size(comm);
             // Shared by the graph::partition_fn and
             // graph::hybrid_partition_fn alternatives below: neither has any
             // other way to obtain the mesh dual graph.
-            auto dual_graph = [&]() -> graph::AdjacencyList<std::int64_t>
+            auto dual_graph
+                = [&commt, &celltypes, &topology_view, &max_facet_to_cell_links,
+                   &num_threads]() -> graph::AdjacencyList<std::int64_t>
             {
               return build_dual_graph(commt, celltypes, topology_view,
                                       max_facet_to_cell_links, num_threads);
             };
 
-            dest = std::visit(
-                [&](const auto& p) -> graph::AdjacencyList<std::int32_t>
-                {
-                  using P = std::decay_t<decltype(p)>;
-                  if constexpr (std::is_same_v<P, graph::hybrid_partition_fn>)
+            // `dest` is already correct for graph::geom_partition_fn (set
+            // above); skip the visit's dispatch (and the AdjacencyList
+            // copy an unconditional assignment would cost) for that case.
+            if (!std::holds_alternative<graph::geom_partition_fn>(
+                    partitioner.fn))
+            {
+              dest = std::visit(
+                  [&dual_graph, &commt, size, &centroid, &partitioner,
+                   &ghosting](
+                      const auto& p) -> graph::AdjacencyList<std::int32_t>
                   {
-                    return p(commt, size, dual_graph(),
-                             std::span<const double>(centroid),
-                             partitioner.node_weights, std::nullopt, ghosting);
-                  }
-                  else if constexpr (std::is_same_v<P, graph::partition_fn>)
-                  {
-                    return p(commt, size, dual_graph(),
-                             partitioner.node_weights, std::nullopt, ghosting);
-                  }
-                  else
-                    return dest;
-                },
-                partitioner.fn);
+                    using P = std::decay_t<decltype(p)>;
+                    if constexpr (std::is_same_v<P, graph::hybrid_partition_fn>)
+                    {
+                      return p(commt, size, dual_graph(),
+                               std::span<const double>(centroid),
+                               partitioner.node_weights, std::nullopt,
+                               ghosting);
+                    }
+                    else if constexpr (std::is_same_v<P, graph::partition_fn>)
+                    {
+                      return p(commt, size, dual_graph(),
+                               partitioner.node_weights, std::nullopt,
+                               ghosting);
+                    }
+                    else
+                    {
+                      // std::visit still requires this branch to
+                      // compile for graph::geom_partition_fn.
+                      static_assert(
+                          std::is_same_v<P, graph::geom_partition_fn>);
+                      throw std::logic_error("Unreachable.");
+                    }
+                  },
+                  partitioner.fn);
+            }
           },
           error);
     }
@@ -1204,11 +1283,6 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
     for (std::int32_t i = 0; i < num_cell_types; ++i)
     {
       std::size_t num_cell_nodes = doflayouts[i].num_dofs();
-      if (cells[i].size() % num_cell_nodes != 0)
-      {
-        throw std::runtime_error("Cell array size is not a multiple of the "
-                                 "number of nodes per cell.");
-      }
       std::size_t num_cells = cells[i].size() / num_cell_nodes;
 
       // Extract destination AdjacencyList for this cell type
@@ -1246,11 +1320,6 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
     {
       cells1[i] = std::vector<std::int64_t>(cells[i].begin(), cells[i].end());
       std::int32_t num_cell_nodes = doflayouts[i].num_dofs();
-      if (cells1[i].size() % num_cell_nodes != 0)
-      {
-        throw std::runtime_error("Cell array size is not a multiple of the "
-                                 "number of nodes per cell.");
-      }
       original_idx1[i].resize(cells1[i].size() / num_cell_nodes);
       num_owned += original_idx1[i].size();
     }
@@ -1342,13 +1411,24 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   using T = typename std::remove_reference_t<typename U::value_type>;
 
   if (cells.size() != elements.size())
-    throw std::runtime_error("Number of cell arrays and elements must match.");
+  {
+    throw std::invalid_argument(
+        "Number of cell arrays and elements must match.");
+  }
   std::vector<CellType> celltypes;
   std::ranges::transform(elements, std::back_inserter(celltypes),
                          [](auto& e) { return e.cell_shape(); });
   std::vector<fem::ElementDofLayout> doflayouts;
   std::ranges::transform(elements, std::back_inserter(doflayouts),
                          [](auto& e) { return e.create_dof_layout(); });
+  for (std::size_t i = 0; i < cells.size(); ++i)
+  {
+    if (cells[i].size() % doflayouts[i].num_dofs() != 0)
+    {
+      throw std::invalid_argument("Cell array size is not a multiple of the "
+                                  "number of nodes per cell.");
+    }
+  }
 
   // Note: `extract_topology` extracts topology data, i.e. just the
   // vertices. For other elements the filtered lists may have 'gaps',
@@ -1433,7 +1513,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   std::vector<std::int64_t> boundary_v;
   std::exception_ptr error;
   impl::try_locally(
-      [&]
+      [&boundary_v, &reorder_fn, &cell_centroids, &xshape,
+       &max_facet_to_cell_links, &celltypes, &doflayouts, &ghost_owners,
+       &cells1, &cells1_v, &original_idx1, &num_threads]
       {
         boundary_v = impl::reorder_cells(reorder_fn, cell_centroids, xshape[1],
                                          max_facet_to_cell_links, celltypes,
@@ -1476,11 +1558,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
       spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
       if (dim_sum > 0)
-        topology.create_entities(dim);
+        topology.create_entities(dim, num_threads);
     }
 
     if (elements[i].needs_dof_permutations())
-      topology.create_entity_permutations();
+      topology.create_cell_permutations(num_threads);
   }
 
   // Cell 'node' indices (global), as a single flat array. This is
@@ -1522,6 +1604,24 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   Geometry geometry
       = create_geometry(topology, elements, nodes1, nodes2, coords, xshape[1]);
 
+#ifndef NDEBUG
+  // Nodes in `x` that no cell references are dropped silently.
+  {
+    std::int64_t num_nodes_local = xshape[0];
+    std::int64_t num_nodes = 0;
+    int err = MPI_Allreduce(&num_nodes_local, &num_nodes, 1,
+                            dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM, comm);
+    dolfinx::MPI::check_error(comm, err);
+    if (std::int64_t num_used = geometry.index_map()->size_global();
+        num_used != num_nodes and dolfinx::MPI::rank(comm) == 0)
+    {
+      spdlog::warn("{} of {} input geometry nodes are not referenced by any "
+                   "cell and have been dropped.",
+                   num_nodes - num_used, num_nodes);
+    }
+  }
+#endif
+
   return Mesh(comm, std::make_shared<Topology>(std::move(topology)),
               std::move(geometry));
 }
@@ -1538,6 +1638,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// This constructor provides a simplified interface to the more general
 /// ::create_mesh constructor, which supports meshes with more than one
 /// cell type.
+///
+/// @note Collective.
 ///
 /// @param[in] comm Communicator to build the mesh on.
 /// @param[in] commt Communicator that the topology data (`cells`) is
@@ -1596,10 +1698,12 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// determined by the default cell partitioner. The default partitioner
 /// is based on graph partitioning.
 ///
+/// @note Collective.
+///
 /// @param[in] comm MPI communicator to build the mesh on.
 /// @param[in] cells Cells on the calling process. See ::create_mesh for
 /// a detailed description.
-/// @param[in] elements Coordinate elements for the cells.
+/// @param[in] element Coordinate element for the cells.
 /// @param[in] x Geometry data ('node' coordinates). See ::create_mesh
 /// for a detailed description.
 /// @param[in] xshape Shape of `x`. It should be `(num_points, gdim)`.
@@ -1611,7 +1715,7 @@ template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
             const fem::CoordinateElement<
-                std::remove_reference_t<typename U::value_type>>& elements,
+                std::remove_reference_t<typename U::value_type>>& element,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode,
             std::optional<std::int32_t> max_facet_to_cell_links = 2)
 {
@@ -1621,8 +1725,8 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
       = dolfinx::MPI::size(comm) == 1
             ? graph::Partitioner{.fn = graph::partition_fn(nullptr)}
             : graph::Partitioner{};
-  return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
-                     comm, x, xshape, partitioner, ghost_mode,
+  return create_mesh(comm, comm, std::vector{cells}, std::vector{element}, comm,
+                     x, xshape, partitioner, ghost_mode,
                      max_facet_to_cell_links, 1);
 }
 
@@ -1632,6 +1736,8 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
 /// A sub-geometry is simply a mesh::Geometry object containing only the
 /// geometric information for the subset of entities. The entities may
 /// differ in topological dimension from the original mesh.
+///
+/// @note Collective.
 ///
 /// @param[in] mesh The full mesh.
 /// @param[in] dim Topological dimension of the sub-topology.
@@ -1648,9 +1754,6 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
 
   // Get the geometry dofs in the sub-geometry based on the entities in
   // sub-geometry
-  const fem::ElementDofLayout layout
-      = geometry.cmaps().front().create_dof_layout();
-
   const std::vector<std::int32_t> x_indices
       = entities_to_geometry(mesh, dim, subentity_to_entity, true).first;
 
@@ -1666,8 +1769,10 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   std::shared_ptr<common::IndexMap> sub_x_dof_index_map;
   std::vector<std::int32_t> subx_to_x_dofmap;
   {
-    auto [map, new_to_old] = common::create_sub_index_map(
-        *x_index_map, sub_x_dofs, common::IndexMapOrder::any, true);
+    // An owner change is permitted here: a coordinate dof may be needed
+    // by a sub-mesh cell on a ghosting rank but not on its owner.
+    auto [map, new_to_old, owners_changed] = common::create_sub_index_map(
+        *x_index_map, sub_x_dofs, common::IndexMapOrder::any);
     sub_x_dof_index_map = std::make_shared<common::IndexMap>(std::move(map));
     subx_to_x_dofmap = std::move(new_to_old);
   }
@@ -1738,6 +1843,9 @@ std::tuple<Mesh<T>, EntityMap, EntityMap, std::vector<std::int32_t>>
 create_submesh(const Mesh<T>& mesh, int dim,
                std::span<const std::int32_t> entities)
 {
+  if (dim < 0 or dim > mesh.topology()->dim())
+    throw std::invalid_argument("dim out of range for mesh topology.");
+
   // Create sub-topology
   mesh.topology_mutable()->create_connectivity(dim, 0);
   auto [topology, subentity_to_entity, subvertex_to_vertex]
@@ -1748,7 +1856,7 @@ create_submesh(const Mesh<T>& mesh, int dim,
   mesh.topology_mutable()->create_entities(dim);
   mesh.topology_mutable()->create_connectivity(dim, tdim);
   mesh.topology_mutable()->create_connectivity(tdim, dim);
-  mesh.topology_mutable()->create_entity_permutations();
+  mesh.topology_mutable()->create_cell_permutations();
   auto [geometry, subx_to_x_dofmap]
       = mesh::create_subgeometry(mesh, dim, subentity_to_entity);
 
@@ -1767,22 +1875,57 @@ create_submesh(const Mesh<T>& mesh, int dim,
 ///
 /// @param[in] tags The meshtags object on the parent mesh.
 /// @param[in] submesh_topology The topology of the submesh.
-/// @param[in] vertex_map Map from submesh vertex to parent mesh vertex.
 /// @param[in] cell_map Map from submesh cell to parent mesh entity.
+/// @param[in] vertex_map Map from submesh vertex to parent mesh vertex.
 /// @return A meshtags object on the submesh.
+///
+/// @note The `cell_map`/`vertex_map` order matches the `(entity_map,
+/// vertex_map)` order that ::create_submesh returns, so its result can
+/// be unpacked and passed straight through.
 template <typename T>
 MeshTags<T> transfer_meshtags_to_submesh(
     const MeshTags<T>& tags,
     std::shared_ptr<const dolfinx::mesh::Topology> submesh_topology,
-    const EntityMap& vertex_map, const EntityMap& cell_map)
+    const EntityMap& cell_map, const EntityMap& vertex_map)
 {
   int tag_dim = tags.dim();
   int submesh_tdim = submesh_topology->dim();
   auto topology = tags.topology();
   if (tag_dim > submesh_tdim)
   {
-    throw std::runtime_error("Tag dimension must be less than or equal to "
-                             "submesh dimension");
+    throw std::invalid_argument("Tag dimension must be less than or equal to "
+                                "submesh dimension");
+  }
+
+  // Validate that cell_map/vertex_map relate `topology` (the tags'
+  // parent topology) to `submesh_topology`, and have the dimension
+  // this function assumes.
+  if (cell_map.dim() != submesh_tdim)
+  {
+    throw std::invalid_argument(
+        "cell_map dimension must equal the submesh topology dimension.");
+  }
+  if (cell_map.topology() != topology)
+  {
+    throw std::invalid_argument(
+        "cell_map topology must match tags.topology().");
+  }
+  if (cell_map.sub_topology() != submesh_topology)
+  {
+    throw std::invalid_argument(
+        "cell_map sub_topology must match submesh_topology.");
+  }
+  if (vertex_map.dim() != 0)
+    throw std::invalid_argument("vertex_map dimension must be 0.");
+  if (vertex_map.topology() != topology)
+  {
+    throw std::invalid_argument(
+        "vertex_map topology must match tags.topology().");
+  }
+  if (vertex_map.sub_topology() != submesh_topology)
+  {
+    throw std::invalid_argument(
+        "vertex_map sub_topology must match submesh_topology.");
   }
   std::shared_ptr<const dolfinx::common::IndexMap> sub_cell_imap
       = submesh_topology->index_map(submesh_tdim);
@@ -1871,8 +2014,8 @@ MeshTags<T> transfer_meshtags_to_submesh(
   // Prepare sub entity to parent map
   std::size_t num_sub_entities
       = sub_entity_imap->size_local() + sub_entity_imap->num_ghosts();
-  constexpr T max_val = std::numeric_limits<T>::max();
-  std::vector<T> submesh_values(num_sub_entities, max_val);
+  std::vector<T> submesh_values(num_sub_entities);
+  std::vector<std::int8_t> submesh_value_found(num_sub_entities, 0);
   std::vector<std::int32_t> submesh_indices(num_sub_entities);
   std::iota(submesh_indices.begin(), submesh_indices.end(), 0);
 
@@ -1933,17 +2076,22 @@ MeshTags<T> transfer_meshtags_to_submesh(
     // Execute the search for the current entity
     std::int32_t sub_entity = find_and_map_sub_entity(tagged_entities[i]);
     if (sub_entity != -1)
+    {
       submesh_values[sub_entity] = tagged_values[i];
+      submesh_value_found[sub_entity] = 1;
+    }
   }
 
-  // Filter out the entities that were never mapped (values still equal max)
+  // Filter out the entities that were never mapped. Tracked with a
+  // separate flag rather than a sentinel value, since any T value
+  // (including numeric_limits<T>::max()) is a legitimate tag value.
   std::vector<std::int32_t> filtered_indices;
   std::vector<T> filtered_values;
   filtered_indices.reserve(num_sub_entities);
   filtered_values.reserve(num_sub_entities);
   for (std::size_t i = 0; i < submesh_values.size(); ++i)
   {
-    if (submesh_values[i] != max_val)
+    if (submesh_value_found[i])
     {
       filtered_indices.push_back(submesh_indices[i]);
       filtered_values.push_back(submesh_values[i]);

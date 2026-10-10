@@ -9,19 +9,25 @@
 #include "dolfinx_wrappers/petsc.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/pycoeff.h"
+#include <algorithm>
+#include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/petsc.h>
-#include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
-#include <dolfinx/fem/utils.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
+#include <dolfinx/la/utils.h>
+#include <functional>
+#include <iterator>
+#include <map>
+#include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/array.h>
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
@@ -32,7 +38,11 @@
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <petsc4py/petsc4py.h>
+#include <ranges>
+#include <span>
 #include <stdexcept>
+#include <utility>
+#include <vector>
 
 namespace
 {
@@ -64,9 +74,23 @@ bool unit_block_size(Mat A)
   return bs0 == 1 and bs1 == 1;
 }
 
+/// @brief Convert a petsc4py InsertMode, passed as a Python int, to a
+/// PETSc InsertMode for matrix insertion.
+InsertMode insert_mode(int mode)
+{
+  InsertMode _mode = static_cast<InsertMode>(mode);
+  if (_mode != INSERT_VALUES and _mode != ADD_VALUES)
+  {
+    throw std::invalid_argument(
+        "InsertMode must be INSERT_VALUES or ADD_VALUES.");
+  }
+  return _mode;
+}
+
 void petsc_la_module(nb::module_& m)
 {
-  import_petsc4py();
+  if (import_petsc4py() != 0)
+    throw std::runtime_error("Could not import petsc4py.");
 
   m.def(
       "create_matrix",
@@ -75,8 +99,7 @@ void petsc_la_module(nb::module_& m)
          std::optional<std::string> type) -> Mat
       { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
       nb::rv_policy::take_ownership, nb::arg("comm"), nb::arg("p"),
-      nb::arg("type") = nb::none(),
-      "Create a PETSc Mat from sparsity pattern.");
+      nb::arg("type").none(), "Create a PETSc Mat from sparsity pattern.");
 
   m.def(
       "create_index_sets",
@@ -85,6 +108,16 @@ void petsc_la_module(nb::module_& m)
       {
         auto _maps = to_index_map_refs(maps);
         return dolfinx::la::petsc::create_index_sets(_maps);
+      },
+      nb::rv_policy::take_ownership, nb::arg("maps"));
+
+  m.def(
+      "create_global_index_sets",
+      [](const std::vector<std::pair<const dolfinx::common::IndexMap*, int>>&
+             maps) -> std::vector<IS>
+      {
+        auto _maps = to_index_map_refs(maps);
+        return dolfinx::la::petsc::create_global_index_sets(_maps);
       },
       nb::rv_policy::take_ownership, nb::arg("maps"));
 
@@ -122,6 +155,28 @@ void petsc_la_module(nb::module_& m)
       },
       nb::arg("x"), nb::arg("maps"),
       "Gather an (ordered) list of sub vectors from a block vector.");
+  m.def(
+      "set_diagonal",
+      [](Mat A, nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+         nb::ndarray<const PetscScalar, nb::ndim<1>, nb::c_contig> diagonals,
+         int mode)
+      {
+        dolfinx::la::set_diagonal(
+            dolfinx::la::petsc::Matrix::set_fn(A, insert_mode(mode)),
+            std::span(rows.data(), rows.size()),
+            std::span<const PetscScalar>(diagonals.data(), diagonals.size()));
+      },
+      nb::arg("A"), nb::arg("rows"), nb::arg("diagonals"), nb::arg("mode"));
+  m.def(
+      "set_diagonal",
+      [](Mat A, nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+         PetscScalar diagonal, int mode)
+      {
+        dolfinx::la::set_diagonal(
+            dolfinx::la::petsc::Matrix::set_fn(A, insert_mode(mode)),
+            std::span(rows.data(), rows.size()), diagonal);
+      },
+      nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), nb::arg("mode"));
 }
 
 void petsc_fem_module(nb::module_& m)
@@ -149,7 +204,7 @@ void petsc_fem_module(nb::module_& m)
       },
       nb::rv_policy::take_ownership, nb::arg("maps"),
       "Create nested vector for multiple (stacked) linear forms.");
-  m.def("create_matrix", dolfinx::fem::petsc::create_matrix<PetscReal>,
+  m.def("create_matrix", &dolfinx::fem::petsc::create_matrix<PetscReal>,
         nb::rv_policy::take_ownership, nb::arg("a"), nb::arg("type").none(),
         "Create a PETSc Mat for bilinear form.");
   m.def("create_matrix_block",
@@ -169,20 +224,15 @@ void petsc_fem_module(nb::module_& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const PetscScalar, nb::ndim<2>,
                                     nb::c_contig>>& coefficients,
-         const std::vector<
-             const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>& bcs,
+         std::array<nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>,
+                    2>
+             dof_markers,
          bool unrolled)
       {
-        std::vector<std::reference_wrapper<
-            const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>
-            _bcs;
-        for (auto bc : bcs)
-        {
-          if (!bc)
-            throw std::runtime_error("Null DirichletBC in bcs list.");
-          _bcs.push_back(*bc);
-        }
-
+        std::span<const std::int8_t> _dof_marker0(dof_markers[0].data(),
+                                                  dof_markers[0].size());
+        std::span<const std::int8_t> _dof_marker1(dof_markers[1].data(),
+                                                  dof_markers[1].size());
         if (unrolled)
         {
           auto set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
@@ -190,7 +240,8 @@ void petsc_fem_module(nb::module_& m)
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
           dolfinx::fem::assemble_matrix(
               set_fn, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
+              _dof_marker1);
         }
         else
         {
@@ -201,76 +252,22 @@ void petsc_fem_module(nb::module_& m)
             dolfinx::fem::assemble_matrix(
                 dolfinx::la::petsc::Matrix::set_fn(A, ADD_VALUES), a,
                 std::span(constants.data(), constants.size()),
-                dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+                dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
+                _dof_marker1);
           }
           else
           {
             dolfinx::fem::assemble_matrix(
                 dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
                 std::span(constants.data(), constants.size()),
-                dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+                dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
+                _dof_marker1);
           }
         }
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
-      nb::arg("bcs"), nb::arg("unrolled") = false,
+      nb::arg("dof_markers"), nb::arg("unrolled"),
       "Assemble bilinear form into an existing PETSc matrix");
-  m.def(
-      "assemble_matrix",
-      [](Mat A, const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
-         nb::ndarray<const PetscScalar, nb::ndim<1>, nb::c_contig> constants,
-         const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<const PetscScalar, nb::ndim<2>,
-                                    nb::c_contig>>& coefficients,
-         nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> rows0,
-         nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> rows1,
-         bool unrolled)
-      {
-        std::function<int(std::span<const std::int32_t>,
-                          std::span<const std::int32_t>,
-                          std::span<const PetscScalar>)>
-            set_fn;
-        if (unrolled)
-        {
-          set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
-              A, a.function_spaces()[0]->dofmap()->bs(),
-              a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
-        }
-        else if (unit_block_size(A))
-          set_fn = dolfinx::la::petsc::Matrix::set_fn(A, ADD_VALUES);
-        else
-          set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
-
-        dolfinx::fem::assemble_matrix(
-            set_fn, a, std::span(constants.data(), constants.size()),
-            dolfinx_wrappers::py_to_cpp_coeffs(coefficients),
-            std::span(rows0.data(), rows0.size()),
-            std::span(rows1.data(), rows1.size()));
-      },
-      nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
-      nb::arg("rows0"), nb::arg("rows1"), nb::arg("unrolled") = false);
-  m.def(
-      "insert_diagonal",
-      [](Mat A, const dolfinx::fem::FunctionSpace<PetscReal>& V,
-         const std::vector<
-             const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>& bcs,
-         PetscScalar diagonal)
-      {
-        std::vector<std::reference_wrapper<
-            const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>
-            _bcs;
-        for (auto bc : bcs)
-        {
-          if (!bc)
-            throw std::runtime_error("Null DirichletBC in bcs list.");
-          _bcs.push_back(*bc);
-        }
-
-        dolfinx::fem::set_diagonal(
-            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES), V, _bcs,
-            diagonal);
-      },
-      nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"));
 }
 
 } // namespace

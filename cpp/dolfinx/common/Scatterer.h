@@ -13,9 +13,12 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <format>
 #include <mpi.h>
 #include <numeric>
+#include <ranges>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
 #include <vector>
 
@@ -40,6 +43,39 @@ namespace dolfinx::common
 /// they create, duplicate and free MPI communicators. Move construction
 /// is not collective, but move assignment is, since it frees the
 /// communicators held by the assignment target.
+///
+/// A forward scatter sends data associated with owned/local indices
+/// to the ranks that ghost them; a reverse scatter sends ghost data
+/// back to the owning ranks, to be accumulated into the owned data.
+/// Both use the same two-step begin/end pattern, splitting the
+/// non-blocking MPI call from completion so that unrelated work can
+/// be done while communication is in flight. A round trip for a
+/// forward scatter with block size 1, where `x` holds the owned data
+/// and `x_ghost` the ghost data:
+/// @code
+/// Scatterer sc(map);
+/// std::vector<std::int64_t> send_buffer(sc.local_indices_block().size());
+/// {
+///   auto& idx = sc.local_indices_block();
+///   for (std::size_t i = 0; i < idx.size(); ++i)
+///     send_buffer[i] = x[idx[i]];
+/// }
+/// std::vector<std::int64_t> recv_buffer(sc.remote_indices_block().size());
+/// MPI_Request request = MPI_REQUEST_NULL;
+/// sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), 1, request);
+/// // ... unrelated work can be done here while communication is
+/// // in flight, but send_buffer/recv_buffer must not be touched ...
+/// sc.scatter_fwd_end(request);
+/// {
+///   auto& idx = sc.remote_indices_block();
+///   for (std::size_t i = 0; i < idx.size(); ++i)
+///     x_ghost[idx[i]] = recv_buffer[i];
+/// }
+/// @endcode
+/// A reverse scatter follows the same pattern with the roles of
+/// ::local_indices_block and ::remote_indices_block, and of
+/// `send_buffer` and `recv_buffer`, swapped; see ::scatter_rev_begin
+/// and ::scatter_rev_end.
 ///
 /// @tparam Container Container type for storing the 'local' and
 /// 'remote' indices. On CPUs this is normally
@@ -597,4 +633,66 @@ private:
   // Displacements of local data for mpi scatter and gather
   std::vector<int> _displs_local;
 };
+
+/// @brief Number of ranks that share each of the given local indices,
+/// reusing an existing Scatterer.
+///
+/// Equivalent to the IndexMap overload, but avoids building a
+/// Scatterer, which duplicates MPI communicators.
+///
+/// @note Collective. Arguments must be locally valid on every rank.
+/// Invalid input on only some ranks may deadlock.
+///
+/// @param[in] map Index map describing the parallel layout.
+/// @param[in] sc Scatterer for `map`.
+/// @param[in] indices Local indices, which may include ghosts. An index
+/// refers to block `i / bs` of `map`.
+/// @param[in] bs Block size relating `indices` to the blocks of `map`.
+/// @return Number of sharing ranks, one entry per entry of `indices`.
+/// @throws std::invalid_argument If `bs` is less than one.
+/// @throws std::out_of_range If an entry of `indices` is not a local
+/// index of `map`.
+template <class Container>
+std::vector<std::int32_t>
+num_sharing_ranks(const IndexMap& map, const Scatterer<Container>& sc,
+                  std::span<const std::int32_t> indices, int bs)
+{
+  if (bs < 1)
+    throw std::invalid_argument(
+        std::format("Block size must be positive, not {}.", bs));
+
+  const std::int32_t size_local = map.size_local();
+  const std::int32_t num_blocks = size_local + map.num_ghosts();
+
+  // Throw before the scatters, which all ranks must reach
+  for (std::int32_t i : indices)
+  {
+    if (i < 0 or i / bs >= num_blocks)
+      throw std::out_of_range("Local index out of range.");
+  }
+
+  // Initialised to 1 for this rank. The owner holds one
+  // local_indices_block entry per ghosting rank, so it counts
+  // occurrences rather than accumulating a reverse scatter.
+  std::vector<std::int32_t> count(num_blocks, 1);
+  const Container& local = sc.local_indices_block();
+  const Container& remote = sc.remote_indices_block();
+  for (std::int32_t i : local)
+    ++count[i];
+
+  std::vector<std::int32_t> send(local.size());
+  std::ranges::transform(local, send.begin(),
+                         [&count](std::int32_t i) { return count[i]; });
+  std::vector<std::int32_t> recv(remote.size());
+  MPI_Request request = MPI_REQUEST_NULL;
+  sc.scatter_fwd_begin(send.data(), recv.data(), 1, request);
+  sc.scatter_fwd_end(request);
+  for (std::size_t i = 0; i < remote.size(); ++i)
+    count[size_local + remote[i]] = recv[i];
+
+  std::vector<std::int32_t> n(indices.size());
+  std::ranges::transform(indices, n.begin(), [&count, bs](std::int32_t i)
+                         { return count[i / bs]; });
+  return n;
+}
 } // namespace dolfinx::common

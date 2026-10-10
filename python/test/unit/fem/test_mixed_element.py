@@ -20,7 +20,7 @@ from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_squa
 @pytest.mark.parametrize("cell", [ufl.triangle, ufl.tetrahedron])
 @pytest.mark.parametrize("degree", [1, 2])
 @pytest.mark.parametrize("rank, family", [(0, "Lagrange"), (1, "Lagrange"), (1, "N1curl")])
-def test_mixed_element(rank, family, cell, degree):
+def test_mixed_element(rank, family, cell, degree) -> None:
     if cell == ufl.triangle:
         mesh = create_unit_square(
             MPI.COMM_WORLD, 1, 1, CellType.triangle, ghost_mode=GhostMode.shared_facet
@@ -48,7 +48,7 @@ def test_mixed_element(rank, family, cell, degree):
 
 
 @pytest.mark.skip_in_parallel
-def test_vector_element():
+def test_vector_element() -> None:
     # Function space containing a scalar should work
     mesh = create_unit_square(
         MPI.COMM_WORLD, 1, 1, CellType.triangle, ghost_mode=GhostMode.shared_facet
@@ -74,7 +74,7 @@ def test_vector_element():
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("d1", range(1, 4))
 @pytest.mark.parametrize("d2", range(1, 4))
-def test_element_product(d1, d2):
+def test_element_product(d1, d2) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
     P3 = element(
         "Lagrange", mesh.basix_cell(), d1, shape=(mesh.geometry.dim,), dtype=default_real_type
@@ -100,7 +100,7 @@ def test_element_product(d1, d2):
 
 
 @pytest.mark.parametrize("rtype", [np.float32, np.float64])
-def test_single_element_in_mixed_element(rtype):
+def test_single_element_in_mixed_element(rtype) -> None:
     """Check that a mixed element with a single element is equivalent to a single element."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 3, dtype=rtype)
     el = element("Lagrange", mesh.basix_cell(), 3, dtype=rtype)

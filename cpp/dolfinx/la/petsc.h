@@ -10,14 +10,19 @@
 #ifdef HAS_PETSC
 
 #include "Vector.h"
+#include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstdint>
 #include <dolfinx/common/petsc.h>
+#include <dolfinx/common/types.h>
 #include <functional>
+#include <iterator>
 #include <optional>
 #include <petscksp.h>
 #include <petscmat.h>
 #include <petscvec.h>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -90,19 +95,49 @@ Vec create_vector_wrap(const la::Vector<V>& x)
   return create_vector_wrap(*x.index_map(), x.bs(), x.array());
 }
 
-/// @brief Compute PETSc IndexSets (IS) for a stack of index maps.
+/// @brief Index sets addressing a stack of index maps in the calling
+/// rank's local numbering.
 ///
-/// If `map[0] = {0, 1, 2, 3, 4, 5, 6}` and `map[1] = {0, 1, 2, 4}` (in
-/// local indices) then `IS[0] = {0, 1, 2, 3, 4, 5, 6}` and
-/// `IS[1] = {7, 8, 9, 10}`.
+/// Each set covers one map's owned *and ghost* entries, at the offset
+/// that map occupies in the stack, so the sets address a rank's local
+/// block of a stacked problem, such as a sub-block of a blocked matrix.
+///
+/// If `map[0]` has 7 local entries (owned plus ghost) and `map[1]` has
+/// 4, then `IS[0] = {0, 1, 2, 3, 4, 5, 6}` and `IS[1] = {7, 8, 9, 10}`.
+/// The sets are rank-private: every rank numbers from zero.
+///
+/// @see create_global_index_sets for sets that describe a field of the
+/// distributed problem in global numbering.
 ///
 /// @todo This function could take just the local sizes.
 ///
 /// @note The caller is responsible for destruction of each IS.
 ///
-/// @param[in] maps Vector of IndexMaps and corresponding block sizes
-/// @return Vector of PETSc Index Sets, created on` PETSC_COMM_SELF`
+/// @param[in] maps Index maps and corresponding block sizes.
+/// @return One index set per map, created on `PETSC_COMM_SELF`.
 std::vector<IS> create_index_sets(
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+
+/// @brief Index sets describing each field of a stack of index maps in
+/// the global numbering of the stacked problem.
+///
+/// Each set covers one map's *owned* entries. Ghosts are excluded, as
+/// each is owned by exactly one rank, so the sets of all ranks
+/// partition the stacked problem. Preconditioners that split a problem
+/// into fields, such as PCBDDC and PCFIELDSPLIT, take sets of this
+/// form.
+///
+/// @see create_index_sets for rank-local sets that include ghosts.
+///
+/// @note The caller is responsible for destruction of each IS.
+///
+/// @param[in] maps Index maps and corresponding block sizes. All maps
+/// must share a communicator.
+/// @return One index set per map, created on the maps' communicator.
+/// @throws std::invalid_argument If the maps do not share a
+/// communicator.
+std::vector<IS> create_global_index_sets(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
@@ -120,13 +155,31 @@ void scatter_local_vectors(
 
 /// @brief Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
+///
+/// @note `MAT_IGNORE_ZERO_ENTRIES` skips exact-zero insertions. Enable it
+/// before assembly to reduce storage only if the matrix is assembled
+/// once. For re-assembly, enable it after the first full assembly so
+/// initially zero entries remain in the sparsity pattern. Otherwise, a
+/// later non-zero insertion can fail because
+/// `MAT_NEW_NONZERO_ALLOCATION_ERR` is set.
+///
 /// @param[in] comm The MPI communicator
 /// @param[in] sp The sparsity pattern that determines the layout and
 /// non-zero structure of the matrix
 /// @param[in] type The PETSc Mat type to create. If `std::nullopt` or
 /// an empty string, the PETSc default is used.
+/// @param[in] rlgmap Row local-to-global map to attach to the matrix.
+/// If `std::nullopt`, a map is built from the row input index map of
+/// `sp`.
+/// @param[in] clgmap Column local-to-global map to attach to the
+/// matrix. If `std::nullopt`, a map is built from the column input
+/// index map of `sp`.
+/// @note A supplied map must be created on `comm`; `MATIS` requires the
+/// maps to share the matrix communicator.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                  std::optional<std::string_view> type = std::nullopt);
+                  std::optional<std::string_view> type = std::nullopt,
+                  std::optional<ISLocalToGlobalMapping> rlgmap = std::nullopt,
+                  std::optional<ISLocalToGlobalMapping> clgmap = std::nullopt);
 
 /// @brief Create PETSc MatNullSpace. Caller is responsible for
 /// destruction returned object.
@@ -169,7 +222,7 @@ public:
   Vector(Vec x, bool inc_ref_count);
 
   /// Destructor
-  virtual ~Vector();
+  ~Vector();
 
   // Assignment operator (disabled)
   Vector& operator=(const Vector& x) = delete;
@@ -227,22 +280,25 @@ public:
   static auto set_fn(Mat A, InsertMode mode)
   {
     return [A, mode, cache = std::vector<PetscInt>()](
-               std::span<const std::int32_t> rows,
-               std::span<const std::int32_t> cols,
+               const common::LocalIndexRange auto& rows,
+               const common::LocalIndexRange auto& cols,
                std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
-      cache.resize(rows.size() + cols.size());
+      cache.resize(std::ranges::size(rows) + std::ranges::size(cols));
       std::ranges::copy(rows, cache.begin());
-      std::ranges::copy(cols, std::next(cache.begin(), rows.size()));
+      std::ranges::copy(cols,
+                        std::next(cache.begin(), std::ranges::size(rows)));
       const PetscInt* _rows = cache.data();
-      const PetscInt* _cols = cache.data() + rows.size();
-      ierr = MatSetValuesLocal(A, rows.size(), _rows, cols.size(), _cols,
-                               vals.data(), mode);
+      const PetscInt* _cols = cache.data() + std::ranges::size(rows);
+      ierr = MatSetValuesLocal(A, std::ranges::size(rows), _rows,
+                               std::ranges::size(cols), _cols, vals.data(),
+                               mode);
 #else
-      ierr = MatSetValuesLocal(A, rows.size(), rows.data(), cols.size(),
-                               cols.data(), vals.data(), mode);
+      ierr = MatSetValuesLocal(A, std::ranges::size(rows),
+                               std::ranges::data(rows), std::ranges::size(cols),
+                               std::ranges::data(cols), vals.data(), mode);
 #endif
 
 #ifndef NDEBUG
@@ -260,22 +316,25 @@ public:
   static auto set_block_fn(Mat A, InsertMode mode)
   {
     return [A, mode, cache = std::vector<PetscInt>()](
-               std::span<const std::int32_t> rows,
-               std::span<const std::int32_t> cols,
+               const common::LocalIndexRange auto& rows,
+               const common::LocalIndexRange auto& cols,
                std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
-      cache.resize(rows.size() + cols.size());
+      cache.resize(std::ranges::size(rows) + std::ranges::size(cols));
       std::ranges::copy(rows, cache.begin());
-      std::ranges::copy(cols, std::next(cache.begin(), rows.size()));
+      std::ranges::copy(cols,
+                        std::next(cache.begin(), std::ranges::size(rows)));
       const PetscInt* _rows = cache.data();
-      const PetscInt* _cols = cache.data() + rows.size();
-      ierr = MatSetValuesBlockedLocal(A, rows.size(), _rows, cols.size(), _cols,
+      const PetscInt* _cols = cache.data() + std::ranges::size(rows);
+      ierr = MatSetValuesBlockedLocal(A, std::ranges::size(rows), _rows,
+                                      std::ranges::size(cols), _cols,
                                       vals.data(), mode);
 #else
-      ierr = MatSetValuesBlockedLocal(A, rows.size(), rows.data(), cols.size(),
-                                      cols.data(), vals.data(), mode);
+      ierr = MatSetValuesBlockedLocal(
+          A, std::ranges::size(rows), std::ranges::data(rows),
+          std::ranges::size(cols), std::ranges::data(cols), vals.data(), mode);
 #endif
 
 #ifndef NDEBUG
@@ -299,20 +358,24 @@ public:
   {
     return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
             cache1 = std::vector<PetscInt>()](
-               std::span<const std::int32_t> rows,
-               std::span<const std::int32_t> cols,
+               const common::LocalIndexRange auto& rows,
+               const common::LocalIndexRange auto& cols,
                std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
-      cache0.resize(bs0 * rows.size());
-      cache1.resize(bs1 * cols.size());
-      for (std::size_t i = 0; i < rows.size(); ++i)
+      const std::int32_t* _rows = std::ranges::data(rows);
+      const std::int32_t* _cols = std::ranges::data(cols);
+      const std::size_t num_rows = std::ranges::size(rows);
+      const std::size_t num_cols = std::ranges::size(cols);
+      cache0.resize(bs0 * num_rows);
+      cache1.resize(bs1 * num_cols);
+      for (std::size_t i = 0; i < num_rows; ++i)
         for (int k = 0; k < bs0; ++k)
-          cache0[bs0 * i + k] = bs0 * rows[i] + k;
+          cache0[bs0 * i + k] = bs0 * _rows[i] + k;
 
-      for (std::size_t i = 0; i < cols.size(); ++i)
+      for (std::size_t i = 0; i < num_cols; ++i)
         for (int k = 0; k < bs1; ++k)
-          cache1[bs1 * i + k] = bs1 * cols[i] + k;
+          cache1[bs1 * i + k] = bs1 * _cols[i] + k;
 
       ierr = MatSetValuesLocal(A, cache0.size(), cache0.data(), cache1.size(),
                                cache1.data(), vals.data(), mode);

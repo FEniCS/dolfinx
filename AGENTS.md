@@ -46,9 +46,14 @@ disclosure process.
   standard-library headers, alphabetically within each group.
 - **Include What You Use (IWYU)**: follow IWYU best practice down to
   including 'trivial' headers such as `<cstdint>` and `<iterators>`
-  directly, rather than relying on transitive includes -- IWYU is
-  not currently enforced systematically via testing, so check touched
-  files for missed opportunities and suggest fixes.
+  directly, rather than relying on transitive includes. A full IWYU run
+  is not part of the test suite, so check touched files for missed
+  opportunities and suggest fixes. Installed headers do have a
+  mechanical check: configure with
+  `-DCMAKE_VERIFY_INTERFACE_HEADER_SETS=ON` and build the
+  `all_verify_interface_header_sets` target, which compiles each header
+  in the target's header sets on its own. Every installed header is
+  expected to pass it.
 - **Namespaces**: library code lives in `dolfinx::<module>` (e.g.
   `dolfinx::io::hdf5`). In `.cpp` files, prefer `using namespace
   dolfinx;` at the top and qualify definitions with the remaining
@@ -100,22 +105,27 @@ disclosure process.
   `std::invalid_argument` for a bad argument or violated parameter
   precondition, `std::out_of_range` for an index/lookup-key failure, and
   `std::runtime_error` for other runtime/state/IO/MPI failures. Do not
-  introduce a custom exception hierarchy. Use a descriptive message —
-  unconditionally when the check is O(1), or guarded behind
-  `#ifndef NDEBUG` when the check is more expensive, so it's skipped in
-  release builds. For internal
-  invariants that indicate a library bug rather than bad user input, use
-  `assert` when the check fits in a single expression, or a
-  `#ifndef NDEBUG`-guarded block with an explicit throw/abort when it
-  needs multiple statements. Do not add exceptions inside hot loops.
-  Prefer `spdlog::debug`/`info`/`warn` for logging over
+  introduce a custom exception hierarchy. Use descriptive messages.
+  Unconditionally perform checks when cost is O(1) and no collective MPI
+  operations are used in the check, except in hot loops. Do not add
+  exceptions inside hot loops. Guard behind `#ifndef NDEBUG` when the
+  check is more expensive or requires MPI communication, so it's skipped
+  in release builds. For internal invariants that indicate a library bug
+  rather than bad user input, use `assert` when the check fits in a
+  single expression, or a `#ifndef NDEBUG`-guarded block with an
+  explicit throw/abort when it needs multiple statements. Prefer
+  `spdlog::debug`/`info`/`warn` for logging over
   `std::cout`/`std::cerr`.
-- **MPI collectives**: collective operations (`MPI_Allreduce`,
-  neighbourhood collectives, etc.) must be reached by every rank in the
-  communicator — an error path, early return, or exception on one rank
-  must not skip a collective that other ranks still call, or the
-  mismatch deadlocks. Validate/throw before entering a code path with
-  collectives, not conditionally partway through it.
+- **MPI collectives**: every rank in a communicator must reach matching
+  collective operations (`MPI_Allreduce`, neighbourhood collectives,
+  etc.) in the same order. An early return or exception on one rank must
+  not skip a collective that peers still call, or they will deadlock. In
+  Release builds, validation must be local: it must not call MPI
+  functions that communicate. Consequently, a collective interface
+  requires locally valid arguments and consistent participation on every
+  rank; invalid input on only some ranks violates this precondition and
+  may deadlock. Validate/throw before entering collective code, never
+  conditionally between collective operations.
 - **Move/copy semantics**: Moving is preferred over copying, unless
   the object is very lightweight. Many DOLFINx classes disable
   copying; none disable moving. `std::move` is used systematically on
@@ -219,9 +229,9 @@ disclosure process.
 - **Docstrings**: Google style (`Args:`, `Returns:`, etc.), module and
   public API documented; test/demo files are exempt from some
   pydocstyle rules (see `per-file-ignores`).
-- **Type hints**: required on the public API; checked with `mypy`
-  (`python/pyproject.toml` `[tool.mypy]` config, run over `dolfinx`,
-  `test`, and `demo`). PETSc-related type checking is disabled on a
+- **Type hints**: required on the public API; checked with `pyrefly`
+  (`python/pyrefly.toml`, run over `dolfinx`, `test`, and `demo`).
+  PETSc-related type checking is disabled on a
   per-line basis until upstream petsc4py type work is finished.
 - **File header**: same SPDX/copyright block as C++, adapted to `#`
   comments, followed by a module docstring.
@@ -246,8 +256,32 @@ disclosure process.
 
 ## CMake style
 
+- **Minimum version**: set by the `cmake_minimum_required` in
+  `cpp/CMakeLists.txt` and repeated identically by every other
+  `cmake_minimum_required` in the tree; don't restate it elsewhere.
+  Features up to that version may be used freely; a policy introduced
+  after it still needs an `if(POLICY CMPxxxx)` guard.
 - Formatted with `gersemi` (2-space indent, see `.gersemirc`); CI runs
-  `gersemi --check .`.
+  `gersemi --check .`. `.gersemirc` points `gersemi` at the directories
+  holding the project's own command definitions so that calls to them
+  are formatted rather than reported as unknown.
+- **Adding a header**: add it to the `FILE_SET HEADERS` list in the
+  `target_sources` call of its `cpp/dolfinx/<module>/CMakeLists.txt`.
+  The file set drives both the include directories and the install
+  rules, so nothing else needs updating. Sources go in the `PRIVATE`
+  `target_sources` call in the same file.
+- **Adding a C++ demo**: create `cpp/demo/<name>/` and a short
+  `CMakeLists.txt` calling `dolfinx_add_demo(<name> [UFL <file>.py]
+  [NO_COMPLEX])`, then register it in `cpp/demo/CMakeLists.txt`. The
+  helper lives in `cpp/cmake/modules/DolfinxDemo.cmake` and is
+  installed, so the demos also build standalone against an installed
+  DOLFINx.
+- Helper modules shared with consumers of an installed DOLFINx
+  (`DolfinxDemo.cmake`, `DolfinxDeveloperCompilerFlags.cmake`,
+  `DolfinxPkgConfigHelpers.cmake`) live in
+  `cpp/cmake/modules/` and are installed next to `DOLFINXConfig.cmake`.
+  Anything `DOLFINXConfig.cmake` needs at consume time belongs there
+  rather than being duplicated into the config template.
 
 ## Demos
 
@@ -255,6 +289,11 @@ disclosure process.
   postprocessing with jupytext and sphinx.
 - Python demos are written with light format and Markdown for
   subsequent postprocessing with jupytext and sphinx.
+- Python demos must not import anything from `dolfinx.cpp`, directly or
+  via `dolfinx.cpp`-qualified attribute access. Demos show the intended
+  user-facing API, so everything a demo needs must be reachable from the
+  pure-Python interface; if it is not, extend that interface rather than
+  reaching into the nanobind layer.
 - Demo text should be checked for clarity, brevity, mathematical
   correctness (e.g. missing definitions) and misalignment with the
   presented solver code.
@@ -270,6 +309,11 @@ disclosure process.
   as part of the test build (see `cpp/test/CMakeLists.txt`).
 - **Python**: `pytest`, in `python/test/`. Use `mpi4py.MPI` fixtures
   for parallel-aware tests where relevant.
+- **Python tests that need PETSc**: any test requiring PETSc/petsc4py
+  must live in a file with `petsc` in its name (e.g.
+  `test_petsc_assembler.py`), so that PETSc-free builds can deselect
+  them by filename. Do not add a PETSc-dependent test to a file without
+  `petsc` in the name — move it to (or create) a `petsc` file instead.
 - Run the relevant formatter/linter and the affected test suite before
   calling a change done — don't rely on CI to catch formatting.
 - Dependency groups (`build`, `docs`, `lint`, `test`, `ci` in

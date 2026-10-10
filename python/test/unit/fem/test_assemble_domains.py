@@ -54,7 +54,7 @@ parametrize_ghost_mode = pytest.mark.parametrize(
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("meshtags_factory", [meshtags, create_cell_meshtags_from_entities])
-def test_assembly_dx_domains(mode, meshtags_factory):
+def test_assembly_dx_domains(mode, meshtags_factory) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -122,7 +122,7 @@ def test_assembly_dx_domains(mode, meshtags_factory):
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-def test_assembly_ds_domains(mode):
+def test_assembly_ds_domains(mode) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -200,7 +200,7 @@ def test_assembly_ds_domains(mode):
 
 
 @parametrize_ghost_mode
-def test_assembly_dS_domains(mode):
+def test_assembly_dS_domains(mode) -> None:
     N = 10
     mesh = create_unit_square(MPI.COMM_WORLD, N, N, ghost_mode=mode)
     one = Constant(mesh, default_scalar_type(1))
@@ -210,7 +210,7 @@ def test_assembly_dS_domains(mode):
 
 
 @parametrize_ghost_mode
-def test_additivity(mode):
+def test_additivity(mode) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = functionspace(mesh, ("Lagrange", 1))
 
@@ -351,7 +351,7 @@ def test_manual_integration_domains():
     assert np.allclose(b.array, b_mt.array)
 
 
-def test_assemble_exterior_facet():
+def test_assemble_exterior_facet() -> None:
     """Check special handling of packing of integration entities for exterior facets,
     which for any other co-dimensional entity is just a one-sided integral.
     """

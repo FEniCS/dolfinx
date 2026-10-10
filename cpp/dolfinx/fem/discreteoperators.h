@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2026 Garth N. Wells, Jørgen S. Dokken
+// Copyright (C) 2015-2026 Garth N. Wells, Jørgen S. Dokken, OpenAI
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,11 +7,15 @@
 #pragma once
 
 #include "DofMap.h"
+#include "ElementDofLayout.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
+#include "sparsitybuild.h"
 #include <algorithm>
 #include <array>
+#include <basix/sobolev-spaces.h>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/la/utils.h>
@@ -19,10 +23,73 @@
 #include <memory>
 #include <span>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::fem
 {
+
+namespace impl
+{
+/// @brief Check source conformity for an entity-closure derivative stencil.
+/// @param[in] element Source element.
+template <std::floating_point T>
+void check_derivative_source(const FiniteElement<T>& element)
+{
+  const basix::sobolev::space space = element.basix_element().sobolev_space();
+  const bool h1
+      = basix::sobolev::space_intersection(space, basix::sobolev::space::H1)
+        == basix::sobolev::space::H1;
+  if (element.map_type() == basix::maps::type::identity and !h1)
+  {
+    throw std::invalid_argument(
+        "Source element must be H1-conforming for the discrete gradient.");
+  }
+  if (element.map_type() == basix::maps::type::covariantPiola and !h1
+      and space != basix::sobolev::space::HCurl)
+  {
+    throw std::invalid_argument(
+        "Source element must be H(curl)-conforming for the discrete curl.");
+  }
+}
+
+/// @brief Gather and insert the entity-closure blocks of one cell's
+/// element matrix.
+///
+/// @param[in] blocks Entity blocks, from
+/// sparsitybuild::entity_closure_blocks.
+/// @param[in] A Element matrix, its rows indexed by the space of
+/// `cell_rows`.
+/// @param[in] ncols Row stride of `A`.
+/// @param[in] cell_rows Row-space degrees-of-freedom of the cell.
+/// @param[in] cell_cols Column-space degrees-of-freedom of the cell.
+/// @param[out] rows,cols,Ae Scratch, each at least as large as the
+/// element matrix dimension it indexes.
+/// @param[in] mat_set Functor that sets values in a matrix.
+template <dolfinx::scalar T>
+void insert_entity_blocks(
+    std::span<const std::pair<std::span<const int>, std::span<const int>>>
+        blocks,
+    std::span<const T> A, std::size_t ncols,
+    std::span<const std::int32_t> cell_rows,
+    std::span<const std::int32_t> cell_cols, std::span<std::int32_t> rows,
+    std::span<std::int32_t> cols, std::span<T> Ae, auto&& mat_set)
+{
+  for (const auto& [rdofs, cdofs] : blocks)
+  {
+    std::ranges::transform(cdofs, cols.begin(),
+                           [cell_cols](int d) { return cell_cols[d]; });
+    for (std::size_t i = 0; i < rdofs.size(); ++i)
+    {
+      rows[i] = cell_rows[rdofs[i]];
+      for (std::size_t j = 0; j < cdofs.size(); ++j)
+        Ae[i * cdofs.size() + j] = A[rdofs[i] * ncols + cdofs[j]];
+    }
+    mat_set(rows.first(rdofs.size()), cols.first(cdofs.size()),
+            Ae.first(rdofs.size() * cdofs.size()));
+  }
+}
+} // namespace impl
 
 /// @brief Assemble a discrete curl operator.
 ///
@@ -67,6 +134,17 @@ namespace dolfinx::fem
 ///
 /// @pre `V0` and `V1` must be vector-valued, in three spatial
 /// dimensions, and use covariant and contravariant maps, respectively.
+/// `V0` must be H(curl)-conforming.
+///
+/// @note Values are inserted one mesh entity at a time: the `V1`
+/// degrees-of-freedom on an entity against the `V0` degrees-of-freedom
+/// on its closure. A facet degree-of-freedom of `V1` is a moment of
+/// \f$n \cdot \nabla \times u\f$ over the facet, which by Stokes'
+/// theorem is a circulation of \f$u\f$ around its boundary, so it sees
+/// only `V0` on the closure of that facet. Build the sparsity pattern
+/// with sparsitybuild::entity_closure, which holds exactly those
+/// couplings. sparsitybuild::cells is wide enough too, at the cost of
+/// entries the operator cannot occupy.
 ///
 /// @tparam T Scalar type of the mesh and elements. @tparam U Scalar
 /// type of the matrix being inserted into. This is usually the same as
@@ -111,6 +189,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
     throw std::invalid_argument(
         "Finite element for parent space must be covariant Piola.");
   }
+  impl::check_derivative_source(*e0);
 
   std::shared_ptr<const FiniteElement<T>> e1 = V1.element();
   assert(e1);
@@ -124,7 +203,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   std::span<const std::uint32_t> cell_info;
   if (e1->needs_dof_transformations() or e0->needs_dof_transformations())
   {
-    mesh->topology_mutable()->create_entity_permutations();
+    mesh->topology_mutable()->create_cell_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
@@ -180,6 +259,14 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
       curl(curl_b.data(), dPhi0.extent(0), dPhi0.extent(1), dPhi0.extent(3));
 
   std::vector<U> Ab(space_dim0 * space_dim1);
+
+  // Insert the element matrix one mesh entity at a time, so that the
+  // operator gets its exact sparsity
+  const std::vector<std::pair<std::span<const int>, std::span<const int>>>
+      blocks = sparsitybuild::entity_closure_blocks(
+          dofmap1->element_dof_layout(), dofmap0->element_dof_layout());
+  std::vector<U> Ab_e(Ab.size());
+  std::vector<std::int32_t> rows(space_dim1), cols(space_dim0);
 
   // Iterate over mesh and interpolate on each cell
   assert(mesh->topology()->index_map(gdim));
@@ -244,7 +331,10 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
 
     if (apply_inverse_dof_transform1)
       apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
-    mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
+
+    impl::insert_entity_blocks<U>(blocks, Ab, space_dim0, dofmap1->cell_dofs(c),
+                                  dofmap0->cell_dofs(c), rows, cols, Ab_e,
+                                  mat_set);
   }
 }
 
@@ -261,16 +351,19 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
 /// algebraic multigrid solvers for \f$H({\rm curl})\f$ and \f$H({\rm
 /// div})\f$ problems.
 ///
-/// @note The sparsity pattern for a discrete operator can be
-/// initialised using sparsitybuild::cells. The space `V1` should be
-/// used for the rows of the sparsity pattern, `V0` for the columns.
+/// @note Values are inserted one mesh entity at a time: the `V1`
+/// degrees-of-freedom on an entity against the `V0` degrees-of-freedom
+/// on its closure. Build the sparsity pattern with
+/// sparsitybuild::entity_closure, which holds exactly those couplings.
+/// sparsitybuild::cells is wide enough too, at the cost of entries the
+/// operator cannot occupy.
 ///
 /// @warning This function relies on the user supplying appropriate
 /// input and output spaces. See parameter descriptions.
 ///
 /// @param[in] topology Mesh topology
 /// @param[in] V0 Lagrange element and dofmap for corresponding space to
-/// interpolate the gradient from.
+/// interpolate the gradient from. The element must be H1-conforming.
 /// @param[in] V1 Nédélec (first kind) element and dofmap for
 /// corresponding space to interpolate into.
 /// @param[in] mat_set A functor that sets values in a matrix
@@ -299,6 +392,7 @@ void discrete_gradient(mesh::Topology& topology,
     throw std::invalid_argument("Block size is greater than 1 for V0.");
   if (e0.reference_value_size() != 1)
     throw std::invalid_argument("Wrong value size for V0.");
+  impl::check_derivative_source(e0);
 
   if (e1.map_type() != basix::maps::type::covariantPiola)
     throw std::invalid_argument("Wrong finite element space for V1.");
@@ -327,7 +421,7 @@ void discrete_gradient(mesh::Topology& topology,
       doftransform::inverse_transpose, false);
 
   // Generate cell permutations
-  topology.create_entity_permutations();
+  topology.create_cell_permutations();
   const std::vector<std::uint32_t>& cell_info
       = topology.get_cell_permutation_info();
 
@@ -343,17 +437,24 @@ void discrete_gradient(mesh::Topology& topology,
     math::dot(_Pi, dphi_reshaped, A);
   }
 
-  // Insert local interpolation matrix for each cell
+  // Insert the element matrix one mesh entity at a time, so that the
+  // operator gets its exact sparsity
+  const std::vector<std::pair<std::span<const int>, std::span<const int>>>
+      blocks = sparsitybuild::entity_closure_blocks(
+          dofmap1.element_dof_layout(), dofmap0.element_dof_layout());
   auto cell_map = topology.index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
-  std::vector<T> Ae(Ab.size());
+  std::vector<T> Ae(Ab.size()), Ab_e(Ab.size());
+  std::vector<std::int32_t> rows(e1.space_dimension()), cols(ndofs0);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     std::ranges::copy(Ab, Ae.begin());
     if (apply_inverse_dof_transform)
       apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
-    mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
+    impl::insert_entity_blocks<T>(blocks, Ae, ndofs0, dofmap1.cell_dofs(c),
+                                  dofmap0.cell_dofs(c), rows, cols, Ab_e,
+                                  mat_set);
   }
 }
 
@@ -368,6 +469,10 @@ void discrete_gradient(mesh::Topology& topology,
 /// @note The sparsity pattern for a discrete operator can be
 /// initialised using sparsitybuild::cells. The space `V1` should be
 /// used for the rows of the sparsity pattern, `V0` for the columns.
+/// Unlike discrete_gradient and discrete_curl there is no narrower
+/// pattern: `V0` is general here, so its restriction to an entity need
+/// not be determined by the degrees-of-freedom on that entity's
+/// closure, and sparsitybuild::entity_closure does not apply.
 ///
 /// @param[in] V0 Space to interpolate from.
 /// @param[in] V1 Space to interpolate to.
@@ -390,10 +495,16 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   std::shared_ptr<const FiniteElement<U>> e1 = V1.element();
   assert(e1);
 
+  if (!std::ranges::equal(e0->value_shape(), e1->value_shape()))
+  {
+    throw std::invalid_argument(
+        "Interpolation operator: elements have different value dimensions");
+  }
+
   std::span<const std::uint32_t> cell_info;
   if (e1->needs_dof_transformations() or e0->needs_dof_transformations())
   {
-    mesh->topology_mutable()->create_entity_permutations();
+    mesh->topology_mutable()->create_cell_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
@@ -416,7 +527,13 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const std::size_t space_dim1 = e1->space_dimension();
   const std::size_t dim0 = space_dim0 / bs0;
   const std::size_t value_size_ref0 = e0->reference_value_size();
-  const std::size_t value_size0 = V0.element()->reference_value_size();
+  // basis0 holds one block of V0's basis pushed forward to the physical
+  // cell; basis_values holds all bs0 blocks; mapped_values holds them
+  // pulled back to the reference cell of e1.
+  const std::size_t value_size0 = e0->physical_base_value_size();
+  const std::size_t value_size_phys = e0->value_size();
+  const std::size_t value_size_ref1
+      = e1->reference_value_size() * static_cast<std::size_t>(bs1);
 
   // Get geometry data
   const CoordinateElement<U>& cmap = mesh->geometry().cmaps().front();
@@ -477,14 +594,12 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 
   // Basis values of Lagrange space unrolled for block size
   // (num_quadrature_points, Lagrange dof, value_size)
-  std::vector<U> basis_values_b(Xshape[0] * bs0 * dim0
-                                * V1.element()->value_size());
+  std::vector<U> basis_values_b(Xshape[0] * bs0 * dim0 * value_size_phys);
   mdspan3_t basis_values(basis_values_b.data(), Xshape[0], bs0 * dim0,
-                         V1.element()->value_size());
-  std::vector<U> mapped_values_b(Xshape[0] * bs0 * dim0
-                                 * V1.element()->value_size());
+                         value_size_phys);
+  std::vector<U> mapped_values_b(Xshape[0] * bs0 * dim0 * value_size_ref1);
   mdspan3_t mapped_values(mapped_values_b.data(), Xshape[0], bs0 * dim0,
-                          V1.element()->value_size());
+                          value_size_ref1);
 
   auto pull_back_fn1
       = e1->basix_element().template map_fn<u_t, U_t, K_t, J_t>();
@@ -608,7 +723,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     if (interpolation_ident)
     {
       md::mdspan<T, md::dextents<std::size_t, 3>> A(
-          Ab.data(), Xshape[0], V1.element()->value_size(), space_dim0);
+          Ab.data(), Xshape[0], value_size_ref1, space_dim0);
       for (std::size_t i = 0; i < mapped_values.extent(0); ++i)
         for (std::size_t j = 0; j < mapped_values.extent(1); ++j)
           for (std::size_t k = 0; k < mapped_values.extent(2); ++k)

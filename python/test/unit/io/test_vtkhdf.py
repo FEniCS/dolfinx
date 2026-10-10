@@ -15,7 +15,7 @@ from dolfinx.io.vtkhdf import read_mesh, write_cell_data, write_mesh, write_poin
 from dolfinx.mesh import CellType, Mesh, create_unit_cube, create_unit_square
 
 
-def test_read_write_vtkhdf_mesh2d():
+def test_read_write_vtkhdf_mesh2d() -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=np.float32)
     write_mesh("example2d.vtkhdf", mesh)
     mesh2 = read_mesh(MPI.COMM_WORLD, "example2d.vtkhdf", np.float32)
@@ -25,7 +25,7 @@ def test_read_write_vtkhdf_mesh2d():
     assert mesh.topology.index_map(2).size_global == mesh2.topology.index_map(2).size_global
 
 
-def test_read_write_vtkhdf_mesh3d():
+def test_read_write_vtkhdf_mesh3d() -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type=CellType.prism)
     write_mesh("example3d.vtkhdf", mesh)
     mesh2 = read_mesh(MPI.COMM_WORLD, "example3d.vtkhdf")
@@ -33,7 +33,47 @@ def test_read_write_vtkhdf_mesh3d():
     assert mesh.topology.index_map(3).size_global == mesh2.topology.index_map(3).size_global
 
 
-def test_read_write_mixed_topology(mixed_topology_mesh):
+@pytest.mark.parametrize("num_threads", [1, 4])
+def test_read_write_vtkhdf_num_threads(num_threads) -> None:
+    filename = "example_num_threads.vtkhdf"
+    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5)
+    write_mesh(filename, mesh)
+
+    mesh_1 = read_mesh(MPI.COMM_WORLD, filename, num_threads=1)
+    mesh_n = read_mesh(MPI.COMM_WORLD, filename, num_threads=num_threads)
+
+    for m in (mesh_1, mesh_n):
+        assert (
+            m.topology.index_map(m.topology.dim).size_global
+            == mesh.topology.index_map(mesh.topology.dim).size_global
+        )
+        assert m.topology.index_map(0).size_global == mesh.topology.index_map(0).size_global
+
+    vol_1 = mesh_1.comm.allreduce(
+        dolfinx.fem.assemble_scalar(
+            dolfinx.fem.form(1 * ufl.dx(domain=mesh_1), dtype=mesh_1.geometry.x.dtype)
+        ),
+        op=MPI.SUM,
+    )
+    vol_n = mesh_n.comm.allreduce(
+        dolfinx.fem.assemble_scalar(
+            dolfinx.fem.form(1 * ufl.dx(domain=mesh_n), dtype=mesh_n.geometry.x.dtype)
+        ),
+        op=MPI.SUM,
+    )
+    assert np.isclose(vol_1, vol_n)
+
+
+def test_read_vtkhdf_num_threads_invalid() -> None:
+    filename = "example_num_threads_invalid.vtkhdf"
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    write_mesh(filename, mesh)
+
+    with pytest.raises(ValueError):
+        read_mesh(MPI.COMM_WORLD, filename, num_threads=0)
+
+
+def test_read_write_mixed_topology(mixed_topology_mesh) -> None:
     mesh = Mesh(mixed_topology_mesh, None)
     write_mesh("mixed_mesh.vtkhdf", mesh)
 
@@ -84,7 +124,7 @@ def test_read_write_higher_order():
 
     max_cells_per_facet = 2
     part = dolfinx.graph.partitioner()
-    mesh = dolfinx.cpp.mesh.create_mesh(
+    mesh = dolfinx.cpp.mesh._create_mixed_mesh(
         MPI.COMM_WORLD,
         cells_np,
         [e._cpp_object for e in coordinate_elements],
@@ -117,7 +157,8 @@ def test_read_write_higher_order():
 
 
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_read_write_higher_order_mesh(order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_read_write_higher_order_mesh(order, dtype) -> None:
     try:
         import gmsh
     except ImportError:
@@ -141,9 +182,14 @@ def test_read_write_higher_order_mesh(order):
     comm.Barrier()
 
     model = comm.bcast(model, root=rank)
-    # Read in mesh with gmsh to create reference dat
-    ref_mesh = dolfinx.io.gmsh.model_to_mesh(gmsh.model, comm, rank).mesh
+    # Use the same precision for the reference and the mesh read back.
+    ref_mesh = dolfinx.io.gmsh.model_to_mesh(gmsh.model, comm, rank, dtype=dtype).mesh
     gmsh.finalize()
+
+    # File cell indices follow rank order, excluding ghost cells.
+    num_cells = ref_mesh.topology.index_map(3).size_local
+    cell_geometry = ref_mesh.geometry.x[ref_mesh.geometry.dofmaps[0][:num_cells]]
+    ref_cell_geometry = np.concatenate(comm.allgather(cell_geometry))
 
     ref_volume_form = dolfinx.fem.form(
         1 * ufl.dx(domain=ref_mesh),
@@ -158,28 +204,53 @@ def test_read_write_higher_order_mesh(order):
     ref_surface = comm.allreduce(dolfinx.fem.assemble_scalar(ref_surface_form), op=MPI.SUM)
 
     # Write to file
-    filename = f"gmsh_{order}_order_sphere.vtkhdf"
+    filename = f"gmsh_{order}_order_sphere_{np.dtype(dtype).name}.vtkhdf"
     write_mesh(filename, ref_mesh)
     del ref_mesh, ref_volume_form
 
-    # Read mesh
-    mesh = read_mesh(comm, filename)
+    # Check both mesh construction thread counts.
+    mesh = read_mesh(comm, filename, dtype=dtype, num_threads=1)
+    mesh_mt = read_mesh(comm, filename, dtype=dtype, num_threads=4)
 
-    # Compare surface and volume metrics
-    # The degree-3 round-trip is not exact, see issue #4415.
-    rtol = 1.0e-4
+    for m in (mesh, mesh_mt):
+        domain = m.ufl_domain()
+        assert domain is not None
+        assert m.geometry.x.dtype == dtype
+        assert domain.ufl_coordinate_element().basix_element.dtype == dtype
+        assert m.geometry.cmaps[0].degree == order
+        np.testing.assert_array_equal(
+            m.geometry.x[m.geometry.dofmaps[0]],
+            ref_cell_geometry[m.topology.original_cell_index],
+        )
+
+    assert (
+        mesh.topology.index_map(mesh.topology.dim).size_global
+        == mesh_mt.topology.index_map(mesh_mt.topology.dim).size_global
+    )
+    assert mesh.topology.index_map(0).size_global == mesh_mt.topology.index_map(0).size_global
+
+    volume_mt_form = dolfinx.fem.form(1 * ufl.dx(domain=mesh_mt), dtype=mesh_mt.geometry.x.dtype)
+    volume_mt = comm.allreduce(dolfinx.fem.assemble_scalar(volume_mt_form), op=MPI.SUM)
+    surface_mt_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh_mt), dtype=mesh_mt.geometry.x.dtype)
+    surface_mt = comm.allreduce(dolfinx.fem.assemble_scalar(surface_mt_form), op=MPI.SUM)
+
+    # Assembly can accumulate in a different order after repartitioning.
+    rtol = 100 * np.finfo(dtype).eps
 
     volume_form = dolfinx.fem.form(1 * ufl.dx(domain=mesh), dtype=mesh.geometry.x.dtype)
     volume = comm.allreduce(dolfinx.fem.assemble_scalar(volume_form), op=MPI.SUM)
-    assert np.isclose(ref_volume, volume, rtol=rtol)
+    assert np.isclose(ref_volume, volume, rtol=rtol, atol=0)
 
     surface_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh), dtype=mesh.geometry.x.dtype)
     surface = comm.allreduce(dolfinx.fem.assemble_scalar(surface_form), op=MPI.SUM)
-    assert np.isclose(ref_surface, surface, rtol=rtol)
+    assert np.isclose(ref_surface, surface, rtol=rtol, atol=0)
+
+    assert np.isclose(volume, volume_mt, rtol=rtol, atol=0)
+    assert np.isclose(surface, surface_mt, rtol=rtol, atol=0)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_write_point_data(dtype):
+def test_write_point_data(dtype) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     filename = "point_data.vtkhdf"
     write_mesh(filename, mesh)
@@ -190,7 +261,7 @@ def test_write_point_data(dtype):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("width", [1, 3])
-def test_write_cell_data(dtype, width):
+def test_write_cell_data(dtype, width) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     filename = "cell_data.vtkhdf"
     write_mesh(filename, mesh)
@@ -199,7 +270,7 @@ def test_write_cell_data(dtype, width):
         write_cell_data(filename, mesh, cell_data, float(j))
 
 
-def test_write_mixed_topology_data(mixed_topology_mesh):
+def test_write_mixed_topology_data(mixed_topology_mesh) -> None:
     mesh = Mesh(mixed_topology_mesh, None)
     filename = "mixed_point_data.vtkhdf"
     write_mesh(filename, mesh)

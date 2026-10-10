@@ -16,12 +16,17 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <dolfinx/common/Timer.h>
+#include <dolfinx/common/local_range.h>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <limits>
 #include <mpi.h>
 #include <optional>
+#include <span>
 #include <stdexcept>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -112,6 +117,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> finalize_mesh(
 /// `6*n[0]*n[1]*n[2]` cells. For hexahedra the number of cells will be
 /// `n[0]*n[1]*n[2]`.
 ///
+/// @note Collective.
+///
 /// @param[in] comm MPI communicator to distribute the mesh on.
 /// @param[in] subcomm MPI communicator to construct and partition the
 /// mesh topology on. If the process should not be involved in the
@@ -136,12 +143,22 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
-    throw std::runtime_error("At least one cell is required.");
+    throw std::invalid_argument("At least one cell is required.");
 
   for (int32_t i = 0; i < 3; i++)
   {
     if (p[0][i] >= p[1][i])
-      throw std::runtime_error("It must hold p[0] < p[1].");
+      throw std::invalid_argument("It must hold p[0] < p[1].");
+  }
+
+  for (int32_t i = 0; i < 3; i++)
+  {
+    if (std::abs(p[1][i] - p[0][i]) / static_cast<T>(n[i])
+        < 2.0 * std::numeric_limits<T>::epsilon())
+    {
+      throw std::invalid_argument(
+          "Box seems to have zero width, height or depth. Check dimensions");
+    }
   }
 
   if (!graph::has_partitioner(partitioner) and dolfinx::MPI::size(comm) > 1)
@@ -159,7 +176,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
     return impl::build_prism<T>(comm, subcomm, p, n, partitioner, ghost_mode,
                                 reorder_fn);
   default:
-    throw std::runtime_error("Generate box mesh. Wrong cell type");
+    throw std::invalid_argument("Generate box mesh. Wrong cell type");
   }
 }
 
@@ -171,6 +188,8 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
 /// 1)*(n[1] + 1)*(n[2] + 1)`. For tetrahedra there will be  will be
 /// `6*n[0]*n[1]*n[2]` cells. For hexahedra the number of cells will be
 /// `n[0]*n[1]*n[2]`.
+///
+/// @note Collective.
 ///
 /// @param[in] comm MPI communicator to distribute the mesh on.
 /// @param[in] p Corner of the box.
@@ -201,6 +220,8 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
 /// 1)*(n[1] + 1)`. For triangles there will be  will be `2*n[0]*n[1]`
 /// cells. For quadrilaterals the number of cells will be `n[0]*n[1]`.
 ///
+/// @note Collective.
+///
 /// @param[in] comm MPI communicator to build the mesh on.
 /// @param[in] p Bottom-left and top-right corners of the rectangle.
 /// @param[in] n Number of cells in each direction.
@@ -224,14 +245,22 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   if (gdim < 2 || gdim > 3)
-    throw std::runtime_error("2 <= gdim <= 3 for rectangle mesh.");
+    throw std::invalid_argument("2 <= gdim <= 3 for rectangle mesh.");
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
-    throw std::runtime_error("At least one cell per dimension is required.");
+    throw std::invalid_argument("At least one cell per dimension is required.");
 
   for (int32_t i = 0; i < 2; i++)
   {
     if (p[0][i] >= p[1][i])
-      throw std::runtime_error("It must hold p[0] < p[1].");
+      throw std::invalid_argument("It must hold p[0] < p[1].");
+  }
+
+  if (std::abs(p[1][0] - p[0][0]) < std::numeric_limits<T>::epsilon()
+      or std::abs(p[1][1] - p[0][1]) < std::numeric_limits<T>::epsilon())
+  {
+    throw std::invalid_argument(
+        "Rectangle seems to have zero width, height or depth. Check "
+        "dimensions");
   }
 
   if (!graph::has_partitioner(partitioner) and dolfinx::MPI::size(comm) > 1)
@@ -246,7 +275,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     return impl::build_quad<T>(comm, p, n, partitioner, ghost_mode, reorder_fn,
                                gdim);
   default:
-    throw std::runtime_error("Generate rectangle mesh. Wrong cell type.");
+    throw std::invalid_argument("Generate rectangle mesh. Wrong cell type.");
   }
 }
 
@@ -257,6 +286,8 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// maximum coordinates. The total number of vertices will be `(n[0] +
 /// 1)*(n[1] + 1)`. For triangles there will be  will be `2*n[0]*n[1]`
 /// cells. For quadrilaterals the number of cells will be `n[0]*n[1]`.
+///
+/// @note Collective.
 ///
 /// @param[in] comm MPI communicator to build the mesh on
 /// @param[in] p Two corner points
@@ -282,6 +313,8 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// intervals will be `n` and the total number of vertices will be
 /// `n + 1`.
 ///
+/// @note Collective.
+///
 /// @param[in] comm MPI communicator to build the mesh on.
 /// @param[in] n Number of cells.
 /// @param[in] p End points of the interval.
@@ -300,16 +333,16 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
                         const graph::Reorder& reorder_fn = graph::Reorder{})
 {
   if (gdim < 1 || gdim > 3)
-    throw std::runtime_error("1 <= gdim <= 3 for interval mesh.");
+    throw std::invalid_argument("1 <= gdim <= 3 for interval mesh.");
   if (n < 1)
-    throw std::runtime_error("At least one cell per dimension is required.");
+    throw std::invalid_argument("At least one cell per dimension is required.");
 
   const auto [a, b] = p;
   if (a >= b)
-    throw std::runtime_error("It must hold p[0] < p[1].");
+    throw std::invalid_argument("It must hold p[0] < p[1].");
   if (std::abs(a - b) < std::numeric_limits<T>::epsilon())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Length of interval is zero. Check your dimensions.");
   }
 
@@ -388,14 +421,6 @@ std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
       (p1[2] - p0[2]) / static_cast<T>(nz),
   };
 
-  if (std::ranges::any_of(
-          extents, [](auto e)
-          { return std::abs(e) < 2.0 * std::numeric_limits<T>::epsilon(); }))
-  {
-    throw std::runtime_error(
-        "Box seems to have zero width, height or depth. Check dimensions");
-  }
-
   const std::int64_t n_points = (nx + 1) * (ny + 1) * (nz + 1);
   const auto [range_begin, range_end] = common::local_range(
       dolfinx::MPI::rank(comm), n_points, dolfinx::MPI::size(comm));
@@ -406,8 +431,9 @@ std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
   for (std::int64_t v = range_begin; v < range_end; ++v)
   {
     // lexiographic index to spatial index
-    const std::int64_t p = v % sqxy;
-    std::array<std::int64_t, 3> idx = {p % (nx + 1), p / (nx + 1), v / sqxy};
+    const std::int64_t xy_idx = v % sqxy;
+    std::array<std::int64_t, 3> idx
+        = {xy_idx % (nx + 1), xy_idx / (nx + 1), v / sqxy};
 
     // vertex = p0 + idx * extents (elementwise)
     for (std::size_t i = 0; i < idx.size(); i++)
@@ -455,7 +481,8 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
       const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
       const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
 
-      // Note that v0 < v1 < v2 < v3 < vmid
+      // Kuhn decomposition of the hexahedron into 6 tetrahedra sharing
+      // the v0-v7 diagonal.
       cells.insert(cells.end(),
                    {v0, v1, v3, v7, v0, v1, v7, v5, v0, v5, v7, v4,
                     v0, v3, v2, v7, v0, v6, v4, v7, v0, v2, v6, v7});
@@ -528,8 +555,8 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
     const std::int64_t ny = n[1];
     const std::int64_t nz = n[2];
     const std::int64_t n_cells = nx * ny * nz;
-    std::array range_c = common::local_range(dolfinx::MPI::rank(comm), n_cells,
-                                             dolfinx::MPI::size(comm));
+    std::array range_c = common::local_range(
+        dolfinx::MPI::rank(subcomm), n_cells, dolfinx::MPI::size(subcomm));
     const std::int64_t cell_range = range_c[1] - range_c[0];
 
     // Create cuboids
@@ -567,7 +594,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 {
   fem::CoordinateElement<T> element(CellType::triangle, 1);
   if (gdim < 2 || gdim > 3)
-    throw std::runtime_error("2 <= gdim <= 3 for tri mesh.");
+    throw std::invalid_argument("2 <= gdim <= 3 for tri mesh.");
 
   if (dolfinx::MPI::rank(comm) == 0)
   {
@@ -579,12 +606,6 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 
     const T ab = (b - a) / static_cast<T>(nx);
     const T cd = (d - c) / static_cast<T>(ny);
-    if (std::abs(b - a) < std::numeric_limits<T>::epsilon()
-        or std::abs(d - c) < std::numeric_limits<T>::epsilon())
-    {
-      throw std::runtime_error("Rectangle seems to have zero width, height or "
-                               "depth. Check dimensions");
-    }
 
     // Create vertices and cells
     std::int64_t nv, nc;
@@ -740,7 +761,7 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    int gdim)
 {
   if (gdim < 2 || gdim > 3)
-    throw std::runtime_error("2 <= gdim <= 3 for quad mesh.");
+    throw std::invalid_argument("2 <= gdim <= 3 for quad mesh.");
 
   fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
   if (dolfinx::MPI::rank(comm) == 0)

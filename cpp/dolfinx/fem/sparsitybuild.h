@@ -7,12 +7,15 @@
 #pragma once
 
 #include "DofMap.h"
+#include "ElementDofLayout.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/la/SparsityPattern.h>
 #include <functional>
 #include <ranges>
 #include <span>
+#include <utility>
+#include <vector>
 
 namespace dolfinx::fem
 {
@@ -40,6 +43,18 @@ void cells(la::SparsityPattern& pattern, const std::pair<R0, R1>& cells,
   assert(cells.first.size() == cells.second.size());
   const DofMap& map0 = dofmaps[0].get();
   const DofMap& map1 = dofmaps[1].get();
+
+  // Reserve entries for all cell-wise outer products.
+  if constexpr (std::ranges::sized_range<R0> and std::ranges::sized_range<R1>)
+  {
+    if (std::size_t num_cells = std::ranges::size(cells.first); num_cells > 0)
+    {
+      std::size_t n0 = map0.cell_dofs(*cells.first.begin()).size();
+      std::size_t n1 = map1.cell_dofs(*cells.second.begin()).size();
+      pattern.reserve_blocks(num_cells, num_cells * n0, num_cells * n1);
+    }
+  }
+
   for (auto cell0 = cells.first.begin(), cell1 = cells.second.begin();
        cell0 != cells.first.end() and cell1 != cells.second.end();
        ++cell0, ++cell1)
@@ -47,6 +62,45 @@ void cells(la::SparsityPattern& pattern, const std::pair<R0, R1>& cells,
     pattern.insert(map0.cell_dofs(*cell0), map1.cell_dofs(*cell1));
   }
 }
+
+/// @brief Element-matrix blocks of an entity-closure stencil.
+///
+/// @param[in] layout_rows Dof layout of the space of the rows.
+/// @param[in] layout_cols Dof layout of the space of the columns.
+/// @return For each reference-cell entity carrying `layout_rows`
+/// degrees-of-freedom, the cell-local `layout_rows` degrees-of-freedom
+/// on the entity and the cell-local `layout_cols` degrees-of-freedom on
+/// its closure. The spans point into the layouts, which must outlive the
+/// return value.
+std::vector<std::pair<std::span<const int>, std::span<const int>>>
+entity_closure_blocks(const ElementDofLayout& layout_rows,
+                      const ElementDofLayout& layout_cols);
+
+/// @brief Iterate over cells and insert the entity-closure blocks into
+/// a sparsity pattern.
+///
+/// Inserts, for each mesh entity of each cell, the `dofmaps[0]`
+/// degrees-of-freedom on the entity against the `dofmaps[1]`
+/// degrees-of-freedom on the closure of that entity. This is narrower
+/// than sparsitybuild::cells, and is the sparsity of an operator whose
+/// `dofmaps[0]` degrees-of-freedom are moments over the entity they are
+/// attached to, since such a moment sees only `dofmaps[1]` restricted
+/// to that entity. fem::discrete_gradient and fem::discrete_curl insert
+/// into exactly these blocks.
+///
+/// Entries that the operator evaluates to zero are part of the
+/// structure and are included; a consumer that reads the sparsity
+/// rather than the values, such as PETSc's PCBDDC Nedelec support,
+/// requires them.
+///
+/// @param pattern Sparsity pattern to insert into.
+/// @param cells Cells to iterate over.
+/// @param dofmaps Dofmaps used in building the sparsity pattern,
+/// `dofmaps[0]` for the rows and `dofmaps[1]` for the columns.
+/// @note The sparsity pattern is not finalised.
+void entity_closure(
+    la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
+    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
 
 /// @brief Iterate over interior facets and insert entries into sparsity
 /// pattern.

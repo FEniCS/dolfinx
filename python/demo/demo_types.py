@@ -16,11 +16,11 @@
 # * {download}`Jupyter notebook <./demo_types.ipynb>`
 # ```
 
-# This demo shows:
+# This demo illustrates how to:
 #
-# - How to solve problems using different scalar types, .e.g. single or
+# - Solve problems using different scalar types, e.g. single or
 #   double precision, or complex numbers
-# - Interfacing with [SciPy](https://scipy.org/) sparse linear algebra
+# - Interface with [SciPy](https://scipy.org/) sparse linear algebra
 #   functionality
 
 

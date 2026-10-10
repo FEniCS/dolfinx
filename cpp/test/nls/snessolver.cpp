@@ -195,8 +195,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
   {
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b);
-    solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
-                 J);
+    solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                 { assemble_jacobian(xk, Jmat); }, J);
 
     // PETSc reports an unset prefix as a null pointer, not ""
     CHECK(solver.get_options_prefix().empty());
@@ -244,8 +244,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
   {
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b);
-    solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
-                 J);
+    solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                 { assemble_jacobian(xk, Jmat); }, J);
 
     // The update hook has no context of its own and recovers the
     // solver from the residual callback, so it exercises a second route
@@ -287,8 +287,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
   {
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b);
-    solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
-                 J);
+    solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                 { assemble_jacobian(xk, Jmat); }, J);
 
     // Newton from a negative guess converges to the negative root, so
     // the vector passed to solve is used as the starting point
@@ -301,8 +301,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
   {
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b);
-    solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
-                 J);
+    solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                 { assemble_jacobian(xk, Jmat); }, J);
 
     CHECK(solver.solve(x) > 0);
     check_solution(x, solver.snes());
@@ -326,10 +326,10 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b);
     solver.set_J(
-        [](const Vec x, Mat Jmat, Mat Pmat)
+        [](const Vec xk, Mat Jmat, Mat Pmat)
         {
-          assemble_jacobian(x, Jmat);
-          assemble_jacobian(x, Pmat);
+          assemble_jacobian(xk, Jmat);
+          assemble_jacobian(xk, Pmat);
         },
         J, P);
     CHECK(solver.solve(x) > 0);
@@ -354,8 +354,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
   {
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b);
-    solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
-                 J);
+    solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                 { assemble_jacobian(xk, Jmat); }, J);
 
     std::vector<PetscInt> steps;
     solver.set_update([&steps](PetscInt step) { steps.push_back(step); });
@@ -384,8 +384,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     nls::petsc::SNESSolver solver(comm);
     solver.set_F([](const Vec, Vec)
                  { throw std::runtime_error("Residual failed"); }, b_local);
-    solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
-                 J);
+    solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                 { assemble_jacobian(xk, Jmat); }, J);
 
     // The exception from the callback is re-thrown, not a PETSc error
     try
@@ -439,8 +439,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b_local);
-    solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
-                 J);
+    solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                 { assemble_jacobian(xk, Jmat); }, J);
     solver.set_update([](PetscInt)
                       { throw std::runtime_error("Update failed"); });
 
@@ -464,8 +464,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b);
-    solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
-                 J);
+    solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                 { assemble_jacobian(xk, Jmat); }, J);
     solver.set_options_prefix("max_it_");
     solver.set_from_options();
 
@@ -481,8 +481,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
   {
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b);
-    solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
-                 J);
+    solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                 { assemble_jacobian(xk, Jmat); }, J);
 
     std::vector<PetscInt> steps;
     solver.set_update([&steps](PetscInt step) { steps.push_back(step); });
@@ -535,8 +535,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // untouched
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual_nest, b_nest);
-    solver.set_J([](const Vec x, Mat Jmat, Mat)
-                 { assemble_jacobian_nest(x, Jmat); }, J_nest);
+    solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                 { assemble_jacobian_nest(xk, Jmat); }, J_nest);
     solver.set_options_prefix("nest_");
     solver.set_from_options();
 
@@ -593,8 +593,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
       // +4: with no preconditioner matrix given, the Jacobian is used as
       // its own preconditioner, so it is passed twice to set_J and twice
       // to SNESSetJacobian, each of which references both arguments
-      solver.set_J([](const Vec x, Mat Jmat, Mat)
-                   { assemble_jacobian(x, Jmat); }, J);
+      solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                   { assemble_jacobian(xk, Jmat); }, J);
       CHECK(ref_count(J) == J_count + 4);
     }
 
@@ -615,8 +615,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
       nls::petsc::SNESSolver solver(comm);
       // +2 each: the two matrices are distinct, so each is referenced
       // once by the solver and once by the SNES
-      solver.set_J([](const Vec x, Mat Jmat, Mat)
-                   { assemble_jacobian(x, Jmat); }, J, P);
+      solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                   { assemble_jacobian(xk, Jmat); }, J, P);
       CHECK(ref_count(J) == J_count + 2);
       CHECK(ref_count(P) == P_count + 2);
     }
@@ -637,8 +637,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
       nls::petsc::SNESSolver solver(snes, true);
       CHECK(ref_count(snes) == snes_count + 1);
       solver.set_F(assemble_residual, b);
-      solver.set_J([](const Vec x, Mat Jmat, Mat)
-                   { assemble_jacobian(x, Jmat); }, J);
+      solver.set_J([](const Vec xk, Mat Jmat, Mat)
+                   { assemble_jacobian(xk, Jmat); }, J);
       CHECK(solver.solve(x) > 0);
       check_solution(x, solver.snes());
     }

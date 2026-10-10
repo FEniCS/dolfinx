@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,11 +9,13 @@
 #if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
 
 #include "array.h"
+#include "assemble.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include "pycoeff.h"
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/petsc.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
@@ -24,7 +26,6 @@
 #include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/fem/sparsitybuild.h>
-#include <dolfinx/fem/utils.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -56,47 +57,26 @@ void declare_petsc_discrete_operators(nb::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
+        dolfinx::la::SparsityPattern sp
+            = create_sparsity_entity_closure(V0, V1);
 
-        auto dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        auto dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        MPI_Comm comm = mesh->comm();
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        auto c = std::ranges::views::iota(0, map->size_local());
-        dolfinx::fem::sparsitybuild::cells(sp, std::pair{c, c},
-                                           {*dofmap1, *dofmap0});
-        sp.finalize();
-
-        // Build operator
+        // Build operator. As for the gradient, zeros are kept: the
+        // sparsity is the operator's exact one, so a stored zero
+        // records a coupling the operator may occupy.
+        MPI_Comm comm = V0.mesh()->comm();
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         try
         {
-          dolfinx::common::petsc::check(
-              MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE),
-              "MatSetOption");
           dolfinx::fem::discrete_curl<U, T>(
               V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
         }
         catch (...)
         {
-          // Already unwinding, so a thrown error here calls
-          // std::terminate rather than propagating
-          dolfinx::common::petsc::check(MatDestroy(&A), "MatDestroy");
+          // Destroy A before rethrowing. Report rather than throw on
+          // failure: throwing here would replace the in-flight exception.
+          if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
+            spdlog::error("MatDestroy failed with error code {}.",
+                          static_cast<int>(ierr));
           throw;
         }
         return A;
@@ -108,39 +88,17 @@ void declare_petsc_discrete_operators(nb::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
+        dolfinx::la::SparsityPattern sp
+            = create_sparsity_entity_closure(V0, V1);
 
-        auto dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        auto dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        MPI_Comm comm = mesh->comm();
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        auto c = std::ranges::views::iota(0, map->size_local());
-        dolfinx::fem::sparsitybuild::cells(sp, std::pair{c, c},
-                                           {*dofmap1, *dofmap0});
-        sp.finalize();
-
-        // Build operator
+        // Build operator. Unlike the other discrete operators, zeros
+        // are kept: the sparsity is the operator's exact one, so a
+        // stored zero records a coupling the operator may occupy, which
+        // is what PCBDDC's Nedelec support reads the matrix for.
+        MPI_Comm comm = V0.mesh()->comm();
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         try
         {
-          dolfinx::common::petsc::check(
-              MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE),
-              "MatSetOption");
           dolfinx::fem::discrete_gradient<T, U>(
               *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
               {*V1.element(), *V1.dofmap()},
@@ -148,9 +106,11 @@ void declare_petsc_discrete_operators(nb::module_& m)
         }
         catch (...)
         {
-          // Already unwinding, so a thrown error here calls
-          // std::terminate rather than propagating
-          dolfinx::common::petsc::check(MatDestroy(&A), "MatDestroy");
+          // Destroy A before rethrowing. Report rather than throw on
+          // failure: throwing here would replace the in-flight exception.
+          if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
+            spdlog::error("MatDestroy failed with error code {}.",
+                          static_cast<int>(ierr));
           throw;
         }
         return A;
@@ -161,33 +121,10 @@ void declare_petsc_discrete_operators(nb::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
-
-        auto dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        auto dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        MPI_Comm comm = mesh->comm();
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        auto c = std::ranges::views::iota(0, map->size_local());
-        dolfinx::fem::sparsitybuild::cells(sp, std::pair{c, c},
-                                           {*dofmap1, *dofmap0});
-        sp.finalize();
+        dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
 
         // Build operator
+        MPI_Comm comm = V0.mesh()->comm();
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         try
         {
@@ -199,9 +136,11 @@ void declare_petsc_discrete_operators(nb::module_& m)
         }
         catch (...)
         {
-          // Already unwinding, so a thrown error here calls
-          // std::terminate rather than propagating
-          dolfinx::common::petsc::check(MatDestroy(&A), "MatDestroy");
+          // Destroy A before rethrowing. Report rather than throw on
+          // failure: throwing here would replace the in-flight exception.
+          if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
+            spdlog::error("MatDestroy failed with error code {}.",
+                          static_cast<int>(ierr));
           throw;
         }
         return A;

@@ -105,7 +105,6 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import common, graph, has_kahip, has_parmetis, has_ptscotch
-from dolfinx import cpp as _cpp
 from dolfinx.fem import coordinate_element
 from dolfinx.mesh import (
     CellType,
@@ -451,7 +450,7 @@ if weighted_partitioner is not None:
 #
 # +
 def identity_cell_ordering(
-    dual_graph: _cpp.graph.AdjacencyList_int32,
+    dual_graph: graph.AdjacencyList[np.int32],
 ) -> npt.NDArray[np.int32]:
     """Preserve the local cell order after partitioning."""
     return np.arange(dual_graph.num_nodes, dtype=np.int32)
@@ -521,8 +520,8 @@ def redistribute_by_partitioner(
         the input ``cells``.
     """
     centroid = compute_cell_centroids(comm, [cell_type], [cells.reshape(-1)], comm, x)
-    dest = graph.adjacencylist(partitioner(comm, comm.size, centroid, None))._cpp_object
-    recv, _, _, _ = graph.distribute(comm, cells, dest)  # type: ignore[arg-type]
+    dest = graph.adjacencylist(partitioner(comm, comm.size, centroid, None))
+    recv, _, _, _ = graph.distribute(comm, cells, dest)
     return recv
 
 

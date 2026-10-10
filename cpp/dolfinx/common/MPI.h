@@ -17,10 +17,12 @@
 #include <complex>
 #include <concepts>
 #include <cstdint>
+#include <format>
 #include <iterator>
 #include <numeric>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -53,14 +55,15 @@ public:
   /// Move constructor
   Comm(Comm&& comm) noexcept;
 
-  // Disable copy assignment operator
+  /// Destructor (frees wrapped communicator)
+  ~Comm();
+
+  // Copy assignment (deleted). MPI_Comm_dup is collective; assigning into
+  // a live Comm would hide a collective dup and free behind `=`.
   Comm& operator=(const Comm& comm) = delete;
 
   /// Move assignment operator
   Comm& operator=(Comm&& comm) noexcept;
-
-  /// Destructor (frees wrapped communicator)
-  ~Comm();
 
   /// Return the underlying MPI_Comm object
   MPI_Comm comm() const noexcept;
@@ -79,9 +82,12 @@ int size(MPI_Comm comm);
 
 /// @brief Check MPI error code. If the error code is not equal to
 /// MPI_SUCCESS, then std::abort is called.
+/// @note Aborts rather than throwing: MPI's state is undefined after an
+/// error, so there is nothing to recover into. Being `noexcept` makes
+/// this safe to call from a destructor.
 /// @param[in] comm MPI communicator.
 /// @param[in] code Error code returned by an MPI function call.
-void check_error(MPI_Comm comm, int code);
+void check_error(MPI_Comm comm, int code) noexcept;
 
 /// @brief Return which rank owns index in global range [0, N - 1]
 /// (inverse of MPI::local_range).
@@ -394,6 +400,65 @@ public:
 private:
   // Created contiguous type, or MPI_DATATYPE_NULL if none was created
   MPI_Datatype _type = MPI_DATATYPE_NULL;
+};
+
+/// @brief Holder for the request of a non-blocking operation.
+///
+/// `MPI_Request` is a plain handle, so a class storing one bare cannot
+/// use a defaulted move: the moved-from object would be left naming the
+/// same request as the target. This holder transfers the request on
+/// move and leaves the source null, which keeps the owner's own move
+/// operations `= default` and correct as members are added.
+///
+/// Copying does not transfer a request in flight -- the new request is
+/// null -- so a copied owner does not wait on an operation it did not
+/// start. The owner's copy operations therefore stay usable.
+///
+/// @note Nothing is released on destruction. A request is consumed by
+/// the `MPI_Wait` that completes it, which the owner is responsible
+/// for.
+class Request
+{
+public:
+  /// Create a null request
+  Request() = default;
+
+  /// Copy constructor. The copy has no request in flight.
+  Request(const Request&) noexcept {}
+
+  /// Move constructor
+  Request(Request&& request) noexcept
+      : _request(std::exchange(request._request, MPI_REQUEST_NULL))
+  {
+  }
+
+  /// Destructor
+  ~Request() = default;
+
+  /// Copy assignment. Leaves this with no request in flight.
+  Request& operator=(const Request&) noexcept
+  {
+    _request = MPI_REQUEST_NULL;
+    return *this;
+  }
+
+  /// Move assignment
+  Request& operator=(Request&& request) noexcept
+  {
+    _request = std::exchange(request._request, MPI_REQUEST_NULL);
+    return *this;
+  }
+
+  /// @brief The handle to pass to MPI.
+  /// @return Request, `MPI_REQUEST_NULL` if no operation is in flight.
+  MPI_Request& request() noexcept { return _request; }
+
+  /// @brief The handle.
+  /// @return Request, `MPI_REQUEST_NULL` if no operation is in flight.
+  const MPI_Request& request() const noexcept { return _request; }
+
+private:
+  MPI_Request _request = MPI_REQUEST_NULL;
 };
 
 //---------------------------------------------------------------------------
@@ -811,8 +876,13 @@ std::vector<std::ranges::range_value_t<U>>
 distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                 MPI_Comm comm1, const U& x, int shape1)
 {
-  assert(shape1 > 0);
-  assert(x.size() % shape1 == 0);
+  if (shape1 <= 0)
+    throw std::invalid_argument("distribute_data: shape1 must be positive");
+  if (x.size() % shape1 != 0)
+  {
+    throw std::invalid_argument(
+        "distribute_data: x.size() must be a multiple of shape1");
+  }
   const std::int64_t shape0_local = x.size() / shape1;
 
   // A rank outside comm1 must hold no data. Check this collectively before
@@ -824,13 +894,30 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
         = MPI_Allreduce(&invalid_local, &invalid, 1, MPI_INT, MPI_MAX, comm0);
     dolfinx::MPI::check_error(comm0, err);
     if (invalid)
-      throw std::runtime_error("Non-empty data on null MPI communicator");
+      throw std::invalid_argument("Non-empty data on null MPI communicator");
   }
 
   std::int64_t shape0 = 0;
   int err
       = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm0);
   dolfinx::MPI::check_error(comm0, err);
+
+#ifndef NDEBUG
+  {
+    int invalid_local = !std::ranges::all_of(indices, [shape0](std::int64_t i)
+                                             { return i >= 0 and i < shape0; });
+    int invalid = 0;
+    err = MPI_Allreduce(&invalid_local, &invalid, 1, MPI_INT, MPI_MAX, comm0);
+    dolfinx::MPI::check_error(comm0, err);
+    if (invalid)
+    {
+      throw std::out_of_range(
+          std::format("distribute_data: index outside the global row range "
+                      "[0, {}) of the distributed data.",
+                      shape0));
+    }
+  }
+#endif
 
   std::int64_t rank_offset = -1;
   if (comm1 != MPI_COMM_NULL)

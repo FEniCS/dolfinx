@@ -6,139 +6,44 @@
 
 #pragma once
 
-#include "Function.h"
 #include "FunctionSpace.h"
-#include "assemble_expression_impl.h"
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
 #include "pack.h"
 #include "traits.h"
-#include "utils.h"
 #include <algorithm>
+#include <array>
 #include <basix/mdspan.hpp>
+#include <cstddef>
 #include <cstdint>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/common/types.h>
+#include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/EntityMap.h>
+#include <format>
+#include <functional>
+#include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <span>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 /// @file assembler.h
-/// @brief Functions supporting assembly of finite element fem::Form and
-/// fem::Expression.
+/// @brief Functions supporting assembly of a finite element fem::Form.
 
 namespace dolfinx::fem
 {
 template <dolfinx::scalar T, std::floating_point U>
 class DirichletBC;
 template <dolfinx::scalar T, std::floating_point U>
-class Expression;
-template <dolfinx::scalar T, std::floating_point U>
 class Form;
 template <std::floating_point T>
 class FunctionSpace;
-
-/// @brief Evaluate an Expression on cells or facets.
-///
-/// This function accepts packed coefficient data, which allows it be
-/// called without re-packing all coefficient data at each evaluation.
-///
-/// @tparam T Scalar type.
-/// @tparam U Geometry type
-/// @param[in,out] values Array to fill with computed values. Shape is
-/// `(num_entities, num_points, value_size, num_argument_dofs)` and
-/// storage is row-major.
-/// @param[in] e Expression to evaluate.
-/// @param[in] coeffs Packed coefficients for the Expressions. Typically
-/// computed using fem::pack_coefficients.
-/// @param[in] constants Packed constant data. Typically computed using
-/// fem::pack_constants.
-/// @param[in] entities Mesh entities to evaluate the expression over.
-/// For cells it is a list of cell indices. For facets is is a list of
-/// (cell index, local facet index) index pairs, i.e. `entities=[cell0,
-/// facet_local0, cell1, facet_local1, ...]`.
-/// @param[in] mesh Mesh that the Expression is evaluated on.
-/// @param[in] element Argument element and argument space dimension.
-template <dolfinx::scalar T, std::floating_point U>
-void tabulate_expression(
-    std::span<T> values, const fem::Expression<T, U>& e,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<const T> constants, const mesh::Mesh<U>& mesh,
-    fem::MDSpan2 auto entities,
-    std::optional<
-        std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
-        element)
-{
-  // Check that domain is the same as mesh of the expression
-  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
-  {
-    throw std::invalid_argument(
-        "Expression was created on a different mesh. Cannot tabulate.");
-  }
-  auto [X, Xshape] = e.X();
-  impl::tabulate_expression(values, e.kernel(), Xshape, e.value_size(), coeffs,
-                            constants, mesh, entities, element);
-}
-
-/// @brief Evaluate an Expression on cells or facets.
-///
-/// @tparam T Scalar type.
-/// @tparam U Geometry type
-/// @param[in,out] values Array to fill with computed values. Row major
-/// storage. Sizing should be `(num_cells, num_points * value_size *
-/// num_all_argument_dofs columns)`. facet index) tuples. Array is
-/// flattened per entity.
-/// @param[in] e Expression to evaluate.
-/// @param[in] mesh Mesh to compute `e` on.
-/// @param[in] entities Mesh entities to evaluate the expression over.
-/// For expressions executed on cells, rank is 1 and size is the number
-/// of cells. For expressions executed on facets rank is 2, and shape is
-/// `(num_facets, 2)`, where `entities[i, 0]` is the cell index and
-/// `entities[i, 1]` is the local index of the facet relative to the
-/// cell.
-template <dolfinx::scalar T, std::floating_point U>
-void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
-                         const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
-{
-  // Check that domain is the same as mesh of the expression
-  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
-  {
-    throw std::invalid_argument(
-        "Expression was created on a different mesh. Cannot tabulate.");
-  }
-
-  std::optional<
-      std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
-      element = std::nullopt;
-  if (auto V = e.argument_space(); V)
-  {
-    std::size_t num_argument_dofs
-        = V->dofmap()->element_dof_layout().num_dofs() * V->dofmap()->bs();
-    assert(V->element());
-    element = {std::cref(*V->element()), num_argument_dofs};
-  }
-
-  std::vector<int> coffsets = e.coefficient_offsets();
-  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
-      = e.coefficients();
-  std::vector<T> coeffs(entities.extent(0) * coffsets.back());
-  int cstride = coffsets.back();
-  {
-    std::vector<std::reference_wrapper<const Function<T, U>>> c;
-    std::ranges::transform(coefficients, std::back_inserter(c),
-                           [](auto c) -> const Function<T, U>& { return *c; });
-    fem::pack_coefficients(c, mesh, entities, e.entity_maps(), coffsets,
-                           std::span(coeffs));
-  }
-  std::vector<T> constants = fem::pack_constants(e);
-
-  tabulate_expression<T, U>(
-      values, e, md::mdspan(coeffs.data(), entities.extent(0), cstride),
-      std::span<const T>(constants), mesh, entities, element);
-}
 
 // -- Helper functions -----------------------------------------------------
 
@@ -257,6 +162,219 @@ void assemble_vector(V&& b, const Form<T, U>& L)
                   make_coefficients_span(coefficients));
 }
 
+namespace impl
+{
+/// @brief Mark the dofs of `V` (owned and ghost, unrolled) constrained
+/// by the boundary conditions in `bcs` that are defined on `V` or a
+/// subspace of it.
+/// @return Dof markers, or an empty array if no boundary condition
+/// applies.
+template <dolfinx::scalar T, std::floating_point U>
+std::vector<std::int8_t> bc_dof_markers(
+    const FunctionSpace<U>& V,
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
+{
+  std::vector<std::int8_t> markers;
+  for (auto& bc : bcs)
+  {
+    assert(bc.get().function_space());
+    if (V.contains(*bc.get().function_space()))
+    {
+      if (markers.empty())
+      {
+        std::shared_ptr<const DofMap> dofmap = V.dofmaps().front();
+        std::shared_ptr<const common::IndexMap> map = dofmap->index_map;
+        assert(map);
+        markers.resize(dofmap->index_map_bs()
+                           * (map->size_local() + map->num_ghosts()),
+                       0);
+      }
+      bc.get().mark_dofs(markers);
+    }
+  }
+  return markers;
+}
+
+/// @brief Mark the dofs of the test and trial spaces of `a` that the
+/// boundary conditions in `bcs` constrain.
+///
+/// Markers depend only on the space, so a form whose test and trial
+/// spaces are the same marks its dofs once and shares the array
+/// between its rows and its columns. The two returned spans are then
+/// the same array rather than equal copies.
+///
+/// @param[in] a Bilinear form whose spaces are marked.
+/// @param[in] bcs Boundary conditions. Only those defined on a space
+/// or a subspace of it mark that space.
+/// @param[out] storage Backing storage for the returned spans, which
+/// are views into it and are valid for as long as it is.
+/// @return Markers on the test space, indexing the rows, and on the
+/// trial space, indexing the columns.
+template <dolfinx::scalar T, std::floating_point U>
+std::array<std::span<const std::int8_t>, 2> bc_dof_markers_pair(
+    const Form<T, U>& a,
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs,
+    std::array<std::vector<std::int8_t>, 2>& storage)
+{
+  storage[0] = bc_dof_markers(*a.function_spaces().at(0), bcs);
+  std::span<const std::int8_t> marker0(storage[0]);
+  if (a.function_spaces().at(0) == a.function_spaces().at(1))
+    return {marker0, marker0};
+
+  storage[1] = bc_dof_markers(*a.function_spaces().at(1), bcs);
+  return {marker0, std::span<const std::int8_t>(storage[1])};
+}
+
+/// @brief Constrained dof markers and boundary condition values on the
+/// trial space of each form in `a`, as used by apply_lifting().
+/// @return Markers and values for each block `j`, both empty if `a[j]`
+/// is null or `bcs1[j]` is empty.
+template <dolfinx::scalar T, std::floating_point U>
+std::pair<std::vector<std::vector<std::int8_t>>, std::vector<std::vector<T>>>
+bc_lifting_data(
+    const std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>>&
+        a,
+    const std::vector<
+        std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1)
+{
+  if (a.size() != bcs1.size())
+  {
+    throw std::invalid_argument(
+        "Mismatch in size between a and bcs in assembler.");
+  }
+
+  std::vector<std::vector<std::int8_t>> markers(a.size());
+  std::vector<std::vector<T>> values(a.size());
+  for (std::size_t j = 0; j < a.size(); ++j)
+  {
+    if (a[j] and !bcs1[j].empty())
+    {
+      std::shared_ptr<const DofMap> dofmap
+          = a[j]->get().function_spaces().at(1)->dofmaps().front();
+      std::shared_ptr<const common::IndexMap> map1 = dofmap->index_map;
+      assert(map1);
+      const std::int32_t crange
+          = dofmap->index_map_bs() * (map1->size_local() + map1->num_ghosts());
+      markers[j].assign(crange, 0);
+      values[j].assign(crange, 0);
+      for (auto& bc : bcs1[j])
+      {
+        bc.get().mark_dofs(markers[j]);
+        bc.get().set(values[j], std::nullopt, 1);
+      }
+    }
+  }
+
+  return {std::move(markers), std::move(values)};
+}
+} // namespace impl
+
+/// @brief Modify the right-hand side vector to account for constraints
+/// (Dirichlet boundary condition constraints), with the constrained
+/// dofs and their values given as arrays.
+///
+/// Computes
+/// \f[
+///  b \leftarrow b - \alpha A_{j}^{(1)} (g_{j} - x_{j})
+/// \f]
+/// for each block `j`, as described in the apply_lifting() overload
+/// that takes Dirichlet boundary conditions. That overload builds
+/// `bc_markers1` and `bc_values1` from the boundary conditions and calls
+/// this function.
+///
+/// @note Ghost contributions are not accumulated (not sent to owner).
+/// Caller is responsible for reverse-scatter to update the ghosts.
+///
+/// @param[in,out] b The vector to modify inplace.
+/// @param[in] a List of bilinear forms, where `a[j]` is the form that
+/// generates the matrix \f$A_{j}\f$. All forms in `a` must share the
+/// same test function space. The trial function spaces can differ.
+/// @param[in] constants Constant data appearing in the forms `a`.
+/// @param[in] coeffs Coefficient data appearing in the forms `a`.
+/// @param[in] bc_markers1 Constrained dof markers on the trial space of
+/// `a[j]`, owned and ghost (unrolled): `bc_markers1[j][i]` is non-zero
+/// if dof `i` is constrained. An empty `bc_markers1[j]` means block `j`
+/// has no constraints and is skipped.
+/// @param[in] bc_values1 Boundary condition values \f$g_{j}\f$, with
+/// `bc_values1[j][i]` the value for dof `i`. Read only where
+/// `bc_markers1[j][i]` is non-zero. Must have the same length as
+/// `bc_markers1[j]`.
+/// @param[in] x0 The vectors \f$x_{j}\f$. If empty, \f$x_{j}\f$ is
+/// treated as zero. Otherwise must have the same length as `a`.
+/// @param[in] alpha Scalar used in the modification of `b`.
+template <typename V,
+          std::floating_point U
+          = scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
+  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
+void apply_lifting(
+    V&& b,
+    const std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>>&
+        a,
+    const std::vector<std::span<const T>>& constants,
+    const std::vector<std::map<std::pair<IntegralType, int>,
+                               std::pair<std::span<const T>, int>>>& coeffs,
+    const std::vector<std::span<const std::int8_t>>& bc_markers1,
+    const std::vector<std::span<const T>>& bc_values1,
+    const std::vector<std::span<const T>>& x0, T alpha)
+{
+  // If all forms are null, there is nothing to do
+  if (std::ranges::all_of(a, [](auto ai) { return !ai; }))
+    return;
+
+  common::Timer t("[Apply lifting]");
+
+  if (!x0.empty() and x0.size() != a.size())
+  {
+    throw std::invalid_argument(
+        "Mismatch in size between x0 and bilinear form in assembler.");
+  }
+
+  if (bc_markers1.size() != a.size() or bc_values1.size() != a.size())
+  {
+    throw std::invalid_argument(
+        "Mismatch in size between a and bc markers/values in assembler.");
+  }
+
+  for (std::size_t j = 0; j < a.size(); ++j)
+  {
+    if (!a[j] or bc_markers1[j].empty())
+      continue;
+
+    assert(a[j]->get().function_spaces().at(0));
+    auto V1 = a[j]->get().function_spaces()[1];
+    assert(V1);
+
+    std::shared_ptr<const DofMap> dofmap = V1->dofmaps().front();
+    auto map1 = dofmap->index_map;
+    assert(map1);
+    const std::size_t crange
+        = dofmap->index_map_bs() * (map1->size_local() + map1->num_ghosts());
+    if (bc_markers1[j].size() != crange or bc_values1[j].size() != crange)
+    {
+      throw std::invalid_argument(std::format(
+          "bc markers/values for block {} have length {}/{}, expected {}.", j,
+          bc_markers1[j].size(), bc_values1[j].size(), crange));
+    }
+
+    const int bs0 = a[j]->get().function_spaces()[0]->dofmaps().front()->bs();
+    const int bs1 = dofmap->bs();
+
+    std::span<const T> _x0;
+    if (!x0.empty())
+      _x0 = x0[j];
+
+    impl::dispatch_bs(bs0, bs1,
+                      [&b, &a, j, &constants, &coeffs, &bc_values1,
+                       &bc_markers1, &_x0, alpha](auto bs0, auto bs1)
+                      {
+                        impl::lift_bc(b, a[j]->get(), bs0, bs1, constants[j],
+                                      coeffs[j], bc_values1[j], bc_markers1[j],
+                                      _x0, alpha);
+                      });
+  }
+}
+
 /// @brief Modify the right-hand side vector to account for constraints
 /// (Dirichlet boundary condition constraints). This modification is
 /// known as 'lifting'.
@@ -323,6 +441,11 @@ void assemble_vector(V&& b, const Form<T, U>& L)
 /// @note Boundary condition values are *not* set in `b` by this
 /// function. Use DirichletBC::set to set values in `b`.
 ///
+/// @note Convenience overload for callers that have boundary
+/// conditions. It rebuilds the constrained dof markers and values on
+/// every call, and should not be called internally by the library;
+/// call the overload taking `bc_markers1` and `bc_values1` instead.
+///
 /// @param[in,out] b The vector to modify inplace.
 /// @param[in] a List of bilinear forms, where `a[i]` is the form that
 /// generates the matrix \f$A_{i}\f$. All forms in `a` must share the
@@ -350,75 +473,13 @@ void apply_lifting(
         std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T alpha)
 {
-  // If all forms are null, there is nothing to do
-  if (std::ranges::all_of(a, [](auto ai) { return !ai; }))
-    return;
-
-  common::Timer t("[Apply lifting]");
-
-  if (!x0.empty() and x0.size() != a.size())
-  {
-    throw std::invalid_argument(
-        "Mismatch in size between x0 and bilinear form in assembler.");
-  }
-
-  if (a.size() != bcs1.size())
-  {
-    throw std::invalid_argument(
-        "Mismatch in size between a and bcs in assembler.");
-  }
-
-  // Reused across iterations so `assign` below can recycle the
-  // existing buffer instead of reallocating for every block.
-  std::vector<std::int8_t> bc_markers1;
-  std::vector<T> bc_values1;
-  for (std::size_t j = 0; j < a.size(); ++j)
-  {
-    if (a[j] and !bcs1[j].empty())
-    {
-      assert(a[j]->get().function_spaces().at(0));
-      auto V1 = a[j]->get().function_spaces()[1];
-      assert(V1);
-
-      const int bs0 = a[j]->get().function_spaces()[0]->dofmaps().front()->bs();
-      const int bs1 = V1->dofmaps().front()->bs();
-
-      std::span<const T> _x0;
-      if (!x0.empty())
-        _x0 = x0[j];
-
-      std::shared_ptr<const DofMap> dofmap = V1->dofmaps().front();
-      auto map1 = dofmap->index_map;
-      const int map_bs1 = dofmap->index_map_bs();
-      assert(map1);
-      const int crange = map_bs1 * (map1->size_local() + map1->num_ghosts());
-      bc_markers1.assign(crange, false);
-      bc_values1.assign(crange, 0);
-      for (auto& bc : bcs1[j])
-      {
-        bc.get().mark_dofs(bc_markers1);
-        bc.get().set(bc_values1, std::nullopt, 1);
-      }
-
-      if (bs0 == 1 and bs1 == 1)
-      {
-        impl::lift_bc(b, a[j]->get(), std::integral_constant<int, 1>{},
-                      std::integral_constant<int, 1>{}, constants[j], coeffs[j],
-                      std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
-      }
-      else if (bs0 == 3 and bs1 == 3)
-      {
-        impl::lift_bc(b, a[j]->get(), std::integral_constant<int, 3>{},
-                      std::integral_constant<int, 3>{}, constants[j], coeffs[j],
-                      std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
-      }
-      else
-      {
-        impl::lift_bc(b, a[j]->get(), bs0, bs1, constants[j], coeffs[j],
-                      std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
-      }
-    }
-  }
+  auto [bc_markers1, bc_values1] = impl::bc_lifting_data(a, bcs1);
+  apply_lifting(
+      b, a, constants, coeffs,
+      std::vector<std::span<const std::int8_t>>(bc_markers1.begin(),
+                                                bc_markers1.end()),
+      std::vector<std::span<const T>>(bc_values1.begin(), bc_values1.end()), x0,
+      alpha);
 }
 
 /// @brief Modify the right-hand side vector to account for constraints
@@ -436,6 +497,11 @@ void apply_lifting(
 ///
 /// @note Boundary condition values are *not* set in `b` by this
 /// function. Use DirichletBC::set to set values in `b`.
+///
+/// @note Convenience overload for callers that have boundary
+/// conditions. It rebuilds the constrained dof markers and values on
+/// every call, and should not be called internally by the library;
+/// call the overload taking `bc_markers1` and `bc_values1` instead.
 ///
 /// @param[in,out] b The vector to modify inplace.
 /// @param[in] a List of bilinear forms, where `a[i]` is the form that
@@ -490,7 +556,13 @@ void apply_lifting(
   std::ranges::transform(coeffs, std::back_inserter(_coeffs),
                          [](auto& c) { return make_coefficients_span(c); });
 
-  apply_lifting(b, a, _constants, _coeffs, bcs1, x0, alpha);
+  auto [bc_markers1, bc_values1] = impl::bc_lifting_data(a, bcs1);
+  apply_lifting(
+      b, a, _constants, _coeffs,
+      std::vector<std::span<const std::int8_t>>(bc_markers1.begin(),
+                                                bc_markers1.end()),
+      std::vector<std::span<const T>>(bc_values1.begin(), bc_values1.end()), x0,
+      alpha);
 }
 
 // -- Matrices ---------------------------------------------------------------
@@ -533,56 +605,12 @@ void assemble_matrix(
                                coefficients, dof_marker0, dof_marker1);
 }
 
-/// @brief Assemble bilinear form into a matrix
-/// @param[in] mat_add The function for adding values into the matrix.
-/// @param[in] a The bilinear from to assemble.
-/// @param[in] constants Constants that appear in `a`.
-/// @param[in] coefficients Coefficients that appear in `a`.
-/// @param[in] bcs Boundary conditions to apply. For boundary condition
-/// dofs the row and column are zeroed. The diagonal  entry is not set.
-template <dolfinx::scalar T, std::floating_point U>
-void assemble_matrix(
-    auto mat_add, const Form<T, U>& a, std::span<const T> constants,
-    const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients,
-    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
-{
-  // Index maps for dof ranges
-  // NOTE: For mixed-topology meshes, there will be multiple DOF maps,
-  // but the index maps are the same.
-  auto map0 = a.function_spaces().at(0)->dofmaps().front()->index_map;
-  auto map1 = a.function_spaces().at(1)->dofmaps().front()->index_map;
-  auto bs0 = a.function_spaces().at(0)->dofmaps().front()->index_map_bs();
-  auto bs1 = a.function_spaces().at(1)->dofmaps().front()->index_map_bs();
-
-  // Build dof markers
-  std::vector<std::int8_t> dof_marker0, dof_marker1;
-  assert(map0);
-  std::int32_t dim0 = bs0 * (map0->size_local() + map0->num_ghosts());
-  assert(map1);
-  std::int32_t dim1 = bs1 * (map1->size_local() + map1->num_ghosts());
-  for (std::size_t k = 0; k < bcs.size(); ++k)
-  {
-    assert(bcs[k].get().function_space());
-    if (a.function_spaces().at(0)->contains(*bcs[k].get().function_space()))
-    {
-      dof_marker0.resize(dim0, false);
-      bcs[k].get().mark_dofs(dof_marker0);
-    }
-
-    if (a.function_spaces().at(1)->contains(*bcs[k].get().function_space()))
-    {
-      dof_marker1.resize(dim1, false);
-      bcs[k].get().mark_dofs(dof_marker1);
-    }
-  }
-
-  // Assemble
-  fem::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
-                       dof_marker1);
-}
-
 /// @brief Assemble bilinear form into a matrix.
+/// @note Convenience overload for callers that have boundary
+/// conditions. It rebuilds the dof markers on every call, and should
+/// not be called internally by the library; call the overload taking
+/// `dof_marker0` and `dof_marker1` instead.
+///
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear from to assemble.
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
@@ -597,9 +625,13 @@ void assemble_matrix(
   auto coefficients = allocate_coefficient_storage(a);
   pack_coefficients(a, coefficients);
 
+  std::array<std::vector<std::int8_t>, 2> markers;
+  auto [dof_marker0, dof_marker1] = impl::bc_dof_markers_pair(a, bcs, markers);
+
   // Assemble
-  assemble_matrix(mat_add, a, std::span(constants),
-                  make_coefficients_span(coefficients), bcs);
+  assemble_matrix(mat_add, a, std::span<const T>(constants),
+                  make_coefficients_span(coefficients), dof_marker0,
+                  dof_marker1);
 }
 
 /// @brief Assemble bilinear form into a matrix. Matrix must already be
@@ -625,65 +657,72 @@ void assemble_matrix(auto mat_add, const Form<T, U>& a,
   pack_coefficients(a, coefficients);
 
   // Assemble
-  impl::assemble_matrix<false>(mat_add, a, std::span(constants),
-                               make_coefficients_span(coefficients),
-                               dof_marker0, dof_marker1);
+  assemble_matrix(mat_add, a, std::span<const T>(constants),
+                  make_coefficients_span(coefficients), dof_marker0,
+                  dof_marker1);
 }
 
-/// @brief Sets a value to the diagonal of a matrix for specified rows.
+/// @brief Set a value on the diagonal of the locally owned rows that a
+/// Dirichlet boundary condition constrains.
 ///
-/// This function is typically called after assembly. The assembly
-/// function zeroes Dirichlet rows and columns. For block matrices, this
-/// function should normally be called only on the diagonal blocks, i.e.
-/// blocks for which the test and trial spaces are the same.
+/// Set only locally owned rows to prevent accumulation when finalising
+/// `A`. A constrained degree-of-freedom that is a ghost on the calling
+/// rank is left untouched here and is set by the rank that owns it, so
+/// no communication is needed from this function.
 ///
-/// @param[in] set_fn The function for setting values to a matrix.
-/// @param[in] rows Row blocks, in local indices, for which to add a
-/// value to the diagonal.
-/// @param[in] diagonal Value to add to the diagonal for the specified
-/// rows.
-template <dolfinx::scalar T>
-void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
-                  T diagonal = 1.0)
-{
-  for (std::size_t i = 0; i < rows.size(); ++i)
-  {
-    std::span diag_span(&diagonal, 1);
-    set_fn(rows.subspan(i, 1), rows.subspan(i, 1), diag_span);
-  }
-}
-
-/// @brief Sets a value to the diagonal of the matrix for rows with a
-/// Dirichlet boundary conditions applied.
+/// This function is typically called after assembly, which zeroes
+/// Dirichlet rows and columns. For block matrices, it should normally
+/// be called only on the diagonal blocks, i.e. blocks for which the
+/// test and trial spaces are the same.
 ///
-/// This function is typically called after assembly. The assembly
-/// function zeroes Dirichlet rows and columns. This function adds the
-/// value only to rows that are locally owned, and therefore does not
-/// create a need for parallel communication. For block matrices, this
-/// function should normally be called only on the diagonal blocks, i.e.
-/// blocks for which the test and trial spaces are the same.
+/// @note Convenience overload for callers holding `V` and `bcs` rather
+/// than the row list, which it rebuilds on every call. Library code
+/// should cache the rows across repeated calls and set them with
+/// la::set_diagonal.
+///
+/// @note Each row is set exactly once, even where several boundary
+/// conditions constrain the same degree-of-freedom, so `set_fn` may
+/// add rather than insert. Every condition sets the same `diagonal`
+/// value, so their order in `bcs` does not matter here.
+///
 /// @param[in] set_fn The function for setting values to a matrix.
 /// @param[in] V The function space for the rows and columns of the
 /// matrix. It is used to extract only the Dirichlet boundary conditions
 /// that are define on V or subspaces of V.
-/// @param[in] bcs The Dirichlet boundary conditions.
-/// @param[in] diagonal Value to add to the diagonal for rows with a
-/// boundary condition applied.
+/// @param[in] bcs The Dirichlet boundary conditions. Only conditions
+/// defined on `V` or a subspace of it contribute, and of those only
+/// their locally owned dofs.
+/// @param[in] diagonal Value to set on the diagonal of each owned
+/// constrained row.
 template <dolfinx::scalar T, std::floating_point U>
 void set_diagonal(
     auto set_fn, const FunctionSpace<U>& V,
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs,
-    T diagonal = 1.0)
+    T diagonal = T(1))
 {
   spdlog::debug("Set diagonal");
+
+  std::vector<std::int32_t> rows;
   for (auto& bc : bcs)
   {
     if (V.contains(*bc.get().function_space()))
     {
       const auto [dofs, range] = bc.get().dof_indices();
-      set_diagonal(set_fn, dofs.first(range), diagonal);
+      std::span<const std::int32_t> owned = dofs.first(range);
+      rows.insert(rows.end(), owned.begin(), owned.end());
     }
   }
+
+  // A condition's dofs are strictly increasing (a DirichletBC
+  // precondition), so one condition needs no sort. Several give sorted
+  // runs, which a comparison sort handles poorly and which are often
+  // already in order, hence the check before radix sorting.
+  if (!std::ranges::is_sorted(rows))
+    dolfinx::radix_sort(rows);
+
+  // Overlapping conditions can repeat a row
+  rows.erase(std::ranges::unique(rows).begin(), rows.end());
+  la::set_diagonal(set_fn, rows, diagonal);
 }
 
 } // namespace dolfinx::fem

@@ -11,17 +11,15 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.common import IndexMap
-from dolfinx.cpp.la import BlockMode, SparsityPattern
-from dolfinx.la import matrix_csr
+from dolfinx.common import index_map
+from dolfinx.la import BlockMode, InsertMode, matrix_csr, set_diagonal, sparsity_pattern
 from dolfinx.mesh import GhostMode, create_unit_square
 
 
 def create_test_sparsity(n, bs):
-    im = IndexMap(MPI.COMM_WORLD, n)
-    sp = SparsityPattern(MPI.COMM_WORLD, [im, im], [bs, bs])
+    im = index_map(MPI.COMM_WORLD, n)
+    sp = sparsity_pattern(MPI.COMM_WORLD, [im, im], [bs, bs])
     if bs == 1:
         for i in range(2):
             for j in range(2):
@@ -33,7 +31,7 @@ def create_test_sparsity(n, bs):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_add(dtype):
+def test_add(dtype) -> None:
     # Regular CSR Matrix 6x6 with bs=1
     sp = create_test_sparsity(6, 1)
     mat1 = matrix_csr(sp, dtype=dtype)
@@ -77,7 +75,7 @@ def test_add(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_set(dtype):
+def test_set(dtype) -> None:
     mpi_size = MPI.COMM_WORLD.size
     # Regular CSR Matrix 6x6 with bs=1
     sp = create_test_sparsity(6, 1)
@@ -95,7 +93,7 @@ def test_set(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_set_blocked(dtype):
+def test_set_blocked(dtype) -> None:
     mpi_size = MPI.COMM_WORLD.size
     # Blocked CSR Matrix 3x3 with bs=2
     sp = create_test_sparsity(3, 2)
@@ -108,7 +106,7 @@ def test_set_blocked(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_distributed_csr(dtype):
+def test_distributed_csr(dtype) -> None:
     size = MPI.COMM_WORLD.size
     rank = MPI.COMM_WORLD.rank
     if size == 1:
@@ -122,8 +120,8 @@ def test_distributed_csr(dtype):
     ghosts = np.array(range(n * nbr, n * nbr + nghost), dtype=np.int64)
     owner = np.ones_like(ghosts, dtype=np.int32) * nbr
 
-    im = IndexMap(MPI.COMM_WORLD, n, ghosts, owner, 0)
-    sp = SparsityPattern(MPI.COMM_WORLD, [im, im], [1, 1])
+    im = index_map(MPI.COMM_WORLD, n, (ghosts, owner), tag=0)
+    sp = sparsity_pattern(MPI.COMM_WORLD, [im, im], [1, 1])
     for i in range(n):
         for j in range(n + nghost):
             sp.insert(i, j)
@@ -177,7 +175,7 @@ def test_set_block_matrix(dtype):
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_set_diagonal_distributed(dtype):
+def test_set_diagonal_distributed(dtype) -> None:
     mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=ghost_mode, dtype=mesh_dtype)
@@ -207,7 +205,7 @@ def test_set_diagonal_distributed(dtype):
 
     # set diagonal values
     value = dtype(1.0)
-    _cpp.fem.insert_diagonal(A._cpp_object, dofs, value)
+    set_diagonal(A, dofs, value)
 
     # check diagonal values: they should be 1.0, including ghost dofs
     diag = As.diagonal()
@@ -222,7 +220,7 @@ def test_set_diagonal_distributed(dtype):
     nlocal = index_map.size_local
     assert (diag[nlocal:] == dtype(0.0)).all()
 
-    data, offsets = index_map.index_to_dest_ranks(0)
+    data, offsets = index_map.index_to_dest_ranks()
     for dof in range(nlocal):
         owners = data[offsets[dof] : offsets[dof + 1]]
         assert diag[dof] == len(owners) + 1
@@ -234,7 +232,7 @@ def test_set_diagonal_distributed(dtype):
     # set diagonal values using dirichlet bc: this will set diagonal values of
     # owned rows only
     bc = fem.dirichletbc(dtype(0.0), dofs, V)
-    _cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], [bc._cpp_object], value)
+    fem.set_bc_diagonal(A, a.function_spaces[0], [bc], value)
 
     # check diagonal values: they should be 1.0, except ghost dofs
     diag = As.diagonal()
@@ -249,8 +247,98 @@ def test_set_diagonal_distributed(dtype):
     assert (As.diagonal()[:nlocal] == dtype(1.0)).all()
 
 
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_set_diagonal_per_row(dtype) -> None:
+    """Test setting a different diagonal value for each row."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 6, 5, dtype=np.real(dtype(0)).dtype)
+    V = fem.functionspace(mesh, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = fem.form(ufl.inner(u, v) * ufl.dx, dtype=dtype)
+    A = fem.create_matrix(a)
+    As = A.to_scipy(ghosted=True)
+
+    # Every other owned row, with value rows[i] + 1 on row rows[i]
+    rows = np.arange(0, V.dofmap.index_map.size_local, 2, dtype=np.int32)
+    diagonals = (rows + 1).astype(dtype)
+    set_diagonal(A, rows, diagonals)
+
+    diag = As.diagonal()
+    assert np.allclose(diag[rows], diagonals)
+    mask = np.ones(diag.shape[0], dtype=bool)
+    mask[rows] = False
+    assert np.allclose(diag[mask], 0.0)
+
+    # Adding the same values again doubles the diagonal
+    set_diagonal(A, rows, diagonals, InsertMode.add)
+    assert np.allclose(As.diagonal()[rows], 2 * diagonals)
+
+    # Adding a single value to every row
+    set_diagonal(A, rows, dtype(1), InsertMode.add)
+    assert np.allclose(As.diagonal()[rows], 2 * diagonals + 1)
+
+    # Inserting overwrites
+    set_diagonal(A, rows, diagonals)
+    assert np.allclose(As.diagonal()[rows], diagonals)
+
+    # Number of values must match number of rows
+    with pytest.raises(ValueError):
+        set_diagonal(A, rows, diagonals[:-1])
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_set_bc_diagonal_duplicate_rows(dtype):
+    """A row constrained by more than one condition is set once.
+
+    Checked with ``InsertMode.add``, where a repeated row would
+    otherwise double the diagonal.
+    """
+    mesh = create_unit_square(MPI.COMM_WORLD, 6, 5, dtype=np.real(dtype(0)).dtype)
+    V = fem.functionspace(mesh, ("Lagrange", 2))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = fem.form(ufl.inner(u, v) * ufl.dx, dtype=dtype)
+
+    # Constrain the first few owned dofs, with the second condition
+    # covering a subset of the first
+    n = min(V.dofmap.index_map.size_local, 8)
+    dofs0 = np.arange(n, dtype=np.int32)
+    bc0 = fem.dirichletbc(dtype(1), dofs0, V)
+    bc1 = fem.dirichletbc(dtype(2), dofs0[: n // 2], V)
+
+    # Adjoining ranges sharing their end point: the concatenation is
+    # already sorted, but still holds a duplicate
+    bc_lo = fem.dirichletbc(dtype(4), dofs0[: n // 2 + 1], V)
+    bc_hi = fem.dirichletbc(dtype(5), dofs0[n // 2 :], V)
+
+    # Reference: the rows of bc0 alone
+    A_ref = fem.create_matrix(a)
+    fem.set_bc_diagonal(A_ref, V, [bc0], dtype(1), InsertMode.add)
+    reference = A_ref.to_scipy(ghosted=True).diagonal()
+    assert np.allclose(reference[dofs0], 1.0)
+
+    for bcs in ([bc0, bc1], [bc_lo, bc_hi]):
+        A = fem.create_matrix(a)
+        fem.set_bc_diagonal(A, V, bcs, dtype(1), InsertMode.add)
+        assert np.allclose(A.to_scipy(ghosted=True).diagonal(), reference)
+
+
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_bad_entry(dtype):
+def test_bad_entry(dtype) -> None:
     sp = create_test_sparsity(6, 1)
     mat1 = matrix_csr(sp, dtype=dtype)
 
@@ -270,7 +358,7 @@ def test_bad_entry(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_eliminate_zeros_tolerance(dtype):
+def test_eliminate_zeros_tolerance(dtype) -> None:
     """Entries are removed from storage iff |value| <= tol (i.e. kept iff
     strictly greater than tol), and storage is compacted accordingly.
     """
@@ -313,7 +401,7 @@ def test_eliminate_zeros_tolerance(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_eliminate_zeros_default_tolerance(dtype):
+def test_eliminate_zeros_default_tolerance(dtype) -> None:
     """With no tolerance supplied, only exact structural zeros are removed;
     small-but-nonzero entries must survive.
 
@@ -348,7 +436,7 @@ def test_eliminate_zeros_default_tolerance(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_eliminate_zeros_no_change_when_nothing_within_tolerance(dtype):
+def test_eliminate_zeros_no_change_when_nothing_within_tolerance(dtype) -> None:
     """eliminate_zeros must be a no-op (and not corrupt data) when no
     entries fall within the given tolerance.
     """
@@ -366,7 +454,7 @@ def test_eliminate_zeros_no_change_when_nothing_within_tolerance(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_eliminate_zeros_blocked_partial(dtype):
+def test_eliminate_zeros_blocked_partial(dtype) -> None:
     """A block with any entry above tolerance must be kept in full, even
     though some of its other entries are within tolerance.
     """
@@ -385,13 +473,13 @@ def test_eliminate_zeros_blocked_partial(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_eliminate_zeros_blocked_whole_block(dtype):
+def test_eliminate_zeros_blocked_whole_block(dtype) -> None:
     """A block is only dropped from storage when *every* one of its
     bs0*bs1 entries is within tolerance; a block with even one entry
     above tolerance is kept in full, byte-for-byte.
     """
-    im = IndexMap(MPI.COMM_WORLD, 4)
-    sp = SparsityPattern(MPI.COMM_WORLD, [im, im], [2, 2])
+    im = index_map(MPI.COMM_WORLD, 4)
+    sp = sparsity_pattern(MPI.COMM_WORLD, [im, im], [2, 2])
     sp.insert(0, 1)
     sp.insert(2, 3)
     sp.finalize()
@@ -418,7 +506,7 @@ def test_eliminate_zeros_blocked_whole_block(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_eliminate_zeros_finalizes(dtype):
+def test_eliminate_zeros_finalizes(dtype) -> None:
     """eliminate_zeros() can shrink the sparsity, which invalidates the
     precomputed ghost-row communication pattern. Once called, further
     modification of the matrix must be rejected rather than silently

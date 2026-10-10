@@ -11,8 +11,7 @@ import numpy as np
 import pytest
 
 import dolfinx
-from dolfinx.common import IndexMap
-from dolfinx.cpp.la import SparsityPattern
+from dolfinx.common import index_map
 from dolfinx.fem import (
     Function,
     apply_lifting,
@@ -29,9 +28,16 @@ from dolfinx.mesh import create_unit_square, exterior_facet_indices
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, as_vector, div, dx, grad, inner
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_solver(dtype):
+def test_superlu_solver(dtype) -> None:
     """Manufactured Poisson and screened problem with exact solution u = x[1]**3.
 
     Test includes various checks that SuperLU_DIST Factor option works correctly
@@ -133,9 +139,16 @@ def test_superlu_solver(dtype):
     check_error(u_ex, uh_2)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_solver_blocked(dtype):
+def test_superlu_solver_blocked(dtype) -> None:
     """Vector Poisson problem on a vector Lagrange space (block size 2)."""
     from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 
@@ -189,16 +202,16 @@ def test_superlu_solver_blocked(dtype):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
 @pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="Hand-built single-rank matrix")
-def test_superlu_solver_asymmetric_blocks(dtype):
+def test_superlu_solver_asymmetric_blocks(dtype) -> None:
     """Hand-built MatrixCSR with bs[0] = 2 and bs[1] = 3 and final size 6 x 6."""
     from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 
     bs0, bs1 = 2, 3
     n_row_blocks, n_col_blocks = 3, 2
 
-    im_row = IndexMap(MPI.COMM_WORLD, n_row_blocks)
-    im_col = IndexMap(MPI.COMM_WORLD, n_col_blocks)
-    sp = SparsityPattern(MPI.COMM_WORLD, [im_row, im_col], [bs0, bs1])
+    im_row = index_map(MPI.COMM_WORLD, n_row_blocks)
+    im_col = index_map(MPI.COMM_WORLD, n_col_blocks)
+    sp = dolfinx.la.sparsity_pattern(MPI.COMM_WORLD, [im_row, im_col], [bs0, bs1])
     for i in range(n_row_blocks):
         for j in range(n_col_blocks):
             sp.insert(i, j)

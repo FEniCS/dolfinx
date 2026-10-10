@@ -70,17 +70,36 @@ public:
   XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
            std::string_view file_mode, Encoding encoding = Encoding::HDF5);
 
+  // Copy constructor (deleted)
+  XDMFFile(const XDMFFile& file) = delete;
+
   /// Move constructor
-  XDMFFile(XDMFFile&&) = default;
+  /// @note Defined in the source file, where pugi::xml_document is
+  /// complete.
+  XDMFFile(XDMFFile&& file) noexcept;
 
   /// Destructor
+  /// @note Any failure to close the HDF5 file is logged rather than
+  /// thrown, since a throwing destructor would terminate. Call ::close
+  /// explicitly where the failure must be reported.
+  /// @note Defined in the source file, where pugi::xml_document is
+  /// complete.
   ~XDMFFile();
+
+  // Copy assignment (deleted)
+  XDMFFile& operator=(const XDMFFile& file) = delete;
+
+  /// Move assignment
+  /// @note Defined in the source file, where pugi::xml_document is
+  /// complete.
+  XDMFFile& operator=(XDMFFile&& file) noexcept;
 
   /// Close the file
   ///
   /// This closes open underlying HDF5 file. In ASCII mode the XML file
   /// is closed each time it is written to or read from, so close() has
   /// no effect.
+  /// @throws std::runtime_error if the HDF5 file cannot be closed.
   void close();
 
   /// Save Mesh
@@ -106,12 +125,14 @@ public:
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @param[in] max_facet_to_cell_links Maximum number of cells that can
   /// be linked to a facet.
+  /// @param[in] num_threads Number threads to use in mesh construction.
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
   mesh::Mesh<double>
   read_mesh(const fem::CoordinateElement<double>& element, mesh::GhostMode mode,
             std::string_view name, std::string_view xpath = "/Xdmf/Domain",
-            std::optional<std::int32_t> max_facet_to_cell_links = 2) const;
+            std::optional<std::int32_t> max_facet_to_cell_links = 2,
+            int num_threads = 1) const;
 
   /// Read Topology data for Mesh
   /// @param[in] name Name of the mesh (Grid)
@@ -213,8 +234,9 @@ private:
   // File mode
   std::string _file_mode;
 
-  // HDF5 file handle
-  hid_t _h5_id;
+  // HDF5 file handle. Owning, so that the identifier is released if the
+  // constructor throws after opening the file, and on destruction.
+  hdf5::Handle _h5_id{H5I_INVALID_HID, H5Fclose};
 
   // The XML document currently representing the XDMF which needs to be
   // kept open for time series etc.

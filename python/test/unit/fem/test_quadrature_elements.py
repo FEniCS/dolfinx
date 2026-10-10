@@ -15,7 +15,7 @@ import ufl
 
 
 @pytest.mark.parametrize("degree", range(1, 4))
-def test_default(degree):
+def test_default(degree) -> None:
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
     CG2_vect = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
@@ -46,7 +46,7 @@ def test_default(degree):
     assert np.allclose(vol_v.array + sur_v.array, vol_surf.array)
 
 
-def test_points_and_weights():
+def test_points_and_weights() -> None:
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
     CG2_vect = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
@@ -83,7 +83,7 @@ def test_points_and_weights():
 
 
 @pytest.mark.parametrize("degree", range(1, 5))
-def test_interpolation(degree):
+def test_interpolation(degree) -> None:
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
     e = basix.ufl.quadrature_element(msh.topology.cell_name(), degree=degree)
@@ -104,7 +104,7 @@ def test_interpolation(degree):
 
 
 @pytest.mark.parametrize("degree", range(1, 5))
-def test_interpolation_blocked(degree):
+def test_interpolation_blocked(degree) -> None:
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
     e = basix.ufl.quadrature_element(msh.topology.cell_name(), value_shape=(2,), degree=degree)
@@ -125,8 +125,8 @@ def test_interpolation_blocked(degree):
 
 
 def extract_diagonal(mat):
-    num_rows = mat._cpp_object.index_map(0).size_local
-    num_cols = mat._cpp_object.index_map(1).size_local
+    num_rows = mat.index_map(0).size_local
+    num_cols = mat.index_map(1).size_local
     assert num_rows == num_cols, "Matrix must be square"
     bs = mat.block_size[0]
     diag = np.empty(num_rows * bs, dtype=mat.data.dtype)
@@ -140,7 +140,7 @@ def extract_diagonal(mat):
 
 @pytest.mark.parametrize("degree", range(1, 4))
 @pytest.mark.parametrize("shape", [(), (1,), (2,), (3,), (4,), (2, 2), (3, 3)])
-def test_vector_element(shape, degree):
+def test_vector_element(shape, degree) -> None:
     """Compare assembly into a vector with quadrature elements with the diagonal of
     an assembled mass matrix with the same quadrature element.
     """
@@ -172,7 +172,7 @@ def test_vector_element(shape, degree):
 
 
 @pytest.mark.parametrize("degree", range(1, 4))
-def test_quadrature_assembly(degree):
+def test_quadrature_assembly(degree) -> None:
     """Test quadrature element against assembly with spatial coord and fixed quadrature rule."""
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 5, 7)
     dx_m = ufl.Measure(

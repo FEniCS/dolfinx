@@ -63,6 +63,7 @@ jobs:
     name: Build wheels
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
@@ -73,6 +74,11 @@ jobs:
             cibw_build: cp312-macosx_arm64
           - os: macos-15-intel
             cibw_build: cp312-macosx_x86_64
+          - os: windows-2022
+            cibw_build: cp312-win_amd64
+
+    permissions:
+      packages: write
 
     env:
       CIBW_BUILD: ${{ matrix.cibw_build }}
@@ -80,10 +86,44 @@ jobs:
       CIBW_ENVIRONMENT: PIP_INDEX_URL="file:///project/simple" PIP_EXTRA_INDEX_URL="https://pypi.org/simple"
       CIBW_ARCHS_LINUX: native
       CIBW_ARCHS_MACOS: native
+      CIBW_ARCHS_WINDOWS: AMD64
       CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64:latest
       CIBW_MANYLINUX_AARCH64_IMAGE: quay.io/pypa/manylinux_2_34_aarch64:latest
+      # vcpkg is pre-installed on the windows-2022 runner image.
+      VCPKG_EXE: C:/vcpkg/vcpkg
+      VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/FEniCS/index.json,readwrite"
 
     steps:
+      - name: Add NuGet sources (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          NUGET_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          .$(${{ env.VCPKG_EXE }} fetch nuget) `
+            sources add `
+            -Source "https://nuget.pkg.github.com/FEniCS/index.json" `
+            -StorePasswordInClearText `
+            -Name GitHubPackages `
+            -UserName "FEniCS" `
+            -Password "$env:NUGET_TOKEN"
+          .$(${{ env.VCPKG_EXE }} fetch nuget) `
+            setapikey "$env:NUGET_TOKEN" `
+            -Source "https://nuget.pkg.github.com/FEniCS/index.json"
+
+      - name: Install Intel MPI (Windows)
+        if: runner.os == 'Windows'
+        uses: mpi4py/setup-mpi@v1.4.4
+        with:
+          mpi: "intelmpi"
+
+      # Ninja needs cl.exe on PATH.
+      - name: Set up MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - uses: actions/setup-python@v7
 
       - name: Install Python dependencies
@@ -130,10 +170,12 @@ jobs:
           python -m cibuildwheel --output-dir ../wheelhouse/ .
 
       - name: Make temporary simple503 repo directories
+        shell: bash
         run: mkdir -p wheelhouse/ simple/
 
       - name: Add wheels to simple503 repository (if built)
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        shell: bash
         run: cp wheelhouse/* simple/
 
       - name: Index simple503 repository (Linux)
@@ -144,14 +186,17 @@ jobs:
         if: runner.os == 'macOS'
         run: python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple/
 
+      - name: Index simple503 repository (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple/
+
       - name: Checkout DOLFINx
         uses: actions/checkout@v7
         with:
           path: dolfinx
           ref: ${{ github.event.inputs.dolfinx_ref }}
 
-      # fenics-ffcx and fenics-basix are required by DOLFINx C++ build
-      # mpi4py and petsc4py are build_requirements of DOLFINx Python
       - name: Build DOLFINx wheel
         run: |
           python -m cibuildwheel --output-dir wheelhouse/ dolfinx/python
@@ -159,22 +204,30 @@ jobs:
           CIBW_ENVIRONMENT_LINUX: PIP_EXTRA_INDEX_URL=file:///project/simple
           # When using Homebrew the packaged .so are always built on the macOS
           # SDK version of the current system. Consequently
-          # MACOSX_DEPLOYMENT_TARGET must always be set to the SDK version of
-          # the current system.
+          # MACOSX_DEPLOYMENT_TARGET must be set to the SDK version of the
+          # current system.
           CIBW_ENVIRONMENT_MACOS: >
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
             MACOSX_DEPLOYMENT_TARGET=$(xcrun --sdk macosx --show-sdk-version)
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install:$(brew --prefix)
+          CIBW_ENVIRONMENT_WINDOWS: >
+            PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
+            CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install
+            CMAKE_GENERATOR=Ninja
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
             dnf install -y epel-release &&
             /usr/bin/crb enable &&
             dnf -y update &&
-            dnf -y install boost-devel boost-program-options git hdf5-mpich-devel make \
+            dnf -y install git hdf5-mpich-devel make \
               mpich-devel ninja-build openblas-devel pugixml-devel spdlog-devel &&
+            (for i in 1 2 3; do curl -L https://archives.boost.io/release/1.92.0/source/boost_1_92_0.tar.gz | tar -xz && exit 0; sleep 10; done; exit 1) &&
+            (cd boost_1_92_0/ && ./bootstrap.sh --prefix=/usr/local &&
+              ./b2 -d0 --prefix=/usr/local --with-headers install) &&
             ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
-            mkdir -p scotch && curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch &&
+            mkdir -p scotch &&
+            (for i in 1 2 3; do curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch && exit 0; sleep 10; done; exit 1) &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
@@ -196,12 +249,13 @@ jobs:
               -DTPL_ENABLE_LAPACKLIB=ON &&
             cmake --build superlu_dist-build-dir/ &&
             cmake --install superlu_dist-build-dir/ &&
-            pip -v install $(python -c "import tomllib; deps=tomllib.load(open('/project/dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
+            echo /usr/local/lib64 > /etc/ld.so.conf.d/usr-local-lib64.conf && ldconfig &&
+            pip -v install --pre fenics-basix fenics-ffcx &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ \
               -DPython3_EXECUTABLE=$(which python) \
               -DCMAKE_PREFIX_PATH=/usr/lib64/mpich \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DCMAKE_BUILD_TYPE=Release \
               -DDOLFINX_ENABLE_SUPERLU_DIST=ON \
               -DDOLFINX_ENABLE_SCOTCH=ON \
               -DDOLFINX_ENABLE_PARMETIS=OFF &&
@@ -209,7 +263,8 @@ jobs:
             cmake --install dolfinx-build-dir/
           CIBW_BEFORE_BUILD_MACOS: >
             brew install boost hdf5-mpi ninja open-mpi openblas pkgconf pugixml spdlog &&
-            mkdir -p scotch && curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch &&
+            mkdir -p scotch &&
+            (for i in 1 2 3; do curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch && exit 0; sleep 10; done; exit 1) &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
@@ -231,7 +286,7 @@ jobs:
               -DTPL_ENABLE_LAPACKLIB=ON &&
             cmake --build superlu_dist-build-dir/ &&
             sudo cmake --install superlu_dist-build-dir/ &&
-            pip -v install $(python -c "import tomllib; deps=tomllib.load(open('dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
+            pip -v install --pre fenics-basix fenics-ffcx &&
             pip -v install wheel mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S $GITHUB_WORKSPACE/dolfinx/cpp -B $GITHUB_WORKSPACE/dolfinx-build-dir/ \
               -DPython3_EXECUTABLE=$(which python) \
@@ -240,9 +295,15 @@ jobs:
               -DDOLFINX_ENABLE_SCOTCH=ON \
               -DDOLFINX_ENABLE_PARMETIS=OFF \
               -DDOLFINX_ENABLE_SUPERLU_DIST=ON \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo &&
+              -DCMAKE_BUILD_TYPE=Release &&
             cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
             sudo cmake --install dolfinx-build-dir/
+          CIBW_BEFORE_BUILD_WINDOWS: >
+            pip -v install --pre fenics-basix fenics-ffcx &&
+            pip -v install mpi4py ninja scikit-build-core[pyproject] nanobind delvewheel &&
+            cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
+            cmake --build dolfinx-build-dir/ &&
+            cmake --install dolfinx-build-dir/ --prefix %GITHUB_WORKSPACE%/dolfinx-install
           # As of 6/26 DOLFINx uses std::jthread which is only officially
           # supported in macOS SDK 26. -fexperimental-library enables
           # experimental std library support which allows the build to complete
@@ -255,31 +316,61 @@ jobs:
             cmake.args="-DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH;-DCMAKE_CXX_FLAGS_INIT=-fexperimental-library"
             wheel.py-api=cp312
             cmake.build-type="Release"
+          CIBW_CONFIG_SETTINGS_WINDOWS: >
+            cmake.args="-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake;-DVCPKG_OVERLAY_PORTS=../cpp/cmake/vcpkg-overlay"
+            wheel.py-api=cp312
+            cmake.build-type="Release"
+
           CIBW_BUILD_FRONTEND: "build; args: -nx"
-          # The first line allows auditwheel to find and bundle in libbasix
+
+          # This comment applies to Linux and Windows (.dlls).
+          # Excluding libbasix.so, libmpi.so and libfabric.so stops delvewheel
+          # vendoring a copy of those .so and all of their dependencies into
+          # DOLFINx. DOLFINx's __init__.py does import basix and import mpi4py
+          # which add the needed .so to the runtime environment before `from
+          # dolfinx import cpp`.
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
-            export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
-            auditwheel repair --exclude libmpi.so* -w {dest_dir} {wheel} &&
+            auditwheel repair --exclude libmpi.so* --exclude libbasix.so* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
+
+          # delocate leaves --excluded libraries pointing at Homebrew, so
+          # repoint them at @rpath to match the install name of the copy that
+          # basix and mpi4py already loaded. Also have to re-code sign as
+          # crytographic hash broken by otool.
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             delocate-listdeps --depending {wheel} &&
-            delocate-wheel --require-archs {delocate_archs} --exclude libmpi -w {dest_dir} {wheel} &&
+            delocate-wheel --require-archs {delocate_archs} --exclude libmpi --exclude libbasix -w {dest_dir} {wheel} &&
             wheel unpack {dest_dir}/*.whl -d {dest_dir}/unpacked &&
             rm {dest_dir}/*.whl &&
-            find {dest_dir}/unpacked \( -name "*.so" -o -name "*.dylib" \) | while read -r f; do for dep in $(otool -L "$f" | awk '/libmpi\.[0-9]+\.dylib/{print $1}'); do install_name_tool -change "$dep" @rpath/$(basename "$dep") "$f"; done; done &&
+            find {dest_dir}/unpacked \( -name "*.so" -o -name "*.dylib" \) | while read -r f; do for dep in $(otool -L "$f" | awk '/lib(mpi|basix)\.[0-9]+\.dylib/{print $1}'); do install_name_tool -change "$dep" @rpath/$(basename "$dep") "$f"; done; done &&
             find {dest_dir}/unpacked \( -name "*.so" -o -name "*.dylib" \) | xargs -I% codesign --force --sign - % &&
             wheel pack {dest_dir}/unpacked/* -d {dest_dir} &&
             pipx run abi3audit --verbose --strict --report {wheel}
+
+          # msvcp140.dll and msvcp140_atomic_wait.dll shouldn't be included,
+          # check delvewheel issue #78.
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
+            delvewheel repair -v
+            --exclude "impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll;basix.dll"
+            --add-path "%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin"
+            -w {dest_dir} {wheel}
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
           CIBW_TEST_COMMAND_LINUX: >
+            echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json &&
             . /etc/profile &&
             module load mpi/mpich-$(arch) &&
-            python -m pytest -n auto -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
+            python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
           CIBW_TEST_COMMAND_MACOS: >
+            echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json &&
             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}" &&
-            mpiexec -n 1 python -m pytest -n auto -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
+            mpiexec -n 1 python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
+            mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
+          CIBW_TEST_COMMAND_WINDOWS: >
+            echo { "cffi_extra_compile_args": ["/Od" ] } > dolfinx_jit_options.json &&
+            pip install impi-rt &&
+            python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
 
       - name: Update temporary simple503 repository (Linux)
@@ -290,6 +381,13 @@ jobs:
 
       - name: Update temporary simple503 repository (macOS)
         if: runner.os == 'macOS'
+        run: |
+          cp wheelhouse/* simple
+          python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple
+
+      - name: Update temporary simple503 repository (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
         run: |
           cp wheelhouse/* simple
           python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple
@@ -308,31 +406,25 @@ jobs:
 
       - name: Test in clean python image with pypi MPICH
         if: runner.os == 'Linux'
-        run: >
-          cd dolfinx &&
-          sudo git clean -fdx && cd ../ &&
-          docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
-            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple python:3.13 \
+        run: |
+          cd dolfinx && sudo git clean -fdx && cd ../
+          mkdir -p jit-config/dolfinx
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > jit-config/dolfinx/dolfinx_jit_options.json
+          docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared -v $(pwd)/jit-config:/config \
+            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple \
+            --env XDG_CONFIG_HOME=/config python:3.13 \
             /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test mpich fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Test in clean python image with pypi Intel MPI (x86_64 only)
         if: runner.os == 'Linux' && runner.arch == 'X64'
-        run: >
-          cd dolfinx &&
-          sudo git clean -fdx && cd ../ &&
-          docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
-            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple python:3.14 \
-            /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
-
-      - name: Test in clean virtual environment with pypi OpenMPI (macOS)
-        if: runner.os == 'macOS'
         run: |
-          cd dolfinx && git clean -fdx && cd ../
-          python -m venv venv-test
-          source venv-test/bin/activate
-          PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install --group dolfinx/python/pyproject.toml:test openmpi fenics-dolfinx
-          which mpiexec
-          mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
+          cd dolfinx && sudo git clean -fdx && cd ../
+          mkdir -p jit-config/dolfinx
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > jit-config/dolfinx/dolfinx_jit_options.json
+          docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared -v $(pwd)/jit-config:/config \
+            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple \
+            --env XDG_CONFIG_HOME=/config python:3.14 \
+            /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Update FEniCS Project simple503 repository
         run: |
@@ -343,6 +435,70 @@ jobs:
         with:
           name: simple503-${{ matrix.os }}
           path: simple/*
+
+  # Test the Windows and macOS wheels in 'clean' runners. They are not very
+  # clean, in reality...
+  test_wheels:
+    name: Test wheels on a clean ${{ matrix.os }}
+    needs: build_wheels
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            mpi: openmpi
+            jit_options: '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }'
+          - os: macos-15-intel
+            mpi: openmpi
+            jit_options: '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }'
+          - os: windows-2022
+            mpi: impi-rt
+            jit_options: '{ "cffi_extra_compile_args": ["/Od" ] }'
+
+    steps:
+      - name: Checkout DOLFINx for the test suite
+        uses: actions/checkout@v7
+        with:
+          path: dolfinx
+          ref: ${{ github.event.inputs.dolfinx_ref }}
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Download wheels
+        uses: actions/download-artifact@v8
+        with:
+          name: wheelhouse-${{ matrix.os }}
+          path: wheelhouse
+
+      - name: Install from the wheels
+        shell: bash
+        run: |
+          echo '${{ matrix.jit_options }}' > dolfinx_jit_options.json
+          python -m pip install --upgrade pip
+          pip -v install --find-links wheelhouse pytest-xdist --group dolfinx/python/pyproject.toml:test ${{ matrix.mpi }} fenics-dolfinx
+
+      # The following are ideas and need full testing:
+      # cmd:
+      #   call "%VIRTUAL_ENV%\etc\conda\activate.d\mpivars.activate.bat"
+      # PowerShell:
+      #   $env:Path = "$env:VIRTUAL_ENV\Library\bin;$env:Path"
+      # Intel currently doesn't provide a nice script for Powershell.
+      # This job step is done with bash for ease, users don't usually use bash.
+      - name: Put mpiexec on PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python -c "import pathlib, sys; print((pathlib.Path(sys.prefix) / 'Library' / 'bin').as_posix())" >> $GITHUB_PATH
+
+      - name: Run tests
+        shell: bash
+        run: |
+          mpiexec --version
+          python -m pytest -n auto -m "not adios2 and not petsc4py" dolfinx/python/test/unit
+          mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
 
   combined_repository:
     name: Create combined simple503 repository

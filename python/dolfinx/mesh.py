@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells, Jørgen S.
+# Copyright (C) 2017-2026 Chris N. Richardson, Garth N. Wells, Jørgen S.
 # Dokken, Paul T. Kühner and Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -11,6 +11,7 @@ from __future__ import annotations
 import typing
 import warnings
 from collections.abc import Callable, Sequence
+from functools import cached_property, wraps
 
 from mpi4py import MPI as _MPI
 
@@ -23,12 +24,16 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.common import IndexMap as _IndexMap
+from dolfinx.common import index_map as _index_map
 from dolfinx.cpp.mesh import (
     CellType,
     DiagonalType,
     GhostMode,
-    build_dual_graph,
     cell_dim,
+    cell_entity_type,
+    cell_num_entities,
+    cell_num_vertices,
+    is_simplex,
     to_string,
     to_type,
 )
@@ -36,6 +41,7 @@ from dolfinx.cpp.refinement import (
     IdentityPartitionerPlaceholder,
     RefinementOption,
 )
+from dolfinx.cpp.refinement import mark_equidistribution as _mark_equidistribution
 from dolfinx.cpp.refinement import mark_maximum as _mark_maximum
 from dolfinx.cpp.refinement import uniform_refine as _uniform_refine
 from dolfinx.fem import CoordinateElement as _CoordinateElement
@@ -56,6 +62,10 @@ __all__ = [
     "Topology",
     "build_dual_graph",
     "cell_dim",
+    "cell_entity_type",
+    "cell_normals",
+    "cell_num_entities",
+    "cell_num_vertices",
     "compute_cell_centroids",
     "compute_incident_entities",
     "compute_midpoints",
@@ -73,8 +83,10 @@ __all__ = [
     "create_unit_square",
     "entities_to_geometry",
     "exterior_facet_indices",
+    "is_simplex",
     "locate_entities",
     "locate_entities_boundary",
+    "mark_equidistribution",
     "mark_maximum",
     "meshtags",
     "meshtags_from_entities",
@@ -95,7 +107,7 @@ PartitioningFunc = typing.Callable[
         npt.NDArray[np.int32] | None,
         bool,
     ],
-    _cpp.graph.AdjacencyList_int32,
+    _cpp.graph.AdjacencyList_int32 | AdjacencyList[np.int32],
 ]
 
 # float64 to match the C++ span<double> interface. Unlike
@@ -116,8 +128,12 @@ HybridPartitioningFunc = typing.Callable[
         npt.NDArray[np.int32] | None,
         bool,
     ],
-    _cpp.graph.AdjacencyList_int32,
+    _cpp.graph.AdjacencyList_int32 | AdjacencyList[np.int32],
 ]
+
+# A cell reordering function receives the local cell dual graph and
+# returns the new index of each cell.
+CellReorderFunc = typing.Callable[[AdjacencyList[np.int32]], npt.NDArray[np.int32]]
 
 
 def create_geometric_cell_partitioner(
@@ -186,7 +202,54 @@ def create_hybrid_cell_partitioner(
         Partitioning function, for use as :func:`create_mesh`'s
         ``partitioner`` argument.
     """
-    return _cpp.graph.create_hybrid_cell_partitioner(part)
+    return _cpp.graph.create_hybrid_cell_partitioner(_wrap_partitioner(part))
+
+
+def build_dual_graph(
+    comm: _MPI.Comm,
+    cell_types: CellType | Sequence[CellType],
+    cells: AdjacencyList[np.int64] | Sequence[npt.NDArray[np.int64]],
+    max_facet_to_cell_links: int | None = None,
+    num_threads: int = 1,
+) -> AdjacencyList[np.int64]:
+    """Build the dual graph of a mesh, i.e. the cell-to-cell graph.
+
+    Two cells are connected in the dual graph if they share a facet.
+
+    Args:
+        comm: MPI communicator that ``cells`` is distributed over.
+        cell_types: Cell type, or the cell types of a mixed-topology
+            mesh.
+        cells: Cells, using global vertex indices. For a single cell
+            type, an adjacency list of the cell vertices; for a
+            mixed-topology mesh, one array of cell vertices per cell
+            type.
+        max_facet_to_cell_links: Maximum number of cells that a facet
+            may connect. If ``None``, no limit is applied.
+        num_threads: Number of CPU threads to use. Must be >= 1.
+
+    Returns:
+        The dual graph, with the local cells as nodes.
+    """
+    # The C++ function is overloaded on the single/mixed cell-type
+    # forms, so dispatch on 'cell_types' rather than passing a union.
+    if isinstance(cell_types, CellType):
+        if not isinstance(cells, AdjacencyList):
+            raise TypeError("'cells' must be an AdjacencyList for a single cell type.")
+        graph = _cpp.mesh.build_dual_graph(
+            comm,
+            cell_types,
+            cells._cpp_object,  # type: ignore[arg-type]
+            max_facet_to_cell_links,
+            num_threads,
+        )
+    else:
+        if isinstance(cells, AdjacencyList):
+            raise TypeError("'cells' must be one array per cell type for a mixed-topology mesh.")
+        graph = _cpp.mesh.build_dual_graph(
+            comm, cell_types, cells, max_facet_to_cell_links, num_threads
+        )
+    return AdjacencyList(graph)
 
 
 def compute_cell_centroids(
@@ -234,28 +297,55 @@ class Topology:
             topology: The C++ topology object
 
         Note:
-            Topology objects should usually be constructed with the
-            :func:`dolfinx.cpp.mesh.create_topology` and not this class
+            Topology objects should usually be constructed with
+            ``dolfinx.cpp.mesh.create_topology`` and not this class
             initializer.
         """
         self._cpp_object = topology
+
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same topology."""
+        if not isinstance(other, Topology):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped topology."""
+        return hash(self._cpp_object)
 
     def cell_name(self) -> str:
         """String representation of the cell-type of the topology."""
         return to_string(self._cpp_object.cell_type)
 
-    def connectivity(self, d0: int, d1: int) -> _cpp.graph.AdjacencyList_int32:
+    def connectivity(
+        self, d0: int | tuple[int, int], d1: int | tuple[int, int]
+    ) -> AdjacencyList[np.int32]:
         """Return connectivity.
 
         Connectivity from entities of dimension ``d0`` to entities of
-        dimension ``d1``.
+        dimension ``d1``. For a mixed-topology mesh, a dimension is
+        given as a ``(dimension, entity type index)`` pair.
 
         Args:
             d0: Dimension of entity one is mapping from.
             d1: Dimension of entity one is mapping to.
         """
-        if (conn := self._cpp_object.connectivity(d0, d1)) is not None:
-            return conn
+        # The C++ method is overloaded on the single/mixed-topology
+        # forms. The two calls below are identical at runtime, but the
+        # isinstance test narrows the argument types so that each picks
+        # the matching overload of the generated stub. Test for a pair
+        # rather than for an int, so that a dimension given as e.g. a
+        # NumPy integer is still treated as a dimension.
+        if isinstance(d0, tuple):
+            if not isinstance(d1, tuple):
+                raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
+            conn = self._cpp_object.connectivity(d0, d1)
+        else:
+            if isinstance(d1, tuple):
+                raise TypeError("'d0' and 'd1' must both be a dimension or both be a pair.")
+            conn = self._cpp_object.connectivity(d0, d1)
+        if conn is not None:
+            return AdjacencyList(conn)
         else:
             raise RuntimeError(
                 f"Connectivity between dimension {d0} and {d1} has not been computed.",
@@ -281,7 +371,7 @@ class Topology:
 
         Args:
             dim: Topological dimension of entities to create.
-            num_threads: Number of CPU threads to use. Must be >= 1.
+            num_threads: Number of threads to use. Must be >= 1.
 
         Returns:
             ``True` is entities are created, ``False`` is if entities
@@ -289,13 +379,52 @@ class Topology:
         """
         return self._cpp_object.create_entities(dim, num_threads)
 
-    def create_entity_permutations(self, num_threads: int = 1) -> None:
-        """Compute entity permutations and reflections.
+    def create_entity_permutations(self, dim: int, num_threads: int = 1) -> None:
+        """Compute permutations of cell-local entities of a dimension.
+
+        A permutation records how an entity is oriented as seen from a
+        cell, relative to a low-to-high ordering of the entity's global
+        vertex indices. It is passed to FFCx kernels as
+        ``quadrature_permutation``, so that cells sharing an entity
+        agree on the order of the quadrature points on it. Which
+        dimension is needed is a property of the integral, not of the
+        element: an interior facet integral needs ``tdim - 1``, a ridge
+        integral ``tdim - 2``.
+
+        See also :meth:`~dolfinx.mesh.Topology.create_cell_permutations`,
+        which packs the orientations of all of a cell's sub-entities into
+        one integer per cell, for correcting element DOFs rather than
+        quadrature points.
 
         Args:
-            num_threads: Number of CPU threads to use. Must be >= 1.
+            dim: Topological dimension of the entities, e.g. ``tdim - 1``
+                for facets. Must satisfy ``0 <= dim < tdim``.
+            num_threads: Number of threads to use. Must be >= 1.
         """
-        self._cpp_object.create_entity_permutations(num_threads)
+        self._cpp_object.create_entity_permutations(dim, num_threads)
+
+    def create_cell_permutations(self, num_threads: int = 1) -> None:
+        """Compute the packed per-cell permutation info.
+
+        Encodes, for each cell, the orientation of every sub-entity of
+        that cell relative to a low-to-high ordering of global vertex
+        indices, packed into one 32-bit integer per cell. See
+        :meth:`~dolfinx.mesh.Topology.get_cell_permutation_info` for the
+        bit layout.
+
+        Required by elements whose DOF transformations are not the
+        identity. Where those transformations are permutations, e.g.
+        higher-order Lagrange, the correction is applied once to the
+        dofmap when it is built. Otherwise, e.g. N1curl and
+        Raviart-Thomas, it is applied to the element tensor on each cell
+        at assembly time; those are the elements for which
+        :attr:`dolfinx.fem.FiniteElement.needs_dof_transformations` is
+        ``True``.
+
+        Args:
+            num_threads: Number of threads to use. Must be >= 1.
+        """
+        self._cpp_object.create_cell_permutations(num_threads)
 
     @property
     def dim(self) -> int:
@@ -317,22 +446,27 @@ class Topology:
         """
         return self._cpp_object.get_cell_permutation_info()
 
-    def get_facet_permutations(self) -> npt.NDArray[np.uint8]:
-        """Get the permutation integer to apply to facets.
+    def get_entity_permutations(self, dim: int) -> npt.NDArray[np.uint8]:
+        """Get the permutation integer for entities of a dimension.
 
-        The bits of each integer describes the number of reflections and
-        rotations that has to be applied to a facet to map between a
-        facet in the mesh (relative to a cell) and the corresponding
-        facet on the reference element. The data has the shape
-        ``(num_cells, num_facets_per_cell)``, flattened row-wise. The
-        number of cells include potential ghost cells.
+        The bits of each integer describe the number of rotations and
+        reflections to apply to an entity to map between the entity as
+        seen by a cell of the mesh and the corresponding entity on the
+        reference element. The data has the shape ``(num_cells,
+        num_entities_per_cell)``, flattened row-wise. The number of
+        cells includes potential ghost cells.
+
+        Args:
+            dim: Topological dimension of the entities, e.g. ``tdim - 1``
+                for facets.
 
         Note:
-            The data can be unpacked with ``numpy.unpack_bits``.
+            :func:`create_entity_permutations` must be called with the
+            same ``dim`` first.
         """
-        return self._cpp_object.get_facet_permutations()
+        return self._cpp_object.get_entity_permutations(dim)
 
-    def index_map(self, dim: int) -> _cpp.common.IndexMap:
+    def index_map(self, dim: int) -> _IndexMap:
         """Index map for the parallel distribution of the mesh entities.
 
         Args:
@@ -341,9 +475,9 @@ class Topology:
         Returns:
             Index map for the entities of dimension ``dim``.
         """
-        return self._cpp_object.index_map(dim)
+        return _IndexMap(self._cpp_object.index_map(dim))
 
-    def index_maps(self, dim: int) -> list[_cpp.common.IndexMap]:
+    def index_maps(self, dim: int) -> list[_IndexMap]:
         """Index maps for parallel distribution of the mesh entities.
 
         Args:
@@ -353,7 +487,7 @@ class Topology:
             Index maps for the entities of dimension ``dim``. May be
             empty if not yet computed.
         """
-        return self._cpp_object.index_maps(dim)
+        return [_IndexMap(m) for m in self._cpp_object.index_maps(dim)]
 
     def interprocess_facets(self) -> npt.NDArray[np.int32]:
         """List of inter-process facets.
@@ -392,10 +526,20 @@ class Geometry(typing.Generic[Real]):
         """
         self._cpp_object = geometry
 
-    @property
-    def cmaps(self) -> list[_CoordinateElement]:
-        """The coordinate maps."""
-        return [_CoordinateElement(cm) for cm in self._cpp_object.cmaps]
+    def __eq__(self, other: object) -> bool:
+        """Check that two wrappers hold the same geometry."""
+        if not isinstance(other, Geometry):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
+
+    def __hash__(self) -> int:
+        """Hash of the wrapped geometry."""
+        return hash(self._cpp_object)
+
+    @cached_property
+    def cmaps(self) -> tuple[_CoordinateElement, ...]:
+        """The coordinate maps, one per cell type."""
+        return tuple(_CoordinateElement(cm) for cm in self._cpp_object.cmaps)
 
     @property
     def cmap(self) -> _CoordinateElement:
@@ -432,7 +576,7 @@ class Geometry(typing.Generic[Real]):
 
     def index_map(self) -> _IndexMap:
         """Index map for the geometry points (nodes) distribution."""
-        return self._cpp_object.index_map()
+        return _IndexMap(self._cpp_object.index_map())
 
     @property
     def input_global_indices(self) -> npt.NDArray[np.int64]:
@@ -542,6 +686,16 @@ class Mesh(typing.Generic[Real]):
         return self._geometry
 
 
+def _mesh_from_ufl_domain(domain: ufl.Mesh) -> Mesh:
+    """Return the Python mesh associated with a UFL domain."""
+    cargo = domain.ufl_cargo()
+    if isinstance(cargo, Mesh):
+        return cargo
+    if isinstance(cargo, _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64):
+        return Mesh(cargo, domain)
+    raise RuntimeError("Expecting to find a Mesh in the UFL domain.")
+
+
 class MeshTags:
     """Mesh tags associate data (markers) with some mesh entities."""
 
@@ -575,15 +729,16 @@ class MeshTags:
             mesh.
         """
         self._cpp_object = meshtags
+        self._topology = Topology(self._cpp_object.topology)
 
     def ufl_id(self) -> int:
         """Identiftying integer used by UFL."""
         return id(self)
 
     @property
-    def topology(self) -> _cpp.mesh.Topology:
+    def topology(self) -> Topology:
         """Mesh topology with which the tags are associated."""
-        return self._cpp_object.topology
+        return self._topology
 
     @property
     def dim(self) -> int:
@@ -859,9 +1014,10 @@ def uniform_refine(
     Returns:
         The refined mesh.
     """
-    _cpp_mesh = _uniform_refine(msh._cpp_object, partitioner, ghost_mode)
+    _cpp_mesh = _uniform_refine(msh._cpp_object, _wrap_partitioner(partitioner), ghost_mode)
     if msh._ufl_domain is None:
-        raise ValueError("Cannot refine a mesh without a UFL domain.")
+        # A mixed-topology mesh has no UFL domain to carry over.
+        return Mesh(_cpp_mesh, None)
     # Create new ufl domain as it will carry a reference to the C++ mesh
     # in the ufl_cargo
     ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())
@@ -908,17 +1064,58 @@ def refine(
        Refined mesh, (optional) parent cells, (optional) parent facets
     """
     mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
-        msh._cpp_object, edges, partitioner, option, ghost_mode
+        msh._cpp_object, edges, _wrap_partitioner(partitioner), option, ghost_mode
     )
     if msh._ufl_domain is None:
         raise ValueError("Cannot refine a mesh without a UFL domain.")
-    # Create new ufl domain as it will carry a reference to the C++ mesh
-    # in the ufl_cargo
+    # Create a new UFL domain to associate with the refined mesh.
     ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())
     return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
 
 
 _MeshPartitioner = Callable | tuple[Callable, npt.NDArray[np.int32] | None] | None
+
+
+@typing.overload
+def _wrap_partitioner(fn: None) -> None: ...
+
+
+@typing.overload
+def _wrap_partitioner(fn: Callable) -> Callable: ...
+
+
+@typing.overload
+def _wrap_partitioner(fn: IdentityPartitionerPlaceholder) -> IdentityPartitionerPlaceholder: ...
+
+
+def _wrap_partitioner(
+    fn: Callable | IdentityPartitionerPlaceholder | None,
+) -> Callable | IdentityPartitionerPlaceholder | None:
+    """Adapt a partitioner so it may return a graph.AdjacencyList.
+
+    Opaque C++ partitioner handles (e.g. as returned by
+    ``graph.partitioner_scotch()``) are passed through unchanged:
+    ``create_mesh``'s nanobind binding recognises them specifically, and
+    wrapping one in a Python closure would silently demote it to the
+    slower raw-callable code path.
+    """
+    if fn is None or isinstance(
+        fn,
+        (
+            _cpp.graph.GraphPartitioner,
+            _cpp.graph.GeometricPartitioner,
+            _cpp.graph.HybridPartitioner,
+            IdentityPartitionerPlaceholder,
+        ),
+    ):
+        return fn
+
+    @wraps(fn)
+    def _wrapped(*args):
+        dest = fn(*args)
+        return dest._cpp_object if isinstance(dest, AdjacencyList) else dest
+
+    return _wrapped
 
 
 def _get_mesh_partitioner(
@@ -935,8 +1132,8 @@ def _get_mesh_partitioner(
         partitioner_fn, cell_weights = partitioner
         if partitioner_fn is None:
             raise TypeError("The partitioner in the tuple must not be None.")
-        return partitioner_fn, cell_weights
-    return partitioner, None
+        return _wrap_partitioner(partitioner_fn), cell_weights
+    return _wrap_partitioner(partitioner), None
 
 
 def mark_maximum(
@@ -966,13 +1163,75 @@ def mark_maximum(
         values: Values, often with each entry associated with a mesh
             entity, e.g. an error indicator.
         index_map: Index map describing the parallel layout of ``values``.
-        theta: Cut-off parameter, :math:`0 < \theta \le 1`.
+        theta: Cut-off parameter, :math:`0 < \theta \leq 1`.
 
     Returns:
         Local indices, ascending and including ghosts, of the entries
         satisfying :math:`v_i > \theta \max_j v_j`.
     """
-    return _mark_maximum(values, index_map, theta)
+    return _mark_maximum(values, index_map._cpp_object, theta)
+
+
+def mark_equidistribution(
+    values: npt.NDArray[Real],
+    index_map: _IndexMap,
+    theta: float,
+) -> npt.NDArray[np.int32]:
+    r"""Return local indices of values exceeding a fraction of the mean.
+
+    Computes the mean :math:`\frac{1}{N} \sum_j v_j` of ``values``
+    :math:`v` over the locally owned entries on every rank of
+    ``index_map``'s communicator, where :math:`N` is the global number of
+    entries, and returns the local indices :math:`i` satisfying
+    :math:`v_i > \frac{\theta^2}{N} \sum_j v_j`.
+
+    Each entry is expected to hold a squared error indicator,
+    :math:`v_i = \eta_i^2`, so that :math:`\frac{1}{N} \sum_j v_j` is the
+    mean square (MS) :math:`\|\eta\|_2^2 / N` of the indicators and the
+    criterion reads :math:`\eta_i^2 > \theta^2 \|\eta\|_2^2 / N`. This is
+    commonly referred to as 'equidistribution marking' in the adaptive
+    finite element literature.
+
+    Note:
+        Ghost entries of ``values`` must be up to date, i.e.
+        ``scatter_forward`` must have been called since the owned entries
+        were last modified.
+
+        :math:`\theta = 0` is rejected, since the
+        threshold would be 0 and the criterion would degenerate to marking
+        every entry with a positive value.
+
+    Args:
+        values: Values, often with each entry associated with a mesh
+            entity, e.g. a squared error indicator :math:`\eta_i^2`.
+        index_map: Index map describing the parallel layout of ``values``.
+        theta: Cut-off parameter, :math:`0 < \theta \leq 1`.
+
+    Returns:
+        Local indices, ascending and including ghosts, of the entries
+        satisfying :math:`v_i > \frac{\theta^2}{N} \sum_j v_j`.
+    """
+    return _mark_equidistribution(values, index_map._cpp_object, theta)
+
+
+def _wrap_cell_reorder(
+    reorder_fn: CellReorderFunc | _cpp.graph.GeometricReorderer | None,
+) -> Callable | _cpp.graph.GeometricReorderer | None:
+    """Adapt a cell reordering callable to the C++ calling convention.
+
+    C++ calls the reordering function with a C++ adjacency list, so a
+    Python callable is wrapped to receive an
+    :class:`~dolfinx.graph.AdjacencyList`. A geometric reorderer is an
+    opaque C++ handle that is called with cell centroids rather than the
+    dual graph, and is passed through unchanged.
+    """
+    if reorder_fn is None or isinstance(reorder_fn, _cpp.graph.GeometricReorderer):
+        return reorder_fn
+
+    def reorder(dual_graph: _cpp.graph.AdjacencyList_int32) -> npt.NDArray[np.int32]:
+        return reorder_fn(AdjacencyList(dual_graph))
+
+    return reorder
 
 
 def _create_mesh_coordinate_element(
@@ -1008,7 +1267,7 @@ def create_mesh(
     ghost_mode: GhostMode = GhostMode.none,
     max_facet_to_cell_links: int = 2,
     num_threads: int = 1,
-    reorder_fn: Callable | None = None,
+    reorder_fn: CellReorderFunc | _cpp.graph.GeometricReorderer | None = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -1030,7 +1289,8 @@ def create_mesh(
         num_threads: Number of threads to use to build mesh. Must be
             greater than 0.
         reorder_fn: A graph reordering callable receives the local cell
-            dual graph. The built-in ``graph.reorder_morton`` and
+            dual graph as an :class:`~dolfinx.graph.AdjacencyList`. The
+            built-in ``graph.reorder_morton`` and
             ``graph.reorder_hilbert`` receive local cell centroids. Both
             return an array mapping each cell index to its new index. If
             ``None`` (default), reverse Cuthill-McKee ordering is used.
@@ -1059,14 +1319,14 @@ def create_mesh(
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
         comm=comm,
         cells=cells,
-        element=cmap._cpp_object,  # type: ignore[arg-type]
+        element=cmap._cpp_object,
         x=x,
         partitioner=partitioner_fn,
         ghost_mode=ghost_mode,
         max_facet_to_cell_links=max_facet_to_cell_links,
         num_threads=num_threads,
         cell_weights=cell_weights,
-        reorder_fn=reorder_fn,
+        reorder_fn=_wrap_cell_reorder(reorder_fn),
     )
 
     return Mesh(msh, domain)
@@ -1227,6 +1487,7 @@ def create_interval(
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.graph.partitioner()
+    partitioner = _wrap_partitioner(partitioner)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1312,6 +1573,7 @@ def create_rectangle(
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.graph.partitioner()
+    partitioner = _wrap_partitioner(partitioner)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1424,6 +1686,7 @@ def create_box(
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.graph.partitioner()
+    partitioner = _wrap_partitioner(partitioner)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1495,13 +1758,27 @@ def entities_to_geometry(
         entities: Entity indices (local to the process).
         permute: Permute the DOFs such that they are consistent with the
             orientation of `dim`-dimensional mesh entities. This
-            requires `create_entity_permutations` to be called first.
+            requires `create_cell_permutations` to be called first.
 
     Returns:
         The geometric DOFs associated with the closure of the entities
         in `entities`.
     """
     return _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, permute)
+
+
+def cell_normals(msh: Mesh[Real], dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[Real]:
+    """Compute the normal to a set of mesh entities.
+
+    Args:
+        msh: The mesh.
+        dim: Topological dimension of the entities.
+        entities: Entity indices (local to the process).
+
+    Returns:
+        Normal vectors, ``shape=(len(entities), 3)``.
+    """
+    return _cpp.mesh.cell_normals(msh._cpp_object, dim, entities)  # type: ignore[return-value]
 
 
 def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:
@@ -1553,11 +1830,15 @@ def create_geometry(
     cpp_element = element._cpp_object
     if isinstance(cpp_element, _cpp.fem.CoordinateElement_float64):
         return Geometry(
-            _cpp.mesh.Geometry_float64(index_map, dofmap, cpp_element, x, input_global_indices)
+            _cpp.mesh.Geometry_float64(
+                index_map._cpp_object, dofmap, cpp_element, x, input_global_indices
+            )
         )
     elif isinstance(cpp_element, _cpp.fem.CoordinateElement_float32):
         return Geometry(
-            _cpp.mesh.Geometry_float32(index_map, dofmap, cpp_element, x, input_global_indices)
+            _cpp.mesh.Geometry_float32(
+                index_map._cpp_object, dofmap, cpp_element, x, input_global_indices
+            )
         )
     else:
         raise ValueError(f"Unknown floating type for coordinate element, got: {dtype}")
@@ -1566,17 +1847,21 @@ def create_geometry(
 def transfer_meshtags_to_submesh(
     entity_tag: MeshTags,
     submesh: Mesh,
-    vertex_to_parent: EntityMap,
     cell_to_parent: EntityMap,
+    vertex_to_parent: EntityMap,
 ) -> MeshTags:
     """Transfer a ``entity_tag`` from a parent mesh to a ``submesh``.
+
+    The ``cell_to_parent``/``vertex_to_parent`` order matches the
+    ``(entity_map, vertex_map)`` order that :func:`create_submesh`
+    returns, so its result can be unpacked and passed straight through.
 
     Args:
         entity_tag: Tag to transfer
         submesh: Submesh to transfer tag to
+        cell_to_parent: Mapping from submesh cells to parent entities
         vertex_to_parent: Mapping from submesh vertices to parent
             mesh vertices
-        cell_to_parent: Mapping from submesh cells to parent entities
     Returns:
         The transferred meshtags object on the submesh.
     """
@@ -1607,8 +1892,8 @@ def transfer_meshtags_to_submesh(
     cpp_tag = ftype(
         entity_tag._cpp_object,  # type: ignore[arg-type]
         submesh.topology._cpp_object,
-        vertex_to_parent._cpp_object,
         cell_to_parent._cpp_object,
+        vertex_to_parent._cpp_object,
     )
     return MeshTags(cpp_tag)
 
@@ -1626,13 +1911,13 @@ def create_point_mesh(comm: _MPI.Comm, points: npt.NDArray[np.float32 | np.float
     # Create topology which only has a 0->0 connectivity and dim 0 entities
     cells = np.arange(points.shape[0], dtype=np.int32).reshape(-1, 1)
     num_nodes_local = cells.shape[0]
-    imap = _cpp.common.IndexMap(comm, num_nodes_local)
+    imap = _index_map(comm, num_nodes_local)
     local_range = imap.local_range[0]
     igi = np.arange(num_nodes_local, dtype=np.int64) + local_range
     topology = _cpp.mesh.Topology(
         cell_type=_cpp.mesh.CellType.point,
-        vertex_map=imap,
-        cell_map=imap,
+        vertex_map=imap._cpp_object,
+        cell_map=imap._cpp_object,
         cells=_cpp.graph.AdjacencyList_int32(cells),
         original_index=igi,
     )

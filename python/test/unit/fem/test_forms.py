@@ -31,13 +31,13 @@ from ufl import (
 )
 
 
-def test_extract_forms():
+def test_extract_forms() -> None:
     """Test extraction on unique function spaces for rows and columns of
     a block system.
     """
-    mesh = create_unit_square(MPI.COMM_WORLD, 32, 31)
-    V0 = functionspace(mesh, ("Lagrange", 1))
-    V1 = functionspace(mesh, ("Lagrange", 2))
+    msh = create_unit_square(MPI.COMM_WORLD, 32, 31)
+    V0 = functionspace(msh, ("Lagrange", 1))
+    V1 = functionspace(msh, ("Lagrange", 2))
     V2 = V0.clone()
     V3 = V1.clone()
 
@@ -56,20 +56,38 @@ def test_extract_forms():
     with pytest.raises(ValueError):
         extract_function_spaces(a, 0)
     Vc = extract_function_spaces(a, 1)
-    assert Vc[0] is V0._cpp_object
-    assert Vc[1] is V2._cpp_object
+    assert Vc[0] is V0
+    assert Vc[1] is V2
+    a00 = a[0][0]
+    assert a00 is not None
+    spaces = a00.function_spaces
+    assert isinstance(spaces, tuple)
+    assert spaces == (V0, V0)
 
     a = form([[inner(u0, v0) * dx, inner(u1, v0) * dx], [inner(u2, v1) * dx, inner(u3, v1) * dx]])
     Vr = extract_function_spaces(a, 0)
-    assert Vr[0] is V0._cpp_object
-    assert Vr[1] is V1._cpp_object
+    assert Vr[0] is V0
+    assert Vr[1] is V1
     with pytest.raises(ValueError):
         extract_function_spaces(a, 1)
 
 
+@pytest.mark.parametrize("index", [0, 1])
+def test_extract_repeated_function_spaces(index):
+    """Space extraction accepts a space used by multiple block rows/columns."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    V = functionspace(msh, ("Lagrange", 1))
+    W = V.clone()
+    tests = [TestFunction(V), TestFunction(V if index == 0 else W)]
+    trials = [TrialFunction(V), TrialFunction(V if index == 1 else W)]
+    a = form([[inner(u, v) * dx for u in trials] for v in tests])
+    assert extract_function_spaces(a, index) == [V, V]
+    assert extract_function_spaces(a, 1 - index) == [V, W]
+
+
 def test_incorrect_element():
     """Test that an error is raised if an incorrect element is used."""
-    mesh = create_unit_square(MPI.COMM_WORLD, 32, 31)
+    msh = create_unit_square(MPI.COMM_WORLD, 32, 31)
     element = basix.ufl.element(
         "Lagrange",
         "triangle",
@@ -85,8 +103,8 @@ def test_incorrect_element():
         dtype=dolfinx.default_real_type,
     )
 
-    space = functionspace(mesh, element)
-    incorrect_space = functionspace(mesh, incorrect_element)
+    space = functionspace(msh, element)
+    incorrect_space = functionspace(msh, incorrect_element)
 
     u = TrialFunction(space)
     v = TestFunction(space)
@@ -97,7 +115,7 @@ def test_incorrect_element():
     ftype = form_cpp_class(dtype)
 
     ufcx_form, module, code = dolfinx.jit.ffcx_jit(
-        mesh.comm, a, form_compiler_options={"scalar_type": dtype}
+        msh.comm, a, form_compiler_options={"scalar_type": dtype}
     )
 
     f = ftype(
@@ -107,9 +125,9 @@ def test_incorrect_element():
         [],
         {IntegralType.cell: []},
         [],
-        mesh._cpp_object,
+        msh._cpp_object,
     )
-    dolfinx.fem.Form(f, ufcx_form, code)
+    dolfinx.fem.Form(f, msh, [space, space], ufcx_form, code)
 
     with pytest.raises(ValueError):
         f = ftype(
@@ -119,25 +137,25 @@ def test_incorrect_element():
             [],
             {IntegralType.cell: []},
             [],
-            mesh._cpp_object,
+            msh._cpp_object,
         )
-        dolfinx.fem.Form(f, ufcx_form, code)
+        dolfinx.fem.Form(f, msh, [incorrect_space, incorrect_space], ufcx_form, code)
 
 
-def test_multiple_measures_one_subdomain_data():
+def test_multiple_measures_one_subdomain_data() -> None:
     comm = MPI.COMM_WORLD
-    mesh = dolfinx.mesh.create_unit_interval(comm, 10)
-    x = SpatialCoordinate(mesh)
-    num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
+    msh = dolfinx.mesh.create_unit_interval(comm, 10)
+    x = SpatialCoordinate(msh)
+    num_cells_local = msh.topology.index_map(msh.topology.dim).size_local
     ct = dolfinx.mesh.meshtags(
-        mesh,
-        mesh.topology.dim,
+        msh,
+        msh.topology.dim,
         np.arange(num_cells_local, dtype=np.int32),
         np.arange(num_cells_local, dtype=np.int32),
     )
 
-    dx = Measure("dx", domain=mesh, subdomain_data=ct)
-    dx_stand = Measure("dx", domain=mesh)
+    dx = Measure("dx", domain=msh, subdomain_data=ct)
+    dx_stand = Measure("dx", domain=msh)
 
     J = dolfinx.fem.form(x[0] ** 2 * dx + x[0] * dx_stand)
     J_local = dolfinx.fem.assemble_scalar(J)
@@ -145,11 +163,11 @@ def test_multiple_measures_one_subdomain_data():
     assert np.isclose(J_global, 1 / 3 + 1 / 2)
 
 
-def test_derivative_block():
+def test_derivative_block() -> None:
     """Test the function derivative_block."""
-    mesh = dolfinx.mesh.create_unit_interval(MPI.COMM_WORLD, 10)
-    V0 = functionspace(mesh, ("Lagrange", 1))
-    V1 = functionspace(mesh, ("Lagrange", 2))
+    msh = dolfinx.mesh.create_unit_interval(MPI.COMM_WORLD, 10)
+    V0 = functionspace(msh, ("Lagrange", 1))
+    V1 = functionspace(msh, ("Lagrange", 2))
     V = MixedFunctionSpace(V0, V1)
 
     f0, f1 = dolfinx.fem.Function(V0), dolfinx.fem.Function(V1)

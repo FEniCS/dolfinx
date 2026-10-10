@@ -1,4 +1,4 @@
-# Copyright (C) 2006 Anders Logg
+# Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -7,6 +7,7 @@
 import math
 import sys
 import typing
+import weakref
 
 from mpi4py import MPI
 
@@ -14,18 +15,18 @@ import numpy as np
 import pytest
 
 import basix
-import dolfinx.cpp.graph
+import dolfinx
 import ufl
 from basix.ufl import element
-from dolfinx import cpp as _cpp
-from dolfinx import graph
+from dolfinx import default_real_type, graph
 from dolfinx import mesh as _mesh
-from dolfinx.cpp.mesh import is_simplex
-from dolfinx.fem import assemble_scalar, coordinate_element, form
+from dolfinx.fem import assemble_scalar, coordinate_element, form, functionspace
 from dolfinx.mesh import (
     CellType,
     DiagonalType,
     GhostMode,
+    cell_num_entities,
+    cell_num_vertices,
     create_box,
     create_interval,
     create_point_mesh,
@@ -36,10 +37,45 @@ from dolfinx.mesh import (
     create_unit_square,
     entities_to_geometry,
     exterior_facet_indices,
+    is_simplex,
     locate_entities,
     locate_entities_boundary,
     transfer_meshtags_to_submesh,
 )
+
+
+def test_ufl_cargo_does_not_keep_mesh_wrapper_alive() -> None:
+    """Test that UFL cargo does not create a reference cycle."""
+    msh = create_unit_square(MPI.COMM_SELF, 2, 2)
+    domain = msh.ufl_domain()
+    assert domain is not None
+
+    mesh_ref = weakref.ref(msh)
+    assert domain.ufl_cargo() is msh._cpp_object
+
+    del msh
+    assert mesh_ref() is None
+
+    recovered_mesh = _mesh._mesh_from_ufl_domain(domain)
+    assert recovered_mesh.ufl_domain() is domain
+    assert domain.ufl_cargo() is recovered_mesh._cpp_object
+    assert recovered_mesh.topology.index_map(recovered_mesh.topology.dim).size_local == 8
+
+
+def test_ufl_cargo_outlives_mesh_and_domain() -> None:
+    """Test that cargo attribute access works once the wrappers are gone."""
+    msh = create_unit_square(MPI.COMM_SELF, 2, 2)
+    domain = msh.ufl_domain()
+    assert domain is not None
+    cargo = domain.ufl_cargo()
+
+    # The cargo holds the C++ mesh, so it stays usable after both the
+    # Python mesh wrapper and the UFL domain are released
+    del msh, domain
+    assert cargo.comm.size == 1
+    assert cargo.topology.index_map(cargo.topology.dim).size_local == 8
+
+    assert not hasattr(cargo, "not_a_mesh_attribute")
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
@@ -97,7 +133,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
     if len(submesh_to_mesh) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
-        mesh.topology.create_entity_permutations()
+        mesh.topology.create_cell_permutations()
         e_to_g = entities_to_geometry(mesh, entity_dim, np.array(submesh_to_mesh), True)
         for submesh_entity in range(len(submesh_to_mesh)):
             submesh_x_dofs = submesh.geometry.dofmaps[0][submesh_entity]
@@ -112,16 +148,16 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
 
 
 @pytest.mark.parametrize("cell_type", [_mesh.CellType.triangle, _mesh.CellType.quadrilateral])
-def test_empty_entities_to_geometry(cell_type):
+def test_empty_entities_to_geometry(cell_type) -> None:
     """Test entities_to_geometry with empty entity list."""
     mesh = _mesh.create_unit_square(MPI.COMM_WORLD, 10, 12, cell_type=cell_type)
 
     mesh.topology.create_connectivity(0, mesh.topology.dim)
-    mesh.topology.create_entity_permutations()
+    mesh.topology.create_cell_permutations()
     e_to_g = entities_to_geometry(mesh, 0, np.array([], dtype=np.int32), True)
     assert e_to_g.shape == (0, 1)
     e_to_g = entities_to_geometry(mesh, mesh.topology.dim, np.array([], dtype=np.int32), True)
-    assert e_to_g.shape == (0, _cpp.mesh.cell_num_vertices(cell_type))
+    assert e_to_g.shape == (0, cell_num_vertices(cell_type))
 
 
 def mesh_1d(dtype):
@@ -239,7 +275,7 @@ def new_comm(comm):
     return new_comm
 
 
-def test_UFLCell(interval, square, rectangle, cube, box):
+def test_UFLCell(interval, square, rectangle, cube, box) -> None:
     import ufl
 
     assert ufl.interval == interval.ufl_cell()
@@ -249,7 +285,7 @@ def test_UFLCell(interval, square, rectangle, cube, box):
     assert ufl.tetrahedron == box.ufl_cell()
 
 
-def test_UFLDomain(interval, square, rectangle, cube, box):
+def test_UFLDomain(interval, square, rectangle, cube, box) -> None:
     def _check_ufl_domain(mesh):
         domain = mesh.ufl_domain()
         assert mesh.geometry.dim == domain.geometric_dimension
@@ -265,7 +301,7 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("comm", [MPI.COMM_SELF, MPI.COMM_WORLD])
-def test_create_unit_square(comm, dtype):
+def test_create_unit_square(comm, dtype) -> None:
     """Create mesh of unit square."""
     mesh = create_unit_square(comm, 5, 7, dtype=dtype)
     assert mesh.topology.index_map(0).size_global == 48
@@ -277,7 +313,7 @@ def test_create_unit_square(comm, dtype):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("comm", [MPI.COMM_SELF, MPI.COMM_WORLD])
-def test_create_unit_cube(comm, dtype):
+def test_create_unit_cube(comm, dtype) -> None:
     """Create mesh of unit cube."""
     mesh = create_unit_cube(comm, 5, 7, 9, dtype=dtype)
     assert mesh.topology.index_map(0).size_global == 480
@@ -289,7 +325,7 @@ def test_create_unit_cube(comm, dtype):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("comm", [MPI.COMM_SELF, MPI.COMM_WORLD])
-def test_create_unit_square_quads(comm, dtype):
+def test_create_unit_square_quads(comm, dtype) -> None:
     mesh = create_unit_square(comm, 5, 7, CellType.quadrilateral, dtype=dtype)
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 35
@@ -300,7 +336,7 @@ def test_create_unit_square_quads(comm, dtype):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("comm", [MPI.COMM_SELF, MPI.COMM_WORLD])
-def test_create_unit_square_hex(comm, dtype):
+def test_create_unit_square_hex(comm, dtype) -> None:
     mesh = create_unit_cube(comm, 5, 7, 9, CellType.hexahedron, dtype=dtype)
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(3).size_global == 315
@@ -309,7 +345,7 @@ def test_create_unit_square_hex(comm, dtype):
     assert mesh.geometry.x.dtype == dtype
 
 
-def test_create_box_prism():
+def test_create_box_prism() -> None:
     mesh = create_box(
         MPI.COMM_WORLD,
         [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]],
@@ -323,7 +359,7 @@ def test_create_box_prism():
 
 
 @pytest.mark.parametrize("gdim", [1, 2, 3])
-def test_create_interval_gdim(gdim):
+def test_create_interval_gdim(gdim) -> None:
     """Interval mesh embedded in gdim-dimensional space has correct tdim and gdim."""
     mesh = create_interval(MPI.COMM_WORLD, 6, [0.0, 1.0], gdim=gdim)
     assert mesh.topology.dim == 1
@@ -335,7 +371,7 @@ def test_create_interval_gdim(gdim):
 
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
 @pytest.mark.parametrize("gdim", [2, 3])
-def test_create_rectangle_gdim(gdim, cell_type):
+def test_create_rectangle_gdim(gdim, cell_type) -> None:
     """Rectangle mesh embedded in gdim-dimensional space has correct tdim and gdim."""
     mesh = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [4, 4], cell_type, gdim=gdim)
     assert mesh.topology.dim == 2
@@ -346,66 +382,39 @@ def test_create_rectangle_gdim(gdim, cell_type):
 
 
 @pytest.mark.skip_in_parallel
-def test_get_coordinates():
+def test_get_coordinates() -> None:
     """Get coordinates of vertices."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     assert len(mesh.geometry.x) == 36
 
 
-@pytest.mark.skip("Needs to be re-implemented")
 @pytest.mark.skip_in_parallel
-def test_cell_inradius(c0, c1, c5):
-    assert _cpp.mesh.inradius(c0[0], [c0[2]]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
-    assert _cpp.mesh.inradius(c1[0], [c1[2]]) == pytest.approx(0.0)
-    assert _cpp.mesh.inradius(c5[0], [c5[2]]) == pytest.approx(math.sqrt(3.0) / 6.0)
-
-
-@pytest.mark.skip("Needs to be re-implemented")
-@pytest.mark.skip_in_parallel
-def test_cell_circumradius(c0, c1, c5):
-    assert _cpp.mesh.circumradius(c0[0], [c0[2]], c0[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
-    # Implementation of diameter() does not work accurately
-    # for degenerate cells - sometimes yields NaN
-    r_c1 = _cpp.mesh.circumradius(c1[0], [c1[2]], c1[1])
-    assert math.isnan(r_c1)
-    assert _cpp.mesh.circumradius(c5[0], [c5[2]], c5[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
-
-
-@pytest.mark.skip_in_parallel
-def test_cell_h(c0, c1, c5):
+def test_cell_h(c0, c1, c5) -> None:
     for c in [c0, c1, c5]:
         c[0].topology.create_connectivity(c[1], c[1])
         assert c[0].h(c[1], np.array([c[2]]))
 
 
-def test_cell_h_prism():
+def test_cell_h_prism() -> None:
     N = 3
     mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=CellType.prism)
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
     cells = np.arange(num_cells, dtype=np.int32)
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, cells)
+    h = mesh.h(tdim, cells)
     assert np.allclose(h, np.sqrt(3 / (N**2)))
 
 
 @pytest.mark.parametrize("ct", [CellType.hexahedron, CellType.tetrahedron])
-def test_facet_h(ct):
+def test_facet_h(ct) -> None:
     N = 3
     mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, ct)
     left_facets = locate_entities_boundary(
         mesh, mesh.topology.dim - 1, lambda x: np.isclose(x[0], 0)
     )
-    h = _cpp.mesh.h(mesh._cpp_object, mesh.topology.dim - 1, left_facets)
+    h = mesh.h(mesh.topology.dim - 1, left_facets)
     assert np.allclose(h, np.sqrt(2 / (N**2)))
-
-
-@pytest.mark.skip("Needs to be re-implemented")
-@pytest.mark.skip_in_parallel
-def test_cell_radius_ratio(c0, c1, c5):
-    assert _cpp.mesh.radius_ratio(c0[0], c0[2]) == pytest.approx(math.sqrt(3.0) - 1.0)
-    assert np.isnan(_cpp.mesh.radius_ratio(c1[0], c1[2]))
-    assert _cpp.mesh.radius_ratio(c5[0], c5[2]) == pytest.approx(1.0)
 
 
 @pytest.fixture(params=["dir1_fixture", "dir2_fixture"])
@@ -423,30 +432,15 @@ def dirname(request):
         (mesh_3d, math.sqrt(2.0), math.sqrt(2.0)),
     ],
 )
-def test_hmin_hmax(_mesh, dtype, hmin, hmax):
+def test_hmin_hmax(_mesh, dtype, hmin, hmax) -> None:
     mesh = _mesh(dtype)
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells))
+    h = mesh.h(tdim, np.arange(num_cells))
     assert h.min() == pytest.approx(hmin)
     assert h.max() == pytest.approx(hmax)
 
-
-# @pytest.mark.skip_in_parallel
-# @pytest.mark.skip("Needs to be re-implemented")
-# @pytest.mark.parametrize("mesh,rmin,rmax",
-#                          [
-#                              (mesh_1d(), 0.0, 0.125),
-#                              (mesh_2d(), 1.0 / (2.0 + math.sqrt(2.0)), math.sqrt(6.0) / 6.0),
-#                              (mesh_3d(), 0.0, math.sqrt(3.0) / 6.0),
-#                          ])
-# def test_rmin_rmax(mesh, rmin, rmax):
-#     tdim = mesh.topology.dim
-#     num_cells = mesh.topology.index_map(tdim).size_local
-#     inradius = cpp.mesh.inradius(mesh, range(num_cells))
-#     assert inradius.min() == pytest.approx(rmin)
-#     assert inradius.max() == pytest.approx(rmax)
 
 # - Facilities to run tests on combination of meshes
 
@@ -510,7 +504,7 @@ def xtest_mesh_topology_lifetime():
 
 
 @pytest.mark.skip_in_parallel
-def test_small_mesh():
+def test_small_mesh() -> None:
     mesh3d = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1)
     gdim = mesh3d.geometry.dim
     assert mesh3d.topology.index_map(gdim).size_global == 6
@@ -524,7 +518,7 @@ def test_small_mesh():
     # assert mesh1d.topology.index_map(gdim).size_global == 2
 
 
-def test_unit_hex_mesh_assemble():
+def test_unit_hex_mesh_assemble() -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
     vol = assemble_scalar(form(1 * ufl.dx(mesh)))
     vol = mesh.comm.allreduce(vol, MPI.SUM)
@@ -552,7 +546,7 @@ def boundary_2(x):
 @pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5, lambda x: x[0] >= -1])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("simplex", [True, False])
-def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
+def test_submesh_full(d, n, codim, marker, ghost_mode, simplex) -> None:
     if d == 1:
         mesh = create_unit_interval(MPI.COMM_WORLD, n, ghost_mode=ghost_mode)
     elif d == 2:
@@ -574,7 +568,7 @@ def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
 @pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("boundary", [boundary_0, boundary_1, boundary_2])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_submesh_boundary(d, n, boundary, ghost_mode):
+def test_submesh_boundary(d, n, boundary, ghost_mode) -> None:
     if d == 1:
         mesh = create_unit_interval(MPI.COMM_WORLD, n, ghost_mode=ghost_mode)
     elif d == 2:
@@ -589,7 +583,7 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_empty_rank_mesh(dtype):
+def test_empty_rank_mesh(dtype) -> None:
     """Construction of mesh where some ranks are empty."""
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
@@ -599,7 +593,7 @@ def test_empty_rank_mesh(dtype):
     def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
         """Leave cells on the current rank,."""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
-        return graph.adjacencylist(dest)._cpp_object
+        return graph.adjacencylist(dest)
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
@@ -639,12 +633,31 @@ def test_empty_rank_mesh(dtype):
         assert e_to_v.num_nodes == 0
 
     # Test creating and getting permutations doesn't throw an error
-    mesh.topology.create_entity_permutations()
+    mesh.topology.create_cell_permutations()
     mesh.topology.get_cell_permutation_info()
-    mesh.topology.get_facet_permutations()
+
+    tdim = mesh.topology.dim
+    for dim in range(tdim):
+        mesh.topology.create_entity_permutations(dim)
+        perms = mesh.topology.get_entity_permutations(dim)
+        num_cells = (
+            mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
+        )
+        num_entities = cell_num_entities(cell_type, dim)
+        # Vertices have no orientation, so their permutations are empty
+        expected = 0 if dim == 0 else num_cells * num_entities
+        assert perms.shape == (expected,)
+
+    # A dimension must be computed before it can be read
+    with pytest.raises(RuntimeError):
+        create_unit_square(MPI.COMM_WORLD, 2, 2).topology.get_entity_permutations(1)
+
+    # A cell is not a sub-entity of itself
+    with pytest.raises(ValueError):
+        mesh.topology.create_entity_permutations(tdim)
 
 
-def test_original_index():
+def test_original_index() -> None:
     nx = 7
     mesh = create_unit_cube(MPI.COMM_WORLD, nx, nx, nx, ghost_mode=GhostMode.none)
     s = sum(mesh.topology.original_cell_index)
@@ -653,7 +666,7 @@ def test_original_index():
 
 
 @pytest.mark.skip_in_parallel
-def test_create_mesh_cell_reordering():
+def test_create_mesh_cell_reordering() -> None:
     """Test a Python callback for cell reordering."""
     cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)
     x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
@@ -670,7 +683,7 @@ def test_create_mesh_cell_reordering():
 
 
 @pytest.mark.skip_in_parallel
-def test_create_mesh_cell_reordering_exception():
+def test_create_mesh_cell_reordering_exception() -> None:
     """Test that an exception from a cell reordering callback keeps its type."""
     cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)
     x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
@@ -684,14 +697,84 @@ def test_create_mesh_cell_reordering_exception():
 
 
 @pytest.mark.skip_in_parallel
-def test_create_mesh_default_cell_reordering():
+def test_create_mesh_unreferenced_nodes() -> None:
+    """Nodes that no cell references are dropped from the geometry."""
+    cells = np.array([[0, 1, 2], [1, 4, 2]], dtype=np.int64)
+    # Nodes 3 and 5 are not referenced by any cell
+    x = np.array(
+        [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.5, 0.5], [1.0, 1.0], [9.0, 9.0]],
+        dtype=default_real_type,
+    )
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type))
+    msh = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x)
+
+    # The geometry holds the referenced nodes only, renumbered
+    # contiguously, and records the input index of each of them
+    assert msh.geometry.x.shape[0] == 4
+    assert msh.geometry.index_map().size_global == 4
+    igi = np.asarray(msh.geometry.input_global_indices)
+    assert sorted(igi) == [0, 1, 2, 4]
+    np.testing.assert_allclose(msh.geometry.x[:, :2], x[igi])
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.skipif(
+    not dolfinx.common.has_debug, reason="Out-of-range node index check is debug-only"
+)
+def test_create_mesh_node_index_out_of_range() -> None:
+    """A cell node index beyond the end of the node array is rejected."""
+    cells = np.array([[0, 1, 7]], dtype=np.int64)
+    x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]], dtype=default_real_type)
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type))
+    with pytest.raises(IndexError, match="outside the global row range"):
+        _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x)
+
+
+@pytest.mark.skip_in_parallel
+def test_topology_connectivity_dimension_types():
+    """Dimensions may be any integer type, but the forms cannot be mixed."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    msh.topology.create_connectivity(2, 0)
+    c = msh.topology.connectivity(2, 0)
+    for d0, d1 in [(np.int32(2), 0), (2, np.int64(0)), (np.int32(2), np.int64(0))]:
+        assert np.array_equal(msh.topology.connectivity(d0, d1).array, c.array)
+    with pytest.raises(TypeError):
+        msh.topology.connectivity((2, 0), 0)
+    with pytest.raises(TypeError):
+        msh.topology.connectivity(2, (0, 0))
+
+
+def test_wrappers_compare_equal() -> None:
+    """Wrappers built around the same C++ object compare equal."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    msh.topology.create_connectivity(2, 0)
+
+    # Each access rebuilds the wrapper, so these are independent objects
+    # around the same underlying C++ object.
+    c0, c1 = msh.topology.connectivity(2, 0), msh.topology.connectivity(2, 0)
+    assert c0 == c1
+    geom0, geom1 = msh.geometry, msh.geometry
+    assert geom0 == geom1
+
+    # A MeshTags wraps the mesh topology in a separate Topology object
+    tdim = msh.topology.dim
+    entities = np.arange(msh.topology.index_map(tdim).size_local, dtype=np.int32)
+    mt = _mesh.meshtags(msh, tdim, entities, np.ones_like(entities))
+    assert mt.topology == msh.topology
+
+    V = functionspace(msh, ("Lagrange", 1))
+    dof_layout0, dof_layout1 = V.dofmap.dof_layout, V.dofmap.dof_layout
+    assert dof_layout0 == dof_layout1
+
+
+def test_create_mesh_default_cell_reordering() -> None:
     """Test default reverse Cuthill-McKee cell reordering."""
     cells = np.array([[0, 1, 2], [1, 3, 2]], dtype=np.int64)
     x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
 
     msh_default = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x)
-    msh_rcm = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=_cpp.graph.reorder_rcm)
+    msh_rcm = _mesh.create_mesh(MPI.COMM_SELF, cells, domain, x, reorder_fn=graph.reorder_rcm)
 
     assert np.array_equal(
         msh_default.topology.original_cell_index, msh_rcm.topology.original_cell_index
@@ -699,7 +782,7 @@ def test_create_mesh_default_cell_reordering():
 
 
 @pytest.mark.skip_in_parallel
-def test_create_mesh_sfc_reordering():
+def test_create_mesh_sfc_reordering() -> None:
     """Test a built-in space-filling-curve cell reordering."""
     cells = np.array([[1, 3, 2], [0, 1, 2]], dtype=np.int64)
     x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
@@ -731,7 +814,7 @@ def compute_num_boundary_facets(mesh):
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_boundary_facets(n, d, ghost_mode, dtype):
+def test_boundary_facets(n, d, ghost_mode, dtype) -> None:
     """Test that the correct number of boundary facets are computed."""
     if d == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode, dtype=dtype)
@@ -777,7 +860,7 @@ def test_submesh_codim_0_boundary_facets(n, d, ghost_mode, dtype):
 @pytest.mark.parametrize("n", [2, 5])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_submesh_codim_1_boundary_facets(n, ghost_mode, dtype):
+def test_submesh_codim_1_boundary_facets(n, ghost_mode, dtype) -> None:
     """Test that the correct number of boundary facets are computed
     for a submesh of codim 1.
     """
@@ -826,11 +909,11 @@ def test_mesh_create_cmap(dtype):
 
 avail_partitioners: list[typing.Callable[..., dolfinx.mesh.PartitioningFunc]] = []
 if dolfinx.has_ptscotch:
-    avail_partitioners.append(getattr(dolfinx.cpp.graph, "partitioner_scotch"))
+    avail_partitioners.append(graph.partitioner_scotch)
 if dolfinx.has_kahip:
-    avail_partitioners.append(getattr(dolfinx.cpp.graph, "partitioner_kahip"))
+    avail_partitioners.append(graph.partitioner_kahip)
 if dolfinx.has_parmetis:
-    avail_partitioners.append(getattr(dolfinx.cpp.graph, "partitioner_parmetis"))
+    avail_partitioners.append(graph.partitioner_parmetis)
 
 
 @pytest.mark.parametrize("partitioner", avail_partitioners)
@@ -867,6 +950,20 @@ def test_mesh_single_process_distribution(partitioner):
             assert adj.links(i).size == 2
 
 
+def test_create_submesh_empty_on_some_ranks() -> None:
+    """create_submesh must not deadlock when some ranks have zero entities."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 8, 8)
+    tdim = mesh.topology.dim
+    if MPI.COMM_WORLD.rank == 0:
+        num_local = mesh.topology.index_map(tdim).size_local
+        entities = np.arange(num_local, dtype=np.int32)
+    else:
+        entities = np.empty(0, dtype=np.int32)
+    submesh, _entity_map, _vertex_map, _node_map = create_submesh(mesh, tdim, entities)
+    if MPI.COMM_WORLD.rank != 0:
+        assert submesh.topology.index_map(tdim).size_local == 0
+
+
 @pytest.mark.parametrize("codim", [0, 1, 2, 3])
 def test_transfer_to_submesh(codim):
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 4, 5)
@@ -892,7 +989,7 @@ def test_transfer_to_submesh(codim):
         et_values = values[et_indices]
         et = dolfinx.mesh.meshtags(mesh, i, et_indices, et_values)
 
-        sub_et = transfer_meshtags_to_submesh(et, submesh, vertex_map, entity_map)
+        sub_et = transfer_meshtags_to_submesh(et, submesh, entity_map, vertex_map)
         ref_one = locate_entities(submesh, i, marker1)
         ref_two = np.sort(locate_entities(submesh, i, marker2))
         ref_one = np.setdiff1d(ref_one, ref_two, assume_unique=True)
@@ -905,7 +1002,7 @@ def test_transfer_to_submesh(codim):
 
 @pytest.mark.parametrize("gdim", [1, 2, 3])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_point_mesh(gdim, dtype):
+def test_point_mesh(gdim, dtype) -> None:
     rng = np.random.default_rng(12)
     num_points = 10
     x = rng.random((num_points, gdim), dtype=dtype)
@@ -915,3 +1012,150 @@ def test_point_mesh(gdim, dtype):
     assert mesh.geometry.dim == gdim
     assert mesh.topology.index_map(0).size_global == MPI.COMM_WORLD.size * num_points
     assert mesh.topology.index_map(0).size_local == num_points
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        CellType.triangle,
+        CellType.quadrilateral,
+        CellType.tetrahedron,
+        CellType.hexahedron,
+    ],
+)
+def test_cell_permutation_info_matches_entity_permutations(cell_type) -> None:
+    """The packed cell permutation info is the per-dimension permutations.
+
+    ``get_cell_permutation_info`` packs three bits per face followed by
+    one bit per edge. Those bits must agree with the permutations
+    returned per entity dimension, which are computed by a separate code
+    path.
+    """
+    if cell_type in (CellType.triangle, CellType.quadrilateral):
+        msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type=cell_type)
+    else:
+        msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
+
+    topology = msh.topology
+    tdim = topology.dim
+
+    # Compute the per-dimension permutations first, so that they and the
+    # packed info are produced by independent code paths: asking for
+    # them after the packed info exists unpacks it instead
+    for dim in range(1, tdim):
+        topology.create_entity_permutations(dim)
+    topology.create_cell_permutations()
+
+    info = topology.get_cell_permutation_info()
+    num_cells = len(info)
+
+    used_bits = 0
+    if tdim > 2:
+        faces = topology.get_entity_permutations(2).reshape(num_cells, -1)
+        for i in range(faces.shape[1]):
+            assert np.array_equal((info >> (3 * i)) & 7, faces[:, i])
+        used_bits += 3 * faces.shape[1]
+
+    edges = topology.get_entity_permutations(1).reshape(num_cells, -1)
+    for i in range(edges.shape[1]):
+        assert np.array_equal((info >> (used_bits + i)) & 1, edges[:, i])
+
+    # A non-trivial mesh really does have permuted entities, so the
+    # comparisons above are not vacuous
+    assert edges.any()
+    if tdim > 2:
+        assert faces.any()
+
+
+def test_entity_permutations_are_computed_per_dimension() -> None:
+    """Computing one dimension must not compute any other."""
+    msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    topology = msh.topology
+
+    topology.create_entity_permutations(1)
+    topology.get_entity_permutations(1)
+    with pytest.raises(RuntimeError):
+        topology.get_entity_permutations(2)
+
+    topology.create_entity_permutations(2)
+    topology.get_entity_permutations(2)
+
+
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_facet_assembly_computes_only_facet_permutations(degree) -> None:
+    """A form pays only for the entities it integrates over.
+
+    An interior facet form needs permutations (it reads
+    ``quadrature_permutation``), so the facets of the tetrahedron --
+    faces, dimension 2 -- must be computed. Its edges must not be. This
+    holds at every degree: the quadrature permutation is a property of
+    the integral, not of the element.
+    """
+    msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.fem.functionspace(msh, ("Lagrange", degree))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = dolfinx.fem.form(ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS)
+    assert a._cpp_object.needs_facet_permutations
+
+    dolfinx.fem.assemble_matrix(a)
+
+    msh.topology.get_entity_permutations(2)
+    with pytest.raises(RuntimeError):
+        msh.topology.get_entity_permutations(1)
+
+    # Lagrange never needs dof transformations at assembly time, but from
+    # degree 3 it is required to permute the dofmap.
+    assert not V.element.needs_dof_transformations
+    if degree < 3:
+        with pytest.raises(RuntimeError):
+            msh.topology.get_cell_permutation_info()
+    else:
+        msh.topology.get_cell_permutation_info()
+
+
+def test_cell_assembly_computes_only_cell_permutations() -> None:
+    """Dof transformations need the packed cell info, but no sub-entities.
+
+    The packed cell info is no longer computed as a side effect of, or
+    alongside, the permutations of a cell's sub-entities.
+    """
+    msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    V = dolfinx.fem.functionspace(msh, ("N1curl", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    assert V.element.needs_dof_transformations
+
+    a = dolfinx.fem.form(ufl.inner(u, v) * ufl.dx)
+    assert not a._cpp_object.needs_facet_permutations
+    dolfinx.fem.assemble_matrix(a)
+
+    msh.topology.get_cell_permutation_info()
+    for dim in (1, 2):
+        with pytest.raises(RuntimeError):
+            msh.topology.get_entity_permutations(dim)
+
+
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+def test_entity_permutations_unpacked_from_cell_info(cell_type):
+    """Asking for permutations after the packed info exists unpacks it.
+
+    The result must equal what the independent per-dimension computation
+    produces, so that the reuse is a pure saving.
+    """
+    if cell_type == CellType.triangle:
+        args = (MPI.COMM_WORLD, 3, 3)
+        make = create_unit_square
+    else:
+        args = (MPI.COMM_WORLD, 2, 2, 2)
+        make = create_unit_cube
+
+    computed = make(*args, cell_type=cell_type)
+    unpacked = make(*args, cell_type=cell_type)
+    unpacked.topology.create_cell_permutations()
+
+    for dim in range(1, computed.topology.dim):
+        computed.topology.create_entity_permutations(dim)
+        unpacked.topology.create_entity_permutations(dim)
+        assert np.array_equal(
+            computed.topology.get_entity_permutations(dim),
+            unpacked.topology.get_entity_permutations(dim),
+        )

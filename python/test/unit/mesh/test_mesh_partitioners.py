@@ -13,14 +13,14 @@ import pytest
 
 import ufl
 from basix.ufl import element
-from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.fem import coordinate_element
-from dolfinx.graph import partitioner
+from dolfinx.graph import adjacencylist, partitioner
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (
     CellType,
     GhostMode,
+    build_dual_graph,
     compute_midpoints,
     create_box,
     create_mesh,
@@ -77,7 +77,7 @@ except ImportError:
 @pytest.mark.parametrize("gpart", partitioners)
 @pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron, CellType.prism])
-def test_partition_box_mesh(gpart, Nx, cell_type):
+def test_partition_box_mesh(gpart, Nx, cell_type) -> None:
     mesh = create_box(
         MPI.COMM_WORLD,
         [np.array([0, 0, 0]), np.array([1, 1, 1])],
@@ -132,7 +132,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     def partitioner(*args):
         midpoints = np.mean(x_global[topo], axis=1)
         dest = np.floor(midpoints[:, 0] % mpi_comm.size).astype(np.int32)
-        return _cpp.graph.AdjacencyList_int32(dest)
+        return adjacencylist(dest)
 
     new_mesh = create_mesh(mpi_comm, topo, domain, x, partitioner)
 
@@ -148,7 +148,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     assert np.all(cell_midpoints[:, 0] <= mpi_comm.rank + 1)
 
 
-def test_asymmetric_partitioner():
+def test_asymmetric_partitioner() -> None:
     mpi_comm = MPI.COMM_WORLD
     n = mpi_comm.Get_size()
     r = mpi_comm.Get_rank()
@@ -183,7 +183,7 @@ def test_asymmetric_partitioner():
 
         dests = np.array(dests, dtype=np.int32)
         offsets = np.array(offsets, dtype=np.int32)
-        return _cpp.graph.AdjacencyList_int32(dests, offsets)
+        return adjacencylist(dests, offsets)
 
     new_mesh = create_mesh(mpi_comm, topo, domain, x, partitioner)
     if r == 0 and n > 1:
@@ -248,14 +248,14 @@ def test_mixed_topology_partitioning():
 
     nparts = 4
     cell_types = [CellType.hexahedron, CellType.pyramid, CellType.tetrahedron]
-    dual_graph = _cpp.mesh.build_dual_graph(MPI.COMM_WORLD, cell_types, cells_np, 2, 1)
+    dual_graph = build_dual_graph(MPI.COMM_WORLD, cell_types, cells_np, 2, 1)
     part = partitioner()
     p = part(
         MPI.COMM_WORLD,
         nparts,
-        dual_graph,
-        np.array([], dtype=np.int32),
-        np.array([], dtype=np.int32),
+        dual_graph._cpp_object,
+        None,
+        None,
         False,
     )
 

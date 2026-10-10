@@ -204,10 +204,6 @@ create_new_vertices(MPI_Comm comm,
   // processes
   std::vector<std::int64_t> received_values;
   {
-    int indegree(-1), outdegree(-2), weighted(-1);
-    MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
-    assert(indegree == outdegree);
-
     std::vector<std::int64_t> send_buffer;
     std::vector<int> send_sizes;
     for (auto& x : values_to_send)

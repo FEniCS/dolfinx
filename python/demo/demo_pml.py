@@ -1,3 +1,13 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.14.4
+# ---
+
 # # Electromagnetic scattering from a wire with PML
 #
 # Copyright (C) 2022-2025 Michele Castriotta, Igor Baratta
@@ -44,11 +54,9 @@ except ImportError:
 
 try:
     import pyvista
-
-    have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
-    have_pyvista = False
+    pyvista = None
 # -
 
 # Since we want to solve time-harmonic Maxwell's equation, we require
@@ -352,7 +360,7 @@ pml_tag = 4
 # -
 
 # We generate the mesh using GMSH and convert it to a
-# {py:class}`Mesh<dolfinx.mesh.Mesh>` using
+# {py:class}`Mesh <dolfinx.mesh.Mesh>` using
 # {py:func}`model_to_mesh <dolfinx.io.gmsh.model_to_mesh>`.
 
 # +
@@ -398,7 +406,7 @@ MPI.COMM_WORLD.barrier()
 out_folder = Path("output_pml")
 out_folder.mkdir(parents=True, exist_ok=True)
 tdim = mesh_data.mesh.topology.dim
-if have_pyvista:
+if pyvista is not None:
     topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
@@ -634,11 +642,11 @@ F = (
 a, L = ufl.lhs(F), ufl.rhs(F)
 
 # For factorisation prefer MUMPS, then superlu_dist, then default
-sys = PETSc.Sys()  # type: ignore
+sys = PETSc.Sys()
 use_superlu = PETSc.IntType == np.int64
-if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
+if sys.hasExternalPackage("mumps") and not use_superlu:
     mat_factor_backend = "mumps"
-elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
+elif sys.hasExternalPackage("superlu_dist"):
     mat_factor_backend = "superlu_dist"
 else:
     if mesh_data.mesh.comm.size > 1:
@@ -680,7 +688,7 @@ with VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
 # discretized with Nedelec elements, check [this](./demo_interpolation-io)
 # DOLFINx demo.
 
-if have_pyvista:
+if pyvista is not None:
     V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)

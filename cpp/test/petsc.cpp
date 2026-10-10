@@ -1,4 +1,4 @@
-// Copyright (C) 2026 Jack S. Hale
+// Copyright (C) 2026 Jack S. Hale and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,13 +8,26 @@
 
 #ifdef HAS_PETSC
 
+#include <algorithm>
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <cmath>
+#include <cstdint>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/fem/assembler.h>
+#include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
+#include <memory>
+#include <mpi.h>
+#include <numeric>
 #include <petscksp.h>
 #include <petscmat.h>
 #include <petscvec.h>
+#include <span>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 using namespace dolfinx;
 
@@ -320,6 +333,181 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
   }
 
   CHECK(MatDestroy(&A) == 0);
+}
+
+TEST_CASE("PETSc Mat re-assembly keeps zero entries in the pattern", "[petsc]")
+{
+  init_petsc();
+
+  // Check both orderings documented on la::petsc::create_matrix.
+  MPI_Comm comm = MPI_COMM_WORLD;
+  constexpr std::int32_t n = 4;
+
+  for (int bs : {1, 2})
+  {
+    auto map = std::make_shared<common::IndexMap>(comm, n);
+    la::SparsityPattern sp(comm, {map, map}, {bs, bs});
+    for (std::int32_t i = 0; i < n; ++i)
+      for (std::int32_t j = 0; j < n; ++j)
+        sp.insert(i, j);
+    sp.finalize();
+
+    // Diagonal-only values make every off-diagonal insertion zero.
+    std::vector<PetscScalar> vals(bs * n * bs * n, 0);
+    for (std::int32_t i = 0; i < bs * n; ++i)
+      vals[bs * n * i + i] = 1.0 + i;
+
+    std::vector<PetscInt> idx(bs * n);
+    std::iota(idx.begin(), idx.end(), 0);
+
+    auto fill = [&](Mat A)
+    {
+      CHECK(MatSetValuesLocal(A, idx.size(), idx.data(), idx.size(), idx.data(),
+                              vals.data(), ADD_VALUES)
+            == 0);
+      CHECK(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY) == 0);
+      CHECK(MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY) == 0);
+    };
+
+    // 0: disabled, 1: enabled after first assembly, 2: enabled before.
+    auto assemble = [&](int when) -> std::pair<double, double>
+    {
+      Mat A = la::petsc::create_matrix(comm, sp);
+      if (when == 2)
+        CHECK(MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE) == 0);
+
+      fill(A);
+      if (when == 1)
+        CHECK(MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE) == 0);
+
+      // Re-assemble as a time-dependent or non-linear problem would.
+      CHECK(MatZeroEntries(A) == 0);
+      fill(A);
+
+      MatInfo info;
+      CHECK(MatGetInfo(A, MAT_GLOBAL_SUM, &info) == 0);
+      PetscReal norm;
+      CHECK(MatNorm(A, NORM_FROBENIUS, &norm) == 0);
+      CHECK(MatDestroy(&A) == 0);
+      return {info.nz_used, norm};
+    };
+
+    const int size = dolfinx::MPI::size(comm);
+    const double nnz_full = static_cast<double>(bs * n * bs * n * size);
+    const double nnz_diag = static_cast<double>(bs * n * size);
+
+    auto [nnz_plain, norm_plain] = assemble(0);
+    auto [nnz_after, norm_after] = assemble(1);
+    auto [nnz_before, norm_before] = assemble(2);
+
+    // Enabling after the first assembly preserves the pattern.
+    CHECK(nnz_plain == Catch::Approx(nnz_full));
+    CHECK(nnz_after == Catch::Approx(nnz_full));
+    CHECK(norm_after == Catch::Approx(norm_plain));
+
+    // Enabling beforehand creates only the diagonal, with equal values.
+    CHECK(nnz_before == Catch::Approx(nnz_diag));
+    CHECK(norm_before == Catch::Approx(norm_plain));
+  }
+}
+
+TEST_CASE("MATIS diagonal sums the contributions of the sharing ranks",
+          "[petsc]")
+{
+  init_petsc();
+
+  // A MATIS matrix holds an unassembled local matrix per rank, the
+  // global operator being the sum of the local contributions. A rank
+  // must therefore add a share of a diagonal value for every local row
+  // it holds, rather than only for the rows it owns, or its local
+  // matrix is singular where a row is shared. Adding 1/n on every
+  // local row, n being the number of sharing ranks, must reproduce the
+  // assembled matrix that adding 1 on the owned rows alone gives.
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const int size = dolfinx::MPI::size(comm);
+  const int rank = dolfinx::MPI::rank(comm);
+
+  // Each rank owns n indices and ghosts the first index of every other
+  // rank, so each of those is shared by all ranks
+  constexpr std::int32_t n = 4;
+  std::vector<std::int64_t> ghosts;
+  std::vector<int> owners;
+  for (int r = 0; r < size; ++r)
+  {
+    if (r != rank)
+    {
+      ghosts.push_back(static_cast<std::int64_t>(r) * n);
+      owners.push_back(r);
+    }
+  }
+  auto map = std::make_shared<common::IndexMap>(comm, n, ghosts, owners);
+
+  std::vector<std::int32_t> owned(map->size_local());
+  std::iota(owned.begin(), owned.end(), 0);
+  std::vector<std::int32_t> local(map->size_local() + map->num_ghosts());
+  std::iota(local.begin(), local.end(), 0);
+
+  // Diagonal-only pattern over all local rows
+  la::SparsityPattern sp(comm, {map, map}, {1, 1});
+  for (std::int32_t i : local)
+    sp.insert(i, i);
+  sp.finalize();
+
+  const std::vector<std::int32_t> nshare
+      = common::num_sharing_ranks(*map, local, 1);
+
+  // The test is only meaningful if a row is genuinely shared
+  if (size > 1)
+    CHECK(std::ranges::max(nshare) == size);
+
+  std::vector<PetscScalar> diagonals(nshare.size());
+  std::ranges::transform(nshare, diagonals.begin(), [](std::int32_t ni)
+                         { return PetscScalar(1) / PetscScalar(ni); });
+
+  // 1/n on every local row of a MATIS matrix
+  Mat A_is = la::petsc::create_matrix(comm, sp, MATIS);
+  PetscBool is_matis = PETSC_FALSE;
+  CHECK(PetscObjectTypeCompare((PetscObject)A_is, MATIS, &is_matis) == 0);
+  CHECK(is_matis == PETSC_TRUE);
+  la::set_diagonal(la::petsc::Matrix::set_fn(A_is, ADD_VALUES), local,
+                   std::span<const PetscScalar>(diagonals));
+  CHECK(MatAssemblyBegin(A_is, MAT_FINAL_ASSEMBLY) == 0);
+  CHECK(MatAssemblyEnd(A_is, MAT_FINAL_ASSEMBLY) == 0);
+
+  // 1 on the owned rows of an AIJ matrix
+  Mat A_aij = la::petsc::create_matrix(comm, sp, MATAIJ);
+  la::set_diagonal(la::petsc::Matrix::set_fn(A_aij, ADD_VALUES), owned,
+                   PetscScalar(1));
+  CHECK(MatAssemblyBegin(A_aij, MAT_FINAL_ASSEMBLY) == 0);
+  CHECK(MatAssemblyEnd(A_aij, MAT_FINAL_ASSEMBLY) == 0);
+
+  // Sum the MATIS local matrices into an assembled matrix
+  Mat A_sum = nullptr;
+  CHECK(MatConvert(A_is, MATAIJ, MAT_INITIAL_MATRIX, &A_sum) == 0);
+
+  // Compare the owned rows. Columns absent from a row are returned as
+  // zero, so this compares the operators and not their patterns
+  PetscInt r0 = 0, r1 = 0, N = 0;
+  CHECK(MatGetOwnershipRange(A_aij, &r0, &r1) == 0);
+  CHECK(MatGetSize(A_aij, nullptr, &N) == 0);
+  std::vector<PetscInt> rows(r1 - r0), cols(N);
+  std::iota(rows.begin(), rows.end(), r0);
+  std::iota(cols.begin(), cols.end(), 0);
+
+  std::vector<PetscScalar> v_sum(rows.size() * cols.size());
+  std::vector<PetscScalar> v_aij(v_sum.size());
+  CHECK(MatGetValues(A_sum, rows.size(), rows.data(), cols.size(), cols.data(),
+                     v_sum.data())
+        == 0);
+  CHECK(MatGetValues(A_aij, rows.size(), rows.data(), cols.size(), cols.data(),
+                     v_aij.data())
+        == 0);
+  for (std::size_t i = 0; i < v_sum.size(); ++i)
+    CHECK(std::abs(v_sum[i] - v_aij[i]) < 100 * PETSC_SMALL);
+
+  CHECK(MatDestroy(&A_is) == 0);
+  CHECK(MatDestroy(&A_aij) == 0);
+  CHECK(MatDestroy(&A_sum) == 0);
 }
 
 #endif

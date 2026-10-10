@@ -31,7 +31,7 @@ def distance_point_to_plane_3D(P1, P2, P3, point):
 
 @pytest.mark.parametrize("delta", [0.1, 1e-12, 0, -2])
 @pytest.mark.parametrize("dtype", [np.float64, np.float32])
-def test_line_point_distance(delta, dtype):
+def test_line_point_distance(delta, dtype) -> None:
     line = np.array([[0.1, 0.2, 0.3], [0.5, 0.8, 0.7]], dtype=dtype)
     point_on_line = line[0] + 0.27 * (line[1] - line[0])
     normal = np.cross(line[0], line[1])
@@ -44,7 +44,7 @@ def test_line_point_distance(delta, dtype):
 
 @pytest.mark.parametrize("delta", [0.1, 1e-12, 0])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_line_line_distance(delta, dtype):
+def test_line_line_distance(delta, dtype) -> None:
     line = np.array([[-0.5, -0.7, -0.3], [1, 2, 3]], dtype=dtype)
     point_on_line = line[0] + 0.38 * (line[1] - line[0])
     normal = np.cross(line[0], line[1])
@@ -57,7 +57,7 @@ def test_line_line_distance(delta, dtype):
 
 @pytest.mark.parametrize("delta", [0.1 ** (3 * i) for i in range(6)])
 @pytest.mark.parametrize("dtype", [np.float64])
-def test_tri_distance(delta, dtype):
+def test_tri_distance(delta, dtype) -> None:
     tri_1 = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]], dtype=dtype)
     tri_2 = np.array([[1, delta, 0], [3, 1.2, 0], [1, 1, 0]], dtype=dtype)
     P1 = tri_1[2]
@@ -70,7 +70,7 @@ def test_tri_distance(delta, dtype):
 
 @pytest.mark.parametrize("delta", [0.1 * 0.1 ** (3 * i) for i in range(6)])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_quad_distance2d(delta, dtype):
+def test_quad_distance2d(delta, dtype) -> None:
     quad_1 = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0]], dtype=dtype)
     quad_2 = np.array([[0, 1 + delta, 0], [2, 2, 0], [2, 4, 0], [4, 4, 0]], dtype=dtype)
     P1 = quad_1[2]
@@ -82,7 +82,7 @@ def test_quad_distance2d(delta, dtype):
 
 
 @pytest.mark.parametrize("delta", [1 * 0.5 ** (3 * i) for i in range(7)])
-def test_tetra_distance_3d(delta):
+def test_tetra_distance_3d(delta) -> None:
     tetra_1 = np.array([[0, 0, 0.2], [1, 0, 0.1], [0, 1, 0.3], [0, 0, 1]], dtype=np.float64)
     tetra_2 = np.array([[0, 0, -3], [1, 0, -3], [0, 1, -3], [0.5, 0.3, -delta]], dtype=np.float64)
     actual_distance = distance_point_to_plane_3D(tetra_1[0], tetra_1[1], tetra_1[2], tetra_2[3])
@@ -91,7 +91,7 @@ def test_tetra_distance_3d(delta):
 
 
 @pytest.mark.parametrize("delta", [(-1) ** i * np.sqrt(2) * 0.1 ** (3 * i) for i in range(6)])
-def test_tetra_collision_3d(delta):
+def test_tetra_collision_3d(delta) -> None:
     tetra_1 = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.float64)
     tetra_2 = np.array([[0, 0, -3], [1, 0, -3], [0, 1, -3], [0.5, 0.3, -delta]], dtype=np.float64)
     actual_distance = distance_point_to_plane_3D(tetra_1[0], tetra_1[1], tetra_1[2], tetra_2[3])
@@ -103,7 +103,7 @@ def test_tetra_collision_3d(delta):
 
 
 @pytest.mark.parametrize("delta", [0, -0.1, -0.49, -0.51])
-def test_hex_collision_3d(delta):
+def test_hex_collision_3d(delta) -> None:
     hex_1 = np.array(
         [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]],
         dtype=np.float64,
@@ -131,7 +131,7 @@ def test_hex_collision_3d(delta):
 @pytest.mark.parametrize("delta", [1e8, 1.0, 1e-6, 1e-12])
 @pytest.mark.parametrize("scale", [1000.0, 1.0, 1e-4])
 @pytest.mark.parametrize("dtype", [np.float64])
-def test_cube_distance(delta, scale, dtype):
+def test_cube_distance(delta, scale, dtype) -> None:
     cubes = [
         scale
         * np.array(
@@ -184,7 +184,7 @@ def test_cube_distance(delta, scale, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_collision_2nd_order_triangle(dtype):
+def test_collision_2nd_order_triangle(dtype) -> None:
     points = np.array(
         [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.65, 0.65], [0.0, 0.5], [0.5, 0.0]], dtype=dtype
     )

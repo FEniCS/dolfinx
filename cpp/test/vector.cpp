@@ -12,8 +12,10 @@
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/la/Vector.h>
 #include <functional>
+#include <memory>
 #include <numeric>
 
 using namespace dolfinx;
@@ -40,7 +42,10 @@ void test_vector()
   auto index_map = std::make_shared<common::IndexMap>(
       MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
 
-  la::Vector<T> v(index_map, 1);
+  std::shared_ptr<common::Scatterer<>> scatterer
+      = std::make_shared<common::Scatterer<>>(*index_map);
+  la::Vector<T> v(index_map, 1, scatterer);
+  CHECK(v.scatterer() == scatterer);
   std::ranges::fill(v.array(), 1.0);
 
   double norm2 = la::squared_norm(v);

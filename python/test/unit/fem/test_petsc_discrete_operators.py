@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2025 Garth N. Wells, Jørgen S. Dokken
+# Copyright (C) 2015-2026 Garth N. Wells, Jørgen S. Dokken, OpenAI
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -13,14 +13,53 @@ import pytest
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
-from dolfinx.cpp.mesh import cell_dim
 from dolfinx.fem import Expression, Function, assemble_scalar, form, functionspace
-from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    cell_dim,
+    create_mesh,
+    create_unit_cube,
+    create_unit_square,
+)
 
 
 @pytest.mark.petsc4py
 class TestPETScDiscreteOperators:
     """Test PETSc-based discrete operators."""
+
+    @pytest.mark.parametrize("family,discontinuous", [("Lagrange", True), ("CR", False)])
+    def test_gradient_nonconforming_source_raises(self, family, discontinuous):
+        """Reject nonconforming sources before constructing a PETSc matrix."""
+        from dolfinx.fem.petsc import discrete_gradient
+
+        msh = create_unit_square(MPI.COMM_WORLD, 2, 2)
+        V = functionspace(
+            msh,
+            element(
+                family,
+                msh.basix_cell(),
+                1,
+                discontinuous=discontinuous,
+                dtype=default_real_type,
+            ),
+        )
+        W = functionspace(msh, ("N1curl", 1))
+        with pytest.raises(ValueError, match="Source element must be H1-conforming"):
+            discrete_gradient(V, W)
+
+    def test_curl_discontinuous_source_raises(self):
+        """Reject discontinuous sources before constructing a PETSc matrix."""
+        from dolfinx.fem.petsc import discrete_curl
+
+        msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+        V = functionspace(
+            msh,
+            element("N1curl", msh.basix_cell(), 1, discontinuous=True, dtype=default_real_type),
+        )
+        W = functionspace(msh, ("RT", 1))
+        with pytest.raises(ValueError, match=r"Source element must be H\(curl\)-conforming"):
+            discrete_curl(V, W)
 
     @pytest.mark.skip_in_parallel
     @pytest.mark.parametrize(
@@ -56,7 +95,7 @@ class TestPETScDiscreteOperators:
         "cell_type",
         [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron],
     )
-    def test_gradient_interpolation_petsc(self, cell_type, p, q):
+    def test_gradient_interpolation_petsc(self, cell_type, p, q) -> None:
         """Test discrete gradient computation with verification using Expression."""
         from dolfinx.fem.petsc import discrete_gradient
 
@@ -126,7 +165,7 @@ class TestPETScDiscreteOperators:
         "cell_type",
         [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron],
     )
-    def test_interpolation_matrix_petsc(self, cell_type, p, q, from_lagrange):
+    def test_interpolation_matrix_petsc(self, cell_type, p, q, from_lagrange) -> None:
         """Test that discrete interpolation matrix yields the same result as interpolation."""
         from dolfinx.fem.petsc import interpolation_matrix
 

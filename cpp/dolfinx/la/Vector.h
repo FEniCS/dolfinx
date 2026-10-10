@@ -11,6 +11,7 @@
 #include <cmath>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/types.h>
 #include <limits>
@@ -18,6 +19,7 @@
 #include <numeric>
 #include <span>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::la
@@ -152,22 +154,46 @@ public:
 
   /// @brief Create a distributed vector.
   ///
+  /// This constructor creates a new Scatterer for the Vector. For
+  /// applications that create many Vectors with the same parallel layout,
+  /// constructing a distinct Scatterer for each Vector can exhaust the
+  /// available MPI communicators. This can be avoided by creating one
+  /// Scatterer and sharing it among those Vectors using the constructor that
+  /// takes a shared pointer to an existing Scatterer.
+  ///
   /// @param map Index map that describes the parallel layout of
   /// the data.
   /// @param bs Number of entries per index map 'index' (block size).
   Vector(std::shared_ptr<const common::IndexMap> map, int bs)
-      : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
-        _scatterer(
-            std::make_shared<common::Scatterer<ScatterContainer>>(*_map)),
+      : Vector(map, bs,
+               std::make_shared<common::Scatterer<ScatterContainer>>(*map))
+  {
+  }
+
+  /// @brief Create a distributed vector using an existing scatterer.
+  ///
+  /// @param[in] map Index map that describes the parallel layout of
+  /// the data.
+  /// @param[in] bs Number of entries per index map 'index' (block size).
+  /// @param[in] scatterer Scatterer compatible with `map`.
+  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
+         std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer)
+      : _map(std::move(map)), _bs(bs),
+        _x(bs * (_map->size_local() + _map->num_ghosts())),
+        _scatterer(std::move(scatterer)),
         _buffer_local(bs * _scatterer->local_indices_block().size()),
         _buffer_remote(bs * _scatterer->remote_indices_block().size())
   {
   }
 
   /// Copy constructor
+  /// @note A scatter in flight is not inherited by the copy, which must
+  /// not be given a matching scatter_fwd_end()/scatter_rev_end().
   Vector(const Vector& x) = default;
 
   /// Move constructor
+  /// @note A scatter in flight transfers to the new vector, which must
+  /// complete it with scatter_fwd_end()/scatter_rev_end().
   Vector(Vector&& x) = default;
 
 private:
@@ -175,8 +201,8 @@ private:
   /// the input Scatterer or (2) to a copy of input Scatterer.
   ///
   /// If the new and old Vectors share the same Scatterer type, the
-  /// Scatter can be shared. If the new Vector uses a different
-  /// Scatterer storage type, then the Scatterer needs to be copied.
+  /// Scatterer is shared. If the new Vector uses a different
+  /// Scatterer storage type, then a new Scatterer is created.
   ///
   /// @param sc Scatter of the Vector being copied.
   /// @return Scatter for use with the new Vector.
@@ -192,22 +218,29 @@ private:
   }
 
 public:
-  /// @brief Copy-convert vector, possibly using different container
-  /// types.
+  /// @brief Create a vector by copying and converting another vector.
   ///
-  /// Examples of use include copying a Vector to a different value
-  /// type, e.g. double to float, or copying a Vector from a CPU to a
-  /// GPU.
+  /// The local vector data, including ghost values, is copied and converted to
+  /// `T` and `Container`. The index map is shared with `x`. If the scatter
+  /// container types are the same, the scatterer is also shared; otherwise, a
+  /// converted copy of the scatterer is created.
+  ///
+  /// This constructor can be used to convert the scalar type, e.g. from
+  /// `double` to `float`, or to transfer a vector between CPU and GPU storage.
+  ///
+  /// @note Construction is collective when `ScatterContainer` and
+  /// `ScatterContainer0` differ because copying the scatterer duplicates its
+  /// MPI neighbourhood communicators.
   ///
   /// @tparam T0 Scalar type of the Vector being copied.
   /// @tparam Container0 Data container type of the Vector being copied.
   /// @tparam ScatterContainer0 Scatterer container type of the Vector
   /// being copied.
-  /// @param x Vector to copy.
+  /// @param[in] x Vector to copy and convert.
   template <typename T0, typename Container0, typename ScatterContainer0>
   explicit Vector(const Vector<T0, Container0, ScatterContainer0>& x)
       : _map(x.index_map()), _bs(x.bs()), _x(x._x.begin(), x._x.end()),
-        _scatterer(scatter_ptr(x._scatterer)), _request(MPI_REQUEST_NULL),
+        _scatterer(scatter_ptr(x._scatterer)),
         _buffer_local(_bs * _scatterer->local_indices_block().size()),
         _buffer_remote(_bs * _scatterer->remote_indices_block().size())
   {
@@ -217,6 +250,10 @@ public:
   Vector& operator=(const Vector& x) = delete;
 
   /// Move assignment operator
+  /// @note A scatter in flight on `x` transfers to this vector. Any
+  /// scatter in flight on this vector is dropped, so a prior
+  /// scatter_fwd_begin()/scatter_rev_begin() on it must already have a
+  /// matching end call.
   Vector& operator=(Vector&& x) = default;
 
   /// @deprecated Use `std::ranges::fill(u.array(), v)` instead.
@@ -253,7 +290,8 @@ public:
          _scatterer->local_indices_block().end(), _x.begin(),
          _buffer_local.begin());
     _scatterer->scatter_fwd_begin(get_ptr(_buffer_local),
-                                  get_ptr(_buffer_remote), _bs, _request);
+                                  get_ptr(_buffer_remote), _bs,
+                                  _request.request());
   }
 
   /// @brief Begin scatter (send) of local data that is ghosted on other
@@ -291,7 +329,7 @@ public:
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_fwd_end(U unpack)
   {
-    _scatterer->scatter_fwd_end(_request);
+    _scatterer->scatter_fwd_end(_request.request());
     unpack(_scatterer->remote_indices_block().begin(),
            _scatterer->remote_indices_block().end(), _buffer_remote.begin(),
            std::next(_x.begin(), _bs * _map->size_local()));
@@ -358,7 +396,8 @@ public:
          _scatterer->remote_indices_block().end(),
          std::next(_x.begin(), local_size), _buffer_remote.begin());
     _scatterer->scatter_rev_begin(get_ptr(_buffer_remote),
-                                  get_ptr(_buffer_local), _bs, _request);
+                                  get_ptr(_buffer_local), _bs,
+                                  _request.request());
   }
 
   /// @brief Start scatter (send) of ghost entry data to the owning
@@ -393,7 +432,7 @@ public:
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_rev_end(U unpack)
   {
-    _scatterer->scatter_rev_end(_request);
+    _scatterer->scatter_rev_end(_request.request());
     unpack(_scatterer->local_indices_block().begin(),
            _scatterer->local_indices_block().end(), _buffer_local.begin(),
            _x.begin());
@@ -422,24 +461,36 @@ public:
   }
 
   /// Get IndexMap
-  std::shared_ptr<const common::IndexMap> index_map() const { return _map; }
+  std::shared_ptr<const common::IndexMap> index_map() const noexcept
+  {
+    return _map;
+  }
+
+  /// @brief Get the scatterer used for halo communication.
+  /// @return The scatterer.
+  std::shared_ptr<const common::Scatterer<ScatterContainer>>
+  scatterer() const noexcept
+  {
+    return _scatterer;
+  }
 
   /// Get block size
-  constexpr int bs() const { return _bs; }
+  constexpr int bs() const noexcept { return _bs; }
 
   /// @brief Get the process-local part of the vector.
   ///
   /// Owned entries appear first, followed by ghosted entries.
-  container_type& array() { return _x; }
+  container_type& array() noexcept { return _x; }
 
   /// @brief Get the process-local part of the vector (const version).
   ///
   /// Owned entries appear first, followed by ghosted entries.
-  const container_type& array() const { return _x; }
+  const container_type& array() const noexcept { return _x; }
 
   /// @deprecated Use ::array instead.
   /// @brief Get local part of the vector
-  [[deprecated("Use array() instead.")]] container_type& mutable_array()
+  [[deprecated("Use array() instead.")]] container_type&
+  mutable_array() noexcept
   {
     return _x;
   }
@@ -457,8 +508,9 @@ private:
   // Scatter for managing MPI communication
   std::shared_ptr<const common::Scatterer<ScatterContainer>> _scatterer;
 
-  // MPI request handle
-  MPI_Request _request = MPI_REQUEST_NULL;
+  // Request for a scatter in flight. Transfers on move, so that the
+  // moved-from vector does not name the target's request.
+  dolfinx::MPI::Request _request;
 
   // Buffers for ghost scatters
   container_type _buffer_local, _buffer_remote;

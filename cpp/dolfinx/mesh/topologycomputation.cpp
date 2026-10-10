@@ -8,8 +8,10 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
+#include <array>
 #include <boost/sort/sort.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
+#include <cassert>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -19,9 +21,12 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <format>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <mpi.h>
 #include <numeric>
+#include <span>
+#include <stdexcept>
 #include <thread>
 #include <tuple>
 #include <utility>
@@ -40,14 +45,14 @@ namespace
 ///
 /// This code is thread-safe.
 ///
-/// @param[in] c0 Starting cell index.
-/// @param[in] num_cells Number of cells to process.
-/// @param[in,out] entity_list
+/// @param[in,out] entity_list Flattened output array to write entity
+/// vertices into.
 /// @param[in] entity_offset Global index of the first entity this call
 /// writes into `entity_list_sorted`.
 /// @param[in,out] entity_list_sorted Sorted-key columns (column-major,
 /// one span per vertex), written at rows `entity_offset` onwards.
-/// @param[in] cells Cell-to-vertex connectivity.
+/// @param[in] cells Cell-to-vertex connectivity, flattened.
+/// @param[in] num_cell_vertices Number of vertices per cell.
 /// @param[in] e_vertices Entity-to-vertices, where
 /// `e_vertices.links(e)[i]` is the `i`th local (to the cell) vertex
 /// index for entity `e`.
@@ -303,9 +308,12 @@ int get_ownership(const U& processes, const V& vertices)
     h ^= static_cast<std::uint64_t>(v);
     h *= 0x100000001b3ULL; // FNV-1a prime
   }
-  std::vector<int> p(processes.begin(), processes.end());
-  int index = static_cast<int>(h % p.size());
-  int owner = p[index];
+  // Index directly into the (already contiguous/sized) input range,
+  // rather than copying it into a fresh vector -- this function is
+  // called once per shared entity, so up to millions of times for a
+  // large, highly-ghosted mesh.
+  int index = static_cast<int>(h % processes.size());
+  int owner = processes[index];
   return owner;
 }
 //-----------------------------------------------------------------------------
@@ -317,12 +325,12 @@ int get_ownership(const U& processes, const V& vertices)
 /// entity.
 ///
 /// @param[in] comm MPI Communicator
-/// @param[in] cell_map Index map for cell distribution
 /// @param[in] vertex_map Index map for vertex distribution
 /// @param[in] entity_list List of entities, each entity represented by
 /// its local vertex indices
 /// @param[in] num_vertices_per_e Number of vertices per entity
-/// @param[in] num_entities_per_cell Number of entities per cell
+/// @param[in] ghost_status Ownership/ghost status of each row in
+/// `entity_list`
 /// @param[in] entity_index Initial numbering for each row in
 /// `entity_list`
 /// @returns Local indices, the index map and shared entities
@@ -357,27 +365,23 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   // Create a symmetric neighbor_comm from vertex_ranks
   common::Timer timer_li_nc("Entity local indexing: neighbourhood setup");
 
-  // Get sharing ranks for each vertex
-  auto [data, offsets] = vertex_map.index_to_dest_ranks();
+  // Ranks sharing an owned or ghost vertex with this rank, and for each
+  // vertex the sharing ranks as positions in all_ranks
+  auto [all_ranks, data, offsets]
+      = common::compute_sharing_neighbourhood(vertex_map);
   graph::AdjacencyList<int> vertex_ranks(std::move(data), std::move(offsets));
 
-  // Create unique list of ranks that share vertices (owners of)
-  std::vector<int> ranks(vertex_ranks.array().begin(),
-                         vertex_ranks.array().end());
-  std::ranges::sort(ranks);
-  auto [unique_end, range_end] = std::ranges::unique(ranks);
-  ranks.erase(unique_end, range_end);
-
   MPI_Comm neighbor_comm;
-  MPI_Dist_graph_create_adjacent(
-      comm, ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
-      ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
+  MPI_Dist_graph_create_adjacent(comm, all_ranks.size(), all_ranks.data(),
+                                 MPI_UNWEIGHTED, all_ranks.size(),
+                                 all_ranks.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neighbor_comm);
 
   timer_li_nc.stop();
   timer_li_nc.flush();
 
-  std::vector<std::vector<std::int64_t>> send_entities(ranks.size());
-  std::vector<std::vector<std::int32_t>> send_index(ranks.size());
+  std::vector<std::vector<std::int64_t>> send_entities(all_ranks.size());
+  std::vector<std::vector<std::int32_t>> send_index(all_ranks.size());
 
   // Get all "possibly shared" entities, based on vertex sharing. Send
   // to other processes, and see if we get the same back.
@@ -421,12 +425,13 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       std::span entity
           = entity_list.subspan(pos * num_vertices_per_e, num_vertices_per_e);
 
-      // Build list of ranks that share vertices of the entity, and sort
+      // Build list of neighbourhood ranks that share vertices of the
+      // entity, and sort
       entity_ranks.clear();
       for (auto v : entity)
       {
-        auto ranks = vertex_ranks.links(v);
-        entity_ranks.insert(entity_ranks.end(), ranks.begin(), ranks.end());
+        auto v_ranks = vertex_ranks.links(v);
+        entity_ranks.insert(entity_ranks.end(), v_ranks.begin(), v_ranks.end());
       }
       if (!entity_ranks.empty())
         std::ranges::sort(entity_ranks);
@@ -449,11 +454,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           // Only send entities that are not known to be ghosts
           if (ghost_status[id] != 1)
           {
-            auto itr_local = std::ranges::lower_bound(ranks, *it);
-            assert(itr_local != ranks.end() and *itr_local == *it);
-            std::size_t r = std::ranges::distance(ranks.begin(), itr_local);
-
-            // Entity id may be shared with rank r
+            // Entity id may be shared with neighbourhood rank r
+            const std::size_t r = *it;
             send_entities[r].insert(send_entities[r].end(), vglobal.begin(),
                                     vglobal.end());
             send_index[r].push_back(id);
@@ -480,9 +482,9 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       return std::ranges::subrange(begin, std::next(begin, ncols));
     };
 
-    auto [unique_end, range_end]
-        = std::ranges::unique(perm, std::ranges::equal, range_by_key);
-    perm.erase(unique_end, range_end);
+    perm.erase(
+        std::ranges::unique(perm, std::ranges::equal, range_by_key).begin(),
+        perm.end());
   }
 
   timer_li_cand.stop();
@@ -503,14 +505,14 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       send_sizes.push_back(x.size());
       send_buffer.insert(send_buffer.end(), x.begin(), x.end());
     }
-    assert(send_sizes.size() == ranks.size());
+    assert(send_sizes.size() == all_ranks.size());
 
     // Build send displacements
     send_disp = {0};
     std::partial_sum(send_sizes.begin(), send_sizes.end(),
                      std::back_inserter(send_disp));
 
-    recv_sizes.resize(ranks.size());
+    recv_sizes.resize(all_ranks.size());
     send_sizes.reserve(1);
     recv_sizes.reserve(1);
     MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
@@ -540,7 +542,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   // found in entity_to_local_idx will have recv_index set to -1.
   const int mpi_rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> recv_index;
-  recv_index.reserve(recv_disp.size() - 1);
+  recv_index.reserve(recv_disp.back() / num_vertices_per_e);
   for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
   {
     // Loop over received entities (defined by array of entity vertices)
@@ -566,7 +568,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
         if (std::equal(e.begin(), std::prev(e.end()), entity.begin()))
         {
           auto idx = e.back();
-          shared_entities_data.push_back({idx, ranks[r]});
+          shared_entities_data.push_back({idx, all_ranks[r]});
           shared_entities_data.push_back({idx, mpi_rank});
           recv_index.push_back(idx);
           std::ranges::transform(
@@ -609,7 +611,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       if (ghost_status[i] == 1)
         continue;
 
-      if (auto ranks = shared_entities.links(i); ranks.empty())
+      if (auto shared_ranks = shared_entities.links(i); shared_ranks.empty())
       {
         // Definitely local, unshared
         local_index[i] = c++;
@@ -620,7 +622,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
         interprocess_entities.push_back(i);
         auto vertices = shared_entities_v.links(i);
         assert(!vertices.empty());
-        int owner_rank = get_ownership(ranks, vertices);
+        int owner_rank = get_ownership(shared_ranks, vertices);
         if (owner_rank == mpi_rank)
         {
           // Take ownership
@@ -694,7 +696,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           assert(local_index[idx] >= num_local);
           std::int32_t p = local_index[idx] - num_local;
           ghost_indices[p] = gi;
-          ghost_owners[p] = ranks[r];
+          ghost_owners[p] = all_ranks[r];
         }
       }
     }
@@ -722,12 +724,13 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
 /// Compute entities of dimension d
 ///
-/// @param[in] comm MPI communicator (TODO: full or neighbor
-/// hood?)
-/// @param[in] cells Adjacency list for cell-vertex connectivity
-/// @param[in] shared_vertices TODO
-/// @param[in] cell_type Cell type
+/// @param[in] comm Full topology communicator.
+/// @param[in] cell_lists For each cell type: cell-vertex connectivity
+/// (flattened), and the index map for the cell distribution.
+/// @param[in] vertex_index_map Index map for the vertex distribution.
+/// @param[in] entity_type Type of entity to compute.
 /// @param[in] dim Topological dimension of the entities to be computed
+/// @param[in] num_threads Number of threads to use.
 /// @return Returns the (cell-entity connectivity, entity-vertex
 /// connectivity, index map for the entity distribution across
 /// processes, shared entities)
@@ -848,10 +851,11 @@ compute_entities_by_key_matching(
   std::vector<std::int32_t> entity_index(cell_type_offsets.back());
   std::int32_t entity_count = 0;
   {
-    common::Timer timer("Compute entities by key matching: number entities");
+    common::Timer timer_number(
+        "Compute entities by key matching: number entities");
 
     auto sort_threaded
-        = [](std::span<const std::span<std::int32_t>> cols, int num_threads)
+        = [](std::span<const std::span<std::int32_t>> cols, int nthreads)
     {
       std::size_t shape0 = cols.empty() ? 0 : cols.front().size();
       std::vector<std::int32_t> sort_order(shape0, 0);
@@ -867,7 +871,7 @@ compute_entities_by_key_matching(
             }
             return false;
           },
-          num_threads);
+          nthreads);
 
       return sort_order;
     };
@@ -1017,8 +1021,7 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
 /// Compute the d0 -> d1 connectivity, where d0 > d1
 ///
 /// @param[in] c_d0_0 The d0 -> 0 (entity (d0) to vertex) connectivity
-/// @param[in] c_d0_0 The d1 -> 0 (entity (d1) to vertex) connectivity
-/// @param[in] cell_type_d0 The cell type for entities of dimension d0
+/// @param[in] c_d1_0 The d1 -> 0 (entity (d1) to vertex) connectivity
 /// @return The d0 -> d1 connectivity
 graph::AdjacencyList<std::int32_t>
 compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
@@ -1081,7 +1084,7 @@ mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
                        int num_threads)
 {
   if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   spdlog::info("Computing mesh entities of dimension {}", dim);
 
@@ -1094,7 +1097,11 @@ mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
 
   {
     auto idx = std::ranges::find(topology.entity_types(dim), entity_type);
-    assert(idx != topology.entity_types(dim).end());
+    if (idx == topology.entity_types(dim).end())
+    {
+      throw std::invalid_argument(std::format(
+          "entity_type is not an entity type of the topology at dim={}.", dim));
+    }
     int index = std::ranges::distance(topology.entity_types(dim).begin(), idx);
     if (topology.connectivity({dim, index}, {0, 0}))
     {
@@ -1200,7 +1207,13 @@ mesh::compute_connectivity(const Topology& topology, std::array<int, 2> d0,
     if (!topology.connectivity(d1, d0))
     {
       // Only possible case is edge->facet
-      assert(d0[0] == 1 and d1[0] == 2);
+      if (d0[0] != 1 or d1[0] != 2)
+      {
+        throw std::invalid_argument(
+            std::format("Cannot compute connectivity ({}, {})-({}, {}): only "
+                        "edge-to-facet connectivity can be computed this way.",
+                        d0[0], d0[1], d1[0], d1[1]));
+      }
       auto c_d1_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_map(*c_d1_0, *c_d0_0));
 
@@ -1229,12 +1242,19 @@ mesh::compute_connectivity(const Topology& topology, std::array<int, 2> d0,
     // those of a higher dimension entity
 
     // Only possible case is facet->edge
-    assert(d0[0] == 2 and d1[0] == 1);
+    if (d0[0] != 2 or d1[0] != 1)
+    {
+      throw std::invalid_argument(
+          std::format("Cannot compute connectivity ({}, {})-({}, {}): only "
+                      "facet-to-edge connectivity can be computed this way.",
+                      d0[0], d0[1], d1[0], d1[1]));
+    }
     auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         compute_from_map(*c_d0_0, *c_d1_0));
     return {c_d0_d1, nullptr};
   }
   else
-    throw std::runtime_error("Entity dimension error when computing topology.");
+    throw std::invalid_argument(
+        "Entity dimension error when computing topology.");
 }
 //--------------------------------------------------------------------------
