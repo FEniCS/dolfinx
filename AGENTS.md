@@ -235,6 +235,20 @@ disclosure process.
   per-line basis until upstream petsc4py type work is finished.
 - **File header**: same SPDX/copyright block as C++, adapted to `#`
   comments, followed by a module docstring.
+- **Wrapping C++ objects**: an accessor that turns a `self._cpp_object`
+  member into its Python wrapper returns a *cached* wrapper, so
+  `V.dofmap is V.dofmap` holds. Use `functools.cached_property` when the
+  accessor takes no arguments, and `dolfinx._wrapper.cached` — which
+  memoises on the C++ object in a per-instance `_wrappers` dict — when it
+  takes arguments or when the C++ layer can replace the object it
+  returns. A Python object handed to the initialiser is stored and
+  returned unchanged instead, since re-wrapping would discard state held
+  only in the Python layer. Methods that genuinely build a new C++ object
+  (`sub`, `collapse`, `transpose`, `create_*`) wrap the result directly.
+  Do not rely on wrapper identity: wrappers that users compare define
+  `__eq__`, and `__hash__` alongside it wherever the wrapped type admits
+  a hash consistent with that equality. See
+  `python/doc/source/styleguide_python.rst`.
 
 ## nanobind wrapper style (`python/dolfinx/wrappers/`)
 

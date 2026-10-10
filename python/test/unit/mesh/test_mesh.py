@@ -1159,3 +1159,32 @@ def test_entity_permutations_unpacked_from_cell_info(cell_type):
             computed.topology.get_entity_permutations(dim),
             unpacked.topology.get_entity_permutations(dim),
         )
+
+
+def test_wrapper_identity_is_stable() -> None:
+    """Repeated access returns the same wrapper for the same C++ object."""
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    msh.topology.create_entities(1)
+    msh.topology.create_connectivity(1, 0)
+
+    assert msh.topology is msh.topology
+    assert msh.geometry is msh.geometry
+    assert msh.geometry.index_map() is msh.geometry.index_map()
+    assert msh.geometry.cmaps is msh.geometry.cmaps
+
+    topology = msh.topology
+    assert topology.index_map(0) is topology.index_map(0)
+    assert topology.index_map(1) is topology.index_map(1)
+    assert topology.index_map(0) is not topology.index_map(1)
+    assert topology.index_maps(1)[0] is topology.index_map(1)
+    assert topology.connectivity(1, 0) is topology.connectivity(1, 0)
+
+
+def test_wrapper_identity_follows_entity_creation() -> None:
+    """An index map wrapper appears only once the entities exist."""
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    with pytest.raises(IndexError):
+        msh.topology.index_map(1)
+    msh.topology.create_entities(1)
+    imap = msh.topology.index_map(1)
+    assert msh.topology.index_map(1) is imap
