@@ -28,6 +28,8 @@ _first_order_vtk = {
     mesh.CellType.quadrilateral: 9,
     mesh.CellType.tetrahedron: 10,
     mesh.CellType.hexahedron: 12,
+    mesh.CellType.prism: 13,
+    mesh.CellType.pyramid: 14,
 }
 
 
@@ -65,8 +67,6 @@ def vtk_mesh(
         dim = msh.topology.dim
 
     cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_type, dim, 0)
-    if cell_type == mesh.CellType.prism:
-        raise RuntimeError("Plotting of prism meshes not supported")
 
     # Use all local cells if not supplied
     if entities is None:
