@@ -54,8 +54,8 @@
 # F$, the stored energy density is
 #
 # $$
-# \psi(F) = \frac{\mu}{2} \left({\rm tr}(C) - 3\right) - \mu \ln J
-#           + \frac{\Lambda}{2} \left(\ln J\right)^{2},
+# \psi(F) = \frac{\mu}{2} \left({\rm tr}(C) - 3\right) - \mu \ln J +
+#           \frac{\Lambda}{2} \left(\ln J\right)^{2},
 # $$
 #
 # where $\mu$ and $\Lambda$ are the Lamé parameters. The second one is
@@ -96,8 +96,8 @@
 # The first variation of the energy is then
 #
 # $$
-# R(u, \lambda; v) = \int_{\Omega} P : \nabla v \, {\rm d} x
-#   + \lambda p \int_{\Gamma_{\rm top}}
+# R(u, \lambda; v) = \int_{\Omega} P : \nabla v \, {\rm d} x +
+#   \lambda p \int_{\Gamma_{\rm top}}
 #     \left({\rm cof}(F) \, N\right) \cdot v \, {\rm d}S,
 # $$
 #
@@ -183,9 +183,9 @@
 # For a load that is merely proportional, with $q$ a fixed vector, both
 # come for free from the right-hand side of the solve: the vector passed
 # to `SNES.solve(q, x)` is scaled internally by the current $\lambda$
-# and subtracted from the residual callback's result, and the unscaled
-# copy is used as the tangent load. The residual callback would then
-# assemble only the internal force and never see $\lambda$.
+# and subtracted from the residual callback's result, while the
+# unscaled copy serves as the tangent load. The residual callback would
+# then assemble only the internal force and never see $\lambda$.
 #
 # A follower pressure is not that case. Its $q$ changes with the
 # configuration, so it must be reassembled wherever it is needed, and
@@ -193,12 +193,14 @@
 #
 # - the residual, which now assembles $r(x) - \lambda q(x)$ in full and
 #   so needs the current $\lambda$, read back with
-#   {py:meth}`SNES.getNewtonALLoadParameter`;
+#   {py:meth}`SNES.getNewtonALLoadParameter
+#   <petsc4py.PETSc.SNES.getNewtonALLoadParameter>`;
 # - the Jacobian, which must include the load-stiffness term $-\lambda
 #   \, \partial q / \partial x$ to keep Newton's quadratic convergence;
 # - the tangent load, registered with
-#   {py:meth}`SNES.setNewtonALFunction`, which assembles $q(x)$ at the
-#   current iterate.
+#   {py:meth}`SNES.setNewtonALFunction
+#   <petsc4py.PETSc.SNES.setNewtonALFunction>`, which assembles
+#   $q(x)$ at the current iterate.
 #
 # Nothing is then passed as the right-hand side of the solve.
 #
@@ -291,8 +293,8 @@
 #
 # $$
 # b = \begin{bmatrix}
-#       r_{0} - \lambda \, q_{0}(x)
-#         + J_{0\Gamma}\left(g_{\Gamma} - x_{\Gamma}\right) \\
+#       r_{0} - \lambda \, q_{0}(x) +
+#         J_{0\Gamma}\left(g_{\Gamma} - x_{\Gamma}\right) \\
 #       x_{\Gamma} - g_{\Gamma}
 #     \end{bmatrix},
 # $$
@@ -573,7 +575,7 @@ snes.setNewtonALFunction(compute_tangent_load)
 #
 # Where [pyvistaqt](https://qtdocs.pyvista.org/) and a Qt binding are
 # installed, the drawing goes to a
-# {py:class}`pyvistaqt.BackgroundPlotter`, a window that redraws while
+# a `BackgroundPlotter`, a window that redraws while
 # the solve runs instead of blocking it. Without them the same drawing
 # code renders off-screen and writes a numbered image per increment,
 # which is what happens on a machine with no display; those frames can
