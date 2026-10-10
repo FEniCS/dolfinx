@@ -13,12 +13,15 @@
 #include "assembler.h"
 #include "pack.h"
 #include "sparsitypattern.h"
+#include <array>
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/petsc.h>
 #include <format>
 #include <functional>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <numeric>
@@ -31,11 +34,6 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx::common
-{
-class IndexMap;
-}
-
 namespace dolfinx::fem
 {
 template <dolfinx::scalar T, std::floating_point U>
@@ -44,16 +42,51 @@ class DirichletBC;
 /// @brief Helper functions for assembly into PETSc data structures
 namespace petsc
 {
+namespace impl
+{
+/// @brief Throw if a MATIS matrix is requested on a mesh with ghost
+/// cells, which would leave empty rows in the local matrix and so make
+/// the subdomain solves of PCBDDC singular.
+///
+/// @param[in] mesh Mesh the matrix is assembled over.
+/// @param[in] type Requested PETSc matrix type.
+/// @throws std::invalid_argument If `type` is MATIS and `mesh` has
+/// ghost cells.
+template <std::floating_point T>
+void check_matis_mesh(const mesh::Mesh<T>& mesh,
+                      const std::optional<std::string>& type)
+{
+  if (!type or *type != MATIS)
+    return;
+
+  auto topology = mesh.topology();
+  assert(topology);
+  std::shared_ptr<const common::IndexMap> cells
+      = topology->index_map(topology->dim());
+  assert(cells);
+  if (cells->num_ghosts() > 0)
+  {
+    throw std::invalid_argument(
+        "A MATIS matrix requires one non-overlapping subdomain per process. "
+        "Create the mesh with GhostMode::none.");
+  }
+}
+} // namespace impl
+
 /// @brief Create a matrix
 /// @param[in] a A bilinear form
 /// @param[in] type The PETSc matrix type to create
 /// @return A sparse matrix with a layout and sparsity that matches the
 /// bilinear form. The caller is responsible for destroying the Mat
 /// object.
+/// @throws std::invalid_argument If `type` is MATIS and the mesh of `a`
+/// has ghost cells. The check is local, but the ghost mode is a mesh
+/// property, so every process throws or none does.
 template <std::floating_point T>
 Mat create_matrix(const Form<PetscScalar, T>& a,
                   std::optional<std::string> type = std::nullopt)
 {
+  impl::check_matis_mesh(*a.mesh(), type);
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
   pattern.finalize();
   return la::petsc::create_matrix(a.mesh()->comm(), pattern, type);
@@ -69,6 +102,8 @@ Mat create_matrix(const Form<PetscScalar, T>& a,
 /// @return A sparse matrix  with a layout and sparsity that matches the
 /// bilinear forms. The caller is responsible for destroying the Mat
 /// object.
+/// @throws std::invalid_argument If `type` is MATIS and the mesh has
+/// ghost cells.
 template <std::floating_point T>
 Mat create_matrix_block(
     const std::vector<std::vector<const Form<PetscScalar, T>*>>& a,
@@ -106,6 +141,8 @@ Mat create_matrix_block(
 
   if (!mesh)
     throw std::invalid_argument("Could not find a Mesh.");
+
+  impl::check_matis_mesh(*mesh, type);
 
   // Compute offsets for the fields
   std::array<std::vector<std::pair<
@@ -670,15 +707,14 @@ void assemble_operator(Mat A, const Form<PetscScalar, T>& a,
               ? 0
               : dofmap0->index_map_bs() * dofmap0->index_map->size_local();
     std::vector<std::int32_t> rows;
-    for (std::int32_t i = 0; i < num_owned; ++i)
-    {
-      if (dof_marker0[i])
-        rows.push_back(i);
-    }
+    std::ranges::copy_if(
+        std::views::iota(std::int32_t(0), num_owned), std::back_inserter(rows),
+        [&dof_marker0](std::int32_t i) { return dof_marker0[i] != 0; });
+
     // Assembly zeroed these rows, so adding sets the diagonal. Adding
     // avoids a flush to switch from ADD_VALUES to INSERT_VALUES.
-    fem::set_diagonal<PetscScalar>(la::petsc::Matrix::set_fn(A, ADD_VALUES),
-                                   rows);
+    la::set_diagonal<PetscScalar>(la::petsc::Matrix::set_fn(A, ADD_VALUES),
+                                  rows);
   }
 
   common::petsc::check(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY),
@@ -815,6 +851,8 @@ void assemble_residual(
 /// degrees-of-freedom are set to `x` before assembly.
 /// @param[in] P Preconditioner form. If not given, `Pmat` is left
 /// alone and PETSc preconditions with the Jacobian.
+/// @pre `P`, if given, must have the same function spaces as `J`, so
+/// that the constrained dof markers built for `J` apply to it too.
 template <std::floating_point T>
 void assemble_jacobian(
     const Vec x, Mat Jmat, Mat Pmat, const Form<PetscScalar, T>& J,
@@ -822,21 +860,29 @@ void assemble_jacobian(
         std::reference_wrapper<const DirichletBC<PetscScalar, T>>>& bcs,
     Function<PetscScalar, T>& u, const Form<PetscScalar, T>* P = nullptr)
 {
+  // Checked before any collective call so that all ranks throw together
+  if (P and P->function_spaces() != J.function_spaces())
+  {
+    throw std::invalid_argument(
+        "Preconditioner form must have the same function spaces as the "
+        "Jacobian form.");
+  }
+
   common::petsc::check(VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD),
                        "VecGhostUpdateBegin");
   common::petsc::check(VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD),
                        "VecGhostUpdateEnd");
   impl::assign(x, u);
 
-  impl::assemble_operator(
-      Jmat, J, fem::impl::bc_dof_markers(*J.function_spaces()[0], bcs),
-      fem::impl::bc_dof_markers(*J.function_spaces()[1], bcs));
+  // Markers depend only on the space, so they are built once here and
+  // the preconditioner, over the same spaces, shares them
+  std::array<std::vector<std::int8_t>, 2> markers;
+  auto [dof_marker0, dof_marker1]
+      = fem::impl::bc_dof_markers_pair(J, bcs, markers);
+
+  impl::assemble_operator(Jmat, J, dof_marker0, dof_marker1);
   if (P)
-  {
-    impl::assemble_operator(
-        Pmat, *P, fem::impl::bc_dof_markers(*P->function_spaces()[0], bcs),
-        fem::impl::bc_dof_markers(*P->function_spaces()[1], bcs));
-  }
+    impl::assemble_operator(Pmat, *P, dof_marker0, dof_marker1);
 }
 
 } // namespace petsc

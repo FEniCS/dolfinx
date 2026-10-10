@@ -44,6 +44,7 @@ add_executable(
   common/sub_systems_manager.cpp
   common/index_map.cpp
   common/move_semantics.cpp
+  common/mpi.cpp
   common/sort.cpp
   fem/assembly_kernels.cpp
   fem/form.cpp

@@ -13,7 +13,7 @@ import pytest
 import ufl
 from dolfinx import fem
 from dolfinx.common import index_map
-from dolfinx.la import BlockMode, InsertMode, matrix_csr, sparsity_pattern
+from dolfinx.la import BlockMode, InsertMode, matrix_csr, set_diagonal, sparsity_pattern
 from dolfinx.mesh import GhostMode, create_unit_square
 
 
@@ -205,7 +205,7 @@ def test_set_diagonal_distributed(dtype) -> None:
 
     # set diagonal values
     value = dtype(1.0)
-    fem.set_diagonal(A, dofs, value)
+    set_diagonal(A, dofs, value)
 
     # check diagonal values: they should be 1.0, including ghost dofs
     diag = As.diagonal()
@@ -268,7 +268,7 @@ def test_set_diagonal_per_row(dtype) -> None:
     # Every other owned row, with value rows[i] + 1 on row rows[i]
     rows = np.arange(0, V.dofmap.index_map.size_local, 2, dtype=np.int32)
     diagonals = (rows + 1).astype(dtype)
-    fem.set_diagonal(A, rows, diagonals)
+    set_diagonal(A, rows, diagonals)
 
     diag = As.diagonal()
     assert np.allclose(diag[rows], diagonals)
@@ -277,20 +277,64 @@ def test_set_diagonal_per_row(dtype) -> None:
     assert np.allclose(diag[mask], 0.0)
 
     # Adding the same values again doubles the diagonal
-    fem.set_diagonal(A, rows, diagonals, InsertMode.add)
+    set_diagonal(A, rows, diagonals, InsertMode.add)
     assert np.allclose(As.diagonal()[rows], 2 * diagonals)
 
     # Adding a single value to every row
-    fem.set_diagonal(A, rows, dtype(1), InsertMode.add)
+    set_diagonal(A, rows, dtype(1), InsertMode.add)
     assert np.allclose(As.diagonal()[rows], 2 * diagonals + 1)
 
     # Inserting overwrites
-    fem.set_diagonal(A, rows, diagonals)
+    set_diagonal(A, rows, diagonals)
     assert np.allclose(As.diagonal()[rows], diagonals)
 
     # Number of values must match number of rows
     with pytest.raises(ValueError):
-        fem.set_diagonal(A, rows, diagonals[:-1])
+        set_diagonal(A, rows, diagonals[:-1])
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_set_bc_diagonal_duplicate_rows(dtype):
+    """A row constrained by more than one condition is set once.
+
+    Checked with ``InsertMode.add``, where a repeated row would
+    otherwise double the diagonal.
+    """
+    mesh = create_unit_square(MPI.COMM_WORLD, 6, 5, dtype=np.real(dtype(0)).dtype)
+    V = fem.functionspace(mesh, ("Lagrange", 2))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = fem.form(ufl.inner(u, v) * ufl.dx, dtype=dtype)
+
+    # Constrain the first few owned dofs, with the second condition
+    # covering a subset of the first
+    n = min(V.dofmap.index_map.size_local, 8)
+    dofs0 = np.arange(n, dtype=np.int32)
+    bc0 = fem.dirichletbc(dtype(1), dofs0, V)
+    bc1 = fem.dirichletbc(dtype(2), dofs0[: n // 2], V)
+
+    # Adjoining ranges sharing their end point: the concatenation is
+    # already sorted, but still holds a duplicate
+    bc_lo = fem.dirichletbc(dtype(4), dofs0[: n // 2 + 1], V)
+    bc_hi = fem.dirichletbc(dtype(5), dofs0[n // 2 :], V)
+
+    # Reference: the rows of bc0 alone
+    A_ref = fem.create_matrix(a)
+    fem.set_bc_diagonal(A_ref, V, [bc0], dtype(1), InsertMode.add)
+    reference = A_ref.to_scipy(ghosted=True).diagonal()
+    assert np.allclose(reference[dofs0], 1.0)
+
+    for bcs in ([bc0, bc1], [bc_lo, bc_hi]):
+        A = fem.create_matrix(a)
+        fem.set_bc_diagonal(A, V, bcs, dtype(1), InsertMode.add)
+        assert np.allclose(A.to_scipy(ghosted=True).diagonal(), reference)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
