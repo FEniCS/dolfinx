@@ -26,6 +26,7 @@
 #include <mpi.h>
 #include <numeric>
 #include <span>
+#include <utility>
 #include <vector>
 
 using namespace dolfinx;
@@ -129,11 +130,12 @@ void test_matrix_apply()
                         [](auto a) { REQUIRE(std::abs(a) < 1e-13); });
 }
 
-/// Adding 1 to the diagonal of owned rows must give the same matrix,
-/// after scatter_rev, as adding 1/n to the diagonal of every local row
-/// (owned and ghost), where n is the number of ranks sharing the row.
+/// @brief P2 space on a unit cube, and the sparsity pattern of its
+/// dofmap over all local cells including ghost cells. No form is needed
+/// as nothing is assembled into the pattern.
 template <std::floating_point T>
-void test_set_diagonal_shared()
+std::pair<std::shared_ptr<fem::FunctionSpace<T>>, la::SparsityPattern>
+create_p2_space_and_pattern()
 {
   auto mesh = std::make_shared<mesh::Mesh<T>>(mesh::create_box<T>(
       MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {4, 5, 3},
@@ -146,8 +148,6 @@ void test_set_diagonal_shared()
       mesh, std::make_shared<fem::FiniteElement<T>>(element,
                                                     mesh->geometry().dim())));
 
-  // Sparsity pattern of the P2 dofmap over all local cells, including
-  // ghost cells; no form is needed as nothing is assembled
   std::shared_ptr<const common::IndexMap> map = V->dofmap()->index_map;
   const int bs = V->dofmap()->index_map_bs();
   std::shared_ptr<const common::IndexMap> cmap
@@ -158,6 +158,18 @@ void test_set_diagonal_shared()
   fem::sparsitybuild::cells(sp, std::pair{std::span(cells), std::span(cells)},
                             {{*V->dofmap(), *V->dofmap()}});
   sp.finalize();
+  return {std::move(V), std::move(sp)};
+}
+
+/// Adding 1 to the diagonal of owned rows must give the same matrix,
+/// after scatter_rev, as adding 1/n to the diagonal of every local row
+/// (owned and ghost), where n is the number of ranks sharing the row.
+template <std::floating_point T>
+void test_set_diagonal_shared()
+{
+  auto [V, sp] = create_p2_space_and_pattern<T>();
+  std::shared_ptr<const common::IndexMap> map = V->dofmap()->index_map;
+  const int bs = V->dofmap()->index_map_bs();
   la::MatrixCSR<T> A0(sp);
   la::MatrixCSR<T> A1(sp);
 
@@ -167,14 +179,14 @@ void test_set_diagonal_shared()
   std::iota(local.begin(), local.end(), 0);
 
   // A0: 1 on owned rows
-  fem::set_diagonal(A0.mat_add_values(), owned, T(1));
+  la::set_diagonal(A0.mat_add_values(), owned, T(1));
 
   // A1: 1/n on all local rows, n the number of sharing ranks
   std::vector<std::int32_t> n = common::num_sharing_ranks(*map, local, bs);
   std::vector<T> diagonals(n.size());
   std::ranges::transform(n, diagonals.begin(),
                          [](std::int32_t ni) { return T(1) / T(ni); });
-  fem::set_diagonal(A1.mat_add_values(), local, std::span<const T>(diagonals));
+  la::set_diagonal(A1.mat_add_values(), local, std::span<const T>(diagonals));
 
   A0.scatter_rev();
   A1.scatter_rev();
@@ -193,6 +205,147 @@ void test_set_diagonal_shared()
   const T tol = 4 * std::numeric_limits<T>::epsilon();
   for (std::size_t i = 0; i < num_owned_entries; ++i)
     CHECK(std::abs(v1[i] - v0[i]) <= tol);
+}
+
+/// @brief Test that set_diagonal() sets a row once when more than one
+/// boundary condition constrains it, and that DirichletBC rejects a dof
+/// list that is not strictly increasing.
+template <std::floating_point T>
+void test_set_diagonal_duplicate_bc_rows()
+{
+  auto [V, sp] = create_p2_space_and_pattern<T>();
+  std::shared_ptr<const common::IndexMap> map = V->dofmap()->index_map;
+
+  // Constrain the first few owned dof blocks, with the second condition
+  // covering a subset of the first
+  const std::int32_t n = std::min<std::int32_t>(map->size_local(), 8);
+  std::vector<std::int32_t> dofs0(n);
+  std::iota(dofs0.begin(), dofs0.end(), 0);
+  std::vector<std::int32_t> dofs1(dofs0.begin(), dofs0.begin() + n / 2);
+
+  // Adjoining ranges sharing their end point: the concatenation is
+  // already sorted, but still holds a duplicate
+  const std::int32_t mid = n / 2;
+  std::vector<std::int32_t> dofs_lo(dofs0.begin(),
+                                    dofs0.begin() + (n > 0 ? mid + 1 : 0));
+  std::vector<std::int32_t> dofs_hi(dofs0.begin() + mid, dofs0.end());
+
+  auto bc0 = std::make_shared<const fem::DirichletBC<T, T>>(T(1), dofs0, V);
+  auto bc1 = std::make_shared<const fem::DirichletBC<T, T>>(T(2), dofs1, V);
+  auto bc_lo = std::make_shared<const fem::DirichletBC<T, T>>(T(4), dofs_lo, V);
+  auto bc_hi = std::make_shared<const fem::DirichletBC<T, T>>(T(5), dofs_hi, V);
+
+  // Reference: the rows of bc0 alone
+  la::MatrixCSR<T> A_ref(sp);
+  fem::set_diagonal<T>(
+      A_ref.mat_add_values(), *V,
+      {std::cref(static_cast<const fem::DirichletBC<T, T>&>(*bc0))}, T(1));
+  A_ref.scatter_rev();
+
+  // bc1 constrains a subset of the rows of bc0, so the diagonal must
+  // match the reference rather than doubling on the shared rows
+  la::MatrixCSR<T> A_overlap(sp);
+  fem::set_diagonal<T>(
+      A_overlap.mat_add_values(), *V,
+      {std::cref(static_cast<const fem::DirichletBC<T, T>&>(*bc0)),
+       std::cref(static_cast<const fem::DirichletBC<T, T>&>(*bc1))},
+      T(1));
+  A_overlap.scatter_rev();
+
+  // Two conditions covering the same rows as bc0, concatenating into a
+  // sorted list with the shared row duplicated
+  la::MatrixCSR<T> A_adjoining(sp);
+  fem::set_diagonal<T>(
+      A_adjoining.mat_add_values(), *V,
+      {std::cref(static_cast<const fem::DirichletBC<T, T>&>(*bc_lo)),
+       std::cref(static_cast<const fem::DirichletBC<T, T>&>(*bc_hi))},
+      T(1));
+  A_adjoining.scatter_rev();
+
+  const std::size_t num_entries = A_ref.values().size();
+  std::span<const T> ref = A_ref.values();
+  std::span<const T> overlap = A_overlap.values();
+  std::span<const T> adjoining = A_adjoining.values();
+  const T tol = 4 * std::numeric_limits<T>::epsilon();
+  T sum = 0;
+  for (std::size_t i = 0; i < num_entries; ++i)
+  {
+    CHECK(std::abs(overlap[i] - ref[i]) <= tol);
+    CHECK(std::abs(adjoining[i] - ref[i]) <= tol);
+    sum += ref[i];
+  }
+
+  // Where this rank owns dofs, the reference must have set some rows
+  if (n > 0)
+    CHECK(sum > T(0));
+
+#ifndef NDEBUG
+  // A non-unique or unsorted dof list violates the DirichletBC
+  // precondition, which is checked in Debug builds
+  if (n > 1)
+  {
+    std::vector<std::int32_t> dofs_repeated;
+    for (std::int32_t dof : dofs0)
+      dofs_repeated.insert(dofs_repeated.end(), 2, dof);
+    CHECK_THROWS_AS((fem::DirichletBC<T, T>(T(1), dofs_repeated, V)),
+                    std::invalid_argument);
+
+    std::vector<std::int32_t> dofs_unsorted(dofs0.rbegin(), dofs0.rend());
+    CHECK_THROWS_AS((fem::DirichletBC<T, T>(T(1), dofs_unsorted, V)),
+                    std::invalid_argument);
+  }
+#endif
+}
+
+/// A matrix moved between scatter_rev_begin() and scatter_rev_end()
+/// carries the in-flight request to the target, which completes the
+/// scatter and gets the same values as a matrix that was not moved.
+///
+/// The request transfer itself is asserted directly in
+/// common/mpi.cpp; this checks that a moved matrix still delivers the
+/// scattered values. The scalar type is irrelevant to the transfer, so
+/// one type is enough.
+void test_move_scatter_in_flight()
+{
+  using T = double;
+  auto [V, sp] = create_p2_space_and_pattern<T>();
+  std::shared_ptr<const common::IndexMap> map = V->dofmap()->index_map;
+  const int bs = V->dofmap()->index_map_bs();
+
+  // Put 1 on every local row, owned and ghost, so that ghost rows carry
+  // data for the scatter to deliver
+  std::vector<std::int32_t> local(bs * (map->size_local() + map->num_ghosts()));
+  std::iota(local.begin(), local.end(), 0);
+  auto fill = [&local](la::MatrixCSR<T>& A)
+  { la::set_diagonal(A.mat_add_values(), local, T(1)); };
+
+  // Reference: scattered without an intervening move
+  la::MatrixCSR<T> A(sp);
+  fill(A);
+  A.scatter_rev();
+
+  // Move-constructed while the scatter is in flight
+  la::MatrixCSR<T> B(sp);
+  fill(B);
+  B.scatter_rev_begin();
+  la::MatrixCSR<T> B1(std::move(B));
+  B1.scatter_rev_end();
+
+  // Move-assigned while the scatter is in flight
+  la::MatrixCSR<T> C(sp);
+  fill(C);
+  C.scatter_rev_begin();
+  la::MatrixCSR<T> C1(sp);
+  C1 = std::move(C);
+  C1.scatter_rev_end();
+
+  // Every value is a sum of T(1) accumulated in the same order from the
+  // same buffers, so the comparison is exact
+  const std::size_t n = A.row_ptr()[bs * map->size_local()];
+  CHECK(std::ranges::equal(std::span(A.values()).first(n),
+                           std::span(B1.values()).first(n)));
+  CHECK(std::ranges::equal(std::span(A.values()).first(n),
+                           std::span(C1.values()).first(n)));
 }
 
 void test_matrix_cast()
@@ -399,6 +552,7 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_matrix_apply());
   CHECK_NOTHROW(test_matrix_norm());
   CHECK_NOTHROW(test_matrix_cast());
+  CHECK_NOTHROW(test_move_scatter_in_flight());
   CHECK_NOTHROW(test_sparsity_pattern_common_index_map());
   CHECK_NOTHROW(test_sparsity_pattern_shared_map_column_ghost_growth());
   CHECK_NOTHROW(test_sparsity_pattern_asymmetric_column_ghost_growth());
@@ -411,4 +565,11 @@ TEST_CASE("Set diagonal on shared rows", "[la_matrix_set_diagonal_shared]")
 {
   CHECK_NOTHROW(test_set_diagonal_shared<float>());
   CHECK_NOTHROW(test_set_diagonal_shared<double>());
+}
+
+TEST_CASE("Set diagonal with duplicate bc rows",
+          "[la_matrix_set_diagonal_duplicate]")
+{
+  test_set_diagonal_duplicate_bc_rows<float>();
+  test_set_diagonal_duplicate_bc_rows<double>();
 }

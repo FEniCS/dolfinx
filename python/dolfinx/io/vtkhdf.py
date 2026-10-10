@@ -79,6 +79,7 @@ def read_mesh(
                 cell_degree,
                 basix.LagrangeVariant(variant),
                 shape=(mesh_cpp.geometry.dim,),
+                dtype=mesh_cpp.geometry.x.dtype,
             )
         )
     return Mesh(mesh_cpp, domain)
