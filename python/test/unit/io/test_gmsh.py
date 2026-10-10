@@ -26,14 +26,21 @@ def gmsh_model():
         gmsh.finalize()
 
 
-def add_gmsh_cell(model, cell_name, degree):
-    """Elevate a discrete reference cell using Gmsh's node ordering."""
+@pytest.mark.parametrize(
+    "cell_name,vertex_order,expected_volume",
+    [
+        ("Hexahedron", [0, 1, 3, 2, 4, 5, 7, 6], 1),
+        ("Prism", [0, 1, 2, 3, 4, 5], 0.5),
+        ("Pyramid", [0, 1, 3, 2, 4], 1 / 3),
+    ],
+)
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_cell_import(gmsh_model, cell_name, vertex_order, expected_volume, degree):
+    """Check Gmsh node ordering and import against Basix reference cells."""
+    from dolfinx.io import gmsh as gmshio
+
+    model = gmsh_model
     cell_type = getattr(basix.CellType, cell_name.lower())
-    vertex_order = {
-        "Hexahedron": [0, 1, 3, 2, 4, 5, 7, 6],
-        "Prism": [0, 1, 2, 3, 4, 5],
-        "Pyramid": [0, 1, 3, 2, 4],
-    }[cell_name]
     vertices = basix.geometry(cell_type)[vertex_order]
     entity = model.addDiscreteEntity(3)
     node_tags = np.arange(1, len(vertices) + 1)
@@ -41,18 +48,8 @@ def add_gmsh_cell(model, cell_name, degree):
     model.mesh.addElementsByType(entity, model.mesh.getElementType(cell_name, 1), [1], node_tags)
     model.addPhysicalGroup(3, [entity], tag=1)
     model.mesh.setOrder(degree)
-    return entity
-
-
-@pytest.mark.parametrize("cell_name", ["Hexahedron", "Prism", "Pyramid"])
-@pytest.mark.parametrize("degree", [1, 2, 3])
-def test_gmsh_cell_ordering(gmsh_model, cell_name, degree):
-    """Compare converted nodes with the independent Basix reference element."""
-    from dolfinx.io import gmsh as gmshio
-
-    entity = add_gmsh_cell(gmsh_model, cell_name, degree)
-    element_types, _, element_nodes = gmsh_model.mesh.getElements(3, entity)
-    node_tags, coordinates, _ = gmsh_model.mesh.getNodes()
+    element_types, _, element_nodes = model.mesh.getElements(3, entity)
+    node_tags, coordinates, _ = model.mesh.getNodes()
     nodes = dict(zip(node_tags, coordinates.reshape(-1, 3), strict=True))
     points = np.array([nodes[tag] for tag in element_nodes[0]])
 
@@ -64,35 +61,19 @@ def test_gmsh_cell_ordering(gmsh_model, cell_name, degree):
     permutation = gmshio.cell_perm_array(cell_type, element.dim)
     np.testing.assert_allclose(points[permutation], element.points, atol=1e-14, rtol=0)
 
-    # Also check the geometry produced by the converted connectivity.
-    cells = np.arange(element.dim, dtype=np.int64)[permutation].reshape(1, -1)
-    mesh = dolfinx.mesh.create_mesh(MPI.COMM_SELF, cells, domain, points)
-    volume = dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=mesh)))
-    expected_volume = {"Hexahedron": 1, "Prism": 0.5, "Pyramid": 1 / 3}[cell_name]
-    assert np.isclose(volume, expected_volume)
-
-
-@pytest.mark.parametrize("cell_name", ["Hexahedron", "Prism", "Pyramid"])
-def test_third_order_cell_import(gmsh_model, cell_name):
-    """Import cubic cells through the complete model-to-mesh path."""
-    from dolfinx.io import gmsh as gmshio
-
     comm = MPI.COMM_WORLD
-    if comm.rank == 0:
-        add_gmsh_cell(gmsh_model, cell_name, 3)
 
     def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
         return dolfinx.graph.adjacencylist(np.zeros((dual_graph.num_nodes, 1), dtype=np.int32))
 
-    data = gmshio.model_to_mesh(gmsh_model, comm, 0, partitioner=partitioner)
-    assert data.mesh.geometry.cmaps[0].degree == 3
+    data = gmshio.model_to_mesh(model, comm, 0, partitioner=partitioner)
+    assert data.mesh.geometry.cmaps[0].degree == degree
     assert data.mesh.topology.index_map(3).size_global == 1
     assert data.cell_tags is not None
     assert np.all(data.cell_tags.values == 1)
     volume = comm.allreduce(
         dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=data.mesh))), op=MPI.SUM
     )
-    expected_volume = {"Hexahedron": 1, "Prism": 0.5, "Pyramid": 1 / 3}[cell_name]
     assert np.isclose(volume, expected_volume)
 
 

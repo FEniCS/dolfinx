@@ -356,16 +356,15 @@ def model_to_mesh(
         element_ids = np.zeros(num_unique_entities, dtype=np.int32)
         entity_tdim = np.zeros(num_unique_entities, dtype=np.int32)
         num_nodes_per_element = np.zeros(num_unique_entities, dtype=np.int32)
-        for i, element in enumerate(topologies.keys()):
+        for i, (element, element_data) in enumerate(topologies.items()):
             if element in _gmsh_to_cells:
                 shape, _ = _gmsh_to_cells[element]
                 dim = ufl.Cell(shape).topological_dimension
             else:
                 _, dim, _, _, _, _ = model.mesh.getElementProperties(element)
-            num_nodes = topologies[element]["topology"].shape[1]
             element_ids[i] = element
             entity_tdim[i] = dim
-            num_nodes_per_element[i] = num_nodes
+            num_nodes_per_element[i] = element_data["topology"].shape[1]
 
         # Broadcast information to all other ranks
         entity_tdim, element_ids, num_nodes_per_element = comm.bcast(
