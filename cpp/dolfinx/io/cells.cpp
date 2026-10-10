@@ -7,10 +7,12 @@
 #include "cells.h"
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <format>
+#include <iterator>
 #include <numeric>
 #include <span>
 #include <stdexcept>
@@ -663,6 +665,7 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     case 6:
       return 1;
     case 15:
+    case 18:
       return 2;
     default:
       throw std::runtime_error(
@@ -674,6 +677,7 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     case 5:
       return 1;
     case 13:
+    case 14:
       return 2;
     default:
       throw std::runtime_error(std::format(
@@ -716,8 +720,11 @@ io::cells::apply_permutation(std::span<const std::int64_t> cells,
 //-----------------------------------------------------------------------------
 std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
 {
-  if (cell == mesh::CellType::prism and dim == 2)
-    throw std::runtime_error("More work needed for prism cell");
+  if ((cell == mesh::CellType::prism or cell == mesh::CellType::pyramid)
+      and dim == 2)
+    throw std::invalid_argument(
+        "Prism and pyramid facets have different cell types. Specify the "
+        "facet cell type directly.");
 
   // Get cell type
   mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
@@ -744,6 +751,27 @@ std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
     return 73;
   default:
     throw std::runtime_error("Unknown cell type");
+  }
+}
+//-----------------------------------------------------------------------------
+std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim,
+                                         int num_nodes)
+{
+  const std::int8_t vtk_type = get_vtk_cell_type(cell, dim);
+  if (vtk_type != 14)
+    return vtk_type;
+
+  switch (num_nodes)
+  {
+  case 5:
+    return 14;
+  case 13:
+    return 27;
+  default:
+    throw std::invalid_argument(
+        std::format("VTK pyramid output supports 5 or 13 nodes, got {}. "
+                    "Lagrange pyramids are not implemented in VTK.",
+                    num_nodes));
   }
 }
 //----------------------------------------------------------------------------

@@ -326,7 +326,8 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable celltype_var
       = impl_adios2::define_variable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(
-      celltype_var, cells::get_vtk_cell_type(topology->cell_type(), tdim));
+      celltype_var,
+      cells::get_vtk_cell_type(topology->cell_type(), tdim, shape[1]));
 
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
@@ -421,7 +422,8 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
-      cell_type, cells::get_vtk_cell_type(topology->cell_type(), tdim));
+      cell_type,
+      cells::get_vtk_cell_type(topology->cell_type(), tdim, vtkshape[1]));
   engine.Put(local_geometry, x.data());
   engine.Put(local_topology, cells.data());
 

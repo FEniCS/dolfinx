@@ -10,6 +10,8 @@
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
 #include <span>
+#include <stdexcept>
+#include <tuple>
 #include <vector>
 
 /// @brief Functions for the re-ordering of input mesh topology to the
@@ -174,8 +176,20 @@ std::vector<std::int64_t> apply_permutation(std::span<const std::int64_t> cells,
 ///
 /// @param[in] cell Cell type.
 /// @param[in] dim Topological dimension of the cell.
+/// @note Pyramids are assumed linear. Use the overload taking the node
+/// count to select the type for a particular layout.
+/// @throws std::invalid_argument If prism or pyramid facets are requested.
 /// @return VTK cell identifier.
 std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim);
+
+/// @brief Get VTK cell identifier for a cell node layout.
+/// @param[in] cell Cell type.
+/// @param[in] dim Topological dimension of the cell.
+/// @param[in] num_nodes Number of nodes per cell.
+/// @return VTK cell identifier.
+/// @throws std::invalid_argument If the pyramid layout is unsupported or
+/// prism or pyramid facets are requested.
+std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim, int num_nodes);
 
 /// @brief Get DOLFINx cell type and degree from VTK cell type.
 ///

@@ -4,10 +4,13 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <catch2/catch_test_macros.hpp>
+#include <dolfinx/io/cells.h>
+#include <stdexcept>
+
 #ifdef HAS_ADIOS2
 
 #include <algorithm>
-#include <catch2/catch_test_macros.hpp>
 #include <concepts>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
@@ -63,3 +66,29 @@ TEST_CASE("VTX reuse mesh")
 }
 
 #endif
+
+TEST_CASE("Prism and pyramid IO layouts", "[io][cells]")
+{
+  using dolfinx::mesh::CellType;
+  namespace cells = dolfinx::io::cells;
+  CHECK(cells::cell_degree(CellType::prism, 6) == 1);
+  CHECK(cells::cell_degree(CellType::prism, 15) == 2);
+  CHECK(cells::cell_degree(CellType::prism, 18) == 2);
+  CHECK(cells::cell_degree(CellType::pyramid, 5) == 1);
+  CHECK(cells::cell_degree(CellType::pyramid, 13) == 2);
+  CHECK(cells::cell_degree(CellType::pyramid, 14) == 2);
+  CHECK_THROWS(cells::cell_degree(CellType::prism, 17));
+  CHECK_THROWS(cells::cell_degree(CellType::pyramid, 15));
+
+  CHECK(cells::get_vtk_cell_type(CellType::pyramid, 3, 5) == 14);
+  CHECK(cells::get_vtk_cell_type(CellType::pyramid, 3, 13) == 27);
+  CHECK(cells::get_vtk_cell_type(CellType::prism, 3, 18) == 73);
+  CHECK_THROWS_AS(cells::get_vtk_cell_type(CellType::pyramid, 3, 14),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(cells::get_vtk_cell_type(CellType::pyramid, 2),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(cells::get_vtk_cell_type(CellType::prism, 2),
+                  std::invalid_argument);
+  CHECK(cells::get_vtk_cell_type(CellType::triangle, 2) == 69);
+  CHECK(cells::get_vtk_cell_type(CellType::quadrilateral, 2) == 70);
+}
