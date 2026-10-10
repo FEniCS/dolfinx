@@ -586,7 +586,7 @@ snes.setNewtonALFunction(compute_tangent_load)
 # deformed configuration and refreshes the colours, rather than
 # building a new mesh. The colour range is fixed at roughly twice the
 # rise, so colours mean the same thing in every frame, and the
-# undeformed arch stays as a wireframe for reference.
+# undeformed arch stays as an outline for reference.
 #
 # Each process plots the part of the mesh that it owns, so a parallel
 # run produces one set of frames per process.
@@ -618,7 +618,7 @@ rendering = __name__ == "__main__"
 rank_suffix = f"_{msh.comm.rank}" if msh.comm.size > 1 else ""
 block_size = V.dofmap.index_map_bs
 frame_dir = Path("out_snap-through/frames")
-undeformed = deformed = plotter = points = None
+undeformed = deformed = plotter = points = reference_edges = None
 colour_bar = {
     "title": "u_z",
     "vertical": True,
@@ -630,11 +630,40 @@ colour_bar = {
     "label_font_size": 12,
 }
 
+# Asking for `show_edges` on a higher-degree cell draws the edges of
+# the tessellation VTK builds in order to render it, not the edges of
+# the element ([pyvista/pyvista#867](https://github.com/pyvista/pyvista/issues/867)).
+# On this quadratic mesh that buries the field under a web of lines.
+# Separating the cells first makes each one an independent patch, so
+# its outline is the only boundary that survives `extract_feature_edges`
+# and the internal tessellation edges drop out
+# ([pyvista/pyvista#5777](https://github.com/pyvista/pyvista/discussions/5777)).
+# Two levels of subdivision are enough to keep the element edges
+# visibly curved here.
+subdivision = 2
+
+
+def element_surface(grid):
+    """Split a grid into a drawable surface and its element outlines.
+
+    Args:
+        grid: Grid of possibly higher-degree cells.
+
+    Returns:
+        The tessellated surface, and the element outlines alone.
+    """
+    surface = grid.separate_cells().extract_surface(
+        nonlinear_subdivision=subdivision, algorithm="dataset_surface"
+    )
+    return surface, surface.extract_feature_edges()
+
+
 if pyvista is not None and rendering:
     cells, types, points = plot.vtk_mesh(V)
     undeformed = pyvista.UnstructuredGrid(cells, types, points)
     deformed = undeformed.copy()
     deformed.point_data["u_z"] = np.zeros(points.shape[0])
+    _, reference_edges = element_surface(undeformed)
 
     if pyvistaqt is not None:
         plotter = pyvistaqt.BackgroundPlotter(
@@ -644,15 +673,7 @@ if pyvista is not None and rendering:
         plotter = pyvista.Plotter(off_screen=True, window_size=(1000, 340))
         frame_dir.mkdir(parents=True, exist_ok=True)
 
-    plotter.add_mesh(undeformed, style="wireframe", color="lightgray")
-    plotter.add_mesh(
-        deformed,
-        scalars="u_z",
-        clim=[-2.0 * rise, 0.0],
-        show_edges=True,
-        line_width=0.5,
-        scalar_bar_args=colour_bar,
-    )
+    plotter.add_mesh(reference_edges, color="lightgray", line_width=1)
     plotter.view_xz()
     plotter.camera.zoom(2.2)
 
@@ -665,6 +686,15 @@ def draw_frame(n: int, lam: float) -> None:
     values = u.x.array.real.reshape(points.shape[0], block_size)
     deformed.points = undeformed.points + values
     deformed.point_data["u_z"] = values[:, 2]
+    surface, edges = element_surface(deformed)
+    plotter.add_mesh(
+        surface,
+        scalars="u_z",
+        clim=[-2.0 * rise, 0.0],
+        name="arch",
+        scalar_bar_args=colour_bar,
+    )
+    plotter.add_mesh(edges, color="black", line_width=1, name="arch_edges")
     plotter.add_text(f"lambda = {lam:.3f}", name="label", font_size=10)
     if pyvistaqt is not None:
         plotter.app.processEvents()  # Redraw the window mid-solve
@@ -896,8 +926,8 @@ if msh.comm.rank == 0:
 # which carries the least load of the whole path and which no
 # load-controlled solve could have found; and the inverted arch under
 # the full load. Each is drawn by warping the mesh by its displacement,
-# coloured by the vertical component, against a wireframe of the
-# undeformed arch. A common colour range and linked cameras make the
+# coloured by the vertical component, against the element outlines of
+# the undeformed arch. A common colour range and linked cameras make the
 # three panels directly comparable.
 #
 # Each process plots the part of the mesh that it owns, so a parallel
@@ -906,6 +936,7 @@ if msh.comm.rank == 0:
 # +
 if plotter is not None:
     assert pyvista is not None and undeformed is not None and points is not None
+    assert reference_edges is not None
     plotter.close()
 
     states = {
@@ -920,17 +951,17 @@ if plotter is not None:
         grid = undeformed.copy()
         grid.point_data["u"] = snapshots[n].reshape(points.shape[0], block_size)
         grid.point_data["u_z"] = grid.point_data["u"][:, 2]
+        surface, edges = element_surface(grid.warp_by_vector("u"))
         summary.subplot(row, 0)
-        summary.add_mesh(undeformed, style="wireframe", color="lightgray")
+        summary.add_mesh(reference_edges, color="lightgray", line_width=1)
         summary.add_mesh(
-            grid.warp_by_vector("u"),
+            surface,
             scalars="u_z",
             clim=clim,
-            show_edges=True,
-            line_width=0.5,
             show_scalar_bar=(row == len(states) - 1),
             scalar_bar_args=colour_bar,
         )
+        summary.add_mesh(edges, color="black", line_width=1)
         summary.add_text(f"{label}:  lambda = {load_path[n]:.3f}", font_size=9)
         summary.view_xz()
     summary.link_views()
