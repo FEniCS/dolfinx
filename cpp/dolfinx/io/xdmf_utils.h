@@ -118,11 +118,10 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
   {
     data_item_node.append_attribute("Format") = "HDF";
 
-    // Get name of HDF5 file, including path
-    const std::filesystem::path p = io::hdf5::get_filename(h5_id);
-    const std::filesystem::path filename = p.filename().c_str();
-
-    // Add HDF5 filename and HDF5 internal path to XML file
+    // Add HDF5 filename (excluding path) and HDF5 internal path to the
+    // XML file
+    const std::filesystem::path filename
+        = io::hdf5::get_filename(h5_id).filename();
     const std::string xdmf_path
         = std::format("{}:{}", filename.string(), h5_path);
     data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
@@ -250,15 +249,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     }
 
     // Retrieve data
-    if (hid_t dset_id = io::hdf5::open_dataset(h5_id, paths[1]);
-        dset_id == H5I_INVALID_HID)
-      throw std::runtime_error("Failed to open HDF5 global dataset.");
-    else
-    {
-      data_vector = io::hdf5::read_dataset<T>(dset_id, range, true);
-      if (herr_t err = H5Dclose(dset_id); err < 0)
-        throw std::runtime_error("Failed to close HDF5 global dataset.");
-    }
+    data_vector = io::hdf5::read_dataset<T>(h5_id, paths[1], range, true);
   }
   else
     throw std::runtime_error(
