@@ -641,7 +641,10 @@ colour_bar = {
 # and the internal tessellation edges drop out
 # ([pyvista/pyvista#5777](https://github.com/pyvista/pyvista/discussions/5777)).
 # Two levels of subdivision are enough to keep the element edges
-# visibly curved here.
+# visibly curved here. `nonlinear_subdivision` needs the surface filter
+# PyVista currently picks by default; newer versions warn that the
+# default is changing, but naming it explicitly is not supported by the
+# versions this has to run on.
 subdivision = 2
 
 
@@ -654,9 +657,7 @@ def element_surface(grid):
     Returns:
         The tessellated surface, and the element outlines alone.
     """
-    surface = grid.separate_cells().extract_surface(
-        nonlinear_subdivision=subdivision, algorithm="dataset_surface"
-    )
+    surface = grid.separate_cells().extract_surface(nonlinear_subdivision=subdivision)
     return surface, surface.extract_feature_edges()
 
 
