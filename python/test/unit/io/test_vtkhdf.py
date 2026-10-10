@@ -157,7 +157,8 @@ def test_read_write_higher_order():
 
 
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_read_write_higher_order_mesh(order) -> None:
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_read_write_higher_order_mesh(order, dtype) -> None:
     try:
         import gmsh
     except ImportError:
@@ -181,9 +182,14 @@ def test_read_write_higher_order_mesh(order) -> None:
     comm.Barrier()
 
     model = comm.bcast(model, root=rank)
-    # Read in mesh with gmsh to create reference dat
-    ref_mesh = dolfinx.io.gmsh.model_to_mesh(gmsh.model, comm, rank).mesh
+    # Use the same precision for the reference and the mesh read back.
+    ref_mesh = dolfinx.io.gmsh.model_to_mesh(gmsh.model, comm, rank, dtype=dtype).mesh
     gmsh.finalize()
+
+    # File cell indices follow rank order, excluding ghost cells.
+    num_cells = ref_mesh.topology.index_map(3).size_local
+    cell_geometry = ref_mesh.geometry.x[ref_mesh.geometry.dofmaps[0][:num_cells]]
+    ref_cell_geometry = np.concatenate(comm.allgather(cell_geometry))
 
     ref_volume_form = dolfinx.fem.form(
         1 * ufl.dx(domain=ref_mesh),
@@ -198,15 +204,24 @@ def test_read_write_higher_order_mesh(order) -> None:
     ref_surface = comm.allreduce(dolfinx.fem.assemble_scalar(ref_surface_form), op=MPI.SUM)
 
     # Write to file
-    filename = f"gmsh_{order}_order_sphere.vtkhdf"
+    filename = f"gmsh_{order}_order_sphere_{np.dtype(dtype).name}.vtkhdf"
     write_mesh(filename, ref_mesh)
     del ref_mesh, ref_volume_form
 
-    # Read mesh, once single-threaded and once multi-threaded, and check
-    # the two agree (global cell/vertex counts, and geometry up to local
-    # ordering via assembled volume/surface)
-    mesh = read_mesh(comm, filename, num_threads=1)
-    mesh_mt = read_mesh(comm, filename, num_threads=4)
+    # Check both mesh construction thread counts.
+    mesh = read_mesh(comm, filename, dtype=dtype, num_threads=1)
+    mesh_mt = read_mesh(comm, filename, dtype=dtype, num_threads=4)
+
+    for m in (mesh, mesh_mt):
+        domain = m.ufl_domain()
+        assert domain is not None
+        assert m.geometry.x.dtype == dtype
+        assert domain.ufl_coordinate_element().basix_element.dtype == dtype
+        assert m.geometry.cmaps[0].degree == order
+        np.testing.assert_array_equal(
+            m.geometry.x[m.geometry.dofmaps[0]],
+            ref_cell_geometry[m.topology.original_cell_index],
+        )
 
     assert (
         mesh.topology.index_map(mesh.topology.dim).size_global
@@ -219,20 +234,19 @@ def test_read_write_higher_order_mesh(order) -> None:
     surface_mt_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh_mt), dtype=mesh_mt.geometry.x.dtype)
     surface_mt = comm.allreduce(dolfinx.fem.assemble_scalar(surface_mt_form), op=MPI.SUM)
 
-    # Compare surface and volume metrics
-    # The degree-3 round-trip is not exact, see issue #4415.
-    rtol = 1.0e-4
+    # Assembly can accumulate in a different order after repartitioning.
+    rtol = 100 * np.finfo(dtype).eps
 
     volume_form = dolfinx.fem.form(1 * ufl.dx(domain=mesh), dtype=mesh.geometry.x.dtype)
     volume = comm.allreduce(dolfinx.fem.assemble_scalar(volume_form), op=MPI.SUM)
-    assert np.isclose(ref_volume, volume, rtol=rtol)
+    assert np.isclose(ref_volume, volume, rtol=rtol, atol=0)
 
     surface_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh), dtype=mesh.geometry.x.dtype)
     surface = comm.allreduce(dolfinx.fem.assemble_scalar(surface_form), op=MPI.SUM)
-    assert np.isclose(ref_surface, surface, rtol=rtol)
+    assert np.isclose(ref_surface, surface, rtol=rtol, atol=0)
 
-    assert np.isclose(volume, volume_mt, rtol=rtol)
-    assert np.isclose(surface, surface_mt, rtol=rtol)
+    assert np.isclose(volume, volume_mt, rtol=rtol, atol=0)
+    assert np.isclose(surface, surface_mt, rtol=rtol, atol=0)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
