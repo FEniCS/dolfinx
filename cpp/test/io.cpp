@@ -72,13 +72,16 @@ TEST_CASE("Prism and pyramid IO layouts", "[io][cells]")
   using dolfinx::mesh::CellType;
   namespace cells = dolfinx::io::cells;
   CHECK(cells::cell_degree(CellType::prism, 6) == 1);
-  CHECK(cells::cell_degree(CellType::prism, 15) == 2);
   CHECK(cells::cell_degree(CellType::prism, 18) == 2);
   CHECK(cells::cell_degree(CellType::pyramid, 5) == 1);
-  CHECK(cells::cell_degree(CellType::pyramid, 13) == 2);
   CHECK(cells::cell_degree(CellType::pyramid, 14) == 2);
   CHECK_THROWS(cells::cell_degree(CellType::prism, 17));
   CHECK_THROWS(cells::cell_degree(CellType::pyramid, 15));
+
+  // Serendipity, not Lagrange: a degree would collide with the 18-node
+  // wedge and the 14-node pyramid, which VTKHDF reads keyed on degree
+  CHECK_THROWS(cells::cell_degree(CellType::prism, 15));
+  CHECK_THROWS(cells::cell_degree(CellType::pyramid, 13));
 
   CHECK(cells::get_vtk_cell_type(CellType::pyramid, 3, 5) == 14);
   CHECK(cells::get_vtk_cell_type(CellType::pyramid, 3, 13) == 27);

@@ -123,9 +123,20 @@ namespace dolfinx::io::cells
 /// @brief Get the Lagrange order of a given cell with a given number of
 /// nodes.
 ///
+/// Only Lagrange layouts have a degree here, so the node count and the
+/// degree determine each other. A serendipity layout is rejected, even
+/// where it has a degree of its own: reporting 2 for the 15-node wedge
+/// and the 13-node pyramid would make them indistinguishable from the
+/// 18-node wedge and the 14-node pyramid, and Basix has no element of
+/// either layout to build. The serendipity layouts Basix does have,
+/// the 8-node quadrilateral and the 20-node hexahedron, are mapped
+/// directly by ::perm_vtk without consulting a degree.
+///
 /// @param[in] type Cell shape.
 /// @param[in] num_nodes Number of cell 'nodes'
 /// @return Lagrange order of the cell type.
+/// @throws std::runtime_error If no Lagrange layout of `type` has
+/// `num_nodes` nodes.
 int cell_degree(mesh::CellType type, int num_nodes);
 
 /// @brief Permutation array to map from VTK to DOLFINx node ordering.

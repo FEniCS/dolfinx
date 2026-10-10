@@ -664,24 +664,28 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     {
     case 6:
       return 1;
-    case 15:
     case 18:
       return 2;
     default:
-      throw std::runtime_error(
-          std::format("Unknown prism layout. Number of nodes: {}", num_nodes));
+      throw std::runtime_error(std::format(
+          "No Lagrange prism has {} nodes, expected 6 or 18. The 15-node "
+          "wedge is a serendipity layout, which Basix does not have for a "
+          "prism.",
+          num_nodes));
     }
   case mesh::CellType::pyramid:
     switch (num_nodes)
     {
     case 5:
       return 1;
-    case 13:
     case 14:
       return 2;
     default:
       throw std::runtime_error(std::format(
-          "Unknown pyramid layout. Number of nodes: {}", num_nodes));
+          "No Lagrange pyramid has {} nodes, expected 5 or 14. The 13-node "
+          "pyramid is a serendipity layout, which Basix does not have for a "
+          "pyramid.",
+          num_nodes));
     }
   default:
     throw std::runtime_error("Unknown cell type.");
