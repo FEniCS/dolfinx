@@ -1090,11 +1090,12 @@ def test_cell_permutations_do_not_create_entities(cell_type, num_threads) -> Non
         msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
     topology = msh.topology
     tdim = topology.dim
+
+    # Entities of dimension dim exist iff they have an index map. The
+    # connectivity accessor is not a usable check here: for a prism it
+    # throws whatever has been created, the facets having two types
     for dim in range(1, tdim):
-        with pytest.raises(RuntimeError):
-            topology.connectivity(tdim, dim)
-        with pytest.raises(RuntimeError):
-            topology.connectivity(dim, 0)
+        assert topology.index_maps(dim) == []
 
     topology.create_cell_permutations(num_threads)
     info = topology.get_cell_permutation_info()
@@ -1105,11 +1106,21 @@ def test_cell_permutations_do_not_create_entities(cell_type, num_threads) -> Non
     else:
         assert not info.any()
     for dim in range(1, tdim):
-        with pytest.raises(RuntimeError):
-            topology.connectivity(tdim, dim)
-        with pytest.raises(RuntimeError):
-            topology.connectivity(dim, 0)
         assert topology.index_maps(dim) == []
+
+
+def test_entity_permutations_on_a_rank_without_cells() -> None:
+    """Unpacking must be taken by every rank, or none.
+
+    Unpacking the packed cell permutations is local, but the fallback
+    that computes them from scratch creates entities, which is
+    collective. A rank holding no cells must not be the only one to take
+    the fallback.
+    """
+    msh = create_unit_square(MPI.COMM_WORLD, 1, 1)
+    msh.topology.create_cell_permutations()
+    msh.topology.create_entity_permutations(1)
+    assert msh.topology.index_maps(1) == []
 
 
 def test_entity_permutations_are_computed_per_dimension() -> None:

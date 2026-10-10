@@ -958,15 +958,13 @@ Topology::connectivity(int d0, int d1) const
 //-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
-  if (auto i_map = this->index_map(this->dim());
-      _cell_permutations.empty()
-      and i_map->size_local() + i_map->num_ghosts() > 0)
+  if (!_cell_permutations.has_value())
   {
     throw std::runtime_error(
         "create_cell_permutations must be called before using this data.");
   }
 
-  return _cell_permutations;
+  return *_cell_permutations;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>&
@@ -1109,12 +1107,16 @@ void Topology::create_entity_permutations(int dim, int num_threads)
   if (_entity_permutations[dim].has_value())
     return;
 
-  if (!_cell_permutations.empty())
+  if (_cell_permutations.has_value())
   {
     // The packed cell info already holds these orientations: 3 bits per
     // face followed by 1 bit per edge. Unpack rather than recompute.
+    // Taking this branch is what keeps create_entity_permutations off
+    // the collective create_entities below, so the test must not be on
+    // the size of the packed data: a rank holding no cells would then
+    // deadlock against its peers.
     CellType cell_type = this->cell_type();
-    const std::int32_t num_cells = _cell_permutations.size();
+    const std::int32_t num_cells = _cell_permutations->size();
     const int num_entities = cell_num_entities(cell_type, dim);
     const int bits = dim == 2 ? 3 : 1;
     const int offset
@@ -1125,7 +1127,7 @@ void Topology::create_entity_permutations(int dim, int num_threads)
       for (int i = 0; i < num_entities; ++i)
       {
         perms[c * num_entities + i]
-            = (_cell_permutations[c] >> (offset + bits * i))
+            = ((*_cell_permutations)[c] >> (offset + bits * i))
               & ((1 << bits) - 1);
       }
     }
@@ -1143,7 +1145,7 @@ void Topology::create_entity_permutations(int dim, int num_threads)
 //-----------------------------------------------------------------------------
 void Topology::create_cell_permutations(int num_threads)
 {
-  if (!_cell_permutations.empty())
+  if (_cell_permutations.has_value())
     return;
 
   _cell_permutations = compute_cell_permutations(*this, num_threads);
