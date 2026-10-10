@@ -2,7 +2,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import datetime
+import datetime as dt
 import importlib.metadata
 import os
 import sys
@@ -64,7 +64,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "DOLFINx Python"
-now = datetime.datetime.now()
+now = dt.datetime.now()
 date = now.date()
 copyright = f"{date.year}, FEniCS Project"
 author = "FEniCS Project"
