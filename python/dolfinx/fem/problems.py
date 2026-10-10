@@ -1,4 +1,4 @@
-# Copyright (C) 2026 Jack S. Hale
+# Copyright (C) 2026 Jack S. Hale and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -28,8 +28,8 @@ from dolfinx.fem.assemble import (
     _apply_lifting_markers,
     _assemble_matrix_csr_markers,
     _assemble_vector_array,
-    _bc_dof_markers,
-    _bc_lifting_data,
+    _bc_dof_markers_by_space,
+    _bc_lifting_values,
 )
 from dolfinx.la import InsertMode, MatrixCSR, Vector
 from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
@@ -132,9 +132,28 @@ class LinearProblem:
         else:
             self._u = u
 
-        self.bcs = [] if bcs is None else bcs
+        self.bcs = bcs
 
         self._superlu_dist_options = superlu_dist_options
+
+    @property
+    def bcs(self) -> tuple[DirichletBC, ...]:
+        """Dirichlet boundary conditions applied to the problem.
+
+        Assigning rebuilds the cached dof markers that :meth:`solve`
+        reuses. These follow from the dofs a condition constrains,
+        which are fixed once it is built, and the sequence is copied,
+        so the cache cannot go stale. Condition *values* are re-read on
+        every solve.
+        """
+        return self._bcs
+
+    @bcs.setter
+    def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
+        self._bcs = tuple(bcs) if bcs is not None else ()
+        V0, V1 = self.a.function_spaces
+        marker0, marker1 = _bc_dof_markers_by_space([V0, V1], self._bcs)
+        self._bc_markers = (marker0, marker1)
 
     def solve(self) -> Function:
         """Solve the problem.
@@ -147,10 +166,7 @@ class LinearProblem:
         """
         # Assemble lhs
         self.A.set_value(self.A.data.dtype.type(0.0))
-        V0, V1 = self.a.function_spaces
-        _assemble_matrix_csr_markers(
-            self.A, self.a, _bc_dof_markers(V0, self.bcs), _bc_dof_markers(V1, self.bcs)
-        )
+        _assemble_matrix_csr_markers(self.A, self.a, *self._bc_markers)
         self.A.scatter_reverse()
 
         # SuperLU_DIST solves in-place, so a deep copy of A is required.
@@ -166,10 +182,10 @@ class LinearProblem:
 
         # Apply boundary conditions to the rhs
         if self.bcs:
-            bc_markers1, bc_values1 = _bc_lifting_data(
+            bc_values1 = _bc_lifting_values(
                 [self.a.function_spaces[1]], [self.bcs], self.b.array.dtype
             )
-            _apply_lifting_markers(self.b.array, [self.a], bc_markers1, bc_values1)
+            _apply_lifting_markers(self.b.array, [self.a], [self._bc_markers[1]], bc_values1)
             self.b.scatter_reverse(InsertMode.add)
             for bc in self.bcs:
                 bc.set(self.b.array)

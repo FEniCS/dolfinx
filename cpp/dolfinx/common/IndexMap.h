@@ -83,13 +83,15 @@ stack_index_maps(
 /// the counts over all ranks that hold an index is the same on each of
 /// them.
 ///
-/// @note Collective.
+/// @note Collective. Arguments must be locally valid on every rank.
+/// Invalid input on only some ranks may deadlock.
 ///
 /// @param[in] map Index map describing the parallel layout.
 /// @param[in] indices Local indices, which may include ghosts. An index
 /// refers to block `i / bs` of `map`.
 /// @param[in] bs Block size relating `indices` to the blocks of `map`.
 /// @return Number of sharing ranks, one entry per entry of `indices`.
+/// @throws std::invalid_argument If `bs` is less than one.
 /// @throws std::out_of_range If an entry of `indices` is not a local
 /// index of `map`.
 /// @note An overload taking an existing Scatterer is declared in

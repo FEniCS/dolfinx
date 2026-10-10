@@ -153,7 +153,7 @@ def piola_id(spec):
 
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("spec", PIOLA_ELEMENTS, ids=piola_id)
-def test_piola_element_value_shape(gdim, spec):
+def test_piola_element_value_shape(gdim, spec) -> None:
     """``FiniteElement.value_shape`` must be the physical value shape.
 
     On a manifold it differs from the reference value shape that Basix
@@ -173,7 +173,7 @@ def test_piola_element_value_shape(gdim, spec):
     "shape, symmetry",
     [((2,), None), ((3,), None), ((5,), None), ((3, 3), None), ((2, 2), True), ((3, 3), True)],
 )
-def test_blocked_value_shape_independent_of_gdim(gdim, shape, symmetry):
+def test_blocked_value_shape_independent_of_gdim(gdim, shape, symmetry) -> None:
     """A blocked element's value shape is whatever the user asked for.
 
     Blocked elements are built from scalar, identity-mapped base
@@ -192,7 +192,7 @@ def test_blocked_value_shape_independent_of_gdim(gdim, shape, symmetry):
 
 
 @pytest.mark.parametrize("gdim", [2, 3])
-def test_scalar_value_shape(gdim):
+def test_scalar_value_shape(gdim) -> None:
     mesh = plane_mesh(1, gdim)
     el = element("Lagrange", "triangle", 1, dtype=default_real_type)
     V = functionspace(mesh, el)
@@ -207,7 +207,7 @@ def test_scalar_value_shape(gdim):
 
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("spec", [s for s in PIOLA_ELEMENTS if s[2] == 1], ids=piola_id)
-def test_interpolate_callable(gdim, spec):
+def test_interpolate_callable(gdim, spec) -> None:
     """Interpolate a tangential constant field from a callable.
 
     The callable returns ``gdim`` components (one per physical
@@ -230,7 +230,7 @@ def test_interpolate_callable(gdim, spec):
 
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("spec", PIOLA_ELEMENTS, ids=piola_id)
-def test_interpolate_piola_to_dg(gdim, spec):
+def test_interpolate_piola_to_dg(gdim, spec) -> None:
     """Interpolate a Piola-mapped Function into a (blocked) DG space.
 
     ``DG_k`` of the same degree contains the Piola space, so the
@@ -259,7 +259,7 @@ def test_interpolate_piola_to_dg(gdim, spec):
 
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("families", [("RT", "BDM"), ("N1curl", "N2curl")])
-def test_interpolate_same_map(gdim, families):
+def test_interpolate_same_map(gdim, families) -> None:
     """Interpolate between two elements sharing a map type.
 
     ``RT_1`` is contained in ``BDM_1`` and ``N1curl_1`` in ``N2curl_1``,
@@ -279,7 +279,7 @@ def test_interpolate_same_map(gdim, families):
 
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("spec", [s for s in PIOLA_ELEMENTS if s[2] == 1], ids=piola_id)
-def test_interpolate_expression(gdim, spec):
+def test_interpolate_expression(gdim, spec) -> None:
     """Interpolate an ``Expression`` into a Piola-mapped space.
 
     ``Expression`` carries the UFL (physical) value shape, so on a
@@ -302,7 +302,7 @@ def test_interpolate_expression(gdim, spec):
 
 
 @pytest.mark.parametrize("gdim", [2, 3])
-def test_interpolate_nonmatching_meshes(gdim):
+def test_interpolate_nonmatching_meshes(gdim) -> None:
     """Interpolate a Piola-mapped Function between two manifold meshes.
 
     Both meshes triangulate the same embedded plane, so a tangential
@@ -335,7 +335,7 @@ def test_interpolate_nonmatching_meshes(gdim):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("spec", [s for s in PIOLA_ELEMENTS if s[2] == 1], ids=piola_id)
-def test_eval_piola(gdim, spec):
+def test_eval_piola(gdim, spec) -> None:
     """``Function.eval`` returns ``gdim`` components on a manifold.
 
     ``Function::eval`` pushes the reference basis forward, so its output
@@ -361,7 +361,7 @@ def test_eval_piola(gdim, spec):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("spec", [s for s in PIOLA_ELEMENTS if s[2] == 1], ids=piola_id)
-def test_eval_piola_is_tangential(gdim, spec):
+def test_eval_piola_is_tangential(gdim, spec) -> None:
     """Every value of a Piola-mapped field lies in the plane of its cell.
 
     The degrees of freedom are set directly, so this exercises
@@ -394,7 +394,7 @@ def test_eval_piola_is_tangential(gdim, spec):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("gdim", [2, 3])
-def test_interpolation_matrix(gdim):
+def test_interpolation_matrix(gdim) -> None:
     """The interpolation operator DG -> N1curl must act as interpolation.
 
     Applying the matrix to a tangential constant must give the
@@ -418,7 +418,7 @@ def test_interpolation_matrix(gdim):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("gdim", [2, 3])
-def test_discrete_gradient(gdim):
+def test_discrete_gradient(gdim) -> None:
     """``discrete_gradient`` maps a P1 field to the N1curl gradient.
 
     Regression guard: this operator is built purely from degrees of

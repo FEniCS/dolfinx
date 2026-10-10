@@ -14,7 +14,7 @@ from dolfinx.fem import Constant
 from dolfinx.mesh import create_unit_cube
 
 
-def test_scalar_constant():
+def test_scalar_constant() -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     c = Constant(mesh, 1.0)
     assert c.value.shape == ()
@@ -25,14 +25,14 @@ def test_scalar_constant():
     assert c.value == 3.0  # /NOSONAR
 
 
-def test_reshape():
+def test_reshape() -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     c = Constant(mesh, 1.0)
     with pytest.raises(ValueError):
         c.value.resize(100)
 
 
-def test_wrong_dim():
+def test_wrong_dim() -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     c = Constant(mesh, [1.0, 2.0])
     assert c.value.shape == (2,)
@@ -40,7 +40,7 @@ def test_wrong_dim():
         c.value = [1.0, 2.0, 3.0]
 
 
-def test_vector_constant():
+def test_vector_constant() -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     c0 = Constant(mesh, [1.0, 2.0])
     c1 = Constant(mesh, np.array([1.0, 2.0]))
@@ -51,7 +51,7 @@ def test_vector_constant():
     assert c0.value[0] == c0.value[1]
 
 
-def test_tensor_constant():
+def test_tensor_constant() -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     data = [[1.0, 2.0, 1.0], [1.0, 2.0, 1.0], [1.0, 2.0, 1.0]]
     c0 = Constant(mesh, data)
@@ -61,14 +61,14 @@ def test_tensor_constant():
     assert c0.value.all() == (2.0 * np.asarray(data)).all()
 
 
-def test_float_method():
+def test_float_method() -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     a = 1.0
     c0 = Constant(mesh, a)
     assert a == float(c0)  # /NOSONAR
 
 
-def test_complex_method():
+def test_complex_method() -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     a = 1.0 + 1.0j
     c0 = Constant(mesh, a)

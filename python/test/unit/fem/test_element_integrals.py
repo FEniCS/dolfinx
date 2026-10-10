@@ -199,7 +199,7 @@ def two_unit_cells(cell_type, dtype, agree=False, random_order=True, return_orde
 @pytest.mark.skip_in_parallel
 @parametrize_cell_types
 @parametrize_dtypes
-def test_facet_integral(cell_type, dtype):
+def test_facet_integral(cell_type, dtype) -> None:
     """Test that the integral of a function over a facet is correct."""
     xtype = np.real(dtype(0)).dtype
     for count in range(5):
@@ -249,7 +249,7 @@ def test_facet_integral(cell_type, dtype):
 @pytest.mark.skip_in_parallel
 @parametrize_cell_types
 @parametrize_dtypes
-def test_facet_normals(cell_type, dtype):
+def test_facet_normals(cell_type, dtype) -> None:
     """Test that FacetNormal is outward facing."""
     xtype = np.real(dtype(0)).dtype
     for count in range(5):
@@ -325,7 +325,7 @@ def test_facet_normals(cell_type, dtype):
 @pytest.mark.parametrize("space_type", ["Lagrange", "DG"])
 @parametrize_cell_types
 @parametrize_dtypes
-def test_plus_minus(cell_type, space_type, dtype):
+def test_plus_minus(cell_type, space_type, dtype) -> None:
     """Test that ('+') and ('-') give the same value for continuous functions."""
     xtype = np.real(dtype(0)).dtype
     results = []
@@ -347,7 +347,7 @@ def test_plus_minus(cell_type, space_type, dtype):
 @pytest.mark.parametrize("pm", ["+", "-"])
 @parametrize_cell_types
 @parametrize_dtypes
-def test_plus_minus_simple_vector(cell_type, pm, dtype):
+def test_plus_minus_simple_vector(cell_type, pm, dtype) -> None:
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions."""
     xtype = np.real(dtype(0)).dtype
     results = []
@@ -400,7 +400,7 @@ def test_plus_minus_simple_vector(cell_type, pm, dtype):
 @pytest.mark.parametrize("pm2", ["+", "-"])
 @parametrize_cell_types
 @parametrize_dtypes
-def test_plus_minus_vector(cell_type, pm1, pm2, dtype):
+def test_plus_minus_vector(cell_type, pm1, pm2, dtype) -> None:
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions."""
     xtype = np.real(dtype(0)).dtype
     results = []
@@ -455,7 +455,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2, dtype):
 @pytest.mark.parametrize("pm2", ["+", "-"])
 @parametrize_cell_types
 @parametrize_dtypes
-def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
+def test_plus_minus_matrix(cell_type, pm1, pm2, dtype) -> None:
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions."""
     xtype = np.real(dtype(0)).dtype
     results = []
@@ -588,7 +588,7 @@ def create_quad_mesh(offset, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("k", [0, 1, 2])
 @parametrize_dtypes
-def test_div_general_quads_mat(k, dtype):
+def test_div_general_quads_mat(k, dtype) -> None:
     """Tests that assembling inner(u, div(w)) * dx, where u is from a
     "DQ" space and w is from an "RTCF" space, gives the same matrix for
     square and trapezoidal elements. This should be the case due to the
@@ -618,7 +618,7 @@ def test_div_general_quads_mat(k, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("k", [0, 1, 2])
 @parametrize_dtypes
-def test_div_general_quads_vec(k, dtype):
+def test_div_general_quads_vec(k, dtype) -> None:
     """Tests that assembling inner(1, div(w)) * dx, where w is from an
     "RTCF" space, gives the same matrix for square and trapezoidal
     elements. This should be the case due to the properties of the Piola

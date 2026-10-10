@@ -24,7 +24,7 @@ if sys.platform.startswith("win32"):
 
 
 @pytest.mark.parametrize("complex_dtype", [np.complex64, np.complex128])
-def test_complex_assembly(complex_dtype):
+def test_complex_assembly(complex_dtype) -> None:
     """Test assembly of complex matrices and vectors."""
     real_dtype = np.real(complex_dtype(1.0)).dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=real_dtype)
@@ -75,7 +75,7 @@ def test_complex_assembly(complex_dtype):
 
 
 @pytest.mark.parametrize("complex_dtype", [np.complex64, np.complex128])
-def test_complex_assembly_solve(complex_dtype, cg_solver):
+def test_complex_assembly_solve(complex_dtype, cg_solver) -> None:
     """Solve a positive definite helmholtz problem and verify solution
     with the method of manufactured solutions.
     """
