@@ -1,5 +1,5 @@
 # Copyright (C) 2022-2026 Jørgen S. Dokken, Henrik N. T. Finsberg and
-# Paul T. Kühner
+# Paul T. Kühner and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -87,7 +87,9 @@ _gmsh_to_cells = {
     26: ("interval", 3),
     29: ("tetrahedron", 3),
     36: ("quadrilateral", 3),
+    90: ("prism", 3),
     92: ("hexahedron", 3),
+    118: ("pyramid", 3),
 }
 
 
@@ -221,8 +223,10 @@ def extract_topology_and_markers(
             ):
                 # Determine number of local nodes per element to create the
                 # topology of the elements
-                properties = model.mesh.getElementProperties(entity_type)
-                name, dim, _, num_nodes, _, _ = properties
+                if len(entity_tag) == 0:
+                    continue
+                # Avoid Gmsh's unsupported cubic-prism reference element.
+                num_nodes = len(entity_topology) // len(entity_tag)
 
                 # Array of shape (num_elements,num_nodes_per_element)
                 # containing the topology of the elements on this entity.
@@ -353,7 +357,12 @@ def model_to_mesh(
         entity_tdim = np.zeros(num_unique_entities, dtype=np.int32)
         num_nodes_per_element = np.zeros(num_unique_entities, dtype=np.int32)
         for i, element in enumerate(topologies.keys()):
-            _, dim, _, num_nodes, _, _ = model.mesh.getElementProperties(element)
+            if element in _gmsh_to_cells:
+                shape, _ = _gmsh_to_cells[element]
+                dim = ufl.Cell(shape).topological_dimension
+            else:
+                _, dim, _, _, _, _ = model.mesh.getElementProperties(element)
+            num_nodes = topologies[element]["topology"].shape[1]
             element_ids[i] = element
             entity_tdim[i] = dim
             num_nodes_per_element[i] = num_nodes
@@ -487,9 +496,7 @@ def model_to_mesh(
             dolfinx_meshtags[key] = None
             continue
 
-        if (
-            codim == 1 and topology.cell_type == CellType.prism
-        ) or topology.cell_type == CellType.pyramid:
+        if codim == 1 and topology.cell_type in (CellType.prism, CellType.pyramid):
             raise RuntimeError(f"Unsupported facet tag for type {topology.cell_type}")
 
         # Distribute entity data [[e0_v0, e0_v1, ...], [e1_v0, e1_v1, ...],
