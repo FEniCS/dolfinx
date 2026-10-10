@@ -55,6 +55,8 @@ _vtk_nodes = {
     (CellType.triangle, 3): [(0,), (1,), (2,)],
     (CellType.triangle, 6): [(0,), (1,), (2,), (0, 1), (1, 2), (2, 0)],
     (CellType.quadrilateral, 4): [(0,), (1,), (2,), (3,)],
+    # 8 nodes is serendipity: no interior node.
+    (CellType.quadrilateral, 8): [(i,) for i in range(4)] + [(0, 1), (1, 2), (2, 3), (3, 0)],
     (CellType.quadrilateral, 9): [(i,) for i in range(4)]
     + [(0, 1), (1, 2), (2, 3), (3, 0), (0, 1, 2, 3)],
     (CellType.tetrahedron, 4): [(i,) for i in range(4)],
@@ -190,7 +192,7 @@ _gmsh_nodes = {
 _vtk_layouts = (
     [(CellType.interval, n) for n in (2, 3, 4, 5)]
     + [(CellType.triangle, n) for n in (3, 6, 10, 15)]
-    + [(CellType.quadrilateral, n) for n in (4, 9, 16, 25)]
+    + [(CellType.quadrilateral, n) for n in (4, 8, 9, 16, 25)]
     + [(CellType.tetrahedron, n) for n in (4, 10, 20, 35)]
     + [(CellType.hexahedron, n) for n in (8, 20, 27, 64)]
     + [(CellType.prism, n) for n in (6, 15, 18)]

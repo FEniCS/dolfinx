@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Jorgen S. Dokken and Garth N. Wells
+// Copyright (C) 2019-2026 Jorgen S. Dokken and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -372,6 +372,17 @@ std::vector<std::uint16_t> vtk_pyramid(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 {
+  if (num_nodes == 8)
+  {
+    // Degree-2 serendipity: one node per vertex and per edge, and no
+    // interior node, so cell_degree below has no answer for it
+    std::vector<std::uint16_t> map;
+    map.insert(map.begin(), {0, 1, 3, 2});
+    for (int e : {0, 2, 3, 1})
+      map.push_back(4 + e);
+    return map;
+  }
+
   std::vector<std::uint16_t> map;
   map.reserve(num_nodes);
 
