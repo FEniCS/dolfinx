@@ -58,7 +58,7 @@ void write_mesh(const std::filesystem::path& filename,
   for (std::size_t i = 0; i < cell_types.size(); ++i)
   {
     vtk_types.push_back(cells::get_vtk_cell_type(
-        cell_types[i], tdim, mesh.geometry().cmaps().at(i).dim()));
+        cell_types[i], mesh.geometry().cmaps().at(i).dim()));
   }
 
   hdf5::Handle h5file(hdf5::open_file(mesh.comm(), filename, "w", true),
