@@ -1,5 +1,5 @@
 // Copyright (C) 2020 Matthew Scroggs
-// Copyright (C) 2020-2026 Matthew Scroggs and Jørgen S. Dokken
+// Copyright (C) 2020-2026 Matthew Scroggs, Jørgen S. Dokken and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //

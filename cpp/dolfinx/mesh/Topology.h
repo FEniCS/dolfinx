@@ -278,6 +278,7 @@ public:
   ///
   /// Does nothing if the cell permutations have already been computed.
   /// Uses cell vertices directly without creating edges or faces.
+  /// @note This operation is not collective.
   ///
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
   /// @see create_entity_permutations, which gives the orientations of

@@ -347,6 +347,49 @@ compute_face_permutations(const mesh::Topology& topology, int num_threads)
                                                              num_threads);
 }
 //-----------------------------------------------------------------------------
+void compute_cell_permutations_range(
+    std::array<std::int64_t, 2> range,
+    const graph::AdjacencyList<std::int32_t>& c_to_v,
+    const common::IndexMap& vertex_map, const graph::AdjacencyList<int>& edges,
+    const graph::AdjacencyList<int>& faces,
+    std::span<std::uint32_t> cell_permutation_info)
+{
+  const int edge_offset = 3 * faces.num_nodes();
+  std::array<std::int64_t, 8> cell_vertices;
+  std::array<std::int64_t, 4> face_vertices;
+  for (std::int32_t c = range[0]; c < range[1]; ++c)
+  {
+    const std::span<const std::int32_t> vertices = c_to_v.links(c);
+    assert(vertices.size() <= cell_vertices.size());
+    vertex_map.local_to_global(vertices,
+                               std::span(cell_vertices).first(vertices.size()));
+    std::uint32_t info = 0;
+    for (int f = 0; f < faces.num_nodes(); ++f)
+    {
+      const std::span<const int> e_vertices = faces.links(f);
+      assert(e_vertices.size() <= face_vertices.size());
+      for (std::size_t i = 0; i < e_vertices.size(); ++i)
+        face_vertices[i] = cell_vertices[e_vertices[i]];
+      const std::span<const std::int64_t> global_vertices
+          = std::span(face_vertices).first(e_vertices.size());
+      const auto [refl, rots]
+          = e_vertices.size() == 3
+                ? compute_triangle_rot_reflect(e_vertices, global_vertices)
+                : compute_quad_rot_reflect(e_vertices, global_vertices);
+      info |= std::uint32_t(refl + 2 * rots) << (3 * f);
+    }
+    for (int e = 0; e < edges.num_nodes(); ++e)
+    {
+      const std::span<const int> e_vertices = edges.links(e);
+      const bool reflected
+          = (e_vertices[1] < e_vertices[0])
+            == (cell_vertices[e_vertices[1]] > cell_vertices[e_vertices[0]]);
+      info |= std::uint32_t(reflected) << (edge_offset + e);
+    }
+    cell_permutation_info[c] = info;
+  }
+}
+//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -439,55 +482,20 @@ mesh::compute_cell_permutations(const mesh::Topology& topology, int num_threads)
   const graph::AdjacencyList<int> faces
       = tdim > 2 ? get_entity_vertices(cell_type, 2)
                  : graph::AdjacencyList<int>(0);
-  const int edge_offset = 3 * faces.num_nodes();
-  assert(edge_offset + edges.num_nodes() < bitset_size);
+  assert(3 * faces.num_nodes() + edges.num_nodes() < bitset_size);
   std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
-
-  auto process_range
-      = [&c_to_v, &vertex_map, &edges, &faces, &cell_permutation_info,
-         edge_offset](std::array<std::int64_t, 2> range)
-  {
-    std::array<std::int64_t, 8> cell_vertices;
-    std::array<std::int64_t, 4> face_vertices;
-    for (std::int32_t c = range[0]; c < range[1]; ++c)
-    {
-      const std::span<const std::int32_t> vertices = c_to_v->links(c);
-      assert(vertices.size() <= cell_vertices.size());
-      vertex_map->local_to_global(
-          vertices, std::span(cell_vertices).first(vertices.size()));
-      std::uint32_t info = 0;
-      for (int f = 0; f < faces.num_nodes(); ++f)
-      {
-        const std::span<const int> e_vertices = faces.links(f);
-        assert(e_vertices.size() <= face_vertices.size());
-        for (std::size_t i = 0; i < e_vertices.size(); ++i)
-          face_vertices[i] = cell_vertices[e_vertices[i]];
-        const std::span<const std::int64_t> global_vertices
-            = std::span(face_vertices).first(e_vertices.size());
-        const auto [refl, rots]
-            = e_vertices.size() == 3
-                  ? compute_triangle_rot_reflect(e_vertices, global_vertices)
-                  : compute_quad_rot_reflect(e_vertices, global_vertices);
-        info |= std::uint32_t(refl + 2 * rots) << (3 * f);
-      }
-      for (int e = 0; e < edges.num_nodes(); ++e)
-      {
-        const std::span<const int> e_vertices = edges.links(e);
-        const bool reflected
-            = (e_vertices[1] < e_vertices[0])
-              == (cell_vertices[e_vertices[1]] > cell_vertices[e_vertices[0]]);
-        info |= std::uint32_t(reflected) << (edge_offset + e);
-      }
-      cell_permutation_info[c] = info;
-    }
-  };
 
   {
     std::vector<std::jthread> threads;
     for (int i = 1; i < num_threads; ++i)
-      threads.emplace_back(process_range,
-                           common::local_range(i, num_cells, num_threads));
-    process_range(common::local_range(0, num_cells, num_threads));
+      threads.emplace_back(compute_cell_permutations_range,
+                           common::local_range(i, num_cells, num_threads),
+                           std::cref(*c_to_v), std::cref(*vertex_map),
+                           std::cref(edges), std::cref(faces),
+                           std::span(cell_permutation_info));
+    compute_cell_permutations_range(
+        common::local_range(0, num_cells, num_threads), *c_to_v, *vertex_map,
+        edges, faces, cell_permutation_info);
   }
 
   return cell_permutation_info;
