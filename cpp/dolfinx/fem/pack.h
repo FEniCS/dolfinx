@@ -388,7 +388,7 @@ void pack_coefficients(const Form<T, U>& form,
   }
 }
 
-/// @brief Pack coefficient data over a list of cells or facets.
+/// @brief Pack coefficient data over a list of cells, facets or ridges.
 ///
 /// Typically used to prepare coefficient data for an ::Expression.
 /// @tparam T Data type of coefficients
@@ -397,6 +397,7 @@ void pack_coefficients(const Form<T, U>& form,
 /// @param mesh Mesh which the entities belong to
 /// @param entities Entities to pack over: either a rank-1 list of cell
 /// indices, or a rank-2 list of (cell, local_entity_index) pairs.
+/// @param dim Topological dimension of `entities`.
 /// @param entity_maps Bidirectional maps between the entities of a
 /// parent mesh and a submesh in case of coefficients being defined on
 /// both.
@@ -406,7 +407,7 @@ void pack_coefficients(const Form<T, U>& form,
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(
     const std::vector<std::reference_wrapper<const Function<T, U>>>& coeffs,
-    const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities,
+    const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities, int dim,
     const std::vector<std::reference_wrapper<const dolfinx::mesh::EntityMap>>&
         entity_maps,
     std::span<const int> offsets, std::span<T> c)
@@ -435,6 +436,7 @@ void pack_coefficients(
     }
     else
     {
+      impl::check_entity_mapping_dim(topology.dim(), dim, topology_c.dim());
       const mesh::EntityMap& emap
           = mesh::find_entity_map(entity_maps, topology, topology_c);
       coefficient_cells = mesh::extract_cells_from_entities(

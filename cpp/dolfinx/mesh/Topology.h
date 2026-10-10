@@ -7,9 +7,11 @@
 #pragma once
 
 #include <array>
+#include <basix/mdspan.hpp>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <map>
 #include <memory>
 #include <optional>
@@ -470,5 +472,30 @@ entities_to_index(const Topology& topology, int dim,
 /// @todo Remove redundant data.
 std::vector<std::vector<std::int32_t>>
 compute_mixed_cell_pairs(const Topology& topology, mesh::CellType facet_type);
+
+/// @brief Permutations of the cell-local entities of a given dimension.
+///
+/// Computes the permutations on `topology` if they are not already
+/// available. Returns an empty mdspan when the entity has no
+/// orientation to permute: cells (`dim == topology.dim()`) and
+/// vertices.
+///
+/// @param[in,out] topology Mesh topology of the integration domain.
+/// @param[in] dim Topological dimension of the entities.
+/// @param[in] cell_type Cell type of the integration domain.
+/// @return Permutation of each cell-local entity, shape
+/// `(num_cells, entities_per_cell)`.
+inline md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
+entity_permutations(mesh::Topology& topology, int dim, mesh::CellType cell_type)
+{
+  if (dim == topology.dim())
+    return {};
+
+  topology.create_entity_permutations(dim);
+  const std::vector<std::uint8_t>& p = topology.get_entity_permutations(dim);
+  const int num_entities_per_cell = mesh::cell_num_entities(cell_type, dim);
+  return md::mdspan(p.data(), p.size() / num_entities_per_cell,
+                    num_entities_per_cell);
+}
 
 } // namespace dolfinx::mesh
