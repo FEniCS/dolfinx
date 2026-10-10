@@ -290,9 +290,19 @@ def test_write_mixed_topology_data(mixed_topology_mesh) -> None:
     write_cell_data(filename, mesh, cell_data, 0.0)
 
 
+def _rank0_only(comm, element, cells, points):
+    """Keep cell and point data on rank 0, as create_mesh expects."""
+    if comm.rank == 0:
+        return cells, points
+    return (
+        np.empty((0, element.basix_element.dim), dtype=np.int64),
+        np.empty((0, 3), dtype=np.float64),
+    )
+
+
 @pytest.mark.parametrize("degree", [1, 2])
 def test_read_write_prism(degree, tempdir) -> None:
-    """Full quadratic prisms retain their coordinate element and geometry."""
+    """Prisms round-trip with coordinate element and geometry preserved."""
     element = basix.ufl.element(
         "Lagrange", "prism", degree, basix.LagrangeVariant.equispaced, shape=(3,), dtype=np.float64
     )
@@ -304,11 +314,9 @@ def test_read_write_prism(degree, tempdir) -> None:
     points[:, 0] += 0.1 * points[:, 2] ** 2
     points, indices = np.unique(points, axis=0, return_inverse=True)
     cells = indices.reshape(-1, element.basix_element.dim).astype(np.int64)
-    if comm.rank != 0:
-        cells = np.empty((0, element.basix_element.dim), dtype=np.int64)
-        points = np.empty((0, 3), dtype=np.float64)
+    cells, points = _rank0_only(comm, element, cells, points)
     mesh = dolfinx.mesh.create_mesh(comm, cells, ufl.Mesh(element), points)
-    num_cells = mesh.topology.index_map(3).size_local
+    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     geometry = np.concatenate(comm.allgather(mesh.geometry.x[mesh.geometry.dofmaps[0][:num_cells]]))
     filename = Path(tempdir, "prism.vtkhdf")
     write_mesh(filename, mesh)
@@ -328,9 +336,7 @@ def test_write_quadratic_pyramid_rejected(tempdir) -> None:
     comm = MPI.COMM_WORLD
     points = element.basix_element.points
     cells = np.arange(element.basix_element.dim, dtype=np.int64).reshape(1, -1)
-    if comm.rank != 0:
-        cells = np.empty((0, element.basix_element.dim), dtype=np.int64)
-        points = np.empty((0, 3), dtype=np.float64)
+    cells, points = _rank0_only(comm, element, cells, points)
 
     def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
         return dolfinx.graph.adjacencylist(np.zeros((dual_graph.num_nodes, 1), dtype=np.int32))

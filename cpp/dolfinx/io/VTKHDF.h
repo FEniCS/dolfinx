@@ -75,8 +75,7 @@ void write_mesh(const std::filesystem::path& filename,
   }
 
   // Extract topology information for each cell type
-  std::vector cell_index_maps
-      = mesh.topology()->index_maps(mesh.topology()->dim());
+  std::vector cell_index_maps = mesh.topology()->index_maps(tdim);
   std::vector<std::int32_t> num_cells;
   std::vector<std::int64_t> num_cells_global;
   for (auto& im : cell_index_maps)
