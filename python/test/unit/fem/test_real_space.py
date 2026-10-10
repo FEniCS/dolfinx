@@ -14,7 +14,7 @@ import ufl
     "cell_type", [dolfinx.mesh.CellType.triangle, dolfinx.mesh.CellType.quadrilateral]
 )
 @pytest.mark.parametrize("dtype", [np.float64, np.float32])
-def test_real_function_space_mass(L, H, cell_type, dtype):
+def test_real_function_space_mass(L, H, cell_type, dtype) -> None:
     """Test that real space mass matrix is the same as assembling the volume."""
     mesh = dolfinx.mesh.create_rectangle(
         MPI.COMM_WORLD, [[0.0, 0.0], [L, H]], [7, 9], cell_type, dtype=dtype
@@ -45,7 +45,7 @@ def test_real_function_space_mass(L, H, cell_type, dtype):
 @pytest.mark.parametrize(
     "cell_type", [dolfinx.mesh.CellType.tetrahedron, dolfinx.mesh.CellType.hexahedron]
 )
-def test_real_function_space_vector(cell_type, dtype):
+def test_real_function_space_vector(cell_type, dtype) -> None:
     """Test assembling with real space test function is equal to assembling with a constant."""
     mesh = dolfinx.mesh.create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, cell_type, dtype=dtype)
 
@@ -88,7 +88,7 @@ def test_real_function_space_vector(cell_type, dtype):
         pytest.param(np.float64, np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_complex_real_space(ftype, stype):
+def test_complex_real_space(ftype, stype) -> None:
     mesh = dolfinx.mesh.create_unit_interval(MPI.COMM_WORLD, 13, dtype=ftype)
 
     val = (2 + 3j, -4 + 5j)
@@ -122,7 +122,7 @@ def test_complex_real_space(ftype, stype):
     [np.float32, np.float64],
 )
 @pytest.mark.parametrize("vs", [(3, 2), (2,), (), (1,)])
-def test_real_sub_spaces(vs, ftype):
+def test_real_sub_spaces(vs, ftype) -> None:
 
     mesh = dolfinx.mesh.create_unit_square(
         MPI.COMM_WORLD, 4, 4, dolfinx.mesh.CellType.triangle, dtype=ftype
@@ -154,7 +154,7 @@ def test_real_sub_spaces(vs, ftype):
     [np.float32, np.float64],
 )
 @pytest.mark.parametrize("vs", [(3, 3), (2, 2), (), (1, 1), (6, 6)])
-def test_symmetric(vs, ftype):
+def test_symmetric(vs, ftype) -> None:
 
     mesh = dolfinx.mesh.create_unit_square(
         MPI.COMM_WORLD, 4, 4, dolfinx.mesh.CellType.triangle, dtype=ftype

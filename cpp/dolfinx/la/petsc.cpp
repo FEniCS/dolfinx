@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <format>
@@ -124,6 +125,45 @@ std::vector<IS> la::petsc::create_index_sets(
         "ISCreateStride");
     is.push_back(_is);
     offset += bs * size;
+  }
+
+  return is;
+}
+//-----------------------------------------------------------------------------
+std::vector<IS> la::petsc::create_global_index_sets(
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
+{
+  std::vector<IS> is;
+  if (maps.empty())
+    return is;
+
+  MPI_Comm comm = maps.front().first.get().comm();
+
+  // Offset of this rank's block of the stacked problem. Ownership in an
+  // index map is contiguous by rank, so a scan over the ranks would
+  // reproduce what local_range() already holds
+  std::int64_t offset = 0;
+  for (auto& [map, bs] : maps)
+  {
+    int result;
+    MPI_Comm_compare(comm, map.get().comm(), &result);
+    if (result != MPI_IDENT and result != MPI_CONGRUENT)
+    {
+      throw std::invalid_argument("All index maps must share a communicator.");
+    }
+    offset += bs * map.get().local_range()[0];
+  }
+
+  is.reserve(maps.size());
+  for (auto& [map, bs] : maps)
+  {
+    std::int32_t size = bs * map.get().size_local();
+    IS _is;
+    common::petsc::check(ISCreateStride(comm, size, offset, 1, &_is),
+                         "ISCreateStride");
+    is.push_back(_is);
+    offset += size;
   }
 
   return is;

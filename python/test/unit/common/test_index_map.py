@@ -16,7 +16,7 @@ from dolfinx.fem import functionspace
 from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square
 
 
-def test_sub_index_map():
+def test_sub_index_map() -> None:
     comm = MPI.COMM_WORLD
     my_rank = comm.rank
 
@@ -69,7 +69,7 @@ def test_sub_index_map():
     assert (owners[ghosts_pos_sub] == subowners).all()
 
 
-def test_sub_index_map_ghost_mode_none():
+def test_sub_index_map_ghost_mode_none() -> None:
     n = 3
     mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
     tdim = mesh.topology.dim
@@ -78,7 +78,7 @@ def test_sub_index_map_ghost_mode_none():
     create_sub_index_map(map, submap_indices)
 
 
-def test_index_map_ghost_lifetime():
+def test_index_map_ghost_lifetime() -> None:
     """Test lifetime management of arrays."""
     # Create index map with one ghost from each other process. The
     # ghosts added are the ith ghost from the ith process relative to
@@ -118,7 +118,7 @@ def test_index_map_ghost_lifetime():
     assert np.array_equal(ghosts, map_ghosts)
 
 
-def test_explicit_index_map_dest_src_order():
+def test_explicit_index_map_dest_src_order() -> None:
     """Check the documented order of explicit IndexMap neighbour lists."""
     comm = MPI.COMM_WORLD
     if comm.size < 3:
@@ -151,7 +151,7 @@ def test_explicit_index_map_dest_src_order():
 
 # TODO: Add test for case where more than one two process shares an index
 # whose owner changes in the submap
-def test_create_submap_owner_change():
+def test_create_submap_owner_change() -> None:
     """Test create_sub_index_map where the ownership of indices is not
     preserved in the submap. The diagram illustrates the case with four
     processes. Original map numbering and connectivity (G indicates a ghost
@@ -227,7 +227,7 @@ def test_create_submap_owner_change():
     assert np.array_equal(global_indices, np.arange(comm.rank * 2, comm.rank * 2 + 3))
 
 
-def test_sub_index_map_multiple_possible_owners():
+def test_sub_index_map_multiple_possible_owners() -> None:
     """Check that creating a submap doesn't crash when an index need to change owner and
     there are multiple possible new owners.
     """
@@ -281,7 +281,7 @@ def test_sub_index_map_multiple_possible_owners():
     assert sub_imap.num_ghosts == submap_num_ghosts_expected
 
 
-def test_index_map_equality():
+def test_index_map_equality() -> None:
     """Index maps for the same C++ object compare (and hash) equal."""
     msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
     V = functionspace(msh, ("Lagrange", 1))
@@ -318,7 +318,7 @@ def _check_index_to_dest_ranks(imap):
 
 
 @pytest.mark.parametrize("seed", [0, 1, 2])
-def test_index_to_dest_ranks(seed):
+def test_index_to_dest_ranks(seed) -> None:
     """Sharing ranks of an index map with randomly chosen ghosts."""
     comm = MPI.COMM_WORLD
     local_size = 10
@@ -338,7 +338,7 @@ def test_index_to_dest_ranks(seed):
 
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("tdim", [2, 3])
-def test_index_to_dest_ranks_mesh(ghost_mode, tdim):
+def test_index_to_dest_ranks_mesh(ghost_mode, tdim) -> None:
     """Sharing ranks of the index maps of all mesh entity dimensions."""
     if tdim == 2:
         msh = create_unit_square(MPI.COMM_WORLD, 8, 8, ghost_mode=ghost_mode)

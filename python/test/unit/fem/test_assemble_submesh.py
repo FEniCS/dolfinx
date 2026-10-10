@@ -106,7 +106,7 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_submesh_facet_assembly(n, k, space, ghost_mode):
+def test_submesh_facet_assembly(n, k, space, ghost_mode) -> None:
     """Test that assembling a form over the face of a unit cube gives
     the same result as assembling it over a unit square.
     """
@@ -190,7 +190,7 @@ def M_ufl(f, g, measure):
 @pytest.mark.parametrize("k", [1, 3])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("integral_type", ["dx", "ds", "dS"])
-def test_mixed_dom_codim_0(n, k, space, integral_type):
+def test_mixed_dom_codim_0(n, k, space, integral_type) -> None:
     """Test assembling forms where the trial and test functions
     are defined over different meshes.
     """
@@ -294,7 +294,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
 
 @pytest.mark.parametrize("n", [4, 6])
 @pytest.mark.parametrize("k", [1, 3])
-def test_mixed_dom_codim_1(n, k):
+def test_mixed_dom_codim_1(n, k) -> None:
     """Test assembling forms where the trial functions, test functions
     and coefficients are defined over different meshes of different topological
     dimension.
@@ -482,7 +482,7 @@ def compute_codim1_and_manifold_dx(msh, k, integrand):
     ],
 )
 @pytest.mark.parametrize("k", [1, 3])
-def test_codim_1_gradient(cell_type, expected, k):
+def test_codim_1_gradient(cell_type, expected, k) -> None:
     """Grad of a codimension-1 submesh coefficient, via the parent's
     facet measure and via the submesh's own cell measure.
 
@@ -508,7 +508,7 @@ def test_codim_1_gradient(cell_type, expected, k):
     [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
 )
 @pytest.mark.parametrize("degree", [2, 3])
-def test_codim_1_gradient_higher_order_geometry(cell_type, degree):
+def test_codim_1_gradient_higher_order_geometry(cell_type, degree) -> None:
     """Same test as `test_codim_1_gradient`, on curved parent geometry.
 
     Does not have a closed form solution.
@@ -528,7 +528,7 @@ def test_codim_1_gradient_higher_order_geometry(cell_type, degree):
         (CellType.hexahedron, 72.0),
     ],
 )
-def test_codim_1_spatial_coordinate(cell_type, expected):
+def test_codim_1_spatial_coordinate(cell_type, expected) -> None:
     """`SpatialCoordinate` of a codimension-1 submesh under the parent's
     exterior facet measure.
 
@@ -589,7 +589,7 @@ def test_codim_1_gradient_interior_facet(cell_type):
         assert np.isclose(c, c_submesh)
 
 
-def test_disjoint_submeshes():
+def test_disjoint_submeshes() -> None:
     # FIXME Simplify this test
     """Test assembly with multiple disjoint submeshes in same variational form."""
     N = 10
@@ -878,7 +878,7 @@ def test_interior_facet_codim_1(msh):
     np.testing.assert_allclose(b_submesh.array, b_ref.array, atol=tol)
 
 
-def test_interior_interface():
+def test_interior_interface() -> None:
     """This is a test for assembling a form over an interface between
     two domains that don't overlap. The test function is defined on one
     domain, and the trial function is defined on the other.
@@ -1065,7 +1065,7 @@ def _ridge_submesh(n, ghost_mode):
 
 @pytest.mark.parametrize("k", [1, 2])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_mixed_dom_codim_2(k, ghost_mode):
+def test_mixed_dom_codim_2(k, ghost_mode) -> None:
     """Assemble over the ridges of a mesh with data on a codim-2 submesh.
 
     Integrating over the parent's ridges must give the same value as
@@ -1100,7 +1100,7 @@ def test_mixed_dom_codim_2(k, ghost_mode):
 
 
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_mixed_dom_codim_2_arguments(ghost_mode):
+def test_mixed_dom_codim_2_arguments(ghost_mode) -> None:
     """Arguments, not just coefficients, may live on a codim-2 submesh."""
     msh, smsh, entity_map = _ridge_submesh(3, ghost_mode)
 
@@ -1123,7 +1123,7 @@ def test_mixed_dom_codim_2_arguments(ghost_mode):
     assert np.isclose(la.norm(b), la.norm(b1))
 
 
-def test_mixed_dom_entity_dim_must_match_submesh_dim():
+def test_mixed_dom_entity_dim_must_match_submesh_dim() -> None:
     """The data must live on the entities being integrated over.
 
     A ridge integral with data on a codim-1 (facet) submesh cannot be
@@ -1147,7 +1147,7 @@ def test_mixed_dom_entity_dim_must_match_submesh_dim():
         fem.form(g * ufl.Measure("dr", domain=msh), entity_maps=[entity_map])
 
 
-def test_mixed_dom_vertex_integral_unsupported():
+def test_mixed_dom_vertex_integral_unsupported() -> None:
     """Vertex integrals with data on another mesh are not supported.
 
     Rejected by FFCx while compiling the kernel; `Form` also refuses the
