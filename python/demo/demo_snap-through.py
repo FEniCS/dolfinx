@@ -14,8 +14,8 @@
 #
 # ```{admonition} Download sources
 # :class: download
-# * {download}`Python script <./demo_buckling.py>`
-# * {download}`Jupyter notebook <./demo_buckling.ipynb>`
+# * {download}`Python script <./demo_snap-through.py>`
+# * {download}`Jupyter notebook <./demo_snap-through.ipynb>`
 # ```
 #
 # This demo computes the equilibrium path of a shallow hyperelastic arch
@@ -595,7 +595,7 @@ except ImportError:
 rank_suffix = f"_{msh.comm.rank}" if msh.comm.size > 1 else ""
 cells, types, points = plot.vtk_mesh(V)
 block_size = V.dofmap.index_map_bs
-frame_dir = Path("out_buckling/frames")
+frame_dir = Path("out_snap-through/frames")
 undeformed = deformed = plotter = None
 colour_bar = {
     "title": "u_z",
@@ -685,7 +685,7 @@ snapshots: list[np.ndarray] = []
 # PyVista frames above draw the quadratic field itself.
 u_linear = fem.Function(fem.functionspace(msh, ("Lagrange", 1, (3,))), name="displacement")
 
-history = XDMFFile(msh.comm, "out_buckling/deformation.xdmf", "w")
+history = XDMFFile(msh.comm, "out_snap-through/deformation.xdmf", "w")
 history.write_mesh(msh)
 history.write_function(u_linear, 0.0)
 draw_frame(0, 0.0)
@@ -739,7 +739,7 @@ petsc_options = {
     "pc_factor_mat_solver_type": mat_solver_type,
 }
 
-prefix = "demo_buckling_"
+prefix = "demo_snap-through_"
 snes.setOptionsPrefix(prefix)
 opts = PETSc.Options()
 opts.prefixPush(prefix)
@@ -786,7 +786,7 @@ unstable = limit + int(np.argmin(load_path[limit:]))
 
 if msh.comm.rank == 0:
     np.savetxt(
-        "out_buckling/equilibrium-path.csv",
+        "out_snap-through/equilibrium-path.csv",
         history_data,
         delimiter=",",
         header="arc_length,load_parameter,mean_vertical_displacement",
@@ -858,7 +858,7 @@ if msh.comm.rank == 0:
     ax.grid(visible=True, alpha=0.3)
     ax.legend()
     fig.tight_layout()
-    fig.savefig("out_buckling/load-displacement.png", dpi=150)
+    fig.savefig("out_snap-through/load-displacement.png", dpi=150)
 # -
 
 # ## Visualisation
@@ -909,7 +909,7 @@ if plotter is not None:
     summary.camera.zoom(2.2)
 
     if pyvista.OFF_SCREEN:
-        summary.screenshot(f"out_buckling/snap-through{rank_suffix}.png")
+        summary.screenshot(f"out_snap-through/deformed-states{rank_suffix}.png")
     else:
         summary.show()
 # -
