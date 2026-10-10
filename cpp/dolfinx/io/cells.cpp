@@ -676,26 +676,32 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     {
     case 6:
       return 1;
-    case 15:
+    case 18:
       return 2;
     case 40:
       return 3;
     default:
-      throw std::runtime_error(
-          std::format("Unknown prism layout. Number of nodes: {}", num_nodes));
+      throw std::runtime_error(std::format(
+          "No Lagrange prism has {} nodes, expected 6 or 18. The 15-node "
+          "wedge is a serendipity layout, which Basix does not have for a "
+          "prism.",
+          num_nodes));
     }
   case mesh::CellType::pyramid:
     switch (num_nodes)
     {
     case 5:
       return 1;
-    case 13:
+    case 14:
       return 2;
     case 30:
       return 3;
     default:
       throw std::runtime_error(std::format(
-          "Unknown pyramid layout. Number of nodes: {}", num_nodes));
+          "No Lagrange pyramid has {} nodes, expected 5 or 14. The 13-node "
+          "pyramid is a serendipity layout, which Basix does not have for a "
+          "pyramid.",
+          num_nodes));
     }
   default:
     throw std::runtime_error("Unknown cell type.");
@@ -734,8 +740,11 @@ io::cells::apply_permutation(std::span<const std::int64_t> cells,
 //-----------------------------------------------------------------------------
 std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
 {
-  if (cell == mesh::CellType::prism and dim == 2)
-    throw std::runtime_error("More work needed for prism cell");
+  if ((cell == mesh::CellType::prism or cell == mesh::CellType::pyramid)
+      and dim == 2)
+    throw std::invalid_argument(
+        "Prism and pyramid facets have different cell types. Specify the "
+        "facet cell type directly.");
 
   // Get cell type
   mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
@@ -762,6 +771,28 @@ std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
     return 73;
   default:
     throw std::runtime_error("Unknown cell type");
+  }
+}
+//-----------------------------------------------------------------------------
+std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim,
+                                         int num_nodes)
+{
+  // Every shape except the pyramid has an arbitrary-degree Lagrange
+  // type in VTK, so only the pyramid needs the node count
+  if (mesh::cell_entity_type(cell, dim, 0) != mesh::CellType::pyramid)
+    return get_vtk_cell_type(cell, dim);
+
+  switch (num_nodes)
+  {
+  case 5:
+    return 14;
+  case 13:
+    return 27;
+  default:
+    throw std::invalid_argument(
+        std::format("VTK pyramid output supports 5 or 13 nodes, got {}. "
+                    "Lagrange pyramids are not implemented in VTK.",
+                    num_nodes));
   }
 }
 //----------------------------------------------------------------------------

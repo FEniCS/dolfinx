@@ -82,6 +82,7 @@ cpp/demo/**/**/*.h
 *.bin
 *.bp
 *.png
+*.vtkhdf
 
 CMakeCache.txt
 CMakeFiles

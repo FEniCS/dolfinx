@@ -4,11 +4,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from pathlib import Path
+
 from mpi4py import MPI
 
 import numpy as np
 import pytest
 
+import basix
+import basix.ufl
 import dolfinx
 import ufl
 from dolfinx.io.vtkhdf import read_mesh, write_cell_data, write_mesh, write_point_data
@@ -284,3 +288,64 @@ def test_write_mixed_topology_data(mixed_topology_mesh) -> None:
     b = sum([im.size_local for im in mesh.topology.index_maps(mesh.topology.dim)])
     cell_data = np.arange(b, dtype=np.float64)
     write_cell_data(filename, mesh, cell_data, 0.0)
+
+
+def _rank0_only(comm, element, cells, points):
+    """Keep cell and point data on rank 0, as create_mesh expects."""
+    if comm.rank == 0:
+        return cells, points
+    return (
+        np.empty((0, element.basix_element.dim), dtype=np.int64),
+        np.empty((0, 3), dtype=np.float64),
+    )
+
+
+@pytest.mark.parametrize("degree", [1, 2])
+def test_read_write_prism(degree, tempdir) -> None:
+    """Prisms round-trip with coordinate element and geometry preserved."""
+    element = basix.ufl.element(
+        "Lagrange", "prism", degree, basix.LagrangeVariant.equispaced, shape=(3,), dtype=np.float64
+    )
+    comm = MPI.COMM_WORLD
+    # A connected stack avoids partitioner corner cases for a single cell.
+    points = np.concatenate(
+        [element.basix_element.points + np.array([0, 0, i]) for i in range(2 * comm.size)]
+    )
+    points[:, 0] += 0.1 * points[:, 2] ** 2
+    points, indices = np.unique(points, axis=0, return_inverse=True)
+    cells = indices.reshape(-1, element.basix_element.dim).astype(np.int64)
+    cells, points = _rank0_only(comm, element, cells, points)
+    mesh = dolfinx.mesh.create_mesh(comm, cells, ufl.Mesh(element), points)
+    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    geometry = np.concatenate(comm.allgather(mesh.geometry.x[mesh.geometry.dofmaps[0][:num_cells]]))
+    filename = Path(tempdir, "prism.vtkhdf")
+    write_mesh(filename, mesh)
+    restored = read_mesh(comm, filename)
+    assert restored.geometry.cmaps[0].degree == degree
+    np.testing.assert_array_equal(
+        restored.geometry.x[restored.geometry.dofmaps[0]],
+        geometry[restored.topology.original_cell_index],
+    )
+
+
+def test_write_quadratic_pyramid_rejected(tempdir) -> None:
+    """Unsupported pyramids must not be labelled as linear VTK cells."""
+    element = basix.ufl.element(
+        "Lagrange", "pyramid", 2, basix.LagrangeVariant.equispaced, shape=(3,), dtype=np.float64
+    )
+    comm = MPI.COMM_WORLD
+    points = element.basix_element.points
+    cells = np.arange(element.basix_element.dim, dtype=np.int64).reshape(1, -1)
+    cells, points = _rank0_only(comm, element, cells, points)
+
+    def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
+        return dolfinx.graph.adjacencylist(np.zeros((dual_graph.num_nodes, 1), dtype=np.int32))
+
+    mesh = dolfinx.mesh.create_mesh(comm, cells, ufl.Mesh(element), points, partitioner=partitioner)
+    with pytest.raises(ValueError, match="Lagrange pyramids are not implemented in VTK"):
+        write_mesh(Path(tempdir, "pyramid.vtkhdf"), mesh)
+    with pytest.raises(ValueError, match="Lagrange pyramids are not implemented in VTK"):
+        dolfinx.plot.vtk_mesh(mesh)
+    with dolfinx.io.VTKFile(comm, Path(tempdir, "pyramid.pvd"), "w") as vtk:
+        with pytest.raises(ValueError, match="Lagrange pyramids are not implemented in VTK"):
+            vtk.write_mesh(mesh)
