@@ -1,4 +1,5 @@
 # Copyright (C) 2024-2025 Jørgen S. Dokken
+# Copyright (C) 2026 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -12,6 +13,74 @@ import pytest
 import basix.ufl
 import dolfinx
 import ufl
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_coefficient_element_consistency(dtype):
+    """Reject coefficients with incompatible Basix elements."""
+    real_type = dtype(0).real.dtype
+    domain = ufl.Mesh(basix.ufl.element("P", "triangle", 1, shape=(2,), dtype=real_type))
+    element = basix.ufl.element(
+        "P", "triangle", 3, lagrange_variant=basix.LagrangeVariant.equispaced, dtype=real_type
+    )
+    u = ufl.Coefficient(ufl.FunctionSpace(domain, element))
+    w = ufl.Coefficient(
+        ufl.FunctionSpace(domain, basix.ufl.element("P", "triangle", 2, dtype=real_type))
+    )
+    v = ufl.TestFunction(
+        ufl.FunctionSpace(domain, basix.ufl.element("P", "triangle", 1, dtype=real_type))
+    )
+    compiled_form = dolfinx.fem.compile_form(
+        MPI.COMM_WORLD, ufl.inner(u + 2 * w, v) * ufl.dx, {"scalar_type": dtype}
+    )
+    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 2, dtype=real_type)
+    V = dolfinx.fem.functionspace(mesh, v.ufl_element())
+    uh = dolfinx.fem.Function(dolfinx.fem.functionspace(mesh, element), dtype=dtype)
+    wh = dolfinx.fem.Function(dolfinx.fem.functionspace(mesh, w.ufl_element()), dtype=dtype)
+    uh.x.array[:] = 1
+    wh.x.array[:] = 2
+    form = dolfinx.fem.create_form(compiled_form, [V], mesh, {}, {u: uh, w: wh}, {})
+    b = dolfinx.fem.assemble_vector(form)
+    b.scatter_reverse(dolfinx.la.InsertMode.add)
+    size_local = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
+    assert np.isclose(mesh.comm.allreduce(b.array[:size_local].sum(), op=MPI.SUM), 5)
+
+    wrong_elements = [
+        w.ufl_element(),
+        basix.ufl.element("Bubble", "triangle", 3, dtype=real_type),
+        basix.ufl.element("DG", "triangle", 3, dtype=real_type),
+        basix.ufl.element(
+            "P", "triangle", 3, lagrange_variant=basix.LagrangeVariant.gll_warped, dtype=real_type
+        ),
+    ]
+    for wrong_element in wrong_elements:
+        wrong_u = dolfinx.fem.Function(dolfinx.fem.functionspace(mesh, wrong_element), dtype=dtype)
+        with pytest.raises(ValueError, match=r"Coefficient \d+ element differs"):
+            dolfinx.fem.create_form(compiled_form, [V], mesh, {}, {u: wrong_u, w: wh}, {})
+
+    with pytest.raises(ValueError, match=r"Coefficient \d+ element differs"):
+        dolfinx.fem.create_form(compiled_form, [V], mesh, {}, {u: uh, w: uh}, {})
+
+
+def test_mixed_coefficient_consistency():
+    """Coefficients without a Basix hash remain supported."""
+    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 2)
+    element = basix.ufl.mixed_element(
+        [basix.ufl.element("P", "triangle", degree) for degree in (1, 2)]
+    )
+    V = dolfinx.fem.functionspace(mesh, element)
+    u = dolfinx.fem.Function(V)
+    u.x.array[:] = 3
+    form = dolfinx.fem.form(u[0] * ufl.dx)
+    assert np.isclose(mesh.comm.allreduce(dolfinx.fem.assemble_scalar(form), op=MPI.SUM), 3)
 
 
 @pytest.mark.parametrize(

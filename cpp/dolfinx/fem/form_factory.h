@@ -60,6 +60,10 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// Use fem::create_form to create a fem::Form with coefficients and
 /// constants associated with the name/string.
 ///
+/// @note Coefficient Basix elements are checked against the compiled form
+/// when UFCx provides a nonzero element hash. This does not check blocked
+/// value shapes or elements without a Basix hash (e.g. mixed elements).
+///
 /// @param[in] ufcx_forms A list of UFCx forms, one for each cell type.
 /// @param[in] spaces Vector of function spaces. The number of spaces is
 /// equal to the rank of the form.
@@ -94,6 +98,29 @@ Form<T, U> create_form_factory(
     {
       throw std::invalid_argument("Mismatch between number of expected and "
                                   "provided Form coefficients.");
+    }
+
+    for (std::size_t c = 0; c < coefficients.size(); ++c)
+    {
+      if (!coefficients[c])
+        throw std::invalid_argument(
+            std::format("Cannot create form. Coefficient {} is null.", c));
+
+      const std::uint64_t element_hash
+          = ufcx_form.finite_element_hashes[ufcx_form.rank + c];
+      if (element_hash != 0
+          and element_hash
+                  != coefficients[c]
+                         ->function_space()
+                         ->element()
+                         ->basix_element()
+                         .hash())
+      {
+        throw std::invalid_argument(std::format(
+            "Cannot create form. Coefficient {} element differs from the "
+            "element used to compile the form.",
+            c));
+      }
     }
 
     // Check Constants for rank and size consistency
