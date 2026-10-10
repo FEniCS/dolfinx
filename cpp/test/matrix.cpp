@@ -26,6 +26,7 @@
 #include <mpi.h>
 #include <numeric>
 #include <span>
+#include <utility>
 #include <vector>
 
 using namespace dolfinx;
@@ -296,6 +297,57 @@ void test_set_diagonal_duplicate_bc_rows()
 #endif
 }
 
+/// A matrix moved between scatter_rev_begin() and scatter_rev_end()
+/// carries the in-flight request to the target, which completes the
+/// scatter and gets the same values as a matrix that was not moved.
+///
+/// The request transfer itself is asserted directly in
+/// common/mpi.cpp; this checks that a moved matrix still delivers the
+/// scattered values. The scalar type is irrelevant to the transfer, so
+/// one type is enough.
+void test_move_scatter_in_flight()
+{
+  using T = double;
+  auto [V, sp] = create_p2_space_and_pattern<T>();
+  std::shared_ptr<const common::IndexMap> map = V->dofmap()->index_map;
+  const int bs = V->dofmap()->index_map_bs();
+
+  // Put 1 on every local row, owned and ghost, so that ghost rows carry
+  // data for the scatter to deliver
+  std::vector<std::int32_t> local(bs * (map->size_local() + map->num_ghosts()));
+  std::iota(local.begin(), local.end(), 0);
+  auto fill = [&local](la::MatrixCSR<T>& A)
+  { la::set_diagonal(A.mat_add_values(), local, T(1)); };
+
+  // Reference: scattered without an intervening move
+  la::MatrixCSR<T> A(sp);
+  fill(A);
+  A.scatter_rev();
+
+  // Move-constructed while the scatter is in flight
+  la::MatrixCSR<T> B(sp);
+  fill(B);
+  B.scatter_rev_begin();
+  la::MatrixCSR<T> B1(std::move(B));
+  B1.scatter_rev_end();
+
+  // Move-assigned while the scatter is in flight
+  la::MatrixCSR<T> C(sp);
+  fill(C);
+  C.scatter_rev_begin();
+  la::MatrixCSR<T> C1(sp);
+  C1 = std::move(C);
+  C1.scatter_rev_end();
+
+  // Every value is a sum of T(1) accumulated in the same order from the
+  // same buffers, so the comparison is exact
+  const std::size_t n = A.row_ptr()[bs * map->size_local()];
+  CHECK(std::ranges::equal(std::span(A.values()).first(n),
+                           std::span(B1.values()).first(n)));
+  CHECK(std::ranges::equal(std::span(A.values()).first(n),
+                           std::span(C1.values()).first(n)));
+}
+
 void test_matrix_cast()
 {
   la::MatrixCSR A0 = create_operator<double>(MPI_COMM_WORLD);
@@ -500,6 +552,7 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_matrix_apply());
   CHECK_NOTHROW(test_matrix_norm());
   CHECK_NOTHROW(test_matrix_cast());
+  CHECK_NOTHROW(test_move_scatter_in_flight());
   CHECK_NOTHROW(test_sparsity_pattern_common_index_map());
   CHECK_NOTHROW(test_sparsity_pattern_shared_map_column_ghost_growth());
   CHECK_NOTHROW(test_sparsity_pattern_asymmetric_column_ghost_growth());
