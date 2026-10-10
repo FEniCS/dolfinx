@@ -359,7 +359,7 @@ def model_to_mesh(
         for i, (element, element_data) in enumerate(topologies.items()):
             if element in _gmsh_to_cells:
                 shape, _ = _gmsh_to_cells[element]
-                dim = ufl.Cell(shape).topological_dimension
+                dim = _cpp.mesh.cell_dim(_cpp.mesh.to_type(shape))
             else:
                 _, dim, _, _, _, _ = model.mesh.getElementProperties(element)
             element_ids[i] = element

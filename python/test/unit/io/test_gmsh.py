@@ -47,6 +47,9 @@ def test_cell_import(gmsh_model, cell_name, vertex_order, expected_volume, degre
     model.mesh.addNodes(3, entity, node_tags, vertices.flatten())
     model.mesh.addElementsByType(entity, model.mesh.getElementType(cell_name, 1), [1], node_tags)
     model.addPhysicalGroup(3, [entity], tag=1)
+    peak = model.addDiscreteEntity(0)
+    model.mesh.addElementsByType(peak, 15, [2], [1])
+    model.addPhysicalGroup(0, [peak], tag=2)
     model.mesh.setOrder(degree)
     element_types, _, element_nodes = model.mesh.getElements(3, entity)
     node_tags, coordinates, _ = model.mesh.getNodes()
@@ -71,6 +74,9 @@ def test_cell_import(gmsh_model, cell_name, vertex_order, expected_volume, degre
     assert data.mesh.topology.index_map(3).size_global == 1
     assert data.cell_tags is not None
     assert np.all(data.cell_tags.values == 1)
+    assert data.peak_tags is not None
+    assert np.all(data.peak_tags.values == 2)
+    assert comm.allreduce(len(data.peak_tags.values), op=MPI.SUM) == 1
     volume = comm.allreduce(
         dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=data.mesh))), op=MPI.SUM
     )
