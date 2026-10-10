@@ -1146,15 +1146,6 @@ void Topology::create_cell_permutations(int num_threads)
   if (!_cell_permutations.empty())
     return;
 
-  // FIXME: Is creating all entities always required? Could it be made
-  // cheaper by doing a local version? This call does quite a lot of
-  // parallel work.
-
-  // Create all mesh entities
-  const int tdim = this->dim();
-  for (int d = 0; d < tdim; ++d)
-    create_entities(d, num_threads);
-
   _cell_permutations = compute_cell_permutations(*this, num_threads);
 }
 //-----------------------------------------------------------------------------

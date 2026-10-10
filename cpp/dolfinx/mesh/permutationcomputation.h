@@ -86,8 +86,7 @@ std::vector<std::uint8_t> compute_entity_permutations(const Topology& topology,
 ///   - edge 5 is not permuted (0)
 ///
 /// @note Not collective.
-/// @pre All entities of dimension `< topology.dim()` must already exist
-/// (see Topology::create_entities).
+/// @pre Cell-to-vertex connectivity and the vertex index map must exist.
 /// @param[in] topology Mesh topology.
 /// @param[in] num_threads Number of threads to use. Must be >= 1.
 /// @return Facet permutation and cell permutations, covering both owned
