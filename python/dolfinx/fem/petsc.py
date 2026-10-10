@@ -1401,7 +1401,7 @@ class LinearProblem(typing.Generic[_U]):
         bcs: Sequence[DirichletBC] | None = None,
         u: Sequence[_Function] | None = None,
         P: Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]] | None = None,
-        kind: str | Sequence[Sequence[str] | None] | None = None,
+        kind: str | Sequence[Sequence[str | None]] | None = None,
         petsc_options: dict | None = None,
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
