@@ -221,18 +221,17 @@ def extract_topology_and_markers(
             for entity_type, entity_tag, entity_topology in zip(
                 entity_types, entity_tags, entity_topologies, strict=True
             ):
-                # Determine number of local nodes per element to create the
-                # topology of the elements
                 if len(entity_tag) == 0:
                     continue
-                # Avoid Gmsh's unsupported cubic-prism reference element.
-                num_nodes = len(entity_topology) // len(entity_tag)
 
-                # Array of shape (num_elements,num_nodes_per_element)
+                # Array of shape (num_elements, num_nodes_per_element)
                 # containing the topology of the elements on this entity.
-                # NOTE: Gmsh indexing starts with one, we therefore
-                # subtract 1 from each node to use zero-based numbering
-                topology = entity_topology.reshape(-1, num_nodes) - 1
+                # The node count is taken from the data rather than from
+                # Gmsh: getElementProperties has no reference element for
+                # some higher-degree types, the cubic prism among them.
+                # NOTE: Gmsh indexing starts at one, so subtract 1 from
+                # each node to get zero-based numbering
+                topology = entity_topology.reshape(len(entity_tag), -1) - 1
 
                 # Create marker array of length of number of tagged cells
                 marker = np.full_like(entity_tag, tag)
@@ -433,7 +432,7 @@ def model_to_mesh(
 
         # Get cell->node connectivity and  permute to FEniCS ordering
         gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
-        cell_connectivity = cell_tags[:, gmsh_cell_perm].copy().flatten()
+        cell_connectivity = cell_tags[:, gmsh_cell_perm].reshape(-1)
         cell_connectivities.append(cell_connectivity)
         ufl_domains.append(ufl_domain)
 

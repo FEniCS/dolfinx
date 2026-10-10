@@ -15,45 +15,50 @@ import ufl
 
 
 @pytest.fixture
-def gmsh_model():
+def gmsh_session():
     gmsh = pytest.importorskip("gmsh")
     gmsh.initialize()
     gmsh.option.setNumber("General.Terminal", 0)
-    gmsh.model.add("cell")
     try:
-        yield gmsh.model
+        yield gmsh
     finally:
         gmsh.finalize()
 
 
+@pytest.fixture
+def gmsh_model(gmsh_session):
+    gmsh_session.model.add("cell")
+    return gmsh_session.model
+
+
 @pytest.mark.parametrize(
-    "cell_name,vertex_order,expected_volume",
+    "cell_name,vertex_order",
     [
-        ("Hexahedron", [0, 1, 3, 2, 4, 5, 7, 6], 1),
-        ("Prism", [0, 1, 2, 3, 4, 5], 0.5),
-        ("Pyramid", [0, 1, 3, 2, 4], 1 / 3),
+        ("Hexahedron", [0, 1, 3, 2, 4, 5, 7, 6]),
+        ("Prism", [0, 1, 2, 3, 4, 5]),
+        ("Pyramid", [0, 1, 3, 2, 4]),
     ],
 )
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def test_cell_import(gmsh_model, cell_name, vertex_order, expected_volume, degree):
+def test_cell_import(gmsh_model, cell_name, vertex_order, degree):
     """Check Gmsh node ordering and import against Basix reference cells."""
     from dolfinx.io import gmsh as gmshio
 
     model = gmsh_model
-    cell_type = getattr(basix.CellType, cell_name.lower())
-    vertices = basix.geometry(cell_type)[vertex_order]
+    basix_cell = getattr(basix.CellType, cell_name.lower())
+    vertices = basix.geometry(basix_cell)[vertex_order]
     entity = model.addDiscreteEntity(3)
     node_tags = np.arange(1, len(vertices) + 1)
     model.mesh.addNodes(3, entity, node_tags, vertices.flatten())
     model.mesh.addElementsByType(entity, model.mesh.getElementType(cell_name, 1), [1], node_tags)
     model.addPhysicalGroup(3, [entity], tag=1)
     peak = model.addDiscreteEntity(0)
-    model.mesh.addElementsByType(peak, 15, [2], [1])
+    model.mesh.addElementsByType(peak, model.mesh.getElementType("Point", 1), [2], [1])
     model.addPhysicalGroup(0, [peak], tag=2)
     model.mesh.setOrder(degree)
     element_types, _, element_nodes = model.mesh.getElements(3, entity)
-    node_tags, coordinates, _ = model.mesh.getNodes()
-    nodes = dict(zip(node_tags, coordinates.reshape(-1, 3), strict=True))
+    all_node_tags, coordinates, _ = model.mesh.getNodes()
+    nodes = dict(zip(all_node_tags, coordinates.reshape(-1, 3), strict=True))
     points = np.array([nodes[tag] for tag in element_nodes[0]])
 
     domain = gmshio.ufl_mesh(element_types[0], 3, np.float64)
@@ -80,7 +85,7 @@ def test_cell_import(gmsh_model, cell_name, vertex_order, expected_volume, degre
     volume = comm.allreduce(
         dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=data.mesh))), op=MPI.SUM
     )
-    assert np.isclose(volume, expected_volume)
+    assert np.isclose(volume, basix.cell.volume(basix_cell))
 
 
 @pytest.mark.parametrize(
@@ -92,15 +97,13 @@ def test_cell_import(gmsh_model, cell_name, vertex_order, expected_volume, degre
         pytest.param(3, marks=pytest.mark.xfail(raises=RuntimeError)),
     ],
 )
-def test_physical_tags(marker_mode) -> None:
+def test_physical_tags(gmsh_session, marker_mode) -> None:
     """Test that we catch partially tagged meshes and not tagged
     meshes as errors.
     """
-    gmsh = pytest.importorskip("gmsh")
+    gmsh = gmsh_session
 
     from dolfinx.io import gmsh as gmshio
-
-    gmsh.initialize()
 
     def gmsh_tet_model(order):
         gmsh.option.setNumber("General.Terminal", 0)
@@ -133,5 +136,3 @@ def test_physical_tags(marker_mode) -> None:
     local_values = np.unique(cell_tags.values)
     all_values = np.unique(np.hstack(msh.comm.allgather(local_values)))
     assert len(all_values) == 2
-
-    gmsh.finalize()

@@ -678,6 +678,8 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
       return 1;
     case 15:
       return 2;
+    case 40:
+      return 3;
     default:
       throw std::runtime_error(
           std::format("Unknown prism layout. Number of nodes: {}", num_nodes));
@@ -689,6 +691,8 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
       return 1;
     case 13:
       return 2;
+    case 30:
+      return 3;
     default:
       throw std::runtime_error(std::format(
           "Unknown pyramid layout. Number of nodes: {}", num_nodes));
