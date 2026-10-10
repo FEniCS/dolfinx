@@ -9,7 +9,6 @@
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
-#include <H5Fpublic.h>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/Function.h>
@@ -37,24 +36,19 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
   // we will have _hdf5_file and _xml_doc both pointing to a valid and
   // opened file handles.
 
+  // An ASCII file leaves _h5_id invalid, so no HDF5 file is closed on
+  // destruction
   if (_encoding == Encoding::HDF5)
   {
-    // See https://www.hdfgroup.org/hdf5-quest.html#gzero on zero for
-    // _hdf5_file_id(0)
-
     // Open HDF5 file
     const std::filesystem::path hdf5_filename
         = xdmf_utils::get_hdf5_filename(_filename);
-    const bool mpi_io = dolfinx::MPI::size(_comm.comm()) > 1 ? true : false;
-    _h5_id
-        = io::hdf5::open_file(_comm.comm(), hdf5_filename, file_mode, mpi_io);
+    const bool mpi_io = dolfinx::MPI::size(_comm.comm()) > 1;
+    _h5_id = io::hdf5::Handle(
+        io::hdf5::open_file(_comm.comm(), hdf5_filename, file_mode, mpi_io),
+        H5Fclose);
     assert(_h5_id > 0);
-    spdlog::info("Opened HDF5 file with id \"{}\"", _h5_id);
-  }
-  else
-  {
-    // HDF handle be -1 to avoid closing a HDF file on destruction
-    _h5_id = -1;
+    spdlog::info("Opened HDF5 file with id \"{}\"", hid_t(_h5_id));
   }
 
   if (_file_mode == "r")
@@ -133,22 +127,17 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
   }
 }
 //-----------------------------------------------------------------------------
-XDMFFile::XDMFFile(XDMFFile&& file) noexcept
-    : _comm(std::move(file._comm)), _filename(std::move(file._filename)),
-      _file_mode(std::move(file._file_mode)),
-      _h5_id(std::exchange(file._h5_id, -1)),
-      _xml_doc(std::move(file._xml_doc)), _encoding(file._encoding)
-{
-  // Do nothing
-}
+XDMFFile::XDMFFile(XDMFFile&& file) noexcept = default;
 //-----------------------------------------------------------------------------
-XDMFFile::~XDMFFile() { close(); }
+XDMFFile::~XDMFFile() = default;
+//-----------------------------------------------------------------------------
+XDMFFile& XDMFFile::operator=(XDMFFile&& file) noexcept = default;
 //-----------------------------------------------------------------------------
 void XDMFFile::close()
 {
-  if (_h5_id > 0)
-    io::hdf5::close_file(_h5_id);
-  _h5_id = -1;
+  // Closes before giving up ownership, so that a failure leaves the
+  // identifier with the handle rather than leaking it
+  _h5_id.close();
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point U>
@@ -500,7 +489,8 @@ std::string XDMFFile::read_information(std::string_view name,
 void XDMFFile::flush()
 {
   // _xml_doc already flushed after every write
-  H5Fflush(_h5_id, H5F_SCOPE_GLOBAL);
+  if (_h5_id > 0)
+    io::hdf5::flush_file(_h5_id);
 }
 //-----------------------------------------------------------------------------
 MPI_Comm XDMFFile::comm() const { return _comm.comm(); }
