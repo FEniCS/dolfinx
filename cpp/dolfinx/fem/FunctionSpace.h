@@ -81,8 +81,10 @@ public:
     for (std::size_t i = 0; i < num_cell_types; ++i)
     {
       if (elements.at(i)->cell_type() != cell_types.at(i))
+      {
         throw std::invalid_argument(
             "Element cell types must match mesh cell types");
+      }
     }
   }
 

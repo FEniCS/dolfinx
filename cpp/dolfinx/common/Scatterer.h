@@ -658,8 +658,10 @@ num_sharing_ranks(const IndexMap& map, const Scatterer<Container>& sc,
                   std::span<const std::int32_t> indices, int bs)
 {
   if (bs < 1)
+  {
     throw std::invalid_argument(
         std::format("Block size must be positive, not {}.", bs));
+  }
 
   const std::int32_t size_local = map.size_local();
   const std::int32_t num_blocks = size_local + map.num_ghosts();

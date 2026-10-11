@@ -28,6 +28,30 @@ disclosure process.
   indent, 80-column limit, Allman braces). Always run `clang-format -i`
   on touched `.cpp`/`.h` files before considering a change done; CI
   runs `clang-format --dry-run --Werror` and will fail otherwise.
+- **Braces**: braces may be omitted around the body of a control
+  statement when every control statement involved occupies a single
+  line and the body directly following occupies a single line. A chain
+  of nested control statements that meets both conditions needs no
+  braces at any level, e.g.
+
+  ```cpp
+  if (num_nodes == 5)
+    return 14;
+  else
+    return 0;
+
+  for (std::size_t i = 0; i < A.extent(1); ++i)
+    for (std::size_t j = 0; j < B.extent(0); ++j)
+      C(i, j) += A(j, i);
+  ```
+
+  Brace the body otherwise: when the control statement wraps onto a
+  second line, or when the body does (a `throw` with a multi-line
+  `std::format`, say). The two arms of an `if`/`else` are judged
+  separately, so one may be braced and the other not. `clang-format`
+  neither adds nor removes these braces, so the choice is checked in
+  review; it does split a body off the line its control statement is
+  on, so `if (c) return x;` is never the formatted form.
 - **File header**: every source file starts with
 
   ```cpp

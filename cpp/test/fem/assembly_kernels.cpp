@@ -379,8 +379,10 @@ void entity_kernel(T* be, const T*, const T*, const T* cdofs,
 {
   for (std::size_t i = 0; i < num_dofs_cell; ++i)
     for (int k = 0; k < bs; ++k)
+    {
       be[bs * i + k] = be_value(cdofs, i, k) + 1000 * (*local_entity)
                        + 10000 * static_cast<T>(*perm);
+    }
 }
 
 /// Facet list: one interior facet between cells 0 and 1, as
