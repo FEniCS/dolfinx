@@ -208,7 +208,7 @@ facet_vector = dolfinx.la.vector(facet_map, dtype=np.int32)
 boundary_facets = dolfinx.mesh.exterior_facet_indices(ball_mesh.topology)
 facet_vector.array[boundary_facets] = 1
 facet_vector.scatter_forward()
-all_boundary_facets = np.flatnonzero(facet_vector.array)
+all_boundary_facets = np.flatnonzero(facet_vector.array).astype(np.int32)
 mesh = dolfinx.mesh.create_submesh(ball_mesh, fdim, all_boundary_facets)[0]
 # -
 

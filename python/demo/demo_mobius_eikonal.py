@@ -231,9 +231,10 @@ latent_map = 1 / ufl.sqrt(1 + ufl.dot(psi, psi))
 F = ufl.inner(ufl.div(psi) - ufl.div(psi0), v) * dx + alpha * ufl.inner(f, v) * dx
 F += ufl.inner(u, ufl.div(tau)) * dx + latent_map * ufl.inner(psi, tau) * dx
 
-tol = 1e-5
+F_blocked: list[ufl.Form] = ufl.extract_blocks(F)  # type: ignore[assignment]
+tol = 1e-5 if np.finfo(dolfinx.default_real_type).bits > 32 else 1e-3
 problem = dolfinx.fem.petsc.NonlinearProblem(
-    ufl.extract_blocks(F),
+    F_blocked,
     [u, psi],
     bcs=[],
     petsc_options={
@@ -325,8 +326,9 @@ def integrate(expr):
     return abs(mesh.comm.allreduce(local, op=MPI.SUM))
 
 
+mean_slope = integrate(grad_norm) / integrate(one)
 if mesh.comm.rank == 0:
-    print(f"mean |grad(u)| = {integrate(grad_norm) / integrate(one):.6f}  (1 in the limit)")
+    print(f"mean |grad(u)| = {mean_slope:.6f}  (1 in the limit)")
 # -
 
 # ## References
