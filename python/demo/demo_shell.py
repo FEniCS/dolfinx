@@ -518,3 +518,8 @@ with io.VTKFile(comm, out_folder / "shell_gmsh.pvd", "w") as output:
 
 # The mesh in `shell_gmsh.pvd` already represents the cylindrical surface.
 # In ParaView, apply **Warp By Vector** to `displacement` directly.
+
+# Release factorisations in the same order on every rank: their PETSc
+# teardown is collective, whereas interpreter shutdown order can vary.
+
+del surface_problem, problem, verification
