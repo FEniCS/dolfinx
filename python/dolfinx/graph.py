@@ -55,6 +55,7 @@ __all__ = [
     "comm_graph_data",
     "comm_to_json",
     "distribute",
+    "partition",
     "partition_hilbert",
     "partition_morton",
     "partitioner",
@@ -191,6 +192,64 @@ def reorder_rcm(graph: AdjacencyList[np.int32]) -> npt.NDArray[np.int32]:
         node ``i``.
     """
     return np.asarray(_cpp.graph.reorder_rcm(graph._cpp_object), dtype=np.int32)  # type: ignore[arg-type]
+
+
+def partition(
+    comm: _MPI.Comm,
+    nparts: int,
+    local_graph: AdjacencyList[np.int64],
+    *,
+    partitioner: _cpp.graph.GraphPartitioner | None = None,
+    node_weights: npt.NDArray[np.int32] | None = None,
+    edge_weights: npt.NDArray[np.int32] | None = None,
+    ghosting: bool = False,
+) -> AdjacencyList[np.int32]:
+    """Partition the nodes of a graph into parts.
+
+    Applies a :func:`partitioner` to a graph, e.g. the dual graph of a
+    mesh from :func:`build_dual_graph <dolfinx.mesh.build_dual_graph>`.
+    :func:`create_mesh <dolfinx.mesh.create_mesh>` partitions a mesh
+    itself; this is for partitioning a graph directly, for instance to
+    build the subdomains of a domain decomposition method. Passing
+    ``MPI.COMM_SELF`` partitions a graph held on one process into
+    ``nparts`` parts without communication.
+
+    Note:
+        Collective across ``comm``, and requires DOLFINx to be built
+        with a graph partitioner (ParMETIS, SCOTCH or KaHIP).
+
+    Args:
+        comm: MPI communicator that ``local_graph`` is distributed
+            across.
+        nparts: Number of parts to partition the graph into.
+        local_graph: Graph to partition, with the nodes owned by this
+            process as its nodes and global node indices as its links.
+        partitioner: Partitioner to apply. The default partitioner,
+            which is the one :func:`create_mesh
+            <dolfinx.mesh.create_mesh>` uses, is applied if ``None``.
+        node_weights: Weight of each node, which a partitioner may use
+            to balance the parts.
+        edge_weights: Weight of each edge, which a partitioner may use
+            to weigh the cost of cutting it.
+        ghosting: Return, for each node, the parts that share a node
+            with it in addition to the part that owns it.
+
+    Returns:
+        Part(s) of each node of ``local_graph``. The first entry for a
+        node is the part that owns it; any further entries are parts
+        that ghost it, and appear only if ``ghosting`` is ``True``.
+    """
+    fn = _cpp.graph.partitioner() if partitioner is None else partitioner
+    return AdjacencyList(
+        fn(
+            comm,
+            nparts,
+            local_graph._cpp_object,  # type: ignore[arg-type]
+            node_weights,
+            edge_weights,
+            ghosting,
+        )
+    )
 
 
 def distribute(
