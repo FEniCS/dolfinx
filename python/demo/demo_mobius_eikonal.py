@@ -113,6 +113,8 @@
 # ## Implementation
 
 # +
+from collections.abc import Callable
+
 from mpi4py import MPI
 
 import numpy as np
@@ -277,35 +279,57 @@ grad_expr = dolfinx.fem.Expression(ufl.grad(u), S_vec.element.interpolation_poin
 change = dolfinx.fem.form(ufl.inner(u - u0, u - u0) * dx)
 newton_iterations = []
 
-with (
-    dolfinx.io.VTXWriter(mesh.comm, "mobius_eikonal_u.bp", [u_out], engine="BP4") as vtx_u,
-    dolfinx.io.VTXWriter(
+write_file: Callable[[int], None]
+if dolfinx.has_adios2:
+    vtx_u = dolfinx.io.VTXWriter(mesh.comm, "mobius_eikonal_u.bp", [u_out], engine="BP4")
+    vtx_psi = dolfinx.io.VTXWriter(
         mesh.comm, "mobius_eikonal_psi.bp", [grad_out, psi_out], engine="BP4"
-    ) as vtx_psi,
-):
-    for i in range(1, 100):
-        alpha.value = min(2**i, 10)
-        problem.solve()
-        newton_iterations.append(problem.solver.getIterationNumber())
+    )
 
-        diff = np.sqrt(abs(mesh.comm.allreduce(dolfinx.fem.assemble_scalar(change), op=MPI.SUM)))
-        if mesh.comm.rank == 0:
-            print(
-                f"LVPP {i}: alpha={alpha.value.real:g}, "
-                f"Newton iterations={newton_iterations[-1]}, |u - u_prev|={diff:.3e}"
-            )
+    def write_file(t):
+        """Write the current solution to file."""
+        vtx_u.write(t)
+        vtx_psi.write(t)
 
-        u0.x.array[:] = u.x.array
-        psi0.x.array[:] = psi.x.array
+    def close_file():
+        """Close the VTX writers."""
+        vtx_u.close()
+        vtx_psi.close()
+else:
 
-        u_out.interpolate(u)
-        grad_out.interpolate(grad_expr)
-        psi_out.interpolate(psi)
-        vtx_u.write(i)
-        vtx_psi.write(i)
+    def write_file(t):
+        """Do nothing if ADIOS2 is not available."""
+        pass
 
-        if diff < 5 * tol:
-            break
+    def close_file():
+        """Do nothing if ADIOS2 is not available."""
+        pass
+
+
+for i in range(1, 100):
+    alpha.value = min(2**i, 10)
+    problem.solve()
+    newton_iterations.append(problem.solver.getIterationNumber())
+
+    diff = np.sqrt(abs(mesh.comm.allreduce(dolfinx.fem.assemble_scalar(change), op=MPI.SUM)))
+    if mesh.comm.rank == 0:
+        print(
+            f"LVPP {i}: alpha={alpha.value.real:g}, "
+            f"Newton iterations={newton_iterations[-1]}, |u - u_prev|={diff:.3e}"
+        )
+
+    u0.x.array[:] = u.x.array
+    psi0.x.array[:] = psi.x.array
+
+    u_out.interpolate(u)
+    grad_out.interpolate(grad_expr)
+    psi_out.interpolate(psi)
+    write_file(i)
+
+    if diff < 5 * tol:
+        break
+
+close_file()
 
 if mesh.comm.rank == 0:
     print(f"{i} LVPP iterations, {sum(newton_iterations)} Newton iterations in total")
