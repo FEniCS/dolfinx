@@ -531,9 +531,11 @@ void write_function(
       {
         // -- Identical spaces
         if (mesh0->geometry().dim() == 3)
+        {
           add_data(_u.get().name,
                    std::span<const std::size_t>(component_vector),
                    std::span(_u.get().x()->array()), data_node);
+        }
         else
         {
           // Pad with zeros and then add
@@ -574,9 +576,11 @@ void write_function(
 
         // Pack/add data
         if (mesh0->geometry().dim() == 3)
+        {
           add_data(_u.get().name,
                    std::span<const std::size_t>(component_vector),
                    std::span<const T>(u_data), data_node);
+        }
         else
         {
           // Pad with zeros and then add

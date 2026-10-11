@@ -285,8 +285,10 @@ public:
 
     // Recursively build the bounding box tree from the leaves
     if (!leaf_bboxes.empty())
+    {
       std::tie(_bboxes, _bbox_coordinates)
           = impl_bb::build_from_leaf(leaf_bboxes);
+    }
 
     spdlog::info("Computed bounding box tree with {} nodes for {} entities",
                  num_bboxes(), entities_span.size());
