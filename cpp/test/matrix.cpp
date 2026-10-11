@@ -1,4 +1,5 @@
 // Copyright (C) 2022 Igor A. Baratta
+// Copyright (C) 2026 OpenAI
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -11,7 +12,9 @@
 #include <basix/mdspan.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
@@ -19,6 +22,7 @@
 #include <dolfinx/la/Vector.h>
 #include <mpi.h>
 #include <span>
+#include <vector>
 
 using namespace dolfinx;
 
@@ -141,6 +145,13 @@ void test_matrix()
         std::vector{0});
   A.add(std::vector<decltype(A)::value_type>{2.3}, std::vector{4},
         std::vector{5});
+
+#ifndef NDEBUG
+  CHECK_THROWS_WITH(A.add(std::vector<T>{1},
+                          std::vector<std::int32_t>{A.num_all_rows()},
+                          std::vector<std::int32_t>{0}),
+                    "Local row out of range");
+#endif
 
   const std::vector Adense0 = A.to_dense();
 
