@@ -73,8 +73,13 @@ def test_coefficient_element_consistency(dtype):
 def test_mixed_coefficient_consistency():
     """Coefficients without a Basix hash remain supported."""
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 2)
+    # The element dtype must follow the mesh geometry, which is
+    # default_real_type, rather than Basix's own float64 default
     element = basix.ufl.mixed_element(
-        [basix.ufl.element("P", "triangle", degree) for degree in (1, 2)]
+        [
+            basix.ufl.element("P", "triangle", degree, dtype=dolfinx.default_real_type)
+            for degree in (1, 2)
+        ]
     )
     V = dolfinx.fem.functionspace(mesh, element)
     u = dolfinx.fem.Function(V)
