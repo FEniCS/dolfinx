@@ -94,11 +94,13 @@ from petsc4py import PETSc
 import gmsh
 import numpy as np
 
+import basix
 import ufl
 from basix.ufl import blocked_element, element, enriched_element, mixed_element
-from dolfinx import default_real_type, fem, io, mesh
+from dolfinx import default_real_type, fem, mesh
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import gmsh as gmshio
+from dolfinx.io import vtkhdf
 
 comm = MPI.COMM_WORLD
 R, length = 1.0, 2.0
@@ -300,30 +302,76 @@ if comm.rank == 0:
 
 # ## Output
 #
-# Write the Cartesian displacement and an offset from the parameter
-# rectangle to the reference cylinder. In ParaView, first apply
-# **Warp By Vector** to `reference_offset` with scale factor 1, then
-# apply a second **Warp By Vector** to `displacement`. Increase the
-# second scale factor to make the small displacement visible. The first
-# warp displays the analytic geometry sampled at the output nodes.
-# Interpolate the enriched cubic displacement into discontinuous cubic
-# Lagrange elements for VTK output. This preserves its cellwise polynomial
-# rather than discarding the bubble contribution in a quadratic space.
+# Write a cubic visualization mesh on the physical cylinder, with the
+# displacement as point data. Equispaced cubic nodes preserve the bubble
+# contribution and match VTK's Lagrange node convention. Each cell has
+# its own nodes, so the interpolated displacement is preserved cellwise.
+# The VTKHDF writer names its point-data array `u`.
+#
+# Open `out_shell/shell.vtkhdf` in ParaView, click **Apply**, and use
+# **Surface** representation and **Reset Camera**. Apply **Warp By Vector**
+# to `u`, increasing the scale factor to make the displacement visible.
+
 
 # +
-V_out = fem.functionspace(msh, ("Discontinuous Lagrange", 3, (3,)))
+def keep_cells_on_rank(
+    comm: MPI.Comm, nparts: int, centroids: np.ndarray, weights: np.ndarray | None
+) -> np.ndarray:
+    """Keep visualization cells on their source rank."""
+    return np.full(centroids.shape[0], comm.rank, dtype=np.int32)
+
+
+def write_shell_vtkhdf(filename: Path, displacement: fem.Function, coordinates: np.ndarray) -> None:
+    """Write cubic geometry and displacement with matching nodes."""
+    V_output = displacement.function_space
+    source = V_output.mesh
+    index_map = V_output.dofmap.index_map
+    num_points = index_map.size_local
+    start = index_map.local_range[0]
+    num_cells = source.topology.index_map(source.topology.dim).size_local
+    cells = V_output.dofmap.list[:num_cells].astype(np.int64) + start
+    coordinate_element = element(
+        "Lagrange",
+        source.basix_cell(),
+        3,
+        lagrange_variant=basix.LagrangeVariant.equispaced,
+        shape=(3,),
+        dtype=default_real_type,
+    )
+    output_mesh = mesh.create_mesh(
+        source.comm,
+        cells,
+        coordinate_element,
+        coordinates[:num_points],
+        partitioner=mesh.create_geometric_cell_partitioner(keep_cells_on_rank),
+    )
+    # Mesh construction can reorder nodes. Recover the input ordering.
+    num_output_points = output_mesh.geometry.index_map().size_local
+    input_nodes = output_mesh.geometry.input_global_indices[:num_output_points] - start
+    assert np.all((input_nodes >= 0) & (input_nodes < num_points))
+    values = displacement.x.array.reshape(-1, 3)[input_nodes].real.copy()
+    vtkhdf.write_mesh(filename, output_mesh)
+    vtkhdf.write_point_data(filename, output_mesh, values.ravel(), 0.0)
+
+
+output_element = element(
+    "DG",
+    msh.basix_cell(),
+    3,
+    lagrange_variant=basix.LagrangeVariant.equispaced,
+    shape=(3,),
+    dtype=default_real_type,
+)
+V_out = fem.functionspace(msh, output_element)
 displacement = fem.Function(V_out, dtype=PETSc.ScalarType)
 displacement.interpolate(solution.sub(0))
-displacement.name = "displacement"
-reference_offset = fem.Function(V_out, dtype=PETSc.ScalarType)
-reference_offset.name = "reference_offset"
-reference_offset.interpolate(
-    fem.Expression(position - ufl.as_vector((x[0], x[1], 0)), V_out.element.interpolation_points)
-)
+reference_position = fem.Function(V_out, dtype=default_real_type)
+reference_position.interpolate(fem.Expression(position, V_out.element.interpolation_points))
 out_folder = Path("out_shell")
 out_folder.mkdir(exist_ok=True)
-with io.VTKFile(comm, out_folder / "shell.pvd", "w") as output:
-    output.write_function([displacement, reference_offset])
+write_shell_vtkhdf(
+    out_folder / "shell.vtkhdf", displacement, reference_position.x.array.reshape(-1, 3)
+)
 # -
 
 # ## Starting from a Gmsh surface mesh
@@ -508,16 +556,18 @@ if comm.rank == 0:
     print(f"Gmsh shell elastic energy: {surface_energy_twice / 2:.6e}")
     print(f"Gmsh/parametric pressure work ratio: {surface_work / work:.6f}")
 
-V_surface_out = fem.functionspace(surface, ("Discontinuous Lagrange", 3, (3,)))
+V_surface_out = fem.functionspace(surface, output_element)
 surface_displacement = fem.Function(V_surface_out, dtype=PETSc.ScalarType)
 surface_displacement.interpolate(surface_solution.sub(0))
-surface_displacement.name = "displacement"
-with io.VTKFile(comm, out_folder / "shell_gmsh.pvd", "w") as output:
-    output.write_function(surface_displacement)
+write_shell_vtkhdf(
+    out_folder / "shell_gmsh.vtkhdf",
+    surface_displacement,
+    V_surface_out.tabulate_dof_coordinates(),
+)
 # -
 
-# The mesh in `shell_gmsh.pvd` already represents the cylindrical surface.
-# In ParaView, apply **Warp By Vector** to `displacement` directly.
+# Open `out_shell/shell_gmsh.vtkhdf` with the same ParaView steps.
+# Its cubic visualization mesh samples the quadratic Gmsh geometry.
 
 # Release factorisations in the same order on every rank: their PETSc
 # teardown is collective, whereas interpreter shutdown order can vary.
