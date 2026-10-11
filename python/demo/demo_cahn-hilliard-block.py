@@ -232,12 +232,19 @@ class MatchedSchur:
 
 # The Jacobian is assembled into a nested matrix. `MATNEST` keeps each
 # block as a separate matrix, which gives the index sets that
-# `PCFIELDSPLIT` needs for free, and lets the $(0,0)$ block be handed
-# straight to a solver.
+# `PCFIELDSPLIT` needs for free, lets the $(0,0)$ block be handed
+# straight to a solver, and lets one block be reassembled without
+# touching the others.
 
+# +
 A = create_matrix(J, kind="nest")
 b = create_vector([V, W], kind="nest")
 x = create_vector([V, W], kind="nest")
+
+J10 = fem.form(ufl.derivative(F1, c, dc))
+assemble_matrix(A, J)
+A.assemble()
+# -
 
 # `SNES` is driven directly, with the two callbacks written out. Each is
 # handed the point to evaluate at, and must assemble into the vector or
@@ -255,6 +262,13 @@ x = create_vector([V, W], kind="nest")
 # columns or set constrained rows, and the residual reduces to
 # "assemble, then reverse-scatter the contributions each process made to
 # entries it does not own".
+#
+# Only one of the four Jacobian blocks depends on the solution: the
+# $(1,0)$ block $-(N + \lambda K)$, through $f''(c)$ in $N$. The other
+# three are $M$, $\theta \Delta t\, K$ and $M$, which is why the matrix
+# was assembled in full just above. `J10` is that block compiled on its
+# own; the callback rebuilds it and leaves the rest of the nest as it
+# is.
 
 
 # +
@@ -281,13 +295,14 @@ def residual(_snes: PETSc.SNES, x: PETSc.Vec, b: PETSc.Vec) -> None:
 
 
 def jacobian(_snes: PETSc.SNES, x: PETSc.Vec, J_mat: PETSc.Mat, _P: PETSc.Mat) -> None:
-    """Assemble the blocked Jacobian at ``x`` into ``J_mat``."""
+    """Assemble the solution-dependent Jacobian block at ``x``."""
     ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
     assign(x, [c, mu])
 
-    J_mat.zeroEntries()
-    assemble_matrix(J_mat, J)
-    J_mat.assemble()
+    A10 = J_mat.getNestSubMatrix(1, 0)
+    A10.zeroEntries()
+    assemble_matrix(A10, J10)
+    A10.assemble()
 
 
 snes = PETSc.SNES().create(msh.comm)  # type: ignore[arg-type]
@@ -300,6 +315,12 @@ snes.setJacobian(jacobian, A, None)
 # linear operator. `schur_fact_type upper` needs one solve with the
 # $(0,0)$ block per application rather than the two a full factorisation
 # needs, for the same iteration count here.
+#
+# Both inner tolerances are deliberately loose. A linear solve only has
+# to return a Newton direction good enough not to cost Newton steps, so
+# `ksp_rtol` is set three orders above the nonlinear tolerance; and the
+# $(0,0)$ solve sits inside a preconditioner, where tightening it beyond
+# `1e-2` buys no outer iterations and costs time.
 
 # +
 amg = "hypre" if PETSc.Sys().hasExternalPackage("hypre") else "gamg"
@@ -308,17 +329,26 @@ opts["snes_type"] = "newtonls"
 opts["snes_linesearch_type"] = "basic"
 opts["snes_rtol"] = 1.0e-9
 opts["ksp_type"] = "fgmres"
-opts["ksp_rtol"] = 1.0e-8
+opts["ksp_rtol"] = 1.0e-6
 opts["pc_type"] = "fieldsplit"
 opts["pc_fieldsplit_type"] = "schur"
 opts["pc_fieldsplit_schur_fact_type"] = "upper"
 # The (0,0) block is a mass matrix: CG with Jacobi is mesh independent
 opts["fieldsplit_c_ksp_type"] = "cg"
-opts["fieldsplit_c_ksp_rtol"] = 1.0e-6
+opts["fieldsplit_c_ksp_rtol"] = 1.0e-2
 opts["fieldsplit_c_pc_type"] = "jacobi"
 opts["fieldsplit_mu_ksp_type"] = "preonly"
 if amg == "hypre":
+    # BoomerAMG's defaults suit two dimensions. These are its documented
+    # three-dimensional settings; they keep the coarse operators sparse,
+    # which is most of the cost of a V-cycle here
     opts["schur_pc_hypre_type"] = "boomeramg"
+    opts["schur_pc_hypre_boomeramg_strong_threshold"] = 0.7
+    opts["schur_pc_hypre_boomeramg_coarsen_type"] = "HMIS"
+    opts["schur_pc_hypre_boomeramg_interp_type"] = "ext+i"
+    opts["schur_pc_hypre_boomeramg_P_max"] = 4
+    opts["schur_pc_hypre_boomeramg_truncfactor"] = 0.3
+    opts["schur_pc_hypre_boomeramg_agg_nl"] = 1
 snes.setFromOptions()
 # -
 
@@ -423,34 +453,38 @@ if msh.comm.rank == 0:
     print(f"Krylov iterations per Newton:  {krylov_total / newton_total:.1f}")
 # -
 
-# Measured on this problem, with the mesh refined and everything else
-# held fixed, against the same problem solved with a sparse LU
-# factorisation:
+# Measured on this problem, running the thirty steps above on one
+# process, with the mesh refined and everything else held fixed,
+# against the same problem assembled monolithically and solved with
+# MUMPS:
 #
 # | per side | unknowns | its | time | LU | memory | LU memory |
 # | --- | --- | --- | --- | --- | --- | --- |
-# | 16 | 9 826   | 20.6 | 0.9 s  | 1.0 s  | --     | --      |
-# | 24 | 31 250  | 20.8 | 1.7 s  | 3.5 s  | 211 MB | 475 MB  |
-# | 32 | 71 874  | 20.8 | 3.4 s  | 8.6 s  | 330 MB | 1093 MB |
-# | 40 | 137 842 | 20.8 | 11.9 s | 23.1 s | 598 MB | 2360 MB |
+# | 16 | 9 826   | 14.3 |  3.2 s |  10.5 s | 160 MB |  208 MB |
+# | 24 | 31 250  | 15.7 |  9.4 s |  52.0 s | 214 MB |  481 MB |
+# | 32 | 71 874  | 15.6 | 25.9 s | 180.5 s | 325 MB | 1103 MB |
+# | 40 | 137 842 | 16.0 | 51.8 s | 497.6 s | 505 MB | 2394 MB |
 #
 # where "its" is Krylov iterations per Newton step and the memory
-# columns are peak resident set size for the whole run.
+# columns are peak resident set size for the whole run. Both solvers
+# take the same Newton steps and agree to at least ten significant
+# figures.
 #
 # The iteration count is flat over a fourteen-fold increase in problem
-# size, so the number of operations in a solve grows in proportion to
-# the unknowns. The two solvers agree to twelve significant figures.
+# size, and the time tracks it: the last refinement multiplies the
+# unknowns by 1.9 and the time by 2.0.
 #
 # This is the case the block preconditioner is for. A sparse direct
 # factorisation fills in, and in three dimensions it fills in badly: by
-# 137 842 unknowns it needs four times the memory and twice the time,
-# and both ratios are still growing. In two dimensions the same
-# comparison goes the other way at these sizes, with LU faster and the
-# memory advantage nearer 1.6 times, because the fill-in is far milder.
+# 137 842 unknowns it needs nearly five times the memory and ten times
+# the time, and both ratios are still growing. Two dimensions is a
+# different story, because the fill-in is far milder: on a unit square
+# at 72 200 unknowns the direct solver is the faster of the two, 21.0 s
+# against 23.0 s, and wants only 1.2 times the memory.
 #
-# The wall-clock time here grows a little faster than the unknowns even
-# though the iteration count does not; that cost is in the algebraic
-# multigrid applications, not in the Krylov method.
+# The demo is not threaded, but it is parallel: on four processes the
+# 71 874-unknown case takes 9.9 s rather than 25.9 s, with the same
+# iteration counts.
 #
 # The usable range of $\Delta t$ and $\lambda$ here is set by the
 # nonlinear problem rather than by the preconditioner: at
