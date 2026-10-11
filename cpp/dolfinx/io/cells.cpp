@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Jorgen S. Dokken and Garth N. Wells
+// Copyright (C) 2019-2026 Jorgen S. Dokken and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,10 +7,12 @@
 #include "cells.h"
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <format>
+#include <iterator>
 #include <numeric>
 #include <span>
 #include <stdexcept>
@@ -480,6 +482,11 @@ std::vector<std::uint16_t> gmsh_hexahedron(int num_nodes)
   case 27:
     return {0,  1,  3,  2,  4,  5,  7,  6,  8,  9,  10, 11, 12, 13,
             15, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
+  case 64:
+    return {0,  1,  3,  2,  4,  5,  7,  6,  8,  9,  10, 11, 12, 13, 14, 15,
+            16, 17, 19, 18, 22, 23, 20, 21, 24, 25, 26, 27, 28, 29, 31, 30,
+            32, 34, 35, 33, 36, 37, 39, 38, 40, 42, 43, 41, 44, 45, 47, 46,
+            49, 48, 50, 51, 52, 53, 55, 54, 56, 57, 59, 58, 60, 61, 63, 62};
   default:
     throw std::runtime_error("Higher order Gmsh hexahedron not supported");
   }
@@ -510,6 +517,10 @@ std::vector<std::uint16_t> gmsh_prism(int num_nodes)
     return {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
   case 18:
     return {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17};
+  case 40:
+    return {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13,
+            14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 37, 25, 26,
+            28, 27, 29, 31, 32, 30, 33, 34, 36, 35, 38, 39};
   default:
     throw std::runtime_error("Higher order Gmsh prism not supported");
   }
@@ -525,6 +536,9 @@ std::vector<std::uint16_t> gmsh_pyramid(int num_nodes)
     return {0, 1, 3, 2, 4, 5, 6, 7, 8, 9, 10, 12, 11};
   case 14:
     return {0, 1, 3, 2, 4, 5, 6, 7, 8, 9, 10, 12, 11, 13};
+  case 30:
+    return {0,  1,  3,  2,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14,
+            16, 15, 19, 20, 17, 18, 25, 26, 27, 28, 21, 23, 24, 22, 29};
   default:
     throw std::runtime_error("Higher order Gmsh pyramid not supported");
   }
@@ -664,6 +678,8 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
       return 1;
     case 15:
       return 2;
+    case 40:
+      return 3;
     default:
       throw std::runtime_error(
           std::format("Unknown prism layout. Number of nodes: {}", num_nodes));
@@ -675,6 +691,8 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
       return 1;
     case 13:
       return 2;
+    case 30:
+      return 3;
     default:
       throw std::runtime_error(std::format(
           "Unknown pyramid layout. Number of nodes: {}", num_nodes));
