@@ -397,6 +397,10 @@ class Topology:
         one integer per cell, for correcting element DOFs rather than
         quadrature points.
 
+        Not collective. The permutations are unpacked from the packed
+        cell permutations, which are computed first if they do not
+        exist. The entities of dimension ``dim`` are not created.
+
         Args:
             dim: Topological dimension of the entities, e.g. ``tdim - 1``
                 for facets. Must satisfy ``0 <= dim < tdim``.
@@ -422,6 +426,9 @@ class Topology:
         :attr:`dolfinx.fem.FiniteElement.needs_dof_transformations` is
         ``True``.
 
+        Not collective. The orientations follow from the global indices
+        of a cell's own vertices, so no mesh entities are created.
+
         Args:
             num_threads: Number of threads to use. Must be >= 1.
         """
@@ -446,6 +453,12 @@ class Topology:
         the cell to be able to map it to the reference element. The
         most significant bit marks a reversed cell (see
         :meth:`cell_orientations`).
+
+        Raises:
+            RuntimeError: If
+                :meth:`~dolfinx.mesh.Topology.create_cell_permutations`
+                has not been called, including on a rank that holds no
+                cells.
         """
         return self._cpp_object.get_cell_permutation_info()
 

@@ -235,6 +235,10 @@ Geometry(std::shared_ptr<const common::IndexMap>, U&&,
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data.
 /// @pre `nodes` must be sorted.
+/// @pre If the coordinate element needs DOF permutations, i.e.
+/// `elements.front().needs_dof_permutations()`, then
+/// `topology.create_cell_permutations()` must have been called.
+/// Otherwise `std::runtime_error` is thrown.
 /// @note Experimental new interface for multiple cmap/dofmap
 /// @return A mesh geometry.
 template <typename U>

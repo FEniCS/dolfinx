@@ -40,8 +40,17 @@ constexpr std::uint32_t reversed_cell_bit = std::uint32_t(1) << 31;
 /// `cell_index`. This data passed to FFCx kernels, where it is used to
 /// permute quadrature points on sub-entity integrals when data from
 /// more than one cell incident to the entity is used.
-
 ///
+/// This measures the entities of dimension `dim`, which must therefore
+/// exist, against the cells incident to them.
+/// Topology::create_entity_permutations instead unpacks the same values
+/// from the packed cell permutations, which need only the cell
+/// vertices. The two are independent routes to the same data, and
+/// `cpp/test/mesh/permutations.cpp` checks that they agree.
+///
+/// @pre The entities of dimension `dim`, and their connectivity with
+/// the cells and the vertices, must already exist (see
+/// Topology::create_entities).
 /// @param[in] topology Mesh topology.
 /// @param[in] dim Topological dimension of the entities to permute.
 /// Must satisfy `0 <= dim < topology.dim()`. Vertices (`dim == 0`) have

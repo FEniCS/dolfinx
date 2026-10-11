@@ -317,11 +317,9 @@ public:
 
   /// @brief Compute entity permutations and reflections.
   ///
-  /// @note Collective, unless the packed cell permutations exist, in
-  /// which case they are unpacked locally. Which of the two applies
-  /// must therefore be the same on all ranks, i.e.
-  /// create_cell_permutations must have been called on all ranks or on
-  /// none.
+  /// @note Not collective. The permutations are unpacked from the
+  /// packed cell permutations, which are computed first if they do not
+  /// exist. The entities of dimension `dim` are not created.
   ///
   /// A permutation records how an entity is oriented as seen from a
   /// cell, relative to a low-to-high ordering of the entity's global
@@ -360,7 +358,7 @@ public:
   ///
   /// Does nothing if the cell permutations have already been computed.
   /// Uses cell vertices directly without creating edges or faces.
-  /// @note This operation is not collective.
+  /// @note Not collective.
   ///
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
   /// @see create_entity_permutations, which gives the orientations of
