@@ -5,9 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "expr.h"
+#include <array>
 #include <basix/finite-element.h>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include <cstddef>
+#include <cstdint>
 #include <dolfinx/fem/Expression.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
@@ -19,8 +22,33 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
+#include <functional>
+#include <memory>
+#include <span>
+#include <stdexcept>
+#include <ufcx.h>
+#include <vector>
 
 using namespace dolfinx;
+
+TEST_CASE("Form with a null coefficient or constant", "[form_coefficient]")
+{
+  std::array<std::uint64_t, 1> hashes{0};
+
+  ufcx_form form_w{};
+  form_w.num_coefficients = 1;
+  form_w.finite_element_hashes = hashes.data();
+  CHECK_THROWS_AS(fem::create_form_factory<double>({std::cref(form_w)}, {},
+                                                   {nullptr}, {}, {}, {}),
+                  std::invalid_argument);
+
+  ufcx_form form_c{};
+  form_c.num_constants = 1;
+  form_c.finite_element_hashes = hashes.data();
+  CHECK_THROWS_AS(fem::create_form_factory<double>({std::cref(form_c)}, {}, {},
+                                                   {nullptr}, {}, {}),
+                  std::invalid_argument);
+}
 
 namespace
 {
