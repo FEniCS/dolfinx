@@ -124,7 +124,8 @@ Structural mechanics
   elasticity using algebraic multigrid.
 * :doc:`demos/demo_shell` -- solve a linear cylindrical shell problem
   with displacement and director unknowns, including membrane, bending
-  and transverse shear deformation.
+  and transverse shear deformation, with partial selective reduced
+  integration to alleviate locking.
 
 
 Electromagnetics

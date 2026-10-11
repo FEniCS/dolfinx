@@ -18,10 +18,10 @@
 # space, and membrane, bending and transverse shear energies.
 #
 # The model includes transverse shear deformation and assumes small
-# displacements and rotations. We use continuous quadratic elements and
-# full integration. This simple discretisation can suffer from membrane
-# and shear locking as the thickness decreases; it is intended for a
-# moderately thick shell, not as a locking-free thin-shell method.
+# displacements and rotations. Cubic bubble enrichment and partial
+# selective reduced integration (PSRI) alleviate membrane and shear
+# locking. This demo uses the practical FEniCS-Shells PSRI variant;
+# it does not establish thickness-uniform convergence for this geometry.
 # Running on multiple MPI ranks requires PETSc with MUMPS or SuperLU_DIST.
 # For background, see the
 # [FEniCS-Shells Naghdi formulation](https://fenics-shells.readthedocs.io/en/latest/demo/nonlinear-naghdi-cylindrical/demo_nonlinear-naghdi-cylindrical.py.html).
@@ -92,7 +92,7 @@ from petsc4py import PETSc
 import numpy as np
 
 import ufl
-from basix.ufl import element, mixed_element
+from basix.ufl import blocked_element, element, enriched_element, mixed_element
 from dolfinx import default_real_type, fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
 
@@ -111,7 +111,9 @@ msh = mesh.create_rectangle(
     cell_type=mesh.CellType.triangle,
 )
 cell = msh.basix_cell()
-U = element("Lagrange", cell, 2, shape=(3,), dtype=default_real_type)
+p2 = element("Lagrange", cell, 2, dtype=default_real_type)
+bubble = element("Bubble", cell, 3, dtype=default_real_type)
+U = blocked_element(enriched_element([p2, bubble]), shape=(3,))
 B = element("Lagrange", cell, 2, shape=(2,), dtype=default_real_type)
 W = fem.functionspace(msh, mixed_element([U, B]))
 V, _ = W.sub(0).collapse()
@@ -125,7 +127,33 @@ axis = ufl.as_vector((0, 1, 0))
 normal = ufl.as_vector((ufl.sin(angle), 0, ufl.cos(angle)))
 A = ufl.grad(position)
 dx = ufl.Measure("dx", domain=msh, metadata={"quadrature_degree": 6})
+dx_reduced = ufl.Measure("dx", domain=msh, metadata={"quadrature_degree": 2})
+h = ufl.CellDiameter(msh)
+alpha = ufl.min_value(1.0, (thickness / h) ** 2)
 # -
+
+# ## Partial selective reduced integration
+#
+# Displacement uses $[P_2+B_3]^3$, with one interior cubic bubble per
+# component and triangle; director components use $[P_2]^2$. The bubbles
+# vanish on edges and therefore do not change the essential boundary
+# conditions. Split the membrane and shear stiffness contributions:
+#
+# $$
+# a_h=a_b+\alpha(a_m+a_s)
+# +(1-\alpha)(a_m^{\mathrm{red}}+a_s^{\mathrm{red}}),
+# \qquad \alpha|_K=\min\{1,(t/h_K)^2\}.
+# $$
+#
+# Here $h_K$ is the cell diameter in the arc-length parameter domain.
+# Bending uses degree-six quadrature throughout; the reduced membrane
+# and shear terms use degree-two quadrature. Load integrals also retain
+# degree-six quadrature. The fully integrated fraction controls modes
+# missed by reduced integration, and clipping $\alpha$ keeps both weights
+# nonnegative when $t>h_K$. Degree-two quadrature on these triangles uses
+# three points; a one-point rule can introduce spurious modes.
+# This follows the
+# [FEniCS-Shells PSRI implementation](https://fenics-shells.readthedocs.io/en/latest/demo/nonlinear-naghdi-cylindrical/demo_nonlinear-naghdi-cylindrical.py.html).
 
 
 def strains(u, beta):
@@ -142,15 +170,18 @@ def stress(e):
     return 2 * mu * e + lambda_ps * ufl.tr(e) * ufl.Identity(2)
 
 
-def stiffness(u, beta, v, delta):
-    """Return the shell stiffness form."""
+def stiffness(u, beta, v, delta, *, psri=True):
+    """Return the shell stiffness form with optional PSRI."""
     e, k, gamma = strains(u, beta)
     ev, kv, gammav = strains(v, delta)
-    return (
-        thickness * ufl.inner(stress(e), ev)
-        + thickness**3 / 12 * ufl.inner(stress(k), kv)
-        + shear_correction * mu * thickness * ufl.inner(gamma, gammav)
-    ) * dx
+    membrane_shear = thickness * ufl.inner(
+        stress(e), ev
+    ) + shear_correction * mu * thickness * ufl.inner(gamma, gammav)
+    bending = thickness**3 / 12 * ufl.inner(stress(k), kv)
+    if psri:
+        return (bending + alpha * membrane_shear) * dx + (1 - alpha) * membrane_shear * dx_reduced
+    else:
+        return (bending + membrane_shear) * dx
 
 
 def integral(expression):
@@ -190,6 +221,9 @@ assert rigid_norm < 100 * np.finfo(default_real_type).eps ** 2
 # The normal force balances the circumferential membrane stress. Since
 # the exact fields lie in the quadratic finite element space, the error
 # should be close to solver and quadrature accuracy.
+# This check uses full integration to verify the continuous shell model.
+# Reduced integration is not exact for the curved-frame terms, even when
+# the displacement is polynomial in the parameter coordinates.
 
 # +
 u, beta = ufl.TrialFunctions(W)
@@ -215,7 +249,7 @@ if comm.size > 1:
     else:
         raise RuntimeError("Parallel shell demo requires MUMPS or SuperLU_DIST.")
 verification = LinearProblem(
-    a,
+    stiffness(u, beta, v, delta, psri=False),
     ufl.inner(f_exact, v) * dx,
     bcs=[bc_exact, bc_beta],
     petsc_options_prefix="demo_shell_verification_",
@@ -237,6 +271,7 @@ if comm.rank == 0:
 # ## Pressure-loaded panel
 #
 # Clamp the end $z=0$ and solve with the normal pressure load.
+# The work balance below uses the PSRI energy of the discrete problem.
 
 # +
 clamped = mesh.locate_entities_boundary(msh, 1, lambda x: np.isclose(x[1], 0.0))
@@ -266,15 +301,20 @@ if comm.rank == 0:
 # **Warp By Vector** to `reference_offset` with scale factor 1, then
 # apply a second **Warp By Vector** to `displacement`. Increase the
 # second scale factor to make the small displacement visible. The first
-# warp displays the analytic geometry sampled at the quadratic nodes.
+# warp displays the analytic geometry sampled at the output nodes.
+# Interpolate the enriched cubic displacement into discontinuous cubic
+# Lagrange elements for VTK output. This preserves its cellwise polynomial
+# rather than discarding the bubble contribution in a quadratic space.
 
 # +
-displacement = solution.sub(0).collapse()
+V_out = fem.functionspace(msh, ("Discontinuous Lagrange", 3, (3,)))
+displacement = fem.Function(V_out, dtype=PETSc.ScalarType)
+displacement.interpolate(solution.sub(0))
 displacement.name = "displacement"
-reference_offset = fem.Function(V, dtype=PETSc.ScalarType)
+reference_offset = fem.Function(V_out, dtype=PETSc.ScalarType)
 reference_offset.name = "reference_offset"
 reference_offset.interpolate(
-    fem.Expression(position - ufl.as_vector((x[0], x[1], 0)), V.element.interpolation_points)
+    fem.Expression(position - ufl.as_vector((x[0], x[1], 0)), V_out.element.interpolation_points)
 )
 out_folder = Path("out_shell")
 out_folder.mkdir(exist_ok=True)
