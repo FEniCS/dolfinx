@@ -376,7 +376,7 @@ def form(
 ) -> None: ...
 @typing.overload
 def form(
-    form: ufl.Form,
+    form: ufl.Form | ufl.ZeroBaseForm,
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
@@ -385,7 +385,7 @@ def form(
 ) -> Form: ...
 @typing.overload
 def form(
-    form: Sequence[ufl.Form | None],
+    form: Sequence[ufl.Form | ufl.ZeroBaseForm | None],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
@@ -394,7 +394,7 @@ def form(
 ) -> list[Form | None]: ...
 @typing.overload
 def form(
-    form: Sequence[Sequence[ufl.Form | None]],
+    form: Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
@@ -402,7 +402,11 @@ def form(
     entity_maps: Sequence[_EntityMap] | None = None,
 ) -> list[list[Form | None]]: ...
 def form(
-    form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
+    form: ufl.Form
+    | ufl.ZeroBaseForm
+    | Sequence[ufl.Form | ufl.ZeroBaseForm | None]
+    | Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]]
+    | None,
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
@@ -540,7 +544,11 @@ def form(
         return Form(f, msh, spaces)
 
     def _create_form(
-        form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
+        form: ufl.Form
+        | ufl.ZeroBaseForm
+        | Sequence[ufl.Form | ufl.ZeroBaseForm | None]
+        | Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]]
+        | None,
     ) -> typing.Any:
         """Recursively convert ufl.Forms to dolfinx.fem.Form.
 

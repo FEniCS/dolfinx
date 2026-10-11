@@ -10,6 +10,7 @@
 #include "dolfinx_wrappers/caster_mpi.h"
 #include "dolfinx_wrappers/mpi_wrappers.h"
 #include <algorithm>
+#include <basix/mdspan.hpp>
 #include <cassert>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -42,6 +43,7 @@
 #include <vector>
 
 namespace nb = nanobind;
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 namespace dolfinx_wrappers::part::impl
 {
@@ -195,6 +197,44 @@ void mesh(nb::module_& m)
       .def_prop_ro("topology", &dolfinx::mesh::EntityMap::topology)
       .def_prop_ro("sub_topology", &dolfinx::mesh::EntityMap::sub_topology);
 
+  m.def(
+      "extract_cells_from_entities",
+      [](const dolfinx::mesh::Topology& topology_c,
+         const dolfinx::mesh::Topology& topology,
+         nb::ndarray<const std::int32_t, nb::c_contig> entities,
+         const dolfinx::mesh::EntityMap* entity_map)
+      {
+        std::optional<std::reference_wrapper<const dolfinx::mesh::EntityMap>>
+            emap;
+        if (entity_map)
+          emap = std::cref(*entity_map);
+
+        if (entities.ndim() == 1)
+        {
+          return as_nbarray(dolfinx::mesh::extract_cells_from_entities(
+              topology_c, topology,
+              md::mdspan(entities.data(), entities.shape(0)), emap));
+        }
+        else if (entities.ndim() == 2 and entities.shape(1) == 2)
+        {
+          return as_nbarray(dolfinx::mesh::extract_cells_from_entities(
+              topology_c, topology,
+              md::mdspan<const std::int32_t,
+                         md::extents<std::size_t, md::dynamic_extent, 2>>(
+                  entities.data(), entities.shape(0), 2),
+              emap));
+        }
+        else
+        {
+          throw std::invalid_argument(
+              "entities must have shape (num_entities,) or (num_entities, 2).");
+        }
+      },
+      nb::arg("topology_c"), nb::arg("topology"), nb::arg("entities"),
+      nb::arg("entity_map").none(),
+      "Map integration entities of a topology to the cells of a related "
+      "topology.");
+
   // dolfinx::mesh::Topology class
   nb::class_<dolfinx::mesh::Topology>(m, "Topology", nb::dynamic_attr(),
                                       "Topology object")
@@ -250,6 +290,28 @@ void mesh(nb::module_& m)
                                                                {p.size()});
           },
           nb::rv_policy::reference_internal)
+      .def(
+          "create_cell_orientations",
+          [](dolfinx::mesh::Topology& self,
+             std::optional<
+                 nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>>
+                 orientations)
+          {
+            self.create_cell_orientations(
+                orientations ? std::optional(std::span<const std::int8_t>(
+                                   orientations->data(), orientations->size()))
+                             : std::nullopt);
+          },
+          nb::arg("orientations").none(),
+          "Compute, or set from the given markers, a per-cell marker for "
+          "a consistent orientation of a surface mesh.")
+      .def(
+          "cell_orientations", [](const dolfinx::mesh::Topology& self)
+          { return as_nbarray(self.cell_orientations()); },
+          "Orientation (+1/-1) of each cell relative to its surface.")
+      .def("has_cell_orientations",
+           &dolfinx::mesh::Topology::has_cell_orientations,
+           "Check if a cell orientation has been computed or set.")
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
       .def_prop_rw(
