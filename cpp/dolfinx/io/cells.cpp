@@ -374,6 +374,13 @@ std::vector<std::uint16_t> vtk_pyramid(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 {
+  // Degree-2 serendipity: a node on each vertex and each edge and none
+  // inside, which is not a Lagrange layout, so cell_degree below has no
+  // answer for it. VTK takes the edges in the order DOLFINx numbers
+  // 0, 2, 3, 1.
+  if (num_nodes == 8)
+    return {0, 1, 3, 2, 4, 6, 7, 5};
+
   std::vector<std::uint16_t> map;
   map.reserve(num_nodes);
 
