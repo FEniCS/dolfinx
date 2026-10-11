@@ -663,7 +663,7 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     const int n = std::sqrt(num_nodes);
     if (num_nodes != n * n)
     {
-      throw std::runtime_error(std::format(
+      throw std::invalid_argument(std::format(
           "Unknown quadrilateral layout. Number of nodes: {}", num_nodes));
     }
     return n - 1;
@@ -673,7 +673,7 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     const int n = std::cbrt(num_nodes);
     if (num_nodes != n * n * n)
     {
-      throw std::runtime_error(std::format(
+      throw std::invalid_argument(std::format(
           "Unknown hexahedron layout. Number of nodes: {}", num_nodes));
     }
     return n - 1;
@@ -758,10 +758,18 @@ std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int num_nodes)
   case mesh::CellType::triangle:
     return 69;
   case mesh::CellType::quadrilateral:
+    if (num_nodes == 8)
+      return 23;
+    if (num_nodes < 4 or cell_degree(cell, num_nodes) < 1)
+      throw std::invalid_argument("VTK quadrilaterals need at least 4 nodes.");
     return 70;
   case mesh::CellType::tetrahedron:
     return 71;
   case mesh::CellType::hexahedron:
+    if (num_nodes == 20)
+      return 25;
+    if (num_nodes < 8 or cell_degree(cell, num_nodes) < 1)
+      throw std::invalid_argument("VTK hexahedra need at least 8 nodes.");
     return 72;
   case mesh::CellType::prism:
     return 73;

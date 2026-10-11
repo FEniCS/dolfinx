@@ -192,10 +192,10 @@ std::vector<std::int64_t> apply_permutation(std::span<const std::int64_t> cells,
 /// mesh::cell_entity_type.
 /// @param[in] num_nodes Number of nodes in the cell. It must be a
 /// layout that VTK's type for `cell` can express and that round-trips
-/// through ::vtk_to_dolfinx, which constrains only pyramids: VTK has an
-/// arbitrary-degree Lagrange type for every other shape, but for the
-/// pyramid only a linear one and a 13-node serendipity quadratic one
-/// that basix cannot express. Only the linear pyramid is accepted.
+/// through ::vtk_to_dolfinx. Quadrilaterals and hexahedra accept Lagrange
+/// layouts and the 8- and 20-node quadratic serendipity layouts,
+/// respectively. Only the linear pyramid is accepted, since VTK has no
+/// arbitrary-degree Lagrange pyramid.
 /// @note Prism and pyramid facets are not all of one type, so no single
 /// identifier labels a facet set; mesh::entities_to_geometry rejects
 /// that case.

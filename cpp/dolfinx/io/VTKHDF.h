@@ -1,4 +1,5 @@
 // Copyright (C) 2024-2025 Chris Richardson, Jørgen S. Dokken
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,6 +10,9 @@
 #include "HDF5Interface.h"
 #include <algorithm>
 #include <array>
+#include <basix/cell.h>
+#include <basix/finite-element.h>
+#include <basix/mdspan.hpp>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -24,6 +28,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <filesystem>
 #include <format>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -33,10 +38,70 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::io::VTKHDF
 {
+namespace impl
+{
+// Construct a nodal coordinate element for a (VTK type, degree) group.
+template <std::floating_point U>
+fem::CoordinateElement<U>
+coordinate_element(std::array<std::uint8_t, 2> type_degree)
+{
+  mesh::CellType cell_type = std::get<0>(cells::vtk_to_dolfinx(type_degree[0]));
+  int cell_degree = type_degree[1];
+  if (type_degree[0] == 23 or type_degree[0] == 25)
+  {
+    basix::cell::type cell = mesh::cell_type_to_basix_type(cell_type);
+    basix::FiniteElement<U> element
+        = basix::create_element<U>(basix::element::family::serendipity, cell, 2,
+                                   basix::element::lagrange_variant::unset,
+                                   basix::element::dpc_variant::unset, false);
+    auto x = element.x();
+    auto M = element.M();
+    auto [geometry, geometry_shape] = basix::cell::geometry<U>(cell);
+    const std::vector<std::vector<int>> edges = basix::cell::topology(cell)[1];
+
+    // VTK stores edge midpoint values, not Basix's edge moments.
+    for (std::size_t i = 0; i < edges.size(); ++i)
+    {
+      std::vector<U> midpoint(geometry_shape[1]);
+      for (std::size_t j = 0; j < geometry_shape[1]; ++j)
+      {
+        midpoint[j] = (geometry[edges[i][0] * geometry_shape[1] + j]
+                       + geometry[edges[i][1] * geometry_shape[1] + j])
+                      / 2;
+      }
+      x[1][i] = {std::move(midpoint), {1, geometry_shape[1]}};
+      M[1][i] = {{1}, {1, 1, 1, 1}};
+    }
+    std::array<std::vector<basix::impl::mdspan_t<const U, 2>>, 4> x_view;
+    std::array<std::vector<basix::impl::mdspan_t<const U, 4>>, 4> M_view;
+    for (std::size_t d = 0; d < 4; ++d)
+    {
+      for (const auto& [data, shape] : x[d])
+        x_view[d].emplace_back(data.data(), shape);
+      for (const auto& [data, shape] : M[d])
+        M_view[d].emplace_back(data.data(), shape);
+    }
+    const auto& [wcoeffs, wshape] = element.wcoeffs();
+    return fem::CoordinateElement<U>(std::make_shared<basix::FiniteElement<U>>(
+        basix::create_custom_element<U>(
+            cell, {}, {wcoeffs.data(), wshape}, x_view, M_view, 0,
+            element.map_type(), element.sobolev_space(), false,
+            element.embedded_subdegree(), element.embedded_superdegree(),
+            element.polyset_type())));
+  }
+  basix::element::lagrange_variant variant
+      = (cell_degree > 2) ? basix::element::lagrange_variant::equispaced
+                          : basix::element::lagrange_variant::unset;
+  return fem::CoordinateElement<U>(cell_type, cell_degree, variant);
+}
+} // namespace impl
+
 /// @brief Write a mesh to VTKHDF format.
 ///
 /// The mesh is written on the MPI communicator of the mesh.
@@ -402,7 +467,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
       h5file, "/VTKHDF/Offsets", {local_cell_range[0], local_cell_range[1] + 1},
       true);
 
-  // Convert cell offsets to cell type and cell degree tuples
+  // The VTK type identifies the family; degree distinguishes Lagrange layouts.
   std::vector<std::array<std::uint8_t, 2>> types_unique;
   std::vector<std::uint8_t> cell_degrees;
   for (std::size_t i = 0; i < types.size(); ++i)
@@ -455,15 +520,13 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
     recv_types.erase(unique_end, range_end);
   }
 
-  // Map from VTKCellType to index in list of (cell types, degree)
+  // Map (VTK type, degree) to coordinate element index.
   std::map<std::array<std::uint8_t, 2>, std::int32_t> type_to_index;
   std::vector<mesh::CellType> dolfinx_cell_type;
-  std::vector<std::uint8_t> dolfinx_cell_degree;
   for (std::array<std::uint8_t, 2> ct : recv_types)
   {
     mesh::CellType cell_type = std::get<0>(io::cells::vtk_to_dolfinx(ct[0]));
-    type_to_index.insert({ct, dolfinx_cell_degree.size()});
-    dolfinx_cell_degree.push_back(ct[1]);
+    type_to_index.insert({ct, dolfinx_cell_type.size()});
     dolfinx_cell_type.push_back(cell_type);
   }
 
@@ -523,16 +586,8 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
 
   // Make coordinate elements
   std::vector<fem::CoordinateElement<U>> coordinate_elements;
-  std::ranges::transform(
-      dolfinx_cell_type, dolfinx_cell_degree,
-      std::back_inserter(coordinate_elements),
-      [](mesh::CellType cell_type, std::uint8_t cell_degree)
-      {
-        basix::element::lagrange_variant variant
-            = (cell_degree > 2) ? basix::element::lagrange_variant::equispaced
-                                : basix::element::lagrange_variant::unset;
-        return fem::CoordinateElement<U>(cell_type, cell_degree, variant);
-      });
+  std::ranges::transform(recv_types, std::back_inserter(coordinate_elements),
+                         impl::coordinate_element<U>);
 
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());

@@ -27,6 +27,44 @@ from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags, _get_mes
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
 
+def _serendipity_coordinate_element(
+    cell_shape: CellType, dtype: npt.DTypeLike
+) -> basix.ufl._BasixElement:
+    """Create quadratic serendipity with edge midpoint evaluations."""
+    s_el = basix.ufl.element(basix.ElementFamily.serendipity, cell_shape.name, 2, dtype=dtype)
+    # Replace edge moments with midpoint evaluations.
+    be = s_el.basix_element
+    geometry = basix.cell.geometry(be.cell_type)
+    topology = basix.cell.topology(be.cell_type)
+    e_x: list[list[npt.NDArray[np.floating]]] = [
+        be.x[0],
+        [np.array([(geometry[e[0]] + geometry[e[1]]) / 2], dtype=dtype) for e in topology[1]],
+        be.x[2],
+        be.x[3],
+    ]
+    e_m: list[list[npt.NDArray[np.floating]]] = [
+        be.M[0],
+        [np.ones((1, 1, 1, 1), dtype=dtype) for _ in be.M[1]],
+        be.M[2],
+        be.M[3],
+    ]
+    return basix.ufl.custom_element(
+        be.cell_type,
+        s_el.reference_value_shape,
+        be.wcoeffs,
+        e_x,
+        e_m,
+        0,
+        s_el.map_type,
+        be.sobolev_space,
+        s_el.discontinuous,
+        s_el.embedded_subdegree,
+        s_el.embedded_superdegree,
+        s_el.polyset_type,
+        s_el.dtype,
+    )
+
+
 # VTXWriter requires ADIOS2
 if _cpp.common.has_adios2:
     from dolfinx.cpp.io import VTXMeshPolicy
@@ -380,45 +418,7 @@ class XDMFFile:
         if (cell_shape == CellType.quadrilateral and num_nodes_per_cell == 8) or (
             cell_shape == CellType.hexahedron and num_nodes_per_cell == 20
         ):
-            s_el = basix.ufl.element(
-                basix.ElementFamily.serendipity,
-                cell_shape.name,
-                2,
-            )
-            # Create a custom element that is serendipity but uses point
-            # evaluations on edges. Only the edge functionals differ, so
-            # the element's own rows carry the rest through and no array
-            # shape has to be restated here.
-            be = s_el.basix_element
-            geometry = basix.cell.geometry(be.cell_type)
-            topology = basix.cell.topology(be.cell_type)
-            e_x: list[list[npt.NDArray[np.floating]]] = [
-                be.x[0],
-                [np.array([(geometry[e[0]] + geometry[e[1]]) / 2]) for e in topology[1]],
-                be.x[2],
-                be.x[3],
-            ]
-            e_m: list[list[npt.NDArray[np.floating]]] = [
-                be.M[0],
-                [np.ones((1, 1, 1, 1)) for _ in be.M[1]],
-                be.M[2],
-                be.M[3],
-            ]
-            el = basix.ufl.custom_element(
-                be.cell_type,
-                s_el.reference_value_shape,
-                be.wcoeffs,
-                e_x,
-                e_m,
-                0,
-                s_el.map_type,
-                be.sobolev_space,
-                s_el.discontinuous,
-                s_el.embedded_subdegree,
-                s_el.embedded_superdegree,
-                s_el.polyset_type,
-                s_el.dtype,
-            )
+            el = _serendipity_coordinate_element(cell_shape, x.dtype)
             cmap = _cpp.fem.CoordinateElement_float64(el.basix_element._e)
             basix_el = basix.ufl.blocked_element(el, shape=(x.shape[1],))
         else:

@@ -1,4 +1,5 @@
 # Copyright (C) 2024-2025 Chris Richardson and Jørgen S. Dokken
+# Copyright (C) 2026 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -15,6 +16,7 @@ import basix
 import basix.ufl
 import dolfinx
 import ufl
+from dolfinx.io.utils import _serendipity_coordinate_element
 from dolfinx.io.vtkhdf import read_mesh, write_cell_data, write_mesh, write_point_data
 from dolfinx.mesh import CellType, Mesh, create_unit_cube, create_unit_square
 
@@ -326,6 +328,63 @@ def test_read_write_prism(degree, tempdir) -> None:
         restored.geometry.x[restored.geometry.dofmaps[0]],
         geometry[restored.topology.original_cell_index],
     )
+
+
+@pytest.mark.parametrize("cell_type", [CellType.quadrilateral, CellType.hexahedron])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_read_write_serendipity_mesh(cell_type, dtype, tempdir) -> None:
+    """VTKHDF preserves nodal serendipity geometry and its UFL element."""
+    comm = MPI.COMM_WORLD
+    scalar_element = _serendipity_coordinate_element(cell_type, dtype)
+    gdim = dolfinx.mesh.cell_dim(cell_type)
+    element = basix.ufl.blocked_element(scalar_element, shape=(gdim,))
+    points = np.concatenate(
+        [
+            scalar_element.basix_element.points + np.eye(gdim, dtype=dtype)[0] * i
+            for i in range(2 * comm.size)
+        ]
+    )
+    points, indices = np.unique(points, axis=0, return_inverse=True)
+    cells = indices.reshape(-1, scalar_element.basix_element.dim).astype(np.int64)
+    # Curve the geometry while preserving the volume (Jacobian determinant 1).
+    points[:, 0] += 0.1 * points[:, 1] ** 2
+    if comm.rank != 0:
+        cells = np.empty((0, scalar_element.basix_element.dim), dtype=np.int64)
+        points = np.empty((0, gdim), dtype=dtype)
+    mesh = dolfinx.mesh.create_mesh(comm, cells, element, points)
+    num_cells = mesh.topology.index_map(gdim).size_local
+    geometry = np.concatenate(comm.allgather(mesh.geometry.x[mesh.geometry.dofmaps[0][:num_cells]]))
+    filename = Path(tempdir, f"serendipity_{cell_type.name}.vtkhdf")
+    write_mesh(filename, mesh)
+    for num_threads in (1, 4):
+        restored = read_mesh(comm, filename, dtype=dtype, gdim=gdim, num_threads=num_threads)
+        assert restored.geometry.x.dtype == dtype
+        assert restored.geometry.cmaps[0].degree == 2
+        assert restored.geometry.dofmaps[0].shape[1] == scalar_element.basix_element.dim
+        assert restored.ufl_domain().ufl_coordinate_element() == element
+        for dim in (0, gdim):
+            assert (
+                restored.topology.index_map(dim).size_global
+                == mesh.topology.index_map(dim).size_global
+            )
+        np.testing.assert_array_equal(
+            restored.geometry.x[restored.geometry.dofmaps[0]],
+            geometry[restored.topology.original_cell_index],
+        )
+        for cell_geometry in restored.geometry.x[restored.geometry.dofmaps[0]]:
+            np.testing.assert_allclose(
+                restored.geometry.cmaps[0].push_forward(
+                    scalar_element.basix_element.points, cell_geometry[:, :gdim]
+                ),
+                cell_geometry[:, :gdim],
+                rtol=100 * np.finfo(dtype).eps,
+                atol=100 * np.finfo(dtype).eps,
+            )
+        volume = comm.allreduce(
+            dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=restored), dtype=dtype)),
+            op=MPI.SUM,
+        )
+        assert np.isclose(volume, 2 * comm.size, rtol=100 * np.finfo(dtype).eps)
 
 
 def test_write_quadratic_pyramid_rejected(tempdir) -> None:
