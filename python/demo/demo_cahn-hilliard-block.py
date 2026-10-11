@@ -351,14 +351,33 @@ schur_pc.setPythonContext(MatchedSchur(S_mat, M_mat, amg))
 schur_pc.setUp()
 # -
 
-# Step in time, recording how much work each Newton step costs the Krylov
-# solver.
+# A `SNES` monitor fires once before each Newton iteration and once
+# more when the solve stops, and `getLinearSolveIterations` reports the
+# Krylov iterations used so far in the current solve. Differencing
+# successive calls therefore gives the cost of each individual Newton
+# step, which is the quantity that should stay flat under refinement.
+
+# +
+krylov_its: list[int] = []
+
+
+def newton_monitor(snes: PETSc.SNES, it: int, _norm: float) -> None:
+    """Record the Krylov iterations used by the Newton step just taken."""
+    if it > 0:
+        krylov_its.append(snes.getLinearSolveIterations() - sum(krylov_its))
+
+
+snes.setMonitor(newton_monitor)
+# -
+
+# Step in time, reporting the work each step took.
 
 # +
 out = Path("demo_ch_block")
 out.mkdir(parents=True, exist_ok=True)
 file = io.XDMFFile(msh.comm, out / "output.xdmf", "w")
 file.write_mesh(msh)
+file.write_function(c, 0.0)  # the initial condition, before any step
 
 num_steps = 3 if "CI" in os.environ or "GITHUB_ACTIONS" in os.environ else 30
 t = 0.0
@@ -369,6 +388,7 @@ for step in range(num_steps):
     mu0.x.array[:] = mu.x.array
 
     assign([c, mu], x)
+    krylov_its.clear()
     snes.solve(None, x)
     assign(x, [c, mu])
     c.x.scatter_forward()
@@ -376,8 +396,16 @@ for step in range(num_steps):
 
     if snes.getConvergedReason() < 0:  # type: ignore[operator]
         raise RuntimeError(f"Step {step} did not converge: {snes.getConvergedReason()}")
-    newton_total += snes.getIterationNumber()
-    krylov_total += snes.getLinearSolveIterations()
+    num_newton = snes.getIterationNumber()
+    num_krylov = snes.getLinearSolveIterations()
+    newton_total += num_newton
+    krylov_total += num_krylov
+    if msh.comm.rank == 0:
+        per_step = " ".join(str(k) for k in krylov_its)
+        print(
+            f"step {step + 1:3d}  t = {t:.2e}  Newton {num_newton}  "
+            f"Krylov {num_krylov} ({per_step})"
+        )
     file.write_function(c, t)
 
 file.close()
