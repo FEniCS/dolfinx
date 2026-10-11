@@ -573,3 +573,43 @@ write_shell_vtkhdf(
 # teardown is collective, whereas interpreter shutdown order can vary.
 
 del surface_problem, problem, verification
+
+# ## PyVista visualization
+#
+# If PyVista is installed, read the two VTKHDF files on rank zero and
+# plot the complete shells, including when the solver runs under MPI.
+# Show displacement magnitude on the deformed surface, with deformation
+# amplified by a factor of 1000 and the reference mesh in grey.
+# Save `out_shell/shell.png` and `out_shell/shell_gmsh.png` as well.
+# Set `PYVISTA_OFF_SCREEN=true` to save images without opening windows.
+
+# +
+if comm.rank == 0:
+    try:
+        import pyvista
+    except ModuleNotFoundError:
+        print("Install 'pyvista' to plot the shells: 'python3 -m pip install pyvista'")
+    else:
+        for name in ("shell", "shell_gmsh"):
+            grid = pyvista.read(out_folder / f"{name}.vtkhdf")
+            grid.point_data["displacement_magnitude"] = np.linalg.norm(grid.point_data["u"], axis=1)
+            warped = grid.warp_by_vector("u", factor=1000)
+            plotter = pyvista.Plotter(window_size=(1000, 800))
+            plotter.add_mesh(grid, style="wireframe", color="grey", opacity=0.25)
+            plotter.add_mesh(
+                warped,
+                scalars="displacement_magnitude",
+                show_edges=True,
+                scalar_bar_args={
+                    "title": "Displacement magnitude",
+                    "fmt": "%.2e",
+                    "n_labels": 4,
+                    "position_x": 0.2,
+                    "position_y": 0.04,
+                    "width": 0.6,
+                },
+            )
+            plotter.view_isometric()
+            plotter.camera.zoom(0.85)
+            plotter.show(screenshot=out_folder / f"{name}.png")
+# -
