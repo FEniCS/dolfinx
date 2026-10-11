@@ -148,7 +148,7 @@ theta = 0.5  # time stepping family
 # Jacobian is a matrix in its own right and the preconditioner can
 # address them. `clone` gives a second, distinct space on the same mesh.
 
-msh = mesh.create_unit_cube(MPI.COMM_WORLD, 32, 32, 32, mesh.CellType.tetrahedron)
+msh = mesh.create_unit_cube(MPI.COMM_WORLD, 64, 64, 64, mesh.CellType.tetrahedron)
 V = fem.functionspace(msh, ("Lagrange", 1))
 W = V.clone()
 
