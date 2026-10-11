@@ -148,7 +148,7 @@ theta = 0.5  # time stepping family
 # Jacobian is a matrix in its own right and the preconditioner can
 # address them. `clone` gives a second, distinct space on the same mesh.
 
-msh = mesh.create_unit_square(MPI.COMM_WORLD, 96, 96, mesh.CellType.triangle)
+msh = mesh.create_unit_cube(MPI.COMM_WORLD, 32, 32, 32, mesh.CellType.tetrahedron)
 V = fem.functionspace(msh, ("Lagrange", 1))
 W = V.clone()
 
@@ -314,7 +314,7 @@ opts["pc_fieldsplit_type"] = "schur"
 opts["pc_fieldsplit_schur_fact_type"] = "upper"
 # The (0,0) block is a mass matrix: CG with Jacobi is mesh independent
 opts["fieldsplit_c_ksp_type"] = "cg"
-opts["fieldsplit_c_ksp_rtol"] = 1.0e-10
+opts["fieldsplit_c_ksp_rtol"] = 1.0e-6
 opts["fieldsplit_c_pc_type"] = "jacobi"
 opts["fieldsplit_mu_ksp_type"] = "preonly"
 if amg == "hypre":
@@ -424,23 +424,33 @@ if msh.comm.rank == 0:
 # -
 
 # Measured on this problem, with the mesh refined and everything else
-# held fixed:
+# held fixed, against the same problem solved with a sparse LU
+# factorisation:
 #
-# | cells per side | unknowns | Krylov its / Newton step |
-# | --- | --- | --- |
-# | 64  | 8 450   | 20.8 |
-# | 128 | 33 282  | 21.2 |
-# | 256 | 132 098 | 23.2 |
-# | 512 | 526 338 | 25.0 |
+# | per side | unknowns | its | time | LU | memory | LU memory |
+# | --- | --- | --- | --- | --- | --- | --- |
+# | 16 | 9 826   | 20.6 | 0.9 s  | 1.0 s  | --     | --      |
+# | 24 | 31 250  | 20.8 | 1.7 s  | 3.5 s  | 211 MB | 475 MB  |
+# | 32 | 71 874  | 20.8 | 3.4 s  | 8.6 s  | 330 MB | 1093 MB |
+# | 40 | 137 842 | 20.8 | 11.9 s | 23.1 s | 598 MB | 2360 MB |
 #
-# The count is flat to within a few per cent over a sixty-fold increase
-# in problem size, so the cost of a solve grows in proportion to the
-# number of unknowns. A direct solver gives the same answer -- the two
-# agree to twelve significant figures -- but its factors fill in, and at
-# 526 338 unknowns the run needs around 1.6 times the peak memory. In two
-# dimensions a sparse direct solver is still competitive on time at these
-# sizes; the gap in its favour closes as the mesh is refined, and in
-# three dimensions, where fill-in is far worse, it closes much sooner.
+# where "its" is Krylov iterations per Newton step and the memory
+# columns are peak resident set size for the whole run.
+#
+# The iteration count is flat over a fourteen-fold increase in problem
+# size, so the number of operations in a solve grows in proportion to
+# the unknowns. The two solvers agree to twelve significant figures.
+#
+# This is the case the block preconditioner is for. A sparse direct
+# factorisation fills in, and in three dimensions it fills in badly: by
+# 137 842 unknowns it needs four times the memory and twice the time,
+# and both ratios are still growing. In two dimensions the same
+# comparison goes the other way at these sizes, with LU faster and the
+# memory advantage nearer 1.6 times, because the fill-in is far milder.
+#
+# The wall-clock time here grows a little faster than the unknowns even
+# though the iteration count does not; that cost is in the algebraic
+# multigrid applications, not in the Krylov method.
 #
 # The usable range of $\Delta t$ and $\lambda$ here is set by the
 # nonlinear problem rather than by the preconditioner: at
