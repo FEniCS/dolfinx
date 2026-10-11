@@ -29,7 +29,7 @@ __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute
 
 def _serendipity_coordinate_element(
     cell_shape: CellType, dtype: npt.DTypeLike
-) -> basix.ufl._BasixElement:
+) -> basix.ufl._ElementBase:
     """Create quadratic serendipity with edge midpoint evaluations."""
     s_el = basix.ufl.element(basix.ElementFamily.serendipity, cell_shape.name, 2, dtype=dtype)
     # Replace edge moments with midpoint evaluations.

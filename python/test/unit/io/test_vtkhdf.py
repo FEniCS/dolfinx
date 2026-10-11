@@ -351,7 +351,7 @@ def test_read_write_serendipity_mesh(cell_type, dtype, tempdir) -> None:
     if comm.rank != 0:
         cells = np.empty((0, scalar_element.basix_element.dim), dtype=np.int64)
         points = np.empty((0, gdim), dtype=dtype)
-    mesh = dolfinx.mesh.create_mesh(comm, cells, element, points)
+    mesh = dolfinx.mesh.create_mesh(comm, cells, ufl.Mesh(element), points)
     num_cells = mesh.topology.index_map(gdim).size_local
     geometry = np.concatenate(comm.allgather(mesh.geometry.x[mesh.geometry.dofmaps[0][:num_cells]]))
     filename = Path(tempdir, f"serendipity_{cell_type.name}.vtkhdf")
@@ -361,7 +361,9 @@ def test_read_write_serendipity_mesh(cell_type, dtype, tempdir) -> None:
         assert restored.geometry.x.dtype == dtype
         assert restored.geometry.cmaps[0].degree == 2
         assert restored.geometry.dofmaps[0].shape[1] == scalar_element.basix_element.dim
-        assert restored.ufl_domain().ufl_coordinate_element() == element
+        domain = restored.ufl_domain()
+        assert domain is not None
+        assert domain.ufl_coordinate_element() == element
         for dim in (0, gdim):
             assert (
                 restored.topology.index_map(dim).size_global
