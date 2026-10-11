@@ -252,8 +252,10 @@ Mat create_matrix_nest(
     std::optional<std::vector<std::vector<std::optional<std::string>>>> types)
 {
   if (a.empty())
+  {
     throw std::invalid_argument(
         "Rectangular array of forms must be non-empty.");
+  }
 
   // Extract and check row/column ranges
   auto V = fem::common_function_spaces(extract_function_spaces(a));

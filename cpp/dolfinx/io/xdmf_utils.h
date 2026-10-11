@@ -190,8 +190,10 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
       for (auto& v : data_vector_str)
       {
         if (v.begin() != v.end())
+        {
           data_vector.push_back(
               boost::lexical_cast<T>(boost::copy_range<std::string>(v)));
+        }
       }
     }
   }
