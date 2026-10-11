@@ -122,12 +122,12 @@ Structural mechanics
 
 * :doc:`demos/demo_elasticity` -- solve three-dimensional linear
   elasticity using algebraic multigrid.
-* :doc:`demos/demo_shell` -- solve a linear cylindrical shell problem
-  with displacement and director unknowns, including membrane, bending
-  and transverse shear deformation, with partial selective reduced
-  integration to alleviate locking. Use an analytic parametrisation and
-  an embedded Gmsh mesh of a perforated panel with local refinement
-  (requires Gmsh).
+* :doc:`demos/demo_shell` -- solve linear Naghdi shell problems with
+  displacement and director unknowns, including membrane, bending and
+  transverse shear deformation, with partial selective reduced
+  integration to alleviate locking. Use an analytic cylindrical
+  parametrisation, and an embedded Gmsh mesh of a flared, perforated
+  panel with local refinement (requires Gmsh).
 
 
 Electromagnetics

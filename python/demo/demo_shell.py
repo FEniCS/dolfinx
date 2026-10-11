@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-# # Linear cylindrical shell
+# # Linear Naghdi shells
 #
 # ```{admonition} Download sources
 # :class: download
@@ -16,8 +16,8 @@
 # clamped at one axial end, under inward normal pressure. It illustrates
 # an analytic surface parametrisation, a mixed displacement/director
 # space, and membrane, bending and transverse shear energies. A second
-# example uses a Gmsh surface mesh of a panel with a radial opening,
-# embedded in three dimensions and refined around the opening rim.
+# example uses a Gmsh surface mesh of a flared, wavy panel with bores,
+# a rounded slot and a scalloped edge, refined around the cutouts.
 # This demo requires Gmsh.
 #
 # The model includes transverse shear deformation and assumes small
@@ -377,57 +377,83 @@ write_shell_vtkhdf(
 
 # ## Starting from a Gmsh surface mesh
 #
-# Now mesh the physical cylinder directly, rather than its parameter
-# rectangle. Gmsh uses OpenCASCADE to extrude a circular arc and cut
-# an opening with a radial cylindrical bore of radius $R/4$, centred at
-# $z=0.6L$. A distance-based size field refines an unstructured triangular
-# mesh around the opening. Upgrade the mesh to quadratic triangles.
-# The geometry is a polynomial approximation of the
-# CAD surface; its nodes lie on the cylinder, but points between nodes
-# need not. The mesh has topological dimension two and geometric
-# dimension three. The surface, clamped arc and opening rim are physical
-# groups. The opening rim and the other outer edges remain traction-free.
+# Construct a separate shell directly in physical space using OpenCASCADE.
+# Revolve a spline profile through a quarter turn to make a flared panel
+# with a waist and varying curvature in both surface directions. Cut
+# three circular bores, a rounded slot and a scallop at the free end.
+# These cuts are made by solids passing through the surface along the
+# Cartesian $z$ direction; their rims follow the curved CAD surface.
+# A distance-based size field refines around the openings and free rim.
+#
+# The quadratic triangles approximate the CAD surface: their nodes lie on
+# it, while points between nodes need not. The mesh has topological
+# dimension two and geometric dimension three. Tag the shell, clamped
+# arc, opening rims and free edges as physical groups. Only the clamped
+# arc has essential boundary conditions; all other edges are traction-free.
 
 # +
 gmsh.initialize()
 cad_area = 0.0
 if comm.rank == 0:
-    gmsh.model.add("perforated_cylindrical_panel")
+    gmsh.model.add("flared_perforated_shell")
     occ = gmsh.model.occ
-    center = occ.addPoint(0, 0, 0)
-    start = occ.addPoint(-R / np.sqrt(2), 0, R / np.sqrt(2))
-    end = occ.addPoint(R / np.sqrt(2), 0, R / np.sqrt(2))
-    arc = occ.addCircleArc(start, center, end)
-    extruded = occ.extrude([(1, arc)], 0, length, 0)
-    panel = [(dim, tag) for dim, tag in extruded if dim == 2]
-    bore = occ.addCylinder(0, 0.6 * length, 0, 0, 0, 2 * R, R / 4)
-    perforated, _ = occ.cut(panel, [(3, bore)])
+    profile_points = [
+        occ.addPoint(-radius / np.sqrt(2), y, radius / np.sqrt(2))
+        for y, radius in zip(
+            length * np.array([0, 0.18, 0.38, 0.60, 0.82, 1]),
+            R * np.array([1, 0.82, 1.18, 0.86, 1.12, 1.35]),
+            strict=True,
+        )
+    ]
+    profile = occ.addSpline(profile_points)
+    revolved = occ.revolve([(1, profile)], 0, 0, 0, 0, 1, 0, np.pi / 2)
+    panel = [(dim, tag) for dim, tag in revolved if dim == 2]
+    tools = [
+        (3, occ.addCylinder(x * R, y * length, 0, 0, 0, 3 * R, radius * R))
+        for x, y, radius in [(-0.35, 0.28, 0.13), (0.35, 0.38, 0.16), (0.42, 0.55, 0.10)]
+    ]
+    slot_radius = 0.11 * R
+    slot_y = 0.72 * length
+    slot_start, slot_end = -0.15 * R, 0.20 * R
+    slot_box = occ.addBox(
+        slot_start, slot_y - slot_radius, 0, slot_end - slot_start, 2 * slot_radius, 3 * R
+    )
+    slot_caps = [
+        (3, occ.addCylinder(x, slot_y, 0, 0, 0, 3 * R, slot_radius)) for x in (slot_start, slot_end)
+    ]
+    slot, _ = occ.fuse([(3, slot_box)], slot_caps)
+    scallop = occ.addCylinder(0, 1.03 * length, 0, 0, 0, 3 * R, 0.25 * R)
+    perforated, _ = occ.cut(panel, tools + slot + [(3, scallop)])
     occ.synchronize()
     surfaces = [tag for dim, tag in perforated if dim == 2]
     cad_area = sum(occ.getMass(2, tag) for tag in surfaces)
     boundary = gmsh.model.getBoundary(perforated, oriented=False)
-    clamped_curves, opening_curves = [], []
+    clamped_curves, opening_curves, free_curves = [], [], []
     for dim, tag in boundary:
         _, y_min, _, _, y_max, _ = gmsh.model.getBoundingBox(dim, tag)
         if np.isclose(y_min, 0, atol=1e-6) and np.isclose(y_max, 0, atol=1e-6):
             clamped_curves.append(tag)
         elif y_min > 1e-6 and y_max < length - 1e-6:
             opening_curves.append(tag)
+        else:
+            free_curves.append(tag)
     assert clamped_curves and opening_curves
     gmsh.model.addPhysicalGroup(2, surfaces, tag=1)
     gmsh.model.addPhysicalGroup(1, clamped_curves, tag=2)
     gmsh.model.addPhysicalGroup(1, opening_curves, tag=3)
+    gmsh.model.addPhysicalGroup(1, free_curves, tag=4)
     gmsh.model.setPhysicalName(2, 1, "shell")
     gmsh.model.setPhysicalName(1, 2, "clamped")
-    gmsh.model.setPhysicalName(1, 3, "opening")
+    gmsh.model.setPhysicalName(1, 3, "openings")
+    gmsh.model.setPhysicalName(1, 4, "free_edges")
 
     distance = gmsh.model.mesh.field.add("Distance")
-    gmsh.model.mesh.field.setNumbers(distance, "CurvesList", opening_curves)
+    gmsh.model.mesh.field.setNumbers(distance, "CurvesList", opening_curves + free_curves)
     gmsh.model.mesh.field.setNumber(distance, "Sampling", 100)
     threshold = gmsh.model.mesh.field.add("Threshold")
     gmsh.model.mesh.field.setNumber(threshold, "InField", distance)
-    gmsh.model.mesh.field.setNumber(threshold, "SizeMin", 0.04 * R)
-    gmsh.model.mesh.field.setNumber(threshold, "SizeMax", 0.13 * R)
+    gmsh.model.mesh.field.setNumber(threshold, "SizeMin", 0.035 * R)
+    gmsh.model.mesh.field.setNumber(threshold, "SizeMax", 0.10 * R)
     gmsh.model.mesh.field.setNumber(threshold, "DistMin", 0.08 * R)
     gmsh.model.mesh.field.setNumber(threshold, "DistMax", 0.35 * R)
     gmsh.model.mesh.field.setAsBackgroundMesh(threshold)
@@ -449,10 +475,12 @@ assert facet_tags is not None
 #
 # The $3\times2$ cell Jacobian supplies two tangent vectors. Their cross
 # product gives the normal, whose sign is chosen to point away from the
-# cylinder axis. Unlike a normal on planar triangles, this normal varies
-# within a quadratic cell. Differentiating it retains the curvature.
+# axis of revolution. Unlike a normal on planar triangles, this normal
+# varies within a quadratic cell. Differentiating it retains the
+# curvature.
 # We form an orthonormal tangent basis $T=[t_1,t_2]$ using the axial
-# direction; this construction is suitable for this cylindrical panel.
+# direction; the profile stays away from the axis and its normal is
+# never parallel to the axial direction.
 #
 # Use three Cartesian rotation components $\theta$, with director change
 # $\eta=\theta\times n$. Cartesian coefficients do not depend on the
@@ -538,17 +566,22 @@ def surface_stiffness(u, theta, v, psi):
 
 # ### Verification, solve and output
 #
-# Check surface area, curvature and a rigid rotation, including drilling.
+# Check surface area and a rigid rotation, including drilling. The wavy
+# profile has regions of positive and negative Gaussian curvature.
 # Clamp the tagged arc and apply the same inward pressure as before.
-# Compare the integrated mesh area with the OpenCASCADE surface area.
+# Compare the integrated mesh area with the CAD area to within 0.5%.
 # The perforated panel has a different domain from the first example.
 
 # +
 surface_area = integral(1 * dx_surface).real
-assert abs(surface_area / cad_area - 1) < 1e-4
-assert 0 < cad_area < np.pi * R * length / 2
+assert abs(surface_area / cad_area - 1) < 0.005
+assert cad_area > 0
 curvature_squared = integral(ufl.inner(ufl.grad(n_surface), ufl.grad(n_surface)) * dx_surface).real
-assert abs(curvature_squared * R**2 / surface_area - 1) < 0.01
+assert np.isfinite(curvature_squared) and curvature_squared > 0
+gaussian_curvature = ufl.det(T.T * ufl.grad(n_surface) * T)
+positive_curvature = integral(ufl.max_value(gaussian_curvature, 0) * dx_surface).real
+negative_curvature = integral(-ufl.min_value(gaussian_curvature, 0) * dx_surface).real
+assert positive_curvature > 0 and negative_curvature > 0
 rigid_surface = surface_strains(ufl.cross(omega, X), omega)
 surface_rigid_norm = integral(sum(ufl.inner(e, e) for e in rigid_surface) * dx_surface).real
 assert surface_rigid_norm < 1000 * np.finfo(default_real_type).eps ** 2
@@ -613,7 +646,9 @@ del surface_problem, problem, verification
 # If PyVista is installed, read the two VTKHDF files on rank zero and
 # plot the complete shells, including when the solver runs under MPI.
 # Show displacement magnitude on the deformed surface, with deformation
-# amplified by a factor of 1000 and the reference mesh in grey.
+# amplified by at most 1000, capped at 15% of the panel length, and the
+# reference mesh in grey. Annotate the actual amplification factor. A
+# fixed off-axis camera keeps the curvature of both shells visible.
 # Save `out_shell/shell.png` and `out_shell/shell_gmsh.png` as well.
 # Set `PYVISTA_OFF_SCREEN=true` to save images without opening windows.
 
@@ -627,13 +662,19 @@ if comm.rank == 0:
         for name in ("shell", "shell_gmsh"):
             grid = pyvista.read(out_folder / f"{name}.vtkhdf")
             grid.point_data["displacement_magnitude"] = np.linalg.norm(grid.point_data["u"], axis=1)
-            warped = grid.warp_by_vector("u", factor=1000)
+            warp_factor = min(
+                1000.0, 0.15 * length / grid.point_data["displacement_magnitude"].max()
+            )
+            warped = grid.warp_by_vector("u", factor=warp_factor)
             plotter = pyvista.Plotter(window_size=(1000, 800))
-            plotter.add_mesh(grid, style="wireframe", color="grey", opacity=0.25)
+            plotter.add_text(f"{name}: displacement x {warp_factor:.0f}", font_size=10)
+            plotter.add_mesh(grid, style="wireframe", color="grey", opacity=0.1)
             plotter.add_mesh(
                 warped,
                 scalars="displacement_magnitude",
                 show_edges=True,
+                edge_color="grey",
+                edge_opacity=0.2,
                 scalar_bar_args={
                     "title": "Displacement magnitude",
                     "fmt": "%.2e",
@@ -643,7 +684,12 @@ if comm.rank == 0:
                     "width": 0.6,
                 },
             )
-            plotter.view_isometric()
+            plotter.camera_position = [
+                (2 * R, 2.6 * R, 4.7 * R),
+                (0, 0.45 * length, 0.45 * R),
+                (0, 1, 0),
+            ]
+            plotter.reset_camera()
             plotter.camera.zoom(0.85)
             plotter.show(screenshot=out_folder / f"{name}.png")
 # -
