@@ -155,8 +155,11 @@ try:
         num_newton_iterations = problem.solver.getIterationNumber()
         converged = problem.solver.getConvergedReason() > 0
         newton_iterations.append(num_newton_iterations)
+        ksp_reason = problem.solver.getKSP().getConvergedReason()
         print(
-            f"Iteration {i}: SNES Converged={converged} Newton Iterations={num_newton_iterations} KSP Converged={problem.solver.getKSP().getConvergedReason()}"
+            f"Iteration {i}: SNES Converged={converged} ",
+            f"Newton Iterations={num_newton_iterations} ",
+            f"KSP Converged={ksp_reason} alpha={alpha.value}",
         )
         local_diff = dolfinx.fem.assemble_scalar(compiled_diff)
         global_diff = np.sqrt(mesh.comm.allreduce(local_diff, op=MPI.SUM))
