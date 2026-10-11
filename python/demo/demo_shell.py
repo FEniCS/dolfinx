@@ -15,7 +15,9 @@
 # This demo solves a linear Naghdi shell problem: a cylindrical panel,
 # clamped at one axial end, under inward normal pressure. It illustrates
 # an analytic surface parametrisation, a mixed displacement/director
-# space, and membrane, bending and transverse shear energies.
+# space, and membrane, bending and transverse shear energies. A second
+# example starts from a Gmsh surface mesh embedded in three dimensions.
+# This demo requires Gmsh.
 #
 # The model includes transverse shear deformation and assumes small
 # displacements and rotations. Cubic bubble enrichment and partial
@@ -89,12 +91,14 @@ from pathlib import Path
 from mpi4py import MPI
 from petsc4py import PETSc
 
+import gmsh
 import numpy as np
 
 import ufl
 from basix.ufl import blocked_element, element, enriched_element, mixed_element
 from dolfinx import default_real_type, fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
+from dolfinx.io import gmsh as gmshio
 
 comm = MPI.COMM_WORLD
 R, length = 1.0, 2.0
@@ -321,3 +325,196 @@ out_folder.mkdir(exist_ok=True)
 with io.VTKFile(comm, out_folder / "shell.pvd", "w") as output:
     output.write_function([displacement, reference_offset])
 # -
+
+# ## Starting from a Gmsh surface mesh
+#
+# Now mesh the physical cylinder directly, rather than its parameter
+# rectangle. Gmsh extrudes a circular arc along the axis and creates
+# quadratic triangles. The geometry is a polynomial approximation of the
+# CAD surface; its nodes lie on the cylinder, but points between nodes
+# need not. The mesh has topological dimension two and geometric
+# dimension three. The surface and clamped arc are physical groups.
+
+# +
+gmsh.initialize()
+if comm.rank == 0:
+    gmsh.model.add("cylindrical_panel")
+    geo = gmsh.model.geo
+    center = geo.addPoint(0, 0, 0)
+    start = geo.addPoint(-R / np.sqrt(2), 0, R / np.sqrt(2))
+    end = geo.addPoint(R / np.sqrt(2), 0, R / np.sqrt(2))
+    arc = geo.addCircleArc(start, center, end)
+    geo.mesh.setTransfiniteCurve(arc, 13)
+    extruded = geo.extrude([(1, arc)], 0, length, 0, numElements=[20])
+    geo.synchronize()
+    surfaces = [tag for dim, tag in extruded if dim == 2]
+    gmsh.model.addPhysicalGroup(2, surfaces, tag=1)
+    gmsh.model.addPhysicalGroup(1, [arc], tag=2)
+    gmsh.model.setPhysicalName(2, 1, "shell")
+    gmsh.model.setPhysicalName(1, 2, "clamped")
+    gmsh.model.mesh.generate(2)
+    gmsh.model.mesh.setOrder(2)
+mesh_data = gmshio.model_to_mesh(gmsh.model, comm, 0, gdim=3)
+gmsh.finalize()
+surface = mesh_data.mesh
+assert surface.topology.dim == 2 and surface.geometry.dim == 3
+facet_tags = mesh_data.facet_tags
+assert facet_tags is not None
+# -
+
+# ### Geometry and rotations
+#
+# The $3\times2$ cell Jacobian supplies two tangent vectors. Their cross
+# product gives the normal, whose sign is chosen to point away from the
+# cylinder axis. Unlike a normal on planar triangles, this normal varies
+# within a quadratic cell. Differentiating it retains the curvature.
+# We form an orthonormal tangent basis $T=[t_1,t_2]$ using the axial
+# direction; this construction is suitable for this cylindrical panel.
+#
+# Use three Cartesian rotation components $\theta$, with director change
+# $\eta=\theta\times n$. Cartesian coefficients do not depend on the
+# tangent basis chosen by a cell. The mesh is only $C^0$, so its normal
+# can differ across cell edges; strains use the cellwise geometry.
+# Surface gradients $\nabla_\Sigma$ are supplied by UFL on the embedded
+# mesh, and the projected strain measures are
+#
+# $$
+# \begin{aligned}
+# e&=\operatorname{sym}(T^T\nabla_\Sigma u\,T),\\
+# k&=\operatorname{sym}\left[T^T\left(\nabla_\Sigma\eta
+#       +(\nabla_\Sigma u)^T\nabla_\Sigma n\right)T\right],\\
+# \gamma&=T^T\left[\eta+(\nabla_\Sigma u)^T n\right].
+# \end{aligned}
+# $$
+#
+# Rotation about $n$ does not change the director. Constrain this drilling
+# component to the in-plane displacement spin using
+# $d=\theta\cdot n-\tfrac12\operatorname{curl}_\Sigma u\cdot n$.
+# Add $\int_\Sigma (Et^3/h_K^2)d(u,\theta)\overline{d(v,\psi)}$
+# to the bilinear form, using full quadrature. This term vanishes for a
+# rigid rotation. For the curved mesh, compute cell diameters using
+# {py:meth}`Mesh.h <dolfinx.mesh.Mesh.h>` and store them in a cellwise
+# constant function for PSRI and drilling. The stabilisation follows the
+# [embedded shell formulation](https://bleyerj.github.io/comet-fenicsx/tours/shells/linear_shell/linear_shell.html).
+
+# +
+X = ufl.SpatialCoordinate(surface)
+J = ufl.Jacobian(surface)
+j0 = ufl.as_vector((J[0, 0], J[1, 0], J[2, 0]))
+j1 = ufl.as_vector((J[0, 1], J[1, 1], J[2, 1]))
+cross = ufl.cross(j0, j1)
+n_cell = cross / ufl.sqrt(ufl.dot(cross, cross))
+radial = ufl.as_vector((X[0], 0, X[2]))
+n_surface = ufl.conditional(ufl.gt(ufl.dot(n_cell, radial), 0), n_cell, -n_cell)
+t1 = ufl.cross(axis, n_surface)
+t1 = t1 / ufl.sqrt(ufl.dot(t1, t1))
+t2 = ufl.cross(n_surface, t1)
+T = ufl.as_matrix(((t1[0], t2[0]), (t1[1], t2[1]), (t1[2], t2[2])))
+
+rotation_element = element("Lagrange", surface.basix_cell(), 2, shape=(3,), dtype=default_real_type)
+W_surface = fem.functionspace(surface, mixed_element([U, rotation_element]))
+V_surface, _ = W_surface.sub(0).collapse()
+Q_surface, _ = W_surface.sub(1).collapse()
+dx_surface = ufl.Measure("dx", domain=surface, metadata={"quadrature_degree": 6})
+dx_surface_reduced = ufl.Measure("dx", domain=surface, metadata={"quadrature_degree": 2})
+cell_map = surface.topology.index_map(2)
+assert cell_map is not None
+surface_cells = np.arange(cell_map.size_local + cell_map.num_ghosts, dtype=np.int32)
+H = fem.functionspace(surface, ("DG", 0))
+h_surface = fem.Function(H, dtype=default_real_type)
+h_surface.x.array[H.dofmap.list[:, 0]] = surface.h(2, surface_cells)
+h_surface.x.scatter_forward()
+alpha_surface = ufl.min_value(1.0, (thickness / h_surface) ** 2)
+# -
+
+
+def surface_strains(u, theta):
+    """Return shell strains and drilling strain on the embedded mesh."""
+    eta = ufl.cross(theta, n_surface)
+    gradient = ufl.grad(u)
+    e = ufl.sym(T.T * gradient * T)
+    k = ufl.sym(T.T * (ufl.grad(eta) + gradient.T * ufl.grad(n_surface)) * T)
+    gamma = T.T * (eta + gradient.T * n_surface)
+    drilling = ufl.dot(theta, n_surface) - ufl.dot(ufl.curl(u), n_surface) / 2
+    return e, k, gamma, drilling
+
+
+def surface_stiffness(u, theta, v, psi):
+    """Return the embedded shell PSRI stiffness, including drilling."""
+    e, k, gamma, drilling = surface_strains(u, theta)
+    ev, kv, gammav, drillingv = surface_strains(v, psi)
+    membrane_shear = thickness * ufl.inner(
+        stress(e), ev
+    ) + shear_correction * mu * thickness * ufl.inner(gamma, gammav)
+    bending = thickness**3 / 12 * ufl.inner(stress(k), kv)
+    stabilisation = young * thickness**3 / h_surface**2 * ufl.inner(drilling, drillingv)
+    return (bending + stabilisation + alpha_surface * membrane_shear) * dx_surface + (
+        1 - alpha_surface
+    ) * membrane_shear * dx_surface_reduced
+
+
+# ### Verification, solve and output
+#
+# Check surface area, curvature and a rigid rotation, including drilling.
+# Clamp the tagged arc and apply the same inward pressure as before.
+# The two solutions use different rotation spaces and approximate
+# geometries; compare their integrated pressure work as a consistency
+# check at this resolution, rather than expecting identical solutions.
+
+# +
+surface_area = integral(1 * dx_surface).real
+assert abs(surface_area / (np.pi * R * length / 2) - 1) < 1e-4
+curvature_squared = integral(ufl.inner(ufl.grad(n_surface), ufl.grad(n_surface)) * dx_surface).real
+assert abs(curvature_squared * R**2 / surface_area - 1) < 0.01
+rigid_surface = surface_strains(ufl.cross(omega, X), omega)
+surface_rigid_norm = integral(sum(ufl.inner(e, e) for e in rigid_surface) * dx_surface).real
+assert surface_rigid_norm < 1000 * np.finfo(default_real_type).eps ** 2
+
+u_s, theta = ufl.TrialFunctions(W_surface)
+v_s, psi = ufl.TestFunctions(W_surface)
+clamped_surface = facet_tags.find(2)
+zero_surface_u = fem.Function(V_surface, dtype=PETSc.ScalarType)
+zero_surface_rotation = fem.Function(Q_surface, dtype=PETSc.ScalarType)
+bcs_surface = [
+    fem.dirichletbc(
+        zero_surface_u,
+        fem.locate_dofs_topological((W_surface.sub(0), V_surface), 1, clamped_surface),
+        W_surface.sub(0),
+    ),
+    fem.dirichletbc(
+        zero_surface_rotation,
+        fem.locate_dofs_topological((W_surface.sub(1), Q_surface), 1, clamped_surface),
+        W_surface.sub(1),
+    ),
+]
+surface_problem = LinearProblem(
+    surface_stiffness(u_s, theta, v_s, psi),
+    ufl.inner(-pressure * n_surface, v_s) * dx_surface,
+    bcs=bcs_surface,
+    petsc_options_prefix="demo_shell_surface_",
+    petsc_options=options,
+)
+surface_solution = surface_problem.solve()
+assert isinstance(surface_solution, fem.Function)
+u_surface, theta_surface = ufl.split(surface_solution)
+surface_energy_twice = integral(
+    surface_stiffness(u_surface, theta_surface, u_surface, theta_surface)
+).real
+surface_work = integral(ufl.inner(-pressure * n_surface, u_surface) * dx_surface).real
+assert np.isfinite(surface_energy_twice) and surface_energy_twice > 0
+assert abs(surface_energy_twice - surface_work) / surface_energy_twice < tolerance
+assert abs(surface_work / work - 1) < 0.05
+if comm.rank == 0:
+    print(f"Gmsh shell elastic energy: {surface_energy_twice / 2:.6e}")
+    print(f"Gmsh/parametric pressure work ratio: {surface_work / work:.6f}")
+
+V_surface_out = fem.functionspace(surface, ("Discontinuous Lagrange", 3, (3,)))
+surface_displacement = fem.Function(V_surface_out, dtype=PETSc.ScalarType)
+surface_displacement.interpolate(surface_solution.sub(0))
+surface_displacement.name = "displacement"
+with io.VTKFile(comm, out_folder / "shell_gmsh.pvd", "w") as output:
+    output.write_function(surface_displacement)
+# -
+
+# The mesh in `shell_gmsh.pvd` already represents the cylindrical surface.
+# In ParaView, apply **Warp By Vector** to `displacement` directly.

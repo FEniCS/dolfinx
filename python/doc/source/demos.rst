@@ -125,7 +125,8 @@ Structural mechanics
 * :doc:`demos/demo_shell` -- solve a linear cylindrical shell problem
   with displacement and director unknowns, including membrane, bending
   and transverse shear deformation, with partial selective reduced
-  integration to alleviate locking.
+  integration to alleviate locking. Compare an analytic parametrisation
+  with an embedded surface mesh created by Gmsh (requires Gmsh).
 
 
 Electromagnetics
