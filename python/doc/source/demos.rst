@@ -20,8 +20,6 @@ Getting started
 
 * :doc:`demos/demo_poisson` -- the recommended starting point: solve the
   Poisson equation with mixed Dirichlet/Neumann boundary conditions.
-* :doc:`demos/demo_helmholtz` -- solve the Helmholtz equation with both
-  real-valued and complex-valued formulations.
 * :doc:`demos/demo_biharmonic` -- solve the biharmonic equation using an
   interior penalty discontinuous Galerkin method.
 
@@ -115,6 +113,18 @@ Mesh generation, partitioning and parallel data
   mesh with mixed cell topology (in development, serial only).
 * :doc:`demos/demo_manifold` -- see *Mixed and hybridised formulations*:
   extract a surface mesh from a Gmsh volume mesh and orient its cells.
+* :doc:`demos/demo_helmholtz` -- see *Acoustics and wave scattering*:
+  build an exterior scattering domain with Gmsh from Boolean geometry,
+  using a mesh size field and curved cells.
+
+
+Acoustics and wave scattering
+-----------------------------
+
+* :doc:`demos/demo_helmholtz` -- solve the Helmholtz equation for the
+  sound scattered by rigid obstacles, with a complex-valued formulation
+  and an approximate radiation condition on the truncated domain, and
+  verify it against a series solution (requires Gmsh).
 
 
 Electromagnetics
@@ -143,7 +153,6 @@ PETSc scalars.
    :maxdepth: 1
 
    demos/demo_poisson.md
-   demos/demo_helmholtz.md
    demos/demo_biharmonic.md
    demos/demo_mixed-poisson.md
    demos/demo_manifold.md
@@ -152,6 +161,7 @@ PETSc scalars.
    demos/demo_hdg.md
    demos/demo_static-condensation.md
    demos/demo_cahn-hilliard.md
+   demos/demo_helmholtz.md
    demos/demo_half-loaded-waveguide.md
    demos/demo_scattering-boundary-conditions.md
    demos/demo_pml.md
