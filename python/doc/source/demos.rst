@@ -57,6 +57,9 @@ Time-dependent and nonlinear problems
 
 * :doc:`demos/demo_cahn-hilliard` -- solve the time-dependent, nonlinear
   Cahn-Hilliard equation with a Newton solver.
+* :doc:`demos/demo_snap-through` -- trace the snap-through buckling of a
+  hyperelastic arch past a limit point, using PETSc's ``SNESNEWTONAL``
+  arc-length continuation solver.
 * :doc:`demos/demo_navier-stokes` -- time-step the semi-implicit
   divergence-conforming Navier-Stokes scheme (see also *Mixed and
   hybridised formulations*).
@@ -146,6 +149,7 @@ PETSc scalars.
    demos/demo_hdg.md
    demos/demo_static-condensation.md
    demos/demo_cahn-hilliard.md
+   demos/demo_snap-through.md
    demos/demo_half-loaded-waveguide.md
    demos/demo_scattering-boundary-conditions.md
    demos/demo_pml.md
