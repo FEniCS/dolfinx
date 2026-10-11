@@ -460,8 +460,11 @@ for step in range(num_steps):
 
     # Start the solve from a linear extrapolation of the last two steps
     # rather than from the last one. Two vector operations, and Newton
-    # needs roughly one iteration per step fewer
-    if step > 0:
+    # needs roughly one iteration per step fewer. It takes two solved
+    # steps to extrapolate from: only $c$ is given at $t = 0$, and
+    # $\mu$ there is the zero it was initialised with, so neither is
+    # extrapolated until the second step
+    if step > 1:
         c.x.array[:] = 2.0 * c0.x.array - c_prev
         mu.x.array[:] = 2.0 * mu0.x.array - mu_prev
 
@@ -533,13 +536,15 @@ if msh.comm.rank == 0:
 # take the same Newton steps, 116 to 118, and agree to twelve
 # significant figures.
 #
-# The matched approximation is the worse of the two on the coarsest
-# mesh and the better by a factor of two and a half on the finest. Its
-# iteration count rises by a quarter over a fifty-six-fold increase in
-# problem size, which is what the $[1/2, 1]$ bound allows, whereas
-# the automatic approximation nearly triples. A reader who
-# stopped at 71 874 unknowns would draw the opposite conclusion; the
-# crossover is at about $2 \times 10^{5}$.
+# The matched approximation needs more iterations than `selfp` on the
+# coarsest mesh, 13.8 against 9.0, and fewer on the finest, 17.2 against
+# 25.7. Its iteration count rises by a quarter over a fifty-six-fold
+# increase in problem size, which is what the $[1/2, 1]$ bound allows,
+# whereas the automatic approximation nearly triples; the two cross at
+# about $2 \times 10^{5}$ unknowns. In wall-clock terms the matched
+# approximation is ahead at every size, by 30% at the coarsest mesh and
+# by a factor of two and a third at the finest, because an application
+# of it is cheaper even where it converges more slowly.
 #
 # The cost of an application explains the rest. $M + aK$ is fixed, so
 # its multigrid hierarchy is built once for the whole run, whereas

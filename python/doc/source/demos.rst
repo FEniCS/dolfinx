@@ -58,8 +58,8 @@ Time-dependent and nonlinear problems
 * :doc:`demos/demo_cahn-hilliard` -- solve the time-dependent, nonlinear
   Cahn-Hilliard equation with a Newton solver.
 * :doc:`demos/demo_cahn-hilliard-block` -- solve the same equation with
-  a Schur complement block preconditioner whose iteration count does not
-  grow with the mesh, driving PETSc's ``SNES`` directly.
+  a Schur complement block preconditioner whose iteration count barely
+  moves as the mesh is refined, driving PETSc's ``SNES`` directly.
 * :doc:`demos/demo_navier-stokes` -- time-step the semi-implicit
   divergence-conforming Navier-Stokes scheme (see also *Mixed and
   hybridised formulations*).
