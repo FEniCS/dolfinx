@@ -130,8 +130,10 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
     if (rank == 0)
     {
       for (std::int64_t i = 0; i < comm_size + 1; i++)
+      {
         x.insert(x.end(), {static_cast<T>(i) / comm_size, static_cast<T>(i) + 1,
                            static_cast<T>(2. * i + comm_size)});
+      }
       for (std::int64_t i = 0; i < 2 * comm_size; i++)
       {
         auto div = std::div(i, static_cast<std::int64_t>(2));

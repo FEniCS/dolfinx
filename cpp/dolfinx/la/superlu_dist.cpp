@@ -140,8 +140,10 @@ std::vector<T> matrix_values(const MatrixCSR<T>& A)
       for (std::int64_t j = A_rowptr[i]; j < A_rowptr[i + 1]; ++j)
       {
         for (int i1 = 0; i1 < bs[1]; ++i1)
+        {
           flattened_values[pos++]
               = A_values[j * bs[0] * bs[1] + i0 * bs[1] + i1];
+        }
       }
     }
   }
@@ -631,8 +633,10 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
 
   // Warn if Factor is DOFACT but solve already appears to be initialised.
   if (_options->Fact == DOFACT && _options->SolveInitialized == YES)
+  {
     spdlog::warn("Extra call to solve with option Fact set to DOFACT. "
                  "This leads to incorrect results; try FACTORED.");
+  }
 
   int_t m_loc
       = static_cast<NRformat_loc*>(_superlu_matA->supermatrix()->Store)->m_loc;

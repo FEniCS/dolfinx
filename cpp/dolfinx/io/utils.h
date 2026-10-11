@@ -97,8 +97,10 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
       auto it = std::find(entity_layout.begin(), entity_layout.end(),
                           vertex_dofs[i]);
       if (it != entity_layout.end())
+      {
         entity_vertex_dofs.push_back(
             std::ranges::distance(entity_layout.begin(), it));
+      }
     }
 
     const std::size_t num_vert_per_e
