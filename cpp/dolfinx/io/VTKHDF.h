@@ -48,6 +48,19 @@ template <std::floating_point U>
 void write_mesh(const std::filesystem::path& filename,
                 const mesh::Mesh<U>& mesh)
 {
+  const int tdim = mesh.topology()->dim();
+  std::vector<mesh::CellType> cell_types = mesh.topology()->entity_types(tdim);
+
+  // Mapped before the file is opened so that an unsupported cell layout
+  // throws on every rank before any collective IO has happened
+  std::vector<std::int8_t> vtk_types;
+  vtk_types.reserve(cell_types.size());
+  for (std::size_t i = 0; i < cell_types.size(); ++i)
+  {
+    vtk_types.push_back(cells::get_vtk_cell_type(
+        cell_types[i], tdim, mesh.geometry().cmaps().at(i).dim()));
+  }
+
   hdf5::Handle h5file(hdf5::open_file(mesh.comm(), filename, "w", true),
                       H5Fclose);
 
@@ -62,11 +75,7 @@ void write_mesh(const std::filesystem::path& filename,
   }
 
   // Extract topology information for each cell type
-  std::vector<mesh::CellType> cell_types
-      = mesh.topology()->entity_types(mesh.topology()->dim());
-
-  std::vector cell_index_maps
-      = mesh.topology()->index_maps(mesh.topology()->dim());
+  std::vector cell_index_maps = mesh.topology()->index_maps(tdim);
   std::vector<std::int32_t> num_cells;
   std::vector<std::int64_t> num_cells_global;
   for (auto& im : cell_index_maps)
@@ -112,9 +121,8 @@ void write_mesh(const std::filesystem::path& filename,
                               global_dm.end());
     topology_offsets.insert(topology_offsets.end(), g_dofmap.extent(0),
                             g_dofmap.extent(1));
-    vtkcelltypes.insert(
-        vtkcelltypes.end(), cell_index_maps[i]->size_local(),
-        cells::get_vtk_cell_type(cell_types[i], mesh.topology()->dim()));
+    vtkcelltypes.insert(vtkcelltypes.end(), cell_index_maps[i]->size_local(),
+                        vtk_types[i]);
   }
 
   // Create topo_offsets
