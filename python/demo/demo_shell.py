@@ -331,18 +331,20 @@ def write_shell_vtkhdf(filename: Path, displacement: fem.Function, coordinates: 
     start = index_map.local_range[0]
     num_cells = source.topology.index_map(source.topology.dim).size_local
     cells = V_output.dofmap.list[:num_cells].astype(np.int64) + start
-    coordinate_element = element(
-        "Lagrange",
-        source.basix_cell(),
-        3,
-        lagrange_variant=basix.LagrangeVariant.equispaced,
-        shape=(3,),
-        dtype=default_real_type,
+    output_domain = ufl.Mesh(
+        element(
+            "Lagrange",
+            source.basix_cell(),
+            3,
+            lagrange_variant=basix.LagrangeVariant.equispaced,
+            shape=(3,),
+            dtype=default_real_type,
+        )
     )
     output_mesh = mesh.create_mesh(
         source.comm,
         cells,
-        coordinate_element,
+        output_domain,
         coordinates[:num_points],
         partitioner=mesh.create_geometric_cell_partitioner(keep_cells_on_rank),
     )
