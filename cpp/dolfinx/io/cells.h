@@ -183,24 +183,25 @@ std::vector<std::int64_t> apply_permutation(std::span<const std::int64_t> cells,
                                             std::array<std::size_t, 2> shape,
                                             std::span<const std::uint16_t> p);
 
-/// @brief Get VTK cell identifier.
+/// @brief Get the VTK cell identifier for a cell type and node layout.
 ///
-/// @param[in] cell Cell type.
-/// @param[in] dim Topological dimension of the cell.
-/// @note Pyramids are assumed linear. Use the overload taking the node
-/// count to select the type for a particular layout.
-/// @throws std::invalid_argument If prism or pyramid facets are requested.
+/// Inverse of ::vtk_to_dolfinx for the layouts that VTK can express.
+///
+/// @param[in] cell Cell type to label. To label an entity of a cell,
+/// pass the entity's own cell type, e.g. from
+/// mesh::cell_entity_type.
+/// @param[in] num_nodes Number of nodes in the cell. It must be a
+/// layout that VTK's type for `cell` can express and that round-trips
+/// through ::vtk_to_dolfinx, which constrains only pyramids: VTK has an
+/// arbitrary-degree Lagrange type for every other shape, but for the
+/// pyramid only a linear one and a 13-node serendipity quadratic one
+/// that basix cannot express. Only the linear pyramid is accepted.
+/// @note Prism and pyramid facets are not all of one type, so no single
+/// identifier labels a facet set; mesh::entities_to_geometry rejects
+/// that case.
 /// @return VTK cell identifier.
-std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim);
-
-/// @brief Get VTK cell identifier for a cell node layout.
-/// @param[in] cell Cell type.
-/// @param[in] dim Topological dimension of the cell.
-/// @param[in] num_nodes Number of nodes per cell.
-/// @return VTK cell identifier.
-/// @throws std::invalid_argument If the pyramid layout is unsupported or
-/// prism or pyramid facets are requested.
-std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim, int num_nodes);
+/// @throws std::invalid_argument If VTK has no type for the layout.
+std::int8_t get_vtk_cell_type(mesh::CellType cell, int num_nodes);
 
 /// @brief Get DOLFINx cell type and degree from VTK cell type.
 ///

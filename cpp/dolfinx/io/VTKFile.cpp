@@ -161,23 +161,21 @@ void add_data(std::string_view name,
 /// Add mesh geometry and topology data to a pugixml node. This function
 /// adds the Points and Cells nodes to the input node.
 /// @param[in] x Coordinates of the points, row-major storage
-/// @param[in] xshape The shape of `x`
 /// @param[in] x_id Unique global index for each point
 /// @param[in] x_ghost Flag indicating if a point is a owned (0) or is a
 /// ghost (1)
 /// @param[in] cells The mesh topology
+/// @param[in] cshape The shape of `cells`
 /// @param[in] cellmap The index map for the cells
 /// @param[in] celltype The cell type
-/// @param[in] tdim Topological dimension of the cells
 /// @param[in,out] piece_node The XML node to add data to
 template <typename U>
-void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
-              std::span<const std::int64_t> x_id,
+void add_mesh(std::span<const U> x, std::span<const std::int64_t> x_id,
               std::span<const std::uint8_t> x_ghost,
               std::span<const std::int64_t> cells,
               std::array<std::size_t, 2> cshape,
               const common::IndexMap& cellmap, mesh::CellType celltype,
-              int tdim, pugi::xml_node& piece_node)
+              pugi::xml_node& piece_node)
 {
   // -- Add geometry (points)
 
@@ -219,7 +217,7 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   type_node.append_attribute("type") = "Int8";
   type_node.append_attribute("Name") = "types";
   type_node.append_attribute("format") = "ascii";
-  int vtk_celltype = io::cells::get_vtk_cell_type(celltype, tdim, cshape[1]);
+  int vtk_celltype = io::cells::get_vtk_cell_type(celltype, cshape[1]);
   {
     const std::string cell_type_str = std::format("{} ", vtk_celltype);
     std::string ss;
@@ -438,9 +436,8 @@ void write_function(
   mesh::CellType cell_type = topology0->cell_type();
   // Add mesh data to "Piece" node
   int tdim = topology0->dim();
-  add_mesh<U>(x, xshape, x_id, x_ghost, cells, cshape,
-              *topology0->index_map(tdim), cell_type, topology0->dim(),
-              piece_node);
+  add_mesh<U>(x, x_id, x_ghost, cells, cshape, *topology0->index_map(tdim),
+              cell_type, piece_node);
 
   // FIXME: is this actually setting the first?
   // Set last scalar/vector/tensor Functions in u to be the 'active'
@@ -813,9 +810,8 @@ void io::VTKFile::write(const mesh::Mesh<U>& mesh, double t)
   std::array<std::size_t, 2> xshape = {geometry.x().size() / 3, 3};
   std::vector<std::uint8_t> x_ghost(xshape[0], 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
-  add_mesh(geometry.x(), xshape, geometry.input_global_indices(), x_ghost,
-           cells, cshape, *topology->index_map(tdim), cell_type,
-           topology->dim(), piece_node);
+  add_mesh(geometry.x(), geometry.input_global_indices(), x_ghost, cells,
+           cshape, *topology->index_map(tdim), cell_type, piece_node);
 
   // Create filepath for a .vtu file
   auto create_vtu_path = [file_root = _filename.parent_path(),
