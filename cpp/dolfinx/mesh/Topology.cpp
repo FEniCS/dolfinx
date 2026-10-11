@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg, Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -1844,5 +1844,18 @@ mesh::compute_mixed_cell_pairs(const Topology& topology, CellType facet_type)
   }
 
   return facet_pair_lists;
+}
+//-----------------------------------------------------------------------------
+md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
+mesh::entity_permutations(Topology& topology, int dim, CellType cell_type)
+{
+  if (dim == topology.dim())
+    return {};
+
+  topology.create_entity_permutations(dim);
+  const std::vector<std::uint8_t>& p = topology.get_entity_permutations(dim);
+  const int num_entities_per_cell = cell_num_entities(cell_type, dim);
+  return md::mdspan(p.data(), p.size() / num_entities_per_cell,
+                    num_entities_per_cell);
 }
 //-----------------------------------------------------------------------------
