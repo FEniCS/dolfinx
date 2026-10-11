@@ -50,12 +50,14 @@ TEST_CASE("PETSc wrappers reject null handles", "[petsc]")
   // PetscObjectReference, where PetscValidHeaderSpecific is a no-op in
   // optimised PETSc builds. The null check happens before inc_ref_count
   // is examined, so both values must be rejected.
-  CHECK_THROWS_AS(la::petsc::Vector(nullptr, true), std::runtime_error);
-  CHECK_THROWS_AS(la::petsc::Vector(nullptr, false), std::runtime_error);
-  CHECK_THROWS_AS(la::petsc::Matrix(nullptr, true), std::runtime_error);
-  CHECK_THROWS_AS(la::petsc::Matrix(nullptr, false), std::runtime_error);
-  CHECK_THROWS_AS(la::petsc::KrylovSolver(nullptr, true), std::runtime_error);
-  CHECK_THROWS_AS(la::petsc::KrylovSolver(nullptr, false), std::runtime_error);
+  CHECK_THROWS_AS(la::petsc::Vector(nullptr, true), std::invalid_argument);
+  CHECK_THROWS_AS(la::petsc::Vector(nullptr, false), std::invalid_argument);
+  CHECK_THROWS_AS(la::petsc::Matrix(nullptr, true), std::invalid_argument);
+  CHECK_THROWS_AS(la::petsc::Matrix(nullptr, false), std::invalid_argument);
+  CHECK_THROWS_AS(la::petsc::KrylovSolver(nullptr, true),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(la::petsc::KrylovSolver(nullptr, false),
+                  std::invalid_argument);
 }
 
 TEST_CASE("PETSc wrappers manage reference counts", "[petsc]")

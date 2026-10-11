@@ -196,7 +196,7 @@ Form<T, U> create_form_factory(
   {
     if (integral.coordinate_element_hash != geo.cmaps().at(cell_idx).hash())
     {
-      throw std::runtime_error(std::format(
+      throw std::invalid_argument(std::format(
           "Generated integral geometry element does not match mesh geometry: "
           "{}, {}",
           integral.coordinate_element_hash, geo.cmaps().at(cell_idx).hash()));
@@ -503,7 +503,7 @@ Form<T, U> create_form(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error(
+      throw std::out_of_range(
           std::format("Form coefficient \"{}\" not provided.", name));
     }
   }
@@ -515,8 +515,10 @@ Form<T, U> create_form(
     if (auto it = constants.find(name); it != constants.end())
       const_map.push_back(it->second);
     else
-      throw std::runtime_error(
+    {
+      throw std::out_of_range(
           std::format("Form constant \"{}\" not provided.", name));
+    }
   }
 
   return create_form_factory({ufcx_form}, spaces, coeff_map, const_map,

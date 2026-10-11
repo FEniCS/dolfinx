@@ -1,4 +1,5 @@
 // Copyright (C) 2026 Chris Richardson
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -11,6 +12,7 @@
 #include <dolfinx/la/matmul.h>
 #include <mpi.h>
 #include <spdlog/spdlog.h>
+#include <stdexcept>
 
 #include <algorithm>
 #include <cassert>
@@ -137,7 +139,7 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   if constexpr (BS0 != -1 or BS1 != -1)
   {
     if (bs[0] != BS0 or bs[1] != BS1)
-      throw std::runtime_error("Invalid template parameters/block size");
+      throw std::invalid_argument("Invalid template parameters/block size");
   }
 
   auto row_map_A = A.index_map(0); // row map

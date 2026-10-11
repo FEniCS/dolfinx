@@ -775,7 +775,7 @@ def _mesh_from_ufl_domain(domain: ufl.Mesh) -> Mesh:
         return cargo
     if isinstance(cargo, _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64):
         return Mesh(cargo, domain)
-    raise RuntimeError("Expecting to find a Mesh in the UFL domain.")
+    raise TypeError("Expecting to find a Mesh in the UFL domain.")
 
 
 class MeshTags:
@@ -1105,7 +1105,7 @@ def transfer_meshtag(
         )
         return MeshTags(mt)
     else:
-        raise RuntimeError("MeshTag transfer is supported on cells or facets.")
+        raise ValueError("MeshTag transfer is supported on cells or facets.")
 
 
 def uniform_refine(
@@ -1245,10 +1245,10 @@ def _get_mesh_partitioner(
         return partitioner_fn, None
     if isinstance(partitioner, tuple):
         if len(partitioner) != 2:
-            raise TypeError("partitioner tuple must have two entries.")
+            raise ValueError("partitioner tuple must have two entries.")
         partitioner_fn, cell_weights = partitioner
         if partitioner_fn is None:
-            raise TypeError("The partitioner in the tuple must not be None.")
+            raise ValueError("The partitioner in the tuple must not be None.")
         return _wrap_partitioner(partitioner_fn), cell_weights
     return _wrap_partitioner(partitioner), None
 
@@ -1372,7 +1372,7 @@ def _create_mesh_coordinate_element(
         return cmap, domain
     if isinstance(e, _CoordinateElement):
         return e, None
-    raise ValueError(f"Unsupported element type {type(e)}.")
+    raise TypeError(f"Unsupported element type {type(e)}.")
 
 
 def create_mesh(
@@ -1530,7 +1530,7 @@ def meshtags(
     elif values.dtype == np.float64:
         ftype = _cpp.mesh.MeshTags_float64
     else:
-        raise NotImplementedError(f"Type {values.dtype} not supported.")
+        raise TypeError(f"Type {values.dtype} not supported.")
 
     return MeshTags(
         ftype(msh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values, name)
@@ -1602,6 +1602,8 @@ def create_interval(
     Returns:
         An interval mesh.
     """
+    if not (np.issubdtype(dtype, np.float32) or np.issubdtype(dtype, np.float64)):
+        raise TypeError(f"Unsupported mesh geometry float type: {dtype}")
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.graph.partitioner()
     partitioner = _wrap_partitioner(partitioner)
@@ -1618,10 +1620,8 @@ def create_interval(
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner, gdim)  # type: ignore[arg-type]
-    elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner, gdim)  # type: ignore[arg-type]
     else:
-        raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
+        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner, gdim)  # type: ignore[arg-type]
 
     return Mesh(msh, domain)
 
@@ -1688,6 +1688,8 @@ def create_rectangle(
     Returns:
         A mesh of a rectangle.
     """
+    if not (np.issubdtype(dtype, np.float32) or np.issubdtype(dtype, np.float64)):
+        raise TypeError(f"Unsupported mesh geometry float type: {dtype}")
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.graph.partitioner()
     partitioner = _wrap_partitioner(partitioner)
@@ -1713,7 +1715,7 @@ def create_rectangle(
             gdim,
             ghost_mode,
         )
-    elif np.issubdtype(dtype, np.float64):
+    else:
         msh = _cpp.mesh.create_rectangle_float64(
             comm,
             points,  # type: ignore[arg-type]
@@ -1724,8 +1726,6 @@ def create_rectangle(
             gdim,
             ghost_mode,
         )
-    else:
-        raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
 
     return Mesh(msh, domain)
 
@@ -1801,6 +1801,8 @@ def create_box(
     Returns:
         A mesh of a box domain.
     """
+    if not (np.issubdtype(dtype, np.float32) or np.issubdtype(dtype, np.float64)):
+        raise TypeError(f"Unsupported mesh geometry float type: {dtype}")
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.graph.partitioner()
     partitioner = _wrap_partitioner(partitioner)
@@ -1817,10 +1819,8 @@ def create_box(
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner, ghost_mode)  # type: ignore[arg-type]
-    elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner, ghost_mode)  # type: ignore[arg-type]
     else:
-        raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
+        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner, ghost_mode)  # type: ignore[arg-type]
 
     return Mesh(msh, domain)
 
@@ -1940,7 +1940,7 @@ def create_geometry(
             commonly from a mesh input file.
     """
     if x.dtype not in (np.float32, np.float64):
-        raise ValueError(f"Unknown floating type for geometry, got: {x.dtype}")
+        raise TypeError(f"Unknown floating type for geometry, got: {x.dtype}")
     if (dtype := np.dtype(element.dtype)) != x.dtype:
         raise ValueError(f"Mismatch in x dtype ({x.dtype}) and coordinate element ({dtype})")
 
@@ -1958,7 +1958,7 @@ def create_geometry(
             )
         )
     else:
-        raise ValueError(f"Unknown floating type for coordinate element, got: {dtype}")
+        raise TypeError(f"Unknown floating type for coordinate element, got: {dtype}")
 
 
 def transfer_meshtags_to_submesh(
@@ -1985,8 +1985,9 @@ def transfer_meshtags_to_submesh(
     dim = entity_tag.dim
     sub_tdim = submesh.topology.dim
     if dim > sub_tdim:
-        raise RuntimeError(
-            f"Cannot transfer meshtags of dimension {dim} to submesh with topological dimension"
+        raise ValueError(
+            f"Cannot transfer meshtags of dimension {dim} to submesh with topological "
+            f"dimension {sub_tdim}."
         )
 
     submesh.topology.create_connectivity(sub_tdim, sub_tdim)
@@ -2003,9 +2004,7 @@ def transfer_meshtags_to_submesh(
     elif dtype == np.float64:
         ftype = _cpp.mesh.transfer_meshtags_to_submesh_float64
     else:
-        raise NotImplementedError(
-            f"MeshTags with dtype {dtype} not supported for transfer to submesh."
-        )
+        raise TypeError(f"MeshTags with dtype {dtype} not supported for transfer to submesh.")
     cpp_tag = ftype(
         entity_tag._cpp_object,  # type: ignore[arg-type]
         submesh.topology._cpp_object,
@@ -2025,6 +2024,9 @@ def create_point_mesh(comm: _MPI.Comm, points: npt.NDArray[np.float32 | np.float
         comm: MPI communicator to create the mesh on.
         points: Points local to the process in the mesh.
     """
+    if points.dtype not in (np.float32, np.float64):
+        raise TypeError(f"Unsupported dtype for mesh {points.dtype}")
+
     # Create topology which only has a 0->0 connectivity and dim 0 entities
     cells = np.arange(points.shape[0], dtype=np.int32).reshape(-1, 1)
     num_nodes_local = cells.shape[0]
@@ -2050,6 +2052,6 @@ def create_point_mesh(comm: _MPI.Comm, points: npt.NDArray[np.float32 | np.float
     elif isinstance(cpp_geometry, _cpp.mesh.Geometry_float32):
         cpp_mesh = _cpp.mesh.Mesh_float32(comm, topology, cpp_geometry)
     else:
-        raise RuntimeError(f"Unsupported dtype for mesh {points.dtype}")
+        raise TypeError(f"Unsupported dtype for mesh {points.dtype}")
 
     return Mesh(cpp_mesh, domain=ufl.Mesh(e))

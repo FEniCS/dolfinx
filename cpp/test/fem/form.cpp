@@ -19,6 +19,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
+#include <stdexcept>
 
 using namespace dolfinx;
 
@@ -27,7 +28,8 @@ namespace
 void test_form_cmap_compat(const auto& V)
 {
   fem::create_form<double>(*form_expr_L1, {V}, {}, {}, {}, {});
-  CHECK_THROWS(fem::create_form<double>(*form_expr_L2, {V}, {}, {}, {}, {}));
+  CHECK_THROWS_AS(fem::create_form<double>(*form_expr_L2, {V}, {}, {}, {}, {}),
+                  std::invalid_argument);
 }
 
 void test_expression_cmap_compat(const auto& V)

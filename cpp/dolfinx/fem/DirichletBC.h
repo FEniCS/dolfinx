@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2024 Michal Habera, Anders Logg, Garth N. Wells, Jørgen
+// Copyright (C) 2007-2026 Michal Habera, Anders Logg, Garth N. Wells, Jørgen
 // S.Dokken and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -631,8 +631,8 @@ public:
     if (!_dofs0.empty()
         and *std::ranges::max_element(_dofs0) >= (std::int32_t)markers.size())
     {
-      throw std::runtime_error("Marker array is too short for the boundary "
-                               "condition dofs.");
+      throw std::invalid_argument("Marker array is too short for the boundary "
+                                  "condition dofs.");
     }
 #endif
     for (std::int32_t idx : _dofs0)

@@ -86,7 +86,7 @@ Vec la::petsc::create_vector_wrap(const common::IndexMap& map, int bs,
   const std::vector<PetscInt> ghosts(map.ghosts().begin(), map.ghosts().end());
   if (x.size() < static_cast<std::size_t>(size_local) + bs * ghosts.size())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Array size is too small for the index map, including ghosts.");
   }
 
@@ -221,7 +221,7 @@ void la::petsc::scatter_local_vectors(
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
   if (x_b.size() != maps.size())
-    throw std::runtime_error("Mismatch in vector/map size.");
+    throw std::invalid_argument("Mismatch in vector/map size.");
 
   // Offset to the first ghost entry, i.e. the total owned size
   int offset_owned = 0;
@@ -436,7 +436,10 @@ petsc::Vector::Vector(const common::IndexMap& map, int bs)
 petsc::Vector::Vector(Vec x, bool inc_ref_count) : _x(x)
 {
   if (!_x)
-    throw std::runtime_error("PETSc Vec must be initialised before wrapping");
+  {
+    throw std::invalid_argument(
+        "PETSc Vec must be initialised before wrapping");
+  }
 
   if (inc_ref_count)
   {
@@ -539,7 +542,10 @@ petsc::Matrix::Matrix(MPI_Comm comm, const SparsityPattern& sp,
 petsc::Matrix::Matrix(Mat A, bool inc_ref_count) : _matA(A)
 {
   if (!_matA)
-    throw std::runtime_error("PETSc Mat must be initialised before wrapping");
+  {
+    throw std::invalid_argument(
+        "PETSc Mat must be initialised before wrapping");
+  }
 
   if (inc_ref_count)
   {
@@ -590,7 +596,7 @@ Vec petsc::Matrix::create_vector(std::size_t dim) const
     spdlog::error("Cannot initialize PETSc vector to match PETSc matrix. "
                   "Dimension must be 0 or 1, not {}",
                   dim);
-    throw std::runtime_error("Invalid dimension");
+    throw std::out_of_range("Invalid dimension");
   }
 
   return x;
@@ -630,7 +636,10 @@ petsc::KrylovSolver::KrylovSolver(MPI_Comm comm) : _ksp(nullptr)
 petsc::KrylovSolver::KrylovSolver(KSP ksp, bool inc_ref_count) : _ksp(ksp)
 {
   if (!_ksp)
-    throw std::runtime_error("PETSc KSP must be initialised before wrapping");
+  {
+    throw std::invalid_argument(
+        "PETSc KSP must be initialised before wrapping");
+  }
 
   if (inc_ref_count)
   {

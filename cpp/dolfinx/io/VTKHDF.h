@@ -1,4 +1,5 @@
 // Copyright (C) 2024-2025 Chris Richardson, Jørgen S. Dokken
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -481,8 +482,9 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   // Remove coordinates if gdim != 3
   if (gdim > 3)
   {
-    throw std::runtime_error("Geometric dimension must be less than or equal "
-                             "to 3.");
+    throw std::invalid_argument(
+        "Geometric dimension must be less than or equal "
+        "to 3.");
   }
   std::vector<U> points_pruned((local_point_range[1] - local_point_range[0])
                                * gdim);

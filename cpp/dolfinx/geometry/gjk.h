@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2026 Chris Richardson and Jørgen S. Dokken
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -523,7 +524,7 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
                       std::span<const T> q, int num_threads)
 {
   if (num_threads <= 0)
-    throw std::runtime_error("num_threads must be >= 1.");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   std::size_t total_size = bodies.size();
   num_threads

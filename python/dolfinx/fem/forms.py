@@ -646,7 +646,7 @@ def extract_function_spaces(
 
         return list(unique_spaces(V if index == 0 else V.transpose()))
 
-    raise RuntimeError("Unsupported array of forms")
+    raise ValueError("Unsupported array of forms")
 
 
 @dataclass
@@ -712,7 +712,7 @@ def form_cpp_creator(
     elif np.issubdtype(dtype, np.complex128):
         return _cpp.fem.create_form_complex128
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise TypeError(f"Type {dtype} not supported.")
 
 
 def create_form(
@@ -745,6 +745,9 @@ def create_form(
 
     Return:
         A Form object.
+
+    Raises:
+        KeyError: A coefficient or constant is missing from its map.
     """
     if entity_maps is None:
         _entity_maps = []
@@ -765,7 +768,7 @@ def create_form(
         try:
             coefficients[f"w{c}"] = coefficient_map[original_coeff]._cpp_object
         except KeyError as err:
-            raise RuntimeError(f"Missing coefficient {original_coeff}") from err
+            raise KeyError(f"Missing coefficient {original_coeff}") from err
 
     # Extract all constants of the compiled form in correct order
     # NOTE: Constants are not eliminated
@@ -782,7 +785,7 @@ def create_form(
             mapped_constant = constant_map[constant]
             constants[f"c{counter}"] = mapped_constant._cpp_object
         except KeyError as err:
-            raise RuntimeError(f"Missing constant {constant}") from err
+            raise KeyError(f"Missing constant {constant}") from err
 
     ftype = form_cpp_creator(form.dtype)
     f = ftype(

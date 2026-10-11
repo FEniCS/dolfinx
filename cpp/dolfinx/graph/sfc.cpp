@@ -314,10 +314,10 @@ std::uint64_t hilbert_key(std::array<std::uint32_t, 3> c, int gdim)
 std::size_t check_point_coordinates(std::span<const double> x, int gdim)
 {
   if (gdim < 1 or gdim > 3)
-    throw std::runtime_error("Geometric dimension must be 1, 2 or 3.");
+    throw std::invalid_argument("Geometric dimension must be 1, 2 or 3.");
   if (x.size() % gdim != 0)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Point coordinate array size is not a multiple of gdim.");
   }
 
@@ -403,10 +403,10 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
 {
   const std::size_t num_points = check_point_coordinates(x, gdim);
   if (nparts < 1)
-    throw std::runtime_error("Number of partitions must be > 0.");
+    throw std::invalid_argument("Number of partitions must be > 0.");
   if (weights and weights->size() != num_points)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Number of point weights does not match the number of points.");
   }
 
