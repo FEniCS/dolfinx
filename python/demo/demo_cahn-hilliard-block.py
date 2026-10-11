@@ -127,9 +127,8 @@ import numpy as np
 import ufl
 from dolfinx import fem, io, mesh
 from dolfinx.fem.petsc import (
-    assemble_jacobian,
     assemble_matrix,
-    assemble_residual,
+    assemble_vector,
     assign,
     create_matrix,
     create_vector,
@@ -240,24 +239,60 @@ A = create_matrix(J, kind="nest")
 b = create_vector([V, W], kind="nest")
 x = create_vector([V, W], kind="nest")
 
-# `SNES` is driven directly. {py:func}`assemble_residual
-# <dolfinx.fem.petsc.assemble_residual>` and {py:func}`assemble_jacobian
-# <dolfinx.fem.petsc.assemble_jacobian>` already have the signatures
-# `SNES` expects; everything else is passed through `kargs`.
+# `SNES` is driven directly, with the two callbacks written out. Each is
+# handed the point to evaluate at, and must assemble into the vector or
+# matrix it receives rather than one captured here: a line search
+# evaluates the residual in a work vector duplicated from `b`.
+#
+# `x` arrives with its ghost entries out of date, because the Krylov
+# solver has just updated only the owned entries. Bringing them forward
+# before copying into `c` and `mu` is what lets the forms, which read
+# ghost values when integrating over cells owned by another process, see
+# a consistent solution.
+#
+# The Cahn-Hilliard problem has no Dirichlet conditions -- the boundary
+# conditions are the natural ones -- so neither callback has to lift
+# columns or set constrained rows, and the residual reduces to
+# "assemble, then reverse-scatter the contributions each process made to
+# entries it does not own".
+
 
 # +
+def ghost_update(vec: PETSc.Vec, insert: PETSc.InsertMode, mode: PETSc.ScatterMode) -> None:
+    """Scatter between owned and ghost entries of each block."""
+    for sub in vec.getNestSubVecs():
+        sub.ghostUpdate(addv=insert, mode=mode)
+
+
+def residual(_snes: PETSc.SNES, x: PETSc.Vec, b: PETSc.Vec) -> None:
+    """Assemble the blocked residual at ``x`` into ``b``."""
+    ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+    assign(x, [c, mu])
+
+    for sub in b.getNestSubVecs():
+        with sub.localForm() as sub_local:
+            sub_local.set(0.0)
+    assemble_vector(b, F)
+
+    # Each process has contributed to entries owned by another; add
+    # those in, then publish the result back to the ghosts
+    ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
+    ghost_update(b, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+
+
+def jacobian(_snes: PETSc.SNES, x: PETSc.Vec, J_mat: PETSc.Mat, _P: PETSc.Mat) -> None:
+    """Assemble the blocked Jacobian at ``x`` into ``J_mat``."""
+    ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+    assign(x, [c, mu])
+
+    J_mat.zeroEntries()
+    assemble_matrix(J_mat, J)
+    J_mat.assemble()
+
+
 snes = PETSc.SNES().create(msh.comm)  # type: ignore[arg-type]
-snes.setFunction(
-    assemble_residual,  # type: ignore[arg-type]
-    b,
-    kargs={"u": [c, mu], "residual": F, "jacobian": J, "bcs": []},
-)
-snes.setJacobian(
-    assemble_jacobian,  # type: ignore[arg-type]
-    A,
-    None,
-    kargs={"u": [c, mu], "jacobian": J, "preconditioner": None, "bcs": []},
-)
+snes.setFunction(residual, b)
+snes.setJacobian(jacobian, A, None)
 # -
 
 # The solver options. The outer Krylov method is FGMRES because the
