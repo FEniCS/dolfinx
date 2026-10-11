@@ -279,6 +279,10 @@ if comm.rank == 0:
 #
 # Clamp the end $z=0$ and solve with the normal pressure load.
 # The work balance below uses the PSRI energy of the discrete problem.
+# It is an identity, so its residual measures the round-off of the
+# direct solve amplified by the conditioning of a thin shell. That
+# residual scales with the machine epsilon rather than its square root,
+# so give it a tolerance of its own.
 
 # +
 clamped = mesh.locate_entities_boundary(msh, 1, lambda x: np.isclose(x[1], 0.0))
@@ -287,6 +291,7 @@ bcs = [
     fem.dirichletbc(zero_u, fem.locate_dofs_topological((W.sub(0), V), 1, clamped), W.sub(0)),
     fem.dirichletbc(zero_beta, fem.locate_dofs_topological((W.sub(1), Q), 1, clamped), W.sub(1)),
 ]
+work_tolerance = 1e6 * np.finfo(default_real_type).eps
 load = ufl.inner(-pressure * normal, v) * dx
 problem = LinearProblem(a, load, bcs=bcs, petsc_options_prefix="demo_shell_", petsc_options=options)
 solution = problem.solve()
@@ -295,7 +300,7 @@ uh, betah = ufl.split(solution)
 energy_twice = integral(stiffness(uh, betah, uh, betah)).real
 work = integral(ufl.inner(-pressure * normal, uh) * dx).real
 assert np.isfinite(energy_twice) and energy_twice > 0
-assert abs(energy_twice - work) / energy_twice < tolerance
+assert abs(energy_twice - work) / energy_twice < work_tolerance
 if comm.rank == 0:
     print(f"Elastic energy: {energy_twice / 2:.6e}")
     print(f"Relative work balance error: {abs(energy_twice - work) / energy_twice:.3e}")
@@ -629,7 +634,7 @@ surface_energy_twice = integral(
 ).real
 surface_work = integral(ufl.inner(-pressure * n_surface, u_surface) * dx_surface).real
 assert np.isfinite(surface_energy_twice) and surface_energy_twice > 0
-assert abs(surface_energy_twice - surface_work) / surface_energy_twice < tolerance
+assert abs(surface_energy_twice - surface_work) / surface_energy_twice < work_tolerance
 if comm.rank == 0:
     print(f"Gmsh shell elastic energy: {surface_energy_twice / 2:.6e}")
     print(f"Gmsh surface area / CAD area: {surface_area / cad_area:.6f}")
