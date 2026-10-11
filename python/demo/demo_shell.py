@@ -16,7 +16,8 @@
 # clamped at one axial end, under inward normal pressure. It illustrates
 # an analytic surface parametrisation, a mixed displacement/director
 # space, and membrane, bending and transverse shear energies. A second
-# example starts from a Gmsh surface mesh embedded in three dimensions.
+# example uses a Gmsh surface mesh of a panel with a radial opening,
+# embedded in three dimensions and refined around the opening rim.
 # This demo requires Gmsh.
 #
 # The model includes transverse shear deformation and assumes small
@@ -377,31 +378,65 @@ write_shell_vtkhdf(
 # ## Starting from a Gmsh surface mesh
 #
 # Now mesh the physical cylinder directly, rather than its parameter
-# rectangle. Gmsh extrudes a circular arc along the axis and creates
-# quadratic triangles. The geometry is a polynomial approximation of the
+# rectangle. Gmsh uses OpenCASCADE to extrude a circular arc and cut
+# an opening with a radial cylindrical bore of radius $R/4$, centred at
+# $z=0.6L$. A distance-based size field refines an unstructured triangular
+# mesh around the opening. Upgrade the mesh to quadratic triangles.
+# The geometry is a polynomial approximation of the
 # CAD surface; its nodes lie on the cylinder, but points between nodes
 # need not. The mesh has topological dimension two and geometric
-# dimension three. The surface and clamped arc are physical groups.
+# dimension three. The surface, clamped arc and opening rim are physical
+# groups. The opening rim and the other outer edges remain traction-free.
 
 # +
 gmsh.initialize()
+cad_area = 0.0
 if comm.rank == 0:
-    gmsh.model.add("cylindrical_panel")
-    geo = gmsh.model.geo
-    center = geo.addPoint(0, 0, 0)
-    start = geo.addPoint(-R / np.sqrt(2), 0, R / np.sqrt(2))
-    end = geo.addPoint(R / np.sqrt(2), 0, R / np.sqrt(2))
-    arc = geo.addCircleArc(start, center, end)
-    geo.mesh.setTransfiniteCurve(arc, 13)
-    extruded = geo.extrude([(1, arc)], 0, length, 0, numElements=[20])
-    geo.synchronize()
-    surfaces = [tag for dim, tag in extruded if dim == 2]
+    gmsh.model.add("perforated_cylindrical_panel")
+    occ = gmsh.model.occ
+    center = occ.addPoint(0, 0, 0)
+    start = occ.addPoint(-R / np.sqrt(2), 0, R / np.sqrt(2))
+    end = occ.addPoint(R / np.sqrt(2), 0, R / np.sqrt(2))
+    arc = occ.addCircleArc(start, center, end)
+    extruded = occ.extrude([(1, arc)], 0, length, 0)
+    panel = [(dim, tag) for dim, tag in extruded if dim == 2]
+    bore = occ.addCylinder(0, 0.6 * length, 0, 0, 0, 2 * R, R / 4)
+    perforated, _ = occ.cut(panel, [(3, bore)])
+    occ.synchronize()
+    surfaces = [tag for dim, tag in perforated if dim == 2]
+    cad_area = sum(occ.getMass(2, tag) for tag in surfaces)
+    boundary = gmsh.model.getBoundary(perforated, oriented=False)
+    clamped_curves, opening_curves = [], []
+    for dim, tag in boundary:
+        _, y_min, _, _, y_max, _ = gmsh.model.getBoundingBox(dim, tag)
+        if np.isclose(y_min, 0, atol=1e-6) and np.isclose(y_max, 0, atol=1e-6):
+            clamped_curves.append(tag)
+        elif y_min > 1e-6 and y_max < length - 1e-6:
+            opening_curves.append(tag)
+    assert clamped_curves and opening_curves
     gmsh.model.addPhysicalGroup(2, surfaces, tag=1)
-    gmsh.model.addPhysicalGroup(1, [arc], tag=2)
+    gmsh.model.addPhysicalGroup(1, clamped_curves, tag=2)
+    gmsh.model.addPhysicalGroup(1, opening_curves, tag=3)
     gmsh.model.setPhysicalName(2, 1, "shell")
     gmsh.model.setPhysicalName(1, 2, "clamped")
+    gmsh.model.setPhysicalName(1, 3, "opening")
+
+    distance = gmsh.model.mesh.field.add("Distance")
+    gmsh.model.mesh.field.setNumbers(distance, "CurvesList", opening_curves)
+    gmsh.model.mesh.field.setNumber(distance, "Sampling", 100)
+    threshold = gmsh.model.mesh.field.add("Threshold")
+    gmsh.model.mesh.field.setNumber(threshold, "InField", distance)
+    gmsh.model.mesh.field.setNumber(threshold, "SizeMin", 0.04 * R)
+    gmsh.model.mesh.field.setNumber(threshold, "SizeMax", 0.13 * R)
+    gmsh.model.mesh.field.setNumber(threshold, "DistMin", 0.08 * R)
+    gmsh.model.mesh.field.setNumber(threshold, "DistMax", 0.35 * R)
+    gmsh.model.mesh.field.setAsBackgroundMesh(threshold)
+    gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
+    gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
+    gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 0)
     gmsh.model.mesh.generate(2)
     gmsh.model.mesh.setOrder(2)
+cad_area = comm.bcast(cad_area, root=0)
 mesh_data = gmshio.model_to_mesh(gmsh.model, comm, 0, gdim=3)
 gmsh.finalize()
 surface = mesh_data.mesh
@@ -505,13 +540,13 @@ def surface_stiffness(u, theta, v, psi):
 #
 # Check surface area, curvature and a rigid rotation, including drilling.
 # Clamp the tagged arc and apply the same inward pressure as before.
-# The two solutions use different rotation spaces and approximate
-# geometries; compare their integrated pressure work as a consistency
-# check at this resolution, rather than expecting identical solutions.
+# Compare the integrated mesh area with the OpenCASCADE surface area.
+# The perforated panel has a different domain from the first example.
 
 # +
 surface_area = integral(1 * dx_surface).real
-assert abs(surface_area / (np.pi * R * length / 2) - 1) < 1e-4
+assert abs(surface_area / cad_area - 1) < 1e-4
+assert 0 < cad_area < np.pi * R * length / 2
 curvature_squared = integral(ufl.inner(ufl.grad(n_surface), ufl.grad(n_surface)) * dx_surface).real
 assert abs(curvature_squared * R**2 / surface_area - 1) < 0.01
 rigid_surface = surface_strains(ufl.cross(omega, X), omega)
@@ -551,10 +586,9 @@ surface_energy_twice = integral(
 surface_work = integral(ufl.inner(-pressure * n_surface, u_surface) * dx_surface).real
 assert np.isfinite(surface_energy_twice) and surface_energy_twice > 0
 assert abs(surface_energy_twice - surface_work) / surface_energy_twice < tolerance
-assert abs(surface_work / work - 1) < 0.05
 if comm.rank == 0:
     print(f"Gmsh shell elastic energy: {surface_energy_twice / 2:.6e}")
-    print(f"Gmsh/parametric pressure work ratio: {surface_work / work:.6f}")
+    print(f"Gmsh surface area / CAD area: {surface_area / cad_area:.6f}")
 
 V_surface_out = fem.functionspace(surface, output_element)
 surface_displacement = fem.Function(V_surface_out, dtype=PETSc.ScalarType)
