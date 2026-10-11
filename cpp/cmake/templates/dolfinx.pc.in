@@ -10,6 +10,8 @@ Name: DOLFINx
 Description: The finite element problem solving environment of the FEniCS Project
 Version: @DOLFINX_VERSION@
 Requires: @PKG_REQUIRES@
+Requires.private: @PKG_REQUIRES_PRIVATE@
 Conflicts:
 Libs: @PKG_LINKFLAGS@ -L${libdir} -ldolfinx
+Libs.private: @PKG_LIBS_PRIVATE@
 Cflags: @PKG_CXXFLAGS@ ${definitions} -I${includedir} @PKG_INCLUDES@
