@@ -360,7 +360,11 @@ snes.setJacobian(jacobian, A, None)
 # `1e-2` buys no outer iterations and costs time.
 
 # +
-amg = "hypre" if PETSc.Sys().hasExternalPackage("hypre") else "gamg"
+# BoomerAMG where PETSc has hypre, GAMG otherwise. hypre is also passed
+# over in a complex build, where its parallel coarsening corrupts memory;
+# the problem is real-valued whatever PETSc's scalar type is
+complex_scalars = np.issubdtype(PETSc.ScalarType, np.complexfloating)
+amg = "hypre" if PETSc.Sys().hasExternalPackage("hypre") and not complex_scalars else "gamg"
 opts = PETSc.Options()
 opts["snes_type"] = "newtonls"
 opts["snes_linesearch_type"] = "basic"
