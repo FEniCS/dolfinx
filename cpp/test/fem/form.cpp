@@ -31,14 +31,22 @@
 
 using namespace dolfinx;
 
-TEST_CASE("Form with a null coefficient", "[form_coefficient]")
+TEST_CASE("Form with a null coefficient or constant", "[form_coefficient]")
 {
   std::array<std::uint64_t, 1> hashes{0};
-  ufcx_form form{};
-  form.num_coefficients = 1;
-  form.finite_element_hashes = hashes.data();
-  CHECK_THROWS_AS(fem::create_form_factory<double>({std::cref(form)}, {},
+
+  ufcx_form form_w{};
+  form_w.num_coefficients = 1;
+  form_w.finite_element_hashes = hashes.data();
+  CHECK_THROWS_AS(fem::create_form_factory<double>({std::cref(form_w)}, {},
                                                    {nullptr}, {}, {}, {}),
+                  std::invalid_argument);
+
+  ufcx_form form_c{};
+  form_c.num_constants = 1;
+  form_c.finite_element_hashes = hashes.data();
+  CHECK_THROWS_AS(fem::create_form_factory<double>({std::cref(form_c)}, {}, {},
+                                                   {nullptr}, {}, {}),
                   std::invalid_argument);
 }
 

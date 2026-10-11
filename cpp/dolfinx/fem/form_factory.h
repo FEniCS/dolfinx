@@ -60,9 +60,14 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// Use fem::create_form to create a fem::Form with coefficients and
 /// constants associated with the name/string.
 ///
-/// @note Coefficient Basix elements are checked against the compiled form
-/// when UFCx provides a nonzero element hash. This does not check blocked
-/// value shapes or elements without a Basix hash (e.g. mixed elements).
+/// @note Argument and coefficient elements are checked against the form
+/// only where UFCx supplies a nonzero Basix element hash. The hash of a
+/// blocked element is that of its scalar sub-element, so a block size
+/// (value shape) mismatch escapes the check, as does any mismatch in an
+/// element that has no Basix hash, e.g. a mixed element. Passing a space
+/// or coefficient that differs from the compiled form in either respect
+/// is undefined behaviour: the generated kernel reads a coefficient
+/// array packed to the wrong size.
 ///
 /// @param[in] ufcx_forms A list of UFCx forms, one for each cell type.
 /// @param[in] spaces Vector of function spaces. The number of spaces is
@@ -90,6 +95,24 @@ Form<T, U> create_form_factory(
         entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
+  for (std::size_t c = 0; c < coefficients.size(); ++c)
+  {
+    if (!coefficients[c])
+    {
+      throw std::invalid_argument(
+          std::format("Cannot create form. Coefficient {} is null.", c));
+    }
+  }
+
+  for (std::size_t c = 0; c < constants.size(); ++c)
+  {
+    if (!constants[c])
+    {
+      throw std::invalid_argument(
+          std::format("Cannot create form. Constant {} is null.", c));
+    }
+  }
+
   for (const ufcx_form& ufcx_form : ufcx_forms)
   {
     if (ufcx_form.rank != (int)spaces.size())
@@ -125,15 +148,6 @@ Form<T, U> create_form_factory(
                         "Constant for Constant {}.",
                         c));
       }
-    }
-  }
-
-  for (std::size_t c = 0; c < coefficients.size(); ++c)
-  {
-    if (!coefficients[c])
-    {
-      throw std::invalid_argument(
-          std::format("Cannot create form. Coefficient {} is null.", c));
     }
   }
 
