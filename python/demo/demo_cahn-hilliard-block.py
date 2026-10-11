@@ -21,7 +21,7 @@
 # memory of a direct factorisation grow faster than the problem size, so
 # it sets a ceiling on the mesh. This demo keeps the same equations and
 # replaces the solver with a block preconditioner whose Krylov iteration
-# count does not grow as the mesh is refined.
+# count barely moves as the mesh is refined.
 #
 # This demo illustrates how to:
 #
@@ -97,9 +97,26 @@
 # $$
 #
 # so setting $a = \sqrt{\theta \Delta t \lambda}$ matches the first and
-# the third term exactly. The only error is the middle term $2aK$, whose
-# coefficient carries the factor $\sqrt{\Delta t}$ and so is small for
-# the time steps this problem is solved with.
+# the third term exactly. The only error is the middle term $2aK$, and
+# it is bounded. Writing $u = a M^{-1/2} K v$ and $w = M^{1/2} v$, the
+# Rayleigh quotient is
+#
+# $$
+# \frac{v^{T} S v}{v^{T} \hat{S} v}
+#   = \frac{u^{T}u + w^{T}w}{u^{T}u + w^{T}w + 2 u^{T}w} ,
+# \qquad u^{T} w = a\, v^{T} K v \ge 0 ,
+# $$
+#
+# and $0 \le \lVert u - w \rVert^{2}$ gives $2u^{T}w \le u^{T}u +
+# w^{T}w$. The eigenvalues of $\hat{S}^{-1} S$ therefore lie in
+# $[1/2, 1]$ whatever the mesh size, the time step and $\lambda$: the
+# factor of two is the whole of the error. This is the bound proved by
+# Bergermann, Deibel, Herzog, MacKenzie, Pietschmann and Stoll,
+# *Preconditioning for a phase-field model with application to
+# morphology evolution in organic semiconductors* (2022),
+# [arXiv:2204.03575](https://arxiv.org/abs/2204.03575), and it is why
+# the iteration counts at the end of this demo do not move under
+# refinement.
 #
 # The point of the construction is that $M + aK$ is a shifted Laplacian:
 # symmetric, positive definite, and exactly what algebraic multigrid is
@@ -147,10 +164,19 @@ theta = 0.5  # time stepping family
 # blocked assembly needs a space per block, so that each block of the
 # Jacobian is a matrix in its own right and the preconditioner can
 # address them. `clone` gives a second, distinct space on the same mesh.
+#
+# The demo doubles as a test. That run only has to exercise the code, so
+# under CI it takes a coarse mesh and a few steps; run on its own it
+# solves the problem the results at the end were measured on.
 
-msh = mesh.create_unit_cube(MPI.COMM_WORLD, 64, 64, 64, mesh.CellType.tetrahedron)
+# +
+ci = "CI" in os.environ or "GITHUB_ACTIONS" in os.environ
+n = 16 if ci else 64
+
+msh = mesh.create_unit_cube(MPI.COMM_WORLD, n, n, n, mesh.CellType.tetrahedron)
 V = fem.functionspace(msh, ("Lagrange", 1))
 W = V.clone()
+# -
 
 c, mu = fem.Function(V, name="c"), fem.Function(W, name="mu")
 c0, mu0 = fem.Function(V), fem.Function(W)
@@ -304,17 +330,28 @@ def jacobian(_snes: PETSc.SNES, x: PETSc.Vec, J_mat: PETSc.Mat, _P: PETSc.Mat) -
     assemble_matrix(A10, J10)
     A10.assemble()
 
+    # Assembling a sub-matrix does not mark the nest itself as changed,
+    # and a preconditioner that reads the Jacobian would go on using a
+    # stale copy. Nothing here does, but say it anyway
+    J_mat.assemble()
+
 
 snes = PETSc.SNES().create(msh.comm)  # type: ignore[arg-type]
 snes.setFunction(residual, b)
 snes.setJacobian(jacobian, A, None)
 # -
 
-# The solver options. The outer Krylov method is FGMRES because the
-# preconditioner contains Krylov solvers of its own and so is not a fixed
-# linear operator. `schur_fact_type upper` needs one solve with the
-# $(0,0)$ block per application rather than the two a full factorisation
-# needs, for the same iteration count here.
+# The solver options. The Schur part of the preconditioner is a fixed
+# linear operator -- one AMG V-cycle per factor -- but the $(0,0)$ block
+# is solved by CG to a relative tolerance, which is not, so the outer
+# method has to be flexible and is FGMRES. Giving the $(0,0)$ block a
+# fixed number of Chebyshev iterations instead would make the whole
+# preconditioner linear and let plain GMRES be used, for the same
+# iteration count and about 5% less memory; a tolerance is kept here
+# because it needs no mesh-dependent iteration count to be chosen.
+# `schur_fact_type upper` needs one solve with the $(0,0)$ block per
+# application rather than the two a full factorisation needs, for the
+# same iteration count here.
 #
 # Both inner tolerances are deliberately loose. A linear solve only has
 # to return a Newton direction good enough not to cost Newton steps, so
@@ -400,7 +437,9 @@ def newton_monitor(snes: PETSc.SNES, it: int, _norm: float) -> None:
 snes.setMonitor(newton_monitor)
 # -
 
-# Step in time, reporting the work each step took.
+# Step in time, reporting the work each step took. The solution of the
+# previous step is kept as well as the current one, so that each solve
+# can start from an extrapolation rather than from a standstill.
 
 # +
 out = Path("demo_ch_block")
@@ -409,13 +448,22 @@ file = io.XDMFFile(msh.comm, out / "output.xdmf", "w")
 file.write_mesh(msh)
 file.write_function(c, 0.0)  # the initial condition, before any step
 
-num_steps = 3 if "CI" in os.environ or "GITHUB_ACTIONS" in os.environ else 30
+num_steps = 3 if ci else 30
 t = 0.0
 newton_total, krylov_total = 0, 0
+c_prev, mu_prev = np.zeros_like(c.x.array), np.zeros_like(mu.x.array)
 for step in range(num_steps):
     t += dt
+    c_prev[:], mu_prev[:] = c0.x.array, mu0.x.array
     c0.x.array[:] = c.x.array
     mu0.x.array[:] = mu.x.array
+
+    # Start the solve from a linear extrapolation of the last two steps
+    # rather than from the last one. Two vector operations, and Newton
+    # needs roughly one iteration per step fewer
+    if step > 0:
+        c.x.array[:] = 2.0 * c0.x.array - c_prev
+        mu.x.array[:] = 2.0 * mu0.x.array - mu_prev
 
     assign([c, mu], x)
     krylov_its.clear()
@@ -454,37 +502,56 @@ if msh.comm.rank == 0:
 # -
 
 # Measured on this problem, running the thirty steps above on one
-# process, with the mesh refined and everything else held fixed,
-# against the same problem assembled monolithically and solved with
-# MUMPS:
+# process and refining the mesh with everything else held fixed. The
+# comparison is against PETSc's own Schur complement approximation,
+# `-pc_fieldsplit_schur_precondition selfp`, which builds
+# $A_{10} \, {\rm diag}(A_{00})^{-1} A_{01}$ automatically and is given
+# the same multigrid settings; everything else is identical.
 #
-# | per side | unknowns | its | time | LU | memory | LU memory |
-# | --- | --- | --- | --- | --- | --- | --- |
-# | 16 | 9 826   | 14.3 |  3.2 s |  10.5 s | 160 MB |  208 MB |
-# | 24 | 31 250  | 15.7 |  9.4 s |  52.0 s | 214 MB |  481 MB |
-# | 32 | 71 874  | 15.6 | 25.9 s | 180.5 s | 325 MB | 1103 MB |
-# | 40 | 137 842 | 16.0 | 51.8 s | 497.6 s | 505 MB | 2394 MB |
+# The matched approximation, as the demo runs it:
+#
+# | per side | unknowns | its | time | memory |
+# | --- | --- | --- | --- | --- |
+# | 16 | 9 826   | 13.8 |   2.7 s |  161 MB |
+# | 24 | 31 250  | 15.1 |   7.8 s |  217 MB |
+# | 32 | 71 874  | 15.1 |  20.4 s |  328 MB |
+# | 48 | 235 298 | 16.0 |  74.3 s |  798 MB |
+# | 64 | 549 250 | 17.2 | 185.8 s | 1690 MB |
+#
+# and `selfp` over the same mesh sequence:
+#
+# | per side | unknowns | its | time | memory |
+# | --- | --- | --- | --- | --- |
+# | 16 | 9 826   |  9.0 |   3.5 s |  171 MB |
+# | 24 | 31 250  | 10.1 |  12.8 s |  269 MB |
+# | 32 | 71 874  | 11.6 |  33.2 s |  457 MB |
+# | 48 | 235 298 | 17.9 | 141.0 s | 1235 MB |
+# | 64 | 549 250 | 25.7 | 436.5 s | 2845 MB |
 #
 # where "its" is Krylov iterations per Newton step and the memory
 # columns are peak resident set size for the whole run. Both solvers
-# take the same Newton steps and agree to at least ten significant
-# figures.
+# take the same Newton steps, 116 to 118, and agree to twelve
+# significant figures.
 #
-# The iteration count is flat over a fourteen-fold increase in problem
-# size, and the time tracks it: the last refinement multiplies the
-# unknowns by 1.9 and the time by 2.0.
+# The matched approximation is the worse of the two on the coarsest
+# mesh and the better by a factor of two and a half on the finest. Its
+# iteration count rises by a quarter over a fifty-six-fold increase in
+# problem size, which is what the $[1/2, 1]$ bound allows, whereas
+# the automatic approximation nearly triples. A reader who
+# stopped at 71 874 unknowns would draw the opposite conclusion; the
+# crossover is at about $2 \times 10^{5}$.
 #
-# This is the case the block preconditioner is for. A sparse direct
-# factorisation fills in, and in three dimensions it fills in badly: by
-# 137 842 unknowns it needs nearly five times the memory and ten times
-# the time, and both ratios are still growing. Two dimensions is a
-# different story, because the fill-in is far milder: on a unit square
-# at 72 200 unknowns the direct solver is the faster of the two, 21.0 s
-# against 23.0 s, and wants only 1.2 times the memory.
+# The cost of an application explains the rest. $M + aK$ is fixed, so
+# its multigrid hierarchy is built once for the whole run, whereas
+# $A_{10} \, {\rm diag}(A_{00})^{-1} A_{01}$ contains $f''(c)$ and has
+# to be re-formed and re-coarsened at every Newton step. That product
+# is also denser than $M + aK$, which is where the extra memory goes.
 #
-# The demo is not threaded, but it is parallel: on four processes the
-# 71 874-unknown case takes 9.9 s rather than 25.9 s, with the same
-# iteration counts.
+# The demo is not threaded, but it is parallel. The 549 250-unknown
+# case takes 185.8 s on one process, 117.3 s on two and 69.0 s on four.
+# The iteration count is unchanged; the Newton count moves by a few per
+# cent only because the random initial condition is drawn per process
+# and so depends on how many there are.
 #
 # The usable range of $\Delta t$ and $\lambda$ here is set by the
 # nonlinear problem rather than by the preconditioner: at
