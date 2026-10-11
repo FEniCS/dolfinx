@@ -100,29 +100,6 @@ Form<T, U> create_form_factory(
                                   "provided Form coefficients.");
     }
 
-    for (std::size_t c = 0; c < coefficients.size(); ++c)
-    {
-      if (!coefficients[c])
-        throw std::invalid_argument(
-            std::format("Cannot create form. Coefficient {} is null.", c));
-
-      const std::uint64_t element_hash
-          = ufcx_form.finite_element_hashes[ufcx_form.rank + c];
-      if (element_hash != 0
-          and element_hash
-                  != coefficients[c]
-                         ->function_space()
-                         ->element()
-                         ->basix_element()
-                         .hash())
-      {
-        throw std::invalid_argument(std::format(
-            "Cannot create form. Coefficient {} element differs from the "
-            "element used to compile the form.",
-            c));
-      }
-    }
-
     // Check Constants for rank and size consistency
     if (ufcx_form.num_constants != (int)constants.size())
     {
@@ -151,14 +128,23 @@ Form<T, U> create_form_factory(
     }
   }
 
-  // Check argument function spaces
+  for (std::size_t c = 0; c < coefficients.size(); ++c)
+  {
+    if (!coefficients[c])
+    {
+      throw std::invalid_argument(
+          std::format("Cannot create form. Coefficient {} is null.", c));
+    }
+  }
+
+  // Check argument and coefficient function spaces
   for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
   {
+    const ufcx_form& ufcx_form = ufcx_forms[form_idx];
     for (std::size_t i = 0; i < spaces.size(); ++i)
     {
       assert(spaces[i]->elements(form_idx));
-      if (auto element_hash
-          = ufcx_forms[form_idx].get().finite_element_hashes[i];
+      if (std::uint64_t element_hash = ufcx_form.finite_element_hashes[i];
           element_hash != 0
           and element_hash
                   != spaces[i]->elements(form_idx)->basix_element().hash())
@@ -166,6 +152,25 @@ Form<T, U> create_form_factory(
         throw std::invalid_argument(
             "Cannot create form. Elements are different to "
             "those used to compile the form.");
+      }
+    }
+
+    for (std::size_t c = 0; c < coefficients.size(); ++c)
+    {
+      std::uint64_t element_hash
+          = ufcx_form.finite_element_hashes[ufcx_form.rank + c];
+      if (element_hash != 0
+          and element_hash
+                  != coefficients[c]
+                         ->function_space()
+                         ->elements(form_idx)
+                         ->basix_element()
+                         .hash())
+      {
+        throw std::invalid_argument(std::format(
+            "Cannot create form. Coefficient {} element differs from the "
+            "element used to compile the form.",
+            c));
       }
     }
   }
