@@ -107,8 +107,8 @@ std::vector<std::uint8_t> compute_entity_permutations(const Topology& topology,
 /// reflected, the next 2 bits say how many times face 0 is rotated; the
 /// next three bits are for face 1, then three for face 2, etc; after
 /// all the faces, there is 1 bit for each edge to say whether or not
-/// they are reversed. The most significant bit is left for
-/// ::reversed_facet_bit.
+/// they are reversed. On a surface, bits 27 to 30 are left for the
+/// facet signs (see ::reversed_facet_bit).
 ///
 /// For example, if a quadrilateral has cell permutation info
 /// `....0111` then (from right to left):

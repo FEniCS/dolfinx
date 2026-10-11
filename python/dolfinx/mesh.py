@@ -452,9 +452,9 @@ class Topology:
         The returned data is used for packing coefficients and
         assembling of tensors. The bits of each integer encodes the
         number of reflections and permutations for each sub-entity of
-        the cell to be able to map it to the reference element. The
-        most significant bit marks a reversed cell (see
-        :meth:`facet_orientations`).
+        the cell to be able to map it to the reference element. On a
+        surface, four further bits mark the facets whose
+        degrees-of-freedom are negated (see :meth:`facet_orientations`).
         """
         return self._cpp_object.get_cell_permutation_info()
 
@@ -525,7 +525,7 @@ class Topology:
     def has_facet_orientations(self) -> bool:
         """Check if the facet signs have been computed.
 
-        A space whose basis depends on the cell orientation, e.g.
+        A space whose basis depends on the facet signs, e.g.
         Raviart-Thomas on a manifold, can only be created once they have
         (see :meth:`create_facet_orientations`).
         """

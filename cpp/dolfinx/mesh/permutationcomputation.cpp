@@ -485,7 +485,7 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
   if (topology.dim() != 2)
   {
     throw std::invalid_argument(
-        std::format("Facet orientations need a surface mesh (topological "
+        std::format("Facet signs need a surface mesh (topological "
                     "dimension 2), not dimension {}.",
                     topology.dim()));
   }
@@ -502,8 +502,8 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
   const std::int32_t num_cells = num_owned + cell_map->num_ghosts();
   const int edges_per_cell = mesh::cell_num_entities(topology.cell_type(), 1);
 
-  // As in compute_cell_orientations: whether walking round cell c in its
-  // vertex order runs edge e from its lower to its higher global vertex
+  // Whether walking round cell c in its vertex order runs edge e from
+  // its lower to its higher global vertex
   const std::vector<std::uint8_t>& edge_perms
       = topology.get_entity_permutations(1);
   assert(std::cmp_less_equal(edges_per_cell, edge_runs_forward.size()));
@@ -564,7 +564,7 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
       const std::int32_t e = edges[i];
       if (e_to_c->links(e).size() > 2)
       {
-        throw std::runtime_error("Cannot orient the cells: an edge is shared "
+        throw std::runtime_error("Cannot sign the facets: an edge is shared "
                                  "by more than two cells.");
       }
 

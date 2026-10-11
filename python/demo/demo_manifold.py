@@ -16,7 +16,8 @@
 #
 # * solve a PDE on a manifold, here a surface embedded in 3D,
 # * use $H(\mathrm{div})$-conforming Raviart-Thomas elements on a
-#   surface, which requires consistently oriented cells,
+#   surface, which requires the two cells of every facet to agree on its
+#   normal,
 # * widen the ghost layer beyond what
 #   {py:class}`GhostMode <dolfinx.mesh.GhostMode>` offers, by writing a
 #   partitioner that ghosts a cell wherever it shares a *vertex*. A
@@ -211,7 +212,7 @@ all_boundary_facets = np.flatnonzero(facet_vector.array)
 mesh = dolfinx.mesh.create_submesh(ball_mesh, fdim, all_boundary_facets)[0]
 # -
 
-# ### Orienting the cells
+# ### Signing the facets
 #
 # The vertex order of a cell on a surface fixes its normal, and thereby
 # which side of the surface the cell regards as "out". The
@@ -219,13 +220,13 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, fdim, all_boundary_facets)[0]
 # from the reference cell, ties the direction of the normal flux across
 # each edge to this side. The normal component of $\sigma_h$ is thus
 # continuous across an edge only if the two cells sharing it agree on
-# the side, i.e. if the mesh is consistently oriented. Two cells agree
+# the side. Two cells agree
 # when, going round each in the order of its vertices, they run their
 # shared edge in opposite directions, as cells $(0, 1, 2)$ and
 # $(1, 3, 2)$ do with edge $\{1, 2\}$.
 #
-# There is no guarantee that an input mesh has a consistent orientation.
-# An example is a submesh of the exterior boundary of a volume mesh:
+# There is no guarantee that the cells of an input mesh agree. An
+# example is a submesh of the exterior boundary of a volume mesh:
 # each facet keeps the vertex order it has in its volume cell.
 # {py:meth}`create_facet_orientations
 # <dolfinx.mesh.Topology.create_facet_orientations>` neither reorders the
@@ -239,8 +240,9 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, fdim, all_boundary_facets)[0]
 # Because this asks nothing of the surface as a whole, only of each
 # facet in turn, it works even where no consistent orientation exists at
 # all, as on the Möbius strip of {doc}`demo_mobius`. Which of the two
-# cells carries the sign is settled by global index, so the result does
-# not depend on the partitioning.
+# cells carries the sign is settled by the global numbering, so it can
+# change with the partitioning; the space, and so the solution, do
+# not.
 #
 # The signs must be requested explicitly, as they are needed only by
 # $H(\mathrm{div})$ elements on surfaces. Lagrange and Nédélec elements

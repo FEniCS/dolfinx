@@ -215,7 +215,7 @@ def ring_mesh(n, m, twist):
     )
 
 
-# ### Orienting the cells
+# ### Signing the facets
 #
 # A Raviart-Thomas basis function is pushed forward by the contravariant
 # Piola map. On a manifold that map scales by the pseudo-determinant
