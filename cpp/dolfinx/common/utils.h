@@ -14,6 +14,7 @@
 #include <iterator>
 #include <mpi.h>
 #include <ranges>
+#include <span>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
@@ -22,6 +23,25 @@
 /// Generic tools
 namespace dolfinx::common
 {
+/// @brief Concatenate per-chunk buffers, in chunk order.
+///
+/// @param[in] chunks Buffers to join, e.g. one per thread of a
+/// ::parallel_for.
+/// @return The buffers, joined end to end.
+template <typename T>
+std::vector<T> concatenate(std::span<const std::vector<T>> chunks)
+{
+  std::size_t size = 0;
+  for (const std::vector<T>& c : chunks)
+    size += c.size();
+
+  std::vector<T> joined;
+  joined.reserve(size);
+  for (const std::vector<T>& c : chunks)
+    joined.insert(joined.end(), c.begin(), c.end());
+  return joined;
+}
+
 ///@brief Sort two arrays based on the values in array `indices`.
 ///
 /// Any duplicate indices and the corresponding value are removed. In

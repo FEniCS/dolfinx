@@ -1303,8 +1303,8 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
       // destination rank
       std::vector<int> src_ranks;
       std::tie(cells1[i], src_ranks, original_idx1[i], ghost_owners[i])
-          = graph::build::distribute(comm, cells[i],
-                                     {num_cells, num_cell_nodes}, dest_i);
+          = graph::build::distribute(
+              comm, cells[i], {num_cells, num_cell_nodes}, dest_i, num_threads);
       spdlog::debug("Got {} cells from distribution", cells1[i].size());
     }
   }

@@ -15,7 +15,9 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/parallel.h>
 #include <dolfinx/common/sort.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <iterator>
@@ -560,6 +562,108 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
 //-----------------------------------------------------------------------------
+
+/// @brief Match the facets at positions `[p0, p1)` of `perm`, adding a
+/// dual graph edge for each pair of cells that share a facet, and
+/// recording facets that may yet be matched by another process.
+///
+/// Facets with equal keys are consecutive in `perm`, but a run of them
+/// may continue past `p1`. A call therefore reads (never writes) past
+/// `p1` to finish the last run that starts in its range, and skips a
+/// leading run that started before `p0`. Ranges are thus disjoint in
+/// the runs they handle, and appending their output in range order
+/// reproduces exactly what one call over the whole of `perm` gives.
+///
+/// @param[in] perm Facets, ordered by vertex key.
+/// @param[in] p0 First position in `perm` to match.
+/// @param[in] p1 One past the last position in `perm` to match.
+/// @param[in] facets Facet vertices, column-major, with the attached
+/// cell index in column `max_vertices_per_facet`.
+/// @param[in] max_vertices_per_facet Number of vertex columns.
+/// @param[in] max_facet_to_cell_links Number of attached cells at
+/// which a facet counts as matched, as for ::build_local_dual_graph.
+/// @param[out] unmatched_facets Vertices of each unmatched facet,
+/// flattened.
+/// @param[out] local_cells Cell attached to each unmatched facet.
+/// @param[out] edges Dual graph edges, one direction only.
+void match_facets(std::span<const std::int32_t> perm, std::size_t p0,
+                  std::size_t p1,
+                  std::span<const std::span<std::int64_t>> facets,
+                  int max_vertices_per_facet,
+                  std::optional<std::int32_t> max_facet_to_cell_links,
+                  std::vector<std::int64_t>& unmatched_facets_out,
+                  std::vector<std::int32_t>& local_cells_out,
+                  std::vector<std::array<std::int32_t, 2>>& edges_out)
+{
+  // Appended to locally and moved out at the end: appending straight to
+  // the caller's buffers would store into a vector header that shares a
+  // cache line with the headers of the neighbouring ranges' buffers
+  std::vector<std::int64_t> unmatched_facets;
+  std::vector<std::int32_t> local_cells;
+  std::vector<std::array<std::int32_t, 2>> edges;
+
+  auto facets_equal
+      = [facets, max_vertices_per_facet](std::int32_t idx0, std::int32_t idx1)
+  {
+    for (int col = 0; col < max_vertices_per_facet; ++col)
+    {
+      if (facets[col][idx0] != facets[col][idx1])
+        return false;
+    }
+    return true;
+  };
+
+  auto facet_cell = [facets, max_vertices_per_facet](std::int32_t idx)
+  { return static_cast<std::int32_t>(facets[max_vertices_per_facet][idx]); };
+
+  std::size_t p = p0;
+
+  // A run that started before p0 belongs to the preceding range
+  if (p0 > 0 and p0 < p1 and facets_equal(perm[p0 - 1], perm[p0]))
+  {
+    std::int32_t idx0 = perm[p];
+    while (p < p1 and facets_equal(idx0, perm[p]))
+      ++p;
+  }
+
+  while (p < p1)
+  {
+    // All facets in [first, p) are the same facet
+    std::size_t first = p;
+    std::int32_t idx0 = perm[p];
+    while (p < perm.size() and facets_equal(idx0, perm[p]))
+      ++p;
+
+    std::size_t cell_count = p - first;
+    assert(cell_count >= 1);
+    if (!max_facet_to_cell_links
+        or cell_count < static_cast<std::size_t>(*max_facet_to_cell_links))
+    {
+      // Store unmatched facets and the attached cell
+      for (std::size_t i = first; i < p; ++i)
+      {
+        std::int32_t idx = perm[i];
+        for (int col = 0; col < max_vertices_per_facet; ++col)
+          unmatched_facets.push_back(facets[col][idx]);
+        local_cells.push_back(facet_cell(idx));
+      }
+    }
+
+    // Add dual graph edges (one direction only, the other is added
+    // later). All combinations within [first, p) are added.
+    for (std::size_t a = first; a < p; ++a)
+    {
+      std::int32_t cell_a = facet_cell(perm[a]);
+      for (std::size_t b = a + 1; b < p; ++b)
+        edges.push_back({cell_a, facet_cell(perm[b])});
+    }
+  }
+
+  unmatched_facets_out = std::move(unmatched_facets);
+  local_cells_out = std::move(local_cells);
+  edges_out = std::move(edges);
+}
+//-----------------------------------------------------------------------------
 } // namespace
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>, int,
@@ -809,69 +913,30 @@ mesh::build_local_dual_graph(
   //    process.
   common::Timer timer4("Compute local part of mesh dual graph: 4");
 
-  // Column-major accessors: vertex column `col` of facet `idx`, and the
-  // attached cell index (the last column) of facet `idx`.
-  auto facet_vertex
-      = [&facets](std::size_t idx, int col) { return facets[col][idx]; };
-  auto facet_cell = [&facets, max_vertices_per_facet](std::size_t idx)
-  { return static_cast<std::int32_t>(facets[max_vertices_per_facet][idx]); };
-  auto facets_equal = [&facet_vertex, max_vertices_per_facet](std::size_t idx0,
-                                                              std::size_t idx1)
-  {
-    for (int col = 0; col < max_vertices_per_facet; ++col)
-      if (facet_vertex(idx0, col) != facet_vertex(idx1, col))
-        return false;
-    return true;
-  };
-
-  std::vector<std::int64_t> unmatched_facets;
-  std::vector<std::int32_t> local_cells;
-  std::vector<std::array<std::int32_t, 2>> edges;
-  {
-    for (auto it = perm.begin(); it != perm.end();)
-    {
-      std::size_t facet_index = *it;
-
-      // Find iterator to next facet different from f0 -> all facets in
-      // [it, it_next_facet) describe the same facet
-      auto matching_facets = std::ranges::subrange(
-          it, std::find_if_not(it, perm.end(),
-                               [facet_index, &facets_equal](auto idx)
-                               { return facets_equal(facet_index, idx); }));
-
-      std::int32_t cell_count = matching_facets.size();
-      assert(cell_count >= 1);
-      if (!max_facet_to_cell_links or cell_count < *max_facet_to_cell_links)
+  // Each thread matches the runs of equal facets that start in its own
+  // range of `perm` and appends to its own buffers; concatenating
+  // those in range order gives the same result as one serial pass.
+  std::vector<std::vector<std::int64_t>> unmatched_facets_t(num_threads);
+  std::vector<std::vector<std::int32_t>> local_cells_t(num_threads);
+  std::vector<std::vector<std::array<std::int32_t, 2>>> edges_t(num_threads);
+  common::parallel_for(
+      perm.size(), num_threads,
+      [&perm, &facets, max_vertices_per_facet, max_facet_to_cell_links,
+       &unmatched_facets_t, &local_cells_t,
+       &edges_t](int i, std::size_t p0, std::size_t p1)
       {
-        // Store unmatched facets and the attached cell
-        for (std::int32_t i = 0; i < cell_count; i++)
-        {
-          std::size_t idx = *std::next(it, i);
-          for (int col = 0; col < max_vertices_per_facet; ++col)
-            unmatched_facets.push_back(facet_vertex(idx, col));
-          local_cells.push_back(facet_cell(idx));
-        }
-      }
+        match_facets(perm, p0, p1, facets, max_vertices_per_facet,
+                     max_facet_to_cell_links, unmatched_facets_t[i],
+                     local_cells_t[i], edges_t[i]);
+      });
 
-      // Add dual graph edges (one direction only, other direction is
-      // added later). In the range [it, it_next_facet), all
-      // combinations are added.
-      for (auto facet_a_it = it; facet_a_it != matching_facets.end();
-           ++facet_a_it)
-      {
-        std::int32_t cell_a = facet_cell(*facet_a_it);
-        for (auto facet_b_it = std::next(facet_a_it);
-             facet_b_it != matching_facets.end(); ++facet_b_it)
-        {
-          std::int32_t cell_b = facet_cell(*facet_b_it);
-          edges.push_back({cell_a, cell_b});
-        }
-      }
-
-      // Update iterator
-      it = matching_facets.end();
-    }
-  }
+  // Concatenate the unmatched facets. The dual graph edges are left
+  // as they are and consumed range by range below, which needs no
+  // copy at all.
+  std::vector<std::int64_t> unmatched_facets
+      = common::concatenate<std::int64_t>(unmatched_facets_t);
+  std::vector<std::int32_t> local_cells
+      = common::concatenate<std::int32_t>(local_cells_t);
 
   timer4.stop();
   timer4.flush();
@@ -884,7 +949,7 @@ mesh::build_local_dual_graph(
   common::Timer timer5("Compute local part of mesh dual graph: 5");
 
   std::vector<std::int32_t> num_links(cell_offsets.back(), 0);
-  for (auto [a, b] : edges)
+  for (auto [a, b] : edges_t | std::views::join)
   {
     ++num_links[a];
     ++num_links[b];
@@ -894,12 +959,14 @@ mesh::build_local_dual_graph(
   std::partial_sum(num_links.cbegin(), num_links.cend(),
                    std::next(offsets.begin()));
   std::vector<std::int32_t> data(offsets.back());
-  std::ranges::for_each(edges,
-                        [&data, pos = offsets](auto e) mutable
-                        {
-                          data[pos[e[0]]++] = e[1];
-                          data[pos[e[1]]++] = e[0];
-                        });
+  {
+    std::vector<std::int32_t> pos = offsets;
+    for (auto [a, b] : edges_t | std::views::join)
+    {
+      data[pos[a]++] = b;
+      data[pos[b]++] = a;
+    }
+  }
 
   timer5.stop();
   timer5.flush();
