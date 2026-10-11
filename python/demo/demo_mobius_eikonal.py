@@ -232,7 +232,7 @@ F = ufl.inner(ufl.div(psi) - ufl.div(psi0), v) * dx + alpha * ufl.inner(f, v) * 
 F += ufl.inner(u, ufl.div(tau)) * dx + latent_map * ufl.inner(psi, tau) * dx
 
 F_blocked: list[ufl.Form] = ufl.extract_blocks(F)  # type: ignore[assignment]
-tol = 1e-5 if np.finfo(dolfinx.default_real_type).bits > 32 else 1e-3
+tol = max(1e-5, 1000 * float(np.finfo(dolfinx.default_real_type).eps))
 problem = dolfinx.fem.petsc.NonlinearProblem(
     F_blocked,
     [u, psi],
