@@ -53,6 +53,8 @@ coordinate_element(std::array<std::uint8_t, 2> type_degree)
 {
   mesh::CellType cell_type = std::get<0>(cells::vtk_to_dolfinx(type_degree[0]));
   int cell_degree = type_degree[1];
+  // VTK_QUADRATIC_QUAD and VTK_QUADRATIC_HEXAHEDRON, the two quadratic
+  // serendipity layouts that Basix has an element for
   if (type_degree[0] == 23 or type_degree[0] == 25)
   {
     basix::cell::type cell = mesh::cell_type_to_basix_type(cell_type);

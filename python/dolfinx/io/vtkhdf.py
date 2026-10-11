@@ -73,7 +73,7 @@ def read_mesh(
         domain = None
     else:
         cmap = mesh_cpp.geometry.cmaps[0]
-        num_nodes = mesh_cpp.geometry.dofmaps[0].shape[1]
+        num_nodes = cmap.dim
         if (cell_types[0] == CellType.quadrilateral and num_nodes == 8) or (
             cell_types[0] == CellType.hexahedron and num_nodes == 20
         ):
