@@ -206,8 +206,8 @@ def partition(
 ) -> AdjacencyList[np.int32]:
     """Partition the nodes of a graph into parts.
 
-    Applies a :func:`partitioner` to a graph, e.g. the dual graph of a
-    mesh from :func:`build_dual_graph <dolfinx.mesh.build_dual_graph>`.
+    Applies a partitioner to a graph, e.g. the dual graph of a mesh
+    from :func:`build_dual_graph <dolfinx.mesh.build_dual_graph>`.
     :func:`create_mesh <dolfinx.mesh.create_mesh>` partitions a mesh
     itself; this is for partitioning a graph directly, for instance to
     build the subdomains of a domain decomposition method. Passing
