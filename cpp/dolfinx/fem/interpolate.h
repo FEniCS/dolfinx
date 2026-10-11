@@ -314,8 +314,10 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
       coeffs[i] = 0.0;
       for (std::size_t k = 0; k < data.extent(1); ++k)
         for (std::size_t j = 0; j < data.extent(0); ++j)
+        {
           coeffs[i]
               += static_cast<X>(Pi(i, k * data.extent(0) + j)) * data(j, k);
+        }
     }
   }
   else
@@ -654,8 +656,10 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
     for (std::size_t k0 = 0; k0 < basis_reference0.extent(0); ++k0)
       for (std::size_t k1 = 0; k1 < basis_reference0.extent(1); ++k1)
         for (std::size_t k2 = 0; k2 < basis_reference0.extent(2); ++k2)
+        {
           basis_reference0(k0, k1, k2)
               = basis_derivatives_reference0(0, k0, k1, k2);
+        }
 
     if (apply_dof_transformation0)
     {
@@ -929,8 +933,10 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   // e.g. not Piola mapped
 
   if (symmetric)
+  {
     throw std::invalid_argument(
         "Interpolation into this element not supported.");
+  }
 
   const int element_bs = element.block_size();
   const int num_scalar_dofs = element.space_dimension() / element_bs;
@@ -1019,8 +1025,10 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
                              const mesh::Mesh<U>& mesh, std::span<T> coeffs)
 {
   if (symmetric)
+  {
     throw std::invalid_argument(
         "Interpolation into this element not supported.");
+  }
 
   const int gdim = mesh.geometry().dim();
   assert(mesh.topology());

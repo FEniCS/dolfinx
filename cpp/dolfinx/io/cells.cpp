@@ -374,6 +374,13 @@ std::vector<std::uint16_t> vtk_pyramid(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 {
+  // Degree-2 serendipity: a node on each vertex and each edge and none
+  // inside, which is not a Lagrange layout, so cell_degree below has no
+  // answer for it. VTK takes the edges in the order DOLFINx numbers
+  // 0, 2, 3, 1.
+  if (num_nodes == 8)
+    return {0, 1, 3, 2, 4, 6, 7, 5};
+
   std::vector<std::uint16_t> map;
   map.reserve(num_nodes);
 
@@ -676,26 +683,32 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     {
     case 6:
       return 1;
-    case 15:
+    case 18:
       return 2;
     case 40:
       return 3;
     default:
-      throw std::runtime_error(
-          std::format("Unknown prism layout. Number of nodes: {}", num_nodes));
+      throw std::runtime_error(std::format(
+          "No Lagrange prism has {} nodes, expected 6, 18 or 40. The 15-node "
+          "wedge is a serendipity layout, which Basix does not have for a "
+          "prism.",
+          num_nodes));
     }
   case mesh::CellType::pyramid:
     switch (num_nodes)
     {
     case 5:
       return 1;
-    case 13:
+    case 14:
       return 2;
     case 30:
       return 3;
     default:
       throw std::runtime_error(std::format(
-          "Unknown pyramid layout. Number of nodes: {}", num_nodes));
+          "No Lagrange pyramid has {} nodes, expected 5, 14 or 30. The 13-node "
+          "pyramid is a serendipity layout, which Basix does not have for a "
+          "pyramid.",
+          num_nodes));
     }
   default:
     throw std::runtime_error("Unknown cell type.");
@@ -732,17 +745,11 @@ io::cells::apply_permutation(std::span<const std::int64_t> cells,
   return cells_new;
 }
 //-----------------------------------------------------------------------------
-std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
+std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int num_nodes)
 {
-  if (cell == mesh::CellType::prism and dim == 2)
-    throw std::runtime_error("More work needed for prism cell");
-
-  // Get cell type
-  mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
-
-  // Determine VTK cell type (arbitrary Lagrange elements)
+  // Arbitrary-degree Lagrange types where VTK has them
   // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
-  switch (cell_type)
+  switch (cell)
   {
   case mesh::CellType::point:
     return 1;
@@ -756,10 +763,18 @@ std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
     return 71;
   case mesh::CellType::hexahedron:
     return 72;
-  case mesh::CellType::pyramid:
-    return 14;
   case mesh::CellType::prism:
     return 73;
+  case mesh::CellType::pyramid:
+    // VTK has no arbitrary-degree Lagrange pyramid to fall back on, and
+    // its quadratic pyramid (27) is the 13-node serendipity cell, which
+    // basix has no element for, so it cannot be written or read back
+    if (num_nodes == 5)
+      return 14;
+    throw std::invalid_argument(
+        std::format("VTK pyramid output supports 5 nodes, got {}. "
+                    "Lagrange pyramids are not implemented in VTK.",
+                    num_nodes));
   default:
     throw std::runtime_error("Unknown cell type");
   }

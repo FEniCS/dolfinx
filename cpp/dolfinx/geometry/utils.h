@@ -356,8 +356,10 @@ _compute_closest_entity(const geometry::BoundingBoxTree<T>& tree,
       // If bounding box closer than previous closest entity, use gjk to
       // obtain exact distance to the convex hull of the entity
       if (r2 <= R2)
+      {
         r2 = squared_distance_entity(mesh, tree.tdim(), bbox.back(), point,
                                      scratch);
+      }
     }
 
     // If entity is closer than best result so far, return it

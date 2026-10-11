@@ -607,8 +607,10 @@ FiniteElement<T>::create_interpolation_operator(const FiniteElement& from) const
     for (std::size_t i = 0; i < dshape[0]; ++i)
       for (std::size_t j = 0; j < dshape[1]; ++j)
         for (int k = 0; k < _bs; ++k)
+        {
           out[shape[1] * (i * _bs + k) + (j * _bs + k)]
               = data[dshape[1] * i + j];
+        }
 
     return {std::move(out), shape};
   }
