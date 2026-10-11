@@ -168,12 +168,8 @@ public:
   /// (see Topology::index_map).
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
-  /// @brief Compute or set a per-cell marker for a consistent
+  /// @brief Compute or set a per-facet-per-cell marker for a consistent
   /// orientation of a surface mesh.
-  ///
-  /// The cells are not modified. A marker is stored for each cell in the
-  /// cell permutation info, where elements whose basis depends on the
-  /// cell orientation consume it.
   ///
   /// On a manifold mesh, whose topological dimension is less than its
   /// geometric dimension, the contravariant Piola map scales by the
@@ -210,20 +206,8 @@ public:
   /// depends on it invalidates existing Function data on them, as their
   /// degrees-of-freedom are not corrected.
   ///
-  /// @note Collective. The two branches do different collective work, so
-  /// `orientations` must be engaged on every rank or on none.
-  /// @pre `orientations` is engaged on every rank or on none.
-  /// @pre A ghost cell has the same orientation as on its owner.
-  /// @param[in] orientations For each owned and ghost cell, in local cell
-  /// order, `-1` if its orientation is reversed relative to its vertex
-  /// order and `1` otherwise. If `std::nullopt`, a consistent orientation
-  /// is computed instead.
   /// @throws std::invalid_argument If the topological dimension is not
-  /// 2, or `orientations` does not have one entry per owned and ghost
-  /// cell.
-  /// @throws std::runtime_error If no orientation is given and an edge
-  /// is shared by more than two cells, or a facet needs a sign on a
-  /// process that holds no ghost cells.
+  /// 2, or if an interior facet is not shared by two cells.
   /// @throws std::out_of_range If there is more than one cell type.
   void create_facet_orientations();
 
