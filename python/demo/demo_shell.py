@@ -367,7 +367,9 @@ V_out = fem.functionspace(msh, output_element)
 displacement = fem.Function(V_out, dtype=PETSc.ScalarType)
 displacement.interpolate(solution.sub(0))
 reference_position = fem.Function(V_out, dtype=default_real_type)
-reference_position.interpolate(fem.Expression(position, V_out.element.interpolation_points))
+reference_position.interpolate(
+    fem.Expression(position, V_out.element.interpolation_points, dtype=default_real_type)
+)
 out_folder = Path("out_shell")
 out_folder.mkdir(exist_ok=True)
 write_shell_vtkhdf(
@@ -507,6 +509,13 @@ assert facet_tags is not None
 # {py:meth}`Mesh.h <dolfinx.mesh.Mesh.h>` and store them in a cellwise
 # constant function for PSRI and drilling. The stabilisation follows the
 # [embedded shell formulation](https://bleyerj.github.io/comet-fenicsx/tours/shells/linear_shell/linear_shell.html).
+#
+# Ordering is undefined for complex numbers, so UFL rejects a comparison
+# unless it can see that both sides are real. Geometry and cell sizes are
+# real, but UFL cannot infer this through a square root or a coefficient,
+# so wrap those comparisons in `ufl.real`. The cell-size function itself
+# uses the form scalar type, since a form and its coefficients must agree.
+# The demo then also runs in a complex-scalar build.
 
 # +
 X = ufl.SpatialCoordinate(surface)
@@ -516,7 +525,7 @@ j1 = ufl.as_vector((J[0, 1], J[1, 1], J[2, 1]))
 cross = ufl.cross(j0, j1)
 n_cell = cross / ufl.sqrt(ufl.dot(cross, cross))
 radial = ufl.as_vector((X[0], 0, X[2]))
-n_surface = ufl.conditional(ufl.gt(ufl.dot(n_cell, radial), 0), n_cell, -n_cell)
+n_surface = ufl.conditional(ufl.gt(ufl.real(ufl.dot(n_cell, radial)), 0), n_cell, -n_cell)
 t1 = ufl.cross(axis, n_surface)
 t1 = t1 / ufl.sqrt(ufl.dot(t1, t1))
 t2 = ufl.cross(n_surface, t1)
@@ -532,10 +541,10 @@ cell_map = surface.topology.index_map(2)
 assert cell_map is not None
 surface_cells = np.arange(cell_map.size_local + cell_map.num_ghosts, dtype=np.int32)
 H = fem.functionspace(surface, ("DG", 0))
-h_surface = fem.Function(H, dtype=default_real_type)
+h_surface = fem.Function(H, dtype=PETSc.ScalarType)
 h_surface.x.array[H.dofmap.list[:, 0]] = surface.h(2, surface_cells)
 h_surface.x.scatter_forward()
-alpha_surface = ufl.min_value(1.0, (thickness / h_surface) ** 2)
+alpha_surface = ufl.min_value(1.0, (thickness / ufl.real(h_surface)) ** 2)
 # -
 
 
@@ -578,7 +587,7 @@ assert abs(surface_area / cad_area - 1) < 0.005
 assert cad_area > 0
 curvature_squared = integral(ufl.inner(ufl.grad(n_surface), ufl.grad(n_surface)) * dx_surface).real
 assert np.isfinite(curvature_squared) and curvature_squared > 0
-gaussian_curvature = ufl.det(T.T * ufl.grad(n_surface) * T)
+gaussian_curvature = ufl.real(ufl.det(T.T * ufl.grad(n_surface) * T))
 positive_curvature = integral(ufl.max_value(gaussian_curvature, 0) * dx_surface).real
 negative_curvature = integral(-ufl.min_value(gaussian_curvature, 0) * dx_surface).real
 assert positive_curvature > 0 and negative_curvature > 0
