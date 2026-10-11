@@ -184,7 +184,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         = shape_to_string(value_shape).c_str();
     attr_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
-    std::span<const scalar_value_t<T>> u;
+    std::span<const scalar_value_t<T>> u_values;
     std::vector<scalar_value_t<T>> _data;
     if constexpr (!std::is_scalar_v<T>)
     {
@@ -200,14 +200,14 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         std::ranges::transform(data_values, _data.begin(),
                                [](auto x) { return x.imag(); });
       }
-      u = std::span<const scalar_value_t<T>>(_data);
+      u_values = std::span<const scalar_value_t<T>>(_data);
     }
     else
-      u = std::span<const T>(data_values);
+      u_values = std::span<const T>(data_values);
 
     // -- Real case, add data item
     std::string h5_path = std::format("/Function/{}/{}", attr_name, t_str);
-    xdmf_utils::add_data_item(attr_node, h5_id, h5_path, u, offset,
+    xdmf_utils::add_data_item(attr_node, h5_id, h5_path, u_values, offset,
                               {num_values, num_components}, "", use_mpi_io);
   }
 }

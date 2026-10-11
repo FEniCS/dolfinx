@@ -17,7 +17,7 @@ from dolfinx.mesh import create_mesh, create_unit_interval
 
 
 @pytest.mark.skip_in_parallel
-def test_distance_interval():
+def test_distance_interval() -> None:
     mesh = create_unit_interval(MPI.COMM_SELF, 1)
     d = np.array([-1.0, 0.0, 0.0])
     assert squared_distance(mesh, mesh.topology.dim, np.array([0]), d) == pytest.approx(1.0)

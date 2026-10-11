@@ -13,11 +13,20 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "traits.h"
+#include <algorithm>
 #include <array>
 #include <basix/mdspan.hpp>
+#include <cassert>
 #include <concepts>
+#include <cstdint>
+#include <dolfinx/mesh/EntityMap.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <format>
+#include <functional>
+#include <iterator>
+#include <memory>
+#include <numeric>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <stdexcept>
@@ -51,7 +60,7 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
   if (element->needs_dof_transformations())
   {
     auto mesh = coefficient.function_space()->mesh();
-    mesh->topology_mutable()->create_entity_permutations();
+    mesh->topology_mutable()->create_cell_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
@@ -60,13 +69,12 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
 
 /// @brief Gather a single coefficient's degrees-of-freedom for a single
 /// cell and apply its DOF transformation.
-/// @tparam _bs Block size known at compile time (1, 2, or 3), or -1 to
-/// use the runtime block size `bs` (allows the compiler to specialize
-/// and unroll the inner loop for the common block sizes). If `_bs >=
-/// 0`, it must equal `bs`.
 /// @param[out] coeffs Destination for this cell's packed values.
 /// @param[in] cell Cell to gather DOF values for.
-/// @param[in] bs Runtime block size of `dofmap`.
+/// @param[in] bs Block size of `dofmap`, as a run-time `int` or a
+/// compile-time `std::integral_constant<int, N>` (allows the compiler
+/// to specialize and unroll the inner loop for the common block sizes
+/// 1, 2 and 3).
 /// @param[in] v Function values to gather from, indexed by
 /// process-local DOF (see DofMap::cell_dofs).
 /// @param[in] cell_info Cell permutation data (see
@@ -74,32 +82,21 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
 /// @param[in] dofmap Dofmap used to look up `cell`'s DOFs.
 /// @param[in] transform DOF transformation applied to `coeffs` after
 /// gathering (see FiniteElement::dof_transformation_fn).
-template <int _bs, dolfinx::scalar T>
-void pack_impl(std::span<T> coeffs, std::int32_t cell, int bs,
+/// @param[in] transform_set Whether `transform` is a set (non-null)
+/// transform (see is_transform_set) -- passed in rather than checked
+/// here since it is loop-invariant across the cells a caller packs in
+/// a single call.
+template <dolfinx::scalar T>
+void pack_impl(std::span<T> coeffs, std::int32_t cell, auto bs,
                std::span<const T> v, std::span<const std::uint32_t> cell_info,
-               const DofMap& dofmap, auto transform)
+               const DofMap& dofmap, auto transform, bool transform_set)
 {
   std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
   for (std::size_t i = 0; i < dofs.size(); ++i)
-  {
-    if constexpr (_bs < 0)
-    {
-      const int pos_c = bs * i;
-      const int pos_v = bs * dofs[i];
-      for (int k = 0; k < bs; ++k)
-        coeffs[pos_c + k] = v[pos_v + k];
-    }
-    else
-    {
-      assert(_bs == bs);
-      const int pos_c = _bs * i;
-      const int pos_v = _bs * dofs[i];
-      for (int k = 0; k < _bs; ++k)
-        coeffs[pos_c + k] = v[pos_v + k];
-    }
-  }
+    std::copy_n(v.data() + bs * dofs[i], bs, coeffs.data() + bs * i);
 
-  transform(coeffs, cell_info, cell, 1);
+  if (transform_set)
+    transform(coeffs, cell_info, cell, 1);
 }
 
 /// @brief Pack a single coefficient for a set of active entities.
@@ -139,21 +136,25 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
       = element->template dof_transformation_fn<T>(doftransform::transpose);
   const int bs = dofmap.bs();
 
-  // Passing the block size as a compile-time constant lets `pack_impl`
-  // unroll its inner (per-DOF) loop for the common block sizes 1, 2,
-  // and 3, rather than looping `bs` times at runtime for every cell.
-  // `bs_c` is a `std::integral_constant<int, N>`, converted to `N` via
-  // `bs_c()` where `pack_impl`'s `_bs` template parameter is needed.
-  auto pack_for_bs = [&cells, &c, &cstride, &offset, &space_dim, &bs, &v,
-                      &cell_info, &dofmap, &transformation](auto bs_c)
+  // `transformation` does not change across cells in this call, so
+  // whether it is a set (non-null) transform is loop-invariant --
+  // checked once here rather than on every cell.
+  const bool transform_set = is_transform_set(transformation);
+
+  // Passing the block size as a compile-time constant
+  // (std::integral_constant<int, N>) lets `pack_impl` unroll its inner
+  // (per-DOF) loop for the common block sizes 1, 2, and 3, rather than
+  // looping `bs` times at runtime for every cell.
+  auto pack_for_bs = [&cells, &c, &cstride, &offset, &space_dim, &v, &cell_info,
+                      &dofmap, &transformation, transform_set](auto bs)
   {
     for (std::size_t e = 0; e < cells.extent(0); ++e)
     {
       if (std::int32_t cell = cells(e); cell >= 0)
       {
         auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
-        pack_impl<bs_c()>(cell_coeff, cell, bs, v, cell_info, dofmap,
-                          transformation);
+        pack_impl(cell_coeff, cell, bs, v, cell_info, dofmap, transformation,
+                  transform_set);
       }
     }
   };
@@ -170,7 +171,7 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
     pack_for_bs(std::integral_constant<int, 3>());
     break;
   default:
-    pack_for_bs(std::integral_constant<int, -1>());
+    pack_for_bs(bs);
     break;
   }
 }
@@ -299,8 +300,9 @@ void pack_coefficients(const Form<T, U>& form,
           // logic error, so fail loudly rather than pack it anyway.
           if (int codim = form_tdim - mesh->topology()->dim(); codim > 0)
           {
-            throw std::runtime_error("Should not be packing coefficients with "
-                                     "codim>0 in a cell integral");
+            throw std::invalid_argument(
+                "Should not be packing coefficients with "
+                "codim>0 in a cell integral");
           }
 
           std::span<const std::int32_t> cells_b
@@ -379,108 +381,8 @@ void pack_coefficients(const Form<T, U>& form,
         break;
       }
       default:
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Could not pack coefficient. Integral type not supported.");
-      }
-    }
-  }
-}
-
-/// @brief Given a Function and a related mesh and its integration entities,
-/// extract the cell indices of the coefficient mesh.
-/// @tparam T Scalar type of the coefficient.
-/// @tparam U Floating point type of the mesh geometry.
-/// @param[in] coeff The coefficient to extract cell indices for.
-/// @param[in] mesh The mesh which the integration entities belong to.
-/// @param[in] entities The integration entities. Is either a sequence of local
-/// cell indices, or a sequence of (cell, local entity index) tuples.
-/// @param[in] entity_map The map between `mesh` and `coeff`'s mesh.
-/// Required (must have a value) whenever `coeff` is not defined on
-/// `mesh` itself.
-/// @return A vector of cell indices on the coefficient mesh corresponding to
-/// the integration entities.
-template <dolfinx::scalar T, std::floating_point U>
-std::vector<std::int32_t> extract_coefficient_cells_from_entities(
-    const fem::Function<T, U>& coeff, const mesh::Mesh<U>& mesh,
-    fem::MDSpan2 auto entities,
-    std::optional<std::reference_wrapper<const dolfinx::mesh::EntityMap>>
-        entity_map)
-{
-  auto mesh_c = coeff.function_space()->mesh();
-  assert(mesh_c);
-
-  auto span_to_vector = [](auto entities)
-  {
-    assert(entities.rank() == 1);
-
-    std::vector<std::int32_t> vec;
-    vec.reserve(entities.extent(0));
-    for (std::size_t i = 0; i < entities.extent(0); ++i)
-      vec.push_back(entities[i]);
-    return vec;
-  };
-
-  if (mesh_c->topology() == mesh.topology())
-  {
-    // If same mesh no mapping is needed
-    if constexpr (entities.rank() == 1)
-      return span_to_vector(entities);
-
-    else
-      // If (cell, local_index) pairs are given, extract the cells
-      return span_to_vector(md::submdspan(entities, md::full_extent, 0));
-  }
-  else
-  {
-    assert(entity_map.has_value());
-    const mesh::Topology& topology = *mesh.topology();
-    int tdim = topology.dim();
-    int codim = tdim - mesh_c->topology()->dim();
-    const dolfinx::mesh::EntityMap& emap = entity_map.value().get();
-    bool inverse = emap.sub_topology() == mesh_c->topology();
-    // If cells are supplied on the parent mesh, we can directly map them to
-    // cells on the coefficient mesh.
-    if constexpr (entities.rank() == 1)
-    {
-      assert(codim == 0);
-
-      return emap.sub_topology_to_topology(span_to_vector(entities), inverse);
-    }
-    else if constexpr (entities.rank() == 2)
-    {
-      if (codim == 0)
-      {
-        // If codim is zero we extract the cells and map them
-        auto cells = md::submdspan(entities, md::full_extent, 0);
-        return emap.sub_topology_to_topology(span_to_vector(cells), inverse);
-      }
-      else
-      {
-        // Any other codim needs  to map (cell, local index) to facets and then
-        // to cells of the submesh
-        if (!inverse)
-        {
-          throw std::runtime_error(
-              "Unsupported mapping. Can only map from submesh to parent mesh.");
-        }
-        assert(codim > 0);
-        auto c_to_e = topology.connectivity(tdim, tdim - codim);
-        if (!c_to_e)
-        {
-          throw std::runtime_error(std::format(
-              "Topology connectivity from codim {} to {} not found.", tdim,
-              tdim - codim));
-        }
-        // Map parent (cell, local_index) to parent facet
-        std::vector<std::int32_t> contiguous_cells;
-        contiguous_cells.reserve(entities.extent(0));
-        for (std::size_t e = 0; e < entities.extent(0); ++e)
-        {
-          contiguous_cells.push_back(
-              c_to_e->links(entities(e, 0))[entities(e, 1)]);
-        }
-        // Map parent facet to submesh cell
-        return emap.sub_topology_to_topology(contiguous_cells, inverse);
       }
     }
   }
@@ -516,49 +418,27 @@ void pack_coefficients(
   if (c.size() < entities.extent(0) * offsets.back())
     throw std::runtime_error("Coefficient packing span is too small.");
 
-  // Helper function to get correct entity map. Note: `mesh` is
-  // captured by reference -- capturing it by value would copy the
-  // whole Mesh (including its Geometry's coordinate array) on every
-  // call.
-  auto get_entity_map
-      = [&mesh, &entity_maps](auto& mesh0) -> const mesh::EntityMap&
-  {
-    auto it = std::ranges::find_if(
-        entity_maps,
-        [&mesh, mesh0](const mesh::EntityMap& em)
-        {
-          return (em.topology() == mesh0->topology()
-                  and em.sub_topology() == mesh.topology())
-                 or (em.sub_topology() == mesh0->topology()
-                     and em.topology() == mesh.topology());
-        });
-
-    if (it == entity_maps.end())
-    {
-      throw std::runtime_error(
-          "Incompatible mesh. argument entity_maps must be provided.");
-    }
-    return *it;
-  };
-
   // Iterate over coefficients
+  const mesh::Topology& topology = *mesh.topology();
   for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
   {
-    // Get mesh of coefficient and check if entity map is required
-    auto mesh_c = coeffs[coeff].get().function_space()->mesh();
+    // Get topology of coefficient and check if entity map is required
+    std::shared_ptr<const mesh::Mesh<U>> mesh_c
+        = coeffs[coeff].get().function_space()->mesh();
+    assert(mesh_c);
+    const mesh::Topology& topology_c = *mesh_c->topology();
     std::vector<std::int32_t> coefficient_cells;
-    if (mesh_c->topology() == mesh.topology())
+    if (&topology_c == &topology)
     {
-      coefficient_cells = extract_coefficient_cells_from_entities(
-          coeffs[coeff].get(), mesh, entities, std::nullopt);
+      coefficient_cells = mesh::extract_cells_from_entities(
+          topology_c, topology, entities, std::nullopt);
     }
     else
     {
-      // Find correct entity map and determine direction of the map
-      const mesh::EntityMap& emap = get_entity_map(mesh_c);
-      coefficient_cells = extract_coefficient_cells_from_entities(
-          coeffs[coeff].get(), mesh, entities,
-          std::reference_wrapper<const mesh::EntityMap>(emap));
+      const mesh::EntityMap& emap
+          = mesh::find_entity_map(entity_maps, topology, topology_c);
+      coefficient_cells = mesh::extract_cells_from_entities(
+          topology_c, topology, entities, std::cref(emap));
     }
 
     std::span<const std::uint32_t> cell_info

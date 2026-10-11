@@ -16,12 +16,14 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <iterator>
 #include <memory>
 #include <mpi.h>
 #include <numeric>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <type_traits>
@@ -102,13 +104,13 @@ public:
   /// typically used in finite element assembly functions.
   ///
   /// Create a function to set values in a MatrixCSR. The function
-  /// signature is `int mat_set_fn(std::span<const std::int32_t rows,
-  /// std::span<const std::int32_t cols, std::span<const value_type>
-  /// data)`. The rows and columns use process local indexing, and the
-  /// given rows and columns must pre-exist in the sparsity pattern of
-  /// the matrix. Insertion into "ghost" rows (in the ghost region of
-  /// the row `IndexMap`) is permitted, so long as there are correct
-  /// entries in the sparsity pattern.
+  /// signature is `int mat_set_fn(rows, cols, std::span<const value_type>
+  /// data)`, where `rows` and `cols` are common::LocalIndexRange, e.g.
+  /// `std::span<const std::int32_t>` of static or dynamic extent. The rows and
+  /// columns use process local indexing, and the given rows and columns must
+  /// pre-exist in the sparsity pattern of the matrix. Insertion into "ghost"
+  /// rows (in the ghost region of the row `IndexMap`) is permitted, so long as
+  /// there are correct entries in the sparsity pattern.
   ///
   /// @note Using rows or columns which are not in the sparsity will
   /// result in undefined behaviour (or an assert failure in Debug
@@ -131,11 +133,16 @@ public:
           "Cannot insert blocks of different size than matrix block size");
     }
 
-    return [this](std::span<const std::int32_t> rows,
-                  std::span<const std::int32_t> cols,
+    return [this](const common::LocalIndexRange auto& rows,
+                  const common::LocalIndexRange auto& cols,
                   std::span<const value_type> data) -> int
     {
-      this->set<BS0, BS1>(data, rows, cols);
+      this->set<BS0, BS1>(
+          data,
+          std::span<const std::int32_t>(std::ranges::data(rows),
+                                        std::ranges::size(rows)),
+          std::span<const std::int32_t>(std::ranges::data(cols),
+                                        std::ranges::size(cols)));
       return 0;
     };
   }
@@ -144,13 +151,13 @@ public:
   /// typically used in finite element assembly functions.
   ///
   /// Create a function to add values to a MatrixCSR. The function
-  /// signature is `int mat_add_fn(std::span<const std::int32_t rows,
-  /// std::span<const std::int32_t cols, std::span<const value_type>
-  /// data)`. The rows and columns use process local indexing, and the
-  /// given rows and columns must pre-exist in the sparsity pattern of
-  /// the matrix. Insertion into "ghost" rows (in the ghost region of
-  /// the row `IndexMap`) is permitted, so long as there are correct
-  /// entries in the sparsity pattern.
+  /// signature is `int mat_add_fn(rows, cols, std::span<const value_type>
+  /// data)`, where `rows` and `cols` are common::LocalIndexRange, e.g.
+  /// `std::span<const std::int32_t>` of static or dynamic extent. The rows and
+  /// columns use process local indexing, and the given rows and columns must
+  /// pre-exist in the sparsity pattern of the matrix. Insertion into "ghost"
+  /// rows (in the ghost region of the row `IndexMap`) is permitted, so long as
+  /// there are correct entries in the sparsity pattern.
   ///
   /// @note Using rows or columns which are not in the sparsity will
   /// result in undefined behaviour (or an assert failure in Debug
@@ -173,11 +180,16 @@ public:
           "Cannot insert blocks of different size than matrix block size");
     }
 
-    return [this](std::span<const std::int32_t> rows,
-                  std::span<const std::int32_t> cols,
+    return [this](const common::LocalIndexRange auto& rows,
+                  const common::LocalIndexRange auto& cols,
                   std::span<const value_type> data) -> int
     {
-      this->add<BS0, BS1>(data, rows, cols);
+      this->add<BS0, BS1>(
+          data,
+          std::span<const std::int32_t>(std::ranges::data(rows),
+                                        std::ranges::size(rows)),
+          std::span<const std::int32_t>(std::ranges::data(cols),
+                                        std::ranges::size(cols)));
       return 0;
     };
   }
@@ -208,13 +220,27 @@ public:
   template <SparsityImplementation T>
   MatrixCSR(const T& p, BlockMode mode = BlockMode::compact);
 
+  // Copy constructor (deleted). Copying deep-copies the matrix data and
+  // duplicates the communicator, which is collective.
+  MatrixCSR(const MatrixCSR& A) = delete;
+
   /// Move constructor
-  /// @todo Check handling of MPI_Request
+  /// @note A scatter in flight transfers to the new matrix, which must
+  /// complete it with scatter_rev_end().
   MatrixCSR(MatrixCSR&& A) = default;
 
-  /// Copy constructor
-  /// @todo Check handling of MPI_Request
-  MatrixCSR(const MatrixCSR& A) = default;
+  /// Destructor
+  ~MatrixCSR() = default;
+
+  // Copy assignment (deleted). Same reasons as the copy constructor.
+  MatrixCSR& operator=(const MatrixCSR& A) = delete;
+
+  /// Move assignment
+  /// @note A scatter in flight on `A` transfers to this matrix. Any
+  /// scatter in flight on this matrix is dropped, so a prior
+  /// scatter_rev_begin() on it must already have a matching
+  /// scatter_rev_end().
+  MatrixCSR& operator=(MatrixCSR&& A) = default;
 
   /// @brief Copy-convert matrix, possibly using to different container
   /// types.
@@ -239,7 +265,7 @@ public:
         _row_ptr(A.row_ptr().begin(), A.row_ptr().end()),
         _off_diagonal_offset(A.off_diag_offset().begin(),
                              A.off_diag_offset().end()),
-        _comm(A.comm()), _request(MPI_REQUEST_NULL), _unpack_pos(A._unpack_pos),
+        _comm(A.comm()), _unpack_pos(A._unpack_pos),
         _val_send_disp(A._val_send_disp), _val_recv_disp(A._val_recv_disp),
         _ghost_row_to_rank(A._ghost_row_to_rank), _finalized(A._finalized)
   {
@@ -449,7 +475,7 @@ public:
         _ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
         dolfinx::MPI::mpi_t<value_type>, _ghost_value_data_in.data(),
         val_recv_count.data(), _val_recv_disp.data(),
-        dolfinx::MPI::mpi_t<value_type>, _comm.comm(), &_request);
+        dolfinx::MPI::mpi_t<value_type>, _comm.comm(), &_request.request());
     dolfinx::MPI::check_error(_comm.comm(), status);
   }
 
@@ -461,7 +487,7 @@ public:
   void scatter_rev_end()
   {
     check_not_finalized();
-    int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
+    int status = MPI_Wait(&_request.request(), MPI_STATUS_IGNORE);
     dolfinx::MPI::check_error(_comm.comm(), status);
 
     _ghost_value_data.clear();
@@ -692,8 +718,9 @@ private:
 
   // -- Precomputed data for scatter_rev/update
 
-  // Request in non-blocking communication
-  MPI_Request _request;
+  // Request for a scatter in flight. Transfers on move, so that the
+  // moved-from matrix does not name the target's request.
+  dolfinx::MPI::Request _request;
 
   // Position in _data to add received data
   std::vector<std::size_t> _unpack_pos;

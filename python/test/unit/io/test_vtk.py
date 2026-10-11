@@ -31,7 +31,7 @@ cell_types_2D = [CellType.triangle, CellType.quadrilateral]
 cell_types_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
-def test_save_1d_mesh_subdir(tempdir):
+def test_save_1d_mesh_subdir(tempdir) -> None:
     filename = Path(tempdir, "mesh.pvd")
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
@@ -40,7 +40,7 @@ def test_save_1d_mesh_subdir(tempdir):
 
 
 @pytest.mark.parametrize("cell_type", cell_types_2D)
-def test_save_2d_mesh(tempdir, cell_type):
+def test_save_2d_mesh(tempdir, cell_type) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 32, cell_type=cell_type)
     filename = Path(tempdir, f"mesh_{cell_type.name}.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
@@ -49,7 +49,7 @@ def test_save_2d_mesh(tempdir, cell_type):
 
 
 @pytest.mark.parametrize("cell_type", cell_types_3D)
-def test_save_3d_mesh(tempdir, cell_type):
+def test_save_3d_mesh(tempdir, cell_type) -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, cell_type=cell_type)
     filename = Path(tempdir, f"mesh_{cell_type.name}.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
@@ -57,7 +57,7 @@ def test_save_3d_mesh(tempdir, cell_type):
         vtk.write_mesh(mesh, 2.0)
 
 
-def test_save_1d_scalar(tempdir):
+def test_save_1d_scalar(tempdir) -> None:
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     u = Function(functionspace(mesh, ("Lagrange", 2)))
     u.interpolate(lambda x: x[0])
@@ -67,7 +67,7 @@ def test_save_1d_scalar(tempdir):
 
 
 @pytest.mark.parametrize("cell_type", cell_types_2D)
-def test_save_2d_scalar(tempdir, cell_type):
+def test_save_2d_scalar(tempdir, cell_type) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type=cell_type)
     u = Function(functionspace(mesh, ("Lagrange", 2)))
     u.x.array[:] = 1.0
@@ -79,7 +79,7 @@ def test_save_2d_scalar(tempdir, cell_type):
 
 
 @pytest.mark.parametrize("cell_type", cell_types_3D)
-def test_save_3d_scalar(tempdir, cell_type):
+def test_save_3d_scalar(tempdir, cell_type) -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, cell_type=cell_type)
     u = Function(functionspace(mesh, ("Lagrange", 2)))
     u.x.array[:] = 1.0
@@ -90,7 +90,7 @@ def test_save_3d_scalar(tempdir, cell_type):
         vtk.write_function(u, 1.0)
 
 
-def test_save_1d_vector(tempdir):
+def test_save_1d_vector(tempdir) -> None:
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
 
     def f(x):
@@ -108,7 +108,7 @@ def test_save_1d_vector(tempdir):
 
 
 @pytest.mark.parametrize("cell_type", cell_types_2D)
-def test_save_2d_vector(tempdir, cell_type):
+def test_save_2d_vector(tempdir, cell_type) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type=cell_type)
     gdim = mesh.geometry.dim
     u = Function(functionspace(mesh, ("Lagrange", 1, (gdim,))))
@@ -127,7 +127,7 @@ def test_save_2d_vector(tempdir, cell_type):
 
 
 @pytest.mark.skip_in_parallel
-def test_save_2d_vector_CG2(tempdir):
+def test_save_2d_vector_CG2(tempdir) -> None:
     points = np.array(
         [[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0], [1, 2], [0.5, 2], [1, 1]],
         dtype=default_real_type,
@@ -143,7 +143,7 @@ def test_save_2d_vector_CG2(tempdir):
         vtk.write_function(u, 0.0)
 
 
-def test_save_vtk_mixed(tempdir):
+def test_save_vtk_mixed(tempdir) -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     P2 = element(
         "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
@@ -180,7 +180,7 @@ def test_save_vtk_mixed(tempdir):
 
 
 @pytest.mark.parametrize("cell_type", cell_types_2D)
-def test_save_vector_element(tempdir, cell_type):
+def test_save_vector_element(tempdir, cell_type) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type=cell_type)
     u = Function(functionspace(mesh, ("RT", 1)))
 
@@ -218,7 +218,7 @@ def test_save_vtk_cell_point(tempdir):
         vtk.write_function((U1, U2), 0.0)
 
 
-def test_save_1d_tensor(tempdir):
+def test_save_1d_tensor(tempdir) -> None:
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     e = element("Lagrange", mesh.basix_cell(), 2, shape=(2, 2), dtype=default_real_type)
     u = Function(functionspace(mesh, e))
@@ -228,7 +228,7 @@ def test_save_1d_tensor(tempdir):
         vtk.write_function(u, 0.0)
 
 
-def test_save_2d_tensor(tempdir):
+def test_save_2d_tensor(tempdir) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16)
     gdim = mesh.geometry.dim
     u = Function(functionspace(mesh, ("Lagrange", 2, (gdim, gdim))))
@@ -240,7 +240,7 @@ def test_save_2d_tensor(tempdir):
         vtk.write_function(u, 1.0)
 
 
-def test_save_3d_tensor(tempdir):
+def test_save_3d_tensor(tempdir) -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
     gdim = mesh.geometry.dim
     u = Function(functionspace(mesh, ("Lagrange", 2, (gdim, gdim))))
@@ -250,7 +250,7 @@ def test_save_3d_tensor(tempdir):
         vtk.write_function(u, 0.0)
 
 
-def test_triangle_perm_vtk():
+def test_triangle_perm_vtk() -> None:
     higher_order_triangle_perm = {
         10: np.array([0, 1, 2, 5, 6, 8, 7, 3, 4, 9]),
         15: np.array([0, 1, 2, 6, 7, 8, 11, 10, 9, 3, 4, 5, 12, 13, 14]),
@@ -441,7 +441,7 @@ def test_triangle_perm_vtk():
         assert_array_equal(v, v_test)
 
 
-def test_vtk_mesh():
+def test_vtk_mesh() -> None:
     comm = MPI.COMM_WORLD
     mesh = create_unit_square(comm, 2 * comm.size, 2 * comm.size)
     V = functionspace(mesh, ("Lagrange", 1))

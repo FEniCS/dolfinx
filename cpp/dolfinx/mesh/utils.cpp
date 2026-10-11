@@ -5,13 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include "Geometry.h"
 #include "Mesh.h"
 #include "Topology.h"
 #include "cell_types.h"
 #include "graphbuild.h"
 #include <algorithm>
-#include <cstdlib>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>
@@ -20,26 +19,28 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <format>
-#include <functional>
+#include <iterator>
+#include <numeric>
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-mesh::impl::reorder_cells(const CellReorderFunction& reorder_fn,
-                          std::optional<std::int32_t> max_facet_to_cell_links,
-                          const std::vector<CellType>& celltypes,
-                          const std::vector<fem::ElementDofLayout>& doflayouts,
-                          const std::vector<std::vector<int>>& ghost_owners,
-                          std::vector<std::vector<std::int64_t>>& cells,
-                          std::vector<std::span<std::int64_t>>& cells_v,
-                          std::vector<std::vector<std::int64_t>>& original_idx,
-                          int num_threads)
+std::vector<std::int64_t> mesh::impl::reorder_cells(
+    const graph::Reorder& reorder_fn, std::span<const double> cell_centroids,
+    int gdim, std::optional<std::int32_t> max_facet_to_cell_links,
+    const std::vector<CellType>& celltypes,
+    const std::vector<fem::ElementDofLayout>& doflayouts,
+    const std::vector<std::vector<int>>& ghost_owners,
+    std::vector<std::vector<std::int64_t>>& cells,
+    std::vector<std::span<std::int64_t>>& cells_v,
+    std::vector<std::vector<std::int64_t>>& original_idx, int num_threads)
 {
   // Build local dual graph for owned cells to (i) get list of vertices
   // on the process boundary and (ii) apply re-ordering to cells for
@@ -53,27 +54,71 @@ mesh::impl::reorder_cells(const CellReorderFunction& reorder_fn,
   // vertices per facet), which can differ between cell types.
   std::vector<std::pair<std::vector<std::int64_t>, int>> facets;
 
-  // Build lists of cells (by cell type) that excludes ghosts
-  std::vector<std::span<const std::int64_t>> cells1_v_local;
+  std::size_t cell_offset = 0;
   for (std::size_t i = 0; i < celltypes.size(); ++i)
   {
-    int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
-    std::size_t num_owned_cells
+    const int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
+    const std::size_t num_owned_cells
         = cells_v[i].size() / num_cell_vertices - ghost_owners[i].size();
-    cells1_v_local.emplace_back(cells_v[i].data(),
-                                num_owned_cells * num_cell_vertices);
+    const std::span<const std::int64_t> cells_v_owned(
+        cells_v[i].data(), num_owned_cells * num_cell_vertices);
 
-    // Build local dual graph for cell type
+    // Build local dual graph for cell type, from the owned (non-ghost)
+    // cells only
     auto [graph, unmatched_facets, max_v, _facet_attached_cells]
         = build_local_dual_graph(std::vector{celltypes[i]},
-                                 std::vector{cells1_v_local.back()},
+                                 std::vector{cells_v_owned},
                                  max_facet_to_cell_links, num_threads);
 
     // Store unmatched_facets for current cell type
     facets.emplace_back(std::move(unmatched_facets), max_v);
 
-    // Compute re-ordering of graph
-    const std::vector<std::int32_t> remap = reorder_fn(graph);
+    // Compute graph reordering.
+    const std::vector<std::int32_t> remap = std::visit(
+        [cell_centroids, gdim, cell_offset, num_owned_cells,
+         &graph](const auto& fn) -> std::vector<std::int32_t>
+        {
+          using F = std::decay_t<decltype(fn)>;
+          if constexpr (std::is_same_v<F, graph::reorder_graph_fn>)
+            return fn ? fn(graph) : graph::reorder_rcm(graph);
+          else
+          {
+            if (!fn)
+            {
+              throw std::invalid_argument(
+                  "Geometric cell reordering function is empty.");
+            }
+            return fn(
+                cell_centroids.subspan(cell_offset, gdim * num_owned_cells),
+                gdim);
+          }
+        },
+        reorder_fn);
+
+    // Validate that the reordering function returned a permutation of
+    // [0, num_owned_cells), since remap is used as one below (both as a
+    // direct index and via reorder_list).
+    if (remap.size() != num_owned_cells)
+    {
+      throw std::invalid_argument(
+          "Cell reordering function returned the wrong number of cells.");
+    }
+#ifndef NDEBUG
+    {
+      std::vector<std::int8_t> seen(num_owned_cells, 0);
+      for (std::int32_t r : remap)
+      {
+        if (r < 0 or static_cast<std::size_t>(r) >= num_owned_cells or seen[r])
+        {
+          throw std::invalid_argument(
+              "Cell reordering function did not return a permutation.");
+        }
+        seen[r] = 1;
+      }
+    }
+#endif
+
+    cell_offset += gdim * num_owned_cells;
 
     // Update 'original' indices
     const std::vector<std::int64_t>& orig_idx = original_idx[i];
@@ -215,7 +260,12 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
     const std::vector<int>& local_index = layout.entity_dofs(0, i);
-    assert(local_index.size() == 1);
+    if (local_index.size() != 1)
+    {
+      throw std::invalid_argument(
+          "Coordinate element dof layout must have exactly one dof per "
+          "vertex.");
+    }
     local_vertices[i] = local_index[0];
   }
 
@@ -297,19 +347,11 @@ mesh::compute_incident_entities(const Topology& topology,
                                 std::span<const std::int32_t> entities, int d0,
                                 int d1)
 {
+  // index_map(d0)/index_map(d1) throw std::out_of_range if entities of
+  // that dimension have not been created; d1's map is otherwise unused
+  // here.
   auto map0 = topology.index_map(d0);
-  if (!map0)
-  {
-    throw std::runtime_error(std::format(
-        "Mesh entities of dimension {} have not been created.", d0));
-  }
-
-  auto map1 = topology.index_map(d1);
-  if (!map1)
-  {
-    throw std::runtime_error(std::format(
-        "Mesh entities of dimension {} have not been created.", d1));
-  }
+  topology.index_map(d1);
 
   auto e0_to_e1 = topology.connectivity(d0, d1);
   if (!e0_to_e1)
@@ -318,9 +360,12 @@ mesh::compute_incident_entities(const Topology& topology,
         std::format("Connectivity missing: ({}, {})", d0, d1));
   }
 
+  const std::int32_t num_entities0 = map0->size_local() + map0->num_ghosts();
   std::vector<std::int32_t> entities1;
   for (std::int32_t entity : entities)
   {
+    if (entity < 0 or entity >= num_entities0)
+      throw std::out_of_range("Entity index out of range.");
     auto e = e0_to_e1->links(entity);
     entities1.insert(entities1.end(), e.begin(), e.end());
   }

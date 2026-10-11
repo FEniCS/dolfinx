@@ -9,7 +9,7 @@
 #include <basix/finite-element.h>
 
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/utils.h>
+#include <dolfinx/fem/functionspace_factory.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
 
@@ -27,5 +27,6 @@ TEST_CASE("Create Function Space (mismatch of elements)", "[functionspace]")
       basix::element::dpc_variant::unset, false);
 
   CHECK_THROWS(fem::create_functionspace<double>(
-      mesh, std::make_shared<fem::FiniteElement<double>>(element)));
+      mesh, std::make_shared<fem::FiniteElement<double>>(
+                element, mesh->geometry().dim())));
 }

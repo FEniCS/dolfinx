@@ -19,6 +19,7 @@
 # ```
 # This demo illustrates how to:
 # - Create a complex-valued finite element formulation
+#
 # In the following example, we will consider the Helmholtz equation solved
 # with both a complex valued and a real valued finite element formulation.
 #
@@ -106,7 +107,7 @@ bcs = [dirichletbc(u_bc, dofs_D)]
 # -
 
 # In this problem, we rely on PETSc as the linear algebra backend.
-# PETSc can only be configured for a either real of complex valued matrices
+# PETSc can only be configured for either real- or complex-valued matrices
 # and vectors. We can check how PETSc is configured by calling
 
 # +

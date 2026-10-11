@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Garth N. Wells, Chris Richardson, Joseph P. Dean and
+// Copyright (C) 2019-2026 Garth N. Wells, Chris Richardson, Joseph P. Dean and
 // Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -11,12 +11,14 @@
 #include "traits.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
-#include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <functional>
 #include <map>
 #include <memory>
@@ -45,6 +47,63 @@ enum class IntegralType : std::int8_t
   vertex = 3,         ///< Vertex
   ridge = 4           ///< Ridge
 };
+
+/// @brief Topological dimension of the mesh entities an integral of the
+/// given type is over.
+///
+/// @param[in] type Integral type.
+/// @param[in] tdim Topological dimension of the integration domain.
+/// @return Entity dimension, equal to `tdim` for a cell integral.
+constexpr int integral_entity_dim(IntegralType type, int tdim)
+{
+  switch (type)
+  {
+  case IntegralType::exterior_facet:
+  case IntegralType::interior_facet:
+    return tdim - 1;
+  case IntegralType::ridge:
+    return tdim - 2;
+  case IntegralType::vertex:
+    return 0;
+  case IntegralType::cell:
+    return tdim;
+  }
+
+  throw std::invalid_argument("Unknown integral type.");
+}
+
+namespace impl
+{
+/// @brief Permutations of the cell-local entities that an integral of
+/// the given type is over.
+///
+/// Computes the permutations on `topology` if they are not already
+/// available. Returns an empty mdspan when the integration entity has
+/// no orientation to permute: cell integrals, and integrals over
+/// entities that are vertices.
+///
+/// @param[in,out] topology Mesh topology of the integration domain.
+/// @param[in] type Integral type.
+/// @param[in] cell_type Cell type of the integration domain.
+/// @return Permutation of each cell-local entity, shape
+/// `(num_cells, entities_per_cell)`.
+inline md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
+entity_permutations(mesh::Topology& topology, IntegralType type,
+                    mesh::CellType cell_type)
+{
+  if (type == IntegralType::cell)
+    return {};
+
+  const int tdim = topology.dim();
+  const int dim = integral_entity_dim(type, tdim);
+
+  topology.create_entity_permutations(dim);
+  const std::vector<std::uint8_t>& p = topology.get_entity_permutations(dim);
+  const int num_entities_per_cell = mesh::cell_num_entities(cell_type, dim);
+  return md::mdspan(p.data(), p.size() / num_entities_per_cell,
+                    num_entities_per_cell);
+}
+} // namespace impl
 
 /// @brief Represents integral data, containing the kernel, and a list
 /// of entities to integrate over and the indices of the coefficient
@@ -165,11 +224,12 @@ public:
       const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
           entity_maps)
       : _function_spaces(V), _integrals(std::forward<X>(integrals)),
-        _mesh(mesh), _coefficients(coefficients), _constants(constants),
+        _mesh(std::move(mesh)), _coefficients(coefficients),
+        _constants(constants),
         _needs_facet_permutations(needs_facet_permutations)
   {
     if (!_mesh)
-      throw std::runtime_error("Form Mesh is null.");
+      throw std::invalid_argument("Form Mesh is null.");
 
     // `_mesh` is fixed for the remainder of construction, so its
     // topology and dimension are fetched once and reused below rather
@@ -177,77 +237,60 @@ public:
     const mesh::Topology& topology = *_mesh->topology();
     const int tdim = topology.dim();
 
-    // A helper function to find the correct entity map for a given mesh
-    auto get_entity_map
-        = [mesh, &entity_maps](auto& mesh0) -> const mesh::EntityMap&
+    // Map the integration entities of one integral to the
+    // argument/coefficient domain, checking first that the mapping is
+    // expressible: an integration entity maps to a *cell* of that mesh,
+    // so unless the meshes have equal dimension the integral's entity
+    // dimension must be that mesh's.
+    auto map_entities
+        = [tdim,
+           &topology](IntegralType type, std::span<const std::int32_t> entities,
+                      const mesh::Topology& topology0,
+                      const mesh::EntityMap& emap) -> std::vector<std::int32_t>
     {
-      auto it = std::ranges::find_if(
-          entity_maps,
-          [mesh, mesh0](const mesh::EntityMap& em)
-          {
-            return ((em.topology() == mesh0->topology()
-                     and em.sub_topology() == mesh->topology()))
-                   or ((em.sub_topology() == mesh0->topology()
-                        and em.topology() == mesh->topology()));
-          });
-
-      if (it == entity_maps.end())
+      if (type == IntegralType::cell)
       {
-        throw std::runtime_error(
-            "Incompatible mesh. argument entity_maps must be provided.");
+        return mesh::extract_cells_from_entities(
+            topology0, topology, md::mdspan(entities.data(), entities.size()),
+            std::cref(emap));
       }
-      return *it;
-    };
 
-    // A helper function to compute the (cell, local_facet) pairs in the
-    // argument/coefficient domain from the (cell, local_facet) pairs in
-    // `this->mesh()`.
-    auto compute_facet_domains
-        = [](const auto& int_ents_mesh, int codim, const auto& c_to_f,
-             const auto& emap, bool inverse)
-    {
-      // TODO: This function would be much neater using
-      // `std::views::stride(2)` from C++ 23
-
-      // Get a list of entities to map to the argument/coefficient
-      // domain
-      std::vector<std::int32_t> entities;
-      entities.reserve(int_ents_mesh.size() / 2);
-      if (codim == 0)
+      if (type == IntegralType::vertex)
       {
-        // In the codim 0 case, we need to map from cells in
-        // `this->mesh()` to cells in the argument/coefficient mesh, so
-        // here we extract the cells.
-        for (std::size_t i = 0; i < int_ents_mesh.size(); i += 2)
-          entities.push_back(int_ents_mesh[i]);
+        throw std::invalid_argument(
+            "Vertex integrals are not supported for a form with an argument "
+            "or coefficient on another mesh. Supported types are cell, "
+            "exterior facet, interior facet and ridge.");
       }
-      else if (codim == 1)
+
+      const int dim0 = topology0.dim();
+      const int edim = integral_entity_dim(type, tdim);
+      if (tdim > dim0 and edim != dim0)
       {
-        // In the codim 1 case, we need to map facets in `this->mesh()`
-        // to cells in the argument/coefficient mesh, so here we extract
-        // the facet index using the cell-to-facet connectivity.
-        for (std::size_t i = 0; i < int_ents_mesh.size(); i += 2)
-        {
-          entities.push_back(
-              c_to_f->links(int_ents_mesh[i])[int_ents_mesh[i + 1]]);
-        }
+        throw std::invalid_argument(std::format(
+            "Cannot map integration entities of dimension {} to cells of a "
+            "mesh of dimension {}. An argument or coefficient on another mesh "
+            "must live on the entities being integrated over.",
+            edim, dim0));
       }
-      else
-        throw std::runtime_error("Codimension > 1 not supported.");
 
-      // Map from entity indices in `this->mesh()` to the corresponding
-      // cell indices in the argument/coefficient mesh
-      std::vector<std::int32_t> cells_mesh0
-          = emap.sub_topology_to_topology(entities, inverse);
+      // Map the (cell, local_entity) pairs, flattened (interior facets
+      // hold two pairs per entity), to cells of the argument/coefficient
+      // mesh
+      std::vector<std::int32_t> cells = mesh::extract_cells_from_entities(
+          topology0, topology,
+          md::mdspan<const std::int32_t,
+                     md::extents<std::size_t, md::dynamic_extent, 2>>(
+              entities.data(), entities.size() / 2, 2),
+          std::cref(emap));
 
-      // Create a list of (cell, local_facet_index) pairs in the
-      // argument/coefficient domain. Since `create_submesh`preserves
-      // the local facet index (with respect to the cell), we can use
-      // the local facet indices from the input integration entities
-      std::vector<std::int32_t> e = int_ents_mesh;
-      for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
-        e[2 * i] = cells_mesh0[i];
-
+      // Replace the cell of each pair. Only the cell column is
+      // meaningful: for codim > 0 the entity is itself the cell, so it
+      // has no local index. The local index column is kept for the
+      // layout used in packing/assembly.
+      std::vector<std::int32_t> e(entities.begin(), entities.end());
+      for (std::size_t i = 0; i < cells.size(); ++i)
+        e[2 * i] = cells[i];
       return e;
     };
 
@@ -268,33 +311,14 @@ public:
       else
       {
         // Find correct entity map
-        const mesh::EntityMap& emap = get_entity_map(mesh0);
-
-        // Determine direction of the map. We need to map from
-        // `this->mesh()` to `mesh0`, so if `emap->sub_topology()` isn't
-        // the source topology, we need the inverse map
-        bool inverse = emap.sub_topology() == mesh0->topology();
+        const mesh::Topology& topology0 = *mesh0->topology();
+        const mesh::EntityMap& emap
+            = mesh::find_entity_map(entity_maps, topology, topology0);
         for (auto& [key, itg] : _integrals)
         {
           auto [type, idx, kernel_idx] = key;
-          std::vector<std::int32_t> e;
-          if (type == IntegralType::cell)
-            e = emap.sub_topology_to_topology(itg.entities, inverse);
-          else if (type == IntegralType::exterior_facet
-                   or type == IntegralType::interior_facet)
-          {
-            assert(mesh0);
-            int codim = tdim - mesh0->topology()->dim();
-            assert(codim >= 0);
-            auto c_to_f = topology.connectivity(tdim, tdim - 1);
-            assert(c_to_f);
-            e = compute_facet_domains(itg.entities, codim, c_to_f, emap,
-                                      inverse);
-          }
-          else
-            throw std::runtime_error("Integral type not supported.");
-
-          vdata.insert({key, std::move(e)});
+          vdata.insert(
+              {key, map_entities(type, itg.entities, topology0, emap)});
         }
       }
 
@@ -313,47 +337,51 @@ public:
         }
         else
         {
-          // Find correct entity map and determine direction of the map
-          const mesh::EntityMap& emap = get_entity_map(mesh0);
-          bool inverse = emap.sub_topology() == mesh0->topology();
-
-          std::vector<std::int32_t> e;
-          if (type == IntegralType::cell)
-            e = emap.sub_topology_to_topology(integral.entities, inverse);
-          else if (type == IntegralType::exterior_facet
-                   or type == IntegralType::interior_facet)
-          {
-            assert(mesh0);
-            int codim = tdim - mesh0->topology()->dim();
-            auto c_to_f = topology.connectivity(tdim, tdim - 1);
-            assert(c_to_f);
-            e = compute_facet_domains(integral.entities, codim, c_to_f, emap,
-                                      inverse);
-          }
-          else
-            throw std::runtime_error("Integral type not supported.");
-          _cdata.insert({{type, idx, c}, std::move(e)});
+          // Find correct entity map
+          const mesh::Topology& topology0 = *mesh0->topology();
+          const mesh::EntityMap& emap
+              = mesh::find_entity_map(entity_maps, topology, topology0);
+          _cdata.insert(
+              {{type, idx, c},
+               map_entities(type, integral.entities, topology0, emap)});
         }
       }
     }
   }
 
-  /// @brief Copy constructor (deleted).
-  ///
-  /// @note Deleted because ::_edata and ::_cdata cache `std::span`s
-  /// aliasing the entity vectors owned by ::_integrals; a shallow copy
-  /// would leave the copy's spans pointing into the original's data.
+  // Copy constructor (deleted). _edata and _cdata cache std::spans
+  // aliasing the entity vectors owned by _integrals; a shallow copy
+  // would leave the copy's spans pointing into the original's data.
   Form(const Form& form) = delete;
 
-  /// @brief Move constructor.
-  ///
+  /// Move constructor
   /// @note Valid because ::_integrals is a `std::map`, whose elements
-  /// keep a stable address across a move, so the `std::span`s cached
-  /// in ::_edata and ::_cdata remain valid after the move.
+  /// keep a stable address across a move, so the `std::span`s cached in
+  /// ::_edata and ::_cdata remain valid after the move.
+#ifdef _MSC_VER
+  /// @note Explicit `noexcept`, MSVC only: MSVC's `std::map` move
+  /// constructor isn't marked `noexcept`, so Form's move constructor
+  /// would otherwise be deduced possibly-throwing. A map's move never
+  /// actually throws - it only transfers internal state - so the
+  /// noexcept override is safe.
+  Form(Form&& form) noexcept = default;
+#else
   Form(Form&& form) = default;
+#endif
 
   /// Destructor
-  virtual ~Form() = default;
+  ~Form() = default;
+
+  // Copy assignment (deleted). Same aliasing reason as the copy
+  // constructor.
+  Form& operator=(const Form& form) = delete;
+
+  /// Move assignment
+  /// @note Valid for the same reason as the move constructor: move
+  /// assigning a `std::map` transfers its nodes, so the entity vectors
+  /// aliased by the `std::span`s cached in ::_edata and ::_cdata keep
+  /// their addresses.
+  Form& operator=(Form&& form) = default;
 
   /// @brief Rank of the form.
   ///
@@ -391,7 +419,7 @@ public:
   {
     auto it = _integrals.find({type, idx, kernel_idx});
     if (it == _integrals.end())
-      throw std::runtime_error("Requested integral kernel not found.");
+      throw std::out_of_range("Requested integral kernel not found.");
     return it->second.kernel;
   }
 
@@ -427,7 +455,7 @@ public:
                                      return t == type and idx_ == idx;
                                    });
     if (it == _integrals.end())
-      throw std::runtime_error("Could not find active coefficient list.");
+      throw std::out_of_range("Could not find active coefficient list.");
     return it->second.coeffs;
   }
 
@@ -496,7 +524,7 @@ public:
   {
     auto it = _integrals.find({type, idx, kernel_idx});
     if (it == _integrals.end())
-      throw std::runtime_error("Requested domain not found.");
+      throw std::out_of_range("Requested domain not found.");
     return it->second.entities;
   }
 
@@ -540,7 +568,7 @@ public:
   {
     auto it = _edata.at(rank).find({type, idx, kernel_idx});
     if (it == _edata.at(rank).end())
-      throw std::runtime_error("Requested domain for argument not found.");
+      throw std::out_of_range("Requested domain for argument not found.");
 
     return std::visit([](const auto& v) -> std::span<const std::int32_t>
                       { return v; }, it->second);
@@ -565,7 +593,7 @@ public:
   {
     auto it = _cdata.find({type, idx, c});
     if (it == _cdata.end())
-      throw std::runtime_error("No domain for requested integral.");
+      throw std::out_of_range("No domain for requested integral.");
     return std::visit([](const auto& v) -> std::span<const std::int32_t>
                       { return v; }, it->second);
   }

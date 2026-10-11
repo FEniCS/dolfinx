@@ -14,11 +14,14 @@
 #include <algorithm>
 #include <array>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/common/types.h>
+#include <format>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -112,7 +115,7 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
     assert(V.elements(i));
     if (V.elements(i)->is_mixed())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Cannot locate dofs geometrically for mixed space. Use subspaces.");
     }
   }
@@ -169,13 +172,13 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   assert(mesh);
   assert(V1.mesh());
   if (mesh != V1.mesh())
-    throw std::runtime_error("Meshes are not the same.");
+    throw std::invalid_argument("Meshes are not the same.");
   const int tdim = mesh->topology()->dim();
 
   assert(V0.element());
   assert(V1.element());
   if (*V0.element() != *V1.element())
-    throw std::runtime_error("Function spaces must have the same element.");
+    throw std::invalid_argument("Function spaces must have the same element.");
 
   // Compute dof coordinates
   const std::vector<T> dof_coordinates = V1.tabulate_dof_coordinates(true);
@@ -269,6 +272,23 @@ private:
     return std::ranges::distance(dofs.begin(), it);
   }
 
+  // Throw if dofs are not strictly increasing, i.e. are unsorted or
+  // hold duplicates. O(dofs.size()), so compiled away in Release.
+  static void check_dofs_strictly_increasing(
+      [[maybe_unused]] std::span<const std::int32_t> dofs)
+  {
+#ifndef NDEBUG
+    auto it = std::ranges::adjacent_find(dofs, std::ranges::greater_equal());
+    if (it != dofs.end())
+    {
+      throw std::invalid_argument(std::format(
+          "DirichletBC dofs must be sorted and free of duplicates, but entry "
+          "{} ({}) does not exceed the preceding entry ({}).",
+          std::ranges::distance(dofs.begin(), it) + 1, *(it + 1), *it));
+    }
+#endif
+  }
+
   /// Unroll dofs for block size.
   static std::vector<std::int32_t>
   unroll_dofs(std::span<const std::int32_t> dofs, int bs)
@@ -284,12 +304,13 @@ public:
   /// @brief Create a representation of a Dirichlet boundary condition
   /// constrained by a scalar- or vector-valued constant.
   ///
-  /// @pre `dofs` must be sorted.
+  /// @pre `dofs` must be strictly increasing, i.e. sorted and free of
+  /// duplicates. Checked in Debug builds only.
   ///
   /// @param[in] g The boundary condition value (`T` or convertible to
   /// `std::span<const T>`)
   /// @param[in] dofs Degree-of-freedom block indices to be constrained.
-  /// The indices must be sorted.
+  /// The indices must be strictly increasing.
   /// @param[in] V The function space to be constrained
   /// @note Can be used only with point-evaluation elements.
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
@@ -311,7 +332,8 @@ public:
   /// @brief Create a representation of a Dirichlet boundary condition
   /// constrained by a fem::Constant.
   ///
-  ///@pre `dofs` must be sorted.
+  /// @pre `dofs` must be strictly increasing, i.e. sorted and free of
+  /// duplicates. Checked in Debug builds only.
   ///
   /// @param[in] g The boundary condition value.
   /// @param[in] dofs Degree-of-freedom block indices to be constrained.
@@ -335,14 +357,14 @@ public:
     assert(V->elements(0));
     if (g->shape.size() != V->elements(0)->value_shape().size())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Rank mismatch between Constant and function space in DirichletBC");
     }
 
     if (g->value.size()
         != (std::size_t)_function_space->dofmaps().front()->bs())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Creating a DirichletBC using a Constant is not supported when the "
           "Constant size is not equal to the block size of the constrained "
           "(sub-)space. Use a fem::Function to create the fem::DirichletBC.");
@@ -350,13 +372,15 @@ public:
 
     if (!V->elements(0)->interpolation_ident())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Constant can be used only with point-evaluation elements");
     }
 
     // Unroll _dofs0 if dofmap block size > 1
     if (const int bs = V->dofmaps().front()->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
+
+    check_dofs_strictly_increasing(_dofs0);
 
     _owned_indices0 = num_owned(*_function_space->dofmaps().front(), _dofs0);
   }
@@ -366,7 +390,8 @@ public:
   /// defines the constraint Function, i.e. share the same
   /// fem::FunctionSpace.
   ///
-  /// @pre `dofs` must be sorted.
+  /// @pre `dofs` must be strictly increasing, i.e. sorted and free of
+  /// duplicates. Checked in Debug builds only.
   ///
   /// @param[in] g The boundary condition value.
   /// @param[in] dofs Degree-of-freedom block indices to be constrained.
@@ -386,6 +411,8 @@ public:
     if (const int bs = _function_space->dofmaps().front()->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
 
+    check_dofs_strictly_increasing(_dofs0);
+
     _owned_indices0 = num_owned(*_function_space->dofmaps().front(), _dofs0);
   }
 
@@ -398,7 +425,8 @@ public:
   /// element.
   ///
   /// @pre The two degree-of-freedom arrays in `V_g_dofs` must be
-  /// sorted by the indices in the first array.
+  /// sorted by the indices in the first array, which must itself be
+  /// free of duplicates. Checked in Debug builds only.
   ///
   /// @param[in] g The boundary condition value
   /// @param[in] V_g_dofs Two arrays of degree-of-freedom indices
@@ -420,6 +448,7 @@ public:
             V_g_dofs[1])),
         _owned_indices0(num_owned(*_function_space->dofmap(), _dofs0))
   {
+    check_dofs_strictly_increasing(_dofs0);
   }
 
   /// Copy constructor
@@ -456,12 +485,22 @@ public:
     return _g;
   }
 
-  /// Access dof indices (local indices, unrolled), including ghosts, to
-  /// which a Dirichlet condition is applied, and the index to the first
-  /// non-owned (ghost) index. The array of indices is sorted.
-  /// @return Sorted array of dof indices (unrolled) and index to the
-  /// first entry in the dof index array that is not owned. Entries
-  /// `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
+  /// @brief Dof indices constrained by this condition, and the position
+  /// of the first ghost index.
+  ///
+  /// Indices are process-local and unrolled (block size expanded), into
+  /// the dofmap of function_space(). For a condition on a sub-space
+  /// they are indices in the parent space, so they apply directly to
+  /// arrays over that space.
+  ///
+  /// The array is strictly increasing, following from the `dofs`
+  /// constructor precondition that the owned/ghost split relies on.
+  /// That precondition is checked in Debug builds only.
+  ///
+  /// @return Dof indices, and the position `pos` of the first non-owned
+  /// (ghost) index. Entries `dofs[:pos]` are owned and entries
+  /// `dofs[pos:]` are ghosts.
+  /// @note The returned span is valid for the lifetime of this object.
   std::pair<std::span<const std::int32_t>, std::int32_t> dof_indices() const
   {
     return {_dofs0, _owned_indices0};

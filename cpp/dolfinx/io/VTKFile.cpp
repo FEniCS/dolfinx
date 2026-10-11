@@ -161,23 +161,21 @@ void add_data(std::string_view name,
 /// Add mesh geometry and topology data to a pugixml node. This function
 /// adds the Points and Cells nodes to the input node.
 /// @param[in] x Coordinates of the points, row-major storage
-/// @param[in] xshape The shape of `x`
 /// @param[in] x_id Unique global index for each point
 /// @param[in] x_ghost Flag indicating if a point is a owned (0) or is a
 /// ghost (1)
 /// @param[in] cells The mesh topology
+/// @param[in] cshape The shape of `cells`
 /// @param[in] cellmap The index map for the cells
 /// @param[in] celltype The cell type
-/// @param[in] tdim Topological dimension of the cells
 /// @param[in,out] piece_node The XML node to add data to
 template <typename U>
-void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
-              std::span<const std::int64_t> x_id,
+void add_mesh(std::span<const U> x, std::span<const std::int64_t> x_id,
               std::span<const std::uint8_t> x_ghost,
               std::span<const std::int64_t> cells,
               std::array<std::size_t, 2> cshape,
               const common::IndexMap& cellmap, mesh::CellType celltype,
-              int tdim, pugi::xml_node& piece_node)
+              pugi::xml_node& piece_node)
 {
   // -- Add geometry (points)
 
@@ -219,7 +217,7 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   type_node.append_attribute("type") = "Int8";
   type_node.append_attribute("Name") = "types";
   type_node.append_attribute("format") = "ascii";
-  int vtk_celltype = io::cells::get_vtk_cell_type(celltype, tdim);
+  int vtk_celltype = io::cells::get_vtk_cell_type(celltype, cshape[1]);
   {
     const std::string cell_type_str = std::format("{} ", vtk_celltype);
     std::string ss;
@@ -375,7 +373,7 @@ void write_function(
     // Check that pointwise elements are the same (up to the block size)
     if (!impl::is_cellwise(*e))
     {
-      if (*e != *element0)
+      if (!impl::same_base_element(*e, *element0))
       {
         throw std::runtime_error("All point-wise Functions written to VTK file "
                                  "must have same element.");
@@ -438,9 +436,8 @@ void write_function(
   mesh::CellType cell_type = topology0->cell_type();
   // Add mesh data to "Piece" node
   int tdim = topology0->dim();
-  add_mesh<U>(x, xshape, x_id, x_ghost, cells, cshape,
-              *topology0->index_map(tdim), cell_type, topology0->dim(),
-              piece_node);
+  add_mesh<U>(x, x_id, x_ghost, cells, cshape, *topology0->index_map(tdim),
+              cell_type, piece_node);
 
   // FIXME: is this actually setting the first?
   // Set last scalar/vector/tensor Functions in u to be the 'active'
@@ -534,9 +531,11 @@ void write_function(
       {
         // -- Identical spaces
         if (mesh0->geometry().dim() == 3)
+        {
           add_data(_u.get().name,
                    std::span<const std::size_t>(component_vector),
                    std::span(_u.get().x()->array()), data_node);
+        }
         else
         {
           // Pad with zeros and then add
@@ -546,7 +545,7 @@ void write_function(
                    std::span<const T>(data), data_node);
         }
       }
-      else if (*e == *element0)
+      else if (impl::same_base_element(*e, *element0))
       {
         // -- Same element, possibly different dofmaps
 
@@ -559,7 +558,7 @@ void write_function(
 
         // Get data on each cell
         auto u_vector = _u.get().x()->array();
-        std::vector<T> u(u_vector.size());
+        std::vector<T> u_data(u_vector.size());
         for (std::size_t c = 0; c < cshape[0]; ++c)
         {
           std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
@@ -569,17 +568,19 @@ void write_function(
             for (int k = 0; k < bs; ++k)
             {
               assert(i < dofs0.size());
-              assert(bs * dofs0[i] + k < (int)u.size());
-              u[bs * dofs0[i] + k] = u_vector[bs * dofs[i] + k];
+              assert(bs * dofs0[i] + k < (int)u_data.size());
+              u_data[bs * dofs0[i] + k] = u_vector[bs * dofs[i] + k];
             }
           }
         }
 
         // Pack/add data
         if (mesh0->geometry().dim() == 3)
+        {
           add_data(_u.get().name,
                    std::span<const std::size_t>(component_vector),
-                   std::span<const T>(u), data_node);
+                   std::span<const T>(u_data), data_node);
+        }
         else
         {
           // Pad with zeros and then add
@@ -689,9 +690,9 @@ void write_function(
     // Add data for each process to the PVTU object
     for (int r = 0; r < mpi_size; ++r)
     {
-      std::filesystem::path vtu = create_vtu_path(r);
-      pugi::xml_node piece_node = grid_node.append_child("Piece");
-      piece_node.append_attribute("Source") = vtu.filename().c_str();
+      std::filesystem::path vtu_r = create_vtu_path(r);
+      pugi::xml_node piece_node_r = grid_node.append_child("Piece");
+      piece_node_r.append_attribute("Source") = vtu_r.filename().c_str();
     }
 
     // Write PVTU file
@@ -723,6 +724,10 @@ io::VTKFile::VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
   vtk_node.append_child("Collection");
 }
 //----------------------------------------------------------------------------
+io::VTKFile::VTKFile(VTKFile&& file) noexcept = default;
+//-----------------------------------------------------------------------------
+io::VTKFile& io::VTKFile::operator=(VTKFile&& file) noexcept = default;
+//-----------------------------------------------------------------------------
 io::VTKFile::~VTKFile()
 {
   if (_pvd_xml and dolfinx::MPI::rank(_comm.comm()) == 0)
@@ -809,9 +814,8 @@ void io::VTKFile::write(const mesh::Mesh<U>& mesh, double t)
   std::array<std::size_t, 2> xshape = {geometry.x().size() / 3, 3};
   std::vector<std::uint8_t> x_ghost(xshape[0], 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
-  add_mesh(geometry.x(), xshape, geometry.input_global_indices(), x_ghost,
-           cells, cshape, *topology->index_map(tdim), cell_type,
-           topology->dim(), piece_node);
+  add_mesh(geometry.x(), geometry.input_global_indices(), x_ghost, cells,
+           cshape, *topology->index_map(tdim), cell_type, piece_node);
 
   // Create filepath for a .vtu file
   auto create_vtu_path = [file_root = _filename.parent_path(),
@@ -850,9 +854,9 @@ void io::VTKFile::write(const mesh::Mesh<U>& mesh, double t)
     const int mpi_size = dolfinx::MPI::size(_comm.comm());
     for (int r = 0; r < mpi_size; ++r)
     {
-      std::filesystem::path vtu = create_vtu_path(r);
-      pugi::xml_node piece_node = grid_node.append_child("Piece");
-      piece_node.append_attribute("Source") = vtu.filename().c_str();
+      std::filesystem::path vtu_r = create_vtu_path(r);
+      pugi::xml_node piece_node_r = grid_node.append_child("Piece");
+      piece_node_r.append_attribute("Source") = vtu_r.filename().c_str();
     }
 
     // Write PVTU file

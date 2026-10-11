@@ -7,7 +7,7 @@ from dolfinx.mesh import CellType, Mesh, create_unit_cube, create_unit_square
 
 
 @pytest.mark.parametrize("ctype", [CellType.hexahedron, CellType.tetrahedron, CellType.prism])
-def test_uniform_refinement_3d(ctype):
+def test_uniform_refinement_3d(ctype) -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 1, cell_type=ctype)
 
     ncells0 = mesh.topology.index_map(3).size_local
@@ -21,7 +21,7 @@ def test_uniform_refinement_3d(ctype):
 
 
 @pytest.mark.parametrize("ctype", [CellType.triangle, CellType.quadrilateral])
-def test_uniform_refinement_2d(ctype):
+def test_uniform_refinement_2d(ctype) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 11, cell_type=ctype)
 
     ncells0 = mesh.topology.index_map(2).size_local
@@ -33,7 +33,7 @@ def test_uniform_refinement_2d(ctype):
     assert mesh.comm.allreduce(ncells0) * 4 == mesh.comm.allreduce(ncells1)
 
 
-def test_uniform_refine_mixed_mesh(mixed_topology_mesh):
+def test_uniform_refine_mixed_mesh(mixed_topology_mesh) -> None:
     mesh = Mesh(mixed_topology_mesh, None)
 
     ct = mesh.topology.entity_types[3]
@@ -42,10 +42,7 @@ def test_uniform_refine_mixed_mesh(mixed_topology_mesh):
     mesh.topology.create_entities(1)
     mesh.topology.create_entities(2)
 
-    m2 = Mesh(
-        dolfinx.cpp.refinement.uniform_refine(mesh._cpp_object, None, dolfinx.mesh.GhostMode.none),
-        None,
-    )
+    m2 = dolfinx.mesh.uniform_refine(mesh, ghost_mode=dolfinx.mesh.GhostMode.none)
     ncells1 = {ct[j]: m2.topology.index_maps(3)[j].size_local for j in range(4)}
 
     comm = mesh.comm

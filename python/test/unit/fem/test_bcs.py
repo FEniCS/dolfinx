@@ -30,7 +30,7 @@ from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, exterio
 from ufl import dx, inner
 
 
-def test_locate_dofs_geometrical():
+def test_locate_dofs_geometrical() -> None:
     """Test that locate_dofs_geometrical, when passed two function
     spaces, returns the correct degrees of freedom in each space.
     """
@@ -42,7 +42,7 @@ def test_locate_dofs_geometrical():
     W = functionspace(mesh, mixed_element([P0, P1]))
     V = W.sub(0).collapse()[0]
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         locate_dofs_geometrical(W, lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
 
     dofs = locate_dofs_geometrical((W.sub(0), V), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
@@ -160,7 +160,7 @@ def test_constant_bc_constructions():
         (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)),
     ],
 )
-def test_constant_bc(mesh_factory):
+def test_constant_bc(mesh_factory) -> None:
     """Test that setting a dirichletbc with a constant yields the same
     result as setting it with a function.
     """
@@ -196,7 +196,7 @@ def test_constant_bc(mesh_factory):
         (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)),
     ],
 )
-def test_vector_constant_bc(mesh_factory):
+def test_vector_constant_bc(mesh_factory) -> None:
     """Test that setting a dirichletbc with a vector valued constant
     yields the same result as setting it with a function.
     """
@@ -244,7 +244,7 @@ def test_vector_constant_bc(mesh_factory):
         (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)),
     ],
 )
-def test_sub_constant_bc(mesh_factory):
+def test_sub_constant_bc(mesh_factory) -> None:
     """Test that setting a dirichletbc with on a component of a vector
     valued function yields the same result as setting it with a
     function.
@@ -284,7 +284,7 @@ def test_sub_constant_bc(mesh_factory):
         (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)),
     ],
 )
-def test_mixed_constant_bc(mesh_factory):
+def test_mixed_constant_bc(mesh_factory) -> None:
     """Test that setting a dirichletbc with on a component of a mixed
     function yields the same result as setting it with a function.
     """
@@ -366,13 +366,13 @@ def test_mixed_blocked_constant():
 
     # Check that vector space throws error
     c1 = default_scalar_type((5, 7))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         dofs1 = locate_dofs_topological(W.sub(1), tdim - 1, boundary_facets)
         dirichletbc(c1, dofs1, W.sub(1))
 
 
 @pytest.mark.parametrize("shape", [(), (2,), (3, 2)])
-def test_blocked_dof_ownership(shape):
+def test_blocked_dof_ownership(shape) -> None:
     """Test that dof ownership is correctly handled for blocked function spaces."""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     V = functionspace(mesh, ("Lagrange", 1, shape))
@@ -408,7 +408,7 @@ def test_blocked_dof_ownership(shape):
         assert len(unrolled_dofs_sub) == len(boundary_dofs_V)
 
 
-def test_bc_index_out_of_range():
+def test_bc_index_out_of_range() -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
     facet_map = mesh.topology.index_map(mesh.topology.dim - 1)

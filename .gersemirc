@@ -1,1 +1,8 @@
 indent: 2
+# Directories scanned for the project's own command definitions, so that
+# calls to them are formatted rather than reported as unknown. Listing
+# directories rather than files means a new definition is picked up
+# without updating this file.
+definitions:
+  - cpp/
+  - python/

@@ -16,10 +16,10 @@
 #include <span>
 #include <utility>
 
-namespace nb = nanobind;
-
 namespace dolfinx_wrappers
 {
+namespace nb = nanobind;
+
 /// @brief Create a multi-dimensional `nb::ndarray` that shares data
 /// with a `std::vector`.
 ///

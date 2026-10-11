@@ -32,6 +32,7 @@ def read_mesh(
     dtype: npt.DTypeLike = np.float64,
     gdim: int = 3,
     max_facet_to_cell_links: int = 2,
+    num_threads: int = 1,
 ) -> Mesh:
     """Read a mesh from a VTKHDF format file.
 
@@ -49,12 +50,20 @@ def read_mesh(
         gdim: Geometric dimension of the mesh.
         max_facet_to_cell_links: Maximum number of cells that can be
             linked to a facet.
+        num_threads: Number of threads to use to build mesh. Must be
+            greater than 0.
     """
     mesh_cpp: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if dtype == np.float64:
-        mesh_cpp = read_vtkhdf_mesh_float64(comm, str(filename), gdim, max_facet_to_cell_links)
+        mesh_cpp = read_vtkhdf_mesh_float64(
+            comm, str(filename), gdim, max_facet_to_cell_links, num_threads
+        )
     elif dtype == np.float32:
-        mesh_cpp = read_vtkhdf_mesh_float32(comm, str(filename), gdim, max_facet_to_cell_links)
+        mesh_cpp = read_vtkhdf_mesh_float32(
+            comm, str(filename), gdim, max_facet_to_cell_links, num_threads
+        )
+    else:
+        raise ValueError(f"Unsupported mesh geometry dtype: {dtype}.")
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:
@@ -70,6 +79,7 @@ def read_mesh(
                 cell_degree,
                 basix.LagrangeVariant(variant),
                 shape=(mesh_cpp.geometry.dim,),
+                dtype=mesh_cpp.geometry.x.dtype,
             )
         )
     return Mesh(mesh_cpp, domain)

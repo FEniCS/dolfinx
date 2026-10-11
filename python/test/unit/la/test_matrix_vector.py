@@ -10,7 +10,6 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.fem import functionspace
 from dolfinx.mesh import create_unit_square
@@ -23,7 +22,7 @@ def test_create_matrix_csr():
     map = V.dofmap.index_map
     bs = V.dofmap.index_map_bs
 
-    pattern = _cpp.la.SparsityPattern(mesh.comm, [map, map], [bs, bs])
+    pattern = la.sparsity_pattern(mesh.comm, [map, map], [bs, bs])
     rows = np.arange(0, bs * map.size_local)
     cols = np.arange(0, bs * map.size_local)
     pattern.insert(rows, cols)
@@ -54,7 +53,7 @@ def test_create_matrix_csr():
         np.complex128,
     ],
 )
-def test_matvec(bs, dtype, mat_random, mat_gather):
+def test_matvec(bs, dtype, mat_random, mat_gather) -> None:
     A = mat_random(0, 0, 12345, dtype, bs)
     Ascipy = mat_gather(A)
     imap = A.index_map(0)
@@ -84,7 +83,7 @@ def test_matvec(bs, dtype, mat_random, mat_gather):
         np.complex128,
     ],
 )
-def test_matvec_transpose(bs, dtype, mat_random, mat_gather):
+def test_matvec_transpose(bs, dtype, mat_random, mat_gather) -> None:
     # Create a random square MatrixCSR
     A = mat_random(0, 0, 54321, dtype, bs)
 
@@ -118,7 +117,7 @@ def test_matvec_transpose(bs, dtype, mat_random, mat_gather):
         np.int64,
     ],
 )
-def test_create_vector(dtype):
+def test_create_vector(dtype) -> None:
     """Test creation of a distributed vector."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     im = mesh.topology.index_map(0)
@@ -162,7 +161,7 @@ def xfail_norm_of_integral_type_vector(dtype):
         ),
     ],
 )
-def test_vector_norm(dtype, norm_type):
+def test_vector_norm(dtype, norm_type) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     im = mesh.topology.index_map(0)
     x = la.vector(im, dtype=dtype)

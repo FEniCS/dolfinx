@@ -1,4 +1,5 @@
 // Copyright (C) 2020 Matthew Scroggs
+// Copyright (C) 2020-2026 Matthew Scroggs and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,67 +8,147 @@
 #pragma once
 
 #include <cstdint>
-#include <utility>
 #include <vector>
 
 namespace dolfinx::mesh
 {
 class Topology;
 
-/// Compute (1) facet rotation and reflection data, and (2) cell
-/// permutation data. This information is used in the assembly of (1) facet
-/// integrals and (2) most non-Lagrange elements.
+/// @brief Bit of the cell permutation info that marks a cell whose
+/// orientation is reversed relative to the orientation of a manifold
+/// mesh.
 ///
-/// 1. The facet rotation and reflection data is encoded so that:
+/// Set by Topology::create_cell_orientations. The sub-entity permutations
+/// packed into the same integer (see compute_cell_permutations) use at
+/// most 30 bits (hexahedron: three per face and one per edge), so this
+/// bit is free for every cell type. It is cleared
+/// (`info & ~reversed_cell_bit`) before the info is passed to Basix,
+/// which knows only the sub-entity permutations.
+constexpr std::uint32_t reversed_cell_bit = std::uint32_t(1) << 31;
+
+/// @brief Compute the permutation to apply to each cell-local entity of
+/// a given dimension.
 ///
-///     - `n % 2` gives the number of reflections to apply
-///     - `n // 2` gives the number of rotations to apply
+/// The permutation is encoded so that:
 ///
-///    The data is stored in a flattened 2D array, so that `data[cell_index *
-///    facets_per_cell + facet_index]` contains the facet with index
-///    `facet_index` of the cell with index `cell_index`. This data passed to
-///    FFCx kernels, where it is used to permute the quadrature points on facet
-///    integrals when data from the cells on both sides of the facet is used.
+///  - `n % 2` gives the number of reflections to apply
+///  - `n // 2` gives the number of rotations to apply
 ///
-/// 2. The cell permutation data contains information about the entities of each
-///    cell, relative to a low-to-high ordering. This data is packed
-///    so that a 32-bit int is used for each cell. For 2D cells, one
-///    bit is used for each edge, to represent whether or not the edge
-///    is reversed: the least significant bit is for edge 0, the next
-///    for edge 1, etc. For 3D cells, three bits are used for each
-///    face, and for each edge: the least significant bit says whether
-///    or not face 0 is reflected, the next 2 bits say how many times
-///    face 0 is rotated; the next three bits are for face 1, then
-///    three for face 2, etc; after all the faces, there is 1 bit for
-///    each edge to say whether or not they are reversed.
+/// The data is stored in a flattened 2D array, so that
+/// `data[cell_index * entities_per_cell + entity_index]` contains the
+/// permutation data for the entity with index `entity_index` of cell
+/// `cell_index`. This data passed to FFCx kernels, where it is used to
+/// permute quadrature points on sub-entity integrals when data from
+/// more than one cell incident to the entity is used.
+
 ///
-///    For example, if a quadrilateral has cell permutation info
-///    `....0111` then (from right to left):
+/// @param[in] topology Mesh topology.
+/// @param[in] dim Topological dimension of the entities to permute.
+/// Must satisfy `0 <= dim < topology.dim()`. Vertices (`dim == 0`) have
+/// no orientation, so an empty vector is returned for them.
+/// @param[in] num_threads Number of threads to use.
+/// @return Permutation of each cell-local entity of dimension `dim`,
+/// flattened row-wise.
+/// @see compute_cell_permutations, which packs the orientations of all
+/// of a cell's sub-entities into one integer per cell, for correcting
+/// element DOFs rather than quadrature points.
+std::vector<std::uint8_t> compute_entity_permutations(const Topology& topology,
+                                                      int dim, int num_threads);
+
+/// @brief Compute the packed per-cell permutation data.
 ///
-///      - edge 0 is reflected (1)
-///      - edge 1 is reflected (1)
-///      - edge 2 is reflected (1)
-///      - edge 3 is not permuted (0)
+/// Required by elements whose DOF transformations are not the identity.
+/// Where those transformations are permutations, e.g. higher-order
+/// Lagrange, the correction is applied once to the dofmap when it is
+/// built; otherwise, e.g. N1curl and Raviart-Thomas, the correction
+/// is applied to the element tensor on each cell at assembly time.
 ///
-///    and if a tetrahedron has cell permutation info
-///    `....011010010101001000` then (from right to left):
+/// The cell permutation data contains information about the entities of
+/// each cell, relative to a low-to-high ordering. This data is packed
+/// so that a 32-bit int is used for each cell. For 2D cells, one bit is
+/// used for each edge, to represent whether or not the edge is
+/// reversed: the least significant bit is for edge 0, the next for edge
+/// 1, etc. For 3D cells, three bits are used for each face, and for
+/// each edge: the least significant bit says whether or not face 0 is
+/// reflected, the next 2 bits say how many times face 0 is rotated; the
+/// next three bits are for face 1, then three for face 2, etc; after
+/// all the faces, there is 1 bit for each edge to say whether or not
+/// they are reversed. The most significant bit is left for
+/// ::reversed_cell_bit.
 ///
-///      - face 0 is not permuted (000)
-///      - face 1 is reflected (001)
-///      - face 2 is rotated twice then reflected (101)
-///      - face 3 is rotated once (010)
-///      - edge 0 is not permuted (0)
-///      - edge 1 is reflected (1)
-///      - edge 2 is not permuted (0)
-///      - edge 3 is reflected (1)
-///      - edge 4 is reflected (1)
-///      - edge 5 is not permuted (0)
+/// For example, if a quadrilateral has cell permutation info
+/// `....0111` then (from right to left):
 ///
-///    This data is used to correct the direction of vector function
-///    on permuted facets.
+///   - edge 0 is reflected (1)
+///   - edge 1 is reflected (1)
+///   - edge 2 is reflected (1)
+///   - edge 3 is not permuted (0)
 ///
-/// @return Facet permutation and cells permutations
-std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
-compute_entity_permutations(const Topology& topology, int num_threads);
+/// and if a tetrahedron has cell permutation info
+/// `....011010010101001000` then (from right to left):
+///
+///   - face 0 is not permuted (000)
+///   - face 1 is reflected (001)
+///   - face 2 is rotated twice then reflected (101)
+///   - face 3 is rotated once (010)
+///   - edge 0 is not permuted (0)
+///   - edge 1 is reflected (1)
+///   - edge 2 is not permuted (0)
+///   - edge 3 is reflected (1)
+///   - edge 4 is reflected (1)
+///   - edge 5 is not permuted (0)
+///
+/// @note Not collective.
+/// @pre All entities of dimension `< topology.dim()` must already exist
+/// (see Topology::create_entities).
+/// @param[in] topology Mesh topology.
+/// @param[in] num_threads Number of threads to use. Must be >= 1.
+/// @return Facet permutation and cell permutations, covering both owned
+/// and ghost cells.
+/// @throws std::invalid_argument If `num_threads < 1`.
+/// @throws std::runtime_error If `topology` is a mixed-topology mesh
+/// (more than one 3D cell type).
+std::vector<std::uint32_t> compute_cell_permutations(const Topology& topology,
+                                                     int num_threads);
+
+/// @brief Compute a consistent orientation of the cells of a surface
+/// mesh.
+///
+/// See Topology::create_cell_orientations, which stores the result, for
+/// why it is needed.
+///
+/// Two cells sharing an edge are consistently oriented when, going
+/// round each cell in the order of its vertices, they run the edge in
+/// opposite directions. For example, cells `(0, 1, 2)` and `(1, 3, 2)`
+/// share edge `{1, 2}`. The first runs it from 1 to 2 and the second
+/// from 2 to 1, so they agree and get the same orientation. Had the
+/// second cell been `(1, 2, 3)`, both would run it from 1 to 2, so they
+/// would disagree and get opposite orientations, `1` and `-1`.
+///
+/// A part of the surface is a set of cells connected through shared
+/// edges. Cells meeting only at a vertex are not connected, so their
+/// parts are oriented independently. Each part keeps the orientation
+/// of its cell with the lowest global index, which gets `1`. Only the
+/// vertex orders are used, not the geometry.
+///
+/// Which of its two orientations a part gets therefore depends on the
+/// global cell numbering, and so on the partitioning. Reversing every
+/// cell of a part negates its basis functions and, with them, its
+/// degrees-of-freedom, so the field they represent is unchanged.
+///
+/// @note Collective.
+/// @pre The edges, the connectivity between edges and cells, and the
+/// edge permutations (see Topology::create_entity_permutations) must
+/// have been created.
+/// @param[in] topology Topology of a mesh of triangles or
+/// quadrilaterals.
+/// @return For each owned and ghost cell, in local cell order, `1` if
+/// its vertex order agrees with the orientation of its part of the
+/// surface and `-1` otherwise.
+/// @throws std::invalid_argument If the topological dimension is not
+/// 2.
+/// @throws std::runtime_error If the surface is not orientable, e.g. a
+/// Möbius strip, or an edge is shared by more than two cells.
+std::vector<std::int8_t> compute_cell_orientations(const Topology& topology);
 
 } // namespace dolfinx::mesh

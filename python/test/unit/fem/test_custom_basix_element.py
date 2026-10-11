@@ -84,7 +84,7 @@ def run_scalar_test(V, degree, dtype, cg_solver, rtol=None):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", range(1, 6))
-def test_basix_element_wrapper(degree, dtype, cg_solver):
+def test_basix_element_wrapper(degree, dtype, cg_solver) -> None:
     ufl_element = basix.ufl.element(
         basix.ElementFamily.P,
         basix.CellType.triangle,
@@ -129,7 +129,7 @@ def test_custom_element_triangle_degree1(dtype, cg_solver):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_custom_element_triangle_degree4(dtype, cg_solver):
+def test_custom_element_triangle_degree4(dtype, cg_solver) -> None:
     wcoeffs = np.eye(15)
     x = [
         [np.array([[0.0, 0.0]]), np.array([[1.0, 0.0]]), np.array([[0.0, 1.0]])],

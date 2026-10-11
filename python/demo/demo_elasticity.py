@@ -17,9 +17,8 @@
 # * {download}`Python script <./demo_elasticity.py>`
 # * {download}`Jupyter notebook <./demo_elasticity.ipynb>`
 # ```
-# This demo solves the equations of static linear elasticity using
-# a smoothed aggregation algebraic multigrid solver.
-# It illustrates how to:
+# This demo solves the equations of static linear elasticity.
+# This demo illustrates how to:
 # - Use a smoothed aggregation algebraic multigrid solver
 # - Use {py:class}`Expression <dolfinx.fem.Expression>` to compute
 #   derived quantities of a solution
@@ -107,7 +106,7 @@ def build_nullspace(V: FunctionSpace):
 
 # ## Problem definition
 
-# Create a {py:func}`box mesh<dolfinx.mesh.create_box>`:
+# Create a {py:func}`box mesh <dolfinx.mesh.create_box>`:
 
 
 msh = create_box(
@@ -219,7 +218,7 @@ solver.setFromOptions()
 solver.setOperators(A)
 # -
 
-# Create a solution {py:class}`Function<dolfinx.fem.Function>` `uh` and
+# Create a solution {py:class}`Function <dolfinx.fem.Function>` `uh` and
 # solve:
 
 # +
@@ -246,9 +245,9 @@ sigma_vm = ufl.sqrt((3 / 2) * ufl.inner(sigma_dev, sigma_dev))
 # -
 
 # Next, the Von Mises stress is interpolated in a piecewise-constant
-# space by creating an {py:class}`Expression<dolfinx.fem.Expression>`
+# space by creating an {py:class}`Expression <dolfinx.fem.Expression>`
 # that is interpolated into the
-# {py:class}`Function<dolfinx.fem.Function>` `sigma_vm_h`.
+# {py:class}`Function <dolfinx.fem.Function>` `sigma_vm_h`.
 
 # +
 W = functionspace(msh, ("Discontinuous Lagrange", 0))
@@ -273,7 +272,7 @@ with XDMFFile(msh.comm, "out_elasticity/von_mises_stress.xdmf", "w") as file:
 
 # Finally, we compute the $L^2$ norm of the displacement solution
 # vector. This is a collective operation (i.e., the method
-# {py:func}`norm<dolfinx.la.norm>` must be called from all MPI ranks),
+# {py:func}`norm <dolfinx.la.norm>` must be called from all MPI ranks),
 # but we print the norm only on rank 0.
 
 # +

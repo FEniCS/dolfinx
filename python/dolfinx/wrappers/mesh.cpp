@@ -6,11 +6,13 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dolfinx_wrappers/mesh.h"
-#include "dolfinx_wrappers/MPICommWrapper.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/mpi_wrappers.h"
 #include <algorithm>
+#include <basix/mdspan.hpp>
 #include <cassert>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/EntityMap.h>
@@ -36,9 +38,12 @@
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace nb = nanobind;
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 namespace dolfinx_wrappers::part::impl
 {
@@ -150,7 +155,7 @@ void mesh(nb::module_& m)
                                                num_threads);
       },
       nb::arg("topology"), nb::arg("dim"), nb::arg("entity_type"),
-      nb::arg("num_threads") = 1);
+      nb::arg("num_threads"));
   m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity,
         nb::arg("topology"), nb::arg("d0"), nb::arg("d1"));
 
@@ -192,6 +197,44 @@ void mesh(nb::module_& m)
       .def_prop_ro("topology", &dolfinx::mesh::EntityMap::topology)
       .def_prop_ro("sub_topology", &dolfinx::mesh::EntityMap::sub_topology);
 
+  m.def(
+      "extract_cells_from_entities",
+      [](const dolfinx::mesh::Topology& topology_c,
+         const dolfinx::mesh::Topology& topology,
+         nb::ndarray<const std::int32_t, nb::c_contig> entities,
+         const dolfinx::mesh::EntityMap* entity_map)
+      {
+        std::optional<std::reference_wrapper<const dolfinx::mesh::EntityMap>>
+            emap;
+        if (entity_map)
+          emap = std::cref(*entity_map);
+
+        if (entities.ndim() == 1)
+        {
+          return as_nbarray(dolfinx::mesh::extract_cells_from_entities(
+              topology_c, topology,
+              md::mdspan(entities.data(), entities.shape(0)), emap));
+        }
+        else if (entities.ndim() == 2 and entities.shape(1) == 2)
+        {
+          return as_nbarray(dolfinx::mesh::extract_cells_from_entities(
+              topology_c, topology,
+              md::mdspan<const std::int32_t,
+                         md::extents<std::size_t, md::dynamic_extent, 2>>(
+                  entities.data(), entities.shape(0), 2),
+              emap));
+        }
+        else
+        {
+          throw std::invalid_argument(
+              "entities must have shape (num_entities,) or (num_entities, 2).");
+        }
+      },
+      nb::arg("topology_c"), nb::arg("topology"), nb::arg("entities"),
+      nb::arg("entity_map").none(),
+      "Map integration entities of a topology to the cells of a related "
+      "topology.");
+
   // dolfinx::mesh::Topology class
   nb::class_<dolfinx::mesh::Topology>(m, "Topology", nb::dynamic_attr(),
                                       "Topology object")
@@ -218,21 +261,25 @@ void mesh(nb::module_& m)
           nb::arg("cell_type"), nb::arg("vertex_map"), nb::arg("cell_map"),
           nb::arg("cells"), nb::arg("original_index").none())
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
-           nb::arg("dim"), nb::arg("num_threads") = 1)
+           nb::arg("dim"), nb::arg("num_threads"))
       .def("create_entity_permutations",
-           &dolfinx::mesh::Topology::create_entity_permutations,
+           &dolfinx::mesh::Topology::create_entity_permutations, nb::arg("dim"),
+           nb::arg("num_threads"))
+      .def("create_cell_permutations",
+           &dolfinx::mesh::Topology::create_cell_permutations,
            nb::arg("num_threads"))
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity,
            nb::arg("d0"), nb::arg("d1"))
       .def(
-          "get_facet_permutations",
-          [](const dolfinx::mesh::Topology& self)
+          "get_entity_permutations",
+          [](const dolfinx::mesh::Topology& self, int dim)
           {
-            const std::vector<std::uint8_t>& p = self.get_facet_permutations();
+            const std::vector<std::uint8_t>& p
+                = self.get_entity_permutations(dim);
             return nb::ndarray<const std::uint8_t, nb::numpy>(p.data(),
                                                               {p.size()});
           },
-          nb::rv_policy::reference_internal)
+          nb::arg("dim"), nb::rv_policy::reference_internal)
       .def(
           "get_cell_permutation_info",
           [](const dolfinx::mesh::Topology& self)
@@ -243,6 +290,28 @@ void mesh(nb::module_& m)
                                                                {p.size()});
           },
           nb::rv_policy::reference_internal)
+      .def(
+          "create_cell_orientations",
+          [](dolfinx::mesh::Topology& self,
+             std::optional<
+                 nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>>
+                 orientations)
+          {
+            self.create_cell_orientations(
+                orientations ? std::optional(std::span<const std::int8_t>(
+                                   orientations->data(), orientations->size()))
+                             : std::nullopt);
+          },
+          nb::arg("orientations").none(),
+          "Compute, or set from the given markers, a per-cell marker for "
+          "a consistent orientation of a surface mesh.")
+      .def(
+          "cell_orientations", [](const dolfinx::mesh::Topology& self)
+          { return as_nbarray(self.cell_orientations()); },
+          "Orientation (+1/-1) of each cell relative to its surface.")
+      .def("has_cell_orientations",
+           &dolfinx::mesh::Topology::has_cell_orientations,
+           "Check if a cell orientation has been computed or set.")
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
       .def_prop_rw(
@@ -250,10 +319,10 @@ void mesh(nb::module_& m)
           [](const dolfinx::mesh::Topology& self)
           {
             if (self.original_cell_index.size() != 1)
-              throw std::runtime_error("Mixed topology unsupported.");
+              throw std::invalid_argument("Mixed topology unsupported.");
             const std::vector<std::vector<std::int64_t>>& idx
                 = self.original_cell_index;
-            return nb::ndarray<const std::int64_t, nb::numpy>(
+            return nb::ndarray<const std::int64_t, nb::ndim<1>, nb::numpy>(
                 idx.front().data(), {idx.front().size()});
           },
           [](dolfinx::mesh::Topology& self,
@@ -261,13 +330,13 @@ void mesh(nb::module_& m)
                  original_cell_indices)
           {
             if (self.original_cell_index.size() > 1)
-              throw std::runtime_error("Mixed topology unsupported.");
+              throw std::invalid_argument("Mixed topology unsupported.");
             self.original_cell_index.resize(1);
             self.original_cell_index.front().assign(
                 original_cell_indices.data(),
                 original_cell_indices.data() + original_cell_indices.size());
           },
-          nb::arg("original_cell_indices"))
+          nb::rv_policy::reference_internal, nb::arg("original_cell_indices"))
       .def_prop_ro(
           "original_cell_indices",
           [](const dolfinx::mesh::Topology& self)
@@ -351,13 +420,15 @@ void mesh(nb::module_& m)
       nb::arg("boundary_vertices").noconvert(), nb::arg("num_threads"),
       "Create a Topology object.");
 
-  m.def("compute_mixed_cell_pairs", &dolfinx::mesh::compute_mixed_cell_pairs);
+  m.def("compute_mixed_cell_pairs", &dolfinx::mesh::compute_mixed_cell_pairs,
+        nb::arg("topology"), nb::arg("facet_type"));
 
   m.def(
       "compute_cell_centroids",
       [](MPICommWrapper comm,
          const std::vector<dolfinx::mesh::CellType>& cell_types,
-         std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb,
+         const std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>,
+                                       nb::c_contig>>& cells_nb,
          MPICommWrapper commg,
          nb::ndarray<const double, nb::ndim<2>, nb::c_contig> x)
       {
@@ -400,7 +471,7 @@ void mesh(nb::module_& m)
         return as_nbarray(dolfinx::mesh::compute_incident_entities(
             topology, std::span(entities.data(), entities.size()), d0, d1));
       },
-      nb::arg("mesh"), nb::arg("entities"), nb::arg("d0"), nb::arg("d1"));
+      nb::arg("topology"), nb::arg("entities"), nb::arg("d0"), nb::arg("d1"));
 
   // Mesh generation
   nb::enum_<dolfinx::mesh::DiagonalType>(m, "DiagonalType")

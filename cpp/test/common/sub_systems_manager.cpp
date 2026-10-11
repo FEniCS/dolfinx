@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <catch2/catch_test_macros.hpp>
+#include <dolfinx/common/petsc.h>
 
 #ifdef HAS_PETSC
 #include <petscvec.h>
@@ -16,11 +17,12 @@ void init_petsc()
   // Test user initialisation of PETSc
   int argc = 0;
   char** argv = nullptr;
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  dolfinx::common::petsc::check(PetscInitialize(&argc, &argv, nullptr, nullptr),
+                                "PetscInitialize");
 
   Vec x;
-  VecCreate(MPI_COMM_WORLD, &x);
-  VecDestroy(&x);
+  dolfinx::common::petsc::check(VecCreate(MPI_COMM_WORLD, &x), "VecCreate");
+  dolfinx::common::petsc::check(VecDestroy(&x), "VecDestroy");
 }
 } // namespace
 

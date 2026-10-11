@@ -30,7 +30,7 @@ from dolfinx.mesh import (
 )
 
 
-def test_refine_create_unit_square():
+def test_refine_create_unit_square() -> None:
     """Refine mesh of unit square."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 7, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
@@ -43,7 +43,7 @@ def test_refine_create_unit_square():
 
 
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_refine_create_unit_cube(ghost_mode):
+def test_refine_create_unit_cube(ghost_mode) -> None:
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
@@ -55,7 +55,7 @@ def test_refine_create_unit_cube(ghost_mode):
     assert Q
 
 
-def test_refine_create_form():
+def test_refine_create_form() -> None:
     """Check that forms can be assembled on refined mesh."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     mesh.topology.create_entities(1)
@@ -69,7 +69,7 @@ def test_refine_create_form():
     assemble_matrix(a)
 
 
-def test_sub_refine():
+def test_sub_refine() -> None:
     """Test that refinement of a subset of edges works."""
     msh = create_unit_square(
         MPI.COMM_WORLD, 3, 4, diagonal=DiagonalType.left, ghost_mode=GhostMode.none
@@ -87,7 +87,7 @@ def test_sub_refine():
     assert msh.topology.index_map(2).size_global + 3 == msh1.topology.index_map(2).size_global
 
 
-def test_refine_from_cells():
+def test_refine_from_cells() -> None:
     """Check user interface for using local cells to define edges."""
     Nx, Ny = 8, 3
     assert Nx % 2 == 0
@@ -125,7 +125,7 @@ def test_refine_from_cells():
         ),
     ],
 )
-def test_refine_facet_meshtag(tdim, refine_plaza_wrapper):
+def test_refine_facet_meshtag(tdim, refine_plaza_wrapper) -> None:
     if tdim == 3:
         msh = create_unit_cube(
             MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, ghost_mode=GhostMode.none
@@ -184,7 +184,7 @@ def test_refine_facet_meshtag(tdim, refine_plaza_wrapper):
         ),
     ],
 )
-def test_refine_cell_meshtag(tdim, refine_plaza_wrapper):
+def test_refine_cell_meshtag(tdim, refine_plaza_wrapper) -> None:
     if tdim == 3:
         msh = create_unit_cube(
             MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, ghost_mode=GhostMode.none
@@ -216,7 +216,7 @@ def test_refine_ufl_cargo():
 
 @pytest.mark.parametrize("tdim", [1, 2, 3])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_identity_partitioner(tdim, ghost_mode):
+def test_identity_partitioner(tdim, ghost_mode) -> None:
     n = 2
     if tdim == 1:
         mesh = create_unit_interval(MPI.COMM_WORLD, n)

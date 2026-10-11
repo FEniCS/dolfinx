@@ -39,7 +39,9 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   if (tdim == 2
       and (cell_type == mesh::CellType::prism
            or cell_type == mesh::CellType::pyramid))
+  {
     throw std::runtime_error("Prism/pyramid cell facet topology not supported");
+  }
 
   // Get entity 'cell' type
   const mesh::CellType entity_cell_type
@@ -99,8 +101,6 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     auto c_to_e = topology.connectivity(tdim, dim);
     if (!c_to_e)
       throw std::runtime_error("Mesh is missing cell-entity connectivity.");
-
-    mesh::CellType cell_type = topology.cell_type();
 
     // Tabulate geometry dofs for local entities
     std::vector<std::vector<int>> entity_dofs;

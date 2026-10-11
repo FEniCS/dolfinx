@@ -12,6 +12,11 @@
 // * Create and apply Dirichlet boundary conditions
 // * Compute errors
 //
+// Running this demo requires the files:
+// {download}`demo_poisson_matrix_free/main.cpp`,
+// {download}`demo_poisson_matrix_free/poisson.py` and
+// {download}`demo_poisson_matrix_free/CMakeLists.txt`.
+//
 // \begin{align*}
 //    - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
 //      u &= u_D \quad {\rm on} \ \Gamma_{D}
@@ -144,7 +149,8 @@ void solver(MPI_Comm comm)
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
   auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-      mesh, std::make_shared<fem::FiniteElement<U>>(element)));
+      mesh, std::make_shared<fem::FiniteElement<U>>(element,
+                                                    mesh->geometry().dim())));
 
   // Prepare and set Constants for the bilinear form
   auto f = std::make_shared<fem::Constant<T>>(-6.0);

@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2021 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta
+// Copyright (C) 2018-2026 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,6 +10,7 @@
 #include <cmath>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/permutationcomputation.h>
 #include <format>
 #include <numeric>
 #include <ranges>
@@ -31,12 +32,13 @@ CoordinateElement<T>::CoordinateElement(
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 CoordinateElement<T>::CoordinateElement(mesh::CellType celltype, int degree,
-                                        basix::element::lagrange_variant type)
-    : CoordinateElement(std::make_shared<basix::FiniteElement<T>>(
-          basix::create_element<T>(basix::element::family::P,
-                                   mesh::cell_type_to_basix_type(celltype),
-                                   degree, type,
-                                   basix::element::dpc_variant::unset, false)))
+                                        basix::element::lagrange_variant type,
+                                        bool discontinuous)
+    : CoordinateElement(
+          std::make_shared<basix::FiniteElement<T>>(basix::create_element<T>(
+              basix::element::family::P,
+              mesh::cell_type_to_basix_type(celltype), degree, type,
+              basix::element::dpc_variant::unset, discontinuous)))
 {
   // Do nothing
 }
@@ -72,7 +74,8 @@ void CoordinateElement<T>::permute_subentity_closure(std::span<std::int32_t> d,
 {
   assert(_element);
   _element->permute_subentity_closure_inv(
-      d, cell_info, mesh::cell_type_to_basix_type(entity_type), entity_index);
+      d, cell_info & ~mesh::reversed_cell_bit,
+      mesh::cell_type_to_basix_type(entity_type), entity_index);
 }
 //--------------------------------------------------------------------------------
 template <std::floating_point T>
@@ -192,7 +195,7 @@ void CoordinateElement<T>::permute(std::span<std::int32_t> dofs,
                                    std::uint32_t cell_perm) const
 {
   assert(_element);
-  _element->permute(dofs, cell_perm);
+  _element->permute(dofs, cell_perm & ~mesh::reversed_cell_bit);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -200,7 +203,7 @@ void CoordinateElement<T>::permute_inv(std::span<std::int32_t> dofs,
                                        std::uint32_t cell_perm) const
 {
   assert(_element);
-  _element->permute_inv(dofs, cell_perm);
+  _element->permute_inv(dofs, cell_perm & ~mesh::reversed_cell_bit);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -237,6 +240,13 @@ std::uint64_t CoordinateElement<T>::hash() const
 {
   assert(_element);
   return _element->hash();
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+bool CoordinateElement<T>::is_discontinuous() const
+{
+  assert(_element);
+  return _element->discontinuous();
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
