@@ -565,19 +565,19 @@ public:
   /// @return True if DOF transformations are required.
   bool needs_dof_transformations() const noexcept;
 
-  /// @brief Check if the basis changes sign on cells whose orientation
-  /// is reversed relative to the mesh (see
+  /// @brief Check if the basis changes sign on the facets whose two
+  /// cells disagree on the normal (see
   /// mesh::Topology::create_facet_orientations).
   ///
   /// True for H(div)-conforming elements on a manifold, i.e. elements
   /// mapped by the contravariant Piola map that need DOF transformations
-  /// (see T_apply(), which applies the sign), and for mixed elements with
-  /// such a sub-element. Discontinuous elements mapped by the
+  /// (see T_apply(), which applies the signs), and for mixed elements
+  /// with such a sub-element. Discontinuous elements mapped by the
   /// contravariant Piola map do not depend on it: with no continuity
-  /// between cells to preserve, a sign per cell changes the basis but not
-  /// the space.
+  /// between cells to preserve, a sign changes the basis but not the
+  /// space.
   ///
-  /// @return True if the basis depends on the cell orientation.
+  /// @return True if the basis depends on the facet signs.
   bool depends_on_cell_orientation() const noexcept;
 
   /// @brief Check if DOF permutations are needed for this element.
@@ -1064,7 +1064,7 @@ public:
 
 private:
   // Negate data on each facet marked with mesh::reversed_facet_bit, if
-  // the basis depends on the cell orientation. A sign is its own
+  // the basis depends on the facet signs. A sign is its own
   // inverse and transpose, so every DOF transformation applies it the
   // same way.
   //
@@ -1157,7 +1157,7 @@ private:
   bool _needs_dof_permutations;
   bool _needs_dof_transformations;
 
-  // Indicate whether the basis depends on the cell orientation
+  // Indicate whether the basis depends on the facet signs
   bool _depends_on_cell_orientation;
 
   // Bits of the cell permutation info that carry an orientation for this

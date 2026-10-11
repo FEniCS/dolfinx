@@ -56,10 +56,15 @@ Problems on manifolds
 ---------------------
 
 * :doc:`demos/demo_manifold` -- solve the Poisson equation in mixed form
-  on the sphere, with Raviart-Thomas elements on a consistently oriented
-  surface mesh extracted from a Gmsh volume mesh.
+  on the sphere, with Raviart-Thomas elements on a surface taken from a
+  Gmsh volume mesh, widening the ghost layer with a custom partitioner
+  so that the facets can be signed in parallel.
 * :doc:`demos/demo_mobius` -- solve the same equation on a Möbius strip,
-  a surface that cannot be oriented, on a higher-order mesh.
+  where no consistent orientation of the cells exists, on a higher-order
+  mesh built by hand, with a cylinder as a control.
+* :doc:`demos/demo_mobius_eikonal` -- compute the distance to the
+  boundary of a Möbius strip, solving the eikonal equation with the
+  latent variable proximal point algorithm in mixed form.
 
 
 Time-dependent and nonlinear problems
@@ -123,8 +128,9 @@ Mesh generation, partitioning and parallel data
   communication pattern of a distributed mesh with NetworkX.
 * :doc:`demos/demo_mixed-topology` -- solve a Helmholtz problem on a
   mesh with mixed cell topology (in development, serial only).
-* :doc:`demos/demo_manifold` -- see *Problems on manifolds*: extract a
-  surface mesh from a Gmsh volume mesh and orient its cells.
+* :doc:`demos/demo_manifold` -- see *Problems on manifolds*: take a
+  surface from a Gmsh volume mesh, and ghost a cell wherever it shares a
+  vertex by writing a partitioner.
 * :doc:`demos/demo_mobius` -- see *Problems on manifolds*: build a
   non-orientable higher-order surface mesh by hand.
 
@@ -179,6 +185,7 @@ PETSc scalars.
    demos/demo_mixed-poisson.md
    demos/demo_manifold.md
    demos/demo_mobius.md
+   demos/demo_mobius_eikonal.md
    demos/demo_stokes.md
    demos/demo_navier-stokes.md
    demos/demo_hdg.md

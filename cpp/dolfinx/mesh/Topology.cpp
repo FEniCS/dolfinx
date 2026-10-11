@@ -835,7 +835,7 @@ build_entity_types(const std::vector<CellType>& cell_types)
   return entity_types;
 }
 
-/// Throw unless `tdim` is that of a surface, which cell orientations
+/// Throw unless `tdim` is that of a surface, which facet signs
 /// need
 void check_surface_dim(int tdim)
 {

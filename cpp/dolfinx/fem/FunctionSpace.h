@@ -423,7 +423,7 @@ public:
   }
 
 private:
-  // Throw if an element depends on the cell orientation of the mesh and
+  // Throw if an element depends on the mesh's facet signs and
   // none has been computed or set. The check is local, and its outcome
   // is the same on all ranks.
   void check_cell_orientations() const
@@ -437,9 +437,9 @@ private:
       {
         throw std::runtime_error(
             "The basis of this element, e.g. Raviart-Thomas on a manifold, "
-            "depends on the cell orientation, which has not been computed or "
-            "set. Call Topology::create_facet_orientations before creating "
-            "the function space.");
+            "depends on the facet signs, which have not been computed. "
+            "Call Topology::create_facet_orientations before creating the "
+            "function space.");
       }
     }
   }
