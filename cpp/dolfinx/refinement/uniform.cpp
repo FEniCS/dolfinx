@@ -49,7 +49,9 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   if (auto it = std::find(entity_types[2].begin(), entity_types[2].end(),
                           mesh::CellType::quadrilateral);
       it != entity_types[2].end())
+  {
     e_index.push_back(std::ranges::distance(entity_types[2].begin(), it));
+  }
 
   if (tdim == 3)
   {
@@ -57,7 +59,9 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     if (auto it = std::find(cell_entity_types.begin(), cell_entity_types.end(),
                             mesh::CellType::hexahedron);
         it != entity_types[3].end())
+    {
       e_index.push_back(std::ranges::distance(cell_entity_types.begin(), it));
+    }
   }
 
   // Add up all local vertices, edges, quad facets and hex cells.
@@ -230,8 +234,10 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
       refined_cell_list = {0,  5,  6, 13, 7,  1,  8,  5, 13, 9,  3,  10, 8,
                            13, 12, 2, 6,  10, 13, 11, 7, 9,  11, 12, 4};
       if (ktet == -1)
+      {
         throw std::runtime_error("Cannot refine mesh with pyramids and no "
                                  "tetrahedra.");
+      }
       break;
 
     case mesh::CellType::triangle:

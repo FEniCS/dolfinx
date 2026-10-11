@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Jorgen S. Dokken and Garth N. Wells
+// Copyright (C) 2019-2026 Jorgen S. Dokken and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,10 +7,12 @@
 #include "cells.h"
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <format>
+#include <iterator>
 #include <numeric>
 #include <span>
 #include <stdexcept>
@@ -372,6 +374,13 @@ std::vector<std::uint16_t> vtk_pyramid(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 {
+  // Degree-2 serendipity: a node on each vertex and each edge and none
+  // inside, which is not a Lagrange layout, so cell_degree below has no
+  // answer for it. VTK takes the edges in the order DOLFINx numbers
+  // 0, 2, 3, 1.
+  if (num_nodes == 8)
+    return {0, 1, 3, 2, 4, 6, 7, 5};
+
   std::vector<std::uint16_t> map;
   map.reserve(num_nodes);
 
@@ -480,6 +489,11 @@ std::vector<std::uint16_t> gmsh_hexahedron(int num_nodes)
   case 27:
     return {0,  1,  3,  2,  4,  5,  7,  6,  8,  9,  10, 11, 12, 13,
             15, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
+  case 64:
+    return {0,  1,  3,  2,  4,  5,  7,  6,  8,  9,  10, 11, 12, 13, 14, 15,
+            16, 17, 19, 18, 22, 23, 20, 21, 24, 25, 26, 27, 28, 29, 31, 30,
+            32, 34, 35, 33, 36, 37, 39, 38, 40, 42, 43, 41, 44, 45, 47, 46,
+            49, 48, 50, 51, 52, 53, 55, 54, 56, 57, 59, 58, 60, 61, 63, 62};
   default:
     throw std::runtime_error("Higher order Gmsh hexahedron not supported");
   }
@@ -510,6 +524,10 @@ std::vector<std::uint16_t> gmsh_prism(int num_nodes)
     return {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
   case 18:
     return {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17};
+  case 40:
+    return {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13,
+            14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 37, 25, 26,
+            28, 27, 29, 31, 32, 30, 33, 34, 36, 35, 38, 39};
   default:
     throw std::runtime_error("Higher order Gmsh prism not supported");
   }
@@ -525,6 +543,9 @@ std::vector<std::uint16_t> gmsh_pyramid(int num_nodes)
     return {0, 1, 3, 2, 4, 5, 6, 7, 8, 9, 10, 12, 11};
   case 14:
     return {0, 1, 3, 2, 4, 5, 6, 7, 8, 9, 10, 12, 11, 13};
+  case 30:
+    return {0,  1,  3,  2,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14,
+            16, 15, 19, 20, 17, 18, 25, 26, 27, 28, 21, 23, 24, 22, 29};
   default:
     throw std::runtime_error("Higher order Gmsh pyramid not supported");
   }
@@ -662,22 +683,32 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     {
     case 6:
       return 1;
-    case 15:
+    case 18:
       return 2;
+    case 40:
+      return 3;
     default:
-      throw std::runtime_error(
-          std::format("Unknown prism layout. Number of nodes: {}", num_nodes));
+      throw std::runtime_error(std::format(
+          "No Lagrange prism has {} nodes, expected 6, 18 or 40. The 15-node "
+          "wedge is a serendipity layout, which Basix does not have for a "
+          "prism.",
+          num_nodes));
     }
   case mesh::CellType::pyramid:
     switch (num_nodes)
     {
     case 5:
       return 1;
-    case 13:
+    case 14:
       return 2;
+    case 30:
+      return 3;
     default:
       throw std::runtime_error(std::format(
-          "Unknown pyramid layout. Number of nodes: {}", num_nodes));
+          "No Lagrange pyramid has {} nodes, expected 5, 14 or 30. The 13-node "
+          "pyramid is a serendipity layout, which Basix does not have for a "
+          "pyramid.",
+          num_nodes));
     }
   default:
     throw std::runtime_error("Unknown cell type.");
@@ -714,17 +745,11 @@ io::cells::apply_permutation(std::span<const std::int64_t> cells,
   return cells_new;
 }
 //-----------------------------------------------------------------------------
-std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
+std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int num_nodes)
 {
-  if (cell == mesh::CellType::prism and dim == 2)
-    throw std::runtime_error("More work needed for prism cell");
-
-  // Get cell type
-  mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
-
-  // Determine VTK cell type (arbitrary Lagrange elements)
+  // Arbitrary-degree Lagrange types where VTK has them
   // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
-  switch (cell_type)
+  switch (cell)
   {
   case mesh::CellType::point:
     return 1;
@@ -738,10 +763,18 @@ std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
     return 71;
   case mesh::CellType::hexahedron:
     return 72;
-  case mesh::CellType::pyramid:
-    return 14;
   case mesh::CellType::prism:
     return 73;
+  case mesh::CellType::pyramid:
+    // VTK has no arbitrary-degree Lagrange pyramid to fall back on, and
+    // its quadratic pyramid (27) is the 13-node serendipity cell, which
+    // basix has no element for, so it cannot be written or read back
+    if (num_nodes == 5)
+      return 14;
+    throw std::invalid_argument(
+        std::format("VTK pyramid output supports 5 nodes, got {}. "
+                    "Lagrange pyramids are not implemented in VTK.",
+                    num_nodes));
   default:
     throw std::runtime_error("Unknown cell type");
   }

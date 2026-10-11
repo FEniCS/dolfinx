@@ -216,8 +216,10 @@ XDMFFile::read_topology_data(std::string_view name,
   pugi::xml_node grid_node
       = node.select_node(std::format("Grid[@Name='{}']", name).c_str()).node();
   if (!grid_node)
+  {
     throw std::runtime_error(
         std::format("<Grid> with name '{}' not found.", name));
+  }
 
   spdlog::info("Read topology data \"{}\" at {}", name, xpath);
   return xdmf_mesh::read_topology_data(_comm.comm(), _h5_id, grid_node);
@@ -236,8 +238,10 @@ XDMFFile::read_geometry_data(std::string_view name,
   pugi::xml_node grid_node
       = node.select_node(std::format("Grid[@Name='{}']", name).c_str()).node();
   if (!grid_node)
+  {
     throw std::runtime_error(
         std::format("<Grid> with name '{}' not found.", name));
+  }
 
   spdlog::info("Read geometry data \"{}\" at {}", name, xpath);
   return xdmf_mesh::read_geometry_data(_comm.comm(), _h5_id, grid_node);
@@ -363,8 +367,10 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
   pugi::xml_node grid_node
       = node.select_node(std::format("Grid[@Name='{}']", name).c_str()).node();
   if (!grid_node)
+  {
     throw std::runtime_error(
         std::format("<Grid> with name '{}' not found.", name));
+  }
 
   const auto [entities, eshape] = read_topology_data(name, xpath);
 
@@ -432,8 +438,10 @@ XDMFFile::read_cell_type(std::string_view grid_name,
       = node.select_node(std::format("Grid[@Name='{}']", grid_name).c_str())
             .node();
   if (!grid_node)
+  {
     throw std::runtime_error(
         std::format("<Grid> with name '{}' not found.", grid_name));
+  }
 
   // Get topology node
   pugi::xml_node topology_node = grid_node.child("Topology");
@@ -478,8 +486,10 @@ std::string XDMFFile::read_information(std::string_view name,
       = node.select_node(std::format("Information[@Name='{}']", name).c_str())
             .node();
   if (!info_node)
+  {
     throw std::runtime_error(
         std::format("<Information> with name '{}' not found.", name));
+  }
 
   // Read data and trim any leading/trailing whitespace
   std::string value_str = info_node.attribute("Value").as_string();

@@ -10,6 +10,8 @@
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
 #include <span>
+#include <stdexcept>
+#include <tuple>
 #include <vector>
 
 /// @brief Functions for the re-ordering of input mesh topology to the
@@ -121,9 +123,20 @@ namespace dolfinx::io::cells
 /// @brief Get the Lagrange order of a given cell with a given number of
 /// nodes.
 ///
+/// Only Lagrange layouts have a degree here, so the node count and the
+/// degree determine each other. A serendipity layout is rejected, even
+/// where it has a degree of its own: reporting 2 for the 15-node wedge
+/// and the 13-node pyramid would make them indistinguishable from the
+/// 18-node wedge and the 14-node pyramid, and Basix has no element of
+/// either layout to build. The serendipity layouts Basix does have,
+/// the 8-node quadrilateral and the 20-node hexahedron, are mapped
+/// directly by ::perm_vtk without consulting a degree.
+///
 /// @param[in] type Cell shape.
 /// @param[in] num_nodes Number of cell 'nodes'
 /// @return Lagrange order of the cell type.
+/// @throws std::runtime_error If no Lagrange layout of `type` has
+/// `num_nodes` nodes.
 int cell_degree(mesh::CellType type, int num_nodes);
 
 /// @brief Permutation array to map from VTK to DOLFINx node ordering.
@@ -170,12 +183,25 @@ std::vector<std::int64_t> apply_permutation(std::span<const std::int64_t> cells,
                                             std::array<std::size_t, 2> shape,
                                             std::span<const std::uint16_t> p);
 
-/// @brief Get VTK cell identifier.
+/// @brief Get the VTK cell identifier for a cell type and node layout.
 ///
-/// @param[in] cell Cell type.
-/// @param[in] dim Topological dimension of the cell.
+/// Inverse of ::vtk_to_dolfinx for the layouts that VTK can express.
+///
+/// @param[in] cell Cell type to label. To label an entity of a cell,
+/// pass the entity's own cell type, e.g. from
+/// mesh::cell_entity_type.
+/// @param[in] num_nodes Number of nodes in the cell. It must be a
+/// layout that VTK's type for `cell` can express and that round-trips
+/// through ::vtk_to_dolfinx, which constrains only pyramids: VTK has an
+/// arbitrary-degree Lagrange type for every other shape, but for the
+/// pyramid only a linear one and a 13-node serendipity quadratic one
+/// that basix cannot express. Only the linear pyramid is accepted.
+/// @note Prism and pyramid facets are not all of one type, so no single
+/// identifier labels a facet set; mesh::entities_to_geometry rejects
+/// that case.
 /// @return VTK cell identifier.
-std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim);
+/// @throws std::invalid_argument If VTK has no type for the layout.
+std::int8_t get_vtk_cell_type(mesh::CellType cell, int num_nodes);
 
 /// @brief Get DOLFINx cell type and degree from VTK cell type.
 ///
