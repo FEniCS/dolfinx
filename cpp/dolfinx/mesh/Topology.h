@@ -162,6 +162,12 @@ public:
   connectivity(int d0, int d1) const;
 
   /// @brief Get the cell permutation information.
+  ///
+  /// Encodes, for each cell, how each of its sub-entities is reflected
+  /// and rotated relative to the reference cell (see
+  /// mesh::compute_cell_permutations for the bit layout). On a surface it
+  /// also holds the facet signs (see facet_orientations).
+  ///
   /// @throws std::runtime_error If create_entity_permutations has not
   /// been called.
   /// @throws std::out_of_range If there is more than one cell type

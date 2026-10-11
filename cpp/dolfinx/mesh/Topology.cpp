@@ -842,7 +842,7 @@ void check_surface_dim(int tdim)
   if (tdim != 2)
   {
     throw std::invalid_argument(
-        std::format("Cell orientations need a surface mesh (topological "
+        std::format("Facet signs need a surface mesh (topological "
                     "dimension 2), not dimension {}.",
                     tdim));
   }
