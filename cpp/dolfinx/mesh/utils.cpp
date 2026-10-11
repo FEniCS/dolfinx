@@ -84,8 +84,10 @@ std::vector<std::int64_t> mesh::impl::reorder_cells(
           else
           {
             if (!fn)
+            {
               throw std::invalid_argument(
                   "Geometric cell reordering function is empty.");
+            }
             return fn(
                 cell_centroids.subspan(cell_offset, gdim * num_owned_cells),
                 gdim);

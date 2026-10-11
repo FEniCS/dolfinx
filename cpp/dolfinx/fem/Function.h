@@ -182,8 +182,10 @@ public:
     {
       // Check for scalar-valued functions
       if (fshape.front() != x.size() / 3)
+      {
         throw std::invalid_argument(
             "Data returned by callable has wrong length");
+      }
     }
     else
     {
