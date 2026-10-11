@@ -185,21 +185,22 @@ public:
   /// cells whose normals agree. A function space with such an element
   /// can therefore only be created on a manifold mesh once an
   /// orientation has been computed or set with this call (see
-  /// has_cell_orientations). Lagrange and Nédélec spaces do not need it.
+  /// has_facet_orientations). Lagrange and Nédélec spaces do not need it.
   ///
-  /// If no orientation is given, one is computed from the vertex orders
-  /// alone (see compute_cell_orientations), which additionally creates
-  /// the edges it is computed across and their orientations relative to
-  /// the cells. Which of its two orientations each connected surface
-  /// gets is then arbitrary, and depends on the partitioning. Pass
-  /// `orientations` instead when a consistent orientation is already
-  /// known, e.g. the outward normal of a closed surface; it is stored in
-  /// the same way, but is not checked for consistency between
-  /// neighbouring cells, and needs none of the above entities. On a mesh
-  /// whose cells are consistently ordered, passing all `1` keeps each
-  /// cell's own vertex order.
+  /// If no orientation is given, the cells keep their own vertex orders
+  /// and the facets on which two cells disagree carry a sign instead
+  /// (see compute_facet_orientations), which additionally creates the
+  /// edges those signs are computed across. This asks nothing of the
+  /// surface as a whole, so it works whether or not the surface can be
+  /// oriented.
   ///
-  /// The result can be read back with cell_orientations. On cells whose
+  /// Pass `orientations` instead to reverse chosen cells, e.g. to match
+  /// the outward normal of a closed surface. It is stored per cell and
+  /// used as given, with no facet signs and no check that neighbouring
+  /// cells agree, so passing all `1` keeps every cell's own vertex order
+  /// however inconsistent that is.
+  ///
+  /// The result can be read back with facet_orientations. On cells whose
   /// vertex order disagrees with it, such elements negate their basis in
   /// every later assembly, interpolation and evaluation. Reversing all
   /// cells of a surface negates the basis functions and, with them, the
@@ -220,33 +221,39 @@ public:
   /// @throws std::invalid_argument If the topological dimension is not
   /// 2, or `orientations` does not have one entry per owned and ghost
   /// cell.
-  /// @throws std::runtime_error If no orientation is given and the
-  /// surface is not orientable, e.g. a Möbius strip, or an edge is shared
-  /// by more than two cells.
+  /// @throws std::runtime_error If no orientation is given and an edge
+  /// is shared by more than two cells, or a facet needs a sign on a
+  /// process that holds no ghost cells.
   /// @throws std::out_of_range If there is more than one cell type.
-  void create_cell_orientations(
-      std::optional<std::span<const std::int8_t>> orientations = std::nullopt);
+  void create_facet_orientations();
 
-  /// @brief Get the orientation of each cell relative to the
-  /// orientation of its surface (see create_cell_orientations).
+  /// @brief Get the sign carried by each facet of each cell (see
+  /// create_facet_orientations).
   ///
-  /// @return For each owned and ghost cell, in local cell order, `-1`
-  /// if its orientation is reversed and `1` otherwise. All are `1` if
-  /// no orientation has been computed or set (see
-  /// has_cell_orientations).
-  /// @throws std::runtime_error If create_cell_permutations has not
-  /// been called.
+  /// A facet whose two cells disagree on its normal has the
+  /// degrees-of-freedom of one of them negated there. This is what makes
+  /// a surface that cannot be oriented, where no assignment of
+  /// orientations to cells makes every pair of neighbours agree,
+  /// conforming all the same.
+  ///
+  /// @return For each owned and ghost cell and each of its facets, in
+  /// cell-local facet order and flattened row-wise, `-1` if the
+  /// degrees-of-freedom on that facet are negated and `1` otherwise. All
+  /// are `1` if no orientation has been computed or set, and on a
+  /// surface that can be oriented.
+  /// @throws std::runtime_error If create_cell_permutations has not been
+  /// called.
   /// @throws std::out_of_range If there is more than one cell type.
-  std::vector<std::int8_t> cell_orientations() const;
+  std::vector<std::int8_t> facet_orientations() const;
 
   /// @brief Check if a cell orientation has been computed or set (see
-  /// create_cell_orientations).
+  /// create_facet_orientations).
   ///
   /// Function spaces whose basis depends on the cell orientation can
   /// only be created once it has.
   ///
   /// @return True if the cell orientation has been computed or set.
-  bool has_cell_orientations() const noexcept;
+  bool has_facet_orientations() const noexcept;
 
   /// @brief Get the numbers that encode the permutation to apply to
   /// each cell-local entity of a given dimension.
@@ -402,7 +409,7 @@ private:
 
   // Whether a cell orientation has been computed or set. Not encoded in
   // _cell_permutations, where an unset orientation reads as all 1.
-  bool _has_cell_orientations = false;
+  bool _has_facet_orientations = false;
 
   // List of facets that are on the inter-process boundary for each
   // facet type. _interprocess_facets[i] is the inter-process facets of

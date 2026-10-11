@@ -216,6 +216,8 @@ FiniteElement<T>::FiniteElement(
   }
 
   _signature = std::format("Basix element {} {}", family, _bs);
+
+  init_orientation_masks();
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -284,6 +286,8 @@ FiniteElement<T>::FiniteElement(
 
   _space_dim = dof_offset;
   _signature += ")";
+
+  init_orientation_masks();
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -316,6 +320,8 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
     _entity_dofs[tdim][0].push_back(i);
     _entity_closure_dofs[tdim][0].push_back(i);
   }
+
+  init_orientation_masks();
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -645,14 +651,18 @@ template <std::floating_point T>
 void FiniteElement<T>::permute(std::span<std::int32_t> doflist,
                                std::uint32_t cell_permutation) const
 {
-  _element->permute(doflist, cell_permutation & ~mesh::reversed_cell_bit);
+  _element->permute(doflist,
+                    cell_permutation
+                        & ~mesh::orientation_mask(mesh::cell_dim(_cell_type)));
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 void FiniteElement<T>::permute_inv(std::span<std::int32_t> doflist,
                                    std::uint32_t cell_permutation) const
 {
-  _element->permute_inv(doflist, cell_permutation & ~mesh::reversed_cell_bit);
+  _element->permute_inv(
+      doflist,
+      cell_permutation & ~mesh::orientation_mask(mesh::cell_dim(_cell_type)));
 }
 //-----------------------------------------------------------------------------
 /// @cond

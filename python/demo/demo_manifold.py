@@ -17,6 +17,12 @@
 # * solve a PDE on a manifold, here a surface embedded in 3D,
 # * use $H(\mathrm{div})$-conforming Raviart-Thomas elements on a
 #   surface, which requires consistently oriented cells,
+# * widen the ghost layer beyond what
+#   {py:class}`GhostMode <dolfinx.mesh.GhostMode>` offers, by writing a
+#   partitioner that ghosts a cell wherever it shares a *vertex*. A
+#   surface taken as a submesh inherits its ghost layer from the volume,
+#   and `shared_facet` leaves it one dimension too narrow to orient the
+#   cells in parallel,
 # * impose a global constraint with a real (constant) space.
 #
 # ```{admonition} Download sources
@@ -99,6 +105,88 @@ orientation: str | None = "computed"
 #
 # We mesh the unit ball with Gmsh on rank 0, distribute it, and take
 # the sphere as the submesh of its exterior facets.
+#
+# ### Widening the ghost layer
+#
+# A submesh cell is a ghost exactly when the parent entity it came from
+# was, so the surface inherits its ghost layer from the ball. That layer
+# is one dimension too narrow. `GhostMode.shared_facet` ghosts the tets
+# that share a *facet* with an owned tet, but two neighbouring cells of
+# the surface are two boundary facets sharing an *edge*, and the tet
+# behind the second one usually meets the owned side along that edge
+# alone. It is never ghosted, its boundary facet does not exist here,
+# and the surface ends up with cells whose neighbour across an edge is
+# missing -- which is exactly what
+# {py:meth}`create_facet_orientations
+# <dolfinx.mesh.Topology.create_facet_orientations>` needs.
+#
+# {py:class}`GhostMode <dolfinx.mesh.GhostMode>` offers no wider layer,
+# but a partitioner can build one. A partitioner returns the destination
+# ranks of each cell, the first being its owner and the rest ghosting
+# it, so ghosting more widely only means adding ranks to those lists. It
+# is free to ignore the dual graph it is handed and return a layout
+# decided elsewhere, which is what lets us keep a partition already
+# computed and only widen it.
+#
+# So we partition once as usual, then rebuild: each cell stays with its
+# owner and is ghosted on every rank that shares one of its vertices,
+# found with {py:meth}`index_to_dest_ranks
+# <dolfinx.common.IndexMap.index_to_dest_ranks>`. A tet meeting the
+# owned side along an edge shares both of that edge's vertices, so it is
+# now ghosted and its boundary facet comes with it.
+
+
+def ghost_by_vertex(msh):
+    """Rebuild ``msh`` so a cell is ghosted wherever it shares a vertex."""
+    tdim = msh.topology.dim
+    num_owned = msh.topology.index_map(tdim).size_local
+    cell_to_vertex = msh.topology.connectivity(tdim, 0)
+    dest, offset = msh.topology.index_map(0).index_to_dest_ranks()
+
+    rank = msh.comm.rank
+    destinations, counts = [], []
+    for c in range(num_owned):
+        extra = set()
+        for v in cell_to_vertex.links(c):
+            extra.update(dest[offset[v] : offset[v + 1]])
+        extra.discard(rank)
+        destinations.append([rank, *sorted(extra)])
+        counts.append(1 + len(extra))
+    offsets = np.zeros(len(counts) + 1, dtype=np.int32)
+    np.cumsum(counts, out=offsets[1:])
+    layout = dolfinx.graph.adjacencylist(
+        np.fromiter((r for row in destinations for r in row), dtype=np.int32), offsets
+    )
+
+    # The cells are handed back in the order they are passed below, so
+    # the layout can be returned as it stands
+    def keep_partition(comm, nparts, dual_graph, node_weights, edge_weights, ghosting):
+        return layout
+
+    # create_mesh numbers the points it is given by position, so supply
+    # the owned nodes and refer to them through the numbering of their
+    # index map, whose local ranges are that same running count
+    geometry = msh.geometry
+    node_map = geometry.index_map()
+    nodes = node_map.local_to_global(geometry.dofmaps[0][:num_owned].reshape(-1).astype(np.int32))
+    domain = ufl.Mesh(
+        basix.ufl.element(
+            "Lagrange",
+            msh.topology.cell_name(),
+            geometry.cmaps[0].degree,
+            basix.LagrangeVariant(geometry.cmaps[0].variant),
+            shape=(geometry.dim,),
+            dtype=geometry.x.dtype,
+        )
+    )
+    return dolfinx.mesh.create_mesh(
+        msh.comm,
+        nodes.reshape(num_owned, -1),
+        domain,
+        geometry.x[: node_map.size_local],
+        partitioner=keep_partition,
+    )
+
 
 # +
 gmsh.initialize()
@@ -109,11 +197,21 @@ if MPI.COMM_WORLD.rank == 0:
     gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", res)
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.setOrder(order)
-ball_mesh = dolfinx.io.gmsh.model_to_mesh(gmsh.model, MPI.COMM_WORLD, 0, gdim=3).mesh
+ball_mesh = dolfinx.io.gmsh.model_to_mesh(
+    gmsh.model, MPI.COMM_WORLD, 0, gdim=3, ghost_mode=dolfinx.io.gmsh.GhostMode.shared_facet
+).mesh
 gmsh.finalize()
+ball_mesh = ghost_by_vertex(ball_mesh)
 ball_mesh.topology.create_connectivity(2, 3)
+fdim = ball_mesh.topology.dim - 1
+assert fdim == 2
+facet_map = ball_mesh.topology.index_map(fdim)
+facet_vector = dolfinx.la.vector(facet_map, dtype=np.int32)
 boundary_facets = dolfinx.mesh.exterior_facet_indices(ball_mesh.topology)
-mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
+facet_vector.array[boundary_facets] = 1
+facet_vector.scatter_forward()
+all_boundary_facets = np.flatnonzero(facet_vector.array)
+mesh = dolfinx.mesh.create_submesh(ball_mesh, fdim, all_boundary_facets)[0]
 # -
 
 # ### Orienting the cells
@@ -132,14 +230,20 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 # There is no guarantee that an input mesh has a consistent orientation.
 # An example is a submesh of the exterior boundary of a volume mesh:
 # each facet keeps the vertex order it has in its volume cell.
-# {py:meth}`create_cell_orientations
-# <dolfinx.mesh.Topology.create_cell_orientations>`
-# computes a consistent orientation from the vertex orders, in serial and
-# in parallel, and the Raviart-Thomas (and Brezzi-Douglas-Marini) basis
-# functions follow it. Whether the result points inwards or outwards is
-# arbitrary, but does not change the solution. It raises an error for a
-# non-orientable surface, such as a Möbius strip, where no
-# $H(\mathrm{div})$-conforming space of this kind exists.
+# {py:meth}`create_facet_orientations
+# <dolfinx.mesh.Topology.create_facet_orientations>` neither reorders the
+# cells nor reverses them. It signs the facets on which two cells
+# disagree: negating the degrees-of-freedom of one of the two there
+# makes their normal components match again, and disturbs nothing else,
+# since only a facet's own basis functions have a non-zero normal trace
+# on it. The Raviart-Thomas (and Brezzi-Douglas-Marini) basis functions
+# follow those signs.
+#
+# Because this asks nothing of the surface as a whole, only of each
+# facet in turn, it works even where no consistent orientation exists at
+# all, as on the Möbius strip of {doc}`demo_mobius`. Which of the two
+# cells carries the sign is settled by global index, so the result does
+# not depend on the partitioning.
 #
 # The orientation must be requested explicitly, as it is needed only by
 # $H(\mathrm{div})$ elements on surfaces. Lagrange and Nédélec elements
@@ -162,7 +266,7 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 cell_map = mesh.topology.index_map(2)
 num_cells = cell_map.size_local + cell_map.num_ghosts
 if orientation == "computed":
-    mesh.topology.create_cell_orientations()
+    mesh.topology.create_facet_orientations()
 elif orientation == "outward":
     # Evaluate n . x at the midpoint of each owned and ghost cell
     cells = np.arange(num_cells, dtype=np.int32)
@@ -171,17 +275,24 @@ elif orientation == "outward":
     n_dot_x = dolfinx.fem.Expression(
         ufl.dot(ufl.CellNormal(mesh), x), midpoint, dtype=dolfinx.default_real_type
     )
-    mesh.topology.create_cell_orientations(np.where(n_dot_x.eval(mesh, cells).ravel() > 0, 1, -1))
+    mesh.topology.create_facet_orientations(np.where(n_dot_x.eval(mesh, cells).ravel() > 0, 1, -1))
 else:
     # Keep each cell's own vertex order, which is not consistent here
-    mesh.topology.create_cell_orientations(np.ones(num_cells, dtype=np.int8))
+    mesh.topology.create_facet_orientations(np.ones(num_cells, dtype=np.int8))
 
-if orientation is not None:
-    # Count the cells whose orientation is reversed relative to their
-    # own vertex order. The count is nonzero, as the facets of the ball
-    # are not consistently ordered.
+num_owned = cell_map.size_local
+if orientation == "computed":
+    # No cell is reversed: the signs sit on the facets whose two cells
+    # disagree. There are plenty, as the facets of the ball are not
+    # consistently ordered.
+    signs = mesh.topology.facet_orientations()
+    per_cell = signs.size // num_cells
+    num_signed = mesh.comm.allreduce(int(np.sum(signs[: num_owned * per_cell] < 0)), op=MPI.SUM)
+    if mesh.comm.rank == 0:
+        print(f"{num_signed} facets signed")
+elif orientation == "outward":
+    # A supplied orientation is stored per cell and used as given
     orientations = mesh.topology.cell_orientations()
-    num_owned = cell_map.size_local
     num_reversed = mesh.comm.allreduce(int(np.sum(orientations[:num_owned] < 0)), op=MPI.SUM)
     if mesh.comm.rank == 0:
         print(f"{num_reversed} of {cell_map.size_global} cells reversed")

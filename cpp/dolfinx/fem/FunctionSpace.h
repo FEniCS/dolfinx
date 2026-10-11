@@ -45,7 +45,7 @@ public:
   /// @throws std::runtime_error If an element depends on the cell
   /// orientation (see FiniteElement::depends_on_cell_orientation) and
   /// none has been computed or set on the mesh (see
-  /// mesh::Topology::has_cell_orientations).
+  /// mesh::Topology::has_facet_orientations).
   FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap)
@@ -66,7 +66,7 @@ public:
   /// @throws std::runtime_error If an element depends on the cell
   /// orientation (see FiniteElement::depends_on_cell_orientation) and
   /// none has been computed or set on the mesh (see
-  /// mesh::Topology::has_cell_orientations).
+  /// mesh::Topology::has_facet_orientations).
   FunctionSpace(
       std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
       std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements,
@@ -427,7 +427,7 @@ private:
   // is the same on all ranks.
   void check_cell_orientations() const
   {
-    if (_mesh->topology()->has_cell_orientations())
+    if (_mesh->topology()->has_facet_orientations())
       return;
     for (const std::shared_ptr<const FiniteElement<geometry_type>>& e :
          _elements)
@@ -437,8 +437,8 @@ private:
         throw std::runtime_error(
             "The basis of this element, e.g. Raviart-Thomas on a manifold, "
             "depends on the cell orientation, which has not been computed or "
-            "set. Call Topology::create_cell_orientations before creating the "
-            "function space.");
+            "set. Call Topology::create_facet_orientations before creating "
+            "the function space.");
       }
     }
   }

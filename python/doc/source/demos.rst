@@ -41,9 +41,6 @@ Mixed and hybridised formulations
 
 * :doc:`demos/demo_mixed-poisson` -- solve the Poisson equation in mixed
   (flux, potential) form with a block-preconditioned iterative solver.
-* :doc:`demos/demo_manifold` -- solve the Poisson equation in mixed form
-  on the sphere, a manifold, with Raviart-Thomas elements on a
-  consistently oriented surface mesh.
 * :doc:`demos/demo_stokes` -- solve the Stokes equations with Taylor-Hood
   elements, comparing five block and monolithic solver strategies.
 * :doc:`demos/demo_navier-stokes` -- solve the Navier-Stokes equations
@@ -53,6 +50,16 @@ Mixed and hybridised formulations
 * :doc:`demos/demo_static-condensation` -- solve a mixed linear
   elasticity formulation with static condensation of the stress
   degrees-of-freedom, using a numba-generated kernel.
+
+
+Problems on manifolds
+---------------------
+
+* :doc:`demos/demo_manifold` -- solve the Poisson equation in mixed form
+  on the sphere, with Raviart-Thomas elements on a consistently oriented
+  surface mesh extracted from a Gmsh volume mesh.
+* :doc:`demos/demo_mobius` -- solve the same equation on a Möbius strip,
+  a surface that cannot be oriented, on a higher-order mesh.
 
 
 Time-dependent and nonlinear problems
@@ -116,8 +123,10 @@ Mesh generation, partitioning and parallel data
   communication pattern of a distributed mesh with NetworkX.
 * :doc:`demos/demo_mixed-topology` -- solve a Helmholtz problem on a
   mesh with mixed cell topology (in development, serial only).
-* :doc:`demos/demo_manifold` -- see *Mixed and hybridised formulations*:
-  extract a surface mesh from a Gmsh volume mesh and orient its cells.
+* :doc:`demos/demo_manifold` -- see *Problems on manifolds*: extract a
+  surface mesh from a Gmsh volume mesh and orient its cells.
+* :doc:`demos/demo_mobius` -- see *Problems on manifolds*: build a
+  non-orientable higher-order surface mesh by hand.
 
 
 Electromagnetics
@@ -169,6 +178,7 @@ PETSc scalars.
 
    demos/demo_mixed-poisson.md
    demos/demo_manifold.md
+   demos/demo_mobius.md
    demos/demo_stokes.md
    demos/demo_navier-stokes.md
    demos/demo_hdg.md
