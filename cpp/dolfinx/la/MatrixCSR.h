@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Garth N. Wells and Chris N. Richardson
+// Copyright (C) 2021-2026 Garth N. Wells and Chris N. Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,12 +10,20 @@
 #include "Vector.h"
 #include "matrix_csr_impl.h"
 #include <algorithm>
+#include <array>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
+#include <iterator>
+#include <memory>
 #include <mpi.h>
 #include <numeric>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -276,17 +284,15 @@ public:
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
     {
-      impl::insert_csr(_data, _cols, _row_ptr, x, rows, cols, set_fn, num_rows,
-                       std::integral_constant<int, BS0>{},
-                       std::integral_constant<int, BS1>{});
+      impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, set_fn,
+                                 num_rows);
     }
     else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Set blocked data in a regular CSR matrix (_bs[0]=1, _bs[1]=1)
       // with correct sparsity
-      impl::insert_blocked_csr(_data, _cols, _row_ptr, x, rows, cols, set_fn,
-                               num_rows, std::integral_constant<int, BS0>{},
-                               std::integral_constant<int, BS1>{});
+      impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
+                                         set_fn, num_rows);
     }
     else
     {
@@ -324,16 +330,14 @@ public:
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
     {
-      impl::insert_csr(_data, _cols, _row_ptr, x, rows, cols, add_fn, num_rows,
-                       std::integral_constant<int, BS0>{},
-                       std::integral_constant<int, BS1>{});
+      impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, add_fn,
+                                 num_rows);
     }
     else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Add blocked data to a regular CSR matrix (_bs[0]=1, _bs[1]=1)
-      impl::insert_blocked_csr(_data, _cols, _row_ptr, x, rows, cols, add_fn,
-                               num_rows, std::integral_constant<int, BS0>{},
-                               std::integral_constant<int, BS1>{});
+      impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
+                                         add_fn, num_rows);
     }
     else
     {
