@@ -225,17 +225,18 @@ def ring_mesh(n, m, twist):
 # and two cells sharing an edge are conforming only if their normals
 # agree there.
 #
-# On the cylinder, {py:meth}`create_facet_orientations
-# <dolfinx.mesh.Topology.create_facet_orientations>` finds a marker per
-# cell that makes every pair agree. On the Möbius strip no such marker
-# exists: following the strip around returns the normal reversed, so
-# whichever markers are chosen, some facets are left disagreeing.
-#
-# Those facets carry a sign of their own. Of a cell's basis functions
+# {py:meth}`create_facet_orientations
+# <dolfinx.mesh.Topology.create_facet_orientations>` compares the two
+# cells of every facet and, where they disagree, negates the
+# degrees-of-freedom of one of them there. Of a cell's basis functions
 # only those belonging to a facet have a non-zero normal trace on it, so
-# negating them fixes the disagreement across that facet and disturbs
-# nothing else. The same call handles both surfaces, and a mesh that can
-# be oriented needs no facet signs at all.
+# that restores the agreement across that facet and disturbs nothing
+# else.
+#
+# Because it looks at one facet at a time and never at the surface as a
+# whole, the same call serves both meshes. The cylinder, which could be
+# oriented, is treated no differently from the strip, which could not:
+# the question of whether a consistent orientation exists never arises.
 #
 # Correcting a facet needs the cell on its other side, which is why the
 # mesh is built with `GhostMode.shared_facet`; with no ghost cells a
@@ -309,9 +310,10 @@ def solve(n, m, twist):
 # Both surfaces converge at the same rate, and on both the normal jump
 # sits at rounding: the space really is $H(\mathrm{div})$-conforming,
 # non-orientable or not. The jump is the quantity to watch, since it is
-# what conformity constrains and it does not shrink with the mesh when
-# something is wrong — before the facet signs it stayed at roughly the
-# size of the flux itself however fine the mesh.
+# what conformity constrains, and unlike a discretisation error it does
+# not shrink with the mesh when something is wrong: an unsigned facet
+# leaves a jump of roughly the size of the flux itself, however fine the
+# mesh.
 #
 # The error in $\sigma$ is larger on the strip than on the cylinder
 # simply because the strip is the harder geometry, not because anything

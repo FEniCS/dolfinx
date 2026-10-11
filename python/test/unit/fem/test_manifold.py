@@ -557,7 +557,7 @@ def test_interpolate_on_mixed_cell_orientations(gdim, spec):
     depend on it: both are controls. A contravariant field (RT, BDM) on
     the manifold uses the unsigned pseudo-determinant, so neighbouring
     cells disagree about the direction of the flux they share until the
-    cells are oriented.
+    facets they share are signed.
     """
     family, degree, linear = spec
     mesh = plane_mesh(2, gdim, mixed_orientation=True, orient=False)
@@ -568,10 +568,6 @@ def test_interpolate_on_mixed_cell_orientations(gdim, spec):
     f, f_ufl = tangential_field(mesh, linear)
 
     w = Function(V, dtype=default_real_type)
-    if contravariant_on_manifold:
-        w.interpolate(f)
-        assert l2_error(mesh, w - f_ufl) > 0.1, "the reversed cells should show"
-        mesh.topology.create_facet_orientations()
 
     # Interpolation of a callable, and of a compiled expression
     w.interpolate(f)
@@ -760,7 +756,3 @@ def test_facet_orientations_need_a_surface():
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     with pytest.raises(ValueError, match="surface mesh"):
         mesh.topology.create_facet_orientations()
-    cell_map = mesh.topology.index_map(3)
-    num_cells = cell_map.size_local + cell_map.num_ghosts
-    with pytest.raises(ValueError, match="surface mesh"):
-        mesh.topology.create_facet_orientations(np.ones(num_cells, dtype=np.int8))

@@ -168,46 +168,46 @@ public:
   /// (see Topology::index_map).
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
-  /// @brief Compute or set a per-facet-per-cell marker for a consistent
-  /// orientation of a surface mesh.
+  /// @brief Sign the facets on which two cells disagree on the normal.
   ///
   /// On a manifold mesh, whose topological dimension is less than its
   /// geometric dimension, the contravariant Piola map scales by the
   /// pseudo-determinant \f$\sqrt{\det(J^T J)}\f$ of the Jacobian
   /// \f$J\f$. It is positive by construction, so it cannot encode an
-  /// orientation. Instead, the vertex order of each cell fixes its
-  /// normal, and elements mapped by the contravariant Piola map (e.g.
-  /// Raviart-Thomas, Brezzi-Douglas-Marini) are conforming only between
-  /// cells whose normals agree. A function space with such an element
-  /// can therefore only be created on a manifold mesh once an
-  /// orientation has been computed or set with this call (see
-  /// has_facet_orientations). Lagrange and Nédélec spaces do not need it.
+  /// orientation. Instead the vertex order of each cell fixes its
+  /// normal, and elements mapped by that map (e.g. Raviart-Thomas,
+  /// Brezzi-Douglas-Marini) are conforming only between cells whose
+  /// normals agree. Two cells agree exactly when they run the facet
+  /// they share in opposite directions.
   ///
-  /// If no orientation is given, the cells keep their own vertex orders
-  /// and the facets on which two cells disagree carry a sign instead
-  /// (see compute_facet_orientations), which additionally creates the
-  /// edges those signs are computed across. This asks nothing of the
-  /// surface as a whole, so it works whether or not the surface can be
-  /// oriented.
+  /// Where they do not, one of the two negates its degrees-of-freedom
+  /// on that facet (see compute_facet_orientations). That restores the
+  /// agreement and disturbs nothing else, since only a facet's own
+  /// basis functions have a non-zero normal trace on it. The cells
+  /// themselves are neither reordered nor reversed, and the result is
+  /// read back with facet_orientations.
   ///
-  /// Pass `orientations` instead to reverse chosen cells, e.g. to match
-  /// the outward normal of a closed surface. It is stored per cell and
-  /// used as given, with no facet signs and no check that neighbouring
-  /// cells agree, so passing all `1` keeps every cell's own vertex order
-  /// however inconsistent that is.
+  /// This asks nothing of the surface as a whole, only of each facet in
+  /// turn, so it works whether or not the surface can be oriented, a
+  /// Möbius strip included. It additionally creates the edges the signs
+  /// are computed across.
   ///
-  /// The result can be read back with facet_orientations. On cells whose
-  /// vertex order disagrees with it, such elements negate their basis in
-  /// every later assembly, interpolation and evaluation. Reversing all
-  /// cells of a surface negates the basis functions and, with them, the
-  /// degrees-of-freedom, so the field they represent is unchanged.
+  /// A function space whose element needs the signs can only be created
+  /// on a manifold mesh once this has been called (see
+  /// has_facet_orientations). Lagrange and Nédélec spaces do not need
+  /// them.
   ///
-  /// @warning Changing the orientation after creating spaces whose basis
-  /// depends on it invalidates existing Function data on them, as their
-  /// degrees-of-freedom are not corrected.
+  /// @warning Changing the signs after creating spaces whose basis
+  /// depends on them invalidates existing Function data on them, as
+  /// their degrees-of-freedom are not corrected.
   ///
+  /// @note Collective.
   /// @throws std::invalid_argument If the topological dimension is not
-  /// 2, or if an interior facet is not shared by two cells.
+  /// 2.
+  /// @throws std::runtime_error If an edge is shared by more than two
+  /// cells, or if a facet needs a sign on a process that holds no ghost
+  /// cell on its other side, i.e. a mesh not built with
+  /// mesh::GhostMode::shared_facet.
   /// @throws std::out_of_range If there is more than one cell type.
   void create_facet_orientations();
 
@@ -220,23 +220,26 @@ public:
   /// orientations to cells makes every pair of neighbours agree,
   /// conforming all the same.
   ///
+  /// @note Which of a facet's two cells carries the sign, and how many
+  /// facets are signed, depend on the partitioning, since both follow
+  /// from the global numbering. The space they define does not.
+  ///
   /// @return For each owned and ghost cell and each of its facets, in
   /// cell-local facet order and flattened row-wise, `-1` if the
   /// degrees-of-freedom on that facet are negated and `1` otherwise. All
-  /// are `1` if no orientation has been computed or set, and on a
-  /// surface that can be oriented.
+  /// are `1` before create_facet_orientations has been called.
   /// @throws std::runtime_error If create_cell_permutations has not been
   /// called.
   /// @throws std::out_of_range If there is more than one cell type.
   std::vector<std::int8_t> facet_orientations() const;
 
-  /// @brief Check if a cell orientation has been computed or set (see
+  /// @brief Check if the facet signs have been computed (see
   /// create_facet_orientations).
   ///
-  /// Function spaces whose basis depends on the cell orientation can
-  /// only be created once it has.
+  /// Function spaces whose basis depends on them can only be created
+  /// once they have.
   ///
-  /// @return True if the cell orientation has been computed or set.
+  /// @return True if the facet signs have been computed.
   bool has_facet_orientations() const noexcept;
 
   /// @brief Get the numbers that encode the permutation to apply to
@@ -391,8 +394,8 @@ private:
   // get_cell_permutation_info for documentation of how this is encoded.
   std::vector<std::uint32_t> _cell_permutations;
 
-  // Whether a cell orientation has been computed or set. Not encoded in
-  // _cell_permutations, where an unset orientation reads as all 1.
+  // Whether the facet signs have been computed. Not encoded in
+  // _cell_permutations, where unsigned facets read as all 1.
   bool _has_facet_orientations = false;
 
   // List of facets that are on the inter-process boundary for each
