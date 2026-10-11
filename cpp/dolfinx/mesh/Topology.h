@@ -237,7 +237,11 @@ public:
 
   /// @brief Compute entity permutations and reflections.
   ///
-  /// @note Collective.
+  /// @note Collective, unless the packed cell permutations exist, in
+  /// which case they are unpacked locally. Which of the two applies
+  /// must therefore be the same on all ranks, i.e.
+  /// create_cell_permutations must have been called on all ranks or on
+  /// none.
   ///
   /// A permutation records how an entity is oriented as seen from a
   /// cell, relative to a low-to-high ordering of the entity's global
@@ -255,11 +259,6 @@ public:
   /// `dim() - 1` for facets. Must satisfy `0 <= dim < dim()`. Vertices
   /// have no orientation, so their permutations are empty.
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
-  /// @note Collective, unless the packed cell permutations exist, in
-  /// which case they are unpacked locally. Which of the two applies
-  /// must therefore be the same on all ranks, i.e.
-  /// create_cell_permutations must have been called on all ranks or on
-  /// none.
   /// @see create_cell_permutations, which packs the orientations of all
   /// of a cell's sub-entities into one integer per cell, for correcting
   /// element DOFs rather than quadrature points.
