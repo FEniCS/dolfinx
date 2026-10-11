@@ -83,6 +83,7 @@ __all__ = [
     "create_unit_square",
     "entities_to_geometry",
     "exterior_facet_indices",
+    "extract_cells_from_entities",
     "is_simplex",
     "locate_entities",
     "locate_entities_boundary",
@@ -865,6 +866,41 @@ def entity_map(
         _cpp.mesh.EntityMap(
             topology._cpp_object, sub_topology._cpp_object, dim, sub_topology_to_topology
         )
+    )
+
+
+def extract_cells_from_entities(
+    topology_c: Topology,
+    topology: Topology,
+    entities: npt.NDArray[np.int32],
+    entity_map: EntityMap | None = None,
+) -> npt.NDArray[np.int32]:
+    """Map integration entities of a topology to cells of a related one.
+
+    Note:
+        For ``(cell, local entity index)`` pairs and a lower-dimensional
+        ``topology_c``, the connectivity of ``topology`` from its cells
+        to entities of dimension ``topology_c.dim`` must have been
+        computed.
+
+    Args:
+        topology_c: Topology to extract cell indices on.
+        topology: Topology that ``entities`` belong to.
+        entities: Integration entities. Either a list of cells of
+            ``topology``, or an array of shape ``(num_entities, 2)`` of
+            ``(cell, local entity index)`` pairs.
+        entity_map: Map between ``topology`` and ``topology_c``.
+            Required if ``topology_c`` is not ``topology``.
+
+    Returns:
+        Cell of ``topology_c`` for each of ``entities``, or -1 if there
+        is none.
+    """
+    return _cpp.mesh.extract_cells_from_entities(
+        topology_c._cpp_object,
+        topology._cpp_object,
+        entities,
+        None if entity_map is None else entity_map._cpp_object,
     )
 
 
