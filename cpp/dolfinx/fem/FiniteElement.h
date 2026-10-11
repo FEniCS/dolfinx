@@ -567,7 +567,7 @@ public:
 
   /// @brief Check if the basis changes sign on cells whose orientation
   /// is reversed relative to the mesh (see
-  /// mesh::Topology::create_cell_orientations).
+  /// mesh::Topology::create_facet_orientations).
   ///
   /// True for H(div)-conforming elements on a manifold, i.e. elements
   /// mapped by the contravariant Piola map that need DOF transformations
@@ -879,8 +879,8 @@ public:
   void T_apply(std::span<U> data, std::uint32_t cell_permutation, int n) const
   {
     assert(_element);
-    _element->T_apply(data, n, cell_permutation & ~mesh::reversed_cell_bit);
-    flip_reversed_cell(data, cell_permutation);
+    _element->T_apply(data, n, cell_permutation & ~_orientation_mask);
+    flip_reversed<false>(data, cell_permutation, n);
   }
 
   /// @brief Apply the inverse transpose of the operator applied by
@@ -897,9 +897,8 @@ public:
                     int n) const
   {
     assert(_element);
-    _element->Tt_inv_apply(data, n,
-                           cell_permutation & ~mesh::reversed_cell_bit);
-    flip_reversed_cell(data, cell_permutation);
+    _element->Tt_inv_apply(data, n, cell_permutation & ~_orientation_mask);
+    flip_reversed<false>(data, cell_permutation, n);
   }
 
   /// @brief Apply the transpose of the operator applied by T_apply().
@@ -915,8 +914,8 @@ public:
   void Tt_apply(std::span<U> data, std::uint32_t cell_permutation, int n) const
   {
     assert(_element);
-    _element->Tt_apply(data, n, cell_permutation & ~mesh::reversed_cell_bit);
-    flip_reversed_cell(data, cell_permutation);
+    _element->Tt_apply(data, n, cell_permutation & ~_orientation_mask);
+    flip_reversed<false>(data, cell_permutation, n);
   }
 
   /// @brief Apply the inverse of the operator applied by T_apply().
@@ -932,8 +931,8 @@ public:
                   int n) const
   {
     assert(_element);
-    _element->Tinv_apply(data, n, cell_permutation & ~mesh::reversed_cell_bit);
-    flip_reversed_cell(data, cell_permutation);
+    _element->Tinv_apply(data, n, cell_permutation & ~_orientation_mask);
+    flip_reversed<false>(data, cell_permutation, n);
   }
 
   /// @brief Right(post)-apply the operator applied by T_apply().
@@ -949,9 +948,8 @@ public:
                      int n) const
   {
     assert(_element);
-    _element->T_apply_right(data, n,
-                            cell_permutation & ~mesh::reversed_cell_bit);
-    flip_reversed_cell(data, cell_permutation);
+    _element->T_apply_right(data, n, cell_permutation & ~_orientation_mask);
+    flip_reversed<true>(data, cell_permutation, n);
   }
 
   /// @brief Right(post)-apply the inverse of the operator applied by
@@ -968,9 +966,8 @@ public:
                         int n) const
   {
     assert(_element);
-    _element->Tinv_apply_right(data, n,
-                               cell_permutation & ~mesh::reversed_cell_bit);
-    flip_reversed_cell(data, cell_permutation);
+    _element->Tinv_apply_right(data, n, cell_permutation & ~_orientation_mask);
+    flip_reversed<true>(data, cell_permutation, n);
   }
 
   /// @brief Right(post)-apply the transpose of the operator applied by
@@ -987,9 +984,8 @@ public:
                       int n) const
   {
     assert(_element);
-    _element->Tt_apply_right(data, n,
-                             cell_permutation & ~mesh::reversed_cell_bit);
-    flip_reversed_cell(data, cell_permutation);
+    _element->Tt_apply_right(data, n, cell_permutation & ~_orientation_mask);
+    flip_reversed<true>(data, cell_permutation, n);
   }
 
   /// @brief Right(post)-apply the transpose inverse of the operator
@@ -1007,8 +1003,8 @@ public:
   {
     assert(_element);
     _element->Tt_inv_apply_right(data, n,
-                                 cell_permutation & ~mesh::reversed_cell_bit);
-    flip_reversed_cell(data, cell_permutation);
+                                 cell_permutation & ~_orientation_mask);
+    flip_reversed<true>(data, cell_permutation, n);
   }
 
   /// @brief Permute indices associated with degree-of-freedoms on the
@@ -1067,18 +1063,58 @@ public:
   dof_permutation_fn(bool inverse = false, bool scalar_element = false) const;
 
 private:
-  // Negate data on a cell marked with mesh::reversed_cell_bit if the
-  // basis depends on the cell orientation. A sign is its own inverse and
-  // transpose, so every DOF transformation applies it the same way.
-  template <typename U>
-  void flip_reversed_cell(std::span<U> data,
-                          std::uint32_t cell_permutation) const
+  // Negate data on each facet marked with mesh::reversed_facet_bit, if
+  // the basis depends on the cell orientation. A sign is its own
+  // inverse and transpose, so every DOF transformation applies it the
+  // same way.
+  //
+  // Only a facet's own degrees-of-freedom have a non-zero normal trace
+  // on it, so negating them changes that trace and no other. This is
+  // what lets a surface that cannot be oriented, where no per-cell
+  // marker makes every pair of neighbours agree, be made conforming one
+  // facet at a time.
+  //
+  // `post` selects the layout: the right-applied transformations store
+  // their data as `(n, num_dofs)`, the others as `(num_dofs, n)`.
+  template <bool post, typename U>
+  void flip_reversed(std::span<U> data, std::uint32_t cell_permutation,
+                     int n) const
   {
-    if (_depends_on_cell_orientation
-        and (cell_permutation & mesh::reversed_cell_bit))
+    // Zero unless the basis depends on the orientation, so this single
+    // test rejects the common case, which is every element on a mesh
+    // that is not a surface and every Lagrange or Nedelec element on one
+    if (!(cell_permutation & _applied_orientation_mask)) [[likely]]
+      return;
+
+    assert(n > 0 and data.size() % n == 0);
+    const std::size_t num_dofs = data.size() / n;
+    for (std::size_t f = 0; f < _facet_dofs->size(); ++f)
     {
-      std::ranges::transform(data, data.begin(), std::negate{});
+      if (!(cell_permutation & mesh::reversed_facet_bit(f)))
+        continue;
+      for (int dof : (*_facet_dofs)[f])
+      {
+        for (int j = 0; j < n; ++j)
+        {
+          U& value = post ? data[j * num_dofs + dof] : data[dof * n + j];
+          value = -value;
+        }
+      }
     }
+  }
+
+  // Set _orientation_mask and the two derived from it. Called once each
+  // constructor has set _cell_type, _entity_dofs and
+  // _depends_on_cell_orientation.
+  void init_orientation_masks()
+  {
+    _orientation_mask = mesh::orientation_mask(mesh::cell_dim(_cell_type));
+    _applied_orientation_mask
+        = _depends_on_cell_orientation ? _orientation_mask : 0;
+    const int tdim = mesh::cell_dim(_cell_type);
+    _facet_dofs = tdim > 0 and std::cmp_less(tdim - 1, _entity_dofs.size())
+                      ? &_entity_dofs[tdim - 1]
+                      : nullptr;
   }
 
   // Value shape in physical space. For blocked elements this is larger
@@ -1123,6 +1159,18 @@ private:
 
   // Indicate whether the basis depends on the cell orientation
   bool _depends_on_cell_orientation;
+
+  // Bits of the cell permutation info that carry an orientation for this
+  // element's cell type, cleared before the info is passed to Basix
+  std::uint32_t _orientation_mask = 0;
+
+  // The subset of those bits that flip_reversed acts on, zero unless the
+  // basis depends on the orientation. Precomputed because flip_reversed
+  // runs per cell.
+  std::uint32_t _applied_orientation_mask = 0;
+
+  // _entity_dofs[tdim - 1], or nullptr if there is no such dimension
+  const std::vector<std::vector<int>>* _facet_dofs = nullptr;
 
   std::vector<std::vector<std::vector<int>>> _entity_dofs;
   std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;

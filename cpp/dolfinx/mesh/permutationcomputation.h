@@ -8,23 +8,57 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
 #include <vector>
 
 namespace dolfinx::mesh
 {
 class Topology;
 
-/// @brief Bit of the cell permutation info that marks a cell whose
-/// orientation is reversed relative to the orientation of a manifold
-/// mesh.
+/// @brief Bit of the cell permutation info that negates the
+/// degrees-of-freedom on facet `f` of a cell.
 ///
-/// Set by Topology::create_cell_orientations. The sub-entity permutations
-/// packed into the same integer (see compute_cell_permutations) use at
-/// most 30 bits (hexahedron: three per face and one per edge), so this
-/// bit is free for every cell type. It is cleared
-/// (`info & ~reversed_cell_bit`) before the info is passed to Basix,
-/// which knows only the sub-entity permutations.
-constexpr std::uint32_t reversed_cell_bit = std::uint32_t(1) << 31;
+/// Set by Topology::create_facet_orientations. An element mapped by the
+/// contravariant Piola map is conforming only between cells that agree
+/// on the normal of the facet they share; where they do not, one of the
+/// two negates its degrees-of-freedom there. A facet's
+/// degrees-of-freedom are the only ones whose normal trace is non-zero
+/// on it, so this changes that trace and no other. See
+/// compute_facet_orientations.
+///
+/// Facets of a cell of topological dimension 2 are its edges, of which
+/// there are at most four, so bits 27 to 30 suffice. The sub-entity
+/// permutations packed into the same integer (see
+/// compute_cell_permutations) reach bit 29 for a hexahedron, but a cell
+/// carrying facet signs has topological dimension 2 and so uses one bit
+/// per edge. These bits are cleared (`info & ~orientation_mask(tdim)`)
+/// before the info is passed to Basix, which knows only the sub-entity
+/// permutations.
+///
+/// @param[in] f Cell-local facet index, `0 <= f < 4`.
+constexpr std::uint32_t reversed_facet_bit(int f)
+{
+  return std::uint32_t(1) << (27 + f);
+}
+
+/// @brief Bits of the cell permutation info that hold the facet signs of
+/// a cell of topological dimension `tdim`.
+///
+/// Only a surface carries facet signs. The sub-entity permutations of a
+/// hexahedron already reach bit 29 (six faces at three bits and twelve
+/// edges at one), so there is no room for them there, and none is
+/// needed: an orientation exists only for `tdim == 2`.
+///
+/// @param[in] tdim Topological dimension of the cell.
+constexpr std::uint32_t orientation_mask(int tdim)
+{
+  if (tdim == 2)
+  {
+    return reversed_facet_bit(0) | reversed_facet_bit(1) | reversed_facet_bit(2)
+           | reversed_facet_bit(3);
+  }
+  return 0;
+}
 
 /// @brief Compute the permutation to apply to each cell-local entity of
 /// a given dimension.
@@ -74,7 +108,7 @@ std::vector<std::uint8_t> compute_entity_permutations(const Topology& topology,
 /// next three bits are for face 1, then three for face 2, etc; after
 /// all the faces, there is 1 bit for each edge to say whether or not
 /// they are reversed. The most significant bit is left for
-/// ::reversed_cell_bit.
+/// ::reversed_facet_bit.
 ///
 /// For example, if a quadrilateral has cell permutation info
 /// `....0111` then (from right to left):
@@ -111,44 +145,40 @@ std::vector<std::uint8_t> compute_entity_permutations(const Topology& topology,
 std::vector<std::uint32_t> compute_cell_permutations(const Topology& topology,
                                                      int num_threads);
 
-/// @brief Compute a consistent orientation of the cells of a surface
-/// mesh.
+/// @brief Find the facets whose two cells disagree on the normal.
 ///
-/// See Topology::create_cell_orientations, which stores the result, for
-/// why it is needed.
+/// An element mapped by the contravariant Piola map is conforming only
+/// between cells that agree on the normal of the facet they share. The
+/// vertex order of a cell fixes its normal, and two cells agree exactly
+/// when they run their shared facet in opposite directions.
 ///
-/// Two cells sharing an edge are consistently oriented when, going
-/// round each cell in the order of its vertices, they run the edge in
-/// opposite directions. For example, cells `(0, 1, 2)` and `(1, 3, 2)`
-/// share edge `{1, 2}`. The first runs it from 1 to 2 and the second
-/// from 2 to 1, so they agree and get the same orientation. Had the
-/// second cell been `(1, 2, 3)`, both would run it from 1 to 2, so they
-/// would disagree and get opposite orientations, `1` and `-1`.
+/// Where they do not, one of the two carries a sign on that facet.
+/// Negating its degrees-of-freedom there restores the agreement and
+/// disturbs nothing else: of a cell's basis functions only those
+/// belonging to a facet have a non-zero normal trace on it. The cell
+/// chosen is the one with the larger global index.
 ///
-/// A part of the surface is a set of cells connected through shared
-/// edges. Cells meeting only at a vertex are not connected, so their
-/// parts are oriented independently. Each part keeps the orientation
-/// of its cell with the lowest global index, which gets `1`. Only the
-/// vertex orders are used, not the geometry.
+/// This asks nothing of the surface as a whole, only of each facet in
+/// turn, so it works on a surface that cannot be oriented, such as a
+/// Möbius strip, as well as on one that can. It is local to a process
+/// but for one reduction.
 ///
-/// Which of its two orientations a part gets therefore depends on the
-/// global cell numbering, and so on the partitioning. Reversing every
-/// cell of a part negates its basis functions and, with them, its
-/// degrees-of-freedom, so the field they represent is unchanged.
+/// @note Which cell of a facet carries the sign, and how many facets
+/// are signed, depend on the partitioning, since both follow from the
+/// global numbering. The space they define does not.
 ///
-/// @note Collective.
 /// @pre The edges, the connectivity between edges and cells, and the
-/// edge permutations (see Topology::create_entity_permutations) must
-/// have been created.
+/// edge permutations must have been created.
 /// @param[in] topology Topology of a mesh of triangles or
 /// quadrilaterals.
-/// @return For each owned and ghost cell, in local cell order, `1` if
-/// its vertex order agrees with the orientation of its part of the
-/// surface and `-1` otherwise.
-/// @throws std::invalid_argument If the topological dimension is not
-/// 2.
-/// @throws std::runtime_error If the surface is not orientable, e.g. a
-/// Möbius strip, or an edge is shared by more than two cells.
-std::vector<std::int8_t> compute_cell_orientations(const Topology& topology);
+/// @return For each owned and ghost cell and each of its facets, in
+/// cell-local facet order and flattened row-wise, `1` if the
+/// degrees-of-freedom on that facet must be negated and `0` otherwise.
+/// @note Collective.
+/// @throws std::invalid_argument If the topological dimension is not 2.
+/// @throws std::runtime_error If an edge is shared by more than two
+/// cells, or if a facet needs correcting on a process that holds no
+/// ghost cells and so cannot see the cell on its other side.
+std::vector<std::uint8_t> compute_facet_orientations(const Topology& topology);
 
 } // namespace dolfinx::mesh

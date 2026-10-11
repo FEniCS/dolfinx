@@ -13,13 +13,10 @@
 # This demo solves the Poisson equation in mixed form on a Möbius strip,
 # a surface that cannot be oriented.
 #
-# ```{admonition} This demo does not converge, by design
-# :class: warning
-# An $H(\mathrm{div})$-conforming space cannot presently be built on a
-# non-orientable surface. The demo forces one anyway. To show that the
-# failure is the orientation and not the method, the same problem is
-# first solved on a cylinder, where it converges.
-# ```
+# A Möbius strip has no consistent orientation at all, which an
+# $H(\mathrm{div})$-conforming space would seem to need. It is made
+# conforming one facet at a time instead. The same problem is solved
+# first on a cylinder, so that the two can be compared directly.
 #
 # ```{admonition} Download sources
 # :class: download
@@ -228,30 +225,28 @@ def ring_mesh(n, m, twist):
 # and two cells sharing an edge are conforming only if their normals
 # agree there.
 #
-# On the cylinder, {py:meth}`create_cell_orientations
-# <dolfinx.mesh.Topology.create_cell_orientations>` finds a marker per
+# On the cylinder, {py:meth}`create_facet_orientations
+# <dolfinx.mesh.Topology.create_facet_orientations>` finds a marker per
 # cell that makes every pair agree. On the Möbius strip no such marker
-# exists — following the strip around returns the normal reversed — so
-# calling it with no argument raises `RuntimeError`. An orientation
-# passed in explicitly is *not* checked for consistency, which is the
-# only way to build the space here, so we pass all ones and keep each
-# cell's own vertex order.
+# exists: following the strip around returns the normal reversed, so
+# whichever markers are chosen, some facets are left disagreeing.
 #
-# The cells then disagree along a seam, where the shared normal-flux
-# degree of freedom means opposite things to the two cells that own it.
+# Those facets carry a sign of their own. Of a cell's basis functions
+# only those belonging to a facet have a non-zero normal trace on it, so
+# negating them fixes the disagreement across that facet and disturbs
+# nothing else. The same call handles both surfaces, and a mesh that can
+# be oriented needs no facet signs at all.
+#
+# Correcting a facet needs the cell on its other side, which is why the
+# mesh is built with `GhostMode.shared_facet`; with no ghost cells a
+# correction on a process boundary would be missed, and the call says so
+# rather than returning a silently wrong answer.
 
 
 def solve(n, m, twist):
     """Solve on one mesh, returning the solution and the errors."""
     mesh = ring_mesh(n, m, twist)
-    cell_map = mesh.topology.index_map(2)
-    num_cells = cell_map.size_local + cell_map.num_ghosts
-    if twist:
-        # No consistent orientation exists, so keep each cell's own
-        # vertex order; the computed path would raise here.
-        mesh.topology.create_cell_orientations(np.ones(num_cells, dtype=np.int8))
-    else:
-        mesh.topology.create_cell_orientations()
+    mesh.topology.create_facet_orientations()
 
     V = dolfinx.fem.functionspace(mesh, ("RT", order))
     Q = dolfinx.fem.functionspace(mesh, ("DG", order - 1))
@@ -311,14 +306,16 @@ def solve(n, m, twist):
 
 # ### Results
 #
-# On the cylinder both errors halve with each refinement, as a
-# lowest-order Raviart-Thomas discretisation should, and the normal jump
-# sits at rounding: the space really is $H(\mathrm{div})$-conforming.
+# Both surfaces converge at the same rate, and on both the normal jump
+# sits at rounding: the space really is $H(\mathrm{div})$-conforming,
+# non-orientable or not. The jump is the quantity to watch, since it is
+# what conformity constrains and it does not shrink with the mesh when
+# something is wrong — before the facet signs it stayed at roughly the
+# size of the flux itself however fine the mesh.
 #
-# On the Möbius strip the same code stalls. The errors flatten out
-# instead of halving, and the normal jump stays at roughly the size of
-# the flux itself however fine the mesh — the seam does not shrink,
-# because it is not a discretisation error.
+# The error in $\sigma$ is larger on the strip than on the cylinder
+# simply because the strip is the harder geometry, not because anything
+# is left uncorrected.
 
 # +
 columns = ["L2(u)", "L2(sigma)", "normal jump"]
