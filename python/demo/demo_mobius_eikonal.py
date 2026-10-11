@@ -71,8 +71,8 @@ degree = 2
 width = 0.92
 mesh = ring_mesh(n, m, width, geometry_degree)
 mesh.topology.create_facet_orientations()
-el_0 = basix.ufl.element("DG", mesh.topology.cell_name(), 2)
-el_1 = basix.ufl.element("RT", mesh.topology.cell_name(), 3)
+el_0 = basix.ufl.element("DG", mesh.topology.cell_name(), 2, dtype=dolfinx.default_real_type)
+el_1 = basix.ufl.element("RT", mesh.topology.cell_name(), 3, dtype=dolfinx.default_real_type)
 
 
 V = dolfinx.fem.functionspace(mesh, el_0)
