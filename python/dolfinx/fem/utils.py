@@ -23,6 +23,7 @@ from dolfinx.cpp.fem import create_interpolation_data as _create_interpolation_d
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
+from dolfinx.cpp.fem import evaluate_basis_functions as _evaluate_basis_functions
 from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem.element import CoordinateElement
 from dolfinx.fem.function import FunctionSpace
@@ -130,6 +131,55 @@ def create_interpolation_data(
             raise TypeError(
                 "create_interpolation_data requires V_to and V_from to have the same dtype."
             )
+
+
+def evaluate_basis_functions(
+    V: FunctionSpace,
+    x: npt.ArrayLike,
+    cells: npt.ArrayLike,
+    tol: float = 1e-6,
+    maxit: int = 15,
+) -> npt.NDArray[np.floating]:
+    """Evaluate the basis functions of a function space at points.
+
+    Each point is pulled back to the reference cell of the cell that
+    contains it (by a Newton method if the geometry is non-affine), the
+    reference basis is tabulated, transformed for the cell's
+    orientation and pushed forward. This is the evaluation underlying
+    :meth:`Function.eval <dolfinx.fem.Function.eval>`.
+
+    For a blocked (e.g. vector-valued Lagrange) space, the basis of one
+    block is evaluated.
+
+    Note:
+        If the element needs dof transformations and the cell
+        permutations of the mesh have not yet been computed, they are
+        created here, which is collective.
+
+    Args:
+        V: Function space whose basis is evaluated.
+        x: Points in physical (not reference) space, with shape
+            ``(num_points, 3)``.
+        cells: Index of the cell containing each point, with shape
+            ``(num_points,)``. Points with a negative cell index are
+            skipped and their basis values are zero.
+        tol: Tolerance for convergence of the Newton method for
+            non-affine pull-backs.
+        maxit: Maximum number of Newton iterations for non-affine
+            pull-backs.
+
+    Returns:
+        Basis values with shape ``(num_points, num_basis_functions,
+        value_size)``, where ``num_basis_functions`` is the number of
+        basis functions of one block on a cell, in the order of the
+        cell's degrees-of-freedom, and ``value_size`` is the physical
+        value size of one block.
+    """
+    _x = np.asarray(x, dtype=V.mesh.geometry.x.dtype).reshape(-1, 3)
+    _cells = np.asarray(cells, dtype=np.int32).reshape(-1)
+    return _evaluate_basis_functions(
+        V.element._cpp_object, V.mesh._cpp_object, _x, _cells, tol, maxit
+    )
 
 
 def discrete_curl(V0: FunctionSpace, V1: FunctionSpace) -> _MatrixCSR:
