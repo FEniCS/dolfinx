@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Garth N. Wells and Paul T. Kühner
+// Copyright (C) 2023-2026 Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,6 +10,8 @@
 #include <complex>
 #include <concepts>
 #include <cstddef>
+#include <cstdint>
+#include <ranges>
 #include <type_traits>
 
 namespace dolfinx
@@ -63,5 +65,15 @@ concept MDSpanRank2 = requires(std::remove_cvref_t<T> x, std::size_t i) {
   x(i, i);
   { x.extent(i) } -> std::integral;
 };
+
+namespace common
+{
+/// @brief Concept for a contiguous list of process-local indices, e.g.
+/// the row or column indices passed to a matrix set function.
+template <class R>
+concept LocalIndexRange
+    = std::ranges::contiguous_range<R> and std::ranges::sized_range<R>
+      and std::same_as<std::ranges::range_value_t<R>, std::int32_t>;
+} // namespace common
 
 } // namespace dolfinx

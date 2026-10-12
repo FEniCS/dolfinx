@@ -39,7 +39,7 @@ def mesh_factory(tdim, n):
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("tdim", [2, 3])
 @pytest.mark.parametrize("n", [6])
-def test_read_mesh_data(tempdir, tdim, n):
+def test_read_mesh_data(tempdir, tdim, n) -> None:
     filename = Path(tempdir, "mesh.xdmf")
     mesh = mesh_factory(tdim, n)
     encoding = XDMFFile.Encoding.HDF5

@@ -40,7 +40,7 @@ def dS_from_ufl(mesh):
 )
 @pytest.mark.parametrize("dx", [dx_from_ufl])
 @pytest.mark.parametrize("ds", [ds_from_ufl])
-def test_ghost_mesh_assembly(mode, dx, ds):
+def test_ghost_mesh_assembly(mode, dx, ds) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -103,7 +103,7 @@ def test_ghost_mesh_assembly(mode, dx, ds):
         ),
     ],
 )
-def test_ghost_mesh_dS_assembly(mode, dS, dtype):
+def test_ghost_mesh_dS_assembly(mode, dS, dtype) -> None:
     xdtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=xdtype)
     V = functionspace(mesh, ("Lagrange", 1))

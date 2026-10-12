@@ -1,8 +1,3 @@
-set(
-  HEADERS_nls
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_nls.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/NewtonSolver.h
-  PARENT_SCOPE
-)
+target_sources(dolfinx PRIVATE SNESSolver.cpp)
 
-target_sources(dolfinx PRIVATE NewtonSolver.cpp)
+target_sources(dolfinx PUBLIC FILE_SET HEADERS FILES SNESSolver.h dolfinx_nls.h)

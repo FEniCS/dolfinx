@@ -25,7 +25,10 @@ SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm) : _eps(nullptr)
 SLEPcEigenSolver::SLEPcEigenSolver(EPS eps, bool inc_ref_count) : _eps(eps)
 {
   if (!_eps)
-    throw std::runtime_error("SLEPc EPS must be initialised before wrapping");
+  {
+    throw std::invalid_argument(
+        "SLEPc EPS must be initialised before wrapping");
+  }
 
   if (inc_ref_count)
   {
@@ -62,7 +65,7 @@ void SLEPcEigenSolver::set_operators(const Mat A, const Mat B)
   common::petsc::check(EPSSetOperators(_eps, A, B), "EPSSetOperators");
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::solve()
+EPSConvergedReason SLEPcEigenSolver::solve()
 {
   assert(_eps);
 
@@ -70,7 +73,9 @@ void SLEPcEigenSolver::solve()
   // set
   common::petsc::check(EPSSolve(_eps), "EPSSolve");
 
-  // Check for convergence
+  // Check for convergence. Note: this does not throw on
+  // non-convergence -- the caller must check the returned convergence
+  // reason if this matters for its use case.
   EPSConvergedReason reason;
   common::petsc::check(EPSGetConvergedReason(_eps, &reason),
                        "EPSGetConvergedReason");
@@ -86,6 +91,8 @@ void SLEPcEigenSolver::solve()
   common::petsc::check(EPSGetType(_eps, &eps_type), "EPSGetType");
   spdlog::info("Eigenvalue solver ({}) converged in {} iterations.",
                eps_type ? eps_type : "unknown", num_iterations);
+
+  return reason;
 }
 //-----------------------------------------------------------------------------
 std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(PetscInt i) const

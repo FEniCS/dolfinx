@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Garth N. Wells and Chris N. Richardson
+// Copyright (C) 2021-2026 Garth N. Wells and Chris N. Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,9 +6,11 @@
 
 #pragma once
 
+#include <cassert>
 #include <concepts>
 #include <numeric>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -81,7 +83,7 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 
 #ifndef NDEBUG
     if (row >= num_rows)
-      throw std::runtime_error("Local row out of range");
+      throw std::out_of_range("Local row out of range");
 #endif
     // Columns indices for row
     auto cit0 = std::next(cols.begin(), row_ptr[row]);
@@ -91,7 +93,7 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       // Find position of column index
       auto it = std::lower_bound(cit0, cit1, xcols[c]);
       if (it == cit1 or *it != xcols[c])
-        throw std::runtime_error("Entry not in sparsity");
+        throw std::out_of_range("Entry not in sparsity");
 
       std::size_t d = std::ranges::distance(cols.begin(), it);
       std::size_t di = d * BS0 * BS1;
@@ -143,7 +145,7 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
     auto row = xrows[r] * BS0;
 #ifndef NDEBUG
     if (row >= num_rows)
-      throw std::runtime_error("Local row out of range");
+      throw std::out_of_range("Local row out of range");
 #endif
 
     for (int i = 0; i < BS0; ++i)
@@ -159,7 +161,7 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
         // Find position of column index
         auto it = std::lower_bound(cit0, cit1, xcols[c] * BS1);
         if (it == cit1 or *it != xcols[c] * BS1)
-          throw std::runtime_error("Entry not in sparsity");
+          throw std::out_of_range("Entry not in sparsity");
 
         std::size_t d = std::ranges::distance(cols.begin(), it);
         assert(d < data.size());
@@ -210,7 +212,7 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
 
 #ifndef NDEBUG
     if (rdiv.quot >= num_rows)
-      throw std::runtime_error("Local row out of range");
+      throw std::out_of_range("Local row out of range");
 #endif
     // Columns indices for row
     auto cit0 = std::next(cols.begin(), row_ptr[rdiv.quot]);
@@ -221,7 +223,7 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       auto cdiv = std::div(xcols[c], bs1);
       auto it = std::lower_bound(cit0, cit1, cdiv.quot);
       if (it == cit1 or *it != cdiv.quot)
-        throw std::runtime_error("Entry not in sparsity");
+        throw std::out_of_range("Entry not in sparsity");
 
       std::size_t d = std::ranges::distance(cols.begin(), it);
       std::size_t di = d * nbs + rdiv.rem * bs1 + cdiv.rem;

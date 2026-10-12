@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Garth N. Wells
+// Copyright (C) 2019-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -71,8 +71,8 @@ public:
   {
     if (_offsets.back() != (std::int32_t)_array.size())
     {
-      throw std::runtime_error("Last offset must equal the size of the data "
-                               "array.");
+      throw std::invalid_argument("Last offset must equal the size of the data "
+                                  "array.");
     }
   }
 
@@ -97,14 +97,14 @@ public:
   {
     if (!_node_data.has_value() or _node_data->size() != _offsets.size() - 1)
     {
-      throw std::runtime_error("Node data size must equal the number of "
-                               "nodes.");
+      throw std::invalid_argument("Node data size must equal the number of "
+                                  "nodes.");
     }
     _array.reserve(_offsets.back());
     if (_offsets.back() != (std::int32_t)_array.size())
     {
-      throw std::runtime_error("Last offset must equal the size of the data "
-                               "array.");
+      throw std::invalid_argument("Last offset must equal the size of the data "
+                                  "array.");
     }
   }
 
@@ -263,13 +263,13 @@ regular_adjacency_list(U&& data, int degree)
 {
   if (degree == 0 and !data.empty())
   {
-    throw std::runtime_error("Degree is zero but data is not empty for "
-                             "constant degree AdjacencyList");
+    throw std::invalid_argument("Degree is zero but data is not empty for "
+                                "constant degree AdjacencyList");
   }
 
   if (degree > 0 and data.size() % degree != 0)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Incompatible data size and degree for constant degree AdjacencyList");
   }
 

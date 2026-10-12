@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "utils.h"
 #include "Constant.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
@@ -12,6 +11,9 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "dofmapbuilder.h"
+#include "form_factory.h"
+#include "functionspace_factory.h"
+#include "integration_domains.h"
 #include <algorithm>
 #include <array>
 #include <dolfinx/common/IndexMap.h>
@@ -61,7 +63,7 @@ fem::DofMap fem::create_dofmap(
   if (permute_inv)
   {
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
-    topology.create_entity_permutations();
+    topology.create_cell_permutations();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
     int dim = layout.num_dofs();
@@ -113,11 +115,11 @@ std::vector<fem::DofMap> fem::create_dofmaps(
   {
     if (layouts.size() != 1)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "DOF transformations not yet supported in mixed topology.");
     }
     std::int32_t num_cells = topology.connectivity(D, 0)->num_nodes();
-    topology.create_entity_permutations();
+    topology.create_cell_permutations();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
     std::int32_t dim = layouts.front().num_dofs();
@@ -157,28 +159,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
 {
   const int tdim = topology.dim();
 
-  int dim = -1;
-  switch (integral_type)
-  {
-  case IntegralType::cell:
-    dim = tdim;
-    break;
-  case IntegralType::exterior_facet:
-    dim = tdim - 1;
-    break;
-  case IntegralType::interior_facet:
-    dim = tdim - 1;
-    break;
-  case IntegralType::vertex:
-    dim = 0;
-    break;
-  case IntegralType::ridge:
-    dim = tdim - 2;
-    break;
-  default:
-    throw std::runtime_error(
-        "Cannot compute integration domains. Integral type not supported.");
-  }
+  const int dim = integral_entity_dim(integral_type, tdim);
 
   {
     // Create span of the owned entities (leaves off any ghosts)
@@ -246,7 +227,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
       }
       else if (interprocess_marker[f])
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Cannot compute interior facet integral over interprocess facet. "
             "Use \"shared facet\"  ghost mode when creating the mesh.");
       }
@@ -267,7 +248,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     break;
   }
   default:
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Cannot compute integration domains. Integral type not supported.");
   }
 

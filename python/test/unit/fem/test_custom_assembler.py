@@ -137,7 +137,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
         ),
     ],
 )
-def test_custom_mesh_loop_rank1(dtype):
+def test_custom_mesh_loop_rank1(dtype) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 64, 64, dtype=dtype(0).real.dtype)
     V = functionspace(mesh, ("Lagrange", 1))
 

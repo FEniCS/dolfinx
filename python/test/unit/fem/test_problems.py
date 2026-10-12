@@ -23,9 +23,16 @@ from dolfinx.mesh import create_unit_square, exterior_facet_indices
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, inner
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_problem(dtype):
+def test_superlu_problem(dtype) -> None:
     """Manufactured Poisson and screened problem with exact solution u = x[1]**3."""
     from dolfinx.fem.problems import LinearProblem
 
@@ -72,7 +79,7 @@ def test_superlu_problem(dtype):
 
 
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_problem_default_args():
+def test_superlu_problem_default_args() -> None:
     from dolfinx.fem.problems import LinearProblem
 
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)

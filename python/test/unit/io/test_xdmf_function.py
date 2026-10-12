@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2019 Garth N. Wells
+# Copyright (C) 2012-2026 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -44,7 +44,7 @@ def mesh_factory(tdim, n):
 @pytest.mark.parametrize("use_pathlib", [True, False])
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
-def test_save_1d_scalar(tempdir, encoding, dtype, use_pathlib):
+def test_save_1d_scalar(tempdir, encoding, dtype, use_pathlib) -> None:
     xtype = np.real(dtype(0)).dtype
     filename2 = Path(tempdir).joinpath("u1_.xdmf") if use_pathlib else Path(tempdir, "u1_.xdmf")
     mesh = create_unit_interval(MPI.COMM_WORLD, 32, dtype=xtype)
@@ -52,7 +52,7 @@ def test_save_1d_scalar(tempdir, encoding, dtype, use_pathlib):
     u = Function(V, dtype=dtype)
     u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         with XDMFFile(mesh.comm, filename2, "w", encoding=encoding) as file:
             file.write_mesh(mesh)
             file.write_function(u)
@@ -68,7 +68,7 @@ def test_save_1d_scalar(tempdir, encoding, dtype, use_pathlib):
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
-def test_save_2d_scalar(tempdir, encoding, dtype, cell_type):
+def test_save_2d_scalar(tempdir, encoding, dtype, cell_type) -> None:
     xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "u2.xdmf")
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type, dtype=xtype)
@@ -93,7 +93,7 @@ def test_save_2d_scalar(tempdir, encoding, dtype, cell_type):
     # Discontinuous (degree > 0) should raise exception
     V = functionspace(mesh, ("Discontinuous Lagrange", 1))
     u = Function(V, dtype=dtype)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
             file.write_mesh(mesh)
             file.write_function(u)
@@ -102,7 +102,7 @@ def test_save_2d_scalar(tempdir, encoding, dtype, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
-def test_save_3d_scalar(tempdir, encoding, dtype, cell_type):
+def test_save_3d_scalar(tempdir, encoding, dtype, cell_type) -> None:
     xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "u3.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 4, cell_type, dtype=xtype)
@@ -121,7 +121,7 @@ def test_save_3d_scalar(tempdir, encoding, dtype, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
-def test_save_2d_vector(tempdir, encoding, dtype, cell_type):
+def test_save_2d_vector(tempdir, encoding, dtype, cell_type) -> None:
     xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "u_2dv.xdmf")
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 13, cell_type, dtype=xtype)
@@ -142,7 +142,7 @@ def test_save_2d_vector(tempdir, encoding, dtype, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
-def test_save_3d_vector(tempdir, encoding, dtype, cell_type):
+def test_save_3d_vector(tempdir, encoding, dtype, cell_type) -> None:
     xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "u_3Dv.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=xtype)
@@ -161,7 +161,7 @@ def test_save_3d_vector(tempdir, encoding, dtype, cell_type):
     V2 = functionspace(mesh, ("RT", 1))
     u2 = Function(V2, dtype=dtype)
     u2.interpolate(u)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
             file.write_mesh(mesh)
             file.write_function(u2)
@@ -170,7 +170,7 @@ def test_save_3d_vector(tempdir, encoding, dtype, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
-def test_save_2d_tensor(tempdir, encoding, dtype, cell_type):
+def test_save_2d_tensor(tempdir, encoding, dtype, cell_type) -> None:
     xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "tensor.xdmf")
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type, dtype=xtype)
@@ -188,7 +188,7 @@ def test_save_2d_tensor(tempdir, encoding, dtype, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_save_3d_tensor(tempdir, encoding, dtype, cell_type):
+def test_save_3d_tensor(tempdir, encoding, dtype, cell_type) -> None:
     xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "u3t.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type, dtype=xtype)
@@ -207,7 +207,7 @@ def test_save_3d_tensor(tempdir, encoding, dtype, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type):
+def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type) -> None:
     filename = Path(tempdir, "u_3D.xdmf")
     xtype = np.real(dtype(0)).dtype
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=xtype)
@@ -224,7 +224,7 @@ def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type):
         file.write_function(u, 0.3)
 
 
-def test_higher_order_function(tempdir):
+def test_higher_order_function(tempdir) -> None:
     """Test Function output for higher-order meshes."""
     gmsh = pytest.importorskip("gmsh")
 
@@ -302,7 +302,7 @@ def test_higher_order_function(tempdir):
     # Write P2 Function (exception expected)
     u = Function(functionspace(msh, ("Lagrange", 2, (gdim,))))
     filename = Path(tempdir, "u3D_P2.xdmf")
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
             file.write_function(u)
@@ -314,7 +314,7 @@ def test_higher_order_function(tempdir):
 
     # Write P1 Function (exception expected)
     u = Function(functionspace(msh, ("Lagrange", 1, (gdim,))))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         filename = Path(tempdir, "u3D_P1.xdmf")
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
@@ -335,7 +335,7 @@ def test_higher_order_function(tempdir):
 
     # Write P2 Function (exception expected)
     u = Function(functionspace(msh, ("Lagrange", 2, (gdim,))))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         filename = Path(tempdir, "u3D_P3.xdmf")
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
@@ -350,7 +350,7 @@ def test_higher_order_function(tempdir):
         dtype=default_real_type,
     )
     u = Function(functionspace(msh, ufl_e))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         filename = Path(tempdir, "u3D_P3.xdmf")
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
@@ -378,7 +378,7 @@ def test_higher_order_function(tempdir):
 
     # Write Q1 Function (exception expected)
     u = Function(functionspace(msh, ("Lagrange", 1, (gdim,))))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         filename = Path(tempdir, "u3D_Q1.xdmf")
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
@@ -398,7 +398,7 @@ def test_higher_order_function(tempdir):
     # assert msh.geometry.cmaps[0].degree == 3
     # gdim = msh.geometry.dim
     # u = Function(functionspace(msh, ("Lagrange", 1, (gdim,))))
-    # with pytest.raises(RuntimeError):
+    # with pytest.raises(ValueError):
     #     filename = Path(tempdir, "u3D_Q1.xdmf")
     #     with XDMFFile(msh.comm, filename, "w") as file:
     #         file.write_mesh(msh)

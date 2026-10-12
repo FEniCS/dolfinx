@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2023 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2026 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -20,6 +20,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 namespace dolfinx::fem
@@ -41,13 +42,17 @@ public:
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] element Finite element for the space.
   /// @param[in] dofmap Degree-of-freedom map for the space.
+  /// @throws std::runtime_error If an element depends on the cell
+  /// orientation (see FiniteElement::depends_on_cell_orientation) and
+  /// none has been computed or set on the mesh (see
+  /// mesh::Topology::has_cell_orientations).
   FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _elements{element}, _dofmaps{std::move(dofmap)},
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
-    // Do nothing
+    check_cell_orientations();
   }
 
   /// @brief Create function space for given mesh, elements and
@@ -58,6 +63,10 @@ public:
   /// mesh::topology::cell_types.
   /// @param[in] dofmaps Degree-of-freedom maps for the space, one for each
   /// element. The dofmaps must be ordered in the same way as the elements.
+  /// @throws std::runtime_error If an element depends on the cell
+  /// orientation (see FiniteElement::depends_on_cell_orientation) and
+  /// none has been computed or set on the mesh (see
+  /// mesh::Topology::has_cell_orientations).
   FunctionSpace(
       std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
       std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements,
@@ -69,20 +78,23 @@ public:
     std::size_t num_cell_types = cell_types.size();
     if (elements.size() != num_cell_types)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Number of elements must match number of cell types");
     }
     if (_dofmaps.size() != num_cell_types)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Number of dofmaps must match number of cell types");
     }
     for (std::size_t i = 0; i < num_cell_types; ++i)
     {
       if (elements.at(i)->cell_type() != cell_types.at(i))
-        throw std::runtime_error(
+      {
+        throw std::invalid_argument(
             "Element cell types must match mesh cell types");
+      }
     }
+    check_cell_orientations();
   }
 
   // Copy constructor (deleted)
@@ -92,7 +104,7 @@ public:
   FunctionSpace(FunctionSpace&& V) = default;
 
   /// Destructor
-  virtual ~FunctionSpace() = default;
+  ~FunctionSpace() = default;
 
   // Assignment operator (delete)
   FunctionSpace& operator=(const FunctionSpace& V) = delete;
@@ -116,7 +128,7 @@ public:
 
     // Check that component is valid
     if (component.empty())
-      throw std::runtime_error("Component must be non-empty");
+      throw std::invalid_argument("Component must be non-empty");
 
     // Extract sub-element
     std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
@@ -180,7 +192,7 @@ public:
   {
     spdlog::debug("FunctionSpace::collapse");
     if (_component.empty())
-      throw std::runtime_error("Function space is not a subspace");
+      throw std::invalid_argument("Function space is not a subspace");
 
     // Create collapsed DofMap
     std::vector<std::shared_ptr<const DofMap>> collapsed_dofmaps;
@@ -230,14 +242,14 @@ public:
   {
     if (!_component.empty())
     {
-      throw std::runtime_error("Cannot tabulate coordinates for a "
-                               "FunctionSpace that is a subspace.");
+      throw std::invalid_argument("Cannot tabulate coordinates for a "
+                                  "FunctionSpace that is a subspace.");
     }
 
     assert(_elements.front());
     if (_elements.front()->is_mixed())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Cannot tabulate coordinates for a mixed FunctionSpace.");
     }
 
@@ -303,7 +315,7 @@ public:
       std::span<const std::uint32_t> cell_info;
       if (_elements[i]->needs_dof_transformations())
       {
-        _mesh->topology_mutable()->create_entity_permutations();
+        _mesh->topology_mutable()->create_cell_permutations();
         cell_info = std::span(_mesh->topology()->get_cell_permutation_info());
       }
 
@@ -317,7 +329,12 @@ public:
           = md::submdspan(phi_full, 0, md::full_extent, md::full_extent, 0);
 
       // TODO: Check transform
-      // Basis function reference-to-conforming transformation function
+      //
+      // Basis function reference-to-conforming transformation function.
+      // This function is only reachable for elements with
+      // interpolation_ident() (point evaluation, e.g. Lagrange), which
+      // never need a DOF transformation, so this is always a no-op
+      // (nullptr) closure.
       auto apply_dof_transformation
           = _elements[i]->template dof_transformation_fn<geometry_type>(
               doftransform::standard);
@@ -332,8 +349,12 @@ public:
 
         // Tabulate dof coordinates on cell
         cmap.push_forward(x, coordinate_dofs, phi);
-        apply_dof_transformation(
-            x_b, std::span(cell_info.data(), cell_info.size()), c, x.extent(1));
+        if (apply_dof_transformation)
+        {
+          apply_dof_transformation(
+              x_b, std::span(cell_info.data(), cell_info.size()), c,
+              x.extent(1));
+        }
 
         // Get cell dofmap
         auto dofs = _dofmaps[i]->cell_dofs(c);
@@ -368,7 +389,7 @@ public:
   {
     if (_elements.size() > 1)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "FunctionSpace has multiple elements, call `elements` instead.");
     }
 
@@ -387,7 +408,7 @@ public:
   {
     if (_dofmaps.size() > 1)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "FunctionSpace has multiple dofmaps, call `dofmaps` instead.");
     }
 
@@ -401,6 +422,27 @@ public:
   }
 
 private:
+  // Throw if an element depends on the cell orientation of the mesh and
+  // none has been computed or set. The check is local, and its outcome
+  // is the same on all ranks.
+  void check_cell_orientations() const
+  {
+    if (_mesh->topology()->has_cell_orientations())
+      return;
+    for (const std::shared_ptr<const FiniteElement<geometry_type>>& e :
+         _elements)
+    {
+      if (e->depends_on_cell_orientation())
+      {
+        throw std::runtime_error(
+            "The basis of this element, e.g. Raviart-Thomas on a manifold, "
+            "depends on the cell orientation, which has not been computed or "
+            "set. Call Topology::create_cell_orientations before creating the "
+            "function space.");
+      }
+    }
+  }
+
   // The mesh
   std::shared_ptr<const mesh::Mesh<geometry_type>> _mesh;
 
@@ -455,7 +497,7 @@ common_function_spaces(
         else
         {
           if (spaces0[i] != V0)
-            throw std::runtime_error("Mismatched test space for row.");
+            throw std::invalid_argument("Mismatched test space for row.");
         }
 
         if (!spaces1[j])
@@ -463,7 +505,7 @@ common_function_spaces(
         else
         {
           if (spaces1[j] != V1)
-            throw std::runtime_error("Mismatched trial space for column.");
+            throw std::invalid_argument("Mismatched trial space for column.");
         }
       }
     }
@@ -471,9 +513,9 @@ common_function_spaces(
 
   // Check that there are no null entries
   if (std::find(spaces0.begin(), spaces0.end(), nullptr) != spaces0.end())
-    throw std::runtime_error("Could not deduce all block test spaces.");
+    throw std::invalid_argument("Could not deduce all block test spaces.");
   if (std::find(spaces1.begin(), spaces1.end(), nullptr) != spaces1.end())
-    throw std::runtime_error("Could not deduce all block trial spaces.");
+    throw std::invalid_argument("Could not deduce all block trial spaces.");
 
   return {spaces0, spaces1};
 }

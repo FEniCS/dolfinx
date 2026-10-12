@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2022 Chris N. Richardson, Garth N. Wells,
+# Copyright (C) 2017-2026 Chris N. Richardson, Garth N. Wells,
 # Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -22,10 +22,47 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
-from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags
-from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
+from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags, _get_mesh_partitioner
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
+
+
+def _serendipity_coordinate_element(
+    cell_shape: CellType, dtype: npt.DTypeLike
+) -> basix.ufl._ElementBase:
+    """Create quadratic serendipity with edge midpoint evaluations."""
+    s_el = basix.ufl.element(basix.ElementFamily.serendipity, cell_shape.name, 2, dtype=dtype)
+    # Replace edge moments with midpoint evaluations.
+    be = s_el.basix_element
+    geometry = basix.cell.geometry(be.cell_type)
+    topology = basix.cell.topology(be.cell_type)
+    e_x: list[list[npt.NDArray[np.floating]]] = [
+        be.x[0],
+        [np.array([(geometry[e[0]] + geometry[e[1]]) / 2], dtype=dtype) for e in topology[1]],
+        be.x[2],
+        be.x[3],
+    ]
+    e_m: list[list[npt.NDArray[np.floating]]] = [
+        be.M[0],
+        [np.ones((1, 1, 1, 1), dtype=dtype) for _ in be.M[1]],
+        be.M[2],
+        be.M[3],
+    ]
+    return basix.ufl.custom_element(
+        be.cell_type,
+        s_el.reference_value_shape,
+        be.wcoeffs,
+        e_x,
+        e_m,
+        0,
+        s_el.map_type,
+        be.sobolev_space,
+        s_el.discontinuous,
+        s_el.embedded_subdegree,
+        s_el.embedded_superdegree,
+        s_el.polyset_type,
+        s_el.dtype,
+    )
 
 
 # VTXWriter requires ADIOS2
@@ -87,17 +124,25 @@ if _cpp.common.has_adios2:
             elif np.issubdtype(dtype, np.float64):
                 _vtxwriter = _cpp.io.VTXWriter_float64  # type: ignore[assignment]
             else:
-                raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
+                raise TypeError(f"VTXWriter does not support dtype={dtype}.")
 
             if isinstance(output, Mesh):
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(  # type: ignore[no-matching-overload]
+                    comm, filename, output._cpp_object, engine
+                )
             else:
                 cpp_objects = (
                     [output._cpp_object]
                     if isinstance(output, Function)
                     else [o._cpp_object for o in output]
                 )
-                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)  # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(
+                    comm,
+                    filename,
+                    cpp_objects,  # type: ignore[bad-argument-type]
+                    engine,
+                    mesh_policy,
+                )
 
         def __enter__(self) -> Self:
             """Enter context manager."""
@@ -272,7 +317,7 @@ class XDMFFile:
 
     def read_geometry_data(
         self, name: str = "mesh", xpath: str = "/Xdmf/Domain"
-    ) -> npt.NDArray[np.float64]:
+    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Read geometry (node coordinates) data for a mesh from file.
 
         Args:
@@ -280,9 +325,10 @@ class XDMFFile:
             xpath: XPath where the Mesh Grid is stored in the file.
 
         Returns:
-            Node coordinates.
+            Node coordinates, as float32 or float64 depending on how
+            the data is stored in the file.
         """
-        return self._cpp_object.read_geometry_data(name, xpath)
+        return self._cpp_object.read_geometry_data(name, xpath)  # type: ignore[return-value]
 
     def read_cell_type(
         self, name: str = "mesh", xpath: str = "/Xdmf/Domain"
@@ -342,6 +388,7 @@ class XDMFFile:
         name: str = "mesh",
         xpath: str = "/Xdmf/Domain",
         max_facet_to_cell_links: int = 2,
+        num_threads: int = 1,
     ) -> Mesh:
         """Read mesh data from file.
 
@@ -357,10 +404,12 @@ class XDMFFile:
             xpath: XPath where Mesh Grid is stored in the file.
             max_facet_to_cell_links: Maximum number of cells that a facet
                 can be linked to.
+            num_threads: Number of threads to use to build mesh. Must be
+                greater than 0.
         """
         cell_shape, cell_degree = self.read_cell_type(name, xpath)
         cells = self.read_topology_data(name, xpath)
-        x = self.read_geometry_data(name, xpath)
+        x = np.asarray(self.read_geometry_data(name, xpath), dtype=np.float64)
 
         # Get coordinate element, special handling for second order
         # serendipity.
@@ -369,42 +418,7 @@ class XDMFFile:
         if (cell_shape == CellType.quadrilateral and num_nodes_per_cell == 8) or (
             cell_shape == CellType.hexahedron and num_nodes_per_cell == 20
         ):
-            s_el = basix.ufl.element(
-                basix.ElementFamily.serendipity,
-                cell_shape.name,
-                2,
-            )
-            # Create a custom element that is serendipity but uses points
-            # evaluations on edges
-            geometry = basix.cell.geometry(s_el.basix_element.cell_type)
-            topology = basix.cell.topology(s_el.basix_element.cell_type)
-            e_x: list[list[npt.NDArray[np.floating]]] = [
-                [np.array([p]) for p in geometry],
-                [np.array([(geometry[edge[0]] + geometry[edge[1]]) / 2]) for edge in topology[1]],
-                [np.zeros((0, 3)) for _ in s_el.basix_element.x[2]],
-                [np.zeros((0, 3)) for _ in s_el.basix_element.x[3]],
-            ]
-            e_m: list[list[npt.NDArray[np.floating]]] = [
-                [np.ones((1, 1, 1, 1)) for _ in s_el.basix_element.M[0]],
-                [np.ones((1, 1, 1, 1)) for _ in s_el.basix_element.M[1]],
-                [np.zeros((0, 1, 0, 1)) for _ in s_el.basix_element.M[2]],
-                [np.zeros((0, 1, 0, 1)) for _ in s_el.basix_element.M[3]],
-            ]
-            el = basix.ufl.custom_element(
-                s_el.basix_element.cell_type,
-                s_el.reference_value_shape,
-                s_el.basix_element.wcoeffs,
-                e_x,
-                e_m,
-                0,
-                s_el.map_type,
-                s_el.basix_element.sobolev_space,
-                s_el.discontinuous,
-                s_el.embedded_subdegree,
-                s_el.embedded_superdegree,
-                s_el.polyset_type,
-                s_el.dtype,
-            )
+            el = _serendipity_coordinate_element(cell_shape, x.dtype)
             cmap = _cpp.fem.CoordinateElement_float64(el.basix_element._e)
             basix_el = basix.ufl.blocked_element(el, shape=(x.shape[1],))
         else:
@@ -418,15 +432,18 @@ class XDMFFile:
             cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
 
         # Build the mesh
+        partitioner_fn, cell_weights = _get_mesh_partitioner(self.comm, None)
         msh = _cpp.mesh.create_mesh(
             self.comm,
             cells,
             cmap,
             x,
-            _cell_partitioner(ghost_mode, max_facet_to_cell_links),
+            partitioner_fn,
+            ghost_mode,
             max_facet_to_cell_links,
-            1,
-            cell_weights=None,
+            num_threads,
+            cell_weights,
+            None,
         )
         msh.name = name
         domain = ufl.Mesh(basix_el)
@@ -467,9 +484,9 @@ class XDMFFile:
 def distribute_entity_data(
     mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: np.ndarray
 ) -> tuple[npt.NDArray[np.int64], np.ndarray]:
-    """Distribute  mesh entities and values to owning process.
+    """Distribute mesh entities and values to owning process.
 
-    The entities are described by the global vertex indices of the mesh.
+    The entities are described by the global node indices of the mesh.
     These entity indices are using the original input ordering.
 
     Returns:
@@ -480,7 +497,7 @@ def distribute_entity_data(
         mesh.topology._cpp_object,
         mesh.geometry.input_global_indices,
         mesh.geometry.index_map().size_global,
-        mesh.geometry.cmaps[0].create_dof_layout(),
+        mesh.geometry.cmaps[0].create_dof_layout()._cpp_object,
         mesh.geometry.dofmaps[0],
         entity_dim,
         entities,

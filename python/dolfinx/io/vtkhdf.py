@@ -1,4 +1,5 @@
 # Copyright (C) 2024-2025 Chris Richardson and Jørgen S. Dokken
+# Copyright (C) 2026 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -21,6 +22,7 @@ from dolfinx.cpp.io import (
     write_vtkhdf_data,
     write_vtkhdf_mesh,
 )
+from dolfinx.io.utils import _serendipity_coordinate_element
 from dolfinx.mesh import CellType, Mesh
 
 __all__ = ["cell_perm_array", "read_mesh", "write_cell_data", "write_mesh", "write_point_data"]
@@ -32,6 +34,7 @@ def read_mesh(
     dtype: npt.DTypeLike = np.float64,
     gdim: int = 3,
     max_facet_to_cell_links: int = 2,
+    num_threads: int = 1,
 ) -> Mesh:
     """Read a mesh from a VTKHDF format file.
 
@@ -49,29 +52,45 @@ def read_mesh(
         gdim: Geometric dimension of the mesh.
         max_facet_to_cell_links: Maximum number of cells that can be
             linked to a facet.
+        num_threads: Number of threads to use to build mesh. Must be
+            greater than 0.
     """
     mesh_cpp: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if dtype == np.float64:
-        mesh_cpp = read_vtkhdf_mesh_float64(comm, str(filename), gdim, max_facet_to_cell_links)
+        mesh_cpp = read_vtkhdf_mesh_float64(
+            comm, str(filename), gdim, max_facet_to_cell_links, num_threads
+        )
     elif dtype == np.float32:
-        mesh_cpp = read_vtkhdf_mesh_float32(comm, str(filename), gdim, max_facet_to_cell_links)
+        mesh_cpp = read_vtkhdf_mesh_float32(
+            comm, str(filename), gdim, max_facet_to_cell_links, num_threads
+        )
+    else:
+        raise ValueError(f"Unsupported mesh geometry dtype: {dtype}.")
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:
         # FIXME: not yet defined for mixed topology
         domain = None
     else:
-        cell_degree = mesh_cpp.geometry.cmaps[0].degree
-        variant = mesh_cpp.geometry.cmaps[0].variant
-        domain = ufl.Mesh(
-            basix.ufl.element(
-                "Lagrange",
-                cell_types[0].name,
-                cell_degree,
-                basix.LagrangeVariant(variant),
+        cmap = mesh_cpp.geometry.cmaps[0]
+        num_nodes = cmap.dim
+        if (cell_types[0] == CellType.quadrilateral and num_nodes == 8) or (
+            cell_types[0] == CellType.hexahedron and num_nodes == 20
+        ):
+            element = basix.ufl.blocked_element(
+                _serendipity_coordinate_element(cell_types[0], mesh_cpp.geometry.x.dtype),
                 shape=(mesh_cpp.geometry.dim,),
             )
-        )
+        else:
+            element = basix.ufl.element(
+                "Lagrange",
+                cell_types[0].name,
+                cmap.degree,
+                basix.LagrangeVariant(cmap.variant),
+                shape=(mesh_cpp.geometry.dim,),
+                dtype=mesh_cpp.geometry.x.dtype,
+            )
+        domain = ufl.Mesh(element)
     return Mesh(mesh_cpp, domain)
 
 

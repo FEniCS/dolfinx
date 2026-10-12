@@ -1,4 +1,5 @@
 # Copyright (C) 2026 Chris Richardson
+# Copyright (C) 2026 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -18,7 +19,7 @@ import pytest
         np.complex128,
     ],
 )
-def test_matmul(dtype, mat_random, mat_gather):
+def test_matmul(dtype, mat_random, mat_gather) -> None:
     # Create two random square MatrixCSR
     A = mat_random(0, 0, 12345, dtype)
     B = mat_random(0, 0, 54321, dtype)
@@ -50,7 +51,7 @@ def test_matmul(dtype, mat_random, mat_gather):
         np.complex128,
     ],
 )
-def test_matmul_rect(dtype, mat_random, mat_gather):
+def test_matmul_rect(dtype, mat_random, mat_gather) -> None:
     # Create two random rectangular MatrixCSR
     A = mat_random(0, 1, 12345, dtype)
     B = mat_random(1, 0, 54321, dtype)
@@ -82,7 +83,7 @@ def test_matmul_rect(dtype, mat_random, mat_gather):
         np.complex128,
     ],
 )
-def test_matmul_zeros(dtype, mat_random, mat_gather):
+def test_matmul_zeros(dtype, mat_random, mat_gather) -> None:
     A = mat_random(0, 0, 123, dtype)
     # Make first two entries in row zero of A (+1, +1).
     A.data[0] = 1.0
@@ -117,16 +118,16 @@ def test_matmul_zeros(dtype, mat_random, mat_gather):
     assert np.allclose(Cs.todense(), C.todense())
 
 
-def test_bad_shape(mat_random):
+def test_bad_shape(mat_random) -> None:
     # Test matmul of incompatible matrices (should raise an error)
     A = mat_random(0, 1, 12345, np.float64)
     B = mat_random(0, 2, 54321, np.float64)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         A.matmul(B)
 
     A = mat_random(0, 2, 12345, np.float64)
     B = mat_random(1, 0, 54321, np.float64)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         A.matmul(B)

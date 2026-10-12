@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2020 Chris N. Richardson, Garth N. Wells and Michal Habera
+// Copyright (C) 2012-2026 Chris N. Richardson, Garth N. Wells and Michal Habera
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -19,6 +19,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <format>
 #include <pugixml.hpp>
+#include <stdexcept>
 #include <string>
 
 using namespace dolfinx;
@@ -39,7 +40,7 @@ std::string shape_to_string(std::span<const std::size_t> shape)
   else if (shape.size() == 2)
     return "Tensor";
   else
-    throw std::runtime_error("Unsupported value shape");
+    throw std::invalid_argument("Unsupported value shape");
 }
 } // namespace
 
@@ -63,8 +64,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   // Check that element is Lagrange
   if (!element->interpolation_ident())
   {
-    throw std::runtime_error("Only Lagrange functions are supported. "
-                             "Interpolate Functions before output.");
+    throw std::invalid_argument("Only Lagrange functions are supported. "
+                                "Interpolate Functions before output.");
   }
 
   auto map_c = mesh->topology()->index_map(mesh->topology()->dim());
@@ -116,7 +117,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     int cell_dim = element->space_dimension() / element->block_size();
     if (cmap_dim != cell_dim)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Degree of output Function must be same as mesh degree. Maybe the "
           "Function needs to be interpolated?");
     }
@@ -124,14 +125,15 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     // Check that dofmap layouts are equal and check Lagrange variants
     if (dofmap->element_dof_layout() != cmap.create_dof_layout())
     {
-      throw std::runtime_error("Function and Mesh dof layouts do not match. "
-                               "Maybe the Function needs to be interpolated?");
+      throw std::invalid_argument(
+          "Function and Mesh dof layouts do not match. "
+          "Maybe the Function needs to be interpolated?");
     }
     if (cmap.degree() > 2
         and element->basix_element().lagrange_variant() != cmap.variant())
     {
-      throw std::runtime_error("Mismatch in Lagrange family. Maybe the "
-                               "Function needs to be interpolated?");
+      throw std::invalid_argument("Mismatch in Lagrange family. Maybe the "
+                                  "Function needs to be interpolated?");
     }
 
     std::int32_t num_cells = map_c->size_local() + map_c->num_ghosts();
@@ -184,7 +186,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         = shape_to_string(value_shape).c_str();
     attr_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
-    std::span<const scalar_value_t<T>> u;
+    std::span<const scalar_value_t<T>> u_values;
     std::vector<scalar_value_t<T>> _data;
     if constexpr (!std::is_scalar_v<T>)
     {
@@ -200,14 +202,14 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         std::ranges::transform(data_values, _data.begin(),
                                [](auto x) { return x.imag(); });
       }
-      u = std::span<const scalar_value_t<T>>(_data);
+      u_values = std::span<const scalar_value_t<T>>(_data);
     }
     else
-      u = std::span<const T>(data_values);
+      u_values = std::span<const T>(data_values);
 
     // -- Real case, add data item
     std::string h5_path = std::format("/Function/{}/{}", attr_name, t_str);
-    xdmf_utils::add_data_item(attr_node, h5_id, h5_path, u, offset,
+    xdmf_utils::add_data_item(attr_node, h5_id, h5_path, u_values, offset,
                               {num_values, num_components}, "", use_mpi_io);
   }
 }

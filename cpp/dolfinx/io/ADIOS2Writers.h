@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Jørgen S. Dokken and Garth N. Wells
+// Copyright (C) 2021-2026 Jørgen S. Dokken and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -147,7 +147,7 @@ extract_common_mesh(const typename adios2_writer::U<T>& u)
         {
           if (mesh != u->function_space()->mesh())
           {
-            throw std::runtime_error(
+            throw std::invalid_argument(
                 "ADIOS2Writer only supports functions sharing the same mesh");
           }
         },
@@ -206,7 +206,7 @@ extract_function_names(const typename adios2_writer::U<T>& u)
     std::ranges::sort(sorted);
     if (std::ranges::unique(sorted).begin() != sorted.end())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Function names in VTX output need to be unique.");
     }
   }
@@ -317,7 +317,6 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
       geometry.dofmaps().front(), topology->cell_type());
 
   // Add cell metadata
-  int tdim = topology->dim();
   adios2::Variable cell_var = impl_adios2::define_variable<std::uint32_t>(
       io, "NumberOfCells", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(cell_var, shape[0]);
@@ -326,7 +325,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable celltype_var
       = impl_adios2::define_variable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(
-      celltype_var, cells::get_vtk_cell_type(topology->cell_type(), tdim));
+      celltype_var, cells::get_vtk_cell_type(topology->cell_type(), shape[1]));
 
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
@@ -348,13 +347,13 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 
   // Vertex global ids and ghost markers
   adios2::Variable orig_id = impl_adios2::define_variable<std::int64_t>(
-      io, "vtkOriginalPointIds", {}, {}, {num_vertices});
+      io, "vtkOriginalPointIds", {}, {}, {num_vertices, 1});
   engine.Put(orig_id, geometry.input_global_indices().data());
 
   std::vector<std::uint8_t> x_ghost(num_vertices, 0);
   std::fill(std::next(x_ghost.begin(), x_map->size_local()), x_ghost.end(), 1);
   adios2::Variable ghost = impl_adios2::define_variable<std::uint8_t>(
-      io, "vtkGhostType", {}, {}, {x_ghost.size()});
+      io, "vtkGhostType", {}, {}, {x_ghost.size(), 1});
   engine.Put(ghost, x_ghost.data());
   engine.PerformPuts();
 }
@@ -375,7 +374,6 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   assert(mesh);
   auto topology = mesh->topology();
   assert(topology);
-  int tdim = topology->dim();
 
   // Get a VTK mesh with points at the 'nodes'
   auto [x, xshape, x_id, x_ghost, vtk, vtkshape] = io::vtk_mesh_from_space(V);
@@ -421,7 +419,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
-      cell_type, cells::get_vtk_cell_type(topology->cell_type(), tdim));
+      cell_type, cells::get_vtk_cell_type(topology->cell_type(), vtkshape[1]));
   engine.Put(local_geometry, x.data());
   engine.Put(local_topology, cells.data());
 
@@ -501,7 +499,7 @@ public:
         _mesh_reuse_policy(mesh_policy), _has_piecewise_constant(false)
   {
     if (u.empty())
-      throw std::runtime_error("VTXWriter fem::Function list is empty.");
+      throw std::invalid_argument("VTXWriter fem::Function list is empty.");
 
     // Extract space from first function
     auto V0 = std::visit([](auto& u) { return u->function_space().get(); },
@@ -533,7 +531,7 @@ public:
     // Check if function is mixed
     if (element0->is_mixed())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Mixed functions are not supported by VTXWriter.");
     }
 
@@ -542,7 +540,7 @@ public:
     // Check that element is Lagrange
     if (!element0->interpolation_ident())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Only (discontinuous) Lagrange functions are "
           "supported. Interpolate Functions before output.");
     }
@@ -558,10 +556,12 @@ public:
             bool is_piecewise_constant = impl::is_cellwise(*element);
             _has_piecewise_constant
                 = _has_piecewise_constant || is_piecewise_constant;
-            if (*element != *V0->element().get() and !is_piecewise_constant)
+            if (!impl::same_base_element(*element, *V0->element().get())
+                and !is_piecewise_constant)
             {
-              throw std::runtime_error("All functions in VTXWriter must have "
-                                       "the same element type.");
+              throw std::invalid_argument(
+                  "All functions in VTXWriter must have "
+                  "the same element type.");
             }
 #ifndef NDEBUG
             auto dmap0 = V0->dofmap()->map();
@@ -572,7 +572,7 @@ public:
                                 dmap.data_handle()))
                 and !is_piecewise_constant)
             {
-              throw std::runtime_error(
+              throw std::invalid_argument(
                   "All functions must have the same dofmap for VTXWriter.");
             }
 #endif
@@ -664,10 +664,10 @@ public:
       {
         // Node global ids
         adios2::Variable orig_id = impl_adios2::define_variable<std::int64_t>(
-            *_io, "vtkOriginalPointIds", {}, {}, {_x_id.size()});
+            *_io, "vtkOriginalPointIds", {}, {}, {_x_id.size(), 1});
         _engine->Put(orig_id, _x_id.data());
         adios2::Variable ghost = impl_adios2::define_variable<std::uint8_t>(
-            *_io, "vtkGhostType", {}, {}, {_x_ghost.size()});
+            *_io, "vtkGhostType", {}, {}, {_x_ghost.size(), 1});
         _engine->Put(ghost, _x_ghost.data());
         _engine->PerformPuts();
       }

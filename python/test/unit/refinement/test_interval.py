@@ -9,7 +9,7 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx import mesh
+from dolfinx import graph, mesh
 
 
 @pytest.mark.parametrize("n", [2, 10, 100])
@@ -22,9 +22,11 @@ from dolfinx import mesh
 def test_refine_interval(n, ghost_mode, ghost_mode_refined, option):
     msh = mesh.create_interval(MPI.COMM_WORLD, n, [0, 1], ghost_mode=ghost_mode)
     msh_refined, edges, _vertices = mesh.refine(
-        msh, option=option, partitioner=mesh.create_cell_partitioner(ghost_mode_refined, 2)
+        msh,
+        option=option,
+        partitioner=graph.partitioner(),
+        ghost_mode=ghost_mode_refined,
     )
-    # TODO: add create_cell_partitioner(ghost_mode) when works
 
     # vertex count
     assert msh_refined.topology.index_map(0).size_global == 2 * n + 1
@@ -52,7 +54,7 @@ def test_refine_interval_adaptive(n, ghost_mode, ghost_mode_refined):
         np.arange(10, dtype=np.int32),
         option=mesh.RefinementOption.parent_cell,
     )
-    # TODO: add create_cell_partitioner(ghost_mode) when works
+    # TODO: pass partitioner=graph.partitioner(), ghost_mode=ghost_mode_refined when works
 
     # vertex count
     assert msh_refined.topology.index_map(0).size_global == n + 1 + 10 * MPI.COMM_WORLD.size

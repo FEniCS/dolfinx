@@ -12,6 +12,11 @@
 // * Create and apply Dirichlet boundary conditions
 // * Compute errors
 //
+// Running this demo requires the files:
+// {download}`demo_poisson_matrix_free/main.cpp`,
+// {download}`demo_poisson_matrix_free/poisson.py` and
+// {download}`demo_poisson_matrix_free/CMakeLists.txt`.
+//
 // \begin{align*}
 //    - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
 //      u &= u_D \quad {\rm on} \ \Gamma_{D}
@@ -138,13 +143,14 @@ void solver(MPI_Comm comm)
   // Create mesh and function space
   auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
       comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10}, mesh::CellType::triangle,
-      mesh::create_cell_partitioner(mesh::GhostMode::none, 2)));
+      graph::partition_graph));
   auto element = basix::create_element<U>(
       basix::element::family::P, basix::cell::type::triangle, 2,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
   auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-      mesh, std::make_shared<fem::FiniteElement<U>>(element)));
+      mesh, std::make_shared<fem::FiniteElement<U>>(element,
+                                                    mesh->geometry().dim())));
 
   // Prepare and set Constants for the bilinear form
   auto f = std::make_shared<fem::Constant<T>>(-6.0);

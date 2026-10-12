@@ -18,14 +18,14 @@ from dolfinx.mesh import (
 )
 
 
-def test_ghost_facet_1d():
+def test_ghost_facet_1d() -> None:
     N = 40
     mesh = create_unit_interval(MPI.COMM_WORLD, N, ghost_mode=GhostMode.shared_facet)
     assert mesh.topology.index_map(0).size_global == N + 1
     assert mesh.topology.index_map(1).size_global == N
 
 
-def test_ghost_2d():
+def test_ghost_2d() -> None:
     N = 8
     num_cells = N * N * 2
     mesh = create_unit_square(MPI.COMM_WORLD, N, N, ghost_mode=GhostMode.shared_facet)
@@ -37,7 +37,7 @@ def test_ghost_2d():
     assert mesh.topology.index_map(2).size_global == num_cells
 
 
-def test_ghost_3d():
+def test_ghost_3d() -> None:
     N = 2
     num_cells = N * N * N * 6
     mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, ghost_mode=GhostMode.shared_facet)

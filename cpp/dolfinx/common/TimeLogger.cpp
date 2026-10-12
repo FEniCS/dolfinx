@@ -9,6 +9,7 @@
 #include "log.h"
 #include <format>
 #include <iostream>
+#include <stdexcept>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
@@ -72,7 +73,7 @@ TimeLogger::timing(std::string_view task) const
   auto it = _timings.find(task);
   if (it == _timings.end())
   {
-    throw std::runtime_error(
+    throw std::out_of_range(
         std::format("No timings registered for task \"{}\".", task));
   }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2024 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,16 +7,16 @@
 #pragma once
 
 #include <array>
-#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <span>
-#include <thread>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -79,7 +79,13 @@ public:
   Topology(const Topology& topology) = default;
 
   /// Move constructor
+#ifdef _MSC_VER
+  /// @note Explicit `noexcept`, MSVC only; see fem::Form's move
+  /// constructor for why the noexcept override is safe.
+  Topology(Topology&& topology) noexcept = default;
+#else
   Topology(Topology&& topology) = default;
+#endif
 
   /// Destructor
   ~Topology() = default;
@@ -109,7 +115,10 @@ public:
   /// of the mesh entities of a given topological dimension.
   ///
   /// @param[in] dim Topological dimension.
-  /// @return Index maps, one for each cell type.
+  /// @return Index maps for entities of dimension `dim`. Entity types
+  /// with no map are dropped, so the result is empty or has one entry
+  /// per entity type in `entity_types(dim)` order; it is not indexable
+  /// positionally by entity-type index if any map is missing.
   std::vector<std::shared_ptr<const common::IndexMap>>
   index_maps(int dim) const;
 
@@ -117,8 +126,11 @@ public:
   /// of the mesh entities.
   ///
   /// @param[in] dim Topological dimension
-  /// @return Index map for the entities of dimension `dim`. Returns
-  /// `nullptr` if index map has not been set.
+  /// @return Index map for the entities of dimension `dim`.
+  /// @throws std::out_of_range If entities of dimension `dim` have not
+  /// been created (call `create_entities(dim)` first), or if there is
+  /// more than one entity type of dimension `dim` (call `index_maps`
+  /// instead).
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
   /// @brief Get the connectivity from entities of topological dimension
@@ -150,23 +162,113 @@ public:
   connectivity(int d0, int d1) const;
 
   /// @brief Get the cell permutation information.
+  /// @throws std::runtime_error If create_entity_permutations has not
+  /// been called.
+  /// @throws std::out_of_range If there is more than one cell type
+  /// (see Topology::index_map).
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
-  /// @brief Get the numbers that encode the number of permutations to
-  /// apply to facets.
+  /// @brief Compute or set a per-cell marker for a consistent
+  /// orientation of a surface mesh.
+  ///
+  /// The cells are not modified. A marker is stored for each cell in the
+  /// cell permutation info, where elements whose basis depends on the
+  /// cell orientation consume it.
+  ///
+  /// On a manifold mesh, whose topological dimension is less than its
+  /// geometric dimension, the contravariant Piola map scales by the
+  /// pseudo-determinant \f$\sqrt{\det(J^T J)}\f$ of the Jacobian
+  /// \f$J\f$. It is positive by construction, so it cannot encode an
+  /// orientation. Instead, the vertex order of each cell fixes its
+  /// normal, and elements mapped by the contravariant Piola map (e.g.
+  /// Raviart-Thomas, Brezzi-Douglas-Marini) are conforming only between
+  /// cells whose normals agree. A function space with such an element
+  /// can therefore only be created on a manifold mesh once an
+  /// orientation has been computed or set with this call (see
+  /// has_cell_orientations). Lagrange and Nédélec spaces do not need it.
+  ///
+  /// If no orientation is given, one is computed from the vertex orders
+  /// alone (see compute_cell_orientations), which additionally creates
+  /// the edges it is computed across and their orientations relative to
+  /// the cells. Which of its two orientations each connected surface
+  /// gets is then arbitrary, and depends on the partitioning. Pass
+  /// `orientations` instead when a consistent orientation is already
+  /// known, e.g. the outward normal of a closed surface; it is stored in
+  /// the same way, but is not checked for consistency between
+  /// neighbouring cells, and needs none of the above entities. On a mesh
+  /// whose cells are consistently ordered, passing all `1` keeps each
+  /// cell's own vertex order.
+  ///
+  /// The result can be read back with cell_orientations. On cells whose
+  /// vertex order disagrees with it, such elements negate their basis in
+  /// every later assembly, interpolation and evaluation. Reversing all
+  /// cells of a surface negates the basis functions and, with them, the
+  /// degrees-of-freedom, so the field they represent is unchanged.
+  ///
+  /// @warning Changing the orientation after creating spaces whose basis
+  /// depends on it invalidates existing Function data on them, as their
+  /// degrees-of-freedom are not corrected.
+  ///
+  /// @note Collective. The two branches do different collective work, so
+  /// `orientations` must be engaged on every rank or on none.
+  /// @pre `orientations` is engaged on every rank or on none.
+  /// @pre A ghost cell has the same orientation as on its owner.
+  /// @param[in] orientations For each owned and ghost cell, in local cell
+  /// order, `-1` if its orientation is reversed relative to its vertex
+  /// order and `1` otherwise. If `std::nullopt`, a consistent orientation
+  /// is computed instead.
+  /// @throws std::invalid_argument If the topological dimension is not
+  /// 2, or `orientations` does not have one entry per owned and ghost
+  /// cell.
+  /// @throws std::runtime_error If no orientation is given and the
+  /// surface is not orientable, e.g. a Möbius strip, or an edge is shared
+  /// by more than two cells.
+  /// @throws std::out_of_range If there is more than one cell type.
+  void create_cell_orientations(
+      std::optional<std::span<const std::int8_t>> orientations = std::nullopt);
+
+  /// @brief Get the orientation of each cell relative to the
+  /// orientation of its surface (see create_cell_orientations).
+  ///
+  /// @return For each owned and ghost cell, in local cell order, `-1`
+  /// if its orientation is reversed and `1` otherwise. All are `1` if
+  /// no orientation has been computed or set (see
+  /// has_cell_orientations).
+  /// @throws std::runtime_error If create_cell_permutations has not
+  /// been called.
+  /// @throws std::out_of_range If there is more than one cell type.
+  std::vector<std::int8_t> cell_orientations() const;
+
+  /// @brief Check if a cell orientation has been computed or set (see
+  /// create_cell_orientations).
+  ///
+  /// Function spaces whose basis depends on the cell orientation can
+  /// only be created once it has.
+  ///
+  /// @return True if the cell orientation has been computed or set.
+  bool has_cell_orientations() const noexcept;
+
+  /// @brief Get the numbers that encode the permutation to apply to
+  /// each cell-local entity of a given dimension.
   ///
   /// The permutations are encoded so that:
   ///
   ///   - `n % 2` gives the number of reflections to apply
   ///   - `n // 2` gives the number of rotations to apply
   ///
-  /// The data is stored in a flattened 2D array, so that `data[cell_index *
-  /// facets_per_cell + facet_index]` contains the facet with index
-  /// `facet_index` of the cell with index `cell_index`.
-  /// @return The encoded permutation info
-  /// @note An exception is raised if the permutations have not been
-  /// computed
-  const std::vector<std::uint8_t>& get_facet_permutations() const;
+  /// The data is stored in a flattened 2D array, so that
+  /// `data[cell_index * entities_per_cell + entity_index]` contains
+  /// the permutation of the cell-local entity `entity_index` of cell
+  /// with local index `cell_index`.
+  ///
+  /// @param[in] dim Topological dimension of the entities. Vertices
+  /// have no orientation, so their permutations are empty.
+  /// @return The encoded permutation info.
+  /// @throws std::runtime_error If create_entity_permutations has not
+  /// been called for `dim`.
+  /// @throws std::out_of_range If there is more than one facet type
+  /// (see Topology::index_map).
+  const std::vector<std::uint8_t>& get_entity_permutations(int dim) const;
 
   /// @brief Get the types of cells in the topology
   /// @return The cell types
@@ -198,6 +300,8 @@ public:
 
   /// @brief Create entities of given topological dimension.
   ///
+  /// @note Collective.
+  ///
   /// @param[in] dim Topological dimension of entities to compute.
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
   /// @return True if entities are created, false if entities already
@@ -206,13 +310,58 @@ public:
 
   /// @brief Create connectivity between given pair of dimensions, `d0
   /// -> d1`.
+  ///
+  /// @note Collective.
+  ///
   /// @param[in] d0 Topological dimension.
   /// @param[in] d1 Topological dimension.
   void create_connectivity(int d0, int d1);
 
   /// @brief Compute entity permutations and reflections.
+  ///
+  /// @note Collective.
+  ///
+  /// A permutation records how an entity is oriented as seen from a
+  /// cell, relative to a low-to-high ordering of the entity's global
+  /// vertex indices. It is passed to FFCx kernels as
+  /// `quadrature_permutation`, so that cells sharing an entity agree on
+  /// the order of the quadrature points on it. Which dimension is
+  /// needed is a property of the integral, not of the element: an
+  /// interior facet integral needs `dim() - 1`, a ridge integral
+  /// `dim() - 2`.
+  ///
+  /// Does nothing if the permutations for `dim` have already been
+  /// computed.
+  ///
+  /// @param[in] dim Topological dimension of the entities, e.g.
+  /// `dim() - 1` for facets. Must satisfy `0 <= dim < dim()`. Vertices
+  /// have no orientation, so their permutations are empty.
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
-  void create_entity_permutations(int num_threads = 1);
+  /// @see create_cell_permutations, which packs the orientations of all
+  /// of a cell's sub-entities into one integer per cell, for correcting
+  /// element DOFs rather than quadrature points.
+  void create_entity_permutations(int dim, int num_threads = 1);
+
+  /// @brief Compute the packed per-cell permutation info.
+  ///
+  /// Encodes, for each cell, the orientation of every sub-entity of
+  /// that cell relative to a low-to-high ordering of global vertex
+  /// indices, packed into one 32-bit integer per cell. See
+  /// ::get_cell_permutation_info for the bit layout.
+  ///
+  /// Required by elements whose DOF transformations are not the
+  /// identity. Where those transformations are permutations, e.g.
+  /// higher-order Lagrange, the correction is applied once to the
+  /// dofmap when it is built; otherwise, e.g. N1curl and
+  /// Raviart-Thomas, the correction is applied to the element tensor on
+  /// each cell at assembly time.
+  ///
+  /// Does nothing if the cell permutations have already been computed.
+  ///
+  /// @param[in] num_threads Number of threads to use. Must be >= 1.
+  /// @see create_entity_permutations, which gives the orientations of
+  /// one entity dimension unpacked, for permuting quadrature points.
+  void create_cell_permutations(int num_threads = 1);
 
   /// Original cell index for each cell type
   std::vector<std::vector<std::int64_t>> original_cell_index;
@@ -239,14 +388,21 @@ private:
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>>
       _connectivity;
 
-  // The facet permutations (local facet, cell)
+  // Entity permutations by entity dimension, each (local entity, cell)
   // [cell0_0, cell0_1, cell0_2, cell1_0, cell1_1, cell1_2, ...,
-  // celln_0, celln_1, celln_2]
-  std::vector<std::uint8_t> _facet_permutations;
+  // celln_0, celln_1, celln_2]. Only sub-entities of a cell are stored,
+  // so the dimension is at most 2. Unset until computed, which an empty
+  // permutation vector (vertices, or a rank with no cells) does not
+  // indicate.
+  std::array<std::optional<std::vector<std::uint8_t>>, 3> _entity_permutations;
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
   std::vector<std::uint32_t> _cell_permutations;
+
+  // Whether a cell orientation has been computed or set. Not encoded in
+  // _cell_permutations, where an unset orientation reads as all 1.
+  bool _has_cell_orientations = false;
 
   // List of facets that are on the inter-process boundary for each
   // facet type. _interprocess_facets[i] is the inter-process facets of
@@ -254,10 +410,36 @@ private:
   std::vector<std::vector<std::int32_t>> _interprocess_facets;
 };
 
+/// @cond
+namespace impl
+{
+/// @brief Create a mesh topology, additionally returning the input
+/// global indices of the topology vertices.
+///
+/// See ::create_topology for a description of the parameters. The
+/// vertex indices are returned because computing them is a by-product
+/// of building the topology, and a caller that holds 'P1' geometry data
+/// (geometry nodes are the cell vertices) would otherwise have to
+/// re-derive them with a sort of the full cell-vertex array.
+///
+/// @return Topology, and the sorted input ('original') global indices
+/// of the vertices in the topology, including ghost vertices.
+std::pair<Topology, std::vector<std::int64_t>>
+create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
+                std::vector<std::span<const std::int64_t>> cells,
+                std::vector<std::span<const std::int64_t>> original_cell_index,
+                std::vector<std::span<const int>> ghost_owners,
+                std::span<const std::int64_t> boundary_vertices,
+                int num_threads);
+} // namespace impl
+/// @endcond
+
 /// @brief Create a mesh topology.
 ///
 /// This function creates a Topology from cells that have been already
 /// distributed to the processes that own or ghost the cell.
+///
+/// @note Collective.
 ///
 /// @param[in] comm Communicator across which the topology will be
 /// distributed.
@@ -295,6 +477,8 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
 /// This function provides a simplified interface to ::create_topology
 /// for the case that a mesh has one cell type only,
 ///
+/// @note Collective.
+///
 /// @param[in] comm Communicator across which the topology will be
 /// distributed.
 /// @param[in] cells Cell topology (list of vertices for each cell)
@@ -322,6 +506,8 @@ Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
 
 /// @brief Create a topology for a subset of entities of a given
 /// topological dimension.
+///
+/// @note Collective.
 ///
 /// @param[in] topology Original (parent) topology.
 /// @param[in] dim Topological dimension of the entities in the new

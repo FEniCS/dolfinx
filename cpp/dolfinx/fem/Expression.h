@@ -94,11 +94,20 @@ public:
         _entity_maps(entity_maps),
         _coordinate_element_hash(coordinate_element_hash) {};
 
+  // Copy constructor (deleted)
+  Expression(const Expression& e) = delete;
+
   /// Move constructor
   Expression(Expression&& e) = default;
 
   /// Destructor
-  virtual ~Expression() = default;
+  ~Expression() = default;
+
+  // Copy assignment (deleted)
+  Expression& operator=(const Expression& e) = delete;
+
+  /// Move assignment
+  Expression& operator=(Expression&& e) = default;
 
   /// @brief Argument function space.
   /// @return Argument function space, nullptr if there is no argument.

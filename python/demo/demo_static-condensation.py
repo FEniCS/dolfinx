@@ -35,8 +35,9 @@
 
 # +
 import sys
-import typing
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -70,7 +71,7 @@ from ffcx.codegeneration.numba.utils import ufcx_kernel_signature as ufcx_signat
 
 # `empty_void_pointer`'s stub signature is numba's `@intrinsic`
 # `typingctx`/`context` arguments, not its real, zero-argument call.
-empty_void_pointer = typing.cast(typing.Callable[[], typing.Any], _empty_void_pointer)
+empty_void_pointer: Callable[[], Any] = _empty_void_pointer  # type: ignore[assignment]
 
 rtype = default_real_type
 dtype = default_scalar_type
@@ -124,7 +125,7 @@ ds = ufl.Measure("ds", subdomain_data=mt)
 u_bc = Function(U)
 u_bc.x.array[:] = 0
 
-# Displacement {py:class}`BC <dolfinx.fem.dirichletbc>` is applied to
+# Displacement {py:func}`BC <dolfinx.fem.dirichletbc>` is applied to
 # the left side
 
 left_facets = locate_entities_boundary(msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
@@ -196,7 +197,7 @@ Usize = U.element.space_dimension
 # Next, we define a static condensation kernel that uses the
 # previously defined kernels to compute the condensed local element
 # tensor. The kernel is decorated with {py:func}`numba.cfunc` using the
-# appropriate signature obtained from {py:func}`ufcx_signature`.`
+# appropriate signature obtained from `ufcx_signature`.
 
 
 @numba.cfunc(ufcx_signature(dtype, rtype), nopython=True)  # type: ignore
@@ -243,7 +244,7 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL, cu
     A[:, :] = -A10 @ np.linalg.solve(A00, A01)
 
 
-# Prepare a {py:class}`Form<dolfinx.fem.Form>` with a condensed
+# Prepare a {py:class}`Form <dolfinx.fem.Form>` with a condensed
 # tabulation kernel. We specify the integration domains to be the
 # cells owned by the current process
 
@@ -251,7 +252,9 @@ formtype = form_cpp_class(dtype)
 cells = np.arange(msh.topology.index_map(msh.topology.dim).size_local)
 integrals = {IntegralType.cell: [(0, tabulate_A.address, cells, np.array([], dtype=np.int8))]}
 a_cond = Form(
-    formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, [], mesh=msh._cpp_object)  # type: ignore
+    formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, [], mesh=msh._cpp_object),  # type: ignore
+    msh,
+    [U, U],
 )
 
 # Next, we pass the compiled kernel to the standard {py:func}`
@@ -260,22 +263,22 @@ a_cond = Form(
 # side vector using {py:func}`assemble_vector
 # <dolfinx.fem.petsc.assemble_vector>` and apply the boundary conditions by
 # {py:func}`applying lifting <dolfinx.fem.petsc.apply_lifting>` and
-# {py:meth}`set bc<dolfinx.fem.DirichletBC.set>`.
+# {py:meth}`set bc <dolfinx.fem.DirichletBC.set>`.
 
 A_cond = assemble_matrix(a_cond, bcs=[bc])
 A_cond.assemble()
 b = assemble_vector(b1)
 apply_lifting(b, [a_cond], bcs=[[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
-bc.set(b.array_w)  # type: ignore[arg-type]
+bc.set(b.array_w)
 
 # We use a {py:class}`PETSc.KSP <petsc4py.PETSc.KSP>` solver to solve the
 # condensed linear system. The solution is stored in a
-# {py:class}`Function<dolfinx.fem.Function>`, while we pass the
+# {py:class}`Function <dolfinx.fem.Function>`, while we pass the
 # underlying data wrapped as a {py:class}`PETSc.Vec <petsc4py.PETSc.Vec>`
 # to the solver by calling {py:meth}`petsc_vec
 # <dolfinx.la.Vector.petsc_vec>` on the
-# {py:meth}`vector <dolfinx.fem.Function.x>` attribute of the function.
+# {py:attr}`vector <dolfinx.fem.Function.x>` attribute of the function.
 
 uc = Function(U, name="u_from_condensation")
 solver = PETSc.KSP().create(A_cond.getComm())
@@ -291,7 +294,7 @@ A = assemble_matrix(a, bcs=[bc])
 A.assemble()
 
 # Create {py:class}`BoundingBoxTree <dolfinx.geometry.BoundingBoxTree>`
-# using {py:meth}`bb_tree <dolfinx.geometry.bb_tree>` constructor
+# using the {py:func}`bb_tree <dolfinx.geometry.bb_tree>` constructor
 # for efficient computation of the ownership of a set of evaluation points
 
 bb_tree = geometry.bb_tree(msh, tdim, padding=0.0)

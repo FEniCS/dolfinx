@@ -9,7 +9,9 @@
 #include "Geometry.h"
 #include <concepts>
 #include <dolfinx/common/MPI.h>
+#include <memory>
 #include <string>
+#include <type_traits>
 
 namespace dolfinx::mesh
 {
@@ -30,6 +32,8 @@ public:
   /// @note This constructor is not normally called by users. User code
   /// will normally use ::create_mesh.
   ///
+  /// @note Collective.
+  ///
   /// @param[in] comm MPI Communicator.
   /// @param[in] topology Mesh topology.
   /// @param[in] geometry Mesh geometry.
@@ -43,6 +47,7 @@ public:
   }
 
   /// Copy constructor
+  /// @note Collective.
   /// @param[in] mesh Mesh to be copied
   Mesh(const Mesh& mesh) = default;
 

@@ -1,4 +1,5 @@
 // Copyright (C) 2024 Massimiliano Leoni
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -16,6 +17,7 @@
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
 #include <numeric>
+#include <stdexcept>
 #include <string>
 
 using namespace dolfinx;
@@ -29,7 +31,7 @@ void test_read_named_meshtags()
   constexpr std::int32_t material_value = 2;
 
   // Create mesh
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none, 2);
+  auto part = graph::partition_graph;
   auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {3, 3},
                              mesh::CellType::triangle, part));
@@ -73,7 +75,8 @@ void test_read_named_meshtags()
       = mesh_file.read_meshtags(*mesh, "material", "material", "/Xdmf/Domain");
   CHECK(mt_material.values().front() == material_value);
 
-  CHECK_THROWS(mesh_file.read_meshtags(*mesh, "mesh", "missing"));
+  CHECK_THROWS_AS(mesh_file.read_meshtags(*mesh, "mesh", "missing"),
+                  std::out_of_range);
   mesh_file.close();
 }
 } // namespace

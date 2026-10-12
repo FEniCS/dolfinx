@@ -13,7 +13,6 @@ import pytest
 from scipy.sparse import bsr_matrix
 
 import dolfinx
-import dolfinx.cpp as _cpp
 from dolfinx.mesh import create_unit_square
 
 
@@ -51,7 +50,7 @@ def mat_random():
         mesh.topology.create_entities(1)
         imap0 = mesh.topology.index_map(dim0)
         imap1 = mesh.topology.index_map(dim1)
-        sp = _cpp.la.SparsityPattern(mesh.comm, [imap0, imap1], bs)
+        sp = dolfinx.la.sparsity_pattern(mesh.comm, [imap0, imap1], bs)
         rows = np.arange(0, imap0.size_local)
         cols = np.arange(0, imap1.size_local + imap1.num_ghosts)
         sp.insert(rows, cols)

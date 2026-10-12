@@ -46,7 +46,7 @@ def nest_matrix_norm(A):
 class TestNLSPETSc:
     """Test nonlinear solver functionality with PETSc."""
 
-    def test_matrix_assembly_block_nl(self):
+    def test_matrix_assembly_block_nl(self) -> None:
         """Test assembly of block matrices and vectors.
 
         Tests monolithic blocked structures, PETSc Nest structures, and
@@ -215,7 +215,7 @@ class TestNLSPETSc:
         assert Anorm2 == pytest.approx(Anorm0, rtol_mono)
         assert bnorm2 == pytest.approx(bnorm0, rtol)
 
-    def test_assembly_solve_block_nl(self):
+    def test_assembly_solve_block_nl(self) -> None:
         """Solve a two-field nonlinear diffusion like problem with block
         matrix approaches and test that solution is the same.
         """
@@ -418,7 +418,7 @@ class TestNLSPETSc:
             create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
         ],
     )
-    def test_assembly_solve_taylor_hood_nl(self, mesh):
+    def test_assembly_solve_taylor_hood_nl(self, mesh) -> None:
         """Assemble Stokes problem with Taylor-Hood elements and solve."""
         from dolfinx.fem import petsc as fem_petsc
 

@@ -1,28 +1,62 @@
-// Copyright (C) 2025 Garth N. Wells
+// Copyright (C) 2025-2026 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "expr.h"
+#include <array>
 #include <basix/finite-element.h>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
+#include <cstddef>
+#include <cstdint>
 #include <dolfinx/fem/Expression.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
-#include <dolfinx/fem/utils.h>
+#include <dolfinx/fem/expression_evaluate.h>
+#include <dolfinx/fem/expression_factory.h>
+#include <dolfinx/fem/form_factory.h>
+#include <dolfinx/fem/functionspace_factory.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/utils.h>
+#include <functional>
+#include <memory>
+#include <span>
+#include <stdexcept>
+#include <ufcx.h>
+#include <vector>
 
 using namespace dolfinx;
+
+TEST_CASE("Form with a null coefficient or constant", "[form_coefficient]")
+{
+  std::array<std::uint64_t, 1> hashes{0};
+
+  ufcx_form form_w{};
+  form_w.num_coefficients = 1;
+  form_w.finite_element_hashes = hashes.data();
+  CHECK_THROWS_AS(fem::create_form_factory<double>({std::cref(form_w)}, {},
+                                                   {nullptr}, {}, {}, {}),
+                  std::invalid_argument);
+
+  ufcx_form form_c{};
+  form_c.num_constants = 1;
+  form_c.finite_element_hashes = hashes.data();
+  CHECK_THROWS_AS(fem::create_form_factory<double>({std::cref(form_c)}, {}, {},
+                                                   {nullptr}, {}, {}),
+                  std::invalid_argument);
+}
 
 namespace
 {
 void test_form_cmap_compat(const auto& V)
 {
   fem::create_form<double>(*form_expr_L1, {V}, {}, {}, {}, {});
-  CHECK_THROWS(fem::create_form<double>(*form_expr_L2, {V}, {}, {}, {}, {}));
+  CHECK_THROWS_AS(fem::create_form<double>(*form_expr_L2, {V}, {}, {}, {}, {}),
+                  std::invalid_argument);
 }
 
 void test_expression_cmap_compat(const auto& V)
@@ -56,8 +90,7 @@ TEST_CASE("Create Expression/Form (mismatch of mesh geometry)",
 {
   auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_box<double>(
       MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {0.96, 4.5, 2.0}}}, {2, 4, 5},
-      mesh::CellType::hexahedron,
-      mesh::create_cell_partitioner(mesh::GhostMode::none, 2)));
+      mesh::CellType::hexahedron, graph::partition_graph));
   auto element = basix::create_element<double>(
       basix::element::family::P, basix::cell::type::hexahedron, 1,
       basix::element::lagrange_variant::unset,
@@ -65,9 +98,60 @@ TEST_CASE("Create Expression/Form (mismatch of mesh geometry)",
 
   auto V = std::make_shared<fem::FunctionSpace<double>>(
       fem::create_functionspace<double>(
-          mesh, std::make_shared<fem::FiniteElement<double>>(
-                    element, std::vector<std::size_t>{3})));
+          mesh,
+          std::make_shared<fem::FiniteElement<double>>(
+              element, mesh->geometry().dim(), std::vector<std::size_t>{3})));
 
   test_form_cmap_compat(V);
   test_expression_cmap_compat(V);
+}
+
+TEST_CASE("Form with data on a mesh of the wrong dimension",
+          "[form_entity_domain]")
+{
+  // `Form` maps an integration entity to a *cell* of the argument's
+  // mesh, so a ridge integral cannot take data on a facet submesh. FFCx
+  // rejects the combination when compiling a kernel, so this is reached
+  // only by building a Form directly, as here.
+  auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_box<double>(
+      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {2, 2, 2},
+      mesh::CellType::tetrahedron, graph::partition_graph));
+  const int tdim = mesh->topology()->dim();
+  mesh->topology_mutable()->create_entities(tdim - 1);
+  mesh->topology_mutable()->create_entities(tdim - 2);
+  mesh->topology_mutable()->create_connectivity(tdim, tdim - 2);
+
+  // A submesh of the facets, i.e. one dimension too high for a ridge
+  auto facets = mesh::locate_entities(
+      *mesh, tdim - 1,
+      [](auto x) { return std::vector<std::int8_t>(x.extent(1), 1); });
+  auto [submesh, e_map, v_map, g_map]
+      = mesh::create_submesh(*mesh, tdim - 1, facets);
+  auto smesh = std::make_shared<mesh::Mesh<double>>(std::move(submesh));
+
+  auto element = basix::create_element<double>(
+      basix::element::family::P, basix::cell::type::triangle, 1,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false);
+  auto V = std::make_shared<fem::FunctionSpace<double>>(
+      fem::create_functionspace<double>(
+          smesh,
+          std::make_shared<fem::FiniteElement<double>>(
+              element, mesh->geometry().dim(), std::vector<std::size_t>{})));
+
+  auto kernel = [](double*, const double*, const double*, const double*,
+                   const int*, const uint8_t*, void*) {};
+  std::map integrals{
+      std::pair{std::tuple{fem::IntegralType::ridge, -1, 0},
+                fem::integral_data<double>(kernel, std::vector<std::int32_t>{},
+                                           std::vector<int>{})}};
+
+  auto build_form = [&V, &integrals, &mesh, &e_map]()
+  {
+    return fem::Form<double, double>({V}, integrals, mesh, {}, {}, false,
+                                     {std::cref(e_map)});
+  };
+
+  CHECK_THROWS_WITH(build_form(), Catch::Matchers::ContainsSubstring(
+                                      "integration entities of dimension"));
 }

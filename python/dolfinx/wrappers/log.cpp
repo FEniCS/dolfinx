@@ -1,16 +1,16 @@
-// Copyright (C) 2017 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <dolfinx/common/log.h>
-#include <iostream>
+#include <format>
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <spdlog/sinks/basic_file_sink.h>
-
+#include <stdexcept>
 #include <string>
 
 namespace nb = nanobind;
@@ -35,12 +35,13 @@ void log(nb::module_& m)
       {
         try
         {
-          auto logger = spdlog::basic_logger_mt("dolfinx", filename.c_str());
-          spdlog::set_default_logger(logger);
+          spdlog::set_default_logger(
+              spdlog::basic_logger_mt("dolfinx", filename));
         }
         catch (const spdlog::spdlog_ex& ex)
         {
-          std::cout << "Log init failed: " << ex.what() << "\n";
+          throw std::runtime_error(
+              std::format("Log initialisation failed: {}", ex.what()));
         }
       },
       nb::arg("filename"));
@@ -49,9 +50,8 @@ void log(nb::module_& m)
       "set_thread_name",
       [](const std::string& thread_name)
       {
-        std::string fmt
-            = "[%Y-%m-%d %H:%M:%S.%e] [" + thread_name + "] [%l] %v";
-        spdlog::set_pattern(fmt);
+        spdlog::set_pattern(
+            std::format("[%Y-%m-%d %H:%M:%S.%e] [{}] [%l] %v", thread_name));
       },
       nb::arg("thread_name"));
 
@@ -66,28 +66,27 @@ void log(nb::module_& m)
         switch (level)
         {
         case (spdlog::level::level_enum::trace):
-          spdlog::trace(s.c_str());
+          spdlog::trace(s);
           break;
         case (spdlog::level::level_enum::debug):
-          spdlog::debug(s.c_str());
+          spdlog::debug(s);
           break;
         case (spdlog::level::level_enum::info):
-          spdlog::info(s.c_str());
+          spdlog::info(s);
           break;
         case (spdlog::level::level_enum::warn):
-          spdlog::warn(s.c_str());
+          spdlog::warn(s);
           break;
         case (spdlog::level::level_enum::err):
-          spdlog::error(s.c_str());
+          spdlog::error(s);
           break;
         case (spdlog::level::level_enum::critical):
-          spdlog::critical(s.c_str());
+          spdlog::critical(s);
           break;
         case (spdlog::level::level_enum::off):
           break;
         default:
-          throw std::runtime_error("Log level not supported");
-          break;
+          throw std::invalid_argument("Log level not supported.");
         }
       },
       nb::arg("level"), nb::arg("s"));

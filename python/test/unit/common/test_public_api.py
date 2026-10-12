@@ -23,7 +23,7 @@ def collect_pkg_modules_recursive(name):
 
 
 @pytest.mark.skip("Test fails when using shared linking with nanobind")
-def test_all_implemented():
+def test_all_implemented() -> None:
     """flake8 does not catch its warning code F822: whether the public API
     offered by the members of __all__ are implemented. We therefore manually
     check.

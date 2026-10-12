@@ -4,7 +4,26 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 // ```
 
-// # Interpolation different meshes
+// # Interpolation between different meshes
+//
+// This demo illustrates how to:
+//
+// * Interpolate a vector-valued function between two unrelated
+//   meshes that discretise the same domain with different cell types
+//   (a tetrahedral mesh and a hexahedral mesh)
+//   and different Lagrange degrees
+// * Create the point-ownership data needed by
+//   `dolfinx::fem::create_interpolation_data()` for a non-matching-mesh
+//   interpolation
+//
+// A vector field is first interpolated from an analytical expression
+// into a piecewise linear Lagrange space on the tetrahedral mesh, and
+// is then interpolated from there into a piecewise quadratic Lagrange
+// space on the hexahedral mesh.
+//
+// Running this demo requires the files:
+// {download}`demo_interpolation_different_meshes/main.cpp` and
+// {download}`demo_interpolation_different_meshes/CMakeLists.txt`.
 
 #include <basix/e-lagrange.h>
 #include <dolfinx/fem/dolfinx_fem.h>
@@ -39,7 +58,8 @@ int main(int argc, char* argv[])
     auto V_tet = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace<double>(
             mesh_tet, std::make_shared<fem::FiniteElement<double>>(
-                          element_tet, std::vector<std::size_t>{3})));
+                          element_tet, mesh_tet->geometry().dim(),
+                          std::vector<std::size_t>{3})));
 
     basix::FiniteElement element_hex = basix::element::create_lagrange<double>(
         mesh::cell_type_to_basix_type(mesh_hex->topology()->cell_type()), 2,
@@ -47,7 +67,8 @@ int main(int argc, char* argv[])
     auto V_hex = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace<double>(
             mesh_hex, std::make_shared<fem::FiniteElement<double>>(
-                          element_hex, std::vector<std::size_t>{3})));
+                          element_hex, mesh_hex->geometry().dim(),
+                          std::vector<std::size_t>{3})));
 
     auto u_tet = std::make_shared<fem::Function<T>>(V_tet);
     auto u_hex = std::make_shared<fem::Function<T>>(V_hex);
@@ -80,7 +101,7 @@ int main(int argc, char* argv[])
             u_hex->function_space()->mesh()->geometry(),
             *u_hex->function_space()->element(),
             *u_tet->function_space()->mesh(), cells, 1e-8);
-    // Tolerance and maximum number of iterations for nonaffine pullbacks
+    // Tolerance and maximum number of iterations for the pullback
     const double eps = 1.0e4 * std::numeric_limits<T>::epsilon();
     int max_iter = 15;
     u_hex->interpolate(*u_tet, cells, eps, max_iter, interpolation_data);

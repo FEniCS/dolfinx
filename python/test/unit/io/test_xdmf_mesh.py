@@ -11,19 +11,24 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx import cpp as _cpp
-from dolfinx import default_real_type
+import basix.ufl
+import dolfinx
+import ufl
+from dolfinx import default_real_type, fem
 from dolfinx.io import XDMFFile
 from dolfinx.io.gmsh import cell_perm_array, ufl_mesh
 from dolfinx.mesh import (
     CellType,
     GhostMode,
+    cell_dim,
+    compute_midpoints,
     create_mesh,
     create_submesh,
     create_unit_cube,
     create_unit_interval,
     create_unit_square,
     locate_entities,
+    to_type,
 )
 
 # Supported XDMF file encoding
@@ -49,7 +54,7 @@ def mesh_factory(tdim, n, ghost_mode=GhostMode.shared_facet, dtype=default_real_
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_1d_mesh(tempdir, encoding):
+def test_save_and_load_1d_mesh(tempdir, encoding) -> None:
     filename = Path(tempdir, "mesh.xdmf")
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
@@ -66,7 +71,7 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
+def test_save_and_load_2d_mesh(tempdir, encoding, cell_type) -> None:
     filename = Path(tempdir, "mesh.xdmf")
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type)
     mesh.name = "square"
@@ -89,7 +94,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
+def test_save_and_load_3d_mesh(tempdir, encoding, cell_type) -> None:
     filename = Path(tempdir, "mesh.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 12, 12, 8, cell_type)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
@@ -104,6 +109,40 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
         topology.index_map(topology.dim).size_global
         == topology2.index_map(topology.dim).size_global
     )
+
+
+@pytest.mark.parametrize("num_threads", [1, 4])
+def test_read_write_num_threads(tempdir, num_threads) -> None:
+    filename = Path(tempdir, "mesh_num_threads.xdmf")
+    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4)
+    with XDMFFile(mesh.comm, filename, "w") as file:
+        file.write_mesh(mesh)
+
+    with XDMFFile(MPI.COMM_WORLD, filename, "r") as file:
+        mesh_1 = file.read_mesh(num_threads=1)
+    with XDMFFile(MPI.COMM_WORLD, filename, "r") as file:
+        mesh_n = file.read_mesh(num_threads=num_threads)
+
+    for m in (mesh_1, mesh_n):
+        assert (
+            m.topology.index_map(m.topology.dim).size_global
+            == mesh.topology.index_map(mesh.topology.dim).size_global
+        )
+        assert m.topology.index_map(0).size_global == mesh.topology.index_map(0).size_global
+
+    vol_1 = mesh_1.comm.allreduce(
+        dolfinx.fem.assemble_scalar(
+            dolfinx.fem.form(1 * ufl.dx(domain=mesh_1), dtype=mesh_1.geometry.x.dtype)
+        ),
+        op=MPI.SUM,
+    )
+    vol_n = mesh_n.comm.allreduce(
+        dolfinx.fem.assemble_scalar(
+            dolfinx.fem.form(1 * ufl.dx(domain=mesh_n), dtype=mesh_n.geometry.x.dtype)
+        ),
+        op=MPI.SUM,
+    )
+    assert np.isclose(vol_1, vol_n)
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
@@ -152,7 +191,7 @@ def test_read_write_p2_mesh(tempdir, encoding):
         cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
 
     domain = ufl_mesh(gmsh_cell_id, 3, dtype=default_real_type)
-    cell_type = _cpp.mesh.to_type(str(domain.ufl_cell()))
+    cell_type = to_type(str(domain.ufl_cell()))
     cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x)
@@ -171,13 +210,81 @@ def test_read_write_p2_mesh(tempdir, encoding):
     )
 
 
+def _serendipity_mesh(comm, cell_type):
+    """Build a degree-2 serendipity mesh from a linear one.
+
+    A serendipity cell has a node on each vertex and each edge and none
+    inside, so the geometry is the linear one plus the edge midpoints.
+    """
+    gdim = cell_dim(cell_type)
+    e = basix.ufl.element(
+        basix.ElementFamily.serendipity,
+        cell_type.name,
+        2,
+        lagrange_variant=basix.LagrangeVariant.equispaced,
+        dpc_variant=basix.DPCVariant.simplex_equispaced,
+        shape=(gdim,),
+    )
+
+    if comm.rank == 0:
+        if gdim == 2:
+            msh = create_unit_square(MPI.COMM_SELF, 4, 5, cell_type=cell_type)
+        else:
+            msh = create_unit_cube(MPI.COMM_SELF, 2, 3, 2, cell_type=cell_type)
+        tdim = msh.topology.dim
+        # Gives both directions, which compute_midpoints needs
+        msh.topology.create_connectivity(1, tdim)
+        x = msh.geometry.x
+        midpoints = compute_midpoints(
+            msh, 1, np.arange(msh.topology.index_map(1).size_local, dtype=np.int32)
+        )
+        vertices = msh.geometry.dofmaps[0]
+        edges = msh.topology.connectivity(tdim, 1).array.reshape(vertices.shape[0], -1)
+        cells = np.hstack([vertices, edges + x.shape[0]]).astype(np.int64)
+        nodes = np.vstack([x, midpoints])[:, :gdim]
+    else:
+        cells = np.empty((0, e.basix_element.dim), dtype=np.int64)
+        nodes = np.empty((0, gdim), dtype=default_real_type)
+
+    return create_mesh(comm, cells, e, nodes)
+
+
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
+@pytest.mark.parametrize("cell_type", [CellType.quadrilateral, CellType.hexahedron])
+@pytest.mark.parametrize("encoding", encodings)
+def test_read_write_serendipity_mesh(tempdir, encoding, cell_type) -> None:
+    """A degree-2 serendipity geometry survives a round-trip.
+
+    Its node count belongs to no Lagrange element, so the layout needs
+    its own entry in the VTK node ordering map that XDMF uses.
+    """
+    msh = _serendipity_mesh(MPI.COMM_WORLD, cell_type)
+
+    filename = Path(tempdir, f"serendipity_{cell_type.name}.xdmf")
+    with XDMFFile(msh.comm, filename, "w", encoding=encoding) as file:
+        file.write_mesh(msh)
+    with XDMFFile(msh.comm, filename, "r", encoding=encoding) as file:
+        msh2 = file.read_mesh()
+
+    assert msh2.geometry.dofmaps[0].shape[1] == msh.geometry.dofmaps[0].shape[1]
+    for dim in (0, msh.topology.dim):
+        assert msh2.topology.index_map(dim).size_global == msh.topology.index_map(dim).size_global
+
+    # The midpoints lie on straight edges, so the cells are undistorted
+    # and the measure is still that of the unit square/cube. A mismatched
+    # node ordering curves them and changes it.
+    for m in (msh, msh2):
+        volume = m.comm.allreduce(fem.assemble_scalar(fem.form(1.0 * ufl.dx(domain=m))), op=MPI.SUM)
+        assert np.isclose(volume, 1.0)
+
+
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 5])
 @pytest.mark.parametrize("codim", [0, 1])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_submesh(tempdir, d, n, codim, ghost_mode, encoding, dtype):
+def test_submesh(tempdir, d, n, codim, ghost_mode, encoding, dtype) -> None:
     mesh = mesh_factory(d, n, ghost_mode, dtype=dtype)
     edim = d - codim
     entities = locate_entities(mesh, edim, lambda x: x[0] > 0.4999)

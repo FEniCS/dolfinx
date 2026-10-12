@@ -1,17 +1,24 @@
-// Copyright (C) 2021 Garth N. Wells
+// Copyright (C) 2021-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <cstdint>
+#include <dolfinx/io/cells.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <initializer_list>
+#include <stdexcept>
+
 #ifdef HAS_ADIOS2
 
 #include <algorithm>
-#include <catch2/catch_test_macros.hpp>
 #include <concepts>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/utils.h>
+#include <dolfinx/fem/functionspace_factory.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
@@ -38,7 +45,8 @@ void test_vtx_reuse_mesh()
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
-      mesh, std::make_shared<fem::FiniteElement<T>>(e)));
+      mesh,
+      std::make_shared<fem::FiniteElement<T>>(e, mesh->geometry().dim())));
 
   // Create a finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
@@ -62,3 +70,95 @@ TEST_CASE("VTX reuse mesh")
 }
 
 #endif
+
+TEST_CASE("Prism and pyramid cell degree", "[io][cells]")
+{
+  using dolfinx::mesh::CellType;
+  namespace cells = dolfinx::io::cells;
+  CHECK(cells::cell_degree(CellType::prism, 6) == 1);
+  CHECK(cells::cell_degree(CellType::prism, 18) == 2);
+  CHECK(cells::cell_degree(CellType::pyramid, 5) == 1);
+  CHECK(cells::cell_degree(CellType::pyramid, 14) == 2);
+  CHECK_THROWS_AS(cells::cell_degree(CellType::prism, 17),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(cells::cell_degree(CellType::pyramid, 15),
+                  std::invalid_argument);
+
+  // Serendipity, not Lagrange: a degree would collide with the 18-node
+  // wedge and the 14-node pyramid, which VTKHDF reads keyed on degree
+  CHECK_THROWS_AS(cells::cell_degree(CellType::prism, 15),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(cells::cell_degree(CellType::pyramid, 13),
+                  std::invalid_argument);
+}
+
+TEST_CASE("VTK cell type round-trip", "[io][cells]")
+{
+  using dolfinx::mesh::CellType;
+  namespace cells = dolfinx::io::cells;
+
+  // One layout per shape, with the identifier transcribed from
+  // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html so that
+  // the test is anchored to VTK and not only to the inverse map, which
+  // could agree with a mistake.
+  auto [cell, num_nodes, expected]
+      = GENERATE(Catch::Generators::table<CellType, int, std::int8_t>(
+          {{CellType::point, 1, 1},
+           {CellType::interval, 3, 68},
+           {CellType::triangle, 6, 69},
+           {CellType::quadrilateral, 9, 70},
+           {CellType::quadrilateral, 8, 23},
+           {CellType::tetrahedron, 10, 71},
+           {CellType::hexahedron, 27, 72},
+           {CellType::hexahedron, 20, 25},
+           {CellType::prism, 18, 73},
+           {CellType::pyramid, 5, 14}}));
+
+  const std::int8_t vtk = cells::get_vtk_cell_type(cell, num_nodes);
+  CHECK(vtk == expected);
+
+  // The inverse must give back the shape and the layout it was handed.
+  // Fixed-order types carry their degree; Lagrange types report -1.
+  auto [cell_out, degree] = cells::vtk_to_dolfinx(vtk);
+  CHECK(cell_out == cell);
+  if (cell == CellType::pyramid)
+    CHECK(degree == cells::cell_degree(cell, num_nodes));
+  else if (vtk == 23 or vtk == 25)
+    CHECK(degree == 2);
+  else
+    CHECK(degree == -1);
+}
+
+TEST_CASE("VTK invalid tensor-product layouts", "[io][cells]")
+{
+  using dolfinx::mesh::CellType;
+  namespace cells = dolfinx::io::cells;
+  for (int num_nodes : {-1, 0, 1, 7, 10, 12})
+  {
+    CHECK_THROWS_AS(
+        cells::get_vtk_cell_type(CellType::quadrilateral, num_nodes),
+        std::invalid_argument);
+  }
+  for (int num_nodes : {-1, 0, 1, 7, 21, 26})
+  {
+    CHECK_THROWS_AS(cells::get_vtk_cell_type(CellType::hexahedron, num_nodes),
+                    std::invalid_argument);
+  }
+}
+
+TEST_CASE("VTK pyramid layouts above linear", "[io][cells]")
+{
+  using dolfinx::mesh::CellType;
+  namespace cells = dolfinx::io::cells;
+
+  // VTK has no arbitrary-degree Lagrange pyramid, and its quadratic one
+  // is the 13-node serendipity cell, which basix cannot express. So the
+  // linear pyramid is the only one DOLFINx can write, and the rest are
+  // rejected rather than mislabelled as it.
+  CHECK_THROWS_AS(cells::get_vtk_cell_type(CellType::pyramid, 13),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(cells::get_vtk_cell_type(CellType::pyramid, 14),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(cells::get_vtk_cell_type(CellType::pyramid, 30),
+                  std::invalid_argument);
+}

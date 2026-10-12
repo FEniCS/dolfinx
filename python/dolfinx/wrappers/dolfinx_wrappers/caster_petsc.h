@@ -8,6 +8,7 @@
 
 #if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
 
+#include <dolfinx/common/petsc.h>
 #include <nanobind/nanobind.h>
 #include <petsc4py/petsc4py.h>
 #include <petscis.h>
@@ -16,8 +17,6 @@
 #include <petscvec.h>
 
 // nanobind casters for PETSc/petsc4py objects
-
-namespace nb = nanobind;
 
 // Import petsc4py on demand
 #define VERIFY_PETSC4PY_FROMPY(func)                                           \
@@ -60,8 +59,10 @@ namespace nb = nanobind;
       if (policy == rv_policy::take_ownership)                                 \
       {                                                                        \
         PyObject* obj = PyPetsc##P4PYTYPE##_New(src);                          \
-        PetscObjectDereference((PetscObject)src);                              \
-        return nb::handle(obj);                                                \
+        dolfinx::common::petsc::check(                                         \
+            PetscObjectDereference((PetscObject)src),                          \
+            "PetscObjectDereference");                                         \
+        return handle(obj);                                                    \
       }                                                                        \
       else if (policy == rv_policy::automatic                                  \
                or policy == rv_policy::automatic_reference                     \
@@ -69,7 +70,7 @@ namespace nb = nanobind;
                or policy == rv_policy::reference_internal)                     \
       {                                                                        \
         PyObject* obj = PyPetsc##P4PYTYPE##_New(src);                          \
-        return nb::handle(obj);                                                \
+        return handle(obj);                                                    \
       }                                                                        \
       else                                                                     \
       {                                                                        \

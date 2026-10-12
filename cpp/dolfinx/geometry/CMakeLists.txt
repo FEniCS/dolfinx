@@ -1,8 +1,5 @@
-set(
-  HEADERS_geometry
-  ${CMAKE_CURRENT_SOURCE_DIR}/BoundingBoxTree.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/gjk.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_geometry.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
-  PARENT_SCOPE
+target_sources(
+  dolfinx
+  PUBLIC
+    FILE_SET HEADERS FILES BoundingBoxTree.h dolfinx_geometry.h gjk.h utils.h
 )
