@@ -10,6 +10,7 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import basix.ufl
 from dolfinx import fem, mesh
 
 
@@ -136,3 +137,28 @@ def test_inconsistent_points_and_cells(dtype):
     x = np.zeros((2, 3), dtype=dtype)
     with pytest.raises(ValueError):
         fem.evaluate_basis_functions(V, x, np.zeros(1, dtype=np.int32))
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_blocked_matches_scalar_basis(dtype):
+    """A blocked space evaluates the basis of its scalar sub-element.
+
+    The basis is tabulated for one block, so the dof transformation must
+    be applied with the scalar element's block size. Serendipity degree
+    4 has dof transformations that are not permutations, which makes a
+    wrong block size change the values (Lagrange, whose transformations
+    are the identity, does not catch this).
+    """
+    msh = _create_mesh(mesh.CellType.quadrilateral, dtype)
+    scalar = basix.ufl.element("Serendipity", "quadrilateral", 4, dtype=dtype)
+    V = fem.functionspace(msh, scalar)
+    W = fem.functionspace(msh, basix.ufl.blocked_element(scalar, shape=(2,)))
+
+    rng = np.random.default_rng(7)
+    x = _interior_points(msh, rng)
+    cells = np.arange(x.shape[0], dtype=np.int32)
+    tol = _pull_back_tol(dtype)
+    blocked = fem.evaluate_basis_functions(W, x, cells, tol=tol)
+    reference = fem.evaluate_basis_functions(V, x, cells, tol=tol)
+    assert blocked.shape == reference.shape
+    np.testing.assert_allclose(blocked, reference)

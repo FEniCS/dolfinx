@@ -359,8 +359,9 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 /// @param[in] values Function values at the interpolation points,
 /// `shape=(num_points, num_functions, value_size)`.
 /// @param[in] bs The block size.
-/// @param[out] A Coefficients, `shape=(num_dofs * bs, num_functions)`,
-/// row-major.
+/// @param[out] A Coefficients, row-major. Shape is `(num_points,
+/// value_size, num_functions)` if `interpolation_ident` is `true`,
+/// otherwise `(num_dofs * bs, num_functions)`.
 template <bool interpolation_ident, dolfinx::scalar T, std::floating_point U>
 void interpolation_apply_columns(mdspan_t<const U, 2> Pi,
                                  mdspan_t<const U, 3> values, int bs,
@@ -1411,8 +1412,10 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
   using K_t = mdspan_t<const T, 2>;
   auto push_forward_fn
       = element.basix_element().template map_fn<u_t, U_t, J_t, K_t>();
+  // The basis is tabulated for the scalar sub-element (one block), so the
+  // scalar-element transformation is required
   auto apply_dof_transformation
-      = element.template dof_transformation_fn<T>(doftransform::standard);
+      = element.template dof_transformation_fn<T>(doftransform::standard, true);
 
   std::vector<T> basis_b(space_dimension * value_size);
   mdspan_t<T, 2> basis(basis_b.data(), space_dimension, value_size);

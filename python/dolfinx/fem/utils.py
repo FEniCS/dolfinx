@@ -175,8 +175,20 @@ def evaluate_basis_functions(
         cell's degrees-of-freedom, and ``value_size`` is the physical
         value size of one block.
     """
-    _x = np.asarray(x, dtype=V.mesh.geometry.x.dtype).reshape(-1, 3)
-    _cells = np.asarray(cells, dtype=np.int32).reshape(-1)
+    _x = np.asarray(x, dtype=V.mesh.geometry.x.dtype)
+    if _x.ndim >= 3:
+        raise ValueError("x must be a 1D or 2D array of points.")
+    _x = (
+        _x.reshape(-1, 3)
+        if _x.size == 0
+        else np.reshape(_x, (_x.shape[0] if _x.ndim == 2 else 1, -1))
+    )
+    if _x.shape[1] != 3:
+        raise ValueError("Coordinate(s) for basis evaluation must have length 3.")
+    _cells = np.asarray(cells, dtype=np.int32)
+    if _cells.ndim >= 2:
+        raise ValueError("cells must be a 1D array of cell indices.")
+    _cells = np.reshape(_cells, _cells.shape[0] if _cells.ndim == 1 else 1)
     return _evaluate_basis_functions(V._cpp_object, _x, _cells, tol, maxit)
 
 
