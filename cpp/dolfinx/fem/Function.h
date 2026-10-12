@@ -318,7 +318,8 @@ public:
   /// @param[in] maxit Maximum number of Newton iterations in non-affine
   /// pull-back. If the mesh geometry is affine this argument is ignored.
   /// @param[in] num_threads Number of threads. The points are split into
-  /// contiguous chunks, one per thread.
+  /// contiguous chunks, one per thread. Must be >= 1.
+  /// @throws std::invalid_argument If `num_threads < 1`.
   void eval(std::span<const geometry_type> x, std::array<std::size_t, 2> xshape,
             mesh::CellRange auto&& cells, std::span<value_type> u,
             std::array<std::size_t, 2> ushape, double tol, int maxit,

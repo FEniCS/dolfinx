@@ -169,7 +169,7 @@ def evaluate_basis_functions(
         maxit: Maximum number of Newton iterations for non-affine
             pull-backs.
         num_threads: Number of threads. The points are split into
-            contiguous chunks, one per thread.
+            contiguous chunks, one per thread. Must be >= 1.
 
     Returns:
         Basis values with shape ``(num_points, num_basis_functions,

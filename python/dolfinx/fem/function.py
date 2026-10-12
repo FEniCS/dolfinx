@@ -460,7 +460,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             maxit: Maximum number of Newton iterations for
                 nonaffine pullbacks.
             num_threads: Number of threads. The points are split into
-                contiguous chunks, one per thread.
+                contiguous chunks, one per thread. Must be >= 1.
         """
         # Make sure input coordinates are a NumPy array
         _x = np.asarray(x, dtype=self._V.mesh.geometry.x.dtype)

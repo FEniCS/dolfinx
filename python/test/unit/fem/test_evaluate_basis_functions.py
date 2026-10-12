@@ -230,3 +230,18 @@ def test_blocked_matches_scalar_basis(dtype):
     reference = fem.evaluate_basis_functions(V, x, cells, tol=tol)
     assert blocked.shape == reference.shape
     np.testing.assert_allclose(blocked, reference)
+
+
+def test_num_threads_invalid():
+    """num_threads < 1 is rejected, as elsewhere in the library."""
+    msh = _create_mesh(mesh.CellType.triangle, np.float64)
+    V = fem.functionspace(msh, ("Lagrange", 1))
+    x = _interior_points(msh, np.random.default_rng(3))
+    cells = np.arange(x.shape[0], dtype=np.int32)
+
+    with pytest.raises(ValueError):
+        fem.evaluate_basis_functions(V, x, cells, num_threads=0)
+
+    u = fem.Function(V)
+    with pytest.raises(ValueError):
+        u.eval(x, cells, num_threads=0)

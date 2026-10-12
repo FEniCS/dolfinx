@@ -1291,7 +1291,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 /// @param[in] maxit Maximum number of Newton iterations for non-affine
 /// pull-backs. Ignored for affine geometries.
 /// @param[in] num_threads Number of threads. The points are split into
-/// contiguous chunks, one per thread.
+/// contiguous chunks, one per thread. Must be >= 1.
 /// @param[in] fn Callable `fn(p, cells[p], basis)` invoked for each
 /// point `p` with a non-negative cell index. `basis` has shape
 /// `(space_dimension / block_size, physical_base_value_size)` and is
@@ -1303,6 +1303,9 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
                     mesh::CellRange auto&& cells, double tol, int maxit,
                     int num_threads, auto&& fn)
 {
+  if (num_threads < 1)
+    throw std::invalid_argument("num_threads must be >= 1.");
+
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t tdim = mesh.topology()->dim();
   const CoordinateElement<T>& cmap = mesh.geometry().cmaps().front();
@@ -1481,8 +1484,8 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
   };
 
   const std::size_t num_points = _cells.size();
-  const int num_chunks = static_cast<int>(
-      std::min<std::size_t>(std::max(num_threads, 1), num_points));
+  const int num_chunks
+      = static_cast<int>(std::min<std::size_t>(num_threads, num_points));
   if (num_chunks < 2)
   {
     evaluate_chunk(0, num_points);
@@ -1560,7 +1563,8 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
 /// @param[in] maxit Maximum number of Newton iterations for non-affine
 /// pull-backs. Ignored for affine geometries.
 /// @param[in] num_threads Number of threads. The points are split into
-/// contiguous chunks, one per thread.
+/// contiguous chunks, one per thread. Must be >= 1.
+/// @throws std::invalid_argument If `num_threads < 1`.
 template <std::floating_point T>
 void evaluate_basis_functions(const FunctionSpace<T>& V, std::span<const T> x,
                               std::array<std::size_t, 2> xshape,
