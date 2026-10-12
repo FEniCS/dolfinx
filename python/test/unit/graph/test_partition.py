@@ -58,10 +58,15 @@ def test_partition_distributed() -> None:
 def test_partition_ghosting() -> None:
     """Ghosting reports the parts sharing a node, the owner first."""
     g = dual_graph(MPI.COMM_SELF, 12)
-    plain = graph.partition(MPI.COMM_SELF, 4, g)
     ghosted = graph.partition(MPI.COMM_SELF, 4, g, ghosting=True)
-    assert np.array_equal(owners(plain), owners(ghosted))
-    assert all(len(ghosted.links(i)) >= 1 for i in range(ghosted.num_nodes))
+    assert ghosted.num_nodes == g.num_nodes
+    parts = owners(ghosted)
+    assert parts.min() >= 0 and parts.max() < 4
+    for i in range(g.num_nodes):
+        expected = {parts[i]} | set(parts[g.links(i)])
+        destinations = ghosted.links(i)
+        assert set(destinations) == expected
+        assert len(destinations) == len(expected)
 
 
 @pytest.mark.skipif(not hasattr(graph, "partitioner_scotch"), reason="DOLFINx built without SCOTCH")
