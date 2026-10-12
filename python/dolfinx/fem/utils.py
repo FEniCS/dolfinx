@@ -177,9 +177,7 @@ def evaluate_basis_functions(
     """
     _x = np.asarray(x, dtype=V.mesh.geometry.x.dtype).reshape(-1, 3)
     _cells = np.asarray(cells, dtype=np.int32).reshape(-1)
-    return _evaluate_basis_functions(
-        V.element._cpp_object, V.mesh._cpp_object, _x, _cells, tol, maxit
-    )
+    return _evaluate_basis_functions(V._cpp_object, _x, _cells, tol, maxit)
 
 
 def discrete_curl(V0: FunctionSpace, V1: FunctionSpace) -> _MatrixCSR:

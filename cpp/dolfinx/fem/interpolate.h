@@ -1444,14 +1444,13 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
 /// expanded in it (e.g. interpolation matrices between non-matching
 /// meshes, or point-based constraints), need not reimplement it.
 ///
-/// @note If `element` needs dof transformations and the cell
+/// @note If the element of `V` needs dof transformations and the cell
 /// permutations of the mesh topology have not yet been computed, they
 /// are created here (Topology::create_cell_permutations), which is
 /// collective.
 ///
-/// @param[in] element Element to evaluate. Its block size is ignored,
-/// i.e. the basis of one block is evaluated.
-/// @param[in] mesh Mesh that `element` is defined on.
+/// @param[in] V Function space whose basis is evaluated. For a blocked
+/// space the basis of one block is evaluated.
 /// @param[in] x Points in physical (not reference) space,
 /// `shape=(num_points, xshape[1])`, row-major, with `xshape[1]` at least
 /// the geometric dimension.
@@ -1467,13 +1466,17 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
 /// @param[in] maxit Maximum number of Newton iterations for non-affine
 /// pull-backs. Ignored for affine geometries.
 template <std::floating_point T>
-void evaluate_basis_functions(const FiniteElement<T>& element,
-                              const mesh::Mesh<T>& mesh, std::span<const T> x,
+void evaluate_basis_functions(const FunctionSpace<T>& V, std::span<const T> x,
                               std::array<std::size_t, 2> xshape,
                               mesh::CellRange auto&& cells, std::span<T> basis,
                               std::array<std::size_t, 3> bshape, double tol,
                               int maxit)
 {
+  assert(V.element());
+  assert(V.mesh());
+  const FiniteElement<T>& element = *V.element();
+  const mesh::Mesh<T>& mesh = *V.mesh();
+
   if (x.size() != xshape[0] * xshape[1])
     throw std::invalid_argument("Shape of x does not match its size.");
   if (xshape[0] != cells.size())
