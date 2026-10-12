@@ -12,7 +12,8 @@
 #
 # This demo computes the distance to the boundary of a Möbius strip by
 # solving the eikonal equation with the latent variable proximal point
-# (LVPP) algorithm of {cite:t}`dokken2025lvpp`. It illustrates how to
+# (LVPP) algorithm of {cite:t}`eikonal-dokken2025lvpp`. It illustrates
+# how to
 #
 # * solve a problem with a pointwise inequality constraint, here
 #   $|\nabla_\Omega u| \le 1$, without ever forming the constraint,
@@ -21,7 +22,7 @@
 #
 # ```{admonition} Difference from the paper
 # :class: note
-# {cite:t}`dokken2025lvpp` solves the eikonal equation in this
+# {cite:t}`eikonal-dokken2025lvpp` solves the eikonal equation in this
 # Raviart-Thomas mixed form on flat surfaces, and on manifolds without a
 # Raviart-Thomas space. What is new here is the combination: a
 # Raviart-Thomas latent variable on a manifold, and one that cannot be
@@ -357,5 +358,7 @@ if mesh.comm.rank == 0:
 
 # ## References
 # ```{bibliography}
-# :filter: docname in docnames
+#    :filter: cited
+#    :labelprefix:
+#    :keyprefix: eikonal-
 # ```
