@@ -1,5 +1,4 @@
 // Copyright (C) 2022-2026 Igor A. Baratta and Garth N. Wells
-// Copyright (C) 2026 OpenAI
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
