@@ -1,4 +1,5 @@
 // Copyright (C) 2026 Jack S. Hale
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -61,7 +62,10 @@ nls::petsc::SNESSolver::SNESSolver(MPI_Comm comm) : _snes(nullptr)
 nls::petsc::SNESSolver::SNESSolver(SNES snes, bool inc_ref_count) : _snes(snes)
 {
   if (!_snes)
-    throw std::runtime_error("PETSc SNES must be initialised before wrapping");
+  {
+    throw std::invalid_argument(
+        "PETSc SNES must be initialised before wrapping");
+  }
 
   if (inc_ref_count)
   {

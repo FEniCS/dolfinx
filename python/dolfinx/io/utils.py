@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2022 Chris N. Richardson, Garth N. Wells,
+# Copyright (C) 2017-2026 Chris N. Richardson, Garth N. Wells,
 # Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -86,7 +86,7 @@ if _cpp.common.has_adios2:
             elif np.issubdtype(dtype, np.float64):
                 _vtxwriter = _cpp.io.VTXWriter_float64  # type: ignore[assignment]
             else:
-                raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
+                raise TypeError(f"VTXWriter does not support dtype={dtype}.")
 
             if isinstance(output, Mesh):
                 self._cpp_object = _vtxwriter(  # type: ignore[no-matching-overload]
@@ -385,31 +385,34 @@ class XDMFFile:
                 cell_shape.name,
                 2,
             )
-            # Create a custom element that is serendipity but uses points
-            # evaluations on edges
-            geometry = basix.cell.geometry(s_el.basix_element.cell_type)
-            topology = basix.cell.topology(s_el.basix_element.cell_type)
+            # Create a custom element that is serendipity but uses point
+            # evaluations on edges. Only the edge functionals differ, so
+            # the element's own rows carry the rest through and no array
+            # shape has to be restated here.
+            be = s_el.basix_element
+            geometry = basix.cell.geometry(be.cell_type)
+            topology = basix.cell.topology(be.cell_type)
             e_x: list[list[npt.NDArray[np.floating]]] = [
-                [np.array([p]) for p in geometry],
-                [np.array([(geometry[edge[0]] + geometry[edge[1]]) / 2]) for edge in topology[1]],
-                [np.zeros((0, 3)) for _ in s_el.basix_element.x[2]],
-                [np.zeros((0, 3)) for _ in s_el.basix_element.x[3]],
+                be.x[0],
+                [np.array([(geometry[e[0]] + geometry[e[1]]) / 2]) for e in topology[1]],
+                be.x[2],
+                be.x[3],
             ]
             e_m: list[list[npt.NDArray[np.floating]]] = [
-                [np.ones((1, 1, 1, 1)) for _ in s_el.basix_element.M[0]],
-                [np.ones((1, 1, 1, 1)) for _ in s_el.basix_element.M[1]],
-                [np.zeros((0, 1, 0, 1)) for _ in s_el.basix_element.M[2]],
-                [np.zeros((0, 1, 0, 1)) for _ in s_el.basix_element.M[3]],
+                be.M[0],
+                [np.ones((1, 1, 1, 1)) for _ in be.M[1]],
+                be.M[2],
+                be.M[3],
             ]
             el = basix.ufl.custom_element(
-                s_el.basix_element.cell_type,
+                be.cell_type,
                 s_el.reference_value_shape,
-                s_el.basix_element.wcoeffs,
+                be.wcoeffs,
                 e_x,
                 e_m,
                 0,
                 s_el.map_type,
-                s_el.basix_element.sobolev_space,
+                be.sobolev_space,
                 s_el.discontinuous,
                 s_el.embedded_subdegree,
                 s_el.embedded_superdegree,

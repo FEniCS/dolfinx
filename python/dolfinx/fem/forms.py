@@ -376,7 +376,7 @@ def form(
 ) -> None: ...
 @typing.overload
 def form(
-    form: ufl.Form,
+    form: ufl.Form | ufl.ZeroBaseForm,
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
@@ -385,7 +385,7 @@ def form(
 ) -> Form: ...
 @typing.overload
 def form(
-    form: Sequence[ufl.Form | None],
+    form: Sequence[ufl.Form | ufl.ZeroBaseForm | None],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
@@ -394,7 +394,7 @@ def form(
 ) -> list[Form | None]: ...
 @typing.overload
 def form(
-    form: Sequence[Sequence[ufl.Form | None]],
+    form: Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
@@ -402,7 +402,11 @@ def form(
     entity_maps: Sequence[_EntityMap] | None = None,
 ) -> list[list[Form | None]]: ...
 def form(
-    form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
+    form: ufl.Form
+    | ufl.ZeroBaseForm
+    | Sequence[ufl.Form | ufl.ZeroBaseForm | None]
+    | Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]]
+    | None,
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
@@ -540,7 +544,11 @@ def form(
         return Form(f, msh, spaces)
 
     def _create_form(
-        form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
+        form: ufl.Form
+        | ufl.ZeroBaseForm
+        | Sequence[ufl.Form | ufl.ZeroBaseForm | None]
+        | Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]]
+        | None,
     ) -> typing.Any:
         """Recursively convert ufl.Forms to dolfinx.fem.Form.
 
@@ -638,7 +646,7 @@ def extract_function_spaces(
 
         return list(unique_spaces(V if index == 0 else V.transpose()))
 
-    raise RuntimeError("Unsupported array of forms")
+    raise ValueError("Unsupported array of forms")
 
 
 @dataclass
@@ -704,7 +712,7 @@ def form_cpp_creator(
     elif np.issubdtype(dtype, np.complex128):
         return _cpp.fem.create_form_complex128
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise TypeError(f"Type {dtype} not supported.")
 
 
 def create_form(
@@ -737,6 +745,9 @@ def create_form(
 
     Return:
         A Form object.
+
+    Raises:
+        KeyError: A coefficient or constant is missing from its map.
     """
     if entity_maps is None:
         _entity_maps = []
@@ -757,7 +768,7 @@ def create_form(
         try:
             coefficients[f"w{c}"] = coefficient_map[original_coeff]._cpp_object
         except KeyError as err:
-            raise RuntimeError(f"Missing coefficient {original_coeff}") from err
+            raise KeyError(f"Missing coefficient {original_coeff}") from err
 
     # Extract all constants of the compiled form in correct order
     # NOTE: Constants are not eliminated
@@ -765,8 +776,8 @@ def create_form(
     num_constants = form.ufcx_form.num_constants
     if num_constants != len(original_constants):
         raise RuntimeError(
-            f"Number of constants in compiled form ({num_constants})",
-            f"does not match the original form {len(original_constants)}",
+            f"Number of constants in compiled form ({num_constants}) does not "
+            f"match the original form ({len(original_constants)})."
         )
     constants = {}
     for counter, constant in enumerate(original_constants):
@@ -774,7 +785,7 @@ def create_form(
             mapped_constant = constant_map[constant]
             constants[f"c{counter}"] = mapped_constant._cpp_object
         except KeyError as err:
-            raise RuntimeError(f"Missing constant {constant}") from err
+            raise KeyError(f"Missing constant {constant}") from err
 
     ftype = form_cpp_creator(form.dtype)
     f = ftype(

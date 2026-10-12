@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """General tools for timing and configuration."""
 
-import datetime
+import datetime as dt
 import functools
 import typing
 from collections.abc import Callable, Sequence
@@ -501,7 +501,7 @@ def scatterer(index_map: IndexMap) -> Scatterer:
     return Scatterer(_cpp.common.Scatterer(index_map._cpp_object))
 
 
-def timing(task: str) -> tuple[int, datetime.timedelta]:
+def timing(task: str) -> tuple[int, dt.timedelta]:
     """Return the logged elapsed time.
 
     Timing data is for the calling process.
@@ -595,7 +595,7 @@ class Timer:
         """Reset elapsed time and (re-)start timer."""
         self._cpp_object.start()
 
-    def stop(self) -> datetime.timedelta:
+    def stop(self) -> dt.timedelta:
         """Stop timer and return elapsed time.
 
         Returns:
@@ -607,7 +607,7 @@ class Timer:
         """Resume timer."""
         self._cpp_object.resume()
 
-    def elapsed(self) -> datetime.timedelta:
+    def elapsed(self) -> dt.timedelta:
         """Return elapsed time.
 
         Returns:

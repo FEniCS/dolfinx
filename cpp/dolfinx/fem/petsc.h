@@ -252,8 +252,10 @@ Mat create_matrix_nest(
     std::optional<std::vector<std::vector<std::optional<std::string>>>> types)
 {
   if (a.empty())
+  {
     throw std::invalid_argument(
         "Rectangular array of forms must be non-empty.");
+  }
 
   // Extract and check row/column ranges
   auto V = fem::common_function_spaces(extract_function_spaces(a));
@@ -634,7 +636,7 @@ void assign(const Vec x, Function<PetscScalar, T>& u)
   std::span<PetscScalar> _u = u.x()->array();
   if (static_cast<std::size_t>(n) != _u.size())
   {
-    throw std::runtime_error(std::format(
+    throw std::invalid_argument(std::format(
         "Vector has {} local entries, function has {}.", n, _u.size()));
   }
 

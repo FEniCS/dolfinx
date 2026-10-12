@@ -1,4 +1,5 @@
 // Copyright (C) 2013-2022 Chris Richardson
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -20,6 +21,7 @@
 #include <map>
 #include <memory>
 #include <mpi.h>
+#include <stdexcept>
 #include <vector>
 
 using namespace dolfinx;
@@ -161,7 +163,7 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
 
   int tdim = topology->dim();
   if (topology->index_map(tdim)->num_ghosts() > 0)
-    throw std::runtime_error("Ghosted meshes are not supported");
+    throw std::invalid_argument("Ghosted meshes are not supported");
 
   auto c_to_f = topology->connectivity(tdim, tdim - 1);
   if (!c_to_f)
@@ -283,10 +285,10 @@ refinement::transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& tags0,
 
   const int tdim = topology0->dim();
   if (tags0.dim() != tdim)
-    throw std::runtime_error("Input meshtag is not cell-based");
+    throw std::invalid_argument("Input meshtag is not cell-based");
 
   if (topology0->index_map(tdim)->num_ghosts() > 0)
-    throw std::runtime_error("Ghosted meshes are not supported");
+    throw std::invalid_argument("Ghosted meshes are not supported");
 
   // Create map parent->child facets
   const std::int32_t num_input_cells

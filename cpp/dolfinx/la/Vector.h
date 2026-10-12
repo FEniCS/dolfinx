@@ -11,12 +11,14 @@
 #include <cmath>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/types.h>
 #include <limits>
 #include <memory>
 #include <numeric>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -186,9 +188,13 @@ public:
   }
 
   /// Copy constructor
+  /// @note A scatter in flight is not inherited by the copy, which must
+  /// not be given a matching scatter_fwd_end()/scatter_rev_end().
   Vector(const Vector& x) = default;
 
   /// Move constructor
+  /// @note A scatter in flight transfers to the new vector, which must
+  /// complete it with scatter_fwd_end()/scatter_rev_end().
   Vector(Vector&& x) = default;
 
 private:
@@ -235,7 +241,7 @@ public:
   template <typename T0, typename Container0, typename ScatterContainer0>
   explicit Vector(const Vector<T0, Container0, ScatterContainer0>& x)
       : _map(x.index_map()), _bs(x.bs()), _x(x._x.begin(), x._x.end()),
-        _scatterer(scatter_ptr(x._scatterer)), _request(MPI_REQUEST_NULL),
+        _scatterer(scatter_ptr(x._scatterer)),
         _buffer_local(_bs * _scatterer->local_indices_block().size()),
         _buffer_remote(_bs * _scatterer->remote_indices_block().size())
   {
@@ -245,6 +251,10 @@ public:
   Vector& operator=(const Vector& x) = delete;
 
   /// Move assignment operator
+  /// @note A scatter in flight on `x` transfers to this vector. Any
+  /// scatter in flight on this vector is dropped, so a prior
+  /// scatter_fwd_begin()/scatter_rev_begin() on it must already have a
+  /// matching end call.
   Vector& operator=(Vector&& x) = default;
 
   /// @deprecated Use `std::ranges::fill(u.array(), v)` instead.
@@ -281,7 +291,8 @@ public:
          _scatterer->local_indices_block().end(), _x.begin(),
          _buffer_local.begin());
     _scatterer->scatter_fwd_begin(get_ptr(_buffer_local),
-                                  get_ptr(_buffer_remote), _bs, _request);
+                                  get_ptr(_buffer_remote), _bs,
+                                  _request.request());
   }
 
   /// @brief Begin scatter (send) of local data that is ghosted on other
@@ -319,7 +330,7 @@ public:
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_fwd_end(U unpack)
   {
-    _scatterer->scatter_fwd_end(_request);
+    _scatterer->scatter_fwd_end(_request.request());
     unpack(_scatterer->remote_indices_block().begin(),
            _scatterer->remote_indices_block().end(), _buffer_remote.begin(),
            std::next(_x.begin(), _bs * _map->size_local()));
@@ -386,7 +397,8 @@ public:
          _scatterer->remote_indices_block().end(),
          std::next(_x.begin(), local_size), _buffer_remote.begin());
     _scatterer->scatter_rev_begin(get_ptr(_buffer_remote),
-                                  get_ptr(_buffer_local), _bs, _request);
+                                  get_ptr(_buffer_local), _bs,
+                                  _request.request());
   }
 
   /// @brief Start scatter (send) of ghost entry data to the owning
@@ -421,7 +433,7 @@ public:
     requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_rev_end(U unpack)
   {
-    _scatterer->scatter_rev_end(_request);
+    _scatterer->scatter_rev_end(_request.request());
     unpack(_scatterer->local_indices_block().begin(),
            _scatterer->local_indices_block().end(), _buffer_local.begin(),
            _x.begin());
@@ -497,8 +509,9 @@ private:
   // Scatter for managing MPI communication
   std::shared_ptr<const common::Scatterer<ScatterContainer>> _scatterer;
 
-  // MPI request handle
-  MPI_Request _request = MPI_REQUEST_NULL;
+  // Request for a scatter in flight. Transfers on move, so that the
+  // moved-from vector does not name the target's request.
+  dolfinx::MPI::Request _request;
 
   // Buffers for ghost scatters
   container_type _buffer_local, _buffer_remote;
@@ -520,7 +533,7 @@ auto inner_product(const V& a, const V& b)
   using T = typename V::value_type;
   const std::int32_t local_size = a.bs() * a.index_map()->size_local();
   if (local_size != b.bs() * b.index_map()->size_local())
-    throw std::runtime_error("Incompatible vector sizes");
+    throw std::invalid_argument("Incompatible vector sizes");
 
   const T local = std::transform_reduce(
       a.array().begin(), std::next(a.array().begin(), local_size),
@@ -592,7 +605,7 @@ auto norm(const V& x, Norm type = Norm::l2)
     return linf;
   }
   default:
-    throw std::runtime_error("Norm type not supported");
+    throw std::invalid_argument("Norm type not supported");
   }
 }
 

@@ -577,7 +577,7 @@ def test_undersized_working_array(gdim: int, is_affine: bool) -> None:
             ref_point.reshape(ref_point.shape[0], gdim), cell_geometry
         )
         # Pull back
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError, match="Working memory is too small for pull_back"):
             mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)
 
 

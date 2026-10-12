@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2020 Chris N. Richardson, Garth N. Wells and Michal Habera
+// Copyright (C) 2012-2026 Chris N. Richardson, Garth N. Wells and Michal Habera
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,7 +9,6 @@
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
-#include <H5Fpublic.h>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/Function.h>
@@ -22,6 +21,7 @@
 #include <filesystem>
 #include <format>
 #include <pugixml.hpp>
+#include <stdexcept>
 #include <utility>
 
 using namespace dolfinx;
@@ -37,24 +37,19 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
   // we will have _hdf5_file and _xml_doc both pointing to a valid and
   // opened file handles.
 
+  // An ASCII file leaves _h5_id invalid, so no HDF5 file is closed on
+  // destruction
   if (_encoding == Encoding::HDF5)
   {
-    // See https://www.hdfgroup.org/hdf5-quest.html#gzero on zero for
-    // _hdf5_file_id(0)
-
     // Open HDF5 file
     const std::filesystem::path hdf5_filename
         = xdmf_utils::get_hdf5_filename(_filename);
-    const bool mpi_io = dolfinx::MPI::size(_comm.comm()) > 1 ? true : false;
-    _h5_id
-        = io::hdf5::open_file(_comm.comm(), hdf5_filename, file_mode, mpi_io);
+    const bool mpi_io = dolfinx::MPI::size(_comm.comm()) > 1;
+    _h5_id = io::hdf5::Handle(
+        io::hdf5::open_file(_comm.comm(), hdf5_filename, file_mode, mpi_io),
+        H5Fclose);
     assert(_h5_id > 0);
-    spdlog::info("Opened HDF5 file with id \"{}\"", _h5_id);
-  }
-  else
-  {
-    // HDF handle be -1 to avoid closing a HDF file on destruction
-    _h5_id = -1;
+    spdlog::info("Opened HDF5 file with id \"{}\"", hid_t(_h5_id));
   }
 
   if (_file_mode == "r")
@@ -74,7 +69,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
   {
     if (_encoding == Encoding::ASCII and dolfinx::MPI::size(_comm.comm()) > 1)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "ASCII encoding is not supported for writing files in parallel.");
     }
 
@@ -96,8 +91,9 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
   {
     if (_encoding == Encoding::ASCII and dolfinx::MPI::size(_comm.comm()) > 1)
     {
-      throw std::runtime_error("ASCII encoding is not supported for appending "
-                               "to files in parallel.");
+      throw std::invalid_argument(
+          "ASCII encoding is not supported for appending "
+          "to files in parallel.");
     }
 
     if (std::filesystem::exists(_filename))
@@ -133,22 +129,17 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
   }
 }
 //-----------------------------------------------------------------------------
-XDMFFile::XDMFFile(XDMFFile&& file) noexcept
-    : _comm(std::move(file._comm)), _filename(std::move(file._filename)),
-      _file_mode(std::move(file._file_mode)),
-      _h5_id(std::exchange(file._h5_id, -1)),
-      _xml_doc(std::move(file._xml_doc)), _encoding(file._encoding)
-{
-  // Do nothing
-}
+XDMFFile::XDMFFile(XDMFFile&& file) noexcept = default;
 //-----------------------------------------------------------------------------
-XDMFFile::~XDMFFile() { close(); }
+XDMFFile::~XDMFFile() = default;
+//-----------------------------------------------------------------------------
+XDMFFile& XDMFFile::operator=(XDMFFile&& file) noexcept = default;
 //-----------------------------------------------------------------------------
 void XDMFFile::close()
 {
-  if (_h5_id > 0)
-    io::hdf5::close_file(_h5_id);
-  _h5_id = -1;
+  // Closes before giving up ownership, so that a failure leaves the
+  // identifier with the handle rather than leaking it
+  _h5_id.close();
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point U>
@@ -157,7 +148,7 @@ void XDMFFile::write_mesh(const mesh::Mesh<U>& mesh, std::string_view xpath)
   pugi::xml_node node
       = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error(std::format("XML node '{}' not found.", xpath));
+    throw std::out_of_range(std::format("XML node '{}' not found.", xpath));
 
   // Add the mesh Grid to the domain
   xdmf_mesh::add_mesh(_comm.comm(), node, _h5_id, mesh, mesh.name);
@@ -177,7 +168,7 @@ void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
   pugi::xml_node node
       = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error(std::format("XML node '{}' not found.", xpath));
+    throw std::out_of_range(std::format("XML node '{}' not found.", xpath));
 
   // Prepare a Grid for Geometry only
   pugi::xml_node grid_node = node.append_child("Grid");
@@ -222,13 +213,15 @@ XDMFFile::read_topology_data(std::string_view name,
   pugi::xml_node node
       = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error(std::format("XML node '{}' not found.", xpath));
+    throw std::out_of_range(std::format("XML node '{}' not found.", xpath));
 
   pugi::xml_node grid_node
       = node.select_node(std::format("Grid[@Name='{}']", name).c_str()).node();
   if (!grid_node)
-    throw std::runtime_error(
+  {
+    throw std::out_of_range(
         std::format("<Grid> with name '{}' not found.", name));
+  }
 
   spdlog::info("Read topology data \"{}\" at {}", name, xpath);
   return xdmf_mesh::read_topology_data(_comm.comm(), _h5_id, grid_node);
@@ -242,13 +235,15 @@ XDMFFile::read_geometry_data(std::string_view name,
   pugi::xml_node node
       = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error(std::format("XML node '{}' not found.", xpath));
+    throw std::out_of_range(std::format("XML node '{}' not found.", xpath));
 
   pugi::xml_node grid_node
       = node.select_node(std::format("Grid[@Name='{}']", name).c_str()).node();
   if (!grid_node)
-    throw std::runtime_error(
+  {
+    throw std::out_of_range(
         std::format("<Grid> with name '{}' not found.", name));
+  }
 
   spdlog::info("Read geometry data \"{}\" at {}", name, xpath);
   return xdmf_mesh::read_geometry_data(_comm.comm(), _h5_id, grid_node);
@@ -332,7 +327,7 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
   pugi::xml_node node
       = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error(std::format("XML node '{}' not found.", xpath));
+    throw std::out_of_range(std::format("XML node '{}' not found.", xpath));
 
   pugi::xml_node grid_node = node.append_child("Grid");
   assert(grid_node);
@@ -370,12 +365,14 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
   pugi::xml_node node
       = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error(std::format("XML node '{}' not found.", xpath));
+    throw std::out_of_range(std::format("XML node '{}' not found.", xpath));
   pugi::xml_node grid_node
       = node.select_node(std::format("Grid[@Name='{}']", name).c_str()).node();
   if (!grid_node)
-    throw std::runtime_error(
+  {
+    throw std::out_of_range(
         std::format("<Grid> with name '{}' not found.", name));
+  }
 
   const auto [entities, eshape] = read_topology_data(name, xpath);
 
@@ -389,7 +386,7 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
         { return n.attribute("Name").value() == attr_name; });
     if (!attribute_node)
     {
-      throw std::runtime_error(
+      throw std::out_of_range(
           std::format("Attribute with name '{}' not found.", *attribute_name));
     }
     else
@@ -438,13 +435,15 @@ XDMFFile::read_cell_type(std::string_view grid_name,
   pugi::xml_node node
       = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error(std::format("XML node '{}' not found.", xpath));
+    throw std::out_of_range(std::format("XML node '{}' not found.", xpath));
   pugi::xml_node grid_node
       = node.select_node(std::format("Grid[@Name='{}']", grid_name).c_str())
             .node();
   if (!grid_node)
-    throw std::runtime_error(
+  {
+    throw std::out_of_range(
         std::format("<Grid> with name '{}' not found.", grid_name));
+  }
 
   // Get topology node
   pugi::xml_node topology_node = grid_node.child("Topology");
@@ -466,7 +465,7 @@ void XDMFFile::write_information(std::string_view name, std::string_view value,
   pugi::xml_node node
       = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error(std::format("XML node '{}' not found.", xpath));
+    throw std::out_of_range(std::format("XML node '{}' not found.", xpath));
 
   pugi::xml_node info_node = node.append_child("Information");
   assert(info_node);
@@ -484,13 +483,15 @@ std::string XDMFFile::read_information(std::string_view name,
   pugi::xml_node node
       = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error(std::format("XML node '{}' not found.", xpath));
+    throw std::out_of_range(std::format("XML node '{}' not found.", xpath));
   pugi::xml_node info_node
       = node.select_node(std::format("Information[@Name='{}']", name).c_str())
             .node();
   if (!info_node)
-    throw std::runtime_error(
+  {
+    throw std::out_of_range(
         std::format("<Information> with name '{}' not found.", name));
+  }
 
   // Read data and trim any leading/trailing whitespace
   std::string value_str = info_node.attribute("Value").as_string();
@@ -500,7 +501,8 @@ std::string XDMFFile::read_information(std::string_view name,
 void XDMFFile::flush()
 {
   // _xml_doc already flushed after every write
-  H5Fflush(_h5_id, H5F_SCOPE_GLOBAL);
+  if (_h5_id > 0)
+    io::hdf5::flush_file(_h5_id);
 }
 //-----------------------------------------------------------------------------
 MPI_Comm XDMFFile::comm() const { return _comm.comm(); }

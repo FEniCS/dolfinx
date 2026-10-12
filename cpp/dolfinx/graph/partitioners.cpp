@@ -17,6 +17,7 @@
 #include <numeric>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <vector>
 
 #ifdef HAS_PTSCOTCH
@@ -352,7 +353,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       strat_val = SCOTCH_STRATSCALABILITY;
       break;
     default:
-      throw std::runtime_error("Unknown SCOTCH strategy");
+      throw std::invalid_argument("Unknown SCOTCH strategy");
     }
     err = SCOTCH_stratDgraphMapBuild(&strat, strat_val, nparts, nparts,
                                      imbalance);
@@ -657,7 +658,7 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
     const int rank = dolfinx::MPI::rank(comm);
     if (nparts != dolfinx::MPI::size(comm))
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Number of parts must equal the communicator size for "
           "re-partitioning, as the current partition is taken to be the "
           "current data distribution.");
@@ -722,7 +723,7 @@ std::vector<int> graph::parmetis::geom_partitioner(
 {
   if (node_weights)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "ParMETIS_V3_PartGeom does not support node weights.");
   }
 
@@ -733,7 +734,7 @@ std::vector<int> graph::parmetis::geom_partitioner(
 
   if (nparts != dolfinx::MPI::size(comm))
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "ParMETIS_V3_PartGeom partitions into one part per MPI rank, so "
         "the number of parts must equal the communicator size.");
   }
@@ -798,7 +799,7 @@ graph::parmetis::geom_partitioner_kway(double imbalance,
     if (static_cast<std::int64_t>(x.size())
         != static_cast<std::int64_t>(gdim) * num_nodes)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Number of coordinates does not match number of graph nodes.");
     }
 

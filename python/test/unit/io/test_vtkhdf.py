@@ -4,11 +4,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from pathlib import Path
+
 from mpi4py import MPI
 
 import numpy as np
 import pytest
 
+import basix
+import basix.ufl
 import dolfinx
 import ufl
 from dolfinx.io.vtkhdf import read_mesh, write_cell_data, write_mesh, write_point_data
@@ -157,7 +161,8 @@ def test_read_write_higher_order():
 
 
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_read_write_higher_order_mesh(order) -> None:
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_read_write_higher_order_mesh(order, dtype) -> None:
     try:
         import gmsh
     except ImportError:
@@ -181,9 +186,14 @@ def test_read_write_higher_order_mesh(order) -> None:
     comm.Barrier()
 
     model = comm.bcast(model, root=rank)
-    # Read in mesh with gmsh to create reference dat
-    ref_mesh = dolfinx.io.gmsh.model_to_mesh(gmsh.model, comm, rank).mesh
+    # Use the same precision for the reference and the mesh read back.
+    ref_mesh = dolfinx.io.gmsh.model_to_mesh(gmsh.model, comm, rank, dtype=dtype).mesh
     gmsh.finalize()
+
+    # File cell indices follow rank order, excluding ghost cells.
+    num_cells = ref_mesh.topology.index_map(3).size_local
+    cell_geometry = ref_mesh.geometry.x[ref_mesh.geometry.dofmaps[0][:num_cells]]
+    ref_cell_geometry = np.concatenate(comm.allgather(cell_geometry))
 
     ref_volume_form = dolfinx.fem.form(
         1 * ufl.dx(domain=ref_mesh),
@@ -198,15 +208,24 @@ def test_read_write_higher_order_mesh(order) -> None:
     ref_surface = comm.allreduce(dolfinx.fem.assemble_scalar(ref_surface_form), op=MPI.SUM)
 
     # Write to file
-    filename = f"gmsh_{order}_order_sphere.vtkhdf"
+    filename = f"gmsh_{order}_order_sphere_{np.dtype(dtype).name}.vtkhdf"
     write_mesh(filename, ref_mesh)
     del ref_mesh, ref_volume_form
 
-    # Read mesh, once single-threaded and once multi-threaded, and check
-    # the two agree (global cell/vertex counts, and geometry up to local
-    # ordering via assembled volume/surface)
-    mesh = read_mesh(comm, filename, num_threads=1)
-    mesh_mt = read_mesh(comm, filename, num_threads=4)
+    # Check both mesh construction thread counts.
+    mesh = read_mesh(comm, filename, dtype=dtype, num_threads=1)
+    mesh_mt = read_mesh(comm, filename, dtype=dtype, num_threads=4)
+
+    for m in (mesh, mesh_mt):
+        domain = m.ufl_domain()
+        assert domain is not None
+        assert m.geometry.x.dtype == dtype
+        assert domain.ufl_coordinate_element().basix_element.dtype == dtype
+        assert m.geometry.cmaps[0].degree == order
+        np.testing.assert_array_equal(
+            m.geometry.x[m.geometry.dofmaps[0]],
+            ref_cell_geometry[m.topology.original_cell_index],
+        )
 
     assert (
         mesh.topology.index_map(mesh.topology.dim).size_global
@@ -219,20 +238,19 @@ def test_read_write_higher_order_mesh(order) -> None:
     surface_mt_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh_mt), dtype=mesh_mt.geometry.x.dtype)
     surface_mt = comm.allreduce(dolfinx.fem.assemble_scalar(surface_mt_form), op=MPI.SUM)
 
-    # Compare surface and volume metrics
-    # The degree-3 round-trip is not exact, see issue #4415.
-    rtol = 1.0e-4
+    # Assembly can accumulate in a different order after repartitioning.
+    rtol = 100 * np.finfo(dtype).eps
 
     volume_form = dolfinx.fem.form(1 * ufl.dx(domain=mesh), dtype=mesh.geometry.x.dtype)
     volume = comm.allreduce(dolfinx.fem.assemble_scalar(volume_form), op=MPI.SUM)
-    assert np.isclose(ref_volume, volume, rtol=rtol)
+    assert np.isclose(ref_volume, volume, rtol=rtol, atol=0)
 
     surface_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh), dtype=mesh.geometry.x.dtype)
     surface = comm.allreduce(dolfinx.fem.assemble_scalar(surface_form), op=MPI.SUM)
-    assert np.isclose(ref_surface, surface, rtol=rtol)
+    assert np.isclose(ref_surface, surface, rtol=rtol, atol=0)
 
-    assert np.isclose(volume, volume_mt, rtol=rtol)
-    assert np.isclose(surface, surface_mt, rtol=rtol)
+    assert np.isclose(volume, volume_mt, rtol=rtol, atol=0)
+    assert np.isclose(surface, surface_mt, rtol=rtol, atol=0)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -270,3 +288,64 @@ def test_write_mixed_topology_data(mixed_topology_mesh) -> None:
     b = sum([im.size_local for im in mesh.topology.index_maps(mesh.topology.dim)])
     cell_data = np.arange(b, dtype=np.float64)
     write_cell_data(filename, mesh, cell_data, 0.0)
+
+
+def _rank0_only(comm, element, cells, points):
+    """Keep cell and point data on rank 0, as create_mesh expects."""
+    if comm.rank == 0:
+        return cells, points
+    return (
+        np.empty((0, element.basix_element.dim), dtype=np.int64),
+        np.empty((0, 3), dtype=np.float64),
+    )
+
+
+@pytest.mark.parametrize("degree", [1, 2])
+def test_read_write_prism(degree, tempdir) -> None:
+    """Prisms round-trip with coordinate element and geometry preserved."""
+    element = basix.ufl.element(
+        "Lagrange", "prism", degree, basix.LagrangeVariant.equispaced, shape=(3,), dtype=np.float64
+    )
+    comm = MPI.COMM_WORLD
+    # A connected stack avoids partitioner corner cases for a single cell.
+    points = np.concatenate(
+        [element.basix_element.points + np.array([0, 0, i]) for i in range(2 * comm.size)]
+    )
+    points[:, 0] += 0.1 * points[:, 2] ** 2
+    points, indices = np.unique(points, axis=0, return_inverse=True)
+    cells = indices.reshape(-1, element.basix_element.dim).astype(np.int64)
+    cells, points = _rank0_only(comm, element, cells, points)
+    mesh = dolfinx.mesh.create_mesh(comm, cells, ufl.Mesh(element), points)
+    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    geometry = np.concatenate(comm.allgather(mesh.geometry.x[mesh.geometry.dofmaps[0][:num_cells]]))
+    filename = Path(tempdir, "prism.vtkhdf")
+    write_mesh(filename, mesh)
+    restored = read_mesh(comm, filename)
+    assert restored.geometry.cmaps[0].degree == degree
+    np.testing.assert_array_equal(
+        restored.geometry.x[restored.geometry.dofmaps[0]],
+        geometry[restored.topology.original_cell_index],
+    )
+
+
+def test_write_quadratic_pyramid_rejected(tempdir) -> None:
+    """Unsupported pyramids must not be labelled as linear VTK cells."""
+    element = basix.ufl.element(
+        "Lagrange", "pyramid", 2, basix.LagrangeVariant.equispaced, shape=(3,), dtype=np.float64
+    )
+    comm = MPI.COMM_WORLD
+    points = element.basix_element.points
+    cells = np.arange(element.basix_element.dim, dtype=np.int64).reshape(1, -1)
+    cells, points = _rank0_only(comm, element, cells, points)
+
+    def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
+        return dolfinx.graph.adjacencylist(np.zeros((dual_graph.num_nodes, 1), dtype=np.int32))
+
+    mesh = dolfinx.mesh.create_mesh(comm, cells, ufl.Mesh(element), points, partitioner=partitioner)
+    with pytest.raises(ValueError, match="Lagrange pyramids are not implemented in VTK"):
+        write_mesh(Path(tempdir, "pyramid.vtkhdf"), mesh)
+    with pytest.raises(ValueError, match="Lagrange pyramids are not implemented in VTK"):
+        dolfinx.plot.vtk_mesh(mesh)
+    with dolfinx.io.VTKFile(comm, Path(tempdir, "pyramid.pvd"), "w") as vtk:
+        with pytest.raises(ValueError, match="Lagrange pyramids are not implemented in VTK"):
+            vtk.write_mesh(mesh)

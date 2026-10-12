@@ -75,8 +75,10 @@ void declare_petsc_discrete_operators(nb::module_& m)
           // Destroy A before rethrowing. Report rather than throw on
           // failure: throwing here would replace the in-flight exception.
           if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
+          {
             spdlog::error("MatDestroy failed with error code {}.",
                           static_cast<int>(ierr));
+          }
           throw;
         }
         return A;
@@ -109,8 +111,10 @@ void declare_petsc_discrete_operators(nb::module_& m)
           // Destroy A before rethrowing. Report rather than throw on
           // failure: throwing here would replace the in-flight exception.
           if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
+          {
             spdlog::error("MatDestroy failed with error code {}.",
                           static_cast<int>(ierr));
+          }
           throw;
         }
         return A;
@@ -139,8 +143,10 @@ void declare_petsc_discrete_operators(nb::module_& m)
           // Destroy A before rethrowing. Report rather than throw on
           // failure: throwing here would replace the in-flight exception.
           if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
+          {
             spdlog::error("MatDestroy failed with error code {}.",
                           static_cast<int>(ierr));
+          }
           throw;
         }
         return A;

@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2025 Garth N. Wells, Jørgen S. Dokken and Paul T. Kühner
+# Copyright (C) 2018-2026 Garth N. Wells, Jørgen S. Dokken and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -414,7 +414,7 @@ class TestPETScAssemblers:
 
             assert A.getType() != "nest"
 
-            with pytest.raises(RuntimeError):
+            with pytest.raises(ValueError):
                 petsc_assemble_matrix(a_block_none, bcs=[bc])
 
             return A, b
@@ -429,7 +429,7 @@ class TestPETScAssemblers:
             A.assemble()
             assert A.type == "nest"
 
-            with pytest.raises(RuntimeError):
+            with pytest.raises(ValueError):
                 petsc_assemble_matrix(a_block_none, bcs=[bc])
 
             b = petsc_assemble_vector(L_block, kind="nest")
