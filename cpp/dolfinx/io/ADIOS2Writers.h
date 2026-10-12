@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Jørgen S. Dokken and Garth N. Wells
+// Copyright (C) 2021-2026 Jørgen S. Dokken and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -147,7 +147,7 @@ extract_common_mesh(const typename adios2_writer::U<T>& u)
         {
           if (mesh != u->function_space()->mesh())
           {
-            throw std::runtime_error(
+            throw std::invalid_argument(
                 "ADIOS2Writer only supports functions sharing the same mesh");
           }
         },
@@ -206,7 +206,7 @@ extract_function_names(const typename adios2_writer::U<T>& u)
     std::ranges::sort(sorted);
     if (std::ranges::unique(sorted).begin() != sorted.end())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Function names in VTX output need to be unique.");
     }
   }
@@ -499,7 +499,7 @@ public:
         _mesh_reuse_policy(mesh_policy), _has_piecewise_constant(false)
   {
     if (u.empty())
-      throw std::runtime_error("VTXWriter fem::Function list is empty.");
+      throw std::invalid_argument("VTXWriter fem::Function list is empty.");
 
     // Extract space from first function
     auto V0 = std::visit([](auto& u) { return u->function_space().get(); },
@@ -531,7 +531,7 @@ public:
     // Check if function is mixed
     if (element0->is_mixed())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Mixed functions are not supported by VTXWriter.");
     }
 
@@ -540,7 +540,7 @@ public:
     // Check that element is Lagrange
     if (!element0->interpolation_ident())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Only (discontinuous) Lagrange functions are "
           "supported. Interpolate Functions before output.");
     }
@@ -559,8 +559,9 @@ public:
             if (!impl::same_base_element(*element, *V0->element().get())
                 and !is_piecewise_constant)
             {
-              throw std::runtime_error("All functions in VTXWriter must have "
-                                       "the same element type.");
+              throw std::invalid_argument(
+                  "All functions in VTXWriter must have "
+                  "the same element type.");
             }
 #ifndef NDEBUG
             auto dmap0 = V0->dofmap()->map();
@@ -571,7 +572,7 @@ public:
                                 dmap.data_handle()))
                 and !is_piecewise_constant)
             {
-              throw std::runtime_error(
+              throw std::invalid_argument(
                   "All functions must have the same dofmap for VTXWriter.");
             }
 #endif

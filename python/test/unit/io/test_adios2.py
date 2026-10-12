@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2026 Jørgen S. Dokken and Paul T. Kühner
+# Copyright (C) 2026 Garth N. Wells
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -87,7 +88,7 @@ class TestVTX:
         v = Function(functionspace(mesh, ("Lagrange", 2, (gdim,))))
         w = Function(functionspace(mesh, ("Lagrange", 1)))
         filename = Path(tempdir, "v.bp")
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             VTXWriter(mesh.comm, filename, [v, w])
 
     @pytest.mark.parametrize("dim", [2, 3])
@@ -101,7 +102,7 @@ class TestVTX:
         v = Function(functionspace(mesh, ("Lagrange", 1, (gdim,))), name="f")
         w = Function(functionspace(mesh, ("Lagrange", 1)), name="f")
         filename = Path(tempdir, "v.bp")
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             VTXWriter(mesh.comm, filename, [v, w])
 
     @pytest.mark.parametrize("simplex", [True, False])
@@ -114,7 +115,7 @@ class TestVTX:
         mesh2 = generate_mesh(2, simplex)
         w = Function(functionspace(mesh2, ("Lagrange", 1)))
         filename = Path(tempdir, "v.bp")
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             VTXWriter(mesh.comm, filename, [v, w])
 
     @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])

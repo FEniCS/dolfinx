@@ -145,7 +145,7 @@ def create_vector(
     if isinstance(V, _FunctionSpace):
         V = [V]
     elif any(_V is None for _V in V):
-        raise RuntimeError("Can not create vector for None block.")
+        raise ValueError("Can not create vector for None block.")
 
     maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]  # type: ignore
     return dolfinx.la.petsc.create_vector(maps, kind=kind)
@@ -932,7 +932,7 @@ def _assemble_matrix_blocked(
                         unrolled=unrolled,
                     )
             elif i == j and bc_data.row_markers[i].size > 0:
-                raise RuntimeError(
+                raise ValueError(
                     f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
                     " and have DirichletBC applied. Consider assembling a zero block."
                 )
@@ -1379,7 +1379,7 @@ class LinearProblem(typing.Generic[_U]):
     def __init__(
         self: LinearProblem[_Function],
         a: ufl.Form,
-        L: ufl.Form,
+        L: ufl.Form | ufl.ZeroBaseForm,
         *,
         petsc_options_prefix: str,
         bcs: Sequence[DirichletBC] | None = None,
@@ -1394,13 +1394,13 @@ class LinearProblem(typing.Generic[_U]):
     @overload
     def __init__(
         self: LinearProblem[Sequence[_Function]],
-        a: Sequence[Sequence[ufl.Form | None]],
-        L: Sequence[ufl.Form],
+        a: Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]],
+        L: Sequence[ufl.Form | ufl.ZeroBaseForm],
         *,
         petsc_options_prefix: str,
         bcs: Sequence[DirichletBC] | None = None,
         u: Sequence[_Function] | None = None,
-        P: Sequence[Sequence[ufl.Form | None]] | None = None,
+        P: Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]] | None = None,
         kind: str | Sequence[Sequence[str | None]] | None = None,
         petsc_options: dict | None = None,
         form_compiler_options: dict | None = None,
@@ -1409,13 +1409,13 @@ class LinearProblem(typing.Generic[_U]):
     ) -> None: ...
     def __init__(
         self,
-        a: ufl.Form | Sequence[Sequence[ufl.Form | None]],
-        L: ufl.Form | Sequence[ufl.Form],
+        a: ufl.Form | Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]],
+        L: ufl.Form | ufl.ZeroBaseForm | Sequence[ufl.Form | ufl.ZeroBaseForm],
         *,
         petsc_options_prefix: str,
         bcs: Sequence[DirichletBC] | None = None,
         u: _Function | Sequence[_Function] | None = None,
-        P: ufl.Form | Sequence[Sequence[ufl.Form | None]] | None = None,
+        P: ufl.Form | Sequence[Sequence[ufl.Form | ufl.ZeroBaseForm | None]] | None = None,
         kind: str | Sequence[Sequence[str | None]] | None = None,
         petsc_options: dict | None = None,
         form_compiler_options: dict | None = None,

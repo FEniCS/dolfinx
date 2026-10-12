@@ -12,6 +12,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <format>
 #include <iterator>
+#include <stdexcept>
 #include <vector>
 
 using namespace dolfinx;
@@ -25,7 +26,7 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   auto topology = mesh.topology();
   int tdim = topology->dim();
   if (tdim < 2)
-    throw std::runtime_error("Uniform refinement only for 2D and 3D meshes");
+    throw std::invalid_argument("Uniform refinement only for 2D and 3D meshes");
 
   spdlog::info("Topology dim = {}", tdim);
 
@@ -235,8 +236,8 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
                            13, 12, 2, 6,  10, 13, 11, 7, 9,  11, 12, 4};
       if (ktet == -1)
       {
-        throw std::runtime_error("Cannot refine mesh with pyramids and no "
-                                 "tetrahedra.");
+        throw std::invalid_argument("Cannot refine mesh with pyramids and no "
+                                    "tetrahedra.");
       }
       break;
 
@@ -251,7 +252,7 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
       break;
 
     default:
-      throw std::runtime_error("Unhandled cell type");
+      throw std::invalid_argument("Unhandled cell type");
     }
 
     auto c_to_v = topology->connectivity({tdim, k}, {0, 0});
