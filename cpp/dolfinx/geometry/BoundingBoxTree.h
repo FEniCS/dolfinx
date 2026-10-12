@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2022 Chris N. Richardson, Anders Logg, Garth N. Wells,
+// Copyright (C) 2013-2026 Chris N. Richardson, Anders Logg, Garth N. Wells,
 // Jørgen S. Dokken, Sarah Roggendorf
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -17,6 +17,7 @@
 #include <mpi.h>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -263,7 +264,7 @@ public:
 
     if (tdim < 0 or tdim > mesh.topology()->dim())
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Dimension must be non-negative and less than or "
           "equal to the topological dimension of the mesh");
     }

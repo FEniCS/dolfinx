@@ -1,4 +1,5 @@
 // Copyright (C) 2014-2022 Chris Richardson
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -16,6 +17,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <limits>
 #include <numeric>
+#include <stdexcept>
 #include <vector>
 
 using namespace dolfinx;
@@ -267,6 +269,6 @@ plaza::impl::get_simplices(std::span<const std::int64_t> indices,
     return get_tetrahedra(indices, longest_edge);
   }
   else
-    throw std::runtime_error("Topological dimension not supported");
+    throw std::invalid_argument("Topological dimension not supported");
 }
 //-----------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2019 Garth N. Wells
+# Copyright (C) 2012-2026 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -52,7 +52,7 @@ def test_save_1d_scalar(tempdir, encoding, dtype, use_pathlib) -> None:
     u = Function(V, dtype=dtype)
     u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         with XDMFFile(mesh.comm, filename2, "w", encoding=encoding) as file:
             file.write_mesh(mesh)
             file.write_function(u)
@@ -93,7 +93,7 @@ def test_save_2d_scalar(tempdir, encoding, dtype, cell_type) -> None:
     # Discontinuous (degree > 0) should raise exception
     V = functionspace(mesh, ("Discontinuous Lagrange", 1))
     u = Function(V, dtype=dtype)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
             file.write_mesh(mesh)
             file.write_function(u)
@@ -161,7 +161,7 @@ def test_save_3d_vector(tempdir, encoding, dtype, cell_type) -> None:
     V2 = functionspace(mesh, ("RT", 1))
     u2 = Function(V2, dtype=dtype)
     u2.interpolate(u)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
             file.write_mesh(mesh)
             file.write_function(u2)
@@ -302,7 +302,7 @@ def test_higher_order_function(tempdir) -> None:
     # Write P2 Function (exception expected)
     u = Function(functionspace(msh, ("Lagrange", 2, (gdim,))))
     filename = Path(tempdir, "u3D_P2.xdmf")
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
             file.write_function(u)
@@ -314,7 +314,7 @@ def test_higher_order_function(tempdir) -> None:
 
     # Write P1 Function (exception expected)
     u = Function(functionspace(msh, ("Lagrange", 1, (gdim,))))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         filename = Path(tempdir, "u3D_P1.xdmf")
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
@@ -335,7 +335,7 @@ def test_higher_order_function(tempdir) -> None:
 
     # Write P2 Function (exception expected)
     u = Function(functionspace(msh, ("Lagrange", 2, (gdim,))))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         filename = Path(tempdir, "u3D_P3.xdmf")
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
@@ -350,7 +350,7 @@ def test_higher_order_function(tempdir) -> None:
         dtype=default_real_type,
     )
     u = Function(functionspace(msh, ufl_e))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         filename = Path(tempdir, "u3D_P3.xdmf")
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
@@ -378,7 +378,7 @@ def test_higher_order_function(tempdir) -> None:
 
     # Write Q1 Function (exception expected)
     u = Function(functionspace(msh, ("Lagrange", 1, (gdim,))))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         filename = Path(tempdir, "u3D_Q1.xdmf")
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
@@ -398,7 +398,7 @@ def test_higher_order_function(tempdir) -> None:
     # assert msh.geometry.cmaps[0].degree == 3
     # gdim = msh.geometry.dim
     # u = Function(functionspace(msh, ("Lagrange", 1, (gdim,))))
-    # with pytest.raises(RuntimeError):
+    # with pytest.raises(ValueError):
     #     filename = Path(tempdir, "u3D_Q1.xdmf")
     #     with XDMFFile(msh.comm, filename, "w") as file:
     #         file.write_mesh(msh)

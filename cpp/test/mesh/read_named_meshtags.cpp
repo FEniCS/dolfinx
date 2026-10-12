@@ -1,4 +1,5 @@
 // Copyright (C) 2024 Massimiliano Leoni
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -16,6 +17,7 @@
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
 #include <numeric>
+#include <stdexcept>
 #include <string>
 
 using namespace dolfinx;
@@ -73,7 +75,8 @@ void test_read_named_meshtags()
       = mesh_file.read_meshtags(*mesh, "material", "material", "/Xdmf/Domain");
   CHECK(mt_material.values().front() == material_value);
 
-  CHECK_THROWS(mesh_file.read_meshtags(*mesh, "mesh", "missing"));
+  CHECK_THROWS_AS(mesh_file.read_meshtags(*mesh, "mesh", "missing"),
+                  std::out_of_range);
   mesh_file.close();
 }
 } // namespace

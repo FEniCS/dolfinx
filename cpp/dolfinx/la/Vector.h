@@ -18,6 +18,7 @@
 #include <memory>
 #include <numeric>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -532,7 +533,7 @@ auto inner_product(const V& a, const V& b)
   using T = typename V::value_type;
   const std::int32_t local_size = a.bs() * a.index_map()->size_local();
   if (local_size != b.bs() * b.index_map()->size_local())
-    throw std::runtime_error("Incompatible vector sizes");
+    throw std::invalid_argument("Incompatible vector sizes");
 
   const T local = std::transform_reduce(
       a.array().begin(), std::next(a.array().begin(), local_size),
@@ -604,7 +605,7 @@ auto norm(const V& x, Norm type = Norm::l2)
     return linf;
   }
   default:
-    throw std::runtime_error("Norm type not supported");
+    throw std::invalid_argument("Norm type not supported");
   }
 }
 

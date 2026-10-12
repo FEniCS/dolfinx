@@ -17,6 +17,7 @@
 #include <functional>
 #include <memory>
 #include <numeric>
+#include <stdexcept>
 
 using namespace dolfinx;
 
@@ -152,4 +153,15 @@ TEST_CASE("Linear Algebra Vector", "[la_vector]")
 TEST_CASE("Linear Algebra Vector scatter reverse", "[la_vector]")
 {
   CHECK_NOTHROW(test_vector_scatter_rev());
+}
+
+TEST_CASE("Incompatible vector sizes", "[la_vector]")
+{
+  const std::shared_ptr<common::IndexMap> map0
+      = std::make_shared<common::IndexMap>(MPI_COMM_WORLD, 2);
+  const std::shared_ptr<common::IndexMap> map1
+      = std::make_shared<common::IndexMap>(MPI_COMM_WORLD, 3);
+  const la::Vector<double> x(map0, 1);
+  const la::Vector<double> y(map1, 1);
+  CHECK_THROWS_AS(la::inner_product(x, y), std::invalid_argument);
 }

@@ -1232,3 +1232,15 @@ def test_wrapper_identity_follows_entity_creation() -> None:
     msh.topology.create_entities(1)
     imap = msh.topology.index_map(1)
     assert msh.topology.index_map(1) is imap
+
+
+@pytest.mark.parametrize("dtype", [np.int32, np.complex128])
+def test_unsupported_geometry_dtype(dtype) -> None:
+    with pytest.raises(TypeError, match="Unsupported mesh geometry float type"):
+        create_unit_interval(MPI.COMM_WORLD, 2, dtype=dtype)
+    with pytest.raises(TypeError, match="Unsupported mesh geometry float type"):
+        create_unit_square(MPI.COMM_WORLD, 2, 2, dtype=dtype)
+    with pytest.raises(TypeError, match="Unsupported mesh geometry float type"):
+        create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=dtype)
+    with pytest.raises(TypeError, match="Unsupported dtype for mesh"):
+        create_point_mesh(MPI.COMM_WORLD, np.zeros((2, 3), dtype=dtype))

@@ -1,4 +1,5 @@
 # Copyright (C) 2026 Jack S. Hale, Chris N. Richardson
+# Copyright (C) 2026 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -89,7 +90,7 @@ def superlu_dist_matrix(A: dolfinx.la.MatrixCSR[_T]) -> SuperLUDistMatrix[_T]:
     elif np.issubdtype(dtype, np.complex128):
         stype = _cpp.la.SuperLUDistMatrix_complex128
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise TypeError(f"Type {dtype} not supported.")
     return SuperLUDistMatrix(stype(A._cpp_object))  # type: ignore[arg-type]
 
 
@@ -208,5 +209,5 @@ def superlu_dist_solver(A: SuperLUDistMatrix[_T]) -> SuperLUDistSolver[_T]:
     elif np.issubdtype(dtype, np.complex128):
         stype = _cpp.la.SuperLUDistSolver_complex128
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise TypeError(f"Type {dtype} not supported.")
     return SuperLUDistSolver(stype(A._cpp_object))  # type: ignore[arg-type]

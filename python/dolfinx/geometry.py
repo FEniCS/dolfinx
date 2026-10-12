@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2021 Michal Habera, Garth N. Wells and
+# Copyright (C) 2018-2026 Michal Habera, Garth N. Wells and
 # Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -156,7 +156,7 @@ def bb_tree(
             _cpp.geometry.BoundingBoxTree_float64(cpp_mesh, dim, padding, entities)
         )
     else:
-        raise NotImplementedError(f"Type {mesh.geometry.x.dtype} not supported.")
+        raise TypeError(f"Type {mesh.geometry.x.dtype} not supported.")
 
 
 def compute_collisions_trees(
@@ -301,7 +301,7 @@ def compute_distance_gjk(p: npt.NDArray[Real], q: npt.NDArray[Real]) -> npt.NDAr
         return _cpp.geometry.compute_distance_gjk_float32(p, q)  # type: ignore[arg-type,return-value]
     elif np.issubdtype(p.dtype, np.float64):
         return _cpp.geometry.compute_distance_gjk_float64(p, q)  # type: ignore[arg-type,return-value]
-    raise RuntimeError("Invalid dtype in compute_distance_gjk")
+    raise TypeError("Invalid dtype in compute_distance_gjk")
 
 
 def compute_distances_gjk(
@@ -330,7 +330,7 @@ def compute_distances_gjk(
         return _cpp.geometry.compute_distances_gjk_float32(bodies, q, num_threads)  # type: ignore[arg-type,return-value]
     elif np.issubdtype(q.dtype, np.float64):
         return _cpp.geometry.compute_distances_gjk_float64(bodies, q, num_threads)  # type: ignore[arg-type,return-value]
-    raise RuntimeError("Invalid dtype in compute_distances_gjk")
+    raise TypeError("Invalid dtype in compute_distances_gjk")
 
 
 def determine_point_ownership(
