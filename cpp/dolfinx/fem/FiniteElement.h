@@ -1086,13 +1086,18 @@ private:
     if (!(cell_permutation & _applied_orientation_mask)) [[likely]]
       return;
 
+    // The mask is non-zero only on a cell of dimension 2, whose facets
+    // are its edges
+    assert(mesh::cell_dim(_cell_type) == 2 and _entity_dofs.size() > 1);
+    const std::vector<std::vector<int>>& facet_dofs = _entity_dofs[1];
+
     assert(n > 0 and data.size() % n == 0);
     const std::size_t num_dofs = data.size() / n;
-    for (std::size_t f = 0; f < _facet_dofs->size(); ++f)
+    for (std::size_t f = 0; f < facet_dofs.size(); ++f)
     {
       if (!(cell_permutation & mesh::reversed_facet_bit(f)))
         continue;
-      for (int dof : (*_facet_dofs)[f])
+      for (int dof : facet_dofs[f])
       {
         for (int j = 0; j < n; ++j)
         {
@@ -1103,18 +1108,13 @@ private:
     }
   }
 
-  // Set _orientation_mask and the two derived from it. Called once each
-  // constructor has set _cell_type, _entity_dofs and
-  // _depends_on_cell_orientation.
+  // Set _orientation_mask and _applied_orientation_mask. Called once
+  // each constructor has set _cell_type and _depends_on_cell_orientation.
   void init_orientation_masks()
   {
     _orientation_mask = mesh::orientation_mask(mesh::cell_dim(_cell_type));
     _applied_orientation_mask
         = _depends_on_cell_orientation ? _orientation_mask : 0;
-    const int tdim = mesh::cell_dim(_cell_type);
-    _facet_dofs = tdim > 0 and std::cmp_less(tdim - 1, _entity_dofs.size())
-                      ? &_entity_dofs[tdim - 1]
-                      : nullptr;
   }
 
   // Value shape in physical space. For blocked elements this is larger
@@ -1168,9 +1168,6 @@ private:
   // basis depends on the orientation. Precomputed because flip_reversed
   // runs per cell.
   std::uint32_t _applied_orientation_mask = 0;
-
-  // _entity_dofs[tdim - 1], or nullptr if there is no such dimension
-  const std::vector<std::vector<int>>* _facet_dofs = nullptr;
 
   std::vector<std::vector<std::vector<int>>> _entity_dofs;
   std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
