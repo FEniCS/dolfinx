@@ -104,15 +104,25 @@ from dolfinx import default_real_type, default_scalar_type, fem, mesh
 # with a continuous piecewise linear space on each mesh.
 
 
-def create_hierarchy(num_levels: int) -> list[fem.FunctionSpace]:
-    """Function spaces on a coarse mesh and its uniform refinements."""
+def create_hierarchy(
+    num_levels: int,
+) -> tuple[list[fem.FunctionSpace], list[np.ndarray]]:
+    """Function spaces on a coarse mesh and its uniform refinements.
+
+    The parent cell of each refined cell is returned alongside the
+    spaces. The default partitioner keeps refined cells on the process
+    owning their parent, so this is all that is needed to build the
+    prolongations without any collision detection.
+    """
     msh = mesh.create_unit_square(MPI.COMM_WORLD, 8, 8, dtype=default_real_type)
     spaces = [fem.functionspace(msh, ("Lagrange", 1))]
+    parent_cells = []
     for _ in range(num_levels - 1):
         msh.topology.create_entities(1)
-        msh, _, _ = mesh.refine(msh)
+        msh, parents, _ = mesh.refine(msh)
+        parent_cells.append(parents)
         spaces.append(fem.functionspace(msh, ("Lagrange", 1)))
-    return spaces
+    return spaces, parent_cells
 
 
 # The problem is defined on any level of the hierarchy by the following
@@ -181,7 +191,9 @@ def shell_dm(V: fem.FunctionSpace) -> PETSc.DMShell:
 
 
 def attach_hierarchy(
-    pc: PETSc.PC, spaces: list[fem.FunctionSpace]
+    pc: PETSc.PC,
+    spaces: list[fem.FunctionSpace],
+    parent_cells: list[np.ndarray],
 ) -> tuple[list[PETSc.DMShell], list[PETSc.Mat]]:
     """Give pc a DM that PCMG can coarsen through the spaces.
 
@@ -189,8 +201,10 @@ def attach_hierarchy(
     """
     dms = [shell_dm(V) for V in spaces]
     prolongations = []
-    for coarse, fine, dm_c, dm_f in zip(spaces[:-1], spaces[1:], dms[:-1], dms[1:], strict=True):
-        P = dolfinx.fem.petsc.nonmatching_interpolation_matrix(coarse, fine)
+    for coarse, fine, dm_c, dm_f, parents in zip(
+        spaces[:-1], spaces[1:], dms[:-1], dms[1:], parent_cells, strict=True
+    ):
+        P = dolfinx.fem.petsc.hierarchy_interpolation_matrix(coarse, fine, parents)
         P.assemble()
         prolongations.append(P)
         dm_f.setCoarsen(lambda dm, comm, dm_c=dm_c: dm_c)
@@ -260,7 +274,7 @@ def solve(num_levels: int, galerkin: bool) -> tuple[int, int, float]:
     Returns the number of degrees-of-freedom, the number of conjugate
     gradient iterations and the L2-error.
     """
-    spaces = create_hierarchy(num_levels)
+    spaces, parent_cells = create_hierarchy(num_levels)
     V = spaces[-1]
     msh = V.mesh
 
@@ -292,7 +306,7 @@ def solve(num_levels: int, galerkin: bool) -> tuple[int, int, float]:
         petsc_options=petsc_options,
         petsc_options_prefix=f"demo_poisson_gmg_{num_levels}_",
     )
-    dms, prolongations = attach_hierarchy(problem.solver.getPC(), spaces)
+    dms, prolongations = attach_hierarchy(problem.solver.getPC(), spaces, parent_cells)
     if not galerkin:
         attach_operators(dms, spaces)
     uh = problem.solve()

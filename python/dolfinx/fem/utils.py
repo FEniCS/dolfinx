@@ -349,6 +349,150 @@ def _nonmatching_interpolation_data(
     return _cells, np.ascontiguousarray(weights.reshape(-1)), data
 
 
+def _nonmatching_matrix_from_data(
+    V0: FunctionSpace,
+    V1: FunctionSpace,
+    cells: npt.NDArray[np.int32],
+    weights: npt.NDArray[np.floating],
+    data: _PointOwnershipData,
+    tol: float,
+    maxit: int,
+    num_threads: int,
+) -> _MatrixCSR:
+    """Build the matrix from precomputed interpolation data."""
+    dtype = V0.mesh.geometry.x.dtype
+    if V1.mesh.geometry.x.dtype != dtype:
+        raise TypeError(
+            "nonmatching_interpolation_matrix requires V0 and V1 to have the same dtype."
+        )
+    return _MatrixCSR(
+        _nonmatching_interpolation_matrix(
+            V0._cpp_object,
+            V1._cpp_object,
+            cells,
+            weights.astype(dtype),
+            data._cpp_object,
+            tol,
+            maxit,
+            num_threads,
+        )
+    )
+
+
+def _hierarchy_interpolation_data(
+    V0: FunctionSpace,
+    V1: FunctionSpace,
+    parent_cells: npt.ArrayLike,
+) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.floating], _PointOwnershipData]:
+    """Cells, weights and point ownership for a refined mesh hierarchy.
+
+    :func:`_nonmatching_interpolation_data` finds the owning rank and
+    cell of every point by searching a bounding-box tree. Here the mesh
+    of ``V1`` is a refinement of the mesh of ``V0`` that was not
+    redistributed, so each fine cell lies inside its parent cell on the
+    same process, and the routing is known exactly: every point stays
+    local.
+
+    The layout required of the
+    :class:`dolfinx.geometry.PointOwnershipData` is dictated by
+    ``impl::scatter_values``: ``dest_owners`` must be in contiguous runs
+    by rank, which holds trivially here because the only rank involved
+    is this one. ``dest_cells`` indexes cells of the mesh of ``V0``.
+    """
+    tdim = V1.mesh.topology.dim
+    num_cells = V1.mesh.topology.index_map(tdim).size_local
+    _cells = np.arange(num_cells, dtype=np.int32)
+
+    _parent = np.asarray(parent_cells, dtype=np.int32).reshape(-1)
+    if _parent.size < num_cells:
+        raise ValueError("parent_cells must have an entry for each owned cell of the mesh of V1.")
+    # parent_cells is indexed by the cell order *before* the reordering
+    # done when the refined mesh is constructed. original_cell_index maps
+    # each cell of the refined mesh back to that order, as
+    # refinement::transfer_cell_meshtag does.
+    original = np.asarray(V1.mesh.topology._cpp_object.original_cell_index, dtype=np.int64)
+    offset = V1.mesh.topology.index_map(tdim).local_range[0]
+    _parent_final = _parent[(original[:num_cells] - offset).astype(np.int32)]
+
+    coarse_map = V0.mesh.topology.index_map(V0.mesh.topology.dim)
+    num_coarse = coarse_map.size_local + coarse_map.num_ghosts
+    if num_cells > 0 and (_parent_final.min() < 0 or _parent_final.max() >= num_coarse):
+        raise ValueError("parent_cells contains indices outside the mesh of V0.")
+
+    # Interpolation points of V1 in physical space, ordered by cell
+    x = _interpolation_coords(  # type: ignore[call-overload]
+        V1.element._cpp_object, V1.mesh.geometry._cpp_object, _cells
+    ).T
+    num_ip = V1.element.interpolation_points.shape[0]
+    point_cells = np.repeat(_cells, num_ip)
+    dest_cells = _parent_final[point_cells]
+
+    dtype = V0.mesh.geometry.x.dtype
+    num_points = x.shape[0]
+    weights = np.ones(num_points, dtype=dtype)
+
+    # No communication: this rank owns every point it asks about
+    rank = np.int32(V1.mesh.comm.rank)
+    local_ranks = np.full(num_points, rank, dtype=np.int32)
+    cls = getattr(_cpp.geometry, f"PointOwnershipData_float{8 * np.dtype(dtype).itemsize}")
+    data = _PointOwnershipData(
+        cls(
+            local_ranks,
+            local_ranks,
+            np.ascontiguousarray(x, dtype=dtype).reshape(-1),
+            np.ascontiguousarray(dest_cells, dtype=np.int32),
+        )
+    )
+    return _cells, weights, data
+
+
+def hierarchy_interpolation_matrix(
+    V0: FunctionSpace,
+    V1: FunctionSpace,
+    parent_cells: npt.ArrayLike,
+    tol: float = 1e-6,
+    maxit: int = 15,
+    num_threads: int = 1,
+) -> _MatrixCSR:
+    """Interpolation matrix from a mesh to its refinement.
+
+    Equivalent to :func:`nonmatching_interpolation_matrix` when the mesh
+    of ``V1`` is a refinement of the mesh of ``V0``, but without the
+    collision detection: ``parent_cells`` already names the cell of the
+    mesh of ``V0`` containing each cell of the mesh of ``V1``, so no
+    bounding-box search and no communication are needed.
+
+    Args:
+        V0: Coarse space to interpolate from.
+        V1: Refined space to interpolate to.
+        parent_cells: Cell of the mesh of ``V0`` containing each owned
+            cell of the mesh of ``V1``, as returned by
+            :func:`dolfinx.mesh.refine` with
+            :attr:`dolfinx.mesh.RefinementOption.parent_cell`.
+        tol: Tolerance of the Newton method for non-affine pull-backs.
+        maxit: Maximum number of Newton iterations for non-affine
+            pull-backs.
+        num_threads: Number of threads used to evaluate the basis. Must
+            be >= 1.
+
+    Returns:
+        Interpolation matrix, as for
+        :func:`nonmatching_interpolation_matrix`.
+
+    Note:
+        The refinement must not have been redistributed, i.e. each
+        refined cell must be on the process owning its parent. This
+        holds for :func:`dolfinx.mesh.refine` with the default identity
+        partitioner.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
+    """
+    _cells, weights, data = _hierarchy_interpolation_data(V0, V1, parent_cells)
+    return _nonmatching_matrix_from_data(V0, V1, _cells, weights, data, tol, maxit, num_threads)
+
+
 def nonmatching_interpolation_matrix(
     V0: FunctionSpace,
     V1: FunctionSpace,
@@ -410,45 +554,7 @@ def nonmatching_interpolation_matrix(
     _cells, weights, data = _nonmatching_interpolation_data(
         V0, V1, cells, expansion, padding, allow_extrapolation
     )
-    match V0._cpp_object, V1._cpp_object, data._cpp_object:
-        case (
-            _cpp.fem.FunctionSpace_float32() as cpp0,
-            _cpp.fem.FunctionSpace_float32() as cpp1,
-            _cpp.geometry.PointOwnershipData_float32() as cpp_data,
-        ):
-            return _MatrixCSR(
-                _nonmatching_interpolation_matrix(
-                    cpp0,
-                    cpp1,
-                    _cells,
-                    weights.astype(np.float32),
-                    cpp_data,
-                    tol,
-                    maxit,
-                    num_threads,
-                )
-            )
-        case (
-            _cpp.fem.FunctionSpace_float64() as cpp0,
-            _cpp.fem.FunctionSpace_float64() as cpp1,
-            _cpp.geometry.PointOwnershipData_float64() as cpp_data,
-        ):
-            return _MatrixCSR(
-                _nonmatching_interpolation_matrix(
-                    cpp0,
-                    cpp1,
-                    _cells,
-                    weights.astype(np.float64),
-                    cpp_data,
-                    tol,
-                    maxit,
-                    num_threads,
-                )
-            )
-        case _:
-            raise TypeError(
-                "nonmatching_interpolation_matrix requires V0 and V1 to have the same dtype."
-            )
+    return _nonmatching_matrix_from_data(V0, V1, _cells, weights, data, tol, maxit, num_threads)
 
 
 def compute_integration_domains(

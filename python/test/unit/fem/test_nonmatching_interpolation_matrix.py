@@ -10,8 +10,28 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import basix.ufl
 import dolfinx
+import ufl
 from dolfinx import fem, la, mesh
+
+
+def _line_in_3d(n: int, dtype, centre=(0.37, 0.43), zrange=(0.23, 0.71)) -> mesh.Mesh:
+    """Interval mesh parallel to the z-axis, embedded in 3D.
+
+    The default centre and z-range avoid the grid planes of a unit cube
+    divided into 5, so no point of the line, and no point of a circle
+    of radius 0.11 around it, lies on a facet of the 3D mesh.
+    """
+    if MPI.COMM_WORLD.rank == 0:
+        z = np.linspace(*zrange, n + 1)
+        x = np.column_stack([np.full(n + 1, centre[0]), np.full(n + 1, centre[1]), z]).astype(dtype)
+        cells = np.column_stack([np.arange(n), np.arange(1, n + 1)]).astype(np.int64)
+    else:
+        x = np.zeros((0, 3), dtype=dtype)
+        cells = np.zeros((0, 2), dtype=np.int64)
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(3,), dtype=dtype))
+    return mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
 
 
 def _square(n: tuple[int, int], cell_type, dtype, lower=(0.0, 0.0), upper=(1.0, 1.0)):
@@ -152,32 +172,40 @@ def test_translation_expansion(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_square_average_expansion(dtype):
-    """Weighted points can interpolate an average around each point.
+def test_circle_average_expansion_3d_1d(dtype):
+    """Average over a circle around each point of a 1D mesh in 3D.
 
-    The 2x2 Gauss rule on a square of half-width h is exact for
-    quadratics, and the average of x^2 + 2y^2 over the square is
-    x^2 + 2y^2 + h^2.
+    This is the coupling of FEniCSx_ii: a function on a 3D mesh is
+    averaged over a circle around each interpolation point of a 1D mesh
+    embedded in the 3D one. The 4-point rule on the circle is exact for
+    quadratics, and the average of ``x^2 + 2y^2 + z`` over a circle of
+    radius ``r`` in the plane normal to the z-axis, which is the plane
+    the circle lies in here, is ``x^2 + 2y^2 + z + 3r^2/2``.
     """
-    mesh0 = _square((6, 6), mesh.CellType.triangle, dtype)
-    mesh1 = _square((3, 4), mesh.CellType.triangle, dtype, (0.2, 0.2), (0.8, 0.8))
+    mesh0 = _cube((5, 5, 5), mesh.CellType.tetrahedron, dtype)
+    mesh1 = _line_in_3d(4, dtype)
     V0 = fem.functionspace(mesh0, ("Lagrange", 2))
     V1 = fem.functionspace(mesh1, ("Lagrange", 2))
-    h = 0.1
-    g = h / np.sqrt(3)
-    offsets = np.array([[-g, -g, 0], [g, -g, 0], [-g, g, 0], [g, g, 0]])
 
-    def square_average(x, cells):
+    # The line and the circle around it are off the grid planes of the
+    # 3D mesh, so each point lies strictly inside a cell rather than on
+    # a facet shared by several. The phase of the rule is irrelevant to
+    # its exactness, but keeps the points off the axes too.
+    r = 0.11
+    theta = 2 * np.pi * np.arange(4) / 4 + np.pi / 7
+    offsets = np.column_stack([r * np.cos(theta), r * np.sin(theta), np.zeros(4)])
+
+    def circle_average(x, cells):
         points = x[:, None, :] + offsets[None, :, :]
         return points, np.full((x.shape[0], 4), 0.25)
 
     u0 = fem.Function(V0, dtype=dtype)
-    u0.interpolate(lambda x: x[0] ** 2 + 2 * x[1] ** 2)
+    u0.interpolate(lambda x: x[0] ** 2 + 2 * x[1] ** 2 + x[2])
     u1_ref = fem.Function(V1, dtype=dtype)
-    u1_ref.interpolate(lambda x: x[0] ** 2 + 2 * x[1] ** 2 + h**2)
+    u1_ref.interpolate(lambda x: x[0] ** 2 + 2 * x[1] ** 2 + x[2] + 1.5 * r**2)
 
     eps = np.finfo(dtype).eps
-    A = fem.nonmatching_interpolation_matrix(V0, V1, expansion=square_average, padding=1e2 * eps)
+    A = fem.nonmatching_interpolation_matrix(V0, V1, expansion=circle_average, padding=1e2 * eps)
     _assert_close(_apply(A, u0, V1), u1_ref, dtype)
 
 
@@ -264,3 +292,41 @@ def test_pull_back_failure_raises_on_all_processes():
     # With no Newton iterations the non-affine pull-back cannot converge
     with pytest.raises(RuntimeError):
         fem.nonmatching_interpolation_matrix(V0, V1, maxit=0)
+
+
+@pytest.mark.parametrize("degree", [1, 2])
+def test_hierarchy_matches_nonmatching(degree):
+    """The hierarchy matrix equals the one built by collision detection.
+
+    On a refinement the parent cell of each cell is known, so no
+    bounding-box search and no communication are needed, but the matrix
+    must be the same.
+    """
+    dtype = dolfinx.default_real_type
+    coarse = mesh.create_unit_square(MPI.COMM_WORLD, 6, 6, dtype=dtype)
+    coarse.topology.create_entities(1)
+    fine, parent_cells, _ = mesh.refine(coarse)
+    V0 = fem.functionspace(coarse, ("Lagrange", degree))
+    V1 = fem.functionspace(fine, ("Lagrange", degree))
+    u0 = _random_function(V0, dtype)
+
+    eps = np.finfo(dtype).eps
+    A_ref = fem.nonmatching_interpolation_matrix(V0, V1, padding=1e2 * eps)
+    A = fem.hierarchy_interpolation_matrix(V0, V1, parent_cells)
+    _assert_close(_apply(A, u0, V1), _apply(A_ref, u0, V1), dtype)
+
+
+def test_hierarchy_rejects_bad_parent_cells():
+    dtype = dolfinx.default_real_type
+    coarse = mesh.create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
+    coarse.topology.create_entities(1)
+    fine, parent_cells, _ = mesh.refine(coarse)
+    V0 = fem.functionspace(coarse, ("Lagrange", 1))
+    V1 = fem.functionspace(fine, ("Lagrange", 1))
+
+    with pytest.raises(ValueError):
+        fem.hierarchy_interpolation_matrix(V0, V1, parent_cells[:1])
+
+    bad = np.full_like(parent_cells, 10**6)
+    with pytest.raises(ValueError):
+        fem.hierarchy_interpolation_matrix(V0, V1, bad)

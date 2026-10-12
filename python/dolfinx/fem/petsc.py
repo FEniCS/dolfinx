@@ -87,6 +87,7 @@ __all__ = [
     "ctypes_utils",
     "discrete_curl",
     "discrete_gradient",
+    "hierarchy_interpolation_matrix",
     "interpolation_matrix",
     "nonmatching_interpolation_matrix",
     "numba_utils",
@@ -2463,6 +2464,32 @@ def nonmatching_interpolation_matrix(
     _cells, weights, data = dolfinx.fem.utils._nonmatching_interpolation_data(
         V0, V1, cells, expansion, padding, allow_extrapolation
     )
+    cpp_args = (V0._cpp_object, V1._cpp_object, _cells, weights, data._cpp_object)
+    return _nonmatching_interpolation_matrix(*cpp_args, tol, maxit, num_threads)  # type: ignore[arg-type]
+
+
+def hierarchy_interpolation_matrix(
+    V0: _FunctionSpace,
+    V1: _FunctionSpace,
+    parent_cells: npt.ArrayLike,
+    tol: float = 1e-6,
+    maxit: int = 15,
+    num_threads: int = 1,
+) -> PETSc.Mat:
+    """Interpolation matrix from a mesh to its refinement.
+
+    See :func:`dolfinx.fem.hierarchy_interpolation_matrix` for a
+    description of the arguments.
+
+    Returns:
+        Interpolation matrix. Its rows are distributed as the index map
+        of ``V1`` and its columns as the index map of ``V0``.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
+    """
+    _cells, weights, data = dolfinx.fem.utils._hierarchy_interpolation_data(V0, V1, parent_cells)
     cpp_args = (V0._cpp_object, V1._cpp_object, _cells, weights, data._cpp_object)
     return _nonmatching_interpolation_matrix(*cpp_args, tol, maxit, num_threads)  # type: ignore[arg-type]
 
