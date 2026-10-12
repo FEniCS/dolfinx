@@ -1274,6 +1274,18 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 /// a callable lets a caller (e.g. Function::eval) consume the basis of
 /// each point while it is in cache. Arguments are not checked.
 ///
+/// @param[in] element Element to evaluate. Its block size is ignored,
+/// i.e. the basis of one block is evaluated.
+/// @param[in] mesh Mesh that `element` is defined on.
+/// @param[in] x Points in physical space, `shape=(num_points,
+/// xshape[1])`, row-major.
+/// @param[in] xshape Shape of `x`.
+/// @param[in] cells `cells[p]` is the cell containing point `p`. Points
+/// with a negative cell index are skipped.
+/// @param[in] tol Tolerance of the Newton method for non-affine
+/// pull-backs. Ignored for affine geometries.
+/// @param[in] maxit Maximum number of Newton iterations for non-affine
+/// pull-backs. Ignored for affine geometries.
 /// @param[in] fn Callable `fn(p, cells[p], basis)` invoked for each
 /// point `p` with a non-negative cell index. `basis` has shape
 /// `(space_dimension / block_size, physical_base_value_size)` and is
