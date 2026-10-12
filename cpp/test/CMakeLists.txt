@@ -39,6 +39,7 @@ add_executable(
   petsc.cpp
   slepc.cpp
   io.cpp
+  io_hdf5.cpp
   io_xdmf.cpp
   common/CIFailure.cpp
   common/sub_systems_manager.cpp

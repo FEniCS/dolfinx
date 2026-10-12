@@ -359,7 +359,9 @@ cells0, x = cube_block(comm, n)
 cmap = coordinate_element(CellType.tetrahedron, 1)
 ghost_mode = GhostMode.none
 
-partitioners = {}
+partitioners: dict[
+    str, graph.GraphPartitioner | graph.GeometricPartitioner | graph.HybridPartitioner
+] = {}
 if has_parmetis:
     partitioners["ParMETIS Kway"] = graph.partitioner_parmetis()
     partitioners["ParMETIS GeomKway"] = graph.partitioner_parmetis_hybrid(1.02, [1, 0, 5])

@@ -1,4 +1,5 @@
 // Copyright (C) 2024 Paul T. Kühner
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -45,7 +46,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   bool compute_parent_cell = option_parent_cell(option);
 
   if (compute_parent_facet)
-    throw std::runtime_error("Parent facet computation not yet supported!");
+    throw std::invalid_argument("Parent facet computation not yet supported!");
 
   auto topology = mesh.topology();
   assert(topology);

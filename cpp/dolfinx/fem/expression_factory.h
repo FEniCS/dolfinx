@@ -112,7 +112,7 @@ Expression<T, U> create_expression(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error(
+      throw std::out_of_range(
           std::format("Expression coefficient \"{}\" not provided.", name));
     }
   }
@@ -130,7 +130,7 @@ Expression<T, U> create_expression(
       const_map.push_back(it->second);
     else
     {
-      throw std::runtime_error(
+      throw std::out_of_range(
           std::format("Expression constant \"{}\" not provided.", name));
     }
   }
