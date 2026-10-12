@@ -641,7 +641,7 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     const int n = (std::sqrt(1 + 8 * num_nodes) - 1) / 2;
     if (2 * num_nodes != n * (n + 1))
     {
-      throw std::runtime_error(std::format(
+      throw std::invalid_argument(std::format(
           "Unknown triangle layout. Number of nodes: {}", num_nodes));
     }
     return n - 1;
@@ -653,7 +653,7 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
       ++n;
     if (n * (n + 1) * (n + 2) != 6 * num_nodes)
     {
-      throw std::runtime_error(std::format(
+      throw std::invalid_argument(std::format(
           "Unknown tetrahedron layout. Number of nodes: {}", num_nodes));
     }
     return n - 1;
@@ -688,7 +688,7 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     case 40:
       return 3;
     default:
-      throw std::runtime_error(std::format(
+      throw std::invalid_argument(std::format(
           "No Lagrange prism has {} nodes, expected 6, 18 or 40. The 15-node "
           "wedge is a serendipity layout, which Basix does not have for a "
           "prism.",
@@ -704,14 +704,14 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     case 30:
       return 3;
     default:
-      throw std::runtime_error(std::format(
+      throw std::invalid_argument(std::format(
           "No Lagrange pyramid has {} nodes, expected 5, 14 or 30. The 13-node "
           "pyramid is a serendipity layout, which Basix does not have for a "
           "pyramid.",
           num_nodes));
     }
   default:
-    throw std::runtime_error("Unknown cell type.");
+    throw std::invalid_argument("Unknown cell type.");
   }
 }
 //-----------------------------------------------------------------------------

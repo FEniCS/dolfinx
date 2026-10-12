@@ -135,7 +135,7 @@ namespace dolfinx::io::cells
 /// @param[in] type Cell shape.
 /// @param[in] num_nodes Number of cell 'nodes'
 /// @return Lagrange order of the cell type.
-/// @throws std::runtime_error If no Lagrange layout of `type` has
+/// @throws std::invalid_argument If no Lagrange layout of `type` has
 /// `num_nodes` nodes.
 int cell_degree(mesh::CellType type, int num_nodes);
 

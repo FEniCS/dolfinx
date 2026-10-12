@@ -52,7 +52,20 @@ fem::CoordinateElement<U>
 coordinate_element(std::array<std::uint8_t, 2> type_degree)
 {
   mesh::CellType cell_type = std::get<0>(cells::vtk_to_dolfinx(type_degree[0]));
-  int cell_degree = type_degree[1];
+
+  // VTK_QUADRATIC_WEDGE and VTK_QUADRATIC_PYRAMID. Both are serendipity
+  // layouts (15 and 13 nodes) that Basix has no element for, and
+  // vtk_to_dolfinx reports degree 2 for them, so they would otherwise
+  // silently become 18- and 14-node Lagrange cells read from a 15- and
+  // 13-node connectivity. Every rank sees the same cell types, so this
+  // throws collectively.
+  if (type_degree[0] == 26 or type_degree[0] == 27)
+  {
+    throw std::runtime_error(std::format(
+        "VTK cell type {} is a serendipity layout that Basix cannot express.",
+        static_cast<int>(type_degree[0])));
+  }
+
   // VTK_QUADRATIC_QUAD and VTK_QUADRATIC_HEXAHEDRON, the two quadratic
   // serendipity layouts that Basix has an element for
   if (type_degree[0] == 23 or type_degree[0] == 25)
@@ -97,6 +110,7 @@ coordinate_element(std::array<std::uint8_t, 2> type_degree)
             element.embedded_subdegree(), element.embedded_superdegree(),
             element.polyset_type())));
   }
+  int cell_degree = type_degree[1];
   basix::element::lagrange_variant variant
       = (cell_degree > 2) ? basix::element::lagrange_variant::equispaced
                           : basix::element::lagrange_variant::unset;
