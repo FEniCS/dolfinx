@@ -678,8 +678,8 @@ if pyvista is not None:
 #
 # The mesh is already distributed, and that distribution is the
 # decomposition: each process splits the cells it holds into a few
-# subdomains and builds each one as a mesh on
-# {py:data}`MPI.COMM_SELF`, on which the local operator is assembled
+# subdomains and builds each one as a mesh on {py:data}`MPI.COMM_SELF
+# <mpi4py.MPI.COMM_SELF>`, on which the local operator is assembled
 # and factorised like any other problem. The overlap between processes
 # is the layer of ghost cells, so the mesh is created with
 # {py:attr}`GhostMode.shared_facet <dolfinx.mesh.GhostMode>`.
