@@ -636,7 +636,7 @@ void assign(const Vec x, Function<PetscScalar, T>& u)
   std::span<PetscScalar> _u = u.x()->array();
   if (static_cast<std::size_t>(n) != _u.size())
   {
-    throw std::runtime_error(std::format(
+    throw std::invalid_argument(std::format(
         "Vector has {} local entries, function has {}.", n, _u.size()));
   }
 

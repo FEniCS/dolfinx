@@ -675,7 +675,7 @@ void declare_objects(nb::module_& m, std::string type)
               self.interpolate(u0, span(*cells0), span(*cells1));
             else
             {
-              throw std::runtime_error(
+              throw std::invalid_argument(
                   "If cells1 is provided, cells0 must also be provided.");
             }
           },
@@ -763,7 +763,7 @@ void declare_objects(nb::module_& m, std::string type)
               dolfinx::fem::interpolate(self, span(*cells1), e0, span(*cells0));
             else
             {
-              throw std::runtime_error(
+              throw std::invalid_argument(
                   "If cells1 is provided, cells0 must also be provided.");
             }
           },
@@ -862,8 +862,10 @@ void declare_objects(nb::module_& m, std::string type)
               argument_space);
         }
         else
-          throw std::runtime_error(
+        {
+          throw std::invalid_argument(
               "create_expression requires geometry type scalar_value_t<T>.");
+        }
       },
       nb::arg("expression"), nb::arg("coefficients"), nb::arg("constants"),
       nb::arg("entity_maps"), nb::arg("argument_space").none(),
@@ -968,8 +970,10 @@ void declare_form(nb::module_& m, std::string type)
                       ptr_to_ref_wrapper_vec(entity_maps), mesh));
             }
             else
-              throw std::runtime_error(
+            {
+              throw std::invalid_argument(
                   "create_form requires geometry type scalar_value_t<T>.");
+            }
           },
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("subdomains"), nb::arg("entity_maps"),
@@ -1050,8 +1054,10 @@ void declare_form(nb::module_& m, std::string type)
               {*p}, spaces, coefficients, constants, sd, {}, std::move(mesh));
         }
         else
-          throw std::runtime_error(
+        {
+          throw std::invalid_argument(
               "create_form requires geometry type scalar_value_t<T>.");
+        }
       },
       nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
       nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh"),
@@ -1095,8 +1101,10 @@ void declare_form(nb::module_& m, std::string type)
               ptr_to_ref_wrapper_vec(entity_maps), std::move(mesh));
         }
         else
-          throw std::runtime_error(
+        {
+          throw std::invalid_argument(
               "create_form requires geometry type scalar_value_t<T>.");
+        }
       },
       // NOLINTEND(performance-no-int-to-ptr)
       nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
@@ -1212,7 +1220,7 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
             std::size_t working_size = self.pull_back_working_size(gdim);
             if (working_array.size() < working_size)
             {
-              throw std::runtime_error(
+              throw std::invalid_argument(
                   std::format("Working memory is too small for pull_back, "
                               "got {}, need {}.",
                               working_array.size(), working_size));

@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2022 Chris N. Richardson, Garth N. Wells,
+# Copyright (C) 2017-2026 Chris N. Richardson, Garth N. Wells,
 # Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -86,7 +86,7 @@ if _cpp.common.has_adios2:
             elif np.issubdtype(dtype, np.float64):
                 _vtxwriter = _cpp.io.VTXWriter_float64  # type: ignore[assignment]
             else:
-                raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
+                raise TypeError(f"VTXWriter does not support dtype={dtype}.")
 
             if isinstance(output, Mesh):
                 self._cpp_object = _vtxwriter(  # type: ignore[no-matching-overload]

@@ -417,7 +417,7 @@ void pack_coefficients(
   const int cstride = offsets.back();
 
   if (c.size() < entities.extent(0) * offsets.back())
-    throw std::runtime_error("Coefficient packing span is too small.");
+    throw std::invalid_argument("Coefficient packing span is too small.");
 
   // Iterate over coefficients
   const mesh::Topology& topology = *mesh.topology();

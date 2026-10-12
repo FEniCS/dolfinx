@@ -374,7 +374,7 @@ def model_to_mesh(
 
     valid_mesh = comm.bcast(valid_mesh, root=rank)
     if not valid_mesh:
-        raise RuntimeError("No 'physical groups' in gmsh mesh. Cannot continue.")
+        raise ValueError("No 'physical groups' in gmsh mesh. Cannot continue.")
 
     # Sort elements by descending dimension
     perm_sort = np.argsort(entity_tdim)[::-1]
@@ -402,7 +402,7 @@ def model_to_mesh(
 
     error_msg = comm.bcast(error_msg, root=rank)
     if error_msg != "":
-        raise RuntimeError(error_msg)
+        raise ValueError(error_msg)
 
     # Extract entity -> node connectivity for all cells and sub-entities
     # marked in the GMSH model
@@ -479,7 +479,7 @@ def model_to_mesh(
             max_facet_to_cell_links=max_facet_to_cell_links,
         )
     if tdim != mesh.topology.dim:
-        raise RuntimeError(f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}")
+        raise ValueError(f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}")
 
     # Create MeshTags for all sub entities
     topology = mesh.topology
@@ -495,7 +495,7 @@ def model_to_mesh(
             continue
 
         if codim == 1 and topology.cell_type in (CellType.prism, CellType.pyramid):
-            raise RuntimeError(f"Unsupported facet tag for type {topology.cell_type}")
+            raise ValueError(f"Unsupported facet tag for type {topology.cell_type}")
 
         # Distribute entity data [[e0_v0, e0_v1, ...], [e1_v0, e1_v1, ...],
         # ...] which is made in global input indices to local indices on
