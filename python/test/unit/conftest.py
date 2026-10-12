@@ -118,7 +118,7 @@ def mixed_topology_mesh():
         cells_np,
         [e._cpp_object for e in coordinate_elements],
         geomx,
-        part,
+        part._cpp_object,
         GhostMode.none,
         max_cells_per_facet,
         num_threads=1,

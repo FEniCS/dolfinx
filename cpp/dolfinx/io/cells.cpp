@@ -759,10 +759,20 @@ std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int num_nodes)
   case mesh::CellType::triangle:
     return 69;
   case mesh::CellType::quadrilateral:
+    if (num_nodes == 8)
+      return 23; // VTK_QUADRATIC_QUAD, the quadratic serendipity layout
+    if (num_nodes < 4)
+      throw std::invalid_argument("VTK quadrilaterals need at least 4 nodes.");
+    cell_degree(cell, num_nodes); // Throws if not a Lagrange layout
     return 70;
   case mesh::CellType::tetrahedron:
     return 71;
   case mesh::CellType::hexahedron:
+    if (num_nodes == 20)
+      return 25; // VTK_QUADRATIC_HEXAHEDRON, the quadratic serendipity layout
+    if (num_nodes < 8)
+      throw std::invalid_argument("VTK hexahedra need at least 8 nodes.");
+    cell_degree(cell, num_nodes); // Throws if not a Lagrange layout
     return 72;
   case mesh::CellType::prism:
     return 73;

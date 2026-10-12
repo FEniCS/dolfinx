@@ -96,6 +96,15 @@ def test_equality(V, V2, W, W2) -> None:
     assert W == W2
 
 
+def test_hash(V, V2, W, Q) -> None:
+    """A function space is hashable, consistently with equality."""
+    assert hash(V) == hash(V)  # /NOSONAR
+    assert hash(V) == hash(V2)
+    assert len({V, V2}) == 1
+    assert len({V, W, Q}) == 3
+    assert {V: "V", W: "W"}[V] == "V"
+
+
 def test_sub(Q, W) -> None:
     X = Q.sub(0)
 
