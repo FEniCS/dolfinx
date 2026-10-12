@@ -9,6 +9,7 @@
 #include "local_range.h"
 #include <algorithm>
 #include <array>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -31,7 +32,7 @@ namespace dolfinx::common
 /// `[i0, i1)`. `chunk` indexes any per-chunk output buffers, which
 /// must therefore be sized for `num_threads` chunks.
 /// @throws std::invalid_argument If `num_threads < 1`.
-template <typename F>
+template <std::invocable<int, std::size_t, std::size_t> F>
 void parallel_for(std::int64_t N, int num_threads, F f)
 {
   if (num_threads < 1)
