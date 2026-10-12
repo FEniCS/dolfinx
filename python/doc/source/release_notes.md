@@ -41,7 +41,9 @@ be ghosted with `GhostMode.shared_facet`. A surface taken as a submesh of a
 volume inherits a ghost layer that is too narrow for this; the mixed Poisson
 demo on the sphere, {doc}`demos/demo_manifold`, shows how to widen it with a
 custom partitioner. {doc}`demos/demo_mobius` and
-{doc}`demos/demo_mobius_eikonal` solve problems on a Möbius strip.
+{doc}`demos/demo_mobius_eikonal` solve problems on a Möbius strip, and
+{doc}`demos/demo_branching_manifold` on a T-joint, with one space per branch
+coupled by a Lagrange multiplier.
 
 Creating an H(div) space on a manifold now raises a `RuntimeError` until
 `mesh.topology.create_facet_orientations()` has been called. Calling it after

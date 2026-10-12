@@ -477,7 +477,7 @@ namespace
 constexpr std::array<bool, 4> edge_runs_forward = {true, false, true, false};
 } // namespace
 
-std::vector<std::uint8_t>
+std::vector<std::uint32_t>
 mesh::compute_facet_orientations(const mesh::Topology& topology)
 {
   common::Timer timer("Compute facet orientations");
@@ -502,83 +502,81 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
   const std::int32_t num_cells = num_owned + cell_map->num_ghosts();
   const int edges_per_cell = mesh::cell_num_entities(topology.cell_type(), 1);
 
-  // Whether walking round cell c in its vertex order runs edge e from
-  // its lower to its higher global vertex
+  // Whether walking round cell c in its vertex order runs its local
+  // edge i from the lower to the higher global vertex
   const std::vector<std::uint8_t>& edge_perms
       = topology.get_entity_permutations(1);
   assert(std::cmp_less_equal(edges_per_cell, edge_runs_forward.size()));
-  auto runs_up = [&c_to_e, &edge_perms, &edges_per_cell](std::int32_t c,
-                                                         std::int32_t e) -> bool
+  auto runs_up
+      = [&edge_perms, edges_per_cell](std::int32_t c, std::size_t i) -> bool
   {
-    std::span<const std::int32_t> edges = c_to_e->links(c);
-    const std::size_t i
-        = std::ranges::distance(edges.begin(), std::ranges::find(edges, e));
-    assert(i < edges.size());
     const bool reflected = edge_perms[c * edges_per_cell + i] % 2;
     return edge_runs_forward[i] != reflected;
   };
 
   // Global cell indices, which break the tie between the two cells of a
-  // facet the same way on every rank holding them, and independently of
-  // how the mesh is partitioned
+  // facet the same way on every rank holding them
   std::vector<std::int32_t> local(num_cells);
   std::iota(local.begin(), local.end(), 0);
   std::vector<std::int64_t> global(num_cells);
   cell_map->local_to_global(local, global);
 
-  // Correcting a facet needs the cell on its other side. An edge on a
-  // process boundary has it on another process, and it is reachable here
-  // only as a ghost cell, so the mesh must have been built with
-  // GhostMode::shared_facet. Checked collectively, so that every process
-  // throws or none does.
-  int blind = 0;
-  for (std::int32_t c = 0; c < num_owned and blind == 0; ++c)
-  {
-    for (std::int32_t e : c_to_e->links(c))
-    {
-      if (e_to_c->links(e).size() == 1
-          and std::ranges::binary_search(topology.interprocess_facets(), e))
-      {
-        blind = 1;
-        break;
-      }
-    }
-  }
-  MPI_Allreduce(MPI_IN_PLACE, &blind, 1, MPI_INT, MPI_LOR, topology.comm());
-  if (blind)
-  {
-    throw std::runtime_error(
-        "Orienting a surface needs the cell on the other side of every "
-        "facet, which on a process boundary is a ghost cell. Create the "
-        "mesh with GhostMode::shared_facet.");
-  }
-
-  // A facet of an owned cell is corrected when its two cells disagree
-  // and this is the cell with the larger global index
-  std::vector<std::uint8_t> flags(num_cells * edges_per_cell, 0);
+  // A facet of an owned cell is signed when its two cells run it the same
+  // way, i.e. give it opposite normals, and this cell has the larger
+  // global index. Errors are only recorded here, and raised before the
+  // scatter below, so that no process leaves while its peers wait in it.
+  // Correcting a facet on a process boundary needs the cell on its other
+  // side as a ghost, which GhostMode::shared_facet provides.
+  constexpr int missing_ghost = 1;
+  constexpr int non_manifold = 2;
+  int error = 0;
+  std::vector<std::uint32_t> flags(num_cells, 0);
+  const std::vector<std::int32_t>& interprocess
+      = topology.interprocess_facets();
   for (std::int32_t c = 0; c < num_owned; ++c)
   {
     std::span<const std::int32_t> edges = c_to_e->links(c);
     for (std::size_t i = 0; i < edges.size(); ++i)
     {
-      const std::int32_t e = edges[i];
-      if (e_to_c->links(e).size() > 2)
+      std::span<const std::int32_t> cells = e_to_c->links(edges[i]);
+      if (cells.size() > 2)
+        error |= non_manifold;
+      else if (cells.size() == 1)
       {
-        throw std::runtime_error("Cannot sign the facets: an edge is shared "
-                                 "by more than two cells.");
+        if (std::ranges::binary_search(interprocess, edges[i]))
+          error |= missing_ghost;
       }
-
-      for (std::int32_t d : e_to_c->links(e))
+      else
       {
-        if (d == c)
-          continue;
-
-        // Running the shared edge the same way means the two cells give
-        // it opposite normals, so one of them must be corrected
-        if (runs_up(c, e) == runs_up(d, e) and global[c] > global[d])
-          flags[c * edges_per_cell + i] = 1;
+        const std::int32_t d = cells[0] == c ? cells[1] : cells[0];
+        if (global[c] > global[d])
+        {
+          std::span<const std::int32_t> d_edges = c_to_e->links(d);
+          const std::size_t j = std::ranges::distance(
+              d_edges.begin(), std::ranges::find(d_edges, edges[i]));
+          assert(j < d_edges.size());
+          if (runs_up(c, i) == runs_up(d, j))
+            flags[c] |= reversed_facet_bit(i);
+        }
       }
     }
+  }
+
+#ifndef NDEBUG
+  // Make every process throw, or none
+  MPI_Allreduce(MPI_IN_PLACE, &error, 1, MPI_INT, MPI_BOR, topology.comm());
+#endif
+  if (error & non_manifold)
+  {
+    throw std::runtime_error("Cannot sign the facets: an edge is shared by "
+                             "more than two cells.");
+  }
+  if (error & missing_ghost)
+  {
+    throw std::runtime_error(
+        "Orienting a surface needs the cell on the other side of every "
+        "facet, which on a process boundary is a ghost cell. Create the "
+        "mesh with GhostMode::shared_facet.");
   }
 
   // Ghost cells take the flags of their owner, which sees all of their
@@ -587,24 +585,15 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
   common::Scatterer<> sc(*cell_map);
   const std::vector<std::int32_t>& local_idx = sc.local_indices_block();
   const std::vector<std::int32_t>& remote_idx = sc.remote_indices_block();
-  std::vector<std::uint8_t> send_buffer(local_idx.size() * edges_per_cell);
-  for (std::size_t i = 0; i < local_idx.size(); ++i)
-  {
-    std::ranges::copy_n(std::next(flags.begin(), local_idx[i] * edges_per_cell),
-                        edges_per_cell,
-                        std::next(send_buffer.begin(), i * edges_per_cell));
-  }
-  std::vector<std::uint8_t> recv_buffer(remote_idx.size() * edges_per_cell);
+  std::vector<std::uint32_t> send_buffer(local_idx.size());
+  std::ranges::transform(local_idx, send_buffer.begin(),
+                         [&flags](std::int32_t c) { return flags[c]; });
+  std::vector<std::uint32_t> recv_buffer(remote_idx.size());
   MPI_Request request = MPI_REQUEST_NULL;
-  sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), edges_per_cell,
-                       request);
+  sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), 1, request);
   sc.scatter_fwd_end(request);
   for (std::size_t i = 0; i < remote_idx.size(); ++i)
-  {
-    std::ranges::copy_n(
-        std::next(recv_buffer.begin(), i * edges_per_cell), edges_per_cell,
-        std::next(flags.begin(), (num_owned + remote_idx[i]) * edges_per_cell));
-  }
+    flags[num_owned + remote_idx[i]] = recv_buffer[i];
 
   return flags;
 }

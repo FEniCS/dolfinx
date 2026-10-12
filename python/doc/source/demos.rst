@@ -65,6 +65,10 @@ Problems on manifolds
 * :doc:`demos/demo_mobius_eikonal` -- compute the distance to the
   boundary of a Möbius strip, solving the eikonal equation with the
   latent variable proximal point algorithm in mixed form.
+* :doc:`demos/demo_branching_manifold` -- solve the Poisson equation in
+  mixed form on three sheets meeting along a line, with a
+  Raviart-Thomas space on each sheet, coupled by a Lagrange multiplier
+  on the joint, transferring mesh tags to the submeshes of the sheets.
 
 
 Time-dependent and nonlinear problems
@@ -186,6 +190,7 @@ PETSc scalars.
    demos/demo_manifold.md
    demos/demo_mobius.md
    demos/demo_mobius_eikonal.md
+   demos/demo_branching_manifold.md
    demos/demo_stokes.md
    demos/demo_navier-stokes.md
    demos/demo_hdg.md

@@ -549,8 +549,9 @@ def mobius_mesh(n, m, dtype=default_real_type, ghost_mode=GhostMode.none):
 def t_joint_mesh(dests, dtype=default_real_type):
     """Three triangles sharing one edge, cell ``i`` on rank ``dests[i]``.
 
-    The ranks are taken modulo the number of ranks. Ghosting across
-    facets gives every rank holding the edge all three of its cells.
+    The ranks are taken modulo the number of ranks. Each cell is ghosted
+    on the ranks of the other two, so every rank holding the edge sees
+    all three of its cells.
     """
     if MPI.COMM_WORLD.rank == 0:
         x = np.array([[0, 0, 0], [1, 0, 0], [0.5, 1, 0], [0.5, -1, 0], [0.5, 0, 1]])
@@ -560,18 +561,16 @@ def t_joint_mesh(dests, dtype=default_real_type):
         cells = np.zeros((0, 3), dtype=np.int64)
 
     def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
-        ranks = np.array(dests[: dual_graph.num_nodes], dtype=np.int32) % comm.size
-        return adjacencylist(ranks)
+        # All cells share the edge, so each is ghosted on the ranks of the
+        # others. The owner comes first.
+        ranks = [r % comm.size for r in dests[: dual_graph.num_nodes]]
+        rows = [[r, *sorted(set(ranks) - {r})] for r in ranks]
+        offsets = np.cumsum([0, *(len(row) for row in rows)], dtype=np.int32)
+        return adjacencylist(np.array([r for row in rows for r in row], dtype=np.int32), offsets)
 
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(3,), dtype=dtype))
     return create_mesh(
-        MPI.COMM_WORLD,
-        cells,
-        domain,
-        x.astype(dtype),
-        partitioner,
-        max_facet_to_cell_links=3,
-        ghost_mode=GhostMode.shared_facet,
+        MPI.COMM_WORLD, cells, domain, x.astype(dtype), partitioner, max_facet_to_cell_links=3
     )
 
 
