@@ -355,7 +355,13 @@ def solve(n, m):
 
     def norm(expr, measure):
         """The L2 norm of ``expr`` over ``measure``."""
-        integral = dolfinx.fem.form(ufl.inner(expr, expr) * measure, entity_maps=entity_maps)
+        # UFL estimates the degree of sin as that of its argument plus
+        # two, too low to measure the error of a high-degree space: at
+        # the few points it gives, the multiplier superconverges.
+        integral = dolfinx.fem.form(
+            ufl.inner(expr, expr) * measure(metadata={"quadrature_degree": 2 * order + 6}),
+            entity_maps=entity_maps,
+        )
         return np.sqrt(abs(msh.comm.allreduce(dolfinx.fem.assemble_scalar(integral))))
 
     x_joint = ufl.SpatialCoordinate(joint)
@@ -373,16 +379,24 @@ def solve(n, m):
 #
 # The errors converge at the optimal rate, $O(h^k)$ for Raviart-Thomas
 # of degree $k$, in the flux, the potential and the multiplier alike.
+# Each error is followed by its rate, computed from the previous mesh.
 
 # +
 resolutions = [4, 8, 16]
 columns = ["L2(u)", "L2(sigma)", "L2(u_Gamma)"]
-if MPI.COMM_WORLD.rank == 0:
-    print(f"{'n':>4}" + "".join(f"{c:>14}" for c in columns))
 results = [solve(n, n) for n in resolutions]
 if MPI.COMM_WORLD.rank == 0:
-    for n, (*_, errors) in zip(resolutions, results, strict=True):
-        print(f"{n:>4}" + "".join(f"{errors[c]:>14.3e}" for c in columns))
+    print(f"{'n':>4}" + "".join(f"{c:>14}{'rate':>6}" for c in columns))
+    for i, (n, (*_, errors)) in enumerate(zip(resolutions, results, strict=True)):
+        row = f"{n:>4}"
+        for c in columns:
+            if i == 0:
+                rate = ""
+            else:
+                ratio = results[i - 1][-1][c] / errors[c]
+                rate = f"{np.log(ratio) / np.log(n / resolutions[i - 1]):.2f}"
+            row += f"{errors[c]:>14.3e}{rate:>6}"
+        print(row)
 # -
 
 # ### Visualisation: interpolation from submeshes to the parent mesh
