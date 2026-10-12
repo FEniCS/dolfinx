@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Garth N. Wells
+// Copyright (C) 2021-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -79,13 +79,17 @@ TEST_CASE("Prism and pyramid cell degree", "[io][cells]")
   CHECK(cells::cell_degree(CellType::prism, 18) == 2);
   CHECK(cells::cell_degree(CellType::pyramid, 5) == 1);
   CHECK(cells::cell_degree(CellType::pyramid, 14) == 2);
-  CHECK_THROWS(cells::cell_degree(CellType::prism, 17));
-  CHECK_THROWS(cells::cell_degree(CellType::pyramid, 15));
+  CHECK_THROWS_AS(cells::cell_degree(CellType::prism, 17),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(cells::cell_degree(CellType::pyramid, 15),
+                  std::invalid_argument);
 
   // Serendipity, not Lagrange: a degree would collide with the 18-node
   // wedge and the 14-node pyramid, which VTKHDF reads keyed on degree
-  CHECK_THROWS(cells::cell_degree(CellType::prism, 15));
-  CHECK_THROWS(cells::cell_degree(CellType::pyramid, 13));
+  CHECK_THROWS_AS(cells::cell_degree(CellType::prism, 15),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(cells::cell_degree(CellType::pyramid, 13),
+                  std::invalid_argument);
 }
 
 TEST_CASE("VTK cell type round-trip", "[io][cells]")

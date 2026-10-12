@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2022 Jørgen S. Dokken and Garth N. Wells
+# Copyright (C) 2021-2026 Jørgen S. Dokken and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -118,14 +118,14 @@ def _(
         "DP",
         "P",
     ]:
-        raise RuntimeError(
-            "Can only create meshes from continuous or discontinuous Lagrange"
-            "spaces, not {V.ufl_element().family_name}."
+        raise ValueError(
+            "Can only create meshes from continuous or discontinuous Lagrange "
+            f"spaces, not {V.ufl_element().family_name}."
         )
 
     degree = V.ufl_element().degree
     if degree == 0:
-        raise RuntimeError("Cannot create topology from cellwise constants.")
+        raise ValueError("Cannot create topology from cellwise constants.")
 
     # Use all local cells if not supplied
     msh = V.mesh

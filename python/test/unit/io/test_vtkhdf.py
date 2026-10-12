@@ -135,7 +135,7 @@ def test_read_write_higher_order():
         cells_np,
         [e._cpp_object for e in coordinate_elements],
         geom,
-        part,
+        part._cpp_object,
         dolfinx.mesh.GhostMode.none,
         max_cells_per_facet,
         num_threads=1,

@@ -253,7 +253,7 @@ def test_mixed_topology_partitioning():
     p = part(
         MPI.COMM_WORLD,
         nparts,
-        dual_graph._cpp_object,
+        dual_graph,
         None,
         None,
         False,

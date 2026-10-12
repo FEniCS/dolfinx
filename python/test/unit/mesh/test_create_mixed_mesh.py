@@ -90,7 +90,7 @@ def test_create_mixed_mesh(dtype):
         cells_np,
         [hexahedron._cpp_object, pyramid._cpp_object, tetrahedron._cpp_object],
         geomx,
-        part,
+        part._cpp_object,
         GhostMode.none,
         max_cells_per_facet,
         num_threads=1,

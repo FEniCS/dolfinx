@@ -1,4 +1,5 @@
 // Copyright (C) 2019 Jorgen S. Dokken
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -267,7 +268,7 @@ vtk_to_dolfinx(std::int8_t vtk_cell_type)
     default:
       break;
     }
-    throw std::runtime_error("Unknown VTK cell type");
+    throw std::invalid_argument("Unknown VTK cell type");
   }
 }
 

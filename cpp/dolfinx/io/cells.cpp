@@ -353,7 +353,7 @@ std::vector<std::uint16_t> vtk_wedge(int num_nodes)
   case 18:
     return {0, 1, 2, 3, 4, 5, 6, 9, 7, 12, 14, 13, 8, 10, 11, 15, 17, 16};
   default:
-    throw std::runtime_error("Unknown wedge layout");
+    throw std::invalid_argument("Unknown wedge layout");
   }
 }
 //-----------------------------------------------------------------------------
@@ -368,7 +368,7 @@ std::vector<std::uint16_t> vtk_pyramid(int num_nodes)
   case 14:
     return {0, 1, 3, 2, 4, 5, 8, 10, 6, 7, 9, 12, 11, 13};
   default:
-    throw std::runtime_error("Unknown pyramid layout");
+    throw std::invalid_argument("Unknown pyramid layout");
   }
 }
 //-----------------------------------------------------------------------------
@@ -460,7 +460,7 @@ std::vector<std::uint16_t> gmsh_triangle(int num_nodes)
   case 10:
     return {0, 1, 2, 7, 8, 3, 4, 6, 5, 9};
   default:
-    throw std::runtime_error("Higher order Gmsh triangle not supported");
+    throw std::invalid_argument("Higher order Gmsh triangle not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -476,7 +476,7 @@ std::vector<std::uint16_t> gmsh_tetrahedron(int num_nodes)
     return {0,  1,  2, 3, 14, 15, 8,  9,  13, 12,
             11, 10, 5, 4, 7,  6,  19, 18, 17, 16};
   default:
-    throw std::runtime_error("Higher order Gmsh tetrahedron not supported");
+    throw std::invalid_argument("Higher order Gmsh tetrahedron not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -495,7 +495,7 @@ std::vector<std::uint16_t> gmsh_hexahedron(int num_nodes)
             32, 34, 35, 33, 36, 37, 39, 38, 40, 42, 43, 41, 44, 45, 47, 46,
             49, 48, 50, 51, 52, 53, 55, 54, 56, 57, 59, 58, 60, 61, 63, 62};
   default:
-    throw std::runtime_error("Higher order Gmsh hexahedron not supported");
+    throw std::invalid_argument("Higher order Gmsh hexahedron not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -510,7 +510,8 @@ std::vector<std::uint16_t> gmsh_quadrilateral(int num_nodes)
   case 16:
     return {0, 1, 3, 2, 4, 5, 8, 9, 11, 10, 7, 6, 12, 13, 15, 14};
   default:
-    throw std::runtime_error("Higher order Gmsh quadrilateral not supported");
+    throw std::invalid_argument(
+        "Higher order Gmsh quadrilateral not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -529,7 +530,7 @@ std::vector<std::uint16_t> gmsh_prism(int num_nodes)
             14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 37, 25, 26,
             28, 27, 29, 31, 32, 30, 33, 34, 36, 35, 38, 39};
   default:
-    throw std::runtime_error("Higher order Gmsh prism not supported");
+    throw std::invalid_argument("Higher order Gmsh prism not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -547,7 +548,7 @@ std::vector<std::uint16_t> gmsh_pyramid(int num_nodes)
     return {0,  1,  3,  2,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14,
             16, 15, 19, 20, 17, 18, 25, 26, 27, 28, 21, 23, 24, 22, 29};
   default:
-    throw std::runtime_error("Higher order Gmsh pyramid not supported");
+    throw std::invalid_argument("Higher order Gmsh pyramid not supported");
   }
 }
 } // namespace
@@ -584,7 +585,7 @@ std::vector<std::uint16_t> io::cells::perm_vtk(mesh::CellType type,
     map = vtk_pyramid(num_nodes);
     break;
   default:
-    throw std::runtime_error("Unknown cell type.");
+    throw std::invalid_argument("Unknown cell type.");
   }
 
   return cells::transpose(map);
@@ -622,7 +623,7 @@ std::vector<std::uint16_t> io::cells::perm_gmsh(mesh::CellType type,
     map = gmsh_pyramid(num_nodes);
     break;
   default:
-    throw std::runtime_error("Unknown cell type.");
+    throw std::invalid_argument("Unknown cell type.");
   }
 
   return cells::transpose(map);
@@ -730,7 +731,7 @@ io::cells::apply_permutation(std::span<const std::int64_t> cells,
                              std::span<const std::uint16_t> p)
 {
   if (cells.size() != shape[0] * shape[1])
-    throw std::runtime_error("Cell array size does not match given shape.");
+    throw std::invalid_argument("Cell array size does not match given shape.");
   assert(shape[1] == p.size());
 
   spdlog::info("IO permuting cells");
@@ -786,7 +787,7 @@ std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int num_nodes)
                     "Lagrange pyramids are not implemented in VTK.",
                     num_nodes));
   default:
-    throw std::runtime_error("Unknown cell type");
+    throw std::invalid_argument("Unknown cell type");
   }
 }
 //----------------------------------------------------------------------------

@@ -5,7 +5,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Graph representations and operations on graphs."""
 
-from typing import Generic
+from collections.abc import Callable
+from functools import wraps
+from typing import Generic, ParamSpec, TypeVar
 
 from mpi4py import MPI as _MPI
 
@@ -15,46 +17,22 @@ import numpy.typing as npt
 from dolfinx import cpp as _cpp
 from dolfinx.common import IndexMap
 from dolfinx.cpp.graph import (
-    partition_hilbert,
-    partition_morton,
-    partitioner,
     reorder_hilbert,
     reorder_morton,
 )
 from dolfinx.typing import Index
 
-# Import graph partitioners, which may or may not be available
-# (dependent on build configuration). Looked up via getattr rather than
-# a static "from ... import" since each CI build's generated dolfinx.cpp
-# stub only declares the partitioners enabled in that build, and a plain
-# import would make type checking build-configuration-specific.
-_partitioner_scotch = getattr(_cpp.graph, "partitioner_scotch", None)
-if _partitioner_scotch is not None:
-    partitioner_scotch = _partitioner_scotch
-_partitioner_parmetis = getattr(_cpp.graph, "partitioner_parmetis", None)
-if _partitioner_parmetis is not None:
-    partitioner_parmetis = _partitioner_parmetis
-_partitioner_kahip = getattr(_cpp.graph, "partitioner_kahip", None)
-if _partitioner_kahip is not None:
-    partitioner_kahip = _partitioner_kahip
-
-# Geometric partitioners, i.e. partitioners that use the position of each
-# graph node. As above, availability depends on the build configuration.
-_partitioner_parmetis_geom = getattr(_cpp.graph, "partitioner_parmetis_geom", None)
-if _partitioner_parmetis_geom is not None:
-    partitioner_parmetis_geom = _partitioner_parmetis_geom
-_partitioner_parmetis_hybrid = getattr(_cpp.graph, "partitioner_parmetis_hybrid", None)
-if _partitioner_parmetis_hybrid is not None:
-    partitioner_parmetis_hybrid = _partitioner_parmetis_hybrid
-
-
 __all__ = [
     "AdjacencyList",
+    "GeometricPartitioner",
+    "GraphPartitioner",
+    "HybridPartitioner",
     "adjacencylist",
     "comm_graph",
     "comm_graph_data",
     "comm_to_json",
     "distribute",
+    "partition",
     "partition_hilbert",
     "partition_morton",
     "partitioner",
@@ -177,6 +155,158 @@ def adjacencylist(
     return AdjacencyList(cpp_object)
 
 
+class GraphPartitioner:
+    """A graph partitioner for direct calls and mesh creation."""
+
+    def __init__(self, partitioner: _cpp.graph.GraphPartitioner):
+        """Wrap a native handle. Use the partitioner factories instead."""
+        self._cpp_object = partitioner
+
+    def __call__(
+        self,
+        comm: _MPI.Comm,
+        nparts: int,
+        local_graph: AdjacencyList[np.int64],
+        node_weights: npt.NDArray[np.int32] | None = None,
+        edge_weights: npt.NDArray[np.int32] | None = None,
+        ghosting: bool = False,
+    ) -> AdjacencyList[np.int32]:
+        """Partition a distributed graph.
+
+        Args:
+            comm: Communicator over which the graph is distributed.
+            nparts: Number of parts.
+            local_graph: Owned nodes with global node indices as links.
+            node_weights: Node weights; None gives equal weights.
+            edge_weights: One weight per link, or equal weights if None.
+            ghosting: Include parts owning adjacent nodes as destinations.
+
+        Returns:
+            Destinations for each node, with its owning part first.
+        """
+        cpp_graph = local_graph._cpp_object
+        if not isinstance(cpp_graph, _cpp.graph.AdjacencyList_int64):
+            raise TypeError("Partitioning requires an adjacency list with int64 links.")
+        return AdjacencyList(
+            self._cpp_object(comm, nparts, cpp_graph, node_weights, edge_weights, ghosting)
+        )
+
+
+class GeometricPartitioner:
+    """A partitioner using positions, without graph edges or ghosting."""
+
+    def __init__(self, partitioner: _cpp.graph.GeometricPartitioner):
+        """Wrap a native handle. Use the partitioner factories instead."""
+        self._cpp_object = partitioner
+
+    def __call__(
+        self,
+        comm: _MPI.Comm,
+        nparts: int,
+        x: npt.NDArray[np.float64],
+        node_weights: npt.NDArray[np.int32] | None = None,
+    ) -> npt.NDArray[np.int32]:
+        """Partition nodes by their positions.
+
+        Args:
+            comm: Communicator over which the nodes are distributed.
+            nparts: Number of parts.
+            x: Positions, with one row per owned node.
+            node_weights: Node weights; None gives equal weights.
+
+        Returns:
+            Owning part of each node.
+        """
+        return self._cpp_object(comm, nparts, x, node_weights)
+
+
+class HybridPartitioner:
+    """A partitioner using both graph edges and node positions."""
+
+    def __init__(self, partitioner: _cpp.graph.HybridPartitioner):
+        """Wrap a native handle. Use the partitioner factories instead."""
+        self._cpp_object = partitioner
+
+    def __call__(
+        self,
+        comm: _MPI.Comm,
+        nparts: int,
+        dual_graph: AdjacencyList[np.int64],
+        x: npt.NDArray[np.float64],
+        node_weights: npt.NDArray[np.int32] | None = None,
+        edge_weights: npt.NDArray[np.int32] | None = None,
+        ghosting: bool = False,
+    ) -> AdjacencyList[np.int32]:
+        """Partition a graph using its edges and node positions.
+
+        Args:
+            comm: Communicator over which the graph is distributed.
+            nparts: Number of parts.
+            dual_graph: Owned nodes with global node indices as links.
+            x: Positions, with one row per owned node.
+            node_weights: Node weights; None gives equal weights.
+            edge_weights: One weight per link, or equal weights if None.
+            ghosting: Include parts owning adjacent nodes as destinations.
+
+        Returns:
+            Destinations for each node, with its owning part first.
+        """
+        cpp_graph = dual_graph._cpp_object
+        if not isinstance(cpp_graph, _cpp.graph.AdjacencyList_int64):
+            raise TypeError("Partitioning requires an adjacency list with int64 links.")
+        return AdjacencyList(
+            self._cpp_object(comm, nparts, cpp_graph, x, node_weights, edge_weights, ghosting)
+        )
+
+
+def partitioner() -> GraphPartitioner:
+    """Create the default graph partitioner, also used by mesh creation."""
+    return GraphPartitioner(_cpp.graph.partitioner())
+
+
+_P = ParamSpec("_P")
+_C = TypeVar("_C")
+_T = TypeVar("_T")
+
+
+def _wrap_partitioner_factory(
+    factory: Callable[_P, _C], wrapper: Callable[[_C], _T]
+) -> Callable[_P, _T]:
+    """Wrap native handles, preserving backend configuration signatures."""
+
+    @wraps(factory)
+    def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+        return wrapper(factory(*args, **kwargs))
+
+    # The copied nanobind docstring announces the native return type;
+    # point it at the Python wrapper that is actually returned.
+    wrapped.__doc__ = (factory.__doc__ or "").replace("-> dolfinx.cpp.graph.", "-> dolfinx.graph.")
+    return wrapped
+
+
+# Backend availability depends on the build, including its generated stubs.
+_partitioner_scotch = getattr(_cpp.graph, "partitioner_scotch", None)
+if _partitioner_scotch is not None:
+    partitioner_scotch = _wrap_partitioner_factory(_partitioner_scotch, GraphPartitioner)
+_partitioner_parmetis = getattr(_cpp.graph, "partitioner_parmetis", None)
+if _partitioner_parmetis is not None:
+    partitioner_parmetis = _wrap_partitioner_factory(_partitioner_parmetis, GraphPartitioner)
+_partitioner_kahip = getattr(_cpp.graph, "partitioner_kahip", None)
+if _partitioner_kahip is not None:
+    partitioner_kahip = _wrap_partitioner_factory(_partitioner_kahip, GraphPartitioner)
+
+partition_morton = GeometricPartitioner(_cpp.graph.partition_morton)
+partition_hilbert = GeometricPartitioner(_cpp.graph.partition_hilbert)
+_partitioner_parmetis_geom = getattr(_cpp.graph, "partitioner_parmetis_geom", None)
+if _partitioner_parmetis_geom is not None:
+    partitioner_parmetis_geom = GeometricPartitioner(_partitioner_parmetis_geom)
+_partitioner_parmetis_hybrid = getattr(_cpp.graph, "partitioner_parmetis_hybrid", None)
+if _partitioner_parmetis_hybrid is not None:
+    partitioner_parmetis_hybrid = _wrap_partitioner_factory(
+        _partitioner_parmetis_hybrid, HybridPartitioner
+    )
+
+
 def reorder_rcm(graph: AdjacencyList[np.int32]) -> npt.NDArray[np.int32]:
     """Re-order a graph using the reverse Cuthill-McKee algorithm.
 
@@ -191,6 +321,55 @@ def reorder_rcm(graph: AdjacencyList[np.int32]) -> npt.NDArray[np.int32]:
         node ``i``.
     """
     return np.asarray(_cpp.graph.reorder_rcm(graph._cpp_object), dtype=np.int32)  # type: ignore[arg-type]
+
+
+def partition(
+    comm: _MPI.Comm,
+    nparts: int,
+    local_graph: AdjacencyList[np.int64],
+    *,
+    partitioner: GraphPartitioner | None = None,
+    node_weights: npt.NDArray[np.int32] | None = None,
+    edge_weights: npt.NDArray[np.int32] | None = None,
+    ghosting: bool = False,
+) -> AdjacencyList[np.int32]:
+    """Partition the nodes of a graph into parts.
+
+    Applies a partitioner to a graph, e.g. the dual graph of a mesh
+    from :func:`build_dual_graph <dolfinx.mesh.build_dual_graph>`.
+    :func:`create_mesh <dolfinx.mesh.create_mesh>` partitions a mesh
+    itself; this is for partitioning a graph directly, for instance to
+    build the subdomains of a domain decomposition method. Passing
+    ``MPI.COMM_SELF`` partitions a graph held on one process into
+    ``nparts`` parts without communication.
+
+    Note:
+        Collective across ``comm``, and requires DOLFINx to be built
+        with a graph partitioner (ParMETIS, SCOTCH or KaHIP).
+
+    Args:
+        comm: MPI communicator that ``local_graph`` is distributed
+            across.
+        nparts: Number of parts to partition the graph into.
+        local_graph: Graph to partition, with the nodes owned by this
+            process as its nodes and global node indices as its links.
+        partitioner: Partitioner to apply. The default partitioner,
+            which is the one :func:`create_mesh
+            <dolfinx.mesh.create_mesh>` uses, is applied if ``None``.
+        node_weights: Weight of each node, which a partitioner may use
+            to balance the parts.
+        edge_weights: Weight of each edge, which a partitioner may use
+            to weigh the cost of cutting it.
+        ghosting: Return, for each node, the parts that share a node
+            with it in addition to the part that owns it.
+
+    Returns:
+        Part(s) of each node of ``local_graph``. The first entry for a
+        node is the part that owns it; any further entries are parts
+        that ghost it, and appear only if ``ghosting`` is ``True``.
+    """
+    fn = GraphPartitioner(_cpp.graph.partitioner()) if partitioner is None else partitioner
+    return fn(comm, nparts, local_graph, node_weights, edge_weights, ghosting)
 
 
 def distribute(

@@ -46,7 +46,7 @@ from dolfinx.cpp.refinement import mark_maximum as _mark_maximum
 from dolfinx.cpp.refinement import uniform_refine as _uniform_refine
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem.element import _coordinate_element_from_basix
-from dolfinx.graph import AdjacencyList
+from dolfinx.graph import AdjacencyList, GeometricPartitioner, GraphPartitioner, HybridPartitioner
 from dolfinx.typing import Real
 
 __all__ = [
@@ -103,12 +103,12 @@ PartitioningFunc = typing.Callable[
     [
         _MPI.Comm,
         int,
-        _cpp.graph.AdjacencyList_int64,
+        AdjacencyList[np.int64],
         npt.NDArray[np.int32] | None,
         npt.NDArray[np.int32] | None,
         bool,
     ],
-    _cpp.graph.AdjacencyList_int32 | AdjacencyList[np.int32],
+    AdjacencyList[np.int32],
 ]
 
 # float64 to match the C++ span<double> interface. Unlike
@@ -123,14 +123,22 @@ HybridPartitioningFunc = typing.Callable[
     [
         _MPI.Comm,
         int,
-        _cpp.graph.AdjacencyList_int64,
+        AdjacencyList[np.int64],
         npt.NDArray[np.float64],
         npt.NDArray[np.int32] | None,
         npt.NDArray[np.int32] | None,
         bool,
     ],
-    _cpp.graph.AdjacencyList_int32 | AdjacencyList[np.int32],
+    AdjacencyList[np.int32],
 ]
+
+_Partitioner = PartitioningFunc | GraphPartitioner | GeometricPartitioner | HybridPartitioner
+_MeshPartitioner = _Partitioner | tuple[_Partitioner, npt.NDArray[np.int32] | None] | None
+
+# Refinement re-distributes using the dual graph of the refined mesh
+# only, so it accepts a graph partitioner but not a geometric or hybrid
+# one: it has no cell positions to pass to them.
+_RefinePartitioner = PartitioningFunc | GraphPartitioner
 
 # A cell reordering function receives the local cell dual graph and
 # returns the new index of each cell.
@@ -139,7 +147,7 @@ CellReorderFunc = typing.Callable[[AdjacencyList[np.int32]], npt.NDArray[np.int3
 
 def create_geometric_cell_partitioner(
     part: GeometricPartitioningFunc,
-) -> _cpp.graph.GeometricPartitioner:
+) -> GeometricPartitioner:
     """Create a function to partition a mesh using cell positions.
 
     ``part`` is called by :func:`create_mesh` with each cell's centroid
@@ -159,22 +167,22 @@ def create_geometric_cell_partitioner(
 
     Args:
         part: A custom geometric graph partitioning function. The
-            built-in geometric partitioners (``dolfinx.cpp.graph``'s
+            built-in geometric partitioners (``dolfinx.graph``'s
             ``partition_morton``, ``partition_hilbert`` and
             ``partitioner_parmetis_geom``) already return a
-            :class:`~dolfinx.cpp.graph.GeometricPartitioner` and do not
+            :class:`~dolfinx.graph.GeometricPartitioner` and do not
             need to be wrapped.
 
     Return:
         Partitioning function, for use as :func:`create_mesh`'s
         ``partitioner`` argument.
     """
-    return _cpp.graph.create_geometric_cell_partitioner(part)
+    return GeometricPartitioner(_cpp.graph.create_geometric_cell_partitioner(part))
 
 
 def create_hybrid_cell_partitioner(
     part: HybridPartitioningFunc,
-) -> _cpp.graph.HybridPartitioner:
+) -> HybridPartitioner:
     """Create a function to partition a mesh using a hybrid partitioner.
 
     Unlike :func:`create_geometric_cell_partitioner`, the dual graph is
@@ -194,16 +202,16 @@ def create_hybrid_cell_partitioner(
 
     Args:
         part: A custom hybrid graph partitioning function. ParMETIS's
-            built-in hybrid partitioner (``dolfinx.cpp.graph``'s
+            built-in hybrid partitioner (``dolfinx.graph``'s
             ``partitioner_parmetis_hybrid``, i.e. ParMETIS `GeomKway`)
-            already returns a :class:`~dolfinx.cpp.graph.HybridPartitioner`
+            already returns a :class:`~dolfinx.graph.HybridPartitioner`
             and does not need to be wrapped.
 
     Return:
         Partitioning function, for use as :func:`create_mesh`'s
         ``partitioner`` argument.
     """
-    return _cpp.graph.create_hybrid_cell_partitioner(_wrap_partitioner(part))
+    return HybridPartitioner(_cpp.graph.create_hybrid_cell_partitioner(_wrap_partitioner(part)))
 
 
 def build_dual_graph(
@@ -775,7 +783,7 @@ def _mesh_from_ufl_domain(domain: ufl.Mesh) -> Mesh:
         return cargo
     if isinstance(cargo, _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64):
         return Mesh(cargo, domain)
-    raise RuntimeError("Expecting to find a Mesh in the UFL domain.")
+    raise TypeError("Expecting to find a Mesh in the UFL domain.")
 
 
 class MeshTags:
@@ -1105,12 +1113,12 @@ def transfer_meshtag(
         )
         return MeshTags(mt)
     else:
-        raise RuntimeError("MeshTag transfer is supported on cells or facets.")
+        raise ValueError("MeshTag transfer is supported on cells or facets.")
 
 
 def uniform_refine(
     msh: Mesh,
-    partitioner: Callable | None = None,
+    partitioner: _RefinePartitioner | None = None,
     ghost_mode: GhostMode = GhostMode.none,
 ) -> Mesh:
     """Uniformly refine a mesh.
@@ -1144,7 +1152,7 @@ def uniform_refine(
 def refine(
     msh: Mesh,
     edges: np.ndarray | None = None,
-    partitioner: Callable | IdentityPartitionerPlaceholder | None = (
+    partitioner: _RefinePartitioner | IdentityPartitionerPlaceholder | None = (
         IdentityPartitionerPlaceholder()
     ),
     option: RefinementOption = RefinementOption.parent_cell,
@@ -1190,9 +1198,6 @@ def refine(
     return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
 
 
-_MeshPartitioner = Callable | tuple[Callable, npt.NDArray[np.int32] | None] | None
-
-
 @typing.overload
 def _wrap_partitioner(fn: None) -> None: ...
 
@@ -1208,14 +1213,10 @@ def _wrap_partitioner(fn: IdentityPartitionerPlaceholder) -> IdentityPartitioner
 def _wrap_partitioner(
     fn: Callable | IdentityPartitionerPlaceholder | None,
 ) -> Callable | IdentityPartitionerPlaceholder | None:
-    """Adapt a partitioner so it may return a graph.AdjacencyList.
+    """Adapt Python graphs and unwrap native partitioner handles."""
+    if isinstance(fn, (GraphPartitioner, GeometricPartitioner, HybridPartitioner)):
+        return fn._cpp_object
 
-    Opaque C++ partitioner handles (e.g. as returned by
-    ``graph.partitioner_scotch()``) are passed through unchanged:
-    ``create_mesh``'s nanobind binding recognises them specifically, and
-    wrapping one in a Python closure would silently demote it to the
-    slower raw-callable code path.
-    """
     if fn is None or isinstance(
         fn,
         (
@@ -1228,8 +1229,8 @@ def _wrap_partitioner(
         return fn
 
     @wraps(fn)
-    def _wrapped(*args):
-        dest = fn(*args)
+    def _wrapped(comm, nparts, local_graph, *args):
+        dest = fn(comm, nparts, AdjacencyList(local_graph), *args)
         return dest._cpp_object if isinstance(dest, AdjacencyList) else dest
 
     return _wrapped
@@ -1245,10 +1246,10 @@ def _get_mesh_partitioner(
         return partitioner_fn, None
     if isinstance(partitioner, tuple):
         if len(partitioner) != 2:
-            raise TypeError("partitioner tuple must have two entries.")
+            raise ValueError("partitioner tuple must have two entries.")
         partitioner_fn, cell_weights = partitioner
         if partitioner_fn is None:
-            raise TypeError("The partitioner in the tuple must not be None.")
+            raise ValueError("The partitioner in the tuple must not be None.")
         return _wrap_partitioner(partitioner_fn), cell_weights
     return _wrap_partitioner(partitioner), None
 
@@ -1372,7 +1373,7 @@ def _create_mesh_coordinate_element(
         return cmap, domain
     if isinstance(e, _CoordinateElement):
         return e, None
-    raise ValueError(f"Unsupported element type {type(e)}.")
+    raise TypeError(f"Unsupported element type {type(e)}.")
 
 
 def create_mesh(
@@ -1530,7 +1531,7 @@ def meshtags(
     elif values.dtype == np.float64:
         ftype = _cpp.mesh.MeshTags_float64
     else:
-        raise NotImplementedError(f"Type {values.dtype} not supported.")
+        raise TypeError(f"Type {values.dtype} not supported.")
 
     return MeshTags(
         ftype(msh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values, name)
@@ -1581,7 +1582,7 @@ def create_interval(
     points: npt.ArrayLike,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode: GhostMode = GhostMode.shared_facet,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
     gdim: int = 1,
 ) -> Mesh:
     """Create an interval mesh.
@@ -1602,9 +1603,11 @@ def create_interval(
     Returns:
         An interval mesh.
     """
-    if partitioner is None and comm.size > 1:
-        partitioner = _cpp.graph.partitioner()
-    partitioner = _wrap_partitioner(partitioner)
+    if not (np.issubdtype(dtype, np.float32) or np.issubdtype(dtype, np.float64)):
+        raise TypeError(f"Unsupported mesh geometry float type: {dtype}")
+    partitioner_fn = _wrap_partitioner(partitioner)
+    if partitioner_fn is None and comm.size > 1:
+        partitioner_fn = _cpp.graph.partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1617,11 +1620,9 @@ def create_interval(
     )
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner, gdim)  # type: ignore[arg-type]
-    elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner, gdim)  # type: ignore[arg-type]
+        msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner_fn, gdim)  # type: ignore[arg-type]
     else:
-        raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
+        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner_fn, gdim)  # type: ignore[arg-type]
 
     return Mesh(msh, domain)
 
@@ -1631,7 +1632,7 @@ def create_unit_interval(
     nx: int,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode: GhostMode = GhostMode.shared_facet,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
     gdim: int = 1,
 ) -> Mesh:
     """Create a mesh on the unit interval.
@@ -1663,7 +1664,7 @@ def create_rectangle(
     cell_type: CellType = CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode: GhostMode = GhostMode.shared_facet,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
     diagonal: DiagonalType = DiagonalType.right,
     gdim: int = 2,
 ) -> Mesh:
@@ -1688,9 +1689,11 @@ def create_rectangle(
     Returns:
         A mesh of a rectangle.
     """
-    if partitioner is None and comm.size > 1:
-        partitioner = _cpp.graph.partitioner()
-    partitioner = _wrap_partitioner(partitioner)
+    if not (np.issubdtype(dtype, np.float32) or np.issubdtype(dtype, np.float64)):
+        raise TypeError(f"Unsupported mesh geometry float type: {dtype}")
+    partitioner_fn = _wrap_partitioner(partitioner)
+    if partitioner_fn is None and comm.size > 1:
+        partitioner_fn = _cpp.graph.partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1708,24 +1711,22 @@ def create_rectangle(
             points,  # type: ignore[arg-type]
             n,
             cell_type,
-            partitioner,
-            diagonal,
-            gdim,
-            ghost_mode,
-        )
-    elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_rectangle_float64(
-            comm,
-            points,  # type: ignore[arg-type]
-            n,
-            cell_type,
-            partitioner,
+            partitioner_fn,
             diagonal,
             gdim,
             ghost_mode,
         )
     else:
-        raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
+        msh = _cpp.mesh.create_rectangle_float64(
+            comm,
+            points,  # type: ignore[arg-type]
+            n,
+            cell_type,
+            partitioner_fn,
+            diagonal,
+            gdim,
+            ghost_mode,
+        )
 
     return Mesh(msh, domain)
 
@@ -1737,7 +1738,7 @@ def create_unit_square(
     cell_type: CellType = CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode: GhostMode = GhostMode.shared_facet,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
     diagonal: DiagonalType = DiagonalType.right,
     gdim: int = 2,
 ) -> Mesh:
@@ -1782,7 +1783,7 @@ def create_box(
     cell_type: CellType = CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode: GhostMode = GhostMode.shared_facet,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
 ) -> Mesh:
     """Create a box mesh.
 
@@ -1801,9 +1802,11 @@ def create_box(
     Returns:
         A mesh of a box domain.
     """
-    if partitioner is None and comm.size > 1:
-        partitioner = _cpp.graph.partitioner()
-    partitioner = _wrap_partitioner(partitioner)
+    if not (np.issubdtype(dtype, np.float32) or np.issubdtype(dtype, np.float64)):
+        raise TypeError(f"Unsupported mesh geometry float type: {dtype}")
+    partitioner_fn = _wrap_partitioner(partitioner)
+    if partitioner_fn is None and comm.size > 1:
+        partitioner_fn = _cpp.graph.partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1816,11 +1819,9 @@ def create_box(
     )
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner, ghost_mode)  # type: ignore[arg-type]
-    elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner, ghost_mode)  # type: ignore[arg-type]
+        msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner_fn, ghost_mode)  # type: ignore[arg-type]
     else:
-        raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
+        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner_fn, ghost_mode)  # type: ignore[arg-type]
 
     return Mesh(msh, domain)
 
@@ -1833,7 +1834,7 @@ def create_unit_cube(
     cell_type: CellType = CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode: GhostMode = GhostMode.shared_facet,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
 ) -> Mesh:
     """Create a mesh of a unit cube.
 
@@ -1940,7 +1941,7 @@ def create_geometry(
             commonly from a mesh input file.
     """
     if x.dtype not in (np.float32, np.float64):
-        raise ValueError(f"Unknown floating type for geometry, got: {x.dtype}")
+        raise TypeError(f"Unknown floating type for geometry, got: {x.dtype}")
     if (dtype := np.dtype(element.dtype)) != x.dtype:
         raise ValueError(f"Mismatch in x dtype ({x.dtype}) and coordinate element ({dtype})")
 
@@ -1958,7 +1959,7 @@ def create_geometry(
             )
         )
     else:
-        raise ValueError(f"Unknown floating type for coordinate element, got: {dtype}")
+        raise TypeError(f"Unknown floating type for coordinate element, got: {dtype}")
 
 
 def transfer_meshtags_to_submesh(
@@ -1985,8 +1986,9 @@ def transfer_meshtags_to_submesh(
     dim = entity_tag.dim
     sub_tdim = submesh.topology.dim
     if dim > sub_tdim:
-        raise RuntimeError(
-            f"Cannot transfer meshtags of dimension {dim} to submesh with topological dimension"
+        raise ValueError(
+            f"Cannot transfer meshtags of dimension {dim} to submesh with topological "
+            f"dimension {sub_tdim}."
         )
 
     submesh.topology.create_connectivity(sub_tdim, sub_tdim)
@@ -2003,9 +2005,7 @@ def transfer_meshtags_to_submesh(
     elif dtype == np.float64:
         ftype = _cpp.mesh.transfer_meshtags_to_submesh_float64
     else:
-        raise NotImplementedError(
-            f"MeshTags with dtype {dtype} not supported for transfer to submesh."
-        )
+        raise TypeError(f"MeshTags with dtype {dtype} not supported for transfer to submesh.")
     cpp_tag = ftype(
         entity_tag._cpp_object,  # type: ignore[arg-type]
         submesh.topology._cpp_object,
@@ -2025,6 +2025,9 @@ def create_point_mesh(comm: _MPI.Comm, points: npt.NDArray[np.float32 | np.float
         comm: MPI communicator to create the mesh on.
         points: Points local to the process in the mesh.
     """
+    if points.dtype not in (np.float32, np.float64):
+        raise TypeError(f"Unsupported dtype for mesh {points.dtype}")
+
     # Create topology which only has a 0->0 connectivity and dim 0 entities
     cells = np.arange(points.shape[0], dtype=np.int32).reshape(-1, 1)
     num_nodes_local = cells.shape[0]
@@ -2050,6 +2053,6 @@ def create_point_mesh(comm: _MPI.Comm, points: npt.NDArray[np.float32 | np.float
     elif isinstance(cpp_geometry, _cpp.mesh.Geometry_float32):
         cpp_mesh = _cpp.mesh.Mesh_float32(comm, topology, cpp_geometry)
     else:
-        raise RuntimeError(f"Unsupported dtype for mesh {points.dtype}")
+        raise TypeError(f"Unsupported dtype for mesh {points.dtype}")
 
     return Mesh(cpp_mesh, domain=ufl.Mesh(e))

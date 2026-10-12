@@ -1,4 +1,5 @@
 # Copyright (C) 2023 Chris N. Richardson
+# Copyright (C) 2026 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -343,17 +344,17 @@ def test_bad_entry(dtype) -> None:
     mat1 = matrix_csr(sp, dtype=dtype)
 
     # Set block in bs=1 matrix (tests insert_blocked_csr)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(IndexError):
         mat1.set(np.array([1.0, 2.0, 3.0, 4.0], dtype=dtype), np.array([0]), np.array([0]), 2)
 
     # Set an single entry in bs=1 matrix (tests insert_csr)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(IndexError):
         mat1.add(np.array([1.0], dtype=dtype), np.array([0]), np.array([0]), 1)
 
     sp = create_test_sparsity(3, 2)
     mat2 = matrix_csr(sp, BlockMode.compact, dtype=dtype)
     # set unblocked in bs=2 matrix (tests insert_nonblocked_csr)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(IndexError):
         mat2.add(np.array([2.0, 3.0, 4.0, 5.0], dtype=dtype), np.array([0, 1]), np.array([0, 1]), 1)
 
 
