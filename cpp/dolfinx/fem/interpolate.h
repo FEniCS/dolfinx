@@ -346,6 +346,62 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
   }
 }
 
+/// @brief Compute the Jacobian, its inverse and its determinant of a
+/// cell at reference points.
+///
+/// For an affine map the Jacobian is constant, so it is computed at the
+/// first point and copied to the others.
+///
+/// @param[in] cmap Coordinate element of the cell.
+/// @param[in] phi Coordinate element basis and first derivatives at the
+/// reference points, `shape=(tdim + 1, num_points, num_dofs_g, 1)`.
+/// @param[in] coord_dofs Cell geometry, `shape=(num_dofs_g, gdim)`.
+/// @param[out] J Jacobians, `shape=(num_points, gdim, tdim)`.
+/// @param[out] K Inverse Jacobians, `shape=(num_points, tdim, gdim)`.
+/// @param[out] detJ Jacobian determinants, `shape=(num_points,)`.
+/// @param[in,out] det_scratch Working memory of size `2 * gdim * tdim`.
+template <std::floating_point T>
+void compute_jacobians(const CoordinateElement<T>& cmap,
+                       mdspan_t<const T, 4> phi,
+                       mdspan_t<const T, 2> coord_dofs, mdspan_t<T, 3> J,
+                       mdspan_t<T, 3> K, std::span<T> detJ,
+                       std::span<T> det_scratch)
+{
+  const std::size_t num_points = J.extent(0);
+  const std::size_t tdim = J.extent(2);
+  std::fill_n(J.data_handle(), J.size(), 0);
+  if (cmap.is_affine() and num_points > 0)
+  {
+    auto dphi
+        = md::submdspan(phi, std::pair(1, tdim + 1), 0, md::full_extent, 0);
+    auto _J = md::submdspan(J, 0, md::full_extent, md::full_extent);
+    cmap.compute_jacobian(dphi, coord_dofs, _J);
+    auto _K = md::submdspan(K, 0, md::full_extent, md::full_extent);
+    cmap.compute_jacobian_inverse(_J, _K);
+    detJ[0] = cmap.compute_jacobian_determinant(_J, det_scratch);
+    const std::size_t Jsize = J.extent(1) * J.extent(2);
+    for (std::size_t p = 1; p < num_points; ++p)
+    {
+      std::copy_n(J.data_handle(), Jsize, J.data_handle() + p * Jsize);
+      std::copy_n(K.data_handle(), Jsize, K.data_handle() + p * Jsize);
+      detJ[p] = detJ[0];
+    }
+  }
+  else
+  {
+    for (std::size_t p = 0; p < num_points; ++p)
+    {
+      auto dphi
+          = md::submdspan(phi, std::pair(1, tdim + 1), p, md::full_extent, 0);
+      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+      cmap.compute_jacobian(dphi, coord_dofs, _J);
+      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+      cmap.compute_jacobian_inverse(_J, _K);
+      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
+    }
+  }
+}
+
 /// @brief Apply interpolation operator Pi to the values of several
 /// functions at once.
 ///
@@ -718,18 +774,8 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
         coord_dofs(i, j) = x_g[pos + j];
     }
 
-    // Compute Jacobians and reference points for current cell
-    std::ranges::fill(J_b, 0);
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
-    {
-      auto dphi
-          = md::submdspan(phi, std::pair(1, tdim + 1), p, md::full_extent, 0);
-      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-      cmap.compute_jacobian(dphi, coord_dofs, _J);
-      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-      cmap.compute_jacobian_inverse(_J, _K);
-      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
-    }
+    // Compute Jacobians at the reference points for current cell
+    compute_jacobians<U>(cmap, phi, coord_dofs, J, K, detJ, det_scratch);
 
     // Copy evaluated basis on reference, apply DOF transformations, and
     // push forward to physical element
@@ -1177,8 +1223,6 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
                                   md::dynamic_extent, md::dynamic_extent, 1>>
       phi(phi_b.data(), phi_shape);
   cmap.tabulate(1, X, Xshape, phi_b);
-  auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), md::full_extent,
-                            md::full_extent, 0);
 
   std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
@@ -1210,16 +1254,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
     }
 
     // Compute J, detJ and K
-    std::ranges::fill(J_b, 0);
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
-    {
-      auto _dphi = md::submdspan(dphi, md::full_extent, p, md::full_extent);
-      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-      cmap.compute_jacobian(_dphi, coord_dofs, _J);
-      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-      cmap.compute_jacobian_inverse(_J, _K);
-      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
-    }
+    compute_jacobians<U>(cmap, phi, coord_dofs, J, K, detJ, det_scratch);
 
     const std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
     std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);

@@ -26,6 +26,7 @@
 #include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/fem/sparsitybuild.h>
+#include <dolfinx/geometry/utils.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -152,6 +153,48 @@ void declare_petsc_discrete_operators(nb::module_& m)
         return A;
       },
       nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));
+
+  m.def(
+      "nonmatching_interpolation_matrix",
+      [](const dolfinx::fem::FunctionSpace<U>& V0,
+         const dolfinx::fem::FunctionSpace<U>& V1,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+         nb::ndarray<const U, nb::ndim<1>, nb::c_contig> weights,
+         const dolfinx::geometry::PointOwnershipData<U>& interpolation_data,
+         double tol, int maxit, int num_threads)
+      {
+        std::span<const std::int32_t> _cells(cells.data(), cells.size());
+        auto [data, column_map, sp] = create_nonmatching_sparsity(
+            V0, V1, _cells, interpolation_data, tol, maxit, num_threads);
+
+        // Build operator
+        Mat A = dolfinx::la::petsc::create_matrix(V0.mesh()->comm(), sp);
+        try
+        {
+          dolfinx::common::petsc::check(
+              MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE),
+              "MatSetOption");
+          dolfinx::fem::interpolation_matrix<T, U>(
+              V0, V1, _cells, std::span(weights.data(), weights.size()), data,
+              *column_map,
+              dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES));
+        }
+        catch (...)
+        {
+          // Destroy A before rethrowing. Report rather than throw on
+          // failure: throwing here would replace the in-flight exception.
+          if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
+          {
+            spdlog::error("MatDestroy failed with error code {}.",
+                          static_cast<int>(ierr));
+          }
+          throw;
+        }
+        return A;
+      },
+      nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"),
+      nb::arg("cells"), nb::arg("weights"), nb::arg("interpolation_data"),
+      nb::arg("tol"), nb::arg("maxit"), nb::arg("num_threads"));
 }
 
 } // namespace dolfinx_wrappers

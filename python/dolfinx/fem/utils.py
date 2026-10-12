@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Callable
 
 import numpy as np
 import numpy.typing as npt
@@ -24,10 +25,15 @@ from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem import evaluate_basis_functions as _evaluate_basis_functions
+from dolfinx.cpp.fem import interpolation_coords as _interpolation_coords
 from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
+from dolfinx.cpp.fem import (
+    nonmatching_interpolation_matrix as _nonmatching_interpolation_matrix,
+)
 from dolfinx.fem.element import CoordinateElement
 from dolfinx.fem.function import FunctionSpace
 from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
+from dolfinx.geometry import determine_point_ownership as _determine_point_ownership
 from dolfinx.la import MatrixCSR as _MatrixCSR
 from dolfinx.la import SparsityPattern as _SparsityPattern
 
@@ -281,6 +287,167 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
         case _:
             raise TypeError(
                 "interpolation_matrix requires space0 and space1 to have the same dtype."
+            )
+
+
+#: Expansion of interpolation points into weighted points, see
+#: :func:`nonmatching_interpolation_matrix`.
+PointExpansion = Callable[
+    [npt.NDArray[np.floating], npt.NDArray[np.int32]],
+    tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]],
+]
+
+
+def _nonmatching_interpolation_data(
+    V0: FunctionSpace,
+    V1: FunctionSpace,
+    cells: npt.ArrayLike | None,
+    expansion: PointExpansion | None,
+    padding: float,
+    allow_extrapolation: bool,
+) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.floating], _PointOwnershipData]:
+    """Cells, weights and point ownership for cross-mesh interpolation."""
+    if cells is None:
+        num_cells = V1.mesh.topology.index_map(V1.mesh.topology.dim).size_local
+        _cells = np.arange(num_cells, dtype=np.int32)
+    else:
+        _cells = np.asarray(cells, dtype=np.int32).reshape(-1)
+
+    # Interpolation points of V1 in physical space, ordered by cell
+    x = _interpolation_coords(  # type: ignore[call-overload]
+        V1.element._cpp_object, V1.mesh.geometry._cpp_object, _cells
+    ).T
+    num_points = x.shape[0]
+    num_ip = V1.element.interpolation_points.shape[0]
+    point_cells = np.repeat(_cells, num_ip)
+
+    dtype = V0.mesh.geometry.x.dtype
+    if expansion is None:
+        points = x
+        weights = np.ones(num_points, dtype=dtype)
+    else:
+        _points, _weights = expansion(x, point_cells)
+        points = np.asarray(_points, dtype=dtype)
+        weights = np.asarray(_weights, dtype=dtype)
+        if (
+            points.ndim != 3
+            or points.shape[0] != num_points
+            or points.shape[2] != 3
+            or weights.shape != points.shape[:2]
+        ):
+            raise ValueError(
+                "expansion must return points with shape (num_points, nq, 3) and "
+                "weights with shape (num_points, nq)."
+            )
+
+    data = _determine_point_ownership(
+        V0.mesh,
+        np.ascontiguousarray(points.reshape(-1, 3), dtype=dtype),
+        padding,
+        find_closest_cell=allow_extrapolation,
+    )
+    return _cells, np.ascontiguousarray(weights.reshape(-1)), data
+
+
+def nonmatching_interpolation_matrix(
+    V0: FunctionSpace,
+    V1: FunctionSpace,
+    cells: npt.ArrayLike | None = None,
+    expansion: PointExpansion | None = None,
+    padding: float = 1e-14,
+    allow_extrapolation: bool = True,
+    tol: float = 1e-6,
+    maxit: int = 15,
+    num_threads: int = 1,
+) -> _MatrixCSR:
+    """Create the interpolation matrix between spaces on different meshes.
+
+    If :math:`u_0` is the degree-of-freedom vector of a function in
+    ``V0``, then :math:`u_1 = A u_0` is the degree-of-freedom vector of
+    its interpolation into ``V1`` on ``cells``. The meshes of ``V0`` and
+    ``V1`` need not match, and may be distributed differently.
+
+    The basis of ``V0`` is evaluated at the interpolation points of
+    ``V1``, pushed forward to physical space. An ``expansion`` can
+    replace each interpolation point by several weighted points, whose
+    values are summed before the interpolation operator of ``V1`` is
+    applied, e.g. to interpolate the average over a circle around each
+    point.
+
+    Args:
+        V0: Space to interpolate from.
+        V1: Space to interpolate to.
+        cells: Cells of the mesh of ``V1`` to interpolate on. Defaults
+            to the cells owned by this process.
+        expansion: Callable ``expansion(x, cells)`` taking the
+            interpolation points ``x`` with shape ``(num_points, 3)``
+            and the cell of each point, and returning points with shape
+            ``(num_points, nq, 3)`` and their weights with shape
+            ``(num_points, nq)``. Any normalisation (e.g. division by
+            the length of a circle) must be included in the weights. If
+            ``None``, each interpolation point is used with weight one.
+        padding: Absolute padding of the cell bounding boxes of the mesh
+            of ``V0`` when searching for the cells containing the points.
+        allow_extrapolation: If ``True``, a point not contained in any
+            cell of the mesh of ``V0`` is assigned the closest candidate
+            cell. If ``False``, such a point does not contribute.
+        tol: Tolerance of the Newton method for non-affine pull-backs.
+        maxit: Maximum number of Newton iterations for non-affine
+            pull-backs.
+        num_threads: Number of threads used to evaluate the basis.
+
+    Returns:
+        Interpolation matrix. Its rows are indexed by the index map of
+        ``V1``. Its columns are indexed by the index map of ``V0``
+        extended with the ghosts needed by the matrix
+        (``A.index_map(1)``), so a vector to multiply must be created
+        from that index map.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
+    """
+    _cells, weights, data = _nonmatching_interpolation_data(
+        V0, V1, cells, expansion, padding, allow_extrapolation
+    )
+    match V0._cpp_object, V1._cpp_object, data._cpp_object:
+        case (
+            _cpp.fem.FunctionSpace_float32() as cpp0,
+            _cpp.fem.FunctionSpace_float32() as cpp1,
+            _cpp.geometry.PointOwnershipData_float32() as cpp_data,
+        ):
+            return _MatrixCSR(
+                _nonmatching_interpolation_matrix(
+                    cpp0,
+                    cpp1,
+                    _cells,
+                    weights.astype(np.float32),
+                    cpp_data,
+                    tol,
+                    maxit,
+                    num_threads,
+                )
+            )
+        case (
+            _cpp.fem.FunctionSpace_float64() as cpp0,
+            _cpp.fem.FunctionSpace_float64() as cpp1,
+            _cpp.geometry.PointOwnershipData_float64() as cpp_data,
+        ):
+            return _MatrixCSR(
+                _nonmatching_interpolation_matrix(
+                    cpp0,
+                    cpp1,
+                    _cells,
+                    weights.astype(np.float64),
+                    cpp_data,
+                    tol,
+                    maxit,
+                    num_threads,
+                )
+            )
+        case _:
+            raise TypeError(
+                "nonmatching_interpolation_matrix requires V0 and V1 to have the same dtype."
             )
 
 

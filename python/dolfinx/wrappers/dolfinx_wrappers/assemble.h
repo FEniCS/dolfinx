@@ -11,6 +11,7 @@
 #include <array>
 #include <basix/mdspan.hpp>
 #include <cstdint>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -20,6 +21,7 @@
 #include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/expression_evaluate.h>
 #include <dolfinx/fem/sparsitybuild.h>
+#include <dolfinx/geometry/utils.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -43,6 +45,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -116,6 +119,63 @@ create_sparsity_entity_closure(const dolfinx::fem::FunctionSpace<U>& V0,
   return sp;
 }
 
+/// Basis data, column index map and finalised sparsity pattern of a
+/// nonmatching interpolation matrix from V0 to V1. Collective.
+template <typename U>
+std::tuple<dolfinx::fem::NonmatchingBasisData<U>,
+           std::shared_ptr<const dolfinx::common::IndexMap>,
+           dolfinx::la::SparsityPattern>
+create_nonmatching_sparsity(
+    const dolfinx::fem::FunctionSpace<U>& V0,
+    const dolfinx::fem::FunctionSpace<U>& V1,
+    std::span<const std::int32_t> cells,
+    const dolfinx::geometry::PointOwnershipData<U>& interpolation_data,
+    double tol, int maxit, int num_threads)
+{
+  dolfinx::fem::NonmatchingBasisData<U> data
+      = dolfinx::fem::evaluate_basis_nonmatching(V0, interpolation_data, tol,
+                                                 maxit, num_threads);
+  auto column_map = std::make_shared<const dolfinx::common::IndexMap>(
+      dolfinx::fem::create_column_map(V0, data));
+  std::shared_ptr<const dolfinx::fem::DofMap> dofmap0 = V0.dofmap();
+  std::shared_ptr<const dolfinx::fem::DofMap> dofmap1 = V1.dofmap();
+  dolfinx::la::SparsityPattern sp(
+      V1.mesh()->comm(), {dofmap1->index_map, column_map},
+      {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
+  dolfinx::fem::sparsity_nonmatching(sp, V1, cells, data, *column_map);
+  sp.finalize();
+  return {std::move(data), std::move(column_map), std::move(sp)};
+}
+
+/// Call `f` with the `mat_add_values` functor of `A` for its block
+/// sizes.
+template <typename T, typename F>
+void mat_add_dispatch(dolfinx::la::MatrixCSR<T>& A, F&& f)
+{
+  auto [bs0, bs1] = A.block_size();
+  if (bs0 == 1 and bs1 == 1)
+    f(A.template mat_add_values<1, 1>());
+  else if (bs0 == 2 and bs1 == 1)
+    f(A.template mat_add_values<2, 1>());
+  else if (bs0 == 1 and bs1 == 2)
+    f(A.template mat_add_values<1, 2>());
+  else if (bs0 == 2 and bs1 == 2)
+    f(A.template mat_add_values<2, 2>());
+  else if (bs0 == 3 and bs1 == 1)
+    f(A.template mat_add_values<3, 1>());
+  else if (bs0 == 1 and bs1 == 3)
+    f(A.template mat_add_values<1, 3>());
+  else if (bs0 == 3 and bs1 == 3)
+    f(A.template mat_add_values<3, 3>());
+  else
+  {
+    throw std::invalid_argument(
+        std::format("Interpolation matrix not supported between block sizes "
+                    "{} and {}.",
+                    bs0, bs1));
+  }
+}
+
 // Declare assembler function that have multiple scalar types
 template <typename T, typename U>
 void declare_discrete_operators(nanobind::module_& m)
@@ -130,54 +190,39 @@ void declare_discrete_operators(nanobind::module_& m)
 
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);
-
-        auto [bs0, bs1] = A.block_size();
-        if (bs0 == 1 and bs1 == 1)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<1, 1>());
-        }
-        else if (bs0 == 2 and bs1 == 1)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<2, 1>());
-        }
-        else if (bs0 == 1 and bs1 == 2)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<1, 2>());
-        }
-        else if (bs0 == 2 and bs1 == 2)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<2, 2>());
-        }
-        else if (bs0 == 3 and bs1 == 1)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<3, 1>());
-        }
-        else if (bs0 == 1 and bs1 == 3)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<1, 3>());
-        }
-        else if (bs0 == 3 and bs1 == 3)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<3, 3>());
-        }
-        else
-        {
-          throw std::invalid_argument(std::format(
-              "Interpolation matrix not supported between block sizes "
-              "{} and {}.",
-              bs0, bs1));
-        }
-
+        mat_add_dispatch(
+            A, [&V0, &V1](auto&& mat_add)
+            { dolfinx::fem::interpolation_matrix<T, U>(V0, V1, mat_add); });
         return A;
       },
       nb::arg("V0"), nb::arg("V1"));
+
+  m.def(
+      "nonmatching_interpolation_matrix",
+      [](const dolfinx::fem::FunctionSpace<U>& V0,
+         const dolfinx::fem::FunctionSpace<U>& V1,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+         nb::ndarray<const U, nb::ndim<1>, nb::c_contig> weights,
+         const dolfinx::geometry::PointOwnershipData<U>& interpolation_data,
+         double tol, int maxit, int num_threads)
+      {
+        std::span<const std::int32_t> _cells(cells.data(), cells.size());
+        auto [data, column_map, sp] = create_nonmatching_sparsity(
+            V0, V1, _cells, interpolation_data, tol, maxit, num_threads);
+        dolfinx::la::MatrixCSR<T> A(sp);
+        mat_add_dispatch(
+            A,
+            [&V0, &V1, &_cells, &weights, &data, &column_map](auto&& mat_add)
+            {
+              dolfinx::fem::interpolation_matrix<T, U>(
+                  V0, V1, _cells, std::span(weights.data(), weights.size()),
+                  data, *column_map, mat_add);
+            });
+        return A;
+      },
+      nb::arg("V0"), nb::arg("V1"), nb::arg("cells"), nb::arg("weights"),
+      nb::arg("interpolation_data"), nb::arg("tol"), nb::arg("maxit"),
+      nb::arg("num_threads"));
 
   m.def(
       "discrete_curl",

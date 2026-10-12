@@ -65,6 +65,7 @@ from dolfinx.fem.utils import (
     evaluate_basis_functions,
     interpolate_geometry,
     interpolation_matrix,
+    nonmatching_interpolation_matrix,
 )
 
 __all__ = [
@@ -110,6 +111,7 @@ __all__ = [
     "locate_dofs_geometrical",
     "locate_dofs_topological",
     "mixed_topology_form",
+    "nonmatching_interpolation_matrix",
     "pack_coefficients",
     "pack_constants",
     "set_bc_diagonal",
