@@ -119,8 +119,8 @@ def _(
         "P",
     ]:
         raise ValueError(
-            "Can only create meshes from continuous or discontinuous Lagrange"
-            "spaces, not {V.ufl_element().family_name}."
+            "Can only create meshes from continuous or discontinuous Lagrange "
+            f"spaces, not {V.ufl_element().family_name}."
         )
 
     degree = V.ufl_element().degree

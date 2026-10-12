@@ -155,7 +155,7 @@ TEST_CASE("Linear Algebra Vector scatter reverse", "[la_vector]")
   CHECK_NOTHROW(test_vector_scatter_rev());
 }
 
-TEST_CASE("Incompatible vector sizes", "[vector]")
+TEST_CASE("Incompatible vector sizes", "[la_vector]")
 {
   const std::shared_ptr<common::IndexMap> map0
       = std::make_shared<common::IndexMap>(MPI_COMM_WORLD, 2);

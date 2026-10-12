@@ -776,8 +776,8 @@ def create_form(
     num_constants = form.ufcx_form.num_constants
     if num_constants != len(original_constants):
         raise RuntimeError(
-            f"Number of constants in compiled form ({num_constants})",
-            f"does not match the original form {len(original_constants)}",
+            f"Number of constants in compiled form ({num_constants}) does not "
+            f"match the original form ({len(original_constants)})."
         )
     constants = {}
     for counter, constant in enumerate(original_constants):

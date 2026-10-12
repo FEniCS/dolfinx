@@ -596,7 +596,7 @@ Vec petsc::Matrix::create_vector(std::size_t dim) const
     spdlog::error("Cannot initialize PETSc vector to match PETSc matrix. "
                   "Dimension must be 0 or 1, not {}",
                   dim);
-    throw std::out_of_range("Invalid dimension");
+    throw std::invalid_argument("Invalid dimension");
   }
 
   return x;

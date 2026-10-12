@@ -380,12 +380,19 @@ void write_data(std::string_view point_or_cell,
 /// facet can be connected to.
 /// @param num_threads Number threads to use in mesh construction.
 /// @return The mesh read from file.
+/// @throws std::invalid_argument If `gdim` is greater than 3.
 template <std::floating_point U>
 mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                         std::size_t gdim = 3,
                         std::optional<std::int32_t> max_facet_to_cell_links = 2,
                         int num_threads = 1)
 {
+  if (gdim > 3)
+  {
+    throw std::invalid_argument(
+        "Geometric dimension must be less than or equal to 3.");
+  }
+
   hdf5::Handle h5file(hdf5::open_file(comm, filename, "r", true), H5Fclose);
 
   std::vector<std::int64_t> shape
@@ -480,12 +487,6 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                                                       local_point_range, true);
 
   // Remove coordinates if gdim != 3
-  if (gdim > 3)
-  {
-    throw std::invalid_argument(
-        "Geometric dimension must be less than or equal "
-        "to 3.");
-  }
   std::vector<U> points_pruned((local_point_range[1] - local_point_range[0])
                                * gdim);
   for (std::int64_t i = 0; i < local_point_range[1] - local_point_range[0]; ++i)
