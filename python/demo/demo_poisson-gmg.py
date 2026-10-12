@@ -128,7 +128,7 @@ def create_hierarchy(num_levels: int) -> list[fem.FunctionSpace]:
 # +
 def shell_dm(V: fem.FunctionSpace) -> PETSc.DMShell:
     """DMShell with the parallel layout of the space V."""
-    dm = PETSc.DMShell().create(V.mesh.comm)
+    dm = PETSc.DMShell().create(V.mesh.comm)  # type: ignore[arg-type]
     dm.setGlobalVector(la.petsc.create_vector([(V.dofmap.index_map, V.dofmap.index_map_bs)]))
     return dm
 
@@ -145,7 +145,7 @@ def attach_hierarchy(pc: PETSc.PC, spaces: list[fem.FunctionSpace]) -> list:
         P.assemble()
         prolongations.append(P)
         dm_f.setCoarsen(lambda dm, comm, dm_c=dm_c: dm_c)
-        dm_c.setCreateInterpolation(lambda dmc, dmf, P=P: (P, None))
+        dm_c.setCreateInterpolation(lambda dmc, dmf, P=P: (P, None))  # type: ignore[arg-type]
     pc.setDM(dms[-1])
     return dms + prolongations
 
@@ -233,4 +233,4 @@ for num_levels in range(2, 6):
         f"{num_levels} levels: {num_dofs:6d} dofs, "
         f"{num_iterations} CG iterations, L2-error {error_L2:.2e}"
     )
-PETSc.garbage_cleanup(MPI.COMM_WORLD)
+PETSc.garbage_cleanup(MPI.COMM_WORLD)  # type: ignore[arg-type]
