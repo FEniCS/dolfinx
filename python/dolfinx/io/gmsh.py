@@ -27,7 +27,8 @@ from dolfinx.mesh import (
     GhostMode,
     Mesh,
     MeshTags,
-    PartitioningFunc,
+    _Partitioner,
+    _wrap_partitioner,
     create_mesh,
     meshtags_from_entities,
 )
@@ -297,7 +298,7 @@ def model_to_mesh(
     comm: _MPI.Comm,
     rank: int,
     gdim: int = 3,
-    partitioner: PartitioningFunc | None = None,
+    partitioner: _Partitioner | None = None,
     dtype: npt.DTypeLike = default_real_type,
     max_facet_to_cell_links: int = 2,
     ghost_mode: GhostMode = GhostMode.none,
@@ -457,7 +458,7 @@ def model_to_mesh(
             cell_connectivities,
             cmaps,
             x[:, :gdim].astype(dtype).copy(),
-            partitioner,
+            _wrap_partitioner(partitioner),
             ghost_mode,
             max_facet_to_cell_links,
             1,
@@ -527,7 +528,7 @@ def read_from_msh(
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
-    partitioner: PartitioningFunc | None = None,
+    partitioner: _Partitioner | None = None,
     ghost_mode: GhostMode = GhostMode.none,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a mesh and cell facet markers.
