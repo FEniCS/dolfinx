@@ -162,14 +162,17 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   // Owning rank for each ghost col of A (= source rank for each needed row)
   std::span<const int> ghost_owners = col_map_A->owners();
 
-  std::vector<int> send_count(src.size(), 0);
-  std::vector<int> recv_count(dest.size(), 0);
+  // Padding guarantees valid MPI buffers on zero-degree ranks. Logical spans
+  // exclude the padding from count loops and prefix sums.
+  std::vector<int> send_count_buffer(src.size() + 1, 0);
+  std::span<int> send_count(send_count_buffer.data(), src.size());
+  std::vector<int> recv_count_buffer(dest.size() + 1, 0);
+  std::span<int> recv_count(recv_count_buffer.data(), dest.size());
 
   for (int gh : ghost_owners)
     ++send_count[rank_to_nbr(gh)];
-  MPI_Neighbor_alltoall(send_count.data(), src.empty() ? 0 : 1, MPI_INT,
-                        recv_count.data(), dest.empty() ? 0 : 1, MPI_INT,
-                        neigh_comm_fwd);
+  MPI_Neighbor_alltoall(send_count_buffer.data(), 1, MPI_INT,
+                        recv_count_buffer.data(), 1, MPI_INT, neigh_comm_fwd);
 
   // Send and recv displacements
   std::vector<int> send_disp(src.size() + 1, 0);
@@ -213,9 +216,11 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   // Compute size of send_data and communicate
   auto row_ptr_B = B.row_ptr();
 
-  std::vector<int> send_entry_count(dest.size(), 0);
+  std::vector<int> send_entry_count_buffer(dest.size() + 1, 0);
+  std::span<int> send_entry_count(send_entry_count_buffer.data(), dest.size());
   std::vector<int> send_entry_disp(dest.size() + 1, 0);
-  std::vector<int> recv_entry_count(src.size(), 0);
+  std::vector<int> recv_entry_count_buffer(src.size() + 1, 0);
+  std::span<int> recv_entry_count(recv_entry_count_buffer.data(), src.size());
   std::vector<int> recv_entry_disp(src.size() + 1, 0);
   assert(recv_count.size() == dest.size());
   for (std::size_t p = 0; p < recv_count.size(); ++p)
@@ -229,8 +234,8 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   std::partial_sum(send_entry_count.begin(), send_entry_count.end(),
                    std::next(send_entry_disp.begin()));
 
-  MPI_Neighbor_alltoall(send_entry_count.data(), dest.empty() ? 0 : 1, MPI_INT,
-                        recv_entry_count.data(), src.empty() ? 0 : 1, MPI_INT,
+  MPI_Neighbor_alltoall(send_entry_count_buffer.data(), 1, MPI_INT,
+                        recv_entry_count_buffer.data(), 1, MPI_INT,
                         neigh_comm_rev);
 
   std::partial_sum(recv_entry_count.begin(), recv_entry_count.end(),

@@ -208,7 +208,10 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   // -----------------------------------------------------------------------
   // Count off-process entries: A[i, j_ghost] grouped by owning rank.
   // -----------------------------------------------------------------------
-  std::vector<int> send_count(src.size(), 0);
+  // Padding guarantees valid MPI buffers on zero-degree ranks. Logical spans
+  // exclude the padding from count loops and prefix sums.
+  std::vector<int> send_count_buffer(src.size() + 1, 0);
+  std::span<int> send_count(send_count_buffer.data(), src.size());
   for (std::int32_t i = 0; i < n_row; ++i)
   {
     for (std::int64_t k = offset_row_A[i]; k < row_ptr_A[i + 1]; ++k)
@@ -218,10 +221,10 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
     }
   }
 
-  std::vector<int> recv_count(dest.size(), 0);
-  MPI_Neighbor_alltoall(send_count.data(), src.empty() ? 0 : 1, MPI_INT,
-                        recv_count.data(), dest.empty() ? 0 : 1, MPI_INT,
-                        neigh_comm);
+  std::vector<int> recv_count_buffer(dest.size() + 1, 0);
+  std::span<int> recv_count(recv_count_buffer.data(), dest.size());
+  MPI_Neighbor_alltoall(send_count_buffer.data(), 1, MPI_INT,
+                        recv_count_buffer.data(), 1, MPI_INT, neigh_comm);
 
   std::vector<int> send_disp(src.size() + 1, 0);
   std::partial_sum(send_count.begin(), send_count.end(),
