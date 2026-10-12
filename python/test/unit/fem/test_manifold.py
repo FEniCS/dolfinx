@@ -97,7 +97,10 @@ def plane_mesh(n, gdim, dtype=default_real_type, mixed_orientation=False, orient
         cells = np.zeros((0, 3), dtype=np.int64)
 
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(gdim,), dtype=dtype))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x.astype(dtype))
+    # Signing a facet on a process boundary needs the cell across it
+    mesh = create_mesh(
+        MPI.COMM_WORLD, cells, domain, x.astype(dtype), ghost_mode=GhostMode.shared_facet
+    )
     if orient:
         mesh.topology.create_facet_orientations()
     return mesh
@@ -484,12 +487,31 @@ def cube_surface(ghost_mode, cell_type=CellType.tetrahedron, dtype=default_real_
     Its cells keep the vertex order of the cube's facets, so their
     normals point both inwards and outwards. They are triangles for a
     tetrahedral and quadrilaterals for a hexahedral cube.
+
+    A submesh inherits the ghost cells of its parent, which do not
+    include every neighbour across a surface edge, so the surface is
+    rebuilt with its own ``GhostMode.shared_facet`` ghost layer.
     """
     cube = create_unit_cube(
         MPI.COMM_WORLD, 3, 3, 3, cell_type=cell_type, ghost_mode=ghost_mode, dtype=dtype
     )
     cube.topology.create_connectivity(2, 3)
-    return create_submesh(cube, 2, exterior_facet_indices(cube.topology))[0]
+    surface = create_submesh(cube, 2, exterior_facet_indices(cube.topology))[0]
+
+    # create_mesh numbers the points it is given by position, which is
+    # the global numbering of the owned nodes in the node index map
+    num_owned = surface.topology.index_map(2).size_local
+    geometry = surface.geometry
+    node_map = geometry.index_map()
+    nodes = node_map.local_to_global(geometry.dofmaps[0][:num_owned].reshape(-1))
+    domain = ufl.Mesh(element("Lagrange", surface.topology.cell_name(), 1, shape=(3,), dtype=dtype))
+    return create_mesh(
+        surface.comm,
+        nodes.reshape(num_owned, -1),
+        domain,
+        geometry.x[: node_map.size_local],
+        ghost_mode=GhostMode.shared_facet,
+    )
 
 
 def mobius_mesh(n, m, dtype=default_real_type, ghost_mode=GhostMode.none):
@@ -527,8 +549,8 @@ def mobius_mesh(n, m, dtype=default_real_type, ghost_mode=GhostMode.none):
 def t_joint_mesh(dests, dtype=default_real_type):
     """Three triangles sharing one edge, cell ``i`` on rank ``dests[i]``.
 
-    The ranks are taken modulo the number of ranks. The mesh is not
-    ghosted, so a rank sees only the cells of the edge that it owns.
+    The ranks are taken modulo the number of ranks. Ghosting across
+    facets gives every rank holding the edge all three of its cells.
     """
     if MPI.COMM_WORLD.rank == 0:
         x = np.array([[0, 0, 0], [1, 0, 0], [0.5, 1, 0], [0.5, -1, 0], [0.5, 0, 1]])
@@ -543,7 +565,13 @@ def t_joint_mesh(dests, dtype=default_real_type):
 
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(3,), dtype=dtype))
     return create_mesh(
-        MPI.COMM_WORLD, cells, domain, x.astype(dtype), partitioner, max_facet_to_cell_links=3
+        MPI.COMM_WORLD,
+        cells,
+        domain,
+        x.astype(dtype),
+        partitioner,
+        max_facet_to_cell_links=3,
+        ghost_mode=GhostMode.shared_facet,
     )
 
 
