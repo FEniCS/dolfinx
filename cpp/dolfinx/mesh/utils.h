@@ -303,7 +303,7 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
                  int dim, int num_threads = 1)
 {
   if (num_threads < 1)
-    throw std::runtime_error("Number of threads must be >= 1");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   if (entities.empty())
     return std::vector<T>();
@@ -385,7 +385,7 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
                             int num_threads = 1)
 {
   if (num_threads < 1)
-    throw std::runtime_error("Number of threads must be >= 1");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   if (entities.empty())
     return std::vector<T>();
@@ -521,7 +521,7 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
                                  int num_threads = 1)
 {
   if (num_threads < 1)
-    throw std::runtime_error("Number of threads must be >= 1");
+    throw std::invalid_argument("num_threads must be >= 1.");
 
   if (entities.empty())
     return std::vector<T>();
