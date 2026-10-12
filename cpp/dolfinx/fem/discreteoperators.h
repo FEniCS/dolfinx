@@ -632,9 +632,8 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   int row_bs = dofmap1->bs();
   std::int32_t num_owned_rows
       = dofmap1->index_map->size_local() * dofmap1->index_map_bs() / row_bs;
-  std::int32_t num_ghosted_rows
-      = dofmap1->index_map->num_ghosts() * dofmap1->index_map_bs() / row_bs;
-  std::vector<std::int8_t> row_added(num_owned_rows + num_ghosted_rows, 0);
+  // Ghost rows are never added, so they need no flag
+  std::vector<std::int8_t> row_added(num_owned_rows, 0);
 
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
@@ -720,7 +719,8 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
             for (int k = 0; k < row_bs; ++k)
               A(i * row_bs + k, j) = 0.0;
         }
-        row_added[r] = 1;
+        else
+          row_added[r] = 1;
       }
     }
     mat_add(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
@@ -976,6 +976,116 @@ inline void cell_columns(std::span<const std::int32_t> point_columns,
   std::ranges::sort(columns);
   columns.erase(std::ranges::unique(columns).begin(), columns.end());
 }
+
+/// @brief Interpolation points contributing to each degree-of-freedom
+/// of `element`, as (offsets, points).
+///
+/// Entry `i` of the adjacency lists the interpolation points whose
+/// values the interpolation operator of `element` mixes into dof `i`.
+/// If the interpolation operator is the identity, the values are copied
+/// in point-major order and each dof reads a single point.
+template <std::floating_point U>
+std::array<std::vector<std::int32_t>, 2>
+dof_point_support(const FiniteElement<U>& element)
+{
+  const std::size_t space_dim = element.space_dimension();
+  const std::size_t num_points = element.interpolation_points().second[0];
+  std::vector<std::int32_t> offsets{0}, points;
+  offsets.reserve(space_dim + 1);
+  if (num_points == 0)
+  {
+    offsets.resize(space_dim + 1, 0);
+    return {std::move(offsets), std::move(points)};
+  }
+
+  if (element.interpolation_ident())
+  {
+    // Values are copied in point-major order, so row `p * vs + k` of
+    // the block reads point `p` only
+    const std::size_t vs = space_dim / num_points;
+    for (std::size_t i = 0; i < space_dim; ++i)
+    {
+      points.push_back(static_cast<std::int32_t>(i / vs));
+      offsets.push_back(static_cast<std::int32_t>(points.size()));
+    }
+  }
+  else
+  {
+    // Columns of Pi index points as in interpolation_apply_columns: for
+    // `bs == 1` they fold the component and point indices together as
+    // `k * num_points + p`, otherwise they index points alone and row
+    // `bs * i + k` of the block reads row `i` of Pi
+    const auto [_Pi, pi_shape] = element.interpolation_operator();
+    mdspan_t<const U, 2> Pi(_Pi.data(), pi_shape);
+    const std::size_t bs = static_cast<std::size_t>(element.block_size());
+    const std::size_t vs = bs == 1 ? pi_shape[1] / num_points : 1;
+    for (std::size_t i = 0; i < space_dim; ++i)
+    {
+      const std::size_t pi_row = bs == 1 ? i : i / bs;
+      for (std::size_t p = 0; p < num_points; ++p)
+      {
+        bool nonzero = false;
+        if (bs == 1)
+        {
+          for (std::size_t k = 0; k < vs and !nonzero; ++k)
+            nonzero = Pi(pi_row, k * num_points + p) != U(0);
+        }
+        else
+          nonzero = Pi(pi_row, p) != U(0);
+
+        if (nonzero)
+          points.push_back(static_cast<std::int32_t>(p));
+      }
+      offsets.push_back(static_cast<std::int32_t>(points.size()));
+    }
+  }
+  return {std::move(offsets), std::move(points)};
+}
+
+/// @brief Columns that degree-of-freedom `i` of a cell of `V1` couples
+/// to, sorted and unique.
+///
+/// A column is kept only where the basis of `V0` does not vanish. This
+/// is what makes the matrix sparse: an interpolation point at a vertex
+/// of a cell of `V0` sees only the basis functions that are non-zero
+/// there, not every dof of that cell.
+template <std::floating_point U>
+void dof_columns(std::span<const std::int32_t> support_offsets,
+                 std::span<const std::int32_t> support_points, std::size_t i,
+                 int row_bs, std::span<const std::int32_t> point_columns,
+                 std::span<const U> point_values, std::size_t nq,
+                 std::size_t num_cell_dofs0, std::size_t value_size0,
+                 std::vector<std::int32_t>& columns)
+{
+  columns.clear();
+  for (int k = 0; k < row_bs; ++k)
+  {
+    const std::size_t r = i * row_bs + k;
+    for (std::int32_t s = support_offsets[r]; s < support_offsets[r + 1]; ++s)
+    {
+      const std::size_t p = support_points[s];
+      for (std::size_t q = p * nq; q < (p + 1) * nq; ++q)
+      {
+        for (std::size_t m = 0; m < num_cell_dofs0; ++m)
+        {
+          const std::int32_t col = point_columns[q * num_cell_dofs0 + m];
+          if (col < 0)
+            continue;
+          bool nonzero = false;
+          for (std::size_t j = 0; j < value_size0 and !nonzero; ++j)
+          {
+            nonzero = point_values[(q * num_cell_dofs0 + m) * value_size0 + j]
+                      != U(0);
+          }
+          if (nonzero)
+            columns.push_back(col);
+        }
+      }
+    }
+  }
+  std::ranges::sort(columns);
+  columns.erase(std::ranges::unique(columns).begin(), columns.end());
+}
 } // namespace impl
 
 /// @brief Insert the non-zero pattern of a nonmatching interpolation
@@ -983,13 +1093,19 @@ inline void cell_columns(std::span<const std::int32_t> point_columns,
 ///
 /// @param[in,out] pattern Sparsity pattern with the index map of `V1`
 /// for the rows and `column_map` for the columns.
+/// @param[in] V0 Space interpolated from.
 /// @param[in] V1 Space interpolated to.
 /// @param[in] cells Cells of the mesh of `V1` whose interpolation
 /// points were used to create `data`.
 /// @param[in] data Basis data from evaluate_basis_nonmatching.
 /// @param[in] column_map Column index map from create_column_map.
+///
+/// @note Only the columns where the basis of `V0` does not vanish are
+/// inserted, so the pattern matches the non-zeros that
+/// `interpolation_matrix` adds.
 template <std::floating_point T>
 void sparsity_nonmatching(la::SparsityPattern& pattern,
+                          const FunctionSpace<T>& V0,
                           const FunctionSpace<T>& V1,
                           std::span<const std::int32_t> cells,
                           const NonmatchingBasisData<T>& data,
@@ -1000,16 +1116,51 @@ void sparsity_nonmatching(la::SparsityPattern& pattern,
 
   std::shared_ptr<const DofMap> dofmap1 = V1.dofmap();
   assert(dofmap1);
+  std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();
+  assert(dofmap0);
+  auto e1 = V1.element();
+  assert(e1);
+
   const std::vector<std::int32_t> columns
       = impl::nonmatching_columns(data, column_map);
-  const std::size_t points_per_cell = columns.size() / cells.size();
-  std::vector<std::int32_t> cell_columns;
+  const std::size_t num_cell_dofs0 = dofmap0->map().extent(1);
+  const std::size_t entries_per_cell = columns.size() / cells.size();
+  const std::size_t points_per_cell = entries_per_cell / num_cell_dofs0;
+  const std::size_t num_ip = e1->interpolation_points().second[0];
+  if (num_ip == 0)
+    return;
+  const std::size_t nq = points_per_cell / num_ip;
+  const std::size_t value_size0
+      = data.dofs.empty() ? 0 : data.values.size() / data.dofs.size();
+
+  const auto [support_offsets, support_points] = impl::dof_point_support(*e1);
+  const int row_bs = dofmap1->bs();
+  const std::int32_t num_owned_rows
+      = dofmap1->index_map->size_local() * dofmap1->index_map_bs() / row_bs;
+  std::vector<std::uint8_t> row_added(num_owned_rows, 0);
+  std::vector<std::int32_t> dof_cols;
   for (std::size_t i = 0; i < cells.size(); ++i)
   {
-    impl::cell_columns(
-        std::span(columns).subspan(i * points_per_cell, points_per_cell),
-        cell_columns);
-    pattern.insert(dofmap1->cell_dofs(cells[i]), cell_columns);
+    auto point_columns
+        = std::span(columns).subspan(i * entries_per_cell, entries_per_cell);
+    auto point_values = std::span(data.values)
+                            .subspan(i * entries_per_cell * value_size0,
+                                     entries_per_cell * value_size0);
+    std::span<const std::int32_t> row_dofs = dofmap1->cell_dofs(cells[i]);
+    for (std::size_t j = 0; j < row_dofs.size(); ++j)
+    {
+      // Matches the row filtering of interpolation_matrix
+      const std::int32_t r0 = row_dofs[j];
+      if (r0 >= num_owned_rows or row_added[r0])
+        continue;
+      row_added[r0] = 1;
+
+      impl::dof_columns(support_offsets, support_points, j, row_bs,
+                        point_columns, point_values, nq, num_cell_dofs0,
+                        value_size0, dof_cols);
+      if (!dof_cols.empty())
+        pattern.insert(std::span(row_dofs.data() + j, 1), dof_cols);
+    }
   }
 }
 
@@ -1068,6 +1219,21 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const std::size_t num_cell_dofs0 = dofmap0->map().extent(1);
   const std::size_t num_points = data.dofs.size() / num_cell_dofs0;
   const auto [X, Xshape] = e1->interpolation_points();
+
+  auto mesh = V1.mesh();
+  assert(mesh);
+  const std::size_t tdim = mesh->topology()->dim();
+  const std::size_t gdim = mesh->geometry().dim();
+
+  // Collective, so it is reached before the early return below: a rank
+  // with no cells must not skip it
+  std::span<const std::uint32_t> cell_info;
+  if (e1->needs_dof_transformations())
+  {
+    mesh->topology_mutable()->create_cell_permutations();
+    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
+  }
+
   if (cells.empty() or Xshape[0] == 0)
     return;
   if (weights.size() != num_points
@@ -1077,17 +1243,6 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
         "Number of weights and points is inconsistent with the cells.");
   }
   const std::size_t nq = num_points / (cells.size() * Xshape[0]);
-
-  auto mesh = V1.mesh();
-  assert(mesh);
-  const std::size_t tdim = mesh->topology()->dim();
-  const std::size_t gdim = mesh->geometry().dim();
-  std::span<const std::uint32_t> cell_info;
-  if (e1->needs_dof_transformations())
-  {
-    mesh->topology_mutable()->create_cell_permutations();
-    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
-  }
 
   // Sizes. The basis of one block of V0 is unrolled for its block size,
   // as in the same-mesh interpolation_matrix.
@@ -1145,14 +1300,16 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   std::vector<std::int32_t> cell_columns;
   const std::size_t points_per_cell = Xshape[0] * nq;
 
-  // Only add each owned row once
+  // Only add each owned row once. Ghost rows are never added, so they
+  // need no flag.
   const int row_bs = dofmap1->bs();
   const std::int32_t num_owned_rows
       = dofmap1->index_map->size_local() * dofmap1->index_map_bs() / row_bs;
-  const std::int32_t num_ghosted_rows
-      = dofmap1->index_map->num_ghosts() * dofmap1->index_map_bs() / row_bs;
-  std::vector<std::int8_t> row_added(num_owned_rows + num_ghosted_rows, 0);
+  std::vector<std::int8_t> row_added(num_owned_rows, 0);
 
+  const auto [support_offsets, support_points] = impl::dof_point_support(*e1);
+  std::vector<std::int32_t> dof_cols;
+  std::vector<T> Ai;
   for (std::size_t ci = 0; ci < cells.size(); ++ci)
   {
     const std::int32_t c = cells[ci];
@@ -1218,23 +1375,43 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     if (apply_inverse_dof_transform1)
       apply_inverse_dof_transform1(Ab, cell_info, c, num_cols);
 
-    // Zero rows that are ghosts or have already been added
     std::span<const std::int32_t> row_dofs = dofmap1->cell_dofs(c);
+    // Insert each row with only the columns it couples to, matching the
+    // pattern built by sparsity_nonmatching
+    auto cell_values
+        = std::span<const U>(data.values)
+              .subspan(ci * points_per_cell * num_cell_dofs0 * value_size0,
+                       points_per_cell * num_cell_dofs0 * value_size0);
     for (std::size_t i = 0; i < row_dofs.size(); ++i)
     {
-      std::int32_t r = row_dofs[i];
-      if (r >= num_owned_rows or row_added[r])
+      // A row is filled from the first cell that owns it, so skip ghost
+      // rows and rows another cell has already added
+      const std::int32_t r0 = row_dofs[i];
+      if (r0 >= num_owned_rows or row_added[r0])
+        continue;
+      row_added[r0] = 1;
+
+      impl::dof_columns(support_offsets, support_points, i, row_bs,
+                        point_columns, cell_values, nq, num_cell_dofs0,
+                        value_size0, dof_cols);
+      if (dof_cols.empty())
+        continue;
+
+      Ai.assign(static_cast<std::size_t>(row_bs) * dof_cols.size() * bs0, 0);
+      for (int k = 0; k < row_bs; ++k)
       {
-        for (int k = 0; k < row_bs; ++k)
+        const std::size_t r = i * row_bs + k;
+        for (std::size_t n = 0; n < dof_cols.size(); ++n)
         {
-          std::fill_n(std::next(Ab.begin(), (i * row_bs + k) * num_cols),
-                      num_cols, T(0));
+          const std::size_t m = std::ranges::distance(
+              cell_columns.begin(),
+              std::ranges::lower_bound(cell_columns, dof_cols[n]));
+          std::copy_n(std::next(Ab.begin(), r * num_cols + m * bs0), bs0,
+                      std::next(Ai.begin(), (k * dof_cols.size() + n) * bs0));
         }
       }
-      row_added[r] = 1;
+      mat_add(std::span(row_dofs.data() + i, 1), dof_cols, Ai);
     }
-
-    mat_add(row_dofs, cell_columns, Ab);
   }
 }
 

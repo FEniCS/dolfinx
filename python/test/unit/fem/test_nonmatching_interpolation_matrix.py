@@ -294,6 +294,33 @@ def test_pull_back_failure_raises_on_all_processes():
         fem.nonmatching_interpolation_matrix(V0, V1, maxit=0)
 
 
+def test_empty_cell_subset_with_dof_transformations():
+    """Every rank reaches the collective setup, including empty ones.
+
+    N1curl needs dof transformations, and creating the cell permutations
+    for them is collective. A rank whose cell subset is empty must not
+    return before that call, or the matrix assembly deadlocks on more
+    than one process. Lagrange does not catch this, as its dof
+    transformations are the identity.
+    """
+    dtype = dolfinx.default_real_type
+    mesh0 = _square((5, 5), mesh.CellType.triangle, dtype)
+    mesh1 = _square((4, 4), mesh.CellType.triangle, dtype, (0.1, 0.1), (0.9, 0.9))
+    V0 = fem.functionspace(mesh0, ("N1curl", 1))
+    V1 = fem.functionspace(mesh1, ("N1curl", 1))
+
+    # Cells on the first rank only, so every other rank passes an empty subset
+    num_owned = mesh1.topology.index_map(2).size_local
+    if MPI.COMM_WORLD.rank == 0:
+        cells = np.arange(num_owned, dtype=np.int32)
+    else:
+        cells = np.zeros(0, dtype=np.int32)
+
+    eps = np.finfo(dtype).eps
+    A = fem.nonmatching_interpolation_matrix(V0, V1, cells=cells, padding=1e2 * eps)
+    assert A.index_map(1).local_range == V0.dofmap.index_map.local_range
+
+
 @pytest.mark.parametrize("degree", [1, 2])
 def test_hierarchy_matches_nonmatching(degree):
     """The hierarchy matrix equals the one built by collision detection.
@@ -330,3 +357,29 @@ def test_hierarchy_rejects_bad_parent_cells():
     bad = np.full_like(parent_cells, 10**6)
     with pytest.raises(ValueError):
         fem.hierarchy_interpolation_matrix(V0, V1, bad)
+
+
+@pytest.mark.parametrize("degree", [1, 2])
+def test_sparsity_has_no_structural_zeros(degree):
+    """Columns where the source basis vanishes are not stored.
+
+    An interpolation point at a vertex of a cell of V0 sees only the
+    basis functions that do not vanish there, so storing every dof of
+    the containing cell would keep explicit zeros.
+    """
+    dtype = dolfinx.default_real_type
+    coarse = mesh.create_unit_square(MPI.COMM_WORLD, 6, 6, dtype=dtype)
+    coarse.topology.create_entities(1)
+    fine, parent_cells, _ = mesh.refine(coarse)
+    V0 = fem.functionspace(coarse, ("Lagrange", degree))
+    V1 = fem.functionspace(fine, ("Lagrange", degree))
+
+    A = fem.hierarchy_interpolation_matrix(V0, V1, parent_cells)
+    A.scatter_reverse()
+    assert np.count_nonzero(A.data == 0.0) == 0
+
+    # The values are unchanged by the tighter pattern
+    u0 = _random_function(V0, dtype)
+    eps = np.finfo(dtype).eps
+    A_ref = fem.nonmatching_interpolation_matrix(V0, V1, padding=1e2 * eps)
+    _assert_close(_apply(A, u0, V1), _apply(A_ref, u0, V1), dtype)

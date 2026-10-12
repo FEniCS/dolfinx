@@ -132,6 +132,18 @@ create_nonmatching_sparsity(
     const dolfinx::geometry::PointOwnershipData<U>& interpolation_data,
     double tol, int maxit, int num_threads)
 {
+  {
+    assert(V0.mesh());
+    assert(V1.mesh());
+    int result;
+    MPI_Comm_compare(V1.mesh()->comm(), V0.mesh()->comm(), &result);
+    if (result == MPI_UNEQUAL)
+    {
+      throw std::invalid_argument("Interpolation on different meshes is only "
+                                  "supported on the same communicator.");
+    }
+  }
+
   dolfinx::fem::NonmatchingBasisData<U> data
       = dolfinx::fem::evaluate_basis_nonmatching(V0, interpolation_data, tol,
                                                  maxit, num_threads);
@@ -142,7 +154,7 @@ create_nonmatching_sparsity(
   dolfinx::la::SparsityPattern sp(
       V1.mesh()->comm(), {dofmap1->index_map, column_map},
       {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-  dolfinx::fem::sparsity_nonmatching(sp, V1, cells, data, *column_map);
+  dolfinx::fem::sparsity_nonmatching(sp, V0, V1, cells, data, *column_map);
   sp.finalize();
   return {std::move(data), std::move(column_map), std::move(sp)};
 }
