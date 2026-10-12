@@ -46,7 +46,7 @@ from dolfinx.cpp.refinement import mark_maximum as _mark_maximum
 from dolfinx.cpp.refinement import uniform_refine as _uniform_refine
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem.element import _coordinate_element_from_basix
-from dolfinx.graph import AdjacencyList
+from dolfinx.graph import AdjacencyList, GeometricPartitioner, GraphPartitioner, HybridPartitioner
 from dolfinx.typing import Real
 
 __all__ = [
@@ -103,12 +103,12 @@ PartitioningFunc = typing.Callable[
     [
         _MPI.Comm,
         int,
-        _cpp.graph.AdjacencyList_int64,
+        AdjacencyList[np.int64],
         npt.NDArray[np.int32] | None,
         npt.NDArray[np.int32] | None,
         bool,
     ],
-    _cpp.graph.AdjacencyList_int32 | AdjacencyList[np.int32],
+    AdjacencyList[np.int32],
 ]
 
 # float64 to match the C++ span<double> interface. Unlike
@@ -123,13 +123,13 @@ HybridPartitioningFunc = typing.Callable[
     [
         _MPI.Comm,
         int,
-        _cpp.graph.AdjacencyList_int64,
+        AdjacencyList[np.int64],
         npt.NDArray[np.float64],
         npt.NDArray[np.int32] | None,
         npt.NDArray[np.int32] | None,
         bool,
     ],
-    _cpp.graph.AdjacencyList_int32 | AdjacencyList[np.int32],
+    AdjacencyList[np.int32],
 ]
 
 # A cell reordering function receives the local cell dual graph and
@@ -139,7 +139,7 @@ CellReorderFunc = typing.Callable[[AdjacencyList[np.int32]], npt.NDArray[np.int3
 
 def create_geometric_cell_partitioner(
     part: GeometricPartitioningFunc,
-) -> _cpp.graph.GeometricPartitioner:
+) -> GeometricPartitioner:
     """Create a function to partition a mesh using cell positions.
 
     ``part`` is called by :func:`create_mesh` with each cell's centroid
@@ -159,22 +159,22 @@ def create_geometric_cell_partitioner(
 
     Args:
         part: A custom geometric graph partitioning function. The
-            built-in geometric partitioners (``dolfinx.cpp.graph``'s
+            built-in geometric partitioners (``dolfinx.graph``'s
             ``partition_morton``, ``partition_hilbert`` and
             ``partitioner_parmetis_geom``) already return a
-            :class:`~dolfinx.cpp.graph.GeometricPartitioner` and do not
+            :class:`~dolfinx.graph.GeometricPartitioner` and do not
             need to be wrapped.
 
     Return:
         Partitioning function, for use as :func:`create_mesh`'s
         ``partitioner`` argument.
     """
-    return _cpp.graph.create_geometric_cell_partitioner(part)
+    return GeometricPartitioner(_cpp.graph.create_geometric_cell_partitioner(part))
 
 
 def create_hybrid_cell_partitioner(
     part: HybridPartitioningFunc,
-) -> _cpp.graph.HybridPartitioner:
+) -> HybridPartitioner:
     """Create a function to partition a mesh using a hybrid partitioner.
 
     Unlike :func:`create_geometric_cell_partitioner`, the dual graph is
@@ -194,16 +194,16 @@ def create_hybrid_cell_partitioner(
 
     Args:
         part: A custom hybrid graph partitioning function. ParMETIS's
-            built-in hybrid partitioner (``dolfinx.cpp.graph``'s
+            built-in hybrid partitioner (``dolfinx.graph``'s
             ``partitioner_parmetis_hybrid``, i.e. ParMETIS `GeomKway`)
-            already returns a :class:`~dolfinx.cpp.graph.HybridPartitioner`
+            already returns a :class:`~dolfinx.graph.HybridPartitioner`
             and does not need to be wrapped.
 
     Return:
         Partitioning function, for use as :func:`create_mesh`'s
         ``partitioner`` argument.
     """
-    return _cpp.graph.create_hybrid_cell_partitioner(_wrap_partitioner(part))
+    return HybridPartitioner(_cpp.graph.create_hybrid_cell_partitioner(_wrap_partitioner(part)))
 
 
 def build_dual_graph(
@@ -1208,14 +1208,10 @@ def _wrap_partitioner(fn: IdentityPartitionerPlaceholder) -> IdentityPartitioner
 def _wrap_partitioner(
     fn: Callable | IdentityPartitionerPlaceholder | None,
 ) -> Callable | IdentityPartitionerPlaceholder | None:
-    """Adapt a partitioner so it may return a graph.AdjacencyList.
+    """Adapt Python graphs and unwrap native partitioner handles."""
+    if isinstance(fn, (GraphPartitioner, GeometricPartitioner, HybridPartitioner)):
+        return fn._cpp_object
 
-    Opaque C++ partitioner handles (e.g. as returned by
-    ``graph.partitioner_scotch()``) are passed through unchanged:
-    ``create_mesh``'s nanobind binding recognises them specifically, and
-    wrapping one in a Python closure would silently demote it to the
-    slower raw-callable code path.
-    """
     if fn is None or isinstance(
         fn,
         (
@@ -1228,8 +1224,8 @@ def _wrap_partitioner(
         return fn
 
     @wraps(fn)
-    def _wrapped(*args):
-        dest = fn(*args)
+    def _wrapped(comm, nparts, local_graph, *args):
+        dest = fn(comm, nparts, AdjacencyList(local_graph), *args)
         return dest._cpp_object if isinstance(dest, AdjacencyList) else dest
 
     return _wrapped

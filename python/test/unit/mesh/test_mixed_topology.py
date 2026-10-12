@@ -371,7 +371,7 @@ def test_locate_entities(dtype):
         cells,
         [hexahedron._cpp_object, prism._cpp_object],
         geom,
-        part,
+        part._cpp_object,
         GhostMode.none,
         max_cells_per_facet,
         1,
