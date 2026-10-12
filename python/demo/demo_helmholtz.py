@@ -614,12 +614,14 @@ if pyvista is not None:
 # three-dimensional Helmholtz problem fill in quickly. The alternative
 # is a Krylov method, and here the Helmholtz operator is awkward. It is
 # indefinite, so neither multigrid nor an incomplete factorisation
-# preconditions it robustly, and unpreconditioned GMRES needs some 3000
-# iterations on the problem solved above.
+# preconditions it robustly {cite}`gander2019helmholtz`, and
+# unpreconditioned GMRES needs some 3000 iterations on the problem
+# solved above.
 #
-# Overlapping Schwarz domain decomposition is the standard answer. The
-# domain is covered by overlapping subdomains $\Omega_i$ and the
-# preconditioner solves a Helmholtz problem on each of them,
+# Overlapping Schwarz domain decomposition is the standard answer
+# {cite}`dolean2015ddm`. The domain is covered by overlapping
+# subdomains $\Omega_i$ and the preconditioner solves a Helmholtz
+# problem on each of them,
 #
 # $$
 # M^{-1} = \sum_i R_i^{T} D_i A_i^{-1} R_i,
@@ -637,7 +639,7 @@ if pyvista is not None:
 # leaving a subdomain is reflected at the interface instead of passing
 # through. Replacing the impedance condition below by zero Dirichlet
 # data costs two orders of magnitude in iterations. Imposing instead
-# the impedance condition of Després,
+# the impedance condition of Després {cite}`despres1990helmholtz`,
 #
 # $$
 # \frac{\partial u}{\partial n} - i k u = 0 \quad
@@ -645,17 +647,18 @@ if pyvista is not None:
 # $$
 #
 # makes every local problem well posed and lets a wave leave. This is
-# the optimised restricted additive Schwarz (ORAS) method, and it is
-# the same condition used on the truncation boundary, applied to an
-# internal interface.
+# the optimised restricted additive Schwarz (ORAS) method
+# {cite}`stcyr2007oras`, and it is the same condition used on the
+# truncation boundary, applied to an internal interface.
 #
 # **The coarse space.** A one-level method couples neighbours only, so
 # information crosses one subdomain per iteration and the iteration
 # count grows with the number of subdomains. A coarse space fixes this
 # by adding a second, global solve on a small space. For the Helmholtz
 # equation a good choice is built from the Dirichlet-to-Neumann (DtN)
-# operator: on each subdomain, discretised, it is the Schur complement
-# of the local operator on the interface,
+# operator {cite}`nataf2011dtn,conen2014dtn`: on each subdomain,
+# discretised, it is the Schur complement of the local operator on the
+# interface,
 #
 # $$
 # S_i = A_{\Gamma \Gamma} - A_{\Gamma I} A_{II}^{-1} A_{I \Gamma},
