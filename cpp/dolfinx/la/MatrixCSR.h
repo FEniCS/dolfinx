@@ -129,7 +129,7 @@ public:
     if ((BS0 != _bs[0] and BS0 > 1 and _bs[0] > 1)
         or (BS1 != _bs[1] and BS1 > 1 and _bs[1] > 1))
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Cannot insert blocks of different size than matrix block size");
     }
 
@@ -176,7 +176,7 @@ public:
     if ((BS0 != _bs[0] and BS0 > 1 and _bs[0] > 1)
         or (BS1 != _bs[1] and BS1 > 1 and _bs[1] > 1))
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Cannot insert blocks of different size than matrix block size");
     }
 

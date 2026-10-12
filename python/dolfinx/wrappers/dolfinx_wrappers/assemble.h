@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2026 Chris Richardson, Garth N. Wells and OpenAI
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //

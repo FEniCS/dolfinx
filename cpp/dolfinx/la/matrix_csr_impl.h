@@ -102,7 +102,7 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 
 #ifndef NDEBUG
     if (row >= num_rows)
-      throw std::runtime_error("Local row out of range");
+      throw std::out_of_range("Local row out of range");
 #endif
     // Columns indices for row
     std::size_t row_begin = row_ptr[row];
@@ -112,7 +112,7 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       // Find position of column index
       std::size_t d = csr_position(cols, row_begin, row_end, xcols[c]);
       if (d == row_end or cols[d] != xcols[c])
-        throw std::runtime_error("Entry not in sparsity");
+        throw std::out_of_range("Entry not in sparsity");
 
       std::size_t di = d * BS0 * BS1;
       std::size_t xi = c * BS1;
@@ -163,7 +163,7 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
     auto row = xrows[r] * BS0;
 #ifndef NDEBUG
     if (row >= num_rows)
-      throw std::runtime_error("Local row out of range");
+      throw std::out_of_range("Local row out of range");
 #endif
 
     for (int i = 0; i < BS0; ++i)
@@ -179,7 +179,7 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
         // Find position of column index
         std::size_t d = csr_position(cols, row_begin, row_end, xcols[c] * BS1);
         if (d == row_end or cols[d] != xcols[c] * BS1)
-          throw std::runtime_error("Entry not in sparsity");
+          throw std::out_of_range("Entry not in sparsity");
 
         assert(d < data.size());
         std::size_t xi = c * BS1;
@@ -229,7 +229,7 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
 
 #ifndef NDEBUG
     if (rdiv.quot >= num_rows)
-      throw std::runtime_error("Local row out of range");
+      throw std::out_of_range("Local row out of range");
 #endif
     // Columns indices for row
     std::size_t row_begin = row_ptr[rdiv.quot];
@@ -240,7 +240,7 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       auto cdiv = std::div(xcols[c], bs1);
       std::size_t d = csr_position(cols, row_begin, row_end, cdiv.quot);
       if (d == row_end or cols[d] != cdiv.quot)
-        throw std::runtime_error("Entry not in sparsity");
+        throw std::out_of_range("Entry not in sparsity");
 
       std::size_t di = d * nbs + rdiv.rem * bs1 + cdiv.rem;
       assert(di < data.size());
