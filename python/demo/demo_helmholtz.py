@@ -77,7 +77,7 @@
 # extra layers of cells.
 #
 # Multiplying by the conjugate of a test function $v$ and integrating by
-# parts gives the variational problem (see, e.g.,
+# parts gives the variational problem (Section 2.3 of
 # {cite:t}`ihlenburg1998scattering`): find $u_{s} \in V$ such that
 #
 # $$
@@ -365,7 +365,7 @@ u_s = solve_scattering(mesh_data, radius)
 # -
 
 # Scattering of a plane wave $e^{i k x}$ by a sound-hard circular
-# cylinder has the classical series solution (Chapter 2 of
+# cylinder has the classical series solution (Section 2.1.3 of
 # {cite:t}`ihlenburg1998scattering`)
 #
 # $$
