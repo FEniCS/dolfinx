@@ -231,7 +231,8 @@ def ring_mesh(n, m, twist):
 # degrees-of-freedom of one of them there. Of a cell's basis functions
 # only those belonging to a facet have a non-zero normal trace on it, so
 # that restores the agreement across that facet and disturbs nothing
-# else.
+# else. Gridap {cite}`mobius-verdugo2022gridap` signs its Raviart-Thomas
+# spaces the same way.
 #
 # Because it looks at one facet at a time and never at the surface as a
 # whole, the same call serves both meshes. The cylinder, which could be
@@ -352,3 +353,10 @@ if dolfinx.has_adios2:
 
     with dolfinx.io.VTXWriter(mesh.comm, "mobius.bp", [sigma_out, u_out]) as writer:
         writer.write(0.0)
+
+# ## References
+# ```{bibliography}
+#    :filter: cited
+#    :labelprefix:
+#    :keyprefix: mobius-
+# ```
