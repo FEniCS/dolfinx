@@ -234,14 +234,16 @@ def test_blocked_matches_scalar_basis(dtype):
 
 def test_num_threads_invalid():
     """num_threads < 1 is rejected, as elsewhere in the library."""
-    msh = _create_mesh(mesh.CellType.triangle, np.float64)
-    V = fem.functionspace(msh, ("Lagrange", 1))
-    x = _interior_points(msh, np.random.default_rng(3))
+    dtype = np.float64
+    msh = _create_mesh(mesh.CellType.triangle, dtype)
+    el = basix.ufl.element("Lagrange", msh.topology.cell_type, 1, dtype=dtype)
+    V = fem.functionspace(msh, el)
+    x = _interior_points(msh, np.random.default_rng(3)).astype(dtype)
     cells = np.arange(x.shape[0], dtype=np.int32)
 
     with pytest.raises(ValueError):
         fem.evaluate_basis_functions(V, x, cells, num_threads=0)
 
-    u = fem.Function(V)
+    u = fem.Function(V, dtype=dtype)
     with pytest.raises(ValueError):
         u.eval(x, cells, num_threads=0)
