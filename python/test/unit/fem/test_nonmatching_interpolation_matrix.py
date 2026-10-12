@@ -15,7 +15,12 @@ import ufl
 from dolfinx import default_real_type, fem, la, mesh
 
 
-def _line_in_3d(n: int, dtype, centre=(0.37, 0.43), zrange=(0.23, 0.71)) -> mesh.Mesh:
+def _line_in_3d(
+    n: int,
+    dtype,
+    centre: tuple[float, float] = (0.37, 0.43),
+    zrange: tuple[float, float] = (0.23, 0.71),
+) -> mesh.Mesh:
     """Interval mesh parallel to the z-axis, embedded in 3D.
 
     The default centre and z-range avoid the grid planes of a unit cube
@@ -23,7 +28,7 @@ def _line_in_3d(n: int, dtype, centre=(0.37, 0.43), zrange=(0.23, 0.71)) -> mesh
     of radius 0.11 around it, lies on a facet of the 3D mesh.
     """
     if MPI.COMM_WORLD.rank == 0:
-        z = np.linspace(zrange[0], zrange[1], n + 1)
+        z = np.linspace(*zrange, n + 1)
         x = np.column_stack([np.full(n + 1, centre[0]), np.full(n + 1, centre[1]), z]).astype(dtype)
         cells = np.column_stack([np.arange(n), np.arange(1, n + 1)]).astype(np.int64)
     else:
