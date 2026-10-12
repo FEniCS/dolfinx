@@ -236,7 +236,7 @@ def test_num_threads_invalid():
     """num_threads < 1 is rejected, as elsewhere in the library."""
     dtype = np.float64
     msh = _create_mesh(mesh.CellType.triangle, dtype)
-    el = basix.ufl.element("Lagrange", msh.topology.cell_type, 1, dtype=dtype)
+    el = basix.ufl.element("Lagrange", msh.basix_cell(), 1, dtype=dtype)
     V = fem.functionspace(msh, el)
     x = _interior_points(msh, np.random.default_rng(3)).astype(dtype)
     cells = np.arange(x.shape[0], dtype=np.int32)
