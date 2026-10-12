@@ -162,7 +162,8 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
     // Row index and current data row
     auto row = xrows[r] * BS0;
 #ifndef NDEBUG
-    if (row >= num_rows)
+    // Rows [row, row + BS0) are accessed below
+    if (row + BS0 > num_rows)
       throw std::out_of_range("Local row out of range");
 #endif
 

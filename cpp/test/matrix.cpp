@@ -377,6 +377,22 @@ void test_matrix()
                           std::vector<std::int32_t>{A.num_all_rows()},
                           std::vector<std::int32_t>{0}),
                     "Local row out of range");
+
+  // A blocked insertion writes rows [row, row + BS0), so the last block
+  // row must be rejected when the row count is not a multiple of BS0
+  {
+    auto map1 = std::make_shared<common::IndexMap>(MPI_COMM_WORLD, 5);
+    la::SparsityPattern p1(MPI_COMM_WORLD, {map1, map1}, {1, 1});
+    for (std::int32_t i = 0; i < 5; ++i)
+      for (std::int32_t j = 0; j < 5; ++j)
+        p1.insert(i, j);
+    p1.finalize();
+    la::MatrixCSR<T> B(p1);
+    CHECK_THROWS_WITH(
+        (B.add<2, 2>(std::vector<T>{1, 2, 3, 4}, std::vector<std::int32_t>{2},
+                     std::vector<std::int32_t>{0})),
+        "Local row out of range");
+  }
 #endif
 
   const std::vector Adense0 = A.to_dense();

@@ -305,8 +305,7 @@ public:
     check_not_finalized();
     auto set_fn = [](value_type& y, const value_type& x) { y = x; };
 
-    std::int32_t num_rows
-        = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts();
+    std::int32_t num_rows = num_all_rows();
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
     {
@@ -351,8 +350,7 @@ public:
     check_not_finalized();
     auto add_fn = [](value_type& y, const value_type& x) { y += x; };
 
-    std::int32_t num_rows
-        = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts();
+    std::int32_t num_rows = num_all_rows();
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
     {
