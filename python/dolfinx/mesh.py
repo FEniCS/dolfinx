@@ -132,6 +132,9 @@ HybridPartitioningFunc = typing.Callable[
     AdjacencyList[np.int32],
 ]
 
+_Partitioner = PartitioningFunc | GraphPartitioner | GeometricPartitioner | HybridPartitioner
+_MeshPartitioner = _Partitioner | tuple[_Partitioner, npt.NDArray[np.int32] | None] | None
+
 # A cell reordering function receives the local cell dual graph and
 # returns the new index of each cell.
 CellReorderFunc = typing.Callable[[AdjacencyList[np.int32]], npt.NDArray[np.int32]]
@@ -1110,7 +1113,7 @@ def transfer_meshtag(
 
 def uniform_refine(
     msh: Mesh,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
     ghost_mode: GhostMode = GhostMode.none,
 ) -> Mesh:
     """Uniformly refine a mesh.
@@ -1144,7 +1147,7 @@ def uniform_refine(
 def refine(
     msh: Mesh,
     edges: np.ndarray | None = None,
-    partitioner: Callable | IdentityPartitionerPlaceholder | None = (
+    partitioner: _Partitioner | IdentityPartitionerPlaceholder | None = (
         IdentityPartitionerPlaceholder()
     ),
     option: RefinementOption = RefinementOption.parent_cell,
@@ -1188,9 +1191,6 @@ def refine(
     # Create a new UFL domain to associate with the refined mesh.
     ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())
     return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
-
-
-_MeshPartitioner = Callable | tuple[Callable, npt.NDArray[np.int32] | None] | None
 
 
 @typing.overload
@@ -1577,7 +1577,7 @@ def create_interval(
     points: npt.ArrayLike,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode: GhostMode = GhostMode.shared_facet,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
     gdim: int = 1,
 ) -> Mesh:
     """Create an interval mesh.
@@ -1600,9 +1600,9 @@ def create_interval(
     """
     if not (np.issubdtype(dtype, np.float32) or np.issubdtype(dtype, np.float64)):
         raise TypeError(f"Unsupported mesh geometry float type: {dtype}")
-    if partitioner is None and comm.size > 1:
-        partitioner = _cpp.graph.partitioner()
-    partitioner = _wrap_partitioner(partitioner)
+    partitioner_fn = _wrap_partitioner(partitioner)
+    if partitioner_fn is None and comm.size > 1:
+        partitioner_fn = _cpp.graph.partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1615,9 +1615,9 @@ def create_interval(
     )
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner, gdim)  # type: ignore[arg-type]
+        msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner_fn, gdim)  # type: ignore[arg-type]
     else:
-        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner, gdim)  # type: ignore[arg-type]
+        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner_fn, gdim)  # type: ignore[arg-type]
 
     return Mesh(msh, domain)
 
@@ -1627,7 +1627,7 @@ def create_unit_interval(
     nx: int,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode: GhostMode = GhostMode.shared_facet,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
     gdim: int = 1,
 ) -> Mesh:
     """Create a mesh on the unit interval.
@@ -1659,7 +1659,7 @@ def create_rectangle(
     cell_type: CellType = CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode: GhostMode = GhostMode.shared_facet,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
     diagonal: DiagonalType = DiagonalType.right,
     gdim: int = 2,
 ) -> Mesh:
@@ -1686,9 +1686,9 @@ def create_rectangle(
     """
     if not (np.issubdtype(dtype, np.float32) or np.issubdtype(dtype, np.float64)):
         raise TypeError(f"Unsupported mesh geometry float type: {dtype}")
-    if partitioner is None and comm.size > 1:
-        partitioner = _cpp.graph.partitioner()
-    partitioner = _wrap_partitioner(partitioner)
+    partitioner_fn = _wrap_partitioner(partitioner)
+    if partitioner_fn is None and comm.size > 1:
+        partitioner_fn = _cpp.graph.partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1706,7 +1706,7 @@ def create_rectangle(
             points,  # type: ignore[arg-type]
             n,
             cell_type,
-            partitioner,
+            partitioner_fn,
             diagonal,
             gdim,
             ghost_mode,
@@ -1717,7 +1717,7 @@ def create_rectangle(
             points,  # type: ignore[arg-type]
             n,
             cell_type,
-            partitioner,
+            partitioner_fn,
             diagonal,
             gdim,
             ghost_mode,
@@ -1733,7 +1733,7 @@ def create_unit_square(
     cell_type: CellType = CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode: GhostMode = GhostMode.shared_facet,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
     diagonal: DiagonalType = DiagonalType.right,
     gdim: int = 2,
 ) -> Mesh:
@@ -1778,7 +1778,7 @@ def create_box(
     cell_type: CellType = CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode: GhostMode = GhostMode.shared_facet,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
 ) -> Mesh:
     """Create a box mesh.
 
@@ -1799,9 +1799,9 @@ def create_box(
     """
     if not (np.issubdtype(dtype, np.float32) or np.issubdtype(dtype, np.float64)):
         raise TypeError(f"Unsupported mesh geometry float type: {dtype}")
-    if partitioner is None and comm.size > 1:
-        partitioner = _cpp.graph.partitioner()
-    partitioner = _wrap_partitioner(partitioner)
+    partitioner_fn = _wrap_partitioner(partitioner)
+    if partitioner_fn is None and comm.size > 1:
+        partitioner_fn = _cpp.graph.partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1814,9 +1814,9 @@ def create_box(
     )
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner, ghost_mode)  # type: ignore[arg-type]
+        msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner_fn, ghost_mode)  # type: ignore[arg-type]
     else:
-        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner, ghost_mode)  # type: ignore[arg-type]
+        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner_fn, ghost_mode)  # type: ignore[arg-type]
 
     return Mesh(msh, domain)
 
@@ -1829,7 +1829,7 @@ def create_unit_cube(
     cell_type: CellType = CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode: GhostMode = GhostMode.shared_facet,
-    partitioner: Callable | None = None,
+    partitioner: _Partitioner | None = None,
 ) -> Mesh:
     """Create a mesh of a unit cube.
 
