@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Garth N. Wells
+// Copyright (C) 2025-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,9 +6,11 @@
 
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/utils.h>
+#include <stdexcept>
 #include <vector>
 
 using namespace dolfinx;
@@ -68,4 +70,16 @@ TEST_CASE("AdjacencyList create")
 TEST_CASE("IndexMap communication graph", "[index_map_graph]")
 {
   CHECK_NOTHROW(test_comm_graphs());
+}
+
+TEST_CASE("Invalid adjacency list arrays", "[graph]")
+{
+  const std::vector<std::int32_t> data = {0, 1};
+  const std::vector<std::int32_t> offsets = {0, 1};
+  CHECK_THROWS_AS(graph::AdjacencyList<std::int32_t>(data, offsets),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(graph::regular_adjacency_list(data, 0),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(graph::regular_adjacency_list(data, 3),
+                  std::invalid_argument);
 }

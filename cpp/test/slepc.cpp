@@ -1,4 +1,5 @@
 // Copyright (C) 2026 Jack S. Hale
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -240,7 +241,7 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
 
   SECTION("Wrapping a null EPS throws")
   {
-    CHECK_THROWS_AS(la::SLEPcEigenSolver(nullptr, true), std::runtime_error);
+    CHECK_THROWS_AS(la::SLEPcEigenSolver(nullptr, true), std::invalid_argument);
   }
 
   SECTION("Move leaves the source safe to destroy")
