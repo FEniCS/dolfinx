@@ -91,10 +91,10 @@ def test_cell_import(gmsh_model, cell_name, vertex_order, degree):
 @pytest.mark.parametrize(
     "marker_mode",
     [
-        pytest.param(0, marks=pytest.mark.xfail(raises=RuntimeError)),
-        pytest.param(1, marks=pytest.mark.xfail(raises=RuntimeError)),
+        pytest.param(0, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(1, marks=pytest.mark.xfail(raises=ValueError)),
         2,
-        pytest.param(3, marks=pytest.mark.xfail(raises=RuntimeError)),
+        pytest.param(3, marks=pytest.mark.xfail(raises=ValueError)),
     ],
 )
 def test_physical_tags(gmsh_session, marker_mode) -> None:

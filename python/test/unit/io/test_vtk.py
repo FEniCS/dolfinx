@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2021 Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2011-2026 Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -171,10 +171,10 @@ def test_save_vtk_mixed(tempdir) -> None:
 
     Up = U.sub(1)
     Up.name = "psub"
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         with VTKFile(mesh.comm, filename, "w") as vtk:
             vtk.write_function([U2, Up, U1], 0)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         with VTKFile(mesh.comm, filename, "w") as vtk:
             vtk.write_function([U.sub(i) for i in range(W.num_sub_spaces)], 0)
 
@@ -192,7 +192,7 @@ def test_save_vector_element(tempdir, cell_type) -> None:
 
     u.interpolate(f)
     filename = Path(tempdir, "u.pvd")
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
             vtk.write_function(u, 0.0)
             vtk.write_function(u, 1.0)

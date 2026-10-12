@@ -145,7 +145,7 @@ def create_vector(
     if isinstance(V, _FunctionSpace):
         V = [V]
     elif any(_V is None for _V in V):
-        raise RuntimeError("Can not create vector for None block.")
+        raise ValueError("Can not create vector for None block.")
 
     maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]  # type: ignore
     return dolfinx.la.petsc.create_vector(maps, kind=kind)
@@ -932,7 +932,7 @@ def _assemble_matrix_blocked(
                         unrolled=unrolled,
                     )
             elif i == j and bc_data.row_markers[i].size > 0:
-                raise RuntimeError(
+                raise ValueError(
                     f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
                     " and have DirichletBC applied. Consider assembling a zero block."
                 )

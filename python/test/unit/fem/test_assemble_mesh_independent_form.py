@@ -125,6 +125,10 @@ def test_compiled_form(dtype) -> None:
         wh.interpolate(lambda x: x[1])
         eh = dolfinx.fem.Constant(mesh, dtype(3.0))
         ch = dolfinx.fem.Constant(mesh, dtype(2.0))
+        with pytest.raises(KeyError, match="Missing coefficient"):
+            dolfinx.fem.create_form(compiled_form, [], mesh, {}, {u: uh}, {c: ch, e: eh})
+        with pytest.raises(KeyError, match="Missing constant"):
+            dolfinx.fem.create_form(compiled_form, [], mesh, {}, {u: uh, w: wh}, {c: ch})
         form = dolfinx.fem.create_form(compiled_form, [], mesh, {}, {u: uh, w: wh}, {c: ch, e: eh})
         assert np.isclose(mesh.comm.allreduce(dolfinx.fem.assemble_scalar(form), op=MPI.SUM), 1.5)
 

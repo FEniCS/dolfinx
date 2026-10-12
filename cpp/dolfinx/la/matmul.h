@@ -1,4 +1,5 @@
 // Copyright (C) 2026 Chris Richardson
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,6 +8,7 @@
 #pragma once
 
 #include <dolfinx/common/IndexMap.h>
+#include <stdexcept>
 
 #include <dolfinx/la/MatrixCSR.h>
 #include <mpi.h>
@@ -554,7 +556,7 @@ dolfinx::la::MatrixCSR<T> matmul(const dolfinx::la::MatrixCSR<T>& A,
   std::array<int, 2> bs{1, 1};
   if (A.block_size() != B.block_size() or A.block_size() != bs)
   {
-    throw std::runtime_error("Currently matmul only supports block size=1");
+    throw std::invalid_argument("Currently matmul only supports block size=1");
   }
 
   // Fetch ghost rows of B needed to multiply against A's ghost columns.
