@@ -11,9 +11,8 @@ import numpy as np
 import pytest
 
 import basix.ufl
-import dolfinx
 import ufl
-from dolfinx import fem, la, mesh
+from dolfinx import default_real_type, fem, la, mesh
 
 
 def _line_in_3d(n: int, dtype, centre=(0.37, 0.43), zrange=(0.23, 0.71)) -> mesh.Mesh:
@@ -211,7 +210,7 @@ def test_circle_average_expansion_3d_1d(dtype):
 
 def test_unowned_points_do_not_contribute():
     """Points outside the source mesh give zero rows without extrapolation."""
-    dtype = dolfinx.default_real_type
+    dtype = default_real_type
     mesh0 = _square((5, 5), mesh.CellType.triangle, dtype)
     mesh1 = _square((4, 4), mesh.CellType.triangle, dtype, (0.5, 0.5), (1.5, 1.5))
     V0 = fem.functionspace(mesh0, ("Lagrange", 1))
@@ -233,7 +232,7 @@ def test_unowned_points_do_not_contribute():
 
 def test_cell_subset():
     """Only the rows of the given cells are filled."""
-    dtype = dolfinx.default_real_type
+    dtype = default_real_type
     mesh0 = _square((5, 5), mesh.CellType.triangle, dtype)
     mesh1 = _square((4, 4), mesh.CellType.quadrilateral, dtype, (0.1, 0.1), (0.9, 0.9))
     V0 = fem.functionspace(mesh0, ("Lagrange", 2))
@@ -250,7 +249,7 @@ def test_cell_subset():
 
 
 def test_threads_match_serial():
-    dtype = dolfinx.default_real_type
+    dtype = default_real_type
     mesh0 = _cube((3, 3, 2), mesh.CellType.hexahedron, dtype)
     mesh1 = _cube((2, 2, 3), mesh.CellType.tetrahedron, dtype)
     V0 = fem.functionspace(mesh0, ("Lagrange", 2))
@@ -266,7 +265,7 @@ def test_threads_match_serial():
 
 
 def test_column_map_extends_source_map():
-    dtype = dolfinx.default_real_type
+    dtype = default_real_type
     mesh0 = _square((6, 5), mesh.CellType.triangle, dtype)
     mesh1 = _square((5, 6), mesh.CellType.quadrilateral, dtype)
     V0 = fem.functionspace(mesh0, ("Lagrange", 1))
@@ -283,7 +282,7 @@ def test_column_map_extends_source_map():
 
 def test_pull_back_failure_raises_on_all_processes():
     """A failure on one process raises on every process, without a hang."""
-    dtype = dolfinx.default_real_type
+    dtype = default_real_type
     mesh0 = _square((4, 4), mesh.CellType.quadrilateral, dtype)
     mesh1 = _square((3, 3), mesh.CellType.triangle, dtype)
     V0 = fem.functionspace(mesh0, ("Lagrange", 1))
@@ -303,7 +302,7 @@ def test_empty_cell_subset_with_dof_transformations():
     than one process. Lagrange does not catch this, as its dof
     transformations are the identity.
     """
-    dtype = dolfinx.default_real_type
+    dtype = default_real_type
     mesh0 = _square((5, 5), mesh.CellType.triangle, dtype)
     mesh1 = _square((4, 4), mesh.CellType.triangle, dtype, (0.1, 0.1), (0.9, 0.9))
     V0 = fem.functionspace(mesh0, ("N1curl", 1))
@@ -329,7 +328,7 @@ def test_hierarchy_matches_nonmatching(degree):
     bounding-box search and no communication are needed, but the matrix
     must be the same.
     """
-    dtype = dolfinx.default_real_type
+    dtype = default_real_type
     coarse = mesh.create_unit_square(MPI.COMM_WORLD, 6, 6, dtype=dtype)
     coarse.topology.create_entities(1)
     fine, parent_cells, _ = mesh.refine(coarse)
@@ -344,7 +343,7 @@ def test_hierarchy_matches_nonmatching(degree):
 
 
 def test_hierarchy_rejects_bad_parent_cells():
-    dtype = dolfinx.default_real_type
+    dtype = default_real_type
     coarse = mesh.create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
     coarse.topology.create_entities(1)
     fine, parent_cells, _ = mesh.refine(coarse)
@@ -367,7 +366,7 @@ def test_sparsity_has_no_structural_zeros(degree):
     basis functions that do not vanish there, so storing every dof of
     the containing cell would keep explicit zeros.
     """
-    dtype = dolfinx.default_real_type
+    dtype = default_real_type
     coarse = mesh.create_unit_square(MPI.COMM_WORLD, 6, 6, dtype=dtype)
     coarse.topology.create_entities(1)
     fine, parent_cells, _ = mesh.refine(coarse)
