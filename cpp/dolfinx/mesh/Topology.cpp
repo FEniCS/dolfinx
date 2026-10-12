@@ -1002,19 +1002,12 @@ void Topology::create_facet_orientations()
   // orientations relative to the cells
   create_entity_permutations(1);
   create_connectivity(1, 2);
-  const std::vector<std::uint8_t> facets = compute_facet_orientations(*this);
+  const std::vector<std::uint32_t> facets = compute_facet_orientations(*this);
 
-  const int facets_per_cell = cell_num_entities(cell_type(), 1);
+  // Replace any signs from an earlier call
+  const std::uint32_t mask = orientation_mask(dim());
   for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    for (int f = 0; f < facets_per_cell; ++f)
-    {
-      if (facets[c * facets_per_cell + f])
-        _cell_permutations[c] |= reversed_facet_bit(f);
-      else
-        _cell_permutations[c] &= ~reversed_facet_bit(f);
-    }
-  }
+    _cell_permutations[c] = (_cell_permutations[c] & ~mask) | facets[c];
   _has_facet_orientations = true;
 }
 //-----------------------------------------------------------------------------

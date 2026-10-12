@@ -161,7 +161,7 @@ std::vector<std::uint32_t> compute_cell_permutations(const Topology& topology,
 /// This asks nothing of the surface as a whole, only of each facet in
 /// turn, so it works on a surface that cannot be oriented, such as a
 /// Möbius strip, as well as on one that can. It is local to a process
-/// but for one reduction.
+/// but for one scatter to the ghost cells.
 ///
 /// @note Which cell of a facet carries the sign, and how many facets
 /// are signed, depend on the partitioning, since both follow from the
@@ -171,14 +171,15 @@ std::vector<std::uint32_t> compute_cell_permutations(const Topology& topology,
 /// edge permutations must have been created.
 /// @param[in] topology Topology of a mesh of triangles or
 /// quadrilaterals.
-/// @return For each owned and ghost cell and each of its facets, in
-/// cell-local facet order and flattened row-wise, `1` if the
-/// degrees-of-freedom on that facet must be negated and `0` otherwise.
+/// @return For each owned and ghost cell, the mask of its signed
+/// facets, with reversed_facet_bit(f) set if the degrees-of-freedom on
+/// its facet `f` must be negated.
 /// @note Collective.
 /// @throws std::invalid_argument If the topological dimension is not 2.
 /// @throws std::runtime_error If an edge is shared by more than two
-/// cells, or if a facet needs correcting on a process that holds no
-/// ghost cells and so cannot see the cell on its other side.
-std::vector<std::uint8_t> compute_facet_orientations(const Topology& topology);
+/// cells, or if an edge on a process boundary has no ghost cell on its
+/// other side. In Release builds this is raised only on the processes
+/// that detect it.
+std::vector<std::uint32_t> compute_facet_orientations(const Topology& topology);
 
 } // namespace dolfinx::mesh
