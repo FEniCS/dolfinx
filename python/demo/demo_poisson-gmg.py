@@ -94,8 +94,9 @@ from petsc4py import PETSc
 import numpy as np
 
 import dolfinx.fem.petsc
+import dolfinx.la.petsc
 import ufl
-from dolfinx import default_real_type, default_scalar_type, fem, la, mesh
+from dolfinx import default_real_type, default_scalar_type, fem, mesh
 
 # -
 
@@ -112,6 +113,42 @@ def create_hierarchy(num_levels: int) -> list[fem.FunctionSpace]:
         msh, _, _ = mesh.refine(msh)
         spaces.append(fem.functionspace(msh, ("Lagrange", 1)))
     return spaces
+
+
+# The problem is defined on any level of the hierarchy by the following
+# functions. The fine problem and the rediscretised coarse operators (see
+# below) use them, so that all levels discretise the same problem.
+
+
+# +
+def exact_solution(msh: mesh.Mesh) -> ufl.core.expr.Expr:
+    """The manufactured solution u_ex on the mesh msh."""
+    x = ufl.SpatialCoordinate(msh)
+    return ufl.sin(ufl.pi * x[0]) * ufl.sin(2 * ufl.pi * x[1]) + x[0] * x[1]
+
+
+def bilinear_form(V: fem.FunctionSpace) -> ufl.Form:
+    """The bilinear form a(u, v) on the space V."""
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    return ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+
+
+def dirichlet_bc(V: fem.FunctionSpace) -> fem.DirichletBC:
+    """The Dirichlet condition u = u_ex on the boundary, in the space V."""
+    msh = V.mesh
+    u_bc = fem.Function(V, dtype=default_scalar_type)
+    u_bc.interpolate(
+        fem.Expression(
+            exact_solution(msh), V.element.interpolation_points, dtype=default_scalar_type
+        )
+    )
+    tdim = msh.topology.dim
+    msh.topology.create_connectivity(tdim - 1, tdim)
+    dofs = fem.locate_dofs_topological(V, tdim - 1, mesh.exterior_facet_indices(msh.topology))
+    return fem.dirichletbc(u_bc, dofs)
+
+
+# -
 
 
 # The multigrid preconditioner builds its hierarchy by repeatedly
@@ -137,7 +174,9 @@ def create_hierarchy(num_levels: int) -> list[fem.FunctionSpace]:
 def shell_dm(V: fem.FunctionSpace) -> PETSc.DMShell:
     """DMShell with the parallel layout of the space V."""
     dm = PETSc.DMShell().create(V.mesh.comm)  # type: ignore[arg-type]
-    dm.setGlobalVector(la.petsc.create_vector([(V.dofmap.index_map, V.dofmap.index_map_bs)]))
+    dm.setGlobalVector(
+        dolfinx.la.petsc.create_vector([(V.dofmap.index_map, V.dofmap.index_map_bs)])
+    )
     return dm
 
 
@@ -165,22 +204,12 @@ def attach_hierarchy(
 # ### Rediscretised coarse operators
 #
 # For rediscretisation, each level assembles the bilinear form on its
-# own mesh. The coarse levels solve for a *correction*, which vanishes on
-# the Dirichlet boundary, so their boundary condition is homogeneous.
-
-
-def level_problem(V: fem.FunctionSpace) -> tuple[fem.Form, fem.DirichletBC]:
-    """Bilinear form and homogeneous Dirichlet condition on the space V."""
-    msh = V.mesh
-    tdim = msh.topology.dim
-    msh.topology.create_connectivity(tdim - 1, tdim)
-    dofs = fem.locate_dofs_topological(V, tdim - 1, mesh.exterior_facet_indices(msh.topology))
-    bc = fem.dirichletbc(default_scalar_type(0), dofs, V)
-    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = fem.form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, dtype=default_scalar_type)
-    return a, bc
-
-
+# own mesh, with the same boundary condition as the fine problem. When a
+# matrix is assembled, a boundary condition only determines which rows
+# and columns are constrained (they are zeroed, with one on the
+# diagonal). Its values only enter the right-hand side, which the coarse
+# levels never assemble, so they do not affect the coarse operators.
+#
 # Without the Galerkin projection, the multigrid preconditioner asks the
 # `DM` of each coarse level for its operator: it creates the matrix with
 # the `DM`'s matrix-creation callback
@@ -195,7 +224,10 @@ def level_problem(V: fem.FunctionSpace) -> tuple[fem.Form, fem.DirichletBC]:
 
 def attach_operators(dms: list[PETSc.DMShell], spaces: list[fem.FunctionSpace]) -> None:
     """Let PCMG assemble the operator of each level on its own mesh."""
-    levels = {dm.handle: level_problem(V) for dm, V in zip(dms, spaces, strict=True)}
+    levels = {
+        dm.handle: (fem.form(bilinear_form(V), dtype=default_scalar_type), dirichlet_bc(V))
+        for dm, V in zip(dms, spaces, strict=True)
+    }
 
     def create_matrix(dm: PETSc.DM) -> PETSc.Mat:
         a, _ = levels[dm.handle]
@@ -232,24 +264,11 @@ def solve(num_levels: int, galerkin: bool) -> tuple[int, int, float]:
     V = spaces[-1]
     msh = V.mesh
 
-    x = ufl.SpatialCoordinate(msh)
-    u_ex = ufl.sin(ufl.pi * x[0]) * ufl.sin(2 * ufl.pi * x[1]) + x[0] * x[1]
+    u_ex = exact_solution(msh)
     f = -ufl.div(ufl.grad(u_ex))
-
-    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
-    L = ufl.inner(f, v) * ufl.dx
-
-    u_bc = fem.Function(V, dtype=default_scalar_type)
-    u_bc.interpolate(
-        fem.Expression(u_ex, V.element.interpolation_points, dtype=default_scalar_type)
-    )
-    tdim = msh.topology.dim
-    msh.topology.create_connectivity(tdim - 1, tdim)
-    boundary_dofs = fem.locate_dofs_topological(
-        V, tdim - 1, mesh.exterior_facet_indices(msh.topology)
-    )
-    bc = fem.dirichletbc(u_bc, boundary_dofs)
+    a = bilinear_form(V)
+    L = ufl.inner(f, ufl.TestFunction(V)) * ufl.dx
+    bc = dirichlet_bc(V)
 
     petsc_options = {
         "ksp_type": "cg",
