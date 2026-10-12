@@ -62,7 +62,7 @@
 # Sommerfeld radiation condition at infinity. To get a finite
 # computational domain $\Omega$ we truncate at a circle $\Gamma_{R}$ of
 # radius $R$ centred at the origin, and impose there the first-order
-# Bayliss-Gunzburger-Turkel condition
+# Bayliss-Gunzburger-Turkel condition {cite}`bayliss1982exterior`
 #
 # $$
 # \frac{\partial u_{s}}{\partial n} = \left(i k -
@@ -70,13 +70,15 @@
 # $$
 #
 # The condition is cheap, but approximate: an outgoing circular wave is
-# reflected back into $\Omega$ with a relative amplitude $O((kR)^{-2})$,
-# and that reflection is the dominant error in this demo. A perfectly
-# matched layer (see the {doc}`PML demo <demo_pml>`) absorbs more
-# effectively, at the cost of extra layers of cells.
+# reflected back into $\Omega$ with a relative amplitude $O((kR)^{-2})$
+# {cite}`bayliss1982exterior`, and that reflection is the dominant error
+# in this demo. A perfectly matched layer (see the
+# {doc}`PML demo <demo_pml>`) absorbs more effectively, at the cost of
+# extra layers of cells.
 #
 # Multiplying by the conjugate of a test function $v$ and integrating by
-# parts gives the variational problem: find $u_{s} \in V$ such that
+# parts gives the variational problem (see, e.g.,
+# {cite:t}`ihlenburg1998scattering`): find $u_{s} \in V$ such that
 #
 # $$
 # \int_{\Omega} \left( \nabla u_{s} \cdot \nabla \bar{v} - k^2 u_{s}
@@ -137,10 +139,11 @@ if not petsc_is_complex and MPI.COMM_WORLD.size > 1:
 # number of degrees-of-freedom per wavelength, so the cell size is set
 # from the wavelength and the polynomial degree. Holding that resolution
 # fixed does not hold the error fixed as $k$ grows -- the pollution
-# effect -- for which raising the degree is the cheaper remedy. Away
-# from the obstacles the solution is a smooth wave and `h` is adequate;
-# the obstacle boundaries are curved and carry the boundary data that
-# drives the scattered field, so cells are refined there.
+# effect {cite}`ihlenburg1995pollution` -- for which raising the degree
+# is the cheaper remedy. Away from the obstacles the solution is a
+# smooth wave and `h` is adequate; the obstacle boundaries are curved
+# and carry the boundary data that drives the scattered field, so cells
+# are refined there.
 
 # +
 wavelength = 0.5
@@ -362,9 +365,8 @@ u_s = solve_scattering(mesh_data, radius)
 # -
 
 # Scattering of a plane wave $e^{i k x}$ by a sound-hard circular
-# cylinder has the classical series solution (see, e.g., Ihlenburg,
-# [Finite Element Analysis of Acoustic
-# Scattering](https://doi.org/10.1007/0-387-22700-8))
+# cylinder has the classical series solution (Chapter 2 of
+# {cite:t}`ihlenburg1998scattering`)
 #
 # $$
 # u_{s}(r, \theta) = - \sum_{m=-\infty}^{\infty} i^{m}
@@ -548,3 +550,8 @@ if pyvista is not None:
         plotter.screenshot(results / "u_total.png", window_size=[800, 800])
     else:
         plotter.show()
+
+# ## References
+# ```{bibliography}
+# :filter: docname in docnames
+# ```
