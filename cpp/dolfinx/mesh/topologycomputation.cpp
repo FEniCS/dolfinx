@@ -27,9 +27,9 @@
 #include <memory>
 #include <mpi.h>
 #include <numeric>
+#include <ranges>
 #include <span>
 #include <stdexcept>
-#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -337,25 +337,23 @@ int get_ownership(const U& processes, const V& vertices)
 /// @param[in] vertex_ranks Neighbourhood ranks sharing each vertex.
 /// @param[in] vertex_map Index map for the vertex distribution.
 /// @param[in] ghost_status Ghost status of each entity.
-/// @param[out] entity_to_local_idx_out Rows of `[global vertices...,
-/// entity index]`, one per (entity, sharing rank) candidate.
-/// @param[out] send_entities Global vertices of the candidates to send
-/// to each neighbourhood rank.
-/// @param[out] send_index Entity index of each entry of
-/// `send_entities`.
-void build_candidates(std::int32_t e0, std::int32_t e1,
-                      std::span<const std::int32_t> first_instance,
-                      std::span<const std::int32_t> entity_list,
-                      int num_vertices_per_e,
-                      const graph::AdjacencyList<int>& vertex_ranks,
-                      const common::IndexMap& vertex_map,
-                      std::span<const std::int8_t> ghost_status,
-                      std::vector<std::int64_t>& entity_to_local_idx_out,
-                      std::vector<std::vector<std::int64_t>>& send_entities,
-                      std::vector<std::vector<std::int32_t>>& send_index)
+/// @param[in,out] send_entities Global vertices of the candidates to
+/// send to each neighbourhood rank. Appended to.
+/// @param[in,out] send_index Entity index of each entry of
+/// `send_entities`. Appended to.
+/// @return Rows of `[global vertices..., entity index]`, one per
+/// (entity, sharing rank) candidate.
+std::vector<std::int64_t>
+build_candidates(std::int32_t e0, std::int32_t e1,
+                 std::span<const std::int32_t> first_instance,
+                 std::span<const std::int32_t> entity_list,
+                 int num_vertices_per_e,
+                 const graph::AdjacencyList<int>& vertex_ranks,
+                 const common::IndexMap& vertex_map,
+                 std::span<const std::int8_t> ghost_status,
+                 std::vector<std::vector<std::int64_t>>& send_entities,
+                 std::vector<std::vector<std::int32_t>>& send_index)
 {
-  // Appended to locally and moved out at the end, to keep stores off a
-  // vector header shared with the neighbouring ranges' buffers
   std::vector<std::int64_t> entity_to_local_idx;
 
   std::vector<std::int64_t> vglobal(num_vertices_per_e);
@@ -417,7 +415,7 @@ void build_candidates(std::int32_t e0, std::int32_t e1,
     }
   }
 
-  entity_to_local_idx_out = std::move(entity_to_local_idx);
+  return entity_to_local_idx;
 }
 //-----------------------------------------------------------------------------
 
@@ -512,14 +510,13 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
          &vertex_map, ghost_status, &e2l_t, &send_entities_t,
          &send_index_t](int i, std::size_t e0, std::size_t e1)
         {
-          build_candidates(static_cast<std::int32_t>(e0),
-                           static_cast<std::int32_t>(e1), first_instance,
-                           entity_list, num_vertices_per_e, vertex_ranks,
-                           vertex_map, ghost_status, e2l_t[i],
-                           send_entities_t[i], send_index_t[i]);
+          e2l_t[i] = build_candidates(
+              static_cast<std::int32_t>(e0), static_cast<std::int32_t>(e1),
+              first_instance, entity_list, num_vertices_per_e, vertex_ranks,
+              vertex_map, ghost_status, send_entities_t[i], send_index_t[i]);
         });
 
-    entity_to_local_idx = common::concatenate<std::int64_t>(e2l_t);
+    entity_to_local_idx = common::concatenate(e2l_t);
     for (std::size_t r = 0; r < all_ranks.size(); ++r)
     {
       for (int i = 0; i < num_threads; ++i)
@@ -780,8 +777,11 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
                        [entity_index, &local_index,
                         &new_entity_index](int, std::size_t p0, std::size_t p1)
                        {
-                         for (std::size_t p = p0; p < p1; ++p)
-                           new_entity_index[p] = local_index[entity_index[p]];
+                         std::ranges::transform(
+                             entity_index.subspan(p0, p1 - p0),
+                             std::next(new_entity_index.begin(), p0),
+                             [&local_index](std::int32_t index)
+                             { return local_index[index]; });
                        });
   timer_li_rn.stop();
   timer_li_rn.flush();
@@ -811,17 +811,14 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 /// @param[in] keys Sorted vertex key of each instance, stored
 /// column-major (one span per vertex).
 /// @param[out] entity_index Entity label of each instance.
-/// @param[out] representatives_out First instance of each entity
-/// labelled, in label order. Collected here because this loop already
-/// has each instance's label to hand.
-void label_entities(std::span<const std::int32_t> sort_order, std::size_t p0,
-                    std::size_t p1,
-                    std::span<const std::span<std::int32_t>> keys,
-                    std::span<std::int32_t> entity_index,
-                    std::vector<std::int32_t>& representatives_out)
+/// @return First instance of each entity labelled, in label order.
+/// Collected here because this loop already has each instance's label
+/// to hand.
+std::vector<std::int32_t>
+label_entities(std::span<const std::int32_t> sort_order, std::size_t p0,
+               std::size_t p1, std::span<const std::span<std::int32_t>> keys,
+               std::span<std::int32_t> entity_index)
 {
-  // Appended to locally and moved out at the end, to keep stores off a
-  // vector header shared with the neighbouring ranges' buffers
   std::vector<std::int32_t> representatives;
 
   auto same_key = [keys](std::int32_t i0, std::int32_t i1)
@@ -855,7 +852,7 @@ void label_entities(std::span<const std::int32_t> sort_order, std::size_t p0,
       entity_index[sort_order[p++]] = label;
   }
 
-  representatives_out = std::move(representatives);
+  return representatives;
 }
 //-----------------------------------------------------------------------------
 
@@ -991,40 +988,28 @@ compute_entities_by_key_matching(
     int num_entities_per_cell = cell_type_entities[k].size();
     std::size_t num_cells = cells.size() / num_cell_vertices(cell_type);
 
-    std::vector<std::jthread> threads;
-    for (int i = 1; i < num_threads; ++i)
-    {
-      auto [c0, c1] = common::local_range(i, num_cells, num_threads);
-      std::size_t offset
-          = cell_type_offsets[k] * num_vertices_per_entity
-            + c0 * num_vertices_per_entity * num_entities_per_cell;
-      std::size_t count
-          = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
-      std::size_t entity_offset
-          = cell_type_offsets[k] + c0 * num_entities_per_cell;
-      auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
-                                   (c1 - c0) * num_vertices_per_cell);
-      threads.emplace_back(
-          build_entity_list, std::span(entity_list.data() + offset, count),
-          entity_offset,
-          std::span<const std::span<std::int32_t>>(entity_list_sorted), cells_i,
-          num_vertices_per_cell, std::cref(e_vertices), entity_type,
-          std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
-    }
-    auto [c0, c1] = common::local_range(0, num_cells, num_threads);
-    std::size_t offset = cell_type_offsets[k] * num_vertices_per_entity
-                         + c0 * num_vertices_per_entity * num_entities_per_cell;
-    std::size_t count
-        = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
-    std::size_t entity_offset
-        = cell_type_offsets[k] + c0 * num_entities_per_cell;
-    auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
-                                 (c1 - c0) * num_vertices_per_cell);
-    build_entity_list(
-        std::span(entity_list.data() + offset, count), entity_offset,
-        std::span<const std::span<std::int32_t>>(entity_list_sorted), cells_i,
-        num_vertices_per_cell, std::cref(e_vertices), entity_type,
-        std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
+    common::parallel_for(
+        num_cells, num_threads,
+        [k, &cell_type_offsets, num_vertices_per_entity, num_entities_per_cell,
+         entity_list, &entity_list_sorted, cells, num_vertices_per_cell,
+         &e_vertices, entity_type, &cell_type_entities,
+         &vertex_index_map](int, std::size_t c0, std::size_t c1)
+        {
+          std::size_t offset
+              = cell_type_offsets[k] * num_vertices_per_entity
+                + c0 * num_vertices_per_entity * num_entities_per_cell;
+          std::size_t count
+              = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
+          std::size_t entity_offset
+              = cell_type_offsets[k] + c0 * num_entities_per_cell;
+          build_entity_list(
+              std::span(entity_list.data() + offset, count), entity_offset,
+              std::span<const std::span<std::int32_t>>(entity_list_sorted),
+              cells.subspan(c0 * num_vertices_per_cell,
+                            (c1 - c0) * num_vertices_per_cell),
+              num_vertices_per_cell, e_vertices, entity_type,
+              cell_type_entities[k], vertex_index_map);
+        });
   }
 
   // Start numbering entities. Uninitialised for the reason given for
@@ -1035,7 +1020,6 @@ compute_entities_by_key_matching(
           cell_type_offsets.back());
   std::span<std::int32_t> entity_index(entity_index_storage.get(),
                                        cell_type_offsets.back());
-  std::int32_t entity_count = 0;
 
   // An instance of each entity, in entity index order. All instances of
   // an entity hold the same (globally oriented) vertex list, so any one
@@ -1100,8 +1084,8 @@ compute_entities_by_key_matching(
         [&sort_order, &entity_list_sorted, entity_index,
          &representatives](int i, std::size_t p0, std::size_t p1)
         {
-          label_entities(sort_order, p0, p1, entity_list_sorted, entity_index,
-                         representatives[i]);
+          representatives[i] = label_entities(sort_order, p0, p1,
+                                              entity_list_sorted, entity_index);
         });
 
     std::vector<std::int32_t> label_offsets(num_threads + 1, 0);
@@ -1110,23 +1094,26 @@ compute_entities_by_key_matching(
                            { return static_cast<std::int32_t>(r.size()); });
     std::partial_sum(std::next(label_offsets.begin()), label_offsets.end(),
                      std::next(label_offsets.begin()));
-    entity_count = label_offsets.back();
 
     // Range 0 is already numbered from zero, so needs no shift
     common::parallel_for(sort_order.size(), num_threads,
                          [&sort_order, &label_offsets,
                           entity_index](int i, std::size_t p0, std::size_t p1)
                          {
-                           if (label_offsets[i] == 0)
+                           const std::int32_t offset = label_offsets[i];
+                           if (offset == 0)
                              return;
                            for (std::size_t p = p0; p < p1; ++p)
-                             entity_index[sort_order[p]] += label_offsets[i];
+                             entity_index[sort_order[p]] += offset;
                          });
 
-    // Range `i` numbered entities [label_offsets[i], label_offsets[i+1])
-    first_instance = common::concatenate<std::int32_t>(representatives);
+    first_instance = common::concatenate(representatives);
   }
-  assert(first_instance.size() == static_cast<std::size_t>(entity_count));
+
+  // Range `i` numbered entities [label_offsets[i], label_offsets[i+1]),
+  // so the total is the number of first instances collected
+  const std::int32_t entity_count
+      = static_cast<std::int32_t>(first_instance.size());
 
   //---------
   // Set ghost status array values

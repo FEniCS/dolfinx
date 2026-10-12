@@ -154,35 +154,13 @@ void pack_send_rows(std::span<const std::array<int, 3>> dest_to_index,
     const std::array<int, 3>& dest_data = dest_to_index[i];
     const std::size_t pos = dest_data[1];
     std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
-    std::copy_n(std::next(list.begin(), pos * shape1), shape1, b.begin());
+    std::span row(list.data() + pos * shape1, shape1);
+    std::ranges::copy(row, b.begin());
 
     auto info = b.last(2);
     info[0] = dest_data[2];        // Owning rank
     info[1] = pos + offset_global; // Original global index
   }
-}
-//-----------------------------------------------------------------------------
-
-/// @brief Count how many of the received rows `[q0, q1)` are owned by
-/// this rank.
-///
-/// @param[in] recv_buffer Received rows, flattened row-major.
-/// @param[in] buffer_shape1 Number of entries per received row.
-/// @param[in] q0 First received row to count.
-/// @param[in] q1 One past the last received row to count.
-/// @param[in] rank This rank.
-/// @return Number of rows in `[q0, q1)` owned by `rank`.
-std::int32_t count_owned_rows(std::span<const std::int64_t> recv_buffer,
-                              std::size_t buffer_shape1, std::size_t q0,
-                              std::size_t q1, int rank)
-{
-  std::int32_t count = 0;
-  for (std::size_t q = q0; q < q1; ++q)
-  {
-    if (recv_buffer[q * buffer_shape1 + buffer_shape1 - 2] == rank)
-      ++count;
-  }
-  return count;
 }
 //-----------------------------------------------------------------------------
 
@@ -494,17 +472,22 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   // appending to separate vectors and joining them afterwards would
   // copy, and reallocate, every row a second time.
   const std::size_t num_recv = recv_disp.back();
-  std::vector<std::int32_t> num_owned_t(num_threads, 0);
-  common::parallel_for(num_recv, num_threads,
-                       [recv_buffer, buffer_shape1, rank,
-                        &num_owned_t](int i, std::size_t q0, std::size_t q1)
-                       {
-                         num_owned_t[i] = count_owned_rows(
-                             recv_buffer, buffer_shape1, q0, q1, rank);
-                       });
-
   std::vector<std::int32_t> owned_offsets(num_threads + 1, 0);
-  std::partial_sum(num_owned_t.begin(), num_owned_t.end(),
+  common::parallel_for(
+      num_recv, num_threads,
+      [recv_buffer, buffer_shape1, rank, &owned_offsets](int i, std::size_t q0,
+                                                         std::size_t q1)
+      {
+        std::int32_t count = 0;
+        for (std::size_t q = q0; q < q1; ++q)
+        {
+          if (recv_buffer[q * buffer_shape1 + buffer_shape1 - 2] == rank)
+            ++count;
+        }
+        owned_offsets[i + 1] = count;
+      });
+
+  std::partial_sum(std::next(owned_offsets.begin()), owned_offsets.end(),
                    std::next(owned_offsets.begin()));
   const std::int32_t num_owned_rows = owned_offsets.back();
 

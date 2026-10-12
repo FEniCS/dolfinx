@@ -46,6 +46,7 @@ add_executable(
   common/index_map.cpp
   common/move_semantics.cpp
   common/mpi.cpp
+  common/parallel.cpp
   common/sort.cpp
   fem/assembly_kernels.cpp
   fem/form.cpp

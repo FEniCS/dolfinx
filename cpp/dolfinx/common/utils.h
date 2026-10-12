@@ -14,7 +14,6 @@
 #include <iterator>
 #include <mpi.h>
 #include <ranges>
-#include <span>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
@@ -28,17 +27,20 @@ namespace dolfinx::common
 /// @param[in] chunks Buffers to join, e.g. one per thread of a
 /// ::parallel_for.
 /// @return The buffers, joined end to end.
-template <typename T>
-std::vector<T> concatenate(std::span<const std::vector<T>> chunks)
+template <std::ranges::input_range R>
+  requires std::ranges::sized_range<std::ranges::range_value_t<R>>
+auto concatenate(const R& chunks)
+    -> std::vector<std::ranges::range_value_t<std::ranges::range_value_t<R>>>
 {
+  using T = std::ranges::range_value_t<std::ranges::range_value_t<R>>;
   std::size_t size = 0;
-  for (const std::vector<T>& c : chunks)
-    size += c.size();
+  for (const auto& c : chunks)
+    size += std::ranges::size(c);
 
   std::vector<T> joined;
   joined.reserve(size);
-  for (const std::vector<T>& c : chunks)
-    joined.insert(joined.end(), c.begin(), c.end());
+  for (const auto& c : chunks)
+    joined.insert(joined.end(), std::ranges::begin(c), std::ranges::end(c));
   return joined;
 }
 

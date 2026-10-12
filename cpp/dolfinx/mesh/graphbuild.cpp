@@ -13,7 +13,6 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
-#include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/parallel.h>
 #include <dolfinx/common/sort.h>
@@ -28,7 +27,7 @@
 #include <ranges>
 #include <span>
 #include <stdexcept>
-#include <thread>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -582,22 +581,16 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 /// @param[in] max_vertices_per_facet Number of vertex columns.
 /// @param[in] max_facet_to_cell_links Number of attached cells at
 /// which a facet counts as matched, as for ::build_local_dual_graph.
-/// @param[out] unmatched_facets Vertices of each unmatched facet,
-/// flattened.
-/// @param[out] local_cells Cell attached to each unmatched facet.
-/// @param[out] edges Dual graph edges, one direction only.
-void match_facets(std::span<const std::int32_t> perm, std::size_t p0,
-                  std::size_t p1,
-                  std::span<const std::span<std::int64_t>> facets,
-                  int max_vertices_per_facet,
-                  std::optional<std::int32_t> max_facet_to_cell_links,
-                  std::vector<std::int64_t>& unmatched_facets_out,
-                  std::vector<std::int32_t>& local_cells_out,
-                  std::vector<std::array<std::int32_t, 2>>& edges_out)
+/// @return Tuple of (vertices of each unmatched facet, flattened; cell
+/// attached to each unmatched facet; dual graph edges, one direction
+/// only).
+std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>,
+           std::vector<std::array<std::int32_t, 2>>>
+match_facets(std::span<const std::int32_t> perm, std::size_t p0, std::size_t p1,
+             std::span<const std::span<std::int64_t>> facets,
+             int max_vertices_per_facet,
+             std::optional<std::int32_t> max_facet_to_cell_links)
 {
-  // Appended to locally and moved out at the end: appending straight to
-  // the caller's buffers would store into a vector header that shares a
-  // cache line with the headers of the neighbouring ranges' buffers
   std::vector<std::int64_t> unmatched_facets;
   std::vector<std::int32_t> local_cells;
   std::vector<std::array<std::int32_t, 2>> edges;
@@ -659,9 +652,8 @@ void match_facets(std::span<const std::int32_t> perm, std::size_t p0,
     }
   }
 
-  unmatched_facets_out = std::move(unmatched_facets);
-  local_cells_out = std::move(local_cells);
-  edges_out = std::move(edges);
+  return {std::move(unmatched_facets), std::move(local_cells),
+          std::move(edges)};
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -845,23 +837,19 @@ mesh::build_local_dual_graph(
         = mesh::get_entity_vertices(cell_type, tdim - 1);
     std::span _cells = cells[j];
     std::size_t num_cells_j = _cells.size() / num_cell_vertices;
-    std::vector<std::jthread> threads;
-    for (int i = 1; i < num_threads; ++i)
-    {
-      auto [c0, c1] = common::local_range(i, num_cells_j, num_threads);
-      threads.emplace_back(
-          build_facets_fn, max_vertices_per_facet, num_cell_vertices,
-          cell_offsets[j] + c0, facet_offset + c0 * cell_facets.num_nodes(),
-          std::cref(cell_facets),
-          _cells.subspan(c0 * num_cell_vertices, (c1 - c0) * num_cell_vertices),
-          std::span<const std::span<std::int64_t>>(facets));
-    }
-    auto [c0, c1] = common::local_range(0, num_cells_j, num_threads);
-    build_facets_fn(
-        max_vertices_per_facet, num_cell_vertices, cell_offsets[j] + c0,
-        facet_offset + c0 * cell_facets.num_nodes(), std::cref(cell_facets),
-        _cells.subspan(c0 * num_cell_vertices, (c1 - c0) * num_cell_vertices),
-        std::span<const std::span<std::int64_t>>(facets));
+    common::parallel_for(
+        num_cells_j, num_threads,
+        [&build_facets_fn, max_vertices_per_facet, num_cell_vertices, j,
+         &cell_offsets, facet_offset, &cell_facets, _cells,
+         &facets](int, std::size_t c0, std::size_t c1)
+        {
+          build_facets_fn(
+              max_vertices_per_facet, num_cell_vertices, cell_offsets[j] + c0,
+              facet_offset + c0 * cell_facets.num_nodes(), cell_facets,
+              _cells.subspan(c0 * num_cell_vertices,
+                             (c1 - c0) * num_cell_vertices),
+              std::span<const std::span<std::int64_t>>(facets));
+        });
 
     facet_offset += num_cells_j * cell_facets.num_nodes();
   }
@@ -925,18 +913,17 @@ mesh::build_local_dual_graph(
        &unmatched_facets_t, &local_cells_t,
        &edges_t](int i, std::size_t p0, std::size_t p1)
       {
-        match_facets(perm, p0, p1, facets, max_vertices_per_facet,
-                     max_facet_to_cell_links, unmatched_facets_t[i],
-                     local_cells_t[i], edges_t[i]);
+        std::tie(unmatched_facets_t[i], local_cells_t[i], edges_t[i])
+            = match_facets(perm, p0, p1, facets, max_vertices_per_facet,
+                           max_facet_to_cell_links);
       });
 
   // Concatenate the unmatched facets. The dual graph edges are left
   // as they are and consumed range by range below, which needs no
   // copy at all.
   std::vector<std::int64_t> unmatched_facets
-      = common::concatenate<std::int64_t>(unmatched_facets_t);
-  std::vector<std::int32_t> local_cells
-      = common::concatenate<std::int32_t>(local_cells_t);
+      = common::concatenate(unmatched_facets_t);
+  std::vector<std::int32_t> local_cells = common::concatenate(local_cells_t);
 
   timer4.stop();
   timer4.flush();
