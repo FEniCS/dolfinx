@@ -30,7 +30,9 @@
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
+#include <optional>
 #include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -97,14 +99,16 @@ struct Fingerprint
 /// its topology.
 Fingerprint build(MPI_Comm comm, std::span<const std::int64_t> cells,
                   std::span<const double> x, std::array<std::size_t, 2> xshape,
-                  int num_threads)
+                  int num_threads,
+                  const graph::partition_fn& partitioner
+                  = graph::partition_graph)
 {
   fem::CoordinateElement<double> element(mesh::CellType::tetrahedron, 1);
   mesh::Mesh<double> mesh = mesh::create_mesh(
       comm, comm, std::vector<std::span<const std::int64_t>>{cells},
       std::vector<fem::CoordinateElement<double>>{element}, comm, x, xshape,
-      graph::Partitioner{.fn = graph::partition_graph},
-      mesh::GhostMode::shared_facet, 2, num_threads);
+      graph::Partitioner{.fn = partitioner}, mesh::GhostMode::shared_facet, 2,
+      num_threads);
 
   const int tdim = mesh.topology()->dim();
   for (int d = 1; d < tdim; ++d)
@@ -142,14 +146,36 @@ TEST_CASE("Threaded mesh creation matches serial", "[mesh][threading]")
   auto [cells, x] = cube(comm, n);
   std::array<std::size_t, 2> xshape = {x.size() / 3, 3};
 
-  const Fingerprint serial = build(comm, cells, x, xshape, 1);
+  // Partition once: repeated partitioner calls can produce different
+  // destinations for the same graph. Compare graphs before replaying.
+  std::optional<graph::AdjacencyList<std::int64_t>> serial_graph;
+  std::optional<graph::AdjacencyList<std::int32_t>> destinations;
+  const graph::partition_fn partitioner
+      = [&serial_graph, &destinations](
+            MPI_Comm c, int nparts, const graph::AdjacencyList<std::int64_t>& g,
+            std::optional<std::span<const std::int32_t>> node_weights,
+            std::optional<std::span<const std::int32_t>> edge_weights,
+            bool ghosting) -> graph::AdjacencyList<std::int32_t>
+  {
+    if (!serial_graph)
+    {
+      serial_graph = g;
+      destinations = graph::partition_graph(c, nparts, g, node_weights,
+                                            edge_weights, ghosting);
+    }
+    else
+      CHECK(g == *serial_graph);
+    return *destinations;
+  };
+
+  const Fingerprint serial = build(comm, cells, x, xshape, 1, partitioner);
 
   // More threads than the hardware has is deliberate: the work split is
   // by range, not by core, so the results must not depend on either
   for (int num_threads : {2, 3, 4, 8, 16})
   {
     INFO("num_threads = " << num_threads);
-    CHECK(build(comm, cells, x, xshape, num_threads) == serial);
+    CHECK(build(comm, cells, x, xshape, num_threads, partitioner) == serial);
   }
 }
 
