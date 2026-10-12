@@ -109,7 +109,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   if (std::size_t required_size = pull_back_working_size(gdim);
       working_array.size() < required_size)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         std::format("Working memory is too small for pull_back_nonaffine, "
                     "got {}, need {}.",
                     working_array.size(), required_size));
