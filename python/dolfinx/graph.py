@@ -278,6 +278,9 @@ def _wrap_partitioner_factory(
     def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _T:
         return wrapper(factory(*args, **kwargs))
 
+    # The copied nanobind docstring announces the native return type;
+    # point it at the Python wrapper that is actually returned.
+    wrapped.__doc__ = (factory.__doc__ or "").replace("-> dolfinx.cpp.graph.", "-> dolfinx.graph.")
     return wrapped
 
 

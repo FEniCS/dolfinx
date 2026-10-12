@@ -135,6 +135,11 @@ HybridPartitioningFunc = typing.Callable[
 _Partitioner = PartitioningFunc | GraphPartitioner | GeometricPartitioner | HybridPartitioner
 _MeshPartitioner = _Partitioner | tuple[_Partitioner, npt.NDArray[np.int32] | None] | None
 
+# Refinement re-distributes using the dual graph of the refined mesh
+# only, so it accepts a graph partitioner but not a geometric or hybrid
+# one: it has no cell positions to pass to them.
+_RefinePartitioner = PartitioningFunc | GraphPartitioner
+
 # A cell reordering function receives the local cell dual graph and
 # returns the new index of each cell.
 CellReorderFunc = typing.Callable[[AdjacencyList[np.int32]], npt.NDArray[np.int32]]
@@ -1113,7 +1118,7 @@ def transfer_meshtag(
 
 def uniform_refine(
     msh: Mesh,
-    partitioner: _Partitioner | None = None,
+    partitioner: _RefinePartitioner | None = None,
     ghost_mode: GhostMode = GhostMode.none,
 ) -> Mesh:
     """Uniformly refine a mesh.
@@ -1147,7 +1152,7 @@ def uniform_refine(
 def refine(
     msh: Mesh,
     edges: np.ndarray | None = None,
-    partitioner: _Partitioner | IdentityPartitionerPlaceholder | None = (
+    partitioner: _RefinePartitioner | IdentityPartitionerPlaceholder | None = (
         IdentityPartitionerPlaceholder()
     ),
     option: RefinementOption = RefinementOption.parent_cell,
