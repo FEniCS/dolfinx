@@ -13,7 +13,7 @@ import pytest
 import basix
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import Function, FunctionSpace, functionspace
+from dolfinx.fem import Function, FunctionSpace, coordinate_element, functionspace
 from dolfinx.mesh import create_mesh, create_unit_cube
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
 
@@ -259,13 +259,33 @@ def test_cell_mismatch(mesh) -> None:
 def test_basix_element(V, W, Q, V2):
     for V_ in (V, W, V2):
         e = V_.element.basix_element
-        assert isinstance(
-            e, basix._basixcpp.FiniteElement_float64 | basix._basixcpp.FiniteElement_float32
-        )
+        assert isinstance(e, basix.finite_element.FiniteElement)
 
     # Mixed spaces do not yet return a basix element
     with pytest.raises(ValueError):
         Q.element.basix_element
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("shape", [(), (3,)])
+def test_basix_element_python_interface(dtype, shape) -> None:
+    """The accessor returns a Basix wrapper usable by the public APIs."""
+    msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=dtype)
+    ufl_element = element("Lagrange", msh.basix_cell(), 2, shape=shape, dtype=dtype)
+    V = functionspace(msh, ufl_element)
+    e = V.element.basix_element
+    assert isinstance(e, basix.finite_element.FiniteElement)
+    assert e.dtype == dtype
+    assert e == ufl_element.basix_element
+    np.testing.assert_array_equal(
+        e.tabulate(1, e.points), ufl_element.basix_element.tabulate(1, e.points)
+    )
+    assert basix.ufl.wrap_element(e).basix_element == e
+    # singledispatch accepts a Basix element without a degree argument.
+    cmap = coordinate_element(e)  # type: ignore[call-arg]
+    assert cmap.dtype == dtype
+    assert cmap.degree == e.degree
+    assert cmap.dim == e.dim
 
 
 @pytest.mark.skip_in_parallel
