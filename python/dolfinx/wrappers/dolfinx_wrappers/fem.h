@@ -1407,6 +1407,15 @@ void declare_real_functions(nb::module_& m)
          double tol, int maxit)
       {
         const dolfinx::fem::FiniteElement<T>& element = *V.element();
+        // Checked before physical_base_value_size(), which throws for
+        // mixed elements
+        if (int num_sub_elements = element.num_sub_elements();
+            num_sub_elements > 1 and num_sub_elements != element.block_size())
+        {
+          throw std::invalid_argument("Evaluation of basis functions is not "
+                                      "supported for mixed elements. Extract "
+                                      "subspaces.");
+        }
         std::array<std::size_t, 3> bshape
             = {x.shape(0),
                static_cast<std::size_t>(element.space_dimension()
