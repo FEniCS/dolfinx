@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2024 Garth N. Wells and Paul T. Kühner
+// Copyright (C) 2010-2026 Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -131,7 +131,7 @@ refine(const mesh::Mesh<T>& mesh,
   auto topology = mesh.topology();
   assert(topology);
   if (!mesh::is_simplex(topology->cell_type()))
-    throw std::runtime_error("Refinement only defined for simplices");
+    throw std::invalid_argument("Refinement only defined for simplices");
 
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
       = (topology->cell_type() == mesh::CellType::interval)
@@ -142,7 +142,7 @@ refine(const mesh::Mesh<T>& mesh,
   {
     if (!parent_cell)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Identity partitioner relies on parent cell computation");
     }
     assert(parent_cell);

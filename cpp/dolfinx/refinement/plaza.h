@@ -1,4 +1,5 @@
 // Copyright (C) 2014-2018 Chris Richardson
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -16,6 +17,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -487,7 +489,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   if (topology->cell_type() != mesh::CellType::triangle
       and topology->cell_type() != mesh::CellType::tetrahedron)
   {
-    throw std::runtime_error("Cell type not supported");
+    throw std::invalid_argument("Cell type not supported");
   }
 
   auto map_e = topology->index_map(1);

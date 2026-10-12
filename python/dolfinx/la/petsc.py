@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Garth N. Wells, Jack S. Hale
+# Copyright (C) 2025-2026 Garth N. Wells, Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -144,7 +144,7 @@ def create_vector(
     elif kind == PETSc.Vec.Type.NEST:
         return dolfinx.cpp.fem.petsc.create_vector_nest(_maps)
     else:
-        raise NotImplementedError(
+        raise ValueError(
             "Vector type must be specified for blocked/nested assembly."
             f"Vector type '{kind}' not supported."
             "Did you mean 'nest' or 'mpi'?"

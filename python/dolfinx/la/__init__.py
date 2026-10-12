@@ -339,14 +339,14 @@ class MatrixCSR(Generic[Scalar]):
             self.index_map(1).size_local != B.index_map(0).size_local
             or self.index_map(1).size_global != B.index_map(0).size_global
         ):
-            raise RuntimeError("Invalid matrix sizes for matmul.")
+            raise ValueError("Invalid matrix sizes for matmul.")
         if (
             self.block_size[0] != 1
             or self.block_size[1] != 1
             or B.block_size[0] != 1
             or B.block_size[1] != 1
         ):
-            raise RuntimeError("Block size not supported in matmul.")
+            raise ValueError("Block size not supported in matmul.")
 
         return MatrixCSR(self._cpp_object.mult(B._cpp_object))  # type: ignore[arg-type]
 
@@ -572,7 +572,7 @@ def matrix_csr(
     elif np.issubdtype(dtype, np.complex128):
         ftype = _cpp.la.MatrixCSR_complex128
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise TypeError(f"Type {dtype} not supported.")
 
     return MatrixCSR(ftype(sp._cpp_object, block_mode))
 
@@ -621,7 +621,7 @@ def vector(
     elif np.issubdtype(dtype, np.int64):
         vtype = _cpp.la.Vector_int64
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise TypeError(f"Type {dtype} not supported.")
 
     if scatterer is None:
         return Vector(vtype(map._cpp_object, bs))

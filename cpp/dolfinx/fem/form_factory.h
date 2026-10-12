@@ -60,6 +60,15 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// Use fem::create_form to create a fem::Form with coefficients and
 /// constants associated with the name/string.
 ///
+/// @note Argument and coefficient elements are checked against the form
+/// only where UFCx supplies a nonzero Basix element hash. The hash of a
+/// blocked element is that of its scalar sub-element, so a block size
+/// (value shape) mismatch escapes the check, as does any mismatch in an
+/// element that has no Basix hash, e.g. a mixed element. Passing a space
+/// or coefficient that differs from the compiled form in either respect
+/// is undefined behaviour: the generated kernel reads a coefficient
+/// array packed to the wrong size.
+///
 /// @param[in] ufcx_forms A list of UFCx forms, one for each cell type.
 /// @param[in] spaces Vector of function spaces. The number of spaces is
 /// equal to the rank of the form.
@@ -86,6 +95,24 @@ Form<T, U> create_form_factory(
         entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
+  for (std::size_t c = 0; c < coefficients.size(); ++c)
+  {
+    if (!coefficients[c])
+    {
+      throw std::invalid_argument(
+          std::format("Cannot create form. Coefficient {} is null.", c));
+    }
+  }
+
+  for (std::size_t c = 0; c < constants.size(); ++c)
+  {
+    if (!constants[c])
+    {
+      throw std::invalid_argument(
+          std::format("Cannot create form. Constant {} is null.", c));
+    }
+  }
+
   for (const ufcx_form& ufcx_form : ufcx_forms)
   {
     if (ufcx_form.rank != (int)spaces.size())
@@ -124,14 +151,14 @@ Form<T, U> create_form_factory(
     }
   }
 
-  // Check argument function spaces
+  // Check argument and coefficient function spaces
   for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
   {
+    const ufcx_form& ufcx_form = ufcx_forms[form_idx];
     for (std::size_t i = 0; i < spaces.size(); ++i)
     {
       assert(spaces[i]->elements(form_idx));
-      if (auto element_hash
-          = ufcx_forms[form_idx].get().finite_element_hashes[i];
+      if (std::uint64_t element_hash = ufcx_form.finite_element_hashes[i];
           element_hash != 0
           and element_hash
                   != spaces[i]->elements(form_idx)->basix_element().hash())
@@ -139,6 +166,25 @@ Form<T, U> create_form_factory(
         throw std::invalid_argument(
             "Cannot create form. Elements are different to "
             "those used to compile the form.");
+      }
+    }
+
+    for (std::size_t c = 0; c < coefficients.size(); ++c)
+    {
+      std::uint64_t element_hash
+          = ufcx_form.finite_element_hashes[ufcx_form.rank + c];
+      if (element_hash != 0
+          and element_hash
+                  != coefficients[c]
+                         ->function_space()
+                         ->elements(form_idx)
+                         ->basix_element()
+                         .hash())
+      {
+        throw std::invalid_argument(std::format(
+            "Cannot create form. Coefficient {} element differs from the "
+            "element used to compile the form.",
+            c));
       }
     }
   }
@@ -196,7 +242,7 @@ Form<T, U> create_form_factory(
   {
     if (integral.coordinate_element_hash != geo.cmaps().at(cell_idx).hash())
     {
-      throw std::runtime_error(std::format(
+      throw std::invalid_argument(std::format(
           "Generated integral geometry element does not match mesh geometry: "
           "{}, {}",
           integral.coordinate_element_hash, geo.cmaps().at(cell_idx).hash()));
@@ -503,7 +549,7 @@ Form<T, U> create_form(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error(
+      throw std::out_of_range(
           std::format("Form coefficient \"{}\" not provided.", name));
     }
   }
@@ -515,8 +561,10 @@ Form<T, U> create_form(
     if (auto it = constants.find(name); it != constants.end())
       const_map.push_back(it->second);
     else
-      throw std::runtime_error(
+    {
+      throw std::out_of_range(
           std::format("Form constant \"{}\" not provided.", name));
+    }
   }
 
   return create_form_factory({ufcx_form}, spaces, coeff_map, const_map,
