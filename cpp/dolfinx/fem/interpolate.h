@@ -126,6 +126,15 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list of cells used when
 /// calling `interpolation_coords`.
+///
+/// @note If `u` is in a symmetric rank-2 tensor space, `f` holds all
+/// `d * d` components of the `(d, d)` tensor rather than the
+/// `d * (d + 1) / 2` components the element stores, since
+/// FiniteElement::value_size is `d * d`. Only the lower triangle, row
+/// `i * d + j` of `f` with `j <= i`, is read. Rows above the diagonal
+/// are discarded without being inspected, so non-symmetric data is
+/// neither rejected nor symmetrised by averaging: it is interpolated as
+/// the symmetric tensor built from its lower triangle.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
@@ -1399,6 +1408,13 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
 /// will be interpolated from. If `cells1[i]` is the index of a cell in
 /// the mesh associated with `u1`, then `cells0[i]` is the index of the
 /// *same* cell but in the mesh associated with `u0`.
+///
+/// @note A symmetry mismatch between the spaces of `u0` and `u1` is
+/// handled only when the two elements have different basis function map
+/// types; other combinations throw. A symmetric `u0` then has its
+/// stored components expanded to the full tensor, and for a symmetric
+/// `u1` only the lower triangle of `u0` is read, the upper triangle
+/// being discarded without being inspected.
 ///
 /// @pre `cells0` and `cells1` have the same size.
 template <dolfinx::scalar T, std::floating_point U>

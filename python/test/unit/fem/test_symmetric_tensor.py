@@ -35,6 +35,50 @@ def test_transpose(degree, symmetry) -> None:
     assert np.isclose(dolfinx.fem.assemble_scalar(form), 0) == symmetry
 
 
+@pytest.mark.parametrize("n", [2, 3])
+def test_interpolation_nonsymmetric_data(n) -> None:
+    """Non-symmetric data is reduced to its lower triangle.
+
+    Interpolation into a symmetric space reads only the components on
+    and below the diagonal; those above are discarded without being
+    checked.
+    """
+    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 2)
+    mat = np.arange(1, n * n + 1, dtype=dolfinx.default_scalar_type).reshape(n, n)
+    expected = np.tril(mat) + np.tril(mat, -1).T
+
+    def tensor(x):
+        return np.broadcast_to(mat.reshape(n * n, 1), (n * n, x.shape[1]))
+
+    def space(symmetry):
+        e = basix.ufl.element(
+            "DG",
+            mesh.basix_cell(),
+            0,
+            shape=(n, n),
+            symmetry=symmetry,
+            dtype=dolfinx.default_real_type,
+        )
+        return dolfinx.fem.functionspace(mesh, e)
+
+    V = space(True)
+    cells = np.arange(mesh.topology.index_map(2).size_local, dtype=np.int32)
+    points = dolfinx.mesh.compute_midpoints(mesh, 2, cells)
+    atol = 10 * np.finfo(dolfinx.default_scalar_type).resolution
+
+    # Callable source
+    f = dolfinx.fem.Function(V)
+    f.interpolate(tensor)
+    assert np.allclose(f.eval(points, cells), expected.reshape(1, -1), atol=atol)
+
+    # Expression source, built on a non-symmetric Function
+    g = dolfinx.fem.Function(space(False))
+    g.interpolate(tensor)
+    f.x.array[:] = 0
+    f.interpolate(dolfinx.fem.Expression(2 * g, V.element.interpolation_points))
+    assert np.allclose(f.eval(points, cells), 2 * expected.reshape(1, -1), atol=atol)
+
+
 def test_interpolation() -> None:
     """Test that a symmetric 3x3 2-tensor is correctly interpolated."""
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
