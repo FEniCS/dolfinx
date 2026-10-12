@@ -61,10 +61,18 @@
 # of the error. The remaining smooth part is restricted to the next
 # coarser mesh, where it can be represented, and corrected there. The
 # meshes are connected by a *prolongation* $P_\ell$ from level $\ell$ to
-# level $\ell + 1$, and the coarse operators are formed as
-# $A_\ell = P_\ell^T A_{\ell + 1} P_\ell$ (a Galerkin projection). With
-# a suitable smoother, the number of Krylov iterations is independent of
-# the mesh size.
+# level $\ell + 1$. With a suitable smoother, the number of Krylov
+# iterations is independent of the mesh size.
+#
+# The operator $A_\ell$ on a coarse level can be obtained in two ways:
+#
+# - by a *Galerkin projection* of the operator on the next finer level,
+#   $A_\ell = P_\ell^T A_{\ell + 1} P_\ell$, computed algebraically from
+#   the fine matrix, or
+# - by *rediscretisation*: assembling the bilinear form on the coarse
+#   mesh, with the boundary conditions of that mesh.
+#
+# This demo shows both.
 #
 # For nested Lagrange spaces on a mesh and its refinement, the
 # prolongation is the interpolation of the coarse basis functions into
@@ -133,7 +141,9 @@ def shell_dm(V: fem.FunctionSpace) -> PETSc.DMShell:
     return dm
 
 
-def attach_hierarchy(pc: PETSc.PC, spaces: list[fem.FunctionSpace]) -> list:
+def attach_hierarchy(
+    pc: PETSc.PC, spaces: list[fem.FunctionSpace]
+) -> tuple[list[PETSc.DMShell], list[PETSc.Mat]]:
     """Give pc a DM that PCMG can coarsen through the spaces.
 
     Returns the DMs and prolongations, which must outlive the solve.
@@ -147,18 +157,72 @@ def attach_hierarchy(pc: PETSc.PC, spaces: list[fem.FunctionSpace]) -> list:
         dm_f.setCoarsen(lambda dm, comm, dm_c=dm_c: dm_c)
         dm_c.setCreateInterpolation(lambda dmc, dmf, P=P: (P, None))  # type: ignore[arg-type]
     pc.setDM(dms[-1])
-    return dms + prolongations
+    return dms, prolongations
 
 
 # -
 
+# ### Rediscretised coarse operators
+#
+# For rediscretisation, each level assembles the bilinear form on its
+# own mesh. The coarse levels solve for a *correction*, which vanishes on
+# the Dirichlet boundary, so their boundary condition is homogeneous.
+
+
+def level_problem(V: fem.FunctionSpace) -> tuple[fem.Form, fem.DirichletBC]:
+    """Bilinear form and homogeneous Dirichlet condition on the space V."""
+    msh = V.mesh
+    tdim = msh.topology.dim
+    msh.topology.create_connectivity(tdim - 1, tdim)
+    dofs = fem.locate_dofs_topological(V, tdim - 1, mesh.exterior_facet_indices(msh.topology))
+    bc = fem.dirichletbc(default_scalar_type(0), dofs, V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = fem.form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, dtype=default_scalar_type)
+    return a, bc
+
+
+# Without the Galerkin projection, the multigrid preconditioner asks the
+# `DM` of each coarse level for its operator: it creates the matrix with
+# the `DM`'s matrix-creation callback
+# ({py:meth}`setCreateMatrix <petsc4py.PETSc.DMShell.setCreateMatrix>`)
+# and fills it with its operator callback
+# ({py:meth}`setKSPComputeOperators
+# <petsc4py.PETSc.DM.setKSPComputeOperators>`). When PETSc coarsens a
+# `DM`, it copies these callbacks from the finer `DM` to the coarser one.
+# We therefore set the same callbacks on every level, and let them look
+# up the level from the `DM` they are called with.
+
+
+def attach_operators(dms: list[PETSc.DMShell], spaces: list[fem.FunctionSpace]) -> None:
+    """Let PCMG assemble the operator of each level on its own mesh."""
+    levels = {dm.handle: level_problem(V) for dm, V in zip(dms, spaces, strict=True)}
+
+    def create_matrix(dm: PETSc.DM) -> PETSc.Mat:
+        a, _ = levels[dm.handle]
+        return dolfinx.fem.petsc.create_matrix(a)
+
+    def compute_operators(ksp: PETSc.KSP, A: PETSc.Mat, P: PETSc.Mat) -> None:
+        a, bc = levels[ksp.getDM().handle]
+        P.zeroEntries()
+        dolfinx.fem.petsc.assemble_matrix(P, a, bcs=[bc])
+        P.assemble()
+
+    for dm in dms:
+        dm.setCreateMatrix(create_matrix)
+        dm.setKSPComputeOperators(compute_operators)
+
+
+# ### Solver
+#
 # We solve on the finest mesh of the hierarchy with the conjugate
-# gradient method, preconditioned by full multigrid with Galerkin coarse
-# operators. Each level is smoothed by five Chebyshev iterations with a
-# Jacobi preconditioner, and the coarsest level is solved with LU.
+# gradient method, preconditioned by full multigrid. Each level is
+# smoothed by five Chebyshev iterations with a Jacobi preconditioner, and
+# the coarsest level is solved with LU. The option `pc_mg_galerkin`
+# selects between the Galerkin projection (`pmat`) and the rediscretised
+# operators (`none`).
 
 
-def solve(num_levels: int) -> tuple[int, int, float]:
+def solve(num_levels: int, galerkin: bool) -> tuple[int, int, float]:
     """Solve on the finest of num_levels levels.
 
     Returns the number of degrees-of-freedom, the number of conjugate
@@ -194,7 +258,7 @@ def solve(num_levels: int) -> tuple[int, int, float]:
         "pc_type": "mg",
         "pc_mg_type": "full",
         "pc_mg_levels": num_levels,
-        "pc_mg_galerkin": "pmat",
+        "pc_mg_galerkin": "pmat" if galerkin else "none",
         "mg_coarse_ksp_type": "preonly",
         "mg_coarse_pc_type": "lu",
         "mg_levels_ksp_type": "chebyshev",
@@ -209,7 +273,9 @@ def solve(num_levels: int) -> tuple[int, int, float]:
         petsc_options=petsc_options,
         petsc_options_prefix=f"demo_poisson_gmg_{num_levels}_",
     )
-    objects = attach_hierarchy(problem.solver.getPC(), spaces)
+    dms, prolongations = attach_hierarchy(problem.solver.getPC(), spaces)
+    if not galerkin:
+        attach_operators(dms, spaces)
     uh = problem.solve()
     num_iterations = problem.solver.getIterationNumber()
 
@@ -217,20 +283,28 @@ def solve(num_levels: int) -> tuple[int, int, float]:
     error_L2 = np.sqrt(msh.comm.allreduce(fem.assemble_scalar(error), op=MPI.SUM).real)
     num_dofs = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
 
-    for obj in objects:
+    for obj in [*dms, *prolongations]:
         obj.destroy()
     problem.solver.destroy()
     return num_dofs, num_iterations, error_L2
 
 
+# ## Results
+#
 # Adding levels refines the finest mesh. The error decreases by a factor
 # of four per level, as expected for linear elements, while the number of
-# conjugate gradient iterations stays small and essentially constant.
+# conjugate gradient iterations stays small and essentially constant for
+# both kinds of coarse operators. The Galerkin projection needs fewer
+# iterations, as its coarse operators approximate the fine operator
+# better. Rediscretisation avoids the triple matrix products, and does
+# not need the fine operator as an assembled matrix.
 
-for num_levels in range(2, 6):
-    num_dofs, num_iterations, error_L2 = solve(num_levels)
-    PETSc.Sys.Print(
-        f"{num_levels} levels: {num_dofs:6d} dofs, "
-        f"{num_iterations} CG iterations, L2-error {error_L2:.2e}"
-    )
+for galerkin in (True, False):
+    PETSc.Sys.Print("Galerkin projection:" if galerkin else "Rediscretisation:")
+    for num_levels in range(2, 6):
+        num_dofs, num_iterations, error_L2 = solve(num_levels, galerkin)
+        PETSc.Sys.Print(
+            f"  {num_levels} levels: {num_dofs:6d} dofs, "
+            f"{num_iterations} CG iterations, L2-error {error_L2:.2e}"
+        )
 PETSc.garbage_cleanup(MPI.COMM_WORLD)  # type: ignore[arg-type]
