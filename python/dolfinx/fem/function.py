@@ -445,6 +445,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         u: npt.NDArray[Scalar] | None = None,
         tol: float = 1.0e-6,
         maxit: int = 15,
+        num_threads: int = 1,
     ) -> npt.NDArray[Scalar]:
         """Evaluate Function at points x.
 
@@ -458,6 +459,8 @@ class Function(ufl.Coefficient, Generic[Scalar]):
                 nonaffine pullbacks.
             maxit: Maximum number of Newton iterations for
                 nonaffine pullbacks.
+            num_threads: Number of threads. The points are split into
+                contiguous chunks, one per thread.
         """
         # Make sure input coordinates are a NumPy array
         _x = np.asarray(x, dtype=self._V.mesh.geometry.x.dtype)
@@ -485,7 +488,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             u = np.empty((num_points, value_size), self.dtype)
 
         assert u is not None
-        self._cpp_object.eval(_x, _cells, u, tol, maxit)  # type: ignore
+        self._cpp_object.eval(_x, _cells, u, tol, maxit, num_threads)  # type: ignore
         if num_points == 1:
             u = np.reshape(u, (-1,))
         return typing.cast(npt.NDArray[Scalar], u)

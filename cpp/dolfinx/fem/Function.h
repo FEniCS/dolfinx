@@ -317,9 +317,12 @@ public:
   /// pullbacks. If the mesh geometry is affine this argument is ignored.
   /// @param[in] maxit Maximum number of Newton iterations in non-affine
   /// pull-back. If the mesh geometry is affine this argument is ignored.
+  /// @param[in] num_threads Number of threads. The points are split into
+  /// contiguous chunks, one per thread.
   void eval(std::span<const geometry_type> x, std::array<std::size_t, 2> xshape,
             mesh::CellRange auto&& cells, std::span<value_type> u,
-            std::array<std::size_t, 2> ushape, double tol, int maxit) const
+            std::array<std::size_t, 2> ushape, double tol, int maxit,
+            int num_threads = 1) const
   {
     if (cells.empty())
       return;
@@ -367,9 +370,6 @@ public:
                                   "elements. Extract subspaces.");
     }
 
-    // Create work vector for expansion coefficients
-    std::vector<value_type> coefficients(space_dimension * bs_element);
-
     // Get dofmap
     std::shared_ptr<const DofMap> dofmap = _function_space->dofmap();
     assert(dofmap);
@@ -388,19 +388,21 @@ public:
     }
 
     // Contract the basis at each point, pushed forward to the physical
-    // cell, with the cell's expansion coefficients
+    // cell, with the cell's expansion coefficients. Points are written by
+    // one thread each, and coefficients are read directly from the
+    // vector, so no per-thread scratch is needed.
     impl::evaluate_basis<geometry_type>(
-        *element, *mesh, x, xshape, cells, tol, maxit,
-        [&u, ushape, &coefficients, &_v, &dofmap, &element, bs_dof, bs_element,
+        *element, *mesh, x, xshape, cells, tol, maxit, num_threads,
+        [&u, ushape, &_v, &dofmap, &element, bs_dof, bs_element,
          space_dimension, value_size,
          matrix_size](std::size_t p, std::int32_t c,
                       impl::mdspan_t<const geometry_type, 2> basis_values)
         {
-          // Get degrees of freedom for current cell
+          // Expansion coefficient j of the cell, with j unrolled by the
+          // dofmap block size
           std::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
-          for (std::size_t i = 0; i < dofs.size(); ++i)
-            for (int k = 0; k < bs_dof; ++k)
-              coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
+          auto coefficient = [&_v, &dofs, bs_dof](int j) -> value_type
+          { return _v[bs_dof * dofs[j / bs_dof] + j % bs_dof]; };
 
           if (element->symmetric())
           {
@@ -416,17 +418,17 @@ public:
               }
               for (std::size_t i = 0; i < space_dimension; ++i)
               {
+                const value_type a = coefficient(bs_element * i + k);
                 for (std::size_t j = 0; j < value_size; ++j)
                 {
                   u[p * ushape[1]
                     + (j * bs_element + row * matrix_size + k - rowstart)]
-                      += coefficients[bs_element * i + k] * basis_values(i, j);
+                      += a * basis_values(i, j);
                   if (k - rowstart != row)
                   {
                     u[p * ushape[1]
                       + (j * bs_element + row + matrix_size * (k - rowstart))]
-                        += coefficients[bs_element * i + k]
-                           * basis_values(i, j);
+                        += a * basis_values(i, j);
                   }
                 }
               }
@@ -439,11 +441,10 @@ public:
             {
               for (std::size_t i = 0; i < space_dimension; ++i)
               {
+                const value_type a = coefficient(bs_element * i + k);
                 for (std::size_t j = 0; j < value_size; ++j)
-                {
                   u[p * ushape[1] + (j * bs_element + k)]
-                      += coefficients[bs_element * i + k] * basis_values(i, j);
-                }
+                      += a * basis_values(i, j);
               }
             }
           }
