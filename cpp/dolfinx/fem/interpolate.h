@@ -12,8 +12,11 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <algorithm>
+#include <array>
 #include <basix/mdspan.hpp>
+#include <cassert>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
@@ -165,7 +168,9 @@ using mdspan_t = md::mdspan<T, md::dextents<std::size_t, D>>;
 /// @pre It is required that src_ranks are sorted.
 /// @note `dest_ranks` can contain repeated entries.
 /// @note `dest_ranks` might contain -1 (no process owns the point).
-template <dolfinx::scalar T>
+/// @tparam T Scalar or integer value type, e.g. global indices.
+template <typename T>
+  requires dolfinx::scalar<T> or std::integral<T>
 void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
                     std::span<const std::int32_t> dest_ranks,
                     mdspan_t<const T, 2> send_values, std::span<T> recv_values)
@@ -343,6 +348,77 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
           acc += static_cast<X>(Pi(i, j)) * data(j, k);
         coeffs[bs * i + k] = acc;
       }
+    }
+  }
+}
+
+/// @brief Apply interpolation operator Pi to the values of several
+/// functions at once.
+///
+/// Column `j` of `A` holds the degree-of-freedom coefficients of the
+/// function whose (reference) values at the interpolation points are
+/// `values(:, j, :)`. Pi is read once for all functions.
+///
+/// @tparam interpolation_ident `true` if Pi is the identity, in which
+/// case it is not applied. A template parameter so that callers select
+/// the variant once, outside their cell loop.
+/// @param[in] Pi The interpolation matrix. Shape is `(num_dofs,
+/// num_points * value_size)` if `bs == 1`, otherwise `(num_dofs,
+/// num_points)`.
+/// @param[in] values Function values at the interpolation points,
+/// `shape=(num_points, num_functions, value_size)`.
+/// @param[in] bs The block size.
+/// @param[out] A Coefficients, `shape=(num_dofs * bs, num_functions)`,
+/// row-major.
+template <bool interpolation_ident, dolfinx::scalar T, std::floating_point U>
+void interpolation_apply_columns(mdspan_t<const U, 2> Pi,
+                                 mdspan_t<const U, 3> values, int bs,
+                                 std::span<T> A)
+{
+  const std::size_t num_pts = values.extent(0);
+  const std::size_t num_fns = values.extent(1);
+  const std::size_t value_size = values.extent(2);
+  if constexpr (interpolation_ident)
+  {
+    assert(A.size() == num_pts * value_size * num_fns);
+    mdspan_t<T, 3> _A(A.data(), num_pts, value_size, num_fns);
+    for (std::size_t p = 0; p < num_pts; ++p)
+      for (std::size_t j = 0; j < num_fns; ++j)
+        for (std::size_t k = 0; k < value_size; ++k)
+          _A(p, k, j) = values(p, j, k);
+  }
+  else
+  {
+    // Loop order reads each entry of Pi once rather than once per
+    // function. The two cases match interpolation_apply: for bs == 1
+    // the columns of Pi fold the point and component indices together,
+    // for bs != 1 they index points only.
+    assert(A.size() == Pi.extent(0) * bs * num_fns);
+    std::ranges::fill(A, T(0));
+    if (bs == 1)
+    {
+      for (std::size_t i = 0; i < Pi.extent(0); ++i)
+        for (std::size_t k = 0; k < value_size; ++k)
+          for (std::size_t p = 0; p < num_pts; ++p)
+          {
+            U pi = Pi(i, k * num_pts + p);
+            for (std::size_t j = 0; j < num_fns; ++j)
+              A[num_fns * i + j] += static_cast<T>(pi * values(p, j, k));
+          }
+    }
+    else
+    {
+      for (std::size_t i = 0; i < Pi.extent(0); ++i)
+        for (int k = 0; k < bs; ++k)
+          for (std::size_t p = 0; p < num_pts; ++p)
+          {
+            U pi = Pi(i, p);
+            for (std::size_t j = 0; j < num_fns; ++j)
+            {
+              A[num_fns * (bs * i + k) + j]
+                  += static_cast<T>(pi * values(p, j, k));
+            }
+          }
     }
   }
 }
@@ -1198,7 +1274,254 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 }
 
 //----------------------------------------------------------------------------
+
+/// @brief Evaluate the basis functions of an element at points in
+/// physical space, passing the basis at each point to a callable.
+///
+/// See evaluate_basis_functions, which stores the basis instead. Using
+/// a callable lets a caller (e.g. Function::eval) consume the basis of
+/// each point while it is in cache. Arguments are not checked.
+///
+/// @param[in] fn Callable `fn(p, cells[p], basis)` invoked for each
+/// point `p` with a non-negative cell index. `basis` has shape
+/// `(space_dimension / block_size, physical_base_value_size)` and is
+/// only valid during the call.
+template <std::floating_point T>
+void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
+                    std::span<const T> x, std::array<std::size_t, 2> xshape,
+                    mesh::CellRange auto&& cells, double tol, int maxit,
+                    auto&& fn)
+{
+  const std::size_t gdim = mesh.geometry().dim();
+  const std::size_t tdim = mesh.topology()->dim();
+  const CoordinateElement<T>& cmap = mesh.geometry().cmaps().front();
+  auto x_dofmap = mesh.geometry().dofmaps().front();
+  const std::size_t num_dofs_g = cmap.dim();
+  std::span<const T> x_g = mesh.geometry().x();
+
+  const std::size_t reference_value_size = element.reference_value_size();
+  const std::size_t value_size = element.physical_base_value_size();
+  const std::size_t space_dimension
+      = element.space_dimension() / element.block_size();
+
+  std::span<const std::uint32_t> cell_info;
+  if (element.needs_dof_transformations())
+  {
+    mesh.topology_mutable()->create_cell_permutations();
+    cell_info = std::span(mesh.topology()->get_cell_permutation_info());
+  }
+
+  std::vector<T> coord_dofs_b(num_dofs_g * gdim);
+  mdspan_t<T, 2> coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
+  std::vector<T> xp_b(1 * gdim);
+  mdspan_t<T, 2> xp(xp_b.data(), 1, gdim);
+
+  // Geometry basis derivatives at the reference origin (affine case)
+  std::array<std::size_t, 4> phi0_shape = cmap.tabulate_shape(1, 1);
+  std::vector<T> phi0_b(
+      std::reduce(phi0_shape.begin(), phi0_shape.end(), 1, std::multiplies{}));
+  mdspan_t<const T, 4> phi0(phi0_b.data(), phi0_shape);
+  cmap.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi0_b);
+  auto dphi0
+      = md::submdspan(phi0, std::pair(1, tdim + 1), 0, md::full_extent, 0);
+
+  // Geometry basis derivatives at a point (non-affine case)
+  std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, 1);
+  std::vector<T> phi_b(
+      std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+  mdspan_t<const T, 4> phi(phi_b.data(), phi_shape);
+  auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), 0, md::full_extent, 0);
+
+  // Reference coordinates and geometry data at each point
+  std::vector<T> Xb(xshape[0] * tdim);
+  mdspan_t<T, 2> X(Xb.data(), xshape[0], tdim);
+  std::vector<T> J_b(xshape[0] * gdim * tdim);
+  mdspan_t<T, 3> J(J_b.data(), xshape[0], gdim, tdim);
+  std::vector<T> K_b(xshape[0] * tdim * gdim);
+  mdspan_t<T, 3> K(K_b.data(), xshape[0], tdim, gdim);
+  std::vector<T> detJ(xshape[0]);
+  std::vector<T> det_scratch(2 * gdim * tdim);
+  std::vector<T> pull_back_scratch(
+      cmap.is_affine() ? 0 : cmap.pull_back_working_size(gdim));
+
+  for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
+  {
+    if (*cell_it < 0)
+      continue;
+
+    auto x_dofs = md::submdspan(x_dofmap, *cell_it, md::full_extent);
+    assert(x_dofs.size() == num_dofs_g);
+    for (std::size_t i = 0; i < num_dofs_g; ++i)
+    {
+      const int pos = 3 * x_dofs[i];
+      for (std::size_t j = 0; j < gdim; ++j)
+        coord_dofs(i, j) = x_g[pos + j];
+    }
+
+    std::size_t p = std::ranges::distance(cells.begin(), cell_it);
+    for (std::size_t j = 0; j < gdim; ++j)
+      xp(0, j) = x[p * xshape[1] + j];
+
+    auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+    auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+
+    std::array<T, 3> Xpb{0, 0, 0};
+    md::mdspan<T, md::extents<std::size_t, 1, md::dynamic_extent>> Xp(
+        Xpb.data(), 1, tdim);
+    if (cmap.is_affine())
+    {
+      CoordinateElement<T>::compute_jacobian(dphi0, coord_dofs, _J);
+      CoordinateElement<T>::compute_jacobian_inverse(_J, _K);
+      std::array<T, 3> x0{0, 0, 0};
+      for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
+        x0[i] += coord_dofs(0, i);
+      CoordinateElement<T>::pull_back_affine(Xp, _K, x0, xp);
+      detJ[p]
+          = CoordinateElement<T>::compute_jacobian_determinant(_J, det_scratch);
+    }
+    else
+    {
+      cmap.pull_back_nonaffine(Xp, xp, coord_dofs, pull_back_scratch, tol,
+                               maxit);
+      cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
+      CoordinateElement<T>::compute_jacobian(dphi, coord_dofs, _J);
+      CoordinateElement<T>::compute_jacobian_inverse(_J, _K);
+      detJ[p]
+          = CoordinateElement<T>::compute_jacobian_determinant(_J, det_scratch);
+    }
+
+    for (std::size_t j = 0; j < X.extent(1); ++j)
+      X(p, j) = Xpb[j];
+  }
+
+  // Tabulate reference basis at all points
+  std::vector<T> reference_basis_b(xshape[0] * space_dimension
+                                   * reference_value_size);
+  mdspan_t<const T, 4> reference_basis(reference_basis_b.data(), 1, xshape[0],
+                                       space_dimension, reference_value_size);
+  element.tabulate(reference_basis_b, Xb, {X.extent(0), X.extent(1)}, 0);
+
+  using u_t = mdspan_t<T, 2>;
+  using U_t = mdspan_t<const T, 2>;
+  using J_t = mdspan_t<const T, 2>;
+  using K_t = mdspan_t<const T, 2>;
+  auto push_forward_fn
+      = element.basix_element().template map_fn<u_t, U_t, J_t, K_t>();
+  auto apply_dof_transformation
+      = element.template dof_transformation_fn<T>(doftransform::standard);
+
+  std::vector<T> basis_b(space_dimension * value_size);
+  mdspan_t<T, 2> basis(basis_b.data(), space_dimension, value_size);
+  const std::size_t num_basis_values = space_dimension * reference_value_size;
+  for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
+  {
+    if (*cell_it < 0)
+      continue;
+
+    // Transform the reference basis for the cell's orientation
+    std::size_t p = std::ranges::distance(cells.begin(), cell_it);
+    if (apply_dof_transformation)
+    {
+      apply_dof_transformation(
+          std::span(reference_basis_b.data() + p * num_basis_values,
+                    num_basis_values),
+          cell_info, *cell_it, reference_value_size);
+    }
+
+    auto _U = md::submdspan(reference_basis, 0, p, md::full_extent,
+                            md::full_extent);
+    auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+    auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+    push_forward_fn(basis, _U, _J, detJ[p], _K);
+    fn(p, *cell_it, mdspan_t<const T, 2>(basis));
+  }
+}
+
 } // namespace impl
+
+/// @brief Evaluate the basis functions of a finite element at points
+/// in physical space.
+///
+/// Each point is pulled back to the reference cell of the cell that
+/// contains it (by a Newton method if the geometry is non-affine), the
+/// reference basis is tabulated, transformed for the cell's orientation
+/// and pushed forward.
+///
+/// This is the evaluation underlying Function::eval. It is public so
+/// that operators needing the basis itself, rather than a function
+/// expanded in it (e.g. interpolation matrices between non-matching
+/// meshes, or point-based constraints), need not reimplement it.
+///
+/// @note If `element` needs dof transformations and the cell
+/// permutations of the mesh topology have not yet been computed, they
+/// are created here (Topology::create_cell_permutations), which is
+/// collective.
+///
+/// @param[in] element Element to evaluate. Its block size is ignored,
+/// i.e. the basis of one block is evaluated.
+/// @param[in] mesh Mesh that `element` is defined on.
+/// @param[in] x Points in physical (not reference) space,
+/// `shape=(num_points, xshape[1])`, row-major, with `xshape[1]` at least
+/// the geometric dimension.
+/// @param[in] xshape Shape of `x`.
+/// @param[in] cells `cells[p]` is the cell containing point `p`. Points
+/// with a negative cell index are skipped.
+/// @param[out] basis Basis values, `shape=(num_points, space_dimension /
+/// block_size, physical_base_value_size)`, row-major. Values of skipped
+/// points are zero.
+/// @param[in] bshape Shape of `basis`.
+/// @param[in] tol Tolerance of the Newton method for non-affine
+/// pull-backs. Ignored for affine geometries.
+/// @param[in] maxit Maximum number of Newton iterations for non-affine
+/// pull-backs. Ignored for affine geometries.
+template <std::floating_point T>
+void evaluate_basis_functions(const FiniteElement<T>& element,
+                              const mesh::Mesh<T>& mesh, std::span<const T> x,
+                              std::array<std::size_t, 2> xshape,
+                              mesh::CellRange auto&& cells, std::span<T> basis,
+                              std::array<std::size_t, 3> bshape, double tol,
+                              int maxit)
+{
+  if (x.size() != xshape[0] * xshape[1])
+    throw std::invalid_argument("Shape of x does not match its size.");
+  if (xshape[0] != cells.size())
+  {
+    throw std::invalid_argument(
+        "Number of points and number of cells must be equal.");
+  }
+  if (xshape[1] < static_cast<std::size_t>(mesh.geometry().dim()))
+  {
+    throw std::invalid_argument(
+        "Points must have at least the geometric dimension of the mesh.");
+  }
+  if (int num_sub_elements = element.num_sub_elements();
+      num_sub_elements > 1 and num_sub_elements != element.block_size())
+  {
+    throw std::invalid_argument("Evaluation of basis functions is not "
+                                "supported for mixed elements. Extract "
+                                "subspaces.");
+  }
+  const std::size_t num_basis
+      = element.space_dimension() / element.block_size();
+  const std::size_t value_size = element.physical_base_value_size();
+  if (bshape[0] != xshape[0] or bshape[1] != num_basis
+      or bshape[2] != value_size
+      or basis.size() != bshape[0] * bshape[1] * bshape[2])
+  {
+    throw std::invalid_argument("Shape of basis is not consistent with the "
+                                "points and the element.");
+  }
+
+  std::ranges::fill(basis, 0);
+  const std::size_t stride = bshape[1] * bshape[2];
+  impl::evaluate_basis(element, mesh, x, xshape, cells, tol, maxit,
+                       [&basis, stride](std::size_t p, std::int32_t,
+                                        impl::mdspan_t<const T, 2> basis_p)
+                       {
+                         std::copy_n(basis_p.data_handle(), stride,
+                                     std::next(basis.begin(), p * stride));
+                       });
+}
 
 /// @brief Generate data needed to interpolate finite element
 /// fem::Function's across different meshes.

@@ -347,24 +347,11 @@ public:
     assert(_function_space);
     auto mesh = _function_space->mesh();
     assert(mesh);
-    const std::size_t gdim = mesh->geometry().dim();
-    const std::size_t tdim = mesh->topology()->dim();
-    auto map = mesh->topology()->index_map(tdim);
-
-    // Get coordinate map
-    const CoordinateElement<geometry_type>& cmap
-        = mesh->geometry().cmaps().front();
-
-    // Get geometry data
-    auto x_dofmap = mesh->geometry().dofmaps().front();
-    const std::size_t num_dofs_g = cmap.dim();
-    auto x_g = mesh->geometry().x();
 
     // Get element
     auto element = _function_space->element();
     assert(element);
     const int bs_element = element->block_size();
-    const std::size_t reference_value_size = element->reference_value_size();
     // Size of the push-forward output for one block. On a manifold a
     // Piola-mapped element has gdim physical components and only tdim
     // reference ones.
@@ -388,143 +375,8 @@ public:
     assert(dofmap);
     const int bs_dof = dofmap->bs();
 
-    std::span<const std::uint32_t> cell_info;
-    if (element->needs_dof_transformations())
-    {
-      mesh->topology_mutable()->create_cell_permutations();
-      cell_info = std::span(mesh->topology()->get_cell_permutation_info());
-    }
-
-    std::vector<geometry_type> coord_dofs_b(num_dofs_g * gdim);
-    impl::mdspan_t<geometry_type, 2> coord_dofs(coord_dofs_b.data(), num_dofs_g,
-                                                gdim);
-    std::vector<geometry_type> xp_b(1 * gdim);
-    impl::mdspan_t<geometry_type, 2> xp(xp_b.data(), 1, gdim);
-
-    // Loop over points
     std::ranges::fill(u, 0);
     std::span<const value_type> _v = _x->array();
-
-    // Evaluate geometry basis at point (0, 0, 0) on the reference cell.
-    // Used in affine case.
-    std::array<std::size_t, 4> phi0_shape = cmap.tabulate_shape(1, 1);
-    std::vector<geometry_type> phi0_b(std::reduce(
-        phi0_shape.begin(), phi0_shape.end(), 1, std::multiplies{}));
-    impl::mdspan_t<const geometry_type, 4> phi0(phi0_b.data(), phi0_shape);
-    cmap.tabulate(1, std::vector<geometry_type>(tdim), {1, tdim}, phi0_b);
-    auto dphi0
-        = md::submdspan(phi0, std::pair(1, tdim + 1), 0, md::full_extent, 0);
-
-    // Data structure for evaluating geometry basis at specific points.
-    // Used in non-affine case.
-    std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, 1);
-    std::vector<geometry_type> phi_b(
-        std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-    impl::mdspan_t<const geometry_type, 4> phi(phi_b.data(), phi_shape);
-    auto dphi
-        = md::submdspan(phi, std::pair(1, tdim + 1), 0, md::full_extent, 0);
-
-    // Reference coordinates for each point
-    std::vector<geometry_type> Xb(xshape[0] * tdim);
-    impl::mdspan_t<geometry_type, 2> X(Xb.data(), xshape[0], tdim);
-
-    // Geometry data at each point
-    std::vector<geometry_type> J_b(xshape[0] * gdim * tdim);
-    impl::mdspan_t<geometry_type, 3> J(J_b.data(), xshape[0], gdim, tdim);
-    std::vector<geometry_type> K_b(xshape[0] * tdim * gdim);
-    impl::mdspan_t<geometry_type, 3> K(K_b.data(), xshape[0], tdim, gdim);
-    std::vector<geometry_type> detJ(xshape[0]);
-    std::vector<geometry_type> det_scratch(2 * gdim * tdim);
-
-    // Scratch space for pull-back of point coordinates for non-affine cells
-    std::vector<geometry_type> pull_back_scratch(
-        cmap.is_affine() ? 0 : cmap.pull_back_working_size(gdim));
-
-    // Prepare geometry data in each cell
-    for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
-    {
-      // Skip negative cell indices
-      if (*cell_it < 0)
-        continue;
-
-      // Get cell geometry (coordinate dofs)
-      auto x_dofs = md::submdspan(x_dofmap, *cell_it, md::full_extent);
-      assert(x_dofs.size() == num_dofs_g);
-      for (std::size_t i = 0; i < num_dofs_g; ++i)
-      {
-        const int pos = 3 * x_dofs[i];
-        for (std::size_t j = 0; j < gdim; ++j)
-          coord_dofs(i, j) = x_g[pos + j];
-      }
-
-      std::size_t p = std::ranges::distance(cells.begin(), cell_it);
-      for (std::size_t j = 0; j < gdim; ++j)
-        xp(0, j) = x[p * xshape[1] + j];
-
-      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-
-      std::array<geometry_type, 3> Xpb{0, 0, 0};
-      md::mdspan<geometry_type, md::extents<std::size_t, 1, md::dynamic_extent>>
-          Xp(Xpb.data(), 1, tdim);
-
-      // Compute reference coordinates X, and J, detJ and K
-      if (cmap.is_affine())
-      {
-        CoordinateElement<geometry_type>::compute_jacobian(dphi0, coord_dofs,
-                                                           _J);
-        CoordinateElement<geometry_type>::compute_jacobian_inverse(_J, _K);
-        std::array<geometry_type, 3> x0{0, 0, 0};
-        for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
-          x0[i] += coord_dofs(0, i);
-        CoordinateElement<geometry_type>::pull_back_affine(Xp, _K, x0, xp);
-        detJ[p]
-            = CoordinateElement<geometry_type>::compute_jacobian_determinant(
-                _J, det_scratch);
-      }
-      else
-      {
-        // Pull-back physical point xp to reference coordinate Xp
-        cmap.pull_back_nonaffine(Xp, xp, coord_dofs, pull_back_scratch, tol,
-                                 maxit);
-        cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
-        CoordinateElement<geometry_type>::compute_jacobian(dphi, coord_dofs,
-                                                           _J);
-        CoordinateElement<geometry_type>::compute_jacobian_inverse(_J, _K);
-        detJ[p]
-            = CoordinateElement<geometry_type>::compute_jacobian_determinant(
-                _J, det_scratch);
-      }
-
-      for (std::size_t j = 0; j < X.extent(1); ++j)
-        X(p, j) = Xpb[j];
-    }
-
-    // Prepare basis function data structures
-    std::vector<geometry_type> basis_derivatives_reference_values_b(
-        1 * xshape[0] * space_dimension * reference_value_size);
-    impl::mdspan_t<const geometry_type, 4> basis_derivatives_reference_values(
-        basis_derivatives_reference_values_b.data(), 1, xshape[0],
-        space_dimension, reference_value_size);
-    std::vector<geometry_type> basis_values_b(space_dimension * value_size);
-    impl::mdspan_t<geometry_type, 2> basis_values(basis_values_b.data(),
-                                                  space_dimension, value_size);
-
-    // Compute basis on reference element
-    element->tabulate(basis_derivatives_reference_values_b, Xb,
-                      {X.extent(0), X.extent(1)}, 0);
-
-    using xu_t = impl::mdspan_t<geometry_type, 2>;
-    using xU_t = impl::mdspan_t<const geometry_type, 2>;
-    using xJ_t = impl::mdspan_t<const geometry_type, 2>;
-    using xK_t = impl::mdspan_t<const geometry_type, 2>;
-    auto push_forward_fn
-        = element->basix_element().template map_fn<xu_t, xU_t, xJ_t, xK_t>();
-
-    // Transformation function for basis function values
-    auto apply_dof_transformation
-        = element->template dof_transformation_fn<geometry_type>(
-            doftransform::standard);
 
     // Size of tensor for symmetric elements, unused in non-symmetric
     // case, but placed outside the loop for pre-computation.
@@ -535,83 +387,67 @@ public:
         ++matrix_size;
     }
 
-    const std::size_t num_basis_values = space_dimension * reference_value_size;
-    for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
-    {
-      if (*cell_it < 0) // Skip negative cell indices
-        continue;
-
-      // Permute the reference basis function values to account for the
-      // cell's orientation
-      std::size_t p = std::ranges::distance(cells.begin(), cell_it);
-      if (apply_dof_transformation)
-      {
-        apply_dof_transformation(
-            std::span(basis_derivatives_reference_values_b.data()
-                          + p * num_basis_values,
-                      num_basis_values),
-            cell_info, *cell_it, reference_value_size);
-      }
-
-      {
-        auto _U = md::submdspan(basis_derivatives_reference_values, 0, p,
-                                md::full_extent, md::full_extent);
-        auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-        auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-        push_forward_fn(basis_values, _U, _J, detJ[p], _K);
-      }
-
-      // Get degrees of freedom for current cell
-      std::span<const std::int32_t> dofs = dofmap->cell_dofs(*cell_it);
-      for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (int k = 0; k < bs_dof; ++k)
-          coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
-
-      if (element->symmetric())
-      {
-        // Compute expansion
-        int row = 0;
-        int rowstart = 0;
-        for (int k = 0; k < bs_element; ++k)
+    // Contract the basis at each point, pushed forward to the physical
+    // cell, with the cell's expansion coefficients
+    impl::evaluate_basis<geometry_type>(
+        *element, *mesh, x, xshape, cells, tol, maxit,
+        [&u, ushape, &coefficients, &_v, &dofmap, &element, bs_dof, bs_element,
+         space_dimension, value_size,
+         matrix_size](std::size_t p, std::int32_t c,
+                      impl::mdspan_t<const geometry_type, 2> basis_values)
         {
-          if (k - rowstart > row)
+          // Get degrees of freedom for current cell
+          std::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+          for (std::size_t i = 0; i < dofs.size(); ++i)
+            for (int k = 0; k < bs_dof; ++k)
+              coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
+
+          if (element->symmetric())
           {
-            row++;
-            rowstart = k;
-          }
-          for (std::size_t i = 0; i < space_dimension; ++i)
-          {
-            for (std::size_t j = 0; j < value_size; ++j)
+            // Compute expansion
+            int row = 0;
+            int rowstart = 0;
+            for (int k = 0; k < bs_element; ++k)
             {
-              u[p * ushape[1]
-                + (j * bs_element + row * matrix_size + k - rowstart)]
-                  += coefficients[bs_element * i + k] * basis_values(i, j);
-              if (k - rowstart != row)
+              if (k - rowstart > row)
               {
-                u[p * ushape[1]
-                  + (j * bs_element + row + matrix_size * (k - rowstart))]
-                    += coefficients[bs_element * i + k] * basis_values(i, j);
+                row++;
+                rowstart = k;
+              }
+              for (std::size_t i = 0; i < space_dimension; ++i)
+              {
+                for (std::size_t j = 0; j < value_size; ++j)
+                {
+                  u[p * ushape[1]
+                    + (j * bs_element + row * matrix_size + k - rowstart)]
+                      += coefficients[bs_element * i + k] * basis_values(i, j);
+                  if (k - rowstart != row)
+                  {
+                    u[p * ushape[1]
+                      + (j * bs_element + row + matrix_size * (k - rowstart))]
+                        += coefficients[bs_element * i + k]
+                           * basis_values(i, j);
+                  }
+                }
               }
             }
           }
-        }
-      }
-      else
-      {
-        // Compute expansion
-        for (int k = 0; k < bs_element; ++k)
-        {
-          for (std::size_t i = 0; i < space_dimension; ++i)
+          else
           {
-            for (std::size_t j = 0; j < value_size; ++j)
+            // Compute expansion
+            for (int k = 0; k < bs_element; ++k)
             {
-              u[p * ushape[1] + (j * bs_element + k)]
-                  += coefficients[bs_element * i + k] * basis_values(i, j);
+              for (std::size_t i = 0; i < space_dimension; ++i)
+              {
+                for (std::size_t j = 0; j < value_size; ++j)
+                {
+                  u[p * ushape[1] + (j * bs_element + k)]
+                      += coefficients[bs_element * i + k] * basis_values(i, j);
+                }
+              }
             }
           }
-        }
-      }
-    }
+        });
   }
 
   /// Name
