@@ -846,6 +846,18 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
             return NotImplemented
         return super().__ne__(other) or self._cpp_object != other._cpp_object
 
+    def __hash__(self) -> int:
+        """Hash of the function space.
+
+        Note:
+            Combines the UFL hash data with the identity of the wrapped
+            C++ space, matching :meth:`__eq__`. Declaring ``__eq__``
+            without ``__hash__`` would otherwise set ``__hash__`` to
+            ``None`` and make the space unhashable, unlike the UFL base
+            class.
+        """
+        return hash((super().__hash__(), self._cpp_object))
+
     def ufl_function_space(self) -> Self:
         """UFL function space."""
         return self
