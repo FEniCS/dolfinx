@@ -120,6 +120,8 @@ def create_hierarchy(
     for _ in range(num_levels - 1):
         msh.topology.create_entities(1)
         msh, parents, _ = mesh.refine(msh)
+        # The default RefinementOption computes the parent cells
+        assert parents is not None
         parent_cells.append(parents)
         spaces.append(fem.functionspace(msh, ("Lagrange", 1)))
     return spaces, parent_cells

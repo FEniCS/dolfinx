@@ -366,7 +366,7 @@ def _nonmatching_matrix_from_data(
             "nonmatching_interpolation_matrix requires V0 and V1 to have the same dtype."
         )
     return _MatrixCSR(
-        _nonmatching_interpolation_matrix(
+        _nonmatching_interpolation_matrix(  # type: ignore[no-matching-overload]
             V0._cpp_object,
             V1._cpp_object,
             cells,
