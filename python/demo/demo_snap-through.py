@@ -329,9 +329,7 @@
 # ## Implementation
 
 # +
-import os
 import sys
-from pathlib import Path
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -632,21 +630,16 @@ snes.setNewtonALFunction(compute_tangent_load)
 # curve is plotted with Matplotlib at the end, as the static figure for
 # the documentation.
 #
-# With [pyvistaqt](https://qtdocs.pyvista.org/) and a Qt binding
-# installed, frames go to a `BackgroundPlotter`, which redraws without
-# blocking the solve. Setting `DOLFINX_DEMO_FRAMES=1` instead renders
-# the same frames off-screen and writes one numbered image per
-# increment, ready to be assembled into a movie. Screenshots are taken
-# only on that path, as a `BackgroundPlotter` needs a real graphics
-# context. Writing the frames costs several times the solve itself, so
-# it is asked for rather than assumed.
+# Redrawing mid-solve needs a window that does not block, which
+# [pyvistaqt](https://qtdocs.pyvista.org/) provides given a Qt
+# binding. Without it the solve simply runs without the animation; the
+# summary at the end is drawn either way.
 #
 # One grid is built and reused, each frame moving its points and
 # refreshing the colours. The colour range is fixed at roughly twice
 # the rise so colours mean the same thing in every frame, and the
 # undeformed arch stays as an outline. Each process plots the part of
-# the mesh it owns, so a parallel run gives one set of frames per
-# process.
+# the mesh it owns, so a parallel run opens one window per process.
 
 # +
 try:
@@ -663,25 +656,8 @@ except ImportError:
     # which raises QtBindingsNotFoundError when no Qt binding is present
     pyvistaqt = None
 
-# Rendering needs a render window, and a machine without the GL
-# libraries crashes outright rather than raising, so it cannot simply
-# be attempted and caught. Three separate decisions follow. The
-# animation is drawn only when the file is run as a script, since the
-# documentation tooling runs it through runpy, which leaves __name__
-# set to something other than "__main__". Frames are written to disk
-# only when DOLFINX_DEMO_FRAMES is set. The summary at the end is also
-# drawn when DOLFINX_DEMO_RENDER is set, which is how the documentation
-# build asks for the 3-D figure.
-animating = __name__ == "__main__"
-recording = os.environ.get("DOLFINX_DEMO_FRAMES") == "1"
-headless = os.environ.get("DOLFINX_DEMO_RENDER") == "1"
-rendering = animating or recording or headless
-if headless and pyvista is not None:
-    pyvista.OFF_SCREEN = True
-
 rank_suffix = f"_{msh.comm.rank}" if msh.comm.size > 1 else ""
 block_size = V.dofmap.index_map_bs
-frame_dir = Path("out_snap-through/frames")
 undeformed = deformed = plotter = points = reference_edges = None
 load_line = load_marker = None
 drawn_deflections: list[float] = []
@@ -738,19 +714,17 @@ def set_arch_view(plot) -> None:
     plot.camera.elevation = 8.0
 
 
-if pyvista is not None and rendering:
+if pyvista is not None:
     cells, types, points = plot.vtk_mesh(V)
     undeformed = pyvista.UnstructuredGrid(cells, types, points)
     deformed = undeformed.copy()
     deformed.point_data["u_z"] = np.zeros(points.shape[0])
     _, reference_edges = element_surface(undeformed)
 
+    # `pyvista.OFF_SCREEN` says that nothing can be shown -- the
+    # documentation build sets it -- so there is no window to animate.
     panels = {"shape": (1, 2), "col_weights": [1, 2], "window_size": (1500, 400)}
-    if recording:
-        plotter = pyvista.Plotter(off_screen=True, **panels)
-        plotter.image_scale = 2
-        frame_dir.mkdir(parents=True, exist_ok=True)
-    elif animating and pyvistaqt is not None:
+    if pyvistaqt is not None and not pyvista.OFF_SCREEN:
         plotter = pyvistaqt.BackgroundPlotter(title="Snap-through", auto_update=True, **panels)
     else:
         plotter = None  # Summary only; no per-increment animation
@@ -817,10 +791,7 @@ def draw_frame(n: int, lam: float, w: float) -> None:
     )
     plotter.add_mesh(edges, color="black", line_width=1, name="arch_edges")
     plotter.add_text(rf"$\lambda$ = {lam:.3f}", name="label", font_size=10)
-    if recording:
-        plotter.screenshot(frame_dir / f"frame_{n:03d}{rank_suffix}.png")
-    else:
-        plotter.app.processEvents()  # Redraw the window mid-solve
+    plotter.app.processEvents()  # Redraw the window mid-solve
 
 
 # -

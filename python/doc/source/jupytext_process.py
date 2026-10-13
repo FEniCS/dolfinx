@@ -32,6 +32,11 @@ def process(run_demos: bool = True):
             execution without the images already present will report
             missing images, which ``sphinx -W`` turns into errors.
     """
+    # Demos that render with PyVista must write their figures to file
+    # rather than try to open a window. PyVista reads this when it is
+    # imported, which the demos do themselves below.
+    os.environ["PYVISTA_OFF_SCREEN"] = "true"
+
     # Directories to scan
     subdirs = [pathlib.Path("../../demo")]
 
@@ -66,9 +71,6 @@ def process(run_demos: bool = True):
                     demo = demo.resolve()
                     here = os.getcwd()
                     os.chdir(demo_dir)
-                    # Demos that can render a 3-D figure for the
-                    # documentation look for this; see demo_snap-through
-                    os.environ["DOLFINX_DEMO_RENDER"] = "1"
                     runpy.run_path(str(demo))
                     os.chdir(here)
                 else:
