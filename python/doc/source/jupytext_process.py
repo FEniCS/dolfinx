@@ -66,6 +66,9 @@ def process(run_demos: bool = True):
                     demo = demo.resolve()
                     here = os.getcwd()
                     os.chdir(demo_dir)
+                    # Demos that can render a 3-D figure for the
+                    # documentation look for this; see demo_snap-through
+                    os.environ["DOLFINX_DEMO_RENDER"] = "1"
                     runpy.run_path(str(demo))
                     os.chdir(here)
                 else:

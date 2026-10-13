@@ -48,24 +48,25 @@
 #
 # The body is a shallow parabolic arch of span $L$, width $W$ and
 # thickness $d$, obtained by lifting a box by
-# $h \left(1 - (2 x_{0} / L - 1)^{2}\right)$, so that the crown stands
+# $h \left(1 - (2 X_{0} / L - 1)^{2}\right)$, so that the crown stands
 # a rise $h$ above the supports. This undeformed body is the reference
 # configuration $\Omega$, and the formulation below is posed entirely on
-# it: $u$ is the displacement from $\Omega$, $\nabla$ is taken with
-# respect to reference coordinates and ${\rm d}x$ is the reference
-# volume element. Capitals denote reference quantities and lower case
-# their deformed counterparts, so $\Gamma_{\rm top}$, $N$ and
+# it: $X$ are the reference coordinates, $u$ the displacement from
+# $\Omega$, $\nabla$ is taken with respect to $X$ and ${\rm d}x$ is the
+# reference volume element. Capitals denote reference quantities and
+# lower case their deformed counterparts, so $\Gamma_{\rm top}$, $N$ and
 # ${\rm d}S$ below are the reference top surface, outward normal and
 # area element, and $\gamma_{\rm top}$, $n$ and ${\rm d}a$ the
 # deformed ones.
 #
 # The arch is a compressible neo-Hookean solid: with the deformation
-# gradient $F = I + \nabla u$, $C = F^{T} F$ and $J = \det F$, the
-# stored energy density is
+# gradient $F = I + \nabla u$ and $C = F^{T} F$, the stored energy
+# density is
 #
 # $$
-# \psi(F) = \frac{\mu}{2} \left({\rm tr}(C) - 3\right) - \mu \ln J +
-#           \frac{\Lambda}{2} \left(\ln J\right)^{2},
+# \psi(F) = \frac{\mu}{2} \left({\rm tr}(C) - 3\right)
+#           - \mu \ln \det F
+#           + \frac{\Lambda}{2} \left(\ln \det F\right)^{2},
 # $$
 #
 # where $\mu$ and $\Lambda$ are the Lamé parameters. The second one is
@@ -84,9 +85,9 @@
 # load of order $10^{-4} E$. The peak Green-Lagrange strain reaches
 # only a few per cent anywhere on the path, even once the arch has
 # inverted: the displacements and rotations are large, the strains are
-# not. That is
-# the regime a finite-strain formulation is needed for, and it is the
-# geometry rather than the material law that produces the limit point.
+# not. That is the regime a finite-strain formulation is needed for, and
+# it is the geometry rather than the material law that produces the
+# limit point.
 #
 # The arch is loaded by a pressure $\lambda p$ on its top surface
 # $\Gamma_{\rm top}$, with $\lambda$ the load parameter. A pressure acts
@@ -94,8 +95,8 @@
 # unit *deformed* area, so the traction is $t = -\lambda p \, n$ and the
 # external virtual work is an integral over the deformed surface
 # $\gamma_{\rm top}$. Nanson's formula, $n \, {\rm d}a = {\rm cof}(F) \,
-# N \, {\rm d}S$ with ${\rm cof}(F) = J F^{-T}$, pulls it back to the
-# reference surface:
+# N \, {\rm d}S$ with ${\rm cof}(F) = (\det F) \, F^{-T}$, pulls it back
+# to the reference surface:
 #
 # $$
 # \int_{\gamma_{\rm top}} t \cdot v \, {\rm d}a
@@ -142,10 +143,10 @@
 #
 # and the reference load vector cannot be assembled once up front.
 #
-# The end $x_{0} = 0$ is clamped, $u = 0$, and the end $x_{0} = L$ is
-# given a fixed inward displacement $u = (-\delta, 0, 0)$. The second
+# The end $X_{0} = 0$ is clamped, $u = 0$, and the end $X_{0} = L$ is
+# pushed inwards by a fixed amount, `shortening` in the code. The second
 # condition is inhomogeneous; shortening the span deepens the arch, and
-# the limit load rises with $\delta$ as a result.
+# the limit load rises with it as a result.
 #
 # ### Why load control fails, and what arc-length continuation does
 #
@@ -160,19 +161,19 @@
 #
 # Arc-length continuation treats $\lambda$ as an unknown and marches
 # along the path instead. From a converged point $(x_{n},
-# \lambda_{n})$ it seeks an increment $(\Delta X, \Delta \lambda)$ with
+# \lambda_{n})$ it seeks an increment $(\Delta x, \Delta \lambda)$ with
 #
 # $$
 # f(x_{n} + \Delta X, \lambda_{n} + \Delta \lambda) = 0,
 # \qquad
-# \lVert \Delta X \rVert^{2} + \psi^{2} \Delta \lambda^{2}
+# \lVert \Delta x \rVert^{2} + \beta^{2} \Delta \lambda^{2}
 #   = \Delta s^{2},
 # $$
 #
 # the second equation fixing the length of the step in the combined
 # space of displacements and load. $\Delta s$ is the arc-length step
-# size and $\psi^{2}$ weights the load against the displacements;
-# $\psi^{2} = 0$ gives a cylindrical constraint. Nothing in this pair
+# size and $\beta^{2}$ weights the load against the displacements;
+# $\beta^{2} = 0$ gives a cylindrical constraint. Nothing in this pair
 # distinguishes the ascending branch from the descending one, so the
 # limit point is passed without the Jacobian of the *augmented* system
 # ever becoming singular.
@@ -191,7 +192,7 @@
 # $\delta x = \delta x_{r} + \delta\lambda \, \delta x_{q}$, with
 # $\delta\lambda$ chosen so that the new iterate satisfies the
 # arc-length constraint: a quadratic equation for the `exact` correction
-# that PETSc uses by default, or a step orthogonal to $\Delta X$ for the
+# that PETSc uses by default, or a step orthogonal to $\Delta x$ for the
 # cheaper `normal` correction.
 #
 # ### What `SNESNEWTONAL` asks of the caller
@@ -233,14 +234,15 @@
 #
 # Partition the degrees-of-freedom into those constrained by a Dirichlet
 # condition, with index set $\mathcal{I}_{\Gamma}$, and the remainder,
-# $\mathcal{I}_{0}$; a subscript $0$ or $\Gamma$ on a vector or on a
-# matrix block selects the corresponding rows (and columns). Writing $g$
+# $\mathcal{I}_{\rm f}$; a subscript ${\rm f}$ or $\Gamma$ on a vector or
+# on a matrix block selects the corresponding rows (and columns).
+# Writing $g$
 # for the vector of boundary values, the constraints are made part of
 # the residual that `SNES` is given,
 #
 # $$
 # \tilde{f}(x, \lambda) = \begin{bmatrix}
-#     r_{0}(x) - \lambda \, q_{0}(x) \\ x_{\Gamma} - g_{\Gamma}
+#     r_{\rm f}(x) - \lambda \, q_{\rm f}(x) \\ x_{\Gamma} - g_{\Gamma}
 #   \end{bmatrix} .
 # $$
 #
@@ -258,9 +260,11 @@
 # partitioning $J$ in the same way,
 #
 # $$
-# \tilde{J} = \begin{bmatrix} J_{00} & J_{0\Gamma} \\ 0 & I \end{bmatrix},
+# \tilde{J} = \begin{bmatrix}
+#     J_{\rm ff} & J_{{\rm f}\Gamma} \\ 0 & I
+#   \end{bmatrix},
 # \qquad
-# -\tilde{f} = \begin{bmatrix} \lambda \, q_{0}(x) - r_{0} \\
+# -\tilde{f} = \begin{bmatrix} \lambda \, q_{\rm f}(x) - r_{\rm f} \\
 #                              g_{\Gamma} - x_{\Gamma} \end{bmatrix} .
 # $$
 #
@@ -270,12 +274,12 @@
 # leaving a system in the free unknowns alone:
 #
 # $$
-# J_{00} \, \delta x_{0}
-#   = \lambda \, q_{0}(x) - r_{0}
-#     - J_{0\Gamma} \left(g_{\Gamma} - x_{\Gamma}\right) .
+# J_{\rm ff} \, \delta x_{\rm f}
+#   = \lambda \, q_{\rm f}(x) - r_{\rm f}
+#     - J_{{\rm f}\Gamma} \left(g_{\Gamma} - x_{\Gamma}\right) .
 # $$
 #
-# Eliminating the column block $J_{0\Gamma}$, rather than carrying it,
+# Eliminating the column block $J_{{\rm f}\Gamma}$, rather than carrying
 # preserves whatever symmetry the operator has, since zeroing the
 # constrained rows alone would destroy it. Here the internal part
 # $\partial r / \partial x$ is the second derivative of an energy and so
@@ -285,7 +289,7 @@
 # therefore
 #
 # $$
-# \hat{J} = \begin{bmatrix} J_{00} & 0 \\ 0 & I \end{bmatrix},
+# \hat{J} = \begin{bmatrix} J_{\rm ff} & 0 \\ 0 & I \end{bmatrix},
 # $$
 #
 # the Jacobian with the constrained rows *and* columns zeroed and a unit
@@ -293,12 +297,12 @@
 # {py:func}`assemble_matrix <dolfinx.fem.petsc.assemble_matrix>`
 # produces.
 #
-# What the elimination leaves behind, the term $J_{0\Gamma}
+# What the elimination leaves behind, the term $J_{{\rm f}\Gamma}
 # \left(g_{\Gamma} - x_{\Gamma}\right)$, is added to the right-hand side
 # by the *lifting* operation,
 #
 # $$
-# b \leftarrow b - \alpha J_{0\Gamma}
+# b \leftarrow b - \alpha J_{{\rm f}\Gamma}
 #                  \left(g_{\Gamma} - x_{0,\Gamma}\right),
 # $$
 #
@@ -312,8 +316,8 @@
 #
 # $$
 # b = \begin{bmatrix}
-#       r_{0} - \lambda \, q_{0}(x) +
-#         J_{0\Gamma}\left(g_{\Gamma} - x_{\Gamma}\right) \\
+#       r_{\rm f} - \lambda \, q_{\rm f}(x) +
+#         J_{{\rm f}\Gamma}\left(g_{\Gamma} - x_{\Gamma}\right) \\
 #       x_{\Gamma} - g_{\Gamma}
 #     \end{bmatrix},
 # $$
@@ -325,6 +329,7 @@
 # ## Implementation
 
 # +
+import os
 import sys
 from pathlib import Path
 
@@ -367,8 +372,8 @@ if np.issubdtype(default_real_type, np.float32):
 # limit load within about one per cent of its converged value.
 #
 # The loaded surface and the two supports are found while the body is
-# still a box, where they are simply $x_{2} = d$, $x_{0} = 0$ and
-# $x_{0} = L$. Moving the vertices afterwards leaves the topology, and
+# still a box, where they are simply $X_{2} = d$, $X_{0} = 0$ and
+# $X_{0} = L$. Moving the vertices afterwards leaves the topology, and
 # so the facet indices, untouched.
 
 # +
@@ -398,8 +403,10 @@ u = fem.Function(V, name="displacement")
 v, du = ufl.TestFunction(V), ufl.TrialFunction(V)
 # -
 
-# The kinematics and the stored energy density, from which the internal
-# virtual work follows by differentiation.
+# The kinematics and the stored energy density $\psi$, from which the
+# first Piola-Kirchhoff stress $P = \partial \psi / \partial F$ follows
+# by differentiation. `internal_work` is then the first term of $R$,
+# $\int_{\Omega} P : \nabla v \, {\rm d}x$.
 
 # +
 I = ufl.Identity(3)  # noqa: E741
@@ -417,7 +424,8 @@ psi = (mu / 2) * (Ic - 3) - mu * ufl.ln(Jdet) + (lmbda / 2) * ufl.ln(Jdet) ** 2
 # a triquadratic hexahedron.
 dx = ufl.Measure("dx", domain=msh, metadata={"quadrature_degree": 4})
 
-internal_work = ufl.derivative(psi * dx, u, v)
+P = ufl.diff(psi, F)  # First Piola-Kirchhoff stress
+internal_work = ufl.inner(P, ufl.grad(v)) * dx
 # -
 
 # The external virtual work of the pressure. {py:func}`ufl.cofac`
@@ -436,9 +444,18 @@ external_work = -pressure * ufl.inner(ufl.cofac(F) * N, v) * ds(TOP)
 
 # The load parameter is a {py:class}`Constant <dolfinx.fem.Constant>`
 # so that the callbacks can write the value `SNES` reports into the
-# forms without recompiling them. Differentiating the residual gives the
-# Jacobian including the load-stiffness term, and the tangent load is
-# the external work alone, without $\lambda$.
+# forms without recompiling them.
+#
+# The three forms are the three objects of $f(x, \lambda) = r(x) -
+# \lambda \, q(x)$: `internal_work` assembles $r$, `external_work`
+# assembles $q$, and `residual` assembles $f$. Note where the minus
+# signs sit. `external_work` already carries the one from the inward
+# pressure, so $q$ is the load vector of $f = r - \lambda q$ and
+# `residual` subtracts it. `tangent_load` is that same form without
+# $\lambda$, which is exactly the $q(x)$ `SNESNEWTONAL` asks for.
+# Differentiating `residual` gives $\partial f / \partial x$, the
+# load-stiffness term $-\lambda \, \partial q / \partial x$ included
+# because `external_work` depends on $u$ through ${\rm cof}(F)$.
 
 # +
 load_parameter = fem.Constant(msh, default_scalar_type(0))
@@ -450,7 +467,7 @@ tangent_load = fem.form(external_work)
 
 # ## Boundary conditions
 #
-# The support at $x_{0} = 0$ is clamped and the one at $x_{0} = L$ is
+# The support at $X_{0} = 0$ is clamped and the one at $X_{0} = L$ is
 # pushed inwards by `shortening`, an inhomogeneous condition that
 # deepens the arch and stiffens it against snapping through.
 
@@ -607,7 +624,13 @@ snes.setNewtonALFunction(compute_tangent_load)
 #
 # The arch is drawn once per converged increment, so the flattening,
 # the snap and the inversion can be watched rather than inferred from
-# the numbers.
+# the numbers. The window has two panels: the load-displacement curve
+# traced so far on the left, with a marker on the current state, and
+# the deformed arch on the right. Together they show what the numbers
+# alone do not -- the curve turning over at the limit point and running
+# backwards in $\lambda$ while the arch keeps deflecting. The same
+# curve is plotted with Matplotlib at the end, as the static figure for
+# the documentation.
 #
 # With [pyvistaqt](https://qtdocs.pyvista.org/) and a Qt binding
 # installed, frames go to a `BackgroundPlotter`, which redraws without
@@ -638,16 +661,27 @@ except ImportError:
     # which raises QtBindingsNotFoundError when no Qt binding is present
     pyvistaqt = None
 
-# The docs build runs this file through runpy, for the Matplotlib
-# figure, in a container with no OpenGL, where creating a render window
-# crashes rather than raising. Gate 3-D rendering on __name__, which
-# runpy leaves set to something other than "__main__".
-rendering = __name__ == "__main__"
+# Rendering needs a render window, and a machine without the GL
+# libraries crashes outright rather than raising, so it cannot simply
+# be attempted and caught. Two separate decisions follow. The animation
+# is drawn only when the file is run as a script, since the
+# documentation tooling runs it through runpy, which leaves __name__
+# set to something other than "__main__". The summary at the end is
+# also drawn when DOLFINX_DEMO_RENDER is set, which is how the
+# documentation build asks for the 3-D figure.
+animating = __name__ == "__main__"
+headless = os.environ.get("DOLFINX_DEMO_RENDER") == "1"
+rendering = animating or headless
+if headless and pyvista is not None:
+    pyvista.OFF_SCREEN = True
 
 rank_suffix = f"_{msh.comm.rank}" if msh.comm.size > 1 else ""
 block_size = V.dofmap.index_map_bs
 frame_dir = Path("out_snap-through/frames")
 undeformed = deformed = plotter = points = reference_edges = None
+load_line = load_marker = None
+drawn_deflections: list[float] = []
+drawn_loads: list[float] = []
 colour_bar = {
     "title": "u_z",
     "vertical": True,
@@ -684,6 +718,22 @@ def element_surface(grid):
     return surface, surface.extract_feature_edges()
 
 
+def set_arch_view(plot) -> None:
+    """Point the camera at the arch, a little off the side-on axis.
+
+    A straight side-on view flattens the arch into a band, hiding its
+    width and thickness. Swinging the camera round and up a little
+    restores them, and since the camera is a perspective one the far
+    end is drawn slightly smaller than the near, which reads as depth.
+
+    Args:
+        plot: Plotter whose active subplot is to be pointed at the arch.
+    """
+    plot.view_xz()
+    plot.camera.azimuth = 12.0
+    plot.camera.elevation = 8.0
+
+
 if pyvista is not None and rendering:
     cells, types, points = plot.vtk_mesh(V)
     undeformed = pyvista.UnstructuredGrid(cells, types, points)
@@ -691,24 +741,64 @@ if pyvista is not None and rendering:
     deformed.point_data["u_z"] = np.zeros(points.shape[0])
     _, reference_edges = element_surface(undeformed)
 
-    if pyvistaqt is not None:
-        plotter = pyvistaqt.BackgroundPlotter(
-            title="Snap-through", auto_update=True, window_size=(1000, 340)
-        )
+    panels = {"shape": (1, 2), "col_weights": [1, 2], "window_size": (1500, 400)}
+    if not animating:
+        plotter = None  # Summary only; no per-increment animation
+    elif pyvistaqt is not None:
+        plotter = pyvistaqt.BackgroundPlotter(title="Snap-through", auto_update=True, **panels)
     else:
-        plotter = pyvista.Plotter(off_screen=True, window_size=(1000, 340))
+        plotter = pyvista.Plotter(off_screen=True, **panels)
+        plotter.image_scale = 2
         frame_dir.mkdir(parents=True, exist_ok=True)
 
+if plotter is not None:
+    # Left panel: the load-displacement curve, drawn as the continuation
+    # walks it. This is the view that shows the snap-back -- the curve
+    # turns over at the limit point and runs backwards in $\lambda$
+    # before recovering -- which a plot against increment number hides.
+    # The line is updated in place rather than redrawn, and the ranges
+    # are fixed so it does not rescale from frame to frame.
+    plotter.subplot(0, 0)
+    load_chart = pyvista.Chart2D()
+    load_chart.x_label = "mean downward displacement"
+    load_chart.y_label = r"load parameter $\lambda$"
+    load_chart.x_range = (0.0, 1.15)
+    load_chart.y_range = (0.0, 1.05)
+    load_line = load_chart.line([0], [0], color="tab:blue", width=2.0)
+    load_marker = load_chart.scatter([0], [0], color="tab:red", size=8)
+    plotter.add_chart(load_chart)
+
+    # Right panel: the arch itself
+    plotter.subplot(0, 1)
     plotter.add_mesh(reference_edges, color="lightgray", line_width=1)
-    plotter.view_xz()
+    set_arch_view(plotter)
     plotter.camera.zoom(2.2)
 
 
-def draw_frame(n: int, lam: float) -> None:
-    """Draw the current deformation as frame ``n`` of the animation."""
+def draw_frame(n: int, lam: float, w: float) -> None:
+    """Draw increment ``n`` of the animation.
+
+    Updates both panels: the load-displacement curve traced so far on
+    the left, and the deformed arch on the right.
+
+    Args:
+        n: Continuation increment.
+        lam: Load parameter at that increment.
+        w: Mean vertical displacement at that increment, negative
+            downwards. Plotted as ``-w`` so the curve runs to the
+            right, matching the Matplotlib figure below.
+    """
     if plotter is None:
         return
     assert deformed is not None and undeformed is not None and points is not None
+
+    drawn_deflections.append(-w)
+    drawn_loads.append(lam)
+    if load_line is not None and load_marker is not None:
+        load_line.update(drawn_deflections, drawn_loads)
+        load_marker.update([-w], [lam])
+
+    plotter.subplot(0, 1)
     values = u.x.array.real.reshape(points.shape[0], block_size)
     deformed.points = undeformed.points + values
     deformed.point_data["u_z"] = values[:, 2]
@@ -721,7 +811,7 @@ def draw_frame(n: int, lam: float) -> None:
         scalar_bar_args=colour_bar,
     )
     plotter.add_mesh(edges, color="black", line_width=1, name="arch_edges")
-    plotter.add_text(f"lambda = {lam:.3f}", name="label", font_size=10)
+    plotter.add_text(rf"$\lambda$ = {lam:.3f}", name="label", font_size=10)
     if pyvistaqt is not None:
         plotter.app.processEvents()  # Redraw the window mid-solve
     else:
@@ -770,7 +860,7 @@ u_linear = fem.Function(fem.functionspace(msh, ("Lagrange", 1, (3,))), name="dis
 history = XDMFFile(msh.comm, "out_snap-through/deformation.xdmf", "w")
 history.write_mesh(msh)
 history.write_function(u_linear, 0.0)
-draw_frame(0, 0.0)
+draw_frame(0, 0.0, 0.0)
 
 
 def record(snes: PETSc.SNES, _its: int, _fnorm: float) -> None:
@@ -783,7 +873,7 @@ def record(snes: PETSc.SNES, _its: int, _fnorm: float) -> None:
         snapshots.append(u.x.array.real.copy())
         u_linear.interpolate(u)
         history.write_function(u_linear, float(n))
-        draw_frame(n, lam)
+        draw_frame(n, lam, w)
 
 
 snes.setMonitor(record)
@@ -945,6 +1035,17 @@ if msh.comm.rank == 0:
     fig.savefig("out_snap-through/load-displacement.png", dpi=150)
 # -
 
+# ```{figure} out_snap-through/load-displacement.png
+# :alt: Load against mean downward displacement for the shallow arch.
+#
+# The whole path in one picture. The arch stiffens briefly, reaches the
+# limit point, and then gives way. The dashed branch is the part no
+# load-controlled solve could have found, since the load falls along it
+# while the deflection grows. Under a steadily increasing pressure the
+# arch cannot follow that branch at all and jumps across it at constant
+# load, which is the snap of the title.
+# ```
+#
 # ## Visualisation
 #
 # Three states tell the story of the snap: the arch at the limit point,
@@ -960,10 +1061,10 @@ if msh.comm.rank == 0:
 # run produces one image per process.
 
 # +
-if plotter is not None:
-    assert pyvista is not None and undeformed is not None and points is not None
-    assert reference_edges is not None
-    plotter.close()
+if pyvista is not None and undeformed is not None:
+    assert points is not None and reference_edges is not None
+    if plotter is not None:
+        plotter.close()
 
     states = {
         "Limit point": limit,
@@ -973,6 +1074,7 @@ if plotter is not None:
     clim = [float(np.min(snapshots[-1].reshape(points.shape[0], block_size)[:, 2])), 0.0]
 
     summary = pyvista.Plotter(shape=(len(states), 1), window_size=(1000, 600))
+    summary.image_scale = 2
     for row, (label, n) in enumerate(states.items()):
         grid = undeformed.copy()
         grid.point_data["u"] = snapshots[n].reshape(points.shape[0], block_size)
@@ -988,8 +1090,8 @@ if plotter is not None:
             scalar_bar_args=colour_bar,
         )
         summary.add_mesh(edges, color="black", line_width=1)
-        summary.add_text(f"{label}:  lambda = {load_path[n]:.3f}", font_size=9)
-        summary.view_xz()
+        summary.add_text(rf"{label}:  $\lambda$ = {load_path[n]:.3f}", font_size=9)
+        set_arch_view(summary)
     summary.link_views()
     summary.camera.zoom(2.2)
 
@@ -999,6 +1101,16 @@ if plotter is not None:
         summary.show()
 # -
 
+# ```{figure} out_snap-through/deformed-states.png
+# :alt: The deformed arch in three states, rendered in 3-D.
+#
+# The same three states as above, rendered in 3-D and warped by the
+# computed displacement, against the element outlines of the undeformed
+# arch in grey. The colour is the vertical displacement, on a common
+# range, and the cameras are linked, so the three panels are directly
+# comparable.
+# ```
+#
 # Finally, the PETSc objects created here are destroyed.
 
 # +
