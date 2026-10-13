@@ -134,6 +134,24 @@ def tol(mesh):
     return 1.0e3 * np.finfo(mesh.geometry.x.dtype).eps
 
 
+def assert_on_all_ranks(comm, check, *args, **kwargs):
+    """Call ``check(*args, **kwargs)``, and fail on every rank if it fails on any.
+
+    A check of rank-local data can fail on some ranks only. Those would
+    move on to the next test while the others wait in a collective
+    call, so a parallel run would hang instead of failing.
+    """
+    try:
+        check(*args, **kwargs)
+        error = None
+    except AssertionError as e:
+        error = e
+    failed = [r for r, f in enumerate(comm.allgather(error is not None)) if f]
+    if error is not None:
+        raise error
+    assert not failed, f"Check failed on rank(s) {failed}"
+
+
 # Piola-mapped elements on a triangle: (family, degree, value rank). The
 # physical value shape is (gdim,) for rank 1 and (gdim, gdim) for rank 2.
 PIOLA_ELEMENTS = [
@@ -605,7 +623,9 @@ def test_interpolate_on_mixed_cell_orientations(gdim, spec):
     cells = np.arange(num_cells, dtype=np.int32)
     midpoints = compute_midpoints(mesh, 2, cells)
     values = w.eval(midpoints, cells).reshape(num_cells, gdim)
-    np.testing.assert_allclose(values, f(midpoints.T).T, atol=tol(mesh))
+    assert_on_all_ranks(
+        mesh.comm, np.testing.assert_allclose, values, f(midpoints.T).T, atol=tol(mesh)
+    )
 
 
 @pytest.mark.parametrize("degree, linear", [(1, False), (2, True)])
@@ -636,14 +656,16 @@ def test_interpolate_discontinuous_rt_on_mixed_cell_orientations(degree, linear)
     cells = np.arange(num_cells, dtype=np.int32)
     midpoints = compute_midpoints(mesh, 2, cells)
     values = w.eval(midpoints, cells).reshape(num_cells, 3)
-    np.testing.assert_allclose(values, f(midpoints.T).T, atol=tol(mesh))
+    assert_on_all_ranks(
+        mesh.comm, np.testing.assert_allclose, values, f(midpoints.T).T, atol=tol(mesh)
+    )
 
     # The signs are ignored
     mesh.topology.create_facet_orientations()
     assert num_signed(mesh) > 0
     w_oriented = Function(V, dtype=default_real_type)
     w_oriented.interpolate(f)
-    np.testing.assert_array_equal(w_oriented.x.array, w.x.array)
+    assert_on_all_ranks(mesh.comm, np.testing.assert_array_equal, w_oriented.x.array, w.x.array)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -736,6 +758,7 @@ def test_facet_orientations_follow_the_vertex_orders(cell_type, ghost_mode):
         return global_vertex[v[p]] < global_vertex[v[q]]
 
     checked = 0
+    wrong = []
     for c in range(num_cells):
         for i, e in enumerate(c_to_e.links(c)):
             cells = e_to_c.links(e)
@@ -744,8 +767,10 @@ def test_facet_orientations_follow_the_vertex_orders(cell_type, ghost_mode):
             d = cells[1] if cells[0] == c else cells[0]
             j = list(c_to_e.links(d)).index(e)
             signed = global_cell[c] > global_cell[d] and runs_up(c, i) == runs_up(d, j)
-            assert signs[c * per_cell + i] == (-1 if signed else 1)
+            if signs[c * per_cell + i] != (-1 if signed else 1):
+                wrong.append((int(global_cell[c]), i))
             checked += 1
+    assert_on_all_ranks(surface.comm, np.testing.assert_equal, wrong, [])
     assert surface.comm.allreduce(checked, op=MPI.SUM) > 0
 
     # Ghosts carry their owner's signs
@@ -753,7 +778,12 @@ def test_facet_orientations_follow_the_vertex_orders(cell_type, ghost_mode):
     owners = vector(cell_map, dtype=np.int32)
     owners.array[:num_owned] = packed[:num_owned]
     owners.scatter_forward()
-    np.testing.assert_array_equal(owners.array[num_owned:], packed[num_owned:])
+    assert_on_all_ranks(
+        surface.comm,
+        np.testing.assert_array_equal,
+        owners.array[num_owned:],
+        packed[num_owned:],
+    )
 
 
 def test_facet_orientations_before_and_after():
@@ -765,12 +795,12 @@ def test_facet_orientations_before_and_after():
     signs = mesh.topology.facet_orientations()
     assert signs.dtype == np.int8
     assert signs.shape == (3 * num_cells,)
-    np.testing.assert_array_equal(signs, 1)
+    assert_on_all_ranks(mesh.comm, np.testing.assert_array_equal, signs, 1)
 
     mesh.topology.create_facet_orientations()
     signs = mesh.topology.facet_orientations()
     assert signs.shape == (3 * num_cells,)
-    assert np.all(np.abs(signs) == 1)
+    assert_on_all_ranks(mesh.comm, np.testing.assert_array_equal, np.abs(signs), 1)
     assert num_signed(mesh) > 0
 
 
@@ -786,7 +816,7 @@ def test_facet_orientations_do_not_change_other_elements():
         assert num_signed(mesh) > 0
         after = Function(V, dtype=default_real_type)
         after.interpolate(f)
-        np.testing.assert_array_equal(after.x.array, before.x.array)
+        assert_on_all_ranks(mesh.comm, np.testing.assert_array_equal, after.x.array, before.x.array)
 
 
 @pytest.mark.parametrize("family,degree", [("RT", 1), ("RT", 2), ("BDM", 1)])
