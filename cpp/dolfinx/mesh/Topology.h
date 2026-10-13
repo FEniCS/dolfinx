@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg, Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -195,8 +195,8 @@ public:
   ///
   /// This asks nothing of the surface as a whole, only of each facet in
   /// turn, so it works whether or not the surface can be oriented, a
-  /// Möbius strip included. It additionally creates the edges the signs
-  /// are computed across.
+  /// Möbius strip included, and needs no ghost cells. It additionally
+  /// creates the edges the signs are computed across.
   ///
   /// A function space whose element needs the signs can only be created
   /// on a manifold mesh once this has been called (see
@@ -211,9 +211,7 @@ public:
   /// @throws std::invalid_argument If the topological dimension is not
   /// 2.
   /// @throws std::runtime_error If an edge is shared by more than two
-  /// cells, or if a facet needs a sign on a process that holds no ghost
-  /// cell on its other side, i.e. a mesh not built with
-  /// mesh::GhostMode::shared_facet.
+  /// cells.
   /// @throws std::out_of_range If there is more than one cell type.
   void create_facet_orientations();
 
@@ -234,6 +232,8 @@ public:
   /// cell-local facet order and flattened row-wise, `-1` if the
   /// degrees-of-freedom on that facet are negated and `1` otherwise. All
   /// are `1` before create_facet_orientations has been called.
+  /// @throws std::invalid_argument If the topological dimension is not
+  /// 2.
   /// @throws std::runtime_error If create_cell_permutations has not been
   /// called.
   /// @throws std::out_of_range If there is more than one cell type.

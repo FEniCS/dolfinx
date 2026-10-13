@@ -174,9 +174,7 @@ joint_marker = 3
 # The surface is built by hand: each branch is a grid of `n` by `m`
 # squares, cut into triangles, with the column of vertices on the axis
 # shared by all three. Every edge on the axis then has three cells,
-# which `max_facet_to_cell_links=3` allows. Each cell is ghosted on the
-# processes of its neighbours across an edge, which signing the facets
-# of the branches below needs.
+# which `max_facet_to_cell_links=3` allows.
 #
 # Each input cell is marked with its branch, and each edge of the joint
 # with `joint_marker`. Like the cells themselves, the markers exist only
@@ -227,7 +225,6 @@ def branching_mesh(n, m):
         cells,
         domain,
         x.astype(dolfinx.default_real_type),
-        ghost_mode=dolfinx.mesh.GhostMode.shared_facet,
         max_facet_to_cell_links=3,
     )
     tdim = msh.topology.dim
@@ -249,9 +246,8 @@ def branching_mesh(n, m):
 #
 # Each branch is extracted from its cell tags as a submesh with
 # {py:func}`create_submesh <dolfinx.mesh.create_submesh>`. A branch is
-# an ordinary surface with a boundary, so its facets can be signed, and
-# it inherits the ghost cells of the whole surface, which include every
-# neighbour across an edge. The joint is a submesh of the tagged edges.
+# an ordinary surface with a boundary, so its facets can be signed. The
+# joint is a submesh of the tagged edges.
 # Each submesh comes with an {py:class}`EntityMap
 # <dolfinx.mesh.EntityMap>` relating its entities to those of the whole
 # surface, which assembly needs to combine them.

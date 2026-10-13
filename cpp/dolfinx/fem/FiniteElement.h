@@ -1,4 +1,5 @@
-// Copyright (C) 2020-2026 Garth N. Wells and Matthew W. Scroggs
+// Copyright (C) 2020-2026 Garth N. Wells, Matthew W. Scroggs and Jørgen S.
+// Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -578,7 +579,7 @@ public:
   /// space.
   ///
   /// @return True if the basis depends on the facet signs.
-  bool depends_on_cell_orientation() const noexcept;
+  bool depends_on_facet_orientations() const noexcept;
 
   /// @brief Check if DOF permutations are needed for this element.
   ///
@@ -1109,12 +1110,12 @@ private:
   }
 
   // Set _orientation_mask and _applied_orientation_mask. Called once
-  // each constructor has set _cell_type and _depends_on_cell_orientation.
+  // each constructor has set _cell_type and _depends_on_facet_orientations.
   void init_orientation_masks()
   {
     _orientation_mask = mesh::orientation_mask(mesh::cell_dim(_cell_type));
     _applied_orientation_mask
-        = _depends_on_cell_orientation ? _orientation_mask : 0;
+        = _depends_on_facet_orientations ? _orientation_mask : 0;
   }
 
   // Value shape in physical space. For blocked elements this is larger
@@ -1158,7 +1159,7 @@ private:
   bool _needs_dof_transformations;
 
   // Indicate whether the basis depends on the facet signs
-  bool _depends_on_cell_orientation;
+  bool _depends_on_facet_orientations;
 
   // Bits of the cell permutation info that carry an orientation for this
   // element's cell type, cleared before the info is passed to Basix

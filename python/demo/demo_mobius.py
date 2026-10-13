@@ -92,8 +92,8 @@
 #
 # This vanishes exactly on the boundary curves $s = \pm w$, matching the
 # natural condition above. On the cylinder it reduces to $u = w^2 - z^2$
-# with $\nabla_\Omega \cdot \nabla_\Omega u = -2$, which the demo prints
-# as a check.
+# with $\nabla_\Omega \cdot \nabla_\Omega u = -2$; the demo prints the
+# mean of the computed right-hand side over the cylinder as a check.
 #
 # ```{admonition} grad of a coordinate expression is the ambient gradient
 # :class: important
@@ -238,15 +238,10 @@ def ring_mesh(n, m, twist):
 # whole, the same call serves both meshes. The cylinder, which could be
 # oriented, is treated no differently from the strip, which could not:
 # the question of whether a consistent orientation exists never arises.
-#
-# Correcting a facet needs the cell on its other side, which is why the
-# mesh is built with `GhostMode.shared_facet`; with no ghost cells a
-# correction on a process boundary would be missed, and the call says so
-# rather than returning a silently wrong answer.
 
 
 def solve(n, m, twist):
-    """Solve on one mesh, returning the solution and the errors."""
+    """Solve on one mesh: solution, errors and mean Laplacian."""
     mesh = ring_mesh(n, m, twist)
     mesh.topology.create_facet_orientations()
 
@@ -298,10 +293,15 @@ def solve(n, m, twist):
         form = dolfinx.fem.form(ufl.inner(expr, expr) * measure)
         return np.sqrt(abs(mesh.comm.allreduce(dolfinx.fem.assemble_scalar(form), op=MPI.SUM)))
 
+    def integral(expr):
+        form = dolfinx.fem.form(expr * ufl.dx(domain=mesh))
+        return mesh.comm.allreduce(dolfinx.fem.assemble_scalar(form), op=MPI.SUM)
+
     errors = {
         "L2(u)": norm(u_h - u_exact),
         "L2(sigma)": norm(sigma_h - sigma_exact),
         "normal jump": norm(jump, ufl.dS),
+        "mean Laplacian": integral(g) / integral(1.0),
     }
     return mesh, sigma_h, u_h, errors
 
@@ -326,10 +326,13 @@ for label, twist in [("cylinder (orientable)", False), ("Möbius strip", True)]:
     if MPI.COMM_WORLD.rank == 0:
         print(f"\n{label}")
         print(f"{'cells':>8}" + "".join(f"{c:>16}" for c in columns))
+    errors: dict[str, float] = {}
     for n, m in resolutions:
         errors = solve(n, m, twist)[3]
         if MPI.COMM_WORLD.rank == 0:
             print(f"{2 * n * m:>8}" + "".join(f"{errors[c]:>16.3e}" for c in columns))
+    if not twist and MPI.COMM_WORLD.rank == 0:
+        print(f"mean surface Laplacian of u: {errors['mean Laplacian']:.4f} (exact: -2)")
 # -
 
 # ### Visualisation

@@ -14,7 +14,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/local_range.h>
@@ -23,6 +22,7 @@
 #include <format>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <mpi.h>
 #include <numeric>
@@ -489,17 +489,17 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
                     "dimension 2), not dimension {}.",
                     topology.dim()));
   }
-  auto c_to_e = topology.connectivity(2, 1);
-  auto e_to_c = topology.connectivity(1, 2);
-  if (!c_to_e or !e_to_c)
-  {
-    throw std::runtime_error("Edges and the connectivity between edges and "
-                             "cells must be created first.");
-  }
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_to_e
+      = topology.connectivity(2, 1);
+  std::shared_ptr<const common::IndexMap> edge_map = topology.index_map(1);
+  if (!c_to_e or !edge_map)
+    throw std::runtime_error("Edges must be created first.");
 
   std::shared_ptr<const common::IndexMap> cell_map = topology.index_map(2);
   const std::int32_t num_owned = cell_map->size_local();
   const std::int32_t num_cells = num_owned + cell_map->num_ghosts();
+  const std::int32_t num_owned_edges = edge_map->size_local();
+  const std::int32_t num_edges = num_owned_edges + edge_map->num_ghosts();
   const int edges_per_cell = mesh::cell_num_entities(topology.cell_type(), 1);
 
   // Whether walking round cell c in its vertex order runs its local
@@ -514,86 +514,130 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
     return edge_runs_forward[i] != reflected;
   };
 
-  // Global cell indices, which break the tie between the two cells of a
-  // facet the same way on every rank holding them
+  // Code of cell c and its local edge i: 2 * (global index of c) +
+  // runs_up(c, i). It packs the cell and its direction along the edge
+  // into one integer that is the same on every process. Codes order as
+  // global cell indices do, so the larger code is the cell with the
+  // larger global index, and code % 2 is its direction.
   std::vector<std::int32_t> local(num_cells);
   std::iota(local.begin(), local.end(), 0);
   std::vector<std::int64_t> global(num_cells);
   cell_map->local_to_global(local, global);
+  auto code = [&global, &runs_up](std::int32_t c, std::size_t i)
+  { return 2 * global[c] + runs_up(c, i); };
 
-  // A facet of an owned cell is signed when its two cells run it the same
-  // way, i.e. give it opposite normals, and this cell has the larger
-  // global index. Errors are only recorded here, and raised before the
-  // scatter below, so that no process leaves while its peers wait in it.
-  // Correcting a facet on a process boundary needs the cell on its other
-  // side as a ghost, which GhostMode::shared_facet provides.
-  constexpr int missing_ghost = 1;
-  constexpr int non_manifold = 2;
-  int error = 0;
-  std::vector<std::uint32_t> flags(num_cells, 0);
-  const std::vector<std::int32_t>& interprocess
-      = topology.interprocess_facets();
+  // Per edge, over its owned cells on all processes, edge_data holds
+  // values_per_edge = 3 values (the block size of the scatters below):
+  //   [0] the largest code,
+  //   [1] the negated smallest code, so that both reduce with max,
+  //   [2] the number of cells.
+  // Each cell is owned once, so this counts it once, and with two cells
+  // the largest and smallest code are the two cells. Combined by the
+  // owner of the edge, then sent back to every process holding it. No
+  // ghost cells are needed.
+  constexpr int values_per_edge = 3;
+  constexpr std::int64_t none = std::numeric_limits<std::int64_t>::min();
+  std::vector<std::int64_t> edge_data(values_per_edge * num_edges, 0);
+  for (std::int32_t e = 0; e < num_edges; ++e)
+  {
+    edge_data[values_per_edge * e] = none;
+    edge_data[values_per_edge * e + 1] = none;
+  }
+  auto combine = [&edge_data](std::int32_t e, std::int64_t hi,
+                              std::int64_t neg_lo, std::int64_t count)
+  {
+    std::int64_t* d = edge_data.data() + values_per_edge * e;
+    d[0] = std::max(d[0], hi);
+    d[1] = std::max(d[1], neg_lo);
+    d[2] += count;
+  };
   for (std::int32_t c = 0; c < num_owned; ++c)
   {
     std::span<const std::int32_t> edges = c_to_e->links(c);
     for (std::size_t i = 0; i < edges.size(); ++i)
+      combine(edges[i], code(c, i), -code(c, i), 1);
+  }
+
+  common::Scatterer<> sc(*edge_map);
+  const std::vector<std::int32_t>& owned_idx = sc.local_indices_block();
+  const std::vector<std::int32_t>& ghost_idx = sc.remote_indices_block();
+  {
+    std::vector<std::int64_t> send(values_per_edge * ghost_idx.size());
+    for (std::size_t j = 0; j < ghost_idx.size(); ++j)
     {
-      std::span<const std::int32_t> cells = e_to_c->links(edges[i]);
-      if (cells.size() > 2)
-        error |= non_manifold;
-      else if (cells.size() == 1)
+      std::copy_n(std::next(edge_data.begin(),
+                            values_per_edge * (num_owned_edges + ghost_idx[j])),
+                  values_per_edge,
+                  std::next(send.begin(), values_per_edge * j));
+    }
+    std::vector<std::int64_t> recv(values_per_edge * owned_idx.size());
+    MPI_Request request = MPI_REQUEST_NULL;
+    sc.scatter_rev_begin(send.data(), recv.data(), values_per_edge, request);
+    sc.scatter_rev_end(request);
+    for (std::size_t j = 0; j < owned_idx.size(); ++j)
+    {
+      combine(owned_idx[j], recv[values_per_edge * j],
+              recv[values_per_edge * j + 1], recv[values_per_edge * j + 2]);
+    }
+  }
+  {
+    std::vector<std::int64_t> send(values_per_edge * owned_idx.size());
+    for (std::size_t j = 0; j < owned_idx.size(); ++j)
+    {
+      std::copy_n(std::next(edge_data.begin(), values_per_edge * owned_idx[j]),
+                  values_per_edge,
+                  std::next(send.begin(), values_per_edge * j));
+    }
+    std::vector<std::int64_t> recv(values_per_edge * ghost_idx.size());
+    MPI_Request request = MPI_REQUEST_NULL;
+    sc.scatter_fwd_begin(send.data(), recv.data(), values_per_edge, request);
+    sc.scatter_fwd_end(request);
+    for (std::size_t j = 0; j < ghost_idx.size(); ++j)
+    {
+      std::copy_n(
+          std::next(recv.begin(), values_per_edge * j), values_per_edge,
+          std::next(edge_data.begin(),
+                    values_per_edge * (num_owned_edges + ghost_idx[j])));
+    }
+  }
+
+  // A facet is signed when its two cells run it the same way, i.e. give
+  // it opposite normals (codes of equal parity), on the cell with the
+  // larger global index (the larger code). Each process holds every edge
+  // of its ghost cells, so ghosts are signed as by their owner. Errors
+  // are raised only after the collective calls above, so that no
+  // process leaves while its peers wait in them.
+  bool non_manifold = false;
+  std::vector<std::uint32_t> flags(num_cells, 0);
+  for (std::int32_t c = 0; c < num_cells; ++c)
+  {
+    std::span<const std::int32_t> edges = c_to_e->links(c);
+    for (std::size_t i = 0; i < edges.size(); ++i)
+    {
+      const std::int64_t* d = edge_data.data() + values_per_edge * edges[i];
+      if (d[2] > 2)
+        non_manifold = true;
+      else if (d[2] == 2)
       {
-        if (std::ranges::binary_search(interprocess, edges[i]))
-          error |= missing_ghost;
-      }
-      else
-      {
-        const std::int32_t d = cells[0] == c ? cells[1] : cells[0];
-        if (global[c] > global[d])
-        {
-          std::span<const std::int32_t> d_edges = c_to_e->links(d);
-          const std::size_t j = std::ranges::distance(
-              d_edges.begin(), std::ranges::find(d_edges, edges[i]));
-          assert(j < d_edges.size());
-          if (runs_up(c, i) == runs_up(d, j))
-            flags[c] |= reversed_facet_bit(i);
-        }
+        const std::int64_t hi = d[0];
+        const std::int64_t lo = -d[1];
+        if (code(c, i) == hi and (hi - lo) % 2 == 0)
+          flags[c] |= reversed_facet_bit(i);
       }
     }
   }
 
 #ifndef NDEBUG
   // Make every process throw, or none
-  MPI_Allreduce(MPI_IN_PLACE, &error, 1, MPI_INT, MPI_BOR, topology.comm());
+  int error = non_manifold;
+  MPI_Allreduce(MPI_IN_PLACE, &error, 1, MPI_INT, MPI_LOR, topology.comm());
+  non_manifold = error;
 #endif
-  if (error & non_manifold)
+  if (non_manifold)
   {
     throw std::runtime_error("Cannot sign the facets: an edge is shared by "
                              "more than two cells.");
   }
-  if (error & missing_ghost)
-  {
-    throw std::runtime_error(
-        "Orienting a surface needs the cell on the other side of every "
-        "facet, which on a process boundary is a ghost cell. Create the "
-        "mesh with GhostMode::shared_facet.");
-  }
-
-  // Ghost cells take the flags of their owner, which sees all of their
-  // facets. Recomputing them here would not, as a ghost's neighbour
-  // across a facet need not be held locally.
-  common::Scatterer<> sc(*cell_map);
-  const std::vector<std::int32_t>& local_idx = sc.local_indices_block();
-  const std::vector<std::int32_t>& remote_idx = sc.remote_indices_block();
-  std::vector<std::uint32_t> send_buffer(local_idx.size());
-  std::ranges::transform(local_idx, send_buffer.begin(),
-                         [&flags](std::int32_t c) { return flags[c]; });
-  std::vector<std::uint32_t> recv_buffer(remote_idx.size());
-  MPI_Request request = MPI_REQUEST_NULL;
-  sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), 1, request);
-  sc.scatter_fwd_end(request);
-  for (std::size_t i = 0; i < remote_idx.size(); ++i)
-    flags[num_owned + remote_idx[i]] = recv_buffer[i];
 
   return flags;
 }

@@ -36,19 +36,19 @@ two cells carries the sign depends on the partitioning, which changes the
 sign of degrees-of-freedom but not the field. Lagrange and Nédélec spaces do
 not need the signs.
 
-Signing a facet needs the cell on its other side, so in parallel the mesh must
-be ghosted with `GhostMode.shared_facet`. A surface taken as a submesh of a
-volume inherits a ghost layer that is too narrow for this; the mixed Poisson
-demo on the sphere, {doc}`demos/demo_manifold`, shows how to widen it with a
-custom partitioner. {doc}`demos/demo_mobius` and
-{doc}`demos/demo_mobius_eikonal` solve problems on a Möbius strip, and
-{doc}`demos/demo_branching_manifold` on a T-joint, with one space per branch
-coupled by a Lagrange multiplier.
+The two cells of a facet on a process boundary are paired by one exchange over
+the edges shared between processes, so no ghost cells are needed. The mixed
+Poisson demo on the sphere is {doc}`demos/demo_manifold`;
+{doc}`demos/demo_mobius` and {doc}`demos/demo_mobius_eikonal` solve problems
+on a Möbius strip, and {doc}`demos/demo_branching_manifold` on a T-joint, with
+one space per branch coupled by a Lagrange multiplier.
 
 Creating an H(div) space on a manifold now raises a `RuntimeError` until
 `mesh.topology.create_facet_orientations()` has been called. Calling it after
 creating such spaces invalidates existing {py:class}`dolfinx.fem.Function`
 data on them.
+In C++, `FiniteElement::depends_on_cell_orientation` is renamed
+`FiniteElement::depends_on_facet_orientations`.
 
 
 ### Assembly over ridges with data on a codimension-2 submesh
