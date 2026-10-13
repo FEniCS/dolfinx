@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2012-2026 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -39,7 +39,10 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   if (tdim == 2
       and (cell_type == mesh::CellType::prism
            or cell_type == mesh::CellType::pyramid))
-    throw std::runtime_error("Prism/pyramid cell facet topology not supported");
+  {
+    throw std::invalid_argument(
+        "Prism/pyramid cell facet topology not supported");
+  }
 
   // Get entity 'cell' type
   const mesh::CellType entity_cell_type
@@ -180,7 +183,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   pugi::xml_node geometry_node = xml_node.append_child("Geometry");
   assert(geometry_node);
   if (gdim <= 0 or gdim > 3)
-    throw std::runtime_error("Geometric dimension must be 1, 2 or 3.");
+    throw std::invalid_argument("Geometric dimension must be 1, 2 or 3.");
   const std::string geometry_type = (gdim == 3) ? "XYZ" : "XY";
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 

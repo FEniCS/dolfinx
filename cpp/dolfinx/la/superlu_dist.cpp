@@ -1,4 +1,5 @@
 // Copyright (C) 2026 Jack S. Hale, Chris N. Richardson
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -140,8 +141,10 @@ std::vector<T> matrix_values(const MatrixCSR<T>& A)
       for (std::int64_t j = A_rowptr[i]; j < A_rowptr[i + 1]; ++j)
       {
         for (int i1 = 0; i1 < bs[1]; ++i1)
+        {
           flattened_values[pos++]
               = A_values[j * bs[0] * bs[1] + i0 * bs[1] + i1];
+        }
       }
     }
   }
@@ -162,7 +165,7 @@ create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
   std::int64_t m = map0->size_global() * bs[0];
   std::int64_t n = map1->size_global() * bs[1];
   if (m != n)
-    throw std::runtime_error("Cannot solve non-square system");
+    throw std::invalid_argument("Cannot solve non-square system");
 
   // Number of local rows, first row and local number of non-zeros.
   std::int32_t m_loc = A.num_owned_rows() * bs[0];
@@ -258,7 +261,7 @@ void option_setter(W& option, std::string_view value_in,
       return;
     }
   }
-  throw std::runtime_error("Unsupported value");
+  throw std::invalid_argument("Unsupported value");
 }
 } // namespace
 
@@ -506,7 +509,7 @@ void SuperLUDistSolver<T>::set_option(std::string_view name,
       field = NO;
     else
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "'Boolean' option values must be string 'YES' or 'NO'");
     }
     spdlog::info("Set {} to {}", name, value);
@@ -544,7 +547,7 @@ void SuperLUDistSolver<T>::set_option(std::string_view name,
   }
   else
   {
-    throw std::runtime_error("Unsupported option name");
+    throw std::invalid_argument("Unsupported option name");
   }
 }
 //----------------------------------------------------------------------------
@@ -572,7 +575,7 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
   if (A->supermatrix()->nrow != _superlu_matA->supermatrix()->nrow
       or A->supermatrix()->ncol != _superlu_matA->supermatrix()->ncol)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "New matrix A has different size to the matrix used to construct the "
         "solver.");
   }
@@ -583,7 +586,7 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
   MPI_Comm_compare(A->comm(), _superlu_matA->comm(), &comm_cmp);
   if (comm_cmp != MPI_IDENT and comm_cmp != MPI_CONGRUENT)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "New matrix A is defined on a different MPI communicator to the "
         "matrix used to construct the solver.");
   }
@@ -616,8 +619,8 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
   }
   else
   {
-    throw std::runtime_error("set_A fact must be one of 'DOFACT', "
-                             "'SamePattern', 'SamePattern_SameRowPerm'");
+    throw std::invalid_argument("set_A fact must be one of 'DOFACT', "
+                                "'SamePattern', 'SamePattern_SameRowPerm'");
   }
 }
 //----------------------------------------------------------------------------
@@ -627,12 +630,14 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
   common::Timer tsolve("SuperLU_DIST solve");
 
   if (b.array().size() != u.array().size())
-    throw std::runtime_error("b and u have incompatible size/layout");
+    throw std::invalid_argument("b and u have incompatible size/layout");
 
   // Warn if Factor is DOFACT but solve already appears to be initialised.
   if (_options->Fact == DOFACT && _options->SolveInitialized == YES)
+  {
     spdlog::warn("Extra call to solve with option Fact set to DOFACT. "
                  "This leads to incorrect results; try FACTORED.");
+  }
 
   int_t m_loc
       = static_cast<NRformat_loc*>(_superlu_matA->supermatrix()->Store)->m_loc;

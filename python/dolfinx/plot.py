@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2022 Jørgen S. Dokken and Garth N. Wells
+# Copyright (C) 2021-2026 Jørgen S. Dokken and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -28,6 +28,8 @@ _first_order_vtk = {
     mesh.CellType.quadrilateral: 9,
     mesh.CellType.tetrahedron: 10,
     mesh.CellType.hexahedron: 12,
+    mesh.CellType.prism: 13,
+    mesh.CellType.pyramid: 14,
 }
 
 
@@ -65,8 +67,6 @@ def vtk_mesh(
         dim = msh.topology.dim
 
     cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_type, dim, 0)
-    if cell_type == mesh.CellType.prism:
-        raise RuntimeError("Plotting of prism meshes not supported")
 
     # Use all local cells if not supplied
     if entities is None:
@@ -84,7 +84,7 @@ def vtk_mesh(
     topology[:, 1:] = vtk_topology
 
     # Array holding the cell type (shape) for each cell
-    vtk_type = _cpp.io.get_vtk_cell_type(cell_type, dim)
+    vtk_type = _cpp.io.get_vtk_cell_type(cell_type, num_nodes_per_cell)
     cell_types = np.full(len(entities), vtk_type)
 
     return topology.reshape(-1), cell_types, msh.geometry.x
@@ -118,14 +118,14 @@ def _(
         "DP",
         "P",
     ]:
-        raise RuntimeError(
-            "Can only create meshes from continuous or discontinuous Lagrange"
-            "spaces, not {V.ufl_element().family_name}."
+        raise ValueError(
+            "Can only create meshes from continuous or discontinuous Lagrange "
+            f"spaces, not {V.ufl_element().family_name}."
         )
 
     degree = V.ufl_element().degree
     if degree == 0:
-        raise RuntimeError("Cannot create topology from cellwise constants.")
+        raise ValueError("Cannot create topology from cellwise constants.")
 
     # Use all local cells if not supplied
     msh = V.mesh
@@ -139,7 +139,9 @@ def _(
     perm = np.argsort(_cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
 
     vtk_type = (
-        _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, tdim)
+        _first_order_vtk[cell_type]
+        if degree == 1
+        else _cpp.io.get_vtk_cell_type(cell_type, num_dofs_per_cell)
     )
     cell_types = np.full(entities.size, vtk_type)
 

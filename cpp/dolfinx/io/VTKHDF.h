@@ -1,4 +1,5 @@
 // Copyright (C) 2024-2025 Chris Richardson, Jørgen S. Dokken
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,6 +10,9 @@
 #include "HDF5Interface.h"
 #include <algorithm>
 #include <array>
+#include <basix/cell.h>
+#include <basix/finite-element.h>
+#include <basix/mdspan.hpp>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -24,6 +28,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <filesystem>
 #include <format>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -33,10 +38,86 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::io::VTKHDF
 {
+namespace impl
+{
+// Construct a nodal coordinate element for a (VTK type, degree) group.
+template <std::floating_point U>
+fem::CoordinateElement<U>
+coordinate_element(std::array<std::uint8_t, 2> type_degree)
+{
+  mesh::CellType cell_type = std::get<0>(cells::vtk_to_dolfinx(type_degree[0]));
+
+  // VTK_QUADRATIC_WEDGE and VTK_QUADRATIC_PYRAMID. Both are serendipity
+  // layouts (15 and 13 nodes) that Basix has no element for, and
+  // vtk_to_dolfinx reports degree 2 for them, so they would otherwise
+  // silently become 18- and 14-node Lagrange cells read from a 15- and
+  // 13-node connectivity. Every rank sees the same cell types, so this
+  // throws collectively.
+  if (type_degree[0] == 26 or type_degree[0] == 27)
+  {
+    throw std::runtime_error(std::format(
+        "VTK cell type {} is a serendipity layout that Basix cannot express.",
+        static_cast<int>(type_degree[0])));
+  }
+
+  // VTK_QUADRATIC_QUAD and VTK_QUADRATIC_HEXAHEDRON, the two quadratic
+  // serendipity layouts that Basix has an element for
+  if (type_degree[0] == 23 or type_degree[0] == 25)
+  {
+    basix::cell::type cell = mesh::cell_type_to_basix_type(cell_type);
+    basix::FiniteElement<U> element
+        = basix::create_element<U>(basix::element::family::serendipity, cell, 2,
+                                   basix::element::lagrange_variant::unset,
+                                   basix::element::dpc_variant::unset, false);
+    auto x = element.x();
+    auto M = element.M();
+    auto [geometry, geometry_shape] = basix::cell::geometry<U>(cell);
+    const std::vector<std::vector<int>> edges = basix::cell::topology(cell)[1];
+
+    // VTK stores edge midpoint values, not Basix's edge moments.
+    for (std::size_t i = 0; i < edges.size(); ++i)
+    {
+      std::vector<U> midpoint(geometry_shape[1]);
+      for (std::size_t j = 0; j < geometry_shape[1]; ++j)
+      {
+        midpoint[j] = (geometry[edges[i][0] * geometry_shape[1] + j]
+                       + geometry[edges[i][1] * geometry_shape[1] + j])
+                      / 2;
+      }
+      x[1][i] = {std::move(midpoint), {1, geometry_shape[1]}};
+      M[1][i] = {{1}, {1, 1, 1, 1}};
+    }
+    std::array<std::vector<basix::impl::mdspan_t<const U, 2>>, 4> x_view;
+    std::array<std::vector<basix::impl::mdspan_t<const U, 4>>, 4> M_view;
+    for (std::size_t d = 0; d < 4; ++d)
+    {
+      for (const auto& [data, shape] : x[d])
+        x_view[d].emplace_back(data.data(), shape);
+      for (const auto& [data, shape] : M[d])
+        M_view[d].emplace_back(data.data(), shape);
+    }
+    const auto& [wcoeffs, wshape] = element.wcoeffs();
+    return fem::CoordinateElement<U>(std::make_shared<basix::FiniteElement<U>>(
+        basix::create_custom_element<U>(
+            cell, {}, {wcoeffs.data(), wshape}, x_view, M_view, 0,
+            element.map_type(), element.sobolev_space(), false,
+            element.embedded_subdegree(), element.embedded_superdegree(),
+            element.polyset_type())));
+  }
+  int cell_degree = type_degree[1];
+  basix::element::lagrange_variant variant
+      = (cell_degree > 2) ? basix::element::lagrange_variant::equispaced
+                          : basix::element::lagrange_variant::unset;
+  return fem::CoordinateElement<U>(cell_type, cell_degree, variant);
+}
+} // namespace impl
+
 /// @brief Write a mesh to VTKHDF format.
 ///
 /// The mesh is written on the MPI communicator of the mesh.
@@ -48,6 +129,19 @@ template <std::floating_point U>
 void write_mesh(const std::filesystem::path& filename,
                 const mesh::Mesh<U>& mesh)
 {
+  const int tdim = mesh.topology()->dim();
+  std::vector<mesh::CellType> cell_types = mesh.topology()->entity_types(tdim);
+
+  // Mapped before the file is opened so that an unsupported cell layout
+  // throws on every rank before any collective IO has happened
+  std::vector<std::int8_t> vtk_types;
+  vtk_types.reserve(cell_types.size());
+  for (std::size_t i = 0; i < cell_types.size(); ++i)
+  {
+    vtk_types.push_back(cells::get_vtk_cell_type(
+        cell_types[i], mesh.geometry().cmaps().at(i).dim()));
+  }
+
   hdf5::Handle h5file(hdf5::open_file(mesh.comm(), filename, "w", true),
                       H5Fclose);
 
@@ -62,11 +156,7 @@ void write_mesh(const std::filesystem::path& filename,
   }
 
   // Extract topology information for each cell type
-  std::vector<mesh::CellType> cell_types
-      = mesh.topology()->entity_types(mesh.topology()->dim());
-
-  std::vector cell_index_maps
-      = mesh.topology()->index_maps(mesh.topology()->dim());
+  std::vector cell_index_maps = mesh.topology()->index_maps(tdim);
   std::vector<std::int32_t> num_cells;
   std::vector<std::int64_t> num_cells_global;
   for (auto& im : cell_index_maps)
@@ -112,9 +202,8 @@ void write_mesh(const std::filesystem::path& filename,
                               global_dm.end());
     topology_offsets.insert(topology_offsets.end(), g_dofmap.extent(0),
                             g_dofmap.extent(1));
-    vtkcelltypes.insert(
-        vtkcelltypes.end(), cell_index_maps[i]->size_local(),
-        cells::get_vtk_cell_type(cell_types[i], mesh.topology()->dim()));
+    vtkcelltypes.insert(vtkcelltypes.end(), cell_index_maps[i]->size_local(),
+                        vtk_types[i]);
   }
 
   // Create topo_offsets
@@ -371,12 +460,19 @@ void write_data(std::string_view point_or_cell,
 /// facet can be connected to.
 /// @param num_threads Number threads to use in mesh construction.
 /// @return The mesh read from file.
+/// @throws std::invalid_argument If `gdim` is greater than 3.
 template <std::floating_point U>
 mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                         std::size_t gdim = 3,
                         std::optional<std::int32_t> max_facet_to_cell_links = 2,
                         int num_threads = 1)
 {
+  if (gdim > 3)
+  {
+    throw std::invalid_argument(
+        "Geometric dimension must be less than or equal to 3.");
+  }
+
   hdf5::Handle h5file(hdf5::open_file(comm, filename, "r", true), H5Fclose);
 
   std::vector<std::int64_t> shape
@@ -394,7 +490,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
       h5file, "/VTKHDF/Offsets", {local_cell_range[0], local_cell_range[1] + 1},
       true);
 
-  // Convert cell offsets to cell type and cell degree tuples
+  // The VTK type identifies the family; degree distinguishes Lagrange layouts.
   std::vector<std::array<std::uint8_t, 2>> types_unique;
   std::vector<std::uint8_t> cell_degrees;
   for (std::size_t i = 0; i < types.size(); ++i)
@@ -447,15 +543,13 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
     recv_types.erase(unique_end, range_end);
   }
 
-  // Map from VTKCellType to index in list of (cell types, degree)
+  // Map (VTK type, degree) to coordinate element index.
   std::map<std::array<std::uint8_t, 2>, std::int32_t> type_to_index;
   std::vector<mesh::CellType> dolfinx_cell_type;
-  std::vector<std::uint8_t> dolfinx_cell_degree;
   for (std::array<std::uint8_t, 2> ct : recv_types)
   {
     mesh::CellType cell_type = std::get<0>(io::cells::vtk_to_dolfinx(ct[0]));
-    type_to_index.insert({ct, dolfinx_cell_degree.size()});
-    dolfinx_cell_degree.push_back(ct[1]);
+    type_to_index.insert({ct, dolfinx_cell_type.size()});
     dolfinx_cell_type.push_back(cell_type);
   }
 
@@ -471,11 +565,6 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                                                       local_point_range, true);
 
   // Remove coordinates if gdim != 3
-  if (gdim > 3)
-  {
-    throw std::runtime_error("Geometric dimension must be less than or equal "
-                             "to 3.");
-  }
   std::vector<U> points_pruned((local_point_range[1] - local_point_range[0])
                                * gdim);
   for (std::int64_t i = 0; i < local_point_range[1] - local_point_range[0]; ++i)
@@ -515,16 +604,8 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
 
   // Make coordinate elements
   std::vector<fem::CoordinateElement<U>> coordinate_elements;
-  std::ranges::transform(
-      dolfinx_cell_type, dolfinx_cell_degree,
-      std::back_inserter(coordinate_elements),
-      [](mesh::CellType cell_type, std::uint8_t cell_degree)
-      {
-        basix::element::lagrange_variant variant
-            = (cell_degree > 2) ? basix::element::lagrange_variant::equispaced
-                                : basix::element::lagrange_variant::unset;
-        return fem::CoordinateElement<U>(cell_type, cell_degree, variant);
-      });
+  std::ranges::transform(recv_types, std::back_inserter(coordinate_elements),
+                         impl::coordinate_element<U>);
 
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());

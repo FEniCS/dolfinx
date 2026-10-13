@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2026 Garth N. Wells, Jørgen S. Dokken, OpenAI
+// Copyright (C) 2015-2026 Garth N. Wells, Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -752,8 +752,10 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
             {
               U pi_val = Pi_1(idof, k * num_pts + p);
               for (std::size_t i = 0; i < space_dim0; ++i) // V0 basis fn
+              {
                 Ab[space_dim0 * idof + i]
                     += static_cast<T>(pi_val * mapped_values(p, i, k));
+              }
             }
       }
       else
@@ -764,8 +766,10 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
             {
               U pi_val = Pi_1(idof, p);
               for (std::size_t i = 0; i < space_dim0; ++i) // V0 basis fn
+              {
                 Ab[space_dim0 * (bs1 * idof + k) + i]
                     += static_cast<T>(pi_val * mapped_values(p, i, k));
+              }
             }
       }
     }

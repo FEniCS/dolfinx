@@ -1,5 +1,5 @@
 # Copyright (C) 2022-2026 Jørgen S. Dokken, Henrik N. T. Finsberg and
-# Paul T. Kühner
+# Paul T. Kühner and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -27,7 +27,8 @@ from dolfinx.mesh import (
     GhostMode,
     Mesh,
     MeshTags,
-    PartitioningFunc,
+    _Partitioner,
+    _wrap_partitioner,
     create_mesh,
     meshtags_from_entities,
 )
@@ -87,7 +88,9 @@ _gmsh_to_cells = {
     26: ("interval", 3),
     29: ("tetrahedron", 3),
     36: ("quadrilateral", 3),
+    90: ("prism", 3),
     92: ("hexahedron", 3),
+    118: ("pyramid", 3),
 }
 
 
@@ -219,16 +222,17 @@ def extract_topology_and_markers(
             for entity_type, entity_tag, entity_topology in zip(
                 entity_types, entity_tags, entity_topologies, strict=True
             ):
-                # Determine number of local nodes per element to create the
-                # topology of the elements
-                properties = model.mesh.getElementProperties(entity_type)
-                name, dim, _, num_nodes, _, _ = properties
+                if len(entity_tag) == 0:
+                    continue
 
-                # Array of shape (num_elements,num_nodes_per_element)
+                # Array of shape (num_elements, num_nodes_per_element)
                 # containing the topology of the elements on this entity.
-                # NOTE: Gmsh indexing starts with one, we therefore
-                # subtract 1 from each node to use zero-based numbering
-                topology = entity_topology.reshape(-1, num_nodes) - 1
+                # The node count is taken from the data rather than from
+                # Gmsh: getElementProperties has no reference element for
+                # some higher-degree types, the cubic prism among them.
+                # NOTE: Gmsh indexing starts at one, so subtract 1 from
+                # each node to get zero-based numbering
+                topology = entity_topology.reshape(len(entity_tag), -1) - 1
 
                 # Create marker array of length of number of tagged cells
                 marker = np.full_like(entity_tag, tag)
@@ -294,7 +298,7 @@ def model_to_mesh(
     comm: _MPI.Comm,
     rank: int,
     gdim: int = 3,
-    partitioner: PartitioningFunc | None = None,
+    partitioner: _Partitioner | None = None,
     dtype: npt.DTypeLike = default_real_type,
     max_facet_to_cell_links: int = 2,
     ghost_mode: GhostMode = GhostMode.none,
@@ -352,11 +356,15 @@ def model_to_mesh(
         element_ids = np.zeros(num_unique_entities, dtype=np.int32)
         entity_tdim = np.zeros(num_unique_entities, dtype=np.int32)
         num_nodes_per_element = np.zeros(num_unique_entities, dtype=np.int32)
-        for i, element in enumerate(topologies.keys()):
-            _, dim, _, num_nodes, _, _ = model.mesh.getElementProperties(element)
+        for i, (element, element_data) in enumerate(topologies.items()):
+            if element in _gmsh_to_cells:
+                shape, _ = _gmsh_to_cells[element]
+                dim = _cpp.mesh.cell_dim(_cpp.mesh.to_type(shape))
+            else:
+                _, dim, _, _, _, _ = model.mesh.getElementProperties(element)
             element_ids[i] = element
             entity_tdim[i] = dim
-            num_nodes_per_element[i] = num_nodes
+            num_nodes_per_element[i] = element_data["topology"].shape[1]
 
         # Broadcast information to all other ranks
         entity_tdim, element_ids, num_nodes_per_element = comm.bcast(
@@ -367,7 +375,7 @@ def model_to_mesh(
 
     valid_mesh = comm.bcast(valid_mesh, root=rank)
     if not valid_mesh:
-        raise RuntimeError("No 'physical groups' in gmsh mesh. Cannot continue.")
+        raise ValueError("No 'physical groups' in gmsh mesh. Cannot continue.")
 
     # Sort elements by descending dimension
     perm_sort = np.argsort(entity_tdim)[::-1]
@@ -395,7 +403,7 @@ def model_to_mesh(
 
     error_msg = comm.bcast(error_msg, root=rank)
     if error_msg != "":
-        raise RuntimeError(error_msg)
+        raise ValueError(error_msg)
 
     # Extract entity -> node connectivity for all cells and sub-entities
     # marked in the GMSH model
@@ -425,7 +433,7 @@ def model_to_mesh(
 
         # Get cell->node connectivity and  permute to FEniCS ordering
         gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
-        cell_connectivity = cell_tags[:, gmsh_cell_perm].copy().flatten()
+        cell_connectivity = cell_tags[:, gmsh_cell_perm].reshape(-1)
         cell_connectivities.append(cell_connectivity)
         ufl_domains.append(ufl_domain)
 
@@ -450,7 +458,7 @@ def model_to_mesh(
             cell_connectivities,
             cmaps,
             x[:, :gdim].astype(dtype).copy(),
-            partitioner,
+            _wrap_partitioner(partitioner),
             ghost_mode,
             max_facet_to_cell_links,
             1,
@@ -472,7 +480,7 @@ def model_to_mesh(
             max_facet_to_cell_links=max_facet_to_cell_links,
         )
     if tdim != mesh.topology.dim:
-        raise RuntimeError(f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}")
+        raise ValueError(f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}")
 
     # Create MeshTags for all sub entities
     topology = mesh.topology
@@ -487,10 +495,8 @@ def model_to_mesh(
             dolfinx_meshtags[key] = None
             continue
 
-        if (
-            codim == 1 and topology.cell_type == CellType.prism
-        ) or topology.cell_type == CellType.pyramid:
-            raise RuntimeError(f"Unsupported facet tag for type {topology.cell_type}")
+        if codim == 1 and topology.cell_type in (CellType.prism, CellType.pyramid):
+            raise ValueError(f"Unsupported facet tag for type {topology.cell_type}")
 
         # Distribute entity data [[e0_v0, e0_v1, ...], [e1_v0, e1_v1, ...],
         # ...] which is made in global input indices to local indices on
@@ -522,7 +528,7 @@ def read_from_msh(
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
-    partitioner: PartitioningFunc | None = None,
+    partitioner: _Partitioner | None = None,
     ghost_mode: GhostMode = GhostMode.none,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a mesh and cell facet markers.

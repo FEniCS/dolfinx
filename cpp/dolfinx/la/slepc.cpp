@@ -25,7 +25,10 @@ SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm) : _eps(nullptr)
 SLEPcEigenSolver::SLEPcEigenSolver(EPS eps, bool inc_ref_count) : _eps(eps)
 {
   if (!_eps)
-    throw std::runtime_error("SLEPc EPS must be initialised before wrapping");
+  {
+    throw std::invalid_argument(
+        "SLEPc EPS must be initialised before wrapping");
+  }
 
   if (inc_ref_count)
   {
