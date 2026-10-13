@@ -634,10 +634,12 @@ snes.setNewtonALFunction(compute_tangent_load)
 #
 # With [pyvistaqt](https://qtdocs.pyvista.org/) and a Qt binding
 # installed, frames go to a `BackgroundPlotter`, which redraws without
-# blocking the solve. Otherwise the same code renders off-screen and
-# writes one numbered image per increment, ready to be assembled into
-# a movie. Screenshots are taken only on that path, as a
-# `BackgroundPlotter` needs a real graphics context.
+# blocking the solve. Setting `DOLFINX_DEMO_FRAMES=1` instead renders
+# the same frames off-screen and writes one numbered image per
+# increment, ready to be assembled into a movie. Screenshots are taken
+# only on that path, as a `BackgroundPlotter` needs a real graphics
+# context. Writing the frames costs several times the solve itself, so
+# it is asked for rather than assumed.
 #
 # One grid is built and reused, each frame moving its points and
 # refreshing the colours. The colour range is fixed at roughly twice
@@ -663,15 +665,17 @@ except ImportError:
 
 # Rendering needs a render window, and a machine without the GL
 # libraries crashes outright rather than raising, so it cannot simply
-# be attempted and caught. Two separate decisions follow. The animation
-# is drawn only when the file is run as a script, since the
+# be attempted and caught. Three separate decisions follow. The
+# animation is drawn only when the file is run as a script, since the
 # documentation tooling runs it through runpy, which leaves __name__
-# set to something other than "__main__". The summary at the end is
-# also drawn when DOLFINX_DEMO_RENDER is set, which is how the
-# documentation build asks for the 3-D figure.
+# set to something other than "__main__". Frames are written to disk
+# only when DOLFINX_DEMO_FRAMES is set. The summary at the end is also
+# drawn when DOLFINX_DEMO_RENDER is set, which is how the documentation
+# build asks for the 3-D figure.
 animating = __name__ == "__main__"
+recording = os.environ.get("DOLFINX_DEMO_FRAMES") == "1"
 headless = os.environ.get("DOLFINX_DEMO_RENDER") == "1"
-rendering = animating or headless
+rendering = animating or recording or headless
 if headless and pyvista is not None:
     pyvista.OFF_SCREEN = True
 
@@ -742,14 +746,14 @@ if pyvista is not None and rendering:
     _, reference_edges = element_surface(undeformed)
 
     panels = {"shape": (1, 2), "col_weights": [1, 2], "window_size": (1500, 400)}
-    if not animating:
-        plotter = None  # Summary only; no per-increment animation
-    elif pyvistaqt is not None:
-        plotter = pyvistaqt.BackgroundPlotter(title="Snap-through", auto_update=True, **panels)
-    else:
+    if recording:
         plotter = pyvista.Plotter(off_screen=True, **panels)
         plotter.image_scale = 2
         frame_dir.mkdir(parents=True, exist_ok=True)
+    elif animating and pyvistaqt is not None:
+        plotter = pyvistaqt.BackgroundPlotter(title="Snap-through", auto_update=True, **panels)
+    else:
+        plotter = None  # Summary only; no per-increment animation
 
     if plotter is not None:
         # Left panel: the load-displacement curve, drawn as the
@@ -813,10 +817,10 @@ def draw_frame(n: int, lam: float, w: float) -> None:
     )
     plotter.add_mesh(edges, color="black", line_width=1, name="arch_edges")
     plotter.add_text(rf"$\lambda$ = {lam:.3f}", name="label", font_size=10)
-    if pyvistaqt is not None:
-        plotter.app.processEvents()  # Redraw the window mid-solve
-    else:
+    if recording:
         plotter.screenshot(frame_dir / f"frame_{n:03d}{rank_suffix}.png")
+    else:
+        plotter.app.processEvents()  # Redraw the window mid-solve
 
 
 # -
