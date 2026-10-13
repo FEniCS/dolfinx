@@ -244,6 +244,33 @@ jobs:
           "HDF5 ${{ matrix.hdf5 }}: $failed of $total runs failed" | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
           if ($failed -gt 0) { exit 1 }
 
+      - name: Repeat VTKHDF tests (xdist and no xdist)
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && inputs.stress_iterations != '0' }}
+        working-directory: dolfinx-src/python/test
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $false
+          $summary = @()
+          foreach ($mode in "xdist", "no-xdist") {
+            $failed = 0
+            foreach ($i in 1..[int]"${{ inputs.stress_iterations }}") {
+              $log = "vtkhdf_${mode}_$i.log"
+              if ($mode -eq "xdist") {
+                python -m pytest -n 4 unit/io/test_vtkhdf.py *> $log
+              } else {
+                python -m pytest -p no:xdist unit/io/test_vtkhdf.py *> $log
+              }
+              if ($LASTEXITCODE -ne 0) {
+                $failed++
+                "::group::FAILED vtkhdf $mode iteration $i (exit $LASTEXITCODE)"
+                Get-Content $log -Tail 80
+                "::endgroup::"
+              }
+            }
+            $summary += "HDF5 ${{ matrix.hdf5 }} vtkhdf ${mode}: $failed of ${{ inputs.stress_iterations }} runs failed"
+          }
+          $summary | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+          if ($summary -match ": [1-9]\d* of") { exit 1 }
+
       - name: Install demo dependencies (excluding numba)
         run: |
           pip install gmsh networkx matplotlib scipy pyvista
