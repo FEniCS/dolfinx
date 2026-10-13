@@ -751,28 +751,29 @@ if pyvista is not None and rendering:
         plotter.image_scale = 2
         frame_dir.mkdir(parents=True, exist_ok=True)
 
-if plotter is not None:
-    # Left panel: the load-displacement curve, drawn as the continuation
-    # walks it. This is the view that shows the snap-back -- the curve
-    # turns over at the limit point and runs backwards in $\lambda$
-    # before recovering -- which a plot against increment number hides.
-    # The line is updated in place rather than redrawn, and the ranges
-    # are fixed so it does not rescale from frame to frame.
-    plotter.subplot(0, 0)
-    load_chart = pyvista.Chart2D()
-    load_chart.x_label = "mean downward displacement"
-    load_chart.y_label = r"load parameter $\lambda$"
-    load_chart.x_range = (0.0, 1.15)
-    load_chart.y_range = (0.0, 1.05)
-    load_line = load_chart.line([0], [0], color="tab:blue", width=2.0)
-    load_marker = load_chart.scatter([0], [0], color="tab:red", size=8)
-    plotter.add_chart(load_chart)
+    if plotter is not None:
+        # Left panel: the load-displacement curve, drawn as the
+        # continuation walks it. This is the view that shows the
+        # snap-back -- the curve turns over at the limit point and runs
+        # backwards in $\lambda$ before recovering -- which a plot
+        # against increment number hides. The line is updated in place
+        # rather than redrawn, and the ranges are fixed so it does not
+        # rescale from frame to frame.
+        plotter.subplot(0, 0)
+        load_chart = pyvista.Chart2D()
+        load_chart.x_label = "mean downward displacement"
+        load_chart.y_label = r"load parameter $\lambda$"
+        load_chart.x_range = (0.0, 1.15)
+        load_chart.y_range = (0.0, 1.05)
+        load_line = load_chart.line([0], [0], color="tab:blue", width=2.0)
+        load_marker = load_chart.scatter([0], [0], color="tab:red", size=8)
+        plotter.add_chart(load_chart)
 
-    # Right panel: the arch itself
-    plotter.subplot(0, 1)
-    plotter.add_mesh(reference_edges, color="lightgray", line_width=1)
-    set_arch_view(plotter)
-    plotter.camera.zoom(2.2)
+        # Right panel: the arch itself
+        plotter.subplot(0, 1)
+        plotter.add_mesh(reference_edges, color="lightgray", line_width=1)
+        set_arch_view(plotter)
+        plotter.camera.zoom(2.2)
 
 
 def draw_frame(n: int, lam: float, w: float) -> None:
