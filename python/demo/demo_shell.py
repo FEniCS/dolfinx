@@ -15,9 +15,12 @@
 # This demo solves a linear Naghdi shell problem: a cylindrical panel,
 # clamped at one axial end, under inward normal pressure. It illustrates
 # an analytic surface parametrisation, a mixed displacement/director
-# space, and membrane, bending and transverse shear energies. A second
-# example uses a Gmsh surface mesh of a flared, wavy panel with bores,
-# a rounded slot and a scalloped edge, refined around the cutouts.
+# space, and membrane, bending and transverse shear energies. The same
+# panel is then solved again with a TDNNS formulation of the bending
+# energy, which carries the bending moment as an independent unknown.
+# A second example uses a Gmsh surface mesh of a flared, wavy panel
+# with bores, a rounded slot and a scalloped edge, refined around the
+# cutouts.
 # This demo requires Gmsh.
 #
 # The model includes transverse shear deformation and assumes small
@@ -307,6 +310,186 @@ assert abs(energy_twice - work) / energy_twice < work_tolerance
 if comm.rank == 0:
     print(f"Elastic energy: {energy_twice / 2:.6e}")
     print(f"Relative work balance error: {abs(energy_twice - work) / energy_twice:.3e}")
+# -
+
+# ## A TDNNS formulation of the bending energy
+#
+# The formulation above puts the bending energy in terms of the
+# curvature $k(u,\beta)$, so the director change must lie in $H^1$. The
+# tangential-displacement normal-normal-stress (TDNNS) method instead
+# carries the bending moment $\sigma$ as an independent unknown and
+# weakens both continuity requirements: $\sigma$ need only have a
+# continuous normal-normal component $\sigma_{nn}$, and $\beta$ only a
+# continuous tangential component $\beta_t$. See
+# [Pechstein and Schöberl](https://doi.org/10.1007/s00211-017-0883-9).
+#
+# Because the tangent frame here is orthonormal and parallel along the
+# surface, $a_i\cdot\partial_j a_k=0$, so $A^T\nabla\eta=\nabla\beta$
+# and the curvature splits as
+#
+# $$
+# k(u,\beta)=\operatorname{sym}(\nabla\beta)
+#   +\operatorname{sym}\!\left((\nabla u)^T\nabla n\right).
+# $$
+#
+# Only the first term differentiates $\beta$. Replacing the bending
+# energy by its Hellinger--Reissner complementary form, with
+# $C_b=(t^3/12)C$, gives
+#
+# $$
+# -\frac{1}{2}\int_\omega C_b^{-1}\sigma:\sigma
+# +\int_\omega\sigma:k(u,\beta),
+# $$
+#
+# and the term that differentiates $\beta$ is given its distributional
+# meaning element by element,
+#
+# $$
+# \langle\sigma,\nabla\beta\rangle_h=\sum_T\left[
+# \int_T\sigma:\nabla\beta\,\mathrm{d}x
+# -\int_{\partial T}\sigma_{nn}\,\beta_n\,\mathrm{d}s\right].
+# $$
+#
+# This is well defined for the chosen spaces: $\sigma_{nn}$ is
+# single-valued on a facet, so the element-boundary term pairs it with
+# the jump of $\beta_n$, which is the component $\beta$ is free to jump
+# in. Writing the volume term as $\int\operatorname{div}\sigma\cdot\beta$
+# instead gives a *different* operator, differing by a
+# $\sigma_{nt}\beta_t$ jump, whose discrete solution collapses to zero
+# under refinement.
+#
+# Discretise $\sigma$ with Hellan--Herrmann--Johnson elements and
+# $\beta$ with second-kind Nédélec elements. The result is a symmetric
+# saddle-point system, so it needs a direct solver.
+#
+# The clamped edge fixes $u$ and $\beta_t$; $\sigma$ is left free there,
+# and the boundary term $-\int\sigma_{nn}\beta_n$ weakly enforces
+# $\beta_n=0$. On the free edges the natural condition $\sigma_{nn}=0$
+# is imposed on the moment degrees of freedom instead.
+#
+# TDNNS removes shear locking by construction, but this panel is
+# membrane-dominated and the membrane term locks on its own. The bubble
+# enrichment and PSRI of the previous section are therefore kept for the
+# membrane and shear energies. With them the two discretisations agree
+# closely at this thickness; as the panel is made thinner, TDNNS is the
+# more accurate of the two on coarse meshes.
+
+# +
+moment_element = element("HHJ", cell, 2, dtype=default_real_type)
+rotation_element = element("N2E", cell, 2, dtype=default_real_type)
+W_tdnns = fem.functionspace(msh, mixed_element([moment_element, rotation_element, U]))
+S_tdnns, _ = W_tdnns.sub(0).collapse()
+Q_tdnns, _ = W_tdnns.sub(1).collapse()
+V_tdnns, _ = W_tdnns.sub(2).collapse()
+
+
+n_facet = ufl.FacetNormal(msh)
+
+
+def compliance(moment):
+    """Apply the inverse of the bending constitutive tensor."""
+    trace_factor = lambda_ps / (2 * mu + 2 * lambda_ps)
+    deviator = moment - trace_factor * ufl.tr(moment) * ufl.Identity(2)
+    return 12 / thickness**3 * deviator / (2 * mu)
+
+
+def displacement_curvature(u):
+    """Return the part of the curvature that depends on displacement."""
+    return ufl.sym(ufl.grad(u).T * ufl.grad(normal))
+
+
+def moment_pairing(moment, beta, *, moment_is_test):
+    """Return the distributional pairing of a moment with grad(beta).
+
+    ``ufl.inner`` conjugates its second argument, which in a
+    sesquilinear form must be the test function, so the two arguments
+    are ordered according to which one carries it.
+    """
+    facet_normal = n_facet("+")
+    moment_nn = ufl.dot(ufl.dot(ufl.avg(moment), facet_normal), facet_normal)
+    jump_beta_n = ufl.dot(beta("+"), facet_normal) + ufl.dot(beta("-"), n_facet("-"))
+    boundary_nn = ufl.dot(ufl.dot(moment, n_facet), n_facet)
+    boundary_beta_n = ufl.dot(beta, n_facet)
+    if moment_is_test:
+        volume, facet = ufl.inner(ufl.grad(beta), moment), ufl.inner(jump_beta_n, moment_nn)
+        boundary = ufl.inner(boundary_beta_n, boundary_nn)
+    else:
+        volume, facet = ufl.inner(moment, ufl.grad(beta)), ufl.inner(moment_nn, jump_beta_n)
+        boundary = ufl.inner(boundary_nn, boundary_beta_n)
+    return volume * dx - facet * ufl.dS - boundary * ufl.ds
+
+
+sigma_t, beta_t, u_t = ufl.TrialFunctions(W_tdnns)
+tau_t, delta_t, v_t = ufl.TestFunctions(W_tdnns)
+membrane_t = ufl.sym(A.T * ufl.grad(u_t))
+membrane_v = ufl.sym(A.T * ufl.grad(v_t))
+shear_t = A.T * (beta_t[0] * tangent + beta_t[1] * axis) + ufl.grad(u_t).T * normal
+shear_v = A.T * (delta_t[0] * tangent + delta_t[1] * axis) + ufl.grad(v_t).T * normal
+membrane_shear = thickness * ufl.inner(
+    stress(membrane_t), membrane_v
+) + shear_correction * mu * thickness * ufl.inner(shear_t, shear_v)
+a_tdnns = (
+    -ufl.inner(compliance(sigma_t), tau_t) * dx
+    + moment_pairing(tau_t, beta_t, moment_is_test=True)
+    + ufl.inner(displacement_curvature(u_t), tau_t) * dx
+    + moment_pairing(sigma_t, delta_t, moment_is_test=False)
+    + ufl.inner(sigma_t, displacement_curvature(v_t)) * dx
+    + alpha * membrane_shear * dx
+    + (1 - alpha) * membrane_shear * dx_reduced
+)
+# -
+
+# The moment degrees of freedom attached to a boundary facet are exactly
+# its normal-normal moments, so constraining them on the free edges
+# imposes $\sigma_{nn}=0$ there.
+
+# +
+free_edges = np.setdiff1d(mesh.exterior_facet_indices(msh.topology), clamped)
+bcs_tdnns = [
+    fem.dirichletbc(
+        fem.Function(S_tdnns, dtype=PETSc.ScalarType),
+        fem.locate_dofs_topological((W_tdnns.sub(0), S_tdnns), 1, free_edges),
+        W_tdnns.sub(0),
+    ),
+    fem.dirichletbc(
+        fem.Function(Q_tdnns, dtype=PETSc.ScalarType),
+        fem.locate_dofs_topological((W_tdnns.sub(1), Q_tdnns), 1, clamped),
+        W_tdnns.sub(1),
+    ),
+    fem.dirichletbc(
+        fem.Function(V_tdnns, dtype=PETSc.ScalarType),
+        fem.locate_dofs_topological((W_tdnns.sub(2), V_tdnns), 1, clamped),
+        W_tdnns.sub(2),
+    ),
+]
+problem_tdnns = LinearProblem(
+    a_tdnns,
+    ufl.inner(-pressure * normal, v_t) * dx,
+    bcs=bcs_tdnns,
+    petsc_options_prefix="demo_shell_tdnns_",
+    petsc_options=options,
+)
+solution_tdnns = problem_tdnns.solve()
+assert isinstance(solution_tdnns, fem.Function)
+u_mixed = ufl.split(solution_tdnns)[2]
+# -
+
+# Both discretisations approximate the same shell model, so the work
+# done by the pressure must agree to discretisation error. On this mesh
+# they differ by about $5\times10^{-5}$. The tolerance also has to
+# cover the round-off of the single-precision direct solve of this
+# indefinite system, which is around $3\times10^{-4}$.
+
+# +
+work_tdnns = integral(ufl.inner(-pressure * normal, u_mixed) * dx).real
+work_naghdi = integral(ufl.inner(-pressure * normal, uh) * dx).real
+assert abs(work_tdnns - work_naghdi) / abs(work_naghdi) < 1e-2
+if comm.rank == 0:
+    print(f"TDNNS external work: {work_tdnns:.6e}")
+    print(
+        f"Relative difference from the displacement formulation: "
+        f"{abs(work_tdnns - work_naghdi) / abs(work_naghdi):.3e}"
+    )
 # -
 
 # ## Output
