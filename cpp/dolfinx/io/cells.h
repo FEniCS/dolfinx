@@ -1,4 +1,5 @@
 // Copyright (C) 2019 Jorgen S. Dokken
+// Copyright (C) 2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -135,7 +136,7 @@ namespace dolfinx::io::cells
 /// @param[in] type Cell shape.
 /// @param[in] num_nodes Number of cell 'nodes'
 /// @return Lagrange order of the cell type.
-/// @throws std::runtime_error If no Lagrange layout of `type` has
+/// @throws std::invalid_argument If no Lagrange layout of `type` has
 /// `num_nodes` nodes.
 int cell_degree(mesh::CellType type, int num_nodes);
 
@@ -192,10 +193,10 @@ std::vector<std::int64_t> apply_permutation(std::span<const std::int64_t> cells,
 /// mesh::cell_entity_type.
 /// @param[in] num_nodes Number of nodes in the cell. It must be a
 /// layout that VTK's type for `cell` can express and that round-trips
-/// through ::vtk_to_dolfinx, which constrains only pyramids: VTK has an
-/// arbitrary-degree Lagrange type for every other shape, but for the
-/// pyramid only a linear one and a 13-node serendipity quadratic one
-/// that basix cannot express. Only the linear pyramid is accepted.
+/// through ::vtk_to_dolfinx. Quadrilaterals and hexahedra accept Lagrange
+/// layouts and the 8- and 20-node quadratic serendipity layouts,
+/// respectively. Only the linear pyramid is accepted, since VTK has no
+/// arbitrary-degree Lagrange pyramid.
 /// @note Prism and pyramid facets are not all of one type, so no single
 /// identifier labels a facet set; mesh::entities_to_geometry rejects
 /// that case.
@@ -267,7 +268,7 @@ vtk_to_dolfinx(std::int8_t vtk_cell_type)
     default:
       break;
     }
-    throw std::runtime_error("Unknown VTK cell type");
+    throw std::invalid_argument("Unknown VTK cell type");
   }
 }
 

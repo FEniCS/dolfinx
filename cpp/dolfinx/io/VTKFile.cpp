@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2020 Garth N. Wells and Jørgen S. Dokken
+// Copyright (C) 2005-2026 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -24,6 +24,7 @@
 #include <iterator>
 #include <pugixml.hpp>
 #include <span>
+#include <stdexcept>
 #include <string>
 
 using namespace dolfinx;
@@ -352,13 +353,13 @@ void write_function(
     assert(V->mesh());
     if (V->mesh() != mesh0)
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "All Functions written to VTK file must share the same Mesh.");
     }
 
     // Check that v isn't a sub-function
     if (!V->component().empty())
-      throw std::runtime_error("Cannot write sub-Functions to VTK file.");
+      throw std::invalid_argument("Cannot write sub-Functions to VTK file.");
 
     auto e = V->element();
     assert(e);
@@ -366,8 +367,8 @@ void write_function(
     // Check that element uses point evaluations
     if (!e->interpolation_ident())
     {
-      throw std::runtime_error("Only Lagrange functions are supported. "
-                               "Interpolate Functions before output.");
+      throw std::invalid_argument("Only Lagrange functions are supported. "
+                                  "Interpolate Functions before output.");
     }
 
     // Check that pointwise elements are the same (up to the block size)
@@ -375,8 +376,9 @@ void write_function(
     {
       if (!impl::same_base_element(*e, *element0))
       {
-        throw std::runtime_error("All point-wise Functions written to VTK file "
-                                 "must have same element.");
+        throw std::invalid_argument(
+            "All point-wise Functions written to VTK file "
+            "must have same element.");
       }
     }
   }
@@ -592,7 +594,7 @@ void write_function(
       }
       else
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Elements differ, not permitted for VTK output");
       }
     }

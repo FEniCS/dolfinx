@@ -62,8 +62,10 @@ disclosure process.
   // SPDX-License-Identifier:    LGPL-3.0-or-later
   ```
 
-  Add your name/year to the existing copyright line when you make a
-  substantive change; don't replace existing authors.
+  Human contributors should add their name/year to the existing
+  copyright line when making a substantive change; don't replace
+  existing authors. LLMs must not add themselves, their model names,
+  or their providers as copyright owners of code.
 - **Headers**: use `#pragma once`, not include guards. Includes are
   sorted (`clang-format`'s `SortIncludes`) — the paired header first
   (in `.cpp` files), then project (`<dolfinx/...>`) headers, then

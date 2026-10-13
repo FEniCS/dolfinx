@@ -1234,3 +1234,15 @@ def test_cell_assembly_computes_only_cell_permutations() -> None:
     for dim in (1, 2):
         with pytest.raises(RuntimeError):
             msh.topology.get_entity_permutations(dim)
+
+
+@pytest.mark.parametrize("dtype", [np.int32, np.complex128])
+def test_unsupported_geometry_dtype(dtype) -> None:
+    with pytest.raises(TypeError, match="Unsupported mesh geometry float type"):
+        create_unit_interval(MPI.COMM_WORLD, 2, dtype=dtype)
+    with pytest.raises(TypeError, match="Unsupported mesh geometry float type"):
+        create_unit_square(MPI.COMM_WORLD, 2, 2, dtype=dtype)
+    with pytest.raises(TypeError, match="Unsupported mesh geometry float type"):
+        create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=dtype)
+    with pytest.raises(TypeError, match="Unsupported dtype for mesh"):
+        create_point_mesh(MPI.COMM_WORLD, np.zeros((2, 3), dtype=dtype))
