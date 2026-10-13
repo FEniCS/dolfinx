@@ -11,6 +11,10 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      stress_iterations:
+        description: Repeats of the HDF5/XDMF test subset (0 to skip)
+        default: "50"
 
 # Cancel superseded runs: a new commit on a pull request makes the
 # previous run's result irrelevant. Pushes to 'main' and 'release' are
@@ -22,11 +26,16 @@ concurrency:
 jobs:
 
   windows-build:
-    name: Windows vcpkg build
+    name: Windows vcpkg build (HDF5 ${{ matrix.hdf5 }})
     runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        hdf5: ["default", "2.1.1"]
     permissions:
       packages: write
     env:
+      PYTHONFAULTHANDLER: "1"
       USERNAME: FEniCS
       VCPKG_EXE: C:/vcpkg/vcpkg
       FEED_URL: https://nuget.pkg.github.com/FEniCS/index.json
@@ -58,6 +67,11 @@ jobs:
         uses: actions/checkout@v7
         with:
           path: dolfinx-src
+
+      - name: Use HDF5 2.1.1 overlay port
+        if: matrix.hdf5 == '2.1.1'
+        run: |
+          echo "VCPKG_OVERLAY_PORTS=$((Resolve-Path dolfinx-src/cpp/cmake/vcpkg-overlay-hdf5-2.1.1).Path)" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
 
       # Ninja avoids vcpkg resolving debug libraries into a Release build.
       - name: Set up MSVC developer environment
@@ -139,6 +153,11 @@ jobs:
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DDOLFINX_BUILD_DEMOS=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DDOLFINX_ENABLE_SCOTCH=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cmake/vcpkg-overlay" -DVCPKG_MANIFEST_FEATURES=basix-from-source -B build-dir -S .
 
+      - name: Report installed HDF5
+        working-directory: dolfinx-src/cpp/build-dir/vcpkg_installed
+        run: |
+          Get-ChildItem -Recurse -Filter "hdf5_*.list" | Select-Object -ExpandProperty Name
+
       - name: Install Basix Python build dependencies
         run: |
           python -m pip install scikit-build-core[pyproject] setuptools wheel nanobind
@@ -195,7 +214,35 @@ jobs:
         working-directory: dolfinx-src/python/test
         run: |
           '{ "cffi_extra_compile_args": ["/Od"] }' | Set-Content dolfinx_jit_options.json
-          mpiexec -n 3 python -m pytest -m "not petsc4py and not adios2" unit/
+          mpiexec -l -n 3 python -m pytest -v -m "not petsc4py and not adios2" unit/
+
+      - name: Repeat HDF5/XDMF tests (serial and MPI, np=3)
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && inputs.stress_iterations != '0' }}
+        working-directory: dolfinx-src/python/test
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $false
+          '{ "cffi_extra_compile_args": ["/Od"] }' | Set-Content dolfinx_jit_options.json
+          $tests = @("unit/io", "unit/mesh/test_mesh_partitioners.py")
+          $failed = 0
+          foreach ($i in 1..[int]"${{ inputs.stress_iterations }}") {
+            foreach ($mode in "serial", "mpi") {
+              $log = "stress_${mode}_$i.log"
+              if ($mode -eq "serial") {
+                python -m pytest -n auto -m "not petsc4py and not adios2" @tests *> $log
+              } else {
+                mpiexec -l -n 3 python -m pytest -v -m "not petsc4py and not adios2" @tests *> $log
+              }
+              if ($LASTEXITCODE -ne 0) {
+                $failed++
+                "::group::FAILED $mode iteration $i (exit $LASTEXITCODE)"
+                Get-Content $log -Tail 120
+                "::endgroup::"
+              }
+            }
+          }
+          $total = 2 * [int]"${{ inputs.stress_iterations }}"
+          "HDF5 ${{ matrix.hdf5 }}: $failed of $total runs failed" | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+          if ($failed -gt 0) { exit 1 }
 
       - name: Install demo dependencies (excluding numba)
         run: |
@@ -211,3 +258,14 @@ jobs:
         working-directory: dolfinx-src/python/demo
         run: |
           python3 -m pytest -m mpi -k "not demo_comm-pattern" --num-proc=3 test.py
+
+      - name: Report native crash events
+        if: failure()
+        run: |
+          Get-WinEvent -FilterHashtable @{
+            LogName = 'Application'
+            ProviderName = 'Application Error', 'Windows Error Reporting'
+            StartTime = (Get-Date).AddHours(-4)
+          } -ErrorAction SilentlyContinue |
+            Select-Object -First 30 |
+            ForEach-Object { "$($_.TimeCreated) $($_.ProviderName)"; $_.Message; "" }
