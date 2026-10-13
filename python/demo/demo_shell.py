@@ -20,7 +20,9 @@
 # energy, which carries the bending moment as an independent unknown.
 # A second example uses a Gmsh surface mesh of a flared, wavy panel
 # with bores, a rounded slot and a scalloped edge, refined around the
-# cutouts.
+# cutouts. That panel is solved both with displacements and rotations
+# and with the TDNNS shell of Neunteufel and Schöberl, which handles a
+# general curved surface whose discrete normal jumps between elements.
 # This demo requires Gmsh.
 #
 # The model includes transverse shear deformation and assumes small
@@ -585,6 +587,9 @@ write_shell_vtkhdf(
 # dimension two and geometric dimension three. Tag the shell, clamped
 # arc, opening rims and free edges as physical groups. Only the clamped
 # arc has essential boundary conditions; all other edges are traction-free.
+# The TDNNS formulation below integrates over interior facets, which in
+# parallel requires cells ghosted across facets, so the mesh is built with
+# `shared_facet` ghosting rather than the default.
 
 # +
 gmsh.initialize()
@@ -658,7 +663,9 @@ if comm.rank == 0:
     gmsh.model.mesh.generate(2)
     gmsh.model.mesh.setOrder(2)
 cad_area = comm.bcast(cad_area, root=0)
-mesh_data = gmshio.model_to_mesh(gmsh.model, comm, 0, gdim=3)
+mesh_data = gmshio.model_to_mesh(
+    gmsh.model, comm, 0, gdim=3, ghost_mode=mesh.GhostMode.shared_facet
+)
 gmsh.finalize()
 surface = mesh_data.mesh
 assert surface.topology.dim == 2 and surface.geometry.dim == 3
@@ -829,6 +836,198 @@ if comm.rank == 0:
     print(f"Gmsh relative work balance error: {surface_balance:.3e}")
     print(f"Gmsh surface area / CAD area: {surface_area / cad_area:.6f}")
 
+# ### The TDNNS shell on a general curved surface
+#
+# The TDNNS section above relied on the cylinder's parametrisation, whose
+# tangent frame is orthonormal and parallel, so that $A^T\nabla\eta$
+# collapsed to $\nabla\beta$ and the director change could be carried as
+# an independent unknown. A general curved surface has no such frame, and
+# a mesh of it is only $C^0$: the normal jumps across element edges.
+# Measuring bending with the element-wise gradient alone then misses the
+# curvature carried by those kinks, and the computed response converges to
+# the wrong answer.
+#
+# [Neunteufel and Schöberl](https://arxiv.org/abs/2304.13806) give a TDNNS
+# shell that works on such a mesh. Its kinematics differ from the section
+# above: there is no independent rotation field. Bending is instead driven
+# by the rotation induced by the displacement, $\nabla_\Sigma u^T n$, and
+# the tangential-continuous unknown that remains is the transverse shear
+# strain $\gamma$, which enters hierarchically on top of Kirchhoff--Love
+# kinematics. Both formulations carry the bending moment in
+# Hellan--Herrmann--Johnson elements, which is why the method is often
+# named after them; dropping $\gamma$ here would leave the HHJ method for
+# a Koiter shell.
+#
+# The second ingredient is a distributional Weingarten tensor, in which
+# the element-wise term is accompanied by the dihedral angle between the
+# normals of neighbouring elements. Linearising about the reference
+# configuration, the element-wise curvature is
+#
+# $$
+# H_n(u)=\nabla_\Sigma\!\left(\nabla_\Sigma u^T n\right)
+#        -\nabla_\Sigma u^T\nabla_\Sigma n,
+# $$
+#
+# while the linearised change of dihedral angle on an edge is the sum of
+# the element-local values of $(\nabla_\Sigma u^T n)\cdot\mu$, each taken
+# with its own outward co-normal $\mu$. Pairing both with the bending
+# moment $\sigma$ gives the bending work
+#
+# $$
+# \langle\kappa,\sigma\rangle_h
+#   =\int_\Sigma(H_n(u)-\nabla_\Sigma\gamma):\sigma
+#   -\sum_E\int_E
+#     [\![(\nabla_\Sigma u^T n-\gamma)\cdot\mu]\!]\,\sigma_{\mu\mu}.
+# $$
+#
+# The bracket $[\![\cdot]\!]$ is that sum over the two elements meeting at
+# $E$, not a difference: the co-normals of the two sides point opposite
+# ways, so summing them is what measures the kink. Because $\gamma$ is
+# itself the shear strain, the shear energy is simply
+# $\kappa_s\mu t\|\gamma\|^2$.
+#
+# Discretise $\sigma$ with Hellan--Herrmann--Johnson elements, whose
+# co-normal--co-normal component $\sigma_{\mu\mu}$ is continuous, and
+# $\gamma$ with Nédélec elements. On this embedded mesh both map into the
+# tangent plane automatically, so no tangent basis is needed for them.
+#
+# Because the only rotational unknown is the tangential $\gamma$, there is
+# no drilling degree of freedom and the stabilisation term used above is
+# not needed. The essential conditions are $u$ and $\gamma$ on the clamped
+# arc; the openings and free edges carry $\sigma_{\mu\mu}=0$ instead.
+#
+# The formulation removes shear locking but says nothing about membrane
+# locking, so the PSRI treatment of the membrane term is kept.
+
+# +
+W_surface_tdnns = fem.functionspace(
+    surface,
+    mixed_element(
+        [
+            element("HHJ", surface.basix_cell(), 1, dtype=default_real_type),
+            element("N2E", surface.basix_cell(), 1, dtype=default_real_type),
+            element("Lagrange", surface.basix_cell(), 2, shape=(3,), dtype=default_real_type),
+        ]
+    ),
+)
+S_surface_tdnns, _ = W_surface_tdnns.sub(0).collapse()
+G_surface_tdnns, _ = W_surface_tdnns.sub(1).collapse()
+V_surface_tdnns, _ = W_surface_tdnns.sub(2).collapse()
+co_normal = ufl.FacetNormal(surface)
+dS_surface = ufl.Measure("dS", domain=surface, metadata={"quadrature_degree": 6})
+ds_surface = ufl.Measure("ds", domain=surface, metadata={"quadrature_degree": 6})
+
+
+def induced_rotation(w):
+    """Return the rotation induced by a displacement, grad_S(w)^T n."""
+    return ufl.dot(ufl.grad(w).T, n_surface)
+
+
+def element_curvature(w):
+    """Return the element-wise linearised curvature of a displacement."""
+    return ufl.grad(induced_rotation(w)) - ufl.grad(w).T * ufl.grad(n_surface)
+
+
+def bending_work(moment, w, shear, *, moment_is_test):
+    """Pair a bending moment with the distributional linearised curvature.
+
+    The element-wise Weingarten term is corrected on every edge by the
+    linearised change of dihedral angle, which is the sum of the
+    element-local values of ``(grad_S(w)^T n - shear) . mu``. ``ufl.inner``
+    conjugates its second argument, so the arguments are ordered by which
+    one carries the test function.
+    """
+    volume = element_curvature(w) - ufl.grad(shear)
+
+    # The normal is derived from the cell Jacobian, so it is discontinuous
+    # and has to be restricted per side rather than reusing the helper.
+    def angle(side):
+        rotation = ufl.dot(ufl.grad(w)(side).T, n_surface(side)) - shear(side)
+        return ufl.dot(rotation, co_normal(side))
+
+    def moment_nn(side):
+        return ufl.dot(ufl.dot(moment(side), co_normal(side)), co_normal(side))
+
+    edge = ufl.dot(induced_rotation(w) - shear, co_normal)
+    boundary_nn = ufl.dot(ufl.dot(moment, co_normal), co_normal)
+    if moment_is_test:
+        return (
+            ufl.inner(volume, moment) * dx_surface
+            # sigma_mumu is continuous, so either side will do.
+            - ufl.inner(angle("+") + angle("-"), moment_nn("+")) * dS_surface
+            - ufl.inner(edge, boundary_nn) * ds_surface
+        )
+    return (
+        ufl.inner(moment, volume) * dx_surface
+        - ufl.inner(moment_nn("+"), angle("+") + angle("-")) * dS_surface
+        - ufl.inner(boundary_nn, edge) * ds_surface
+    )
+
+
+sigma_s, gamma_s, u_s_tdnns = ufl.TrialFunctions(W_surface_tdnns)
+tau_s, delta_s, v_s_tdnns = ufl.TestFunctions(W_surface_tdnns)
+membrane_s = ufl.sym(T.T * ufl.grad(u_s_tdnns) * T)
+membrane_vs = ufl.sym(T.T * ufl.grad(v_s_tdnns) * T)
+membrane_only = thickness * ufl.inner(stress(membrane_s), membrane_vs)
+a_surface_tdnns = (
+    -ufl.inner(compliance(T.T * sigma_s * T), T.T * tau_s * T) * dx_surface
+    + bending_work(tau_s, u_s_tdnns, gamma_s, moment_is_test=True)
+    + bending_work(sigma_s, v_s_tdnns, delta_s, moment_is_test=False)
+    + shear_correction * mu * thickness * ufl.inner(gamma_s, delta_s) * dx_surface
+    + alpha_surface * membrane_only * dx_surface
+    + (1 - alpha_surface) * membrane_only * dx_surface_reduced
+)
+# -
+
+# The moment degrees of freedom on a boundary facet are its
+# co-normal--co-normal moments, so constraining them on every edge that is
+# not clamped imposes $\sigma_{\mu\mu}=0$ there. The saddle-point system is
+# larger and more ill-conditioned than the displacement one, so MUMPS is
+# given extra working space when it is the solver in use.
+
+# +
+surface.topology.create_connectivity(1, 2)
+unclamped = np.setdiff1d(mesh.exterior_facet_indices(surface.topology), clamped_surface)
+bcs_surface_tdnns = [
+    fem.dirichletbc(
+        fem.Function(S_surface_tdnns, dtype=PETSc.ScalarType),
+        fem.locate_dofs_topological((W_surface_tdnns.sub(0), S_surface_tdnns), 1, unclamped),
+        W_surface_tdnns.sub(0),
+    ),
+    fem.dirichletbc(
+        fem.Function(G_surface_tdnns, dtype=PETSc.ScalarType),
+        fem.locate_dofs_topological((W_surface_tdnns.sub(1), G_surface_tdnns), 1, clamped_surface),
+        W_surface_tdnns.sub(1),
+    ),
+    fem.dirichletbc(
+        fem.Function(V_surface_tdnns, dtype=PETSc.ScalarType),
+        fem.locate_dofs_topological((W_surface_tdnns.sub(2), V_surface_tdnns), 1, clamped_surface),
+        W_surface_tdnns.sub(2),
+    ),
+]
+surface_tdnns_options = dict(options)
+if surface_tdnns_options.get("pc_factor_mat_solver_type") == "mumps":
+    surface_tdnns_options["mat_mumps_icntl_14"] = "400"
+surface_tdnns_problem = LinearProblem(
+    a_surface_tdnns,
+    ufl.inner(-pressure * n_surface, v_s_tdnns) * dx_surface,
+    bcs=bcs_surface_tdnns,
+    petsc_options_prefix="demo_shell_surface_tdnns_",
+    petsc_options=surface_tdnns_options,
+)
+surface_tdnns_solution = surface_tdnns_problem.solve()
+assert isinstance(surface_tdnns_solution, fem.Function)
+u_surface_tdnns = ufl.split(surface_tdnns_solution)[2]
+work_surface_tdnns = integral(ufl.inner(-pressure * n_surface, u_surface_tdnns) * dx_surface).real
+assert abs(work_surface_tdnns - surface_work) / abs(surface_work) < 5e-2
+if comm.rank == 0:
+    print(f"Gmsh TDNNS external work: {work_surface_tdnns:.6e}")
+    print(
+        "Gmsh TDNNS relative difference from the displacement formulation: "
+        f"{abs(work_surface_tdnns - surface_work) / abs(surface_work):.3e}"
+    )
+# -
+
 V_surface_out = fem.functionspace(surface, output_element)
 surface_displacement = fem.Function(V_surface_out, dtype=PETSc.ScalarType)
 surface_displacement.interpolate(surface_solution.sub(0))
@@ -845,7 +1044,7 @@ write_shell_vtkhdf(
 # Release factorisations in the same order on every rank: their PETSc
 # teardown is collective, whereas interpreter shutdown order can vary.
 
-del surface_problem, problem, verification
+del surface_problem, surface_tdnns_problem, problem, verification
 
 # ## PyVista visualization
 #
