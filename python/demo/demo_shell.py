@@ -625,9 +625,9 @@ if comm.rank == 0:
     occ.synchronize()
     surfaces = [tag for dim, tag in perforated if dim == 2]
     cad_area = sum(occ.getMass(2, tag) for tag in surfaces)
-    boundary = gmsh.model.getBoundary(perforated, oriented=False)
+    boundary_curves = gmsh.model.getBoundary(perforated, oriented=False)
     clamped_curves, opening_curves, free_curves = [], [], []
-    for dim, tag in boundary:
+    for dim, tag in boundary_curves:
         _, y_min, _, _, y_max, _ = gmsh.model.getBoundingBox(dim, tag)
         if np.isclose(y_min, 0, atol=1e-6) and np.isclose(y_max, 0, atol=1e-6):
             clamped_curves.append(tag)
@@ -729,8 +729,10 @@ t1 = t1 / ufl.sqrt(ufl.dot(t1, t1))
 t2 = ufl.cross(n_surface, t1)
 T = ufl.as_matrix(((t1[0], t2[0]), (t1[1], t2[1]), (t1[2], t2[2])))
 
-rotation_element = element("Lagrange", surface.basix_cell(), 2, shape=(3,), dtype=default_real_type)
-W_surface = fem.functionspace(surface, mixed_element([U, rotation_element]))
+surface_rotation_element = element(
+    "Lagrange", surface.basix_cell(), 2, shape=(3,), dtype=default_real_type
+)
+W_surface = fem.functionspace(surface, mixed_element([U, surface_rotation_element]))
 V_surface, _ = W_surface.sub(0).collapse()
 Q_surface, _ = W_surface.sub(1).collapse()
 dx_surface = ufl.Measure("dx", domain=surface, metadata={"quadrature_degree": 6})
@@ -782,8 +784,8 @@ def surface_stiffness(u, theta, v, psi):
 
 # +
 surface_area = integral(1 * dx_surface).real
-assert abs(surface_area / cad_area - 1) < 0.005
 assert cad_area > 0
+assert abs(surface_area / cad_area - 1) < 0.005
 curvature_squared = integral(ufl.inner(ufl.grad(n_surface), ufl.grad(n_surface)) * dx_surface).real
 assert np.isfinite(curvature_squared) and curvature_squared > 0
 gaussian_curvature = ufl.real(ufl.det(T.T * ufl.grad(n_surface) * T))
@@ -825,8 +827,8 @@ surface_energy_twice = integral(
     surface_stiffness(u_surface, theta_surface, u_surface, theta_surface)
 ).real
 surface_work = integral(ufl.inner(-pressure * n_surface, u_surface) * dx_surface).real
-surface_balance = abs(surface_energy_twice - surface_work) / surface_energy_twice
 assert np.isfinite(surface_energy_twice) and surface_energy_twice > 0
+surface_balance = abs(surface_energy_twice - surface_work) / surface_energy_twice
 if double_precision:
     assert surface_balance < 1e-6
 if comm.rank == 0:
@@ -1044,7 +1046,7 @@ write_shell_vtkhdf(
 # Release factorisations in the same order on every rank: their PETSc
 # teardown is collective, whereas interpreter shutdown order can vary.
 
-del surface_problem, surface_tdnns_problem, problem, verification
+del surface_problem, surface_tdnns_problem, problem, problem_tdnns, verification
 
 # ## PyVista visualization
 #
