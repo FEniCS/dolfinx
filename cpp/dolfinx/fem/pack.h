@@ -388,7 +388,8 @@ void pack_coefficients(const Form<T, U>& form,
   }
 }
 
-/// @brief Pack coefficient data over a list of cells, facets or ridges.
+/// @brief Pack coefficient data over a list of cells, facets, ridges or
+/// peaks.
 ///
 /// Typically used to prepare coefficient data for an ::Expression.
 /// @tparam T Data type of coefficients

@@ -2,14 +2,14 @@
 
 ## v0.12.0 (draft)
 
-### Expressions on ridges
+### Expressions on ridges and peaks
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
 
-{py:class}`dolfinx.fem.Expression` may now be evaluated on the ridges of a mesh, i.e. its
-codimension-2 entities, by giving evaluation points on the reference cell of
-a ridge: the reference interval for the edges of a 3D mesh, and a points
-array with zero columns for the vertices of a 2D mesh. As for facets, the entities are passed to
+{py:class}`dolfinx.fem.Expression` may now be evaluated on the ridges and peaks of a mesh, i.e.
+its codimension-2 and codimension-3 entities, by giving evaluation points on the reference cell
+of the entity: the reference interval for the edges of a 3D mesh, and a points array with zero
+columns for the vertices of a 2D (ridges) or 3D (peaks) mesh. As for facets, the entities are passed to
 {py:func}`dolfinx.fem.Expression.eval` as `(cell, local entity index)` pairs, and a coefficient
 may live on a submesh of the entities being evaluated over.
 

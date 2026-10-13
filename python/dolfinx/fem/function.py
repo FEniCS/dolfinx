@@ -255,8 +255,8 @@ class Expression(Generic[Scalar]):
         Args:
             mesh: Mesh to evaluate Expression on.
             entities: Entities to evaluate the Expression over. For
-                cells, it is a list of cell indices. For facets and
-                ridges, it is a 2D array of (cell index, local entity
+                cells, it is a list of cell indices. For facets, ridges
+                and peaks, it is a 2D array of (cell index, local entity
                 index).
             values: Array to fill with evaluated values. If ``None``,
                 storage will be allocated. Otherwise it must have shape
@@ -275,14 +275,14 @@ class Expression(Generic[Scalar]):
         """
         _entities = np.asarray(entities, dtype=np.int32)
         if (tdim := mesh.topology.dim) != (expr_dim := self.entity_dim):
-            if expr_dim < tdim - 2:
+            if expr_dim < tdim - 3:
                 raise ValueError(
-                    "Expression must be defined on the cells, facets or ridges of the mesh."
+                    "Expression must be defined on the cells, facets, ridges or peaks of the mesh."
                 )
             if _entities.ndim != 2:
                 raise ValueError(
                     "entities list should have two dimensions for expression evaluation on "
-                    "facets or ridges."
+                    "facets, ridges or peaks."
                 )
 
         if self.argument_space is None:
@@ -329,8 +329,8 @@ class Expression(Generic[Scalar]):
         """Topological dimension of the entities evaluated on.
 
         The evaluation points are given on the reference entity, e.g. on a
-        triangle mesh this is 2 for cells, 1 for facets and 0 for ridges
-        (vertices).
+        tetrahedral mesh this is 3 for cells, 2 for facets, 1 for ridges
+        and 0 for peaks.
         """
         return self._cpp_object.entity_dim
 

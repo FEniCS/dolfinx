@@ -55,10 +55,10 @@ namespace dolfinx::fem::impl
 /// expression. Usually packed using fem::pack_constants.
 /// @param[in] entities Mesh entities to evaluate the expression over.
 /// For expressions executed on cells, rank is 1 and size is the number
-/// of cells. For expressions executed on facets or ridges rank is 2,
-/// and shape is `(num_entities, 2)`, where `entities[i, 0]` is the cell
-/// index and `entities[i, 1]` is the local index of the entity relative
-/// to the cell.
+/// of cells. For expressions executed on facets, ridges or peaks rank
+/// is 2, and shape is `(num_entities, 2)`, where `entities[i, 0]` is the
+/// cell index and `entities[i, 1]` is the local index of the entity
+/// relative to the cell.
 /// @param[in] cell_info Cell orientation data for use in `P0`.
 /// @param[in] argument_cells Cell of the argument's mesh for each of
 /// `entities`, for use in `P0`. Empty if the argument is defined on the
@@ -152,10 +152,10 @@ void tabulate_expression(
 /// @param[in] mesh Mesh to execute the expression kernel on.
 /// @param[in] entities Mesh entities to evaluate the expression over.
 /// For expressions executed on cells, rank is 1 and size is the number
-/// of cells. For expressions executed on facets or ridges rank is 2,
-/// and shape is `(num_entities, 2)`, where `entities[i, 0]` is the cell
-/// index and `entities[i, 1]` is the local index of the entity relative
-/// to the cell.
+/// of cells. For expressions executed on facets, ridges or peaks rank
+/// is 2, and shape is `(num_entities, 2)`, where `entities[i, 0]` is the
+/// cell index and `entities[i, 1]` is the local index of the entity
+/// relative to the cell.
 /// @param[in] element Argument element and argument space dimension.
 /// Used to computed a 1-form expression, e.g. can be used to create a
 /// matrix that when applied to a degree-of-freedom vector gives the

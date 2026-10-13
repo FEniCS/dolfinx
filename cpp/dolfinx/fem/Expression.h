@@ -181,8 +181,8 @@ public:
   /// evaluated on.
   ///
   /// The evaluation points (::X) are given on the reference entity, e.g.
-  /// on a triangle mesh this is 2 for cells, 1 for facets and 0 for
-  /// ridges (vertices).
+  /// on a tetrahedral mesh this is 3 for cells, 2 for facets, 1 for
+  /// ridges and 0 for peaks.
   int entity_dim() const { return static_cast<int>(_x_ref.second[1]); }
 
   /// @brief Maps between entities of different meshes.

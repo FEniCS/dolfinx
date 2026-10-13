@@ -21,6 +21,7 @@ from dolfinx.mesh import (
     create_rectangle,
     create_submesh,
     create_unit_cube,
+    create_unit_interval,
     create_unit_square,
     exterior_facet_indices,
     locate_entities,
@@ -871,3 +872,53 @@ def test_submesh_codim_two(dtype, tdim):
     expr_exact = Expression(expr0(x) * expr1(x), quadrature_points, dtype=dtype)
     values_exact = expr_exact.eval(mesh, entities)
     np.testing.assert_allclose(values, values_exact, atol=50 * np.finfo(xtype).resolution)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+@pytest.mark.parametrize("tdim", [1, 2, 3])
+def test_vertex_expression(dtype, tdim):
+    """Evaluate an Expression at the vertices of a 1D, 2D or 3D mesh.
+
+    Zero-dimensional points give a facet Expression in 1D, a ridge
+    Expression in 2D and a peak Expression in 3D: a peak, of dimension
+    ``tdim - 3``, only exists on a 3D mesh.
+    """
+    xtype = dtype(0).real.dtype
+    if tdim == 1:
+        mesh = create_unit_interval(MPI.COMM_WORLD, 4, dtype=xtype)
+    elif tdim == 2:
+        mesh = create_unit_square(MPI.COMM_WORLD, 3, 2, dtype=xtype)
+    else:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xtype)
+
+    points = np.zeros((1, 0), dtype=xtype)
+    x = ufl.SpatialCoordinate(mesh)
+    expr = Expression(x[0], points, dtype=dtype)
+    assert expr.entity_dim == 0
+
+    # (cell, local vertex) pairs for every owned cell
+    num_cells = mesh.topology.index_map(tdim).size_local
+    c_to_v = mesh.topology.connectivity(tdim, 0)
+    vertices = np.concatenate([c_to_v.links(c) for c in range(num_cells)])
+    num_vertices_per_cell = vertices.size // num_cells
+    entities = np.column_stack(
+        (
+            np.repeat(np.arange(num_cells, dtype=np.int32), num_vertices_per_cell),
+            np.tile(np.arange(num_vertices_per_cell, dtype=np.int32), num_cells),
+        )
+    )
+    values = expr.eval(mesh, entities)
+
+    mesh.topology.create_connectivity(0, tdim)
+    exact = compute_midpoints(mesh, 0, vertices.astype(np.int32))[:, 0]
+    np.testing.assert_allclose(
+        values[:, 0], exact.astype(dtype), atol=50 * np.finfo(xtype).resolution
+    )
