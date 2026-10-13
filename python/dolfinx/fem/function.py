@@ -543,19 +543,17 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             element) stores only the ``d * (d + 1) / 2`` independent
             components of a ``(d, d)`` tensor, but its value size is
             ``d * d``, so a callable or :class:`Expression` ``u0`` must
-            supply all ``d * d`` components, row-major. Only the lower
-            triangle, component ``i * d + j`` with ``j <= i``, is read.
-            Components above the diagonal are discarded without being
-            inspected, so non-symmetric data is neither rejected nor
-            symmetrised by averaging: ``[[a, b], [c, d]]`` interpolates
-            to ``[[a, c], [c, d]]``, and ``b`` is ignored.
+            supply all ``d * d`` components, row-major. The input should
+            be symmetric. Symmetry is not checked, and the choice of
+            components retained from non-symmetric data is unspecified.
 
             For a :class:`Function` ``u0``, a symmetry mismatch is
             supported only when the two elements use different basis
             function maps (e.g. Regge or HHJ to Lagrange); other
             combinations raise an exception. A symmetric ``u0`` is then
-            expanded to the full tensor, and a non-symmetric ``u0`` has
-            its lower triangle read as above.
+            expanded to the full tensor. When interpolating into a
+            symmetric space, the input should be symmetric; the choice
+            of components retained from non-symmetric data is unspecified.
         """
 
         @singledispatch

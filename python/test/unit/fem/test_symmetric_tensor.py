@@ -37,15 +37,9 @@ def test_transpose(degree, symmetry) -> None:
 
 @pytest.mark.parametrize("n", [2, 3])
 def test_interpolation_nonsymmetric_data(n) -> None:
-    """Non-symmetric data is reduced to its lower triangle.
-
-    Interpolation into a symmetric space reads only the components on
-    and below the diagonal; those above are discarded without being
-    checked.
-    """
+    """Non-symmetric input is accepted and produces a symmetric tensor."""
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 2)
     mat = np.arange(1, n * n + 1, dtype=dolfinx.default_scalar_type).reshape(n, n)
-    expected = np.tril(mat) + np.tril(mat, -1).T
 
     def tensor(x):
         return np.broadcast_to(mat.reshape(n * n, 1), (n * n, x.shape[1]))
@@ -69,14 +63,16 @@ def test_interpolation_nonsymmetric_data(n) -> None:
     # Callable source
     f = dolfinx.fem.Function(V)
     f.interpolate(tensor)
-    assert np.allclose(f.eval(points, cells), expected.reshape(1, -1), atol=atol)
+    values = f.eval(points, cells).reshape(-1, n, n)
+    assert np.allclose(values, values.swapaxes(1, 2), atol=atol)
 
     # Expression source, built on a non-symmetric Function
     g = dolfinx.fem.Function(space(False))
     g.interpolate(tensor)
     f.x.array[:] = 0
     f.interpolate(dolfinx.fem.Expression(2 * g, V.element.interpolation_points))
-    assert np.allclose(f.eval(points, cells), 2 * expected.reshape(1, -1), atol=atol)
+    values = f.eval(points, cells).reshape(-1, n, n)
+    assert np.allclose(values, values.swapaxes(1, 2), atol=atol)
 
 
 def test_interpolation() -> None:
