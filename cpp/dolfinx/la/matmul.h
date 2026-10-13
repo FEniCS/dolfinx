@@ -128,7 +128,7 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   // Use col_map_B — not col_map_A — for new_col_map so that any existing
   // ghost columns in B are preserved in the product's column map.
 
-  int comm_size = dolfinx::MPI::size(col_map_A->comm());
+  int comm_size = dolfinx::MPI::size(comm);
   if (comm_size == 1)
   {
     auto col_map_B = B.index_map(1);
@@ -162,17 +162,15 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   // Owning rank for each ghost col of A (= source rank for each needed row)
   std::span<const int> ghost_owners = col_map_A->owners();
 
-  // Padding guarantees valid MPI buffers on zero-degree ranks. Logical spans
-  // exclude the padding from count loops and prefix sums.
-  std::vector<int> send_count_buffer(src.size() + 1, 0);
-  std::span<int> send_count(send_count_buffer.data(), src.size());
-  std::vector<int> recv_count_buffer(dest.size() + 1, 0);
-  std::span<int> recv_count(recv_count_buffer.data(), dest.size());
+  std::vector<int> send_count(src.size(), 0);
+  std::vector<int> recv_count(dest.size(), 0);
+  send_count.reserve(1); // ensure data is not a nullptr
+  recv_count.reserve(1); // ensure data is not a nullptr
 
   for (int gh : ghost_owners)
     ++send_count[rank_to_nbr(gh)];
-  MPI_Neighbor_alltoall(send_count_buffer.data(), 1, MPI_INT,
-                        recv_count_buffer.data(), 1, MPI_INT, neigh_comm_fwd);
+  MPI_Neighbor_alltoall(send_count.data(), 1, MPI_INT, recv_count.data(), 1,
+                        MPI_INT, neigh_comm_fwd);
 
   // Send and recv displacements
   std::vector<int> send_disp(src.size() + 1, 0);
@@ -216,12 +214,12 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   // Compute size of send_data and communicate
   auto row_ptr_B = B.row_ptr();
 
-  std::vector<int> send_entry_count_buffer(dest.size() + 1, 0);
-  std::span<int> send_entry_count(send_entry_count_buffer.data(), dest.size());
+  std::vector<int> send_entry_count(dest.size(), 0);
   std::vector<int> send_entry_disp(dest.size() + 1, 0);
-  std::vector<int> recv_entry_count_buffer(src.size() + 1, 0);
-  std::span<int> recv_entry_count(recv_entry_count_buffer.data(), src.size());
+  std::vector<int> recv_entry_count(src.size(), 0);
   std::vector<int> recv_entry_disp(src.size() + 1, 0);
+  send_entry_count.reserve(1); // ensure data is not a nullptr
+  recv_entry_count.reserve(1); // ensure data is not a nullptr
   assert(recv_count.size() == dest.size());
   for (std::size_t p = 0; p < recv_count.size(); ++p)
   {
@@ -234,9 +232,8 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   std::partial_sum(send_entry_count.begin(), send_entry_count.end(),
                    std::next(send_entry_disp.begin()));
 
-  MPI_Neighbor_alltoall(send_entry_count_buffer.data(), 1, MPI_INT,
-                        recv_entry_count_buffer.data(), 1, MPI_INT,
-                        neigh_comm_rev);
+  MPI_Neighbor_alltoall(send_entry_count.data(), 1, MPI_INT,
+                        recv_entry_count.data(), 1, MPI_INT, neigh_comm_rev);
 
   std::partial_sum(recv_entry_count.begin(), recv_entry_count.end(),
                    std::next(recv_entry_disp.begin()));
