@@ -42,6 +42,7 @@ from dolfinx.la import InsertMode, vector
 from dolfinx.mesh import (
     CellType,
     GhostMode,
+    cell_num_entities,
     compute_midpoints,
     create_mesh,
     create_submesh,
@@ -484,10 +485,12 @@ def oriented_id(spec):
 
 def num_signed(mesh):
     """Number of signed facets of the owned cells, over all ranks."""
-    cell_map = mesh.topology.index_map(2)
+    # A rank may hold no cells, so the number of facets per cell is taken
+    # from the cell type rather than from the size of the signs
+    num_owned = mesh.topology.index_map(2).size_local
     signs = mesh.topology.facet_orientations()
-    per_cell = signs.size // (cell_map.size_local + cell_map.num_ghosts)
-    local = int(np.sum(signs[: cell_map.size_local * per_cell] < 0))
+    per_cell = cell_num_entities(mesh.topology.cell_type, 1)
+    local = int(np.sum(signs[: num_owned * per_cell] < 0))
     return mesh.comm.allreduce(local, op=MPI.SUM)
 
 
