@@ -1,4 +1,5 @@
 # Copyright (C) 2026 Chris Richardson
+# Copyright (C) 2026 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -122,11 +123,11 @@ def test_bad_shape(mat_random) -> None:
     A = mat_random(0, 1, 12345, np.float64)
     B = mat_random(0, 2, 54321, np.float64)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         A.matmul(B)
 
     A = mat_random(0, 2, 12345, np.float64)
     B = mat_random(1, 0, 54321, np.float64)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         A.matmul(B)

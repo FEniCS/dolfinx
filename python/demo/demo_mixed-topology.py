@@ -123,7 +123,7 @@ mesh = _create_mixed_mesh(
     cells_np,
     [hexahedron_cpp, prism_cpp],
     geomx,
-    part,
+    part._cpp_object,
     GhostMode.none,
     2,
     1,
