@@ -47,11 +47,21 @@
 # ## Equation and problem definition
 #
 # The body is a shallow parabolic arch of span $L$, width $W$ and
-# thickness $t$, obtained by lifting a box by $h \left(1 - (2 x_{0} / L
-# - 1)^{2}\right)$, so that the crown stands a rise $h$ above the
-# supports. It is a compressible neo-Hookean solid: with the
-# deformation gradient $F = I + \nabla u$, $C = F^{T} F$ and $J = \det
-# F$, the stored energy density is
+# thickness $d$, obtained by lifting a box by
+# $h \left(1 - (2 x_{0} / L - 1)^{2}\right)$, so that the crown stands
+# a rise $h$ above the supports. This undeformed body is the reference
+# configuration $\Omega$, and the formulation below is posed entirely on
+# it: $u$ is the displacement from $\Omega$, $\nabla$ is taken with
+# respect to reference coordinates and ${\rm d}x$ is the reference
+# volume element. Capitals denote reference quantities and lower case
+# their deformed counterparts, so $\Gamma_{\rm top}$, $N$ and
+# ${\rm d}S$ below are the reference top surface, outward normal and
+# area element, and $\gamma_{\rm top}$, $n$ and ${\rm d}a$ the
+# deformed ones.
+#
+# The arch is a compressible neo-Hookean solid: with the deformation
+# gradient $F = I + \nabla u$, $C = F^{T} F$ and $J = \det F$, the
+# stored energy density is
 #
 # $$
 # \psi(F) = \frac{\mu}{2} \left({\rm tr}(C) - 3\right) - \mu \ln J +
@@ -93,7 +103,16 @@
 #     \left({\rm cof}(F) \, N\right) \cdot v \, {\rm d}S .
 # $$
 #
-# The first variation of the energy is then
+# The energy stored in the arch is
+#
+# $$
+# \Pi(u) = \int_{\Omega} \psi(F) \, {\rm d}x .
+# $$
+#
+# A follower pressure on a surface whose edge is free to move has no
+# potential, so the load enters through the virtual work above rather
+# than as a term in $\Pi$. Equilibrium balances the first variation of
+# $\Pi$ against that virtual work, giving the residual
 #
 # $$
 # R(u, \lambda; v) = \int_{\Omega} P : \nabla v \, {\rm d} x +
@@ -346,11 +365,9 @@ if np.issubdtype(default_real_type, np.float32):
 # that cripples trilinear ones on a slender body, so few of them are
 # needed: four through the thickness and sixteen along the span put the
 # limit load within about one per cent of its converged value.
-# They are not cheap, though — each element couples 81 nodes, so the
-# element matrices are large and the mesh is kept small deliberately.
 #
 # The loaded surface and the two supports are found while the body is
-# still a box, where they are simply $x_{2} = t$, $x_{0} = 0$ and
+# still a box, where they are simply $x_{2} = d$, $x_{0} = 0$ and
 # $x_{0} = L$. Moving the vertices afterwards leaves the topology, and
 # so the facet indices, untouched.
 
@@ -394,16 +411,10 @@ E, nu = 1.0e4, 0.3  # Young's modulus and Poisson's ratio
 mu, lmbda = E / (2 * (1 + nu)), E * nu / ((1 + nu) * (1 - 2 * nu))
 psi = (mu / 2) * (Ic - 3) - mu * ufl.ln(Jdet) + (lmbda / 2) * ufl.ln(Jdet) ** 2
 
-# The quadrature rule is chosen rather than left to UFL. UFL estimates
-# the degree of this Jacobian at 35, because of the $\ln \det F$ chain,
-# which on a hexahedron means $18^{3}$ points per cell and leaves
-# assembly accounting for almost the whole run time. Degree 4 is the
-# $3 \times 3 \times 3$ Gauss rule, full integration for a triquadratic
-# hexahedron. It costs a thirtieth as much and moves the computed limit
-# load by 4 parts in a million, and the whole path by under 0.1%, which
-# is orders of magnitude below the discretisation error. Do not lower
-# it further: at degree 3 the $2 \times 2 \times 2$ rule cannot control
-# the element's deformation modes and the solve diverges.
+# The quadrature rule is chosen rather than left to UFL. UFL estimates a
+# high degree because of the $\ln \det F$ chain, which is expensive.
+# Degree 4 is the $3 \times 3 \times 3$ Gauss rule, full integration for
+# a triquadratic hexahedron.
 dx = ufl.Measure("dx", domain=msh, metadata={"quadrature_degree": 4})
 
 internal_work = ufl.derivative(psi * dx, u, v)
@@ -473,6 +484,31 @@ bcs = [
 
 def compute_residual(snes: PETSc.SNES, x: PETSc.Vec, b: PETSc.Vec) -> None:
     """Assemble the residual into ``b`` at the point ``x``.
+
+    What ``SNES`` is given is the constrained residual: the
+    unconstrained rows hold the equilibrium residual, and the
+    constrained rows hold ``x - g``, the amount by which the current
+    iterate misses the Dirichlet data. Two steps turn the plain
+    assembled residual into that.
+
+    ``apply_lifting`` adds the term left behind by eliminating the
+    constrained columns of the Jacobian, which moves the known
+    increment of the boundary values onto the right-hand side of the
+    unconstrained rows. ``set_bc`` then overwrites the constrained rows
+    themselves. Both are passed ``x0=x`` and ``alpha=-1``: the vector
+    handed to ``SNES`` is the residual and not its negative, so the
+    constrained rows must come out as ``x - g`` rather than ``g - x``.
+
+    The two are separated by a reverse scatter because they accumulate
+    differently. Lifting contributes to rows owned by other processes,
+    so those contributions are summed with ``ADD``/``REVERSE`` first;
+    ``set_bc`` then assigns owned constrained rows outright, which must
+    not be summed into. The closing ``INSERT``/``FORWARD`` scatter
+    refreshes the ghost entries to match the owned ones.
+
+    The load needs no special handling here, since the constrained rows
+    are overwritten wholesale. The tangent load is a different matter,
+    and is zeroed on those entries in :func:`compute_tangent_load`.
 
     Args:
         snes: Solver instance, queried for the current load parameter.
@@ -569,29 +605,23 @@ snes.setNewtonALFunction(compute_tangent_load)
 
 # ## Plotting the deformation as the load is applied
 #
-# The arch is drawn as the continuation proceeds, one frame per
-# converged increment, so the flattening, the snap and the inversion
-# can be watched rather than inferred from the numbers.
+# The arch is drawn once per converged increment, so the flattening,
+# the snap and the inversion can be watched rather than inferred from
+# the numbers.
 #
-# Where [pyvistaqt](https://qtdocs.pyvista.org/) and a Qt binding are
-# installed, the drawing goes to a
-# a `BackgroundPlotter`, a window that redraws while
-# the solve runs instead of blocking it. Without them the same drawing
-# code renders off-screen and writes a numbered image per increment,
-# which is what happens on a machine with no display; those frames can
-# be assembled into a movie afterwards. Screenshots are taken only on
-# that path, since a `BackgroundPlotter` needs a real graphics context
-# to produce one. Either way the durable record of the deformation is
-# the time series written below.
+# With [pyvistaqt](https://qtdocs.pyvista.org/) and a Qt binding
+# installed, frames go to a `BackgroundPlotter`, which redraws without
+# blocking the solve. Otherwise the same code renders off-screen and
+# writes one numbered image per increment, ready to be assembled into
+# a movie. Screenshots are taken only on that path, as a
+# `BackgroundPlotter` needs a real graphics context.
 #
-# One grid is built and reused: each frame moves its points to the
-# deformed configuration and refreshes the colours, rather than
-# building a new mesh. The colour range is fixed at roughly twice the
-# rise, so colours mean the same thing in every frame, and the
-# undeformed arch stays as an outline for reference.
-#
-# Each process plots the part of the mesh that it owns, so a parallel
-# run produces one set of frames per process.
+# One grid is built and reused, each frame moving its points and
+# refreshing the colours. The colour range is fixed at roughly twice
+# the rise so colours mean the same thing in every frame, and the
+# undeformed arch stays as an outline. Each process plots the part of
+# the mesh it owns, so a parallel run gives one set of frames per
+# process.
 
 # +
 try:
@@ -604,17 +634,14 @@ except ModuleNotFoundError:
 try:
     import pyvistaqt
 except ImportError:
-    # Not only ModuleNotFoundError: pyvistaqt imports qtpy, which
-    # raises QtBindingsNotFoundError, an ImportError, when it is
-    # installed but no Qt binding is
+    # ImportError, not ModuleNotFoundError: pyvistaqt imports qtpy,
+    # which raises QtBindingsNotFoundError when no Qt binding is present
     pyvistaqt = None
 
-# The documentation build executes this file, because it saves a
-# Matplotlib figure, in a container that has no OpenGL. Creating a
-# render window there crashes rather than raising, so the 3-D
-# rendering is skipped unless the file is run as a script: the
-# documentation tooling runs it through runpy, which leaves __name__
-# set to something other than "__main__".
+# The docs build runs this file through runpy, for the Matplotlib
+# figure, in a container with no OpenGL, where creating a render window
+# crashes rather than raising. Gate 3-D rendering on __name__, which
+# runpy leaves set to something other than "__main__".
 rendering = __name__ == "__main__"
 
 rank_suffix = f"_{msh.comm.rank}" if msh.comm.size > 1 else ""
@@ -632,19 +659,15 @@ colour_bar = {
     "label_font_size": 12,
 }
 
-# Asking for `show_edges` on a higher-degree cell draws the edges of
-# the tessellation VTK builds in order to render it, not the edges of
-# the element ([pyvista/pyvista#867](https://github.com/pyvista/pyvista/issues/867)).
-# On this quadratic mesh that buries the field under a web of lines.
-# Separating the cells first makes each one an independent patch, so
-# its outline is the only boundary that survives `extract_feature_edges`
-# and the internal tessellation edges drop out
-# ([pyvista/pyvista#5777](https://github.com/pyvista/pyvista/discussions/5777)).
-# Two levels of subdivision are enough to keep the element edges
-# visibly curved here. `nonlinear_subdivision` needs the surface filter
-# PyVista currently picks by default; newer versions warn that the
-# default is changing, but naming it explicitly is not supported by the
-# versions this has to run on.
+# `show_edges` on a higher-degree cell draws VTK's tessellation edges
+# rather than the element edges (pyvista/pyvista#867), burying the field
+# under a web of lines. Separating the cells first makes each an
+# independent patch, so only its outline survives
+# `extract_feature_edges` (pyvista/pyvista#5777). Two subdivisions keep
+# the element edges visibly curved. `nonlinear_subdivision` needs the
+# surface filter PyVista picks by default; newer versions warn that the
+# default is changing, but naming it explicitly is unsupported in the
+# versions this must run on.
 subdivision = 2
 
 
