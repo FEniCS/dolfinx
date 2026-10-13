@@ -28,11 +28,10 @@
 # The model includes transverse shear deformation and assumes small
 # displacements and rotations. Cubic bubble enrichment and partial
 # selective reduced integration (PSRI) alleviate membrane and shear
-# locking. This demo uses the practical FEniCS-Shells PSRI variant;
-# it does not establish thickness-uniform convergence for this geometry.
+# locking. This demo uses the practical PSRI variant of
+# {cite:t}`hale2018shells`; it does not establish thickness-uniform
+# convergence for this geometry.
 # Running on multiple MPI ranks requires PETSc with MUMPS or SuperLU_DIST.
-# For background, see the
-# [FEniCS-Shells Naghdi formulation](https://fenics-shells.readthedocs.io/en/latest/demo/nonlinear-naghdi-cylindrical/demo_nonlinear-naghdi-cylindrical.py.html).
 #
 # ## Geometry and kinematics
 #
@@ -164,8 +163,7 @@ alpha = ufl.min_value(1.0, (thickness / h) ** 2)
 # missed by reduced integration, and clipping $\alpha$ keeps both weights
 # nonnegative when $t>h_K$. Degree-two quadrature on these triangles uses
 # three points; a one-point rule can introduce spurious modes.
-# This follows the
-# [FEniCS-Shells PSRI implementation](https://fenics-shells.readthedocs.io/en/latest/demo/nonlinear-naghdi-cylindrical/demo_nonlinear-naghdi-cylindrical.py.html).
+# This follows the FEniCS-Shells implementation {cite}`hale2018shells`.
 
 
 def strains(u, beta):
@@ -323,7 +321,7 @@ if comm.rank == 0:
 # weakens both continuity requirements: $\sigma$ need only have a
 # continuous normal-normal component $\sigma_{nn}$, and $\beta$ only a
 # continuous tangential component $\beta_t$. See
-# [Pechstein and Schöberl](https://doi.org/10.1007/s00211-017-0883-9).
+# {cite:t}`pechstein2017tdnns`.
 #
 # Because the tangent frame here is orthonormal and parallel along the
 # surface, $a_i\cdot\partial_j a_k=0$, so $A^T\nabla\eta=\nabla\beta$
@@ -708,7 +706,7 @@ assert facet_tags is not None
 # rigid rotation. For the curved mesh, compute cell diameters using
 # {py:meth}`Mesh.h <dolfinx.mesh.Mesh.h>` and store them in a cellwise
 # constant function for PSRI and drilling. The stabilisation follows the
-# [embedded shell formulation](https://bleyerj.github.io/comet-fenicsx/tours/shells/linear_shell/linear_shell.html).
+# linear shell tour of {cite:t}`bleyer2024tours`.
 #
 # Ordering is undefined for complex numbers, so UFL rejects a comparison
 # unless it can see that both sides are real. Geometry and cell sizes are
@@ -835,6 +833,7 @@ if comm.rank == 0:
     print(f"Gmsh shell elastic energy: {surface_energy_twice / 2:.6e}")
     print(f"Gmsh relative work balance error: {surface_balance:.3e}")
     print(f"Gmsh surface area / CAD area: {surface_area / cad_area:.6f}")
+# -
 
 # ### The TDNNS shell on a general curved surface
 #
@@ -847,10 +846,10 @@ if comm.rank == 0:
 # curvature carried by those kinks, and the computed response converges to
 # the wrong answer.
 #
-# [Neunteufel and Schöberl](https://arxiv.org/abs/2304.13806) give a TDNNS
-# shell that works on such a mesh. Its kinematics differ from the section
-# above: there is no independent rotation field. Bending is instead driven
-# by the rotation induced by the displacement, $\nabla_\Sigma u^T n$, and
+# {cite:t}`neunteufel2024shells` give a TDNNS shell that works on such a
+# mesh. Its kinematics differ from the section above: there is no
+# independent rotation field. Bending is instead driven by the rotation
+# induced by the displacement, $\nabla_\Sigma u^T n$, and
 # the tangential-continuous unknown that remains is the transverse shear
 # strain $\gamma$, which enters hierarchically on top of Kirchhoff--Love
 # kinematics. Both formulations carry the bending moment in
@@ -1028,6 +1027,7 @@ if comm.rank == 0:
     )
 # -
 
+# +
 V_surface_out = fem.functionspace(surface, output_element)
 surface_displacement = fem.Function(V_surface_out, dtype=PETSc.ScalarType)
 surface_displacement.interpolate(surface_solution.sub(0))
@@ -1098,3 +1098,8 @@ if comm.rank == 0:
             plotter.camera.zoom(0.85)
             plotter.show(screenshot=out_folder / f"{name}.png")
 # -
+
+# ## References
+# ```{bibliography}
+# :filter: docname in docnames
+# ```
