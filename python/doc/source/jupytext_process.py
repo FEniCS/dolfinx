@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Convert Python demos in Jupytext 'light' into MyST markdown/ipynb."""
 
+import argparse
 import os
 import pathlib
 import runpy
@@ -13,11 +14,23 @@ import shutil
 import jupytext
 
 
-def process():
+def process(run_demos: bool = True):
     """Convert Python demos in Jupytext 'light' into MyST markdown/ipynb.
 
     Uses Jupytext. These files can then be included in Sphinx
     documentation.
+
+    Demos that save figures are executed so that the images they
+    reference exist. This dominates the build time, so it can be
+    skipped when the images are already present from an earlier build
+    and do not need refreshing.
+
+    Args:
+        run_demos: If ``True``, execute demos that save figures to
+            (re)generate their images. If ``False``, skip execution and
+            leave any existing images in place. A build that skips
+            execution without the images already present will report
+            missing images, which ``sphinx -W`` turns into errors.
     """
     # Directories to scan
     subdirs = [pathlib.Path("../../demo")]
@@ -49,11 +62,14 @@ def process():
             # images
             code = demo.read_text()
             if "savefig" in code:
-                demo = demo.resolve()
-                here = os.getcwd()
-                os.chdir(demo_dir)
-                runpy.run_path(str(demo))
-                os.chdir(here)
+                if run_demos:
+                    demo = demo.resolve()
+                    here = os.getcwd()
+                    os.chdir(demo_dir)
+                    runpy.run_path(str(demo))
+                    os.chdir(here)
+                else:
+                    print(f"Skipping execution of {demo.name} (images not refreshed)")
 
         # Copy images used in demos
         for file in subdir.glob("**/*.png"):
@@ -61,4 +77,11 @@ def process():
 
 
 if __name__ == "__main__":
-    process()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--skip-demo-images",
+        action="store_true",
+        help="do not execute demos that save figures, leaving existing images in place",
+    )
+    args = parser.parse_args()
+    process(run_demos=not args.skip_demo_images)
