@@ -273,7 +273,8 @@ void declare_bbtree(nb::module_& m, std::string_view type)
   m.def(
       "determine_point_ownership",
       [](const dolfinx::mesh::Mesh<T>& mesh,
-         nb::ndarray<const T, nb::c_contig> points, T padding,
+         nb::ndarray<const T, nb::c_contig> points, T padding, T tol_pb,
+         int max_iter_pb,
          std::optional<
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              cells,
@@ -284,17 +285,19 @@ void declare_bbtree(nb::module_& m, std::string_view type)
         if (cells.has_value())
         {
           return dolfinx::geometry::determine_point_ownership<T>(
-              mesh, _p, padding, std::span(cells->data(), cells->size()),
-              find_closest_cell);
+              mesh, _p, padding, tol_pb, max_iter_pb,
+              std::span(cells->data(), cells->size()), find_closest_cell);
         }
         else
         {
           return dolfinx::geometry::determine_point_ownership<T>(
-              mesh, _p, padding, std::nullopt, find_closest_cell);
+              mesh, _p, padding, tol_pb, max_iter_pb, std::nullopt,
+              find_closest_cell);
         }
       },
-      nb::arg("mesh"), nb::arg("points"), nb::arg("padding"),
-      nb::arg("cells").none(), nb::arg("find_closest_cell"),
+      nb::arg("mesh"), nb::arg("points"), nb::arg("padding"), nb::arg("tol_pb"),
+      nb::arg("max_iter_pb"), nb::arg("cells").none(),
+      nb::arg("find_closest_cell"),
       "Compute point ownership data for mesh-points pair.");
 
   std::string pod_pyclass_name

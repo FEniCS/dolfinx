@@ -1042,7 +1042,11 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     fine_mesh_cell_map = mesh1.topology.index_map(mesh1.topology.dim)
     num_cells_on_proc = fine_mesh_cell_map.size_local + fine_mesh_cell_map.num_ghosts
     cells = np.arange(num_cells_on_proc, dtype=np.int32)
-    interpolation_data = create_interpolation_data(V1, V0, cells, padding=padding)
+    tol_pb = 1e-6
+    maxit_pb = 15
+    interpolation_data = create_interpolation_data(
+        V1, V0, cells, padding=padding, tol_pb=tol_pb, max_iter_pb=maxit_pb
+    )
 
     # Interpolate 3D->2D
     u1 = Function(V1, dtype=xtype)
@@ -1052,8 +1056,8 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     u1._cpp_object.interpolate(
         u=u0._cpp_object,
         cells=cells,
-        tol=1e-6,
-        maxit=15,
+        tol=tol_pb,
+        maxit=maxit_pb,
         interpolation_data=interpolation_data._cpp_object,
     )
     u1.x.scatter_forward()
@@ -1353,3 +1357,65 @@ def test_submesh_interpolation_mapped(ghost_mode):
     L2_local = assemble_scalar(L2_compiled)
     L2_global = np.sqrt(L2_compiled.mesh.comm.allreduce(L2_local, op=MPI.SUM))
     assert np.isclose(L2_global, 0.0, atol=eps, rtol=eps)
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("xtype", [np.float32, np.float64])
+@pytest.mark.parametrize("node", [0.32, 0.68])
+def test_nonmatching_interpolation_from_curved_mesh(xtype, node):
+    """Interpolate from a curved P2 mesh at points in the convex hull of the wrong cell.
+
+    The two P2 triangles of the unit square share the edge from (1, 0) to
+    (0, 1), whose node is moved from (0.5, 0.5) to (node, node). One cell
+    bulges into the convex hull of the other, and the pull-back to the
+    dented cell of a point in the bulge has no solution. Both bulge
+    directions are tested, so that the dented cell is the first candidate
+    in one of them, whatever the order of the bounding box tree.
+    """
+    if MPI.COMM_WORLD.rank == 0:
+        x = np.array(
+            [
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 1.0],
+                [node, node],
+                [0.0, 0.5],
+                [0.5, 0.0],
+                [0.5, 1.0],
+                [1.0, 0.5],
+            ],
+            dtype=xtype,
+        )
+        cells = np.array([[0, 1, 2, 4, 5, 6], [1, 3, 2, 7, 4, 8]], dtype=np.int64)
+    else:
+        x = np.empty((0, 2), dtype=xtype)
+        cells = np.empty((0, 6), dtype=np.int64)
+    coordinate_element = element("Lagrange", "triangle", 2, shape=(2,), dtype=xtype)
+    mesh_from = create_mesh(MPI.COMM_WORLD, cells=cells, x=x, e=ufl.Mesh(coordinate_element))
+    mesh_to = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=xtype)
+
+    def f(x):
+        return x[0] + 2 * x[1]
+
+    # f is exactly represented in the isoparametric P2 space
+    u_from = Function(functionspace(mesh_from, ("Lagrange", 2)), dtype=xtype)
+    u_from.interpolate(f)
+    V_to = functionspace(mesh_to, ("Lagrange", 1))
+    bulge_point = [0.4, 0.4] if node < 0.5 else [0.6, 0.6]
+    assert np.isclose(V_to.tabulate_dof_coordinates()[:, :2], bulge_point).all(axis=1).any()
+
+    eps = np.finfo(xtype).eps
+    cell_map = mesh_to.topology.index_map(mesh_to.topology.dim)
+    cells_to = np.arange(cell_map.size_local + cell_map.num_ghosts, dtype=np.int32)
+    interpolation_data = create_interpolation_data(
+        V_to, u_from.function_space, cells_to, padding=1e3 * eps
+    )
+    u_to = Function(V_to, dtype=xtype)
+    # Newton's error in the pull-back is O(tol^2), so the default tol=1e-6
+    # would leave O(1e-12) errors in float64
+    u_to.interpolate_nonmatching(u_from, cells_to, interpolation_data, tol=float(np.sqrt(eps)))
+
+    u_exact = Function(V_to, dtype=xtype)
+    u_exact.interpolate(f)
+    np.testing.assert_allclose(u_to.x.array, u_exact.x.array, rtol=0, atol=1e3 * eps)
