@@ -146,8 +146,11 @@ class Expression(Generic[Scalar]):
 
         Args:
             e: UFL expression.
-            X: Array of points of shape ``(num_points, tdim)`` on the
-                reference element.
+            X: Array of points on the reference cell of the entities
+                the Expression is evaluated on, of shape
+                ``(num_points, entity_dim)``: ``tdim`` for cells,
+                ``tdim - 1`` for facets, ``tdim - 2`` for ridges and
+                ``tdim - 3`` for peaks.
             comm: Communicator that the Expression is defined on.
             form_compiler_options: Options used in FFCx compilation of
                 this Expression. Run ``ffcx --help`` in the commandline
@@ -275,9 +278,10 @@ class Expression(Generic[Scalar]):
         """
         _entities = np.asarray(entities, dtype=np.int32)
         if (tdim := mesh.topology.dim) != (expr_dim := self.entity_dim):
-            if expr_dim < tdim - 3:
+            if expr_dim > tdim:
                 raise ValueError(
-                    "Expression must be defined on the cells, facets, ridges or peaks of the mesh."
+                    f"Cannot evaluate an Expression on entities of dimension {expr_dim} "
+                    f"on a mesh of dimension {tdim}."
                 )
             if _entities.ndim != 2:
                 raise ValueError(
@@ -321,7 +325,7 @@ class Expression(Generic[Scalar]):
         return values
 
     def X(self) -> npt.NDArray:
-        """Evaluation points on the reference cell."""
+        """Evaluation points on the reference entity."""
         return self._cpp_object.X()
 
     @property

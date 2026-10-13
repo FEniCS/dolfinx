@@ -47,6 +47,45 @@
 
 namespace dolfinx::fem
 {
+namespace impl
+{
+/// @brief Check that an Expression can be evaluated over entities of a
+/// mesh.
+///
+/// @param[in] e Expression to evaluate.
+/// @param[in] mesh Mesh that the Expression is evaluated on.
+/// @param[in] rank Rank of the entities array: 1 for cell indices, 2
+/// for (cell, local entity index) pairs.
+/// @throws std::invalid_argument if `e` was created on another mesh, or
+/// its entity dimension does not fit `mesh` or `rank`.
+template <dolfinx::scalar T, std::floating_point U>
+void check_expression_entities(const fem::Expression<T, U>& e,
+                               const mesh::Mesh<U>& mesh, std::size_t rank)
+{
+  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
+  {
+    throw std::invalid_argument(
+        "Expression was created on a different mesh. Cannot tabulate.");
+  }
+
+  const int tdim = mesh.topology()->dim();
+  if (e.entity_dim() > tdim)
+  {
+    throw std::invalid_argument(
+        std::format("Cannot evaluate an Expression on entities of dimension "
+                    "{} on a mesh of dimension {}.",
+                    e.entity_dim(), tdim));
+  }
+
+  if (rank == 1 and e.entity_dim() != tdim)
+  {
+    throw std::invalid_argument(
+        "An Expression on facets, ridges or peaks must be evaluated on "
+        "(cell, local entity index) pairs.");
+  }
+}
+} // namespace impl
+
 /// @brief Evaluate an Expression on cells, facets, ridges or peaks.
 ///
 /// This function accepts packed coefficient data, which allows it be
@@ -83,35 +122,13 @@ void tabulate_expression(
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
-  // Check that domain is the same as mesh of the expression
-  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
-  {
-    throw std::invalid_argument(
-        "Expression was created on a different mesh. Cannot tabulate.");
-  }
-
-  // FFCx generates kernels on cells, facets, ridges and peaks only
-  const int tdim = mesh.topology()->dim();
-  if (e.entity_dim() < tdim - 3 or e.entity_dim() > tdim)
-  {
-    throw std::invalid_argument(std::format(
-        "Cannot evaluate an Expression on entities of dimension {} of a mesh "
-        "of dimension {}. Expressions are evaluated on cells, facets, "
-        "ridges or peaks.",
-        e.entity_dim(), tdim));
-  }
-  if (entities.rank() == 1 and e.entity_dim() != tdim)
-  {
-    throw std::invalid_argument(
-        "An Expression on facets, ridges or peaks must be evaluated on "
-        "(cell, local entity index) pairs.");
-  }
+  impl::check_expression_entities(e, mesh, entities.rank());
 
   // An argument on another mesh must live on the evaluated entities
   std::shared_ptr<const FunctionSpace<U>> V = e.argument_space();
   if (V and V->mesh()->topology() != mesh.topology())
   {
-    impl::check_entity_mapping_dim(tdim, e.entity_dim(),
+    impl::check_entity_mapping_dim(mesh.topology()->dim(), e.entity_dim(),
                                    V->mesh()->topology()->dim());
   }
 
@@ -170,12 +187,8 @@ template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
 {
-  // Check that domain is the same as mesh of the expression
-  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
-  {
-    throw std::invalid_argument(
-        "Expression was created on a different mesh. Cannot tabulate.");
-  }
+  // Validate before packing coefficients
+  impl::check_expression_entities(e, mesh, entities.rank());
 
   std::optional<
       std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>

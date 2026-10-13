@@ -59,8 +59,10 @@ public:
   ///
   /// @param[in] coefficients Coefficients in the Expression.
   /// @param[in] constants Constants in the Expression.
-  /// @param[in] X Points on the reference cell, `shape=(number of
-  /// points, tdim)` and storage is row-major.
+  /// @param[in] X Points on the reference cell of the entities the
+  /// Expression is evaluated on, `shape=(number of points, entity
+  /// dimension)` and storage is row-major. The entity dimension is the
+  /// mesh topological dimension for cells, one less for facets, etc.
   /// @param[in] Xshape Shape of `X`.
   /// @param[in] fn Function for tabulating the Expression.
   /// @param[in] value_shape Shape of Expression evaluated at single
@@ -171,7 +173,7 @@ public:
   /// @brief Value shape of Expression result (at a point),
   const std::vector<std::size_t>& value_shape() const { return _value_shape; }
 
-  /// @brief Evaluation point coordinates on the reference cell.
+  /// @brief Evaluation point coordinates on the reference entity.
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> X() const
   {
     return _x_ref;
@@ -217,7 +219,7 @@ private:
   // Shape of the evaluated Expression
   std::vector<std::size_t> _value_shape;
 
-  // Evaluation points on reference cell
+  // Evaluation points on reference entity
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> _x_ref;
 
   // Set of bidirectional maps of mesh entities (cells, facets, ridges or peaks)

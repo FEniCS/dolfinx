@@ -779,6 +779,16 @@ def compute_ridge_entities(mesh):
     return ridges, entities.reshape(-1, 2)
 
 
+def compute_vertex_entities(mesh):
+    """(cell, local vertex index) pairs for every owned vertex of ``mesh``."""
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(0, tdim)
+    mesh.topology.create_connectivity(tdim, 0)
+    vertices = np.arange(mesh.topology.index_map(0).size_local, dtype=np.int32)
+    entities = fem.compute_integration_domains(fem.IntegralType.vertex, mesh.topology, vertices)
+    return vertices, entities.reshape(-1, 2)
+
+
 @pytest.mark.parametrize(
     "dtype",
     [
@@ -904,21 +914,53 @@ def test_vertex_expression(dtype, tdim):
     expr = Expression(x[0], points, dtype=dtype)
     assert expr.entity_dim == 0
 
-    # (cell, local vertex) pairs for every owned cell
-    num_cells = mesh.topology.index_map(tdim).size_local
-    c_to_v = mesh.topology.connectivity(tdim, 0)
-    vertices = np.concatenate([c_to_v.links(c) for c in range(num_cells)])
-    num_vertices_per_cell = vertices.size // num_cells
-    entities = np.column_stack(
-        (
-            np.repeat(np.arange(num_cells, dtype=np.int32), num_vertices_per_cell),
-            np.tile(np.arange(num_vertices_per_cell, dtype=np.int32), num_cells),
-        )
-    )
+    vertices, entities = compute_vertex_entities(mesh)
     values = expr.eval(mesh, entities)
 
-    mesh.topology.create_connectivity(0, tdim)
-    exact = compute_midpoints(mesh, 0, vertices.astype(np.int32))[:, 0]
+    exact = compute_midpoints(mesh, 0, vertices)[:, 0]
     np.testing.assert_allclose(
         values[:, 0], exact.astype(dtype), atol=50 * np.finfo(xtype).resolution
     )
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_submesh_codim_three(dtype):
+    """Evaluate a peak Expression with a coefficient on a peak submesh.
+
+    The peaks of a 3D mesh are its vertices, so the submesh is a mesh of
+    points, on which only degree 0 is defined.
+    """
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 2, dtype=xtype)
+    points = np.zeros((1, 0), dtype=xtype)
+    vertices, entities = compute_vertex_entities(mesh)
+
+    def expr0(x):
+        return x[0] + 2.0 * x[1]
+
+    def expr1(x):
+        return x[1] ** 2 - x[0] * x[2]
+
+    u = Function(functionspace(mesh, ("Lagrange", 1)), dtype=dtype)
+    u.interpolate(expr0)
+
+    submesh, entity_map, _, _ = create_submesh(mesh, 0, vertices)
+    u_sub = Function(functionspace(submesh, ("Lagrange", 0)), dtype=dtype)
+    u_sub.interpolate(expr1)
+
+    expr = Expression(u * u_sub, points, dtype=dtype, entity_maps=[entity_map])
+    assert expr.entity_dim == 0
+    values = expr.eval(mesh, entities)
+
+    x = ufl.SpatialCoordinate(mesh)
+    expr_exact = Expression(expr0(x) * expr1(x), points, dtype=dtype)
+    values_exact = expr_exact.eval(mesh, entities)
+    np.testing.assert_allclose(values, values_exact, atol=50 * np.finfo(xtype).resolution)

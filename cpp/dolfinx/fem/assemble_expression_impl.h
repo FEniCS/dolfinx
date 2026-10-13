@@ -37,8 +37,9 @@ namespace dolfinx::fem::impl
 /// value_size, num_argument_dofs)`. Storage is row-major. Data is set
 /// in `values` (not accumulated).
 /// @param[in] fn Expression kernel to execute.
-/// @param[in] Xshape Shape `(num_points, geometric dimensions)` of
-/// points array at which the expression is evaluated by the kernel.
+/// @param[in] Xshape Shape `(num_points, entity dimension)` of the
+/// points, on the reference cell of the entities, at which the
+/// expression is evaluated by the kernel.
 /// @param[in] value_size Value size of the evaluated expression at a
 /// point, e.g. 1 for a scalar field, 3 for a vector field in 3D, 4 for
 /// a second-order tensor in 2D.
@@ -140,8 +141,9 @@ void tabulate_expression(
 /// (`entities.extent(0), Xshape[0], value_size)`. Storage is row-major.
 /// Data is set (not accumulated).
 /// @param[in] fn Expression kernel to execute.
-/// @param[in] Xshape Shape `(num_points, geometric dimensions)` of
-/// points array at which the expression is evaluated by the kernel.
+/// @param[in] Xshape Shape `(num_points, entity dimension)` of the
+/// points, on the reference cell of the entities, at which the
+/// expression is evaluated by the kernel.
 /// @param[in] value_size Value size of the evaluated expression at a
 /// point, e.g. 1 for a scalar field and 3 for a vector field in 3D.
 /// @param[in] coeffs Coefficient data that appears in the Expression.
