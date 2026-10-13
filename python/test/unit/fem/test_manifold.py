@@ -24,7 +24,7 @@ import pytest
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import default_real_type
+from dolfinx import default_real_type, has_debug
 from dolfinx.fem import (
     Constant,
     Expression,
@@ -38,7 +38,7 @@ from dolfinx.fem import (
     interpolation_matrix,
 )
 from dolfinx.graph import adjacencylist
-from dolfinx.la import InsertMode
+from dolfinx.la import InsertMode, vector
 from dolfinx.mesh import (
     CellType,
     GhostMode,
@@ -56,7 +56,14 @@ TANGENTS = {2: (np.array([1.0, 0.0]), np.array([0.0, 1.0]))}
 TANGENTS[3] = (np.array([1.0, 0.0, 1.0]), np.array([0.0, 1.0, 0.0]))
 
 
-def plane_mesh(n, gdim, dtype=default_real_type, mixed_orientation=False, orient=True):
+def plane_mesh(
+    n,
+    gdim,
+    dtype=default_real_type,
+    mixed_orientation=False,
+    orient=True,
+    ghost_mode=GhostMode.none,
+):
     """Triangulate the unit square with ``2 * n**2`` cells.
 
     For ``gdim == 3`` the square is embedded in R^3 as the plane
@@ -65,8 +72,8 @@ def plane_mesh(n, gdim, dtype=default_real_type, mixed_orientation=False, orient
 
     Every cell's vertices run anticlockwise, so all cell normals agree.
     With ``mixed_orientation`` every other cell is reversed instead.
-    With ``orient`` the cell orientation is computed, which
-    H(div) spaces on the manifold need.
+    With ``orient`` the facet signs are computed, which H(div) spaces
+    on the manifold need.
     """
     if MPI.COMM_WORLD.rank == 0:
         s = np.linspace(0.0, 1.0, n + 1)
@@ -97,10 +104,7 @@ def plane_mesh(n, gdim, dtype=default_real_type, mixed_orientation=False, orient
         cells = np.zeros((0, 3), dtype=np.int64)
 
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(gdim,), dtype=dtype))
-    # Signing a facet on a process boundary needs the cell across it
-    mesh = create_mesh(
-        MPI.COMM_WORLD, cells, domain, x.astype(dtype), ghost_mode=GhostMode.shared_facet
-    )
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x.astype(dtype), ghost_mode=ghost_mode)
     if orient:
         mesh.topology.create_facet_orientations()
     return mesh
@@ -460,6 +464,15 @@ def oriented_id(spec):
     return f"{spec[0]}{spec[1]}-{label}"
 
 
+def num_signed(mesh):
+    """Number of signed facets of the owned cells, over all ranks."""
+    cell_map = mesh.topology.index_map(2)
+    signs = mesh.topology.facet_orientations()
+    per_cell = signs.size // (cell_map.size_local + cell_map.num_ghosts)
+    local = int(np.sum(signs[: cell_map.size_local * per_cell] < 0))
+    return mesh.comm.allreduce(local, op=MPI.SUM)
+
+
 def tangential_field(mesh, linear):
     """A field tangential to ``plane_mesh``, as a callable and as UFL.
 
@@ -486,32 +499,14 @@ def cube_surface(ghost_mode, cell_type=CellType.tetrahedron, dtype=default_real_
 
     Its cells keep the vertex order of the cube's facets, so their
     normals point both inwards and outwards. They are triangles for a
-    tetrahedral and quadrilaterals for a hexahedral cube.
-
-    A submesh inherits the ghost cells of its parent, which do not
-    include every neighbour across a surface edge, so the surface is
-    rebuilt with its own ``GhostMode.shared_facet`` ghost layer.
+    tetrahedral and quadrilaterals for a hexahedral cube. The submesh
+    inherits the ghost cells of the cube, if any.
     """
     cube = create_unit_cube(
         MPI.COMM_WORLD, 3, 3, 3, cell_type=cell_type, ghost_mode=ghost_mode, dtype=dtype
     )
     cube.topology.create_connectivity(2, 3)
-    surface = create_submesh(cube, 2, exterior_facet_indices(cube.topology))[0]
-
-    # create_mesh numbers the points it is given by position, which is
-    # the global numbering of the owned nodes in the node index map
-    num_owned = surface.topology.index_map(2).size_local
-    geometry = surface.geometry
-    node_map = geometry.index_map()
-    nodes = node_map.local_to_global(geometry.dofmaps[0][:num_owned].reshape(-1))
-    domain = ufl.Mesh(element("Lagrange", surface.topology.cell_name(), 1, shape=(3,), dtype=dtype))
-    return create_mesh(
-        surface.comm,
-        nodes.reshape(num_owned, -1),
-        domain,
-        geometry.x[: node_map.size_local],
-        ghost_mode=GhostMode.shared_facet,
-    )
+    return create_submesh(cube, 2, exterior_facet_indices(cube.topology))[0]
 
 
 def mobius_mesh(n, m, dtype=default_real_type, ghost_mode=GhostMode.none):
@@ -546,12 +541,13 @@ def mobius_mesh(n, m, dtype=default_real_type, ghost_mode=GhostMode.none):
     return create_mesh(MPI.COMM_WORLD, cells, domain, x.astype(dtype), ghost_mode=ghost_mode)
 
 
-def t_joint_mesh(dests, dtype=default_real_type):
+def t_joint_mesh(dests, ghosted, dtype=default_real_type):
     """Three triangles sharing one edge, cell ``i`` on rank ``dests[i]``.
 
-    The ranks are taken modulo the number of ranks. Each cell is ghosted
-    on the ranks of the other two, so every rank holding the edge sees
-    all three of its cells.
+    The ranks are taken modulo the number of ranks. If ``ghosted``, each
+    cell is ghosted on the ranks of the other two, so every rank holding
+    the edge sees all three of its cells; otherwise no rank sees more
+    than its own.
     """
     if MPI.COMM_WORLD.rank == 0:
         x = np.array([[0, 0, 0], [1, 0, 0], [0.5, 1, 0], [0.5, -1, 0], [0.5, 0, 1]])
@@ -564,7 +560,7 @@ def t_joint_mesh(dests, dtype=default_real_type):
         # All cells share the edge, so each is ghosted on the ranks of the
         # others. The owner comes first.
         ranks = [r % comm.size for r in dests[: dual_graph.num_nodes]]
-        rows = [[r, *sorted(set(ranks) - {r})] for r in ranks]
+        rows = [[r, *sorted(set(ranks) - {r})] if ghosted else [r] for r in ranks]
         offsets = np.cumsum([0, *(len(row) for row in rows)], dtype=np.int32)
         return adjacencylist(np.array([r for row in rows for r in row], dtype=np.int32), offsets)
 
@@ -591,6 +587,7 @@ def test_interpolate_on_mixed_cell_orientations(gdim, spec):
     contravariant_on_manifold = gdim == 3 and family in ("RT", "BDM")
     if contravariant_on_manifold:
         mesh.topology.create_facet_orientations()
+        assert num_signed(mesh) > 0, "the reversed cells should be signed"
     V = functionspace(mesh, element(family, "triangle", degree, dtype=default_real_type))
     f, f_ufl = tangential_field(mesh, linear)
 
@@ -641,8 +638,9 @@ def test_interpolate_discontinuous_rt_on_mixed_cell_orientations(degree, linear)
     values = w.eval(midpoints, cells).reshape(num_cells, 3)
     np.testing.assert_allclose(values, f(midpoints.T).T, atol=tol(mesh))
 
-    # The orientation is ignored
+    # The signs are ignored
     mesh.topology.create_facet_orientations()
+    assert num_signed(mesh) > 0
     w_oriented = Function(V, dtype=default_real_type)
     w_oriented.interpolate(f)
     np.testing.assert_array_equal(w_oriented.x.array, w.x.array)
@@ -677,13 +675,7 @@ def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost
 
     # The facets of the submesh are not consistently ordered, so plenty
     # of them carry a sign, which is what the test is here to exercise
-    cell_map = surface.topology.index_map(2)
-    signs = surface.topology.facet_orientations()
-    per_cell = signs.size // (cell_map.size_local + cell_map.num_ghosts)
-    signed = surface.comm.allreduce(
-        int(np.sum(signs[: cell_map.size_local * per_cell] < 0)), op=MPI.SUM
-    )
-    assert signed > 0, "the test needs facets of both orientations"
+    assert num_signed(surface) > 0, "the test needs facets of both orientations"
 
     V = functionspace(surface, element(family, surface.basix_cell(), degree, dtype=dtype))
     divergence = form(ufl.div(ufl.TestFunction(V)) * ufl.dx, dtype=dtype)
@@ -697,6 +689,91 @@ def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost
     assert surface.comm.allreduce(local_max, op=MPI.MAX) < tol(surface)
 
 
+# Basix's edges of each cell, and whether walking round the cell in its
+# vertex order runs edge i from its first to its second vertex
+CELL_EDGES = {
+    "triangle": [(1, 2), (0, 2), (0, 1)],
+    "quadrilateral": [(0, 1), (0, 2), (1, 3), (2, 3)],
+}
+EDGE_RUNS_FORWARD = [True, False, True, False]
+
+
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+def test_facet_orientations_follow_the_vertex_orders(cell_type, ghost_mode):
+    """The signs are recomputed from the vertex orders, independently.
+
+    A facet is signed on the cell with the larger global index exactly
+    when its two cells run it in the same direction. That is checked on
+    every facet whose two cells this rank holds. Ghost cells must carry
+    the signs of their owner, which is checked by sending the owner's.
+    """
+    surface = cube_surface(ghost_mode, cell_type)
+    surface.topology.create_facet_orientations()
+    topology = surface.topology
+    signs = topology.facet_orientations()
+
+    topology.create_connectivity(2, 1)
+    topology.create_connectivity(1, 2)
+    c_to_v = topology.connectivity(2, 0)
+    c_to_e = topology.connectivity(2, 1)
+    e_to_c = topology.connectivity(1, 2)
+    cell_map = topology.index_map(2)
+    num_owned = cell_map.size_local
+    num_cells = num_owned + cell_map.num_ghosts
+    vertex_map = topology.index_map(0)
+    num_vertices = vertex_map.size_local + vertex_map.num_ghosts
+    global_cell = cell_map.local_to_global(np.arange(num_cells, dtype=np.int32))
+    global_vertex = vertex_map.local_to_global(np.arange(num_vertices, dtype=np.int32))
+    edges = CELL_EDGES[topology.cell_name()]
+    per_cell = len(edges)
+    assert signs.dtype == np.int8
+    assert signs.shape == (num_cells * per_cell,)
+
+    def runs_up(c, i):
+        p, q = edges[i] if EDGE_RUNS_FORWARD[i] else edges[i][::-1]
+        v = c_to_v.links(c)
+        return global_vertex[v[p]] < global_vertex[v[q]]
+
+    checked = 0
+    for c in range(num_cells):
+        for i, e in enumerate(c_to_e.links(c)):
+            cells = e_to_c.links(e)
+            if len(cells) != 2:
+                continue  # The other cell is on another rank
+            d = cells[1] if cells[0] == c else cells[0]
+            j = list(c_to_e.links(d)).index(e)
+            signed = global_cell[c] > global_cell[d] and runs_up(c, i) == runs_up(d, j)
+            assert signs[c * per_cell + i] == (-1 if signed else 1)
+            checked += 1
+    assert surface.comm.allreduce(checked, op=MPI.SUM) > 0
+
+    # Ghosts carry their owner's signs
+    packed = np.sum((signs.reshape(num_cells, per_cell) < 0) << np.arange(per_cell), axis=1)
+    owners = vector(cell_map, dtype=np.int32)
+    owners.array[:num_owned] = packed[:num_owned]
+    owners.scatter_forward()
+    np.testing.assert_array_equal(owners.array[num_owned:], packed[num_owned:])
+
+
+def test_facet_orientations_before_and_after():
+    """All facets carry sign ``1`` until they are signed, then ``1`` or ``-1``."""
+    mesh = plane_mesh(2, 3, mixed_orientation=True, orient=False)
+    mesh.topology.create_cell_permutations()
+    cell_map = mesh.topology.index_map(2)
+    num_cells = cell_map.size_local + cell_map.num_ghosts
+    signs = mesh.topology.facet_orientations()
+    assert signs.dtype == np.int8
+    assert signs.shape == (3 * num_cells,)
+    np.testing.assert_array_equal(signs, 1)
+
+    mesh.topology.create_facet_orientations()
+    signs = mesh.topology.facet_orientations()
+    assert signs.shape == (3 * num_cells,)
+    assert np.all(np.abs(signs) == 1)
+    assert num_signed(mesh) > 0
+
+
 def test_facet_orientations_do_not_change_other_elements():
     """Orientations change no element off a manifold, nor covariant ones on it."""
     for gdim, family in [(2, "RT"), (3, "N1curl")]:
@@ -706,6 +783,7 @@ def test_facet_orientations_do_not_change_other_elements():
         before = Function(V, dtype=default_real_type)
         before.interpolate(f)
         mesh.topology.create_facet_orientations()
+        assert num_signed(mesh) > 0
         after = Function(V, dtype=default_real_type)
         after.interpolate(f)
         np.testing.assert_array_equal(after.x.array, before.x.array)
@@ -720,8 +798,7 @@ def test_moebius_strip_is_conforming(family, degree):
     own. The test is that the normal component, which is what
     H(div)-conformity constrains, has no jump across any interior facet.
     """
-    # shared_facet both for the dS diagnostic and because correcting a
-    # facet needs the cell on its other side
+    # The dS diagnostic needs the cell across each process boundary
     mesh = mobius_mesh(24, 4, ghost_mode=GhostMode.shared_facet)
     mesh.topology.create_facet_orientations()
     V = functionspace(mesh, element(family, "triangle", degree, dtype=default_real_type))
@@ -742,16 +819,25 @@ def test_moebius_strip_is_conforming(family, degree):
     assert np.sqrt(abs(jump2)) < 1e3 * tol(mesh) * np.sqrt(abs(size))
 
 
+@pytest.mark.parametrize("ghosted", [True, False])
 @pytest.mark.parametrize("dests", [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 2)])
-def test_facet_orientations_refuse_a_t_joint(dests):
+def test_facet_orientations_refuse_a_t_joint(dests, ghosted):
     """An edge shared by three cells cannot be oriented, so it is refused.
 
     ``dests`` places the cells on ranks, so that in parallel no rank owns
     all cells of the edge: two on one rank and one on another, or one on
-    each of three ranks.
+    each of three ranks. Without ghosts no rank sees all three cells, so
+    the count has to be combined across ranks.
+
+    Every rank holding the edge raises. In Release builds a rank without
+    it returns normally, as the error is not reduced over ranks there.
     """
-    mesh = t_joint_mesh(dests)
-    with pytest.raises(RuntimeError, match="more than two cells"):
+    mesh = t_joint_mesh(dests, ghosted)
+    cell_map = mesh.topology.index_map(2)
+    if has_debug or cell_map.size_local + cell_map.num_ghosts > 0:
+        with pytest.raises(RuntimeError, match="more than two cells"):
+            mesh.topology.create_facet_orientations()
+    else:
         mesh.topology.create_facet_orientations()
 
 
@@ -783,3 +869,6 @@ def test_facet_orientations_need_a_surface():
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     with pytest.raises(ValueError, match="surface mesh"):
         mesh.topology.create_facet_orientations()
+    mesh.topology.create_cell_permutations()
+    with pytest.raises(ValueError, match="surface mesh"):
+        mesh.topology.facet_orientations()

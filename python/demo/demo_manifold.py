@@ -18,12 +18,6 @@
 # * use $H(\mathrm{div})$-conforming Raviart-Thomas elements on a
 #   surface, which requires the two cells of every facet to agree on its
 #   normal,
-# * widen the ghost layer beyond what
-#   {py:class}`GhostMode <dolfinx.mesh.GhostMode>` offers, by writing a
-#   partitioner that ghosts a cell wherever it shares a *vertex*. A
-#   surface taken as a submesh inherits its ghost layer from the volume,
-#   and `shared_facet` leaves it one dimension too narrow to orient the
-#   cells in parallel,
 # * impose a global constraint with a real (constant) space.
 #
 # ```{admonition} Download sources
@@ -93,8 +87,7 @@ import ufl
 # -
 
 # and set the degree $k$ of the Raviart-Thomas space, which is also the
-# degree of the geometry, the mesh resolution, and how the cells are
-# and the mesh resolution.
+# degree of the geometry, and the mesh resolution.
 
 order = 3
 res = 0.2
@@ -103,88 +96,6 @@ res = 0.2
 #
 # We mesh the unit ball with Gmsh on rank 0, distribute it, and take
 # the sphere as the submesh of its exterior facets.
-#
-# ### Widening the ghost layer
-#
-# A submesh cell is a ghost exactly when the parent entity it came from
-# was, so the surface inherits its ghost layer from the ball. That layer
-# is one dimension too narrow. `GhostMode.shared_facet` ghosts the tets
-# that share a *facet* with an owned tet, but two neighbouring cells of
-# the surface are two boundary facets sharing an *edge*, and the tet
-# behind the second one usually meets the owned side along that edge
-# alone. It is never ghosted, its boundary facet does not exist here,
-# and the surface ends up with cells whose neighbour across an edge is
-# missing -- which is exactly what
-# {py:meth}`create_facet_orientations
-# <dolfinx.mesh.Topology.create_facet_orientations>` needs.
-#
-# {py:class}`GhostMode <dolfinx.mesh.GhostMode>` offers no wider layer,
-# but a partitioner can build one. A partitioner returns the destination
-# ranks of each cell, the first being its owner and the rest ghosting
-# it, so ghosting more widely only means adding ranks to those lists. It
-# is free to ignore the dual graph it is handed and return a layout
-# decided elsewhere, which is what lets us keep a partition already
-# computed and only widen it.
-#
-# So we partition once as usual, then rebuild: each cell stays with its
-# owner and is ghosted on every rank that shares one of its vertices,
-# found with {py:meth}`index_to_dest_ranks
-# <dolfinx.common.IndexMap.index_to_dest_ranks>`. A tet meeting the
-# owned side along an edge shares both of that edge's vertices, so it is
-# now ghosted and its boundary facet comes with it.
-
-
-def ghost_by_vertex(msh):
-    """Rebuild ``msh`` so a cell is ghosted wherever it shares a vertex."""
-    tdim = msh.topology.dim
-    num_owned = msh.topology.index_map(tdim).size_local
-    cell_to_vertex = msh.topology.connectivity(tdim, 0)
-    dest, offset = msh.topology.index_map(0).index_to_dest_ranks()
-
-    rank = msh.comm.rank
-    destinations, counts = [], []
-    for c in range(num_owned):
-        extra = set()
-        for v in cell_to_vertex.links(c):
-            extra.update(dest[offset[v] : offset[v + 1]])
-        extra.discard(rank)
-        destinations.append([rank, *sorted(extra)])
-        counts.append(1 + len(extra))
-    offsets = np.zeros(len(counts) + 1, dtype=np.int32)
-    np.cumsum(counts, out=offsets[1:])
-    layout = dolfinx.graph.adjacencylist(
-        np.fromiter((r for row in destinations for r in row), dtype=np.int32), offsets
-    )
-
-    # The cells are handed back in the order they are passed below, so
-    # the layout can be returned as it stands
-    def keep_partition(comm, nparts, dual_graph, node_weights, edge_weights, ghosting):
-        return layout
-
-    # create_mesh numbers the points it is given by position, so supply
-    # the owned nodes and refer to them through the numbering of their
-    # index map, whose local ranges are that same running count
-    geometry = msh.geometry
-    node_map = geometry.index_map()
-    nodes = node_map.local_to_global(geometry.dofmaps[0][:num_owned].reshape(-1).astype(np.int32))
-    domain = ufl.Mesh(
-        basix.ufl.element(
-            "Lagrange",
-            msh.topology.cell_name(),
-            geometry.cmaps[0].degree,
-            basix.LagrangeVariant(geometry.cmaps[0].variant),
-            shape=(geometry.dim,),
-            dtype=geometry.x.dtype,
-        )
-    )
-    return dolfinx.mesh.create_mesh(
-        msh.comm,
-        nodes.reshape(num_owned, -1),
-        domain,
-        geometry.x[: node_map.size_local],
-        partitioner=keep_partition,
-    )
-
 
 # +
 gmsh.initialize()
@@ -195,21 +106,11 @@ if MPI.COMM_WORLD.rank == 0:
     gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", res)
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.setOrder(order)
-ball_mesh = dolfinx.io.gmsh.model_to_mesh(
-    gmsh.model, MPI.COMM_WORLD, 0, gdim=3, ghost_mode=dolfinx.io.gmsh.GhostMode.shared_facet
-).mesh
+ball_mesh = dolfinx.io.gmsh.model_to_mesh(gmsh.model, MPI.COMM_WORLD, 0, gdim=3).mesh
 gmsh.finalize()
-ball_mesh = ghost_by_vertex(ball_mesh)
 ball_mesh.topology.create_connectivity(2, 3)
-fdim = ball_mesh.topology.dim - 1
-assert fdim == 2
-facet_map = ball_mesh.topology.index_map(fdim)
-facet_vector = dolfinx.la.vector(facet_map, dtype=np.int32)
 boundary_facets = dolfinx.mesh.exterior_facet_indices(ball_mesh.topology)
-facet_vector.array[boundary_facets] = 1
-facet_vector.scatter_forward()
-all_boundary_facets = np.flatnonzero(facet_vector.array).astype(np.int32)
-mesh = dolfinx.mesh.create_submesh(ball_mesh, fdim, all_boundary_facets)[0]
+mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 # -
 
 # ### Signing the facets

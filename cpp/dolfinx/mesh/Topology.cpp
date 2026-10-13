@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg, Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -998,10 +998,9 @@ void Topology::create_facet_orientations()
 
   create_cell_permutations();
 
-  // Creates the edges the signs are computed across, and their
-  // orientations relative to the cells
+  // The orientations of the edges, which the signs are computed across,
+  // relative to the cells
   create_entity_permutations(1);
-  create_connectivity(1, 2);
   const std::vector<std::uint32_t> facets = compute_facet_orientations(*this);
 
   // Replace any signs from an earlier call
@@ -1018,6 +1017,7 @@ bool Topology::has_facet_orientations() const noexcept
 //-----------------------------------------------------------------------------
 std::vector<std::int8_t> Topology::facet_orientations() const
 {
+  check_surface_dim(dim());
   const std::vector<std::uint32_t>& info = get_cell_permutation_info();
   const int facets_per_cell = cell_num_entities(cell_type(), 1);
   std::vector<std::int8_t> signs(info.size() * facets_per_cell);

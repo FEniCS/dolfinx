@@ -8,7 +8,6 @@
 #pragma once
 
 #include <cstdint>
-#include <span>
 #include <vector>
 
 namespace dolfinx::mesh
@@ -160,15 +159,16 @@ std::vector<std::uint32_t> compute_cell_permutations(const Topology& topology,
 ///
 /// This asks nothing of the surface as a whole, only of each facet in
 /// turn, so it works on a surface that cannot be oriented, such as a
-/// Möbius strip, as well as on one that can. It is local to a process
-/// but for one scatter to the ghost cells.
+/// Möbius strip, as well as on one that can. The two cells of a facet
+/// on a process boundary are paired through one exchange over the edge
+/// index map, so ghost cells are not needed, and ghost cells are signed
+/// as by their owner.
 ///
 /// @note Which cell of a facet carries the sign, and how many facets
 /// are signed, depend on the partitioning, since both follow from the
 /// global numbering. The space they define does not.
 ///
-/// @pre The edges, the connectivity between edges and cells, and the
-/// edge permutations must have been created.
+/// @pre The edges and the edge permutations must have been created.
 /// @param[in] topology Topology of a mesh of triangles or
 /// quadrilaterals.
 /// @return For each owned and ghost cell, the mask of its signed
@@ -177,9 +177,9 @@ std::vector<std::uint32_t> compute_cell_permutations(const Topology& topology,
 /// @note Collective.
 /// @throws std::invalid_argument If the topological dimension is not 2.
 /// @throws std::runtime_error If an edge is shared by more than two
-/// cells, or if an edge on a process boundary has no ghost cell on its
-/// other side. In Release builds this is raised only on the processes
-/// that detect it.
+/// cells. It is raised after all communication, so no process is left
+/// waiting; in Release builds only the processes holding such an edge
+/// raise it.
 std::vector<std::uint32_t> compute_facet_orientations(const Topology& topology);
 
 } // namespace dolfinx::mesh

@@ -192,15 +192,7 @@ def mobius_mesh(n, m, width, k):
             "Lagrange", "triangle", k, basix.LagrangeVariant.equispaced, shape=(3,), dtype=dtype
         )
     )
-    # Signing a facet needs the cell on its other side, which on a
-    # process boundary is a ghost cell
-    return dolfinx.mesh.create_mesh(
-        MPI.COMM_WORLD,
-        cells,
-        domain,
-        x.astype(dtype),
-        ghost_mode=dolfinx.mesh.GhostMode.shared_facet,
-    )
+    return dolfinx.mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x.astype(dtype))
 
 
 # +

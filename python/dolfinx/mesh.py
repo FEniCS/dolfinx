@@ -489,11 +489,7 @@ class Topology:
 
         Raises:
             ValueError: If the topological dimension is not 2.
-            RuntimeError: If an edge is shared by more than two cells, or
-                a facet needs a sign on a process that cannot see the
-                cell on its other side. The latter means the mesh has no
-                ghost cells there; build it with
-                ``GhostMode.shared_facet``.
+            RuntimeError: If an edge is shared by more than two cells.
         """
         self._cpp_object.create_facet_orientations()
 
@@ -514,9 +510,15 @@ class Topology:
             For each owned and ghost cell and each of its facets, in
             cell-local facet order and flattened row-wise, ``-1`` if the
             degrees-of-freedom on that facet are negated and ``1``
-            otherwise. All ``1`` on a surface that can be oriented.
+            otherwise. All ``1`` before :meth:`create_facet_orientations`
+            has been called, and after it wherever the two cells of a
+            facet run it in opposite directions, i.e. agree on its
+            normal. Whether any facet is signed says nothing about
+            whether the surface can be oriented: a sphere whose cells
+            have arbitrary vertex orders has many signed facets.
 
         Raises:
+            ValueError: If the topological dimension is not 2.
             RuntimeError: If the cell permutations have not been created
                 (see :meth:`create_cell_permutations`).
         """
