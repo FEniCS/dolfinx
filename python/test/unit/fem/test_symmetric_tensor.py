@@ -135,7 +135,14 @@ def test_interpolation_tensor_layouts_cell_selection(source_symmetry):
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 2)
     functions = []
     for symmetry in [source_symmetry, not source_symmetry]:
-        element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(2, 2), symmetry=symmetry)
+        element = basix.ufl.element(
+            "DG",
+            mesh.basix_cell(),
+            0,
+            shape=(2, 2),
+            symmetry=symmetry,
+            dtype=dolfinx.default_real_type,
+        )
         functions.append(dolfinx.fem.Function(dolfinx.fem.functionspace(mesh, element)))
     source, target = functions
     source.interpolate(lambda x: [x[0], x[1], x[1], 2 * x[0]])
