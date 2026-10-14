@@ -544,18 +544,20 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             components of a ``(d, d)`` tensor, but its value size is
             ``d * d``, so a callable or :class:`Expression` ``u0`` must
             supply all ``d * d`` components, row-major. The input should
-            be symmetric. Symmetry is not checked, and the choice of
+            be symmetric. Symmetry is not checked. The diagonal is taken
+            from the diagonal of the input; the choice of off-diagonal
             components retained from non-symmetric data is unspecified.
 
             Direct Function-to-Function interpolation between a blocked
             tensor element with ``symmetry=True`` and an element using a
-            full tensor representation is supported. Regge and HHJ tensors
-            are mathematically symmetric, but use a full tensor
+            full tensor representation is supported. Regge and HHJ
+            tensors are mathematically symmetric, but use a full tensor
             representation. A blocked source with ``symmetry=True`` has
-            its stored components expanded to the
-            full tensor. When interpolating into a symmetric space, the
-            input should be symmetric; the choice of components retained
-            from non-symmetric data is unspecified.
+            its stored components expanded to the full tensor. When
+            interpolating into a symmetric space, the input should be
+            symmetric. The diagonal is taken from the diagonal of the
+            input; the choice of off-diagonal components retained from
+            non-symmetric data is unspecified.
         """
 
         @singledispatch

@@ -200,7 +200,8 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
 ///
 /// @note If `u1` is in a symmetric rank-2 tensor space, `e0` has the
 /// value size of the full `(d, d)` tensor. The input should be symmetric.
-/// Symmetry is not checked, and the choice of components retained from
+/// Symmetry is not checked. The diagonal is taken from the diagonal of
+/// the input; the choice of off-diagonal components retained from
 /// non-symmetric data is unspecified.
 ///
 /// @pre `cells0` and `cells1` have the same size.

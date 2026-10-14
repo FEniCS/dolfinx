@@ -37,7 +37,12 @@ def test_transpose(degree, symmetry) -> None:
 
 @pytest.mark.parametrize("n", [2, 3])
 def test_interpolation_nonsymmetric_data(n) -> None:
-    """Non-symmetric input is accepted and produces a symmetric tensor."""
+    """Non-symmetric input is accepted and produces a symmetric tensor.
+
+    The diagonal of the result is the diagonal of the input; which
+    off-diagonal components are retained is unspecified, so it is not
+    checked.
+    """
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 2)
     mat = np.arange(1, n * n + 1, dtype=dolfinx.default_scalar_type).reshape(n, n)
 
@@ -138,6 +143,11 @@ def test_interpolation_tensor_layouts_cell_selection(source_symmetry):
 
     all_cells = np.arange(mesh.topology.index_map(2).size_local, dtype=np.int32)
     cells = all_cells[::2].copy()
+    # `cells0[i]` and `cells1[i]` are documented to be the same cell, so on a
+    # single mesh they would normally be equal. Reversing `cells0` only checks
+    # that the two lists are not transposed internally, and is safe here solely
+    # because DG0 is identity mapped: the conversion path takes the cell
+    # geometry from `cells0` while writing the dofs of `cells1`.
     source_cells = cells[::-1].copy()
     target.interpolate(source, cells0=source_cells, cells1=cells)
     points = dolfinx.mesh.compute_midpoints(mesh, 2, cells)

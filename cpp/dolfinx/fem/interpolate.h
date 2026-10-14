@@ -131,7 +131,8 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 /// `d * d` components of the `(d, d)` tensor rather than the
 /// `d * (d + 1) / 2` components the element stores, since
 /// FiniteElement::value_size is `d * d`. The input should be symmetric.
-/// Symmetry is not checked, and the choice of components retained from
+/// Symmetry is not checked. The diagonal is taken from the diagonal of
+/// the input; the choice of off-diagonal components retained from
 /// non-symmetric data is unspecified.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
@@ -1410,8 +1411,9 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
 /// element using a full tensor representation is supported. A symmetric
 /// blocked `u0` has its stored components expanded to the full tensor.
 /// For a symmetric `u1`, the input should be symmetric. Symmetry is not
-/// checked, and the choice of components retained from non-symmetric
-/// data is unspecified.
+/// checked. The diagonal is taken from the diagonal of the input; the
+/// choice of off-diagonal components retained from non-symmetric data
+/// is unspecified.
 ///
 /// @pre `cells0` and `cells1` have the same size.
 template <dolfinx::scalar T, std::floating_point U>
@@ -1439,7 +1441,9 @@ void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
 
   if (e0->symmetric() != e1->symmetric())
   {
-    // Convert between independent and full tensor components.
+    // Convert between independent and full tensor components. This must
+    // precede the same-map branch below, which cannot change the number
+    // of components.
     impl::interpolate_nonmatching_maps(u1, cells1, u0, cells0);
   }
   else if (V1->mesh() == V0->mesh() and (e1 == e0 or *e1 == *e0))
