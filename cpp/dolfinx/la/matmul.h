@@ -104,12 +104,13 @@ struct Sparsity
 /// columns of Matrix A.
 /// @tparam T Scalar type.
 /// @tparam BS Square block size. Use -1 for runtime dispatch (non-optimised).
-///            When >= 1, must match A.block_size() == B.block_size() == {BS,BS}.
+///            When >= 1, must match A.block_size() == B.block_size() ==
+///            {BS,BS}.
 /// @param A MatrixCSR
 /// @param B MatrixCSR
 /// @returns Tuple containing [new index map, rowptr, cols, values] for the
 /// received rows. `rowptr` and `cols` are indexed by graph node (CSR entry);
-/// `values` has `bsq` scalars per graph entry.
+/// `values` has `bsq`=`BS*BS` scalars per graph entry.
 template <typename T, int BS = -1>
 std::tuple<std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>,
            std::vector<std::int32_t>, std::vector<T>>
@@ -614,10 +615,9 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
 
 /// @brief Compute C = A*B as a distributed MatrixCSR.
 ///
-/// Both A and B must have square block size {BS, BS}. For scalar matrices
-/// (block size 1) use the default BS=-1 or BS=1. For block matrices pass the
-/// compile-time block size as the template argument to enable compile-time
-/// loop unrolling in the inner GEMM.
+/// Both A and B must have square block size {BS, BS}.
+/// Passing the compile-time block size as the template
+/// argument enables compile-time loop unrolling in the inner GEMM.
 ///
 /// @tparam T  Scalar type.
 /// @tparam BS Square block size, or -1 for runtime dispatch (non-optimised).
@@ -665,9 +665,9 @@ dolfinx::la::MatrixCSR<T> matmul(const dolfinx::la::MatrixCSR<T>& A,
   spdlog::debug("Compute sparsity and values of C=A*B");
   auto [C_row_ptr, C_off_diag_offsets, C_cols, C_vals_vec]
       = impl::matmul<T, BS>(A, B, new_col_map,
-                             std::span<const std::int32_t>(ghost_row_ptr),
-                             std::span<const std::int32_t>(ghost_cols),
-                             std::span<const T>(ghost_vals));
+                            std::span<const std::int32_t>(ghost_row_ptr),
+                            std::span<const std::int32_t>(ghost_cols),
+                            std::span<const T>(ghost_vals));
 
   auto C_row_map = std::make_shared<common::IndexMap>(
       A.index_map(0)->comm(), A.index_map(0)->size_local());
