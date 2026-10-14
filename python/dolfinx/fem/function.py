@@ -549,14 +549,10 @@ class Function(ufl.Coefficient, Generic[Scalar]):
 
             Direct Function-to-Function interpolation between a blocked
             tensor element with ``symmetry=True`` and an element using a
-            full tensor representation is supported only when their basis
-            function map types differ. For example, interpolation between
-            symmetric blocked Lagrange and Regge or HHJ elements is
-            supported, whereas interpolation between Lagrange tensor
-            elements with different ``symmetry`` settings raises an
-            exception. Regge and HHJ tensors are mathematically symmetric,
-            but use a full tensor representation. A blocked source with
-            ``symmetry=True`` has its stored components expanded to the
+            full tensor representation is supported. Regge and HHJ tensors
+            are mathematically symmetric, but use a full tensor
+            representation. A blocked source with ``symmetry=True`` has
+            its stored components expanded to the
             full tensor. When interpolating into a symmetric space, the
             input should be symmetric; the choice of components retained
             from non-symmetric data is unspecified.
