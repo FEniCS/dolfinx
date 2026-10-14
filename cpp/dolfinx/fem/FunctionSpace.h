@@ -43,9 +43,9 @@ public:
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] element Finite element for the space.
   /// @param[in] dofmap Degree-of-freedom map for the space.
-  /// @throws std::runtime_error If an element depends on the cell
-  /// orientation (see FiniteElement::depends_on_facet_orientations) and
-  /// none has been computed or set on the mesh (see
+  /// @throws std::runtime_error If an element depends on the facet
+  /// signs (see FiniteElement::depends_on_facet_orientations) and they
+  /// have not been computed on the mesh (see
   /// mesh::Topology::has_facet_orientations).
   FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
@@ -64,9 +64,9 @@ public:
   /// mesh::topology::cell_types.
   /// @param[in] dofmaps Degree-of-freedom maps for the space, one for each
   /// element. The dofmaps must be ordered in the same way as the elements.
-  /// @throws std::runtime_error If an element depends on the cell
-  /// orientation (see FiniteElement::depends_on_facet_orientations) and
-  /// none has been computed or set on the mesh (see
+  /// @throws std::runtime_error If an element depends on the facet
+  /// signs (see FiniteElement::depends_on_facet_orientations) and they
+  /// have not been computed on the mesh (see
   /// mesh::Topology::has_facet_orientations).
   FunctionSpace(
       std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
@@ -423,9 +423,9 @@ public:
   }
 
 private:
-  // Throw if an element depends on the mesh's facet signs and
-  // none has been computed or set. The check is local, and its outcome
-  // is the same on all ranks.
+  // Throw if an element depends on the mesh's facet signs and they have
+  // not been computed. The check is local, and its outcome is the same on
+  // all ranks.
   void check_facet_orientations() const
   {
     if (_mesh->topology()->has_facet_orientations())

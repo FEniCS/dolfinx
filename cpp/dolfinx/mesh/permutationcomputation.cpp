@@ -457,9 +457,9 @@ mesh::compute_cell_permutations(const mesh::Topology& topology, int num_threads)
 
     used_bits += cell_num_entities(cell_type, 1);
   }
-  // At most bits 0 to 30 are taken, which leaves the facet sign bits free.
-  // A cell that can carry an orientation has topological dimension 2 and
-  // so uses one bit per edge, leaving the facet bits free too.
+  // A hexahedron takes bits 0 to 29, overlapping the facet sign bits 27
+  // to 30. Those are used only for tdim == 2, which takes one bit per
+  // edge.
   assert(used_bits < bitset_size);
   assert(tdim != 2 or used_bits <= 27);
 
@@ -482,13 +482,7 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
 {
   common::Timer timer("Compute facet orientations");
 
-  if (topology.dim() != 2)
-  {
-    throw std::invalid_argument(
-        std::format("Facet signs need a surface mesh (topological "
-                    "dimension 2), not dimension {}.",
-                    topology.dim()));
-  }
+  assert(topology.dim() == 2);
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_to_e
       = topology.connectivity(2, 1);
   std::shared_ptr<const common::IndexMap> edge_map = topology.index_map(1);
@@ -565,10 +559,10 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
     std::vector<std::int64_t> send(values_per_edge * ghost_idx.size());
     for (std::size_t j = 0; j < ghost_idx.size(); ++j)
     {
-      std::copy_n(std::next(edge_data.begin(),
-                            values_per_edge * (num_owned_edges + ghost_idx[j])),
-                  values_per_edge,
-                  std::next(send.begin(), values_per_edge * j));
+      std::ranges::copy_n(
+          std::next(edge_data.begin(),
+                    values_per_edge * (num_owned_edges + ghost_idx[j])),
+          values_per_edge, std::next(send.begin(), values_per_edge * j));
     }
     std::vector<std::int64_t> recv(values_per_edge * owned_idx.size());
     MPI_Request request = MPI_REQUEST_NULL;
@@ -584,9 +578,9 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
     std::vector<std::int64_t> send(values_per_edge * owned_idx.size());
     for (std::size_t j = 0; j < owned_idx.size(); ++j)
     {
-      std::copy_n(std::next(edge_data.begin(), values_per_edge * owned_idx[j]),
-                  values_per_edge,
-                  std::next(send.begin(), values_per_edge * j));
+      std::ranges::copy_n(
+          std::next(edge_data.begin(), values_per_edge * owned_idx[j]),
+          values_per_edge, std::next(send.begin(), values_per_edge * j));
     }
     std::vector<std::int64_t> recv(values_per_edge * ghost_idx.size());
     MPI_Request request = MPI_REQUEST_NULL;
@@ -594,7 +588,7 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
     sc.scatter_fwd_end(request);
     for (std::size_t j = 0; j < ghost_idx.size(); ++j)
     {
-      std::copy_n(
+      std::ranges::copy_n(
           std::next(recv.begin(), values_per_edge * j), values_per_edge,
           std::next(edge_data.begin(),
                     values_per_edge * (num_owned_edges + ghost_idx[j])));

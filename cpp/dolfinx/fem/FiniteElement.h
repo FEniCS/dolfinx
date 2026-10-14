@@ -1065,15 +1065,10 @@ public:
 
 private:
   // Negate data on each facet marked with mesh::reversed_facet_bit, if
-  // the basis depends on the facet signs. A sign is its own
+  // the basis depends on the facet signs (see
+  // mesh::Topology::create_facet_orientations). A sign is its own
   // inverse and transpose, so every DOF transformation applies it the
   // same way.
-  //
-  // Only a facet's own degrees-of-freedom have a non-zero normal trace
-  // on it, so negating them changes that trace and no other. This is
-  // what lets a surface that cannot be oriented, where no per-cell
-  // marker makes every pair of neighbours agree, be made conforming one
-  // facet at a time.
   //
   // `post` selects the layout: the right-applied transformations store
   // their data as `(n, num_dofs)`, the others as `(num_dofs, n)`.
@@ -1081,11 +1076,11 @@ private:
   void flip_reversed(std::span<U> data, std::uint32_t cell_permutation,
                      int n) const
   {
-    // Zero unless the basis depends on the orientation, so this single
-    // test rejects the common case, which is every element on a mesh
-    // that is not a surface and every Lagrange or Nedelec element on one
-    if (!(cell_permutation & _applied_orientation_mask)) [[likely]]
+    if (!_depends_on_facet_orientations
+        or !(cell_permutation & _orientation_mask)) [[likely]]
+    {
       return;
+    }
 
     // The mask is non-zero only on a cell of dimension 2, whose facets
     // are its edges
@@ -1107,15 +1102,6 @@ private:
         }
       }
     }
-  }
-
-  // Set _orientation_mask and _applied_orientation_mask. Called once
-  // each constructor has set _cell_type and _depends_on_facet_orientations.
-  void init_orientation_masks()
-  {
-    _orientation_mask = mesh::orientation_mask(mesh::cell_dim(_cell_type));
-    _applied_orientation_mask
-        = _depends_on_facet_orientations ? _orientation_mask : 0;
   }
 
   // Value shape in physical space. For blocked elements this is larger
@@ -1161,14 +1147,9 @@ private:
   // Indicate whether the basis depends on the facet signs
   bool _depends_on_facet_orientations;
 
-  // Bits of the cell permutation info that carry an orientation for this
+  // Bits of the cell permutation info holding facet signs for this
   // element's cell type, cleared before the info is passed to Basix
   std::uint32_t _orientation_mask = 0;
-
-  // The subset of those bits that flip_reversed acts on, zero unless the
-  // basis depends on the orientation. Precomputed because flip_reversed
-  // runs per cell.
-  std::uint32_t _applied_orientation_mask = 0;
 
   std::vector<std::vector<std::vector<int>>> _entity_dofs;
   std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
