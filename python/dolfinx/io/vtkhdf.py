@@ -1,4 +1,5 @@
 # Copyright (C) 2024-2025 Chris Richardson and Jørgen S. Dokken
+# Copyright (C) 2026 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -21,6 +22,7 @@ from dolfinx.cpp.io import (
     write_vtkhdf_data,
     write_vtkhdf_mesh,
 )
+from dolfinx.io.utils import _serendipity_coordinate_element
 from dolfinx.mesh import CellType, Mesh
 
 __all__ = ["cell_perm_array", "read_mesh", "write_cell_data", "write_mesh", "write_point_data"]
@@ -70,18 +72,25 @@ def read_mesh(
         # FIXME: not yet defined for mixed topology
         domain = None
     else:
-        cell_degree = mesh_cpp.geometry.cmaps[0].degree
-        variant = mesh_cpp.geometry.cmaps[0].variant
-        domain = ufl.Mesh(
-            basix.ufl.element(
+        cmap = mesh_cpp.geometry.cmaps[0]
+        num_nodes = cmap.dim
+        if (cell_types[0] == CellType.quadrilateral and num_nodes == 8) or (
+            cell_types[0] == CellType.hexahedron and num_nodes == 20
+        ):
+            element = basix.ufl.blocked_element(
+                _serendipity_coordinate_element(cell_types[0], mesh_cpp.geometry.x.dtype),
+                shape=(mesh_cpp.geometry.dim,),
+            )
+        else:
+            element = basix.ufl.element(
                 "Lagrange",
                 cell_types[0].name,
-                cell_degree,
-                basix.LagrangeVariant(variant),
+                cmap.degree,
+                basix.LagrangeVariant(cmap.variant),
                 shape=(mesh_cpp.geometry.dim,),
                 dtype=mesh_cpp.geometry.x.dtype,
             )
-        )
+        domain = ufl.Mesh(element)
     return Mesh(mesh_cpp, domain)
 
 
