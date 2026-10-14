@@ -265,10 +265,11 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   // Communicate values using a compound MPI datatype of bsq scalars per
   // graph entry, so count/disp arrays index graph entries directly.
   const dolfinx::MPI::Datatype<T> block_type(bsq);
+  MPI_Datatype mpi_block = block_type.type();
   MPI_Neighbor_alltoallv(send_vals.data(), send_entry_count.data(),
-                         send_entry_disp.data(), block_type, recv_vals.data(),
+                         send_entry_disp.data(), mpi_block, recv_vals.data(),
                          recv_entry_count.data(), recv_entry_disp.data(),
-                         block_type, neigh_comm_rev);
+                         mpi_block, neigh_comm_rev);
 
   // Pack and send column indices
   auto cols_B = B.cols();
