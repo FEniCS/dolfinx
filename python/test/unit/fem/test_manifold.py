@@ -24,7 +24,7 @@ import pytest
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import default_real_type, has_debug
+from dolfinx import default_real_type
 from dolfinx.fem import (
     Constant,
     Expression,
@@ -862,16 +862,32 @@ def test_facet_orientations_refuse_a_t_joint(dests, ghosted):
     each of three ranks. Without ghosts no rank sees all three cells, so
     the count has to be combined across ranks.
 
-    Every rank holding the edge raises. In Release builds a rank without
-    it returns normally, as the error is not reduced over ranks there.
+    Every rank holding the edge raises. The others raise too only where
+    the error is reduced over ranks (Developer and Debug builds of the C++
+    library), so they must agree with each other, not with the build mode
+    of the Python module. The outcomes are gathered before any assertion,
+    so a failure fails on every rank instead of hanging.
     """
     mesh = t_joint_mesh(dests, ghosted)
     cell_map = mesh.topology.index_map(2)
-    if has_debug or cell_map.size_local + cell_map.num_ghosts > 0:
-        with pytest.raises(RuntimeError, match="more than two cells"):
-            mesh.topology.create_facet_orientations()
-    else:
+    holds_edge = cell_map.size_local + cell_map.num_ghosts > 0
+    try:
         mesh.topology.create_facet_orientations()
+        error = None
+    except Exception as e:
+        error = f"{type(e).__name__}: {e}"
+    outcomes = mesh.comm.allgather((holds_edge, error))
+
+    def refused(error):
+        return (
+            error is not None
+            and error.startswith("RuntimeError")
+            and "more than two cells" in error
+        )
+
+    assert all(refused(error) for holds, error in outcomes if holds), outcomes
+    others = [error for holds, error in outcomes if not holds]
+    assert all(map(refused, others)) or all(e is None for e in others), outcomes
 
 
 def test_function_space_needs_facet_orientations():
