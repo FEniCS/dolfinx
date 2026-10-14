@@ -165,5 +165,5 @@ def test_matmul_block(dtype, bs, mat_random, mat_gather) -> None:
     nrC = C.index_map(0).size_local
 
     assert np.allclose(
-        C.to_dense()[:nrC, :], Cscipy_ref.todense()[lrC0:lrC1]
+        C.to_dense()[:nrC * bs, :], Cscipy_ref.todense()[lrC0 * bs:lrC1 * bs]
     )
