@@ -283,6 +283,10 @@ public:
   FiniteElement& operator=(FiniteElement&& element) = default;
 
   /// @brief Check if two elements are equivalent.
+  ///
+  /// Two elements are equivalent if they wrap the same Basix element
+  /// and have the same physical value shape and symmetry, i.e. if
+  /// degrees of freedom can be copied directly from one to the other.
   /// @return True is the two elements are the same.
   /// @note Equality can be checked only for non-mixed elements. For a
   /// mixed element, this function will throw an exception.
