@@ -460,23 +460,19 @@ class Topology:
     def create_facet_orientations(self) -> None:
         """Sign the facets on which two cells disagree on the normal.
 
-        On a surface, elements mapped by the contravariant Piola map
+        On a manifold, elements mapped by the contravariant Piola map
         (e.g. Raviart-Thomas, Brezzi-Douglas-Marini) are conforming only
-        between cells that agree on the normal of the facet they share.
-        The vertex order of a cell fixes its normal, and two cells agree
-        exactly when they run their shared facet in opposite directions.
+        across facets whose two cells agree on the normal, which the
+        vertex order of each cell fixes. Where they disagree, one cell
+        negates its degrees-of-freedom on that facet; only these have a
+        non-zero normal trace there. Cells are not reordered. As each
+        facet is treated on its own, surfaces that cannot be oriented,
+        such as a Möbius strip, work too.
 
-        Where they do not, one of the two negates its degrees-of-freedom
-        on that facet, which restores the agreement and disturbs nothing
-        else: only a facet's own basis functions have a non-zero normal
-        trace on it. The cells are neither reordered nor reversed.
-
-        This asks nothing of the surface as a whole, only of each facet
-        in turn, so it works whether or not the surface can be oriented,
-        a Möbius strip included. A space of such elements on a surface
-        can only be created once it has been called (see
-        :meth:`has_facet_orientations`); Lagrange and Nédélec spaces do
-        not need it. The result is read with :meth:`facet_orientations`.
+        Such spaces on a manifold can only be created after this call
+        (see :meth:`has_facet_orientations`); Lagrange and Nédélec spaces
+        do not need it. The signs are read with
+        :meth:`facet_orientations`.
 
         Warning:
             Changing the signs after creating such spaces invalidates
@@ -489,32 +485,27 @@ class Topology:
         Raises:
             ValueError: If the topological dimension is not 2.
             RuntimeError: If an edge is shared by more than two cells.
+                On every rank in Developer and Debug builds, otherwise
+                only on the ranks holding such an edge, while the others
+                return.
         """
         self._cpp_object.create_facet_orientations()
 
     def facet_orientations(self) -> npt.NDArray[np.int8]:
         """Get the sign carried by each facet of each cell.
 
-        A facet whose two cells disagree on its normal has the
-        degrees-of-freedom of one of them negated there, which is what
-        makes a surface that cannot be oriented, such as a Möbius strip,
-        conforming all the same.
-
-        Which of a facet's two cells carries the sign, and how many
-        facets are signed at all, depend on the partitioning: both are
-        decided from the global numbering, which the partitioning fixes.
-        The space they define does not, so the solution is unchanged.
+        See :meth:`create_facet_orientations`. Which of a facet's two
+        cells carries the sign, and how many facets are signed, follow
+        from the global numbering and so depend on the partitioning. The
+        space they define, and so the solution, does not.
 
         Returns:
             For each owned and ghost cell and each of its facets, in
             cell-local facet order and flattened row-wise, ``-1`` if the
             degrees-of-freedom on that facet are negated and ``1``
             otherwise. All ``1`` before :meth:`create_facet_orientations`
-            has been called, and after it wherever the two cells of a
-            facet run it in opposite directions, i.e. agree on its
-            normal. Whether any facet is signed says nothing about
-            whether the surface can be oriented: a sphere whose cells
-            have arbitrary vertex orders has many signed facets.
+            has been called. Signed facets do not mean the surface cannot
+            be oriented: a sphere with arbitrary vertex orders has many.
 
         Raises:
             ValueError: If the topological dimension is not 2.

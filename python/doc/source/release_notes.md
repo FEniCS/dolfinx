@@ -18,26 +18,18 @@ silently wrong results ([\#4571](https://github.com/FEniCS/dolfinx/issues/4571))
 The fix is stored on the topology, one facet at a time:
 
 - {py:meth}`Topology.create_facet_orientations
-  <dolfinx.mesh.Topology.create_facet_orientations>` compares the two cells
-  of every facet and, where they disagree, negates the degrees-of-freedom of
-  one of them on that facet. Since only a facet's own basis functions have a
-  non-zero normal trace on it, that disturbs nothing else. It never asks for
-  a consistent orientation of the surface as a whole, so it works whether or
-  not one exists. It raises an error for an edge shared by more than two
-  cells (e.g. a T-joint).
+  <dolfinx.mesh.Topology.create_facet_orientations>` negates, on each facet
+  whose two cells disagree, the degrees-of-freedom of one of them. It needs
+  no consistent orientation of the whole surface, and no ghost cells. It
+  raises an error for an edge shared by more than two cells (e.g. a T-joint).
 - {py:meth}`Topology.facet_orientations
   <dolfinx.mesh.Topology.facet_orientations>` returns the sign on each facet
   of each cell, and {py:meth}`Topology.has_facet_orientations
   <dolfinx.mesh.Topology.has_facet_orientations>` whether they have been
   computed.
 
-The cells themselves are neither reordered nor reversed. Which of a facet's
-two cells carries the sign depends on the partitioning, which changes the
-sign of degrees-of-freedom but not the field. Lagrange and Nédélec spaces do
-not need the signs.
-
-The two cells of a facet on a process boundary are paired by one exchange over
-the edges shared between processes, so no ghost cells are needed. The mixed
+Which cell of a facet carries the sign depends on the partitioning; the field
+does not. Lagrange and Nédélec spaces do not need the signs. The mixed
 Poisson demo on the sphere is {doc}`demos/demo_manifold`;
 {doc}`demos/demo_mobius` and {doc}`demos/demo_mobius_eikonal` solve problems
 on a Möbius strip, and {doc}`demos/demo_branching_manifold` on a T-joint, with

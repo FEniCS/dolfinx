@@ -218,7 +218,7 @@ FiniteElement<T>::FiniteElement(
 
   _signature = std::format("Basix element {} {}", family, _bs);
 
-  init_orientation_masks();
+  _orientation_mask = mesh::orientation_mask(mesh::cell_dim(_cell_type));
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -288,7 +288,7 @@ FiniteElement<T>::FiniteElement(
   _space_dim = dof_offset;
   _signature += ")";
 
-  init_orientation_masks();
+  _orientation_mask = mesh::orientation_mask(mesh::cell_dim(_cell_type));
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -322,7 +322,7 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
     _entity_closure_dofs[tdim][0].push_back(i);
   }
 
-  init_orientation_masks();
+  _orientation_mask = mesh::orientation_mask(mesh::cell_dim(_cell_type));
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

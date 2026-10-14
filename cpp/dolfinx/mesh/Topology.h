@@ -176,57 +176,44 @@ public:
 
   /// @brief Sign the facets on which two cells disagree on the normal.
   ///
-  /// On a manifold mesh, whose topological dimension is less than its
-  /// geometric dimension, the contravariant Piola map scales by the
-  /// pseudo-determinant \f$\sqrt{\det(J^T J)}\f$ of the Jacobian
-  /// \f$J\f$. It is positive by construction, so it cannot encode an
-  /// orientation. Instead the vertex order of each cell fixes its
-  /// normal, and elements mapped by that map (e.g. Raviart-Thomas,
-  /// Brezzi-Douglas-Marini) are conforming only between cells whose
-  /// normals agree. Two cells agree exactly when they run the facet
-  /// they share in opposite directions.
+  /// On a manifold, the contravariant Piola map scales by the
+  /// pseudo-determinant \f$\sqrt{\det(J^T J)}\f$, which is positive, so
+  /// each cell's normal is fixed by its vertex order. Elements mapped by
+  /// it (e.g. Raviart-Thomas, Brezzi-Douglas-Marini) are conforming only
+  /// across facets whose two cells agree on the normal, i.e. run the
+  /// facet in opposite directions.
   ///
-  /// Where they do not, one of the two negates its degrees-of-freedom
-  /// on that facet (see compute_facet_orientations). That restores the
-  /// agreement and disturbs nothing else, since only a facet's own
-  /// basis functions have a non-zero normal trace on it. The cells
-  /// themselves are neither reordered nor reversed, and the result is
-  /// read back with facet_orientations.
+  /// On each facet where they do not, one of the two cells negates its
+  /// degrees-of-freedom there (see compute_facet_orientations). Only a
+  /// facet's own basis functions have a non-zero normal trace on it, so
+  /// nothing else changes. Cells are not reordered. As each facet is
+  /// treated on its own, surfaces that cannot be oriented (e.g. a Möbius
+  /// strip) work too, and no ghost cells are needed. Creates the edges.
   ///
-  /// This asks nothing of the surface as a whole, only of each facet in
-  /// turn, so it works whether or not the surface can be oriented, a
-  /// Möbius strip included, and needs no ghost cells. It additionally
-  /// creates the edges the signs are computed across.
+  /// A function space whose element needs the signs (see
+  /// fem::FiniteElement::depends_on_facet_orientations) can only be
+  /// created on a manifold after this call; Lagrange and Nédélec spaces
+  /// do not need them. The signs are read with facet_orientations.
   ///
-  /// A function space whose element needs the signs can only be created
-  /// on a manifold mesh once this has been called (see
-  /// has_facet_orientations). Lagrange and Nédélec spaces do not need
-  /// them.
-  ///
-  /// @warning Changing the signs after creating spaces whose basis
-  /// depends on them invalidates existing Function data on them, as
-  /// their degrees-of-freedom are not corrected.
+  /// @warning Changing the signs after creating spaces that depend on
+  /// them invalidates existing Function data on those spaces.
   ///
   /// @note Collective.
   /// @throws std::invalid_argument If the topological dimension is not
   /// 2.
   /// @throws std::runtime_error If an edge is shared by more than two
-  /// cells.
+  /// cells. On every process in Developer and Debug builds, otherwise
+  /// only on the processes holding such an edge, while the others
+  /// return.
   /// @throws std::out_of_range If there is more than one cell type.
   void create_facet_orientations();
 
   /// @brief Get the sign carried by each facet of each cell (see
   /// create_facet_orientations).
   ///
-  /// A facet whose two cells disagree on its normal has the
-  /// degrees-of-freedom of one of them negated there. This is what makes
-  /// a surface that cannot be oriented, where no assignment of
-  /// orientations to cells makes every pair of neighbours agree,
-  /// conforming all the same.
-  ///
   /// @note Which of a facet's two cells carries the sign, and how many
-  /// facets are signed, depend on the partitioning, since both follow
-  /// from the global numbering. The space they define does not.
+  /// facets are signed, follow from the global numbering and so depend
+  /// on the partitioning. The space they define does not.
   ///
   /// @return For each owned and ghost cell and each of its facets, in
   /// cell-local facet order and flattened row-wise, `-1` if the
