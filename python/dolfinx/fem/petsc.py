@@ -58,6 +58,8 @@ from dolfinx.fem.assemble import (
     _bc_dof_markers_by_space,
     _bc_lifting_markers,
     _bc_lifting_values,
+    _check_matrix_bc_marker,
+    _matrix_bc_diagonal,
     _owned_marked_rows,
 )
 from dolfinx.fem.bcs import DirichletBC
@@ -71,6 +73,7 @@ from dolfinx.mesh import EntityMap as _EntityMap
 
 __all__ = [
     "LinearProblem",
+    "MatrixBCData",
     "NonlinearProblem",
     "apply_lifting",
     "assemble_jacobian",
@@ -86,8 +89,28 @@ __all__ = [
     "discrete_gradient",
     "interpolation_matrix",
     "numba_utils",
+    "prepare_matrix_bcs",
     "set_bc",
 ]
+
+
+class MatrixBCData(typing.NamedTuple):
+    """Prepared matrix constraints for PETSc matrix assembly.
+
+    Markers cover owned and ghost dofs in unrolled local numbering, one
+    array per block row or column. Diagonal rows and values account for
+    the target matrix type, including MATIS sharing. Treat arrays as
+    read-only. Rebuild when constrained dofs, spaces, diagonal values or
+    the relevant matrix layout change, but not when BC values change.
+    """
+
+    row_markers: list[npt.NDArray[np.int8]]
+    column_markers: list[npt.NDArray[np.int8]]
+    row_spaces: Sequence[_FunctionSpace | None]
+    column_spaces: Sequence[_FunctionSpace | None]
+    diagonal_rows: list[npt.NDArray[np.int32]]
+    diagonal_values: list[npt.NDArray | float | complex]
+    diagonal_ghosts: tuple[bool, ...]
 
 
 # -- Vector instantiation -------------------------------------------------
@@ -427,8 +450,8 @@ def _assemble_vector_petsc(
 @overload
 def assemble_matrix(
     a: Form | Sequence[Sequence[Form | None]],
-    bcs: Sequence[DirichletBC] | None = None,
-    diag: float = 1.0,
+    bcs: Sequence[DirichletBC] | MatrixBCData | None = None,
+    diag: float | complex | None = None,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
     | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
@@ -441,8 +464,8 @@ def assemble_matrix(
 def assemble_matrix(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form | None]],
-    bcs: Sequence[DirichletBC] | None = None,
-    diag: float = 1.0,
+    bcs: Sequence[DirichletBC] | MatrixBCData | None = None,
+    diag: float | complex | None = None,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: (
         dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
@@ -455,8 +478,8 @@ def assemble_matrix(
 @functools.singledispatch
 def assemble_matrix(
     a: Form | Sequence[Sequence[Form | None]],
-    bcs: Sequence[DirichletBC] | None = None,
-    diag: float = 1,
+    bcs: Sequence[DirichletBC] | MatrixBCData | None = None,
+    diag: float | complex | None = None,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: (
         dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
@@ -490,7 +513,8 @@ def assemble_matrix(
           ``PETSc.Mat.Type.NEST``.
 
     Rows/columns that are constrained by a Dirichlet boundary condition
-    are zeroed, with the diagonal to set to ``diag``.
+    are zeroed, with the constrained diagonal set to 1 by default or
+    to the values in prepared data.
 
     Constant and coefficient data that appear in the form(s) can be
     packed outside of this function to avoid re-packing by this
@@ -504,10 +528,12 @@ def assemble_matrix(
 
     Args:
         a: Bilinear form(s) to assembled into a matrix.
-        bcs: Dirichlet boundary conditions applied to the system.
-        diag: Value to set on the matrix diagonal for Dirichlet
-            boundary condition constrained degrees-of-freedom belonging
-            to the same trial and test space.
+        bcs: Dirichlet boundary conditions or data from
+            :func:`prepare_matrix_bcs`. With boundary conditions, the
+            diagonal defaults to 1.
+        diag: Deprecated diagonal value for boundary-condition objects.
+            Use :func:`prepare_matrix_bcs` for a custom diagonal. Cannot
+            be supplied with prepared data.
         constants: Constants appearing in the form.
         coeffs: Coefficients appearing in the form.
         kind: PETSc matrix type (``MatType``).
@@ -516,9 +542,8 @@ def assemble_matrix(
         Matrix representing the bilinear form.
 
     Note:
-        Convenience function for callers that have boundary conditions.
-        It rebuilds the constrained dof markers on every call, and
-        should not be called internally by the library.
+        Passing boundary-condition objects rebuilds the constrained dof
+        data on each call. Pass prepared data to reuse it.
     """  # noqa: D301
     return _assemble_matrix_mat(create_matrix(a, kind), a, bcs, diag, constants, coeffs)
 
@@ -527,8 +552,8 @@ def assemble_matrix(
 def _assemble_matrix_mat(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form | None]],
-    bcs: Sequence[DirichletBC] | None = None,
-    diag: float = 1,
+    bcs: Sequence[DirichletBC] | MatrixBCData | None = None,
+    diag: float | complex | None = None,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: (
         dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
@@ -546,16 +571,46 @@ def _assemble_matrix_mat(
     accumulated.
 
     Note:
-        Convenience function for callers that have boundary conditions.
-        It rebuilds the constrained dof markers on every call, and
-        should not be called internally by the library.
+        Passing boundary-condition objects rebuilds the constrained dof
+        data on each call. Pass prepared data to reuse it.
     """
-    bc_data = _matrix_bc_data(a, bcs)
+    if isinstance(bcs, MatrixBCData):
+        if diag is not None:
+            raise ValueError("diag cannot be supplied with prepared matrix BC data")
+        data = bcs
+    else:
+        data = prepare_matrix_bcs(A, a, bcs, _matrix_bc_diagonal(diag))
+    if isinstance(a, Sequence):
+        V0, V1 = _extract_block_spaces(a)
+    else:
+        V0, V1 = [a.function_spaces[0]], [a.function_spaces[1]]
+    for spaces, prepared in ((V0, data.row_spaces), (V1, data.column_spaces)):
+        if len(spaces) != len(prepared) or any(
+            (V is None) != (W is None)
+            or (V is not None and W is not None and V._cpp_object is not W._cpp_object)
+            for V, W in zip(spaces, prepared, strict=True)
+        ):
+            raise ValueError("Prepared matrix BC data belongs to different function spaces")
+    if tuple(_diag_on_ghost_rows(A, a)) != data.diagonal_ghosts:
+        raise ValueError("Prepared matrix BC data has an incompatible diagonal layout")
+    if (
+        len(data.row_markers) != len(V0)
+        or len(data.column_markers) != len(V1)
+        or len(data.diagonal_rows) != len(V0)
+        or len(data.diagonal_values) != len(V0)
+    ):
+        raise ValueError("Prepared matrix BC data has inconsistent block counts")
+    for spaces, markers in ((V0, data.row_markers), (V1, data.column_markers)):
+        for V, marker in zip(spaces, markers, strict=True):
+            _check_matrix_bc_marker(V, marker)
+    bc_data = _MatrixBCData(
+        data.row_markers, data.column_markers, data.row_spaces, data.column_spaces
+    )
     return _assemble_matrix_petsc(
         A,
         a,
         bc_data,
-        _matrix_diag_data(bc_data, diag, _diag_on_ghost_rows(A, a)),
+        _MatrixDiagData(data.diagonal_rows, data.diagonal_values),
         pack_constants(a) if constants is None else constants,
         pack_coefficients(a) if coeffs is None else coeffs,
     )
@@ -714,6 +769,43 @@ class _MatrixDiagData(typing.NamedTuple):
 
     rows: list[npt.NDArray[np.int32]]
     values: list[npt.NDArray | float | complex]
+
+
+def prepare_matrix_bcs(
+    A: PETSc.Mat,
+    a: Form | Sequence[Sequence[Form | None]],
+    bcs: Sequence[DirichletBC] | None,
+    diag: float | complex = 1.0,
+) -> MatrixBCData:
+    """Prepare reusable boundary-condition data for PETSc matrix assembly.
+
+    Args:
+        A: Target matrix determining the diagonal layout.
+        a: Bilinear form or rectangular array of forms.
+        bcs: Boundary conditions identifying constrained dofs.
+        diag: Value to set on constrained diagonal entries.
+
+    Returns:
+        Data accepted by ``assemble_matrix(..., bcs=data)``. It can be
+        reused with forms on the same spaces and matrices with the same
+        relevant layout.
+
+    Note:
+        Collective when a diagonal block uses MATIS, including on ranks
+        with no constrained dofs.
+    """
+    bc_data = _matrix_bc_data(a, bcs)
+    ghosts = _diag_on_ghost_rows(A, a)
+    diag_data = _matrix_diag_data(bc_data, diag, ghosts)
+    return MatrixBCData(
+        bc_data.row_markers,
+        bc_data.column_markers,
+        bc_data.row_spaces,
+        bc_data.column_spaces,
+        diag_data.rows,
+        diag_data.values,
+        tuple(ghosts),
+    )
 
 
 def _check_nest_forms(A: PETSc.Mat, a: Form | Sequence[Sequence[Form | None]]) -> None:
