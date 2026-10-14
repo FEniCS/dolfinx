@@ -547,13 +547,19 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             be symmetric. Symmetry is not checked, and the choice of
             components retained from non-symmetric data is unspecified.
 
-            For a :class:`Function` ``u0``, a symmetry mismatch is
-            supported only when the two elements use different basis
-            function maps (e.g. Regge or HHJ to Lagrange); other
-            combinations raise an exception. A symmetric ``u0`` is then
-            expanded to the full tensor. When interpolating into a
-            symmetric space, the input should be symmetric; the choice
-            of components retained from non-symmetric data is unspecified.
+            Direct Function-to-Function interpolation between a blocked
+            tensor element with ``symmetry=True`` and an element using a
+            full tensor representation is supported only when their basis
+            function map types differ. For example, interpolation between
+            symmetric blocked Lagrange and Regge or HHJ elements is
+            supported, whereas interpolation between Lagrange tensor
+            elements with different ``symmetry`` settings raises an
+            exception. Regge and HHJ tensors are mathematically symmetric,
+            but use a full tensor representation. A blocked source with
+            ``symmetry=True`` has its stored components expanded to the
+            full tensor. When interpolating into a symmetric space, the
+            input should be symmetric; the choice of components retained
+            from non-symmetric data is unspecified.
         """
 
         @singledispatch

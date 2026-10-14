@@ -1407,12 +1407,17 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
 /// the mesh associated with `u1`, then `cells0[i]` is the index of the
 /// *same* cell but in the mesh associated with `u0`.
 ///
-/// @note A symmetry mismatch between the spaces of `u0` and `u1` is
-/// handled only when the two elements have different basis function map
-/// types; other combinations throw. A symmetric `u0` then has its
-/// stored components expanded to the full tensor. For a symmetric `u1`,
-/// the input should be symmetric. Symmetry is not checked, and the
-/// choice of components retained from non-symmetric data is unspecified.
+/// @note Interpolation between a symmetric blocked tensor element and an
+/// element using a full tensor representation is supported only when
+/// their basis function map types differ. For example, interpolation
+/// between symmetric blocked Lagrange and Regge or HHJ elements is
+/// supported, whereas interpolation between symmetric and non-symmetric
+/// blocked Lagrange tensor elements throws. Regge and HHJ tensors are
+/// mathematically symmetric, but use a full tensor representation. A
+/// symmetric blocked `u0` has its stored components expanded to the full
+/// tensor. For a symmetric `u1`, the input should be symmetric. Symmetry
+/// is not checked, and the choice of components retained from
+/// non-symmetric data is unspecified.
 ///
 /// @pre `cells0` and `cells1` have the same size.
 template <dolfinx::scalar T, std::floating_point U>
