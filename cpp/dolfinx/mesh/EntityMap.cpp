@@ -54,6 +54,15 @@ const EntityMap& find_entity_map(
 void check_entity_cell_mapping(const Topology& topology_c,
                                const Topology& topology, int dim)
 {
+  if (topology.dim() < topology_c.dim())
+  {
+    throw std::invalid_argument(std::format(
+        "Cannot map entities of a topology of dimension {} to cells of a "
+        "topology of higher dimension {}. Integrate or evaluate over the "
+        "higher-dimensional mesh instead.",
+        topology.dim(), topology_c.dim()));
+  }
+
   if (topology.dim() > topology_c.dim() and dim != topology_c.dim())
   {
     throw std::invalid_argument(std::format(

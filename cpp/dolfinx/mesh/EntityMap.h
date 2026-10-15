@@ -213,8 +213,11 @@ const EntityMap& find_entity_map(
 /// a related topology.
 ///
 /// An entity maps to a *cell* of `topology_c`, so unless the
-/// topologies have equal dimension the entities must be cells of
-/// `topology_c`, i.e. have dimension `topology_c.dim()`.
+/// topologies have equal dimension `topology_c` must be the
+/// lower-dimensional one and the entities its cells, i.e. have
+/// dimension `topology_c.dim()`. These are the requirements of
+/// ::extract_cells_from_entities that do not depend on the entities
+/// themselves.
 ///
 /// @param[in] topology_c Related topology to map to.
 /// @param[in] topology Topology that the entities belong to.

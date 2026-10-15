@@ -22,7 +22,6 @@
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <format>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -406,10 +405,8 @@ void pack_coefficients(const Form<T, U>& form,
 /// @param offsets Insertion offset for each of the `coeffs` when packed
 /// into `c`.
 /// @param[in,out] c Packed coefficients.
-/// @throws std::invalid_argument if `entities` is a list of cells and
-/// `dim` is not the mesh dimension, or `entities` cannot be mapped to
-/// the cells of a coefficient's mesh (see
-/// mesh::check_entity_cell_mapping).
+/// @throws std::invalid_argument if `entities` cannot be mapped to the
+/// cells of a coefficient's mesh (see mesh::check_entity_cell_mapping).
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(
     const std::vector<std::reference_wrapper<const Function<T, U>>>& coeffs,
@@ -428,14 +425,6 @@ void pack_coefficients(
   // Check that the entities can be mapped to the cells of each
   // coefficient's mesh before packing, as packing may compute cell
   // permutations collectively
-  if (entities.rank() == 1 and dim != topology.dim())
-  {
-    throw std::invalid_argument(
-        std::format("Entities of dimension {} must be given as (cell, local "
-                    "entity index) pairs, not as a list of cells.",
-                    dim));
-  }
-
   std::vector<std::optional<std::reference_wrapper<const mesh::EntityMap>>>
       emaps(coeffs.size());
   for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
@@ -452,7 +441,10 @@ void pack_coefficients(
 
   // Cells of `topology`, shared by all coefficients on it
   std::vector<std::int32_t> cells;
-  if (std::ranges::any_of(emaps, [](const auto& emap) { return !emap; }))
+  if (std::ranges::any_of(
+          emaps,
+          [](const std::optional<std::reference_wrapper<const mesh::EntityMap>>&
+                 emap) { return !emap; }))
   {
     cells = mesh::extract_cells_from_entities(topology, topology, entities,
                                               std::nullopt);

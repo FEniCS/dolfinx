@@ -17,8 +17,6 @@
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/cell_types.h>
-#include <format>
 #include <functional>
 #include <map>
 #include <memory>

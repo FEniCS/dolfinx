@@ -29,7 +29,6 @@
 #include <functional>
 #include <iterator>
 #include <memory>
-#include <mpi.h>
 #include <optional>
 #include <ranges>
 #include <span>
@@ -57,8 +56,9 @@ namespace impl
 /// @param[in] rank Rank of the entities array: 1 for cell indices, 2
 /// for (cell, local entity index) pairs.
 /// @throws std::invalid_argument if `mesh` has more than one cell type,
-/// `e` was created on another mesh, or its entity dimension does not
-/// fit `mesh` or `rank`.
+/// `e` was created on another mesh, its entity dimension does not fit
+/// `mesh` or `rank`, or its argument is on another mesh whose cells
+/// are not the entities evaluated over.
 template <dolfinx::scalar T, std::floating_point U>
 void check_expression_entities(const fem::Expression<T, U>& e,
                                const mesh::Mesh<U>& mesh, std::size_t rank)
@@ -92,6 +92,14 @@ void check_expression_entities(const fem::Expression<T, U>& e,
     throw std::invalid_argument(
         "An Expression on facets, ridges or peaks must be evaluated on "
         "(cell, local entity index) pairs.");
+  }
+
+  // An argument on another mesh must live on the evaluated entities
+  if (std::shared_ptr<const FunctionSpace<U>> V = e.argument_space();
+      V and V->mesh()->topology() != mesh.topology())
+  {
+    mesh::check_entity_cell_mapping(*V->mesh()->topology(), *mesh.topology(),
+                                    e.entity_dim());
   }
 }
 } // namespace impl
@@ -170,13 +178,7 @@ void tabulate_expression(
 {
   impl::check_expression_entities(e, mesh, entities.rank());
 
-  // An argument on another mesh must live on the evaluated entities
   std::shared_ptr<const FunctionSpace<U>> V = e.argument_space();
-  if (V and V->mesh()->topology() != mesh.topology())
-  {
-    mesh::check_entity_cell_mapping(*V->mesh()->topology(), *mesh.topology(),
-                                    e.entity_dim());
-  }
 
   // Topology providing the argument's cell orientation data and, when
   // the argument is on another mesh, its cell for each of `entities`.
@@ -188,29 +190,27 @@ void tabulate_expression(
   if (element and element->first.get().needs_dof_transformations())
   {
     if (V and V->mesh()->topology() != mesh.topology())
+      topology_v = V->mesh()->topology_mutable();
+
+    // NOTE: Collective
+    topology_v->create_cell_permutations();
+    cell_info = topology_v->get_cell_permutation_info();
+
+    if (topology_v != mesh.topology_mutable())
     {
       const mesh::Topology& topology = *mesh.topology();
-      topology_v = V->mesh()->topology_mutable();
       const mesh::EntityMap& emap
           = mesh::find_entity_map(e.entity_maps(), topology, *topology_v);
       argument_cells = mesh::extract_cells_from_entities(
           *topology_v, topology, entities, std::cref(emap));
 #ifndef NDEBUG
-      // Agree across ranks before throwing, as cell permutations are
-      // created collectively below
-      int missing
-          = std::ranges::find(argument_cells, -1) != argument_cells.end();
-      MPI_Allreduce(MPI_IN_PLACE, &missing, 1, MPI_INT, MPI_LOR,
-                    topology.comm());
-      if (missing)
+      if (std::ranges::find(argument_cells, -1) != argument_cells.end())
       {
         throw std::invalid_argument(
             "An entity has no cell in the mesh of the argument.");
       }
 #endif
     }
-    topology_v->create_cell_permutations();
-    cell_info = topology_v->get_cell_permutation_info();
   }
 
   impl::tabulate_expression(values, e.kernel(), e.X().second, e.value_size(),

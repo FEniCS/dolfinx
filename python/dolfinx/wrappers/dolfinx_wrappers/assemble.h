@@ -52,6 +52,28 @@ namespace nb = nanobind;
 
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
+/// @brief Call `f` with `entities` viewed as a rank-1 mdspan of cells,
+/// or a rank-2 mdspan of (cell, local entity index) pairs.
+/// @throws std::invalid_argument if `entities` has another shape.
+template <typename F>
+decltype(auto)
+visit_entities(nb::ndarray<const std::int32_t, nb::c_contig> entities, F&& f)
+{
+  if (entities.ndim() == 1)
+    return f(md::mdspan(entities.data(), entities.shape(0)));
+  else if (entities.ndim() == 2 and entities.shape(1) == 2)
+  {
+    return f(md::mdspan<const std::int32_t,
+                        md::extents<std::size_t, md::dynamic_extent, 2>>(
+        entities.data(), entities.shape(0), 2));
+  }
+  else
+  {
+    throw std::invalid_argument(
+        "entities must have shape (num_entities,) or (num_entities, 2).");
+  }
+}
+
 template <typename U>
 dolfinx::la::SparsityPattern
 create_sparsity(const dolfinx::fem::FunctionSpace<U>& V0,
@@ -255,22 +277,9 @@ void declare_assembly_functions(nanobind::module_& m)
          const dolfinx::mesh::Mesh<U>& mesh,
          nb::ndarray<const std::int32_t, nb::c_contig> entities)
       {
-        if (entities.ndim() != 1
-            and (entities.ndim() != 2 or entities.shape(1) != 2))
-        {
-          throw std::invalid_argument("entities must have shape "
-                                      "(num_entities,) or (num_entities, 2).");
-        }
-        auto [coeffs, cstride]
-            = entities.ndim() == 1
-                  ? dolfinx::fem::pack_coefficients(
-                        e, mesh, md::mdspan(entities.data(), entities.shape(0)))
-                  : dolfinx::fem::pack_coefficients(
-                        e, mesh,
-                        md::mdspan<
-                            const std::int32_t,
-                            md::extents<std::size_t, md::dynamic_extent, 2>>(
-                            entities.data(), entities.shape(0), 2));
+        auto [coeffs, cstride] = visit_entities(
+            entities, [&e, &mesh](auto entities)
+            { return dolfinx::fem::pack_coefficients(e, mesh, entities); });
         return dolfinx_wrappers::as_nbarray(
             std::move(coeffs),
             {entities.shape(0), static_cast<std::size_t>(cstride)});
@@ -312,36 +321,16 @@ void declare_assembly_functions(nanobind::module_& m)
           element = {std::cref(*V->element()), num_argument_dofs};
         }
 
-        if (entities.ndim() == 1)
-        {
-          dolfinx::fem::tabulate_expression(
-              std::span<T>(values.data(), values.size()), e,
-              md::mdspan(coeffs.data(), coeffs.shape(0), coeffs.shape(1)),
-              std::span(constants.data(), constants.size()), mesh,
-              md::mdspan(entities.data(), entities.size()), element);
-        }
-        else if (entities.ndim() == 2)
-        {
-          if (entities.shape(1) != 2)
-          {
-            throw std::invalid_argument(
-                std::format("2D entities array must have 2 columns, got {}.",
-                            entities.shape(1)));
-          }
-          dolfinx::fem::tabulate_expression(
-              std::span<T>(values.data(), values.size()), e,
-              md::mdspan(coeffs.data(), coeffs.shape(0), coeffs.shape(1)),
-              std::span(constants.data(), constants.size()), mesh,
-              md::mdspan<const std::int32_t,
-                         md::extents<std::size_t, md::dynamic_extent, 2>>(
-                  entities.data(), entities.shape(0), entities.shape(1)),
-              element);
-        }
-        else
-        {
-          throw std::invalid_argument(std::format(
-              "entities must have rank 1 or 2, got {}.", entities.ndim()));
-        }
+        visit_entities(
+            entities,
+            [&values, &e, &coeffs, &constants, &mesh, &element](auto entities)
+            {
+              dolfinx::fem::tabulate_expression(
+                  std::span<T>(values.data(), values.size()), e,
+                  md::mdspan(coeffs.data(), coeffs.shape(0), coeffs.shape(1)),
+                  std::span(constants.data(), constants.size()), mesh, entities,
+                  element);
+            });
       },
       nb::arg("values"), nb::arg("expression"), nb::arg("constants"),
       nb::arg("coefficients"), nb::arg("mesh"), nb::arg("entities"),
