@@ -18,7 +18,15 @@ from dolfinx import fem, mesh
 
 @pytest.mark.parametrize("shape", [(), (2,)])
 @pytest.mark.parametrize("constrained", [False, True])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_prepared_matrix_bcs(shape, constrained, dtype, monkeypatch):
     msh = mesh.create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype(0).real.dtype)
     V = fem.functionspace(msh, ("Lagrange", 1, shape))

@@ -106,8 +106,8 @@ class MatrixBCData(typing.NamedTuple):
 
     row_markers: list[npt.NDArray[np.int8]]
     column_markers: list[npt.NDArray[np.int8]]
-    row_spaces: Sequence[_FunctionSpace | None]
-    column_spaces: Sequence[_FunctionSpace | None]
+    row_spaces: Sequence[dolfinx.fem.FunctionSpace | None]
+    column_spaces: Sequence[dolfinx.fem.FunctionSpace | None]
     diagonal_rows: list[npt.NDArray[np.int32]]
     diagonal_values: list[npt.NDArray | float | complex]
     diagonal_ghosts: tuple[bool, ...]
