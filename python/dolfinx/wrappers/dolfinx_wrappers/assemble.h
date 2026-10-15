@@ -277,13 +277,14 @@ void declare_assembly_functions(nanobind::module_& m)
         if (entities.ndim() == 1)
         {
           dolfinx::fem::pack_coefficients(
-              c, mesh, md::mdspan(entities.data(), entities.shape(0)),
-              e.entity_dim(), e.entity_maps(), coffsets, std::span(coeffs));
+              c, *mesh.topology(),
+              md::mdspan(entities.data(), entities.shape(0)), e.entity_dim(),
+              e.entity_maps(), coffsets, std::span(coeffs));
         }
         else
         {
           dolfinx::fem::pack_coefficients(
-              c, mesh,
+              c, *mesh.topology(),
               md::mdspan<const std::int32_t,
                          md::extents<std::size_t, md::dynamic_extent, 2>>(
                   entities.data(), entities.shape(0), 2),

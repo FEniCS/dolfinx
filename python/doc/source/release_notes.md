@@ -17,8 +17,9 @@ may live on a submesh of the entities being evaluated over.
 topological dimension of the entities the Expression is evaluated on, and the number of
 evaluation points.
 
-In C++, `fem::pack_coefficients` for a list of coefficients takes the dimension of the
-entities as a new argument, e.g. `Expression::entity_dim()`. A coefficient or argument on another mesh must live on the
+In C++, `fem::pack_coefficients` for a list of coefficients takes the topology of the entities
+instead of their mesh, and the dimension of the entities as a new argument, e.g.
+`Expression::entity_dim()`. A coefficient or argument on another mesh must live on the
 entities being evaluated over; evaluating an Expression on entities of another dimension
 now raises `std::invalid_argument` (`ValueError` in Python).
 

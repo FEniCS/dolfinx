@@ -396,7 +396,7 @@ void pack_coefficients(const Form<T, U>& form,
 /// @tparam T Data type of coefficients
 /// @tparam U Floating point type of mesh geometry
 /// @param coeffs Coefficients to pack
-/// @param mesh Mesh which the entities belong to
+/// @param topology Topology that the entities belong to
 /// @param entities Entities to pack over: either a rank-1 list of cell
 /// indices, or a rank-2 list of (cell, local_entity_index) pairs.
 /// @param dim Topological dimension of `entities`.
@@ -413,7 +413,7 @@ void pack_coefficients(const Form<T, U>& form,
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(
     const std::vector<std::reference_wrapper<const Function<T, U>>>& coeffs,
-    const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities, int dim,
+    const mesh::Topology& topology, fem::MDSpan2 auto entities, int dim,
     const std::vector<std::reference_wrapper<const dolfinx::mesh::EntityMap>>&
         entity_maps,
     std::span<const int> offsets, std::span<T> c)
@@ -428,7 +428,6 @@ void pack_coefficients(
   // Check and map the entities to the cells of each coefficient's mesh
   // first: this is local and may throw, while packing may compute cell
   // permutations collectively
-  const mesh::Topology& topology = *mesh.topology();
   if (entities.rank() == 1 and dim != topology.dim())
   {
     throw std::invalid_argument(
@@ -445,10 +444,8 @@ void pack_coefficients(
   coefficient_cells.reserve(coeffs.size());
   for (const Function<T, U>& coeff : coeffs)
   {
-    std::shared_ptr<const mesh::Mesh<U>> mesh_c
-        = coeff.function_space()->mesh();
-    assert(mesh_c);
-    const mesh::Topology& topology_c = *mesh_c->topology();
+    const mesh::Topology& topology_c
+        = *coeff.function_space()->mesh()->topology();
     std::optional<std::reference_wrapper<const mesh::EntityMap>> emap;
     if (&topology_c != &topology)
     {
