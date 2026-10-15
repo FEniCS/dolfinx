@@ -154,17 +154,11 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   std::span<const int> src = col_map_A->src();
   std::span<const int> dest = col_map_A->dest();
 
-  // No-neighbour fast-path (parallel, but A's column map has no cross-process
-  // topology — i.e. A has no ghost columns). Also true for serial case.
-  //
-  // When src AND dest are both empty this rank does not appear in any other
-  // rank's neighbourhood communicator, so returning early without calling
-  // neighbourhood collectives is safe: no other rank is blocked waiting for
-  // us.
-  //
+  // Only serial execution may return early. Parallel ranks with no
+  // neighbours must still participate in communicator-wide collectives.
   MPI_Comm comm = row_map_A->comm();
   int comm_size = dolfinx::MPI::size(comm);
-  if (comm_size == 1 or (src.empty() && dest.empty()))
+  if (comm_size == 1)
   {
     // Pure local transpose: all columns are owned, so Aᵀ has no ghost columns.
     auto at_col_map = std::make_shared<dolfinx::common::IndexMap>(comm, n_row);
@@ -215,6 +209,7 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   // Count off-process entries: A[i, j_ghost] grouped by owning rank.
   // -----------------------------------------------------------------------
   std::vector<int> send_count(src.size(), 0);
+  send_count.reserve(1); // ensure data is not a nullptr
   for (std::int32_t i = 0; i < n_row; ++i)
   {
     for (std::int64_t k = offset_row_A[i]; k < row_ptr_A[i + 1]; ++k)
@@ -225,6 +220,7 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   }
 
   std::vector<int> recv_count(dest.size(), 0);
+  recv_count.reserve(1); // ensure data is not a nullptr
   MPI_Neighbor_alltoall(send_count.data(), 1, MPI_INT, recv_count.data(), 1,
                         MPI_INT, neigh_comm);
 

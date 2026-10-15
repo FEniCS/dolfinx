@@ -555,6 +555,27 @@ class Function(ufl.Coefficient, Generic[Scalar]):
                 interpolate over. If ``None``, then taken to be the same
                 cells as ``cells0``. If ``cells1`` is not ``None`` it
                 must have the same length as ``cells0``.
+
+        Note:
+            A symmetric rank-2 tensor space (``symmetry=True`` on the
+            element) stores only the ``d * (d + 1) / 2`` independent
+            components of a ``(d, d)`` tensor, but its value size is
+            ``d * d``, so a callable or :class:`Expression` ``u0`` must
+            supply all ``d * d`` components, row-major. The input should
+            be symmetric. Symmetry is not checked. The diagonal is taken
+            from the diagonal of the input; the choice of off-diagonal
+            components retained from non-symmetric data is unspecified.
+
+            Direct Function-to-Function interpolation between a blocked
+            tensor element with ``symmetry=True`` and an element using a
+            full tensor representation is supported. Regge and HHJ
+            tensors are mathematically symmetric, but use a full tensor
+            representation. A blocked source with ``symmetry=True`` has
+            its stored components expanded to the full tensor. When
+            interpolating into a symmetric space, the input should be
+            symmetric. The diagonal is taken from the diagonal of the
+            input; the choice of off-diagonal components retained from
+            non-symmetric data is unspecified.
         """
 
         @singledispatch

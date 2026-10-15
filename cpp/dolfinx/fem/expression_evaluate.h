@@ -237,6 +237,12 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
 /// with `u1`, then `cells0[i]` is the index of the *same* cell but in
 /// the mesh associated with `e0`.
 ///
+/// @note If `u1` is in a symmetric rank-2 tensor space, `e0` has the
+/// value size of the full `(d, d)` tensor. The input should be symmetric.
+/// Symmetry is not checked. The diagonal is taken from the diagonal of
+/// the input; the choice of off-diagonal components retained from
+/// non-symmetric data is unspecified.
+///
 /// @pre `cells0` and `cells1` have the same size.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
