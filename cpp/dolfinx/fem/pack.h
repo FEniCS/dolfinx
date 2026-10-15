@@ -425,8 +425,8 @@ void pack_coefficients(
   if (c.size() < entities.extent(0) * offsets.back())
     throw std::invalid_argument("Coefficient packing span is too small.");
 
-  // Check and map the entities to the cells of each coefficient's mesh
-  // first: this is local and may throw, while packing may compute cell
+  // Check that the entities can be mapped to the cells of each
+  // coefficient's mesh before packing, as packing may compute cell
   // permutations collectively
   if (entities.rank() == 1 and dim != topology.dim())
   {
@@ -436,35 +436,44 @@ void pack_coefficients(
                     dim));
   }
 
-  // Vector of vectors, as the cells of all coefficients must be mapped
-  // before any is packed: a throw between two collective cell
-  // permutation computations would deadlock. One list per coefficient,
-  // typically few.
-  std::vector<std::vector<std::int32_t>> coefficient_cells;
-  coefficient_cells.reserve(coeffs.size());
-  for (const Function<T, U>& coeff : coeffs)
+  std::vector<std::optional<std::reference_wrapper<const mesh::EntityMap>>>
+      emaps(coeffs.size());
+  for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
   {
     const mesh::Topology& topology_c
-        = *coeff.function_space()->mesh()->topology();
-    std::optional<std::reference_wrapper<const mesh::EntityMap>> emap;
+        = *coeffs[coeff].get().function_space()->mesh()->topology();
     if (&topology_c != &topology)
     {
       mesh::check_entity_cell_mapping(topology_c, topology, dim);
-      emap
+      emaps[coeff]
           = std::cref(mesh::find_entity_map(entity_maps, topology, topology_c));
     }
-    coefficient_cells.push_back(mesh::extract_cells_from_entities(
-        topology_c, topology, entities, emap));
+  }
+
+  // Cells of `topology`, shared by all coefficients on it
+  std::vector<std::int32_t> cells;
+  if (std::ranges::any_of(emaps, [](const auto& emap) { return !emap; }))
+  {
+    cells = mesh::extract_cells_from_entities(topology, topology, entities,
+                                              std::nullopt);
   }
 
   for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
   {
+    std::vector<std::int32_t> cells_c;
+    if (emaps[coeff])
+    {
+      cells_c = mesh::extract_cells_from_entities(
+          *coeffs[coeff].get().function_space()->mesh()->topology(), topology,
+          entities, emaps[coeff]);
+    }
+    std::span<const std::int32_t> coeff_cells = emaps[coeff] ? cells_c : cells;
+
     std::span<const std::uint32_t> cell_info
         = impl::get_cell_orientation_info(coeffs[coeff].get());
-    md::mdspan cells(coefficient_cells[coeff].data(),
-                     coefficient_cells[coeff].size());
-    impl::pack_coefficient_entity(std::span(c), cstride, coeffs[coeff].get(),
-                                  cell_info, cells, offsets[coeff]);
+    impl::pack_coefficient_entity(
+        std::span(c), cstride, coeffs[coeff].get(), cell_info,
+        md::mdspan(coeff_cells.data(), coeff_cells.size()), offsets[coeff]);
   }
 }
 

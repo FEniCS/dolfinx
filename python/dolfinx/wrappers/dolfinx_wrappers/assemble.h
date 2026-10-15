@@ -261,37 +261,19 @@ void declare_assembly_functions(nanobind::module_& m)
           throw std::invalid_argument("entities must have shape "
                                       "(num_entities,) or (num_entities, 2).");
         }
-        dolfinx::fem::impl::check_expression_entities(e, mesh, entities.ndim());
-
-        std::vector<int> coffsets = e.coefficient_offsets();
-        const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
-            coefficients = e.coefficients();
-        std::vector<T> coeffs(entities.shape(0) * coffsets.back());
-        std::size_t cstride = coffsets.back();
-        std::vector<std::reference_wrapper<const dolfinx::fem::Function<T, U>>>
-            c;
-        std::ranges::transform(
-            coefficients, std::back_inserter(c),
-            [](auto& c) -> const dolfinx::fem::Function<T, U>& { return *c; });
-
-        if (entities.ndim() == 1)
-        {
-          dolfinx::fem::pack_coefficients(
-              c, *mesh.topology(),
-              md::mdspan(entities.data(), entities.shape(0)), e.entity_dim(),
-              e.entity_maps(), coffsets, std::span(coeffs));
-        }
-        else
-        {
-          dolfinx::fem::pack_coefficients(
-              c, *mesh.topology(),
-              md::mdspan<const std::int32_t,
-                         md::extents<std::size_t, md::dynamic_extent, 2>>(
-                  entities.data(), entities.shape(0), 2),
-              e.entity_dim(), e.entity_maps(), coffsets, std::span(coeffs));
-        }
-        return dolfinx_wrappers::as_nbarray(std::move(coeffs),
-                                            {entities.shape(0), cstride});
+        auto [coeffs, cstride]
+            = entities.ndim() == 1
+                  ? dolfinx::fem::pack_coefficients(
+                        e, mesh, md::mdspan(entities.data(), entities.shape(0)))
+                  : dolfinx::fem::pack_coefficients(
+                        e, mesh,
+                        md::mdspan<
+                            const std::int32_t,
+                            md::extents<std::size_t, md::dynamic_extent, 2>>(
+                            entities.data(), entities.shape(0), 2));
+        return dolfinx_wrappers::as_nbarray(
+            std::move(coeffs),
+            {entities.shape(0), static_cast<std::size_t>(cstride)});
       },
       nb::arg("expression"), nb::arg("mesh"), nb::arg("entities"),
       "Pack coefficients for a Expression.");

@@ -173,7 +173,7 @@ TEST_CASE("Expression with data on a mesh of the wrong dimension",
   mesh->topology_mutable()->create_connectivity(tdim, tdim - 2);
 
   // A submesh of the facets, i.e. one dimension too high for a ridge
-  auto facets = mesh::locate_entities(
+  std::vector<std::int32_t> facets = mesh::locate_entities(
       *mesh, tdim - 1,
       [](auto x) { return std::vector<std::int8_t>(x.extent(1), 1); });
   auto [submesh, e_map, v_map, g_map]
@@ -198,7 +198,7 @@ TEST_CASE("Expression with data on a mesh of the wrong dimension",
       entities(ridges.data(), 1, 2);
 
   auto kernel = [](double*, const double*, const double*, const double*,
-                   const int*, const uint8_t*, void*) {};
+                   const int*, const std::uint8_t*, void*) {};
   const std::uint64_t hash = mesh->geometry().cmaps().front().hash();
 
   SECTION("coefficient")

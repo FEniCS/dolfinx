@@ -21,6 +21,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <format>
+#include <iterator>
 #include <numeric>
 #include <optional>
 #include <random>
@@ -1938,7 +1939,7 @@ mesh::entity_permutations(Topology& topology, int dim, int cell_type_idx)
     return {};
 
   std::vector<CellType> cell_types = topology.cell_types();
-  if (cell_type_idx < 0 or cell_type_idx >= int(cell_types.size()))
+  if (cell_type_idx < 0 or cell_type_idx >= std::ssize(cell_types))
   {
     throw std::out_of_range(std::format(
         "Cell type index {} out of range for a topology with {} cell types.",

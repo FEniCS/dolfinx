@@ -72,26 +72,6 @@ constexpr int integral_entity_dim(IntegralType type, int tdim)
   throw std::invalid_argument("Unknown integral type.");
 }
 
-namespace impl
-{
-/// @brief Permutations of the cell-local entities that an integral of
-/// the given type is over.
-///
-/// @param[in,out] topology Mesh topology of the integration domain.
-/// @param[in] type Integral type.
-/// @param[in] cell_type_idx Index of the cell type, following the order
-/// of mesh::Topology::cell_types.
-/// @return Permutation of each cell-local entity, shape
-/// `(num_cells, entities_per_cell)`.
-inline md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
-entity_permutations(mesh::Topology& topology, IntegralType type,
-                    int cell_type_idx)
-{
-  return mesh::entity_permutations(
-      topology, integral_entity_dim(type, topology.dim()), cell_type_idx);
-}
-} // namespace impl
-
 /// @brief Represents integral data, containing the kernel, and a list
 /// of entities to integrate over and the indices of the coefficient
 /// functions (relative to the Form) active for this integral.

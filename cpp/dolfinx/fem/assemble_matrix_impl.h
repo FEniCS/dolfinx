@@ -847,9 +847,11 @@ void assemble_matrix(
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
     if (a.needs_facet_permutations())
     {
-      facet_perms = impl::entity_permutations(*mesh->topology_mutable(),
-                                              IntegralType::interior_facet,
-                                              cell_type_idx);
+      facet_perms = mesh::entity_permutations(
+          *mesh->topology_mutable(),
+          integral_entity_dim(IntegralType::interior_facet,
+                              mesh->topology()->dim()),
+          cell_type_idx);
     }
 
     for (int i = 0;
@@ -915,8 +917,10 @@ void assemble_matrix(
       md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
       if (a.needs_facet_permutations())
       {
-        perms = impl::entity_permutations(*mesh->topology_mutable(), itg_type,
-                                          cell_type_idx);
+        perms = mesh::entity_permutations(
+            *mesh->topology_mutable(),
+            integral_entity_dim(itg_type, mesh->topology()->dim()),
+            cell_type_idx);
       }
 
       for (int i = 0; i < num_itg; ++i)

@@ -29,6 +29,7 @@
 #include <functional>
 #include <iterator>
 #include <memory>
+#include <mpi.h>
 #include <optional>
 #include <ranges>
 #include <span>
@@ -62,8 +63,9 @@ template <dolfinx::scalar T, std::floating_point U>
 void check_expression_entities(const fem::Expression<T, U>& e,
                                const mesh::Mesh<U>& mesh, std::size_t rank)
 {
-  // Evaluation uses the geometry and entity permutations of the first
-  // cell type only
+  // An Expression is compiled for one cell type, and cell indices are
+  // local to a cell type, so neither cells nor (cell, local index)
+  // pairs identify entities of a mesh with several cell types
   if (mesh.topology()->cell_types().size() > 1)
   {
     throw std::invalid_argument("Evaluating an Expression on a mesh with "
@@ -94,6 +96,40 @@ void check_expression_entities(const fem::Expression<T, U>& e,
 }
 } // namespace impl
 
+/// @brief Pack the coefficients of an Expression over entities of a
+/// mesh.
+///
+/// @tparam T Scalar type.
+/// @tparam U Geometry type.
+/// @param[in] e Expression to pack coefficients for.
+/// @param[in] mesh Mesh that the Expression is evaluated on.
+/// @param[in] entities Entities to pack over: either a rank-1 list of
+/// cell indices, or a rank-2 list of (cell, local entity index) pairs.
+/// @return Packed coefficients, shape `(entities.extent(0), cstride)`
+/// and row-major, and `cstride`.
+/// @throws std::invalid_argument if `e` cannot be evaluated over
+/// `entities` of `mesh`.
+template <dolfinx::scalar T, std::floating_point U>
+std::pair<std::vector<T>, int> pack_coefficients(const fem::Expression<T, U>& e,
+                                                 const mesh::Mesh<U>& mesh,
+                                                 fem::MDSpan2 auto entities)
+{
+  // Validate before packing, as packing may compute cell permutations
+  // collectively
+  impl::check_expression_entities(e, mesh, entities.rank());
+
+  std::vector<int> coffsets = e.coefficient_offsets();
+  const int cstride = coffsets.back();
+  std::vector<T> coeffs(entities.extent(0) * cstride);
+  std::vector<std::reference_wrapper<const Function<T, U>>> c;
+  std::ranges::transform(e.coefficients(), std::back_inserter(c),
+                         [](const std::shared_ptr<const Function<T, U>>& f)
+                             -> const Function<T, U>& { return *f; });
+  fem::pack_coefficients(c, *mesh.topology(), entities, e.entity_dim(),
+                         e.entity_maps(), coffsets, std::span(coeffs));
+  return {std::move(coeffs), cstride};
+}
+
 /// @brief Evaluate an Expression on cells, facets, ridges or peaks.
 ///
 /// This function accepts packed coefficient data, which allows it be
@@ -118,12 +154,10 @@ void check_expression_entities(const fem::Expression<T, U>& e,
 /// @note An argument on a mesh other than `mesh` is mapped to its own
 /// cells through the Expression's entity maps, and its dof
 /// transformations use that mesh's cell orientation data.
-/// @pre `mesh` has a single cell type, and `e` was created with the
-/// coordinate element of `mesh`.
-/// @pre `e.entity_dim()` is at most the topological dimension of
-/// `mesh`, and equal to it if `entities` is a list of cells.
 /// @pre If the argument is on a mesh other than `mesh` and needs dof
 /// transformations, each of `entities` has a cell in that mesh.
+/// @throws std::invalid_argument if `e` cannot be evaluated over
+/// `entities` of `mesh`.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, const fem::Expression<T, U>& e,
@@ -134,6 +168,8 @@ void tabulate_expression(
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
+  impl::check_expression_entities(e, mesh, entities.rank());
+
   // An argument on another mesh must live on the evaluated entities
   std::shared_ptr<const FunctionSpace<U>> V = e.argument_space();
   if (V and V->mesh()->topology() != mesh.topology())
@@ -160,7 +196,13 @@ void tabulate_expression(
       argument_cells = mesh::extract_cells_from_entities(
           *topology_v, topology, entities, std::cref(emap));
 #ifndef NDEBUG
-      if (std::ranges::find(argument_cells, -1) != argument_cells.end())
+      // Agree across ranks before throwing, as cell permutations are
+      // created collectively below
+      int missing
+          = std::ranges::find(argument_cells, -1) != argument_cells.end();
+      MPI_Allreduce(MPI_IN_PLACE, &missing, 1, MPI_INT, MPI_LOR,
+                    topology.comm());
+      if (missing)
       {
         throw std::invalid_argument(
             "An entity has no cell in the mesh of the argument.");
@@ -196,34 +238,20 @@ template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
 {
-  // Validate before packing coefficients, as packing may compute cell
-  // permutations collectively
-  impl::check_expression_entities(e, mesh, entities.rank());
+  // Packing validates `e` against `mesh` and `entities` first
+  auto [coeffs, cstride] = fem::pack_coefficients(e, mesh, entities);
+  std::vector<T> constants = fem::pack_constants(e);
 
   std::optional<
       std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
       element = std::nullopt;
-  if (auto V = e.argument_space(); V)
+  if (std::shared_ptr<const FunctionSpace<U>> V = e.argument_space(); V)
   {
     std::size_t num_argument_dofs
         = V->dofmap()->element_dof_layout().num_dofs() * V->dofmap()->bs();
     assert(V->element());
     element = {std::cref(*V->element()), num_argument_dofs};
   }
-
-  std::vector<int> coffsets = e.coefficient_offsets();
-  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
-      = e.coefficients();
-  std::vector<T> coeffs(entities.extent(0) * coffsets.back());
-  int cstride = coffsets.back();
-  {
-    std::vector<std::reference_wrapper<const Function<T, U>>> c;
-    std::ranges::transform(coefficients, std::back_inserter(c),
-                           [](auto c) -> const Function<T, U>& { return *c; });
-    fem::pack_coefficients(c, *mesh.topology(), entities, e.entity_dim(),
-                           e.entity_maps(), coffsets, std::span(coeffs));
-  }
-  std::vector<T> constants = fem::pack_constants(e);
 
   tabulate_expression(
       values, e,
