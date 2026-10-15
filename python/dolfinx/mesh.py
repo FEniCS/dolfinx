@@ -751,7 +751,9 @@ class Mesh(typing.Generic[Real]):
         """Return the Basix cell type."""
         return typing.cast(basix.CellType, getattr(basix.CellType, self.topology.cell_name()))
 
-    def h(self, dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[Real]:
+    def h(
+        self, dim: int, entities: npt.NDArray[np.int32], num_threads: int = 1
+    ) -> npt.NDArray[Real]:
         """Geometric size measure of cell entities.
 
         Args:
@@ -759,11 +761,14 @@ class Mesh(typing.Generic[Real]):
                 size measure of.
             entities: Indices of entities of dimension ``dim`` to
                 compute size measure of.
+            num_threads: Number of threads to use. Must be >= 1.
 
         Returns:
             Size measure for each requested entity.
         """
-        return _cpp.mesh.h(self._cpp_object, dim, entities)  # type: ignore[return-value]
+        return _cpp.mesh.h(  # type: ignore[return-value]
+            self._cpp_object, dim, entities, num_threads
+        )
 
     @property
     def topology(self) -> Topology:
@@ -1014,7 +1019,7 @@ def compute_incident_entities(
 
 
 def compute_midpoints(
-    msh: Mesh[Real], dim: int, entities: npt.NDArray[np.int32]
+    msh: Mesh[Real], dim: int, entities: npt.NDArray[np.int32], num_threads: int = 1
 ) -> npt.NDArray[Real]:
     """Compute the midpoints of a set of mesh entities.
 
@@ -1022,11 +1027,14 @@ def compute_midpoints(
         msh: The mesh.
         dim: Topological dimension of the mesh entities to consider.
         entities: Indices of entities in ``mesh`` to consider.
+        num_threads: Number of threads to use. Must be >= 1.
 
     Returns:
         Midpoints of the entities, shape ``(num_entities, 3)``.
     """
-    return _cpp.mesh.compute_midpoints(msh._cpp_object, dim, entities)  # type: ignore[return-value]
+    return _cpp.mesh.compute_midpoints(  # type: ignore[return-value]
+        msh._cpp_object, dim, entities, num_threads
+    )
 
 
 def locate_entities(msh: Mesh, dim: int, marker: Callable) -> np.ndarray:
@@ -1885,18 +1893,23 @@ def entities_to_geometry(
     return _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, permute)
 
 
-def cell_normals(msh: Mesh[Real], dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[Real]:
+def cell_normals(
+    msh: Mesh[Real], dim: int, entities: npt.NDArray[np.int32], num_threads: int = 1
+) -> npt.NDArray[Real]:
     """Compute the normal to a set of mesh entities.
 
     Args:
         msh: The mesh.
         dim: Topological dimension of the entities.
         entities: Entity indices (local to the process).
+        num_threads: Number of threads to use. Must be >= 1.
 
     Returns:
         Normal vectors, ``shape=(len(entities), 3)``.
     """
-    return _cpp.mesh.cell_normals(msh._cpp_object, dim, entities)  # type: ignore[return-value]
+    return _cpp.mesh.cell_normals(  # type: ignore[return-value]
+        msh._cpp_object, dim, entities, num_threads
+    )
 
 
 def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:

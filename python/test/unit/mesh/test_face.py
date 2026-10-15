@@ -27,7 +27,8 @@ def square():
     return create_unit_square(MPI.COMM_WORLD, 5, 5)
 
 
-def test_normals(cube, square) -> None:
+@pytest.mark.parametrize("num_threads", [1, 2])
+def test_normals(cube, square, num_threads) -> None:
     """Test cell normals for a subset of facets."""
 
     def left_side(x):
@@ -35,10 +36,10 @@ def test_normals(cube, square) -> None:
 
     fdim = cube.topology.dim - 1
     facets = locate_entities_boundary(cube, fdim, left_side)
-    normals = cell_normals(cube, fdim, facets)
+    normals = cell_normals(cube, fdim, facets, num_threads)
     assert np.allclose(np.abs(normals), [1, 0, 0])
 
     fdim = square.topology.dim - 1
     facets = locate_entities_boundary(square, fdim, left_side)
-    normals = cell_normals(square, fdim, facets)
+    normals = cell_normals(square, fdim, facets, num_threads)
     assert np.allclose(np.abs(normals), [1, 0, 0])
