@@ -1932,14 +1932,23 @@ mesh::compute_mixed_cell_pairs(const Topology& topology, CellType facet_type)
 }
 //-----------------------------------------------------------------------------
 md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
-mesh::entity_permutations(Topology& topology, int dim, CellType cell_type)
+mesh::entity_permutations(Topology& topology, int dim, int cell_type_idx)
 {
   if (dim == topology.dim())
     return {};
 
+  std::vector<CellType> cell_types = topology.cell_types();
+  if (cell_type_idx < 0 or cell_type_idx >= int(cell_types.size()))
+  {
+    throw std::out_of_range(std::format(
+        "Cell type index {} out of range for a topology with {} cell types.",
+        cell_type_idx, cell_types.size()));
+  }
+
   topology.create_entity_permutations(dim);
   const std::vector<std::uint8_t>& p = topology.get_entity_permutations(dim);
-  const int num_entities_per_cell = cell_num_entities(cell_type, dim);
+  const int num_entities_per_cell
+      = cell_num_entities(cell_types[cell_type_idx], dim);
   return md::mdspan(p.data(), p.size() / num_entities_per_cell,
                     num_entities_per_cell);
 }

@@ -8,7 +8,6 @@
 
 #include "Expression.h"
 #include "FiniteElement.h"
-#include "Form.h"
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "assemble_expression_impl.h"
@@ -56,12 +55,21 @@ namespace impl
 /// @param[in] mesh Mesh that the Expression is evaluated on.
 /// @param[in] rank Rank of the entities array: 1 for cell indices, 2
 /// for (cell, local entity index) pairs.
-/// @throws std::invalid_argument if `e` was created on another mesh, or
-/// its entity dimension does not fit `mesh` or `rank`.
+/// @throws std::invalid_argument if `mesh` has more than one cell type,
+/// `e` was created on another mesh, or its entity dimension does not
+/// fit `mesh` or `rank`.
 template <dolfinx::scalar T, std::floating_point U>
 void check_expression_entities(const fem::Expression<T, U>& e,
                                const mesh::Mesh<U>& mesh, std::size_t rank)
 {
+  // Evaluation uses the geometry and entity permutations of the first
+  // cell type only
+  if (mesh.topology()->cell_types().size() > 1)
+  {
+    throw std::invalid_argument("Evaluating an Expression on a mesh with "
+                                "multiple cell types is not supported.");
+  }
+
   if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
   {
     throw std::invalid_argument(
@@ -110,6 +118,10 @@ void check_expression_entities(const fem::Expression<T, U>& e,
 /// @note An argument on a mesh other than `mesh` is mapped to its own
 /// cells through the Expression's entity maps, and its dof
 /// transformations use that mesh's cell orientation data.
+/// @pre `mesh` has a single cell type, and `e` was created with the
+/// coordinate element of `mesh`.
+/// @pre `e.entity_dim()` is at most the topological dimension of
+/// `mesh`, and equal to it if `entities` is a list of cells.
 /// @pre If the argument is on a mesh other than `mesh` and needs dof
 /// transformations, each of `entities` has a cell in that mesh.
 template <dolfinx::scalar T, std::floating_point U>
@@ -122,14 +134,12 @@ void tabulate_expression(
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
-  impl::check_expression_entities(e, mesh, entities.rank());
-
   // An argument on another mesh must live on the evaluated entities
   std::shared_ptr<const FunctionSpace<U>> V = e.argument_space();
   if (V and V->mesh()->topology() != mesh.topology())
   {
-    impl::check_entity_mapping_dim(mesh.topology()->dim(), e.entity_dim(),
-                                   V->mesh()->topology()->dim());
+    mesh::check_entity_cell_mapping(*V->mesh()->topology(), *mesh.topology(),
+                                    e.entity_dim());
   }
 
   // Topology providing the argument's cell orientation data and, when
@@ -161,10 +171,9 @@ void tabulate_expression(
     cell_info = topology_v->get_cell_permutation_info();
   }
 
-  auto [X, Xshape] = e.X();
-  impl::tabulate_expression(values, e.kernel(), Xshape, e.value_size(), coeffs,
-                            constants, mesh, entities, element, cell_info,
-                            argument_cells);
+  impl::tabulate_expression(values, e.kernel(), e.X().second, e.value_size(),
+                            coeffs, constants, mesh, entities, element,
+                            cell_info, argument_cells);
 }
 
 /// @brief Evaluate an Expression on cells, facets, ridges or peaks.
@@ -187,7 +196,8 @@ template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
 {
-  // Validate before packing coefficients
+  // Validate before packing coefficients, as packing may compute cell
+  // permutations collectively
   impl::check_expression_entities(e, mesh, entities.rank());
 
   std::optional<
@@ -288,7 +298,7 @@ void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
 
   // Compatibility check
   {
-    auto [X0, shape0] = e0.X();
+    const auto& [X0, shape0] = e0.X();
     auto [X1, shape1] = V1->element()->interpolation_points();
     if (shape0 != shape1)
     {
@@ -309,7 +319,7 @@ void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
 
   // Array to hold evaluated Expression
   std::size_t num_cells = cells0.size();
-  std::size_t num_points = e0.X().second[0];
+  std::size_t num_points = e0.num_points();
   std::vector<T> fdata(num_cells * num_points * value_size);
   md::mdspan<const T, md::dextents<std::size_t, 3>> f(fdata.data(), num_cells,
                                                       num_points, value_size);

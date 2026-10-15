@@ -567,10 +567,11 @@ compute_mixed_cell_pairs(const Topology& topology, mesh::CellType facet_type);
 ///
 /// @param[in,out] topology Mesh topology.
 /// @param[in] dim Topological dimension of the entities.
-/// @param[in] cell_type Cell type of the cells of `topology`.
-/// @return Permutation of each cell-local entity, shape
-/// `(num_cells, entities_per_cell)`.
+/// @param[in] cell_type_idx Index of the cell type, following the order
+/// of Topology::cell_types.
+/// @return Permutation of each cell-local entity of the cells of type
+/// `cell_type_idx`, shape `(num_cells, entities_per_cell)`.
 md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
-entity_permutations(Topology& topology, int dim, CellType cell_type);
+entity_permutations(Topology& topology, int dim, int cell_type_idx);
 
 } // namespace dolfinx::mesh

@@ -538,9 +538,8 @@ void assemble_vector(
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
     if (L.needs_facet_permutations())
     {
-      facet_perms = impl::entity_permutations(
-          *mesh->topology_mutable(), IntegralType::interior_facet,
-          mesh->topology()->cell_types()[0]);
+      facet_perms = impl::entity_permutations(*mesh->topology_mutable(),
+                                              IntegralType::interior_facet, 0);
     }
 
     using mdspanx2_t
@@ -594,8 +593,8 @@ void assemble_vector(
       md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
       if (L.needs_facet_permutations())
       {
-        perms = impl::entity_permutations(*mesh->topology_mutable(), itg_type,
-                                          mesh->topology()->cell_types()[0]);
+        perms
+            = impl::entity_permutations(*mesh->topology_mutable(), itg_type, 0);
       }
 
       for (int i = 0; i < num_itg; ++i)

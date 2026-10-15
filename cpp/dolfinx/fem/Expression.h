@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/EntityMap.h>
@@ -174,10 +175,16 @@ public:
   const std::vector<std::size_t>& value_shape() const { return _value_shape; }
 
   /// @brief Evaluation point coordinates on the reference entity.
-  std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> X() const
+  /// @return Points, row-major, and their shape `(number of points,
+  /// entity dimension)`.
+  const std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>>&
+  X() const
   {
     return _x_ref;
   }
+
+  /// @brief Number of evaluation points (::X).
+  std::size_t num_points() const { return _x_ref.second[0]; }
 
   /// @brief Topological dimension of the entities the Expression is
   /// evaluated on.

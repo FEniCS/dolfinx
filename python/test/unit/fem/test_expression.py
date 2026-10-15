@@ -964,3 +964,40 @@ def test_submesh_codim_three(dtype):
     expr_exact = Expression(expr0(x) * expr1(x), points, dtype=dtype)
     values_exact = expr_exact.eval(mesh, entities)
     np.testing.assert_allclose(values, values_exact, atol=50 * np.finfo(xtype).resolution)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+@pytest.mark.parametrize("tdim", [2, 3])
+def test_expression_invalid_entities(dtype, tdim):
+    """Evaluating an Expression on entities of the wrong layout raises.
+
+    Facets, ridges and peaks must be given as (cell, local entity index)
+    pairs: a list of cells does not say which of the cell's entities to
+    evaluate on.
+    """
+    xtype = dtype(0).real.dtype
+    if tdim == 3:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xtype)
+    else:
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, dtype=xtype)
+    x = ufl.SpatialCoordinate(mesh)
+    cells = np.arange(mesh.topology.index_map(tdim).size_local, dtype=np.int32)
+
+    # Ridges, and for a 3D mesh also peaks
+    for edim in range(tdim - 2, -1, -1):
+        expr = Expression(x[0], np.full((1, edim), 0.5, dtype=xtype), dtype=dtype)
+        with pytest.raises(ValueError, match="local entity index"):
+            expr.eval(mesh, cells)
+
+    # Pairs need exactly two columns
+    expr = Expression(x[0], np.full((1, tdim - 1), 0.5, dtype=xtype), dtype=dtype)
+    with pytest.raises(ValueError, match="entities must have shape"):
+        expr.eval(mesh, np.zeros((cells.size, 3), dtype=np.int32))

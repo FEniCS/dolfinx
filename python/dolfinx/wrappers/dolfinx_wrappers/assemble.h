@@ -255,6 +255,14 @@ void declare_assembly_functions(nanobind::module_& m)
          const dolfinx::mesh::Mesh<U>& mesh,
          nb::ndarray<const std::int32_t, nb::c_contig> entities)
       {
+        if (entities.ndim() != 1
+            and (entities.ndim() != 2 or entities.shape(1) != 2))
+        {
+          throw std::invalid_argument("entities must have shape "
+                                      "(num_entities,) or (num_entities, 2).");
+        }
+        dolfinx::fem::impl::check_expression_entities(e, mesh, entities.ndim());
+
         std::vector<int> coffsets = e.coefficient_offsets();
         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
             coefficients = e.coefficients();
@@ -278,7 +286,7 @@ void declare_assembly_functions(nanobind::module_& m)
               c, mesh,
               md::mdspan<const std::int32_t,
                          md::extents<std::size_t, md::dynamic_extent, 2>>(
-                  entities.data(), entities.shape(0), entities.shape(1)),
+                  entities.data(), entities.shape(0), 2),
               e.entity_dim(), e.entity_maps(), coffsets, std::span(coeffs));
         }
         return dolfinx_wrappers::as_nbarray(std::move(coeffs),

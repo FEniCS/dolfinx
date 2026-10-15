@@ -153,7 +153,7 @@ TEST_CASE("Form with data on a mesh of the wrong dimension",
   };
 
   CHECK_THROWS_WITH(build_form(), Catch::Matchers::ContainsSubstring(
-                                      "integration entities of dimension"));
+                                      "Cannot map entities of dimension"));
 }
 
 TEST_CASE("Expression with data on a mesh of the wrong dimension",
@@ -209,8 +209,7 @@ TEST_CASE("Expression with data on a mesh of the wrong dimension",
     std::vector<double> values(entities.extent(0));
     CHECK_THROWS_WITH(
         fem::tabulate_expression(std::span(values), e, *mesh, entities),
-        Catch::Matchers::ContainsSubstring(
-            "integration entities of dimension"));
+        Catch::Matchers::ContainsSubstring("Cannot map entities of dimension"));
   }
 
   SECTION("argument")
@@ -221,7 +220,6 @@ TEST_CASE("Expression with data on a mesh of the wrong dimension",
                                * V->dofmap()->element_dof_layout().num_dofs());
     CHECK_THROWS_WITH(
         fem::tabulate_expression(std::span(values), e, *mesh, entities),
-        Catch::Matchers::ContainsSubstring(
-            "integration entities of dimension"));
+        Catch::Matchers::ContainsSubstring("Cannot map entities of dimension"));
   }
 }

@@ -22,6 +22,7 @@
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <format>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -405,6 +406,10 @@ void pack_coefficients(const Form<T, U>& form,
 /// @param offsets Insertion offset for each of the `coeffs` when packed
 /// into `c`.
 /// @param[in,out] c Packed coefficients.
+/// @throws std::invalid_argument if `entities` is a list of cells and
+/// `dim` is not the mesh dimension, or `entities` cannot be mapped to
+/// the cells of a coefficient's mesh (see
+/// mesh::check_entity_cell_mapping).
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(
     const std::vector<std::reference_wrapper<const Function<T, U>>>& coeffs,
@@ -420,33 +425,47 @@ void pack_coefficients(
   if (c.size() < entities.extent(0) * offsets.back())
     throw std::invalid_argument("Coefficient packing span is too small.");
 
-  // Iterate over coefficients
+  // Check and map the entities to the cells of each coefficient's mesh
+  // first: this is local and may throw, while packing may compute cell
+  // permutations collectively
   const mesh::Topology& topology = *mesh.topology();
-  for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
+  if (entities.rank() == 1 and dim != topology.dim())
   {
-    // Get topology of coefficient and check if entity map is required
+    throw std::invalid_argument(
+        std::format("Entities of dimension {} must be given as (cell, local "
+                    "entity index) pairs, not as a list of cells.",
+                    dim));
+  }
+
+  // Vector of vectors, as the cells of all coefficients must be mapped
+  // before any is packed: a throw between two collective cell
+  // permutation computations would deadlock. One list per coefficient,
+  // typically few.
+  std::vector<std::vector<std::int32_t>> coefficient_cells;
+  coefficient_cells.reserve(coeffs.size());
+  for (const Function<T, U>& coeff : coeffs)
+  {
     std::shared_ptr<const mesh::Mesh<U>> mesh_c
-        = coeffs[coeff].get().function_space()->mesh();
+        = coeff.function_space()->mesh();
     assert(mesh_c);
     const mesh::Topology& topology_c = *mesh_c->topology();
-    std::vector<std::int32_t> coefficient_cells;
-    if (&topology_c == &topology)
+    std::optional<std::reference_wrapper<const mesh::EntityMap>> emap;
+    if (&topology_c != &topology)
     {
-      coefficient_cells = mesh::extract_cells_from_entities(
-          topology_c, topology, entities, std::nullopt);
+      mesh::check_entity_cell_mapping(topology_c, topology, dim);
+      emap
+          = std::cref(mesh::find_entity_map(entity_maps, topology, topology_c));
     }
-    else
-    {
-      impl::check_entity_mapping_dim(topology.dim(), dim, topology_c.dim());
-      const mesh::EntityMap& emap
-          = mesh::find_entity_map(entity_maps, topology, topology_c);
-      coefficient_cells = mesh::extract_cells_from_entities(
-          topology_c, topology, entities, std::cref(emap));
-    }
+    coefficient_cells.push_back(mesh::extract_cells_from_entities(
+        topology_c, topology, entities, emap));
+  }
 
+  for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
+  {
     std::span<const std::uint32_t> cell_info
         = impl::get_cell_orientation_info(coeffs[coeff].get());
-    md::mdspan cells(coefficient_cells.data(), coefficient_cells.size());
+    md::mdspan cells(coefficient_cells[coeff].data(),
+                     coefficient_cells[coeff].size());
     impl::pack_coefficient_entity(std::span(c), cstride, coeffs[coeff].get(),
                                   cell_info, cells, offsets[coeff]);
   }

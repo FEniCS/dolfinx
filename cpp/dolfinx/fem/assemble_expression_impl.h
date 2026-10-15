@@ -205,13 +205,12 @@ void tabulate_expression(
   // The kernel is passed the permutation of the entity it is evaluated
   // on, so that the evaluation points are ordered consistently with a
   // neighbouring cell's. The points are given on the reference cell of
-  // the entity, so `Xshape[1]` is the entity dimension.
+  // the entity, so `Xshape[1]` is the entity dimension. The mesh has a
+  // single cell type, see fem::impl::check_expression_entities.
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
   if constexpr (std::remove_cvref_t<decltype(entities)>::rank() == 2)
   {
-    perms = mesh::entity_permutations(*mesh.topology_mutable(),
-                                      static_cast<int>(Xshape[1]),
-                                      mesh.topology()->cell_types().front());
+    perms = mesh::entity_permutations(*mesh.topology_mutable(), Xshape[1], 0);
   }
 
   tabulate_expression(values, fn, Xshape, value_size, num_argument_dofs,

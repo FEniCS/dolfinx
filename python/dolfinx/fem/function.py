@@ -276,25 +276,15 @@ class Expression(Generic[Scalar]):
             num_points, *value_shape, argument_space_dim)`` if the
             Expression does have an argument function.
         """
+        # Packing the coefficients checks that the Expression can be
+        # evaluated over `entities`
         _entities = np.asarray(entities, dtype=np.int32)
-        if (tdim := mesh.topology.dim) != (expr_dim := self.entity_dim):
-            if expr_dim > tdim:
-                raise ValueError(
-                    f"Cannot evaluate an Expression on entities of dimension {expr_dim} "
-                    f"on a mesh of dimension {tdim}."
-                )
-            if _entities.ndim != 2:
-                raise ValueError(
-                    "entities list should have two dimensions for expression evaluation on "
-                    "facets, ridges or peaks."
-                )
-
         if self.argument_space is None:
-            values_shape = (_entities.shape[0], self.X().shape[0], *self.value_shape)
+            values_shape = (_entities.shape[0], self.num_points, *self.value_shape)
         else:
             values_shape = (
                 _entities.shape[0],
-                self.X().shape[0],
+                self.num_points,
                 *self.value_shape,
                 self.argument_space.element.space_dimension,
             )
@@ -327,6 +317,11 @@ class Expression(Generic[Scalar]):
     def X(self) -> npt.NDArray:
         """Evaluation points on the reference entity."""
         return self._cpp_object.X()
+
+    @property
+    def num_points(self) -> int:
+        """Number of evaluation points."""
+        return self._cpp_object.num_points
 
     @property
     def entity_dim(self) -> int:

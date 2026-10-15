@@ -74,45 +74,21 @@ constexpr int integral_entity_dim(IntegralType type, int tdim)
 
 namespace impl
 {
-
 /// @brief Permutations of the cell-local entities that an integral of
 /// the given type is over.
 ///
 /// @param[in,out] topology Mesh topology of the integration domain.
 /// @param[in] type Integral type.
-/// @param[in] cell_type Cell type of the integration domain.
+/// @param[in] cell_type_idx Index of the cell type, following the order
+/// of mesh::Topology::cell_types.
 /// @return Permutation of each cell-local entity, shape
 /// `(num_cells, entities_per_cell)`.
 inline md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
 entity_permutations(mesh::Topology& topology, IntegralType type,
-                    mesh::CellType cell_type)
+                    int cell_type_idx)
 {
   return mesh::entity_permutations(
-      topology, integral_entity_dim(type, topology.dim()), cell_type);
-}
-
-/// @brief Check that integration entities can be mapped to cells of the
-/// mesh of an argument or coefficient.
-///
-/// An integration entity maps to a *cell* of that mesh, so unless the
-/// meshes have equal dimension the entity dimension must be that
-/// mesh's.
-///
-/// @param[in] tdim Topological dimension of the integration domain.
-/// @param[in] edim Topological dimension of the integration entities.
-/// @param[in] dim0 Topological dimension of the argument/coefficient
-/// mesh.
-/// @throws std::invalid_argument if the entities cannot be mapped.
-inline void check_entity_mapping_dim(int tdim, int edim, int dim0)
-{
-  if (tdim > dim0 and edim != dim0)
-  {
-    throw std::invalid_argument(std::format(
-        "Cannot map integration entities of dimension {} to cells of a "
-        "mesh of dimension {}. An argument or coefficient on another mesh "
-        "must live on the entities being integrated over.",
-        edim, dim0));
-  }
+      topology, integral_entity_dim(type, topology.dim()), cell_type_idx);
 }
 } // namespace impl
 
@@ -250,9 +226,7 @@ public:
 
     // Map the integration entities of one integral to the
     // argument/coefficient domain, checking first that the mapping is
-    // expressible: an integration entity maps to a *cell* of that mesh,
-    // so unless the meshes have equal dimension the integral's entity
-    // dimension must be that mesh's.
+    // expressible
     auto map_entities
         = [tdim,
            &topology](IntegralType type, std::span<const std::int32_t> entities,
@@ -274,8 +248,8 @@ public:
             "exterior facet, interior facet and ridge.");
       }
 
-      impl::check_entity_mapping_dim(tdim, integral_entity_dim(type, tdim),
-                                     topology0.dim());
+      mesh::check_entity_cell_mapping(topology0, topology,
+                                      integral_entity_dim(type, tdim));
 
       // Map the (cell, local_entity) pairs, flattened (interior facets
       // hold two pairs per entity), to cells of the argument/coefficient
