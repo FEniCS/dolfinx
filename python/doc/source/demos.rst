@@ -60,6 +60,9 @@ Time-dependent and nonlinear problems
 
 * :doc:`demos/demo_cahn-hilliard` -- solve the time-dependent, nonlinear
   Cahn-Hilliard equation with a Newton solver.
+* :doc:`demos/demo_snap-through` -- trace the snap-through buckling of a
+  hyperelastic arch past a limit point, using PETSc's ``SNESNEWTONAL``
+  arc-length continuation solver.
 * :doc:`demos/demo_navier-stokes` -- time-step the semi-implicit
   divergence-conforming Navier-Stokes scheme (see also *Mixed and
   hybridised formulations*).
@@ -135,38 +138,86 @@ PETSc scalars.
 
 
 ..
-   The following hidden toctree serves as the master site map for Sphinx.
-   It ensures the left sidebar populates cleanly without duplicating items.
+   The hidden toctrees below are the master site map for Sphinx, and
+   group the left sidebar by the same topics as the sections above.
+   Each demo appears in exactly one of them -- a demo that illustrates
+   several topics is cross-referenced in the text rather than listed
+   twice, since a second toctree entry would make the sidebar
+   ambiguous.
 
 .. toctree::
    :hidden:
    :maxdepth: 1
+   :caption: Getting started
 
    demos/demo_poisson.md
    demos/demo_helmholtz.md
    demos/demo_biharmonic.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Interpolation, IO and visualisation
+
+   demos/demo_pyvista.md
+   demos/demo_interpolation-io.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Mixed and hybridised formulations
+
    demos/demo_mixed-poisson.md
    demos/demo_manifold.md
    demos/demo_stokes.md
    demos/demo_navier-stokes.md
    demos/demo_hdg.md
    demos/demo_static-condensation.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Time-dependent and nonlinear problems
+
    demos/demo_cahn-hilliard.md
-   demos/demo_half-loaded-waveguide.md
-   demos/demo_scattering-boundary-conditions.md
-   demos/demo_pml.md
-   demos/demo_axis.md
+   demos/demo_snap-through.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Linear solvers and matrix-free methods
+
    demos/demo_elasticity.md
    demos/demo_pyamg.md
    demos/demo_dd-solvers.md
    demos/demo_poisson-matrix-free.md
    demos/demo_matrix-free-petsc.md
    demos/demo_types.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Custom and advanced finite elements
+
    demos/demo_lagrange-variants.md
    demos/demo_tnt-elements.md
-   demos/demo_pyvista.md
-   demos/demo_interpolation-io.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Mesh generation, partitioning and parallel data
+
    demos/demo_gmsh.md
    demos/demo_partition.md
    demos/demo_comm-pattern.md
    demos/demo_mixed-topology.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Electromagnetics
+
+   demos/demo_half-loaded-waveguide.md
+   demos/demo_scattering-boundary-conditions.md
+   demos/demo_pml.md
+   demos/demo_axis.md

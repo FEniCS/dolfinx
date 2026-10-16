@@ -21,27 +21,27 @@ from dolfinx.io.vtkhdf import read_mesh, write_cell_data, write_mesh, write_poin
 from dolfinx.mesh import CellType, Mesh, create_unit_cube, create_unit_square
 
 
-def test_read_write_vtkhdf_mesh2d() -> None:
+def test_read_write_vtkhdf_mesh2d(tempdir) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=np.float32)
-    write_mesh("example2d.vtkhdf", mesh)
-    mesh2 = read_mesh(MPI.COMM_WORLD, "example2d.vtkhdf", np.float32)
+    write_mesh(Path(tempdir, "example2d.vtkhdf"), mesh)
+    mesh2 = read_mesh(MPI.COMM_WORLD, Path(tempdir, "example2d.vtkhdf"), np.float32)
     assert mesh2.geometry.x.dtype == np.float32
-    mesh2 = read_mesh(MPI.COMM_WORLD, "example2d.vtkhdf", np.float64)
+    mesh2 = read_mesh(MPI.COMM_WORLD, Path(tempdir, "example2d.vtkhdf"), np.float64)
     assert mesh2.geometry.x.dtype == np.float64
     assert mesh.topology.index_map(2).size_global == mesh2.topology.index_map(2).size_global
 
 
-def test_read_write_vtkhdf_mesh3d() -> None:
+def test_read_write_vtkhdf_mesh3d(tempdir) -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type=CellType.prism)
-    write_mesh("example3d.vtkhdf", mesh)
-    mesh2 = read_mesh(MPI.COMM_WORLD, "example3d.vtkhdf")
+    write_mesh(Path(tempdir, "example3d.vtkhdf"), mesh)
+    mesh2 = read_mesh(MPI.COMM_WORLD, Path(tempdir, "example3d.vtkhdf"))
 
     assert mesh.topology.index_map(3).size_global == mesh2.topology.index_map(3).size_global
 
 
 @pytest.mark.parametrize("num_threads", [1, 4])
-def test_read_write_vtkhdf_num_threads(num_threads) -> None:
-    filename = "example_num_threads.vtkhdf"
+def test_read_write_vtkhdf_num_threads(num_threads, tempdir) -> None:
+    filename = Path(tempdir, "example_num_threads.vtkhdf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5)
     write_mesh(filename, mesh)
 
@@ -70,8 +70,8 @@ def test_read_write_vtkhdf_num_threads(num_threads) -> None:
     assert np.isclose(vol_1, vol_n)
 
 
-def test_read_vtkhdf_num_threads_invalid() -> None:
-    filename = "example_num_threads_invalid.vtkhdf"
+def test_read_vtkhdf_num_threads_invalid(tempdir) -> None:
+    filename = Path(tempdir, "example_num_threads_invalid.vtkhdf")
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     write_mesh(filename, mesh)
 
@@ -79,16 +79,16 @@ def test_read_vtkhdf_num_threads_invalid() -> None:
         read_mesh(MPI.COMM_WORLD, filename, num_threads=0)
 
 
-def test_read_write_mixed_topology(mixed_topology_mesh) -> None:
+def test_read_write_mixed_topology(mixed_topology_mesh, tempdir) -> None:
     mesh = Mesh(mixed_topology_mesh, None)
-    write_mesh("mixed_mesh.vtkhdf", mesh)
+    write_mesh(Path(tempdir, "mixed_mesh.vtkhdf"), mesh)
 
-    mesh2 = read_mesh(MPI.COMM_WORLD, "mixed_mesh.vtkhdf", np.float64)
+    mesh2 = read_mesh(MPI.COMM_WORLD, Path(tempdir, "mixed_mesh.vtkhdf"), np.float64)
     for t in mesh2.topology.entity_types[-1]:
         assert t in mesh.topology.entity_types[-1]
 
 
-def test_read_write_higher_order():
+def test_read_write_higher_order(tempdir):
     # Create a simple, 2 cell mesh consisting of a second order quadrilateral and
     # a second order triangle.
     geom = np.array(
@@ -145,11 +145,12 @@ def test_read_write_higher_order():
     py_mesh = Mesh(mesh, None)
 
     # Write mesh to file
-    write_mesh("mixed_mesh_second_order.vtkhdf", py_mesh)
+    filename = Path(tempdir, "mixed_mesh_second_order.vtkhdf")
+    write_mesh(filename, py_mesh)
 
     # Read mesh as a 2D grid and a flat manifold in 3D
     for gdim in [2, 3]:
-        mesh_in = read_mesh(MPI.COMM_WORLD, "mixed_mesh_second_order.vtkhdf", gdim=gdim)
+        mesh_in = read_mesh(MPI.COMM_WORLD, filename, gdim=gdim)
         assert mesh_in.geometry.dim == gdim
         assert mesh_in.geometry.index_map().size_global == 12
         cmap_0 = mesh_in.geometry.cmaps[0]
@@ -164,7 +165,7 @@ def test_read_write_higher_order():
 
 @pytest.mark.parametrize("order", [1, 2, 3])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_read_write_higher_order_mesh(order, dtype) -> None:
+def test_read_write_higher_order_mesh(order, dtype, tempdir) -> None:
     try:
         import gmsh
     except ImportError:
@@ -210,7 +211,7 @@ def test_read_write_higher_order_mesh(order, dtype) -> None:
     ref_surface = comm.allreduce(dolfinx.fem.assemble_scalar(ref_surface_form), op=MPI.SUM)
 
     # Write to file
-    filename = f"gmsh_{order}_order_sphere_{np.dtype(dtype).name}.vtkhdf"
+    filename = Path(tempdir, f"gmsh_{order}_order_sphere_{np.dtype(dtype).name}.vtkhdf")
     write_mesh(filename, ref_mesh)
     del ref_mesh, ref_volume_form
 
@@ -256,9 +257,9 @@ def test_read_write_higher_order_mesh(order, dtype) -> None:
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_write_point_data(dtype) -> None:
+def test_write_point_data(dtype, tempdir) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
-    filename = "point_data.vtkhdf"
+    filename = Path(tempdir, "point_data.vtkhdf")
     write_mesh(filename, mesh)
     point_data = np.arange(mesh.geometry.index_map().size_local)
     for j in range(3):
@@ -267,25 +268,25 @@ def test_write_point_data(dtype) -> None:
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("width", [1, 3])
-def test_write_cell_data(dtype, width) -> None:
+def test_write_cell_data(dtype, width, tempdir) -> None:
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
-    filename = "cell_data.vtkhdf"
+    filename = Path(tempdir, "cell_data.vtkhdf")
     write_mesh(filename, mesh)
     cell_data = np.arange(mesh.topology.index_map(2).size_local * width)
     for j in range(3):
         write_cell_data(filename, mesh, cell_data, float(j))
 
 
-def test_write_mixed_topology_data(mixed_topology_mesh) -> None:
+def test_write_mixed_topology_data(mixed_topology_mesh, tempdir) -> None:
     mesh = Mesh(mixed_topology_mesh, None)
-    filename = "mixed_point_data.vtkhdf"
+    filename = Path(tempdir, "mixed_point_data.vtkhdf")
     write_mesh(filename, mesh)
     point_data = np.arange(mesh.geometry.index_map().size_local, dtype=np.float64)
     for j in range(10):
         write_point_data(filename, mesh, point_data, float(j))
         point_data *= 0.9
 
-    filename = "mixed_cell_data.vtkhdf"
+    filename = Path(tempdir, "mixed_cell_data.vtkhdf")
     write_mesh(filename, mesh)
     b = sum([im.size_local for im in mesh.topology.index_maps(mesh.topology.dim)])
     cell_data = np.arange(b, dtype=np.float64)

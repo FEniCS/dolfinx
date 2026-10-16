@@ -345,6 +345,14 @@ jobs:
           path: cpp/doc/build/html
           retention-days: 2
 
+      - name: Install PyVista rendering dependencies
+        # The Python demos render 3-D figures for the documentation
+        # off-screen, which needs the GL libraries that the base image
+        # does not carry
+        run: |
+          apt-get -y update
+          apt-get install -y libegl1 libxrender1
+
       - name: Build Python interface documentation
         run: |
           cd python/doc
