@@ -479,6 +479,33 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
   std::vector<bool> in_row(num_cols_C, false);
   std::vector<std::int32_t> row_cols;
 
+  // Block GEMM: C[r,s] += sum_t A[r,t] * B[t,s]  (row-major BS×BS).
+  // When BS >= 1 the loop bounds are compile-time constants, enabling
+  // unrolling; when BS < 0 the runtime size bs_rt is used instead.
+  auto gemm_block = [&](const T* a_blk, const T* b_blk, T* c_blk)
+  {
+    if constexpr (BS < 0)
+    {
+      for (int r = 0; r < bs_rt; ++r)
+        for (int t = 0; t < bs_rt; ++t)
+        {
+          const T a_rt = a_blk[r * bs_rt + t];
+          for (int s = 0; s < bs_rt; ++s)
+            c_blk[r * bs_rt + s] += a_rt * b_blk[t * bs_rt + s];
+        }
+    }
+    else
+    {
+      for (int r = 0; r < BS; ++r)
+        for (int t = 0; t < BS; ++t)
+        {
+          const T a_rt = a_blk[r * BS + t];
+          for (int s = 0; s < BS; ++s)
+            c_blk[r * BS + s] += a_rt * b_blk[t * BS + s];
+        }
+    }
+  };
+
   for (std::int32_t i = 0; i < num_local_rows_A; ++i)
   {
     row_cols.clear();
@@ -498,29 +525,7 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
           in_row[k] = true;
           row_cols.push_back(k);
         }
-        const T* b_blk = vals_B.data() + kb * bsq;
-        T* c_blk = acc.data() + k * bsq;
-        // Block GEMM: C[r,s] += sum_t A[r,t] * B[t,s]  (row-major BS×BS)
-        if constexpr (BS < 0)
-        {
-          for (int r = 0; r < bs_rt; ++r)
-            for (int t = 0; t < bs_rt; ++t)
-            {
-              const T a_rt = a_blk[r * bs_rt + t];
-              for (int s = 0; s < bs_rt; ++s)
-                c_blk[r * bs_rt + s] += a_rt * b_blk[t * bs_rt + s];
-            }
-        }
-        else
-        {
-          for (int r = 0; r < BS; ++r)
-            for (int t = 0; t < BS; ++t)
-            {
-              const T a_rt = a_blk[r * BS + t];
-              for (int s = 0; s < BS; ++s)
-                c_blk[r * BS + s] += a_rt * b_blk[t * BS + s];
-            }
-        }
+        gemm_block(a_blk, vals_B.data() + kb * bsq, acc.data() + k * bsq);
       }
     }
 
@@ -538,29 +543,7 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
           in_row[k] = true;
           row_cols.push_back(k);
         }
-        const T* b_blk = ghost_vals.data() + kb * bsq;
-        T* c_blk = acc.data() + k * bsq;
-        // Block GEMM: C[r,s] += sum_t A[r,t] * B[t,s]  (row-major BS×BS)
-        if constexpr (BS < 0)
-        {
-          for (int r = 0; r < bs_rt; ++r)
-            for (int t = 0; t < bs_rt; ++t)
-            {
-              const T a_rt = a_blk[r * bs_rt + t];
-              for (int s = 0; s < bs_rt; ++s)
-                c_blk[r * bs_rt + s] += a_rt * b_blk[t * bs_rt + s];
-            }
-        }
-        else
-        {
-          for (int r = 0; r < BS; ++r)
-            for (int t = 0; t < BS; ++t)
-            {
-              const T a_rt = a_blk[r * BS + t];
-              for (int s = 0; s < BS; ++s)
-                c_blk[r * BS + s] += a_rt * b_blk[t * BS + s];
-            }
-        }
+        gemm_block(a_blk, ghost_vals.data() + kb * bsq, acc.data() + k * bsq);
       }
     }
 
