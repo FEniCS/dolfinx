@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg, Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -835,14 +835,14 @@ build_entity_types(const std::vector<CellType>& cell_types)
   return entity_types;
 }
 
-/// Throw unless `tdim` is that of a surface, which cell orientations
+/// Throw unless `tdim` is that of a surface, which facet signs
 /// need
 void check_surface_dim(int tdim)
 {
   if (tdim != 2)
   {
     throw std::invalid_argument(
-        std::format("Cell orientations need a surface mesh (topological "
+        std::format("Facet signs need a surface mesh (topological "
                     "dimension 2), not dimension {}.",
                     tdim));
   }
@@ -988,70 +988,48 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
   return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
-void Topology::create_cell_orientations(
-    std::optional<std::span<const std::int8_t>> orientations)
+void Topology::create_facet_orientations()
 {
   // Check before the collective calls below
   check_surface_dim(dim());
   std::shared_ptr<const common::IndexMap> cell_map = index_map(2);
   const std::int32_t num_cells
       = cell_map->size_local() + cell_map->num_ghosts();
-  if (orientations)
-  {
-    if (std::cmp_not_equal(orientations->size(), num_cells))
-    {
-      throw std::invalid_argument(
-          std::format("Expected {} cell orientations, one per owned and ghost "
-                      "cell, not {}.",
-                      num_cells, orientations->size()));
-    }
-#ifndef NDEBUG
-    if (!std::ranges::all_of(*orientations,
-                             [](std::int8_t o) { return o == 1 or o == -1; }))
-    {
-      throw std::invalid_argument("Cell orientations must be 1 or -1.");
-    }
-#endif
-  }
 
   create_cell_permutations();
 
-  // Outlives the span below when the orientation is computed here
-  std::vector<std::int8_t> computed;
-  if (!orientations)
-  {
-    // Creates the edges, which the orientation is computed across, and
-    // their orientations relative to the cells
-    create_entity_permutations(1);
-    create_connectivity(1, 2);
-    computed = compute_cell_orientations(*this);
-  }
+  // The orientations of the edges, which the signs are computed across,
+  // relative to the cells
+  create_entity_permutations(1);
+  const std::vector<std::uint32_t> facets = compute_facet_orientations(*this);
 
-  std::span<const std::int8_t> o
-      = orientations ? *orientations : std::span<const std::int8_t>(computed);
+  // Replace any signs from an earlier call
+  const std::uint32_t mask = orientation_mask(dim());
   for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    if (o[c] < 0)
-      _cell_permutations[c] |= reversed_cell_bit;
-    else
-      _cell_permutations[c] &= ~reversed_cell_bit;
-  }
-  _has_cell_orientations = true;
+    _cell_permutations[c] = (_cell_permutations[c] & ~mask) | facets[c];
+  _has_facet_orientations = true;
 }
 //-----------------------------------------------------------------------------
-bool Topology::has_cell_orientations() const noexcept
+bool Topology::has_facet_orientations() const noexcept
 {
-  return _has_cell_orientations;
+  return _has_facet_orientations;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int8_t> Topology::cell_orientations() const
+std::vector<std::int8_t> Topology::facet_orientations() const
 {
+  check_surface_dim(dim());
   const std::vector<std::uint32_t>& info = get_cell_permutation_info();
-  std::vector<std::int8_t> orientations(info.size());
-  std::ranges::transform(info, orientations.begin(),
-                         [](std::uint32_t p) -> std::int8_t
-                         { return (p & reversed_cell_bit) ? -1 : 1; });
-  return orientations;
+  const int facets_per_cell = cell_num_entities(cell_type(), 1);
+  std::vector<std::int8_t> signs(info.size() * facets_per_cell);
+  for (std::size_t c = 0; c < info.size(); ++c)
+  {
+    for (int f = 0; f < facets_per_cell; ++f)
+    {
+      signs[c * facets_per_cell + f]
+          = (info[c] & reversed_facet_bit(f)) ? -1 : 1;
+    }
+  }
+  return signs;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>&
