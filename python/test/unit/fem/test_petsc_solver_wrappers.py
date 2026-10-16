@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for high-level wrapper around PETSc for linear and non-linear problems."""
 
+import typing
+
 from mpi4py import MPI
 
 import numpy as np
@@ -508,3 +510,135 @@ class TestPETScSolverWrappers:
                 assemble_matrix(A, repeated)
         finally:
             A.destroy()
+
+
+@pytest.mark.petsc4py
+@pytest.mark.parametrize("layout", ["single", "blocked", "nest", "is", "nest_is"])
+def test_nonlinear_callback_preparation(layout, monkeypatch) -> None:
+    """Callbacks reuse fixed data while refreshing coefficients and BC values."""
+    from petsc4py import PETSc
+
+    from dolfinx.fem import petsc as fem_petsc
+
+    scalar_type = dolfinx.default_scalar_type
+    msh = dolfinx.mesh.create_unit_square(
+        MPI.COMM_WORLD, 4, 4, dtype=PETSc.RealType, ghost_mode=dolfinx.mesh.GhostMode.none
+    )
+    V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+    block = layout in ("blocked", "nest", "nest_is")
+    spaces = [V, V.clone()] if block else [V]
+    functions = [dolfinx.fem.Function(space) for space in spaces]
+    coefficient = dolfinx.fem.Constant(msh, scalar_type(2))
+    residuals = [
+        ufl.inner(coefficient * u + u**3, ufl.TestFunction(space)) * ufl.dx
+        for u, space in zip(functions, spaces, strict=True)
+    ]
+    preconditioners = [
+        coefficient * ufl.inner(ufl.TrialFunction(space), ufl.TestFunction(space)) * ufl.dx
+        for space in spaces
+    ]
+    P = [[preconditioners[0], None], [None, preconditioners[1]]] if block else preconditioners[0]
+    kind = {
+        "single": None,
+        "blocked": "mpi",
+        "nest": "nest",
+        "is": "is",
+        "nest_is": [["is", None], [None, "is"]],
+    }[layout]
+    boundary = dolfinx.fem.Constant(msh, scalar_type(3))
+    left = dolfinx.fem.locate_dofs_geometrical(V, lambda x: x[0] < 1.0e-3)
+    right = dolfinx.fem.locate_dofs_geometrical(V, lambda x: x[0] > 1 - 1.0e-3)
+    conditions = [
+        dolfinx.fem.dirichletbc(boundary, dofs, space)
+        for dofs, space in zip((left, right)[: len(spaces)], spaces, strict=True)
+    ]
+    problem = fem_petsc.NonlinearProblem(
+        residuals if block else residuals[0],
+        functions if block else functions[0],
+        bcs=conditions,
+        P=P,
+        kind=kind,
+        petsc_options_prefix=f"test_prepared_callbacks_{layout}_",
+    )
+    A_ref = fem_petsc.create_matrix(problem.J, kind=kind)
+    assert problem.preconditioner is not None
+    assert problem.P_mat is not None
+    P_ref = fem_petsc.create_matrix(problem.preconditioner, kind=kind)
+    b_ref = problem.b.duplicate()
+    eps = 1000 * np.finfo(PETSc.RealType).eps
+
+    def unexpected(*args, **kwargs):
+        raise AssertionError("SNES callback rebuilt invariant assembly data")
+
+    def compare_matrix(actual, expected):
+        if actual.getType() == PETSc.Mat.Type.NEST:
+            for i in range(len(spaces)):
+                for j in range(len(spaces)):
+                    a = actual.getNestSubMatrix(i, j)
+                    e = expected.getNestSubMatrix(i, j)
+                    if a:
+                        compare_matrix(a, e)
+            return
+        a = actual.copy().convert(PETSc.Mat.Type.AIJ)
+        e = expected.copy().convert(PETSc.Mat.Type.AIJ)
+        a.axpy(-1, e, PETSc.Mat.Structure.DIFFERENT_NONZERO_PATTERN)
+        assert a.norm() <= eps * max(1, e.norm())
+        a.destroy()
+        e.destroy()
+
+    try:
+        # Reassignment removes formerly constrained dofs and resets lifting storage.
+        for bcs in (conditions, conditions[1:], []):
+            problem.bcs = bcs
+            for step in (1, 2):
+                boundary.value = scalar_type(step + 3)
+                coefficient.value = scalar_type(step + 1)
+                for i, u in enumerate(functions):
+                    u.x.array[:] = scalar_type(step + i)
+                fem_petsc.assign(problem.u, problem.x)
+                with monkeypatch.context() as patch:
+                    for name in (
+                        "_check_preconditioner_spaces",
+                        "_matrix_bc_data",
+                        "_matrix_diag_data",
+                        "_matis_diag_data",
+                        "_block_index_sets",
+                        "_extract_function_spaces",
+                        "_bcs_by_block",
+                        "_lifting_bc_values",
+                        "_bc_lifting_values",
+                    ):
+                        patch.setattr(fem_petsc, name, unexpected)
+                    problem.solver.computeFunction(problem.x, problem.b)
+                    problem.solver.computeJacobian(problem.x, problem.A, problem.P_mat)
+
+                fem_petsc.assemble_residual(
+                    problem.solver,
+                    problem.x,
+                    b_ref,
+                    problem.u,
+                    problem.F,
+                    problem.J,
+                    problem.bcs,
+                    _blocks=typing.cast(
+                        tuple[tuple[int, int, int], ...] | None, problem.b.getAttr("_blocks")
+                    ),
+                )
+                fem_petsc.assemble_jacobian(
+                    problem.solver,
+                    problem.x,
+                    A_ref,
+                    P_ref,
+                    problem.u,
+                    problem.J,
+                    problem.preconditioner,
+                    problem.bcs,
+                )
+                compare_matrix(problem.A, A_ref)
+                compare_matrix(problem.P_mat, P_ref)
+                b_ref.axpy(-1, problem.b)
+                assert b_ref.norm() <= eps * max(1, problem.b.norm())
+    finally:
+        b_ref.destroy()
+        A_ref.destroy()
+        P_ref.destroy()

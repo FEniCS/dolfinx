@@ -949,6 +949,7 @@ def _assemble_matrix_petsc(
         dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
         | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
     ),
+    index_sets: tuple[Sequence, Sequence] | None = None,
 ) -> PETSc.Mat:
     """Assemble form(s) with cached BC data; do not zero or finalise ``A``.
 
@@ -982,7 +983,7 @@ def _assemble_matrix_petsc(
             diag_data,
             constants,  # type: ignore[arg-type]
             coeffs,  # type: ignore[arg-type]
-            _block_index_sets(bc_data),
+            _block_index_sets(bc_data) if index_sets is None else index_sets,
         )
     else:
         _assemble_matrix_single(
@@ -1767,6 +1768,24 @@ class LinearProblem(typing.Generic[_U]):
 # -- High-level interface for SNES ---------------------------------------
 
 
+class _ResidualAssemblyData(typing.NamedTuple):
+    """Fixed BC grouping and markers, with reusable lifting storage."""
+
+    markers: Sequence[npt.NDArray[np.int8]]
+    values: list[npt.NDArray]
+    trial_bcs: Sequence[Sequence[DirichletBC]]
+    residual_bcs: Sequence[DirichletBC] | Sequence[Sequence[DirichletBC]]
+
+
+class _JacobianAssemblyData(typing.NamedTuple):
+    """Fixed constrained rows, diagonal values and block addressing."""
+
+    bc_data: _MatrixBCData
+    diagonal: _MatrixDiagData
+    preconditioner_diagonal: _MatrixDiagData
+    index_sets: tuple[Sequence, Sequence] | None
+
+
 def assemble_residual(
     _snes: PETSc.SNES,
     x: PETSc.Vec,
@@ -1776,6 +1795,8 @@ def assemble_residual(
     jacobian: Form | Sequence[Sequence[Form]],
     bcs: Sequence[DirichletBC],
     _blocks: tuple[tuple[int, int, int], ...] | None = None,
+    *,
+    _assembly_data: _ResidualAssemblyData | None = None,
 ) -> None:
     """Assemble the residual at ``x`` into the vector ``b``.
 
@@ -1811,13 +1832,16 @@ def assemble_residual(
             See :func:`dolfinx.fem.petsc.create_vector` for more details
             on the format of this argument.
 
+        _assembly_data: Internal BC data prepared by ``NonlinearProblem``.
+            Must match the forms and boundary conditions.
+
     Note:
         The lifting markers are rebuilt from ``bcs`` on every call.
         :class:`NonlinearProblem` builds them once and reuses them,
         which it can do because the dofs a condition constrains are
         fixed when it is built.
     """
-    _assemble_residual(_snes, x, b, u, residual, jacobian, bcs, _blocks, None)
+    _assemble_residual(_snes, x, b, u, residual, jacobian, bcs, _blocks, _assembly_data)
 
 
 def _assemble_residual(
@@ -1829,15 +1853,9 @@ def _assemble_residual(
     jacobian: Form | Sequence[Sequence[Form]],
     bcs: Sequence[DirichletBC],
     _blocks: tuple[tuple[int, int, int], ...] | None,
-    lifting_markers: Sequence[npt.NDArray[np.int8]] | None,
+    assembly_data: _ResidualAssemblyData | None,
 ) -> None:
-    """Assemble the residual with cached lifting markers.
-
-    As :func:`assemble_residual`, with ``lifting_markers`` from
-    :func:`_lifting_bc_markers`, or ``None`` to build them from
-    ``bcs`` here. They must match ``bcs``, which is why the public
-    function does not take them. Values are read afresh from ``bcs``.
-    """
+    """Assemble with fixed BC data and current boundary values."""
     # Update input vector before assigning
     dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
 
@@ -1855,36 +1873,46 @@ def _assemble_residual(
     dolfinx.la.petsc._zero_vector(b)
     _assemble_vector_petsc(b, residual)
 
+    if assembly_data is not None:
+        for values, conditions in zip(assembly_data.values, assembly_data.trial_bcs, strict=True):
+            for bc in conditions:
+                bc.set(values, None, 1)
+
     # Lift vector
     if isinstance(jacobian, Sequence):
         # Nest and blocked lifting
         if not isinstance(residual, Sequence):
             raise ValueError("Expected a sequence of forms for a block/nest residual.")
-        bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)
-        markers = (
-            _lifting_bc_markers(jacobian, bcs1) if lifting_markers is None else lifting_markers
-        )
+        if assembly_data is None:
+            bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)
+            markers = _lifting_bc_markers(jacobian, bcs1)
+            values = _lifting_bc_values(jacobian, bcs1)
+            bcs0 = _bcs_by_block(_extract_function_spaces(residual), bcs)
+        else:
+            markers, values = assembly_data.markers, assembly_data.values
+            bcs0 = assembly_data.residual_bcs
         _apply_lifting_petsc(
             b,
             jacobian,
             markers,
-            _lifting_bc_values(jacobian, bcs1),  # type: ignore[arg-type]
+            values,
             x0=x,  # type: ignore[arg-type]
             alpha=-1.0,
         )
         dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
-        bcs0 = _bcs_by_block(_extract_function_spaces(residual), bcs)
-        set_bc(b, bcs0, x0=x, alpha=-1.0)
+        set_bc(b, bcs0, x0=x, alpha=-1.0)  # type: ignore[arg-type]
     else:
         # Single form lifting
-        markers = (
-            _lifting_bc_markers([jacobian], [bcs]) if lifting_markers is None else lifting_markers
-        )
+        if assembly_data is None:
+            markers = _lifting_bc_markers([jacobian], [bcs])
+            values = _lifting_bc_values([jacobian], [bcs])
+        else:
+            markers, values = assembly_data.markers, assembly_data.values
         _apply_lifting_petsc(
             b,
             [jacobian],
             markers,
-            _lifting_bc_values([jacobian], [bcs]),
+            values,
             x0=[x],
             alpha=-1.0,
         )
@@ -1946,8 +1974,10 @@ def assemble_jacobian(
     P_mat: PETSc.Mat,
     u: Sequence[_Function] | _Function,
     jacobian: Form | Sequence[Sequence[Form]],
-    preconditioner: Form | Sequence[Sequence[Form]] | None,
+    preconditioner: Form | Sequence[Sequence[Form | None]] | None,
     bcs: Sequence[DirichletBC],
+    *,
+    _assembly_data: _JacobianAssemblyData | None = None,
 ) -> None:
     """Assemble the Jacobian and preconditioner matrices.
 
@@ -1980,10 +2010,24 @@ def assemble_jacobian(
             function spaces of ``jacobian``.
         bcs: Dirichlet boundary conditions to apply to the Jacobian and
             preconditioner matrices.
+        _assembly_data: Internal BC data prepared by ``NonlinearProblem``.
+            Must match the forms, boundary conditions and matrix types.
     """
-    _check_preconditioner_spaces(jacobian, preconditioner)
-    bc_data = _matrix_bc_data(jacobian, bcs)
-    diag_data = _matrix_diag_data(bc_data, 1.0, _diag_on_ghost_rows(J, jacobian))
+    if _assembly_data is None:
+        _check_preconditioner_spaces(jacobian, preconditioner)
+        bc_data = _matrix_bc_data(jacobian, bcs)
+        diag_data = _matrix_diag_data(bc_data, 1.0, _diag_on_ghost_rows(J, jacobian))
+        preconditioner_diag = (
+            _matrix_diag_data(bc_data, 1.0, _diag_on_ghost_rows(P_mat, preconditioner))
+            if preconditioner is not None and P_mat != J
+            else diag_data
+        )
+        index_sets = None
+    else:
+        bc_data = _assembly_data.bc_data
+        diag_data = _assembly_data.diagonal
+        preconditioner_diag = _assembly_data.preconditioner_diagonal
+        index_sets = _assembly_data.index_sets
 
     # Copy existing solution into the function used in the residual and
     # Jacobian
@@ -1999,6 +2043,7 @@ def assemble_jacobian(
         diag_data,
         pack_constants(jacobian),
         pack_coefficients(jacobian),
+        index_sets,
     )
     J.assemble()
     if preconditioner is not None:
@@ -2010,9 +2055,10 @@ def assemble_jacobian(
             P_mat,
             preconditioner,
             bc_data,
-            diag_data,
+            preconditioner_diag,
             pack_constants(preconditioner),
             pack_coefficients(preconditioner),
+            index_sets,
         )
         P_mat.assemble()
 
@@ -2239,38 +2285,69 @@ class NonlinearProblem(typing.Generic[_U]):
     def bcs(self) -> tuple[DirichletBC, ...]:
         """Dirichlet boundary conditions applied to the problem.
 
-        Assigning rebuilds the cached lifting markers and re-registers
-        both SNES callbacks, so the residual reuses the markers rather
-        than rebuilding them each Newton step. The markers follow from
-        the dofs a condition constrains, which are fixed once it is
-        built, and the sequence is copied, so the cache cannot go
-        stale. Condition *values* are re-read on every step.
+        Assigning rebuilds the cached markers, diagonal data, block index
+        sets and BC grouping, and re-registers both SNES callbacks.
+        This is collective for MATIS matrices. Constrained dofs are fixed
+        once a condition is built; values are re-read on every callback.
         """
         return self._bcs
 
     @bcs.setter
     def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
         conditions = tuple(bcs) if bcs is not None else ()
+        bc_data = _matrix_bc_data(self.J, conditions)
+        diagonal = _matrix_diag_data(bc_data, 1.0, _diag_on_ghost_rows(self.A, self.J))
+        preconditioner_diagonal = (
+            _matrix_diag_data(bc_data, 1.0, _diag_on_ghost_rows(self.P_mat, self.preconditioner))
+            if self.preconditioner is not None and self.P_mat is not None
+            else diagonal
+        )
+        index_sets = (
+            _block_index_sets(bc_data)
+            if isinstance(self.J, Sequence) and self.A.getType() != PETSc.Mat.Type.NEST
+            else None
+        )
+        jacobian_data = _JacobianAssemblyData(
+            bc_data, diagonal, preconditioner_diagonal, index_sets
+        )
+        if isinstance(self.J, Sequence):
+            residual = self.F
+            if not isinstance(residual, Sequence):
+                raise ValueError("Expected a sequence of forms for a block/nest residual.")
+            trial_bcs = _bcs_by_block(bc_data.column_spaces, conditions)
+            residual_bcs = _bcs_by_block(_extract_function_spaces(residual), conditions)
+        else:
+            trial_bcs = [conditions]
+            residual_bcs = conditions
+        residual_data = _ResidualAssemblyData(
+            bc_data.column_markers,
+            _bc_lifting_values(bc_data.column_spaces, trial_bcs, PETSc.ScalarType),
+            trial_bcs,
+            residual_bcs,
+        )
         jacobian_ctx = {
             "u": self.u,
             "jacobian": self.J,
             "preconditioner": self.preconditioner,
             "bcs": conditions,
+            "_assembly_data": jacobian_data,
         }
         self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=jacobian_ctx)  # type: ignore[arg-type]
-        # Get potential attributes from the residual to pass to the
-        # residual assembly function, e.g. block layout for block assembly.
-        bc_data = _matrix_bc_data(self.J, conditions)
         function_ctx = {
             "u": self.u,
             "residual": self.F,
             "jacobian": self.J,
             "bcs": conditions,
-            "lifting_markers": bc_data.column_markers,
+            "_assembly_data": residual_data,
             "_blocks": self.b.getAttr("_blocks"),
         }
-        self.solver.setFunction(_assemble_residual, self.b, kargs=function_ctx)  # type: ignore[arg-type]
-
+        self.solver.setFunction(assemble_residual, self.b, kargs=function_ctx)  # type: ignore[arg-type]
+        old_data = getattr(self, "_jacobian_data", None)
+        self._jacobian_data = jacobian_data
+        if old_data is not None and old_data.index_sets is not None:
+            for sets in old_data.index_sets:
+                for index_set in sets:
+                    index_set.destroy()
         self._bcs = conditions
 
     def set_update(self, update: typing.Callable[[int], None]) -> None:
@@ -2316,6 +2393,11 @@ class NonlinearProblem(typing.Generic[_U]):
         for name in ("_snes", "_A", "_b", "_x", "_P_mat"):
             if (obj := getattr(self, name, None)) is not None:
                 obj.destroy()
+        data = getattr(self, "_jacobian_data", None)
+        if data is not None and data.index_sets is not None:
+            for sets in data.index_sets:
+                for index_set in sets:
+                    index_set.destroy()
 
     @property
     def F(self) -> Form | Sequence[Form]:

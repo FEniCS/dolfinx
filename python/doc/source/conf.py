@@ -277,13 +277,15 @@ nitpick_ignore = [
 #   dolfinx's and basix's C++ layer are real types that legitimately
 #   appear in public type signatures, but have no public class name to
 #   document;
-# - dolfinx's own internal TypeVars/type aliases (dolfinx/typing.py,
-#   mesh.py, fem/petsc.py, la.py, la/superlu_dist.py) and
-#   dolfinx.fem.forms.CompiledForm/dolfinx.plot's singledispatch
-#   overload (conventionally named `_`): real objects that are either
-#   not classes at all (a TypeVar is not a class) or have no page in
-#   the generated API reference (neither is re-exported from a
-#   documented module).
+# - any dolfinx target whose last dotted component is private: the
+#   TypeVars and type aliases in dolfinx/typing.py, mesh.py,
+#   fem/petsc.py, la.py and la/superlu_dist.py, internal helper types
+#   that appear in a public signature (fem.petsc._JacobianAssemblyData
+#   and friends), and dolfinx.plot's singledispatch overload
+#   (conventionally named `_`). autodoc documents no private member, so
+#   none of these has a page to point at, whether or not it is a class;
+# - dolfinx.fem.forms.CompiledForm, which is real but is not
+#   re-exported from a documented module.
 _any_role = r"py:(attr|class|data|func|meth|obj)"
 nitpick_ignore_regex = [
     (_any_role, r"^numpy\.(u?int(8|16|32|64)|float(16|32|64)|complex(64|128))$"),
@@ -318,10 +320,9 @@ nitpick_ignore_regex = [
     (_any_role, r"^dolfinx\.typing\.(Real|Scalar|Index)$"),
     (_any_role, r"^(Real|Scalar)$"),
     (_any_role, r"^PartitioningFunc$"),
-    (_any_role, r"^dolfinx\.(la\._T|la\.superlu_dist\._T|fem\.petsc\._U)$"),
+    (_any_role, r"^dolfinx\.([\w.]*\.)?_\w*$"),
     (_any_role, r"^_EntityMap$"),
     (_any_role, r"^(dolfinx\.fem\.forms\.)?CompiledForm$"),
-    (_any_role, r"^dolfinx\.plot\._$"),
 ]
 
 
