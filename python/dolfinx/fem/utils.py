@@ -139,6 +139,7 @@ def evaluate_basis_functions(
     cells: npt.ArrayLike,
     tol: float = 1e-6,
     maxit: int = 15,
+    num_threads: int = 1,
 ) -> npt.NDArray[np.floating]:
     """Evaluate the basis functions of a function space at points.
 
@@ -167,6 +168,8 @@ def evaluate_basis_functions(
             non-affine pull-backs.
         maxit: Maximum number of Newton iterations for non-affine
             pull-backs.
+        num_threads: Number of threads. The points are split into
+            contiguous chunks, one per thread. Must be >= 1.
 
     Returns:
         Basis values with shape ``(num_points, num_basis_functions,
@@ -189,7 +192,7 @@ def evaluate_basis_functions(
     if _cells.ndim >= 2:
         raise ValueError("cells must be a 1D array of cell indices.")
     _cells = np.reshape(_cells, _cells.shape[0] if _cells.ndim == 1 else 1)
-    return _evaluate_basis_functions(V._cpp_object, _x, _cells, tol, maxit)
+    return _evaluate_basis_functions(V._cpp_object, _x, _cells, tol, maxit, num_threads)
 
 
 def discrete_curl(V0: FunctionSpace, V1: FunctionSpace) -> _MatrixCSR:

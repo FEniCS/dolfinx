@@ -777,16 +777,17 @@ void declare_objects(nb::module_& m, std::string type)
           [](const dolfinx::fem::Function<T, U>& self,
              nb::ndarray<const U, nb::ndim<2>, nb::c_contig> x,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
-             nb::ndarray<T, nb::ndim<2>, nb::c_contig> u, double tol, int maxit)
+             nb::ndarray<T, nb::ndim<2>, nb::c_contig> u, double tol, int maxit,
+             int num_threads)
           {
             // TODO: handle 1d case
             self.eval(std::span(x.data(), x.size()), {x.shape(0), x.shape(1)},
                       std::span(cells.data(), cells.size()),
                       std::span<T>(u.data(), u.size()),
-                      {u.shape(0), u.shape(1)}, tol, maxit);
+                      {u.shape(0), u.shape(1)}, tol, maxit, num_threads);
           },
           nb::arg("x"), nb::arg("cells"), nb::arg("values"), nb::arg("tol"),
-          nb::arg("maxit"), "Evaluate Function")
+          nb::arg("maxit"), nb::arg("num_threads"), "Evaluate Function")
       .def_prop_ro("function_space",
                    &dolfinx::fem::Function<T, U>::function_space);
 
@@ -1404,7 +1405,7 @@ void declare_real_functions(nb::module_& m)
       [](const dolfinx::fem::FunctionSpace<T>& V,
          nb::ndarray<const T, nb::ndim<2>, nb::c_contig> x,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
-         double tol, int maxit)
+         double tol, int maxit, int num_threads)
       {
         const dolfinx::fem::FiniteElement<T>& element = *V.element();
         // Checked before physical_base_value_size(), which throws for
@@ -1424,11 +1425,12 @@ void declare_real_functions(nb::module_& m)
         std::vector<T> basis(bshape[0] * bshape[1] * bshape[2]);
         dolfinx::fem::evaluate_basis_functions<T>(
             V, std::span(x.data(), x.size()), {x.shape(0), x.shape(1)},
-            std::span(cells.data(), cells.size()), basis, bshape, tol, maxit);
+            std::span(cells.data(), cells.size()), basis, bshape, tol, maxit,
+            num_threads);
         return dolfinx_wrappers::as_nbarray(std::move(basis), bshape);
       },
       nb::arg("V"), nb::arg("x"), nb::arg("cells"), nb::arg("tol"),
-      nb::arg("maxit"),
+      nb::arg("maxit"), nb::arg("num_threads"),
       "Evaluate the basis functions of a function space at points in "
       "physical space.");
 

@@ -18,14 +18,17 @@
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/local_range.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <exception>
 #include <functional>
 #include <numeric>
 #include <ranges>
 #include <span>
 #include <stdexcept>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -1294,16 +1297,22 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 /// pull-backs. Ignored for affine geometries.
 /// @param[in] maxit Maximum number of Newton iterations for non-affine
 /// pull-backs. Ignored for affine geometries.
+/// @param[in] num_threads Number of threads. The points are split into
+/// contiguous chunks, one per thread. Must be >= 1.
 /// @param[in] fn Callable `fn(p, cells[p], basis)` invoked for each
 /// point `p` with a non-negative cell index. `basis` has shape
 /// `(space_dimension / block_size, physical_base_value_size)` and is
-/// only valid during the call.
+/// only valid during the call. If `num_threads > 1`, `fn` is invoked
+/// concurrently for different points and must be safe for that.
 template <std::floating_point T>
 void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
                     std::span<const T> x, std::array<std::size_t, 2> xshape,
                     mesh::CellRange auto&& cells, double tol, int maxit,
-                    auto&& fn)
+                    int num_threads, auto&& fn)
 {
+  if (num_threads < 1)
+    throw std::invalid_argument("num_threads must be >= 1.");
+
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t tdim = mesh.topology()->dim();
   const CoordinateElement<T>& cmap = mesh.geometry().cmaps().front();
@@ -1315,7 +1324,9 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
   const std::size_t value_size = element.physical_base_value_size();
   const std::size_t space_dimension
       = element.space_dimension() / element.block_size();
+  const std::size_t num_basis_values = space_dimension * reference_value_size;
 
+  // Collective, so done before any thread is started
   std::span<const std::uint32_t> cell_info;
   if (element.needs_dof_transformations())
   {
@@ -1323,10 +1334,22 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
     cell_info = std::span(mesh.topology()->get_cell_permutation_info());
   }
 
-  std::vector<T> coord_dofs_b(num_dofs_g * gdim);
-  mdspan_t<T, 2> coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
-  std::vector<T> xp_b(1 * gdim);
-  mdspan_t<T, 2> xp(xp_b.data(), 1, gdim);
+  // Random access to the cell of each point
+  std::vector<std::int32_t> cells_b;
+  std::span<const std::int32_t> _cells;
+  using cells_t = std::remove_cvref_t<decltype(cells)>;
+  if constexpr (std::ranges::contiguous_range<cells_t>
+                and std::same_as<std::ranges::range_value_t<cells_t>,
+                                 std::int32_t>)
+  {
+    _cells = std::span<const std::int32_t>(std::ranges::data(cells),
+                                           std::ranges::size(cells));
+  }
+  else
+  {
+    cells_b.assign(std::ranges::begin(cells), std::ranges::end(cells));
+    _cells = cells_b;
+  }
 
   // Geometry basis derivatives at the reference origin (affine case)
   std::array<std::size_t, 4> phi0_shape = cmap.tabulate_shape(1, 1);
@@ -1336,82 +1359,6 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
   cmap.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi0_b);
   auto dphi0
       = md::submdspan(phi0, std::pair(1, tdim + 1), 0, md::full_extent, 0);
-
-  // Geometry basis derivatives at a point (non-affine case)
-  std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, 1);
-  std::vector<T> phi_b(
-      std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-  mdspan_t<const T, 4> phi(phi_b.data(), phi_shape);
-  auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), 0, md::full_extent, 0);
-
-  // Reference coordinates and geometry data at each point
-  std::vector<T> Xb(xshape[0] * tdim);
-  mdspan_t<T, 2> X(Xb.data(), xshape[0], tdim);
-  std::vector<T> J_b(xshape[0] * gdim * tdim);
-  mdspan_t<T, 3> J(J_b.data(), xshape[0], gdim, tdim);
-  std::vector<T> K_b(xshape[0] * tdim * gdim);
-  mdspan_t<T, 3> K(K_b.data(), xshape[0], tdim, gdim);
-  std::vector<T> detJ(xshape[0]);
-  std::vector<T> det_scratch(2 * gdim * tdim);
-  std::vector<T> pull_back_scratch(
-      cmap.is_affine() ? 0 : cmap.pull_back_working_size(gdim));
-
-  for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
-  {
-    if (*cell_it < 0)
-      continue;
-
-    auto x_dofs = md::submdspan(x_dofmap, *cell_it, md::full_extent);
-    assert(x_dofs.size() == num_dofs_g);
-    for (std::size_t i = 0; i < num_dofs_g; ++i)
-    {
-      const int pos = 3 * x_dofs[i];
-      for (std::size_t j = 0; j < gdim; ++j)
-        coord_dofs(i, j) = x_g[pos + j];
-    }
-
-    std::size_t p = std::ranges::distance(cells.begin(), cell_it);
-    for (std::size_t j = 0; j < gdim; ++j)
-      xp(0, j) = x[p * xshape[1] + j];
-
-    auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-    auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-
-    std::array<T, 3> Xpb{0, 0, 0};
-    md::mdspan<T, md::extents<std::size_t, 1, md::dynamic_extent>> Xp(
-        Xpb.data(), 1, tdim);
-    if (cmap.is_affine())
-    {
-      CoordinateElement<T>::compute_jacobian(dphi0, coord_dofs, _J);
-      CoordinateElement<T>::compute_jacobian_inverse(_J, _K);
-      std::array<T, 3> x0{0, 0, 0};
-      for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
-        x0[i] += coord_dofs(0, i);
-      CoordinateElement<T>::pull_back_affine(Xp, _K, x0, xp);
-      detJ[p]
-          = CoordinateElement<T>::compute_jacobian_determinant(_J, det_scratch);
-    }
-    else
-    {
-      cmap.pull_back_nonaffine(Xp, xp, coord_dofs, pull_back_scratch, tol,
-                               maxit);
-      cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
-      CoordinateElement<T>::compute_jacobian(dphi, coord_dofs, _J);
-      CoordinateElement<T>::compute_jacobian_inverse(_J, _K);
-      detJ[p]
-          = CoordinateElement<T>::compute_jacobian_determinant(_J, det_scratch);
-    }
-
-    for (std::size_t j = 0; j < X.extent(1); ++j)
-      X(p, j) = Xpb[j];
-  }
-
-  // Tabulate reference basis at all points
-  std::vector<T> reference_basis_b(xshape[0] * space_dimension
-                                   * reference_value_size);
-  mdspan_t<const T, 4> reference_basis(reference_basis_b.data(), 1, xshape[0],
-                                       space_dimension, reference_value_size);
-  element.tabulate(reference_basis_b, Xb, {X.extent(0), X.extent(1)}, 0);
 
   using u_t = mdspan_t<T, 2>;
   using U_t = mdspan_t<const T, 2>;
@@ -1424,30 +1371,165 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
   auto apply_dof_transformation
       = element.template dof_transformation_fn<T>(doftransform::standard, true);
 
-  std::vector<T> basis_b(space_dimension * value_size);
-  mdspan_t<T, 2> basis(basis_b.data(), space_dimension, value_size);
-  const std::size_t num_basis_values = space_dimension * reference_value_size;
-  for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
+  // Evaluate the basis at points [p0, p1). Each call has its own scratch
+  // and only reads shared data, so calls can run concurrently.
+  auto evaluate_chunk =
+      [&element, &cmap, &cell_info, &_cells, &x, &x_g, &dphi0, &push_forward_fn,
+       &apply_dof_transformation, &fn, x_dofmap, xshape, gdim, tdim, num_dofs_g,
+       space_dimension, reference_value_size, value_size, num_basis_values, tol,
+       maxit](std::size_t p0, std::size_t p1)
   {
-    if (*cell_it < 0)
-      continue;
+    const std::size_t num_points = p1 - p0;
+    std::vector<T> coord_dofs_b(num_dofs_g * gdim);
+    mdspan_t<T, 2> coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
+    std::vector<T> xp_b(1 * gdim);
+    mdspan_t<T, 2> xp(xp_b.data(), 1, gdim);
 
-    // Transform the reference basis for the cell's orientation
-    std::size_t p = std::ranges::distance(cells.begin(), cell_it);
-    if (apply_dof_transformation)
+    // Geometry basis derivatives at a point (non-affine case)
+    std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, 1);
+    std::vector<T> phi_b(
+        std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+    mdspan_t<const T, 4> phi(phi_b.data(), phi_shape);
+    auto dphi
+        = md::submdspan(phi, std::pair(1, tdim + 1), 0, md::full_extent, 0);
+
+    // Reference coordinates and geometry data at each point of the chunk
+    std::vector<T> Xb(num_points * tdim);
+    mdspan_t<T, 2> X(Xb.data(), num_points, tdim);
+    std::vector<T> J_b(num_points * gdim * tdim);
+    mdspan_t<T, 3> J(J_b.data(), num_points, gdim, tdim);
+    std::vector<T> K_b(num_points * tdim * gdim);
+    mdspan_t<T, 3> K(K_b.data(), num_points, tdim, gdim);
+    std::vector<T> detJ(num_points);
+    std::vector<T> det_scratch(2 * gdim * tdim);
+    std::vector<T> pull_back_scratch(
+        cmap.is_affine() ? 0 : cmap.pull_back_working_size(gdim));
+
+    for (std::size_t p = p0; p < p1; ++p)
     {
-      apply_dof_transformation(
-          std::span(reference_basis_b.data() + p * num_basis_values,
-                    num_basis_values),
-          cell_info, *cell_it, reference_value_size);
+      const std::int32_t c = _cells[p];
+      if (c < 0)
+        continue;
+
+      auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
+      assert(x_dofs.size() == num_dofs_g);
+      for (std::size_t i = 0; i < num_dofs_g; ++i)
+      {
+        const int pos = 3 * x_dofs[i];
+        for (std::size_t j = 0; j < gdim; ++j)
+          coord_dofs(i, j) = x_g[pos + j];
+      }
+
+      for (std::size_t j = 0; j < gdim; ++j)
+        xp(0, j) = x[p * xshape[1] + j];
+
+      const std::size_t q = p - p0;
+      auto _J = md::submdspan(J, q, md::full_extent, md::full_extent);
+      auto _K = md::submdspan(K, q, md::full_extent, md::full_extent);
+
+      std::array<T, 3> Xpb{0, 0, 0};
+      md::mdspan<T, md::extents<std::size_t, 1, md::dynamic_extent>> Xp(
+          Xpb.data(), 1, tdim);
+      if (cmap.is_affine())
+      {
+        CoordinateElement<T>::compute_jacobian(dphi0, coord_dofs, _J);
+        CoordinateElement<T>::compute_jacobian_inverse(_J, _K);
+        std::array<T, 3> x0{0, 0, 0};
+        for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
+          x0[i] += coord_dofs(0, i);
+        CoordinateElement<T>::pull_back_affine(Xp, _K, x0, xp);
+        detJ[q] = CoordinateElement<T>::compute_jacobian_determinant(
+            _J, det_scratch);
+      }
+      else
+      {
+        cmap.pull_back_nonaffine(Xp, xp, coord_dofs, pull_back_scratch, tol,
+                                 maxit);
+        cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
+        CoordinateElement<T>::compute_jacobian(dphi, coord_dofs, _J);
+        CoordinateElement<T>::compute_jacobian_inverse(_J, _K);
+        detJ[q] = CoordinateElement<T>::compute_jacobian_determinant(
+            _J, det_scratch);
+      }
+
+      for (std::size_t j = 0; j < X.extent(1); ++j)
+        X(q, j) = Xpb[j];
     }
 
-    auto _U = md::submdspan(reference_basis, 0, p, md::full_extent,
-                            md::full_extent);
-    auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-    auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-    push_forward_fn(basis, _U, _J, detJ[p], _K);
-    fn(p, *cell_it, mdspan_t<const T, 2>(basis));
+    // Tabulate reference basis at the points of the chunk
+    std::vector<T> reference_basis_b(num_points * num_basis_values);
+    mdspan_t<const T, 4> reference_basis(reference_basis_b.data(), 1,
+                                         num_points, space_dimension,
+                                         reference_value_size);
+    element.tabulate(reference_basis_b, Xb, {X.extent(0), X.extent(1)}, 0);
+
+    std::vector<T> basis_b(space_dimension * value_size);
+    mdspan_t<T, 2> basis(basis_b.data(), space_dimension, value_size);
+    for (std::size_t p = p0; p < p1; ++p)
+    {
+      const std::int32_t c = _cells[p];
+      if (c < 0)
+        continue;
+
+      // Transform the reference basis for the cell's orientation
+      const std::size_t q = p - p0;
+      if (apply_dof_transformation)
+      {
+        apply_dof_transformation(
+            std::span(reference_basis_b.data() + q * num_basis_values,
+                      num_basis_values),
+            cell_info, c, reference_value_size);
+      }
+
+      auto _U = md::submdspan(reference_basis, 0, q, md::full_extent,
+                              md::full_extent);
+      auto _J = md::submdspan(J, q, md::full_extent, md::full_extent);
+      auto _K = md::submdspan(K, q, md::full_extent, md::full_extent);
+      push_forward_fn(basis, _U, _J, detJ[q], _K);
+      fn(p, c, mdspan_t<const T, 2>(basis));
+    }
+  };
+
+  const std::size_t num_points = _cells.size();
+  const int num_chunks
+      = static_cast<int>(std::min<std::size_t>(num_threads, num_points));
+  if (num_chunks < 2)
+  {
+    evaluate_chunk(0, num_points);
+    return;
+  }
+
+  // An exception must not escape a thread, so each chunk stores its own
+  // and they are rethrown once all threads have joined
+  std::vector<std::exception_ptr> errors(num_chunks);
+  auto try_evaluate_chunk = [&evaluate_chunk](std::size_t p0, std::size_t p1,
+                                              std::exception_ptr& error)
+  {
+    try
+    {
+      evaluate_chunk(p0, p1);
+    }
+    catch (...)
+    {
+      error = std::current_exception();
+    }
+  };
+
+  {
+    std::vector<std::jthread> threads;
+    for (int i = 1; i < num_chunks; ++i)
+    {
+      auto [p0, p1] = common::local_range(i, num_points, num_chunks);
+      threads.emplace_back(try_evaluate_chunk, p0, p1, std::ref(errors[i]));
+    }
+    auto [p0, p1] = common::local_range(0, num_points, num_chunks);
+    try_evaluate_chunk(p0, p1, errors[0]);
+  }
+
+  for (const std::exception_ptr& error : errors)
+  {
+    if (error)
+      std::rethrow_exception(error);
   }
 }
 
@@ -1487,12 +1569,15 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
 /// pull-backs. Ignored for affine geometries.
 /// @param[in] maxit Maximum number of Newton iterations for non-affine
 /// pull-backs. Ignored for affine geometries.
+/// @param[in] num_threads Number of threads. The points are split into
+/// contiguous chunks, one per thread. Must be >= 1.
+/// @throws std::invalid_argument If `num_threads < 1`.
 template <std::floating_point T>
 void evaluate_basis_functions(const FunctionSpace<T>& V, std::span<const T> x,
                               std::array<std::size_t, 2> xshape,
                               mesh::CellRange auto&& cells, std::span<T> basis,
                               std::array<std::size_t, 3> bshape, double tol,
-                              int maxit)
+                              int maxit, int num_threads = 1)
 {
   assert(V.element());
   assert(V.mesh());
@@ -1531,7 +1616,7 @@ void evaluate_basis_functions(const FunctionSpace<T>& V, std::span<const T> x,
 
   std::ranges::fill(basis, 0);
   const std::size_t stride = bshape[1] * bshape[2];
-  impl::evaluate_basis(element, mesh, x, xshape, cells, tol, maxit,
+  impl::evaluate_basis(element, mesh, x, xshape, cells, tol, maxit, num_threads,
                        [&basis, stride](std::size_t p, std::int32_t,
                                         impl::mdspan_t<const T, 2> basis_p)
                        {
