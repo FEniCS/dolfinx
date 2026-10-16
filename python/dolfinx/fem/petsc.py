@@ -51,6 +51,9 @@ from dolfinx.common import IndexMap
 from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
+from dolfinx.cpp.fem.petsc import (
+    nonmatching_interpolation_matrix as _nonmatching_interpolation_matrix,
+)
 from dolfinx.fem import pack_coefficients, pack_constants
 from dolfinx.fem.assemble import (
     _apply_lifting_markers,
@@ -84,7 +87,9 @@ __all__ = [
     "ctypes_utils",
     "discrete_curl",
     "discrete_gradient",
+    "hierarchy_interpolation_matrix",
     "interpolation_matrix",
+    "nonmatching_interpolation_matrix",
     "numba_utils",
     "set_bc",
 ]
@@ -2430,6 +2435,63 @@ def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:
         accumulated.
     """  # noqa: D301
     return _interpolation_matrix(V0._cpp_object, V1._cpp_object)  # type: ignore[arg-type]
+
+
+def nonmatching_interpolation_matrix(
+    V0: _FunctionSpace,
+    V1: _FunctionSpace,
+    cells: npt.ArrayLike | None = None,
+    expansion: dolfinx.fem.utils.PointExpansion | None = None,
+    padding: float = 1e-14,
+    allow_extrapolation: bool = True,
+    tol: float = 1e-6,
+    maxit: int = 15,
+    num_threads: int = 1,
+) -> PETSc.Mat:
+    """Create the interpolation matrix between spaces on different meshes.
+
+    See :func:`dolfinx.fem.nonmatching_interpolation_matrix` for a
+    description of the arguments.
+
+    Returns:
+        Interpolation matrix. Its rows are distributed as the index map
+        of ``V1`` and its columns as the index map of ``V0``.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
+    """
+    _cells, weights, data = dolfinx.fem.utils._nonmatching_interpolation_data(
+        V0, V1, cells, expansion, padding, allow_extrapolation
+    )
+    cpp_args = (V0._cpp_object, V1._cpp_object, _cells, weights, data._cpp_object)
+    return _nonmatching_interpolation_matrix(*cpp_args, tol, maxit, num_threads)  # type: ignore[arg-type]
+
+
+def hierarchy_interpolation_matrix(
+    V0: _FunctionSpace,
+    V1: _FunctionSpace,
+    parent_cells: npt.ArrayLike,
+    tol: float = 1e-6,
+    maxit: int = 15,
+    num_threads: int = 1,
+) -> PETSc.Mat:
+    """Interpolation matrix from a mesh to its refinement.
+
+    See :func:`dolfinx.fem.hierarchy_interpolation_matrix` for a
+    description of the arguments.
+
+    Returns:
+        Interpolation matrix. Its rows are distributed as the index map
+        of ``V1`` and its columns as the index map of ``V0``.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
+    """
+    _cells, weights, data = dolfinx.fem.utils._hierarchy_interpolation_data(V0, V1, parent_cells)
+    cpp_args = (V0._cpp_object, V1._cpp_object, _cells, weights, data._cpp_object)
+    return _nonmatching_interpolation_matrix(*cpp_args, tol, maxit, num_threads)  # type: ignore[arg-type]
 
 
 @functools.singledispatch

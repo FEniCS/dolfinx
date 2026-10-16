@@ -63,8 +63,10 @@ from dolfinx.fem.utils import (
     discrete_curl,
     discrete_gradient,
     evaluate_basis_functions,
+    hierarchy_interpolation_matrix,
     interpolate_geometry,
     interpolation_matrix,
+    nonmatching_interpolation_matrix,
 )
 
 __all__ = [
@@ -105,11 +107,13 @@ __all__ = [
     "form",
     "form_cpp_class",
     "functionspace",
+    "hierarchy_interpolation_matrix",
     "interpolate_geometry",
     "interpolation_matrix",
     "locate_dofs_geometrical",
     "locate_dofs_topological",
     "mixed_topology_form",
+    "nonmatching_interpolation_matrix",
     "pack_coefficients",
     "pack_constants",
     "set_bc_diagonal",

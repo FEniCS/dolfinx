@@ -82,6 +82,9 @@ Linear solvers, preconditioners and matrix-free methods
 * :doc:`demos/demo_mixed-poisson` -- see *Mixed and hybridised
   formulations*: a block-preconditioned solver, including a Hypre AMS
   preconditioner for :math:`H(\mathrm{div})`.
+* :doc:`demos/demo_poisson-gmg` -- solve the Poisson equation with
+  geometric multigrid, using interpolation matrices between a hierarchy
+  of refined meshes as prolongations.
 * :doc:`demos/demo_dd-solvers` -- solve the Poisson, linearised
   elasticity and curl-curl equations with BDDC and PCHPDDM domain
   decomposition preconditioners, using PETSc's unassembled ``MATIS``
@@ -189,6 +192,7 @@ PETSc scalars.
 
    demos/demo_elasticity.md
    demos/demo_pyamg.md
+   demos/demo_poisson-gmg.md
    demos/demo_dd-solvers.md
    demos/demo_poisson-matrix-free.md
    demos/demo_matrix-free-petsc.md
