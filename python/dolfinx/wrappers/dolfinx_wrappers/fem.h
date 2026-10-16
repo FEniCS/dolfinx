@@ -1400,6 +1400,39 @@ void declare_real_functions(nb::module_& m)
       nb::arg("element"), nb::arg("V"), nb::arg("cells").none());
 
   m.def(
+      "evaluate_basis_functions",
+      [](const dolfinx::fem::FunctionSpace<T>& V,
+         nb::ndarray<const T, nb::ndim<2>, nb::c_contig> x,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+         double tol, int maxit)
+      {
+        const dolfinx::fem::FiniteElement<T>& element = *V.element();
+        // Checked before physical_base_value_size(), which throws for
+        // mixed elements
+        if (int num_sub_elements = element.num_sub_elements();
+            num_sub_elements > 1 and num_sub_elements != element.block_size())
+        {
+          throw std::invalid_argument("Evaluation of basis functions is not "
+                                      "supported for mixed elements. Extract "
+                                      "subspaces.");
+        }
+        std::array<std::size_t, 3> bshape
+            = {x.shape(0),
+               static_cast<std::size_t>(element.space_dimension()
+                                        / element.block_size()),
+               static_cast<std::size_t>(element.physical_base_value_size())};
+        std::vector<T> basis(bshape[0] * bshape[1] * bshape[2]);
+        dolfinx::fem::evaluate_basis_functions<T>(
+            V, std::span(x.data(), x.size()), {x.shape(0), x.shape(1)},
+            std::span(cells.data(), cells.size()), basis, bshape, tol, maxit);
+        return dolfinx_wrappers::as_nbarray(std::move(basis), bshape);
+      },
+      nb::arg("V"), nb::arg("x"), nb::arg("cells"), nb::arg("tol"),
+      nb::arg("maxit"),
+      "Evaluate the basis functions of a function space at points in "
+      "physical space.");
+
+  m.def(
       "interpolate_geometry",
       [](std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
          const dolfinx::fem::CoordinateElement<T>& new_cmap)
