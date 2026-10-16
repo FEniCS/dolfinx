@@ -46,6 +46,7 @@ add_executable(
   common/index_map.cpp
   common/move_semantics.cpp
   common/mpi.cpp
+  common/parallel.cpp
   common/sort.cpp
   fem/assembly_kernels.cpp
   fem/form.cpp
@@ -59,6 +60,7 @@ add_executable(
   mesh/refinement/option.cpp
   mesh/refinement/rectangle.cpp
   mesh/refinement/mark.cpp
+  mesh/threading.cpp
   nls/snessolver.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c

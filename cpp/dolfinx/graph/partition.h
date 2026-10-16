@@ -198,6 +198,8 @@ namespace build
 /// 4. Owning rank of the ghost nodes among (1). This has one entry per
 ///    ghost node -- the trailing entries of (1) -- not one entry per
 ///    node of (1).
+/// @note This overload is serial. Use the fixed-degree overload below
+/// for a threaded distribution.
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
@@ -226,6 +228,8 @@ distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
 /// @param[in] destinations Destination rank(s) for the `i`th row of
 /// `list`. The first rank is the 'owner' of the row; any further ranks
 /// receive it as a ghost.
+/// @param[in] num_threads Number of threads to use. Must be >= 1.
+/// @throws std::invalid_argument If `num_threads < 1`.
 /// @return
 /// 1. Received rows for this process, flattened row-major with shape
 ///    (num_nodes, degree). Rows owned by this process come first,
@@ -239,7 +243,8 @@ std::tuple<std::vector<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, std::span<const std::int64_t> list,
            std::array<std::size_t, 2> shape,
-           const graph::AdjacencyList<std::int32_t>& destinations);
+           const graph::AdjacencyList<std::int32_t>& destinations,
+           int num_threads = 1);
 
 /// @brief Take a set of distributed input global indices, including
 /// ghosts, and determine the new global indices after remapping.

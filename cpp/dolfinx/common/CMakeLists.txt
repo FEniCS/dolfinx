@@ -27,6 +27,7 @@ target_sources(
         local_range.h
         log.h
         math.h
+        parallel.h
         petsc.h
         sort.h
         timing.h

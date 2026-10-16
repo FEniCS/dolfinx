@@ -22,6 +22,28 @@
 /// Generic tools
 namespace dolfinx::common
 {
+/// @brief Concatenate per-chunk buffers, in chunk order.
+///
+/// @param[in] chunks Buffers to join, e.g. one per thread of a
+/// ::parallel_for.
+/// @return The buffers, joined end to end.
+template <std::ranges::input_range R>
+  requires std::ranges::sized_range<std::ranges::range_value_t<R>>
+auto concatenate(const R& chunks)
+    -> std::vector<std::ranges::range_value_t<std::ranges::range_value_t<R>>>
+{
+  using T = std::ranges::range_value_t<std::ranges::range_value_t<R>>;
+  std::size_t size = 0;
+  for (const auto& c : chunks)
+    size += std::ranges::size(c);
+
+  std::vector<T> joined;
+  joined.reserve(size);
+  for (const auto& c : chunks)
+    joined.insert(joined.end(), std::ranges::begin(c), std::ranges::end(c));
+  return joined;
+}
+
 ///@brief Sort two arrays based on the values in array `indices`.
 ///
 /// Any duplicate indices and the corresponding value are removed. In
