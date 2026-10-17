@@ -261,10 +261,19 @@ jobs:
         run: |
           python -m build -o wheelhouse/ ffcx/
 
+      # The Basix tests need the UFL wheel built above, which only the
+      # project directory makes visible inside the Linux container.
       - name: Build Basix wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         working-directory: basix/
+        shell: bash
+        env:
+          CIBW_ENVIRONMENT_LINUX: PIP_FIND_LINKS=/project/stack-wheels
+          CIBW_ENVIRONMENT_MACOS: PIP_FIND_LINKS=$GITHUB_WORKSPACE/basix/stack-wheels
+          CIBW_ENVIRONMENT_WINDOWS: PIP_FIND_LINKS=$GITHUB_WORKSPACE/basix/stack-wheels
         run: |
+          mkdir -p stack-wheels
+          cp ../wheelhouse/fenics_ufl-*.whl stack-wheels/
           python -m cibuildwheel --output-dir ../wheelhouse/ .
 
       - name: Make temporary simple503 repo directories
