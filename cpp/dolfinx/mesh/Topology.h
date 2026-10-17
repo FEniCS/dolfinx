@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg, Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,8 +7,11 @@
 #pragma once
 
 #include <array>
+#include <basix/mdspan.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
@@ -554,5 +557,21 @@ entities_to_index(const Topology& topology, int dim,
 /// @todo Remove redundant data.
 std::vector<std::vector<std::int32_t>>
 compute_mixed_cell_pairs(const Topology& topology, mesh::CellType facet_type);
+
+/// @brief Permutations of the cell-local entities of a given dimension.
+///
+/// Computes the permutations on `topology` if they are not already
+/// available. Returns an empty mdspan when the entity has no
+/// orientation to permute: cells (`dim == topology.dim()`) and
+/// vertices.
+///
+/// @param[in,out] topology Mesh topology.
+/// @param[in] dim Topological dimension of the entities.
+/// @param[in] cell_type_idx Index of the cell type, following the order
+/// of Topology::cell_types.
+/// @return Permutation of each cell-local entity of the cells of type
+/// `cell_type_idx`, shape `(num_cells, entities_per_cell)`.
+md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
+entity_permutations(Topology& topology, int dim, int cell_type_idx);
 
 } // namespace dolfinx::mesh
