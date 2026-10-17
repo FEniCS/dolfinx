@@ -23,71 +23,23 @@ Documentation can be viewed [here](https://docs.fenicsproject.org).
 
 ## Installation
 
-### From source
-
-For detailed instructions and a list of dependencies, see
-[here](https://docs.fenicsproject.org/dolfinx/main/python/installation).
-
-#### C++ core
-
-To build and install the C++ core, in the `cpp/` directory, run:
-
-```shell
-mkdir build
-cd build
-cmake ..
-make install
-```
-
-#### Python interface
-
-To install the Python interface, first install the C++ core, and then in
-the `python/` directory run:
-
-```shell
-pip install --group pyproject.toml:build
-pip install --check-build-dependencies --no-build-isolation .
-```
-
-### Spack
-
-To build the most recent release using
-[Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
-shell):
-
-```shell
-git clone https://github.com/spack/spack.git
-. ./spack/share/spack/setup-env.sh
-spack env create fenicsx-env
-spack env activate fenicsx-env
-spack install --add py-fenics-dolfinx+petsc4py+slepc4py
-```
-
-Spack is the recommended approach for HPC systems.
-
-Although Spack already contains FEniCS Project packages, we also maintain a
-separate [overlay package repository](https://github.com/FEniCS/spack-fenics)
-which may contain bug fixes and package specs for newer releases of the FEniCS
-Project components, particularly after a recent release.
-
-```shell
-spack repo add https://github.com/fenics/spack-fenics
-spack repo ls # shows fenics above builtin
-```
-
 ### Binary packages
 
 **Recommendations**
 
-- macOS: [conda](#conda).
-- Linux: [apt](#ubuntu-packages)
-  ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)),
-  [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
-- Windows: [docker](#docker-images), or install
-  [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use
-  [Ubuntu](#ubuntu-packages). [conda](#conda) packages in beta testing.
+- Most users: [pip (preview)](#pip-preview) or [conda](#conda), on Linux,
+  macOS and Windows. pip does not include PETSc yet, and conda does not
+  include PETSc on Windows.
+- With PETSc: [conda](#conda) (Linux and macOS),
+  [Ubuntu](#ubuntu-packages)/[Debian](#debian-packages) packages or
+  [Docker](#docker-images). On Windows, install
+  [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) and use
+  [Ubuntu](#ubuntu-packages).
 - High performance computers: [Spack](#spack) or
   [from source](#from-source), both using system-provided MPI.
+  [pip (preview)](#pip-preview) works with an MPICH-compatible MPI (MPICH,
+  Cray MPICH, Intel MPI, MVAPICH) loaded from the module system, in place
+  of the `mpich` package.
 
 #### conda
 
@@ -101,9 +53,8 @@ conda install -c conda-forge fenics-dolfinx mpich pyvista # Linux and macOS
 conda install -c conda-forge fenics-dolfinx pyvista pyamg # Windows
 ```
 
-*Windows only*: Windows conda packages are currently in beta testing. PETSc
-and petsc4py are not available on Windows. Because FEniCS uses just-in-time
-compilation it necessary to install
+*Windows only*: PETSc and petsc4py are not available on Windows. Because
+FEniCS uses just-in-time compilation it is necessary to install
 [Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/).
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
@@ -182,6 +133,94 @@ docker run -ti dolfinx/dev-env:current
 The Docker images support arm64 and amd64 architectures. For a full list
 of tags, including versioned images, see
 <https://hub.docker.com/u/dolfinx>
+
+#### pip (preview)
+
+Development builds of `main` are available from
+[Test PyPI](https://test.pypi.org/) for Python 3.12+. They are built without
+PETSc and with SuperLU_DIST for sparse direct solves.
+
+Linux (x86_64 and aarch64):
+
+```shell
+python3 -m venv fenicsx-env
+source fenicsx-env/bin/activate
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" mpich
+```
+
+macOS (Apple silicon and Intel), with the Xcode Command Line Tools:
+
+```shell
+python3 -m venv fenicsx-env
+source fenicsx-env/bin/activate
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" openmpi
+```
+
+Windows (x86_64), in an administrator PowerShell:
+
+```powershell
+# Or install the Visual Studio C++ build tools and Python 3.13 manually
+choco install -y visualstudio2022-workload-vctools python313
+refreshenv
+python -m venv fenicsx-env
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned -Force
+fenicsx-env\Scripts\Activate.ps1
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" impi-rt
+# Put mpiexec from impi-rt on the PATH, in each new session
+$env:Path = "$env:VIRTUAL_ENV\Library\bin;$env:Path"
+```
+
+### From source
+
+For detailed instructions and a list of dependencies, see
+[here](https://docs.fenicsproject.org/dolfinx/main/python/installation).
+
+#### C++ core
+
+To build and install the C++ core, in the `cpp/` directory, run:
+
+```shell
+mkdir build
+cd build
+cmake ..
+make install
+```
+
+#### Python interface
+
+To install the Python interface, first install the C++ core, and then in
+the `python/` directory run:
+
+```shell
+pip install --group pyproject.toml:build
+pip install --check-build-dependencies --no-build-isolation .
+```
+
+### Spack
+
+To build the most recent release using
+[Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
+shell):
+
+```shell
+git clone https://github.com/spack/spack.git
+. ./spack/share/spack/setup-env.sh
+spack env create fenicsx-env
+spack env activate fenicsx-env
+spack install --add py-fenics-dolfinx+petsc4py+slepc4py
+```
+
+Spack is the recommended approach for HPC systems.
+
+Although Spack already contains FEniCS Project packages, we also maintain a
+separate [overlay package repository](https://github.com/FEniCS/spack-fenics)
+which may contain bug fixes and package specs for newer releases of the FEniCS
+Project components, particularly after a recent release.
+
+```shell
+spack repo add https://github.com/fenics/spack-fenics
+spack repo ls # shows fenics above builtin
+```
 
 ## Contributing
 
