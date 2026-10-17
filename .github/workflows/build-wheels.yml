@@ -1,7 +1,8 @@
 name: Build wheels
 
-# By default this action does not push to test or production PyPI.  The wheels
-# are available as an artifact that can be downloaded and tested locally.
+# By default this action does not push to Test PyPI. The wheels are available
+# as an artifact that can be downloaded and tested locally. Uploads to the
+# production PyPI index are deliberately not supported.
 
 on:
   workflow_dispatch:
@@ -31,6 +32,11 @@ on:
         default: "main"
         type: string
 
+      test_pypi_publish:
+        description: "Publish to Test PyPI (requires build_fenicsx_stack)"
+        default: false
+        type: boolean
+
   workflow_call:
     inputs:
       dolfinx_ref:
@@ -58,9 +64,32 @@ on:
         default: "main"
         type: string
 
+      test_pypi_publish:
+        description: "Publish to Test PyPI (requires build_fenicsx_stack)"
+        default: false
+        type: boolean
+
 jobs:
+  dev_version:
+    name: Compute development version stamp
+    runs-on: ubuntu-latest
+    outputs:
+      stamp: ${{ steps.stamp.outputs.stamp }}
+    steps:
+      - name: Check publishing inputs
+        if: ${{ inputs.test_pypi_publish && !inputs.build_fenicsx_stack }}
+        run: |
+          echo "::error::Publishing to Test PyPI requires build_fenicsx_stack"
+          exit 1
+
+      # One stamp shared by every matrix job keeps the stack's pins consistent.
+      - name: Compute stamp
+        id: stamp
+        run: echo "stamp=$(date -u +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"
+
   build_wheels:
     name: Build wheels
+    needs: dev_version
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -137,11 +166,6 @@ jobs:
           path: ufl
           ref: ${{ github.event.inputs.ufl_ref }}
 
-      - name: Build UFL wheel
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        run: |
-          python -m build -o wheelhouse/ ufl/
-
       - name: Checkout FFCx
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         uses: actions/checkout@v7
@@ -150,11 +174,6 @@ jobs:
           path: ffcx
           ref: ${{ github.event.inputs.ffcx_ref }}
 
-      - name: Build FFCx wheel
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        run: |
-          python -m build -o wheelhouse/ ffcx/
-
       - name: Checkout Basix
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         uses: actions/checkout@v7
@@ -162,6 +181,70 @@ jobs:
           repository: FEniCS/basix
           path: basix
           ref: ${{ github.event.inputs.basix_ref }}
+
+      - name: Checkout DOLFINx
+        uses: actions/checkout@v7
+        with:
+          path: dolfinx
+          ref: ${{ github.event.inputs.dolfinx_ref }}
+
+      # PyPI never accepts a filename twice, so each build gets a unique
+      # .devN. The stack is pinned exactly since DOLFINx links against the
+      # Basix it was built with.
+      - name: Stamp development versions
+        shell: bash
+        env:
+          DEV_STAMP: ${{ needs.dev_version.outputs.stamp }}
+          BUILD_STACK: ${{ inputs.build_fenicsx_stack }}
+        run: |
+          python - <<'EOF'
+          import os
+          import pathlib
+          import re
+
+          from packaging.specifiers import SpecifierSet
+
+          stamp = os.environ["DEV_STAMP"]
+          projects = {"fenics-dolfinx": pathlib.Path("dolfinx/python/pyproject.toml")}
+          if os.environ["BUILD_STACK"] == "true":
+              projects |= {
+                  name: pathlib.Path(name.removeprefix("fenics-"), "pyproject.toml")
+                  for name in ("fenics-ufl", "fenics-ffcx", "fenics-basix")
+              }
+
+          versions = {}
+          for name, path in projects.items():
+              text, n = re.subn(
+                  r'^version = "(.+)\.dev0"$', rf'version = "\1.dev{stamp}"', path.read_text(), flags=re.M
+              )
+              if n != 1:
+                  raise RuntimeError(f"{path} has no .dev0 version to stamp")
+              path.write_text(text)
+              versions[name] = re.search(r'^version = "(.+)"$', text, flags=re.M).group(1)
+              print(f"{name} {versions[name]}")
+
+          def pin(match):
+              name, spec = match.groups()
+              if versions[name] not in SpecifierSet(spec, prereleases=True):
+                  raise RuntimeError(f"{name} {versions[name]} does not satisfy {spec}")
+              return f'"{name}=={versions[name]}"'
+
+          for name, path in projects.items():
+              deps = "|".join(re.escape(d) for d in versions if d != name)
+              if deps:
+                  path.write_text(re.sub(rf'"({deps})([<>=!~][^";]*)"', pin, path.read_text()))
+          EOF
+          git -C dolfinx diff python/pyproject.toml
+
+      - name: Build UFL wheel
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        run: |
+          python -m build -o wheelhouse/ ufl/
+
+      - name: Build FFCx wheel
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        run: |
+          python -m build -o wheelhouse/ ffcx/
 
       - name: Build Basix wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
@@ -190,12 +273,6 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple/
-
-      - name: Checkout DOLFINx
-        uses: actions/checkout@v7
-        with:
-          path: dolfinx
-          ref: ${{ github.event.inputs.dolfinx_ref }}
 
       - name: Build DOLFINx wheel
         run: |
@@ -530,3 +607,26 @@ jobs:
         with:
           name: simple503-combined
           path: shared/*
+
+  upload_test_pypi:
+    name: Upload to Test PyPI (optional)
+    if: ${{ inputs.test_pypi_publish }}
+    needs: [build_wheels, test_wheels]
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/fenics-dolfinx
+    permissions:
+      id-token: write
+    steps:
+      - name: Download all wheel artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: wheelhouse-*
+          path: dist/
+          merge-multiple: true
+
+      - name: Push to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
