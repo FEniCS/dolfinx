@@ -120,6 +120,19 @@ Mesh generation, partitioning and parallel data
   extract a surface mesh from a Gmsh volume mesh and orient its cells.
 
 
+Structural mechanics
+--------------------
+
+* :doc:`demos/demo_elasticity` -- solve three-dimensional linear
+  elasticity using algebraic multigrid.
+* :doc:`demos/demo_shell` -- solve linear Naghdi shell problems with
+  displacement and director unknowns, including membrane, bending and
+  transverse shear deformation, with partial selective reduced
+  integration to alleviate locking. Use an analytic cylindrical
+  parametrisation, and an embedded Gmsh mesh of a flared, perforated
+  panel with local refinement (requires Gmsh).
+
+
 Electromagnetics
 ----------------
 
@@ -188,6 +201,7 @@ PETSc scalars.
    :caption: Linear solvers and matrix-free methods
 
    demos/demo_elasticity.md
+   demos/demo_shell.md
    demos/demo_pyamg.md
    demos/demo_dd-solvers.md
    demos/demo_poisson-matrix-free.md
