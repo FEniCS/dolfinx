@@ -1194,6 +1194,16 @@ void Topology::create_entity_permutations(int dim, int num_threads)
   if (_entity_permutations[dim].has_value())
     return;
 
+  if (num_threads < 1)
+    throw std::invalid_argument("num_threads must be >= 1.");
+
+  // Vertices have no orientation, including in mixed topologies.
+  if (dim == 0)
+  {
+    _entity_permutations[dim].emplace();
+    return;
+  }
+
   // The packed cell info holds these orientations: 3 bits per face
   // followed by 1 bit per edge, and it covers every dimension that has
   // one (vertices have no orientation, and a cell is not a sub-entity of
@@ -1208,7 +1218,7 @@ void Topology::create_entity_permutations(int dim, int num_threads)
   const int bits = dim == 2 ? 3 : 1;
   const int offset
       = (dim == 1 and tdim > 2) ? 3 * cell_num_entities(cell_type, 2) : 0;
-  std::vector<std::uint8_t> perms(dim == 0 ? 0 : num_cells * num_entities);
+  std::vector<std::uint8_t> perms(num_cells * num_entities);
   for (std::int32_t c = 0; c < std::int32_t(perms.size() / num_entities); ++c)
   {
     for (int i = 0; i < num_entities; ++i)
