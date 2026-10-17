@@ -67,6 +67,7 @@ __all__ = [
     "cell_num_entities",
     "cell_num_vertices",
     "compute_cell_centroids",
+    "compute_entity_permutations",
     "compute_incident_entities",
     "compute_midpoints",
     "create_box",
@@ -991,6 +992,27 @@ def extract_cells_from_entities(
         entities,
         None if entity_map is None else entity_map._cpp_object,
     )
+
+
+def compute_entity_permutations(
+    topology: Topology, dim: int, num_threads: int = 1
+) -> npt.NDArray[np.uint8]:
+    """Compute the permutation of each cell-local entity of a dimension.
+
+    Unlike :meth:`~dolfinx.mesh.Topology.create_entity_permutations`,
+    the result is not stored on the topology, and it is always computed
+    from the entities, never unpacked from the cell permutation info.
+    The entities of dimension ``dim`` must already exist.
+
+    Args:
+        topology: The topology.
+        dim: Topological dimension of the entities.
+        num_threads: Number of threads to use.
+
+    Returns:
+        Permutation of each cell-local entity, flattened row-wise.
+    """
+    return _cpp.mesh.compute_entity_permutations(topology._cpp_object, dim, num_threads)
 
 
 def compute_incident_entities(
