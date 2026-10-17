@@ -977,15 +977,13 @@ Topology::connectivity(int d0, int d1) const
 //-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
-  if (auto i_map = this->index_map(this->dim());
-      _cell_permutations.empty()
-      and i_map->size_local() + i_map->num_ghosts() > 0)
+  if (!_cell_permutations.has_value())
   {
     throw std::runtime_error(
         "create_cell_permutations must be called before using this data.");
   }
 
-  return _cell_permutations;
+  return *_cell_permutations;
 }
 //-----------------------------------------------------------------------------
 void Topology::create_cell_orientations(
@@ -1020,10 +1018,12 @@ void Topology::create_cell_orientations(
   std::vector<std::int8_t> computed;
   if (!orientations)
   {
-    // Creates the edges, which the orientation is computed across, and
-    // their orientations relative to the cells
-    create_entity_permutations(1);
+    // The edges, which the orientation is computed across, and their
+    // orientations relative to the cells. The permutations are unpacked
+    // from the cell permutations created above, so the edges come from
+    // the connectivity.
     create_connectivity(1, 2);
+    create_entity_permutations(1);
     computed = compute_cell_orientations(*this);
   }
 
@@ -1032,9 +1032,9 @@ void Topology::create_cell_orientations(
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     if (o[c] < 0)
-      _cell_permutations[c] |= reversed_cell_bit;
+      (*_cell_permutations)[c] |= reversed_cell_bit;
     else
-      _cell_permutations[c] &= ~reversed_cell_bit;
+      (*_cell_permutations)[c] &= ~reversed_cell_bit;
   }
   _has_cell_orientations = true;
 }
@@ -1194,51 +1194,47 @@ void Topology::create_entity_permutations(int dim, int num_threads)
   if (_entity_permutations[dim].has_value())
     return;
 
-  if (!_cell_permutations.empty())
+  if (num_threads < 1)
+    throw std::invalid_argument("num_threads must be >= 1.");
+
+  // Vertices have no orientation, including in mixed topologies.
+  if (dim == 0)
   {
-    // The packed cell info already holds these orientations: 3 bits per
-    // face followed by 1 bit per edge. Unpack rather than recompute.
-    CellType cell_type = this->cell_type();
-    const std::int32_t num_cells = _cell_permutations.size();
-    const int num_entities = cell_num_entities(cell_type, dim);
-    const int bits = dim == 2 ? 3 : 1;
-    const int offset
-        = (dim == 1 and tdim > 2) ? 3 * cell_num_entities(cell_type, 2) : 0;
-    std::vector<std::uint8_t> perms(dim == 0 ? 0 : num_cells * num_entities);
-    for (std::int32_t c = 0; c < std::int32_t(perms.size() / num_entities); ++c)
-    {
-      for (int i = 0; i < num_entities; ++i)
-      {
-        perms[c * num_entities + i]
-            = (_cell_permutations[c] >> (offset + bits * i))
-              & ((1 << bits) - 1);
-      }
-    }
-    _entity_permutations[dim] = std::move(perms);
+    _entity_permutations[dim].emplace();
     return;
   }
 
-  // The orientation of an entity is relative to the cell's vertices, so
-  // the entities must exist.
-  create_entities(dim, num_threads);
+  // The packed cell info holds these orientations: 3 bits per face
+  // followed by 1 bit per edge, and it covers every dimension that has
+  // one (vertices have no orientation, and a cell is not a sub-entity of
+  // itself). Computing it needs only the cell vertices, so unpack it
+  // rather than build the entities of dimension `dim` to measure them
+  // against.
+  create_cell_permutations(num_threads);
 
-  _entity_permutations[dim]
-      = compute_entity_permutations(*this, dim, num_threads);
+  CellType cell_type = this->cell_type();
+  const std::int32_t num_cells = _cell_permutations->size();
+  const int num_entities = cell_num_entities(cell_type, dim);
+  const int bits = dim == 2 ? 3 : 1;
+  const int offset
+      = (dim == 1 and tdim > 2) ? 3 * cell_num_entities(cell_type, 2) : 0;
+  std::vector<std::uint8_t> perms(num_cells * num_entities);
+  for (std::int32_t c = 0; c < std::int32_t(perms.size() / num_entities); ++c)
+  {
+    for (int i = 0; i < num_entities; ++i)
+    {
+      perms[c * num_entities + i]
+          = ((*_cell_permutations)[c] >> (offset + bits * i))
+            & ((1 << bits) - 1);
+    }
+  }
+  _entity_permutations[dim] = std::move(perms);
 }
 //-----------------------------------------------------------------------------
 void Topology::create_cell_permutations(int num_threads)
 {
-  if (!_cell_permutations.empty())
+  if (_cell_permutations.has_value())
     return;
-
-  // FIXME: Is creating all entities always required? Could it be made
-  // cheaper by doing a local version? This call does quite a lot of
-  // parallel work.
-
-  // Create all mesh entities
-  const int tdim = this->dim();
-  for (int d = 0; d < tdim; ++d)
-    create_entities(d, num_threads);
 
   _cell_permutations = compute_cell_permutations(*this, num_threads);
 }

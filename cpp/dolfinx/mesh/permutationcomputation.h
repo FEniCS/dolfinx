@@ -1,5 +1,5 @@
 // Copyright (C) 2020 Matthew Scroggs
-// Copyright (C) 2020-2026 Matthew Scroggs and Jørgen S. Dokken
+// Copyright (C) 2020-2026 Matthew Scroggs, Jørgen S. Dokken and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -40,8 +40,17 @@ constexpr std::uint32_t reversed_cell_bit = std::uint32_t(1) << 31;
 /// `cell_index`. This data passed to FFCx kernels, where it is used to
 /// permute quadrature points on sub-entity integrals when data from
 /// more than one cell incident to the entity is used.
-
 ///
+/// This measures the entities of dimension `dim`, which must therefore
+/// exist, against the cells incident to them.
+/// Topology::create_entity_permutations instead unpacks the same values
+/// from the packed cell permutations, which need only the cell
+/// vertices. The two are independent routes to the same data, and
+/// `cpp/test/mesh/permutations.cpp` checks that they agree.
+///
+/// @pre The entities of dimension `dim`, and their connectivity with
+/// the cells and the vertices, must already exist (see
+/// Topology::create_entities).
 /// @param[in] topology Mesh topology.
 /// @param[in] dim Topological dimension of the entities to permute.
 /// Must satisfy `0 <= dim < topology.dim()`. Vertices (`dim == 0`) have
@@ -99,8 +108,7 @@ std::vector<std::uint8_t> compute_entity_permutations(const Topology& topology,
 ///   - edge 5 is not permuted (0)
 ///
 /// @note Not collective.
-/// @pre All entities of dimension `< topology.dim()` must already exist
-/// (see Topology::create_entities).
+/// @pre Cell-to-vertex connectivity and the vertex index map must exist.
 /// @param[in] topology Mesh topology.
 /// @param[in] num_threads Number of threads to use. Must be >= 1.
 /// @return Facet permutation and cell permutations, covering both owned

@@ -1067,13 +1067,16 @@ def test_point_mesh(gdim, dtype) -> None:
         CellType.hexahedron,
     ],
 )
-def test_cell_permutation_info_matches_entity_permutations(cell_type) -> None:
-    """The packed cell permutation info is the per-dimension permutations.
+@pytest.mark.parametrize("num_threads", [1, 4])
+def test_cell_permutation_info_bit_layout(cell_type, num_threads) -> None:
+    """The packed cell permutation info has the documented bit layout.
 
     ``get_cell_permutation_info`` packs three bits per face followed by
-    one bit per edge. Those bits must agree with the permutations
-    returned per entity dimension, which are computed by a separate code
-    path.
+    one bit per edge, and ``get_entity_permutations`` unpacks them. This
+    pins that layout, re-deriving the offsets here. The check that the
+    packed bits are themselves right is in ``cpp/test/mesh/permutations.cpp``,
+    which compares them against the independent computation from the
+    mesh entities.
     """
     if cell_type in (CellType.triangle, CellType.quadrilateral):
         msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type=cell_type)
@@ -1083,12 +1086,9 @@ def test_cell_permutation_info_matches_entity_permutations(cell_type) -> None:
     topology = msh.topology
     tdim = topology.dim
 
-    # Compute the per-dimension permutations first, so that they and the
-    # packed info are produced by independent code paths: asking for
-    # them after the packed info exists unpacks it instead
+    topology.create_cell_permutations(num_threads)
     for dim in range(1, tdim):
         topology.create_entity_permutations(dim)
-    topology.create_cell_permutations()
 
     info = topology.get_cell_permutation_info()
     num_cells = len(info)
@@ -1109,6 +1109,61 @@ def test_cell_permutation_info_matches_entity_permutations(cell_type) -> None:
     assert edges.any()
     if tdim > 2:
         assert faces.any()
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        CellType.interval,
+        CellType.triangle,
+        CellType.quadrilateral,
+        CellType.tetrahedron,
+        CellType.hexahedron,
+        CellType.prism,
+    ],
+)
+@pytest.mark.parametrize("num_threads", [1, 4])
+def test_cell_permutations_do_not_create_entities(cell_type, num_threads) -> None:
+    """Packed orientations need only the cell vertices, including ghost cells."""
+    if cell_type == CellType.interval:
+        msh = create_unit_interval(MPI.COMM_WORLD, 4)
+    elif cell_type in (CellType.triangle, CellType.quadrilateral):
+        msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type=cell_type)
+    else:
+        msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
+    topology = msh.topology
+    tdim = topology.dim
+
+    # Entities of dimension dim exist iff they have an index map. The
+    # connectivity accessor is not a usable check here: for a prism it
+    # throws whatever has been created, the facets having two types
+    for dim in range(1, tdim):
+        assert topology.index_maps(dim) == []
+
+    topology.create_cell_permutations(num_threads)
+    info = topology.get_cell_permutation_info()
+    cell_map = topology.index_map(tdim)
+    assert len(info) == cell_map.size_local + cell_map.num_ghosts
+    if tdim > 1:
+        assert info.any()
+    else:
+        assert not info.any()
+    for dim in range(1, tdim):
+        assert topology.index_maps(dim) == []
+
+
+def test_entity_permutations_do_not_create_entities() -> None:
+    """Unpacking is local, including on a rank that holds no cells.
+
+    The permutations are unpacked from the packed cell permutations,
+    which need only the cell vertices. Nothing here is collective, so a
+    rank holding no cells cannot diverge from its peers. A 1x1 square
+    has two cells, so most ranks hold none.
+    """
+    msh = create_unit_square(MPI.COMM_WORLD, 1, 1)
+    msh.topology.create_entity_permutations(1)
+    assert msh.topology.index_maps(1) == []
+    msh.topology.get_entity_permutations(1)
 
 
 def test_entity_permutations_are_computed_per_dimension() -> None:
@@ -1147,14 +1202,17 @@ def test_facet_assembly_computes_only_facet_permutations(degree) -> None:
     with pytest.raises(RuntimeError):
         msh.topology.get_entity_permutations(1)
 
-    # Lagrange never needs dof transformations at assembly time, but from
-    # degree 3 it is required to permute the dofmap.
+    # The integral itself creates the facets it integrates over, and the
+    # permutations create nothing. The edges appear only once the element
+    # has dofs on them, which is what builds them.
+    assert msh.topology.index_maps(2) != []
+    assert (msh.topology.index_maps(1) != []) == (degree > 1)
+
+    # The face permutations are unpacked from the packed cell info, so it
+    # exists whatever the element needs. It costs one integer per cell
+    # and no mesh entities.
     assert not V.element.needs_dof_transformations
-    if degree < 3:
-        with pytest.raises(RuntimeError):
-            msh.topology.get_cell_permutation_info()
-    else:
-        msh.topology.get_cell_permutation_info()
+    msh.topology.get_cell_permutation_info()
 
 
 def test_cell_assembly_computes_only_cell_permutations() -> None:
@@ -1176,33 +1234,6 @@ def test_cell_assembly_computes_only_cell_permutations() -> None:
     for dim in (1, 2):
         with pytest.raises(RuntimeError):
             msh.topology.get_entity_permutations(dim)
-
-
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
-def test_entity_permutations_unpacked_from_cell_info(cell_type):
-    """Asking for permutations after the packed info exists unpacks it.
-
-    The result must equal what the independent per-dimension computation
-    produces, so that the reuse is a pure saving.
-    """
-    if cell_type == CellType.triangle:
-        args = (MPI.COMM_WORLD, 3, 3)
-        make = create_unit_square
-    else:
-        args = (MPI.COMM_WORLD, 2, 2, 2)
-        make = create_unit_cube
-
-    computed = make(*args, cell_type=cell_type)
-    unpacked = make(*args, cell_type=cell_type)
-    unpacked.topology.create_cell_permutations()
-
-    for dim in range(1, computed.topology.dim):
-        computed.topology.create_entity_permutations(dim)
-        unpacked.topology.create_entity_permutations(dim)
-        assert np.array_equal(
-            computed.topology.get_entity_permutations(dim),
-            unpacked.topology.get_entity_permutations(dim),
-        )
 
 
 @pytest.mark.parametrize("dtype", [np.int32, np.complex128])

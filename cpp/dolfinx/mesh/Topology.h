@@ -162,10 +162,8 @@ public:
   connectivity(int d0, int d1) const;
 
   /// @brief Get the cell permutation information.
-  /// @throws std::runtime_error If create_entity_permutations has not
+  /// @throws std::runtime_error If create_cell_permutations has not
   /// been called.
-  /// @throws std::out_of_range If there is more than one cell type
-  /// (see Topology::index_map).
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
   /// @brief Compute or set a per-cell marker for a consistent
@@ -319,7 +317,9 @@ public:
 
   /// @brief Compute entity permutations and reflections.
   ///
-  /// @note Collective.
+  /// @note Not collective. The permutations are unpacked from the
+  /// packed cell permutations, which are computed first if they do not
+  /// exist. The entities of dimension `dim` are not created.
   ///
   /// A permutation records how an entity is oriented as seen from a
   /// cell, relative to a low-to-high ordering of the entity's global
@@ -357,6 +357,8 @@ public:
   /// each cell at assembly time.
   ///
   /// Does nothing if the cell permutations have already been computed.
+  /// Uses cell vertices directly without creating edges or faces.
+  /// @note Not collective.
   ///
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
   /// @see create_entity_permutations, which gives the orientations of
@@ -398,7 +400,9 @@ private:
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
-  std::vector<std::uint32_t> _cell_permutations;
+  // Unset until computed, which an empty vector (a rank with no cells)
+  // does not indicate.
+  std::optional<std::vector<std::uint32_t>> _cell_permutations;
 
   // Whether a cell orientation has been computed or set. Not encoded in
   // _cell_permutations, where an unset orientation reads as all 1.
