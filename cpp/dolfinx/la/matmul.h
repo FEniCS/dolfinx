@@ -8,6 +8,7 @@
 #pragma once
 
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <stdexcept>
 
 #include <dolfinx/la/MatrixCSR.h>
@@ -640,12 +641,12 @@ dolfinx::la::MatrixCSR<T> matmul(const dolfinx::la::MatrixCSR<T>& A,
   const std::array<int, 2> bs = A.block_size();
 
   // Fetch ghost rows of B needed to multiply against A's ghost columns.
-  spdlog::debug("Fetch remote rows of B in C=A*B");
+  logger().debug("Fetch remote rows of B in C=A*B");
   auto [new_col_map, ghost_row_ptr, ghost_cols, ghost_vals]
       = impl::fetch_ghost_rows<T, BS>(A, B);
 
   // Single pass: compute sparsity, off-diagonal boundaries, and values.
-  spdlog::debug("Compute sparsity and values of C=A*B");
+  logger().debug("Compute sparsity and values of C=A*B");
   auto [C_row_ptr, C_off_diag_offsets, C_cols, C_vals_vec]
       = impl::matmul<T, BS>(A, B, new_col_map,
                             std::span<const std::int32_t>(ghost_row_ptr),

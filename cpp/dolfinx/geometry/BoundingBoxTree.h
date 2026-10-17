@@ -11,6 +11,7 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <dolfinx/common/log.h>
 #include <dolfinx/mesh/utils.h>
 #include <format>
 #include <iterator>
@@ -291,8 +292,8 @@ public:
           = impl_bb::build_from_leaf(leaf_bboxes);
     }
 
-    spdlog::info("Computed bounding box tree with {} nodes for {} entities",
-                 num_bboxes(), entities_span.size());
+    logger().info("Computed bounding box tree with {} nodes for {} entities",
+                  num_bboxes(), entities_span.size());
   }
 
   /// Constructor
@@ -314,8 +315,8 @@ public:
       impl_bb::_build_from_point(std::span(points), _bboxes, _bbox_coordinates);
     }
 
-    spdlog::info("Computed bounding box tree with {} nodes for {} points.",
-                 num_bboxes(), points.size());
+    logger().info("Computed bounding box tree with {} nodes for {} points.",
+                  num_bboxes(), points.size());
   }
 
   // Copy constructor (deleted)
@@ -379,8 +380,8 @@ public:
     BoundingBoxTree global_tree(std::move(global_bboxes),
                                 std::move(global_coords));
 
-    spdlog::info("Computed global bounding box tree with {} boxes.",
-                 global_tree.num_bboxes());
+    logger().info("Computed global bounding box tree with {} boxes.",
+                  global_tree.num_bboxes());
 
     return global_tree;
   }

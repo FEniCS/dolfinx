@@ -8,6 +8,7 @@
 #include "uniform.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <format>
@@ -28,7 +29,7 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   if (tdim < 2)
     throw std::invalid_argument("Uniform refinement only for 2D and 3D meshes");
 
-  spdlog::info("Topology dim = {}", tdim);
+  logger().info("Topology dim = {}", tdim);
 
   // Collect up entity types on each dimension
   std::vector<std::vector<mesh::CellType>> entity_types;
@@ -208,7 +209,7 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     switch (cell_entity_types[k])
     {
     case mesh::CellType::hexahedron:
-      spdlog::debug("Hex subdivision [{}]", k);
+      logger().debug("Hex subdivision [{}]", k);
       refined_cell_list
           = {0, 9,  8,  20, 10, 22, 21, 26, 1, 11, 8,  20, 12, 23, 21, 26,
              2, 13, 9,  20, 14, 24, 22, 26, 3, 13, 11, 20, 15, 24, 23, 26,
@@ -217,13 +218,13 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
       break;
 
     case mesh::CellType::tetrahedron:
-      spdlog::debug("Tet subdivision [{}]", k);
+      logger().debug("Tet subdivision [{}]", k);
       refined_cell_list = {0, 7, 8, 9, 1, 5, 6, 9, 2, 4, 6, 8, 3, 4, 5, 7,
                            9, 4, 6, 8, 9, 4, 8, 7, 9, 4, 7, 5, 9, 4, 5, 6};
       break;
 
     case mesh::CellType::prism:
-      spdlog::debug("Prism subdivision [{}]", k);
+      logger().debug("Prism subdivision [{}]", k);
       refined_cell_list
           = {0,  6,  7,  8,  15, 16, 6,  1,  9,  15, 10, 17, 7,  9,  2,  16,
              17, 11, 6,  9,  7,  15, 17, 16, 15, 17, 16, 12, 14, 13, 8,  15,
@@ -231,7 +232,7 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
       break;
 
     case mesh::CellType::pyramid:
-      spdlog::debug("Pyramid subdivision [{}]", k);
+      logger().debug("Pyramid subdivision [{}]", k);
       refined_cell_list = {0,  5,  6, 13, 7,  1,  8,  5, 13, 9,  3,  10, 8,
                            13, 12, 2, 6,  10, 13, 11, 7, 9,  11, 12, 4};
       if (ktet == -1)
@@ -242,12 +243,12 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
       break;
 
     case mesh::CellType::triangle:
-      spdlog::debug("Triangle subdivision [{}]", k);
+      logger().debug("Triangle subdivision [{}]", k);
       refined_cell_list = {0, 4, 5, 1, 5, 3, 2, 3, 4, 3, 4, 5};
       break;
 
     case mesh::CellType::quadrilateral:
-      spdlog::debug("Quad subdivision [{}]", k);
+      logger().debug("Quad subdivision [{}]", k);
       refined_cell_list = {0, 4, 5, 8, 1, 6, 4, 8, 2, 7, 5, 8, 3, 7, 6, 8};
       break;
 
@@ -309,7 +310,7 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     }
   }
 
-  spdlog::debug("Create new mesh");
+  logger().debug("Create new mesh");
   std::vector<std::span<const std::int64_t>> topo_span(mixed_topology.begin(),
                                                        mixed_topology.end());
 

@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -190,7 +191,7 @@ public:
   std::pair<FunctionSpace, std::vector<std::vector<std::int32_t>>>
   collapse() const
   {
-    spdlog::debug("FunctionSpace::collapse");
+    logger().debug("FunctionSpace::collapse");
     if (_component.empty())
       throw std::invalid_argument("Function space is not a subspace");
 
@@ -200,10 +201,10 @@ public:
     for (auto d : _dofmaps)
     {
       assert(d);
-      spdlog::debug("Call DofMap::collapse");
+      logger().debug("Call DofMap::collapse");
       auto [_collapsed_dofmap, _collapsed_dofs]
           = d->collapse(_mesh->comm(), *_mesh->topology());
-      spdlog::debug("Got collapsed dofmap");
+      logger().debug("Got collapsed dofmap");
       collapsed_dofmaps.push_back(
           std::make_shared<DofMap>(std::move(_collapsed_dofmap)));
       collapsed_dofs.push_back(_collapsed_dofs);
