@@ -166,7 +166,7 @@ python -m venv fenicsx-env
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned -Force
 fenicsx-env\Scripts\Activate.ps1
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" impi-rt
-# Put mpiexec from impi-rt on the PATH
+# Put mpiexec from impi-rt on the PATH, in each new session
 $env:Path = "$env:VIRTUAL_ENV\Library\bin;$env:Path"
 ```
 
