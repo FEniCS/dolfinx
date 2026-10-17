@@ -141,7 +141,7 @@ Development builds of `main` are available from
 [Test PyPI](https://test.pypi.org/) for Python 3.12+. They are built without
 PETSc and with SuperLU_DIST for sparse direct solves.
 
-Linux:
+Linux (x86_64 and aarch64, glibc 2.34+):
 
 ```shell
 python3 -m venv fenicsx-env
@@ -149,7 +149,7 @@ source fenicsx-env/bin/activate
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" mpich
 ```
 
-macOS, with the Xcode Command Line Tools:
+macOS (Apple silicon and Intel), with the Xcode Command Line Tools:
 
 ```shell
 python3 -m venv fenicsx-env
@@ -157,7 +157,7 @@ source fenicsx-env/bin/activate
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" openmpi
 ```
 
-Windows, in an administrator PowerShell:
+Windows (x86_64), in an administrator PowerShell:
 
 ```powershell
 # Or install the Visual Studio C++ build tools and Python 3.13 manually
