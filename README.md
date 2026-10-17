@@ -27,15 +27,19 @@ Documentation can be viewed [here](https://docs.fenicsproject.org).
 
 **Recommendations**
 
-- macOS: [conda](#conda).
+- macOS: [conda](#conda) or [pip (preview)](#pip-preview).
 - Linux: [apt](#ubuntu-packages)
   ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)),
-  [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
-- Windows: [docker](#docker-images), or install
-  [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use
-  [Ubuntu](#ubuntu-packages). [conda](#conda) packages in beta testing.
+  [docker](#docker-images), [conda](#conda) or
+  [pip (preview)](#pip-preview). See also [Spack](#spack).
+- Windows: [pip (preview)](#pip-preview), [docker](#docker-images), or
+  install [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and
+  use [Ubuntu](#ubuntu-packages). [conda](#conda) packages in beta testing.
 - High performance computers: [Spack](#spack) or
   [from source](#from-source), both using system-provided MPI.
+  [pip (preview)](#pip-preview) works on systems with glibc 2.34+ using an
+  MPICH-compatible MPI (MPICH, Cray MPICH, Intel MPI, MVAPICH) loaded from
+  the module system, in place of the `mpich` package.
 
 #### conda
 
