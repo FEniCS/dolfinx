@@ -32,12 +32,13 @@ Documentation can be viewed [here](https://docs.fenicsproject.org).
   ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)),
   [docker](#docker-images), [conda](#conda) or
   [pip (preview)](#pip-preview). See also [Spack](#spack).
-- Windows: [pip (preview)](#pip-preview), [docker](#docker-images), or
-  install [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and
-  use [Ubuntu](#ubuntu-packages). [conda](#conda) packages in beta testing.
+- Windows: [conda](#conda) or [pip (preview)](#pip-preview). Alternatively
+  [docker](#docker-images), or install
+  [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use
+  [Ubuntu](#ubuntu-packages).
 - High performance computers: [Spack](#spack) or
   [from source](#from-source), both using system-provided MPI.
-  [pip (preview)](#pip-preview) works using an
+  [pip (preview)](#pip-preview) works with an
   MPICH-compatible MPI (MPICH, Cray MPICH, Intel MPI, MVAPICH) loaded from
   the module system, in place of the `mpich` package.
 
@@ -53,9 +54,8 @@ conda install -c conda-forge fenics-dolfinx mpich pyvista # Linux and macOS
 conda install -c conda-forge fenics-dolfinx pyvista pyamg # Windows
 ```
 
-*Windows only*: Windows conda packages are currently in beta testing. PETSc
-and petsc4py are not available on Windows. Because FEniCS uses just-in-time
-compilation it necessary to install
+*Windows only*: PETSc and petsc4py are not available on Windows. Because
+FEniCS uses just-in-time compilation it is necessary to install
 [Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/).
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
