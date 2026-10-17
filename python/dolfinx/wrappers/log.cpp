@@ -33,16 +33,10 @@ void log(nb::module_& m)
       "set_output_file",
       [](const std::string& filename)
       {
-        try
-        {
-          spdlog::set_default_logger(
-              spdlog::basic_logger_mt("dolfinx", filename));
-        }
-        catch (const spdlog::spdlog_ex& ex)
-        {
-          throw std::runtime_error(
-              std::format("Log initialisation failed: {}", ex.what()));
-        }
+        std::shared_ptr<spdlog::sinks::sink> file_sink
+            = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename,
+                                                                  true);
+        dolfinx::logger().sinks().push_back(file_sink);
       },
       nb::arg("filename"));
 
@@ -50,15 +44,15 @@ void log(nb::module_& m)
       "set_thread_name",
       [](const std::string& thread_name)
       {
-        spdlog::set_pattern(
+        dolfinx::logger().set_pattern(
             std::format("[%Y-%m-%d %H:%M:%S.%e] [{}] [%l] %v", thread_name));
       },
       nb::arg("thread_name"));
 
   m.def(
       "set_log_level", [](spdlog::level::level_enum level)
-      { spdlog::set_level(level); }, nb::arg("level"));
-  m.def("get_log_level", []() { return spdlog::get_level(); });
+      { dolfinx::logger().set_level(level); }, nb::arg("level"));
+  m.def("get_log_level", []() { return dolfinx::logger().level(); });
   m.def(
       "log",
       [](spdlog::level::level_enum level, const std::string& s)
