@@ -27,20 +27,19 @@ Documentation can be viewed [here](https://docs.fenicsproject.org).
 
 **Recommendations**
 
-- macOS: [conda](#conda) or [pip (preview)](#pip-preview).
-- Linux: [apt](#ubuntu-packages)
-  ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)),
-  [docker](#docker-images), [conda](#conda) or
-  [pip (preview)](#pip-preview). See also [Spack](#spack).
-- Windows: [conda](#conda) or [pip (preview)](#pip-preview). Alternatively
-  [docker](#docker-images), or install
-  [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use
+- Most users: [pip (preview)](#pip-preview) or [conda](#conda), on Linux,
+  macOS and Windows. pip does not include PETSc yet, and conda does not
+  include PETSc on Windows.
+- With PETSc: [conda](#conda) (Linux and macOS),
+  [Ubuntu](#ubuntu-packages)/[Debian](#debian-packages) packages or
+  [Docker](#docker-images). On Windows, install
+  [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) and use
   [Ubuntu](#ubuntu-packages).
 - High performance computers: [Spack](#spack) or
   [from source](#from-source), both using system-provided MPI.
-  [pip (preview)](#pip-preview) works with an
-  MPICH-compatible MPI (MPICH, Cray MPICH, Intel MPI, MVAPICH) loaded from
-  the module system, in place of the `mpich` package.
+  [pip (preview)](#pip-preview) works with an MPICH-compatible MPI (MPICH,
+  Cray MPICH, Intel MPI, MVAPICH) loaded from the module system, in place
+  of the `mpich` package.
 
 #### conda
 
