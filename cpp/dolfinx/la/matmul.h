@@ -102,11 +102,16 @@ struct Sparsity
 
 /// @brief Fetch the rows of Matrix B which are referenced by the ghost
 /// columns of Matrix A.
+/// @tparam T Scalar type.
+/// @tparam BS Square block size. Use -1 for runtime dispatch (non-optimised).
+///            When >= 1, must match A.block_size() == B.block_size() ==
+///            {BS,BS}.
 /// @param A MatrixCSR
 /// @param B MatrixCSR
 /// @returns Tuple containing [new index map, rowptr, cols, values] for the
-/// received rows
-template <typename T>
+/// received rows. `rowptr` and `cols` are indexed by graph node (CSR entry);
+/// `values` has `bsq`=`BS*BS` scalars per graph entry.
+template <typename T, int BS = -1>
 std::tuple<std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>,
            std::vector<std::int32_t>, std::vector<T>>
 fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
@@ -115,6 +120,10 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   // The ghost columns of A are global row indices into B.
   auto col_map_A = A.index_map(1); // column IndexMap of A
   auto row_map_B = B.index_map(0); // row IndexMap of B
+
+  // Runtime block size: use compile-time BS when provided, else read from B.
+  const int bs_rt = (BS < 0) ? B.block_size()[0] : BS;
+  const int bsq = bs_rt * bs_rt;
 
   // Create neighborhood comms for col_map_A
   std::span<const int> src = col_map_A->src();
@@ -238,24 +247,30 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   std::partial_sum(recv_entry_count.begin(), recv_entry_count.end(),
                    std::next(recv_entry_disp.begin()));
 
-  // Pack and send data values
+  // Pack and send data values.
+  // send_entry_count/disp count graph entries (CSR nodes); multiply by bsq
+  // for the value count since each entry holds a BS×BS block.
   auto values_B = B.values();
-  std::vector<T> send_vals(send_entry_disp.back());
-  std::vector<T> recv_vals(recv_entry_disp.back());
+  std::vector<T> send_vals(send_entry_disp.back() * bsq);
+  std::vector<T> recv_vals(recv_entry_disp.back() * bsq);
   std::size_t k = 0;
   for (int r : recv_row_locals)
   {
     std::size_t row_size = row_ptr_B[r + 1] - row_ptr_B[r];
-    std::copy(std::next(values_B.begin(), row_ptr_B[r]),
-              std::next(values_B.begin(), row_ptr_B[r + 1]),
+    std::copy(std::next(values_B.begin(), row_ptr_B[r] * bsq),
+              std::next(values_B.begin(), row_ptr_B[r + 1] * bsq),
               std::next(send_vals.begin(), k));
-    k += row_size;
+    k += row_size * bsq;
   }
-  MPI_Datatype mpi_T = dolfinx::MPI::mpi_t<T>;
+
+  // Communicate values using a compound MPI datatype of bsq scalars per
+  // graph entry, so count/disp arrays index graph entries directly.
+  const dolfinx::MPI::Datatype<T> block_type(bsq);
+  MPI_Datatype mpi_block = block_type.type();
   MPI_Neighbor_alltoallv(send_vals.data(), send_entry_count.data(),
-                         send_entry_disp.data(), mpi_T, recv_vals.data(),
-                         recv_entry_count.data(), recv_entry_disp.data(), mpi_T,
-                         neigh_comm_rev);
+                         send_entry_disp.data(), mpi_block, recv_vals.data(),
+                         recv_entry_count.data(), recv_entry_disp.data(),
+                         mpi_block, neigh_comm_rev);
 
   // Pack and send column indices
   auto cols_B = B.cols();
@@ -384,9 +399,9 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
     std::copy(std::next(recv_col_local.begin(), src_start),
               std::next(recv_col_local.begin(), src_end),
               std::next(orig_recv_col_local.begin(), dst_start));
-    std::copy(std::next(recv_vals.begin(), src_start),
-              std::next(recv_vals.begin(), src_end),
-              std::next(orig_recv_vals.begin(), dst_start));
+    std::copy(std::next(recv_vals.begin(), src_start * bsq),
+              std::next(recv_vals.begin(), src_end * bsq),
+              std::next(orig_recv_vals.begin(), dst_start * bsq));
   }
 
   return {new_col_map, orig_ghost_row_ptr, orig_recv_col_local, orig_recv_vals};
@@ -394,22 +409,26 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
 
 /// @brief Compute the sparsity pattern and values of C = A*B in a single pass.
 ///
-/// Uses a dense accumulator (one entry per possible output column) to
-/// simultaneously detect nonzero columns and accumulate A[i,j]*B[j,k],
-/// eliminating the separate value-fill loop and the per-entry lower_bound
-/// search that a two-pass approach requires.
+/// Uses a dense accumulator (one entry per possible output column, BS×BS
+/// scalars per entry for block matrices) to simultaneously detect nonzero
+/// columns and accumulate A[i,j]*B[j,k], eliminating the separate value-fill
+/// loop and the per-entry lower_bound search that a two-pass approach requires.
 ///
-/// @param A             Left matrix.
+/// @tparam T Scalar type.
+/// @tparam BS Square block size. Use -1 for runtime dispatch (non-optimised).
+///            When >= 1, inner GEMM loops are compile-time-sized (unrollable).
+/// @param A             Left matrix (local rows only).
 /// @param B             Right matrix (local rows only).
 /// @param new_col_map   Extended column IndexMap for C, from fetch_ghost_rows.
-/// @param ghost_row_ptr CSR row pointer for the ghost rows of B.
+/// @param ghost_row_ptr CSR row pointer for the ghost rows of B (graph-node
+///                      units; values are at ghost_row_ptr[g]*bsq).
 /// @param ghost_cols    Local column indices (w.r.t. new_col_map) for ghost
 /// rows.
-/// @param ghost_vals    Values for the ghost rows of B.
+/// @param ghost_vals    Values for the ghost rows of B (bsq scalars per entry).
 /// @return Tuple (row_ptr, off_diag_offsets, cols, vals). off_diag_offsets[i]
 ///         is the number of diagonal-block entries in row i, computed during
 ///         the same sort step that establishes column order.
-template <typename T>
+template <typename T, int BS = -1>
 std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>, std::vector<T>>
 matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
@@ -417,6 +436,10 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
        std::span<const std::int32_t> ghost_row_ptr,
        std::span<const std::int32_t> ghost_cols, std::span<const T> ghost_vals)
 {
+  // Runtime block size: use compile-time BS when provided, else read from A.
+  const int bs_rt = (BS < 0) ? A.block_size()[0] : BS;
+  const int bsq = bs_rt * bs_rt;
+
   auto col_map_B = B.index_map(1);
   const std::int32_t num_local_rows_A = A.index_map(0)->size_local();
   const std::int32_t num_local_rows_B = B.index_map(0)->size_local();
@@ -448,13 +471,40 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
   std::vector<std::int32_t> cols_C;
   std::vector<T> vals_C;
 
-  // Dense accumulator: acc[k] holds the running sum for column k.
-  // in_row[k] marks whether column k was touched in the current row.
-  // Both are reset via row_cols at the end of each row (O(nnz/row), not
-  // O(num_cols_C)).
-  std::vector<T> acc(num_cols_C, T(0));
+  // Dense accumulator: acc[k*bsq..(k+1)*bsq-1] holds the running BS×BS block
+  // sum for output column (node) k. in_row[k] marks whether column k was
+  // touched in the current row. Both are reset via row_cols at the end of each
+  // row (O(nnz/row), not O(num_cols_C)).
+  std::vector<T> acc(num_cols_C * bsq, T(0));
   std::vector<bool> in_row(num_cols_C, false);
   std::vector<std::int32_t> row_cols;
+
+  // Block GEMM: C[r,s] += sum_t A[r,t] * B[t,s]  (row-major BS×BS).
+  // When BS >= 1 the loop bounds are compile-time constants, enabling
+  // unrolling; when BS < 0 the runtime size bs_rt is used instead.
+  auto gemm_block = [&](const T* a_blk, const T* b_blk, T* c_blk)
+  {
+    if constexpr (BS < 0)
+    {
+      for (int r = 0; r < bs_rt; ++r)
+        for (int t = 0; t < bs_rt; ++t)
+        {
+          const T a_rt = a_blk[r * bs_rt + t];
+          for (int s = 0; s < bs_rt; ++s)
+            c_blk[r * bs_rt + s] += a_rt * b_blk[t * bs_rt + s];
+        }
+    }
+    else
+    {
+      for (int r = 0; r < BS; ++r)
+        for (int t = 0; t < BS; ++t)
+        {
+          const T a_rt = a_blk[r * BS + t];
+          for (int s = 0; s < BS; ++s)
+            c_blk[r * BS + s] += a_rt * b_blk[t * BS + s];
+        }
+    }
+  };
 
   for (std::int32_t i = 0; i < num_local_rows_A; ++i)
   {
@@ -464,19 +514,18 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
     for (std::int32_t ka = row_ptr_A[i]; ka < offdiag_ptr_A[i]; ++ka)
     {
       const std::int32_t j = cols_A[ka];
-      const T a = vals_A[ka];
+      const T* a_blk = vals_A.data() + ka * bsq;
       for (std::int32_t kb = row_ptr_B[j]; kb < row_ptr_B[j + 1]; ++kb)
       {
         const std::int32_t c = cols_B[kb];
         const std::int32_t k
             = c < num_owned_cols_B ? c : b_ghost_remap[c - num_owned_cols_B];
-        T acc_val = a * vals_B[kb];
-        if (!in_row[k] and acc_val != T(0))
+        if (!in_row[k])
         {
           in_row[k] = true;
           row_cols.push_back(k);
         }
-        acc[k] += acc_val;
+        gemm_block(a_blk, vals_B.data() + kb * bsq, acc.data() + k * bsq);
       }
     }
 
@@ -484,26 +533,30 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
     for (std::int32_t ka = offdiag_ptr_A[i]; ka < row_ptr_A[i + 1]; ++ka)
     {
       const std::int32_t j = cols_A[ka];
-      const T a = vals_A[ka];
+      const T* a_blk = vals_A.data() + ka * bsq;
       const std::int32_t g = j - num_local_rows_B;
       for (std::int32_t kb = ghost_row_ptr[g]; kb < ghost_row_ptr[g + 1]; ++kb)
       {
         const std::int32_t k = ghost_cols[kb];
-        T acc_val = a * ghost_vals[kb];
-        if (!in_row[k] and acc_val != T(0))
+        if (!in_row[k])
         {
           in_row[k] = true;
           row_cols.push_back(k);
         }
-        acc[k] += acc_val;
+        gemm_block(a_blk, ghost_vals.data() + kb * bsq, acc.data() + k * bsq);
       }
     }
 
-    // Remove zeros produced by exact cancellation in the SpGEMM.
+    // Remove nodes whose accumulated block is identically zero (exact
+    // cancellation in the SpGEMM).
     auto pos = row_cols.begin();
     while (pos != row_cols.end())
     {
-      if (acc[*pos] == T(0))
+      const T* c_blk = acc.data() + (*pos) * bsq;
+      bool all_zero = true;
+      for (int q = 0; q < bsq && all_zero; ++q)
+        all_zero = (c_blk[q] == T(0));
+      if (all_zero)
       {
         in_row[*pos] = false;
         pos = row_cols.erase(pos);
@@ -526,8 +579,12 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
     for (const std::int32_t c : row_cols)
     {
       cols_C.push_back(c);
-      vals_C.push_back(acc[c]);
-      acc[c] = T(0);
+      T* c_blk = acc.data() + c * bsq;
+      for (int q = 0; q < bsq; ++q)
+      {
+        vals_C.push_back(c_blk[q]);
+        c_blk[q] = T(0);
+      }
       in_row[c] = false;
     }
     row_ptr_C.push_back(static_cast<std::int64_t>(cols_C.size()));
@@ -541,36 +598,59 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
 
 /// @brief Compute C = A*B as a distributed MatrixCSR.
 ///
+/// Both A and B must have square block size {BS, BS}.
+/// Passing the compile-time block size as the template
+/// argument enables compile-time loop unrolling in the inner GEMM.
+///
+/// @tparam T  Scalar type.
+/// @tparam BS Square block size, or -1 for runtime dispatch (non-optimised).
+///            When >= 1, A and B must have block_size() == {BS, BS}.
 /// @param A Left matrix.
 /// @param B Right matrix.
-/// @note Currently only supports block-size 1 matrices.
 /// @return The product C = A*B as a MatrixCSR with row distribution
 ///         matching A and column distribution determined by B.
 ///         The row IndexMap of C has no ghosts, and the column IndexMap of C
 ///         will generally be a larger superset of the column IndexMap of B.
-template <typename T>
+template <typename T, int BS = -1>
 dolfinx::la::MatrixCSR<T> matmul(const dolfinx::la::MatrixCSR<T>& A,
                                  const dolfinx::la::MatrixCSR<T>& B)
 {
   dolfinx::common::Timer t_spgemm("MatrixCSR SpGEMM");
 
-  std::array<int, 2> bs{1, 1};
-  if (A.block_size() != B.block_size() or A.block_size() != bs)
+  // Validate block sizes.
+  if (A.block_size() != B.block_size())
   {
-    throw std::invalid_argument("Currently matmul only supports block size=1");
+    throw std::invalid_argument(
+        "matmul: A and B must have the same block size");
   }
+  if (A.block_size()[0] != A.block_size()[1])
+  {
+    throw std::invalid_argument(
+        "matmul: only square block sizes are supported");
+  }
+  if constexpr (BS >= 1)
+  {
+    if (A.block_size() != std::array<int, 2>{BS, BS})
+    {
+      throw std::invalid_argument(
+          "matmul: template parameter BS does not match matrix block size");
+    }
+  }
+
+  const std::array<int, 2> bs = A.block_size();
 
   // Fetch ghost rows of B needed to multiply against A's ghost columns.
   spdlog::debug("Fetch remote rows of B in C=A*B");
   auto [new_col_map, ghost_row_ptr, ghost_cols, ghost_vals]
-      = impl::fetch_ghost_rows(A, B);
+      = impl::fetch_ghost_rows<T, BS>(A, B);
 
   // Single pass: compute sparsity, off-diagonal boundaries, and values.
   spdlog::debug("Compute sparsity and values of C=A*B");
-  auto [C_row_ptr, C_off_diag_offsets, C_cols, C_vals_vec] = impl::matmul(
-      A, B, new_col_map, std::span<const std::int32_t>(ghost_row_ptr),
-      std::span<const std::int32_t>(ghost_cols),
-      std::span<const T>(ghost_vals));
+  auto [C_row_ptr, C_off_diag_offsets, C_cols, C_vals_vec]
+      = impl::matmul<T, BS>(A, B, new_col_map,
+                            std::span<const std::int32_t>(ghost_row_ptr),
+                            std::span<const std::int32_t>(ghost_cols),
+                            std::span<const T>(ghost_vals));
 
   auto C_row_map = std::make_shared<common::IndexMap>(
       A.index_map(0)->comm(), A.index_map(0)->size_local());
