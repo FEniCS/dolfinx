@@ -215,11 +215,14 @@ jobs:
           versions = {}
           for name, path in projects.items():
               text, n = re.subn(
-                  r'^version = "(.+)\.dev0"$', rf'version = "\1.dev{stamp}"', path.read_text(), flags=re.M
+                  r'^version = "(.+)\.dev0"$',
+                  rf'version = "\1.dev{stamp}"',
+                  path.read_text(encoding="utf-8"),
+                  flags=re.M,
               )
               if n != 1:
                   raise RuntimeError(f"{path} has no .dev0 version to stamp")
-              path.write_text(text)
+              path.write_text(text, encoding="utf-8")
               versions[name] = re.search(r'^version = "(.+)"$', text, flags=re.M).group(1)
               print(f"{name} {versions[name]}")
 
@@ -232,7 +235,8 @@ jobs:
           for name, path in projects.items():
               deps = "|".join(re.escape(d) for d in versions if d != name)
               if deps:
-                  path.write_text(re.sub(rf'"({deps})([<>=!~][^";]*)"', pin, path.read_text()))
+                  text = re.sub(rf'"({deps})([<>=!~][^";]*)"', pin, path.read_text(encoding="utf-8"))
+                  path.write_text(text, encoding="utf-8")
           EOF
           git -C dolfinx diff python/pyproject.toml
 
