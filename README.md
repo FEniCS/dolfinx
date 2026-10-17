@@ -37,7 +37,7 @@ Documentation can be viewed [here](https://docs.fenicsproject.org).
   use [Ubuntu](#ubuntu-packages). [conda](#conda) packages in beta testing.
 - High performance computers: [Spack](#spack) or
   [from source](#from-source), both using system-provided MPI.
-  [pip (preview)](#pip-preview) works on systems with glibc 2.34+ using an
+  [pip (preview)](#pip-preview) works using an
   MPICH-compatible MPI (MPICH, Cray MPICH, Intel MPI, MVAPICH) loaded from
   the module system, in place of the `mpich` package.
 
@@ -141,7 +141,7 @@ Development builds of `main` are available from
 [Test PyPI](https://test.pypi.org/) for Python 3.12+. They are built without
 PETSc and with SuperLU_DIST for sparse direct solves.
 
-Linux (x86_64 and aarch64, glibc 2.34+):
+Linux (x86_64 and aarch64):
 
 ```shell
 python3 -m venv fenicsx-env
