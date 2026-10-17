@@ -91,6 +91,11 @@ Linear solvers, preconditioners and matrix-free methods
 * :doc:`demos/demo_types` -- solve the Poisson equation using different
   scalar types (single/double precision, real/complex) and SciPy sparse
   solvers.
+* :doc:`demos/demo_helmholtz` -- see *Acoustics and wave scattering*:
+  precondition the Helmholtz equation with a two-level overlapping
+  Schwarz method that runs in parallel, using impedance transmission
+  between subdomains and a Dirichlet-to-Neumann coarse space (the
+  solver section requires complex PETSc scalars).
 
 
 Custom and advanced finite elements
