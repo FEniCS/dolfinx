@@ -131,3 +131,36 @@ def test_bad_shape(mat_random) -> None:
 
     with pytest.raises(ValueError):
         A.matmul(B)
+
+
+@pytest.mark.parametrize(
+    "bs",
+    [2, 3],
+)
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+    ],
+)
+def test_matmul_block(dtype, bs, mat_random, mat_gather) -> None:
+    """Test matmul on compact (block) MatrixCSR with bs x bs blocks.
+
+    Strategy: compute C = A*B in compact form, expand both operands
+    and the result to scalar form, then verify against scalar matmul.
+    """
+    A = mat_random(0, 0, 12345, dtype, bs=[bs, bs])
+    B = mat_random(0, 0, 54321, dtype, bs=[bs, bs])
+
+    C = A.matmul(B)
+
+    # Expand to scalar and verify via scipy
+    Ascipy = mat_gather(A)
+    Bscipy = mat_gather(B)
+    Cscipy_ref = Ascipy @ Bscipy
+
+    lrC0, lrC1 = C.index_map(0).local_range
+    nrC = C.index_map(0).size_local
+
+    assert np.allclose(C.to_dense()[: nrC * bs, :], Cscipy_ref.todense()[lrC0 * bs : lrC1 * bs])
