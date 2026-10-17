@@ -461,7 +461,10 @@ FiniteElement<T>::tabulate(std::span<const T> X,
                            std::array<std::size_t, 2> shape, int order) const
 {
   assert(_element);
-  return _element->tabulate(order, X, shape);
+  std::array<std::size_t, 4> vshape = _element->tabulate_shape(order, shape[0]);
+  std::vector<T> values(vshape[0] * vshape[1] * vshape[2] * vshape[3]);
+  _element->tabulate(order, X, shape, values);
+  return {std::move(values), vshape};
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
