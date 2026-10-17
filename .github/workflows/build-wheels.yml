@@ -190,8 +190,9 @@ jobs:
 
       # PyPI never accepts a filename twice, so each build gets a unique
       # .devN. The stack is pinned exactly since DOLFINx links against the
-      # Basix it was built with.
-      - name: Stamp development versions
+      # Basix it was built with. Only the wheels fix the MPI family, so the
+      # MPI check is injected here.
+      - name: Prepare sources for wheels
         shell: bash
         env:
           DEV_STAMP: ${{ needs.dev_version.outputs.stamp }}
@@ -237,8 +238,15 @@ jobs:
               if deps:
                   text = re.sub(rf'"({deps})([<>=!~][^";]*)"', pin, path.read_text(encoding="utf-8"))
                   path.write_text(text, encoding="utf-8")
+
+          init = pathlib.Path("dolfinx/python/dolfinx/__init__.py")
+          check = pathlib.Path("dolfinx/.github/wheels/mpi_check.py").read_text(encoding="utf-8")
+          text = init.read_text(encoding="utf-8")
+          if text.count("# WHEELMPICHECK\n") != 1:
+              raise RuntimeError(f"{init} has no WHEELMPICHECK placeholder")
+          init.write_text(text.replace("# WHEELMPICHECK\n", check), encoding="utf-8")
           EOF
-          git -C dolfinx diff python/pyproject.toml
+          git -C dolfinx diff python/pyproject.toml python/dolfinx/__init__.py
 
       - name: Build UFL wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
@@ -495,6 +503,16 @@ jobs:
             --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple \
             --env XDG_CONFIG_HOME=/config python:3.13 \
             /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test mpich fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
+
+      - name: Check MPI error message in clean python image
+        if: runner.os == 'Linux'
+        run: |
+          docker run -v "$(pwd)/simple:/shared" \
+            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple \
+            python:3.13 /bin/bash -l -c "pip install fenics-dolfinx &&
+              python -c 'import dolfinx' 2>&1 | grep 'compatible MPI library' &&
+              pip install openmpi &&
+              python -c 'import dolfinx' 2>&1 | grep 'compatible MPI library'"
 
       - name: Test in clean python image with pypi Intel MPI (x86_64 only)
         if: runner.os == 'Linux' && runner.arch == 'X64'
