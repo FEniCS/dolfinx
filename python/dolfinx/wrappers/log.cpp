@@ -66,22 +66,22 @@ void log(nb::module_& m)
         switch (level)
         {
         case (spdlog::level::level_enum::trace):
-          spdlog::trace(s);
+          dolfinx::logger().trace(s);
           break;
         case (spdlog::level::level_enum::debug):
-          spdlog::debug(s);
+          dolfinx::logger().debug(s);
           break;
         case (spdlog::level::level_enum::info):
-          spdlog::info(s);
+          dolfinx::logger().info(s);
           break;
         case (spdlog::level::level_enum::warn):
-          spdlog::warn(s);
+          dolfinx::logger().warn(s);
           break;
         case (spdlog::level::level_enum::err):
-          spdlog::error(s);
+          dolfinx::logger().error(s);
           break;
         case (spdlog::level::level_enum::critical):
-          spdlog::critical(s);
+          dolfinx::logger().critical(s);
           break;
         case (spdlog::level::level_enum::off):
           break;

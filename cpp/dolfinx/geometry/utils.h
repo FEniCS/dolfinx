@@ -13,6 +13,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -521,8 +522,8 @@ template <std::floating_point T>
 BoundingBoxTree<T> create_midpoint_tree(const mesh::Mesh<T>& mesh, int tdim,
                                         std::span<const std::int32_t> entities)
 {
-  spdlog::info("Building point search tree to accelerate distance queries for "
-               "a given topological dimension and subset of entities.");
+  logger().info("Building point search tree to accelerate distance queries for "
+                "a given topological dimension and subset of entities.");
 
   const std::vector<T> midpoints
       = mesh::compute_midpoints(mesh, tdim, entities);

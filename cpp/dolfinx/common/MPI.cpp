@@ -103,7 +103,7 @@ void dolfinx::MPI::check_error(MPI_Comm comm, int code) noexcept
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
 {
-  spdlog::info(
+  logger().info(
       "Computing communication graph edges (using PCX algorithm). Number "
       "of input edges: {}",
       edges.size());
@@ -157,9 +157,9 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
                     MPI_STATUSES_IGNORE);
   dolfinx::MPI::check_error(comm, err);
 
-  spdlog::info("Finished graph edge discovery using PCX algorithm. Number "
-               "of discovered edges {}",
-               other_ranks.size());
+  logger().info("Finished graph edge discovery using PCX algorithm. Number "
+                "of discovered edges {}",
+                other_ranks.size());
 
   // See comment in compute_graph_edges_nbx above.
   other_ranks.reserve(1);
@@ -294,7 +294,7 @@ std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
                                       int tag)
 {
-  spdlog::info(
+  logger().info(
       "Computing communication graph edges (using NBX algorithm). Number "
       "of input edges: {}",
       edges.size());
@@ -302,9 +302,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
   std::array<std::vector<int>, 1> src_ranks
       = ::nbx_consensus_rounds<1>(comm, {edges}, {tag});
 
-  spdlog::info("Finished graph edge discovery using NBX algorithm. Number "
-               "of discovered edges {}",
-               src_ranks[0].size());
+  logger().info("Finished graph edge discovery using NBX algorithm. Number "
+                "of discovered edges {}",
+                src_ranks[0].size());
 
   // Guarantee non-null data() when no edges were discovered: some MPI
   // implementations require non-null count/rank array pointers even
@@ -321,7 +321,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
                                       std::span<const int> edges1, int tag1)
 {
   assert(tag0 != tag1);
-  spdlog::info(
+  logger().info(
       "Computing communication graph edges for two overlapped consensus "
       "rounds (using NBX algorithm). Number of input edges: {}, {}",
       edges0.size(), edges1.size());
@@ -329,9 +329,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
   std::array<std::vector<int>, 2> src_ranks
       = ::nbx_consensus_rounds<2>(comm, {edges0, edges1}, {tag0, tag1});
 
-  spdlog::info("Finished overlapped graph edge discovery using NBX "
-               "algorithm. Number of discovered edges {}, {}",
-               src_ranks[0].size(), src_ranks[1].size());
+  logger().info("Finished overlapped graph edge discovery using NBX "
+                "algorithm. Number of discovered edges {}, {}",
+                src_ranks[0].size(), src_ranks[1].size());
 
   // See comment in the single-edge-set overload above.
   src_ranks[0].reserve(1);

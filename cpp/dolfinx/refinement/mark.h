@@ -11,13 +11,13 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/la/Vector.h>
 #include <format>
 #include <limits>
 #include <mpi.h>
 #include <numeric>
 #include <span>
-#include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
@@ -91,9 +91,9 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> values,
       indices.push_back(i);
   }
 
-  spdlog::info("Marking (maximum): marked {} of {} local entries (owned + "
-               "ghost).",
-               indices.size(), n);
+  logger().info("Marking (maximum): marked {} of {} local entries (owned + "
+                "ghost).",
+                indices.size(), n);
 
   return indices;
 }
@@ -169,7 +169,7 @@ mark_equidistribution(std::span<const T> values,
       indices.push_back(i);
   }
 
-  spdlog::info(
+  logger().info(
       "Marking (equidistribution): marked {} of {} local entries (owned + "
       "ghost).",
       indices.size(), n);
