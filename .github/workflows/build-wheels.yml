@@ -386,8 +386,8 @@ jobs:
             wheel pack {dest_dir}/unpacked/* -d {dest_dir} &&
             pipx run abi3audit --verbose --strict --report {wheel}
 
-          # msvcp140.dll and msvcp140_atomic_wait.dll shouldn't be included,
-          # check delvewheel issue #78.
+          # The Visual Studio install that the JIT requires already provides
+          # msvcp140.dll and msvcp140_atomic_wait.dll.
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
             delvewheel repair -v
             --exclude "impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll;basix.dll"
