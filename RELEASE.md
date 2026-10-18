@@ -230,7 +230,10 @@ DOLFINx to the next development version via PRs, in the files listed above. On
 - In `ufcx.h` bump `UFCX_VERSION_MINOR` and set `UFCX_VERSION_IS_RELEASE` to
   `false`.
 - The DOLFINx `find_package` calls require the next minor version, e.g.
-  `0.13`.
+  `0.13`. Basix only satisfies requests for its own minor version, so once Basix
+  `main` is bumped DOLFINx `main` no longer configures. Make the Basix and
+  DOLFINx bumps paired PRs, each pointing `fenicsx-refs.env` at the other's
+  branch, and merge them together.
 - `python/doc/source/release_notes.md` gets a new section, e.g.
   `## v0.13.0 (draft)`.
 
