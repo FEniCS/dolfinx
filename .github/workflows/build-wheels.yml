@@ -240,7 +240,9 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir wheelhouse/ dolfinx/python
         env:
+          # Environment
           CIBW_ENVIRONMENT_LINUX: PIP_FIND_LINKS=/project/wheelhouse
+
           # When using Homebrew the packaged .so are always built on the macOS
           # SDK version of the current system. Consequently
           # MACOSX_DEPLOYMENT_TARGET must be set to the SDK version of the
@@ -249,10 +251,13 @@ jobs:
             PIP_FIND_LINKS=$GITHUB_WORKSPACE/wheelhouse
             MACOSX_DEPLOYMENT_TARGET=$(xcrun --sdk macosx --show-sdk-version)
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install:$(brew --prefix)
+
           CIBW_ENVIRONMENT_WINDOWS: >
             PIP_FIND_LINKS=$GITHUB_WORKSPACE/wheelhouse
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install
             CMAKE_GENERATOR=Ninja
+
+          # DOLFINx C++ and its dependencies
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -300,6 +305,11 @@ jobs:
               -DDOLFINX_ENABLE_PARMETIS=OFF &&
             cmake --build dolfinx-build-dir/ &&
             cmake --install dolfinx-build-dir/
+
+          # As of 6/26 DOLFINx uses std::jthread which is only officially
+          # supported in macOS SDK 26. -fexperimental-library enables
+          # experimental std library support which allows the build to complete
+          # on macOS SDK 15.
           CIBW_BEFORE_BUILD_MACOS: >
             brew install boost hdf5-mpi ninja open-mpi openblas pkgconf pugixml spdlog &&
             mkdir -p scotch &&
@@ -337,30 +347,33 @@ jobs:
               -DCMAKE_BUILD_TYPE=Release &&
             cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
             sudo cmake --install dolfinx-build-dir/
+
           CIBW_BEFORE_BUILD_WINDOWS: >
             pip -v install --pre fenics-basix fenics-ffcx &&
             pip -v install mpi4py ninja scikit-build-core[pyproject] nanobind delvewheel &&
             cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
             cmake --build dolfinx-build-dir/ &&
             cmake --install dolfinx-build-dir/ --prefix %GITHUB_WORKSPACE%/dolfinx-install
-          # As of 6/26 DOLFINx uses std::jthread which is only officially
-          # supported in macOS SDK 26. -fexperimental-library enables
-          # experimental std library support which allows the build to complete
-          # on macOS SDK 15.
+
+          # DOLFINx Python wheel
           CIBW_CONFIG_SETTINGS_LINUX: >
             cmake.args="-DCMAKE_PREFIX_PATH=/usr/lib64/mpich"
             wheel.py-api=cp312
             cmake.build-type="Release"
+
           CIBW_CONFIG_SETTINGS_MACOS: >
             cmake.args="-DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH;-DCMAKE_CXX_FLAGS_INIT=-fexperimental-library"
             wheel.py-api=cp312
             cmake.build-type="Release"
+
           CIBW_CONFIG_SETTINGS_WINDOWS: >
             cmake.args="-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake;-DVCPKG_OVERLAY_PORTS=../cpp/cmake/vcpkg-overlay"
             wheel.py-api=cp312
             cmake.build-type="Release"
 
           CIBW_BUILD_FRONTEND: "build; args: -nx"
+
+          # Wheel repair
 
           # This comment applies to Linux and Windows (.dlls).
           # Excluding libbasix.so, libmpi.so and libfabric.so stops delvewheel
@@ -393,19 +406,24 @@ jobs:
             --exclude "impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll;basix.dll"
             --add-path "%GITHUB_WORKSPACE%/dolfinx-install/bin;%GITHUB_WORKSPACE%/dolfinx-build-dir/vcpkg_installed/x64-windows/bin"
             -w {dest_dir} {wheel}
+
+          # Tests
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_GROUPS: test
+
           CIBW_TEST_COMMAND_LINUX: >
             echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json &&
             . /etc/profile &&
             module load mpi/mpich-$(arch) &&
             python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
+
           CIBW_TEST_COMMAND_MACOS: >
             echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json &&
             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}" &&
             mpiexec -n 1 python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
+
           CIBW_TEST_COMMAND_WINDOWS: >
             echo { "cffi_extra_compile_args": ["/Od" ] } > dolfinx_jit_options.json &&
             pip install impi-rt &&
