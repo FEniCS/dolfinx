@@ -149,12 +149,13 @@ and mistakes before they reach tagged versions.
 First, update `.github/workflows/fenicsx-refs.env` in every repository to point
 at the `release` branches.
 
-Pushing `release` runs the UFL and DOLFINx integration tests. Run the Basix
-and FFCx ones on `release` with:
+Pushes to `release` do not run CI, except in UFL. Once every `release` branch
+is updated, run the integration tests on `release` with:
 
     gh workflow run ffcx.yml -R FEniCS/basix --ref release
     gh workflow run dolfinx.yml -R FEniCS/basix --ref release
     gh workflow run dolfinx.yml -R FEniCS/ffcx --ref release
+    gh workflow run ccpp.yml -R FEniCS/dolfinx --ref release
 
 Then list the latest run of each:
 
@@ -164,9 +165,9 @@ Then list the latest run of each:
     done
 
 Wait on a run with `gh run watch --exit-status -R FEniCS/<repo> <run-id>`.
-Rerun DOLFINx after changing another component's `release` with
-`gh workflow run ccpp.yml -R FEniCS/dolfinx --ref release`. The UFL workflow
-cannot be dispatched, so rerun it with `gh run rerun -R FEniCS/ufl <run-id>`.
+The UFL integration tests run on each push to `release`. Rerun them after
+changing another component's `release` with
+`gh run rerun -R FEniCS/ufl <run-id>`.
 
 ## Tagging
 
@@ -184,6 +185,8 @@ from `ufl_ref`. If it is left at `main` they can pick up a UFL outside the
     git tag v0.5.0
     git push --tags origin
 
+Tag pushes run each component's full CI and publish its documentation.
+
 If things go wrong, deleting and remaking tags is allowed on the same working
 day.
 
@@ -196,26 +199,32 @@ of tags. You will need to manually update the `README.md`.
 
 ### Docker containers
 
-First create tagged development and test environment images, e.g. `v0.5.0`:
+Image tags match the DOLFINx tag. Run each workflow from the DOLFINx tag so
+the Dockerfiles match the release. `gh workflow run` prints the run URL. Wait
+for each run with `gh run watch --exit-status -R FEniCS/dolfinx <run-id>`
+before starting the next.
 
-https://github.com/FEniCS/dolfinx/actions/workflows/docker-dev-test-env.yml
+First create the tagged development and test environment images:
 
-Then create tagged end-user images setting the base image as the tagged
-development image:
+    gh workflow run docker-dev-test-env.yml -R FEniCS/dolfinx --ref v0.5.0 \
+        -f tag_prefix=v0.5.0
 
-https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml
+Then create the tagged end-user images on top of the development image:
 
-The tag prefix should be the same as the DOLFINx tag e.g. `v0.5.0`. Git refs
-should be appropriate tags for each component.
+    gh workflow run docker-end-user.yml -R FEniCS/dolfinx --ref v0.5.0 \
+        -f tag_prefix=v0.5.0 \
+        -f baseimage=docker.io/dolfinx/dev-env:v0.5.0 \
+        -f dolfinx_ref=v0.5.0 -f basix_ref=v0.5.0 \
+        -f ffcx_ref=v0.5.0 -f ufl_ref=2022.2.0
 
-Tagged Docker images will be pushed to Dockerhub and GitHub.
+The images are pushed to Docker Hub and the GitHub Container Registry.
 
     docker run -ti dolfinx/dolfinx:v0.5.0
 
-Use the *Docker update stable* tag workflow to update/link `:stable` to e.g.
-`v0.5.0`.
+Finally link `:stable` to the new images:
 
-https://github.com/FEniCS/dolfinx/actions/workflows/docker-update-stable.yml
+    gh workflow run docker-update-stable.yml -R FEniCS/dolfinx --ref v0.5.0 \
+        -f end-user-tag=v0.5.0 -f dev-env-tag=v0.5.0
 
 ### pypi
 
