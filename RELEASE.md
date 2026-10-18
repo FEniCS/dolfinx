@@ -68,9 +68,8 @@ Firedrake teams. The version number should be bumped as follows:
 2. Update version numbers in `pyproject.toml`, `python/pyproject.toml`,
    `CMakeLists.txt` and `cpp/CMakeLists.txt`.
 
-3. In `pyproject.toml` update the `fenics-ufl` optional dependency version. On
-   `main` this is often pointing at the git repo, it needs to be changed to a
-   version bound e.g. `>=2024.1.0,<2024.2.0`.
+3. In `pyproject.toml` and `python/pyproject.toml` update the `fenics-ufl`
+   bound of the `optional` extra, e.g. `>=2024.1.0,<2024.2.0`.
 
 4. Commit and push.
 
