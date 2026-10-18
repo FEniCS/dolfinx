@@ -435,9 +435,9 @@ jobs:
           docker run -v "$(pwd)/wheelhouse:/shared" \
             --env PIP_FIND_LINKS=/shared \
             python:3.13 /bin/bash -l -c "python -m venv fenicsx-env && source fenicsx-env/bin/activate && pip install fenics-dolfinx &&
-              python -c 'import dolfinx' 2>&1 | grep 'compatible MPI library' &&
+              python -c 'import dolfinx' 2>&1 | grep 'DOLFINx wheels need' &&
               pip install openmpi &&
-              python -c 'import dolfinx' 2>&1 | grep 'compatible MPI library'"
+              python -c 'import dolfinx' 2>&1 | grep 'DOLFINx wheels need'"
 
       - name: Test in clean python image with pypi Intel MPI (x86_64 only)
         if: runner.os == 'Linux' && runner.arch == 'X64'

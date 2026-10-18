@@ -2,11 +2,14 @@
 
 import sys
 
-_mpi_package = {"darwin": "openmpi", "win32": "impi-rt"}.get(sys.platform, "mpich")
+_mpi_name, _mpi_file, _mpi_package = {
+    "darwin": ("Open MPI", "libmpi.40.dylib", "openmpi"),
+    "win32": ("Intel MPI", "impi.dll", "impi-rt"),
+}.get(sys.platform, ("an MPICH ABI compatible MPI", "libmpi.so.12", "mpich"))
 try:
     from mpi4py import MPI as _MPI
 
-    _mpi_library = _MPI.Get_library_version()
+    _mpi_library = _MPI.Get_library_version().strip()
 except RuntimeError:
     _mpi_library = ""
 if (
@@ -14,5 +17,9 @@ if (
     or ("Open MPI" in _mpi_library) != (sys.platform == "darwin")
     or (sys.platform == "win32" and "Intel" not in _mpi_library)
 ):
-    raise ImportError(f"DOLFINx wheels need a compatible MPI library: pip install {_mpi_package}")
-del _MPI, _mpi_package, _mpi_library
+    _mpi_found = _mpi_library.splitlines()[0].split(",")[0] if _mpi_library else "no MPI library"
+    raise ImportError(
+        f"DOLFINx wheels need {_mpi_name} ({_mpi_file}), e.g. pip install {_mpi_package}. "
+        f"mpi4py loaded: {_mpi_found}"
+    )
+del _MPI, _mpi_name, _mpi_file, _mpi_package, _mpi_library
