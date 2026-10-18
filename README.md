@@ -156,13 +156,17 @@ source fenicsx-env/bin/activate
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" openmpi
 ```
 
-Windows (x86_64), in an administrator PowerShell with [Chocolatey](https://chocolatey.org/install):
+Windows (x86_64), in PowerShell:
 
 ```powershell
-# Without Chocolatey, install the Visual Studio C++ build tools and Python 3.13 manually
-choco install -y visualstudio2022-workload-vctools python313
-refreshenv
-python -m venv fenicsx-env
+winget install -e --id Python.Python.3.13
+winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+```
+
+Then in a new PowerShell:
+
+```powershell
+py -3.13 -m venv fenicsx-env
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned -Force
 fenicsx-env\Scripts\Activate.ps1
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" impi-rt
