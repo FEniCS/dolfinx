@@ -112,7 +112,6 @@ jobs:
     env:
       CIBW_BUILD: ${{ matrix.cibw_build }}
       CIBW_BUILD_VERBOSITY: 1
-      CIBW_ENVIRONMENT: PIP_INDEX_URL="file:///project/simple" PIP_EXTRA_INDEX_URL="https://pypi.org/simple"
       CIBW_ARCHS_LINUX: native
       CIBW_ARCHS_MACOS: native
       CIBW_ARCHS_WINDOWS: AMD64
@@ -156,7 +155,7 @@ jobs:
       - uses: actions/setup-python@v7
 
       - name: Install Python dependencies
-        run: python -m pip install cibuildwheel simple503 build
+        run: python -m pip install cibuildwheel build
 
       - name: Checkout UFL
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
@@ -276,27 +275,9 @@ jobs:
           cp ../wheelhouse/fenics_ufl-*.whl stack-wheels/
           python -m cibuildwheel --output-dir ../wheelhouse/ .
 
-      - name: Make temporary simple503 repo directories
+      - name: Make wheelhouse directory
         shell: bash
-        run: mkdir -p wheelhouse/ simple/
-
-      - name: Add wheels to simple503 repository (if built)
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        shell: bash
-        run: cp wheelhouse/* simple/
-
-      - name: Index simple503 repository (Linux)
-        if: runner.os == 'Linux'
-        run: python -m simple503 --base-url file:///project/simple simple/
-
-      - name: Index simple503 repository (macOS)
-        if: runner.os == 'macOS'
-        run: python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple/
-
-      - name: Index simple503 repository (Windows)
-        if: runner.os == 'Windows'
-        shell: bash
-        run: python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple/
+        run: mkdir -p wheelhouse/
 
       # The vcpkg overlay ports set the SCOTCH and SuperLU_DIST versions on all platforms.
       - name: Read SCOTCH and SuperLU_DIST versions
@@ -310,17 +291,17 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir wheelhouse/ dolfinx/python
         env:
-          CIBW_ENVIRONMENT_LINUX: PIP_EXTRA_INDEX_URL=file:///project/simple
+          CIBW_ENVIRONMENT_LINUX: PIP_FIND_LINKS=/project/wheelhouse
           # When using Homebrew the packaged .so are always built on the macOS
           # SDK version of the current system. Consequently
           # MACOSX_DEPLOYMENT_TARGET must be set to the SDK version of the
           # current system.
           CIBW_ENVIRONMENT_MACOS: >
-            PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
+            PIP_FIND_LINKS=$GITHUB_WORKSPACE/wheelhouse
             MACOSX_DEPLOYMENT_TARGET=$(xcrun --sdk macosx --show-sdk-version)
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install:$(brew --prefix)
           CIBW_ENVIRONMENT_WINDOWS: >
-            PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
+            PIP_FIND_LINKS=$GITHUB_WORKSPACE/wheelhouse
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install
             CMAKE_GENERATOR=Ninja
           CIBW_BEFORE_BUILD_LINUX: >
@@ -482,31 +463,6 @@ jobs:
             python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
 
-      - name: Update temporary simple503 repository (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          cp wheelhouse/* simple
-          python -m simple503 --base-url file:///shared simple
-
-      - name: Update temporary simple503 repository (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          cp wheelhouse/* simple
-          python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple
-
-      - name: Update temporary simple503 repository (Windows)
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          cp wheelhouse/* simple
-          python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple
-
-      - name: Upload simple503-test artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: simple503-test-${{ matrix.os }}
-          path: simple/*
-
       - name: Upload wheelhouse artifact
         uses: actions/upload-artifact@v7
         with:
@@ -519,16 +475,16 @@ jobs:
           cd dolfinx && sudo git clean -fdx && cd ../
           mkdir -p jit-config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > jit-config/dolfinx/dolfinx_jit_options.json
-          docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared -v $(pwd)/jit-config:/config \
-            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple \
+          docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/wheelhouse:/shared -v $(pwd)/jit-config:/config \
+            --env PIP_FIND_LINKS=/shared \
             --env XDG_CONFIG_HOME=/config python:3.13 \
             /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test mpich fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Check MPI error message in clean python image
         if: runner.os == 'Linux'
         run: |
-          docker run -v "$(pwd)/simple:/shared" \
-            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple \
+          docker run -v "$(pwd)/wheelhouse:/shared" \
+            --env PIP_FIND_LINKS=/shared \
             python:3.13 /bin/bash -l -c "pip install fenics-dolfinx &&
               python -c 'import dolfinx' 2>&1 | grep 'compatible MPI library' &&
               pip install openmpi &&
@@ -540,20 +496,10 @@ jobs:
           cd dolfinx && sudo git clean -fdx && cd ../
           mkdir -p jit-config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > jit-config/dolfinx/dolfinx_jit_options.json
-          docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared -v $(pwd)/jit-config:/config \
-            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple \
+          docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/wheelhouse:/shared -v $(pwd)/jit-config:/config \
+            --env PIP_FIND_LINKS=/shared \
             --env XDG_CONFIG_HOME=/config python:3.14 \
             /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
-
-      - name: Update FEniCS Project simple503 repository
-        run: |
-          python -m simple503 --base-url http://packages.fenicsproject.org/simple simple
-
-      - name: Upload simple503 artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: simple503-${{ matrix.os }}
-          path: simple/*
 
   # Test the Windows and macOS wheels in 'clean' runners. They are not very
   # clean, in reality...
@@ -618,37 +564,6 @@ jobs:
           mpiexec --version
           python -m pytest -n auto -m "not adios2 and not petsc4py" dolfinx/python/test/unit
           mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
-
-  combined_repository:
-    name: Create combined simple503 repository
-    needs: build_wheels
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-python@v7
-
-      - name: Install Python dependencies
-        run: python -m pip install simple503
-
-      - name: Make shared wheel directory
-        run: mkdir -p shared/
-
-      - name: Download all wheel artifacts
-        uses: actions/download-artifact@v8
-        with:
-          pattern: wheelhouse-*
-          path: wheelhouse-artifacts/
-
-      - name: Extract wheels into shared folder
-        run: find wheelhouse-artifacts/ -name "*.whl" -exec cp {} shared/ \;
-
-      - name: Build simple503 repository
-        run: python -m simple503 --base-url http://packages.fenicsproject.org/simple-beta shared/
-
-      - name: Upload combined repository artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: simple503-combined
-          path: shared/*
 
   upload_test_pypi:
     name: Upload to Test PyPI (optional)
