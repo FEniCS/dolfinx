@@ -15,6 +15,7 @@
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -126,6 +127,14 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list of cells used when
 /// calling `interpolation_coords`.
+///
+/// @note If `u` is in a symmetric rank-2 tensor space, `f` holds all
+/// `d * d` components of the `(d, d)` tensor rather than the
+/// `d * (d + 1) / 2` components the element stores, since
+/// FiniteElement::value_size is `d * d`. The input should be symmetric.
+/// Symmetry is not checked. The diagonal is taken from the diagonal of
+/// the input; the choice of off-diagonal components retained from
+/// non-symmetric data is unspecified.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
@@ -452,9 +461,8 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
 /// the same mesh.
 ///
 /// This interpolation function is for cases where the finite element
-/// basis functions for the two elements are mapped differently, e.g.
-/// one may be subject to a Piola mapping and the other to a standard
-/// isoparametric mapping.
+/// basis functions for the two elements may have different maps or
+/// different tensor component layouts.
 ///
 /// @param[out] u1 Function to interpolate to.
 /// @param[in] cells1 Cells to interpolate on.
@@ -1268,7 +1276,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     throw std::invalid_argument("Interpolation data has the wrong shape/size.");
   }
 
-  spdlog::debug("Check for dof transformation");
+  logger().debug("Check for dof transformation");
   std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
@@ -1277,7 +1285,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   }
 
   // Get dofmap
-  spdlog::debug("Interpolate: get dofmap");
+  logger().debug("Interpolate: get dofmap");
   const auto dofmap = u.function_space()->dofmaps().at(index);
   assert(dofmap);
 
@@ -1289,19 +1297,19 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   {
     // This assumes that any element with an identity interpolation
     // matrix is a point evaluation
-    spdlog::debug("Interpolate: point evaluation");
+    logger().debug("Interpolate: point evaluation");
     impl::point_evaluation(*element, symmetric, *dofmap, cells, cell_info, f,
                            fshape, coeffs);
   }
   else if (element->map_ident())
   {
-    spdlog::debug("Interpolate: identity-mapped evaluation");
+    logger().debug("Interpolate: identity-mapped evaluation");
     impl::identity_mapped_evaluation(*element, symmetric, *dofmap, cells,
                                      cell_info, f, fshape, coeffs);
   }
   else
   {
-    spdlog::debug("Interpolate: Piola-mapped evaluation");
+    logger().debug("Interpolate: Piola-mapped evaluation");
     impl::piola_mapped_evaluation(*element, symmetric, *dofmap, cells,
                                   cell_info, f, fshape, *mesh, coeffs);
   }
@@ -1400,6 +1408,14 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
 /// the mesh associated with `u1`, then `cells0[i]` is the index of the
 /// *same* cell but in the mesh associated with `u0`.
 ///
+/// @note Interpolation between a symmetric blocked tensor element and an
+/// element using a full tensor representation is supported. A symmetric
+/// blocked `u0` has its stored components expanded to the full tensor.
+/// For a symmetric `u1`, the input should be symmetric. Symmetry is not
+/// checked. The diagonal is taken from the diagonal of the input; the
+/// choice of off-diagonal components retained from non-symmetric data
+/// is unspecified.
+///
 /// @pre `cells0` and `cells1` have the same size.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
@@ -1424,7 +1440,14 @@ void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
         "Interpolation: elements have different value dimensions");
   }
 
-  if (V1->mesh() == V0->mesh() and (e1 == e0 or *e1 == *e0))
+  if (e0->symmetric() != e1->symmetric())
+  {
+    // Convert between independent and full tensor components. This must
+    // precede the same-map branch below, which cannot change the number
+    // of components.
+    impl::interpolate_nonmatching_maps(u1, cells1, u0, cells0);
+  }
+  else if (V1->mesh() == V0->mesh() and (e1 == e0 or *e1 == *e0))
   {
     // Same element and same mesh
     if (e1->block_size() != e0->block_size())

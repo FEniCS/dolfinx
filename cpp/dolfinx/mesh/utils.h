@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
@@ -1157,8 +1158,8 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
   std::vector<std::vector<int>> ghost_owners(num_cell_types);
   if (graph::has_partitioner(partitioner.fn))
   {
-    spdlog::info("Using partitioner with cell data ({} cell types)",
-                 num_cell_types);
+    logger().info("Using partitioner with cell data ({} cell types)",
+                  num_cell_types);
     graph::AdjacencyList<std::int32_t> dest(0);
     std::exception_ptr error;
 
@@ -1305,7 +1306,7 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
       std::tie(cells1[i], src_ranks, original_idx1[i], ghost_owners[i])
           = graph::build::distribute(comm, cells[i],
                                      {num_cells, num_cell_nodes}, dest_i);
-      spdlog::debug("Got {} cells from distribution", cells1[i].size());
+      logger().debug("Got {} cells from distribution", cells1[i].size());
     }
   }
   else // No partitioning: keep cells on their current rank
@@ -1471,8 +1472,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       cells1_v[i] = cells1_v_storage[i];
     }
 
-    spdlog::info("Extract basic topology: {}->{}", cells1[i].size(),
-                 cells1_v[i].size());
+    logger().info("Extract basic topology: {}->{}", cells1[i].size(),
+                  cells1_v[i].size());
   }
 
   // Re-order cells and get boundary vertices. The re-ordering is done
@@ -1525,7 +1526,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       error);
   impl::mpi_check(comm, "Cell reordering", error);
 
-  spdlog::debug("Got {} boundary vertices", boundary_v.size());
+  logger().debug("Got {} boundary vertices", boundary_v.size());
 
   // Create Topology
   std::vector<std::span<const std::int64_t>> cells1_v_span(cells1_v.begin(),
@@ -1556,7 +1557,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
                             [](int c, auto v) { return c + v.size(); });
 
-      spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
+      logger().debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
       if (dim_sum > 0)
         topology.create_entities(dim, num_threads);
     }
@@ -1615,9 +1616,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     if (std::int64_t num_used = geometry.index_map()->size_global();
         num_used != num_nodes and dolfinx::MPI::rank(comm) == 0)
     {
-      spdlog::warn("{} of {} input geometry nodes are not referenced by any "
-                   "cell and have been dropped.",
-                   num_nodes - num_used, num_nodes);
+      logger().warn("{} of {} input geometry nodes are not referenced by any "
+                    "cell and have been dropped.",
+                    num_nodes - num_used, num_nodes);
     }
   }
 #endif

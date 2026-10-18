@@ -49,7 +49,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
         io::hdf5::open_file(_comm.comm(), hdf5_filename, file_mode, mpi_io),
         H5Fclose);
     assert(_h5_id > 0);
-    spdlog::info("Opened HDF5 file with id \"{}\"", hid_t(_h5_id));
+    logger().info("Opened HDF5 file with id \"{}\"", hid_t(_h5_id));
   }
 
   if (_file_mode == "r")
@@ -223,7 +223,7 @@ XDMFFile::read_topology_data(std::string_view name,
         std::format("<Grid> with name '{}' not found.", name));
   }
 
-  spdlog::info("Read topology data \"{}\" at {}", name, xpath);
+  logger().info("Read topology data \"{}\" at {}", name, xpath);
   return xdmf_mesh::read_topology_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
@@ -245,7 +245,7 @@ XDMFFile::read_geometry_data(std::string_view name,
         std::format("<Grid> with name '{}' not found.", name));
   }
 
-  spdlog::info("Read geometry data \"{}\" at {}", name, xpath);
+  logger().info("Read geometry data \"{}\" at {}", name, xpath);
   return xdmf_mesh::read_geometry_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
@@ -280,8 +280,8 @@ void XDMFFile::write_function(const fem::Function<T, U>& u, double t,
       = _xml_doc->select_node(std::string(mesh_xpath).c_str()).node();
   if (!mesh_node)
   {
-    spdlog::warn("No mesh found at '{}'. Write mesh before function!",
-                 mesh_xpath);
+    logger().warn("No mesh found at '{}'. Write mesh before function!",
+                  mesh_xpath);
   }
 
   const std::string ref_path = std::format(
@@ -361,7 +361,7 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
                         std::optional<std::string_view> attribute_name,
                         std::string_view xpath) const
 {
-  spdlog::info("XDMF read meshtags ({})", name);
+  logger().info("XDMF read meshtags ({})", name);
   pugi::xml_node node
       = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
@@ -413,7 +413,7 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
           mesh.geometry().dofmaps().front(), mesh::cell_dim(cell_type),
           entities_span, values);
 
-  spdlog::info("XDMF create meshtags");
+  logger().info("XDMF create meshtags");
   std::size_t num_vertices_per_entity = mesh::cell_num_entities(
       mesh::cell_entity_type(mesh.topology()->cell_type(),
                              mesh::cell_dim(cell_type), 0),

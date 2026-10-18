@@ -95,7 +95,7 @@ create_new_geometry(const mesh::Mesh<T>& mesh,
     for (std::size_t j = 0; j < gdim; ++j)
       new_vertex_coords[gdim * v + j] = x_g[pos + j];
   }
-  spdlog::info("Copied {} existing vertices", num_vertices);
+  logger().info("Copied {} existing vertices", num_vertices);
 
   // Compute new vertices on edges
   if (num_new_vertices > 0)
@@ -107,7 +107,7 @@ create_new_geometry(const mesh::Mesh<T>& mesh,
       for (std::size_t j = 0; j < gdim; ++j)
         new_vertex_coords[gdim * (num_vertices + i) + j] = midpoints[3 * i + j];
   }
-  spdlog::info("Created {} new vertices", num_new_vertices);
+  logger().info("Created {} new vertices", num_new_vertices);
 
   return {std::move(new_vertex_coords), shape};
 }
@@ -162,7 +162,7 @@ create_new_vertices(MPI_Comm comm,
     if (marked_edges[local_i])
       marked_edge_list.push_back(local_i);
   }
-  spdlog::info("Marked edge list has {} entries", marked_edge_list.size());
+  logger().info("Marked edge list has {} entries", marked_edge_list.size());
 
   // Create actual points
   auto [new_vertex_coords, xshape]
@@ -176,7 +176,7 @@ create_new_vertices(MPI_Comm comm,
   std::iota(local_edge_to_new_vertex.begin(), local_edge_to_new_vertex.end(),
             global_offset);
 
-  spdlog::info("Marked edge global offset = {}", global_offset);
+  logger().info("Marked edge global offset = {}", global_offset);
 
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.

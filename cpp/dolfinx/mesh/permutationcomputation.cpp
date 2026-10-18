@@ -229,7 +229,7 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
 
   for (std::size_t t = 0; t < face_type_indices.size(); ++t)
   {
-    spdlog::info("Computing permutations for face type {}", t);
+    logger().info("Computing permutations for face type {}", t);
     if (!face_type_indices[t].empty())
     {
       auto compute_refl_rots = (mesh_face_types[t] == mesh::CellType::triangle)
@@ -386,7 +386,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology, int dim,
   {
   case 1:
   {
-    spdlog::info("Compute edge permutations");
+    logger().info("Compute edge permutations");
     const std::vector<std::bitset<bitset_size>> edge_perm
         = compute_edge_reflections<bitset_size>(topology, num_threads);
     for (std::int32_t c = 0; c < num_cells; ++c)
@@ -396,7 +396,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology, int dim,
   }
   case 2:
   {
-    spdlog::info("Compute face permutations");
+    logger().info("Compute face permutations");
     const std::vector<std::bitset<bitset_size>> face_perm
         = compute_face_permutations<bitset_size>(topology, num_threads);
     // Three bits encode each face: one reflection bit and two rotation
@@ -438,7 +438,7 @@ mesh::compute_cell_permutations(const mesh::Topology& topology, int num_threads)
   {
     // Each face occupies 3 bits: one reflection and two rotations. This
     // will need increasing if faces with more than 4 sides are added.
-    spdlog::info("Compute face permutations");
+    logger().info("Compute face permutations");
     const std::vector<std::bitset<bitset_size>> face_perm
         = compute_face_permutations<bitset_size>(topology, num_threads);
     for (std::int32_t c = 0; c < num_cells; ++c)
@@ -449,7 +449,7 @@ mesh::compute_cell_permutations(const mesh::Topology& topology, int num_threads)
 
   if (tdim > 1)
   {
-    spdlog::info("Compute edge permutations");
+    logger().info("Compute edge permutations");
     const std::vector<std::bitset<bitset_size>> edge_perm
         = compute_edge_reflections<bitset_size>(topology, num_threads);
     for (std::int32_t c = 0; c < num_cells; ++c)

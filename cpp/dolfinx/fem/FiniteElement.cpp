@@ -327,11 +327,13 @@ bool FiniteElement<T>::operator==(const FiniteElement& e) const
         "Missing a Basix element. Cannot check for equivalence");
   }
 
-  // The value shape is part of the element: the same Basix element on
-  // meshes of different geometric dimension gives different physical
-  // value shapes, and callers use equality to decide that degrees of
-  // freedom can be copied directly.
-  return *_element == *e._element and _value_shape == e._value_shape;
+  // The value shape and the symmetry flag are part of the element: the
+  // same Basix element on meshes of different geometric dimension gives
+  // different physical value shapes, and a symmetric blocked element
+  // stores only the lower triangle. Callers use equality to decide that
+  // degrees of freedom can be copied directly.
+  return *_element == *e._element and _value_shape == e._value_shape
+         and _symmetric == e._symmetric;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -487,8 +489,8 @@ FiniteElement<T>::extract_sub_element(const std::vector<int>& component) const
 {
   // Recursively extract sub element
   auto sub_finite_element = _extract_sub_element(*this, component);
-  spdlog::debug("Extracted finite element for sub-system: {}",
-                sub_finite_element->signature().c_str());
+  logger().debug("Extracted finite element for sub-system: {}",
+                 sub_finite_element->signature().c_str());
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
