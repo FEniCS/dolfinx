@@ -12,6 +12,7 @@ try:
     _mpi_library = " ".join(_MPI.Get_library_version().splitlines()[0].split(",")[0].split())
 except RuntimeError:
     _mpi_library = ""
+# On Linux this misses an MPI providing only the MPI 5 standard ABI.
 if (
     not _mpi_library
     or ("Open MPI" in _mpi_library) != (sys.platform == "darwin")
