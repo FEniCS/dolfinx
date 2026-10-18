@@ -156,7 +156,7 @@ source fenicsx-env/bin/activate
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" openmpi
 ```
 
-Windows (x86_64), in an administrator PowerShell:
+Windows (x86_64), in an administrator PowerShell with [Chocolatey](https://chocolatey.org/install):
 
 ```powershell
 # Or install the Visual Studio C++ build tools and Python 3.13 manually
