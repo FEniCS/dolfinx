@@ -24,7 +24,18 @@ Check that all CIs on `main` are running green.
 Check that the `main` documentation looks reasonable at
 https://docs.fenicsproject.org.
 
-Check out all of the FEniCSx components on the `release` branch.
+Clone UFL, Basix, FFCx and DOLFINx.
+
+In DOLFINx, merge a PR to `main` that:
+
+- removes `(draft)` from the `python/doc/source/release_notes.md` heading,
+  fills in the number of merged pull requests and contributors, and points the
+  full diff link at the new tag, e.g. `compare/v0.11.0...v0.12.0`,
+- updates `version` and `date-released` in `CITATION.cff`,
+- adds the new version to the options in
+  `.github/ISSUE_TEMPLATE/bug_report.yml`.
+
+These then reach `release` with the merge below.
 
 ## Running workflows
 
@@ -69,8 +80,9 @@ previous `UFCX_VERSION_IS_RELEASE true`, and removes files deleted on `main`.
 `git checkout --theirs .` does neither. After the merge `git diff origin/main`
 should be empty.
 
-After making the changes for each component, check `git diff origin/main` for
-obvious errors, then commit and push.
+Then point the refs in `.github/workflows/fenicsx-refs.env` at the `release`
+branches, make the component's changes below, check `git diff origin/main` for
+obvious errors, and commit and push.
 
 ### UFL version bump
 
@@ -114,22 +126,10 @@ obvious errors, then commit and push.
 4. In `python/pyproject.toml` update the version, e.g. `0.12.0`, and replace
    the `fenics-basix`, `fenics-ffcx` and `fenics-ufl` lower bounds with ranges.
 
-5. In `CITATION.cff` update `version` and `date-released`.
-
-6. In `.github/ISSUE_TEMPLATE/bug_report.yml` add the new version to the
-   options.
-
-7. In `python/doc/source/release_notes.md` remove `(draft)` from the heading,
-   fill in the number of merged pull requests and contributors, and point the
-   full diff link at the new tag, e.g. `compare/v0.11.0...v0.12.0`.
-
 ## Integration testing
 
 Although lengthy, integration testing is highly effective at discovering issues
 and mistakes before they reach tagged versions.
-
-In every repository, point the refs in `.github/workflows/fenicsx-refs.env` on
-`release` at the `release` branches, then commit and push.
 
 Pushes to `release` do not run CI. Once every `release` branch is updated, run
 the integration tests on `release` with:
@@ -165,9 +165,8 @@ prefix, e.g. `2026.3.0`. The others do, e.g. `v0.12.0`.
 
 Tag pushes run each component's full CI and publish its documentation. Wait for
 the UFL, Basix and FFCx documentation to be published before tagging DOLFINx.
-
-If things go wrong, deleting and remaking tags is allowed on the same working
-day.
+The DOLFINx tag CI tests the tagged stack, so check it passes before producing
+artifacts.
 
 ## Artifacts
 
@@ -216,7 +215,8 @@ Check for any changes on `release` that should be cherry-picked back onto
     git cherry-pick 914ae4
 
 Bump the version numbers on the `main` branches of UFL, Basix, FFCx and
-DOLFINx to the next development version, in the files listed above. On `main`:
+DOLFINx to the next development version via PRs, in the files listed above. On
+`main`:
 
 - Python versions are e.g. `0.13.0.dev0` and CMake versions e.g. `0.13.0.0`.
 - Dependencies on other components are lower bounds only, e.g.
@@ -341,12 +341,18 @@ release process you can either:
 If you want the same change to be reflected on `main` option 1. is preferred.
 
 A tag can be deleted and recreated on the same working day, and a GitHub
-release can be recreated. Once packages are on PyPI, fix mistakes with a
-`.post0` tag or a patch release instead.
+release can be recreated. Once packages are on PyPI, fix mistakes with a patch
+release, or with a `.post0` release, e.g. version and tag `v0.12.0.post0`, if
+only packaging or documentation changed.
 
 ## Bug fix patches
 
-Bug fix versions e.g. `v0.12.1` can be made by cherry picking commits off of
-`main` and bumping the patch version number. Follow the steps above from the
-version bump onwards, including the integration tests, as it is easy to make
-an error.
+Bug fix versions e.g. `v0.12.1` are made on `release` without merging `main`:
+
+1. Cherry-pick the fixes from `main` onto `release`.
+2. Bump the patch version in the files listed above. Keep the dependency
+   ranges, and point `fenicsx-refs.env` at the tags the patch release is meant
+   to work with.
+3. Run the integration tests, then follow the steps from Tagging onwards. Use
+   the previous tag in the series as `--notes-start-tag`, e.g. `v0.12.0`, and
+   only publish the components that changed.
