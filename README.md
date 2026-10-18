@@ -159,6 +159,9 @@ source fenicsx-env/bin/activate
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" openmpi
 ```
 
+The macOS wheels need macOS 15 or later. Check with `sw_vers -productVersion`.
+On older systems pip reports `from versions: none`.
+
 Windows (x86_64), in PowerShell:
 
 ```powershell
