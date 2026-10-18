@@ -149,13 +149,24 @@ and mistakes before they reach tagged versions.
 First, update `.github/workflows/fenicsx-refs.env` in every repository to point
 at the `release` branches.
 
-Then check:
+Pushing `release` runs the UFL and DOLFINx integration tests. Run the Basix
+and FFCx ones on `release` with:
 
-- [Basix with FFCx](https://github.com/FEniCS/basix/actions/workflows/ffcx.yml)
-- [Basix with DOLFINx](https://github.com/FEniCS/basix/actions/workflows/dolfinx.yml)
-- [UFL with FEniCSx](https://github.com/FEniCS/ufl/actions/workflows/fenicsx-tests.yml)
-- [FFCx with DOLFINx](https://github.com/FEniCS/ffcx/actions/workflows/dolfinx.yml)
-- [Full stack](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml)
+    gh workflow run ffcx.yml -R FEniCS/basix --ref release
+    gh workflow run dolfinx.yml -R FEniCS/basix --ref release
+    gh workflow run dolfinx.yml -R FEniCS/ffcx --ref release
+
+Then list the latest run of each:
+
+    for w in ufl:fenicsx-tests.yml basix:ffcx.yml basix:dolfinx.yml \
+        ffcx:dolfinx.yml dolfinx:ccpp.yml; do
+      gh run list -R FEniCS/${w%%:*} -w ${w#*:} -b release -L 1
+    done
+
+Wait on a run with `gh run watch --exit-status -R FEniCS/<repo> <run-id>`.
+Rerun DOLFINx after changing another component's `release` with
+`gh workflow run ccpp.yml -R FEniCS/dolfinx --ref release`. The UFL workflow
+cannot be dispatched, so rerun it with `gh run rerun -R FEniCS/ufl <run-id>`.
 
 ## Tagging
 
