@@ -489,27 +489,32 @@ jobs:
           path: wheelhouse
 
       - name: Install from the wheels
-        shell: bash
+        if: runner.os != 'Windows'
         run: |
           echo '${{ matrix.jit_options }}' > dolfinx_jit_options.json
           python -m pip install --upgrade pip
           pip -v install --find-links wheelhouse pytest-xdist --group dolfinx/python/pyproject.toml:test ${{ matrix.mpi }} fenics-dolfinx
 
-      # The following are ideas and need full testing:
-      # cmd:
-      #   call "%VIRTUAL_ENV%\etc\conda\activate.d\mpivars.activate.bat"
-      # PowerShell:
-      #   $env:Path = "$env:VIRTUAL_ENV\Library\bin;$env:Path"
-      # Intel currently doesn't provide a nice script for Powershell.
-      # This job step is done with bash for ease, users don't usually use bash.
-      - name: Put mpiexec on PATH (Windows)
-        if: runner.os == 'Windows'
-        shell: bash
-        run: python -c "import pathlib, sys; print((pathlib.Path(sys.prefix) / 'Library' / 'bin').as_posix())" >> $GITHUB_PATH
-
       - name: Run tests
-        shell: bash
+        if: runner.os != 'Windows'
         run: |
+          mpiexec --version
+          python -m pytest -n auto -m "not adios2 and not petsc4py" dolfinx/python/test/unit
+          mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
+
+      # Follows the README so that its PowerShell instructions are tested.
+      - name: Install from the wheels and run tests (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          '${{ matrix.jit_options }}' | Set-Content dolfinx_jit_options.json
+          python -m venv fenicsx-env
+          Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned -Force
+          fenicsx-env\Scripts\Activate.ps1
+          python -m pip install --upgrade pip
+          pip -v install --find-links wheelhouse pytest-xdist --group dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx
+          $env:Path = "$env:VIRTUAL_ENV\Library\bin;$env:Path"
           mpiexec --version
           python -m pytest -n auto -m "not adios2 and not petsc4py" dolfinx/python/test/unit
           mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
