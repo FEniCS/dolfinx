@@ -193,11 +193,10 @@ jobs:
       # MPI check is injected here.
       - name: Prepare sources for wheels
         shell: bash
-        env:
-          DEV_STAMP: ${{ needs.dev_version.outputs.stamp }}
-          BUILD_STACK: ${{ inputs.build_fenicsx_stack }}
         run: |
-          python dolfinx/.github/wheels/wheels-modify-source.py
+          python dolfinx/.github/wheels/wheels-modify-source.py \
+            --dev-stamp ${{ needs.dev_version.outputs.stamp }} \
+            ${{ inputs.build_fenicsx_stack && '--build-stack' || '' }}
           git -C dolfinx diff python/pyproject.toml python/dolfinx/__init__.py
 
       - name: Build UFL wheel

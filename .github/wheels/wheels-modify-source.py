@@ -1,14 +1,19 @@
 """Stamp dev versions, pin the stack and inject the MPI check for the wheels."""
 
-import os
+import argparse
 import pathlib
 import re
 
 from packaging.specifiers import SpecifierSet
 
-stamp = os.environ["DEV_STAMP"]
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--dev-stamp", required=True, help="replaces 0 in each .dev0 version")
+parser.add_argument("--build-stack", action="store_true", help="also prepare UFL, FFCx and Basix")
+args = parser.parse_args()
+
+stamp = args.dev_stamp
 projects = {"fenics-dolfinx": pathlib.Path("dolfinx/python/pyproject.toml")}
-if os.environ["BUILD_STACK"] == "true":
+if args.build_stack:
     projects |= {
         name: pathlib.Path(name.removeprefix("fenics-"), "pyproject.toml")
         for name in ("fenics-ufl", "fenics-ffcx", "fenics-basix")
