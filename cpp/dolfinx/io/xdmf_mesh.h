@@ -9,6 +9,7 @@
 #include "xdmf_utils.h"
 #include <array>
 #include <cstdint>
+#include <dolfinx/common/log.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <format>
 #include <hdf5.h>
@@ -97,7 +98,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
                   const mesh::Geometry<U>& geometry, pugi::xml_node& xml_node,
                   hid_t h5_id, std::string_view name)
 {
-  spdlog::info("XDMF: add meshtags ({})", name);
+  logger().info("XDMF: add meshtags ({})", name);
   // Get mesh
   const int dim = meshtags.dim();
   std::shared_ptr<const common::IndexMap> entity_map

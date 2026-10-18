@@ -15,6 +15,7 @@
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -1275,7 +1276,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     throw std::invalid_argument("Interpolation data has the wrong shape/size.");
   }
 
-  spdlog::debug("Check for dof transformation");
+  logger().debug("Check for dof transformation");
   std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
@@ -1284,7 +1285,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   }
 
   // Get dofmap
-  spdlog::debug("Interpolate: get dofmap");
+  logger().debug("Interpolate: get dofmap");
   const auto dofmap = u.function_space()->dofmaps().at(index);
   assert(dofmap);
 
@@ -1296,19 +1297,19 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   {
     // This assumes that any element with an identity interpolation
     // matrix is a point evaluation
-    spdlog::debug("Interpolate: point evaluation");
+    logger().debug("Interpolate: point evaluation");
     impl::point_evaluation(*element, symmetric, *dofmap, cells, cell_info, f,
                            fshape, coeffs);
   }
   else if (element->map_ident())
   {
-    spdlog::debug("Interpolate: identity-mapped evaluation");
+    logger().debug("Interpolate: identity-mapped evaluation");
     impl::identity_mapped_evaluation(*element, symmetric, *dofmap, cells,
                                      cell_info, f, fshape, coeffs);
   }
   else
   {
-    spdlog::debug("Interpolate: Piola-mapped evaluation");
+    logger().debug("Interpolate: Piola-mapped evaluation");
     impl::piola_mapped_evaluation(*element, symmetric, *dofmap, cells,
                                   cell_info, f, fshape, *mesh, coeffs);
   }

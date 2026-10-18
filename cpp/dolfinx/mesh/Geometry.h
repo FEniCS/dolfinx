@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/dofmapbuilder.h>
@@ -24,7 +25,6 @@
 #include <memory>
 #include <numeric>
 #include <span>
-#include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -252,7 +252,7 @@ create_geometry(const Topology& topology,
                     const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                 = nullptr)
 {
-  spdlog::info("Create Geometry (multiple)");
+  logger().info("Create Geometry (multiple)");
 
   if (dim < 1 or dim > 3)
     throw std::invalid_argument("dim must be 1, 2 or 3.");
