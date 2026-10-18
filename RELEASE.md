@@ -149,9 +149,10 @@ and mistakes before they reach tagged versions.
 First, update `.github/workflows/fenicsx-refs.env` in every repository to point
 at the `release` branches.
 
-Pushes to `release` do not run CI, except in UFL. Once every `release` branch
-is updated, run the integration tests on `release` with:
+Pushes to `release` do not run CI. Once every `release` branch is updated,
+run the integration tests on `release` with:
 
+    gh workflow run fenicsx-tests.yml -R FEniCS/ufl --ref release
     gh workflow run ffcx.yml -R FEniCS/basix --ref release
     gh workflow run dolfinx.yml -R FEniCS/basix --ref release
     gh workflow run dolfinx.yml -R FEniCS/ffcx --ref release
@@ -165,9 +166,6 @@ Then list the latest run of each:
     done
 
 Wait on a run with `gh run watch --exit-status -R FEniCS/<repo> <run-id>`.
-The UFL integration tests run on each push to `release`. Rerun them after
-changing another component's `release` with
-`gh run rerun -R FEniCS/ufl <run-id>`.
 
 ## Tagging
 
