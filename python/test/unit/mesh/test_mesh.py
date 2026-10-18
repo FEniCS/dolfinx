@@ -27,6 +27,7 @@ from dolfinx.mesh import (
     GhostMode,
     cell_num_entities,
     cell_num_vertices,
+    compute_entity_permutations,
     create_box,
     create_interval,
     create_point_mesh,
@@ -1192,17 +1193,15 @@ def test_entity_permutations_unpacked_from_cell_info(cell_type):
         args = (MPI.COMM_WORLD, 2, 2, 2)
         make = create_unit_cube
 
-    computed = make(*args, cell_type=cell_type)
-    unpacked = make(*args, cell_type=cell_type)
-    unpacked.topology.create_cell_permutations()
+    # A single mesh is used since two meshes need not be partitioned identically.
+    mesh = make(*args, cell_type=cell_type)
+    mesh.topology.create_cell_permutations()
 
-    for dim in range(1, computed.topology.dim):
-        computed.topology.create_entity_permutations(dim)
-        unpacked.topology.create_entity_permutations(dim)
-        assert np.array_equal(
-            computed.topology.get_entity_permutations(dim),
-            unpacked.topology.get_entity_permutations(dim),
-        )
+    for dim in range(1, mesh.topology.dim):
+        mesh.topology.create_entities(dim)
+        mesh.topology.create_entity_permutations(dim)
+        computed = compute_entity_permutations(mesh.topology, dim)
+        assert np.array_equal(computed, mesh.topology.get_entity_permutations(dim))
 
 
 @pytest.mark.parametrize("dtype", [np.int32, np.complex128])
