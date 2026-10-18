@@ -27,7 +27,7 @@ Documentation can be viewed [here](https://docs.fenicsproject.org).
 
 **Recommendations**
 
-- Most users: [pip (preview)](#pip-preview) or [conda](#conda), on Linux,
+- Most users: [pip (beta)](#pip-beta) or [conda](#conda), on Linux,
   macOS and Windows. pip does not include PETSc yet, and conda does not
   include PETSc on Windows.
 - With PETSc: [conda](#conda) (Linux and macOS),
@@ -37,9 +37,6 @@ Documentation can be viewed [here](https://docs.fenicsproject.org).
   [Ubuntu](#ubuntu-packages).
 - High performance computers: [Spack](#spack) or
   [from source](#from-source), both using system-provided MPI.
-  [pip (preview)](#pip-preview) works with an MPICH-compatible MPI (MPICH,
-  Cray MPICH, Intel MPI, MVAPICH) loaded from the module system, in place
-  of the `mpich` package.
 
 #### conda
 
@@ -134,9 +131,9 @@ The Docker images support arm64 and amd64 architectures. For a full list
 of tags, including versioned images, see
 <https://hub.docker.com/u/dolfinx>
 
-#### pip (preview)
+#### pip (beta)
 
-Development builds of `main` are available from
+Beta binary wheels of `main` are built twice a week and available from
 [Test PyPI](https://test.pypi.org/) for Python 3.12+. They are built without
 PETSc and with SuperLU_DIST for sparse direct solves.
 
