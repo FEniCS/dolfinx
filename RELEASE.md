@@ -39,14 +39,19 @@ Firedrake teams. The version number should be bumped as follows:
 3. If making a patch release, bump the patch version `0.0.+1` -- check
    compatibility through CI runs before releasing.
 
+`git read-tree` also discards release-only changes that merge cleanly, e.g. a
+previous `UFCX_VERSION_IS_RELEASE true`, and removes files deleted on `main`.
+`git checkout --theirs .` does neither. After the merge `git diff origin/main`
+should be empty.
+
 ### UFL version bump
 
-1. Merge `origin/main` into `release` resolving all conflicts in favour of `main`.
+1. Merge `origin/main` into `release`, taking `main`'s version of every file.
 
        git pull
        git checkout release
        git merge --no-commit origin/main
-       git checkout --theirs . # files deleted on `main` must be manually git `rm`ed
+       git read-tree -u --reset origin/main
        git diff origin/main
 
 2. Update the version number in `pyproject.toml`, e.g. `2022.2.0`.
@@ -57,19 +62,20 @@ Firedrake teams. The version number should be bumped as follows:
 
 ### Basix version bump
 
-1. Merge `origin/main` into `release` resolving all conflicts in favour of `main`.
+1. Merge `origin/main` into `release`, taking `main`'s version of every file.
 
        git pull
        git checkout release
        git merge --no-commit origin/main
-       git checkout --theirs . # files deleted on `main` must be manually git `rm`ed
+       git read-tree -u --reset origin/main
        git diff origin/main
 
 2. Update version numbers in `pyproject.toml`, `python/pyproject.toml`,
    `CMakeLists.txt` and `cpp/CMakeLists.txt`.
 
-3. In `pyproject.toml` and `python/pyproject.toml` update the `fenics-ufl`
-   bound of the `optional` extra, e.g. `>=2024.1.0,<2024.2.0`.
+3. In `pyproject.toml` and `python/pyproject.toml` replace the `fenics-ufl`
+   lower bound of the `optional` extra with a range, e.g.
+   `>=2026.3.0,<2026.4.0`.
 
 4. Commit and push.
 
@@ -77,18 +83,18 @@ Firedrake teams. The version number should be bumped as follows:
 
 ### FFCx version bump
 
-1. Merge `main` into `release` resolving all conflicts in favour of `main`.
+1. Merge `origin/main` into `release`, taking `main`'s version of every file.
 
        git pull
        git checkout release
        git merge --no-commit origin/main
-       git checkout --theirs . # files deleted on `main` must be manually git `rm`ed
+       git read-tree -u --reset origin/main
        git diff origin/main
 
 2. Update the version number in `pyproject.toml`, e.g. `0.5.0`.
 
 3. Update the dependency versions for `fenics-basix` and `fenics-ufl` in
-   `pyproject.toml`.
+   `pyproject.toml` to ranges, e.g. `>=0.5.0,<0.6.0`.
 
 4. If necessary, update the version number in `cmake/CMakeLists.txt`, e.g.
    `0.5.0`.
@@ -103,31 +109,37 @@ Firedrake teams. The version number should be bumped as follows:
 
 ### DOLFINx
 
-1. Merge `main` into `release` resolving all conflicts in favour of `main`.
+1. Merge `origin/main` into `release`, taking `main`'s version of every file.
 
        git pull
        git checkout release
        git merge --no-commit origin/main
-       git checkout --theirs . # files deleted on `main` must be manually git `rm`ed
+       git read-tree -u --reset origin/main
        git diff origin/main
 
 2. In `cpp/CMakeLists.txt` change the version number e.g. `0.5.0`.
 
-3. In `cpp/CMakeLists.txt` change the version number in the
-   `find_package(ufcx)`, `find_package(UFCx)` and `find_package(Basix)` calls.
+3. Check the `find_package(Basix)`, `find_package(ufcx)` and
+   `find_package(UFCxPython)` calls in `cpp/CMakeLists.txt` require the
+   release's minor version, e.g. `0.5`.
 
 4. In `python/pyproject.toml` update the version to e.g. `0.5.0` and update the
-   dependency versions for `fenics-basix`, `fenics-ffcx` and `fenics-ufl`.
+   dependency versions for `fenics-basix`, `fenics-ffcx` and `fenics-ufl` to
+   ranges, e.g. `>=0.5.0,<0.6.0`.
 
-5. In `CITATION.md` update the version number `version: 0.5.0` and the release
+5. In `CITATION.cff` update the version number `version: 0.5.0` and the release
    date `date-released: 2022-03-14`.
 
 6. In `.github/ISSUE_TEMPLATE/bug_report.yml` add a new option to the version
    numbers.
 
-7. Commit and push.
+7. In `python/doc/source/release_notes.md` remove `(draft)` from the heading,
+   fill in the number of merged pull requests and contributors, and point the
+   full diff link at the new tag, e.g. `compare/v0.4.0...v0.5.0`.
 
-8. Check `git diff origin/main` for obvious errors.
+8. Commit and push.
+
+9. Check `git diff origin/main` for obvious errors.
 
 ## Integration testing
 
@@ -139,10 +151,10 @@ at the `release` branches.
 
 Then check:
 
-- [Basix with FFCx](https://github.com/FEniCS/basix/actions/workflows/ffcx-tests.yml)
-- [Basix with DOLFINx](https://github.com/FEniCS/basix/actions/workflows/dolfinx-tests.yml)
+- [Basix with FFCx](https://github.com/FEniCS/basix/actions/workflows/ffcx.yml)
+- [Basix with DOLFINx](https://github.com/FEniCS/basix/actions/workflows/dolfinx.yml)
 - [UFL with FEniCSx](https://github.com/FEniCS/ufl/actions/workflows/fenicsx-tests.yml)
-- [FFCx with DOLFINx](https://github.com/FEniCS/ffcx/actions/workflows/dolfinx-tests.yml)
+- [FFCx with DOLFINx](https://github.com/FEniCS/ffcx/actions/workflows/dolfinx.yml)
 - [Full stack](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml)
 
 ## Tagging
@@ -151,6 +163,12 @@ Make appropriate version tags e.g. `v0.12.0` in each repository in order: UFL,
 Basix, FFCx, DOLFINx. You must wait for UFL, Basix and FFCx to build and push
 documentation before making the tag for DOLFINx. UFL does not use the `v`
 prefix.
+
+Before tagging Basix, FFCx and DOLFINx, point each dependency's ref in that
+repository's `.github/workflows/fenicsx-refs.env` on `release` at its new tag,
+e.g. `ufl_ref=2022.2.0` and `basix_ref=v0.5.0`. The Basix wheel tests install UFL
+from `ufl_ref`. If it is left at `main` they can pick up a UFL outside the
+`fenics-ufl` range.
 
     git tag v0.5.0
     git push --tags origin
@@ -192,14 +210,17 @@ https://github.com/FEniCS/dolfinx/actions/workflows/docker-update-stable.yml
 
 Wheels can be made using the following actions:
 
-https://github.com/FEniCS/basix/actions/workflows/build-wheels.yml
-
 https://github.com/FEniCS/ufl/actions/workflows/build-wheels.yml
+
+https://github.com/FEniCS/basix/actions/workflows/build-wheels.yml
 
 https://github.com/FEniCS/ffcx/actions/workflows/build-wheels.yml
 
 Both the workflow and the ref should be set to the appropriate tags for each
 component.
+
+Publish in the order UFL, Basix, FFCx, since each package's dependency ranges
+only resolve once the packages below it are on PyPI.
 
 It is recommended to first build without publishing, then to test pypi, then to
 the real pypi. Publishing to pypa cannot be revoked.
@@ -241,20 +262,30 @@ https://github.com/FEniCS/dolfinx/releases/new
 ## Post-release
 
 Check for any changes on `release` that should be cherry-picked back onto
-`main` via a PR.
+`main` via a PR. Do not cherry-pick version numbers or
+`.github/workflows/fenicsx-refs.env`, which stays at `main` on `main`.
 
      git checkout main
      git diff release
      git log
      git cherry-pick 914ae4
 
-Bump the version numbers on the `main` branches of UFL, Basix, FFCx, 
-DOLFINx following the instructions above.
+Bump the version numbers on the `main` branches of UFL, Basix, FFCx and
+DOLFINx to the next development version, in the files listed above. On `main`:
+
+- Python versions are e.g. `0.6.0.dev0` and CMake versions e.g. `0.6.0.0`.
+- Dependencies on other components are lower bounds only, e.g.
+  `fenics-basix>=0.6.0.dev0` and `fenics-ufl>=2022.3.0.dev0`.
+- In `ufcx.h` bump `UFCX_VERSION_MINOR` and set `UFCX_VERSION_IS_RELEASE` to
+  `false`.
+- The DOLFINx `find_package` calls require the next minor version, e.g. `0.6`.
+- `python/doc/source/release_notes.md` gets a new section, e.g.
+  `## v0.6.0 (draft)`.
 
 ### Bug fix patches
 
 Bug fix versions e.g. `v0.5.1` can be made by cherry picking commits off of
-`main` and bumping the minor version number. Remember to run the DOLFINx
+`main` and bumping the patch version number. Remember to run the DOLFINx
 integration tests on a proposed set of tags as it is easy to make an error.
 
 ### Debian/Ubuntu
@@ -269,13 +300,13 @@ Conda-forge bots typically pickup new releases automatically. Can also contact
 ### Spack
 
 Create a branch on
-[FEniCS/fenics-spack](https://github.com/FEniCS/fenics-spack]. Copy across the
+[FEniCS/fenics-spack](https://github.com/FEniCS/fenics-spack). Copy across the
 upstream `fenics_*` recipes from
 [spack/spack-packages](https://github.com/spack/spack-packages). Make
 appropriate updates for the latest releases and `main` branch and ensure the CI
 passes.
 
-Once the CI passes, update the Spack upsteam `fenics_*` recipes on the fork
+Once the CI passes, update the Spack upstream `fenics_*` recipes on the fork
 [FEniCS/spack-packages](https://github.com/FEniCS/spack-packages) using a
 branch per component e.g. `<username>/dolfinx-<version>`. Create a pull request
 to the Spack mainline repository for each FEniCS component, along with any
