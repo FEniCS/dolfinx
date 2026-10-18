@@ -9,7 +9,7 @@ _mpi_name, _mpi_file, _mpi_package = {
 try:
     from mpi4py import MPI as _MPI
 
-    _mpi_library = _MPI.Get_library_version()
+    _mpi_library = " ".join(_MPI.Get_library_version().splitlines()[0].split(",")[0].split())
 except RuntimeError:
     _mpi_library = ""
 if (
@@ -17,28 +17,10 @@ if (
     or ("Open MPI" in _mpi_library) != (sys.platform == "darwin")
     or (sys.platform == "win32" and "Intel" not in _mpi_library)
 ):
-    _mpi_found = "no MPI library"
-    if _mpi_library:
-        _mpi_found = " ".join(_mpi_library.splitlines()[0].split(",")[0].split())
-    # mpi4py does not record the libmpi path, so look it up in the loaded images.
-    try:
-        import ctypes
-        import re
-
-        if sys.platform == "darwin":
-            _dyld = ctypes.CDLL(None)
-            _image_name = _dyld._dyld_get_image_name
-            _image_name.restype = ctypes.c_char_p
-            _images = [_image_name(i).decode() for i in range(_dyld._dyld_image_count())]
-        else:
-            with open("/proc/self/maps") as _maps:
-                _images = [line.split()[-1] for line in _maps]
-        for _path in sorted({p for p in _images if re.search(r"/libmpi\.(so|[0-9]+\.dylib)", p)}):
-            _mpi_found += f" ({_path})"
-    except Exception:
-        pass
     raise ImportError(
         f"DOLFINx wheels need {_mpi_name} ({_mpi_file}), e.g. pip install {_mpi_package}. "
-        f"mpi4py loaded: {_mpi_found}"
+        f"mpi4py loaded: {_mpi_library or 'no MPI library'}. "
+        "Run python -v -c 'from mpi4py import MPI' to see mpi4py's search, "
+        "and set MPI4PY_LIBMPI to choose a library."
     )
 del _MPI, _mpi_name, _mpi_file, _mpi_package, _mpi_library
