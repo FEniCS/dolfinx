@@ -59,16 +59,17 @@ fixes cherry-picked onto `release`, compare `release` with the previous tag in
 the series.
 
 ufcx and FFCx have separate version numbers that move forward independently.
-FFCx's version, in its `pyproject.toml`, follows the checks for FFCx. The ufcx
-version, in `cmake/CMakeLists.txt` and the `ufcx.h` macros, follows the
-`ufcx.h` ABI alone, and changes more slowly. For example, FFCx `0.12.0` can
+FFCx's version, in its `pyproject.toml`, follows the FFCx row below. The ufcx
+version, in `cmake/CMakeLists.txt` and the `ufcx.h` macros, follows the ufcx
+row alone, and changes more slowly. For example, FFCx `0.12.0` can
 ship ufcx `0.11.0`. DOLFINx requests the ufcx version, not the FFCx one.
 
 | Component | Interface | Check |
 | --- | --- | --- |
 | UFL | Python API | griffe |
 | Basix | `libbasix` ABI, Python API, element definitions | `abidiff`, griffe, element comparison |
-| FFCx | `ufcx.h` ABI, Python API | `abidiff`, griffe |
+| FFCx | Python API | griffe |
+| ufcx | `ufcx.h` ABI | `abidiff` |
 | DOLFINx | `libdolfinx` ABI and headers, Python API, file formats | `abidiff`, old demos against the new library, griffe |
 
 - `ufcx.h`: compile the old and new header into small shared libraries with
