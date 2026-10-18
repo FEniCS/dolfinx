@@ -155,7 +155,7 @@ jobs:
       - uses: actions/setup-python@v7
 
       - name: Install Python dependencies
-        run: python -m pip install cibuildwheel build
+        run: python -m pip install cibuildwheel build packaging tomlkit
 
       - name: Checkout UFL
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
