@@ -68,8 +68,11 @@ tag in the series. A patch release must not change any of the following, and
   `abidiff --non-reachable-types`. Exit status `0` means no change.
 - `libbasix` and `libdolfinx`: build both versions with debug information and
   compare them with `abidiff`, using `--headers-dir1` and `--headers-dir2` for
-  the public headers. Most of DOLFINx is templates in headers, so also run the
-  previous release's C++ demos against the new library.
+  the public headers. Most of DOLFINx is templates in headers, which `abidiff`
+  does not see. So also build the previous release's C++ demos against an
+  install of it, install the new release into the same prefix without
+  rebuilding the demos, and run them again. `ldd` on a demo should show the new
+  `libdolfinx`, which has the same `major.minor` `SOVERSION`.
 - Python API: in each repository run
   `uvx griffe check <package> --search <dir> -b origin/main -a <tag>`, with
   `--search python` for Basix and DOLFINx and `--search .` otherwise.
