@@ -226,22 +226,47 @@ Finally link `:stable` to the new images:
 
 ### pypi
 
-Wheels can be made using the following actions:
+Publishing to PyPI cannot be revoked. Wait a few days after tagging, so that
+errors found in the release can still be fixed by retagging. Publish in the
+order UFL, Basix, FFCx, since each package's dependency ranges only resolve
+once the packages below it are on PyPI. Run each workflow from its tag.
+`gh workflow run` prints the run URL. Wait for each run with
+`gh run watch --exit-status -R FEniCS/<repo> <run-id>` before starting the
+next.
 
-https://github.com/FEniCS/ufl/actions/workflows/build-wheels.yml
+First build and test the wheels without publishing:
 
-https://github.com/FEniCS/basix/actions/workflows/build-wheels.yml
+    gh workflow run build-wheels.yml -R FEniCS/ufl --ref 2022.2.0 \
+        -f ufl_ref=2022.2.0
+    gh workflow run build-wheels.yml -R FEniCS/basix --ref v0.5.0 \
+        -f basix_ref=v0.5.0
+    gh workflow run build-wheels.yml -R FEniCS/ffcx --ref v0.5.0 \
+        -f ffcx_ref=v0.5.0
 
-https://github.com/FEniCS/ffcx/actions/workflows/build-wheels.yml
+Then publish to Test PyPI, one component at a time:
 
-Both the workflow and the ref should be set to the appropriate tags for each
-component.
+    gh workflow run build-wheels.yml -R FEniCS/ufl --ref 2022.2.0 \
+        -f ufl_ref=2022.2.0 -f test_pypi_publish=true
+    gh workflow run build-wheels.yml -R FEniCS/basix --ref v0.5.0 \
+        -f basix_ref=v0.5.0 -f test_pypi_publish=true
+    gh workflow run build-wheels.yml -R FEniCS/ffcx --ref v0.5.0 \
+        -f ffcx_ref=v0.5.0 -f test_pypi_publish=true
 
-Publish in the order UFL, Basix, FFCx, since each package's dependency ranges
-only resolve once the packages below it are on PyPI.
+Check the Test PyPI packages install together in a clean environment:
 
-It is recommended to first build without publishing, then to test pypi, then to
-the real pypi. Publishing to pypa cannot be revoked.
+    python -m venv test-env
+    test-env/bin/pip install --index-url https://test.pypi.org/simple/ \
+        --extra-index-url https://pypi.org/simple/ \
+        fenics-ufl==2022.2.0 fenics-basix==0.5.0 fenics-ffcx==0.5.0
+
+Finally publish to PyPI, one component at a time:
+
+    gh workflow run build-wheels.yml -R FEniCS/ufl --ref 2022.2.0 \
+        -f ufl_ref=2022.2.0 -f pypi_publish=true
+    gh workflow run build-wheels.yml -R FEniCS/basix --ref v0.5.0 \
+        -f basix_ref=v0.5.0 -f pypi_publish=true
+    gh workflow run build-wheels.yml -R FEniCS/ffcx --ref v0.5.0 \
+        -f ffcx_ref=v0.5.0 -f pypi_publish=true
 
 The DOLFINx wheel builder is experimental and is not used in the release
 process at this time.
