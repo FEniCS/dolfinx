@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
                          + (x2 - x2_c) * std::cos(theta) - x2);
           }
 
-          return {std::move(fdata), {3, x.extent(1)}};
+          return {std::move(fdata), std::vector<std::size_t>{3, x.extent(1)}};
         });
 
     // Create Dirichlet boundary conditions

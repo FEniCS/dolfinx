@@ -64,7 +64,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     std::span<const std::int32_t> cells,
     const graph::AdjacencyList<std::int32_t>& local_dual_graph)
 {
-  spdlog::info("Build nonlocal part of mesh dual graph");
+  logger().info("Build nonlocal part of mesh dual graph");
   common::Timer timer("Compute non-local part of mesh dual graph");
 
   // TODO: Two possible straightforward optimisations:
@@ -169,7 +169,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     assert(0 <= vertex_range[0]);
     assert(vertex_range[0] <= vertex_range[1]);
   }
-  spdlog::debug("Max. vertices per facet={}", max_vertices_per_facet);
+  logger().debug("Max. vertices per facet={}", max_vertices_per_facet);
   const std::int32_t buffer_shape1 = max_vertices_per_facet + 1;
 
   // Build list of dest ranks and count number of items (facets) to send
@@ -238,12 +238,12 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Determine source ranks
   const std::vector<int> src
       = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-  spdlog::info("Number of destination and source ranks in non-local dual graph "
-               "construction, and ratio to total number of ranks: {}, {}, "
-               "{}, {}",
-               dest.size(), src.size(),
-               static_cast<double>(dest.size()) / comm_size,
-               static_cast<double>(src.size()) / comm_size);
+  logger().info(
+      "Number of destination and source ranks in non-local dual graph "
+      "construction, and ratio to total number of ranks: {}, {}, "
+      "{}, {}",
+      dest.size(), src.size(), static_cast<double>(dest.size()) / comm_size,
+      static_cast<double>(src.size()) / comm_size);
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm comm_po_post;
@@ -572,7 +572,7 @@ mesh::build_local_dual_graph(
   if (num_threads < 1)
     throw std::invalid_argument("num_threads must be >= 1.");
 
-  spdlog::info("Build local part of mesh dual graph");
+  logger().info("Build local part of mesh dual graph");
   common::Timer timer("Compute local part of mesh dual graph");
 
   if (cells.size() != celltypes.size())
@@ -915,7 +915,7 @@ mesh::build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                        std::optional<std::int32_t> max_facet_to_cell_links,
                        int num_threads)
 {
-  spdlog::info("Building mesh dual graph");
+  logger().info("Building mesh dual graph");
 
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
@@ -926,9 +926,9 @@ mesh::build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
   graph::AdjacencyList graph
       = compute_nonlocal_dual_graph(comm, facets, shape1, fcells, local_graph);
 
-  spdlog::info("Graph edges (local: {}, non-local: {})",
-               local_graph.offsets().back(),
-               graph.offsets().back() - local_graph.offsets().back());
+  logger().info("Graph edges (local: {}, non-local: {})",
+                local_graph.offsets().back(),
+                graph.offsets().back() - local_graph.offsets().back());
 
   return graph;
 }
