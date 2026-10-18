@@ -427,14 +427,14 @@ jobs:
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/wheelhouse:/shared -v $(pwd)/jit-config:/config \
             --env PIP_FIND_LINKS=/shared \
             --env XDG_CONFIG_HOME=/config python:3.13 \
-            /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test mpich fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
+            /bin/bash -l -c "python -m venv fenicsx-env && source fenicsx-env/bin/activate && pip install --group /dolfinx/python/pyproject.toml:test mpich fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Check MPI error message in clean python image
         if: runner.os == 'Linux'
         run: |
           docker run -v "$(pwd)/wheelhouse:/shared" \
             --env PIP_FIND_LINKS=/shared \
-            python:3.13 /bin/bash -l -c "pip install fenics-dolfinx &&
+            python:3.13 /bin/bash -l -c "python -m venv fenicsx-env && source fenicsx-env/bin/activate && pip install fenics-dolfinx &&
               python -c 'import dolfinx' 2>&1 | grep 'compatible MPI library' &&
               pip install openmpi &&
               python -c 'import dolfinx' 2>&1 | grep 'compatible MPI library'"
@@ -448,7 +448,7 @@ jobs:
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/wheelhouse:/shared -v $(pwd)/jit-config:/config \
             --env PIP_FIND_LINKS=/shared \
             --env XDG_CONFIG_HOME=/config python:3.14 \
-            /bin/bash -l -c "pip install --group /dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
+            /bin/bash -l -c "python -m venv fenicsx-env && source fenicsx-env/bin/activate && pip install --group /dolfinx/python/pyproject.toml:test impi-rt fenics-dolfinx && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
   # Test the Windows and macOS wheels in 'clean' runners. They are not very
   # clean, in reality...
@@ -488,16 +488,15 @@ jobs:
           name: wheelhouse-${{ matrix.os }}
           path: wheelhouse
 
-      - name: Install from the wheels
-        if: runner.os != 'Windows'
+      # Each step is a new shell, so the venv is created and used in one step.
+      - name: Install from the wheels and run tests (macOS)
+        if: runner.os == 'macOS'
         run: |
           echo '${{ matrix.jit_options }}' > dolfinx_jit_options.json
+          python -m venv fenicsx-env
+          source fenicsx-env/bin/activate
           python -m pip install --upgrade pip
           pip -v install --find-links wheelhouse pytest-xdist --group dolfinx/python/pyproject.toml:test ${{ matrix.mpi }} fenics-dolfinx
-
-      - name: Run tests
-        if: runner.os != 'Windows'
-        run: |
           mpiexec --version
           python -m pytest -n auto -m "not adios2 and not petsc4py" dolfinx/python/test/unit
           mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
