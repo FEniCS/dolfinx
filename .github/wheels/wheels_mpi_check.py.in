@@ -1,4 +1,4 @@
-"""Check the MPI library matches the one family the DOLFINx wheels link."""
+# Check the MPI library matches the one family the DOLFINx wheels link.
 
 import sys
 

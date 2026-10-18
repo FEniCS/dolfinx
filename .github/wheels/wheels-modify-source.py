@@ -46,7 +46,7 @@ for name, path in projects.items():
         path.write_text(text, encoding="utf-8")
 
 init = pathlib.Path("dolfinx/python/dolfinx/__init__.py")
-check = pathlib.Path("dolfinx/.github/wheels/wheels_mpi_check.py").read_text(encoding="utf-8")
+check = pathlib.Path("dolfinx/.github/wheels/wheels_mpi_check.py.in").read_text(encoding="utf-8")
 text = init.read_text(encoding="utf-8")
 if text.count("# WHEELMPICHECK\n") != 1:
     raise RuntimeError(f"{init} has no WHEELMPICHECK placeholder")
