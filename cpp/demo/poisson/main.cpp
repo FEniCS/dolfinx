@@ -183,24 +183,24 @@ int main(int argc, char* argv[])
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          std::vector<T> f;
+          std::vector<T> f(x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
             auto dx = (x(0, p) - 0.5) * (x(0, p) - 0.5);
             auto dy = (x(1, p) - 0.5) * (x(1, p) - 0.5);
-            f.push_back(10 * std::exp(-(dx + dy) / 0.02));
+            f[p] = 10 * std::exp(-(dx + dy) / 0.02);
           }
 
-          return {f, {f.size()}};
+          return {std::move(f), std::vector<std::size_t>{f.size()}};
         });
 
     g->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          std::vector<T> g;
+          std::vector<T> g(x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
-            g.push_back(std::sin(5 * x(0, p)));
-          return {g, {g.size()}};
+            g[p] = std::sin(5 * x(0, p));
+          return {std::move(g), std::vector<std::size_t>{g.size()}};
         });
 
     //  Now, we have specified the variational forms and can consider
