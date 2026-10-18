@@ -148,6 +148,9 @@ source fenicsx-env/bin/activate
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" mpich
 ```
 
+The Linux wheels need glibc 2.34 or later, e.g. RHEL 9 or Ubuntu 22.04. Check
+with `ldd --version`. On older systems pip reports `from versions: none`.
+
 macOS (Apple silicon and Intel), with the Xcode Command Line Tools:
 
 ```shell
