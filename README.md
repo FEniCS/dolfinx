@@ -175,14 +175,7 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 $env:Path = "$env:VIRTUAL_ENV\Library\bin;$env:Path"
 ```
 
-With [uv](https://docs.astral.sh/uv/) on Linux or macOS, using `openmpi` in
-place of `mpich` on macOS:
-
-```shell
-uv venv fenicsx-env
-source fenicsx-env/bin/activate
-uv pip install --index-strategy unsafe-best-match --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" mpich
-```
+With `uv pip install`, also pass `--index-strategy unsafe-best-match`.
 
 ### From source
 
