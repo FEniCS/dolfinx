@@ -166,11 +166,11 @@ int main(int argc, char* argv[])
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          std::vector<T> f;
+          std::vector<T> f(x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
             auto x0 = x(0, p);
-            f.push_back(std::sin(5 * x0) + 1);
+            f[p] = std::sin(5 * x0) + 1;
           }
           return {f, {f.size()}};
         });
@@ -249,9 +249,9 @@ int main(int argc, char* argv[])
     u0->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          std::vector<T> f;
+          std::vector<T> f(x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
-            f.push_back(20 * x(1, p) + 1);
+            f[p] = 20 * x(1, p) + 1;
           return {f, {f.size()}};
         });
 

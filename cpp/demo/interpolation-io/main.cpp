@@ -135,18 +135,18 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
       = mesh::locate_entities(*mesh, 2,
                               [](auto x)
                               {
-                                std::vector<std::int8_t> marked;
+                                std::vector<std::int8_t> marked(x.extent(1));
                                 for (std::size_t i = 0; i < x.extent(1); ++i)
-                                  marked.push_back(x(0, i) <= 0.5);
+                                  marked[i] = x(0, i) <= 0.5;
                                 return marked;
                               });
   std::vector cells1
       = mesh::locate_entities(*mesh, 2,
                               [](auto x)
                               {
-                                std::vector<std::int8_t> marked;
+                                std::vector<std::int8_t> marked(x.extent(1));
                                 for (std::size_t i = 0; i < x.extent(1); ++i)
-                                  marked.push_back(x(0, i) >= 0.5);
+                                  marked[i] = x(0, i) >= 0.5;
                                 return marked;
                               });
 
