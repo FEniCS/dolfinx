@@ -2,9 +2,12 @@ name: Build wheels
 
 # By default this action does not push to Test PyPI. The wheels are available
 # as an artifact that can be downloaded and tested locally. Uploads to the
-# production PyPI index are deliberately not supported.
+# production PyPI index are deliberately not supported. The scheduled run
+# builds the whole stack from main and pushes it to Test PyPI.
 
 on:
+  schedule:
+    - cron: "0 2 */3 * *"
   workflow_dispatch:
     inputs:
       dolfinx_ref:
@@ -68,6 +71,10 @@ on:
         description: "Publish to Test PyPI (requires build_fenicsx_stack)"
         default: false
         type: boolean
+
+# Scheduled runs have no inputs.
+env:
+  BUILD_STACK: ${{ github.event_name == 'schedule' || inputs.build_fenicsx_stack }}
 
 jobs:
   dev_version:
@@ -158,34 +165,34 @@ jobs:
         run: python -m pip install cibuildwheel build packaging tomlkit
 
       - name: Checkout UFL
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        if: ${{ env.BUILD_STACK == 'true' }}
         uses: actions/checkout@v7
         with:
           repository: FEniCS/ufl
           path: ufl
-          ref: ${{ github.event.inputs.ufl_ref }}
+          ref: ${{ inputs.ufl_ref || 'main' }}
 
       - name: Checkout FFCx
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        if: ${{ env.BUILD_STACK == 'true' }}
         uses: actions/checkout@v7
         with:
           repository: FEniCS/ffcx
           path: ffcx
-          ref: ${{ github.event.inputs.ffcx_ref }}
+          ref: ${{ inputs.ffcx_ref || 'main' }}
 
       - name: Checkout Basix
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        if: ${{ env.BUILD_STACK == 'true' }}
         uses: actions/checkout@v7
         with:
           repository: FEniCS/basix
           path: basix
-          ref: ${{ github.event.inputs.basix_ref }}
+          ref: ${{ inputs.basix_ref || 'main' }}
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v7
         with:
           path: dolfinx
-          ref: ${{ github.event.inputs.dolfinx_ref }}
+          ref: ${{ inputs.dolfinx_ref || 'main' }}
 
       # PyPI never accepts a filename twice, so each build gets a unique
       # .devN. The stack is pinned exactly since DOLFINx links against the
@@ -196,23 +203,23 @@ jobs:
         run: |
           python dolfinx/.github/wheels/wheels-modify-source.py \
             --dev-stamp ${{ needs.dev_version.outputs.stamp }} \
-            ${{ inputs.build_fenicsx_stack && '--build-stack' || '' }}
+            ${{ env.BUILD_STACK == 'true' && '--build-stack' || '' }}
           git -C dolfinx diff python/pyproject.toml python/dolfinx/__init__.py
 
       - name: Build UFL wheel
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        if: ${{ env.BUILD_STACK == 'true' }}
         run: |
           python -m build -o wheelhouse/ ufl/
 
       - name: Build FFCx wheel
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        if: ${{ env.BUILD_STACK == 'true' }}
         run: |
           python -m build -o wheelhouse/ ffcx/
 
       # The Basix tests need the UFL wheel built above, which only the
       # project directory makes visible inside the Linux container.
       - name: Build Basix wheel
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        if: ${{ env.BUILD_STACK == 'true' }}
         working-directory: basix/
         shell: bash
         env:
@@ -494,7 +501,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           path: dolfinx
-          ref: ${{ github.event.inputs.dolfinx_ref }}
+          ref: ${{ inputs.dolfinx_ref || 'main' }}
 
       - uses: actions/setup-python@v7
         with:
@@ -537,7 +544,7 @@ jobs:
 
   upload_test_pypi:
     name: Upload to Test PyPI (optional)
-    if: ${{ inputs.test_pypi_publish }}
+    if: ${{ github.event_name == 'schedule' || inputs.test_pypi_publish }}
     needs: [build_wheels, test_wheels]
     runs-on: ubuntu-latest
     environment:
