@@ -51,109 +51,25 @@ before starting a step that depends on it.
 
 ## ABI checks
 
-Compare each component with the previous release before choosing version
-numbers, since the results decide them. A patch release must not change any
-interface below. A minor release may, but `ufcx.h` changes more slowly than
-FFCx and is moving towards its own version, bumped only when its ABI changes.
-Compare `main` with the previous release's tag, e.g. `v0.11.0`, after
-`git fetch --tags`. For a patch release, compare `release`, with its
-cherry-picked fixes, against the previous tag in the series, e.g. `v0.12.0`,
-and use `release` wherever the commands below use `main`.
+Before choosing version numbers, compare `main` with the previous release's
+tag, e.g. `v0.11.0`. For a patch release, compare `release` with the previous
+tag in the series. A patch release must not change any of the following, and
+`ufcx.h` only gets a new minor version if its ABI changed.
 
-| Component | Interface | Check |
-| --- | --- | --- |
-| UFL | Python API | griffe |
-| Basix | `libbasix` ABI, Python API, element definitions | `abidiff`, griffe, element comparison |
-| FFCx | `ufcx.h` ABI, Python API | `abidiff`, griffe |
-| DOLFINx | `libdolfinx` ABI and headers, Python API, file formats | `abidiff`, old demos against the new library, griffe |
-
-### C and C++ ABI
-
-Use libabigail's `abidiff`, e.g. in a Fedora container. `ufcx.h` is
-header-only, so compile it into a small library that keeps all its types in
-the debug information:
-
-    mkdir old new
-    git show v0.11.0:ffcx/codegeneration/ufcx.h > old/ufcx.h
-    git show origin/main:ffcx/codegeneration/ufcx.h > new/ufcx.h
-    podman run --rm -v "$PWD":/w:Z -w /w docker.io/library/fedora bash -c '
-      dnf -y -q install gcc libabigail >/dev/null 2>&1 &&
-      for d in old new; do
-        echo "#include \"ufcx.h\"" > $d/abi.c &&
-        gcc -shared -fPIC -g -fno-eliminate-unused-debug-types -I$d \
-          -o $d/libufcx.so $d/abi.c
-      done &&
-      abidiff --non-reachable-types old/libufcx.so new/libufcx.so'
-
-Exit status `0` means no ABI change. Otherwise `abidiff` lists the changed
-types, and `12` means an incompatible change. The SHA1 signature of `ufcx.h` is
-no substitute, since it changes with the version macros on every release.
-
-For Basix and DOLFINx, build the previous tag and `origin/main` with
-`-DCMAKE_BUILD_TYPE=RelWithDebInfo` and compare the installed libraries, e.g.
-`abidiff --headers-dir1 old/include --headers-dir2 new/include
-old/lib/libbasix.so new/lib/libbasix.so`. The headers options limit the report
-to the public API. Most of DOLFINx is templates in its headers, which
-`abidiff` does not see, so also build the previous release's C++ demos against
-the old install and run them against the new `libdolfinx` without rebuilding.
-
-### Python API
-
-In each repository, compare `main` with the previous release using
-[griffe](https://mkdocstrings.github.io/griffe/):
-
-    uvx griffe check ufl --search . -b origin/main -a 2026.2.0
-    uvx griffe check ffcx --search . -b origin/main -a v0.11.0
-    uvx griffe check basix --search python -b origin/main -a v0.11.0
-    uvx griffe check dolfinx --search python -b origin/main -a v0.11.0
-
-griffe lists removed objects and changed signatures, and exits non-zero if it
-finds any. Additions are not reported. It reads Python source and stub files,
-not the compiled modules `_basixcpp` and `dolfinx.cpp`.
-
-### Basix elements
-
-FFCx bakes Basix's tabulated values into generated kernels, and saved data
-depends on dof layouts, so a patch release must not change an element. Older
-FFCx releases also left the Basix version out of the JIT cache key, so cached
-kernels would silently keep the old values. Compare every element's hash and
-tabulated values, since the hash alone can miss changes:
-
-    cat > element_hashes.py <<'EOF'
-    import hashlib
-    import itertools
-
-    import numpy as np
-
-    import basix
-
-    for family, cell, degree in itertools.product(
-        basix.ElementFamily, basix.CellType, range(5)
-    ):
-        try:
-            e = basix.create_element(family, cell, degree)
-            pts, _ = basix.make_quadrature(cell, 4)
-        except RuntimeError:
-            continue
-        t = np.round(e.tabulate(1, pts), 10)
-        sha = hashlib.sha1(t.tobytes()).hexdigest()[:12]
-        print(family.name, cell.name, degree, e.hash(), sha)
-    EOF
-    python3 -m venv old new
-    old/bin/pip install -q fenics-basix==0.11.0 numpy
-    new/bin/pip install -q numpy \
-        "fenics-basix @ git+https://github.com/FEniCS/basix.git@main"
-    old/bin/python element_hashes.py > old.txt
-    new/bin/python element_hashes.py > new.txt
-    diff old.txt new.txt
-
-Any output means an element changed.
-
-### Build environment
-
-Within a release series, build the wheels with the same nanobind version,
-since `dolfinx.cpp` takes Basix's nanobind objects directly. Do not change the
-MPI implementation, the manylinux image or the `cp312-abi3` tag either.
+- `ufcx.h`: compile the old and new header into small shared libraries with
+  `-g -fno-eliminate-unused-debug-types` and compare them with libabigail's
+  `abidiff --non-reachable-types`. Exit status `0` means no change.
+- `libbasix` and `libdolfinx`: build both versions with debug information and
+  compare them with `abidiff`, using `--headers-dir1` and `--headers-dir2` for
+  the public headers. Most of DOLFINx is templates in headers, so also run the
+  previous release's C++ demos against the new library.
+- Python API: in each repository run
+  `uvx griffe check <package> --search <dir> -b origin/main -a <tag>`, with
+  `--search python` for Basix and DOLFINx and `--search .` otherwise.
+- Basix elements: compare `hash()` and the tabulated values of every element
+  between the two versions. The hash does not cover the values.
+- Wheels: keep the nanobind version, MPI implementation, manylinux image and
+  `cp312-abi3` tag the same within a release series.
 
 ## Version number bumping
 
