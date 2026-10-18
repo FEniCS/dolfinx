@@ -90,6 +90,38 @@ Then point the refs in `.github/workflows/fenicsx-refs.env` at the `release`
 branches, make the component's changes below, check `git diff origin/main` for
 obvious errors, and commit and push.
 
+### ABI checks
+
+Basix and DOLFINx libraries have `SOVERSION` `major.minor`, so a patch release
+must keep their ABI. `ufcx.h` changes more slowly than FFCx, and is moving
+towards its own version, bumped only when its ABI changes. Check both with
+libabigail's `abidiff`, e.g. in a Fedora container.
+
+`ufcx.h` is header-only, so compile it into a small library that keeps all its
+types in the debug information:
+
+    mkdir old new
+    git show v0.11.0:ffcx/codegeneration/ufcx.h > old/ufcx.h
+    cp ffcx/codegeneration/ufcx.h new/ufcx.h
+    podman run --rm -v "$PWD":/w:Z -w /w docker.io/library/fedora bash -c '
+      dnf -y -q install gcc libabigail >/dev/null 2>&1 &&
+      for d in old new; do
+        echo "#include \"ufcx.h\"" > $d/abi.c &&
+        gcc -shared -fPIC -g -fno-eliminate-unused-debug-types -I$d \
+          -o $d/libufcx.so $d/abi.c
+      done &&
+      abidiff --non-reachable-types old/libufcx.so new/libufcx.so'
+
+Exit status `0` means no ABI change. Otherwise `abidiff` lists the changed
+types, and `12` means an incompatible change. The SHA1 signature of `ufcx.h` is
+no substitute, since it changes with the version macros on every release.
+
+For a Basix or DOLFINx patch release, build the previous and new tags with
+`-DCMAKE_BUILD_TYPE=RelWithDebInfo` and compare the installed libraries, e.g.
+`abidiff --headers-dir1 old/include --headers-dir2 new/include
+old/lib/libbasix.so new/lib/libbasix.so`. The headers options limit the report
+to the public API.
+
 ### UFL version bump
 
 1. Merge `main` into `release`.
@@ -110,14 +142,16 @@ obvious errors, and commit and push.
 
 1. Merge `main` into `release`.
 
-2. Update the version numbers in `pyproject.toml` and `cmake/CMakeLists.txt`,
-   e.g. `0.12.0`.
+2. Update the version number in `pyproject.toml`, e.g. `0.12.0`.
 
 3. In `pyproject.toml` replace the `fenics-basix` and `fenics-ufl` lower bounds
    with ranges.
 
-4. Update the version number macros in `ffcx/codegeneration/ufcx.h` to match
-   and set `UFCX_VERSION_IS_RELEASE` to `true`.
+4. Check the `ufcx.h` ABI against the previous release, see
+   [ABI checks](#abi-checks). The ufcx version is in `cmake/CMakeLists.txt` and
+   the `ufcx.h` macros. If the ABI changed, bump its minor version, e.g. from
+   `0.11.0` to `0.12.0`. Otherwise keep the previous release's, e.g. `0.11.0`.
+   Set `UFCX_VERSION_IS_RELEASE` to `true`.
 
 ### DOLFINx version bump
 
@@ -125,9 +159,10 @@ obvious errors, and commit and push.
 
 2. Update the version number in `cpp/CMakeLists.txt`, e.g. `0.12.0`.
 
-3. Check the `find_package(Basix)`, `find_package(ufcx)` and
-   `find_package(UFCxPython)` calls in `cpp/CMakeLists.txt` require the
-   release's minor version, e.g. `0.12`, or `0.12...<0.13` for `UFCxPython`.
+3. Check the `find_package(Basix)` call in `cpp/CMakeLists.txt` requires the
+   release's minor version, e.g. `0.12`. Check `find_package(ufcx)` and
+   `find_package(UFCxPython)` require the ufcx version chosen in the FFCx bump,
+   e.g. `0.11` and `0.11...<0.12`.
 
 4. In `python/pyproject.toml` update the version, e.g. `0.12.0`, and replace
    the `fenics-basix`, `fenics-ffcx` and `fenics-ufl` lower bounds with ranges.
@@ -227,14 +262,17 @@ DOLFINx to the next development version via PRs, in the files listed above. On
 - Python versions are e.g. `0.13.0.dev0` and CMake versions e.g. `0.13.0.0`.
 - Dependencies on other components are lower bounds only, e.g.
   `fenics-basix>=0.13.0.dev0` and `fenics-ufl>=2026.4.0.dev0`.
-- In `ufcx.h` bump `UFCX_VERSION_MINOR` and set `UFCX_VERSION_IS_RELEASE` to
-  `false`.
-- The DOLFINx `find_package` calls require the next minor version, e.g.
-  `0.13`, or `0.13...<0.14` for `UFCxPython`. Basix and ufcx only satisfy
-  requests for their own minor version, so once Basix or FFCx `main` is bumped
-  DOLFINx `main` no longer configures. Make the Basix, FFCx and DOLFINx bumps
-  paired PRs, each pointing `fenicsx-refs.env` at the others' branches, and
-  merge them together.
+- In `ufcx.h` set `UFCX_VERSION_IS_RELEASE` to `false`, and give the ufcx
+  version in `cmake/CMakeLists.txt` its fourth component, e.g. `0.11.0.0`. Do
+  not bump the ufcx version itself. The first PR that changes the `ufcx.h` ABI
+  bumps its minor version instead.
+- The DOLFINx `find_package(Basix)` call requires the next minor version, e.g.
+  `0.13`. Basix only satisfies requests for its own minor version, so once Basix
+  `main` is bumped DOLFINx `main` no longer configures. Make the Basix and
+  DOLFINx bumps paired PRs, each pointing `fenicsx-refs.env` at the other's
+  branch, and merge them together. An FFCx PR that bumps the ufcx version needs
+  a paired DOLFINx PR updating `find_package(ufcx)` and
+  `find_package(UFCxPython)` in the same way.
 - `python/doc/source/release_notes.md` gets a new section, e.g.
   `## v0.13.0 (draft)`.
 
@@ -372,7 +410,9 @@ Bug fix versions e.g. `v0.12.1` are made on `release` without merging `main`:
 1. Cherry-pick the fixes from `main` onto `release`.
 2. Bump the patch version in the files listed above. Keep the dependency
    ranges, and point `fenicsx-refs.env` at the tags the patch release is meant
-   to work with.
+   to work with. Check the ABI of patched libraries and of `ufcx.h` against the
+   previous tag in the series, see [ABI checks](#abi-checks). A patch release
+   must not change it.
 3. Run the integration tests, then follow the steps from Tagging onwards. Use
    the previous tag in the series as `--notes-start-tag`, e.g. `v0.12.0`, and
    only publish the components that changed.
