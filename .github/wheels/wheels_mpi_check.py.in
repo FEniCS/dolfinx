@@ -21,6 +21,6 @@ if (
         f"DOLFINx wheels need {_mpi_name} ({_mpi_file}), e.g. pip install {_mpi_package}. "
         f"mpi4py loaded: {_mpi_library or 'no MPI library'}. "
         "Run python -v -c 'from mpi4py import MPI' to see mpi4py's search, "
-        "and set MPI4PY_LIBMPI to choose a library."
+        "and only if needed set MPI4PY_LIBMPI to force a library."
     )
 del _MPI, _mpi_name, _mpi_file, _mpi_package, _mpi_library
