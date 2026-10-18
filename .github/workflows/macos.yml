@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - main
-      - release
     tags:
       - "v*"
   merge_group:
@@ -16,7 +15,7 @@ on:
   workflow_dispatch:
 
 # Cancel superseded runs: a new commit on a pull request makes the
-# previous run's result irrelevant. Pushes to 'main' and 'release' are
+# previous run's result irrelevant. Pushes to 'main' and tags are
 # left to finish, since they populate caches and publish artefacts.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
