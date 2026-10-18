@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
             f[p] = 10 * std::exp(-(dx + dy) / 0.02);
           }
 
-          return {f, {f.size()}};
+          return {std::move(f), std::vector<std::size_t>{f.size()}};
         });
 
     g->interpolate(
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
           std::vector<T> g(x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
             g[p] = std::sin(5 * x(0, p));
-          return {g, {g.size()}};
+          return {std::move(g), std::vector<std::size_t>{g.size()}};
         });
 
     //  Now, we have specified the variational forms and can consider

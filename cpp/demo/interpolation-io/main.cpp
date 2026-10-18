@@ -76,7 +76,7 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
         std::vector<T> f(x.extent(1));
         for (std::size_t p = 0; p < x.extent(1); ++p)
           f[p] = std::sin(2 * std::numbers::pi * x(0, p));
-        return {f, {f.size()}};
+        return {std::move(f), std::vector<std::size_t>{f.size()}};
       });
 
 #ifdef HAS_ADIOS2
@@ -156,7 +156,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
       {
         std::vector<T> f(2 * x.extent(1), 0);
         std::copy_n(x.data_handle(), f.size(), f.begin());
-        return {f, {2, x.extent(1)}};
+        return {std::move(f), std::vector<std::size_t>{2, x.extent(1)}};
       },
       cells0);
   u->interpolate(
@@ -165,7 +165,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
         std::vector<T> f(2 * x.extent(1), 0);
         std::copy_n(x.data_handle(), f.size(), f.begin());
         std::ranges::transform(f, f.begin(), [](auto x) { return x + T(1); });
-        return {f, {2, x.extent(1)}};
+        return {std::move(f), std::vector<std::size_t>{2, x.extent(1)}};
       },
       cells1);
 
