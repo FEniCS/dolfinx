@@ -159,7 +159,7 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 Windows (x86_64), in an administrator PowerShell with [Chocolatey](https://chocolatey.org/install):
 
 ```powershell
-# Or install the Visual Studio C++ build tools and Python 3.13 manually
+# Without Chocolatey, install the Visual Studio C++ build tools and Python 3.13 manually
 choco install -y visualstudio2022-workload-vctools python313
 refreshenv
 python -m venv fenicsx-env
