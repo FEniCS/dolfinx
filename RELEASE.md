@@ -51,10 +51,12 @@ before starting a step that depends on it.
 
 ## ABI checks
 
-Before choosing version numbers, compare `main` with the previous release's
-tag, e.g. `v0.11.0`. For a patch release, compare `release` with the previous
-tag in the series. A patch release must not change any of the following, and
-`ufcx.h` only gets a new minor version if its ABI changed.
+Before choosing version numbers, compare `main` with each component's previous
+release tag, e.g. `v0.11.0`. The result decides the release. If nothing below
+was removed or changed incompatibly, make a patch release, e.g. `v0.11.1`,
+rather than a new minor version. Additions are fine. `ufcx.h` follows the same
+rule for its own version. For a patch release of fixes cherry-picked onto
+`release`, compare `release` with the previous tag in the series.
 
 | Component | Interface | Check |
 | --- | --- | --- |
@@ -83,8 +85,10 @@ tag in the series. A patch release must not change any of the following, and
 
 ## Version number bumping
 
-At the current phase of development (<1.0) FEniCSx components are typically
-bumped an entire minor version i.e. `0.+1.0`.
+At the current phase of development (<1.0), Basix, FFCx and DOLFINx get a new
+minor version `0.+1.0` only if [ABI checks](#abi-checks) found an incompatible
+change, and a patch version `0.0.+1` otherwise. Each component is decided
+separately, e.g. Basix `0.11.1` alongside DOLFINx `0.12.0`.
 
 UFL uses year-based numbering and releases are made by both FEniCS and
 Firedrake teams. The version number should be bumped as follows:
@@ -97,7 +101,8 @@ Firedrake teams. The version number should be bumped as follows:
    compatibility through CI runs before releasing.
 
 Release dependency ranges are capped at the next minor version, e.g.
-`fenics-basix>=0.12.0,<0.13.0` and `fenics-ufl>=2026.3.0,<2026.4.0`.
+`fenics-basix>=0.12.0,<0.13.0`, or `fenics-basix>=0.11.1,<0.12.0` after a Basix
+patch release, and `fenics-ufl>=2026.3.0,<2026.4.0`.
 
 CMake versions cannot carry `.dev0`. On `main` they have a fourth component
 instead, e.g. `0.12.0.0` for Python `0.12.0.dev0`, which the release drops: both
@@ -161,7 +166,8 @@ obvious errors, and commit and push.
 2. Update the version number in `cpp/CMakeLists.txt`, e.g. `0.12.0`.
 
 3. Check the `find_package(Basix)` call in `cpp/CMakeLists.txt` requires the
-   release's minor version, e.g. `0.12`. Check `find_package(ufcx)` and
+   minor version of the Basix release, e.g. `0.12`, or `0.11` if Basix made a
+   patch release. Check `find_package(ufcx)` and
    `find_package(UFCxPython)` require the ufcx version chosen in the FFCx bump,
    e.g. `0.11` and `0.11...<0.12`.
 
@@ -257,8 +263,9 @@ Check for any changes on `release` that should be cherry-picked back onto
     git cherry-pick 914ae4
 
 Bump the version numbers on the `main` branches of UFL, Basix, FFCx and
-DOLFINx to the next development version via PRs, in the files listed above. On
-`main`:
+DOLFINx to the next development version via PRs, in the files listed above. A
+component that made a patch release keeps its development version, e.g.
+`0.12.0.dev0` after `0.11.1`. On `main`:
 
 - Python versions are e.g. `0.13.0.dev0` and CMake versions e.g. `0.13.0.0`.
 - Dependencies on other components are lower bounds only, e.g.
@@ -267,11 +274,12 @@ DOLFINx to the next development version via PRs, in the files listed above. On
   version in `cmake/CMakeLists.txt` its fourth component, e.g. `0.11.0.0`. Do
   not bump the ufcx version itself. The first PR that changes the `ufcx.h` ABI
   bumps its minor version instead.
-- The DOLFINx `find_package(Basix)` call requires the next minor version, e.g.
-  `0.13`. Basix only satisfies requests for its own minor version, so once Basix
-  `main` is bumped DOLFINx `main` no longer configures. Make the Basix and
-  DOLFINx bumps paired PRs, each pointing `fenicsx-refs.env` at the other's
-  branch, and merge them together. An FFCx PR that bumps the ufcx version needs
+- After a new Basix minor release, the DOLFINx `find_package(Basix)` call
+  requires the next minor version, e.g. `0.13`. Basix only satisfies requests
+  for its own minor version, so once Basix `main` is bumped DOLFINx `main` no
+  longer configures. Make the Basix and DOLFINx bumps paired PRs, each pointing
+  `fenicsx-refs.env` at the other's branch, and merge them together. After a
+  Basix patch release, neither changes. An FFCx PR that bumps the ufcx version needs
   a paired DOLFINx PR updating `find_package(ufcx)` and
   `find_package(UFCxPython)` in the same way.
 - `python/doc/source/release_notes.md` gets a new section, e.g.
