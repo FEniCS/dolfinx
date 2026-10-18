@@ -159,7 +159,7 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 Windows (x86_64), in PowerShell:
 
 ```powershell
-# Or install Python 3.13 and the Visual Studio C++ build tools manually
+# Or install Python 3.12 or later and the Visual Studio C++ build tools manually
 winget install -e --id Python.Python.3.13
 winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
@@ -167,7 +167,7 @@ winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--quie
 Then in a new PowerShell:
 
 ```powershell
-py -3.13 -m venv fenicsx-env
+py -3 -m venv fenicsx-env
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned -Force
 fenicsx-env\Scripts\Activate.ps1
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" impi-rt
