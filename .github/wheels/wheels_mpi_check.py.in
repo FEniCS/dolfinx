@@ -2,6 +2,33 @@
 
 import sys
 
+
+def _loaded_mpi_paths():
+    import ctypes
+    import re
+
+    if sys.platform == "win32":
+        kernel32 = ctypes.WinDLL("kernel32")
+        kernel32.GetModuleHandleW.restype = ctypes.c_void_p
+        kernel32.GetModuleFileNameW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p, ctypes.c_uint32]
+        paths = []
+        for name in ("impi.dll", "msmpi.dll"):
+            if handle := kernel32.GetModuleHandleW(name):
+                buffer = ctypes.create_unicode_buffer(32768)
+                kernel32.GetModuleFileNameW(handle, buffer, len(buffer))
+                paths.append(buffer.value)
+        return paths
+    if sys.platform == "darwin":
+        dyld = ctypes.CDLL(None)
+        dyld._dyld_get_image_name.restype = ctypes.c_char_p
+        dyld._dyld_get_image_name.argtypes = [ctypes.c_uint32]
+        images = [dyld._dyld_get_image_name(i).decode() for i in range(dyld._dyld_image_count())]
+    else:
+        with open("/proc/self/maps") as maps:
+            images = [line.split()[-1] for line in maps]
+    return sorted({p for p in images if re.search(r"/libmpi\.(so|[0-9]+\.dylib)", p)})
+
+
 _mpi_name, _mpi_file, _mpi_package = {
     "darwin": ("Open MPI", "libmpi.40.dylib", "openmpi"),
     "win32": ("Intel MPI", "impi.dll", "impi-rt"),
@@ -17,9 +44,16 @@ if (
     or ("Open MPI" in _mpi_library) != (sys.platform == "darwin")
     or (sys.platform == "win32" and "Intel" not in _mpi_library)
 ):
-    _mpi_found = _mpi_library.splitlines()[0].split(",")[0] if _mpi_library else "no MPI library"
+    _mpi_found = "no MPI library"
+    if _mpi_library:
+        _mpi_found = " ".join(_mpi_library.splitlines()[0].split(",")[0].split())
+        try:
+            if _mpi_paths := _loaded_mpi_paths():
+                _mpi_found += f" ({', '.join(_mpi_paths)})"
+        except Exception:
+            pass
     raise ImportError(
         f"DOLFINx wheels need {_mpi_name} ({_mpi_file}), e.g. pip install {_mpi_package}. "
         f"mpi4py loaded: {_mpi_found}"
     )
-del _MPI, _mpi_name, _mpi_file, _mpi_package, _mpi_library
+del _loaded_mpi_paths, _MPI, _mpi_name, _mpi_file, _mpi_package, _mpi_library
