@@ -317,19 +317,24 @@ Conda-forge bots typically pickup new releases automatically. Can also contact
 
 ### Spack
 
-Create a branch on
-[FEniCS/fenics-spack](https://github.com/FEniCS/fenics-spack). Copy across the
-upstream `fenics_*` recipes from
-[spack/spack-packages](https://github.com/spack/spack-packages). Make
-appropriate updates for the latest releases and `main` branch and ensure the CI
-passes.
+The FEniCS overlay [FEniCS/spack-fenics](https://github.com/FEniCS/spack-fenics)
+should differ from upstream
+[spack/spack-packages](https://github.com/spack/spack-packages) `develop` only
+by fixes not yet merged upstream. An LLM is a good help with steps 1 and 2.
 
-Once the CI passes, update the Spack upstream `fenics_*` recipes on the fork
-[FEniCS/spack-packages](https://github.com/FEniCS/spack-packages) using a
-branch per component e.g. `<username>/dolfinx-<version>`. Create a pull request
-to the Spack mainline repository for each FEniCS component, along with any
-required dependencies. If PRs are slow to merge ask in Slack Spack
-`#pull-requests`.
+1. Diff each overlay package against its `builtin` copy on upstream `develop`,
+   using both histories to see which side changed each hunk.
+
+2. In a spack-fenics PR, take upstream's newer changes and cosmetic choices,
+   restore any fix either side lost, keep overlay fixes, and add the new
+   versions. The CI must pass before and after.
+
+3. Upstream each remaining fix and new version from a personal fork of
+   spack/spack-packages, one PR per package, e.g. branch
+   `<username>/fenics-dolfinx-0.5.0`. Link the passing spack-fenics CI. If PRs
+   are slow to merge ask in Slack Spack `#pull-requests`.
+
+4. Once upstream PRs merge, drop the matching changes from the overlay.
 
 ### Easybuild/EESSI
 
