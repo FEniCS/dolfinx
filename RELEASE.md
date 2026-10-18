@@ -54,9 +54,15 @@ before starting a step that depends on it.
 Before choosing version numbers, compare `main` with each component's previous
 release tag, e.g. `v0.11.0`. The result decides the release. If nothing below
 was removed or changed incompatibly, make a patch release, e.g. `v0.11.1`,
-rather than a new minor version. Additions are fine. `ufcx.h` follows the same
-rule for its own version. For a patch release of fixes cherry-picked onto
-`release`, compare `release` with the previous tag in the series.
+rather than a new minor version. Additions are fine. For a patch release of
+fixes cherry-picked onto `release`, compare `release` with the previous tag in
+the series.
+
+ufcx and FFCx have separate version numbers that move forward independently.
+FFCx's version, in its `pyproject.toml`, follows the checks for FFCx. The ufcx
+version, in `cmake/CMakeLists.txt` and the `ufcx.h` macros, follows the
+`ufcx.h` ABI alone, and changes more slowly. For example, FFCx `0.12.0` can
+ship ufcx `0.11.0`. DOLFINx requests the ufcx version, not the FFCx one.
 
 | Component | Interface | Check |
 | --- | --- | --- |
@@ -88,7 +94,8 @@ rule for its own version. For a patch release of fixes cherry-picked onto
 At the current phase of development (<1.0), Basix, FFCx and DOLFINx get a new
 minor version `0.+1.0` only if [ABI checks](#abi-checks) found an incompatible
 change, and a patch version `0.0.+1` otherwise. Each component is decided
-separately, e.g. Basix `0.11.1` alongside DOLFINx `0.12.0`.
+separately, e.g. Basix `0.11.1` alongside DOLFINx `0.12.0`. ufcx is versioned
+apart from FFCx in the same way, see [ABI checks](#abi-checks).
 
 UFL uses year-based numbering and releases are made by both FEniCS and
 Firedrake teams. The version number should be bumped as follows:
