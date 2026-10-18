@@ -92,13 +92,22 @@ obvious errors, and commit and push.
 
 ### ABI checks
 
-Basix and DOLFINx libraries have `SOVERSION` `major.minor`, so a patch release
-must keep their ABI. `ufcx.h` changes more slowly than FFCx, and is moving
-towards its own version, bumped only when its ABI changes. Check both with
-libabigail's `abidiff`, e.g. in a Fedora container.
+A patch release must not change any interface below. A minor release may, but
+`ufcx.h` changes more slowly than FFCx and is moving towards its own version,
+bumped only when its ABI changes.
 
-`ufcx.h` is header-only, so compile it into a small library that keeps all its
-types in the debug information:
+| Component | Interface | Check |
+| --- | --- | --- |
+| UFL | Python API | griffe |
+| Basix | `libbasix` ABI, Python API, element definitions | `abidiff`, griffe, element comparison |
+| FFCx | `ufcx.h` ABI, Python API | `abidiff`, griffe |
+| DOLFINx | `libdolfinx` ABI and headers, Python API, file formats | `abidiff`, old demos against the new library, griffe |
+
+#### C and C++ ABI
+
+Use libabigail's `abidiff`, e.g. in a Fedora container. `ufcx.h` is
+header-only, so compile it into a small library that keeps all its types in
+the debug information:
 
     mkdir old new
     git show v0.11.0:ffcx/codegeneration/ufcx.h > old/ufcx.h
@@ -116,11 +125,70 @@ Exit status `0` means no ABI change. Otherwise `abidiff` lists the changed
 types, and `12` means an incompatible change. The SHA1 signature of `ufcx.h` is
 no substitute, since it changes with the version macros on every release.
 
-For a Basix or DOLFINx patch release, build the previous and new tags with
+For Basix and DOLFINx, build the previous and new tags with
 `-DCMAKE_BUILD_TYPE=RelWithDebInfo` and compare the installed libraries, e.g.
 `abidiff --headers-dir1 old/include --headers-dir2 new/include
 old/lib/libbasix.so new/lib/libbasix.so`. The headers options limit the report
-to the public API.
+to the public API. Most of DOLFINx is templates in its headers, which
+`abidiff` does not see, so also build the previous release's C++ demos against
+the old install and run them against the new `libdolfinx` without rebuilding.
+
+#### Python API
+
+From each repository at the new tag, compare with the previous release using
+[griffe](https://mkdocstrings.github.io/griffe/):
+
+    uvx griffe check ufl --search . --against 2026.3.0
+    uvx griffe check ffcx --search . --against v0.12.0
+    uvx griffe check basix --search python --against v0.12.0
+    uvx griffe check dolfinx --search python --against v0.12.0
+
+griffe lists removed objects and changed signatures, and exits non-zero if it
+finds any. Additions are not reported. It reads Python source and stub files,
+not the compiled modules `_basixcpp` and `dolfinx.cpp`.
+
+#### Basix elements
+
+FFCx bakes Basix's tabulated values into generated kernels, and its JIT cache
+key does not include the Basix version. A Basix patch release that changes an
+element would leave cached kernels silently using the old values. Compare every
+element's hash and tabulated values, since the hash alone can miss changes:
+
+    cat > element_hashes.py <<'EOF'
+    import hashlib
+    import itertools
+
+    import numpy as np
+
+    import basix
+
+    for family, cell, degree in itertools.product(
+        basix.ElementFamily, basix.CellType, range(5)
+    ):
+        try:
+            e = basix.create_element(family, cell, degree)
+            pts, _ = basix.make_quadrature(cell, 4)
+        except RuntimeError:
+            continue
+        t = np.round(e.tabulate(1, pts), 10)
+        sha = hashlib.sha1(t.tobytes()).hexdigest()[:12]
+        print(family.name, cell.name, degree, e.hash(), sha)
+    EOF
+    python3 -m venv old new
+    old/bin/pip install -q fenics-basix==0.12.0 numpy
+    new/bin/pip install -q numpy \
+        "fenics-basix @ git+https://github.com/FEniCS/basix.git@v0.12.1"
+    old/bin/python element_hashes.py > old.txt
+    new/bin/python element_hashes.py > new.txt
+    diff old.txt new.txt
+
+Any output means an element changed.
+
+#### Build environment
+
+Within a release series, build the wheels with the same nanobind version,
+since `dolfinx.cpp` takes Basix's nanobind objects directly. Do not change the
+MPI implementation, the manylinux image or the `cp312-abi3` tag either.
 
 ### UFL version bump
 
@@ -410,9 +478,8 @@ Bug fix versions e.g. `v0.12.1` are made on `release` without merging `main`:
 1. Cherry-pick the fixes from `main` onto `release`.
 2. Bump the patch version in the files listed above. Keep the dependency
    ranges, and point `fenicsx-refs.env` at the tags the patch release is meant
-   to work with. Check the ABI of patched libraries and of `ufcx.h` against the
-   previous tag in the series, see [ABI checks](#abi-checks). A patch release
-   must not change it.
+   to work with. Check against the previous tag in the series that no
+   interface in [ABI checks](#abi-checks) changed.
 3. Run the integration tests, then follow the steps from Tagging onwards. Use
    the previous tag in the series as `--notes-start-tag`, e.g. `v0.12.0`, and
    only publish the components that changed.
