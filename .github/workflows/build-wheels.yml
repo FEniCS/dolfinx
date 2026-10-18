@@ -488,7 +488,6 @@ jobs:
           name: wheelhouse-${{ matrix.os }}
           path: wheelhouse
 
-      # Each step is a new shell, so the venv is created and used in one step.
       - name: Install from the wheels and run tests (macOS)
         if: runner.os == 'macOS'
         run: |
