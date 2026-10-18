@@ -159,6 +159,7 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 Windows (x86_64), in PowerShell:
 
 ```powershell
+# Or install Python 3.13 and the Visual Studio C++ build tools manually
 winget install -e --id Python.Python.3.13
 winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
