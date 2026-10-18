@@ -12,7 +12,8 @@ release DOLFINx, Basix and FFCx `0.12.0` and UFL `2026.3.0`.
 5. Update version numbers on `main`.
 6. Make GitHub releases (not permanent).
 7. Make PyPI releases (permanent!), a few days after tagging.
-8. Update downstream packages.
+8. Announce the release.
+9. Update downstream packages.
 
 Git tags and GitHub releases can be deleted and remade. PyPI releases cannot.
 Waiting a few days before publishing to PyPI leaves time to find errors.
@@ -291,6 +292,16 @@ Finally publish to PyPI, one component at a time:
 
 The DOLFINx wheel builder is experimental and is not used in the release
 process at this time.
+
+## Announcements
+
+Once the packages are on PyPI, announce the release:
+
+- Website: open a PR to [FEniCS/web](https://github.com/FEniCS/web) updating
+  the version in `_config.yml` and the documentation links in
+  `documentation/index.md`.
+- Slack: post in the FEniCS Slack, linking the GitHub releases.
+- LinkedIn: post on the FEniCS Project page.
 
 ## Downstream packages
 
