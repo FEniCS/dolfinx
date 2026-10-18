@@ -21,6 +21,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/graphbuild.h>
+#include <dolfinx/mesh/permutationcomputation.h>
 #include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
 #include <functional>
@@ -472,6 +473,14 @@ void mesh(nb::module_& m)
             topology, std::span(entities.data(), entities.size()), d0, d1));
       },
       nb::arg("topology"), nb::arg("entities"), nb::arg("d0"), nb::arg("d1"));
+  m.def(
+      "compute_entity_permutations",
+      [](const dolfinx::mesh::Topology& topology, int dim, int num_threads)
+      {
+        return as_nbarray(dolfinx::mesh::compute_entity_permutations(
+            topology, dim, num_threads));
+      },
+      nb::arg("topology"), nb::arg("dim"), nb::arg("num_threads"));
 
   // Mesh generation
   nb::enum_<dolfinx::mesh::DiagonalType>(m, "DiagonalType")

@@ -424,7 +424,8 @@ else()
   # Check in MODULE mode (using FindUFCxPython.cmake) using Python
   # interpreter
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  find_package(UFCxPython 0.12 REQUIRED MODULE)
+  # A find module accepts any newer version, so cap at the next minor
+  find_package(UFCxPython 0.12...<0.13 REQUIRED MODULE)
 endif()
 
 set_package_properties(
