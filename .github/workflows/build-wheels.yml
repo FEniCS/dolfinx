@@ -298,6 +298,14 @@ jobs:
         shell: bash
         run: python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple/
 
+      # The vcpkg overlay ports set the SCOTCH and SuperLU_DIST versions on all platforms.
+      - name: Read SCOTCH and SuperLU_DIST versions
+        shell: bash
+        run: |
+          overlay=dolfinx/cpp/cmake/vcpkg-overlay
+          echo "SCOTCH_VERSION=$(jq -r .version $overlay/scotch/vcpkg.json)" >> "$GITHUB_ENV"
+          echo "SUPERLU_DIST_VERSION=$(jq -r .version $overlay/superlu-dist/vcpkg.json)" >> "$GITHUB_ENV"
+
       - name: Build DOLFINx wheel
         run: |
           python -m cibuildwheel --output-dir wheelhouse/ dolfinx/python
@@ -328,7 +336,7 @@ jobs:
               ./b2 -d0 --prefix=/usr/local --with-headers install) &&
             ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
             mkdir -p scotch &&
-            (for i in 1 2 3; do curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch && exit 0; sleep 10; done; exit 1) &&
+            (for i in 1 2 3; do curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v${{ env.SCOTCH_VERSION }}/scotch-v${{ env.SCOTCH_VERSION }}.tar.bz2 | tar -xj --strip-components=1 -C scotch && exit 0; sleep 10; done; exit 1) &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
@@ -337,7 +345,7 @@ jobs:
               -DINSTALL_METIS_HEADERS=ON &&
             cmake --build scotch-build-dir/ &&
             cmake --install scotch-build-dir/ &&
-            git clone --branch v9.2.1 --single-branch https://github.com/xiaoyeli/superlu_dist.git &&
+            git clone --branch v${{ env.SUPERLU_DIST_VERSION }} --single-branch https://github.com/xiaoyeli/superlu_dist.git &&
             cmake -G Ninja -S superlu_dist/ -B superlu_dist-build-dir/ \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
@@ -365,7 +373,7 @@ jobs:
           CIBW_BEFORE_BUILD_MACOS: >
             brew install boost hdf5-mpi ninja open-mpi openblas pkgconf pugixml spdlog &&
             mkdir -p scotch &&
-            (for i in 1 2 3; do curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch && exit 0; sleep 10; done; exit 1) &&
+            (for i in 1 2 3; do curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v${{ env.SCOTCH_VERSION }}/scotch-v${{ env.SCOTCH_VERSION }}.tar.bz2 | tar -xj --strip-components=1 -C scotch && exit 0; sleep 10; done; exit 1) &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
@@ -374,7 +382,7 @@ jobs:
               -DINSTALL_METIS_HEADERS=ON &&
             cmake --build scotch-build-dir/ &&
             sudo cmake --install scotch-build-dir/ &&
-            git clone --branch v9.2.1 --single-branch https://github.com/xiaoyeli/superlu_dist.git &&
+            git clone --branch v${{ env.SUPERLU_DIST_VERSION }} --single-branch https://github.com/xiaoyeli/superlu_dist.git &&
             cmake -G Ninja -S superlu_dist/ -B superlu_dist-build-dir/ \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
