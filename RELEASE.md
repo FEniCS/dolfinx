@@ -1,28 +1,39 @@
 # FEniCSx release guide
 
-## Prerequisites
+## Overview
 
-Check out all of the FEniCSx components on the `release` branch.
+The release proceeds bottom up: UFL, Basix, FFCx, DOLFINx. The examples below
+release DOLFINx, Basix and FFCx `0.12.0` and UFL `2026.3.0`.
+
+1. Update version numbers and dependencies on the `release` branches.
+2. Run integration tests, ensuring that the `release` branches work together.
+3. Make git tags on the tip of `release` (not permanent).
+4. Produce the documentation and Docker images.
+5. Update version numbers on `main`.
+6. Make GitHub releases (not permanent).
+7. Make PyPI releases (permanent!), a few days after tagging.
+8. Update downstream packages.
+
+Git tags and GitHub releases can be deleted and remade. PyPI releases cannot.
+Waiting a few days before publishing to PyPI leaves time to find errors.
+
+## Prerequisites
 
 Check that all CIs on `main` are running green.
 
 Check that the `main` documentation looks reasonable at
 https://docs.fenicsproject.org.
 
-The release proceeds in a bottom up manner (UFL, Basix, FFCx, DOLFINx). pypa
-packages cannot be deleted and should be made a number of days after the
-creation of git tags so that errors can be fixed. GitHub releases can have their
-version notes updated, and can be deleted and remade on new tags (not recommended).
+Check out all of the FEniCSx components on the `release` branch.
 
-The release process consists of the following steps:
+## Running workflows
 
-1. Update version numbers and dependencies on the `release` branches.
-2. Run integration tests, ensuring that the `release` branches work together.
-3. Make git tags on the tip of `release` (not permanent).
-4. Organise production of release artifacts.
-5. Update version numbers on `main`.
-6. Make GitHub releases (not permanent)
-7. PyPi releases (permanent!).
+Most steps run GitHub Actions workflows with `gh workflow run`, which prints
+the run URL. Wait for a run with
+
+    gh run watch --exit-status -R FEniCS/<repo> <run-id>
+
+before starting a step that depends on it.
 
 ## Version number bumping
 
@@ -39,118 +50,89 @@ Firedrake teams. The version number should be bumped as follows:
 3. If making a patch release, bump the patch version `0.0.+1` -- check
    compatibility through CI runs before releasing.
 
+Release dependency ranges are capped at the next minor version, e.g.
+`fenics-basix>=0.12.0,<0.13.0` and `fenics-ufl>=2026.3.0,<2026.4.0`.
+
+### Merging `main` into `release`
+
+Each component starts by merging `origin/main` into `release`, taking `main`'s
+version of every file:
+
+    git pull
+    git checkout release
+    git merge --no-commit origin/main
+    git read-tree -u --reset origin/main
+    git diff origin/main
+
 `git read-tree` also discards release-only changes that merge cleanly, e.g. a
 previous `UFCX_VERSION_IS_RELEASE true`, and removes files deleted on `main`.
 `git checkout --theirs .` does neither. After the merge `git diff origin/main`
 should be empty.
 
+After making the changes for each component, check `git diff origin/main` for
+obvious errors, then commit and push.
+
 ### UFL version bump
 
-1. Merge `origin/main` into `release`, taking `main`'s version of every file.
+1. Merge `main` into `release`.
 
-       git pull
-       git checkout release
-       git merge --no-commit origin/main
-       git read-tree -u --reset origin/main
-       git diff origin/main
-
-2. Update the version number in `pyproject.toml`, e.g. `2022.2.0`.
-
-3. Commit and push.
-
-4. Check `git diff origin/main` for obvious errors.
+2. Update the version number in `pyproject.toml`, e.g. `2026.3.0`.
 
 ### Basix version bump
 
-1. Merge `origin/main` into `release`, taking `main`'s version of every file.
+1. Merge `main` into `release`.
 
-       git pull
-       git checkout release
-       git merge --no-commit origin/main
-       git read-tree -u --reset origin/main
-       git diff origin/main
-
-2. Update version numbers in `pyproject.toml`, `python/pyproject.toml`,
-   `CMakeLists.txt` and `cpp/CMakeLists.txt`.
+2. Update the version numbers in `pyproject.toml`, `python/pyproject.toml`,
+   `CMakeLists.txt` and `cpp/CMakeLists.txt`, e.g. `0.12.0`.
 
 3. In `pyproject.toml` and `python/pyproject.toml` replace the `fenics-ufl`
-   lower bound of the `optional` extra with a range, e.g.
-   `>=2026.3.0,<2026.4.0`.
-
-4. Commit and push.
-
-5. Check `git diff origin/main` for obvious errors.
+   lower bound of the `optional` extra with a range.
 
 ### FFCx version bump
 
-1. Merge `origin/main` into `release`, taking `main`'s version of every file.
+1. Merge `main` into `release`.
 
-       git pull
-       git checkout release
-       git merge --no-commit origin/main
-       git read-tree -u --reset origin/main
-       git diff origin/main
+2. Update the version numbers in `pyproject.toml` and `cmake/CMakeLists.txt`,
+   e.g. `0.12.0`.
 
-2. Update the version number in `pyproject.toml`, e.g. `0.5.0`.
+3. In `pyproject.toml` replace the `fenics-basix` and `fenics-ufl` lower bounds
+   with ranges.
 
-3. Update the dependency versions for `fenics-basix` and `fenics-ufl` in
-   `pyproject.toml` to ranges, e.g. `>=0.5.0,<0.6.0`.
+4. Update the version number macros in `ffcx/codegeneration/ufcx.h` to match
+   and set `UFCX_VERSION_IS_RELEASE` to `true`.
 
-4. If necessary, update the version number in `cmake/CMakeLists.txt`, e.g.
-   `0.5.0`.
+### DOLFINx version bump
 
-5. Update the version number macros in `ffcx/codegeneration/ufcx.h`. Typically
-   this should match the Python version number. Remember to change the
-   `UFCX_VERSION_IS_RELEASE` to `true`.
+1. Merge `main` into `release`.
 
-6. Commit and push.
-
-7. Check `git diff origin/main` for obvious errors.
-
-### DOLFINx
-
-1. Merge `origin/main` into `release`, taking `main`'s version of every file.
-
-       git pull
-       git checkout release
-       git merge --no-commit origin/main
-       git read-tree -u --reset origin/main
-       git diff origin/main
-
-2. In `cpp/CMakeLists.txt` change the version number e.g. `0.5.0`.
+2. Update the version number in `cpp/CMakeLists.txt`, e.g. `0.12.0`.
 
 3. Check the `find_package(Basix)`, `find_package(ufcx)` and
    `find_package(UFCxPython)` calls in `cpp/CMakeLists.txt` require the
-   release's minor version, e.g. `0.5`.
+   release's minor version, e.g. `0.12`.
 
-4. In `python/pyproject.toml` update the version to e.g. `0.5.0` and update the
-   dependency versions for `fenics-basix`, `fenics-ffcx` and `fenics-ufl` to
-   ranges, e.g. `>=0.5.0,<0.6.0`.
+4. In `python/pyproject.toml` update the version, e.g. `0.12.0`, and replace
+   the `fenics-basix`, `fenics-ffcx` and `fenics-ufl` lower bounds with ranges.
 
-5. In `CITATION.cff` update the version number `version: 0.5.0` and the release
-   date `date-released: 2022-03-14`.
+5. In `CITATION.cff` update `version` and `date-released`.
 
-6. In `.github/ISSUE_TEMPLATE/bug_report.yml` add a new option to the version
-   numbers.
+6. In `.github/ISSUE_TEMPLATE/bug_report.yml` add the new version to the
+   options.
 
 7. In `python/doc/source/release_notes.md` remove `(draft)` from the heading,
    fill in the number of merged pull requests and contributors, and point the
-   full diff link at the new tag, e.g. `compare/v0.4.0...v0.5.0`.
-
-8. Commit and push.
-
-9. Check `git diff origin/main` for obvious errors.
+   full diff link at the new tag, e.g. `compare/v0.11.0...v0.12.0`.
 
 ## Integration testing
 
 Although lengthy, integration testing is highly effective at discovering issues
 and mistakes before they reach tagged versions.
 
-First, update `.github/workflows/fenicsx-refs.env` in every repository to point
-at the `release` branches.
+In every repository, point the refs in `.github/workflows/fenicsx-refs.env` on
+`release` at the `release` branches, then commit and push.
 
-Pushes to `release` do not run CI. Once every `release` branch is updated,
-run the integration tests on `release` with:
+Pushes to `release` do not run CI. Once every `release` branch is updated, run
+the integration tests on `release` with:
 
     gh workflow run fenicsx-tests.yml -R FEniCS/ufl --ref release
     gh workflow run ffcx.yml -R FEniCS/basix --ref release
@@ -165,25 +147,24 @@ Then list the latest run of each:
       gh run list -R FEniCS/${w%%:*} -w ${w#*:} -b release -L 1
     done
 
-Wait on a run with `gh run watch --exit-status -R FEniCS/<repo> <run-id>`.
-
 ## Tagging
 
-Make appropriate version tags e.g. `v0.12.0` in each repository in order: UFL,
-Basix, FFCx, DOLFINx. You must wait for UFL, Basix and FFCx to build and push
-documentation before making the tag for DOLFINx. UFL does not use the `v`
-prefix.
+Tag each repository in order: UFL, Basix, FFCx, DOLFINx. UFL tags have no `v`
+prefix, e.g. `2026.3.0`. The others do, e.g. `v0.12.0`.
 
-Before tagging Basix, FFCx and DOLFINx, point each dependency's ref in that
-repository's `.github/workflows/fenicsx-refs.env` on `release` at its new tag,
-e.g. `ufl_ref=2022.2.0` and `basix_ref=v0.5.0`. The Basix wheel tests install UFL
-from `ufl_ref`. If it is left at `main` they can pick up a UFL outside the
-`fenics-ufl` range.
+1. For Basix, FFCx and DOLFINx, point the refs of the components below it in
+   `.github/workflows/fenicsx-refs.env` on `release` at their new tags, e.g.
+   `ufl_ref=2026.3.0` and `basix_ref=v0.12.0`, then commit and push. The Basix
+   wheel tests install UFL from `ufl_ref`. If it is left at `main` they can pick
+   up a UFL outside the `fenics-ufl` range.
 
-    git tag v0.5.0
-    git push --tags origin
+2. Tag the tip of `release` and push the tag:
 
-Tag pushes run each component's full CI and publish its documentation.
+       git tag v0.12.0
+       git push origin v0.12.0
+
+Tag pushes run each component's full CI and publish its documentation. Wait for
+the UFL, Basix and FFCx documentation to be published before tagging DOLFINx.
 
 If things go wrong, deleting and remaking tags is allowed on the same working
 day.
@@ -192,115 +173,36 @@ day.
 
 ### Documentation
 
-Documentation should be pushed automatically to `FEniCS/docs` on the creation
-of tags. You will need to manually update the `README.md`.
+Documentation is pushed automatically to
+[FEniCS/docs](https://github.com/FEniCS/docs) when tags are created. Update
+its `README.md` by hand.
 
 ### Docker containers
 
-Image tags match the DOLFINx tag. Run each workflow from the DOLFINx tag so
-the Dockerfiles match the release. `gh workflow run` prints the run URL. Wait
-for each run with `gh run watch --exit-status -R FEniCS/dolfinx <run-id>`
-before starting the next.
+Image tags match the DOLFINx tag. Run each workflow from the DOLFINx tag so the
+Dockerfiles match the release.
 
 First create the tagged development and test environment images:
 
-    gh workflow run docker-dev-test-env.yml -R FEniCS/dolfinx --ref v0.5.0 \
-        -f tag_prefix=v0.5.0
+    gh workflow run docker-dev-test-env.yml -R FEniCS/dolfinx --ref v0.12.0 \
+        -f tag_prefix=v0.12.0
 
 Then create the tagged end-user images on top of the development image:
 
-    gh workflow run docker-end-user.yml -R FEniCS/dolfinx --ref v0.5.0 \
-        -f tag_prefix=v0.5.0 \
-        -f baseimage=docker.io/dolfinx/dev-env:v0.5.0 \
-        -f dolfinx_ref=v0.5.0 -f basix_ref=v0.5.0 \
-        -f ffcx_ref=v0.5.0 -f ufl_ref=2022.2.0
+    gh workflow run docker-end-user.yml -R FEniCS/dolfinx --ref v0.12.0 \
+        -f tag_prefix=v0.12.0 \
+        -f baseimage=docker.io/dolfinx/dev-env:v0.12.0 \
+        -f dolfinx_ref=v0.12.0 -f basix_ref=v0.12.0 \
+        -f ffcx_ref=v0.12.0 -f ufl_ref=2026.3.0
 
-The images are pushed to Docker Hub and the GitHub Container Registry.
+The images are pushed to Docker Hub and the GitHub Container Registry:
 
-    docker run -ti dolfinx/dolfinx:v0.5.0
+    docker run -ti dolfinx/dolfinx:v0.12.0
 
 Finally link `:stable` to the new images:
 
-    gh workflow run docker-update-stable.yml -R FEniCS/dolfinx --ref v0.5.0 \
-        -f end-user-tag=v0.5.0 -f dev-env-tag=v0.5.0
-
-### pypi
-
-Publishing to PyPI cannot be revoked. Wait a few days after tagging, so that
-errors found in the release can still be fixed by retagging. Publish in the
-order UFL, Basix, FFCx, since each package's dependency ranges only resolve
-once the packages below it are on PyPI. Run each workflow from its tag.
-`gh workflow run` prints the run URL. Wait for each run with
-`gh run watch --exit-status -R FEniCS/<repo> <run-id>` before starting the
-next.
-
-First build and test the wheels without publishing:
-
-    gh workflow run build-wheels.yml -R FEniCS/ufl --ref 2022.2.0 \
-        -f ufl_ref=2022.2.0
-    gh workflow run build-wheels.yml -R FEniCS/basix --ref v0.5.0 \
-        -f basix_ref=v0.5.0
-    gh workflow run build-wheels.yml -R FEniCS/ffcx --ref v0.5.0 \
-        -f ffcx_ref=v0.5.0
-
-Then publish to Test PyPI, one component at a time:
-
-    gh workflow run build-wheels.yml -R FEniCS/ufl --ref 2022.2.0 \
-        -f ufl_ref=2022.2.0 -f test_pypi_publish=true
-    gh workflow run build-wheels.yml -R FEniCS/basix --ref v0.5.0 \
-        -f basix_ref=v0.5.0 -f test_pypi_publish=true
-    gh workflow run build-wheels.yml -R FEniCS/ffcx --ref v0.5.0 \
-        -f ffcx_ref=v0.5.0 -f test_pypi_publish=true
-
-Check the Test PyPI packages install together in a clean environment:
-
-    python -m venv test-env
-    test-env/bin/pip install --index-url https://test.pypi.org/simple/ \
-        --extra-index-url https://pypi.org/simple/ \
-        fenics-ufl==2022.2.0 fenics-basix==0.5.0 fenics-ffcx==0.5.0
-
-Finally publish to PyPI, one component at a time:
-
-    gh workflow run build-wheels.yml -R FEniCS/ufl --ref 2022.2.0 \
-        -f ufl_ref=2022.2.0 -f pypi_publish=true
-    gh workflow run build-wheels.yml -R FEniCS/basix --ref v0.5.0 \
-        -f basix_ref=v0.5.0 -f pypi_publish=true
-    gh workflow run build-wheels.yml -R FEniCS/ffcx --ref v0.5.0 \
-        -f ffcx_ref=v0.5.0 -f pypi_publish=true
-
-The DOLFINx wheel builder is experimental and is not used in the release
-process at this time.
-
-### Mistakes
-
-If something doesn't work, or other issues/bugs are identified during the
-release process you can either:
-
-1. Make changes on `main` via the usual PR workflow, then `git cherry-pick` or
-   `git merge` the commit back onto `release`.
-
-2. Manually make commits on the `release` branch.
-
-If you want the same change to be reflected on `main` option 1. is preferred.
-
-If a mistake is noticed soon after making a tag then you can delete the tag and
-recreate it. It is also possible to recreate GitHub releases. However, if the 
-mistake was noticed after pypi packages are pushed you must create `*.post0` 
-tags or make a minor version bumps , as pypa is immutable.
-
-### GitHub releases
-
-Releases can be made at the following links using the appropriate tag. The
-automatic release notes should be checked. The release notes can still be
-edited after the release is finalised.
-
-https://github.com/FEniCS/basix/releases/new
-
-https://github.com/FEniCS/ufl/releases/new
-
-https://github.com/FEniCS/ffcx/releases/new
-
-https://github.com/FEniCS/dolfinx/releases/new
+    gh workflow run docker-update-stable.yml -R FEniCS/dolfinx --ref v0.12.0 \
+        -f end-user-tag=v0.12.0 -f dev-env-tag=v0.12.0
 
 ## Post-release
 
@@ -308,28 +210,80 @@ Check for any changes on `release` that should be cherry-picked back onto
 `main` via a PR. Do not cherry-pick version numbers or
 `.github/workflows/fenicsx-refs.env`, which stays at `main` on `main`.
 
-     git checkout main
-     git diff release
-     git log
-     git cherry-pick 914ae4
+    git checkout main
+    git diff release
+    git log
+    git cherry-pick 914ae4
 
 Bump the version numbers on the `main` branches of UFL, Basix, FFCx and
 DOLFINx to the next development version, in the files listed above. On `main`:
 
-- Python versions are e.g. `0.6.0.dev0` and CMake versions e.g. `0.6.0.0`.
+- Python versions are e.g. `0.13.0.dev0` and CMake versions e.g. `0.13.0.0`.
 - Dependencies on other components are lower bounds only, e.g.
-  `fenics-basix>=0.6.0.dev0` and `fenics-ufl>=2022.3.0.dev0`.
+  `fenics-basix>=0.13.0.dev0` and `fenics-ufl>=2026.4.0.dev0`.
 - In `ufcx.h` bump `UFCX_VERSION_MINOR` and set `UFCX_VERSION_IS_RELEASE` to
   `false`.
-- The DOLFINx `find_package` calls require the next minor version, e.g. `0.6`.
+- The DOLFINx `find_package` calls require the next minor version, e.g.
+  `0.13`.
 - `python/doc/source/release_notes.md` gets a new section, e.g.
-  `## v0.6.0 (draft)`.
+  `## v0.13.0 (draft)`.
 
-### Bug fix patches
+## GitHub releases
 
-Bug fix versions e.g. `v0.5.1` can be made by cherry picking commits off of
-`main` and bumping the patch version number. Remember to run the DOLFINx
-integration tests on a proposed set of tags as it is easy to make an error.
+Create a release for each tag with automatically generated notes:
+
+    gh release create 2026.3.0 -R FEniCS/ufl --verify-tag --generate-notes
+    gh release create v0.12.0 -R FEniCS/basix --verify-tag --generate-notes
+    gh release create v0.12.0 -R FEniCS/ffcx --verify-tag --generate-notes
+    gh release create v0.12.0 -R FEniCS/dolfinx --verify-tag --generate-notes
+
+Check the generated notes. They can still be edited after the release, e.g.
+with `gh release edit`.
+
+## PyPI
+
+Publish to PyPI a few days after tagging. Publish in the order UFL, Basix,
+FFCx, since each package's dependency ranges only resolve once the packages
+below it are on PyPI. Run each workflow from its tag.
+
+First build and test the wheels without publishing:
+
+    gh workflow run build-wheels.yml -R FEniCS/ufl --ref 2026.3.0 \
+        -f ufl_ref=2026.3.0
+    gh workflow run build-wheels.yml -R FEniCS/basix --ref v0.12.0 \
+        -f basix_ref=v0.12.0
+    gh workflow run build-wheels.yml -R FEniCS/ffcx --ref v0.12.0 \
+        -f ffcx_ref=v0.12.0
+
+Then publish to Test PyPI, one component at a time:
+
+    gh workflow run build-wheels.yml -R FEniCS/ufl --ref 2026.3.0 \
+        -f ufl_ref=2026.3.0 -f test_pypi_publish=true
+    gh workflow run build-wheels.yml -R FEniCS/basix --ref v0.12.0 \
+        -f basix_ref=v0.12.0 -f test_pypi_publish=true
+    gh workflow run build-wheels.yml -R FEniCS/ffcx --ref v0.12.0 \
+        -f ffcx_ref=v0.12.0 -f test_pypi_publish=true
+
+Check the Test PyPI packages install together in a clean environment:
+
+    python -m venv test-env
+    test-env/bin/pip install --index-url https://test.pypi.org/simple/ \
+        --extra-index-url https://pypi.org/simple/ \
+        fenics-ufl==2026.3.0 fenics-basix==0.12.0 fenics-ffcx==0.12.0
+
+Finally publish to PyPI, one component at a time:
+
+    gh workflow run build-wheels.yml -R FEniCS/ufl --ref 2026.3.0 \
+        -f ufl_ref=2026.3.0 -f pypi_publish=true
+    gh workflow run build-wheels.yml -R FEniCS/basix --ref v0.12.0 \
+        -f basix_ref=v0.12.0 -f pypi_publish=true
+    gh workflow run build-wheels.yml -R FEniCS/ffcx --ref v0.12.0 \
+        -f ffcx_ref=v0.12.0 -f pypi_publish=true
+
+The DOLFINx wheel builder is experimental and is not used in the release
+process at this time.
+
+## Downstream packages
 
 ### Debian/Ubuntu
 
@@ -337,8 +291,8 @@ Contact Drew Parsons.
 
 ### conda-forge
 
-Conda-forge bots typically pickup new releases automatically. Can also contact
-@minrk.
+Conda-forge bots typically pick up new releases automatically. Can also
+contact @minrk.
 
 ### Spack
 
@@ -356,11 +310,34 @@ by fixes not yet merged upstream. An agentic LLM can do all of the steps.
 
 3. Upstream each remaining fix and new version from a personal fork of
    spack/spack-packages, one PR per package, e.g. branch
-   `<username>/fenics-dolfinx-0.5.0`. Link the passing spack-fenics CI. If PRs
+   `<username>/fenics-dolfinx-0.12.0`. Link the passing spack-fenics CI. If PRs
    are slow to merge ask in Slack Spack `#pull-requests`.
 
 4. Once upstream PRs merge, drop the matching changes from the overlay.
 
-### Easybuild/EESSI
+### EasyBuild/EESSI
 
 Contact Jack Hale.
+
+## Mistakes
+
+If something doesn't work, or other issues/bugs are identified during the
+release process you can either:
+
+1. Make changes on `main` via the usual PR workflow, then `git cherry-pick` or
+   `git merge` the commit back onto `release`.
+
+2. Manually make commits on the `release` branch.
+
+If you want the same change to be reflected on `main` option 1. is preferred.
+
+A tag can be deleted and recreated on the same working day, and a GitHub
+release can be recreated. Once packages are on PyPI, fix mistakes with a
+`.post0` tag or a patch release instead.
+
+## Bug fix patches
+
+Bug fix versions e.g. `v0.12.1` can be made by cherry picking commits off of
+`main` and bumping the patch version number. Follow the steps above from the
+version bump onwards, including the integration tests, as it is easy to make
+an error.
