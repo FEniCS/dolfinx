@@ -55,9 +55,10 @@ Compare each component with the previous release before choosing version
 numbers, since the results decide them. A patch release must not change any
 interface below. A minor release may, but `ufcx.h` changes more slowly than
 FFCx and is moving towards its own version, bumped only when its ABI changes.
-Run the checks on `main`, or on `release` for a patch release. The examples
-compare with the previous release, e.g. `v0.11.0`. For a patch release compare
-with the previous tag in the series, e.g. `v0.12.0`.
+Compare `main` with the previous release's tag, e.g. `v0.11.0`, after
+`git fetch --tags`. For a patch release, compare `release`, with its
+cherry-picked fixes, against the previous tag in the series, e.g. `v0.12.0`,
+and use `release` wherever the commands below use `main`.
 
 | Component | Interface | Check |
 | --- | --- | --- |
@@ -74,7 +75,7 @@ the debug information:
 
     mkdir old new
     git show v0.11.0:ffcx/codegeneration/ufcx.h > old/ufcx.h
-    cp ffcx/codegeneration/ufcx.h new/ufcx.h
+    git show origin/main:ffcx/codegeneration/ufcx.h > new/ufcx.h
     podman run --rm -v "$PWD":/w:Z -w /w docker.io/library/fedora bash -c '
       dnf -y -q install gcc libabigail >/dev/null 2>&1 &&
       for d in old new; do
@@ -88,7 +89,7 @@ Exit status `0` means no ABI change. Otherwise `abidiff` lists the changed
 types, and `12` means an incompatible change. The SHA1 signature of `ufcx.h` is
 no substitute, since it changes with the version macros on every release.
 
-For Basix and DOLFINx, build the previous tag and the new code with
+For Basix and DOLFINx, build the previous tag and `origin/main` with
 `-DCMAKE_BUILD_TYPE=RelWithDebInfo` and compare the installed libraries, e.g.
 `abidiff --headers-dir1 old/include --headers-dir2 new/include
 old/lib/libbasix.so new/lib/libbasix.so`. The headers options limit the report
@@ -98,13 +99,13 @@ the old install and run them against the new `libdolfinx` without rebuilding.
 
 ### Python API
 
-In each repository, compare with the previous release using
+In each repository, compare `main` with the previous release using
 [griffe](https://mkdocstrings.github.io/griffe/):
 
-    uvx griffe check ufl --search . --against 2026.2.0
-    uvx griffe check ffcx --search . --against v0.11.0
-    uvx griffe check basix --search python --against v0.11.0
-    uvx griffe check dolfinx --search python --against v0.11.0
+    uvx griffe check ufl --search . -b origin/main -a 2026.2.0
+    uvx griffe check ffcx --search . -b origin/main -a v0.11.0
+    uvx griffe check basix --search python -b origin/main -a v0.11.0
+    uvx griffe check dolfinx --search python -b origin/main -a v0.11.0
 
 griffe lists removed objects and changed signatures, and exits non-zero if it
 finds any. Additions are not reported. It reads Python source and stub files,
