@@ -127,7 +127,7 @@ obvious errors, and commit and push.
 
 3. Check the `find_package(Basix)`, `find_package(ufcx)` and
    `find_package(UFCxPython)` calls in `cpp/CMakeLists.txt` require the
-   release's minor version, e.g. `0.12`.
+   release's minor version, e.g. `0.12`, or `0.12...<0.13` for `UFCxPython`.
 
 4. In `python/pyproject.toml` update the version, e.g. `0.12.0`, and replace
    the `fenics-basix`, `fenics-ffcx` and `fenics-ufl` lower bounds with ranges.
@@ -230,10 +230,11 @@ DOLFINx to the next development version via PRs, in the files listed above. On
 - In `ufcx.h` bump `UFCX_VERSION_MINOR` and set `UFCX_VERSION_IS_RELEASE` to
   `false`.
 - The DOLFINx `find_package` calls require the next minor version, e.g.
-  `0.13`. Basix only satisfies requests for its own minor version, so once Basix
-  `main` is bumped DOLFINx `main` no longer configures. Make the Basix and
-  DOLFINx bumps paired PRs, each pointing `fenicsx-refs.env` at the other's
-  branch, and merge them together.
+  `0.13`, or `0.13...<0.14` for `UFCxPython`. Basix and ufcx only satisfy
+  requests for their own minor version, so once Basix or FFCx `main` is bumped
+  DOLFINx `main` no longer configures. Make the Basix, FFCx and DOLFINx bumps
+  paired PRs, each pointing `fenicsx-refs.env` at the others' branches, and
+  merge them together.
 - `python/doc/source/release_notes.md` gets a new section, e.g.
   `## v0.13.0 (draft)`.
 
