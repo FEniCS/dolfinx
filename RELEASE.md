@@ -279,8 +279,8 @@ component that made a patch release keeps its development version, e.g.
   for its own minor version, so once Basix `main` is bumped DOLFINx `main` no
   longer configures. Make the Basix and DOLFINx bumps paired PRs, each pointing
   `fenicsx-refs.env` at the other's branch, and merge them together. After a
-  Basix patch release, neither changes. An FFCx PR that bumps the ufcx version needs
-  a paired DOLFINx PR updating `find_package(ufcx)` and
+  Basix patch release, neither changes. An FFCx PR that bumps the ufcx version
+  needs a paired DOLFINx PR updating `find_package(ufcx)` and
   `find_package(UFCxPython)` in the same way.
 - `python/doc/source/release_notes.md` gets a new section, e.g.
   `## v0.13.0 (draft)`.
