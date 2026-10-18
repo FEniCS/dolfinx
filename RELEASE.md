@@ -65,6 +65,11 @@ Firedrake teams. The version number should be bumped as follows:
 Release dependency ranges are capped at the next minor version, e.g.
 `fenics-basix>=0.12.0,<0.13.0` and `fenics-ufl>=2026.3.0,<2026.4.0`.
 
+CMake versions cannot carry `.dev0`. On `main` they have a fourth component
+instead, e.g. `0.12.0.0` for Python `0.12.0.dev0`, which the release drops: both
+become `0.12.0`. `UFCX_VERSION` in `ufcx.h` follows the same rule through
+`UFCX_VERSION_IS_RELEASE`.
+
 ### Merging `main` into `release`
 
 Each component starts by merging `origin/main` into `release`, taking `main`'s
