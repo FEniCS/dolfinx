@@ -320,7 +320,7 @@ Conda-forge bots typically pickup new releases automatically. Can also contact
 The FEniCS overlay [FEniCS/spack-fenics](https://github.com/FEniCS/spack-fenics)
 should differ from upstream
 [spack/spack-packages](https://github.com/spack/spack-packages) `develop` only
-by fixes not yet merged upstream. An LLM is a good help with steps 1 and 2.
+by fixes not yet merged upstream. An agentic LLM can do all of the steps.
 
 1. Diff each overlay package against its `builtin` copy on upstream `develop`,
    using both histories to see which side changed each hunk.
