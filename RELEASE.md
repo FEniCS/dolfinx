@@ -56,6 +56,13 @@ tag, e.g. `v0.11.0`. For a patch release, compare `release` with the previous
 tag in the series. A patch release must not change any of the following, and
 `ufcx.h` only gets a new minor version if its ABI changed.
 
+| Component | Interface | Check |
+| --- | --- | --- |
+| UFL | Python API | griffe |
+| Basix | `libbasix` ABI, Python API, element definitions | `abidiff`, griffe, element comparison |
+| FFCx | `ufcx.h` ABI, Python API | `abidiff`, griffe |
+| DOLFINx | `libdolfinx` ABI and headers, Python API, file formats | `abidiff`, old demos against the new library, griffe |
+
 - `ufcx.h`: compile the old and new header into small shared libraries with
   `-g -fno-eliminate-unused-debug-types` and compare them with libabigail's
   `abidiff --non-reachable-types`. Exit status `0` means no change.
