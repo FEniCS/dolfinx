@@ -232,13 +232,22 @@ DOLFINx to the next development version, in the files listed above. On `main`:
 
 Create a release for each tag with automatically generated notes:
 
-    gh release create 2026.3.0 -R FEniCS/ufl --verify-tag --generate-notes
-    gh release create v0.12.0 -R FEniCS/basix --verify-tag --generate-notes
-    gh release create v0.12.0 -R FEniCS/ffcx --verify-tag --generate-notes
-    gh release create v0.12.0 -R FEniCS/dolfinx --verify-tag --generate-notes
+    gh release create 2026.3.0 -R FEniCS/ufl --verify-tag --generate-notes \
+        --notes-start-tag 2026.2.0
+    gh release create v0.12.0 -R FEniCS/basix --verify-tag --generate-notes \
+        --notes-start-tag v0.11.0
+    gh release create v0.12.0 -R FEniCS/ffcx --verify-tag --generate-notes \
+        --notes-start-tag v0.11.0
+    gh release create v0.12.0 -R FEniCS/dolfinx --verify-tag --generate-notes \
+        --notes-start-tag v0.11.0
 
-Check the generated notes. They can still be edited after the release, e.g.
-with `gh release edit`.
+Always pass `--notes-start-tag`. Release tags are on `release`, not `main`, so
+GitHub's automatic choice can be far older than the previous release. For
+Basix, FFCx and DOLFINx start from the previous minor's `.0` tag, not a `.postN`
+tag. For UFL start from the previous UFL tag, even when Firedrake made it.
+
+Check the "Full Changelog" link in the generated notes. The notes can still be
+edited after the release, e.g. with `gh release edit`.
 
 ## PyPI
 
