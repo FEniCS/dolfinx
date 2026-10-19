@@ -28,9 +28,9 @@ DOLFINx can be installed from [binary packages](#binary-packages) or
 
 **Recommendations**
 
-- Most users: [conda](#conda) or [pip (beta)](#pip-beta) or , on Linux,
-  macOS and Windows. *pip does not include PETSc yet*, and conda does not
-  include PETSc on Windows.
+- Most users: [conda](#conda) or [pip (beta)](#pip-beta) on Linux,
+  macOS and Windows. *pip does not include PETSc yet*, and conda does
+  not include PETSc on Windows.
 - With PETSc: [conda](#conda) (Linux and macOS),
   [Ubuntu](#ubuntu-packages)/[Debian](#debian-packages) packages or
   [Docker](#docker-images). On Windows, install
