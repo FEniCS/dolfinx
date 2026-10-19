@@ -400,6 +400,11 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
                 SuperLUDistStructs::superlu_dist_options_t>();
             set_default_options_dist(o.get());
             o->PrintStat = NO;
+#ifdef HAVE_PARMETIS
+            // Ranks compute METIS_AT_PLUS_A separately and deadlock if
+            // the orderings differ as with Scotch's METIS emulation.
+            o->ColPerm = PARMETIS;
+#endif
             return o;
           }()),
       _gridinfo(

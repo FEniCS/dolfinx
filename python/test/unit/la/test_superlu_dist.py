@@ -246,3 +246,44 @@ def test_superlu_solver_asymmetric_blocks(dtype) -> None:
     u.scatter_forward()
 
     assert np.allclose(u.array, x_expected)
+
+
+@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
+def test_superlu_solver_default_ordering() -> None:
+    """Poisson problem with default options on a mesh large enough to need ordering.
+
+    Ranks computing different column orderings deadlock in parallel, which
+    small meshes do not expose.
+    """
+    from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 32, 32)
+    V = functionspace(mesh, ("Lagrange", 2))
+    u, v = TrialFunction(V), TestFunction(V)
+    x = SpatialCoordinate(mesh)
+    u_ex = 1 + x[0] ** 2 + 2 * x[1] ** 2
+
+    a = form(inner(grad(u), grad(v)) * dx)
+    L = form(inner(-div(grad(u_ex)), v) * dx)
+
+    u_bc = Function(V)
+    u_bc.interpolate(lambda x: 1 + x[0] ** 2 + 2 * x[1] ** 2)
+    facetdim = mesh.topology.dim - 1
+    mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
+    bdofs = locate_dofs_topological(V, facetdim, exterior_facet_indices(mesh.topology))
+    bc = dirichletbc(u_bc, bdofs)
+
+    b = assemble_vector(L)
+    apply_lifting(b.array, [a], bcs=[[bc]])
+    b.scatter_reverse(InsertMode.add)
+    bc.set(b.array)
+    A = assemble_matrix(a, bcs=[bc])
+    A.scatter_reverse()
+
+    solver = superlu_dist_solver(superlu_dist_matrix(A))
+    uh = Function(V)
+    assert solver.solve(b, uh.x) == 0
+    uh.x.scatter_forward()
+
+    error = mesh.comm.allreduce(assemble_scalar(form((u_ex - uh) ** 2 * dx)), op=MPI.SUM)
+    assert np.isclose(error, 0.0, atol=np.sqrt(np.finfo(np.float64).eps))
