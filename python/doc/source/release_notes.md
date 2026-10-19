@@ -27,6 +27,11 @@ The fix is stored on the topology, one facet at a time:
   of each cell, and {py:meth}`Topology.has_facet_orientations
   <dolfinx.mesh.Topology.has_facet_orientations>` whether they have been
   computed.
+- {py:func}`dolfinx.mesh.compute_cell_orientations` returns a consistent
+  orientation of the cells of an orientable surface without storing it, e.g.
+  to orient {py:class}`ufl.CellNormal` through a piecewise constant function.
+  {doc}`demos/demo_manifold_vorticity` uses it for the surface curl of a
+  Nédélec flux.
 
 Which cell of a facet carries the sign depends on the partitioning; the field
 does not. Lagrange and Nédélec spaces do not need the signs. The mixed

@@ -22,9 +22,10 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import basix
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import default_real_type
+from dolfinx import default_real_type, default_scalar_type, has_petsc4py
 from dolfinx.fem import (
     Constant,
     Expression,
@@ -42,7 +43,9 @@ from dolfinx.la import InsertMode, vector
 from dolfinx.mesh import (
     CellType,
     GhostMode,
+    cell_normals,
     cell_num_entities,
+    compute_cell_orientations,
     compute_midpoints,
     create_mesh,
     create_submesh,
@@ -515,19 +518,84 @@ def tangential_field(mesh, linear):
     return f, a * ufl.as_vector(t0) + b * ufl.as_vector(t1)
 
 
-def cube_surface(ghost_mode, cell_type=CellType.tetrahedron, dtype=default_real_type):
-    """The boundary of a cube, as a facet submesh.
+def ghost_by_vertex(mesh):
+    """Rebuild ``mesh`` with each cell ghosted on every rank sharing one of its vertices.
+
+    The cells keep their owner and vertex order. Ghosting by vertex
+    includes ghosts that touch the owned cells only at a vertex.
+    """
+    tdim = mesh.topology.dim
+    num_owned = mesh.topology.index_map(tdim).size_local
+    c_to_v = mesh.topology.connectivity(tdim, 0)
+    dest, offset = mesh.topology.index_map(0).index_to_dest_ranks()
+    rank = mesh.comm.rank
+    rows = []
+    for c in range(num_owned):
+        sharing = {int(r) for v in c_to_v.links(c) for r in dest[offset[v] : offset[v + 1]]}
+        rows.append([rank, *sorted(sharing - {rank})])
+    offsets = np.cumsum([0, *(len(row) for row in rows)], dtype=np.int32)
+    layout = adjacencylist(np.array([r for row in rows for r in row], dtype=np.int32), offsets)
+
+    def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
+        return layout  # Cells are passed in their current order
+
+    # create_mesh numbers the points by position over the ranks, as the
+    # node index map numbers its owned nodes
+    geometry = mesh.geometry
+    node_map = geometry.index_map()
+    dofmap = geometry.dofmaps[0][:num_owned]
+    nodes = node_map.local_to_global(dofmap.reshape(-1)).reshape(dofmap.shape)
+    cmap = geometry.cmaps[0]
+    domain = ufl.Mesh(
+        element(
+            "Lagrange",
+            mesh.topology.cell_name(),
+            cmap.degree,
+            basix.LagrangeVariant(cmap.variant),
+            shape=(geometry.dim,),
+            dtype=geometry.x.dtype,
+        )
+    )
+    return create_mesh(
+        mesh.comm,
+        nodes,
+        domain,
+        geometry.x[: node_map.size_local],
+        partitioner,
+    )
+
+
+def cube_surface(ghosted, cell_type=CellType.tetrahedron, dtype=default_real_type):
+    """The boundary of a cube.
 
     Its cells keep the vertex order of the cube's facets, so their
     normals point both inwards and outwards. They are triangles for a
-    tetrahedral and quadrilaterals for a hexahedral cube. The submesh
-    inherits the ghost cells of the cube, if any.
+    tetrahedral and quadrilaterals for a hexahedral cube. A facet
+    submesh has no ghost cells, so if ``ghosted`` it is rebuilt with
+    :func:`ghost_by_vertex`.
     """
-    cube = create_unit_cube(
-        MPI.COMM_WORLD, 3, 3, 3, cell_type=cell_type, ghost_mode=ghost_mode, dtype=dtype
-    )
+    cube = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, cell_type=cell_type, dtype=dtype)
     cube.topology.create_connectivity(2, 3)
-    return create_submesh(cube, 2, exterior_facet_indices(cube.topology))[0]
+    surface = create_submesh(cube, 2, exterior_facet_indices(cube.topology))[0]
+    if not ghosted:
+        return surface
+    surface = ghost_by_vertex(surface)
+    num_ghosts = surface.comm.allreduce(surface.topology.index_map(2).num_ghosts)
+    assert surface.comm.size == 1 or num_ghosts > 0
+    return surface
+
+
+def outward_orientations(surface):
+    """The outward orientation of each owned and ghost cell of ``cube_surface``.
+
+    ``1`` if the normal given by the cell's vertex order points out of
+    the cube, ``-1`` otherwise.
+    """
+    cell_map = surface.topology.index_map(2)
+    cells = np.arange(cell_map.size_local + cell_map.num_ghosts, dtype=np.int32)
+    normals = cell_normals(surface, 2, cells).reshape(-1, 3)
+    radial = compute_midpoints(surface, 2, cells) - 0.5
+    return np.where(np.einsum("ci,ci->c", normals, radial) > 0, 1, -1).astype(np.int8)
 
 
 def mobius_mesh(n, m, dtype=default_real_type, ghost_mode=GhostMode.none):
@@ -672,7 +740,7 @@ def test_interpolate_discontinuous_rt_on_mixed_cell_orientations(degree, linear)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("ghosted", [False, True])
 @pytest.mark.parametrize(
     "cell_type, family, degree",
     [
@@ -684,7 +752,7 @@ def test_interpolate_discontinuous_rt_on_mixed_cell_orientations(degree, linear)
         (CellType.hexahedron, "BDMCF", 1),
     ],
 )
-def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost_mode, dtype):
+def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghosted, dtype):
     """``int div(phi) dx = 0`` on a closed surface, for every basis function.
 
     Equivalently ``int div(w) dx = 0`` for any conforming ``w``. The flux
@@ -695,7 +763,7 @@ def test_divergence_theorem_on_a_closed_surface(cell_type, family, degree, ghost
     hexahedral cube has quadrilateral cells, which run their edges in
     other directions than triangles.
     """
-    surface = cube_surface(ghost_mode, cell_type, dtype)
+    surface = cube_surface(ghosted, cell_type, dtype)
     surface.topology.create_facet_orientations()
 
     # The facets of the submesh are not consistently ordered, so plenty
@@ -723,9 +791,9 @@ CELL_EDGES = {
 EDGE_RUNS_FORWARD = [True, False, True, False]
 
 
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("ghosted", [False, True])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
-def test_facet_orientations_follow_the_vertex_orders(cell_type, ghost_mode):
+def test_facet_orientations_follow_the_vertex_orders(cell_type, ghosted):
     """The signs are recomputed from the vertex orders, independently.
 
     A facet is signed on the cell with the larger global index exactly
@@ -733,7 +801,7 @@ def test_facet_orientations_follow_the_vertex_orders(cell_type, ghost_mode):
     every facet whose two cells this rank holds. Ghost cells must carry
     the signs of their owner, which is checked by sending the owner's.
     """
-    surface = cube_surface(ghost_mode, cell_type)
+    surface = cube_surface(ghosted, cell_type)
     surface.topology.create_facet_orientations()
     topology = surface.topology
     signs = topology.facet_orientations()
@@ -921,3 +989,205 @@ def test_facet_orientations_need_a_surface():
     mesh.topology.create_cell_permutations()
     with pytest.raises(ValueError, match="surface mesh"):
         mesh.topology.facet_orientations()
+
+
+@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+@pytest.mark.parametrize("ghosted", [False, True])
+def test_compute_cell_orientations_agree_with_the_outward_normal(ghosted, cell_type):
+    """The orientation is the outward one or its opposite, and is not stored.
+
+    It comes from the vertex orders alone, so it is fixed only up to one
+    sign per connected surface, which has to be the same on every rank,
+    ghost cells included. The cell with global index 0 gets ``1``.
+    """
+    surface = cube_surface(ghosted, cell_type)
+    orientations = compute_cell_orientations(surface.topology)
+    cell_map = surface.topology.index_map(2)
+    assert orientations.dtype == np.int8
+    assert orientations.shape == (cell_map.size_local + cell_map.num_ghosts,)
+    assert not surface.topology.has_facet_orientations()
+
+    outward = outward_orientations(surface) * orientations > 0
+    comm = surface.comm
+    all_outward = comm.allreduce(bool(np.all(outward)), op=MPI.LAND)
+    all_inward = comm.allreduce(not bool(np.any(outward)), op=MPI.LAND)
+    assert all_outward or all_inward
+    assert comm.allreduce(bool(np.any(orientations < 0)), op=MPI.LOR)
+    first = cell_map.local_range[0] == 0 and cell_map.size_local > 0
+    assert comm.allreduce(not first or orientations[0] == 1, op=MPI.LAND)
+
+
+def test_compute_cell_orientations_undo_mixed_vertex_orders():
+    """The cells that ``plane_mesh`` reverses get the opposite sign to the others."""
+    mesh = plane_mesh(2, 3, mixed_orientation=True, orient=False)
+    orientations = compute_cell_orientations(mesh.topology)
+    num_owned = mesh.topology.index_map(2).size_local
+    even = np.asarray(mesh.topology.original_cell_index[:num_owned]) % 2 == 0
+    flipped = orientations[:num_owned] < 0
+    comm = mesh.comm
+    even_flipped = comm.allreduce(bool(np.all(flipped == even)), op=MPI.LAND)
+    odd_flipped = comm.allreduce(bool(np.all(flipped != even)), op=MPI.LAND)
+    assert even_flipped or odd_flipped
+
+
+@pytest.mark.parametrize("ghosted", [False, True])
+def test_compute_cell_orientations_vertex_contact(ghosted):
+    """Cells meeting only at a vertex are oriented independently.
+
+    The two triangles lie in one plane with opposite vertex orders, but
+    share no edge, so each is a surface of its own and gets ``1``.
+    """
+    if MPI.COMM_WORLD.rank == 0:
+        x = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [-1, 0, 0], [0, -1, 0]])
+        cells = np.array([[0, 1, 2], [0, 4, 3]], dtype=np.int64)
+    else:
+        x = np.zeros((0, 3))
+        cells = np.zeros((0, 3), dtype=np.int64)
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(3,), dtype=default_real_type))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x.astype(default_real_type))
+    if ghosted:
+        mesh = ghost_by_vertex(mesh)
+    orientations = compute_cell_orientations(mesh.topology)
+    assert mesh.comm.allreduce(bool(np.all(orientations == 1)), op=MPI.LAND)
+
+
+@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+def test_oriented_cell_normal(cell_type):
+    """The documented recipe gives a cell normal pointing to one side.
+
+    The orientations are in local cell order and the degrees-of-freedom
+    of a DG0 space are not, so they are placed through its dofmap.
+    """
+    surface = cube_surface(True, cell_type)
+    orientations = compute_cell_orientations(surface.topology)
+    Q = functionspace(surface, ("DG", 0))
+    o = Function(Q, dtype=default_real_type)
+    o.x.array[Q.dofmap.list[:, 0]] = orientations
+    n = o * ufl.CellNormal(surface)
+
+    x = ufl.SpatialCoordinate(surface)
+    centre = ufl.as_vector([0.5, 0.5, 0.5])
+    midpoint = basix.geometry(surface.basix_cell()).mean(axis=0, keepdims=True)
+    expr = Expression(ufl.dot(n, x - centre), midpoint, dtype=default_real_type)
+    cell_map = surface.topology.index_map(2)
+    cells = np.arange(cell_map.size_local + cell_map.num_ghosts, dtype=np.int32)
+    outward = expr.eval(surface, cells).ravel() > 0
+    comm = surface.comm
+    all_outward = comm.allreduce(bool(np.all(outward)), op=MPI.LAND)
+    all_inward = comm.allreduce(not bool(np.any(outward)), op=MPI.LAND)
+    assert all_outward or all_inward
+
+
+def refusals(mesh):
+    """The error ``compute_cell_orientations`` raised on each rank, or None."""
+    try:
+        compute_cell_orientations(mesh.topology)
+        error = None
+    except Exception as e:
+        error = f"{type(e).__name__}: {e}"
+    return mesh.comm.allgather(error)
+
+
+@pytest.mark.parametrize("ghosted", [False, True])
+def test_compute_cell_orientations_refuse_a_moebius_strip(ghosted):
+    mesh = mobius_mesh(24, 4)
+    errors = refusals(ghost_by_vertex(mesh) if ghosted else mesh)
+    assert all(e is not None and e.startswith("RuntimeError") for e in errors), errors
+    assert all("not orientable" in e for e in errors), errors
+
+
+@pytest.mark.parametrize("ghosted", [True, False])
+@pytest.mark.parametrize("dests", [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 2)])
+def test_compute_cell_orientations_refuse_a_t_joint(dests, ghosted):
+    """Every rank raises, as the error is reduced over ranks in all builds."""
+    errors = refusals(t_joint_mesh(dests, ghosted))
+    assert all(e is not None and e.startswith("RuntimeError") for e in errors), errors
+    assert all("more than two cells" in e for e in errors), errors
+
+
+def test_compute_cell_orientations_need_a_surface():
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    with pytest.raises(ValueError, match="surface mesh"):
+        compute_cell_orientations(mesh.topology)
+
+
+def solve_mixed_poisson(mesh, family, Q, orientations=None):
+    """Solve ``div(grad(u)) = f``, ``u = 0`` on the boundary, in mixed form.
+
+    With ``RT``, sigma approximates ``grad(u)``. With ``N1curl`` it is
+    that flux rotated by 90 degrees in the tangent plane, ``sigma_RT =
+    n x sigma``, so ``div(sigma_RT) = -rot(sigma)`` with ``rot(w) = n .
+    curl(w)``, which needs the consistently oriented normal ``n``.
+    """
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import LinearProblem
+
+    V = functionspace(mesh, element(family, "triangle", 1, dtype=default_real_type))
+    W = ufl.MixedFunctionSpace(V, Q)
+    sigma, u = ufl.TrialFunctions(W)
+    tau, v = ufl.TestFunctions(W)
+    x = ufl.SpatialCoordinate(mesh)
+    f = x[0] * (1 - x[0]) * x[1]
+
+    if family == "RT":
+        a = (
+            ufl.inner(sigma, tau) + ufl.inner(u, ufl.div(tau)) + ufl.inner(ufl.div(sigma), v)
+        ) * ufl.dx
+        L = ufl.inner(f, v) * ufl.dx
+    else:
+        S = functionspace(mesh, ("DG", 0))
+        o = Function(S, dtype=default_scalar_type)  # The forms' scalar type
+        o.x.array[S.dofmap.list[:, 0]] = orientations
+        n = o * ufl.CellNormal(mesh)
+
+        def rot(w):
+            return ufl.dot(n, ufl.curl(w))
+
+        a = (ufl.inner(sigma, tau) - ufl.inner(u, rot(tau)) + ufl.inner(rot(sigma), v)) * ufl.dx
+        L = -ufl.inner(f, v) * ufl.dx
+
+    problem = LinearProblem(
+        ufl.extract_blocks(a),
+        [ufl.ZeroBaseForm((tau,)), L],
+        petsc_options={
+            "ksp_type": "preonly",
+            "pc_type": "lu",
+            "pc_factor_mat_solver_type": "mumps",
+            "ksp_error_if_not_converged": True,
+        },
+        petsc_options_prefix=f"manifold_{family}_",
+        kind="mpi",
+    )
+    u_h = problem.solve()[1]
+    del problem  # Destroys its PETSc objects
+    PETSc.garbage_cleanup(mesh.comm)  # type: ignore[bad-argument-type]
+    return u_h
+
+
+@pytest.mark.petsc4py
+@pytest.mark.skipif(not has_petsc4py, reason="DOLFINx was built without petsc4py")
+def test_rotated_n1curl_matches_rt():
+    """N1curl rotated by the oriented normal is RT, so both give the same ``u``.
+
+    Every other cell is reversed, so the normal is consistent only once
+    oriented. With each cell's own vertex order, ``rot`` changes sign
+    from cell to cell and the solution differs.
+    """
+    mesh = plane_mesh(4, 3, mixed_orientation=True, orient=False)
+    orientations = compute_cell_orientations(mesh.topology)
+    mesh.topology.create_facet_orientations()  # For the RT space
+    Q = functionspace(mesh, ("DG", 0))
+
+    u_rt = solve_mixed_poisson(mesh, "RT", Q)
+    u_curl = solve_mixed_poisson(mesh, "N1curl", Q, orientations)
+    u_wrong = solve_mixed_poisson(mesh, "N1curl", Q, np.ones_like(orientations))
+
+    def norm(w):
+        local = np.sum(np.abs(w[: Q.dofmap.index_map.size_local]) ** 2)
+        return np.sqrt(mesh.comm.allreduce(local, op=MPI.SUM))
+
+    scale = norm(u_rt.x.array)
+    eps = np.finfo(default_scalar_type).eps
+    assert norm(u_curl.x.array - u_rt.x.array) < 1e3 * eps * scale
+    assert norm(u_wrong.x.array - u_rt.x.array) > 1e-2 * scale

@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/local_range.h>
@@ -30,6 +31,7 @@
 #include <span>
 #include <stdexcept>
 #include <thread>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -475,6 +477,217 @@ namespace
 // forward, back, forward, back. Valid only for these two cell types, so
 // a new cell type of dimension 2 needs its own table.
 constexpr std::array<bool, 4> edge_runs_forward = {true, false, true, false};
+
+/// Whether walking round cell `c` in its vertex order runs its local
+/// edge `i` from the lower to the higher global vertex. The global vertex
+/// numbering is shared by all cells and processes, so the result can be
+/// compared between cells. `edge_perms` holds `edges_per_cell` edge
+/// permutations per cell; bit 0 is whether edge `i` runs from the higher
+/// to the lower global vertex.
+bool runs_up(std::span<const std::uint8_t> edge_perms, int edges_per_cell,
+             std::int32_t c, std::size_t i)
+{
+  assert(i < edge_runs_forward.size());
+  const bool reflected = edge_perms[c * edges_per_cell + i] % 2;
+  return edge_runs_forward[i] != reflected;
+}
+
+/// Values per edge reduced by reduce_edge_codes: the largest code, the
+/// negated smallest code, so that both reduce with max, and the number
+/// of cells
+constexpr int codes_per_edge = 3;
+
+/// The `bs` values of edge `e` in `data`, which holds `bs` per edge
+template <int bs>
+std::span<std::int64_t, bs> edge_row(std::span<std::int64_t> data,
+                                     std::int32_t e)
+{
+  return data.subspan(bs * e).first<bs>();
+}
+
+/// Fold a `contribution` to an edge, i.e. the values of one owned cell
+/// on the edge or another process's row for it, into the edge's row
+/// `total`
+void fold_codes(std::span<std::int64_t, codes_per_edge> total,
+                std::span<const std::int64_t, codes_per_edge> contribution)
+{
+  total[0] = std::max(total[0], contribution[0]);
+  total[1] = std::max(total[1], contribution[1]);
+  total[2] += contribution[2];
+}
+
+/// For each owned and ghost edge, reduce over its owned cells on all
+/// processes the codes `code(c, i)` of cell `c` on its local edge `i`
+/// (see ::codes_per_edge). Each cell is owned once, so it is counted
+/// once, and with two cells the largest and smallest code are the two
+/// cells. No ghost cells are needed: the owner of an edge combines the
+/// contributions, then sends the result to every process holding the
+/// edge. Collective.
+template <typename Code>
+std::vector<std::int64_t>
+reduce_edge_codes(const graph::AdjacencyList<std::int32_t>& c_to_e,
+                  std::int32_t num_owned_cells,
+                  const common::IndexMap& edge_map, Code code)
+{
+  const std::int32_t num_owned_edges = edge_map.size_local();
+  const std::int32_t num_edges = num_owned_edges + edge_map.num_ghosts();
+  constexpr std::int64_t none = std::numeric_limits<std::int64_t>::min();
+  std::vector<std::int64_t> data(codes_per_edge * num_edges);
+  for (std::int32_t e = 0; e < num_edges; ++e)
+  {
+    std::ranges::copy(std::array<std::int64_t, codes_per_edge>{none, none, 0},
+                      edge_row<codes_per_edge>(data, e).begin());
+  }
+  for (std::int32_t c = 0; c < num_owned_cells; ++c)
+  {
+    std::span<const std::int32_t> edges = c_to_e.links(c);
+    for (std::size_t i = 0; i < edges.size(); ++i)
+    {
+      const std::int64_t k = code(c, i);
+      fold_codes(edge_row<codes_per_edge>(data, edges[i]),
+                 std::array<std::int64_t, codes_per_edge>{k, -k, 1});
+    }
+  }
+
+  const common::Scatterer<> sc(edge_map);
+  const std::vector<std::int32_t>& owned = sc.local_indices_block();
+  const std::vector<std::int32_t>& ghosts = sc.remote_indices_block();
+
+  // Ghost contributions to the owner
+  std::vector<std::int64_t> ghost_buffer(codes_per_edge * ghosts.size());
+  for (std::size_t j = 0; j < ghosts.size(); ++j)
+  {
+    std::ranges::copy(
+        edge_row<codes_per_edge>(data, num_owned_edges + ghosts[j]),
+        std::next(ghost_buffer.begin(), codes_per_edge * j));
+  }
+  std::vector<std::int64_t> owned_buffer(codes_per_edge * owned.size());
+  MPI_Request request = MPI_REQUEST_NULL;
+  sc.scatter_rev_begin(ghost_buffer.data(), owned_buffer.data(), codes_per_edge,
+                       request);
+  sc.scatter_rev_end(request);
+  for (std::size_t j = 0; j < owned.size(); ++j)
+  {
+    fold_codes(edge_row<codes_per_edge>(data, owned[j]),
+               edge_row<codes_per_edge>(owned_buffer, j));
+  }
+
+  // Reduction back to the ghosts
+  for (std::size_t j = 0; j < owned.size(); ++j)
+  {
+    std::ranges::copy(edge_row<codes_per_edge>(data, owned[j]),
+                      std::next(owned_buffer.begin(), codes_per_edge * j));
+  }
+  sc.scatter_fwd_begin(owned_buffer.data(), ghost_buffer.data(), codes_per_edge,
+                       request);
+  sc.scatter_fwd_end(request);
+  for (std::size_t j = 0; j < ghosts.size(); ++j)
+  {
+    std::ranges::copy(
+        edge_row<codes_per_edge>(ghost_buffer, j),
+        edge_row<codes_per_edge>(data, num_owned_edges + ghosts[j]).begin());
+  }
+
+  return data;
+}
+
+/// Gather `local` from all processes onto process 0, where `counts`
+/// holds the number of values from each process (empty elsewhere).
+/// Collective.
+std::vector<std::int64_t> gather_on_root(MPI_Comm comm,
+                                         std::span<const std::int64_t> local,
+                                         std::span<const int> counts)
+{
+  std::vector<int> disp(counts.size() + 1, 0);
+  std::partial_sum(counts.begin(), counts.end(), std::next(disp.begin()));
+  std::vector<std::int64_t> all(disp.back());
+  MPI_Gatherv(local.data(), local.size(), MPI_INT64_T, all.data(),
+              counts.data(), disp.data(), MPI_INT64_T, 0, comm);
+  return all;
+}
+
+/// Orient the parts joined by `links`, rows `(a, b, r)` meaning that
+/// part `b` has `r` times the orientation of part `a`. Each set of
+/// joined parts is oriented by its part with the lowest label, which
+/// gets `1`. Returns the sorted labels, their orientations, and whether
+/// the links are consistent; a contradicting link means the surface is
+/// not orientable.
+std::tuple<std::vector<std::int64_t>, std::vector<std::int8_t>, bool>
+orient_parts(std::span<const std::int64_t> links)
+{
+  std::vector<std::int64_t> labels;
+  labels.reserve(2 * links.size() / 3);
+  for (std::size_t k = 0; k < links.size(); k += 3)
+    labels.insert(labels.end(), {links[k], links[k + 1]});
+  std::ranges::sort(labels);
+  auto [last, end] = std::ranges::unique(labels);
+  labels.erase(last, end);
+  auto index = [&labels](std::int64_t l) -> std::int32_t
+  {
+    return std::ranges::distance(labels.begin(),
+                                 std::ranges::lower_bound(labels, l));
+  };
+
+  // Union-find over the parts, numbered by label. rel[a] is the
+  // orientation of a relative to parent[a]. A set's root is its lowest
+  // label.
+  std::vector<std::int32_t> parent(labels.size());
+  std::iota(parent.begin(), parent.end(), 0);
+  std::vector<std::int8_t> rel(labels.size(), 1);
+
+  // Root of a and the orientation of a relative to it, compressing the
+  // path
+  auto find = [&parent, &rel](std::int32_t a) -> std::pair<std::int32_t, int>
+  {
+    std::int32_t root = a;
+    int s = 1;
+    while (parent[root] != root)
+    {
+      s *= rel[root];
+      root = parent[root];
+    }
+    for (int sa = s; a != root;)
+    {
+      const std::int32_t next = parent[a];
+      const int r = rel[a];
+      parent[a] = root;
+      rel[a] = sa;
+      sa *= r;
+      a = next;
+    }
+    return {root, s};
+  };
+
+  bool consistent = true;
+  for (std::size_t k = 0; k < links.size(); k += 3)
+  {
+    auto [ra, sa] = find(index(links[k]));
+    auto [rb, sb] = find(index(links[k + 1]));
+    const int r = links[k + 2];
+    if (ra == rb)
+      consistent = consistent and sb == r * sa;
+    else
+    {
+      // The orientation of either root relative to the other
+      const std::int8_t s = r * sa * sb;
+      if (ra < rb)
+      {
+        parent[rb] = ra;
+        rel[rb] = s;
+      }
+      else
+      {
+        parent[ra] = rb;
+        rel[ra] = s;
+      }
+    }
+  }
+
+  std::vector<std::int8_t> orientation(labels.size());
+  for (std::size_t a = 0; a < labels.size(); ++a)
+    orientation[a] = find(a).second;
+  return {std::move(labels), std::move(orientation), consistent};
+}
 } // namespace
 
 std::vector<std::uint32_t>
@@ -492,21 +705,10 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
   std::shared_ptr<const common::IndexMap> cell_map = topology.index_map(2);
   const std::int32_t num_owned = cell_map->size_local();
   const std::int32_t num_cells = num_owned + cell_map->num_ghosts();
-  const std::int32_t num_owned_edges = edge_map->size_local();
-  const std::int32_t num_edges = num_owned_edges + edge_map->num_ghosts();
-  const int edges_per_cell = mesh::cell_num_entities(topology.cell_type(), 1);
-
-  // Whether walking round cell c in its vertex order runs its local
-  // edge i from the lower to the higher global vertex
   const std::vector<std::uint8_t>& edge_perms
       = topology.get_entity_permutations(1);
+  const int edges_per_cell = mesh::cell_num_entities(topology.cell_type(), 1);
   assert(std::cmp_less_equal(edges_per_cell, edge_runs_forward.size()));
-  auto runs_up
-      = [&edge_perms, edges_per_cell](std::int32_t c, std::size_t i) -> bool
-  {
-    const bool reflected = edge_perms[c * edges_per_cell + i] % 2;
-    return edge_runs_forward[i] != reflected;
-  };
 
   // Code of cell c and its local edge i: 2 * (global index of c) +
   // runs_up(c, i). It packs the cell and its direction along the edge
@@ -517,83 +719,11 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
   std::iota(local.begin(), local.end(), 0);
   std::vector<std::int64_t> global(num_cells);
   cell_map->local_to_global(local, global);
-  auto code = [&global, &runs_up](std::int32_t c, std::size_t i)
-  { return 2 * global[c] + runs_up(c, i); };
-
-  // Per edge, over its owned cells on all processes, edge_data holds
-  // values_per_edge = 3 values (the block size of the scatters below):
-  //   [0] the largest code,
-  //   [1] the negated smallest code, so that both reduce with max,
-  //   [2] the number of cells.
-  // Each cell is owned once, so this counts it once, and with two cells
-  // the largest and smallest code are the two cells. Combined by the
-  // owner of the edge, then sent back to every process holding it. No
-  // ghost cells are needed.
-  constexpr int values_per_edge = 3;
-  constexpr std::int64_t none = std::numeric_limits<std::int64_t>::min();
-  std::vector<std::int64_t> edge_data(values_per_edge * num_edges, 0);
-  for (std::int32_t e = 0; e < num_edges; ++e)
-  {
-    edge_data[values_per_edge * e] = none;
-    edge_data[values_per_edge * e + 1] = none;
-  }
-  auto combine = [&edge_data](std::int32_t e, std::int64_t hi,
-                              std::int64_t neg_lo, std::int64_t count)
-  {
-    std::int64_t* d = edge_data.data() + values_per_edge * e;
-    d[0] = std::max(d[0], hi);
-    d[1] = std::max(d[1], neg_lo);
-    d[2] += count;
-  };
-  for (std::int32_t c = 0; c < num_owned; ++c)
-  {
-    std::span<const std::int32_t> edges = c_to_e->links(c);
-    for (std::size_t i = 0; i < edges.size(); ++i)
-      combine(edges[i], code(c, i), -code(c, i), 1);
-  }
-
-  common::Scatterer<> sc(*edge_map);
-  const std::vector<std::int32_t>& owned_idx = sc.local_indices_block();
-  const std::vector<std::int32_t>& ghost_idx = sc.remote_indices_block();
-  {
-    std::vector<std::int64_t> send(values_per_edge * ghost_idx.size());
-    for (std::size_t j = 0; j < ghost_idx.size(); ++j)
-    {
-      std::ranges::copy_n(
-          std::next(edge_data.begin(),
-                    values_per_edge * (num_owned_edges + ghost_idx[j])),
-          values_per_edge, std::next(send.begin(), values_per_edge * j));
-    }
-    std::vector<std::int64_t> recv(values_per_edge * owned_idx.size());
-    MPI_Request request = MPI_REQUEST_NULL;
-    sc.scatter_rev_begin(send.data(), recv.data(), values_per_edge, request);
-    sc.scatter_rev_end(request);
-    for (std::size_t j = 0; j < owned_idx.size(); ++j)
-    {
-      combine(owned_idx[j], recv[values_per_edge * j],
-              recv[values_per_edge * j + 1], recv[values_per_edge * j + 2]);
-    }
-  }
-  {
-    std::vector<std::int64_t> send(values_per_edge * owned_idx.size());
-    for (std::size_t j = 0; j < owned_idx.size(); ++j)
-    {
-      std::ranges::copy_n(
-          std::next(edge_data.begin(), values_per_edge * owned_idx[j]),
-          values_per_edge, std::next(send.begin(), values_per_edge * j));
-    }
-    std::vector<std::int64_t> recv(values_per_edge * ghost_idx.size());
-    MPI_Request request = MPI_REQUEST_NULL;
-    sc.scatter_fwd_begin(send.data(), recv.data(), values_per_edge, request);
-    sc.scatter_fwd_end(request);
-    for (std::size_t j = 0; j < ghost_idx.size(); ++j)
-    {
-      std::ranges::copy_n(
-          std::next(recv.begin(), values_per_edge * j), values_per_edge,
-          std::next(edge_data.begin(),
-                    values_per_edge * (num_owned_edges + ghost_idx[j])));
-    }
-  }
+  auto code
+      = [&global, &edge_perms, edges_per_cell](std::int32_t c, std::size_t i)
+  { return 2 * global[c] + runs_up(edge_perms, edges_per_cell, c, i); };
+  std::vector<std::int64_t> edge_data
+      = reduce_edge_codes(*c_to_e, num_owned, *edge_map, code);
 
   // A facet is signed when its two cells run it the same way, i.e. give
   // it opposite normals (codes of equal parity), on the cell with the
@@ -608,7 +738,8 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
     std::span<const std::int32_t> edges = c_to_e->links(c);
     for (std::size_t i = 0; i < edges.size(); ++i)
     {
-      const std::int64_t* d = edge_data.data() + values_per_edge * edges[i];
+      std::span<const std::int64_t, codes_per_edge> d
+          = edge_row<codes_per_edge>(edge_data, edges[i]);
       if (d[2] > 2)
         non_manifold = true;
       else if (d[2] == 2)
@@ -634,5 +765,227 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
   }
 
   return flags;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int8_t>
+mesh::compute_cell_orientations(const mesh::Topology& topology)
+{
+  common::Timer timer("Compute cell orientations");
+
+  if (topology.dim() != 2)
+  {
+    throw std::invalid_argument(
+        std::format("Cell orientations need a surface mesh (topological "
+                    "dimension 2), not dimension {}.",
+                    topology.dim()));
+  }
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_to_e
+      = topology.connectivity(2, 1);
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> e_to_c
+      = topology.connectivity(1, 2);
+  if (!c_to_e or !e_to_c)
+  {
+    throw std::runtime_error("The cell-to-edge and edge-to-cell "
+                             "connectivities must be created first.");
+  }
+
+  MPI_Comm comm = topology.comm();
+  std::shared_ptr<const common::IndexMap> cell_map = topology.index_map(2);
+  std::shared_ptr<const common::IndexMap> edge_map = topology.index_map(1);
+  const std::int32_t num_owned = cell_map->size_local();
+  const std::int32_t num_cells = num_owned + cell_map->num_ghosts();
+  const std::vector<std::uint8_t>& edge_perms
+      = topology.get_entity_permutations(1);
+  const int edges_per_cell = mesh::cell_num_entities(topology.cell_type(), 1);
+  assert(std::cmp_less_equal(edges_per_cell, edge_runs_forward.size()));
+
+  // +1 if cell c runs its local edge i up, -1 otherwise. Two cells
+  // sharing an edge agree when they run it in opposite directions.
+  auto direction = [&edge_perms, edges_per_cell](std::int32_t c,
+                                                 std::size_t i) -> std::int8_t
+  { return runs_up(edge_perms, edges_per_cell, c, i) ? 1 : -1; };
+
+  // 1. Depth-first walk of each "part", the owned cells connected
+  //    through edges whose two cells are both owned, from its "root",
+  //    its first cell. sign[c] is the orientation of c relative to the
+  //    root. Edges with more than two cells are not crossed. Conflicting
+  //    routes are not checked here, but in step 2.
+  std::vector<std::int8_t> sign(num_owned, 0);
+  std::vector<std::int32_t> part(num_owned, -1);
+  std::vector<std::int64_t> label; // Global index of each part's root
+  {
+    const std::int64_t offset = cell_map->local_range()[0];
+    std::vector<std::int32_t> stack;
+    for (std::int32_t root = 0; root < num_owned; ++root)
+    {
+      if (part[root] >= 0)
+        continue;
+      const std::int32_t p = label.size();
+      label.push_back(offset + root);
+      part[root] = p;
+      sign[root] = 1;
+      stack.push_back(root);
+      while (!stack.empty())
+      {
+        const std::int32_t c = stack.back();
+        stack.pop_back();
+        std::span<const std::int32_t> edges = c_to_e->links(c);
+        for (std::size_t i = 0; i < edges.size(); ++i)
+        {
+          // One cell: a boundary edge, or the other cell is on another
+          // process (joined in step 2). More than two: not a manifold,
+          // raised in step 2.
+          std::span<const std::int32_t> cells = e_to_c->links(edges[i]);
+          if (cells.size() != 2)
+            continue;
+          const std::int32_t d = cells[0] == c ? cells[1] : cells[0];
+          if (d >= num_owned or part[d] >= 0)
+            continue;
+          std::span<const std::int32_t> d_edges = c_to_e->links(d);
+          const std::size_t j = std::ranges::distance(
+              d_edges.begin(), std::ranges::find(d_edges, edges[i]));
+          part[d] = p;
+          sign[d] = direction(c, i) == direction(d, j) ? -sign[c] : sign[c];
+          stack.push_back(d);
+        }
+      }
+    }
+  }
+
+  // 2. Find where parts meet. t = sign[c] * direction(c, i) is the
+  //    direction c runs its edge i, oriented relative to its root, so
+  //    consistently oriented cells give opposite t. The code 2 * label +
+  //    (t > 0) gives both cells of an edge, their parts and their t.
+  auto code = [&label, &part, &sign, &direction](std::int32_t c,
+                                                 std::size_t i) -> std::int64_t
+  { return 2 * label[part[c]] + (sign[c] * direction(c, i) > 0); };
+  std::vector<std::int64_t> edge_data
+      = reduce_edge_codes(*c_to_e, num_owned, *edge_map, code);
+
+  // The owner of each edge checks it, and records a "link" (a, b, r)
+  // where its two cells are in parts a < b: part b has r times the
+  // orientation of part a, -1 if the cells run the edge the same way.
+  constexpr int not_manifold = 1;
+  constexpr int not_orientable = 2;
+  int status = 0;
+  std::vector<std::int64_t> links;
+  for (std::int32_t e = 0; e < edge_map->size_local(); ++e)
+  {
+    std::span<const std::int64_t, codes_per_edge> d
+        = edge_row<codes_per_edge>(edge_data, e);
+    const std::int64_t hi = d[0];
+    const std::int64_t lo = -d[1];
+    if (d[2] > 2)
+      status |= not_manifold;
+    else if (d[2] == 2 and hi / 2 != lo / 2)
+      links.insert(links.end(), {lo / 2, hi / 2, hi % 2 == lo % 2 ? -1 : 1});
+    else if (d[2] == 2 and hi == lo) // One part, same t
+      status |= not_orientable;
+  }
+
+  // Parts of this process with a link, which need their orientation
+  // relative to the others
+  std::vector<std::int8_t> linked(label.size(), false);
+  for (std::int32_t c = 0; c < num_owned; ++c)
+  {
+    for (std::int32_t e : c_to_e->links(c))
+    {
+      std::span<const std::int64_t, codes_per_edge> d
+          = edge_row<codes_per_edge>(edge_data, e);
+      if (d[2] == 2 and d[0] / 2 != -d[1] / 2)
+        linked[part[c]] = true;
+    }
+  }
+  std::vector<std::int64_t> linked_labels;
+  for (std::size_t p = 0; p < label.size(); ++p)
+    if (linked[p])
+      linked_labels.push_back(label[p]);
+
+  // 3. Orient the linked parts on process 0, which replies to each
+  //    process with the combined status and the orientation of each of
+  //    its linked parts. The links are the edges between parts on
+  //    different processes, so they are few compared with the cells.
+  const int rank = dolfinx::MPI::rank(comm);
+  const int size = dolfinx::MPI::size(comm);
+  std::array<int, 3> sizes_local = {status, static_cast<int>(links.size()),
+                                    static_cast<int>(linked_labels.size())};
+  std::vector<int> sizes(rank == 0 ? 3 * size : 0);
+  MPI_Gather(sizes_local.data(), 3, MPI_INT, sizes.data(), 3, MPI_INT, 0, comm);
+  std::vector<int> link_counts, part_counts;
+  for (std::size_t r = 0; r < sizes.size(); r += 3)
+  {
+    status |= sizes[r];
+    link_counts.push_back(sizes[r + 1]);
+    part_counts.push_back(sizes[r + 2]);
+  }
+  std::vector<std::int64_t> all_links
+      = gather_on_root(comm, links, link_counts);
+  std::vector<std::int64_t> all_labels
+      = gather_on_root(comm, linked_labels, part_counts);
+
+  std::vector<std::int8_t> reply;
+  std::vector<int> reply_counts(part_counts.size());
+  std::vector<int> reply_disp(part_counts.size() + 1, 0);
+  if (rank == 0)
+  {
+    auto [labels, orientation, consistent] = orient_parts(all_links);
+    if (!consistent)
+      status |= not_orientable;
+    std::ranges::transform(part_counts, reply_counts.begin(),
+                           [](int n) { return n + 1; });
+    std::partial_sum(reply_counts.begin(), reply_counts.end(),
+                     std::next(reply_disp.begin()));
+    reply.resize(reply_disp.back());
+    for (std::size_t r = 0, k = 0; r < part_counts.size(); ++r)
+    {
+      reply[reply_disp[r]] = status;
+      for (int j = 1; j <= part_counts[r]; ++j, ++k)
+      {
+        // Every linked part is in a link
+        auto it = std::ranges::lower_bound(labels, all_labels[k]);
+        assert(it != labels.end() and *it == all_labels[k]);
+        reply[reply_disp[r] + j]
+            = orientation[std::ranges::distance(labels.begin(), it)];
+      }
+    }
+  }
+  std::vector<std::int8_t> answer(1 + linked_labels.size());
+  MPI_Scatterv(reply.data(), reply_counts.data(), reply_disp.data(), MPI_INT8_T,
+               answer.data(), answer.size(), MPI_INT8_T, 0, comm);
+  if (answer[0] & not_manifold)
+  {
+    throw std::runtime_error("Cannot orient the cells: an edge is shared "
+                             "by more than two cells.");
+  }
+  if (answer[0] & not_orientable)
+  {
+    throw std::runtime_error("Cannot orient the cells: the surface is "
+                             "not orientable (e.g. a Möbius strip).");
+  }
+  std::vector<std::int8_t> part_sign(label.size(), 1);
+  for (std::size_t p = 0, k = 1; p < label.size(); ++p)
+    if (linked[p])
+      part_sign[p] = answer[k++];
+
+  // 4. Orientations of the owned cells, then of the ghost cells from
+  //    their owners
+  std::vector<std::int8_t> orientations(num_cells);
+  for (std::int32_t c = 0; c < num_owned; ++c)
+    orientations[c] = part_sign[part[c]] * sign[c];
+  const common::Scatterer<> cell_sc(*cell_map);
+  const std::vector<std::int32_t>& owned = cell_sc.local_indices_block();
+  const std::vector<std::int32_t>& ghosts = cell_sc.remote_indices_block();
+  std::vector<std::int8_t> send_buffer(owned.size());
+  std::ranges::transform(owned, send_buffer.begin(),
+                         [&orientations](std::int32_t c)
+                         { return orientations[c]; });
+  std::vector<std::int8_t> recv_buffer(ghosts.size());
+  MPI_Request request = MPI_REQUEST_NULL;
+  cell_sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), 1, request);
+  cell_sc.scatter_fwd_end(request);
+  for (std::size_t i = 0; i < ghosts.size(); ++i)
+    orientations[num_owned + ghosts[i]] = recv_buffer[i];
+
+  return orientations;
 }
 //-----------------------------------------------------------------------------
