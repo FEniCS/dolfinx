@@ -489,9 +489,10 @@ void SuperLUDistSolver<T>::set_option(std::string_view name,
   // RefineInitialized) are deliberately excluded: setting them by hand can
   // trigger cleanup of uninitialised SuperLU_DIST structures.
   using bool_option_t = decltype(&::superlu_dist_options_t::Equil);
-  static constexpr std::array<std::pair<std::string_view, bool_option_t>, 11>
+  static constexpr std::array<std::pair<std::string_view, bool_option_t>, 12>
       bool_options{
           {{"Equil", &::superlu_dist_options_t::Equil},
+           {"ParSymbFact", &::superlu_dist_options_t::ParSymbFact},
            {"DiagInv", &::superlu_dist_options_t::DiagInv},
            {"SymmetricMode", &::superlu_dist_options_t::SymmetricMode},
            {"PivotGrowth", &::superlu_dist_options_t::PivotGrowth},
@@ -637,6 +638,9 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
 
   if (b.array().size() != u.array().size())
     throw std::invalid_argument("b and u have incompatible size/layout");
+
+  if (_options->ParSymbFact == YES and _options->ColPerm != PARMETIS)
+    throw std::invalid_argument("ParSymbFact YES requires ColPerm PARMETIS");
 
   // Warn if Factor is DOFACT but solve already appears to be initialised.
   if (_options->Fact == DOFACT && _options->SolveInitialized == YES)

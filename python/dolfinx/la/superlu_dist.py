@@ -128,6 +128,11 @@ class SuperLUDistSolver(Generic[_T]):
 
         See SuperLU_DIST User's Guide for option names and values.
 
+        ``ParSymbFact`` set to ``YES`` requires ``ColPerm`` set to
+        ``PARMETIS``. Together with ``RowPerm`` set to ``NOROWPERM`` it
+        avoids gathering the global matrix on every process, which
+        reduces memory use for large problems.
+
         Example::
 
             solver.set_option("SymmetricMode", "YES")

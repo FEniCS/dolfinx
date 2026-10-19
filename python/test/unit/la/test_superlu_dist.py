@@ -248,9 +248,17 @@ def test_superlu_solver_asymmetric_blocks(dtype) -> None:
     assert np.allclose(u.array, x_expected)
 
 
+@pytest.mark.parametrize(
+    "options",
+    [
+        {},
+        {"ParSymbFact": "YES"},
+        {"ParSymbFact": "YES", "RowPerm": "NOROWPERM"},
+    ],
+)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_solver_default_ordering() -> None:
-    """Poisson problem with default options on a mesh large enough to need ordering.
+def test_superlu_solver_default_ordering(options) -> None:
+    """Poisson problem with default ordering on a mesh large enough to need ordering.
 
     Ranks computing different column orderings deadlock in parallel, which
     small meshes do not expose.
@@ -281,9 +289,35 @@ def test_superlu_solver_default_ordering() -> None:
     A.scatter_reverse()
 
     solver = superlu_dist_solver(superlu_dist_matrix(A))
+    for name, value in options.items():
+        solver.set_option(name, value)
     uh = Function(V)
-    assert solver.solve(b, uh.x) == 0
+    try:
+        assert solver.solve(b, uh.x) == 0
+    except ValueError as e:
+        # Default ordering is not PARMETIS without ParMETIS support
+        if "ParSymbFact" not in str(e):
+            raise
+        pytest.skip("SuperLU_DIST built without ParMETIS")
     uh.x.scatter_forward()
 
     error = mesh.comm.allreduce(assemble_scalar(form((u_ex - uh) ** 2 * dx)), op=MPI.SUM)
     assert np.isclose(error, 0.0, atol=np.sqrt(np.finfo(np.float64).eps))
+
+
+@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
+def test_superlu_solver_parsymbfact_requires_parmetis() -> None:
+    """ParSymbFact without PARMETIS ordering is rejected before factorisation."""
+    from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
+    V = functionspace(mesh, ("Lagrange", 1))
+    u, v = TrialFunction(V), TestFunction(V)
+    A = assemble_matrix(form(inner(u, v) * dx))
+    A.scatter_reverse()
+    solver = superlu_dist_solver(superlu_dist_matrix(A))
+    solver.set_option("ColPerm", "MMD_AT_PLUS_A")
+    solver.set_option("ParSymbFact", "YES")
+    b = assemble_vector(form(inner(1.0, v) * dx))
+    with pytest.raises(ValueError):
+        solver.solve(b, Function(V).x)
