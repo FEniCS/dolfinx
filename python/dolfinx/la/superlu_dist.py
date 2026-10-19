@@ -129,9 +129,10 @@ class SuperLUDistSolver(Generic[_T]):
         See SuperLU_DIST User's Guide for option names and values.
 
         ``ParSymbFact`` set to ``YES`` requires ``ColPerm`` set to
-        ``PARMETIS``. Together with ``RowPerm`` set to ``NOROWPERM`` it
-        avoids gathering the global matrix on every process, which
-        reduces memory use for large problems.
+        ``PARMETIS``, so setting ``ColPerm`` to another ordering sets
+        ``ParSymbFact`` to ``NO``. Together with ``RowPerm`` set to
+        ``NOROWPERM`` it avoids gathering the global matrix on every
+        process, which reduces memory use for large problems.
 
         Example::
 
@@ -151,7 +152,9 @@ class SuperLUDistSolver(Generic[_T]):
             A: Assembled left-hand side matrix :math:`A`.
             fact: One of ``"DOFACT"``, ``"SamePattern"``,
                 ``"SamePattern_SameRowPerm"``. See the SuperLU_DIST
-                documentation for the meaning of these values.
+                documentation for the meaning of these values. With
+                ``ParSymbFact`` set to ``YES``, ``"SamePattern"`` is
+                treated as ``"DOFACT"``.
         """
         self._cpp_object.set_A(A._cpp_object, fact)  # type: ignore[arg-type]
 
@@ -194,7 +197,8 @@ def superlu_dist_solver(A: SuperLUDistMatrix[_T]) -> SuperLUDistSolver[_T]:
 
     The SuperLU_DIST solver has options set to upstream defaults, except
     PrintStat (verbose solver output) set to NO and, when SuperLU_DIST is
-    built with ParMETIS support, ColPerm set to PARMETIS.
+    built with ParMETIS support, ColPerm set to PARMETIS and ParSymbFact
+    set to YES.
 
     Args:
         A: Assembled left-hand side matrix :math:`A`.

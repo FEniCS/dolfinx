@@ -252,13 +252,14 @@ def test_superlu_solver_asymmetric_blocks(dtype) -> None:
     "options",
     [
         {},
-        {"ParSymbFact": "YES"},
-        {"ParSymbFact": "YES", "RowPerm": "NOROWPERM"},
+        {"ParSymbFact": "NO"},
+        {"RowPerm": "NOROWPERM"},
+        {"ColPerm": "MMD_AT_PLUS_A"},
     ],
 )
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
 def test_superlu_solver_default_ordering(options) -> None:
-    """Poisson problem with default ordering on a mesh large enough to need ordering.
+    """Poisson problem on a mesh large enough to need a nontrivial ordering.
 
     Ranks computing different column orderings deadlock in parallel, which
     small meshes do not expose.
@@ -292,13 +293,7 @@ def test_superlu_solver_default_ordering(options) -> None:
     for name, value in options.items():
         solver.set_option(name, value)
     uh = Function(V)
-    try:
-        assert solver.solve(b, uh.x) == 0
-    except ValueError as e:
-        # Default ordering is not PARMETIS without ParMETIS support
-        if "ParSymbFact" not in str(e):
-            raise
-        pytest.skip("SuperLU_DIST built without ParMETIS")
+    assert solver.solve(b, uh.x) == 0
     uh.x.scatter_forward()
 
     error = mesh.comm.allreduce(assemble_scalar(form((u_ex - uh) ** 2 * dx)), op=MPI.SUM)

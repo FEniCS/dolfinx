@@ -404,6 +404,9 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
             // Ranks compute METIS_AT_PLUS_A separately and deadlock if
             // the orderings differ as with Scotch's METIS emulation.
             o->ColPerm = PARMETIS;
+            // Serial symbolic factorisation replicates global data on
+            // every rank.
+            o->ParSymbFact = YES;
 #endif
             return o;
           }()),
@@ -544,6 +547,11 @@ void SuperLUDistSolver<T>::set_option(std::string_view name,
                   {"NATURAL", "MMD_ATA", "MMD_AT_PLUS_A", "COLAMD",
                    "METIS_AT_PLUS_A", "PARMETIS", "METIS_ATA", "ZOLTAN",
                    "MY_PERMC"});
+    if (_options->ColPerm != PARMETIS and _options->ParSymbFact == YES)
+    {
+      _options->ParSymbFact = NO;
+      logger().info("Set ParSymbFact to NO as it requires ColPerm PARMETIS");
+    }
   }
   else if (name == "RowPerm")
   {
@@ -618,7 +626,22 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
         static_assert(impl::always_false_v<T>, "Invalid scalar type");
       _factored = false;
     }
-    _options->Fact = (fact == "DOFACT") ? DOFACT : SamePattern;
+
+    // Parallel symbolic factorisation needs the ordering SamePattern skips
+    bool dofact = fact == "DOFACT" or _options->ParSymbFact == YES;
+    if (dofact)
+    {
+      // A new ordering invalidates the solve communication pattern
+      if constexpr (std::is_same_v<T, double>)
+        dSolveFinalize(_options.get(), _solvestruct.get());
+      else if constexpr (std::is_same_v<T, float>)
+        sSolveFinalize(_options.get(), _solvestruct.get());
+      else if constexpr (std::is_same_v<T, std::complex<double>>)
+        zSolveFinalize(_options.get(), _solvestruct.get());
+      else
+        static_assert(impl::always_false_v<T>, "Invalid scalar type");
+    }
+    _options->Fact = dofact ? DOFACT : SamePattern;
   }
   else if (fact == "SamePattern_SameRowPerm")
   {
@@ -641,6 +664,11 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
 
   if (_options->ParSymbFact == YES and _options->ColPerm != PARMETIS)
     throw std::invalid_argument("ParSymbFact YES requires ColPerm PARMETIS");
+  if (_options->ParSymbFact == YES and _options->Fact == SamePattern)
+  {
+    throw std::invalid_argument(
+        "ParSymbFact YES does not support Fact SamePattern");
+  }
 
   // Warn if Factor is DOFACT but solve already appears to be initialised.
   if (_options->Fact == DOFACT && _options->SolveInitialized == YES)
