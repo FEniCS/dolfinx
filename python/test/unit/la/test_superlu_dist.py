@@ -252,7 +252,6 @@ def test_superlu_solver_asymmetric_blocks(dtype) -> None:
     "options",
     [
         {},
-        {"ParSymbFact": "NO"},
         {"RowPerm": "NOROWPERM"},
         {"ColPerm": "MMD_AT_PLUS_A"},
     ],

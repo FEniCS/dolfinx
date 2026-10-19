@@ -401,9 +401,10 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
             set_default_options_dist(o.get());
             o->PrintStat = NO;
 #ifdef HAVE_PARMETIS
-            // METIS_AT_PLUS_A deadlocks if ranks get different orderings
+            // METIS_AT_PLUS_A deadlocks if ranks get different orderings.
+            // ParSymbFact stays off as it can hang, see
+            // https://github.com/xiaoyeli/superlu_dist/pull/231
             o->ColPerm = PARMETIS;
-            o->ParSymbFact = YES;
 #endif
             return o;
           }()),
