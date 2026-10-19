@@ -1940,8 +1940,8 @@ def compute_cell_orientations(topology: Topology) -> npt.NDArray[np.int8]:
         wrong signs without an error.
 
     Note:
-        Collective. Creates the edges, the cell-to-edge and edge-to-cell
-        connectivities and the edge permutations if not already created.
+        Collective. Creates the edges, the cell-to-edge connectivity and
+        the edge permutations if not already created.
 
     Args:
         topology: Topology of a mesh of triangles or quadrilaterals.
@@ -1964,7 +1964,6 @@ def compute_cell_orientations(topology: Topology) -> npt.NDArray[np.int8]:
             f"not dimension {topology.dim}."
         )
     topology.create_connectivity(2, 1)
-    topology.create_connectivity(1, 2)
     topology.create_entity_permutations(1)
     return _cpp.mesh.compute_cell_orientations(topology._cpp_object)
 

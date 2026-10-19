@@ -1021,6 +1021,8 @@ def test_compute_cell_orientations_undo_mixed_vertex_orders():
     """The cells that ``plane_mesh`` reverses get the opposite sign to the others."""
     mesh = plane_mesh(2, 3, mixed_orientation=True, orient=False)
     orientations = compute_cell_orientations(mesh.topology)
+    with pytest.raises(RuntimeError, match="has not been computed"):
+        mesh.topology.connectivity(1, 2)  # Not kept on the topology
     num_owned = mesh.topology.index_map(2).size_local
     even = np.asarray(mesh.topology.original_cell_index[:num_owned]) % 2 == 0
     flipped = orientations[:num_owned] < 0

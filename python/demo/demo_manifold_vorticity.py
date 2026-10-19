@@ -37,8 +37,7 @@
 #
 # On a manifold, here a surface in 3D with unit normal $n$, the Nédélec
 # and Raviart-Thomas fields are tangential to the surface: their Piola
-# maps take them into the tangent plane of each cell. (On a domain of
-# the same dimension as the space they span every direction.) We write
+# maps take them into the tangent plane of each cell. We write
 #
 # $$
 # \begin{aligned}
@@ -290,7 +289,7 @@ u_h_rt = problem_rt.solve()[1]
 # $\nabla u$ the surface gradient. Taking $n = n_h$ there too makes the
 # comparison independent of whether $n_h$ points out or in. The
 # difference between the two approximations of $u$ is at the level of
-# rounding.
+# rounding, which we check.
 
 # +
 n_exact = x / ufl.sqrt(ufl.dot(x, x))
@@ -311,6 +310,9 @@ if mesh.comm.rank == 0:
     print("L2 error in u:", E_u)
     print("L2 error in sigma:", E_sigma)
     print("L2 difference to the Raviart-Thomas u:", E_rt)
+
+eps = np.finfo(dolfinx.default_real_type).eps
+assert E_rt < 1e4 * eps * norm(u_h), "the N1curl and RT solutions differ"
 # -
 
 # Finally, we free the PETSc objects held by the two problems.
