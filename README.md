@@ -183,8 +183,8 @@ $env:Path = "$env:VIRTUAL_ENV\Library\bin;$env:Path"
 
 Check that `mpiexec` comes from `fenicsx-env`, since another MPI on the `PATH`,
 e.g. from Homebrew, can shadow it. `which -a mpiexec` on Linux and macOS, or
-`Get-Command -All mpiexec` on Windows, should list it first. A new login shell
-can put the system MPI back in front, so reactivate the environment there.
+`Get-Command -All mpiexec` on Windows, should list the virtual environment's
+`mpiexec` first.
 
 With `uv pip install`, also pass `--index-strategy unsafe-best-match`.
 
