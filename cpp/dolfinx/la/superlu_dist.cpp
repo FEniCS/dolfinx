@@ -401,11 +401,8 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
             set_default_options_dist(o.get());
             o->PrintStat = NO;
 #ifdef HAVE_PARMETIS
-            // Ranks compute METIS_AT_PLUS_A separately and deadlock if
-            // the orderings differ as with Scotch's METIS emulation.
+            // METIS_AT_PLUS_A deadlocks if ranks get different orderings
             o->ColPerm = PARMETIS;
-            // Serial symbolic factorisation replicates global data on
-            // every rank.
             o->ParSymbFact = YES;
 #endif
             return o;
@@ -627,11 +624,10 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
       _factored = false;
     }
 
-    // Parallel symbolic factorisation needs the ordering SamePattern skips
+    // SamePattern crashes SuperLU_DIST with ParSymbFact
     bool dofact = fact == "DOFACT" or _options->ParSymbFact == YES;
     if (dofact)
     {
-      // A new ordering invalidates the solve communication pattern
       if constexpr (std::is_same_v<T, double>)
         dSolveFinalize(_options.get(), _solvestruct.get());
       else if constexpr (std::is_same_v<T, float>)
