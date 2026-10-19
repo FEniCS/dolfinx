@@ -71,6 +71,7 @@ docs = [
       "pydata-sphinx-theme",
       "sphinx_codeautolink[ipython]",
       "sphinxcontrib-bibtex",
+      "sphinx-togglebutton",
       "fenics-dolfinx[demo]",
 ]
 lint = ["ruff", "gersemi", "clang-format"]

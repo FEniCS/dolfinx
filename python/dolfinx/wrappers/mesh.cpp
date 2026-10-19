@@ -292,27 +292,16 @@ void mesh(nb::module_& m)
           },
           nb::rv_policy::reference_internal)
       .def(
-          "create_cell_orientations",
-          [](dolfinx::mesh::Topology& self,
-             std::optional<
-                 nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>>
-                 orientations)
-          {
-            self.create_cell_orientations(
-                orientations ? std::optional(std::span<const std::int8_t>(
-                                   orientations->data(), orientations->size()))
-                             : std::nullopt);
-          },
-          nb::arg("orientations").none(),
-          "Compute, or set from the given markers, a per-cell marker for "
-          "a consistent orientation of a surface mesh.")
+          "create_facet_orientations", [](dolfinx::mesh::Topology& self)
+          { self.create_facet_orientations(); },
+          "Sign the facets on which two cells disagree on the normal.")
       .def(
-          "cell_orientations", [](const dolfinx::mesh::Topology& self)
-          { return as_nbarray(self.cell_orientations()); },
-          "Orientation (+1/-1) of each cell relative to its surface.")
-      .def("has_cell_orientations",
-           &dolfinx::mesh::Topology::has_cell_orientations,
-           "Check if a cell orientation has been computed or set.")
+          "facet_orientations", [](const dolfinx::mesh::Topology& self)
+          { return as_nbarray(self.facet_orientations()); },
+          "Sign (+1/-1) carried by each facet of each cell.")
+      .def("has_facet_orientations",
+           &dolfinx::mesh::Topology::has_facet_orientations,
+           "Check if the facet signs have been computed.")
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
       .def_prop_rw(

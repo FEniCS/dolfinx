@@ -2,44 +2,45 @@
 
 ## v0.12.0 (draft)
 
-### H(div) spaces on orientable manifolds
+### H(div) spaces on manifolds
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
 
 Raviart-Thomas, Brezzi-Douglas-Marini and their quadrilateral counterparts
-(RTCF, BDMCF) now work on orientable manifolds, such as a surface in 3D. 
-These elements are mapped by the contravariant Piola map. On a manifold its Jacobian is not square, so it cannot give a cell an orientation. The normal of each cell then follows the order of its vertices, and the space is conforming only if neighbouring cells agree on it. Previously, cells with opposite normals gave silently wrong results ([\#4571](https://github.com/FEniCS/dolfinx/issues/4571)).
+(RTCF, BDMCF) now work on manifolds, such as a surface in 3D, including
+surfaces that cannot be oriented, such as a Möbius strip. These elements are
+mapped by the contravariant Piola map. On a manifold its Jacobian is not
+square, so it cannot give a cell an orientation. The normal of each cell then
+follows the order of its vertices, and the space is conforming only if the two
+cells of every facet agree on it. Previously, cells with opposite normals gave
+silently wrong results ([\#4571](https://github.com/FEniCS/dolfinx/issues/4571)).
 
-The orientation is now stored on the topology:
+The fix is stored on the topology, one facet at a time:
 
-- {py:meth}`Topology.create_cell_orientations
-  <dolfinx.mesh.Topology.create_cell_orientations>` computes a consistent
-  orientation from the vertex orders, in serial and in parallel. It raises an
-  error for a non-orientable surface (e.g. a Möbius strip) or for an edge
-  shared by more than two cells (e.g. a T-joint). Passing `orientations` sets
-  a known orientation instead, e.g. from the outward normal of a closed
-  surface: `1` or `-1` for each owned and ghost cell, not checked for
-  consistency.
-- {py:meth}`Topology.cell_orientations
-  <dolfinx.mesh.Topology.cell_orientations>` returns the orientation, and
-  {py:meth}`Topology.has_cell_orientations
-  <dolfinx.mesh.Topology.has_cell_orientations>` whether one has been
-  computed or set.
+- {py:meth}`Topology.create_facet_orientations
+  <dolfinx.mesh.Topology.create_facet_orientations>` negates, on each facet
+  whose two cells disagree, the degrees-of-freedom of one of them. It needs
+  no consistent orientation of the whole surface, and no ghost cells. It
+  raises an error for an edge shared by more than two cells (e.g. a T-joint).
+- {py:meth}`Topology.facet_orientations
+  <dolfinx.mesh.Topology.facet_orientations>` returns the sign on each facet
+  of each cell, and {py:meth}`Topology.has_facet_orientations
+  <dolfinx.mesh.Topology.has_facet_orientations>` whether they have been
+  computed.
 
-The cells themselves are not modified. Which of its two orientations a
-connected surface gets from `create_cell_orientations` depends on the
-partitioning. This changes the sign of the degrees-of-freedom, but not the
-field. Lagrange and Nédélec spaces do not depend on the orientation. The new
-mixed Poisson demo on the sphere, {doc}`demos/demo_manifold`, shows both ways
-of orienting the cells.
+Which cell of a facet carries the sign depends on the partitioning; the field
+does not. Lagrange and Nédélec spaces do not need the signs. The mixed
+Poisson demo on the sphere is {doc}`demos/demo_manifold`;
+{doc}`demos/demo_mobius` and {doc}`demos/demo_mobius_eikonal` solve problems
+on a Möbius strip, and {doc}`demos/demo_branching_manifold` on a T-joint, with
+one space per branch coupled by a Lagrange multiplier.
 
-Creating an H(div) space on a manifold now raises a `RuntimeError` unless an
-orientation has been computed or set. Code that relied on consistently ordered
-cells should call `mesh.topology.create_cell_orientations()` before creating
-the space. Alternatively, passing all orientations `1` keeps each cell's own
-vertex order. Changing the orientation after creating
-such spaces invalidates existing {py:class}`dolfinx.fem.Function` data on
-them.
+Creating an H(div) space on a manifold now raises a `RuntimeError` until
+`mesh.topology.create_facet_orientations()` has been called. Calling it after
+creating such spaces invalidates existing {py:class}`dolfinx.fem.Function`
+data on them.
+In C++, `FiniteElement::depends_on_cell_orientation` is renamed
+`FiniteElement::depends_on_facet_orientations`.
 
 
 ### Assembly over ridges with data on a codimension-2 submesh
