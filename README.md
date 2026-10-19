@@ -23,12 +23,13 @@ Documentation can be viewed [here](https://docs.fenicsproject.org).
 
 ## Installation
 
-### Binary packages
+DOLFINx can be installed from [binary packages](#binary-packages) or
+[source](#from-source).
 
 **Recommendations**
 
-- Most users: [pip (beta)](#pip-beta) or [conda](#conda), on Linux,
-  macOS and Windows. pip does not include PETSc yet, and conda does not
+- Most users: [conda](#conda) or [pip (beta)](#pip-beta) or , on Linux,
+  macOS and Windows. *pip does not include PETSc yet*, and conda does not
   include PETSc on Windows.
 - With PETSc: [conda](#conda) (Linux and macOS),
   [Ubuntu](#ubuntu-packages)/[Debian](#debian-packages) packages or
@@ -37,6 +38,8 @@ Documentation can be viewed [here](https://docs.fenicsproject.org).
   [Ubuntu](#ubuntu-packages).
 - High performance computers: [Spack](#spack) or
   [from source](#from-source), both using system-provided MPI.
+
+### Binary packages
 
 #### conda
 
