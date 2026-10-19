@@ -27,11 +27,6 @@ The fix is stored on the topology, one facet at a time:
   of each cell, and {py:meth}`Topology.has_facet_orientations
   <dolfinx.mesh.Topology.has_facet_orientations>` whether they have been
   computed.
-- {py:func}`dolfinx.mesh.compute_cell_orientations` returns a consistent
-  orientation of the cells of an orientable surface without storing it, e.g.
-  to orient {py:class}`ufl.CellNormal` through a piecewise constant function.
-  {doc}`demos/demo_manifold_vorticity` uses it for the surface curl of a
-  Nédélec flux.
 
 Which cell of a facet carries the sign depends on the partitioning; the field
 does not. Lagrange and Nédélec spaces do not need the signs. The mixed
@@ -46,6 +41,20 @@ creating such spaces invalidates existing {py:class}`dolfinx.fem.Function`
 data on them.
 In C++, `FiniteElement::depends_on_cell_orientation` is renamed
 `FiniteElement::depends_on_facet_orientations`.
+
+
+### Consistent cell orientations of surfaces
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
+
+{py:func}`dolfinx.mesh.compute_cell_orientations` returns, for each cell of
+an orientable surface, the sign, `1` or `-1`, that makes the normals of all cells
+agree. Nothing is stored on the topology. Multiplying
+{py:class}`ufl.CellNormal` by these signs, through a piecewise constant
+function, gives a consistent normal, as needed for the surface curl
+`dot(n, curl(w))` in vorticity formulations.
+{doc}`demos/demo_manifold_vorticity` solves mixed Poisson on the sphere with a
+rotated Nédélec flux and reproduces the Raviart-Thomas solution.
 
 
 ### Assembly over ridges with data on a codimension-2 submesh
