@@ -28,6 +28,7 @@ def test_uniform_refinement_2d(ctype) -> None:
     mesh.topology.create_entities(1)
 
     m2 = dolfinx.mesh.uniform_refine(mesh)
+    assert m2.geometry.dim == mesh.geometry.dim
     ncells1 = m2.topology.index_map(2).size_local
 
     assert mesh.comm.allreduce(ncells0) * 4 == mesh.comm.allreduce(ncells1)
