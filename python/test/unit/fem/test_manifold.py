@@ -1045,8 +1045,15 @@ def test_compute_cell_orientations_vertex_contact(ghosted):
     else:
         x = np.zeros((0, 3))
         cells = np.zeros((0, 3), dtype=np.int64)
+
+    def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
+        # Cell i on rank i. The dual graph has no edges, which ParMETIS
+        # cannot partition.
+        dest = np.arange(dual_graph.num_nodes, dtype=np.int32) % nparts
+        return adjacencylist(dest)
+
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(3,), dtype=default_real_type))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x.astype(default_real_type))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x.astype(default_real_type), partitioner)
     if ghosted:
         mesh = ghost_by_vertex(mesh)
     orientations = compute_cell_orientations(mesh.topology)
