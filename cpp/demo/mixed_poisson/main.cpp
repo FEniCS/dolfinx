@@ -166,13 +166,13 @@ int main(int argc, char* argv[])
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          std::vector<T> f;
+          std::vector<T> f(x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
             auto x0 = x(0, p);
-            f.push_back(std::sin(5 * x0) + 1);
+            f[p] = std::sin(5 * x0) + 1;
           }
-          return {f, {f.size()}};
+          return {std::move(f), std::vector<std::size_t>{f.size()}};
         });
 
     // Create boundary condition for $\sigma$ and interpolate such that
@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
           mspan_t f(fdata.data(), 2, x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
             f(1, p) = x(1, p) < 0.5 ? -10 : 10;
-          return {std::move(fdata), {2, x.extent(1)}};
+          return {std::move(fdata), std::vector<std::size_t>{2, x.extent(1)}};
         });
 
     // Get list of all boundary facets
@@ -249,10 +249,10 @@ int main(int argc, char* argv[])
     u0->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          std::vector<T> f;
+          std::vector<T> f(x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
-            f.push_back(20 * x(1, p) + 1);
-          return {f, {f.size()}};
+            f[p] = 20 * x(1, p) + 1;
+          return {std::move(f), std::vector<std::size_t>{f.size()}};
         });
 
     // Write u0 to file to visualise

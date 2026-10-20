@@ -16,6 +16,9 @@ import mpi4py as _mpi4py
 
 del _mpi4py
 
+# Template placeholder for injecting the wheel MPI check in CI
+# WHEELMPICHECK
+
 # The wheels do not bundle Basix, so import basix to load it first.
 import basix as _basix
 

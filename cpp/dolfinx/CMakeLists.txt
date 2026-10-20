@@ -245,7 +245,7 @@ include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
   ${PROJECT_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
   VERSION ${DOLFINX_VERSION}
-  COMPATIBILITY AnyNewerVersion
+  COMPATIBILITY SameMinorVersion
 )
 
 configure_package_config_file(

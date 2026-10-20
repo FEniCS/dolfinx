@@ -5,7 +5,7 @@
 #  UFCxPython_FOUND       - system has UFCx
 #  UFCxPython::UFCxPython - imported interface target
 #  UFCX_SIGNATURE         - SHA1 hash of ufcx.h
-#  UFCX_VERSION           - version for UFCx
+#  UFCX_VERSION           - version of ufcx.h
 #
 #=============================================================================
 # Copyright (C) 2010-2026 Johannes Ring, Garth N. Wells, Jack S. Hale
@@ -53,20 +53,28 @@ execute_process(
 # Converts os native to cmake native path type
 cmake_path(SET _UFCX_INCLUDE_DIR "${_UFCX_INCLUDE_DIR}")
 
-# Get ufcx.h version
-if(_UFCX_INCLUDE_DIR)
-  execute_process(
-    COMMAND
-      ${Python3_EXECUTABLE} -c
-      "import ffcx, sys; sys.stdout.write(ffcx.__version__)"
-    OUTPUT_VARIABLE UFCX_VERSION
-  )
-endif()
-
-# Compute hash of ufcx.h
+# Compute hash of ufcx.h and read its version, which need not match the
+# FFCx version
 find_file(_UFCX_HEADER "ufcx.h" PATHS ${_UFCX_INCLUDE_DIR} NO_DEFAULT_PATH)
 if(_UFCX_HEADER)
   file(SHA1 ${_UFCX_HEADER} UFCX_SIGNATURE)
+  file(
+    STRINGS ${_UFCX_HEADER}
+    _UFCX_VERSION_DEFINES
+    REGEX "^#define UFCX_VERSION_(MAJOR|MINOR|MAINTENANCE) +[0-9]+"
+  )
+  foreach(_part MAJOR MINOR MAINTENANCE)
+    string(
+      REGEX REPLACE ".*#define UFCX_VERSION_${_part} +([0-9]+).*"
+      "\\1"
+      _UFCX_VERSION_${_part}
+      "${_UFCX_VERSION_DEFINES}"
+    )
+  endforeach()
+  set(
+    UFCX_VERSION
+    "${_UFCX_VERSION_MAJOR}.${_UFCX_VERSION_MINOR}.${_UFCX_VERSION_MAINTENANCE}"
+  )
 endif()
 
 mark_as_advanced(UFCX_VERSION UFCX_SIGNATURE)

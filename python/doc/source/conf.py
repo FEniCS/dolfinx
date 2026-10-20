@@ -48,6 +48,7 @@ extensions = [
     "sphinx_codeautolink",
     "sphinx.ext.intersphinx",
     "sphinxcontrib.bibtex",
+    "sphinx_togglebutton",
 ]
 
 # Bibligraphy file

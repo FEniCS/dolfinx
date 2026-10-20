@@ -16,7 +16,8 @@
 #
 # * solve a PDE on a manifold, here a surface embedded in 3D,
 # * use $H(\mathrm{div})$-conforming Raviart-Thomas elements on a
-#   surface, which requires consistently oriented cells,
+#   surface, which requires the two cells of every facet to agree on its
+#   normal,
 # * impose a global constraint with a real (constant) space.
 #
 # ```{admonition} Download sources
@@ -86,14 +87,10 @@ import ufl
 # -
 
 # and set the degree $k$ of the Raviart-Thomas space, which is also the
-# degree of the geometry, the mesh resolution, and how the cells are
-# oriented (see below): `"computed"` from the vertex orders, `"outward"`
-# from the geometry, or `None` to keep each cell's own vertex order and
-# see what goes wrong.
+# degree of the geometry, and the mesh resolution.
 
 order = 3
 res = 0.2
-orientation: str | None = "computed"
 
 # ### The mesh
 #
@@ -116,7 +113,7 @@ boundary_facets = dolfinx.mesh.exterior_facet_indices(ball_mesh.topology)
 mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 # -
 
-# ### Orienting the cells
+# ### Signing the facets
 #
 # The vertex order of a cell on a surface fixes its normal, and thereby
 # which side of the surface the cell regards as "out". The
@@ -124,67 +121,50 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 # from the reference cell, ties the direction of the normal flux across
 # each edge to this side. The normal component of $\sigma_h$ is thus
 # continuous across an edge only if the two cells sharing it agree on
-# the side, i.e. if the mesh is consistently oriented. Two cells agree
+# the side. Two cells agree
 # when, going round each in the order of its vertices, they run their
 # shared edge in opposite directions, as cells $(0, 1, 2)$ and
 # $(1, 3, 2)$ do with edge $\{1, 2\}$.
 #
-# There is no guarantee that an input mesh has a consistent orientation.
-# An example is a submesh of the exterior boundary of a volume mesh:
+# There is no guarantee that the cells of an input mesh agree. An
+# example is a submesh of the exterior boundary of a volume mesh:
 # each facet keeps the vertex order it has in its volume cell.
-# {py:meth}`create_cell_orientations
-# <dolfinx.mesh.Topology.create_cell_orientations>`
-# computes a consistent orientation from the vertex orders, in serial and
-# in parallel, and the Raviart-Thomas (and Brezzi-Douglas-Marini) basis
-# functions follow it. Whether the result points inwards or outwards is
-# arbitrary, but does not change the solution. It raises an error for a
-# non-orientable surface, such as a Möbius strip, where no
-# $H(\mathrm{div})$-conforming space of this kind exists.
+# {py:meth}`create_facet_orientations
+# <dolfinx.mesh.Topology.create_facet_orientations>` neither reorders the
+# cells nor reverses them. It signs the facets on which two cells
+# disagree: negating the degrees-of-freedom of one of the two there
+# makes their normal components match again, and disturbs nothing else,
+# since only a facet's own basis functions have a non-zero normal trace
+# on it. The Raviart-Thomas (and Brezzi-Douglas-Marini) basis functions
+# follow those signs.
 #
-# The orientation must be requested explicitly, as it is needed only by
+# Because this asks nothing of the surface as a whole, only of each
+# facet in turn, it works even where no consistent orientation exists at
+# all, as on the Möbius strip of {doc}`demo_mobius`. Which of the two
+# cells carries the sign is settled by the global numbering, so it can
+# change with the partitioning; the space, and so the solution, do
+# not.
+#
+# The signs must be requested explicitly, as they are needed only by
 # $H(\mathrm{div})$ elements on surfaces. Lagrange and Nédélec elements
-# do not depend on it. Creating an $H(\mathrm{div})$ space on a surface
-# whose orientation has been neither computed nor set raises an error.
-#
-# A known orientation can be passed to the same method instead, as
-# `orientations`: for each owned and ghost cell, $-1$ if the vertex
-# order of the cell disagrees with it and $1$ otherwise. On the sphere,
-# the outward normal is such an orientation. The cell normal
-# {py:class}`ufl.CellNormal` is computed from the Jacobian of each cell,
-# so it follows the vertex order, and its sign relative to the radius
-# vector $x$ at the cell midpoint tells whether the cell is reversed.
-# This is close to legacy FEniCS, where the cells were oriented relative
-# to a normal field given by the user {cite}`rognes2013manifolds`. A
-# supplied orientation is not checked for consistency, and needs none of
-# the edge entities the computed one builds.
+# do not depend on them, and creating an $H(\mathrm{div})$ space on a
+# surface before they have been computed raises an error.
 
 # +
 cell_map = mesh.topology.index_map(2)
 num_cells = cell_map.size_local + cell_map.num_ghosts
-if orientation == "computed":
-    mesh.topology.create_cell_orientations()
-elif orientation == "outward":
-    # Evaluate n . x at the midpoint of each owned and ghost cell
-    cells = np.arange(num_cells, dtype=np.int32)
-    midpoint = basix.geometry(mesh.basix_cell()).mean(axis=0, keepdims=True)
-    x = ufl.SpatialCoordinate(mesh)
-    n_dot_x = dolfinx.fem.Expression(
-        ufl.dot(ufl.CellNormal(mesh), x), midpoint, dtype=dolfinx.default_real_type
-    )
-    mesh.topology.create_cell_orientations(np.where(n_dot_x.eval(mesh, cells).ravel() > 0, 1, -1))
-else:
-    # Keep each cell's own vertex order, which is not consistent here
-    mesh.topology.create_cell_orientations(np.ones(num_cells, dtype=np.int8))
+mesh.topology.create_facet_orientations()
 
-if orientation is not None:
-    # Count the cells whose orientation is reversed relative to their
-    # own vertex order. The count is nonzero, as the facets of the ball
-    # are not consistently ordered.
-    orientations = mesh.topology.cell_orientations()
-    num_owned = cell_map.size_local
-    num_reversed = mesh.comm.allreduce(int(np.sum(orientations[:num_owned] < 0)), op=MPI.SUM)
-    if mesh.comm.rank == 0:
-        print(f"{num_reversed} of {cell_map.size_global} cells reversed")
+# No cell is reordered or reversed: the signs sit on the facets whose
+# two cells disagree. There are plenty, as the facets of the ball are
+# not consistently ordered.
+signs = mesh.topology.facet_orientations()
+per_cell = signs.size // num_cells
+num_signed = mesh.comm.allreduce(
+    int(np.sum(signs[: cell_map.size_local * per_cell] < 0)), op=MPI.SUM
+)
+if mesh.comm.rank == 0:
+    print(f"{num_signed} of {cell_map.size_global * per_cell} facets signed")
 # -
 
 # ### Function spaces
@@ -274,9 +254,7 @@ if dolfinx.has_adios2:
 # Finally, we compute the error of $u_h$ in the $L^2$ norm, and of
 # $\sigma_h$ in the $L^2$ and $H(\mathrm{div})$ norms. As
 # $\nabla \cdot \sigma = g - r$ and $r = 0$, the divergence of the exact
-# flux is $g$. The computed and the outward orientation give the same
-# errors. With the cells' own vertex orders, they are several orders of
-# magnitude larger.
+# flux is $g$.
 
 # +
 L2_error_u = dolfinx.fem.form(ufl.inner(u_h - u_exact, u_h - u_exact) * ufl.dx)

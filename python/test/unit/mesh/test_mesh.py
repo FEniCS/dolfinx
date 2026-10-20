@@ -27,6 +27,7 @@ from dolfinx.mesh import (
     GhostMode,
     cell_num_entities,
     cell_num_vertices,
+    compute_entity_permutations,
     create_box,
     create_interval,
     create_point_mesh,
@@ -1234,6 +1235,31 @@ def test_cell_assembly_computes_only_cell_permutations() -> None:
     for dim in (1, 2):
         with pytest.raises(RuntimeError):
             msh.topology.get_entity_permutations(dim)
+
+
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+def test_entity_permutations_unpacked_from_cell_info(cell_type):
+    """Asking for permutations after the packed info exists unpacks it.
+
+    The result must equal what the independent per-dimension computation
+    produces, so that the reuse is a pure saving.
+    """
+    if cell_type == CellType.triangle:
+        args = (MPI.COMM_WORLD, 3, 3)
+        make = create_unit_square
+    else:
+        args = (MPI.COMM_WORLD, 2, 2, 2)
+        make = create_unit_cube
+
+    # A single mesh is used since two meshes need not be partitioned identically.
+    mesh = make(*args, cell_type=cell_type)
+    mesh.topology.create_cell_permutations()
+
+    for dim in range(1, mesh.topology.dim):
+        mesh.topology.create_entities(dim)
+        mesh.topology.create_entity_permutations(dim)
+        computed = compute_entity_permutations(mesh.topology, dim)
+        assert np.array_equal(computed, mesh.topology.get_entity_permutations(dim))
 
 
 @pytest.mark.parametrize("dtype", [np.int32, np.complex128])
