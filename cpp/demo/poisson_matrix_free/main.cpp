@@ -169,10 +169,10 @@ void solver(MPI_Comm comm)
   u_D->interpolate(
       [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
       {
-        std::vector<T> f;
+        std::vector<T> f(x.extent(1));
         for (std::size_t p = 0; p < x.extent(1); ++p)
-          f.push_back(1 + x(0, p) * x(0, p) + 2 * x(1, p) * x(1, p));
-        return {f, {f.size()}};
+          f[p] = 1 + x(0, p) * x(0, p) + 2 * x(1, p) * x(1, p);
+        return {std::move(f), std::vector<std::size_t>{f.size()}};
       });
 
   mesh->topology_mutable()->create_connectivity(1, 2);

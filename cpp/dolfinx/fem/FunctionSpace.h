@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2026 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2026 Anders Logg, Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -42,17 +43,17 @@ public:
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] element Finite element for the space.
   /// @param[in] dofmap Degree-of-freedom map for the space.
-  /// @throws std::runtime_error If an element depends on the cell
-  /// orientation (see FiniteElement::depends_on_cell_orientation) and
-  /// none has been computed or set on the mesh (see
-  /// mesh::Topology::has_cell_orientations).
+  /// @throws std::runtime_error If an element depends on the facet
+  /// signs (see FiniteElement::depends_on_facet_orientations) and they
+  /// have not been computed on the mesh (see
+  /// mesh::Topology::has_facet_orientations).
   FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _elements{element}, _dofmaps{std::move(dofmap)},
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
-    check_cell_orientations();
+    check_facet_orientations();
   }
 
   /// @brief Create function space for given mesh, elements and
@@ -63,10 +64,10 @@ public:
   /// mesh::topology::cell_types.
   /// @param[in] dofmaps Degree-of-freedom maps for the space, one for each
   /// element. The dofmaps must be ordered in the same way as the elements.
-  /// @throws std::runtime_error If an element depends on the cell
-  /// orientation (see FiniteElement::depends_on_cell_orientation) and
-  /// none has been computed or set on the mesh (see
-  /// mesh::Topology::has_cell_orientations).
+  /// @throws std::runtime_error If an element depends on the facet
+  /// signs (see FiniteElement::depends_on_facet_orientations) and they
+  /// have not been computed on the mesh (see
+  /// mesh::Topology::has_facet_orientations).
   FunctionSpace(
       std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
       std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements,
@@ -94,7 +95,7 @@ public:
             "Element cell types must match mesh cell types");
       }
     }
-    check_cell_orientations();
+    check_facet_orientations();
   }
 
   // Copy constructor (deleted)
@@ -190,7 +191,7 @@ public:
   std::pair<FunctionSpace, std::vector<std::vector<std::int32_t>>>
   collapse() const
   {
-    spdlog::debug("FunctionSpace::collapse");
+    logger().debug("FunctionSpace::collapse");
     if (_component.empty())
       throw std::invalid_argument("Function space is not a subspace");
 
@@ -200,10 +201,10 @@ public:
     for (auto d : _dofmaps)
     {
       assert(d);
-      spdlog::debug("Call DofMap::collapse");
+      logger().debug("Call DofMap::collapse");
       auto [_collapsed_dofmap, _collapsed_dofs]
           = d->collapse(_mesh->comm(), *_mesh->topology());
-      spdlog::debug("Got collapsed dofmap");
+      logger().debug("Got collapsed dofmap");
       collapsed_dofmaps.push_back(
           std::make_shared<DofMap>(std::move(_collapsed_dofmap)));
       collapsed_dofs.push_back(_collapsed_dofs);
@@ -422,22 +423,22 @@ public:
   }
 
 private:
-  // Throw if an element depends on the cell orientation of the mesh and
-  // none has been computed or set. The check is local, and its outcome
-  // is the same on all ranks.
-  void check_cell_orientations() const
+  // Throw if an element depends on the mesh's facet signs and they have
+  // not been computed. The check is local, and its outcome is the same on
+  // all ranks.
+  void check_facet_orientations() const
   {
-    if (_mesh->topology()->has_cell_orientations())
+    if (_mesh->topology()->has_facet_orientations())
       return;
     for (const std::shared_ptr<const FiniteElement<geometry_type>>& e :
          _elements)
     {
-      if (e->depends_on_cell_orientation())
+      if (e->depends_on_facet_orientations())
       {
         throw std::runtime_error(
             "The basis of this element, e.g. Raviart-Thomas on a manifold, "
-            "depends on the cell orientation, which has not been computed or "
-            "set. Call Topology::create_cell_orientations before creating the "
+            "depends on the facet signs, which have not been computed. "
+            "Call Topology::create_facet_orientations before creating the "
             "function space.");
       }
     }
