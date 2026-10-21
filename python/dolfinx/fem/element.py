@@ -13,7 +13,6 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
-import basix._basixcpp
 import basix.ufl
 from dolfinx import cpp as _cpp
 from dolfinx.typing import Real
@@ -317,18 +316,13 @@ class FiniteElement(Generic[Real]):
         return np.dtype(self._cpp_object.dtype)
 
     @property
-    def basix_element(
-        self,
-    ) -> basix._basixcpp.FiniteElement_float32 | basix._basixcpp.FiniteElement_float64:
-        """Return underlying Basix C++ element (if it exists).
+    def basix_element(self) -> basix.finite_element.FiniteElement[Real]:
+        """Return the underlying Basix element (if it exists).
 
         Raises:
-            RuntimeError: If a Basix element does not exist.
+            ValueError: If a Basix element does not exist.
         """
-        return cast(
-            "basix._basixcpp.FiniteElement_float32 | basix._basixcpp.FiniteElement_float64",
-            self._cpp_object.basix_element,
-        )
+        return basix.finite_element.FiniteElement(self._cpp_object.basix_element)
 
     @property
     def num_sub_elements(self) -> int:
