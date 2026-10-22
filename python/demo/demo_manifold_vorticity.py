@@ -12,8 +12,9 @@
 #
 # This demo solves the problem of {doc}`demo_manifold` again, but with
 # the flux in an $H(\mathrm{curl})$-conforming Nédélec space, rotated by
-# $90^\circ$ in the tangent plane. This is the basis of vorticity-type
-# formulations. It illustrates how to
+# $\pi/2$ in the tangent plane, which recovers the $H(\mathrm{div})$
+# space. This is the basis of vorticity-type formulations. It illustrates
+# how to
 #
 # * compute a consistent orientation of the cells of a surface with
 #   {py:func}`compute_cell_orientations
