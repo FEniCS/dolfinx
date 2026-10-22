@@ -59,9 +59,9 @@ Problems on manifolds
   on the sphere, with Raviart-Thomas elements on a surface taken from a
   Gmsh volume mesh, signing the facets whose cells disagree on the
   normal.
-* :doc:`demos/demo_manifold_vorticity` -- solve the same problem with a
-  Nédélec flux rotated by a consistently oriented cell normal, as in
-  vorticity formulations.
+* :doc:`demos/demo_manifold_vorticity` -- solve the mixed Poisson
+  problem of :doc:`demos/demo_manifold` with a Nédélec flux rotated by a
+  consistently oriented cell normal, as in vorticity formulations.
 * :doc:`demos/demo_mobius` -- solve the same equation on a Möbius strip,
   where no consistent orientation of the cells exists, on a higher-order
   mesh built by hand, with a cylinder as a control.
