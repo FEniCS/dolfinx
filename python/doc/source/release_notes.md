@@ -2,6 +2,27 @@
 
 ## v0.12.0 (draft)
 
+### Expressions on ridges and peaks
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
+
+{py:class}`dolfinx.fem.Expression` may now be evaluated on the ridges and peaks of a mesh, i.e.
+its codimension-2 and codimension-3 entities, by giving evaluation points on the reference cell
+of the entity: the reference interval for the edges of a 3D mesh, and a points array with zero
+columns for the vertices of a 2D (ridges) or 3D (peaks) mesh. As for facets, the entities are passed to
+{py:func}`dolfinx.fem.Expression.eval` as `(cell, local entity index)` pairs, and a coefficient
+may live on a submesh of the entities being evaluated over.
+
+{py:class}`dolfinx.fem.Expression` also gained `entity_dim` and `num_points` properties: the
+topological dimension of the entities the Expression is evaluated on, and the number of
+evaluation points.
+
+In C++, `fem::pack_coefficients` for a list of coefficients takes the topology of the entities
+instead of their mesh, and the dimension of the entities as a new argument, e.g.
+`Expression::entity_dim()`. A coefficient or argument on another mesh must live on the
+entities being evaluated over; evaluating an Expression on entities of another dimension
+now raises `std::invalid_argument` (`ValueError` in Python).
+
 ### H(div) spaces on manifolds
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
@@ -41,7 +62,6 @@ creating such spaces invalidates existing {py:class}`dolfinx.fem.Function`
 data on them.
 In C++, `FiniteElement::depends_on_cell_orientation` is renamed
 `FiniteElement::depends_on_facet_orientations`.
-
 
 ### Assembly over ridges with data on a codimension-2 submesh
 
