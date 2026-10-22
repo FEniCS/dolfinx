@@ -148,9 +148,11 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 
 # ### A consistent normal
 #
-# {py:class}`ufl.CellNormal` is computed from the Jacobian $J$ of each
-# cell. Its columns $J_0 = \partial x / \partial X_0$ and
-# $J_1 = \partial x / \partial X_1$ are tangent to the cell, and
+# {py:class}`ufl.CellNormal` is computed from the Jacobian
+# $J = \partial x / \partial X$ of the map $x(X)$ from the reference
+# coordinates $X$ to each cell. The columns
+# $J_0 = \partial x / \partial X_0$ and $J_1 = \partial x / \partial X_1$
+# are tangent to the cell, and
 #
 # $$
 # \begin{aligned}
@@ -159,22 +161,23 @@ mesh = dolfinx.mesh.create_submesh(ball_mesh, 2, boundary_facets)[0]
 # $$
 #
 # The columns follow the order of the cell's vertices, and swapping two
-# vertices flips $n$. The facets of the ball keep the vertex order they
-# have in their tetrahedra, so on the sphere some cell normals point out
-# and others in.
+# vertices flips $n$. The cells of the surface mesh are facets of
+# `ball_mesh` and keep the vertex order they have in their tetrahedra, so
+# on the sphere some cell normals point out and others in.
 # {py:func}`compute_cell_orientations
 # <dolfinx.mesh.compute_cell_orientations>` returns, for each owned and
-# ghost cell, the sign that makes all of them agree. It uses only the
-# vertex orders, so whether the agreed normal points out or in depends
-# on the partitioning, which does not change $u_h$. It raises an error
-# on a surface that cannot be oriented, such as the Möbius strips of
+# ghost cell, the sign that makes all of them agree. The signs are
+# computed from the vertex orders alone, so whether the agreed normal
+# points out or in depends on the partitioning, which does not change
+# $u_h$. The function raises an error on a surface that cannot be
+# oriented, such as the Möbius strips of
 # {doc}`demo_mobius` and {doc}`demo_mobius_eikonal`. There, only the
-# Raviart-Thomas formulation works, as it needs consistent signs per
-# facet rather than a consistent normal.
+# Raviart-Thomas formulation works, as that formulation needs consistent
+# signs per facet rather than a consistent normal.
 #
 # The signs are in local cell order. We store them in a piecewise
-# constant function, whose degrees-of-freedom are numbered differently,
-# so they are placed through its dofmap.
+# constant function, whose degrees-of-freedom are not numbered in the
+# same order as the cells, so the signs are placed through its dofmap.
 
 # +
 orientations = dolfinx.mesh.compute_cell_orientations(mesh.topology)
