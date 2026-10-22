@@ -549,6 +549,10 @@ reduce_edge_codes(const graph::AdjacencyList<std::int32_t>& c_to_e,
     }
   }
 
+  // Equivalent to a la::Vector<std::int64_t> over the edges with block
+  // size codes_per_edge: a reverse scatter that folds each received row
+  // with fold_codes, then a forward scatter. The Scatterer is used
+  // directly so that the mesh module does not depend on la.
   const common::Scatterer<> sc(edge_map);
   const std::vector<std::int32_t>& owned = sc.local_indices_block();
   const std::vector<std::int32_t>& ghosts = sc.remote_indices_block();
@@ -591,100 +595,6 @@ reduce_edge_codes(const graph::AdjacencyList<std::int32_t>& c_to_e,
   return data;
 }
 
-/// Gather `local` from all processes onto process 0, where `counts`
-/// holds the number of values from each process (empty elsewhere).
-/// Collective.
-std::vector<std::int64_t> gather_on_root(MPI_Comm comm,
-                                         std::span<const std::int64_t> local,
-                                         std::span<const int> counts)
-{
-  std::vector<int> disp(counts.size() + 1, 0);
-  std::partial_sum(counts.begin(), counts.end(), std::next(disp.begin()));
-  std::vector<std::int64_t> all(disp.back());
-  MPI_Gatherv(local.data(), local.size(), MPI_INT64_T, all.data(),
-              counts.data(), disp.data(), MPI_INT64_T, 0, comm);
-  return all;
-}
-
-/// The root of the set of part `a` in a union-find forest, and the
-/// orientation of `a` relative to it. `parent[a]` is the parent of `a`
-/// and `rel[a]` its orientation relative to the parent. Compresses the
-/// path from `a` to the root.
-std::pair<std::size_t, int> find_root(std::span<std::size_t> parent,
-                                      std::span<std::int8_t> rel, std::size_t a)
-{
-  std::size_t root = a;
-  int s = 1;
-  while (parent[root] != root)
-  {
-    s *= rel[root];
-    root = parent[root];
-  }
-  for (int sa = s; a != root;)
-  {
-    const std::size_t next = parent[a];
-    const int r = rel[a];
-    parent[a] = root;
-    rel[a] = sa;
-    sa *= r;
-    a = next;
-  }
-  return {root, s};
-}
-
-/// Join the parts of `links`, rows `(a, b, r)` meaning that part `b` has
-/// `r` times the orientation of part `a`. Returns the sorted labels of
-/// the linked parts, their orientations relative to the part with the
-/// lowest label in their set, the links that joined two sets, and
-/// whether no link contradicted the others. If consistent, the joining
-/// links imply all others, with at most one link per part.
-std::tuple<std::vector<std::int64_t>, std::vector<std::int8_t>,
-           std::vector<std::int64_t>, bool>
-join_parts(std::span<const std::int64_t> links)
-{
-  std::vector<std::int64_t> labels;
-  labels.reserve(2 * links.size() / 3);
-  for (std::size_t k = 0; k < links.size(); k += 3)
-    labels.insert(labels.end(), {links[k], links[k + 1]});
-  std::ranges::sort(labels);
-  auto [last, end] = std::ranges::unique(labels);
-  labels.erase(last, end);
-  auto index = [&labels](std::int64_t l) -> std::size_t
-  {
-    return std::ranges::distance(labels.begin(),
-                                 std::ranges::lower_bound(labels, l));
-  };
-
-  // Union-find over the parts, numbered as in labels. The root of each
-  // set is its lowest label.
-  std::vector<std::size_t> parent(labels.size());
-  std::iota(parent.begin(), parent.end(), 0);
-  std::vector<std::int8_t> rel(labels.size(), 1);
-  std::vector<std::int64_t> joining;
-  bool consistent = true;
-  for (std::size_t k = 0; k < links.size(); k += 3)
-  {
-    auto [ra, sa] = find_root(parent, rel, index(links[k]));
-    auto [rb, sb] = find_root(parent, rel, index(links[k + 1]));
-    const int r = links[k + 2];
-    if (ra == rb)
-      consistent = consistent and sb == r * sa;
-    else
-    {
-      // The orientation of either root relative to the other
-      const auto [root, child] = std::minmax(ra, rb);
-      parent[child] = root;
-      rel[child] = r * sa * sb;
-      joining.insert(joining.end(), {links[k], links[k + 1], links[k + 2]});
-    }
-  }
-
-  std::vector<std::int8_t> orientation(labels.size());
-  for (std::size_t a = 0; a < labels.size(); ++a)
-    orientation[a] = find_root(parent, rel, a).second;
-  return {std::move(labels), std::move(orientation), std::move(joining),
-          consistent};
-}
 } // namespace
 
 std::vector<std::uint32_t>
@@ -787,8 +697,8 @@ mesh::compute_cell_orientations(const mesh::Topology& topology)
   MPI_Comm comm = topology.comm();
   std::shared_ptr<const common::IndexMap> cell_map = topology.index_map(2);
   std::shared_ptr<const common::IndexMap> edge_map = topology.index_map(1);
-  const std::int32_t num_owned = cell_map->size_local();
-  const std::int32_t num_cells = num_owned + cell_map->num_ghosts();
+  const std::int32_t num_owned_cells = cell_map->size_local();
+  const std::int32_t num_cells = num_owned_cells + cell_map->num_ghosts();
   const std::vector<std::uint8_t>& edge_perms
       = topology.get_entity_permutations(1);
   const int edges_per_cell = mesh::cell_num_entities(topology.cell_type(), 1);
@@ -808,13 +718,13 @@ mesh::compute_cell_orientations(const mesh::Topology& topology)
     const std::int32_t num_edges
         = edge_map->size_local() + edge_map->num_ghosts();
     std::vector<std::int32_t> offsets(num_edges + 1, 0);
-    for (std::int32_t c = 0; c < num_owned; ++c)
+    for (std::int32_t c = 0; c < num_owned_cells; ++c)
       for (std::int32_t e : c_to_e->links(c))
         ++offsets[e + 1];
     std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
     std::vector<std::int32_t> slots(offsets.back());
     std::vector<std::int32_t> pos(offsets.begin(), std::prev(offsets.end()));
-    for (std::int32_t c = 0; c < num_owned; ++c)
+    for (std::int32_t c = 0; c < num_owned_cells; ++c)
     {
       std::span<const std::int32_t> edges = c_to_e->links(c);
       for (std::size_t i = 0; i < edges.size(); ++i)
@@ -828,18 +738,16 @@ mesh::compute_cell_orientations(const mesh::Topology& topology)
   //    through edges with exactly two owned cells, from its "root", its
   //    first cell. sign[c] is the orientation of c relative to the root.
   //    Conflicting routes are not checked here, but in step 2.
-  std::vector<std::int8_t> sign(num_owned, 0);
-  std::vector<std::int32_t> part(num_owned, -1);
-  std::vector<std::int64_t> label; // Global index of each part's root
+  std::vector<std::int8_t> sign(num_owned_cells, 0);
+  std::vector<std::int32_t> part(num_owned_cells, -1);
+  std::int32_t num_parts = 0;
   {
-    const std::int64_t offset = cell_map->local_range()[0];
     std::vector<std::int32_t> stack;
-    for (std::int32_t root = 0; root < num_owned; ++root)
+    for (std::int32_t root = 0; root < num_owned_cells; ++root)
     {
       if (part[root] >= 0)
         continue;
-      const std::int32_t p = label.size();
-      label.push_back(offset + root);
+      const std::int32_t p = num_parts++;
       part[root] = p;
       sign[root] = 1;
       stack.push_back(root);
@@ -870,112 +778,277 @@ mesh::compute_cell_orientations(const mesh::Topology& topology)
     }
   }
 
-  // 2. Find where parts meet. t = sign[c] * direction(c, i) is the
-  //    direction c runs its edge i, oriented relative to its root, so
-  //    consistently oriented cells give opposite t. The code 2 * label +
-  //    (t > 0) gives both cells of an edge, their parts and their t.
-  auto code = [&label, &part, &sign, &direction](std::int32_t c,
-                                                 std::size_t i) -> std::int64_t
-  { return 2 * label[part[c]] + (sign[c] * direction(c, i) > 0); };
-  std::vector<std::int64_t> edge_data
-      = reduce_edge_codes(*c_to_e, num_owned, *edge_map, code);
+  // Number the parts globally, process by process. Parts are numbered
+  // in the order of their roots, and processes own increasing ranges of
+  // cells, so the lowest part of a set is the one whose root has the
+  // lowest global index.
+  const common::IndexMap part_map(comm, num_parts);
+  const std::int64_t part_offset = part_map.local_range()[0];
+  const std::int64_t num_global_parts = part_map.size_global();
 
-  // The owner of each edge checks it, and records a "link" (a, b, r)
-  // where its two cells are in parts a < b: part b has r times the
-  // orientation of part a, -1 if the cells run the edge the same way.
+  // 2. Find where parts meet. t = sign[c] * direction(c, i) is the
+  //    direction cell c runs its edge i once oriented relative to the
+  //    root of its part, so consistently oriented cells give opposite t.
+  //    Each owned cell contributes one code per edge (see
+  //    encode_edge_orientation), and reduce_edge_codes keeps the largest
+  //    and the smallest code of each edge. On an edge with two cells
+  //    these are the codes of the two cells.
+  const int rank = dolfinx::MPI::rank(comm);
+  const int size = dolfinx::MPI::size(comm);
+  // The code of cell c on its local edge i: its part (by global number),
+  // whether its t is positive, and its owning process, packed into
+  // (2 * part + (t > 0)) * size + rank
+  auto encode_edge_orientation
+      = [part_offset, rank, size, &part, &sign,
+         &direction](std::int32_t c, std::size_t i) -> std::int64_t
+  {
+    const std::int64_t global_part = part_offset + part[c];
+    const bool t_positive = sign[c] * direction(c, i) > 0;
+    return (2 * global_part + t_positive) * size + rank;
+  };
+  // The part, whether t is positive, and the owning process in a code of
+  // encode_edge_orientation:
+  //   part = code / size / 2,
+  //   t > 0 = (code / size) % 2,
+  //   rank = code % size
+  auto decode_edge_orientation
+      = [size](std::int64_t code) -> std::tuple<std::int64_t, bool, int>
+  { return {code / size / 2, (code / size) % 2, code % size}; };
+  std::vector<std::int64_t> edge_data = reduce_edge_codes(
+      *c_to_e, num_owned_cells, *edge_map, encode_edge_orientation);
+
+  // Each owned cell reads, on each of its edges, the largest code, the
+  // smallest code and the number of cells, counted over all processes:
+  // - more than two cells: not a manifold;
+  // - one cell: a boundary edge, joining nothing;
+  // - two cells: one code is this cell's, the other the other cell's.
+  //   - Same part: equal t means the part cannot be oriented.
+  //   - Different parts: the other cell's part is a neighbour of this
+  //     cell's part, with r times its orientation, where r = -1 if the
+  //     two cells have equal t and 1 otherwise.
   constexpr int not_manifold = 1;
   constexpr int not_orientable = 2;
   int status = 0;
-  std::vector<std::int64_t> links;
-  for (std::int32_t e = 0; e < edge_map->size_local(); ++e)
+  // (local part index, global number of the neighbouring part, process
+  //  owning the neighbouring part, r). Only r can differ between two
+  //  meetings of the same pair of parts. Two owned cells sharing an edge
+  //  are in the same part, so there is at most one meeting per edge with
+  //  one owned cell, an edge on the boundary of the mesh or of this
+  //  process.
+  std::vector<std::array<std::int64_t, 4>> meetings;
   {
-    std::span<const std::int64_t, codes_per_edge> d
-        = edge_row<codes_per_edge>(edge_data, e);
-    const std::int64_t hi = d[0];
-    const std::int64_t lo = -d[1];
-    if (d[2] > 2)
-      status |= not_manifold;
-    else if (d[2] == 2 and hi / 2 != lo / 2)
-      links.insert(links.end(), {lo / 2, hi / 2, hi % 2 == lo % 2 ? -1 : 1});
-    else if (d[2] == 2 and hi == lo) // One part, same t
-      status |= not_orientable;
+    // sum(offsets[1:] - offsets[:-1] == 1)
+    const std::vector<std::int32_t>& offsets = edge_slots.offsets();
+    const std::int32_t edges_with_one_owned_cell = std::transform_reduce(
+        std::next(offsets.begin()), offsets.end(), offsets.begin(), 0,
+        std::plus{},
+        [](std::int32_t next, std::int32_t prev) { return next - prev == 1; });
+    meetings.reserve(edges_with_one_owned_cell);
   }
-
-  // 3. Orient the parts on process 0, which replies to each process
-  //    with the combined status and the orientation of each of its
-  //    parts. Each process first joins its own links and sends only a
-  //    spanning forest, so process 0 receives at most one link per part,
-  //    not one per edge between processes.
-  auto [local_labels, local_orientation, forest, consistent]
-      = join_parts(links);
-  if (!consistent)
-    status |= not_orientable;
-  const int rank = dolfinx::MPI::rank(comm);
-  const int size = dolfinx::MPI::size(comm);
-  std::array<int, 3> sizes_local = {status, static_cast<int>(forest.size()),
-                                    static_cast<int>(label.size())};
-  std::vector<int> sizes(rank == 0 ? 3 * size : 0);
-  MPI_Gather(sizes_local.data(), 3, MPI_INT, sizes.data(), 3, MPI_INT, 0, comm);
-  std::vector<int> link_counts, part_counts;
-  for (std::size_t r = 0; r < sizes.size(); r += 3)
+  for (std::int32_t c = 0; c < num_owned_cells; ++c)
   {
-    status |= sizes[r];
-    link_counts.push_back(sizes[r + 1]);
-    part_counts.push_back(sizes[r + 2]);
-  }
-  std::vector<std::int64_t> all_links
-      = gather_on_root(comm, forest, link_counts);
-  std::vector<std::int64_t> all_labels
-      = gather_on_root(comm, label, part_counts);
-
-  std::vector<std::int8_t> reply;
-  std::vector<int> reply_counts(part_counts.size());
-  std::vector<int> reply_disp(part_counts.size() + 1, 0);
-  if (rank == 0)
-  {
-    auto [labels, orientation, all_forest, all_consistent]
-        = join_parts(all_links);
-    if (!all_consistent)
-      status |= not_orientable;
-    std::ranges::transform(part_counts, reply_counts.begin(),
-                           [](int n) { return n + 1; });
-    std::partial_sum(reply_counts.begin(), reply_counts.end(),
-                     std::next(reply_disp.begin()));
-    reply.resize(reply_disp.back());
-    for (std::size_t r = 0, k = 0; r < part_counts.size(); ++r)
+    std::span<const std::int32_t> edges = c_to_e->links(c);
+    for (std::size_t i = 0; i < edges.size(); ++i)
     {
-      reply[reply_disp[r]] = status;
-      for (int j = 1; j <= part_counts[r]; ++j, ++k)
+      std::span<const std::int64_t, codes_per_edge> d
+          = edge_row<codes_per_edge>(edge_data, edges[i]);
+      const std::int64_t cells_on_edge = d[2];
+      if (cells_on_edge > 2)
       {
-        // A part in no link is its own set, oriented by itself
-        auto it = std::ranges::lower_bound(labels, all_labels[k]);
-        reply[reply_disp[r] + j]
-            = it != labels.end() and *it == all_labels[k]
-                  ? orientation[std::ranges::distance(labels.begin(), it)]
-                  : 1;
+        status |= not_manifold;
+        continue;
       }
+      if (cells_on_edge < 2)
+        continue;
+
+      const std::int64_t own_code = encode_edge_orientation(c, i);
+      const std::int64_t other_code = own_code == d[0] ? -d[1] : d[0];
+      const auto [own_part, own_t_positive, own_rank]
+          = decode_edge_orientation(own_code);
+      const auto [other_part, other_t_positive, other_rank]
+          = decode_edge_orientation(other_code);
+      const bool same_t = own_t_positive == other_t_positive;
+      if (other_part != own_part)
+      {
+        meetings.push_back({part[c], other_part, other_rank, same_t ? -1 : 1});
+      }
+      else if (same_t)
+        status |= not_orientable;
     }
   }
-  std::vector<std::int8_t> answer(1 + label.size());
-  MPI_Scatterv(reply.data(), reply_counts.data(), reply_disp.data(), MPI_INT8_T,
-               answer.data(), answer.size(), MPI_INT8_T, 0, comm);
-  if (answer[0] & not_manifold)
+
+  // The neighbours of each part, by global part number, with the
+  // relative orientation of each in part_signs and its owner in
+  // neighbour_owners. A neighbour met with both orientations means the
+  // surface cannot be oriented.
+  std::ranges::sort(meetings);
+  auto [last, end] = std::ranges::unique(meetings);
+  meetings.erase(last, end);
+  std::vector<std::int32_t> offsets(num_parts + 1, 0);
+  std::vector<std::int64_t> neighbours;
+  std::vector<std::int8_t> part_signs;
+  std::vector<int> neighbour_owners;
+  neighbours.reserve(meetings.size());
+  part_signs.reserve(meetings.size());
+  neighbour_owners.reserve(meetings.size());
+  for (std::size_t k = 0; k < meetings.size(); ++k)
   {
-    throw std::runtime_error("Cannot orient the cells: an edge is shared "
-                             "by more than two cells.");
+    const auto [local_part, neighbour_part, owner, r] = meetings[k];
+    // The same pair of parts twice in the list means both a 1 and a -1
+    // orientation, so the surface is not orientable. The rest of the
+    // list is then not needed: every process raises the error after the
+    // first round of step 3, which all processes still enter.
+    if (k > 0 and meetings[k - 1][0] == local_part
+        and meetings[k - 1][1] == neighbour_part)
+    {
+      status |= not_orientable;
+      break;
+    }
+    ++offsets[local_part + 1];
+    neighbours.push_back(neighbour_part);
+    part_signs.push_back(r);
+    neighbour_owners.push_back(owner);
   }
-  if (answer[0] & not_orientable)
+  std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
+  const graph::AdjacencyList<std::int64_t> part_neighbours(
+      std::move(neighbours), std::move(offsets));
+
+  // 3. Join the parts across processes, over an index map of the parts
+  //    with each process's neighbouring parts as ghosts. Each part holds
+  //    a row (representative, orientation): the lowest part it is known
+  //    to be connected to, initially itself, and its orientation
+  //    relative to that part. Each round, a forward scatter brings the
+  //    neighbours' rows into the ghost rows, and every part takes the
+  //    lowest representative among its neighbours', with the orientation
+  //    that implies. Once no representative changes, every part's
+  //    representative is the lowest part of its set, which the set is
+  //    oriented by, and the rows received in that round are final, so
+  //    each link is checked: a neighbour with the other orientation
+  //    means the surface cannot be oriented.
+  std::span<const std::int64_t> neighbour_parts = part_neighbours.array();
+  const std::vector<std::int32_t>& neighbour_offsets
+      = part_neighbours.offsets();
+  std::vector<std::pair<std::int64_t, int>> ghost_owner_pairs;
+  for (std::size_t k = 0; k < neighbour_parts.size(); ++k)
+    ghost_owner_pairs.emplace_back(neighbour_parts[k], neighbour_owners[k]);
+  std::ranges::sort(ghost_owner_pairs);
+  auto [last_pair, end_pair] = std::ranges::unique(ghost_owner_pairs);
+  ghost_owner_pairs.erase(last_pair, end_pair);
+  std::vector<std::int64_t> ghost_parts;
+  std::vector<int> ghost_owners;
+  for (const auto& [ghost, owner] : ghost_owner_pairs)
   {
-    throw std::runtime_error("Cannot orient the cells: the surface is "
-                             "not orientable (e.g. a Möbius strip).");
+    ghost_parts.push_back(ghost);
+    ghost_owners.push_back(owner);
   }
-  std::vector<std::int8_t> part_sign(std::next(answer.begin()), answer.end());
+  const common::IndexMap neighbour_map(comm, num_parts, ghost_parts,
+                                       ghost_owners);
+  std::vector<std::int32_t> neighbour_rows(neighbour_parts.size());
+  neighbour_map.global_to_local(neighbour_parts, neighbour_rows);
+
+  // Rows of the owned parts, then of the ghosts
+  constexpr int row_size = 2;
+  std::vector<std::int64_t> rows(row_size * (num_parts + ghost_parts.size()),
+                                 1);
+  for (std::int32_t p = 0; p < num_parts; ++p)
+    rows[row_size * p] = part_offset + p; // Orientation 1 relative to itself
+
+  // Each round's exchange is equivalent to the forward scatter of a
+  // la::Vector<std::int64_t> over neighbour_map with block size
+  // row_size. The Scatterer is used directly so that the mesh module
+  // does not depend on la.
+  const common::Scatterer<> sc(neighbour_map);
+  const std::vector<std::int32_t>& owned_rows = sc.local_indices_block();
+  const std::vector<std::int32_t>& ghost_rows = sc.remote_indices_block();
+  std::vector<std::int64_t> send(row_size * owned_rows.size());
+  std::vector<std::int64_t> recv(row_size * ghost_rows.size());
+
+  constexpr int changed = 4;
+  constexpr int conflict = 8;
+
+  // Each round moves the lowest representative one part further along
+  // every chain of parts, so the representatives stop changing within
+  // num_global_parts rounds, and one more round sees no change
+  bool converged = false;
+  for (std::int64_t round = 0; round <= num_global_parts and !converged;
+       ++round)
+  {
+    for (std::size_t j = 0; j < owned_rows.size(); ++j)
+    {
+      send[row_size * j] = rows[row_size * owned_rows[j]];
+      send[row_size * j + 1] = rows[row_size * owned_rows[j] + 1];
+    }
+    MPI_Request request = MPI_REQUEST_NULL;
+    sc.scatter_fwd_begin(send.data(), recv.data(), row_size, request);
+    sc.scatter_fwd_end(request);
+    for (std::size_t j = 0; j < ghost_rows.size(); ++j)
+    {
+      const std::int32_t ghost = num_parts + ghost_rows[j];
+      rows[row_size * ghost] = recv[row_size * j];
+      rows[row_size * ghost + 1] = recv[row_size * j + 1];
+    }
+
+    int round_status = status;
+    // The rows after this round, updated from the previous round's rows
+    // so that every part sees the same values
+    std::vector<std::int64_t> updated_rows = rows;
+    for (std::int32_t p = 0; p < num_parts; ++p)
+    {
+      const std::int64_t representative = rows[row_size * p];
+      const std::int64_t orientation = rows[row_size * p + 1];
+      std::int64_t& updated_representative = updated_rows[row_size * p];
+      std::int64_t& updated_orientation = updated_rows[row_size * p + 1];
+
+      // p adopts the lowest of its neighbours' representatives, if lower
+      // than its own, which is how it joins the set of the lowest part
+      // it is connected to. A neighbour has r times the orientation of p,
+      // so p has r times the neighbour's.
+      for (std::int32_t k = neighbour_offsets[p]; k < neighbour_offsets[p + 1];
+           ++k)
+      {
+        const std::int64_t neighbour_representative
+            = rows[row_size * neighbour_rows[k]];
+        const std::int64_t neighbour_orientation
+            = rows[row_size * neighbour_rows[k] + 1];
+        const std::int64_t r = part_signs[k];
+        if (neighbour_representative < updated_representative)
+        {
+          updated_representative = neighbour_representative;
+          updated_orientation = r * neighbour_orientation;
+        }
+        if (neighbour_representative == representative
+            and neighbour_orientation != r * orientation)
+        {
+          round_status |= conflict;
+        }
+      }
+    }
+    if (updated_rows != rows)
+      round_status |= changed;
+    rows = std::move(updated_rows);
+
+    MPI_Allreduce(MPI_IN_PLACE, &round_status, 1, MPI_INT, MPI_BOR, comm);
+    if (round_status & not_manifold)
+    {
+      throw std::runtime_error("Cannot orient the cells: an edge is shared "
+                               "by more than two cells.");
+    }
+    // A conflict is final only in a round without changes
+    converged = !(round_status & changed);
+    if ((round_status & not_orientable)
+        or (converged and (round_status & conflict)))
+    {
+      throw std::runtime_error("Cannot orient the cells: the surface is "
+                               "not orientable (e.g. a Möbius strip).");
+    }
+  }
+  assert(converged);
 
   // 4. Orientations of the owned cells, then of the ghost cells from
   //    their owners
   std::vector<std::int8_t> orientations(num_cells);
-  for (std::int32_t c = 0; c < num_owned; ++c)
-    orientations[c] = part_sign[part[c]] * sign[c];
+  for (std::int32_t c = 0; c < num_owned_cells; ++c)
+    orientations[c] = rows[row_size * part[c] + 1] * sign[c];
   const common::Scatterer<> cell_sc(*cell_map);
   const std::vector<std::int32_t>& owned = cell_sc.local_indices_block();
   const std::vector<std::int32_t>& ghosts = cell_sc.remote_indices_block();
@@ -988,7 +1061,7 @@ mesh::compute_cell_orientations(const mesh::Topology& topology)
   cell_sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), 1, request);
   cell_sc.scatter_fwd_end(request);
   for (std::size_t i = 0; i < ghosts.size(); ++i)
-    orientations[num_owned + ghosts[i]] = recv_buffer[i];
+    orientations[num_owned_cells + ghosts[i]] = recv_buffer[i];
 
   return orientations;
 }
