@@ -677,6 +677,25 @@ mesh::compute_facet_orientations(const mesh::Topology& topology)
 std::vector<std::int8_t>
 mesh::compute_cell_orientations(const mesh::Topology& topology)
 {
+  // Overview. Two cells sharing an edge are consistently oriented when
+  // they run the edge in opposite directions.
+  // 1. Each process splits its owned cells into "parts": sets of cells
+  //    connected through edges whose two cells it owns. A walk through
+  //    each part orients its cells relative to the part's first cell.
+  // 2. One reduction over the edges tells each process, for every edge
+  //    of its cells, which part the cell on the other side belongs to
+  //    and whether the two cells agree there. This gives each part its
+  //    neighbouring parts on other processes, each with a relative
+  //    orientation of 1 or -1.
+  // 3. The parts are joined into connected surfaces by rounds of
+  //    exchange with the neighbouring parts. Each part adopts the lowest
+  //    part it is connected to as its reference, together with its
+  //    orientation relative to that part.
+  // 4. Each cell's orientation is its orientation within its part times
+  //    its part's orientation; ghost cells get their owner's value.
+  // Non-manifold edges and non-orientable surfaces are detected along the
+  // way and raised on all processes together.
+
   common::Timer timer("Compute cell orientations");
 
   if (topology.dim() != 2)
