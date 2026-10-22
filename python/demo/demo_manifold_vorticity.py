@@ -125,7 +125,9 @@ import ufl
 
 # -
 
-# We use the same degree, geometry and mesh as {doc}`demo_manifold`.
+# We use the same degree, geometry and mesh as {doc}`demo_manifold`: the
+# surface mesh is the boundary of a tetrahedral mesh of the unit ball,
+# `ball_mesh`.
 
 # +
 order = 3
