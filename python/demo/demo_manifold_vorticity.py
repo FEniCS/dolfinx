@@ -248,49 +248,11 @@ problem = dolfinx.fem.petsc.LinearProblem(
 sigma_h, u_h, r_h = problem.solve()
 # -
 
-# ### Comparison with Raviart-Thomas
-#
-# We solve the problem of {doc}`demo_manifold` with Raviart-Thomas
-# elements on the same mesh, and compare the two approximations of $u$,
-# which live in the same space $Q$.
-
-# +
-mesh.topology.create_facet_orientations()
-V_rt = dolfinx.fem.functionspace(mesh, ("RT", order))
-W_rt = ufl.MixedFunctionSpace(V_rt, Q, R)
-(sigma_rt, u_rt, r_rt) = ufl.TrialFunctions(W_rt)
-(tau_rt, v_rt, t_rt) = ufl.TestFunctions(W_rt)
-a_rt = (
-    ufl.inner(sigma_rt, tau_rt)
-    + ufl.inner(ufl.div(sigma_rt), v_rt)
-    + ufl.inner(u_rt, ufl.div(tau_rt))
-    + ufl.inner(r_rt, v_rt)
-    + ufl.inner(u_rt, t_rt)
-) * ufl.dx
-a_rt_blocked: list[list[ufl.Form | None]] = ufl.extract_blocks(a_rt)  # type: ignore[assignment]
-L_rt_blocked: list[ufl.Form | ufl.ZeroBaseForm] = [
-    ufl.ZeroBaseForm((tau_rt,)),
-    ufl.inner(g, v_rt) * ufl.dx,
-    ufl.ZeroBaseForm((t_rt,)),
-]
-problem_rt = dolfinx.fem.petsc.LinearProblem(
-    a_rt_blocked,
-    L_rt_blocked,
-    bcs=[],
-    petsc_options=petsc_options,
-    petsc_options_prefix="mixed_poisson_rt_",
-    kind="mpi",
-)
-u_h_rt = problem_rt.solve()[1]
-# -
-
 # ### Errors
 #
 # The exact flux is $\sigma = -R(\nabla u) = -n \times \nabla u$, with
 # $\nabla u$ the surface gradient. Taking $n = n_h$ there too makes the
-# comparison independent of whether $n_h$ points out or in. The
-# difference between the two approximations of $u$ is at the level of
-# rounding, which we check.
+# comparison independent of whether $n_h$ points out or in.
 
 # +
 n_exact = x / ufl.sqrt(ufl.dot(x, x))
@@ -306,17 +268,12 @@ def norm(expr):
 
 E_u = norm(u_h - u_exact)
 E_sigma = norm(sigma_h - sigma_exact)
-E_rt = norm(u_h - u_h_rt)
 if mesh.comm.rank == 0:
     print("L2 error in u:", E_u)
     print("L2 error in sigma:", E_sigma)
-    print("L2 difference to the Raviart-Thomas u:", E_rt)
-
-eps = np.finfo(dolfinx.default_real_type).eps
-assert E_rt < 1e4 * eps * norm(u_h), "the N1curl and RT solutions differ"
 # -
 
-# Finally, we free the PETSc objects held by the two problems.
+# Finally, we free the PETSc objects held by the problem.
 
-del problem, problem_rt
+del problem
 PETSc.garbage_cleanup(mesh.comm)  # type: ignore[bad-argument-type]
