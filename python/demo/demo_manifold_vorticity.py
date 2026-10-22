@@ -19,7 +19,7 @@
 # * compute a consistent orientation of the cells of a surface with
 #   {py:func}`compute_cell_orientations
 #   <dolfinx.mesh.compute_cell_orientations>`,
-# * turn it into a consistent unit normal from
+# * turn the orientation into a consistent unit normal from
 #   {py:class}`ufl.CellNormal`,
 # * use that normal to build the surface curl of a Nédélec field.
 #
