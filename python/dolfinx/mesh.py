@@ -1934,10 +1934,11 @@ def compute_cell_orientations(topology: Topology) -> npt.NDArray[np.int8]:
         n = o_h * ufl.CellNormal(msh)
 
     Warning:
-        The values are in local cell order, which is not the order of
-        the degrees-of-freedom of a piecewise constant space. Assign them
-        through its dofmap, as above: ``o_h.x.array[:] = o`` gives
-        wrong signs without an error.
+        The values are in local cell order. The degrees-of-freedom of a
+        piecewise constant space are not guaranteed to follow that
+        order, as the dofmap may be reordered. Assign the values
+        through its dofmap, as above, rather than with
+        ``o_h.x.array[:] = o``.
 
     Note:
         Collective. Creates the edges, the cell-to-edge connectivity and

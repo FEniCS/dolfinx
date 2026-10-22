@@ -284,8 +284,9 @@ surface_mesh = dolfinx.mesh.create_submesh(volume_mesh, 2, boundary_facets)[0]
 # ```
 #
 # The signs are in local cell order. We store them in a piecewise
-# constant function, whose degrees-of-freedom are not numbered in the
-# same order as the cells, so the signs are placed through its dofmap.
+# constant function, whose degrees-of-freedom are not guaranteed to be
+# numbered in the same order as the cells, so the signs are placed
+# through its dofmap.
 
 # +
 orientations = dolfinx.mesh.compute_cell_orientations(surface_mesh.topology)
