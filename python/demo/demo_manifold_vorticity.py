@@ -193,9 +193,7 @@ if mesh.comm.rank == 0:
 # -
 
 # With the oriented normal, we define the surface curl
-# $\operatorname{rot} w = n_h \cdot (\nabla \times w)$. UFL's
-# `ufl.rot` cannot be used here: it is the curl itself, a vector for a
-# field in 3D.
+# $\operatorname{rot} w = n_h \cdot (\nabla \times w)$.
 
 
 # +
