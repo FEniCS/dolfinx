@@ -62,6 +62,7 @@ from dolfinx.fem.utils import (
     create_sparsity_pattern,
     discrete_curl,
     discrete_gradient,
+    evaluate_basis_functions,
     interpolate_geometry,
     interpolation_matrix,
 )
@@ -98,6 +99,7 @@ __all__ = [
     "dirichletbc",
     "discrete_curl",
     "discrete_gradient",
+    "evaluate_basis_functions",
     "extract_function_spaces",
     "finiteelement",
     "form",
