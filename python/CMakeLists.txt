@@ -202,20 +202,9 @@ set(
   dolfinx/cpp/refinement.pyi
 )
 
-# Import the cpp compiled module before installing, relying on dynamic
-# linking at import time. Build it directly into a throwaway "dolfinx"
-# package directory so that the
-# module imports under its real name (dolfinx.cpp): otherwise
-# nanobind's stubgen resolves submodule cross-references (e.g.
-# dolfinx.cpp.la) against the bare top-level name "cpp", producing
-# "import cpp.la" in the generated stubs, which does not exist as an
-# importable module and silently resolves to Any during type checking. stubgen
-# infers its output location from the imported module's __file__, so
-# placing the build output under CMAKE_CURRENT_BINARY_DIR/dolfinx
-# keeps that location matching the OUTPUT paths below (relative to
-# CMAKE_CURRENT_BINARY_DIR). See nanobind's nanobind_add_stub docs
-# for the import mechanism:
-# https://nanobind.readthedocs.io/en/latest/api_cmake.html#command:nanobind_add_stub
+# Build the module inside a "dolfinx" package directory so stubgen imports
+# it as dolfinx.cpp. Otherwise submodule references in the stubs resolve to
+# a bare "cpp" and become Any. The directory also fixes where stubgen writes.
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
 file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/__init__.py)
 # The generator expression stops Visual Studio adding a config subdirectory.
