@@ -103,10 +103,15 @@
 # \end{aligned}
 # $$
 #
-# Cell by cell, $R(\sigma)$ for $\sigma$ in the Nédélec space of
-# degree $k$ spans the Raviart-Thomas space of degree $k$, so $u_h$ is
-# the same as in {doc}`demo_manifold`, provided that $n$ is the same on
-# every cell. That is where the orientation comes in.
+# ```{note}
+# The rotation $R$ depends on the normal $n$. If the normals of two
+# cells sharing an edge point to opposite sides of the surface,
+# $R(\sigma)$ changes sign across the edge and its normal component is
+# discontinuous, so $R(\sigma)$ is not in $H(\mathrm{div})$. The cell
+# normals must therefore be consistently oriented for this formulation
+# to give the same $u_h$ as the Raviart-Thomas formulation of
+# {doc}`demo_manifold`.
+# ```
 #
 # ## Implementation
 
