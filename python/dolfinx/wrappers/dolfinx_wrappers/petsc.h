@@ -76,8 +76,8 @@ void declare_petsc_discrete_operators(nb::module_& m)
           // failure: throwing here would replace the in-flight exception.
           if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
           {
-            spdlog::error("MatDestroy failed with error code {}.",
-                          static_cast<int>(ierr));
+            dolfinx::logger().error("MatDestroy failed with error code {}.",
+                                    static_cast<int>(ierr));
           }
           throw;
         }
@@ -112,8 +112,8 @@ void declare_petsc_discrete_operators(nb::module_& m)
           // failure: throwing here would replace the in-flight exception.
           if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
           {
-            spdlog::error("MatDestroy failed with error code {}.",
-                          static_cast<int>(ierr));
+            dolfinx::logger().error("MatDestroy failed with error code {}.",
+                                    static_cast<int>(ierr));
           }
           throw;
         }
@@ -144,8 +144,8 @@ void declare_petsc_discrete_operators(nb::module_& m)
           // failure: throwing here would replace the in-flight exception.
           if (PetscErrorCode ierr = MatDestroy(&A); ierr != 0)
           {
-            spdlog::error("MatDestroy failed with error code {}.",
-                          static_cast<int>(ierr));
+            dolfinx::logger().error("MatDestroy failed with error code {}.",
+                                    static_cast<int>(ierr));
           }
           throw;
         }

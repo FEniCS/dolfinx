@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - release
     tags:
       - "v*"
   pull_request:
@@ -16,7 +15,7 @@ on:
   workflow_dispatch:
 
 # Cancel superseded runs: a new commit on a pull request makes the
-# previous run's result irrelevant. Pushes to 'main' and 'release' are
+# previous run's result irrelevant. Pushes to 'main' and tags are
 # left to finish, since they populate caches and publish artefacts.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -344,6 +343,14 @@ jobs:
           name: docs-cpp-sphinx
           path: cpp/doc/build/html
           retention-days: 2
+
+      - name: Install PyVista rendering dependencies
+        # The Python demos render 3-D figures for the documentation
+        # off-screen, which needs the GL libraries that the base image
+        # does not carry
+        run: |
+          apt-get -y update
+          apt-get install -y libegl1 libxrender1
 
       - name: Build Python interface documentation
         run: |

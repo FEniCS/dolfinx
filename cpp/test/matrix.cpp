@@ -21,6 +21,8 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/la/matmul.h>
+#include <dolfinx/la/mattrans.h>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -568,6 +570,73 @@ void test_stacked_sparsity_pattern_blocks()
       offsets, std::array<std::int64_t, 7>{0, 6, 12, 12, 12, 18, 24}));
 }
 
+/// @brief Matrix product and transpose when some ranks have no
+/// neighbours.
+///
+/// Only rank 0 holds a ghost column, so on ranks greater than 1 the
+/// column IndexMap of A has neither source nor destination ranks. Those
+/// ranks must still take part in the communicator creation and IndexMap
+/// collectives inside matmul/transpose, otherwise their peers deadlock.
+template <std::floating_point T>
+void test_matmul_transpose_no_neighbours()
+{
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const int rank = dolfinx::MPI::rank(comm);
+  if (dolfinx::MPI::size(comm) < 3)
+    return;
+
+  constexpr std::int32_t nlocal = 2;
+  std::vector<std::int64_t> ghosts;
+  std::vector<int> owners;
+  if (rank == 0)
+  {
+    ghosts.push_back(nlocal); // first index owned by rank 1
+    owners.push_back(1);
+  }
+
+  auto row_map = std::make_shared<common::IndexMap>(comm, nlocal);
+  auto col_map
+      = std::make_shared<common::IndexMap>(comm, nlocal, ghosts, owners);
+
+  std::vector<std::int32_t> rows(nlocal);
+  std::iota(rows.begin(), rows.end(), 0);
+  std::vector<std::int32_t> cols(nlocal + ghosts.size());
+  std::iota(cols.begin(), cols.end(), 0);
+
+  // A: all owned columns of each owned row, plus the ghost column
+  la::SparsityPattern pa(comm, {row_map, col_map}, {1, 1});
+  pa.insert(rows, cols);
+  pa.finalize();
+  la::MatrixCSR<T> A(pa);
+  std::ranges::fill(A.values(), T(1));
+
+  // B: owned columns only
+  la::SparsityPattern pb(comm, {row_map, row_map}, {1, 1});
+  pb.insert(rows, rows);
+  pb.finalize();
+  la::MatrixCSR<T> B(pb);
+  std::ranges::fill(B.values(), T(1));
+
+  la::MatrixCSR<T> C = la::matmul(A, B);
+  CHECK(C.index_map(0)->size_global() == A.index_map(0)->size_global());
+  CHECK(C.index_map(1)->size_global() == B.index_map(1)->size_global());
+
+  la::MatrixCSR<T> At = la::transpose<T, 1, 1>(A);
+  CHECK(At.index_map(0)->size_global() == A.index_map(1)->size_global());
+  CHECK(At.index_map(1)->size_global() == A.index_map(0)->size_global());
+
+  if (rank > 1)
+  {
+    // These rows couple to owned columns only, so each row of C and of
+    // Aᵀ holds nlocal entries, and each entry of C is a sum of nlocal
+    // unit products.
+    CHECK(C.row_ptr()[nlocal] == nlocal * nlocal);
+    CHECK(At.row_ptr()[nlocal] == nlocal * nlocal);
+    for (T v : C.values())
+      CHECK(v == T(nlocal));
+  }
+}
+
 } // namespace
 
 TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
@@ -596,4 +665,11 @@ TEST_CASE("Set diagonal with duplicate bc rows",
 {
   test_set_diagonal_duplicate_bc_rows<float>();
   test_set_diagonal_duplicate_bc_rows<double>();
+}
+
+TEST_CASE("Matrix product and transpose with no-neighbour ranks",
+          "[la_matrix_matmul_no_neighbours]")
+{
+  CHECK_NOTHROW(test_matmul_transpose_no_neighbours<float>());
+  CHECK_NOTHROW(test_matmul_transpose_no_neighbours<double>());
 }

@@ -101,7 +101,7 @@ private:
   void close_or_warn() noexcept
   {
     if (_id > 0 and _close(_id) < 0)
-      spdlog::warn("Failed to close HDF5 identifier {}.", _id);
+      logger().warn("Failed to close HDF5 identifier {}.", _id);
   }
 
   hid_t _id;
@@ -382,7 +382,7 @@ std::vector<T> read_dataset(hid_t dset_id, std::array<std::int64_t, 2> range,
   if (rank < 1)
     throw std::runtime_error("Failed to get rank of data space.");
   else if (rank > 2)
-    spdlog::warn("io::hdf5::read_dataset untested for rank > 2.");
+    logger().warn("io::hdf5::read_dataset untested for rank > 2.");
 
   // Hyperslab selection, defaulting to the full extent in each
   // dimension
@@ -427,7 +427,7 @@ std::vector<T> read_dataset(hid_t dset_id, std::array<std::int64_t, 2> range,
   auto timer_end = std::chrono::system_clock::now();
   std::chrono::duration<double> dt = (timer_end - timer_start);
   double data_rate = data.size() * sizeof(T) / (1e6 * dt.count());
-  spdlog::info("HDF5 Read data rate: {} MB/s", data_rate);
+  logger().info("HDF5 Read data rate: {} MB/s", data_rate);
 
   return data;
 }

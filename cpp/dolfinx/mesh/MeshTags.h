@@ -160,7 +160,7 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
                             std::span<const T> values,
                             std::string name = "mesh_tags")
 {
-  spdlog::info(
+  logger().info(
       "Building MeshTags object from tagged entities (defined by vertices).");
 
   // Compute the indices of the topology entities (index is set to -1 if

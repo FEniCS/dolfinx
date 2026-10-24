@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
         f(1, i) = std::sin(10 * x(0, i)) * std::sin(10 * x(2, i));
         f(2, i) = std::cos(10 * x(0, i)) * std::cos(10 * x(2, i));
       }
-      return {std::move(fdata), {3, x.extent(1)}};
+      return {std::move(fdata), std::vector<std::size_t>{3, x.extent(1)}};
     };
 
     // Interpolate an expression into u_tet

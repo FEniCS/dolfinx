@@ -209,17 +209,39 @@ const EntityMap& find_entity_map(
     std::span<const std::reference_wrapper<const EntityMap>> entity_maps,
     const Topology& topology0, const Topology& topology1);
 
-/// @brief Map integration entities of a topology to the cells of a
-/// related topology.
-/// @param[in] topology_c Topology to extract cell indices on.
+/// @brief Check that entities of a topology can be mapped to cells of
+/// a related topology.
+///
+/// An entity maps to a *cell* of `topology_c`, so unless the
+/// topologies have equal dimension `topology_c` must be the
+/// lower-dimensional one and the entities its cells, i.e. have
+/// dimension `topology_c.dim()`. These are the requirements of
+/// ::extract_cells_from_entities that do not depend on the entities
+/// themselves.
+///
+/// @param[in] topology_c Related topology to map to.
+/// @param[in] topology Topology that the entities belong to.
+/// @param[in] dim Topological dimension of the entities.
+/// @throws std::invalid_argument if the entities cannot be mapped.
+void check_entity_cell_mapping(const Topology& topology_c,
+                               const Topology& topology, int dim);
+
+/// @brief Map entities of a topology to the cells of a related
+/// topology, e.g. the integration entities of a form or the entities
+/// an Expression is evaluated on.
+/// @param[in] topology_c Related topology to extract cell indices on.
 /// @param[in] topology Topology that `entities` belong to.
-/// @param[in] entities Integration entities. Either a rank-1 list of
-/// cells of `topology`, or a rank-2 list of (cell, local entity index)
-/// pairs.
+/// @param[in] entities Either a rank-1 list of cells of `topology`, or
+/// a rank-2 list of (cell, local entity index) pairs.
 /// @param[in] entity_map Map between `topology` and `topology_c`.
 /// Required when `topology_c` is not `topology`.
 /// @return Cell of `topology_c` for each of `entities`, or -1 if there
 /// is none.
+/// @pre For (cell, local entity index) pairs and a lower-dimensional
+/// `topology_c`, the local index is that of an entity of dimension
+/// `topology_c.dim()`. A pair does not carry the dimension of its
+/// entity, so this is not checked here; callers check it with
+/// ::check_entity_cell_mapping.
 /// @note For (cell, local entity index) pairs and a lower-dimensional
 /// `topology_c`, the connectivity of `topology` from its cells to
 /// entities of dimension `topology_c.dim()` must have been computed.

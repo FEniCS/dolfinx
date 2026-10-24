@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <array>
 #include <concepts>
+#include <cstddef>
+#include <cstdint>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -58,8 +60,10 @@ public:
   ///
   /// @param[in] coefficients Coefficients in the Expression.
   /// @param[in] constants Constants in the Expression.
-  /// @param[in] X Points on the reference cell, `shape=(number of
-  /// points, tdim)` and storage is row-major.
+  /// @param[in] X Points on the reference cell of the entities the
+  /// Expression is evaluated on, `shape=(number of points, entity
+  /// dimension)` and storage is row-major. The entity dimension is the
+  /// mesh topological dimension for cells, one less for facets, etc.
   /// @param[in] Xshape Shape of `X`.
   /// @param[in] fn Function for tabulating the Expression.
   /// @param[in] value_shape Shape of Expression evaluated at single
@@ -170,11 +174,25 @@ public:
   /// @brief Value shape of Expression result (at a point),
   const std::vector<std::size_t>& value_shape() const { return _value_shape; }
 
-  /// @brief Evaluation point coordinates on the reference cell.
-  std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> X() const
+  /// @brief Evaluation point coordinates on the reference entity.
+  /// @return Points, row-major, and their shape `(number of points,
+  /// entity dimension)`.
+  const std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>>&
+  X() const
   {
     return _x_ref;
   }
+
+  /// @brief Number of evaluation points (::X).
+  std::size_t num_points() const { return _x_ref.second[0]; }
+
+  /// @brief Topological dimension of the entities the Expression is
+  /// evaluated on.
+  ///
+  /// The evaluation points (::X) are given on the reference entity, e.g.
+  /// on a tetrahedral mesh this is 3 for cells, 2 for facets, 1 for
+  /// ridges and 0 for peaks.
+  int entity_dim() const { return static_cast<int>(_x_ref.second[1]); }
 
   /// @brief Maps between entities of different meshes.
   const std::vector<std::reference_wrapper<const dolfinx::mesh::EntityMap>>&
@@ -208,7 +226,7 @@ private:
   // Shape of the evaluated Expression
   std::vector<std::size_t> _value_shape;
 
-  // Evaluation points on reference cell
+  // Evaluation points on reference entity
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> _x_ref;
 
   // Set of bidirectional maps of mesh entities (cells, facets, ridges or peaks)

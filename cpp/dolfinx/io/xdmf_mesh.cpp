@@ -8,6 +8,7 @@
 #include "cells.h"
 #include "xdmf_utils.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -29,7 +30,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   const mesh::Geometry<U>& geometry, int dim,
                                   std::span<const std::int32_t> entities)
 {
-  spdlog::info("Adding topology data to node {}", xml_node.path('/'));
+  logger().info("Adding topology data to node {}", xml_node.path('/'));
 
   const int tdim = topology.dim();
 
@@ -169,7 +170,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   hid_t h5_id, std::string_view path_prefix,
                                   const mesh::Geometry<U>& geometry)
 {
-  spdlog::info("Adding geometry data to node \"{}\"", xml_node.path('/'));
+  logger().info("Adding geometry data to node \"{}\"", xml_node.path('/'));
   auto map = geometry.index_map();
   assert(map);
 
@@ -224,7 +225,7 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
                          const mesh::Mesh<U>& mesh,
                          std::string_view path_prefix)
 {
-  spdlog::info("Adding mesh to node \"{}\"", xml_node.path('/'));
+  logger().info("Adding mesh to node \"{}\"", xml_node.path('/'));
 
   // Add grid node and attributes
   pugi::xml_node grid_node = xml_node.append_child("Grid");

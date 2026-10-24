@@ -22,7 +22,11 @@ import jupytext_process  # isort:skip
 
 myst_heading_anchors = 3
 
-jupytext_process.process()
+# Demos that save figures are executed to generate their images, which
+# dominates the build time. Set DOLFINX_DOC_SKIP_DEMO_IMAGES=1 to reuse
+# the images from an earlier build instead.
+_skip_demo_images = os.environ.get("DOLFINX_DOC_SKIP_DEMO_IMAGES", "")
+jupytext_process.process(run_demos=_skip_demo_images.lower() not in ("1", "true", "yes", "on"))
 
 # -- General configuration ------------------------------------------------
 
@@ -44,6 +48,7 @@ extensions = [
     "sphinx_codeautolink",
     "sphinx.ext.intersphinx",
     "sphinxcontrib.bibtex",
+    "sphinx_togglebutton",
 ]
 
 # Bibligraphy file

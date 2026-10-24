@@ -41,9 +41,6 @@ Mixed and hybridised formulations
 
 * :doc:`demos/demo_mixed-poisson` -- solve the Poisson equation in mixed
   (flux, potential) form with a block-preconditioned iterative solver.
-* :doc:`demos/demo_manifold` -- solve the Poisson equation in mixed form
-  on the sphere, a manifold, with Raviart-Thomas elements on a
-  consistently oriented surface mesh.
 * :doc:`demos/demo_stokes` -- solve the Stokes equations with Taylor-Hood
   elements, comparing five block and monolithic solver strategies.
 * :doc:`demos/demo_navier-stokes` -- solve the Navier-Stokes equations
@@ -55,11 +52,33 @@ Mixed and hybridised formulations
   degrees-of-freedom, using a numba-generated kernel.
 
 
+Problems on manifolds
+---------------------
+
+* :doc:`demos/demo_manifold` -- solve the Poisson equation in mixed form
+  on the sphere, with Raviart-Thomas elements on a surface taken from a
+  Gmsh volume mesh, widening the ghost layer with a custom partitioner
+  so that the facets can be signed in parallel.
+* :doc:`demos/demo_mobius` -- solve the same equation on a Möbius strip,
+  where no consistent orientation of the cells exists, on a higher-order
+  mesh built by hand, with a cylinder as a control.
+* :doc:`demos/demo_mobius_eikonal` -- compute the distance to the
+  boundary of a Möbius strip, solving the eikonal equation with the
+  latent variable proximal point algorithm in mixed form.
+* :doc:`demos/demo_branching_manifold` -- solve the Poisson equation in
+  mixed form on three sheets meeting along a line, with a
+  Raviart-Thomas space on each sheet, coupled by a Lagrange multiplier
+  on the joint, transferring mesh tags to the submeshes of the sheets.
+
+
 Time-dependent and nonlinear problems
 -------------------------------------
 
 * :doc:`demos/demo_cahn-hilliard` -- solve the time-dependent, nonlinear
   Cahn-Hilliard equation with a Newton solver.
+* :doc:`demos/demo_snap-through` -- trace the snap-through buckling of a
+  hyperelastic arch past a limit point, using PETSc's ``SNESNEWTONAL``
+  arc-length continuation solver.
 * :doc:`demos/demo_navier-stokes` -- time-step the semi-implicit
   divergence-conforming Navier-Stokes scheme (see also *Mixed and
   hybridised formulations*).
@@ -113,8 +132,11 @@ Mesh generation, partitioning and parallel data
   communication pattern of a distributed mesh with NetworkX.
 * :doc:`demos/demo_mixed-topology` -- solve a Helmholtz problem on a
   mesh with mixed cell topology (in development, serial only).
-* :doc:`demos/demo_manifold` -- see *Mixed and hybridised formulations*:
-  extract a surface mesh from a Gmsh volume mesh and orient its cells.
+* :doc:`demos/demo_manifold` -- see *Problems on manifolds*: take a
+  surface from a Gmsh volume mesh, and ghost a cell wherever it shares a
+  vertex by writing a partitioner.
+* :doc:`demos/demo_mobius` -- see *Problems on manifolds*: build a
+  non-orientable higher-order surface mesh by hand.
 
 
 Electromagnetics
@@ -135,38 +157,89 @@ PETSc scalars.
 
 
 ..
-   The following hidden toctree serves as the master site map for Sphinx.
-   It ensures the left sidebar populates cleanly without duplicating items.
+   The hidden toctrees below are the master site map for Sphinx, and
+   group the left sidebar by the same topics as the sections above.
+   Each demo appears in exactly one of them -- a demo that illustrates
+   several topics is cross-referenced in the text rather than listed
+   twice, since a second toctree entry would make the sidebar
+   ambiguous.
 
 .. toctree::
    :hidden:
    :maxdepth: 1
+   :caption: Getting started
 
    demos/demo_poisson.md
    demos/demo_helmholtz.md
    demos/demo_biharmonic.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Interpolation, IO and visualisation
+
+   demos/demo_pyvista.md
+   demos/demo_interpolation-io.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Mixed and hybridised formulations
+
    demos/demo_mixed-poisson.md
    demos/demo_manifold.md
+   demos/demo_mobius.md
+   demos/demo_mobius_eikonal.md
+   demos/demo_branching_manifold.md
    demos/demo_stokes.md
    demos/demo_navier-stokes.md
    demos/demo_hdg.md
    demos/demo_static-condensation.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Time-dependent and nonlinear problems
+
    demos/demo_cahn-hilliard.md
-   demos/demo_half-loaded-waveguide.md
-   demos/demo_scattering-boundary-conditions.md
-   demos/demo_pml.md
-   demos/demo_axis.md
+   demos/demo_snap-through.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Linear solvers and matrix-free methods
+
    demos/demo_elasticity.md
    demos/demo_pyamg.md
    demos/demo_dd-solvers.md
    demos/demo_poisson-matrix-free.md
    demos/demo_matrix-free-petsc.md
    demos/demo_types.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Custom and advanced finite elements
+
    demos/demo_lagrange-variants.md
    demos/demo_tnt-elements.md
-   demos/demo_pyvista.md
-   demos/demo_interpolation-io.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Mesh generation, partitioning and parallel data
+
    demos/demo_gmsh.md
    demos/demo_partition.md
    demos/demo_comm-pattern.md
    demos/demo_mixed-topology.md
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Electromagnetics
+
+   demos/demo_half-loaded-waveguide.md
+   demos/demo_scattering-boundary-conditions.md
+   demos/demo_pml.md
+   demos/demo_axis.md
