@@ -68,11 +68,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install --no-install-recommends \
     catch2 \
     cmake \
-    doxygen \
     g++ \
     gfortran \
     git \
-    graphviz \
     libadios2-mpi-c++-dev \
     libboost-dev \
     libfltk1.3-dev \
