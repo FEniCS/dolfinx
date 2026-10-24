@@ -7,6 +7,7 @@
 #include "CoordinateElement.h"
 #include <algorithm>
 #include <basix/finite-element.h>
+#include <cassert>
 #include <cmath>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -25,6 +26,15 @@ CoordinateElement<T>::CoordinateElement(
     std::shared_ptr<const basix::FiniteElement<T>> element)
     : _element(std::move(element))
 {
+  assert(_element);
+  // Geometry coefficients are node coordinates
+  if (!_element->interpolation_is_identity())
+  {
+    throw std::invalid_argument(
+        "Coordinate element DOFs must be unit-weight point evaluations "
+        "(identity interpolation matrix), e.g. Lagrange.");
+  }
+
   int degree = _element->degree();
   mesh::CellType cell = this->cell_shape();
   _is_affine = mesh::is_simplex(cell) and degree == 1;
