@@ -46,7 +46,6 @@ graph BT
   fem --> mesh
   fem --> geometry
   refinement --> grph
-  refinement --> la
   refinement --> mesh
   refinement --> fem
   io --> grph

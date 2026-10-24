@@ -12,7 +12,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/la/Vector.h>
 #include <format>
 #include <limits>
 #include <mpi.h>
