@@ -998,9 +998,10 @@ void Topology::create_facet_orientations()
   create_cell_permutations();
 
   // The edges, which the signs are computed across, and their
-  // orientations relative to the cells. The permutations are unpacked
-  // from the cell permutations created above, so the edges come from
-  // the connectivity.
+  // orientations relative to the cells. create_entity_permutations
+  // unpacks the orientations from the cell permutations created above
+  // and creates nothing, so compute_facet_orientations below needs the
+  // cell-to-edge connectivity created here.
   create_connectivity(2, 1);
   create_entity_permutations(1);
   const std::vector<std::uint32_t> facets = compute_facet_orientations(*this);
@@ -1199,7 +1200,7 @@ void Topology::create_entity_permutations(int dim, int num_threads)
   const int offset
       = (dim == 1 and tdim > 2) ? 3 * cell_num_entities(cell_type, 2) : 0;
   std::vector<std::uint8_t> perms(num_cells * num_entities);
-  for (std::int32_t c = 0; c < std::int32_t(perms.size() / num_entities); ++c)
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
     for (int i = 0; i < num_entities; ++i)
     {

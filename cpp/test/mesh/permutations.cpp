@@ -59,7 +59,7 @@ void check_dimension(mesh::Topology& topology, int dim)
 
 /// Check every dimension that has an orientation, i.e. all but the
 /// vertices and the cell itself
-void check_mesh(mesh::Mesh<double>&& mesh)
+void check_mesh(const mesh::Mesh<double>& mesh)
 {
   mesh::Topology& topology = *mesh.topology_mutable();
   for (int dim = 1; dim < topology.dim(); ++dim)
