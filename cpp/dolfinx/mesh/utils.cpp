@@ -15,9 +15,9 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/common/sort.h>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <format>
 #include <iterator>
 #include <numeric>
@@ -36,7 +36,7 @@ std::vector<std::int64_t> mesh::impl::reorder_cells(
     const graph::Reorder& reorder_fn, std::span<const double> cell_centroids,
     int gdim, std::optional<std::int32_t> max_facet_to_cell_links,
     const std::vector<CellType>& celltypes,
-    const std::vector<fem::ElementDofLayout>& doflayouts,
+    const std::vector<mesh::ElementDofLayout>& doflayouts,
     const std::vector<std::vector<int>>& ghost_owners,
     std::vector<std::vector<std::int64_t>>& cells,
     std::vector<std::span<std::int64_t>>& cells_v,
@@ -250,7 +250,7 @@ std::vector<std::int64_t> mesh::impl::reorder_cells(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
-mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
+mesh::extract_topology(CellType cell_type, const mesh::ElementDofLayout& layout,
                        std::span<const std::int64_t> cells)
 {
   // Use ElementDofLayout to get vertex dof indices (local to a cell)
@@ -285,7 +285,7 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
 }
 //-----------------------------------------------------------------------------
 bool mesh::is_vertex_dof_layout(CellType cell_type,
-                                const fem::ElementDofLayout& layout)
+                                const mesh::ElementDofLayout& layout)
 {
   const int num_vertices_per_cell = num_cell_vertices(cell_type);
   if (layout.num_dofs() != num_vertices_per_cell)

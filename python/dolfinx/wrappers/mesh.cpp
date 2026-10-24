@@ -14,7 +14,7 @@
 #include <cassert>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -100,7 +100,7 @@ void mesh(nb::module_& m)
   m.def(
       "extract_topology",
       [](dolfinx::mesh::CellType cell_type,
-         const dolfinx::fem::ElementDofLayout& layout,
+         const dolfinx::mesh::ElementDofLayout& layout,
          nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> cells)
       {
         return as_nbarray(dolfinx::mesh::extract_topology(

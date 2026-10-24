@@ -26,14 +26,14 @@ class xml_document;
 
 namespace dolfinx::fem
 {
-template <std::floating_point T>
-class CoordinateElement;
 template <dolfinx::scalar T, std::floating_point U>
 class Function;
 } // namespace dolfinx::fem
 
 namespace dolfinx::mesh
 {
+template <std::floating_point T>
+class CoordinateElement;
 template <std::floating_point T>
 class Geometry;
 enum class GhostMode : std::uint8_t;
@@ -129,8 +129,9 @@ public:
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
   mesh::Mesh<double>
-  read_mesh(const fem::CoordinateElement<double>& element, mesh::GhostMode mode,
-            std::string_view name, std::string_view xpath = "/Xdmf/Domain",
+  read_mesh(const mesh::CoordinateElement<double>& element,
+            mesh::GhostMode mode, std::string_view name,
+            std::string_view xpath = "/Xdmf/Domain",
             std::optional<std::int32_t> max_facet_to_cell_links = 2,
             int num_threads = 1) const;
 

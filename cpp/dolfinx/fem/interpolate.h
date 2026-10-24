@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "CoordinateElement.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
@@ -18,6 +17,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/geometry/utils.h>
+#include <dolfinx/mesh/CoordinateElement.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <numeric>
@@ -55,7 +55,8 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
       if (geometry.cmaps().at(i).cell_shape() == cell_type)
         return i;
     }
-    throw std::runtime_error("Cannot find CoordinateElement for FiniteElement");
+    throw std::runtime_error(
+        "Cannot find mesh::CoordinateElement for FiniteElement");
   };
   int index = cmap_index(element.cell_type());
 
@@ -64,7 +65,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
   auto x_dofmap = geometry.dofmaps().at(index);
   std::span<const T> x_g = geometry.x();
 
-  const CoordinateElement<T>& cmap = geometry.cmaps().at(index);
+  const mesh::CoordinateElement<T>& cmap = geometry.cmaps().at(index);
   const std::size_t num_dofs_g = cmap.dim();
 
   // Get the interpolation points on the reference cells
@@ -532,7 +533,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   // at a time, so it is sized with the physical (base) value size.
   const std::size_t value_size0 = V0->element()->physical_base_value_size();
 
-  const CoordinateElement<U>& cmap = mesh0->geometry().cmaps().front();
+  const mesh::CoordinateElement<U>& cmap = mesh0->geometry().cmaps().front();
   auto x_dofmap = mesh0->geometry().dofmaps().front();
   std::span<const U> x_g = mesh0->geometry().x();
 
@@ -1065,7 +1066,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
     throw std::invalid_argument("Interpolation data has the wrong shape.");
 
   // Get coordinate map
-  const CoordinateElement<U>& cmap = mesh.geometry().cmaps().front();
+  const mesh::CoordinateElement<U>& cmap = mesh.geometry().cmaps().front();
 
   // Get geometry data
   auto x_dofmap = mesh.geometry().dofmaps().front();

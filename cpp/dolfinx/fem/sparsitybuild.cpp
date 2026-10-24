@@ -6,10 +6,10 @@
 
 #include "sparsitybuild.h"
 #include "DofMap.h"
-#include "ElementDofLayout.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <stdexcept>
 
 using namespace dolfinx;
@@ -17,8 +17,8 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::span<const int>, std::span<const int>>>
-sparsitybuild::entity_closure_blocks(const ElementDofLayout& layout_rows,
-                                     const ElementDofLayout& layout_cols)
+sparsitybuild::entity_closure_blocks(const mesh::ElementDofLayout& layout_rows,
+                                     const mesh::ElementDofLayout& layout_cols)
 {
   const std::vector<std::vector<std::vector<int>>>& edofs1
       = layout_rows.entity_dofs_all();

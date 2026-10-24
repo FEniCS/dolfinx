@@ -14,10 +14,10 @@
 #include <cmath>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/graph/partitioners.h>
 #include <dolfinx/graph/sfc.h>
+#include <dolfinx/mesh/CoordinateElement.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
@@ -80,7 +80,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
   constexpr std::int64_t n = 12;
   auto [cells, x] = cube(comm, n);
   std::array<std::size_t, 2> xshape = {x.size() / 3, 3};
-  fem::CoordinateElement<double> element(mesh::CellType::tetrahedron, 1);
+  mesh::CoordinateElement<double> element(mesh::CellType::tetrahedron, 1);
 
   // Global entity counts for each entity dimension
   auto counts
@@ -91,7 +91,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
         comm, comm,
         std::vector<std::span<const std::int64_t>>{
             std::span<const std::int64_t>(cells)},
-        std::vector<fem::CoordinateElement<double>>{element}, comm, x, xshape,
+        std::vector<mesh::CoordinateElement<double>>{element}, comm, x, xshape,
         graph::Partitioner{.fn = part}, ghost_mode, 2, 1);
     mesh.topology_mutable()->create_entities(1);
     mesh.topology_mutable()->create_entities(2);
@@ -243,7 +243,7 @@ TEST_CASE("Geometric partitioning with distributed geometry",
   for (std::int64_t i = range[0]; i < range[1]; ++i)
     x[i - range[0]] = static_cast<double>(i) / n;
 
-  fem::CoordinateElement<double> element(mesh::CellType::interval, 1);
+  mesh::CoordinateElement<double> element(mesh::CellType::interval, 1);
   auto check_partitioner = [&](const graph::AnyPartitionFunction& partitioner)
   {
     mesh::Mesh<double> msh = mesh::create_mesh(
@@ -322,7 +322,7 @@ TEST_CASE("Geometric cell reordering", "[geometric_partitioner]")
 {
   const std::vector<std::int64_t> cells = {0, 1, 2, 1, 3, 2};
   const std::vector<double> x = {0, 0, 1, 0, 0, 1, 1, 1};
-  const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
+  const mesh::CoordinateElement<double> element(mesh::CellType::triangle, 1);
 
   const graph::Reorder reorder = graph::reorder_geom_fn(
       [](std::span<const double> centroids, int gdim)
@@ -344,7 +344,7 @@ TEST_CASE("Default RCM cell reordering", "[geometric_partitioner]")
 {
   const std::vector<std::int64_t> cells = {0, 1, 2, 1, 3, 2};
   const std::vector<double> x = {0, 0, 1, 0, 0, 1, 1, 1};
-  const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
+  const mesh::CoordinateElement<double> element(mesh::CellType::triangle, 1);
 
   mesh::Mesh<double> msh_default = mesh::create_mesh(
       MPI_COMM_SELF, MPI_COMM_SELF, std::span<const std::int64_t>(cells),
@@ -364,7 +364,7 @@ TEST_CASE("SFC cell reordering", "[geometric_partitioner]")
 {
   const std::vector<std::int64_t> cells = {1, 3, 2, 0, 1, 2};
   const std::vector<double> x = {0, 0, 1, 0, 0, 1, 1, 1};
-  const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
+  const mesh::CoordinateElement<double> element(mesh::CellType::triangle, 1);
 
   for (auto reorder_sfc :
        {graph::reorder_sfc_morton, graph::reorder_sfc_hilbert})
@@ -383,7 +383,7 @@ TEST_CASE("Empty geometric cell reordering", "[geometric_partitioner]")
 {
   const std::vector<std::int64_t> cells = {0, 1, 2, 1, 3, 2};
   const std::vector<double> x = {0, 0, 1, 0, 0, 1, 1, 1};
-  const fem::CoordinateElement<double> element(mesh::CellType::triangle, 1);
+  const mesh::CoordinateElement<double> element(mesh::CellType::triangle, 1);
   const graph::Reorder reorder = graph::reorder_geom_fn{};
 
   // The exception from the reordering function reaches the caller with

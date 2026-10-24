@@ -8,7 +8,6 @@
 #pragma once
 
 #include "DofMap.h"
-#include "ElementDofLayout.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <algorithm>
@@ -16,6 +15,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
@@ -33,13 +33,13 @@ namespace dolfinx::fem
 {
 /// Create an ElementDofLayout from a FiniteElement
 template <std::floating_point T>
-ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
-                                           const std::vector<int>& parent_map
-                                           = {})
+mesh::ElementDofLayout
+create_element_dof_layout(const fem::FiniteElement<T>& element,
+                          const std::vector<int>& parent_map = {})
 {
   // Create subdofmaps and compute offset
   std::vector<int> offsets(1, 0);
-  std::vector<dolfinx::fem::ElementDofLayout> sub_doflayout;
+  std::vector<dolfinx::mesh::ElementDofLayout> sub_doflayout;
   int bs = element.block_size();
   for (int i = 0; i < element.num_sub_elements(); ++i)
   {
@@ -61,9 +61,9 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
         dolfinx::fem::create_element_dof_layout(*sub_e, parent_map_sub));
   }
 
-  return ElementDofLayout(bs, element.entity_dofs(),
-                          element.entity_closure_dofs(), parent_map,
-                          sub_doflayout);
+  return mesh::ElementDofLayout(bs, element.entity_dofs(),
+                                element.entity_closure_dofs(), parent_map,
+                                sub_doflayout);
 }
 
 /// @brief Create a dof map on mesh
@@ -75,7 +75,7 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
 /// @param[in] reorder_fn Graph reordering function called on the dofmap
 /// @return A new dof map
 DofMap
-create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
+create_dofmap(MPI_Comm comm, const mesh::ElementDofLayout& layout,
               mesh::Topology& topology,
               const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
                   permute_inv,
@@ -93,7 +93,7 @@ create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
 /// @note The number of layouts must match the number of cell types in the
 /// topology
 std::vector<DofMap> create_dofmaps(
-    MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
+    MPI_Comm comm, const std::vector<mesh::ElementDofLayout>& layouts,
     mesh::Topology& topology,
     const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
         permute_inv,
@@ -116,7 +116,7 @@ FunctionSpace<T> create_functionspace(
     throw std::invalid_argument("Cell type of element and mesh must match.");
 
   // Create element dof layout
-  fem::ElementDofLayout layout = fem::create_element_dof_layout(*e);
+  mesh::ElementDofLayout layout = fem::create_element_dof_layout(*e);
 
   // Create a dofmap
   std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv

@@ -20,27 +20,22 @@ class IndexMap;
 
 namespace dolfinx::mesh
 {
+class ElementDofLayout;
 class Topology;
-}
+} // namespace dolfinx::mesh
 
 namespace dolfinx::fem
 {
-class ElementDofLayout;
 class DofMap;
 
-/// Build dofmap data for elements on a mesh topology
-/// @param[in] comm MPI communicator
-/// @param[in] topology The mesh topology
-/// @param[in] element_dof_layouts The element dof layouts for each cell
-/// type in `topology`.
-/// @param[in] reorder_fn Graph reordering function that is applied to
-/// the dofmaps
-/// @return The index map, block size, and dofmaps for each element type
+/// @deprecated Use mesh::build_dofmap_data instead.
+[[deprecated("Use mesh::build_dofmap_data instead.")]]
 std::tuple<common::IndexMap, int, std::vector<std::vector<std::int32_t>>>
-build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
-                  const std::vector<ElementDofLayout>& element_dof_layouts,
-                  const std::function<std::vector<int>(
-                      const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
+build_dofmap_data(
+    MPI_Comm comm, const mesh::Topology& topology,
+    const std::vector<mesh::ElementDofLayout>& element_dof_layouts,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
 
 /// @brief Build a dofmap on a real element, i.e. a single constant dof shared
 /// by all cells.
@@ -49,6 +44,6 @@ build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
 /// @param[in] dof_layout The element dof layout for the real element.
 /// @return The dofmap for the real element.
 fem::DofMap build_real_element_dofmap(const mesh::Topology& topology,
-                                      const fem::ElementDofLayout& dof_layout);
+                                      const mesh::ElementDofLayout& dof_layout);
 
 } // namespace dolfinx::fem

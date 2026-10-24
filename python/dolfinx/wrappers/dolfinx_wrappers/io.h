@@ -10,11 +10,11 @@
 #include "mpi_wrappers.h"
 #include <basix/mdspan.hpp>
 #include <cstdint>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/utils.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <filesystem>
@@ -194,7 +194,7 @@ void declare_data_types(nanobind::module_& m)
          nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
              input_global_indices,
          std::int64_t num_nodes_g,
-         const dolfinx::fem::ElementDofLayout& cmap_dof_layout,
+         const dolfinx::mesh::ElementDofLayout& cmap_dof_layout,
          nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> xdofmap,
          int entity_dim,
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> entities,

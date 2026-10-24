@@ -186,7 +186,7 @@ void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh<double> XDMFFile::read_mesh(
-    const fem::CoordinateElement<double>& element, mesh::GhostMode mode,
+    const mesh::CoordinateElement<double>& element, mesh::GhostMode mode,
     std::string_view name, std::string_view xpath,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads) const
 {

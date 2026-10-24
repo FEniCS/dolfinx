@@ -7,7 +7,6 @@
 #pragma once
 
 #include "DofMap.h"
-#include "ElementDofLayout.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include "sparsitybuild.h"
@@ -19,6 +18,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/la/utils.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <span>
@@ -536,7 +536,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
       = e1->reference_value_size() * static_cast<std::size_t>(bs1);
 
   // Get geometry data
-  const CoordinateElement<U>& cmap = mesh->geometry().cmaps().front();
+  const mesh::CoordinateElement<U>& cmap = mesh->geometry().cmaps().front();
   auto x_dofmap = mesh->geometry().dofmaps().front();
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();

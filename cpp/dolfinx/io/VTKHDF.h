@@ -20,9 +20,9 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/mesh/CoordinateElement.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -49,7 +49,7 @@ namespace impl
 {
 // Construct a nodal coordinate element for a (VTK type, degree) group.
 template <std::floating_point U>
-fem::CoordinateElement<U>
+mesh::CoordinateElement<U>
 coordinate_element(std::array<std::uint8_t, 2> type_degree)
 {
   mesh::CellType cell_type = std::get<0>(cells::vtk_to_dolfinx(type_degree[0]));
@@ -104,7 +104,7 @@ coordinate_element(std::array<std::uint8_t, 2> type_degree)
         M_view[d].emplace_back(data.data(), shape);
     }
     const auto& [wcoeffs, wshape] = element.wcoeffs();
-    return fem::CoordinateElement<U>(std::make_shared<basix::FiniteElement<U>>(
+    return mesh::CoordinateElement<U>(std::make_shared<basix::FiniteElement<U>>(
         basix::create_custom_element<U>(
             cell, {}, {wcoeffs.data(), wshape}, x_view, M_view, 0,
             element.map_type(), element.sobolev_space(), false,
@@ -115,7 +115,7 @@ coordinate_element(std::array<std::uint8_t, 2> type_degree)
   basix::element::lagrange_variant variant
       = (cell_degree > 2) ? basix::element::lagrange_variant::equispaced
                           : basix::element::lagrange_variant::unset;
-  return fem::CoordinateElement<U>(cell_type, cell_degree, variant);
+  return mesh::CoordinateElement<U>(cell_type, cell_degree, variant);
 }
 } // namespace impl
 
@@ -604,7 +604,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   }
 
   // Make coordinate elements
-  std::vector<fem::CoordinateElement<U>> coordinate_elements;
+  std::vector<mesh::CoordinateElement<U>> coordinate_elements;
   std::ranges::transform(recv_types, std::back_inserter(coordinate_elements),
                          impl::coordinate_element<U>);
 

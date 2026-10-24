@@ -46,7 +46,7 @@
 /// @file utils.h
 /// @brief Functions supporting mesh operations
 
-namespace dolfinx::fem
+namespace dolfinx::mesh
 {
 class ElementDofLayout;
 }
@@ -249,7 +249,7 @@ std::vector<std::int64_t> reorder_cells(
     const graph::Reorder& reorder_fn, std::span<const double> cell_centroids,
     int gdim, std::optional<std::int32_t> max_facet_to_cell_links,
     const std::vector<CellType>& celltypes,
-    const std::vector<fem::ElementDofLayout>& doflayouts,
+    const std::vector<mesh::ElementDofLayout>& doflayouts,
     const std::vector<std::vector<int>>& ghost_owners,
     std::vector<std::vector<std::int64_t>>& cells,
     std::vector<std::span<std::int64_t>>& cells_v,
@@ -266,7 +266,7 @@ std::vector<std::int64_t> reorder_cells(
 /// 'gaps' due to mid-side and other higher-order nodes being removed
 /// from the input `cell`.
 std::vector<std::int64_t> extract_topology(CellType cell_type,
-                                           const fem::ElementDofLayout& layout,
+                                           const mesh::ElementDofLayout& layout,
                                            std::span<const std::int64_t> cells);
 
 /// @brief Check if ::extract_topology is the identity operation for a
@@ -281,7 +281,7 @@ std::vector<std::int64_t> extract_topology(CellType cell_type,
 /// reference cell.
 /// @return `true` if the cell 'nodes' are the cell vertices.
 bool is_vertex_dof_layout(CellType cell_type,
-                          const fem::ElementDofLayout& layout);
+                          const mesh::ElementDofLayout& layout);
 
 /// @brief Compute greatest distance between any two geometry nodes of
 /// the mesh entities (`h`).
@@ -790,7 +790,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto xdofs = geometry.dofmaps().front();
 
   // Get the DOF layout and the number of DOFs per entity
-  const fem::CoordinateElement<T>& coord_ele = geometry.cmaps().front();
+  const mesh::CoordinateElement<T>& coord_ele = geometry.cmaps().front();
   if (dim < tdim and coord_ele.is_discontinuous())
   {
     throw std::invalid_argument(
@@ -799,7 +799,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
         "degrees-of-freedom associated with sub-entities.");
   }
 
-  const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
+  const mesh::ElementDofLayout layout = coord_ele.create_dof_layout();
   const std::size_t num_entity_dofs = layout.entity_closure_dofs(dim, 0).size();
   std::vector<std::int32_t> entity_xdofs;
   entity_xdofs.reserve(entities.size() * num_entity_dofs);
@@ -1145,7 +1145,7 @@ std::tuple<std::vector<std::vector<std::int64_t>>,
 partition_cells(MPI_Comm comm, MPI_Comm commt,
                 const std::vector<std::span<const std::int64_t>>& cells,
                 const std::vector<CellType>& celltypes,
-                const std::vector<fem::ElementDofLayout>& doflayouts,
+                const std::vector<mesh::ElementDofLayout>& doflayouts,
                 bool p1_geometry, const graph::Partitioner& partitioner,
                 bool ghosting,
                 std::optional<std::int32_t> max_facet_to_cell_links,
@@ -1402,7 +1402,7 @@ template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt,
     std::vector<std::span<const std::int64_t>> cells,
-    const std::vector<fem::CoordinateElement<
+    const std::vector<mesh::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const graph::Partitioner& partitioner, GhostMode ghost_mode,
@@ -1419,7 +1419,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   std::vector<CellType> celltypes;
   std::ranges::transform(elements, std::back_inserter(celltypes),
                          [](auto& e) { return e.cell_shape(); });
-  std::vector<fem::ElementDofLayout> doflayouts;
+  std::vector<mesh::ElementDofLayout> doflayouts;
   std::ranges::transform(elements, std::back_inserter(doflayouts),
                          [](auto& e) { return e.create_dof_layout(); });
   for (std::size_t i = 0; i < cells.size(); ++i)
@@ -1678,7 +1678,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt, std::span<const std::int64_t> cells,
-    const fem::CoordinateElement<
+    const mesh::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const graph::Partitioner& partitioner, GhostMode ghost_mode,
@@ -1715,7 +1715,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
-            const fem::CoordinateElement<
+            const mesh::CoordinateElement<
                 std::remove_reference_t<typename U::value_type>>& element,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode,
             std::optional<std::int32_t> max_facet_to_cell_links = 2)
@@ -1812,8 +1812,8 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   // basis functions
   int degree
       = (sub_xcell == CellType::point) ? 0 : geometry.cmaps().front().degree();
-  fem::CoordinateElement<T> sub_cmap(sub_xcell, degree,
-                                     geometry.cmaps().front().variant());
+  mesh::CoordinateElement<T> sub_cmap(sub_xcell, degree,
+                                      geometry.cmaps().front().variant());
 
   // Sub-geometry input_global_indices
   const std::vector<std::int64_t>& igi = geometry.input_global_indices();

@@ -9,14 +9,15 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/integration_domains.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/dofmapbuilder.h>
 #include <format>
 #include <functional>
 #include <memory>
@@ -51,11 +52,11 @@ void fem(nb::module_& m)
   m.def(
       "build_dofmap",
       [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
-         const dolfinx::fem::ElementDofLayout& layout)
+         const dolfinx::mesh::ElementDofLayout& layout)
       {
         if (topology.entity_types(topology.dim()).size() != 1)
           throw std::invalid_argument("Mixed topology unsupported.");
-        auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
+        auto [map, bs, dofmap] = dolfinx::mesh::build_dofmap_data(
             comm.get(), topology, {layout}, nullptr);
         return std::tuple(std::move(map), bs, std::move(dofmap));
       },
@@ -91,30 +92,30 @@ void fem(nb::module_& m)
       },
       nb::arg("integral_type"), nb::arg("topology"), nb::arg("entities"));
 
-  // dolfinx::fem::ElementDofLayout
-  nb::class_<dolfinx::fem::ElementDofLayout>(
+  // dolfinx::mesh::ElementDofLayout
+  nb::class_<dolfinx::mesh::ElementDofLayout>(
       m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
       .def(nb::init<int, const std::vector<std::vector<std::vector<int>>>&,
                     const std::vector<std::vector<std::vector<int>>>&,
                     const std::vector<int>&,
-                    const std::vector<dolfinx::fem::ElementDofLayout>&>(),
+                    const std::vector<dolfinx::mesh::ElementDofLayout>&>(),
            nb::arg("block_size"), nb::arg("entity_dofs"),
            nb::arg("entity_closure_dofs"), nb::arg("parent_map"),
            nb::arg("sub_layouts"))
-      .def_prop_ro("num_dofs", &dolfinx::fem::ElementDofLayout::num_dofs)
-      .def("entity_dofs", &dolfinx::fem::ElementDofLayout::entity_dofs,
+      .def_prop_ro("num_dofs", &dolfinx::mesh::ElementDofLayout::num_dofs)
+      .def("entity_dofs", &dolfinx::mesh::ElementDofLayout::entity_dofs,
            nb::arg("dim"), nb::arg("entity_index"))
       .def("entity_closure_dofs",
-           &dolfinx::fem::ElementDofLayout::entity_closure_dofs, nb::arg("dim"),
-           nb::arg("entity_index"))
-      .def_prop_ro("block_size", &dolfinx::fem::ElementDofLayout::block_size);
+           &dolfinx::mesh::ElementDofLayout::entity_closure_dofs,
+           nb::arg("dim"), nb::arg("entity_index"))
+      .def_prop_ro("block_size", &dolfinx::mesh::ElementDofLayout::block_size);
 
   // dolfinx::fem::DofMap
   nb::class_<dolfinx::fem::DofMap>(m, "DofMap", "DofMap object")
       .def(
           "__init__",
           [](dolfinx::fem::DofMap* self,
-             const dolfinx::fem::ElementDofLayout& element,
+             const dolfinx::mesh::ElementDofLayout& element,
              std::shared_ptr<const dolfinx::common::IndexMap> index_map,
              int index_map_bs,
              const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap, int bs)

@@ -14,10 +14,8 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/fem/Constant.h>
-#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Expression.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
@@ -32,6 +30,8 @@
 #include <dolfinx/fem/interpolate_geometry.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/sparsitypattern.h>
+#include <dolfinx/mesh/CoordinateElement.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <format>
@@ -1123,40 +1123,41 @@ template <typename T>
 void declare_coordinate_element(nb::module_& m, const std::string& type)
 {
   std::string pyclass_name = std::string("CoordinateElement_") + type;
-  nb::class_<dolfinx::fem::CoordinateElement<T>>(m, pyclass_name.c_str(),
-                                                 "Coordinate map element")
+  nb::class_<dolfinx::mesh::CoordinateElement<T>>(m, pyclass_name.c_str(),
+                                                  "Coordinate map element")
       .def(nb::init<dolfinx::mesh::CellType, int>(), nb::arg("celltype"),
            nb::arg("degree"))
       .def(nb::init<std::shared_ptr<const basix::FiniteElement<T>>>(),
            nb::arg("element"))
       .def(
           "__init__",
-          [](dolfinx::fem::CoordinateElement<T>* cm, dolfinx::mesh::CellType ct,
-             int d, int var, bool discontinuous)
+          [](dolfinx::mesh::CoordinateElement<T>* cm,
+             dolfinx::mesh::CellType ct, int d, int var, bool discontinuous)
           {
-            new (cm) dolfinx::fem::CoordinateElement<T>(
+            new (cm) dolfinx::mesh::CoordinateElement<T>(
                 ct, d, static_cast<basix::element::lagrange_variant>(var),
                 discontinuous);
           },
           nb::arg("celltype"), nb::arg("degree"), nb::arg("variant"),
           nb::arg("discontinuous"))
-      .def_prop_ro("dtype", [](const dolfinx::fem::CoordinateElement<T>&)
+      .def_prop_ro("dtype", [](const dolfinx::mesh::CoordinateElement<T>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def("create_dof_layout",
-           &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
-      .def_prop_ro("degree", &dolfinx::fem::CoordinateElement<T>::degree)
-      .def_prop_ro("dim", &dolfinx::fem::CoordinateElement<T>::dim)
+           &dolfinx::mesh::CoordinateElement<T>::create_dof_layout)
+      .def_prop_ro("degree", &dolfinx::mesh::CoordinateElement<T>::degree)
+      .def_prop_ro("dim", &dolfinx::mesh::CoordinateElement<T>::dim)
       .def_prop_ro("is_discontinuous",
-                   &dolfinx::fem::CoordinateElement<T>::is_discontinuous)
-      .def_prop_ro("variant", [](const dolfinx::fem::CoordinateElement<T>& self)
+                   &dolfinx::mesh::CoordinateElement<T>::is_discontinuous)
+      .def_prop_ro("variant",
+                   [](const dolfinx::mesh::CoordinateElement<T>& self)
                    { return static_cast<int>(self.variant()); })
-      .def("hash", &dolfinx::fem::CoordinateElement<T>::hash)
+      .def("hash", &dolfinx::mesh::CoordinateElement<T>::hash)
       .def("pull_back_working_size",
-           &dolfinx::fem::CoordinateElement<T>::pull_back_working_size,
+           &dolfinx::mesh::CoordinateElement<T>::pull_back_working_size,
            nb::arg("gdim"))
       .def(
           "push_forward",
-          [](const dolfinx::fem::CoordinateElement<T>& self,
+          [](const dolfinx::mesh::CoordinateElement<T>& self,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> X,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_x)
           {
@@ -1189,7 +1190,7 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
           nb::arg("X"), nb::arg("cell_geometry"))
       .def(
           "pull_back",
-          [](const dolfinx::fem::CoordinateElement<T>& self,
+          [](const dolfinx::mesh::CoordinateElement<T>& self,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> x,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_geometry,
              double tol, int maxit,
@@ -1283,7 +1284,7 @@ void declare_real_functions(nb::module_& m)
          dolfinx::mesh::Topology& topology,
          const dolfinx::fem::FiniteElement<T>& element)
       {
-        dolfinx::fem::ElementDofLayout layout
+        dolfinx::mesh::ElementDofLayout layout
             = dolfinx::fem::create_element_dof_layout(element);
 
         std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
@@ -1302,7 +1303,7 @@ void declare_real_functions(nb::module_& m)
          std::vector<std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>
              elements)
       {
-        std::vector<dolfinx::fem::ElementDofLayout> layouts;
+        std::vector<dolfinx::mesh::ElementDofLayout> layouts;
         layouts.reserve(elements.size());
         assert(elements.size() == topology.entity_types(topology.dim()).size());
         for (std::size_t i = 0; i < elements.size(); ++i)
@@ -1404,7 +1405,7 @@ void declare_real_functions(nb::module_& m)
   m.def(
       "interpolate_geometry",
       [](std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
-         const dolfinx::fem::CoordinateElement<T>& new_cmap)
+         const dolfinx::mesh::CoordinateElement<T>& new_cmap)
       { return dolfinx::fem::interpolate_geometry(mesh, new_cmap); },
       nb::arg("mesh"), nb::arg("new_cmap"));
 

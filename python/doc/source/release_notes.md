@@ -2,6 +2,18 @@
 
 ## v0.12.0 (draft)
 
+### `CoordinateElement` and `ElementDofLayout` moved to `mesh`
+
+**Authors**: [Garth N. Wells](https://github.com/garth-wells)
+
+In C++, `fem::CoordinateElement`, `fem::ElementDofLayout` and
+`fem::build_dofmap_data` have moved to the `mesh` namespace, with headers
+`dolfinx/mesh/CoordinateElement.h`, `dolfinx/mesh/ElementDofLayout.h` and
+`dolfinx/mesh/dofmapbuilder.h`. The `fem` names remain as deprecated aliases and
+will be removed in a later release. The move removes the dependency of `mesh` and
+`geometry` on `fem` ([\#4675](https://github.com/FEniCS/dolfinx/issues/4675)).
+The Python interface is unchanged.
+
 ### Expressions on ridges and peaks
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)

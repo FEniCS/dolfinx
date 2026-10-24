@@ -17,7 +17,7 @@
 #include <stdexcept>
 
 using namespace dolfinx;
-using namespace dolfinx::fem;
+using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -261,6 +261,6 @@ std::size_t CoordinateElement<T>::pull_back_working_size(std::size_t gdim) const
     return tdim * (2 * gdim + 2 * dim() + 2) + gdim + dim();
 }
 //-----------------------------------------------------------------------------
-template class fem::CoordinateElement<float>;
-template class fem::CoordinateElement<double>;
+template class mesh::CoordinateElement<float>;
+template class mesh::CoordinateElement<double>;
 //-----------------------------------------------------------------------------

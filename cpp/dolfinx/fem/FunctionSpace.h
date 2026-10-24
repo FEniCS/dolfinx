@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "CoordinateElement.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include <boost/uuid/uuid.hpp>
@@ -16,6 +15,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/mesh/CoordinateElement.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -300,7 +300,7 @@ public:
       const auto [X, Xshape] = _elements[i]->interpolation_points();
 
       // Get coordinate map
-      const CoordinateElement<geometry_type>& cmap
+      const mesh::CoordinateElement<geometry_type>& cmap
           = _mesh->geometry().cmaps().at(i);
 
       // Prepare cell geometry

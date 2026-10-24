@@ -7,10 +7,10 @@
 #pragma once
 
 #include "DofMap.h"
-#include "ElementDofLayout.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <functional>
 #include <ranges>
 #include <span>
@@ -73,8 +73,8 @@ void cells(la::SparsityPattern& pattern, const std::pair<R0, R1>& cells,
 /// its closure. The spans point into the layouts, which must outlive the
 /// return value.
 std::vector<std::pair<std::span<const int>, std::span<const int>>>
-entity_closure_blocks(const ElementDofLayout& layout_rows,
-                      const ElementDofLayout& layout_cols);
+entity_closure_blocks(const mesh::ElementDofLayout& layout_rows,
+                      const mesh::ElementDofLayout& layout_cols);
 
 /// @brief Iterate over cells and insert the entity-closure blocks into
 /// a sparsity pattern.

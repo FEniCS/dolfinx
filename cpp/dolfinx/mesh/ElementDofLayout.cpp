@@ -13,7 +13,7 @@
 #include <stdexcept>
 
 using namespace dolfinx;
-using namespace dolfinx::fem;
+using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(

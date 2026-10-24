@@ -1,10 +1,8 @@
 target_sources(
   dolfinx
   PRIVATE
-    CoordinateElement.cpp
     DirichletBC.cpp
     DofMap.cpp
-    ElementDofLayout.cpp
     FiniteElement.cpp
     dofmapbuilder.cpp
     petsc.cpp

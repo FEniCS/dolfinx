@@ -58,7 +58,7 @@ mesh::Mesh<T> create_3_vertex_interval_mesh()
 
   std::vector<T> x{v0[0], v0[1], v0[2], v1[0], v1[1],
                    v1[2], v2[0], v2[1], v2[2]};
-  fem::CoordinateElement<T> element(mesh::CellType::interval, 1);
+  mesh::CoordinateElement<T> element(mesh::CellType::interval, 1);
   return mesh::create_mesh(MPI_COMM_SELF, MPI_COMM_SELF, cells, element,
                            MPI_COMM_SELF, x, {x.size() / 3, 3},
                            graph::Partitioner{}, mesh::GhostMode::none, 2, 1);
@@ -126,7 +126,7 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
   {
     std::vector<T> x;
     std::vector<std::int64_t> cells;
-    fem::CoordinateElement<T> element(mesh::CellType::interval, 1);
+    mesh::CoordinateElement<T> element(mesh::CellType::interval, 1);
     if (rank == 0)
     {
       for (std::int64_t i = 0; i < comm_size + 1; i++)
