@@ -2,6 +2,27 @@
 
 ## v0.12.0 (draft)
 
+### Expressions on ridges and peaks
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
+
+{py:class}`dolfinx.fem.Expression` may now be evaluated on the ridges and peaks of a mesh, i.e.
+its codimension-2 and codimension-3 entities, by giving evaluation points on the reference cell
+of the entity: the reference interval for the edges of a 3D mesh, and a points array with zero
+columns for the vertices of a 2D (ridges) or 3D (peaks) mesh. As for facets, the entities are passed to
+{py:func}`dolfinx.fem.Expression.eval` as `(cell, local entity index)` pairs, and a coefficient
+may live on a submesh of the entities being evaluated over.
+
+{py:class}`dolfinx.fem.Expression` also gained `entity_dim` and `num_points` properties: the
+topological dimension of the entities the Expression is evaluated on, and the number of
+evaluation points.
+
+In C++, `fem::pack_coefficients` for a list of coefficients takes the topology of the entities
+instead of their mesh, and the dimension of the entities as a new argument, e.g.
+`Expression::entity_dim()`. A coefficient or argument on another mesh must live on the
+entities being evaluated over; evaluating an Expression on entities of another dimension
+now raises `std::invalid_argument` (`ValueError` in Python).
+
 ### H(div) spaces on manifolds
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
@@ -41,7 +62,6 @@ creating such spaces invalidates existing {py:class}`dolfinx.fem.Function`
 data on them.
 In C++, `FiniteElement::depends_on_cell_orientation` is renamed
 `FiniteElement::depends_on_facet_orientations`.
-
 
 ### Assembly over ridges with data on a codimension-2 submesh
 
@@ -89,6 +109,21 @@ Code that called `create_entity_permutations()` in order to use
 <dolfinx.mesh.Topology.get_cell_permutation_info>` should now call
 `create_cell_permutations()`.
 
+Both are now computed from the global indices of a cell's own vertices, so
+neither creates mesh entities and neither is collective. The permutations of
+one dimension are unpacked from the packed cell info, which covers every
+dimension that has an orientation. `create_cell_permutations()` previously
+created every entity of dimension below the cell dimension, and
+`create_entity_permutations(dim)` created the entities of dimension `dim`;
+code that relied on either side effect should call
+{py:meth}`Topology.create_entities <dolfinx.mesh.Topology.create_entities>`
+itself. A form integrated over facets or ridges still creates the entities it
+integrates over.
+
+`get_cell_permutation_info()` now raises if `create_cell_permutations()` has
+not been called, including on a rank that holds no cells, where it previously
+returned an empty array.
+
 `Topology.get_facet_permutations` has been removed. Use the new
 {py:meth}`Topology.get_entity_permutations
 <dolfinx.mesh.Topology.get_entity_permutations>`, which takes the entity
@@ -101,6 +136,10 @@ returns only that dimension's permutations, the cell permutation info is
 returned by the new `mesh::compute_cell_permutations`, and
 `Topology::get_facet_permutations` has been removed in favour of
 `Topology::get_entity_permutations(dim)`.
+`mesh::compute_cell_permutations` requires only the cell-to-vertex
+connectivity and the vertex index map. `mesh::compute_entity_permutations`
+still measures the entities of a dimension against the cells incident to them,
+and so still requires those entities, but `Topology` no longer uses it.
 
 ### A first-class SNES interface for C++
 

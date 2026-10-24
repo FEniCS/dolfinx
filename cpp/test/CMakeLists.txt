@@ -54,6 +54,7 @@ add_executable(
   mesh/distributed_mesh.cpp
   mesh/generation.cpp
   mesh/geometric_partitioner.cpp
+  mesh/permutations.cpp
   mesh/read_named_meshtags.cpp
   mesh/refinement/interval.cpp
   mesh/refinement/option.cpp
