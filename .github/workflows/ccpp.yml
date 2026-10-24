@@ -324,6 +324,19 @@ jobs:
           --check-build-dependencies
           --no-build-isolation
 
+      # The container's Doxygen (Ubuntu 26.04, 1.15) misparses attributes
+      # on alias declarations; use a pinned upstream release instead.
+      - name: Install Doxygen
+        env:
+          DOXYGEN_VERSION: 1.18.0
+        run: |
+          cd $RUNNER_TEMP
+          wget -nv https://www.doxygen.nl/files/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+          tar -xzf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz doxygen-${DOXYGEN_VERSION}/bin/doxygen
+          rm doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+          echo "$RUNNER_TEMP/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
+          doxygen-${DOXYGEN_VERSION}/bin/doxygen --version
+
       - name: Build C++ interface documentation
         run: |
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
