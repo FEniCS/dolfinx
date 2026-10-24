@@ -10,7 +10,10 @@
 
 namespace dolfinx::fem
 {
-/// @deprecated Use mesh::ElementDofLayout instead.
+// Deprecated: use mesh::ElementDofLayout. Hidden from Doxygen, which (in
+// 1.15) misparses an attribute on an alias declaration.
+/// @cond
 using ElementDofLayout [[deprecated("Use mesh::ElementDofLayout instead.")]]
 = mesh::ElementDofLayout;
+/// @endcond
 } // namespace dolfinx::fem
