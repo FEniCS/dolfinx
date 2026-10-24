@@ -74,7 +74,7 @@ exclude_patterns = []
 # html_theme = 'alabaster'
 # html_theme = "nature"
 html_theme = "pydata_sphinx_theme"
-html_title = f"DOLFINx C++ {release}"
+html_title = project
 
 # Version switcher. FEniCS/docs generates the version list from the
 # published documentation. CI sets DOCS_VERSION to the branch or tag

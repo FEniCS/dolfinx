@@ -107,7 +107,7 @@ todo_include_todos = True
 # a list of builtin themes.
 #
 html_theme = "pydata_sphinx_theme"
-html_title = f"DOLFINx Python {release}"
+html_title = project
 
 # Version switcher. FEniCS/docs generates the version list from the
 # published documentation. CI sets DOCS_VERSION to the branch or tag
