@@ -39,8 +39,9 @@ def test_prepared_matrix_bcs(kind, shape, constrained, monkeypatch):
             bc = fem.dirichletbc(np.zeros(shape, dtype=PETSc.ScalarType), dofs, U)
             bcs.extend([bc, bc])
     matrix_kind = "aij" if kind == "blocked" else kind
-    with pytest.warns(DeprecationWarning, match="diag argument"):
+    with pytest.warns(DeprecationWarning, match="diag argument") as record:
         reference = petsc.assemble_matrix(a, bcs=bcs, diag=2, kind=matrix_kind)
+    assert record[0].filename == __file__
     reference.assemble()
     A = petsc.create_matrix(a, kind=matrix_kind)
     data = petsc.prepare_matrix_bcs(A, a, bcs, diag=2)
@@ -50,30 +51,51 @@ def test_prepared_matrix_bcs(kind, shape, constrained, monkeypatch):
 
     monkeypatch.setattr(petsc, "_matrix_bc_data", unexpected)
     monkeypatch.setattr(petsc, "_matrix_diag_data", unexpected)
+    monkeypatch.setattr(petsc, "_block_index_sets", unexpected)
+
+    def assert_matches_reference(M):
+        M.assemble()
+        result, expected = M.copy().convert("aij"), reference.copy().convert("aij")
+        try:
+            result.axpy(-1, expected)
+            assert result.norm() < 1e-12
+        finally:
+            result.destroy()
+            expected.destroy()
+
     matrices = [reference, A]
     try:
-        for target in [A, petsc.assemble_matrix(a, bcs=data, kind=matrix_kind)]:
-            if target is not A:
-                matrices.append(target)
-            else:
-                petsc.assemble_matrix(target, a, bcs=data)
-            for _ in range(2):
-                target.assemble()
-                result = target.copy().convert("aij")
-                expected = reference.copy().convert("aij")
-                try:
-                    result.axpy(-1, expected)
-                    assert result.norm() < 1e-12
-                finally:
-                    result.destroy()
-                    expected.destroy()
-                target.zeroEntries()
-                petsc.assemble_matrix(target, a, bcs=data)
+        petsc.assemble_matrix(A, a, bcs=data)
+        assert_matches_reference(A)
+        A.zeroEntries()
+        petsc.assemble_matrix(A, a, bcs=data)
+        assert_matches_reference(A)
+        B = petsc.assemble_matrix(a, bcs=data, kind=matrix_kind)
+        matrices.append(B)
+        assert_matches_reference(B)
         with pytest.raises(ValueError, match="diag cannot"):
             petsc.assemble_matrix(A, a, bcs=data, diag=1)
-        invalid = data._replace(column_markers=[np.zeros(1, dtype=np.int8) for _ in spaces])
+        if kind in ("aij", "is"):
+            with pytest.raises(TypeError, match="different matrix type"):
+                petsc.assemble_matrix(A, a, bcs=fem.prepare_matrix_bcs(a, bcs))
+        invalid = data._replace(
+            markers=data.markers._replace(
+                column_markers=[np.zeros(1, dtype=np.int8) for _ in spaces]
+            )
+        )
         with pytest.raises(ValueError, match="BC markers"):
             petsc.assemble_matrix(A, a, bcs=invalid)
+        num_rows = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
+        invalid = data._replace(
+            diagonal=data.diagonal._replace(
+                rows=[np.array([num_rows], dtype=np.int32) for _ in spaces]
+            )
+        )
+        with pytest.raises(ValueError, match="Diagonal rows"):
+            petsc.assemble_matrix(A, a, bcs=invalid)
+        if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
+            with pytest.raises(ValueError, match="Complex diagonal"):
+                petsc.prepare_matrix_bcs(A, a, bcs, diag=1 + 1j)
         if kind == "is":
             other = petsc.create_matrix(a, kind="aij")
             matrices.append(other)

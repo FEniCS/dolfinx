@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tests for reusable CSR matrix boundary-condition data."""
 
-import importlib
+import collections
 
 from mpi4py import MPI
 
@@ -42,18 +42,21 @@ def test_prepared_matrix_bcs(shape, constrained, dtype, monkeypatch):
     default_data = fem.prepare_matrix_bcs(a, bcs)
     default_prepared = fem.assemble_matrix(a, bcs=default_data)
     np.testing.assert_allclose(default.data, default_prepared.data)
-    with pytest.warns(DeprecationWarning, match="diag argument"):
+    with pytest.warns(DeprecationWarning, match="diag argument") as record:
         reference = fem.assemble_matrix(a, bcs=bcs, diag=diagonal)
+    assert record[0].filename == __file__
     reference.scatter_reverse()
+    with pytest.warns(DeprecationWarning, match="diag argument") as record:
+        fem.assemble_matrix(fem.create_matrix(a), a, bcs=bcs, diag=diagonal)
+    assert record[0].filename == __file__
     data = fem.prepare_matrix_bcs(a, bcs, diag=diagonal)
     data = data._replace(diagonal_values=np.full(data.diagonal_rows.size, diagonal, dtype=dtype))
 
     def unexpected(*args, **kwargs):
         raise AssertionError("Prepared assembly must not rebuild BC data")
 
-    assembly = importlib.import_module("dolfinx.fem.assemble")
-    monkeypatch.setattr(assembly, "_bc_dof_markers_by_space", unexpected)
-    monkeypatch.setattr(assembly, "_owned_marked_rows", unexpected)
+    monkeypatch.setattr("dolfinx.fem.assemble._bc_dof_markers_by_space", unexpected)
+    monkeypatch.setattr("dolfinx.fem.assemble._owned_marked_rows", unexpected)
     A = fem.assemble_matrix(a, bcs=data)
     A.scatter_reverse()
     np.testing.assert_allclose(A.data, reference.data)
@@ -70,6 +73,30 @@ def test_prepared_matrix_bcs(shape, constrained, dtype, monkeypatch):
     other = fem.form(ufl.inner(ufl.TrialFunction(W), ufl.TestFunction(W)) * ufl.dx, dtype=dtype)
     with pytest.raises(ValueError, match="different function spaces"):
         fem.assemble_matrix(A, other, bcs=data)
+    with pytest.raises(TypeError, match="different matrix type"):
+        fem.assemble_matrix(A, a, bcs=collections.namedtuple("Foreign", [])())
+
+
+def test_prepared_matrix_bcs_invalid_diagonal():
+    msh = mesh.create_unit_square(MPI.COMM_WORLD, 3, 3)
+    V = fem.functionspace(msh, ("Lagrange", 1))
+    a = fem.form(ufl.inner(ufl.TrialFunction(V), ufl.TestFunction(V)) * ufl.dx, dtype=np.float64)
+    dofs = fem.locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0))
+    data = fem.prepare_matrix_bcs(a, [fem.dirichletbc(np.float64(0), dofs, V)])
+    A = fem.create_matrix(a)
+    num_owned = V.dofmap.index_map.size_local
+    for rows, values, match in [
+        (np.array([num_owned], dtype=np.int32), 1.0, "Diagonal rows"),
+        (np.array([-1], dtype=np.int32), 1.0, "Diagonal rows"),
+        (np.array([0], dtype=np.int64), 1.0, "Diagonal rows"),
+        (np.array([0], dtype=np.int32), np.ones(2), "Diagonal values"),
+        (np.array([0], dtype=np.int32), 1.0 + 1j, "Complex diagonal"),
+    ]:
+        invalid = data._replace(diagonal_rows=rows, diagonal_values=values)
+        with pytest.raises(ValueError, match=match):
+            fem.assemble_matrix(A, a, bcs=invalid)
+    with pytest.raises(ValueError, match="Complex diagonal"):
+        fem.prepare_matrix_bcs(a, [], diag=1 + 1j)
 
 
 def test_prepared_matrix_bcs_rectangular():
@@ -108,8 +135,7 @@ def test_prepared_matrix_bcs_callback(monkeypatch):
     def unexpected(*args, **kwargs):
         raise AssertionError("Prepared assembly must not rebuild BC markers")
 
-    assembly = importlib.import_module("dolfinx.fem.assemble")
-    monkeypatch.setattr(assembly, "_bc_dof_markers_by_space", unexpected)
+    monkeypatch.setattr("dolfinx.fem.assemble._bc_dof_markers_by_space", unexpected)
     fem.assemble_matrix_fn(insert, a, bcs=data)
     assert len(reference) == len(contributions)
     for expected, actual in zip(reference, contributions, strict=True):

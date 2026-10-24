@@ -58,9 +58,15 @@ from dolfinx.fem.assemble import (
     _bc_dof_markers_by_space,
     _bc_lifting_markers,
     _bc_lifting_values,
+    _check_diagonal_dtype,
+    _check_matrix_bc_diagonal,
     _check_matrix_bc_marker,
     _matrix_bc_diagonal,
     _owned_marked_rows,
+    _owned_unrolled_size,
+    _reject_foreign_bc_data,
+    _same_spaces,
+    _unrolled_size,
 )
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
@@ -97,20 +103,26 @@ __all__ = [
 class MatrixBCData(typing.NamedTuple):
     """Prepared matrix constraints for PETSc matrix assembly.
 
-    Markers cover owned and ghost dofs in unrolled local numbering, one
-    array per block row or column. Diagonal rows and values account for
-    the target matrix type, including MATIS sharing. Treat arrays as
-    read-only. Rebuild when constrained dofs, spaces, diagonal values or
-    the relevant matrix layout change, but not when BC values change.
+    ``markers`` holds constrained dof markers (owned and ghost dofs,
+    unrolled local numbering) and spaces, one entry per block row or
+    column. ``diagonal`` holds the diagonal rows and values, one entry
+    per block row, in unrolled local numbering. Block rows with
+    ``diagonal_ghosts`` false (assembled matrices) have owned rows and,
+    as prepared, a scalar value. Block rows with ``diagonal_ghosts``
+    true (MATIS) have owned and ghost rows and an array holding this
+    rank's share of the value on each row, i.e. the value divided by
+    the number of ranks sharing the row. ``index_sets`` address the
+    blocks of a blocked (non-nest) matrix, and are ``None`` otherwise.
+
+    Treat arrays as read-only. Rebuild with :func:`prepare_matrix_bcs`
+    when constrained dofs, spaces, diagonal values or the relevant
+    matrix layout change, but not when BC values change.
     """
 
-    row_markers: list[npt.NDArray[np.int8]]
-    column_markers: list[npt.NDArray[np.int8]]
-    row_spaces: Sequence[dolfinx.fem.FunctionSpace | None]
-    column_spaces: Sequence[dolfinx.fem.FunctionSpace | None]
-    diagonal_rows: list[npt.NDArray[np.int32]]
-    diagonal_values: list[npt.NDArray | float | complex]
+    markers: _MatrixBCData
+    diagonal: _MatrixDiagData
     diagonal_ghosts: tuple[bool, ...]
+    index_sets: tuple[list, list] | None
 
 
 # -- Vector instantiation -------------------------------------------------
@@ -545,7 +557,7 @@ def assemble_matrix(
         Passing boundary-condition objects rebuilds the constrained dof
         data on each call. Pass prepared data to reuse it.
     """  # noqa: D301
-    return _assemble_matrix_mat(create_matrix(a, kind), a, bcs, diag, constants, coeffs)
+    return _assemble_matrix_mat_bcs(create_matrix(a, kind), a, bcs, diag, constants, coeffs)
 
 
 @assemble_matrix.register  # type: ignore[attr-defined]
@@ -574,45 +586,42 @@ def _assemble_matrix_mat(
         Passing boundary-condition objects rebuilds the constrained dof
         data on each call. Pass prepared data to reuse it.
     """
+    return _assemble_matrix_mat_bcs(A, a, bcs, diag, constants, coeffs)
+
+
+def _assemble_matrix_mat_bcs(
+    A: PETSc.Mat,
+    a: Form | Sequence[Sequence[Form | None]],
+    bcs: Sequence[DirichletBC] | MatrixBCData | None,
+    diag: float | complex | None,
+    constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None,
+    coeffs: (
+        dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+        | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
+        | None
+    ),
+) -> PETSc.Mat:
+    """Body of the PETSc :func:`assemble_matrix` implementations.
+
+    Called directly by each dispatched implementation, at the call
+    depth :func:`dolfinx.fem.assemble._matrix_bc_diagonal` assumes.
+    """
     if isinstance(bcs, MatrixBCData):
         if diag is not None:
             raise ValueError("diag cannot be supplied with prepared matrix BC data")
+        _check_prepared_matrix_bcs(A, a, bcs)
         data = bcs
     else:
+        _reject_foreign_bc_data(bcs)
         data = prepare_matrix_bcs(A, a, bcs, _matrix_bc_diagonal(diag))
-    if isinstance(a, Sequence):
-        V0, V1 = _extract_block_spaces(a)
-    else:
-        V0, V1 = [a.function_spaces[0]], [a.function_spaces[1]]
-    for spaces, prepared in ((V0, data.row_spaces), (V1, data.column_spaces)):
-        if len(spaces) != len(prepared) or any(
-            (V is None) != (W is None)
-            or (V is not None and W is not None and V._cpp_object is not W._cpp_object)
-            for V, W in zip(spaces, prepared, strict=True)
-        ):
-            raise ValueError("Prepared matrix BC data belongs to different function spaces")
-    if tuple(_diag_on_ghost_rows(A, a)) != data.diagonal_ghosts:
-        raise ValueError("Prepared matrix BC data has an incompatible diagonal layout")
-    if (
-        len(data.row_markers) != len(V0)
-        or len(data.column_markers) != len(V1)
-        or len(data.diagonal_rows) != len(V0)
-        or len(data.diagonal_values) != len(V0)
-    ):
-        raise ValueError("Prepared matrix BC data has inconsistent block counts")
-    for spaces, markers in ((V0, data.row_markers), (V1, data.column_markers)):
-        for V, marker in zip(spaces, markers, strict=True):
-            _check_matrix_bc_marker(V, marker)
-    bc_data = _MatrixBCData(
-        data.row_markers, data.column_markers, data.row_spaces, data.column_spaces
-    )
     return _assemble_matrix_petsc(
         A,
         a,
-        bc_data,
-        _MatrixDiagData(data.diagonal_rows, data.diagonal_values),
+        data.markers,
+        data.diagonal,
         pack_constants(a) if constants is None else constants,
         pack_coefficients(a) if coeffs is None else coeffs,
+        data.index_sets,
     )
 
 
@@ -707,6 +716,16 @@ def _extract_block_spaces(
     return row_spaces, column_spaces
 
 
+def _form_block_spaces(
+    a: Form | Sequence[Sequence[Form | None]],
+) -> tuple[list[_FunctionSpace | None], list[_FunctionSpace | None]]:
+    """Test and trial spaces, one per block row/column."""
+    if isinstance(a, Sequence):
+        return _extract_block_spaces(a)
+    test_space, trial_space = a.function_spaces
+    return [test_space], [trial_space]
+
+
 def _matrix_bc_data(
     a: Form | Sequence[Sequence[Form | None]], bcs: Sequence[DirichletBC] | None
 ) -> _MatrixBCData:
@@ -717,11 +736,7 @@ def _matrix_bc_data(
     array, and column markers can also be used for lifting. Treat the
     arrays as read-only. Boundary condition values are not cached.
     """
-    if isinstance(a, Sequence):
-        V0, V1 = _extract_block_spaces(a)
-    else:
-        test_space, trial_space = a.function_spaces
-        V0, V1 = [test_space], [trial_space]
+    V0, V1 = _form_block_spaces(a)
     markers = _bc_dof_markers_by_space([*V0, *V1], bcs)
     row_markers, column_markers = markers[: len(V0)], markers[len(V0) :]
     return _MatrixBCData(row_markers, column_markers, V0, V1)
@@ -759,6 +774,15 @@ def _block_index_sets(bc_data: _MatrixBCData) -> tuple[list, list]:
     return sets(bc_data.row_spaces, "row"), sets(bc_data.column_spaces, "column")
 
 
+def _matrix_index_sets(
+    A: PETSc.Mat, a: Form | Sequence[Sequence[Form | None]], bc_data: _MatrixBCData
+) -> tuple[list, list] | None:
+    """Block index sets for a blocked (non-nest) ``A``, else ``None``."""
+    if isinstance(a, Sequence) and A.getType() != PETSc.Mat.Type.NEST:
+        return _block_index_sets(bc_data)
+    return None
+
+
 class _MatrixDiagData(typing.NamedTuple):
     """Rows carrying the constrained diagonal, and the value on each.
 
@@ -783,7 +807,8 @@ def prepare_matrix_bcs(
         A: Target matrix determining the diagonal layout.
         a: Bilinear form or rectangular array of forms.
         bcs: Boundary conditions identifying constrained dofs.
-        diag: Value to set on constrained diagonal entries.
+        diag: Value to set on constrained diagonal entries. Must be
+            real for a real PETSc build.
 
     Returns:
         Data accepted by ``assemble_matrix(..., bcs=data)``. It can be
@@ -794,18 +819,45 @@ def prepare_matrix_bcs(
         Collective when a diagonal block uses MATIS, including on ranks
         with no constrained dofs.
     """
+    _check_diagonal_dtype(diag, PETSc.ScalarType)
     bc_data = _matrix_bc_data(a, bcs)
     ghosts = _diag_on_ghost_rows(A, a)
-    diag_data = _matrix_diag_data(bc_data, diag, ghosts)
     return MatrixBCData(
-        bc_data.row_markers,
-        bc_data.column_markers,
-        bc_data.row_spaces,
-        bc_data.column_spaces,
-        diag_data.rows,
-        diag_data.values,
+        bc_data,
+        _matrix_diag_data(bc_data, diag, ghosts),
         tuple(ghosts),
+        _matrix_index_sets(A, a, bc_data),
     )
+
+
+def _check_prepared_matrix_bcs(
+    A: PETSc.Mat, a: Form | Sequence[Sequence[Form | None]], data: MatrixBCData
+) -> None:
+    """Raise if prepared data does not match ``a`` or ``A``."""
+    V0, V1 = _form_block_spaces(a)
+    markers, diagonal = data.markers, data.diagonal
+    if not (_same_spaces(V0, markers.row_spaces) and _same_spaces(V1, markers.column_spaces)):
+        raise ValueError("Prepared matrix BC data belongs to different function spaces")
+    if tuple(_diag_on_ghost_rows(A, a)) != data.diagonal_ghosts:
+        raise ValueError("Prepared matrix BC data has an incompatible diagonal layout")
+    if (
+        len(markers.row_markers) != len(V0)
+        or len(markers.column_markers) != len(V1)
+        or len(diagonal.rows) != len(V0)
+        or len(diagonal.values) != len(V0)
+    ):
+        raise ValueError("Prepared matrix BC data has inconsistent block counts")
+    for spaces, marker_list in ((V0, markers.row_markers), (V1, markers.column_markers)):
+        for V, marker in zip(spaces, marker_list, strict=True):
+            _check_matrix_bc_marker(V, marker)
+    for V, rows, values, ghosts in zip(
+        V0, diagonal.rows, diagonal.values, data.diagonal_ghosts, strict=True
+    ):
+        if V is None:
+            num_rows = 0
+        else:
+            num_rows = _unrolled_size(V) if ghosts else _owned_unrolled_size(V)
+        _check_matrix_bc_diagonal(rows, values, num_rows, PETSc.ScalarType)
 
 
 def _check_nest_forms(A: PETSc.Mat, a: Form | Sequence[Sequence[Form | None]]) -> None:
@@ -1041,6 +1093,7 @@ def _assemble_matrix_petsc(
         dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
         | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
     ),
+    index_sets: tuple[list, list] | None = None,
 ) -> PETSc.Mat:
     """Assemble form(s) with cached BC data; do not zero or finalise ``A``.
 
@@ -1048,7 +1101,9 @@ def _assemble_matrix_petsc(
     :func:`_matrix_bc_data`, and ``diag_data`` the constrained rows and
     the value on each from :func:`_matrix_diag_data`. Both are fixed
     for the lifetime of the boundary conditions. Constants and
-    coefficients are supplied afresh by the caller.
+    coefficients are supplied afresh by the caller. ``index_sets``,
+    from :func:`_matrix_index_sets`, are built here if ``None`` and
+    ``A`` is blocked.
     """
     _check_nest_forms(A, a)
     if A.getType() == PETSc.Mat.Type.NEST:
@@ -1074,7 +1129,7 @@ def _assemble_matrix_petsc(
             diag_data,
             constants,  # type: ignore[arg-type]
             coeffs,  # type: ignore[arg-type]
-            _block_index_sets(bc_data),
+            _block_index_sets(bc_data) if index_sets is None else index_sets,
         )
     else:
         _assemble_matrix_single(
@@ -1710,6 +1765,7 @@ class LinearProblem(typing.Generic[_U]):
             self._a_diag_data,
             pack_constants(self.a),
             pack_coefficients(self.a),
+            self._a_index_sets,
         )
         self.A.assemble()
 
@@ -1727,6 +1783,7 @@ class LinearProblem(typing.Generic[_U]):
                 self._a_diag_data,
                 pack_constants(self.preconditioner),
                 pack_coefficients(self.preconditioner),
+                self._a_index_sets,
             )
             self.P_mat.assemble()
 
@@ -1785,6 +1842,7 @@ class LinearProblem(typing.Generic[_U]):
         self._a_diag_data = _matrix_diag_data(
             self._a_bc_data, 1, _diag_on_ghost_rows(self.A, self.a)
         )
+        self._a_index_sets = _matrix_index_sets(self.A, self.a, self._a_bc_data)
         # Which block each condition belongs to follows from the spaces,
         # so group once here and re-read only the values in solve().
         L = self.L
@@ -2020,15 +2078,8 @@ def _check_preconditioner_spaces(
         if isinstance(preconditioner, Sequence):
             raise ValueError(message)
         spaces = [(a.function_spaces, preconditioner.function_spaces)]
-    for A_spaces, P_spaces in spaces:
-        if len(A_spaces) != len(P_spaces):
-            raise ValueError(message)
-        for VA, VP in zip(A_spaces, P_spaces, strict=True):
-            if VA is None or VP is None:
-                if VA is not VP:
-                    raise ValueError(message)
-            elif VA._cpp_object is not VP._cpp_object:
-                raise ValueError(message)
+    if not all(_same_spaces(A_spaces, P_spaces) for A_spaces, P_spaces in spaces):
+        raise ValueError(message)
 
 
 def assemble_jacobian(
