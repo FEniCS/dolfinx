@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import typing
 import warnings
@@ -417,7 +418,13 @@ def _owned_unrolled_size(V: FunctionSpace) -> int:
     return dofmap.index_map_bs * dofmap.index_map.size_local
 
 
-class MatrixBCData(typing.NamedTuple):
+@dataclasses.dataclass(frozen=True, slots=True)
+class _PreparedMatrixBCData:
+    """Base of prepared matrix BC data, for every matrix type."""
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class MatrixBCData(_PreparedMatrixBCData):
     """Prepared matrix constraints for a CSR matrix.
 
     Markers cover owned and ghost dofs in unrolled local numbering.
@@ -486,10 +493,10 @@ def _matrix_bc_diagonal(diag: float | complex | None) -> float | complex:
 def _reject_foreign_bc_data(bcs: object) -> None:
     """Raise if ``bcs`` is prepared data for another matrix type.
 
-    Prepared data are named tuples, so would otherwise be iterated as
-    a sequence of boundary conditions.
+    Called where prepared data for the assembler's own matrix type has
+    already been handled, so any prepared data left is foreign.
     """
-    if isinstance(bcs, tuple) and hasattr(type(bcs), "_fields"):
+    if isinstance(bcs, _PreparedMatrixBCData):
         raise TypeError(
             f"{type(bcs).__module__}.{type(bcs).__name__} was prepared for a different "
             "matrix type. Use the prepare_matrix_bcs of the assembler being called."

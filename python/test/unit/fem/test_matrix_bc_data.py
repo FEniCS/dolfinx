@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tests for reusable CSR matrix boundary-condition data."""
 
-import collections
+import dataclasses
 
 from mpi4py import MPI
 
@@ -50,7 +50,9 @@ def test_prepared_matrix_bcs(shape, constrained, dtype, monkeypatch):
         fem.assemble_matrix(fem.create_matrix(a), a, bcs=bcs, diag=diagonal)
     assert record[0].filename == __file__
     data = fem.prepare_matrix_bcs(a, bcs, diag=diagonal)
-    data = data._replace(diagonal_values=np.full(data.diagonal_rows.size, diagonal, dtype=dtype))
+    data = dataclasses.replace(
+        data, diagonal_values=np.full(data.diagonal_rows.size, diagonal, dtype=dtype)
+    )
 
     def unexpected(*args, **kwargs):
         raise AssertionError("Prepared assembly must not rebuild BC data")
@@ -66,15 +68,13 @@ def test_prepared_matrix_bcs(shape, constrained, dtype, monkeypatch):
     np.testing.assert_allclose(A.data, reference.data)
     with pytest.raises(ValueError, match="diag cannot"):
         fem.assemble_matrix(A, a, bcs=data, diag=1)
-    invalid = data._replace(column_marker=np.zeros(1, dtype=np.int8))
+    invalid = dataclasses.replace(data, column_marker=np.zeros(1, dtype=np.int8))
     with pytest.raises(ValueError, match="BC markers"):
         fem.assemble_matrix(A, a, bcs=invalid)
     W = V.clone()
     other = fem.form(ufl.inner(ufl.TrialFunction(W), ufl.TestFunction(W)) * ufl.dx, dtype=dtype)
     with pytest.raises(ValueError, match="different function spaces"):
         fem.assemble_matrix(A, other, bcs=data)
-    with pytest.raises(TypeError, match="different matrix type"):
-        fem.assemble_matrix(A, a, bcs=collections.namedtuple("Foreign", [])())
 
 
 def test_prepared_matrix_bcs_invalid_diagonal():
@@ -92,7 +92,7 @@ def test_prepared_matrix_bcs_invalid_diagonal():
         (np.array([0], dtype=np.int32), np.ones(2), "Diagonal values"),
         (np.array([0], dtype=np.int32), 1.0 + 1j, "Complex diagonal"),
     ]:
-        invalid = data._replace(diagonal_rows=rows, diagonal_values=values)
+        invalid = dataclasses.replace(data, diagonal_rows=rows, diagonal_values=values)
         with pytest.raises(ValueError, match=match):
             fem.assemble_matrix(A, a, bcs=invalid)
     with pytest.raises(ValueError, match="Complex diagonal"):

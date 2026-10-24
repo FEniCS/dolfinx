@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import contextlib
 import ctypes as _ctypes
+import dataclasses
 import functools
 import os
 import pathlib
@@ -64,6 +65,7 @@ from dolfinx.fem.assemble import (
     _matrix_bc_diagonal,
     _owned_marked_rows,
     _owned_unrolled_size,
+    _PreparedMatrixBCData,
     _reject_foreign_bc_data,
     _same_spaces,
     _unrolled_size,
@@ -78,8 +80,8 @@ from dolfinx.fem.function import FunctionSpace as _FunctionSpace
 from dolfinx.mesh import EntityMap as _EntityMap
 
 __all__ = [
+    "BlockMatrixBCData",
     "LinearProblem",
-    "MatrixBCData",
     "NonlinearProblem",
     "apply_lifting",
     "assemble_jacobian",
@@ -100,7 +102,8 @@ __all__ = [
 ]
 
 
-class MatrixBCData(typing.NamedTuple):
+@dataclasses.dataclass(frozen=True, slots=True)
+class BlockMatrixBCData(_PreparedMatrixBCData):
     """Prepared matrix constraints for PETSc matrix assembly.
 
     ``markers`` holds constrained dof markers (owned and ghost dofs,
@@ -462,7 +465,7 @@ def _assemble_vector_petsc(
 @overload
 def assemble_matrix(
     a: Form | Sequence[Sequence[Form | None]],
-    bcs: Sequence[DirichletBC] | MatrixBCData | None = None,
+    bcs: Sequence[DirichletBC] | BlockMatrixBCData | None = None,
     diag: float | complex | None = None,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
@@ -476,7 +479,7 @@ def assemble_matrix(
 def assemble_matrix(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form | None]],
-    bcs: Sequence[DirichletBC] | MatrixBCData | None = None,
+    bcs: Sequence[DirichletBC] | BlockMatrixBCData | None = None,
     diag: float | complex | None = None,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: (
@@ -490,7 +493,7 @@ def assemble_matrix(
 @functools.singledispatch
 def assemble_matrix(
     a: Form | Sequence[Sequence[Form | None]],
-    bcs: Sequence[DirichletBC] | MatrixBCData | None = None,
+    bcs: Sequence[DirichletBC] | BlockMatrixBCData | None = None,
     diag: float | complex | None = None,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: (
@@ -564,7 +567,7 @@ def assemble_matrix(
 def _assemble_matrix_mat(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form | None]],
-    bcs: Sequence[DirichletBC] | MatrixBCData | None = None,
+    bcs: Sequence[DirichletBC] | BlockMatrixBCData | None = None,
     diag: float | complex | None = None,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: (
@@ -592,7 +595,7 @@ def _assemble_matrix_mat(
 def _assemble_matrix_mat_bcs(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form | None]],
-    bcs: Sequence[DirichletBC] | MatrixBCData | None,
+    bcs: Sequence[DirichletBC] | BlockMatrixBCData | None,
     diag: float | complex | None,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None,
     coeffs: (
@@ -606,7 +609,7 @@ def _assemble_matrix_mat_bcs(
     Called directly by each dispatched implementation, at the call
     depth :func:`dolfinx.fem.assemble._matrix_bc_diagonal` assumes.
     """
-    if isinstance(bcs, MatrixBCData):
+    if isinstance(bcs, BlockMatrixBCData):
         if diag is not None:
             raise ValueError("diag cannot be supplied with prepared matrix BC data")
         _check_prepared_matrix_bcs(A, a, bcs)
@@ -800,7 +803,7 @@ def prepare_matrix_bcs(
     a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None,
     diag: float | complex = 1.0,
-) -> MatrixBCData:
+) -> BlockMatrixBCData:
     """Prepare reusable boundary-condition data for PETSc matrix assembly.
 
     Args:
@@ -822,7 +825,7 @@ def prepare_matrix_bcs(
     _check_diagonal_dtype(diag, PETSc.ScalarType)
     bc_data = _matrix_bc_data(a, bcs)
     ghosts = _diag_on_ghost_rows(A, a)
-    return MatrixBCData(
+    return BlockMatrixBCData(
         bc_data,
         _matrix_diag_data(bc_data, diag, ghosts),
         tuple(ghosts),
@@ -831,7 +834,7 @@ def prepare_matrix_bcs(
 
 
 def _check_prepared_matrix_bcs(
-    A: PETSc.Mat, a: Form | Sequence[Sequence[Form | None]], data: MatrixBCData
+    A: PETSc.Mat, a: Form | Sequence[Sequence[Form | None]], data: BlockMatrixBCData
 ) -> None:
     """Raise if prepared data does not match ``a`` or ``A``."""
     V0, V1 = _form_block_spaces(a)
