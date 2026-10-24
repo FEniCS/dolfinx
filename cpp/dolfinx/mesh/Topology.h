@@ -171,10 +171,8 @@ public:
   /// mesh::compute_cell_permutations for the bit layout). On a surface it
   /// also holds the facet signs (see facet_orientations).
   ///
-  /// @throws std::runtime_error If create_entity_permutations has not
+  /// @throws std::runtime_error If create_cell_permutations has not
   /// been called.
-  /// @throws std::out_of_range If there is more than one cell type
-  /// (see Topology::index_map).
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
   /// @brief Sign the facets on which two cells disagree on the normal.
@@ -309,7 +307,8 @@ public:
 
   /// @brief Compute entity permutations and reflections.
   ///
-  /// @note Collective.
+  /// @note Not collective. Unpacked from the cell permutations
+  /// (computed if absent); creates no entities.
   ///
   /// A permutation records how an entity is oriented as seen from a
   /// cell, relative to a low-to-high ordering of the entity's global
@@ -347,6 +346,7 @@ public:
   /// each cell at assembly time.
   ///
   /// Does nothing if the cell permutations have already been computed.
+  /// @note Not collective. Uses the cell vertices; creates no entities.
   ///
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
   /// @see create_entity_permutations, which gives the orientations of
@@ -388,7 +388,8 @@ private:
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
-  std::vector<std::uint32_t> _cell_permutations;
+  // Unset until computed; empty is valid (no cells).
+  std::optional<std::vector<std::uint32_t>> _cell_permutations;
 
   // Whether the facet signs have been computed. Not encoded in
   // _cell_permutations, where unsigned facets read as all 1.

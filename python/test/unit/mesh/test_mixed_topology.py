@@ -33,6 +33,35 @@ from dolfinx.mesh import (
 )
 
 
+def test_mixed_topology_vertex_permutations():
+    cells = [np.array([0, 1, 2, 1, 2, 3], dtype=np.int64), np.array([2, 3, 4, 5], dtype=np.int64)]
+    topology = Topology(
+        create_topology(
+            MPI.COMM_SELF,
+            [CellType.triangle, CellType.quadrilateral],
+            cells,
+            [np.array([0, 1], dtype=np.int64), np.array([2], dtype=np.int64)],
+            [np.array([], dtype=np.int32), np.array([], dtype=np.int32)],
+            np.array([], dtype=np.int64),
+            1,
+        )
+    )
+
+    with pytest.raises(RuntimeError):
+        topology.get_entity_permutations(0)
+    for invalid_threads in (0, -1):
+        with pytest.raises(ValueError, match="num_threads must be >= 1"):
+            topology.create_entity_permutations(0, num_threads=invalid_threads)
+
+    for _ in range(2):
+        topology.create_entity_permutations(0)
+        assert topology.get_entity_permutations(0).size == 0
+
+    assert not topology.index_maps(1)
+    with pytest.raises(RuntimeError):
+        topology.get_cell_permutation_info()
+
+
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_mixed_topology_mesh(dtype):
     set_log_level(LogLevel.INFO)
