@@ -874,6 +874,19 @@ def test_submesh_codim_1_boundary_facets(n, ghost_mode, dtype) -> None:
     assert compute_num_boundary_facets(submesh) == expected_num_boundary_facets
 
 
+@pytest.mark.parametrize("cell_type", ["quadrilateral", "hexahedron"])
+@pytest.mark.parametrize("degree", [2, 3])
+def test_coordinate_element_rejects_integral_moments(cell_type, degree):
+    """Geometry coefficients are node coordinates, so integral moment DOFs are rejected."""
+    e = element(basix.ElementFamily.serendipity, cell_type, degree)
+    with pytest.raises(ValueError, match="point evaluations"):
+        coordinate_element(e.basix_element)
+    with pytest.raises(ValueError, match="point evaluations"):
+        coordinate_element(
+            _mesh.to_type(cell_type), degree, basix.LagrangeVariant.legendre, discontinuous=True
+        )
+
+
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_mesh_create_cmap(dtype):
