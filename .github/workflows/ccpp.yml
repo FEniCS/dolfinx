@@ -343,6 +343,8 @@ jobs:
           doxygen-${DOXYGEN_VERSION}/bin/doxygen --version
 
       - name: Build C++ interface documentation
+        env:
+          DOCS_VERSION: ${{ github.ref_name }}
         run: |
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
           echo $DOLFINX_VERSION
@@ -371,6 +373,8 @@ jobs:
           apt-get install -y libegl1 libxrender1
 
       - name: Build Python interface documentation
+        env:
+          DOCS_VERSION: ${{ github.ref_name }}
         run: |
           cd python/doc
           python -m sphinx -W -b html source/ build/html/
