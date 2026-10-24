@@ -324,13 +324,16 @@ jobs:
           --check-build-dependencies
           --no-build-isolation
 
-      # Doxygen is not taken from the test-env image: Ubuntu 26.04's 1.15
-      # misparses attributes on alias declarations. Use a pinned upstream
-      # release.
-      - name: Install Doxygen
+      # Doxygen and Graphviz (dot, for the Doxygen graphs) are not taken
+      # from the test-env image. Ubuntu 26.04's Doxygen 1.15 misparses
+      # attributes on alias declarations, so use a pinned upstream release.
+      - name: Install Doxygen and Graphviz
         env:
+          DEBIAN_FRONTEND: noninteractive
           DOXYGEN_VERSION: 1.18.0
         run: |
+          apt-get -y update
+          apt-get install -y --no-install-recommends graphviz
           cd $RUNNER_TEMP
           wget -nv https://www.doxygen.nl/files/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
           tar -xzf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz doxygen-${DOXYGEN_VERSION}/bin/doxygen
