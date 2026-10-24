@@ -1072,46 +1072,6 @@ def _unit_mesh(cell_type):
 @pytest.mark.parametrize(
     "cell_type",
     [
-        CellType.triangle,
-        CellType.quadrilateral,
-        CellType.tetrahedron,
-        CellType.hexahedron,
-    ],
-)
-@pytest.mark.parametrize("num_threads", [1, 4])
-def test_cell_permutation_info_bit_layout(cell_type, num_threads) -> None:
-    """Pin the packed layout: three bits per face, then one per edge."""
-    topology = _unit_mesh(cell_type).topology
-    tdim = topology.dim
-
-    topology.create_cell_permutations(num_threads)
-    for dim in range(1, tdim):
-        topology.create_entity_permutations(dim)
-
-    info = topology.get_cell_permutation_info()
-    num_cells = len(info)
-
-    used_bits = 0
-    if tdim > 2:
-        faces = topology.get_entity_permutations(2).reshape(num_cells, -1)
-        for i in range(faces.shape[1]):
-            assert np.array_equal((info >> (3 * i)) & 7, faces[:, i])
-        used_bits += 3 * faces.shape[1]
-
-    edges = topology.get_entity_permutations(1).reshape(num_cells, -1)
-    for i in range(edges.shape[1]):
-        assert np.array_equal((info >> (used_bits + i)) & 1, edges[:, i])
-
-    # A non-trivial mesh really does have permuted entities, so the
-    # comparisons above are not vacuous
-    assert edges.any()
-    if tdim > 2:
-        assert faces.any()
-
-
-@pytest.mark.parametrize(
-    "cell_type",
-    [
         CellType.interval,
         CellType.triangle,
         CellType.quadrilateral,
@@ -1121,14 +1081,12 @@ def test_cell_permutation_info_bit_layout(cell_type, num_threads) -> None:
     ],
 )
 @pytest.mark.parametrize("num_threads", [1, 4])
-def test_cell_permutations_do_not_create_entities(cell_type, num_threads) -> None:
-    """Packed orientations need only the cell vertices, including ghost cells."""
+def test_cell_permutations(cell_type, num_threads) -> None:
+    """Check the packed layout without creating mesh edges or faces."""
     topology = _unit_mesh(cell_type).topology
     tdim = topology.dim
 
-    # Entities of dimension dim exist iff they have an index map. The
-    # connectivity accessor is not a usable check here: for a prism it
-    # throws whatever has been created, the facets having two types
+    # Index maps also handle prisms, whose facets have two types.
     for dim in range(1, tdim):
         assert topology.index_maps(dim) == []
 
@@ -1143,15 +1101,21 @@ def test_cell_permutations_do_not_create_entities(cell_type, num_threads) -> Non
     for dim in range(1, tdim):
         assert topology.index_maps(dim) == []
 
+    # Three bits per face, then one per edge, in cell-local entity order.
+    offset = 0
+    for dim in range(tdim - 1, 0, -1):
+        topology.create_entity_permutations(dim)
+        num_entities = cell_num_entities(cell_type, dim)
+        perms = topology.get_entity_permutations(dim).reshape(-1, num_entities)
+        bits = 3 if dim == 2 else 1
+        shifts = offset + bits * np.arange(num_entities, dtype=np.uint32)
+        assert np.array_equal((info[:, None] >> shifts) & ((1 << bits) - 1), perms)
+        offset += bits * num_entities
+        assert topology.index_maps(dim) == []
+
 
 def test_entity_permutations_do_not_create_entities() -> None:
-    """Unpacking is local, including on a rank that holds no cells.
-
-    The permutations are unpacked from the packed cell permutations,
-    which need only the cell vertices. Nothing here is collective, so a
-    rank holding no cells cannot diverge from its peers. A 1x1 square
-    has two cells, so most ranks hold none.
-    """
+    """Unpack without edges, including empty ranks when running with MPI."""
     msh = create_unit_square(MPI.COMM_WORLD, 1, 1)
     msh.topology.create_entity_permutations(1)
     assert msh.topology.index_maps(1) == []
@@ -1174,14 +1138,7 @@ def test_entity_permutations_are_computed_per_dimension() -> None:
 
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_facet_assembly_computes_only_facet_permutations(degree) -> None:
-    """A form pays only for the entities it integrates over.
-
-    An interior facet form needs permutations (it reads
-    ``quadrature_permutation``), so the facets of the tetrahedron --
-    faces, dimension 2 -- must be computed. Its edges must not be. This
-    holds at every degree: the quadrature permutation is a property of
-    the integral, not of the element.
-    """
+    """Facet assembly computes face permutations, with edges needed only for DOFs."""
     msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = dolfinx.fem.functionspace(msh, ("Lagrange", degree))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)

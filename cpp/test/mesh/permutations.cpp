@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <cstdint>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -20,9 +21,7 @@ using namespace dolfinx;
 
 namespace
 {
-/// Whether any rank holds a non-zero permutation. The meshes below are
-/// built so that some entity really is permuted, without which the
-/// comparisons would hold vacuously.
+/// Whether any rank holds a non-zero permutation.
 bool any_nonzero(const std::vector<std::uint8_t>& perms)
 {
   int local = std::ranges::any_of(perms, [](std::uint8_t p) { return p != 0; });
@@ -54,32 +53,19 @@ TEST_CASE("Entity permutations match the packed cell permutations",
   constexpr std::array<std::array<double, 2>, 2> rectangle = {{{0, 0}, {1, 1}}};
   constexpr std::array<std::array<double, 3>, 2> box = {{{0, 0, 0}, {1, 1, 1}}};
 
-  SECTION("triangle")
+  const mesh::CellType cell_type
+      = GENERATE(mesh::CellType::triangle, mesh::CellType::quadrilateral,
+                 mesh::CellType::tetrahedron, mesh::CellType::hexahedron,
+                 mesh::CellType::prism);
+  CAPTURE(cell_type);
+  if (mesh::cell_dim(cell_type) == 2)
   {
     check_mesh(mesh::create_rectangle<double>(MPI_COMM_WORLD, rectangle, {3, 3},
-                                              mesh::CellType::triangle));
+                                              cell_type));
   }
-  SECTION("quadrilateral")
+  else
   {
-    check_mesh(mesh::create_rectangle<double>(MPI_COMM_WORLD, rectangle, {3, 3},
-                                              mesh::CellType::quadrilateral));
-  }
-  SECTION("tetrahedron")
-  {
-    check_mesh(mesh::create_box<double>(MPI_COMM_WORLD, box, {2, 2, 2},
-                                        mesh::CellType::tetrahedron));
-  }
-  SECTION("hexahedron")
-  {
-    check_mesh(mesh::create_box<double>(MPI_COMM_WORLD, box, {2, 2, 2},
-                                        mesh::CellType::hexahedron));
-  }
-  SECTION("prism")
-  {
-    // The only cell type with two facet types, where the two routes
-    // differ most: one indexes faces by type, the other by cell-local
-    // index
-    check_mesh(mesh::create_box<double>(MPI_COMM_WORLD, box, {2, 2, 2},
-                                        mesh::CellType::prism));
+    check_mesh(
+        mesh::create_box<double>(MPI_COMM_WORLD, box, {2, 2, 2}, cell_type));
   }
 }

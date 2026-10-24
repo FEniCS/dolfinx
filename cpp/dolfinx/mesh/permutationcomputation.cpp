@@ -477,15 +477,17 @@ mesh::compute_cell_permutations(const mesh::Topology& topology, int num_threads)
   const CellType cell_type = topology.cell_type();
   const auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
+  const std::int32_t num_cells = c_to_v->num_nodes();
+  std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
+  if (tdim < 2)
+    return cell_permutation_info;
+
   const auto vertex_map = topology.index_map(0);
   assert(vertex_map);
-  const std::int32_t num_cells = c_to_v->num_nodes();
 
   // Reference-cell entities identify vertices without constructing mesh
   // edges or faces and their distributed index maps.
-  const graph::AdjacencyList<int> edges
-      = tdim > 1 ? get_entity_vertices(cell_type, 1)
-                 : graph::AdjacencyList<int>(0);
+  const graph::AdjacencyList<int> edges = get_entity_vertices(cell_type, 1);
   const graph::AdjacencyList<int> faces
       = tdim > 2 ? get_entity_vertices(cell_type, 2)
                  : graph::AdjacencyList<int>(0);
@@ -502,8 +504,6 @@ mesh::compute_cell_permutations(const mesh::Topology& topology, int num_threads)
   assert(std::ranges::all_of(
       std::views::iota(0, faces.num_nodes()),
       [&faces](int f) { return faces.links(f).size() <= max_face_vertices; }));
-  std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
-
   {
     std::vector<std::jthread> threads;
     for (int i = 1; i < num_threads; ++i)
