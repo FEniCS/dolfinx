@@ -6,8 +6,12 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <concepts>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <numeric>
 #include <span>
 #include <stdexcept>
@@ -36,6 +40,21 @@ template <typename T>
 concept BlockSizeArg = std::integral<std::remove_cvref_t<T>>
                        or is_integral_constant<std::remove_cvref_t<T>>::value;
 /// @endcond
+
+/// @brief Find the lower-bound position of a column in a sorted CSR row.
+/// @param[in] cols CSR column indices.
+/// @param[in] begin Start of the row in `cols`.
+/// @param[in] end End of the row in `cols` (exclusive).
+/// @param[in] col Column index to locate.
+/// @return Position of the first column >= `col`, or `end`.
+/// @note Callers must check for `end` and an exact column match.
+template <typename V, std::integral T>
+std::size_t csr_position(const V& cols, std::size_t begin, std::size_t end,
+                         T col)
+{
+  const auto* c = cols.data();
+  return std::ranges::lower_bound(c + begin, c + end, col) - c;
+}
 
 /// @brief Incorporate data into a CSR matrix.
 ///
@@ -86,16 +105,15 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       throw std::out_of_range("Local row out of range");
 #endif
     // Columns indices for row
-    auto cit0 = std::next(cols.begin(), row_ptr[row]);
-    auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
+    std::size_t row_begin = row_ptr[row];
+    std::size_t row_end = row_ptr[row + 1];
     for (std::size_t c = 0; c < nc; ++c)
     {
       // Find position of column index
-      auto it = std::lower_bound(cit0, cit1, xcols[c]);
-      if (it == cit1 or *it != xcols[c])
+      std::size_t d = csr_position(cols, row_begin, row_end, xcols[c]);
+      if (d == row_end or cols[d] != xcols[c])
         throw std::out_of_range("Entry not in sparsity");
 
-      std::size_t d = std::ranges::distance(cols.begin(), it);
       std::size_t di = d * BS0 * BS1;
       std::size_t xi = c * BS1;
       assert(di < data.size());
@@ -144,7 +162,8 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
     // Row index and current data row
     auto row = xrows[r] * BS0;
 #ifndef NDEBUG
-    if (row >= num_rows)
+    // Rows [row, row + BS0) are accessed below
+    if (row + BS0 > num_rows)
       throw std::out_of_range("Local row out of range");
 #endif
 
@@ -154,16 +173,15 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       const T* xr = x.data() + (r * BS0 + i) * nc * BS1;
 
       // Columns indices for row
-      auto cit0 = std::next(cols.begin(), row_ptr[row + i]);
-      auto cit1 = std::next(cols.begin(), row_ptr[row + i + 1]);
+      std::size_t row_begin = row_ptr[row + i];
+      std::size_t row_end = row_ptr[row + i + 1];
       for (std::size_t c = 0; c < nc; ++c)
       {
         // Find position of column index
-        auto it = std::lower_bound(cit0, cit1, xcols[c] * BS1);
-        if (it == cit1 or *it != xcols[c] * BS1)
+        std::size_t d = csr_position(cols, row_begin, row_end, xcols[c] * BS1);
+        if (d == row_end or cols[d] != xcols[c] * BS1)
           throw std::out_of_range("Entry not in sparsity");
 
-        std::size_t d = std::ranges::distance(cols.begin(), it);
         assert(d < data.size());
         std::size_t xi = c * BS1;
         for (int j = 0; j < BS1; ++j)
@@ -215,17 +233,16 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       throw std::out_of_range("Local row out of range");
 #endif
     // Columns indices for row
-    auto cit0 = std::next(cols.begin(), row_ptr[rdiv.quot]);
-    auto cit1 = std::next(cols.begin(), row_ptr[rdiv.quot + 1]);
+    std::size_t row_begin = row_ptr[rdiv.quot];
+    std::size_t row_end = row_ptr[rdiv.quot + 1];
     for (std::size_t c = 0; c < nc; ++c)
     {
       // Find position of column index
       auto cdiv = std::div(xcols[c], bs1);
-      auto it = std::lower_bound(cit0, cit1, cdiv.quot);
-      if (it == cit1 or *it != cdiv.quot)
+      std::size_t d = csr_position(cols, row_begin, row_end, cdiv.quot);
+      if (d == row_end or cols[d] != cdiv.quot)
         throw std::out_of_range("Entry not in sparsity");
 
-      std::size_t d = std::ranges::distance(cols.begin(), it);
       std::size_t di = d * nbs + rdiv.rem * bs1 + cdiv.rem;
       assert(di < data.size());
       op(data[di], xr[c]);
