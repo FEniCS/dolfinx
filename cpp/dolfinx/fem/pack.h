@@ -423,8 +423,8 @@ void pack_coefficients(
     throw std::invalid_argument("Coefficient packing span is too small.");
 
   // Check that the entities can be mapped to the cells of each
-  // coefficient's mesh before packing, as packing may compute cell
-  // permutations collectively
+  // coefficient's mesh before packing, so that a failure is reported
+  // before any coefficient is packed
   std::vector<std::optional<std::reference_wrapper<const mesh::EntityMap>>>
       emaps(coeffs.size());
   for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
