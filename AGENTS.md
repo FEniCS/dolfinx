@@ -15,6 +15,76 @@ disclosure process.
 - `python/dolfinx/wrappers/` — nanobind C++/Python bindings.
 - `python/demo/`, `python/test/` — Python demos and pytest suite.
 
+## Module dependencies
+
+The C++ modules in `cpp/dolfinx/` depend on each other in one
+direction only. A module may include headers from the modules listed
+before it, and from none listed after it:
+
+1. `common`
+2. `graph`
+3. `la`
+4. `mesh`
+5. `geometry`
+6. `fem`
+7. `refinement`
+8. `io`
+9. `nls`
+
+Current dependencies (`a --> b`: `a` includes `b`; every module also
+includes `common`):
+
+```mermaid
+graph BT
+  grph[graph] --> common
+  la --> grph
+  mesh --> grph
+  geometry --> grph
+  geometry --> mesh
+  fem --> grph
+  fem --> la
+  fem --> mesh
+  fem --> geometry
+  refinement --> grph
+  refinement --> la
+  refinement --> mesh
+  refinement --> fem
+  io --> grph
+  io --> mesh
+  io --> fem
+  nls --> common
+  mesh -. to remove .-> fem
+  geometry -. to remove .-> fem
+```
+
+- **What counts**: an `#include` of another module's header, in a
+  header or a source file. Indirect cycles count too: `a` → `b` →
+  `c` → `a` is a two-way dependency just as `a` ↔ `b` is.
+- **Exempt**: the umbrella header `dolfinx.h`, and the tests, demos
+  and nanobind wrappers, which sit above every module.
+- **Known exceptions, to be removed**: two modules include `fem`,
+  which is listed after them:
+  - `mesh` → `fem`: `mesh/Geometry.h` (`CoordinateElement.h`,
+    `ElementDofLayout.h`, `dofmapbuilder.h`), `mesh/generation.h`
+    (`CoordinateElement.h`) and `mesh/utils.cpp`
+    (`ElementDofLayout.h`).
+  - `geometry` → `fem`: `geometry/utils.h` (`CoordinateElement.h`,
+    `ElementDofLayout.h`).
+
+  Don't add to these, whether by including another `fem` header or
+  by including from another file. Remove an entry when its include
+  goes. All three headers also serve the mesh geometry, so moving
+  them to a module listed before `mesh` would remove both exceptions.
+- **No new exceptions**: a change that needs a header from a module
+  listed later should move the code it needs down, not add an
+  include.
+- **Checking**: this is checked in review, not CI. To list one
+  module's includes of another, e.g. `mesh` including `fem`:
+
+  ```sh
+  grep -rnE '#include [<"]dolfinx/fem/' cpp/dolfinx/mesh
+  ```
+
 ## C++ style
 
 - **Standard**: Modern C++20. Use concepts (`std::floating_point T`,
