@@ -37,9 +37,7 @@ namespace
 {
 constexpr int bitset_size = 32;
 
-// Vertex counts of the largest supported cell (hexahedron) and the
-// largest supported face (quadrilateral), which size the per-cell
-// scratch buffers in ::compute_cell_permutations_range
+// Largest supported cell (hexahedron) and face (quadrilateral)
 constexpr std::size_t max_cell_vertices = 8;
 constexpr std::size_t max_face_vertices = 4;
 } // namespace
@@ -366,10 +364,6 @@ void compute_cell_permutations_range(
     std::span<std::uint32_t> cell_permutation_info)
 {
   const int edge_offset = 3 * faces.num_nodes();
-
-  // Per-cell scratch, sized for the largest supported cell (hexahedron,
-  // 8 vertices) and the largest supported face (quadrilateral, 4). The
-  // caller checks that `c_to_v` and `faces` fit.
   std::array<std::int64_t, max_cell_vertices> cell_vertices;
   std::array<std::int64_t, max_face_vertices> face_vertices;
   for (std::int32_t c = range[0]; c < range[1]; ++c)
@@ -503,10 +497,7 @@ mesh::compute_cell_permutations(const mesh::Topology& topology, int num_threads)
   assert(used_bits < bitset_size);
   assert(tdim != 2 or used_bits <= 27);
 
-  // Scratch buffer capacity in ::compute_cell_permutations_range,
-  // checked once here rather than per cell and per face. Faces are
-  // triangles or quadrilaterals, which the three bits each occupies
-  // above also assumes.
+  // Scratch capacity in ::compute_cell_permutations_range
   assert(std::cmp_less_equal(num_cell_vertices(cell_type), max_cell_vertices));
   assert(std::ranges::all_of(
       std::views::iota(0, faces.num_nodes()),

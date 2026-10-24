@@ -307,9 +307,8 @@ public:
 
   /// @brief Compute entity permutations and reflections.
   ///
-  /// @note Not collective. The permutations are unpacked from the
-  /// packed cell permutations, which are computed first if they do not
-  /// exist. The entities of dimension `dim` are not created.
+  /// @note Not collective. Unpacked from the cell permutations
+  /// (computed if absent); creates no entities.
   ///
   /// A permutation records how an entity is oriented as seen from a
   /// cell, relative to a low-to-high ordering of the entity's global
@@ -347,8 +346,7 @@ public:
   /// each cell at assembly time.
   ///
   /// Does nothing if the cell permutations have already been computed.
-  /// Uses cell vertices directly without creating edges or faces.
-  /// @note Not collective.
+  /// @note Not collective. Uses the cell vertices; creates no entities.
   ///
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
   /// @see create_entity_permutations, which gives the orientations of
@@ -390,8 +388,7 @@ private:
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
-  // Unset until computed, which an empty vector (a rank with no cells)
-  // does not indicate.
+  // Unset until computed; empty is valid (no cells).
   std::optional<std::vector<std::uint32_t>> _cell_permutations;
 
   // Whether the facet signs have been computed. Not encoded in

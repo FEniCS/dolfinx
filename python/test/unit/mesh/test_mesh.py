@@ -1059,6 +1059,16 @@ def test_point_mesh(gdim, dtype) -> None:
     assert mesh.topology.index_map(0).size_local == num_points
 
 
+def _unit_mesh(cell_type):
+    """Small unit mesh of the given cell type."""
+    if cell_type == CellType.interval:
+        return create_unit_interval(MPI.COMM_WORLD, 4)
+    elif cell_type in (CellType.triangle, CellType.quadrilateral):
+        return create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type=cell_type)
+    else:
+        return create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
+
+
 @pytest.mark.parametrize(
     "cell_type",
     [
@@ -1070,21 +1080,8 @@ def test_point_mesh(gdim, dtype) -> None:
 )
 @pytest.mark.parametrize("num_threads", [1, 4])
 def test_cell_permutation_info_bit_layout(cell_type, num_threads) -> None:
-    """The packed cell permutation info has the documented bit layout.
-
-    ``get_cell_permutation_info`` packs three bits per face followed by
-    one bit per edge, and ``get_entity_permutations`` unpacks them. This
-    pins that layout, re-deriving the offsets here. The check that the
-    packed bits are themselves right is in ``cpp/test/mesh/permutations.cpp``,
-    which compares them against the independent computation from the
-    mesh entities.
-    """
-    if cell_type in (CellType.triangle, CellType.quadrilateral):
-        msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type=cell_type)
-    else:
-        msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
-
-    topology = msh.topology
+    """Pin the packed layout: three bits per face, then one per edge."""
+    topology = _unit_mesh(cell_type).topology
     tdim = topology.dim
 
     topology.create_cell_permutations(num_threads)
@@ -1126,13 +1123,7 @@ def test_cell_permutation_info_bit_layout(cell_type, num_threads) -> None:
 @pytest.mark.parametrize("num_threads", [1, 4])
 def test_cell_permutations_do_not_create_entities(cell_type, num_threads) -> None:
     """Packed orientations need only the cell vertices, including ghost cells."""
-    if cell_type == CellType.interval:
-        msh = create_unit_interval(MPI.COMM_WORLD, 4)
-    elif cell_type in (CellType.triangle, CellType.quadrilateral):
-        msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type=cell_type)
-    else:
-        msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type)
-    topology = msh.topology
+    topology = _unit_mesh(cell_type).topology
     tdim = topology.dim
 
     # Entities of dimension dim exist iff they have an index map. The
@@ -1239,20 +1230,9 @@ def test_cell_assembly_computes_only_cell_permutations() -> None:
 
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
 def test_entity_permutations_unpacked_from_cell_info(cell_type):
-    """Asking for permutations after the packed info exists unpacks it.
-
-    The result must equal what the independent per-dimension computation
-    produces, so that the reuse is a pure saving.
-    """
-    if cell_type == CellType.triangle:
-        args = (MPI.COMM_WORLD, 3, 3)
-        make = create_unit_square
-    else:
-        args = (MPI.COMM_WORLD, 2, 2, 2)
-        make = create_unit_cube
-
+    """Unpacked permutations equal those measured from the mesh entities."""
     # A single mesh is used since two meshes need not be partitioned identically.
-    mesh = make(*args, cell_type=cell_type)
+    mesh = _unit_mesh(cell_type)
     mesh.topology.create_cell_permutations()
 
     for dim in range(1, mesh.topology.dim):

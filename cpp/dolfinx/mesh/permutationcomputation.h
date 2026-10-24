@@ -62,12 +62,9 @@ constexpr std::uint32_t orientation_mask(int tdim)
 /// permute quadrature points on sub-entity integrals when data from
 /// more than one cell incident to the entity is used.
 ///
-/// This measures the entities of dimension `dim`, which must therefore
-/// exist, against the cells incident to them.
-/// Topology::create_entity_permutations instead unpacks the same values
-/// from the packed cell permutations, which need only the cell
-/// vertices. The two are independent routes to the same data, and
-/// `cpp/test/mesh/permutations.cpp` checks that they agree.
+/// Measures the entities against their incident cells, independently
+/// of Topology::create_entity_permutations, which unpacks the same
+/// values from the packed cell permutations.
 ///
 /// @pre The entities of dimension `dim`, and their connectivity with
 /// the cells and the vertices, must already exist (see

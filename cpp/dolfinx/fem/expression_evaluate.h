@@ -122,8 +122,7 @@ std::pair<std::vector<T>, int> pack_coefficients(const fem::Expression<T, U>& e,
                                                  const mesh::Mesh<U>& mesh,
                                                  fem::MDSpan2 auto entities)
 {
-  // Validate before packing, so that an invalid request is rejected
-  // before any coefficient is packed
+  // Validate before packing
   impl::check_expression_entities(e, mesh, entities.rank());
 
   std::vector<int> coffsets = e.coefficient_offsets();

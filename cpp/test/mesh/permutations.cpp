@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <array>
 #include <catch2/catch_test_macros.hpp>
-#include <cstddef>
 #include <cstdint>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -31,50 +30,27 @@ bool any_nonzero(const std::vector<std::uint8_t>& perms)
   return local;
 }
 
-/// Check that the permutations of the dimension `dim` entities are the
-/// bits the packed cell permutations devote to them: three per face,
-/// starting at bit 0, followed by one per edge.
-void check_dimension(mesh::Topology& topology, int dim)
-{
-  const int tdim = topology.dim();
-  topology.create_entities(dim);
-  const std::vector<std::uint8_t> perms
-      = mesh::compute_entity_permutations(topology, dim, 1);
-  const std::vector<std::uint32_t> info
-      = mesh::compute_cell_permutations(topology, 1);
-
-  const int num_entities = mesh::cell_num_entities(topology.cell_type(), dim);
-  const int bits = dim == 2 ? 3 : 1;
-  const int offset = dim == 1 and tdim > 2
-                         ? 3 * mesh::cell_num_entities(topology.cell_type(), 2)
-                         : 0;
-  REQUIRE(perms.size() == info.size() * num_entities);
-  for (std::size_t c = 0; c < info.size(); ++c)
-    for (int i = 0; i < num_entities; ++i)
-      CHECK(perms[c * num_entities + i]
-            == ((info[c] >> (offset + bits * i)) & ((1 << bits) - 1)));
-
-  CHECK(any_nonzero(perms));
-}
-
-/// Check every dimension that has an orientation, i.e. all but the
-/// vertices and the cell itself
+/// Check, for every dimension with an orientation, that the
+/// permutations Topology unpacks from the packed cell permutations
+/// match those measured from the mesh entities
 void check_mesh(const mesh::Mesh<double>& mesh)
 {
   mesh::Topology& topology = *mesh.topology_mutable();
   for (int dim = 1; dim < topology.dim(); ++dim)
-    check_dimension(topology, dim);
+  {
+    topology.create_entities(dim);
+    topology.create_entity_permutations(dim);
+    const std::vector<std::uint8_t>& perms
+        = topology.get_entity_permutations(dim);
+    CHECK(perms == mesh::compute_entity_permutations(topology, dim, 1));
+    CHECK(any_nonzero(perms));
+  }
 }
 } // namespace
 
 TEST_CASE("Entity permutations match the packed cell permutations",
           "[mesh][permutations]")
 {
-  // Topology::create_entity_permutations unpacks the permutations from
-  // the packed cell permutations, which are computed from the cell
-  // vertices alone. mesh::compute_entity_permutations instead measures
-  // the entities of one dimension against the cells incident to them.
-  // The two must agree, and only this test compares them.
   constexpr std::array<std::array<double, 2>, 2> rectangle = {{{0, 0}, {1, 1}}};
   constexpr std::array<std::array<double, 3>, 2> box = {{{0, 0, 0}, {1, 1, 1}}};
 

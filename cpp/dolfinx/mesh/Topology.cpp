@@ -997,11 +997,8 @@ void Topology::create_facet_orientations()
 
   create_cell_permutations();
 
-  // The edges, which the signs are computed across, and their
-  // orientations relative to the cells. create_entity_permutations
-  // unpacks the orientations from the cell permutations created above
-  // and creates nothing, so compute_facet_orientations below needs the
-  // cell-to-edge connectivity created here.
+  // The signs are reconciled across edges, which the permutations do
+  // not create
   create_connectivity(2, 1);
   create_entity_permutations(1);
   const std::vector<std::uint32_t> facets = compute_facet_orientations(*this);
@@ -1185,12 +1182,8 @@ void Topology::create_entity_permutations(int dim, int num_threads)
     return;
   }
 
-  // The packed cell info holds these orientations: 3 bits per face
-  // followed by 1 bit per edge, and it covers every dimension that has
-  // one (vertices have no orientation, and a cell is not a sub-entity of
-  // itself). Computing it needs only the cell vertices, so unpack it
-  // rather than build the entities of dimension `dim` to measure them
-  // against.
+  // Unpack from the packed cell info (3 bits per face, then 1 per
+  // edge), which needs only the cell vertices
   create_cell_permutations(num_threads);
 
   CellType cell_type = this->cell_type();
@@ -1202,12 +1195,9 @@ void Topology::create_entity_permutations(int dim, int num_threads)
   std::vector<std::uint8_t> perms(num_cells * num_entities);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
+    const std::uint32_t info = (*_cell_permutations)[c] >> offset;
     for (int i = 0; i < num_entities; ++i)
-    {
-      perms[c * num_entities + i]
-          = ((*_cell_permutations)[c] >> (offset + bits * i))
-            & ((1 << bits) - 1);
-    }
+      perms[c * num_entities + i] = (info >> (bits * i)) & ((1 << bits) - 1);
   }
   _entity_permutations[dim] = std::move(perms);
 }

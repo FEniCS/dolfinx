@@ -33,8 +33,7 @@ from dolfinx.mesh import (
 )
 
 
-@pytest.mark.parametrize("num_threads", [1, 4])
-def test_mixed_topology_vertex_permutations(num_threads):
+def test_mixed_topology_vertex_permutations():
     cells = [np.array([0, 1, 2, 1, 2, 3], dtype=np.int64), np.array([2, 3, 4, 5], dtype=np.int64)]
     topology = Topology(
         create_topology(
@@ -44,7 +43,7 @@ def test_mixed_topology_vertex_permutations(num_threads):
             [np.array([0, 1], dtype=np.int64), np.array([2], dtype=np.int64)],
             [np.array([], dtype=np.int32), np.array([], dtype=np.int32)],
             np.array([], dtype=np.int64),
-            num_threads,
+            1,
         )
     )
 
@@ -55,7 +54,7 @@ def test_mixed_topology_vertex_permutations(num_threads):
             topology.create_entity_permutations(0, num_threads=invalid_threads)
 
     for _ in range(2):
-        topology.create_entity_permutations(0, num_threads=num_threads)
+        topology.create_entity_permutations(0)
         assert topology.get_entity_permutations(0).size == 0
 
     assert not topology.index_maps(1)

@@ -406,9 +406,8 @@ class Topology:
         one integer per cell, for correcting element DOFs rather than
         quadrature points.
 
-        Not collective. The permutations are unpacked from the packed
-        cell permutations, which are computed first if they do not
-        exist. The entities of dimension ``dim`` are not created.
+        Not collective. Unpacked from the cell permutations (computed
+        if absent); creates no entities.
 
         Args:
             dim: Topological dimension of the entities, e.g. ``tdim - 1``
