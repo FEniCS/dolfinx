@@ -12,11 +12,8 @@
 
 namespace dolfinx::fem
 {
-// Deprecated: use mesh::CoordinateElement. Hidden from Doxygen, which (in
-// 1.15) misparses an attribute on an alias declaration.
-/// @cond
+/// @deprecated Use mesh::CoordinateElement instead.
 template <std::floating_point T>
 using CoordinateElement [[deprecated("Use mesh::CoordinateElement instead.")]]
 = mesh::CoordinateElement<T>;
-/// @endcond
 } // namespace dolfinx::fem
