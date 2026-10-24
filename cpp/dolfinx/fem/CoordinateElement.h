@@ -40,8 +40,8 @@ class CoordinateElement
 public:
   /// @brief Create a coordinate element from a Basix element.
   /// @param[in] element Basix finite element
-  /// @throws std::invalid_argument if `element` DOFs are not point
-  /// evaluations or its DOF transformations are not permutations.
+  /// @throws std::invalid_argument if the DOFs of `element` are not
+  /// unit-weight point evaluations (identity interpolation matrix).
   explicit CoordinateElement(
       std::shared_ptr<const basix::FiniteElement<T>> element);
 

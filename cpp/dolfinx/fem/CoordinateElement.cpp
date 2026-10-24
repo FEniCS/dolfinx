@@ -31,13 +31,8 @@ CoordinateElement<T>::CoordinateElement(
   if (!_element->interpolation_is_identity())
   {
     throw std::invalid_argument(
-        "Coordinate element DOFs must be point evaluations (e.g. Lagrange), "
-        "not integral moments.");
-  }
-  if (!_element->dof_transformations_are_permutations())
-  {
-    throw std::invalid_argument(
-        "Coordinate element DOF transformations must be permutations.");
+        "Coordinate element DOFs must be unit-weight point evaluations "
+        "(identity interpolation matrix), e.g. Lagrange.");
   }
 
   int degree = _element->degree();
@@ -227,6 +222,7 @@ template <std::floating_point T>
 bool CoordinateElement<T>::needs_dof_permutations() const
 {
   assert(_element);
+  assert(_element->dof_transformations_are_permutations());
   return !_element->dof_transformations_are_identity();
 }
 //-----------------------------------------------------------------------------
