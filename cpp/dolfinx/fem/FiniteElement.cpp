@@ -1,4 +1,5 @@
-// Copyright (C) 2020-2026 Garth N. Wells and Matthew W. Scroggs
+// Copyright (C) 2020-2026 Garth N. Wells, Matthew W. Scroggs and Jørgen S.
+// Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -196,7 +197,7 @@ FiniteElement<T>::FiniteElement(
   // components forward to gdim physical components. The sign is applied
   // by the DOF transformations, so an element without them, e.g. a
   // discontinuous one, does not depend on the orientation.
-  _depends_on_cell_orientation
+  _depends_on_facet_orientations
       = element.map_type() == basix::maps::type::contravariantPiola
         and physical_base_value_size() != reference_value_size()
         and _needs_dof_transformations;
@@ -216,6 +217,8 @@ FiniteElement<T>::FiniteElement(
   }
 
   _signature = std::format("Basix element {} {}", family, _bs);
+
+  _orientation_mask = mesh::orientation_mask(mesh::cell_dim(_cell_type));
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -232,7 +235,7 @@ FiniteElement<T>::FiniteElement(
       _cell_type(elements.front()->cell_type()), _space_dim(-1),
       _sub_elements(elements), _reference_value_shape(std::nullopt),
       _symmetric(false), _needs_dof_permutations(false),
-      _needs_dof_transformations(false), _depends_on_cell_orientation(false)
+      _needs_dof_transformations(false), _depends_on_facet_orientations(false)
 {
   _signature = "Mixed element (";
 
@@ -256,8 +259,8 @@ FiniteElement<T>::FiniteElement(
       _needs_dof_permutations = true;
     if (e->needs_dof_transformations())
       _needs_dof_transformations = true;
-    if (e->depends_on_cell_orientation())
-      _depends_on_cell_orientation = true;
+    if (e->depends_on_facet_orientations())
+      _depends_on_facet_orientations = true;
 
     const std::size_t sub_bs = e->block_size();
     for (std::size_t i = 0; i < _entity_dofs.size(); ++i)
@@ -284,6 +287,8 @@ FiniteElement<T>::FiniteElement(
 
   _space_dim = dof_offset;
   _signature += ")";
+
+  _orientation_mask = mesh::orientation_mask(mesh::cell_dim(_cell_type));
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -298,7 +303,7 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
       _space_dim(pshape[0] * _bs), _sub_elements({}),
       _reference_value_shape(std::vector<std::size_t>()), _element(nullptr),
       _symmetric(symmetric), _needs_dof_permutations(false),
-      _needs_dof_transformations(false), _depends_on_cell_orientation(false),
+      _needs_dof_transformations(false), _depends_on_facet_orientations(false),
       _entity_dofs(mesh::cell_dim(cell_type) + 1),
       _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
       _points(std::vector<T>(points.begin(), points.end()), pshape)
@@ -316,6 +321,8 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
     _entity_dofs[tdim][0].push_back(i);
     _entity_closure_dofs[tdim][0].push_back(i);
   }
+
+  _orientation_mask = mesh::orientation_mask(mesh::cell_dim(_cell_type));
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -461,7 +468,10 @@ FiniteElement<T>::tabulate(std::span<const T> X,
                            std::array<std::size_t, 2> shape, int order) const
 {
   assert(_element);
-  return _element->tabulate(order, X, shape);
+  std::array<std::size_t, 4> vshape = _element->tabulate_shape(order, shape[0]);
+  std::vector<T> values(vshape[0] * vshape[1] * vshape[2] * vshape[3]);
+  _element->tabulate(order, X, shape, values);
+  return {std::move(values), vshape};
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -489,8 +499,8 @@ FiniteElement<T>::extract_sub_element(const std::vector<int>& component) const
 {
   // Recursively extract sub element
   auto sub_finite_element = _extract_sub_element(*this, component);
-  spdlog::debug("Extracted finite element for sub-system: {}",
-                sub_finite_element->signature().c_str());
+  logger().debug("Extracted finite element for sub-system: {}",
+                 sub_finite_element->signature().c_str());
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
@@ -630,9 +640,9 @@ bool FiniteElement<T>::needs_dof_transformations() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-bool FiniteElement<T>::depends_on_cell_orientation() const noexcept
+bool FiniteElement<T>::depends_on_facet_orientations() const noexcept
 {
-  return _depends_on_cell_orientation;
+  return _depends_on_facet_orientations;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -645,14 +655,14 @@ template <std::floating_point T>
 void FiniteElement<T>::permute(std::span<std::int32_t> doflist,
                                std::uint32_t cell_permutation) const
 {
-  _element->permute(doflist, cell_permutation & ~mesh::reversed_cell_bit);
+  _element->permute(doflist, cell_permutation & ~_orientation_mask);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 void FiniteElement<T>::permute_inv(std::span<std::int32_t> doflist,
                                    std::uint32_t cell_permutation) const
 {
-  _element->permute_inv(doflist, cell_permutation & ~mesh::reversed_cell_bit);
+  _element->permute_inv(doflist, cell_permutation & ~_orientation_mask);
 }
 //-----------------------------------------------------------------------------
 /// @cond

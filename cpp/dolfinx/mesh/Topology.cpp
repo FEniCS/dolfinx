@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg, Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -21,6 +21,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <format>
+#include <iterator>
 #include <numeric>
 #include <optional>
 #include <random>
@@ -835,14 +836,14 @@ build_entity_types(const std::vector<CellType>& cell_types)
   return entity_types;
 }
 
-/// Throw unless `tdim` is that of a surface, which cell orientations
+/// Throw unless `tdim` is that of a surface, which facet signs
 /// need
 void check_surface_dim(int tdim)
 {
   if (tdim != 2)
   {
     throw std::invalid_argument(
-        std::format("Cell orientations need a surface mesh (topological "
+        std::format("Facet signs need a surface mesh (topological "
                     "dimension 2), not dimension {}.",
                     tdim));
   }
@@ -977,81 +978,58 @@ Topology::connectivity(int d0, int d1) const
 //-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
-  if (auto i_map = this->index_map(this->dim());
-      _cell_permutations.empty()
-      and i_map->size_local() + i_map->num_ghosts() > 0)
+  if (!_cell_permutations.has_value())
   {
     throw std::runtime_error(
         "create_cell_permutations must be called before using this data.");
   }
 
-  return _cell_permutations;
+  return *_cell_permutations;
 }
 //-----------------------------------------------------------------------------
-void Topology::create_cell_orientations(
-    std::optional<std::span<const std::int8_t>> orientations)
+void Topology::create_facet_orientations()
 {
   // Check before the collective calls below
   check_surface_dim(dim());
   std::shared_ptr<const common::IndexMap> cell_map = index_map(2);
   const std::int32_t num_cells
       = cell_map->size_local() + cell_map->num_ghosts();
-  if (orientations)
-  {
-    if (std::cmp_not_equal(orientations->size(), num_cells))
-    {
-      throw std::invalid_argument(
-          std::format("Expected {} cell orientations, one per owned and ghost "
-                      "cell, not {}.",
-                      num_cells, orientations->size()));
-    }
-#ifndef NDEBUG
-    if (!std::ranges::all_of(*orientations,
-                             [](std::int8_t o) { return o == 1 or o == -1; }))
-    {
-      throw std::invalid_argument("Cell orientations must be 1 or -1.");
-    }
-#endif
-  }
 
   create_cell_permutations();
 
-  // Outlives the span below when the orientation is computed here
-  std::vector<std::int8_t> computed;
-  if (!orientations)
-  {
-    // Creates the edges, which the orientation is computed across, and
-    // their orientations relative to the cells
-    create_entity_permutations(1);
-    create_connectivity(1, 2);
-    computed = compute_cell_orientations(*this);
-  }
+  // The signs are reconciled across edges, which the permutations do
+  // not create
+  create_connectivity(2, 1);
+  create_entity_permutations(1);
+  const std::vector<std::uint32_t> facets = compute_facet_orientations(*this);
 
-  std::span<const std::int8_t> o
-      = orientations ? *orientations : std::span<const std::int8_t>(computed);
+  // Replace any signs from an earlier call
+  const std::uint32_t mask = orientation_mask(dim());
   for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    if (o[c] < 0)
-      _cell_permutations[c] |= reversed_cell_bit;
-    else
-      _cell_permutations[c] &= ~reversed_cell_bit;
-  }
-  _has_cell_orientations = true;
+    (*_cell_permutations)[c] = ((*_cell_permutations)[c] & ~mask) | facets[c];
+  _has_facet_orientations = true;
 }
 //-----------------------------------------------------------------------------
-bool Topology::has_cell_orientations() const noexcept
+bool Topology::has_facet_orientations() const noexcept
 {
-  return _has_cell_orientations;
+  return _has_facet_orientations;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int8_t> Topology::cell_orientations() const
+std::vector<std::int8_t> Topology::facet_orientations() const
 {
+  check_surface_dim(dim());
   const std::vector<std::uint32_t>& info = get_cell_permutation_info();
-  std::vector<std::int8_t> orientations(info.size());
-  std::ranges::transform(info, orientations.begin(),
-                         [](std::uint32_t p) -> std::int8_t
-                         { return (p & reversed_cell_bit) ? -1 : 1; });
-  return orientations;
+  const int facets_per_cell = cell_num_entities(cell_type(), 1);
+  std::vector<std::int8_t> signs(info.size() * facets_per_cell);
+  for (std::size_t c = 0; c < info.size(); ++c)
+  {
+    for (int f = 0; f < facets_per_cell; ++f)
+    {
+      signs[c * facets_per_cell + f]
+          = (info[c] & reversed_facet_bit(f)) ? -1 : 1;
+    }
+  }
+  return signs;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>&
@@ -1194,51 +1172,40 @@ void Topology::create_entity_permutations(int dim, int num_threads)
   if (_entity_permutations[dim].has_value())
     return;
 
-  if (!_cell_permutations.empty())
+  if (num_threads < 1)
+    throw std::invalid_argument("num_threads must be >= 1.");
+
+  // Vertices have no orientation, including in mixed topologies.
+  if (dim == 0)
   {
-    // The packed cell info already holds these orientations: 3 bits per
-    // face followed by 1 bit per edge. Unpack rather than recompute.
-    CellType cell_type = this->cell_type();
-    const std::int32_t num_cells = _cell_permutations.size();
-    const int num_entities = cell_num_entities(cell_type, dim);
-    const int bits = dim == 2 ? 3 : 1;
-    const int offset
-        = (dim == 1 and tdim > 2) ? 3 * cell_num_entities(cell_type, 2) : 0;
-    std::vector<std::uint8_t> perms(dim == 0 ? 0 : num_cells * num_entities);
-    for (std::int32_t c = 0; c < std::int32_t(perms.size() / num_entities); ++c)
-    {
-      for (int i = 0; i < num_entities; ++i)
-      {
-        perms[c * num_entities + i]
-            = (_cell_permutations[c] >> (offset + bits * i))
-              & ((1 << bits) - 1);
-      }
-    }
-    _entity_permutations[dim] = std::move(perms);
+    _entity_permutations[dim].emplace();
     return;
   }
 
-  // The orientation of an entity is relative to the cell's vertices, so
-  // the entities must exist.
-  create_entities(dim, num_threads);
+  // Unpack from the packed cell info (3 bits per face, then 1 per
+  // edge), which needs only the cell vertices
+  create_cell_permutations(num_threads);
 
-  _entity_permutations[dim]
-      = compute_entity_permutations(*this, dim, num_threads);
+  CellType cell_type = this->cell_type();
+  const std::int32_t num_cells = _cell_permutations->size();
+  const int num_entities = cell_num_entities(cell_type, dim);
+  const int bits = dim == 2 ? 3 : 1;
+  const int offset
+      = (dim == 1 and tdim > 2) ? 3 * cell_num_entities(cell_type, 2) : 0;
+  std::vector<std::uint8_t> perms(num_cells * num_entities);
+  for (std::int32_t c = 0; c < num_cells; ++c)
+  {
+    const std::uint32_t info = (*_cell_permutations)[c] >> offset;
+    for (int i = 0; i < num_entities; ++i)
+      perms[c * num_entities + i] = (info >> (bits * i)) & ((1 << bits) - 1);
+  }
+  _entity_permutations[dim] = std::move(perms);
 }
 //-----------------------------------------------------------------------------
 void Topology::create_cell_permutations(int num_threads)
 {
-  if (!_cell_permutations.empty())
+  if (_cell_permutations.has_value())
     return;
-
-  // FIXME: Is creating all entities always required? Could it be made
-  // cheaper by doing a local version? This call does quite a lot of
-  // parallel work.
-
-  // Create all mesh entities
-  const int tdim = this->dim();
-  for (int d = 0; d < tdim; ++d)
-    create_entities(d, num_threads);
 
   _cell_permutations = compute_cell_permutations(*this, num_threads);
 }
@@ -1269,7 +1236,7 @@ std::pair<Topology, std::vector<std::int64_t>> mesh::impl::create_topology(
   // Check cell data consistency and compile spans of owned and ghost
   // cells
   common::Timer timer0("Topology: 0");
-  spdlog::info("Create topology (generalised)");
+  logger().info("Create topology (generalised)");
   std::vector<std::int32_t> num_local_cells(cell_types.size());
   std::vector<std::span<const std::int64_t>> owned_cells;
   std::vector<std::span<const std::int64_t>> ghost_cells;
@@ -1675,7 +1642,7 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                       std::span<const std::int64_t> boundary_vertices,
                       int num_threads)
 {
-  spdlog::info("Create topology (single cell type)");
+  logger().info("Create topology (single cell type)");
   return create_topology(comm, {cell_type}, {cells}, {original_cell_index},
                          {ghost_owners}, boundary_vertices, num_threads);
 }
@@ -1784,7 +1751,7 @@ std::vector<std::int32_t>
 mesh::entities_to_index(const Topology& topology, int dim,
                         std::span<const std::int32_t> entities)
 {
-  spdlog::info("Build list of mesh entity indices from the entity vertices.");
+  logger().info("Build list of mesh entity indices from the entity vertices.");
 
   // Tagged entity topological dimension
   auto map_e = topology.index_map(dim);
@@ -1929,5 +1896,27 @@ mesh::compute_mixed_cell_pairs(const Topology& topology, CellType facet_type)
   }
 
   return facet_pair_lists;
+}
+//-----------------------------------------------------------------------------
+md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
+mesh::entity_permutations(Topology& topology, int dim, int cell_type_idx)
+{
+  if (dim == topology.dim())
+    return {};
+
+  std::vector<CellType> cell_types = topology.cell_types();
+  if (cell_type_idx < 0 or cell_type_idx >= std::ssize(cell_types))
+  {
+    throw std::out_of_range(std::format(
+        "Cell type index {} out of range for a topology with {} cell types.",
+        cell_type_idx, cell_types.size()));
+  }
+
+  topology.create_entity_permutations(dim);
+  const std::vector<std::uint8_t>& p = topology.get_entity_permutations(dim);
+  const int num_entities_per_cell
+      = cell_num_entities(cell_types[cell_type_idx], dim);
+  return md::mdspan(p.data(), p.size() / num_entities_per_cell,
+                    num_entities_per_cell);
 }
 //-----------------------------------------------------------------------------

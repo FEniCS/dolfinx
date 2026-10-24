@@ -819,8 +819,8 @@ void SparsityPattern::finalize()
   dolfinx::MPI::check_error(_comm.comm(), ierr);
   if (ghosts_changed_global)
   {
-    spdlog::debug("Column ghost size increased from {} to {}",
-                  _index_maps[1]->ghosts().size(), _col_ghosts.size());
+    logger().debug("Column ghost size increased from {} to {}",
+                   _index_maps[1]->ghosts().size(), _col_ghosts.size());
     _col_index_map = std::make_shared<common::IndexMap>(
         _comm.comm(), _index_maps[1]->size_local(), _col_ghosts,
         _col_ghost_owners);

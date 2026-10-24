@@ -17,8 +17,6 @@
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/cell_types.h>
-#include <format>
 #include <functional>
 #include <map>
 #include <memory>
@@ -71,39 +69,6 @@ constexpr int integral_entity_dim(IntegralType type, int tdim)
 
   throw std::invalid_argument("Unknown integral type.");
 }
-
-namespace impl
-{
-/// @brief Permutations of the cell-local entities that an integral of
-/// the given type is over.
-///
-/// Computes the permutations on `topology` if they are not already
-/// available. Returns an empty mdspan when the integration entity has
-/// no orientation to permute: cell integrals, and integrals over
-/// entities that are vertices.
-///
-/// @param[in,out] topology Mesh topology of the integration domain.
-/// @param[in] type Integral type.
-/// @param[in] cell_type Cell type of the integration domain.
-/// @return Permutation of each cell-local entity, shape
-/// `(num_cells, entities_per_cell)`.
-inline md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
-entity_permutations(mesh::Topology& topology, IntegralType type,
-                    mesh::CellType cell_type)
-{
-  if (type == IntegralType::cell)
-    return {};
-
-  const int tdim = topology.dim();
-  const int dim = integral_entity_dim(type, tdim);
-
-  topology.create_entity_permutations(dim);
-  const std::vector<std::uint8_t>& p = topology.get_entity_permutations(dim);
-  const int num_entities_per_cell = mesh::cell_num_entities(cell_type, dim);
-  return md::mdspan(p.data(), p.size() / num_entities_per_cell,
-                    num_entities_per_cell);
-}
-} // namespace impl
 
 /// @brief Represents integral data, containing the kernel, and a list
 /// of entities to integrate over and the indices of the coefficient
@@ -239,9 +204,7 @@ public:
 
     // Map the integration entities of one integral to the
     // argument/coefficient domain, checking first that the mapping is
-    // expressible: an integration entity maps to a *cell* of that mesh,
-    // so unless the meshes have equal dimension the integral's entity
-    // dimension must be that mesh's.
+    // expressible
     auto map_entities
         = [tdim,
            &topology](IntegralType type, std::span<const std::int32_t> entities,
@@ -263,16 +226,8 @@ public:
             "exterior facet, interior facet and ridge.");
       }
 
-      const int dim0 = topology0.dim();
-      const int edim = integral_entity_dim(type, tdim);
-      if (tdim > dim0 and edim != dim0)
-      {
-        throw std::invalid_argument(std::format(
-            "Cannot map integration entities of dimension {} to cells of a "
-            "mesh of dimension {}. An argument or coefficient on another mesh "
-            "must live on the entities being integrated over.",
-            edim, dim0));
-      }
+      mesh::check_entity_cell_mapping(topology0, topology,
+                                      integral_entity_dim(type, tdim));
 
       // Map the (cell, local_entity) pairs, flattened (interior facets
       // hold two pairs per entity), to cells of the argument/coefficient

@@ -13,6 +13,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
@@ -165,7 +166,7 @@ build_basic_dofmaps(
   const std::size_t D = topology.dim();
   const std::size_t num_cell_types = topology.entity_types(D).size();
 
-  spdlog::info("Checking required entities per dimension");
+  logger().info("Checking required entities per dimension");
 
   // Find which dimensions (d) and entity types (et) are required
   // and the number of dofs which are required for each (d, et) combination.
@@ -244,7 +245,7 @@ build_basic_dofmaps(
                      (int)required_dim_et[i].first,
                      (int)required_dim_et[i].second, num_entity_dofs_et[i]);
     }
-    spdlog::info("{}", s);
+    logger().info("{}", s);
   }
 #endif
 
@@ -263,7 +264,7 @@ build_basic_dofmaps(
     std::int32_t dofmap_width = element_dof_layouts[i].num_dofs();
     dofs[i].width = dofmap_width;
     dofs[i].array.resize(num_cells * dofmap_width);
-    spdlog::info("Cell type: {} dofmap: {}x{}", i, num_cells, dofmap_width);
+    logger().info("Cell type: {} dofmap: {}x{}", i, num_cells, dofmap_width);
 
     std::vector<std::vector<mesh::CellType>> cell_entity_types(D + 1);
     for (std::size_t d = 0; d < D + 1; ++d)
@@ -353,7 +354,7 @@ build_basic_dofmaps(
     }
   }
 
-  spdlog::info("Global index computation");
+  logger().info("Global index computation");
 
   // TODO: Put Global index computations in separate function
   // Global index computations
@@ -673,14 +674,14 @@ fem::build_dofmap_data(
   const auto [node_graphs, local_to_global0, dof_entity0, topo_index_maps,
               offset] = build_basic_dofmaps(topology, element_dof_layouts);
 
-  spdlog::info("Got {} index_maps", topo_index_maps.size());
+  logger().info("Got {} index_maps", topo_index_maps.size());
 
   // Build re-ordering map for data locality and get number of owned
   // nodes
   const auto [old_to_new, num_owned] = compute_reordering_map(
       node_graphs, dof_entity0, topo_index_maps, reorder_fn);
 
-  spdlog::info("Get global indices");
+  logger().info("Get global indices");
 
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]

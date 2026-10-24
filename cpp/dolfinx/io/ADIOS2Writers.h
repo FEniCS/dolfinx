@@ -16,6 +16,7 @@
 #include <complex>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
@@ -260,7 +261,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
 
     adios2::Variable output = impl_adios2::define_variable<T>(
         io, u.name, {}, {}, {num_dofs, num_comp});
-    spdlog::debug("Output data size={}", data.size());
+    logger().debug("Output data size={}", data.size());
     engine.Put(output, data.data(), adios2::Mode::Sync);
   }
   else
@@ -304,7 +305,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable local_geometry = impl_adios2::define_variable<T>(
       io, "geometry", {}, {}, {num_vertices, 3});
-  spdlog::debug("Put local_geometry: {}x3", num_vertices);
+  logger().debug("Put local_geometry: {}x3", num_vertices);
   engine.Put(local_geometry, geometry.x().data());
 
   // Put number of nodes. The mesh data is written with local indices,
@@ -320,7 +321,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable cell_var = impl_adios2::define_variable<std::uint32_t>(
       io, "NumberOfCells", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(cell_var, shape[0]);
-  spdlog::debug("Put local_cells: {}", shape[0]);
+  logger().debug("Put local_cells: {}", shape[0]);
 
   adios2::Variable celltype_var
       = impl_adios2::define_variable<std::uint32_t>(io, "types");
@@ -341,7 +342,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   // Put topology (nodes)
   adios2::Variable local_topology = impl_adios2::define_variable<std::int64_t>(
       io, "connectivity", {}, {}, {shape[0], shape[1] + 1});
-  spdlog::debug("Put local_topology: {}x{}", shape[0], shape[1] + 1);
+  logger().debug("Put local_topology: {}x{}", shape[0], shape[1] + 1);
 
   engine.Put(local_topology, cells.data());
 
@@ -378,8 +379,8 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   // Get a VTK mesh with points at the 'nodes'
   auto [x, xshape, x_id, x_ghost, vtk, vtkshape] = io::vtk_mesh_from_space(V);
 
-  spdlog::debug("x={}, xshape={}x{}, x_id={}, x_ghost={}", x.size(), xshape[0],
-                xshape[1], x_id.size(), x_ghost.size());
+  logger().debug("x={}, xshape={}x{}, x_id={}, x_ghost={}", x.size(), xshape[0],
+                 xshape[1], x_id.size(), x_ghost.size());
 
   std::uint32_t num_dofs = xshape[0];
 
@@ -387,7 +388,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
   // etc, is the node index.
 
-  spdlog::debug("Create cells: [{}x{}]", vtkshape[0], vtkshape[1]);
+  logger().debug("Create cells: [{}x{}]", vtkshape[0], vtkshape[1]);
 
   // Create vector, setting all entries to nodes per cell (vtk.shape(1))
   std::vector<std::int64_t> cells(vtkshape[0] * (vtkshape[1] + 1), vtkshape[1]);
@@ -414,8 +415,8 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
       io, "NumberOfCells", {adios2::LocalValueDim});
 
   // Write mesh information to file
-  spdlog::debug("vertices={}, elements={}, local_geom={}, local_cells={}",
-                num_dofs, vtkshape[0], x.size(), cells.size());
+  logger().debug("vertices={}, elements={}, local_geom={}, local_cells={}",
+                 num_dofs, vtkshape[0], x.size(), cells.size());
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
@@ -632,7 +633,7 @@ public:
     adios2::Variable var_step
         = impl_adios2::define_variable<double>(*_io, "step");
 
-    spdlog::debug("ADIOS2: step");
+    logger().debug("ADIOS2: step");
     assert(_engine);
     _engine->BeginStep();
     _engine->template Put<double>(var_step, t);
@@ -641,7 +642,7 @@ public:
     auto [names, dg0_names] = impl_vtx::extract_function_names<T>(_u);
     if ((names.size() == 0) or _u.empty())
     {
-      spdlog::debug("ADIOS2: write_mesh");
+      logger().debug("ADIOS2: write_mesh");
       impl_vtx::vtx_write_mesh(*_io, *_engine, *_mesh);
     }
     else
@@ -654,7 +655,7 @@ public:
         std::tie(_x_id, _x_ghost) = std::visit(
             [this](auto& u)
             {
-              spdlog::debug("ADIOS2: write_mesh_from_space");
+              logger().debug("ADIOS2: write_mesh_from_space");
               return impl_vtx::vtx_write_mesh_from_space(*_io, *_engine,
                                                          *u->function_space());
             },
@@ -673,7 +674,7 @@ public:
       }
     }
 
-    spdlog::debug("Write function data");
+    logger().debug("Write function data");
     // Write function data for each function to file
     for (auto& v : _u)
     {

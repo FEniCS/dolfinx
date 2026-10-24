@@ -18,6 +18,7 @@ extern "C"
 #include <array>
 #include <cmath>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <initializer_list>
@@ -155,7 +156,7 @@ template <typename T>
 std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
 create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
 {
-  spdlog::info("Start create_supermatrix");
+  logger().info("Start create_supermatrix");
 
   auto map0 = A.index_map(0);
   auto map1 = A.index_map(1);
@@ -212,7 +213,7 @@ create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
   else
     static_assert(dolfinx::la::impl::always_false_v<T>, "Invalid scalar type");
 
-  spdlog::info("Finished create_supermatrix");
+  logger().info("Finished create_supermatrix");
   return p;
 }
 } // namespace
@@ -257,7 +258,7 @@ void option_setter(W& option, std::string_view value_in,
     if (value_in == *(value_names.begin() + i))
     {
       option = *(values.begin() + i);
-      spdlog::info("Set {} to {}", option_name, value_in);
+      logger().info("Set {} to {}", option_name, value_in);
       return;
     }
   }
@@ -399,6 +400,12 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
                 SuperLUDistStructs::superlu_dist_options_t>();
             set_default_options_dist(o.get());
             o->PrintStat = NO;
+#ifdef HAVE_PARMETIS
+            // METIS_AT_PLUS_A deadlocks if ranks get different orderings.
+            // ParSymbFact stays off as it can hang, see
+            // https://github.com/xiaoyeli/superlu_dist/pull/231
+            o->ColPerm = PARMETIS;
+#endif
             return o;
           }()),
       _gridinfo(
@@ -476,16 +483,17 @@ template <typename T>
 void SuperLUDistSolver<T>::set_option(std::string_view name,
                                       std::string_view value)
 {
-  spdlog::info("Attempting to set option {} to {}", name, value);
+  logger().info("Attempting to set option {} to {}", name, value);
 
   // Boolean-valued options, keyed to their member in superlu_dist_options_t.
   // Internal state flags managed by the solver (e.g. SolveInitialized,
   // RefineInitialized) are deliberately excluded: setting them by hand can
   // trigger cleanup of uninitialised SuperLU_DIST structures.
   using bool_option_t = decltype(&::superlu_dist_options_t::Equil);
-  static constexpr std::array<std::pair<std::string_view, bool_option_t>, 11>
+  static constexpr std::array<std::pair<std::string_view, bool_option_t>, 12>
       bool_options{
           {{"Equil", &::superlu_dist_options_t::Equil},
+           {"ParSymbFact", &::superlu_dist_options_t::ParSymbFact},
            {"DiagInv", &::superlu_dist_options_t::DiagInv},
            {"SymmetricMode", &::superlu_dist_options_t::SymmetricMode},
            {"PivotGrowth", &::superlu_dist_options_t::PivotGrowth},
@@ -512,7 +520,7 @@ void SuperLUDistSolver<T>::set_option(std::string_view name,
       throw std::invalid_argument(
           "'Boolean' option values must be string 'YES' or 'NO'");
     }
-    spdlog::info("Set {} to {}", name, value);
+    logger().info("Set {} to {}", name, value);
     return;
   }
 
@@ -537,6 +545,11 @@ void SuperLUDistSolver<T>::set_option(std::string_view name,
                   {"NATURAL", "MMD_ATA", "MMD_AT_PLUS_A", "COLAMD",
                    "METIS_AT_PLUS_A", "PARMETIS", "METIS_ATA", "ZOLTAN",
                    "MY_PERMC"});
+    if (_options->ColPerm != PARMETIS and _options->ParSymbFact == YES)
+    {
+      _options->ParSymbFact = NO;
+      logger().info("Set ParSymbFact to NO as it requires ColPerm PARMETIS");
+    }
   }
   else if (name == "RowPerm")
   {
@@ -611,7 +624,21 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
         static_assert(impl::always_false_v<T>, "Invalid scalar type");
       _factored = false;
     }
-    _options->Fact = (fact == "DOFACT") ? DOFACT : SamePattern;
+
+    // SamePattern crashes SuperLU_DIST with ParSymbFact
+    bool dofact = fact == "DOFACT" or _options->ParSymbFact == YES;
+    if (dofact)
+    {
+      if constexpr (std::is_same_v<T, double>)
+        dSolveFinalize(_options.get(), _solvestruct.get());
+      else if constexpr (std::is_same_v<T, float>)
+        sSolveFinalize(_options.get(), _solvestruct.get());
+      else if constexpr (std::is_same_v<T, std::complex<double>>)
+        zSolveFinalize(_options.get(), _solvestruct.get());
+      else
+        static_assert(impl::always_false_v<T>, "Invalid scalar type");
+    }
+    _options->Fact = dofact ? DOFACT : SamePattern;
   }
   else if (fact == "SamePattern_SameRowPerm")
   {
@@ -632,11 +659,19 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
   if (b.array().size() != u.array().size())
     throw std::invalid_argument("b and u have incompatible size/layout");
 
+  if (_options->ParSymbFact == YES and _options->ColPerm != PARMETIS)
+    throw std::invalid_argument("ParSymbFact YES requires ColPerm PARMETIS");
+  if (_options->ParSymbFact == YES and _options->Fact == SamePattern)
+  {
+    throw std::invalid_argument(
+        "ParSymbFact YES does not support Fact SamePattern");
+  }
+
   // Warn if Factor is DOFACT but solve already appears to be initialised.
   if (_options->Fact == DOFACT && _options->SolveInitialized == YES)
   {
-    spdlog::warn("Extra call to solve with option Fact set to DOFACT. "
-                 "This leads to incorrect results; try FACTORED.");
+    logger().warn("Extra call to solve with option Fact set to DOFACT. "
+                  "This leads to incorrect results; try FACTORED.");
   }
 
   int_t m_loc
@@ -657,9 +692,9 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
   std::vector<scalar_value_t<T>> berr(nrhs);
   if constexpr (std::is_same_v<T, double>)
   {
-    spdlog::info("Start solve [float64]");
+    logger().info("Start solve [float64]");
 
-    spdlog::info("Call SuperLU_DIST pdgssvx()");
+    logger().info("Call SuperLU_DIST pdgssvx()");
     pdgssvx(_options.get(), _superlu_matA->supermatrix(),
             _scalepermstruct.get(), u.array().data(), ldb, nrhs,
             _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
@@ -667,9 +702,9 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
   }
   else if constexpr (std::is_same_v<T, float>)
   {
-    spdlog::info("Start solve [float32]");
+    logger().info("Start solve [float32]");
 
-    spdlog::info("Call SuperLU_DIST psgssvx()");
+    logger().info("Call SuperLU_DIST psgssvx()");
     psgssvx(_options.get(), _superlu_matA->supermatrix(),
             _scalepermstruct.get(), u.array().data(), ldb, nrhs,
             _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
@@ -677,9 +712,9 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
-    spdlog::info("Start solve [complex128]");
+    logger().info("Start solve [complex128]");
 
-    spdlog::info("Call SuperLU_DIST pzgssvx()");
+    logger().info("Call SuperLU_DIST pzgssvx()");
     pzgssvx(_options.get(), _superlu_matA->supermatrix(),
             _scalepermstruct.get(),
             reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
@@ -690,7 +725,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
     static_assert(impl::always_false_v<T>, "Invalid scalar type");
 
   if (info != 0)
-    spdlog::warn("SuperLU_DIST p*gssvx() returned info = {}", info);
+    logger().warn("SuperLU_DIST p*gssvx() returned info = {}", info);
 
   // Record the factorisation so Destroy_LU is called on the LUstruct
   // internals. info < 0 means an illegal argument, where pdgssvx returns
@@ -701,7 +736,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
   PStatPrint(_options.get(), &stat, _gridinfo.get());
   PStatFree(&stat);
 
-  spdlog::info("Finished solve");
+  logger().info("Finished solve");
 
   return info;
 }

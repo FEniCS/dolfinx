@@ -49,7 +49,7 @@ fem::DofMap fem::create_dofmap(
         = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
                           [](int c, auto v) { return c + v.size(); });
 
-    spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
+    logger().debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
     if (dim_sum > 0)
       topology.create_entities(dim);
   }
@@ -99,7 +99,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
           = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
                             [](int c, auto v) { return c + v.size(); });
 
-      spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
+      logger().debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
       if (dim_sum > 0)
         topology.create_entities(dim);
     }

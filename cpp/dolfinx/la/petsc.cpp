@@ -593,9 +593,9 @@ Vec petsc::Matrix::create_vector(std::size_t dim) const
     common::petsc::check(MatCreateVecs(_matA, &x, nullptr), "MatCreateVecs");
   else
   {
-    spdlog::error("Cannot initialize PETSc vector to match PETSc matrix. "
-                  "Dimension must be 0 or 1, not {}",
-                  dim);
+    logger().error("Cannot initialize PETSc vector to match PETSc matrix. "
+                   "Dimension must be 0 or 1, not {}",
+                   dim);
     throw std::invalid_argument("Invalid dimension");
   }
 
@@ -689,7 +689,7 @@ KSPConvergedReason petsc::KrylovSolver::solve(Vec x, const Vec b,
   // Solve linear system. With no operator set, PCGetOperators creates an
   // untyped Mat and setup fails on it, so KSPSolve errors rather than
   // silently solving
-  spdlog::info("PETSc Krylov solver starting to solve system.");
+  logger().info("PETSc Krylov solver starting to solve system.");
   if (!transpose)
     common::petsc::check(KSPSolve(_ksp, b, x), "KSPSolve");
   else
@@ -711,9 +711,9 @@ KSPConvergedReason petsc::KrylovSolver::solve(Vec x, const Vec b,
     const char* reason_str;
     common::petsc::check(KSPGetConvergedReasonString(_ksp, &reason_str),
                          "KSPGetConvergedReasonString");
-    spdlog::warn("PETSc Krylov solver did not converge in {} iterations "
-                 "(PETSc reason: {}).",
-                 num_iterations, reason_str);
+    logger().warn("PETSc Krylov solver did not converge in {} iterations "
+                  "(PETSc reason: {}).",
+                  num_iterations, reason_str);
   }
 
   return reason;

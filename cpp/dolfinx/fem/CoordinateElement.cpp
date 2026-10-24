@@ -74,7 +74,7 @@ void CoordinateElement<T>::permute_subentity_closure(std::span<std::int32_t> d,
 {
   assert(_element);
   _element->permute_subentity_closure_inv(
-      d, cell_info & ~mesh::reversed_cell_bit,
+      d, cell_info & ~mesh::orientation_mask(mesh::cell_dim(cell_shape())),
       mesh::cell_type_to_basix_type(entity_type), entity_index);
 }
 //--------------------------------------------------------------------------------
@@ -195,7 +195,8 @@ void CoordinateElement<T>::permute(std::span<std::int32_t> dofs,
                                    std::uint32_t cell_perm) const
 {
   assert(_element);
-  _element->permute(dofs, cell_perm & ~mesh::reversed_cell_bit);
+  _element->permute(
+      dofs, cell_perm & ~mesh::orientation_mask(mesh::cell_dim(cell_shape())));
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -203,7 +204,8 @@ void CoordinateElement<T>::permute_inv(std::span<std::int32_t> dofs,
                                        std::uint32_t cell_perm) const
 {
   assert(_element);
-  _element->permute_inv(dofs, cell_perm & ~mesh::reversed_cell_bit);
+  _element->permute_inv(
+      dofs, cell_perm & ~mesh::orientation_mask(mesh::cell_dim(cell_shape())));
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

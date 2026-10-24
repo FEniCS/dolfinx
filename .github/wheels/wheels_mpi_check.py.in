@@ -1,0 +1,25 @@
+# Check the MPI library matches the one family the DOLFINx wheels link.
+
+import sys
+
+_mpi_name, _mpi_file, _mpi_package = {
+    "darwin": ("Open MPI", "libmpi.40.dylib", "openmpi"),
+    "win32": ("Intel MPI", "impi.dll", "impi-rt"),
+}.get(sys.platform, ("an MPICH ABI compatible MPI", "libmpi.so.12", "mpich"))
+try:
+    from mpi4py import MPI as _MPI
+
+    _mpi_library = " ".join(_MPI.Get_library_version().splitlines()[0].split(",")[0].split())
+except RuntimeError:
+    _mpi_library = ""
+# On Linux this misses an MPI providing only the MPI 5 standard ABI.
+if (
+    not _mpi_library
+    or ("Open MPI" in _mpi_library) != (sys.platform == "darwin")
+    or (sys.platform == "win32" and "Intel" not in _mpi_library)
+):
+    raise ImportError(
+        f"DOLFINx wheels need {_mpi_name} ({_mpi_file}), e.g. pip install {_mpi_package}. "
+        f"mpi4py loaded: {_mpi_library or 'no MPI library'}"
+    )
+del _MPI, _mpi_name, _mpi_file, _mpi_package, _mpi_library

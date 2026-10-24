@@ -41,9 +41,6 @@ Mixed and hybridised formulations
 
 * :doc:`demos/demo_mixed-poisson` -- solve the Poisson equation in mixed
   (flux, potential) form with a block-preconditioned iterative solver.
-* :doc:`demos/demo_manifold` -- solve the Poisson equation in mixed form
-  on the sphere, a manifold, with Raviart-Thomas elements on a
-  consistently oriented surface mesh.
 * :doc:`demos/demo_stokes` -- solve the Stokes equations with Taylor-Hood
   elements, comparing five block and monolithic solver strategies.
 * :doc:`demos/demo_navier-stokes` -- solve the Navier-Stokes equations
@@ -53,6 +50,25 @@ Mixed and hybridised formulations
 * :doc:`demos/demo_static-condensation` -- solve a mixed linear
   elasticity formulation with static condensation of the stress
   degrees-of-freedom, using a numba-generated kernel.
+
+
+Problems on manifolds
+---------------------
+
+* :doc:`demos/demo_manifold` -- solve the Poisson equation in mixed form
+  on the sphere, with Raviart-Thomas elements on a surface taken from a
+  Gmsh volume mesh, widening the ghost layer with a custom partitioner
+  so that the facets can be signed in parallel.
+* :doc:`demos/demo_mobius` -- solve the same equation on a Möbius strip,
+  where no consistent orientation of the cells exists, on a higher-order
+  mesh built by hand, with a cylinder as a control.
+* :doc:`demos/demo_mobius_eikonal` -- compute the distance to the
+  boundary of a Möbius strip, solving the eikonal equation with the
+  latent variable proximal point algorithm in mixed form.
+* :doc:`demos/demo_branching_manifold` -- solve the Poisson equation in
+  mixed form on three sheets meeting along a line, with a
+  Raviart-Thomas space on each sheet, coupled by a Lagrange multiplier
+  on the joint, transferring mesh tags to the submeshes of the sheets.
 
 
 Time-dependent and nonlinear problems
@@ -116,8 +132,11 @@ Mesh generation, partitioning and parallel data
   communication pattern of a distributed mesh with NetworkX.
 * :doc:`demos/demo_mixed-topology` -- solve a Helmholtz problem on a
   mesh with mixed cell topology (in development, serial only).
-* :doc:`demos/demo_manifold` -- see *Mixed and hybridised formulations*:
-  extract a surface mesh from a Gmsh volume mesh and orient its cells.
+* :doc:`demos/demo_manifold` -- see *Problems on manifolds*: take a
+  surface from a Gmsh volume mesh, and ghost a cell wherever it shares a
+  vertex by writing a partitioner.
+* :doc:`demos/demo_mobius` -- see *Problems on manifolds*: build a
+  non-orientable higher-order surface mesh by hand.
 
 
 Electromagnetics
@@ -169,6 +188,9 @@ PETSc scalars.
 
    demos/demo_mixed-poisson.md
    demos/demo_manifold.md
+   demos/demo_mobius.md
+   demos/demo_mobius_eikonal.md
+   demos/demo_branching_manifold.md
    demos/demo_stokes.md
    demos/demo_navier-stokes.md
    demos/demo_hdg.md

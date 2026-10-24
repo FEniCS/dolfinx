@@ -2,45 +2,66 @@
 
 ## v0.12.0 (draft)
 
-### H(div) spaces on orientable manifolds
+### Expressions on ridges and peaks
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
+
+{py:class}`dolfinx.fem.Expression` may now be evaluated on the ridges and peaks of a mesh, i.e.
+its codimension-2 and codimension-3 entities, by giving evaluation points on the reference cell
+of the entity: the reference interval for the edges of a 3D mesh, and a points array with zero
+columns for the vertices of a 2D (ridges) or 3D (peaks) mesh. As for facets, the entities are passed to
+{py:func}`dolfinx.fem.Expression.eval` as `(cell, local entity index)` pairs, and a coefficient
+may live on a submesh of the entities being evaluated over.
+
+{py:class}`dolfinx.fem.Expression` also gained `entity_dim` and `num_points` properties: the
+topological dimension of the entities the Expression is evaluated on, and the number of
+evaluation points.
+
+In C++, `fem::pack_coefficients` for a list of coefficients takes the topology of the entities
+instead of their mesh, and the dimension of the entities as a new argument, e.g.
+`Expression::entity_dim()`. A coefficient or argument on another mesh must live on the
+entities being evaluated over; evaluating an Expression on entities of another dimension
+now raises `std::invalid_argument` (`ValueError` in Python).
+
+### H(div) spaces on manifolds
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
 
 Raviart-Thomas, Brezzi-Douglas-Marini and their quadrilateral counterparts
-(RTCF, BDMCF) now work on orientable manifolds, such as a surface in 3D. 
-These elements are mapped by the contravariant Piola map. On a manifold its Jacobian is not square, so it cannot give a cell an orientation. The normal of each cell then follows the order of its vertices, and the space is conforming only if neighbouring cells agree on it. Previously, cells with opposite normals gave silently wrong results ([\#4571](https://github.com/FEniCS/dolfinx/issues/4571)).
+(RTCF, BDMCF) now work on manifolds, such as a surface in 3D, including
+surfaces that cannot be oriented, such as a Möbius strip. These elements are
+mapped by the contravariant Piola map. On a manifold its Jacobian is not
+square, so it cannot give a cell an orientation. The normal of each cell then
+follows the order of its vertices, and the space is conforming only if the two
+cells of every facet agree on it. Previously, cells with opposite normals gave
+silently wrong results ([\#4571](https://github.com/FEniCS/dolfinx/issues/4571)).
 
-The orientation is now stored on the topology:
+The fix is stored on the topology, one facet at a time:
 
-- {py:meth}`Topology.create_cell_orientations
-  <dolfinx.mesh.Topology.create_cell_orientations>` computes a consistent
-  orientation from the vertex orders, in serial and in parallel. It raises an
-  error for a non-orientable surface (e.g. a Möbius strip) or for an edge
-  shared by more than two cells (e.g. a T-joint). Passing `orientations` sets
-  a known orientation instead, e.g. from the outward normal of a closed
-  surface: `1` or `-1` for each owned and ghost cell, not checked for
-  consistency.
-- {py:meth}`Topology.cell_orientations
-  <dolfinx.mesh.Topology.cell_orientations>` returns the orientation, and
-  {py:meth}`Topology.has_cell_orientations
-  <dolfinx.mesh.Topology.has_cell_orientations>` whether one has been
-  computed or set.
+- {py:meth}`Topology.create_facet_orientations
+  <dolfinx.mesh.Topology.create_facet_orientations>` negates, on each facet
+  whose two cells disagree, the degrees-of-freedom of one of them. It needs
+  no consistent orientation of the whole surface, and no ghost cells. It
+  raises an error for an edge shared by more than two cells (e.g. a T-joint).
+- {py:meth}`Topology.facet_orientations
+  <dolfinx.mesh.Topology.facet_orientations>` returns the sign on each facet
+  of each cell, and {py:meth}`Topology.has_facet_orientations
+  <dolfinx.mesh.Topology.has_facet_orientations>` whether they have been
+  computed.
 
-The cells themselves are not modified. Which of its two orientations a
-connected surface gets from `create_cell_orientations` depends on the
-partitioning. This changes the sign of the degrees-of-freedom, but not the
-field. Lagrange and Nédélec spaces do not depend on the orientation. The new
-mixed Poisson demo on the sphere, {doc}`demos/demo_manifold`, shows both ways
-of orienting the cells.
+Which cell of a facet carries the sign depends on the partitioning; the field
+does not. Lagrange and Nédélec spaces do not need the signs. The mixed
+Poisson demo on the sphere is {doc}`demos/demo_manifold`;
+{doc}`demos/demo_mobius` and {doc}`demos/demo_mobius_eikonal` solve problems
+on a Möbius strip, and {doc}`demos/demo_branching_manifold` on a T-joint, with
+one space per branch coupled by a Lagrange multiplier.
 
-Creating an H(div) space on a manifold now raises a `RuntimeError` unless an
-orientation has been computed or set. Code that relied on consistently ordered
-cells should call `mesh.topology.create_cell_orientations()` before creating
-the space. Alternatively, passing all orientations `1` keeps each cell's own
-vertex order. Changing the orientation after creating
-such spaces invalidates existing {py:class}`dolfinx.fem.Function` data on
-them.
-
+Creating an H(div) space on a manifold now raises a `RuntimeError` until
+`mesh.topology.create_facet_orientations()` has been called. Calling it after
+creating such spaces invalidates existing {py:class}`dolfinx.fem.Function`
+data on them.
+In C++, `FiniteElement::depends_on_cell_orientation` is renamed
+`FiniteElement::depends_on_facet_orientations`.
 
 ### Assembly over ridges with data on a codimension-2 submesh
 
@@ -88,6 +109,21 @@ Code that called `create_entity_permutations()` in order to use
 <dolfinx.mesh.Topology.get_cell_permutation_info>` should now call
 `create_cell_permutations()`.
 
+Both are now computed from the global indices of a cell's own vertices, so
+neither creates mesh entities and neither is collective. The permutations of
+one dimension are unpacked from the packed cell info, which covers every
+dimension that has an orientation. `create_cell_permutations()` previously
+created every entity of dimension below the cell dimension, and
+`create_entity_permutations(dim)` created the entities of dimension `dim`;
+code that relied on either side effect should call
+{py:meth}`Topology.create_entities <dolfinx.mesh.Topology.create_entities>`
+itself. A form integrated over facets or ridges still creates the entities it
+integrates over.
+
+`get_cell_permutation_info()` now raises if `create_cell_permutations()` has
+not been called, including on a rank that holds no cells, where it previously
+returned an empty array.
+
 `Topology.get_facet_permutations` has been removed. Use the new
 {py:meth}`Topology.get_entity_permutations
 <dolfinx.mesh.Topology.get_entity_permutations>`, which takes the entity
@@ -100,6 +136,10 @@ returns only that dimension's permutations, the cell permutation info is
 returned by the new `mesh::compute_cell_permutations`, and
 `Topology::get_facet_permutations` has been removed in favour of
 `Topology::get_entity_permutations(dim)`.
+`mesh::compute_cell_permutations` requires only the cell-to-vertex
+connectivity and the vertex index map. `mesh::compute_entity_permutations`
+still measures the entities of a dimension against the cells incident to them,
+and so still requires those entities, but `Topology` no longer uses it.
 
 ### A first-class SNES interface for C++
 
@@ -132,7 +172,7 @@ only member of the `dolfinx.nls` module, the module has been removed.
 
 Since the 0.10.0 release, there has been 177 merged pull requests from 27 contributors.
 Below follows a summary of the biggest changes to the Python API.
-A full diff can be found [here](https://github.com/FEniCS/dolfinx/compare/v0.10.0.post5...main).
+A full diff can be found [here](https://github.com/FEniCS/dolfinx/compare/v0.10.0.post5...v0.11.0).
 
 ### SuperLU_DIST interface
 

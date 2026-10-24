@@ -80,7 +80,7 @@ EPSConvergedReason SLEPcEigenSolver::solve()
   common::petsc::check(EPSGetConvergedReason(_eps, &reason),
                        "EPSGetConvergedReason");
   if (reason < 0)
-    spdlog::warn("Eigenvalue solver did not converge");
+    logger().warn("Eigenvalue solver did not converge");
 
   // Report solver status
   PetscInt num_iterations = 0;
@@ -89,8 +89,8 @@ EPSConvergedReason SLEPcEigenSolver::solve()
 
   EPSType eps_type = nullptr;
   common::petsc::check(EPSGetType(_eps, &eps_type), "EPSGetType");
-  spdlog::info("Eigenvalue solver ({}) converged in {} iterations.",
-               eps_type ? eps_type : "unknown", num_iterations);
+  logger().info("Eigenvalue solver ({}) converged in {} iterations.",
+                eps_type ? eps_type : "unknown", num_iterations);
 
   return reason;
 }
