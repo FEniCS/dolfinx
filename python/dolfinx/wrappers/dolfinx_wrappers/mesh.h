@@ -12,8 +12,8 @@
 #include "mpi_wrappers.h"
 #include "numpy_dtype.h"
 #include <cstdint>
-#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/CoordinateElement.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
@@ -207,7 +207,7 @@ void declare_mesh(nb::module_& m, std::string_view type)
           [](dolfinx::mesh::Geometry<T>* self,
              std::shared_ptr<const dolfinx::common::IndexMap> index_map,
              nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
-             const dolfinx::fem::CoordinateElement<T>& element,
+             const dolfinx::mesh::CoordinateElement<T>& element,
              nb::ndarray<const T, nb::ndim<2>> x,
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
                  input_global_indices)
@@ -364,7 +364,7 @@ void declare_mesh(nb::module_& m, std::string_view type)
       "create_mesh",
       [](MPICommWrapper comm,
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> cells,
-         const dolfinx::fem::CoordinateElement<T>& element,
+         const dolfinx::mesh::CoordinateElement<T>& element,
          nb::ndarray<const T, nb::c_contig> x,
          const part::impl::PythonPartitionFn& p,
          dolfinx::mesh::GhostMode ghost_mode,
@@ -396,7 +396,7 @@ void declare_mesh(nb::module_& m, std::string_view type)
       [](MPICommWrapper comm,
          const std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>,
                                        nb::c_contig>>& cells_nb,
-         const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
+         const std::vector<dolfinx::mesh::CoordinateElement<T>>& elements,
          nb::ndarray<const T, nb::c_contig> x,
          const part::impl::PythonPartitionFn& p,
          dolfinx::mesh::GhostMode ghost_mode,
@@ -517,7 +517,7 @@ void declare_mesh(nb::module_& m, std::string_view type)
   m.def(
       "create_geometry",
       [](const dolfinx::mesh::Topology& topology,
-         const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
+         const std::vector<dolfinx::mesh::CoordinateElement<T>>& elements,
          nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> nodes,
          nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> xdofs,
          nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x, int dim)

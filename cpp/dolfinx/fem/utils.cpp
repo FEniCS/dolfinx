@@ -10,7 +10,6 @@
 #include "Form.h"
 #include "Function.h"
 #include "FunctionSpace.h"
-#include "dofmapbuilder.h"
 #include "form_factory.h"
 #include "functionspace_factory.h"
 #include "integration_domains.h"
@@ -22,6 +21,7 @@
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/dofmapbuilder.h>
 #include <dolfinx/mesh/topologycomputation.h>
 #include <memory>
 #include <stdexcept>
@@ -32,7 +32,8 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(
-    MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
+    MPI_Comm comm, const mesh::ElementDofLayout& layout,
+    mesh::Topology& topology,
     const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
         permute_inv,
     const std::function<std::vector<int>(
@@ -78,7 +79,7 @@ fem::DofMap fem::create_dofmap(
 }
 //-----------------------------------------------------------------------------
 std::vector<fem::DofMap> fem::create_dofmaps(
-    MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
+    MPI_Comm comm, const std::vector<mesh::ElementDofLayout>& layouts,
     mesh::Topology& topology,
     const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
         permute_inv,

@@ -9,13 +9,13 @@
 
 #pragma once
 
-#include "ElementDofLayout.h"
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <functional>
 #include <memory>
 #include <mpi.h>
@@ -87,7 +87,7 @@ public:
   /// @param[in] bs The block size of the `dofmap`.
   template <typename E, typename U>
     requires std::is_convertible_v<std::remove_cvref_t<E>,
-                                   fem::ElementDofLayout>
+                                   mesh::ElementDofLayout>
                  and std::is_convertible_v<std::remove_cvref_t<U>,
                                            std::vector<std::int32_t>>
   DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
@@ -154,7 +154,7 @@ public:
   md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> map() const;
 
   /// Layout of dofs on an element
-  const ElementDofLayout& element_dof_layout() const
+  const mesh::ElementDofLayout& element_dof_layout() const
   {
     return _element_dof_layout;
   }
@@ -171,7 +171,7 @@ private:
   int _index_map_bs = -1;
 
   // Layout of dofs on a cell
-  ElementDofLayout _element_dof_layout;
+  mesh::ElementDofLayout _element_dof_layout;
 
   // Cell local-to-dof map
   std::vector<std::int32_t> _dofmap;

@@ -1,9 +1,12 @@
 target_sources(
   dolfinx
   PRIVATE
+    CoordinateElement.cpp
+    ElementDofLayout.cpp
     EntityMap.cpp
     Topology.cpp
     cell_types.cpp
+    dofmapbuilder.cpp
     graphbuild.cpp
     permutationcomputation.cpp
     topologycomputation.cpp
@@ -15,12 +18,15 @@ target_sources(
   PUBLIC
     FILE_SET HEADERS
       FILES
+        CoordinateElement.h
+        ElementDofLayout.h
         EntityMap.h
         Geometry.h
         Mesh.h
         MeshTags.h
         Topology.h
         cell_types.h
+        dofmapbuilder.h
         dolfinx_mesh.h
         generation.h
         graphbuild.h

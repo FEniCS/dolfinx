@@ -18,9 +18,9 @@
 #include <cstdint>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/local_range.h>
-#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
+#include <dolfinx/mesh/CoordinateElement.h>
 #include <limits>
 #include <mpi.h>
 #include <optional>
@@ -96,7 +96,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> finalize_mesh(
     MPI_Comm comm, MPI_Comm commx, std::span<const std::int64_t> cells,
-    const fem::CoordinateElement<
+    const mesh::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     const U& x, std::array<std::size_t, 2> xshape,
     const graph::AnyPartitionFunction& partitioner, GhostMode ghost_mode,
@@ -349,7 +349,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
   if (!graph::has_partitioner(partitioner) and dolfinx::MPI::size(comm) > 1)
     partitioner = graph::partition_graph;
 
-  fem::CoordinateElement<T> element(CellType::interval, 1);
+  mesh::CoordinateElement<T> element(CellType::interval, 1);
   if (dolfinx::MPI::rank(comm) == 0)
   {
     auto [x1d, cells] = impl::create_interval_cells<T>(p, n);
@@ -453,7 +453,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
   common::Timer timer("Build BoxMesh (tetrahedra)");
   std::vector<T> x;
   std::vector<std::int64_t> cells;
-  fem::CoordinateElement<T> element(CellType::tetrahedron, 1);
+  mesh::CoordinateElement<T> element(CellType::tetrahedron, 1);
   if (subcomm != MPI_COMM_NULL)
   {
     x = create_geom<T>(subcomm, p, n);
@@ -503,7 +503,7 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
   common::Timer timer("Build BoxMesh (hexahedra)");
   std::vector<T> x;
   std::vector<std::int64_t> cells;
-  fem::CoordinateElement<T> element(CellType::hexahedron, 1);
+  mesh::CoordinateElement<T> element(CellType::hexahedron, 1);
   if (subcomm != MPI_COMM_NULL)
   {
     x = create_geom<T>(subcomm, p, n);
@@ -546,7 +546,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
 {
   std::vector<T> x;
   std::vector<std::int64_t> cells;
-  fem::CoordinateElement<T> element(CellType::prism, 1);
+  mesh::CoordinateElement<T> element(CellType::prism, 1);
   if (subcomm != MPI_COMM_NULL)
   {
     x = create_geom<T>(subcomm, p, n);
@@ -592,7 +592,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   DiagonalType diagonal, GhostMode ghost_mode,
                   const graph::Reorder& reorder_fn, int gdim)
 {
-  fem::CoordinateElement<T> element(CellType::triangle, 1);
+  mesh::CoordinateElement<T> element(CellType::triangle, 1);
   if (gdim < 2 || gdim > 3)
     throw std::invalid_argument("2 <= gdim <= 3 for tri mesh.");
 
@@ -763,7 +763,7 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
   if (gdim < 2 || gdim > 3)
     throw std::invalid_argument("2 <= gdim <= 3 for quad mesh.");
 
-  fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
+  mesh::CoordinateElement<T> element(CellType::quadrilateral, 1);
   if (dolfinx::MPI::rank(comm) == 0)
   {
     const auto [nx, ny] = n;

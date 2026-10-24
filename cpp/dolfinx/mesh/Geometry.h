@@ -15,11 +15,11 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <dolfinx/mesh/CoordinateElement.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
+#include <dolfinx/mesh/dofmapbuilder.h>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -73,7 +73,7 @@ public:
                                            std::vector<std::int64_t>>
   Geometry(
       std::shared_ptr<const common::IndexMap> index_map, U&& dofmaps,
-      const std::vector<fem::CoordinateElement<
+      const std::vector<mesh::CoordinateElement<
           typename std::remove_reference_t<typename V::value_type>>>& elements,
       V&& x, int dim, W&& input_global_indices)
       : _dim(dim), _dofmaps(std::forward<U>(dofmaps)),
@@ -166,7 +166,7 @@ public:
 
   /// @brief The elements that describes the geometry map.
   /// @return The coordinate/geometry elements.
-  const std::vector<fem::CoordinateElement<value_type>>& cmaps() const
+  const std::vector<mesh::CoordinateElement<value_type>>& cmaps() const
   {
     return _cmaps;
   }
@@ -188,7 +188,7 @@ private:
   std::shared_ptr<const common::IndexMap> _index_map;
 
   // The coordinate elements
-  std::vector<fem::CoordinateElement<value_type>> _cmaps;
+  std::vector<mesh::CoordinateElement<value_type>> _cmaps;
 
   // Coordinates for all points stored as a contiguous array (row-major,
   // column size = 3)
@@ -202,7 +202,7 @@ private:
 /// Template type deduction
 template <typename U, typename V, typename W>
 Geometry(std::shared_ptr<const common::IndexMap>, U&&,
-         const std::vector<fem::CoordinateElement<
+         const std::vector<mesh::CoordinateElement<
              typename std::remove_reference_t<typename V::value_type>>>&,
          V&&, int, W&&)
     -> Geometry<typename std::remove_cvref_t<typename V::value_type>>;
@@ -244,7 +244,7 @@ Geometry(std::shared_ptr<const common::IndexMap>, U&&,
 template <typename U>
 Geometry<typename std::remove_reference_t<typename U::value_type>>
 create_geometry(const Topology& topology,
-                const std::vector<fem::CoordinateElement<
+                const std::vector<mesh::CoordinateElement<
                     std::remove_reference_t<typename U::value_type>>>& elements,
                 std::span<const std::int64_t> nodes,
                 std::span<const std::int64_t> xdofs, const U& x, int dim,
@@ -266,15 +266,15 @@ create_geometry(const Topology& topology,
   if (elements.size() != num_cell_types)
     throw std::invalid_argument("Mismatch between topology and geometry.");
 
-  std::vector<fem::ElementDofLayout> dof_layouts;
+  std::vector<mesh::ElementDofLayout> dof_layouts;
   dof_layouts.reserve(elements.size());
   for (auto& el : elements)
     dof_layouts.push_back(el.create_dof_layout());
 
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmaps]
-      = fem::build_dofmap_data(topology.index_maps(topology.dim())[0]->comm(),
-                               topology, dof_layouts, reorder_fn);
+      = mesh::build_dofmap_data(topology.index_maps(topology.dim())[0]->comm(),
+                                topology, dof_layouts, reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 

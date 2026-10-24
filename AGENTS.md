@@ -47,13 +47,10 @@ graph BT
   fem --> geometry
   refinement --> grph
   refinement --> mesh
-  refinement --> fem
   io --> grph
   io --> mesh
   io --> fem
   nls --> common
-  mesh -. to remove .-> fem
-  geometry -. to remove .-> fem
 ```
 
 - **What counts**: an `#include` of another module's header, in a
@@ -61,20 +58,7 @@ graph BT
   `c` → `a` is a two-way dependency just as `a` ↔ `b` is.
 - **Exempt**: the umbrella header `dolfinx.h`, and the tests, demos
   and nanobind wrappers, which sit above every module.
-- **Known exceptions, to be removed**: two modules include `fem`,
-  which is listed after them:
-  - `mesh` → `fem`: `mesh/Geometry.h` (`CoordinateElement.h`,
-    `ElementDofLayout.h`, `dofmapbuilder.h`), `mesh/generation.h`
-    (`CoordinateElement.h`) and `mesh/utils.cpp`
-    (`ElementDofLayout.h`).
-  - `geometry` → `fem`: `geometry/utils.h` (`CoordinateElement.h`,
-    `ElementDofLayout.h`).
-
-  Don't add to these, whether by including another `fem` header or
-  by including from another file. Remove an entry when its include
-  goes. All three headers also serve the mesh geometry, so moving
-  them to a module listed before `mesh` would remove both exceptions.
-- **No new exceptions**: a change that needs a header from a module
+- **No exceptions**: a change that needs a header from a module
   listed later should move the code it needs down, not add an
   include.
 - **Checking**: this is checked in review, not CI. To list one

@@ -60,7 +60,7 @@ void test_read_named_meshtags()
   io::XDMFFile mesh_file(MPI_COMM_WORLD, mesh_file_name, "r",
                          io::XDMFFile::Encoding::HDF5);
   mesh = std::make_shared<mesh::Mesh<double>>(mesh_file.read_mesh(
-      fem::CoordinateElement<double>(mesh::CellType::triangle, 1),
+      mesh::CoordinateElement<double>(mesh::CellType::triangle, 1),
       mesh::GhostMode::none, "mesh"));
 
   mesh::MeshTags<std::int32_t> mt_first

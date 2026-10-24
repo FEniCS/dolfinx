@@ -10,7 +10,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/fem/CoordinateElement.h>
+#include <dolfinx/mesh/CoordinateElement.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <format>
@@ -317,7 +317,7 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   std::vector<std::span<const std::int64_t>> topo_span(mixed_topology.begin(),
                                                        mixed_topology.end());
 
-  std::vector<fem::CoordinateElement<T>> geometry_cmaps;
+  std::vector<mesh::CoordinateElement<T>> geometry_cmaps;
   for (auto cm : mesh.geometry().cmaps())
     geometry_cmaps.push_back(cm);
   mesh::Mesh new_mesh = mesh::create_mesh(

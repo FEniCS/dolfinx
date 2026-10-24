@@ -11,7 +11,7 @@
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <mpi.h>
@@ -62,7 +62,7 @@ namespace io
 template <typename T>
 std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     const mesh::Topology& topology, std::span<const std::int64_t> nodes_g,
-    std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
+    std::int64_t num_nodes_g, const mesh::ElementDofLayout& cmap_dof_layout,
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> xdofmap,
     int entity_dim,
     md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>> entities,
@@ -85,7 +85,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
   // -- A. Convert from list of entities by 'nodes' to list of entities
   // by 'vertex nodes'
   auto to_vertex_entities
-      = [](const fem::ElementDofLayout& layout, int dim,
+      = [](const mesh::ElementDofLayout& layout, int dim,
            std::span<const int> vertex_dofs, mesh::CellType type, auto ents)
   {
     // Use ElementDofLayout of the cell to get vertex dof indices (local

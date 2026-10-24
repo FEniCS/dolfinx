@@ -32,15 +32,11 @@ template <dolfinx::scalar T, std::floating_point U>
 class Function;
 } // namespace fem
 
-namespace fem
+namespace mesh
 {
 template <std::floating_point T>
 class CoordinateElement;
 class ElementDofLayout;
-} // namespace fem
-
-namespace mesh
-{
 template <std::floating_point T>
 class Mesh;
 class Topology;

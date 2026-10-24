@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "CoordinateElement.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
@@ -16,6 +15,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/CoordinateElement.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -55,13 +55,15 @@ namespace dolfinx::fem
 /// functions that extract the geometry of a sub-entity, e.g.
 /// mesh::entities_to_geometry, do not support it.
 template <std::floating_point T>
-mesh::Mesh<T> interpolate_geometry(
-    std::shared_ptr<mesh::Mesh<T>> mesh, const CoordinateElement<T>& new_cmap,
-    const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn = nullptr)
+mesh::Mesh<T>
+interpolate_geometry(std::shared_ptr<mesh::Mesh<T>> mesh,
+                     const mesh::CoordinateElement<T>& new_cmap,
+                     const std::function<std::vector<int>(
+                         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                     = nullptr)
 {
   assert(mesh);
-  const CoordinateElement<T>& old_cmap = mesh->geometry().cmaps().front();
+  const mesh::CoordinateElement<T>& old_cmap = mesh->geometry().cmaps().front();
   if (new_cmap.cell_shape() != old_cmap.cell_shape())
   {
     throw std::invalid_argument(
@@ -108,7 +110,7 @@ mesh::Mesh<T> interpolate_geometry(
 
   mesh::Geometry<T> geometry(
       new_imap, std::vector<std::vector<std::int32_t>>{std::move(dofmap_flat)},
-      std::vector<CoordinateElement<T>>{new_cmap}, std::move(x_new), gdim,
+      std::vector<mesh::CoordinateElement<T>>{new_cmap}, std::move(x_new), gdim,
       std::move(igi));
 
   return mesh::Mesh<T>(mesh->comm(), mesh->topology(), std::move(geometry));

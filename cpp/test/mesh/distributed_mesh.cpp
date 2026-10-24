@@ -132,7 +132,7 @@ void test_distributed_mesh(const graph::partition_fn& partitioner)
       basix::element::family::P, basix::cell::type::triangle, 1,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false));
-  fem::CoordinateElement<T> cmap(e);
+  mesh::CoordinateElement<T> cmap(e);
 
   // Read mesh data from file on sub-communicator
   std::vector<T> x;

@@ -5,8 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DofMap.h"
-#include "ElementDofLayout.h"
-#include "dofmapbuilder.h"
 #include "utils.h"
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -14,7 +12,9 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/dofmapbuilder.h>
 #include <memory>
 #include <stdexcept>
 #include <utility>
@@ -132,7 +132,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view)
 
   // Copy dof layout, discarding parent data
   logger().debug("Copy element layout");
-  ElementDofLayout element_dof_layout = dofmap_view.element_dof_layout().copy();
+  mesh::ElementDofLayout element_dof_layout
+      = dofmap_view.element_dof_layout().copy();
 
   // Create new dofmap and return
   return DofMap(std::move(element_dof_layout), index_map, 1, std::move(dofmap),
@@ -228,7 +229,8 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
   // FIXME X
 
   // Set element dof layout and cell dimension
-  ElementDofLayout sub_dof_layout = _element_dof_layout.sub_layout(component);
+  mesh::ElementDofLayout sub_dof_layout
+      = _element_dof_layout.sub_layout(component);
   return DofMap(std::move(sub_dof_layout), this->index_map,
                 this->index_map_bs(), std::move(dofmap), 1);
 }
@@ -252,7 +254,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
       // new submap to get block structure for collapsed dofmap.
 
       // Create new element dof layout and reset parent
-      ElementDofLayout collapsed_dof_layout = layout.copy();
+      mesh::ElementDofLayout collapsed_dof_layout = layout.copy();
       auto [_index_map, bs, dofmaps] = build_dofmap_data(
           dofmap_comm, topology, {collapsed_dof_layout}, reorder_fn);
       auto index_map

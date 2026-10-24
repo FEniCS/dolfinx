@@ -352,7 +352,7 @@ public:
     auto map = mesh->topology()->index_map(tdim);
 
     // Get coordinate map
-    const CoordinateElement<geometry_type>& cmap
+    const mesh::CoordinateElement<geometry_type>& cmap
         = mesh->geometry().cmaps().front();
 
     // Get geometry data
@@ -471,16 +471,17 @@ public:
       // Compute reference coordinates X, and J, detJ and K
       if (cmap.is_affine())
       {
-        CoordinateElement<geometry_type>::compute_jacobian(dphi0, coord_dofs,
-                                                           _J);
-        CoordinateElement<geometry_type>::compute_jacobian_inverse(_J, _K);
+        mesh::CoordinateElement<geometry_type>::compute_jacobian(
+            dphi0, coord_dofs, _J);
+        mesh::CoordinateElement<geometry_type>::compute_jacobian_inverse(_J,
+                                                                         _K);
         std::array<geometry_type, 3> x0{0, 0, 0};
         for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
           x0[i] += coord_dofs(0, i);
-        CoordinateElement<geometry_type>::pull_back_affine(Xp, _K, x0, xp);
-        detJ[p]
-            = CoordinateElement<geometry_type>::compute_jacobian_determinant(
-                _J, det_scratch);
+        mesh::CoordinateElement<geometry_type>::pull_back_affine(Xp, _K, x0,
+                                                                 xp);
+        detJ[p] = mesh::CoordinateElement<
+            geometry_type>::compute_jacobian_determinant(_J, det_scratch);
       }
       else
       {
@@ -488,12 +489,12 @@ public:
         cmap.pull_back_nonaffine(Xp, xp, coord_dofs, pull_back_scratch, tol,
                                  maxit);
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
-        CoordinateElement<geometry_type>::compute_jacobian(dphi, coord_dofs,
-                                                           _J);
-        CoordinateElement<geometry_type>::compute_jacobian_inverse(_J, _K);
-        detJ[p]
-            = CoordinateElement<geometry_type>::compute_jacobian_determinant(
-                _J, det_scratch);
+        mesh::CoordinateElement<geometry_type>::compute_jacobian(
+            dphi, coord_dofs, _J);
+        mesh::CoordinateElement<geometry_type>::compute_jacobian_inverse(_J,
+                                                                         _K);
+        detJ[p] = mesh::CoordinateElement<
+            geometry_type>::compute_jacobian_determinant(_J, det_scratch);
       }
 
       for (std::size_t j = 0; j < X.extent(1); ++j)

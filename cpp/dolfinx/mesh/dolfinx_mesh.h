@@ -10,6 +10,7 @@ namespace dolfinx::mesh
 // DOLFINx mesh interface
 
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/CoordinateElement.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>

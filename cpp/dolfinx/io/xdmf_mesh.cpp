@@ -9,7 +9,7 @@
 #include "xdmf_utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -49,7 +49,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const mesh::CellType entity_cell_type
       = mesh::cell_entity_type(cell_type, dim, 0);
 
-  const fem::ElementDofLayout cmap_dof_layout
+  const mesh::ElementDofLayout cmap_dof_layout
       = geometry.cmaps().front().create_dof_layout();
 
   // Get number of nodes per entity

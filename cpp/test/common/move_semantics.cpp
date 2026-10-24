@@ -21,10 +21,8 @@
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/fem/Constant.h>
-#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Expression.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
@@ -37,6 +35,8 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/mesh/CoordinateElement.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -90,14 +90,14 @@ template struct scalar_classes<std::complex<double>>;
 template <std::floating_point T>
 struct geometry_classes
 {
-  static_assert(nothrow_move_c<fem::CoordinateElement<T>>);
+  static_assert(nothrow_move_c<mesh::CoordinateElement<T>>);
   static_assert(nothrow_move_c<fem::FiniteElement<T>>);
   static_assert(nothrow_move_c<fem::FunctionSpace<T>>);
   static_assert(nothrow_move_c<geometry::BoundingBoxTree<T>>);
   static_assert(nothrow_move_c<mesh::Geometry<T>>);
   static_assert(nothrow_move_c<mesh::Mesh<T>>);
 
-  static_assert(nothrow_move_a<fem::CoordinateElement<T>>);
+  static_assert(nothrow_move_a<mesh::CoordinateElement<T>>);
   static_assert(nothrow_move_a<fem::FiniteElement<T>>);
   static_assert(nothrow_move_a<fem::FunctionSpace<T>>);
   static_assert(nothrow_move_a<geometry::BoundingBoxTree<T>>);
@@ -131,7 +131,7 @@ static_assert(nothrow_move_c<dolfinx::MPI::Request>);
 static_assert(nothrow_move_c<dolfinx::Table>);
 static_assert(nothrow_move_c<common::Timer<>>);
 static_assert(nothrow_move_c<fem::DofMap>);
-static_assert(nothrow_move_c<fem::ElementDofLayout>);
+static_assert(nothrow_move_c<mesh::ElementDofLayout>);
 static_assert(nothrow_move_c<graph::AdjacencyList<std::int32_t>>);
 static_assert(nothrow_move_c<graph::AdjacencyList<std::int64_t>>);
 static_assert(nothrow_move_c<io::VTKFile>);
@@ -149,7 +149,7 @@ static_assert(nothrow_move_a<dolfinx::MPI::Request>);
 static_assert(nothrow_move_a<dolfinx::Table>);
 static_assert(nothrow_move_a<common::Timer<>>);
 static_assert(nothrow_move_a<fem::DofMap>);
-static_assert(nothrow_move_a<fem::ElementDofLayout>);
+static_assert(nothrow_move_a<mesh::ElementDofLayout>);
 static_assert(nothrow_move_a<graph::AdjacencyList<std::int32_t>>);
 static_assert(nothrow_move_a<graph::AdjacencyList<std::int64_t>>);
 static_assert(nothrow_move_a<io::VTKFile>);

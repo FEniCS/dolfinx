@@ -14,9 +14,9 @@
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/log.h>
-#include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/CoordinateElement.h>
+#include <dolfinx/mesh/ElementDofLayout.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <limits>
 #include <map>
@@ -249,7 +249,7 @@ struct ClosestEntityScratch
                         ///< the largest coordinate element in the mesh; only
                         ///< the leading `3 * num_nodes` entries are used for
                         ///< a given entity.
-  const fem::ElementDofLayout&
+  const mesh::ElementDofLayout&
       cmap_dof_layout; ///< Coordinate-element dof layout
 };
 
@@ -683,14 +683,14 @@ compute_closest_entity(const BoundingBoxTree<T>& tree,
   std::vector<std::int32_t> entities;
   entities.reserve(points.size() / 3);
 
-  const fem::ElementDofLayout cmap_dof_layout
+  const mesh::ElementDofLayout cmap_dof_layout
       = mesh.geometry().cmaps().front().create_dof_layout();
 
   // Scratch buffer sized for the largest coordinate element, to avoid
   // repeated resizing in the closest-entity search (mixed topology may
   // have more than one coordinate element).
   std::size_t max_nodes = 0;
-  for (const fem::CoordinateElement<T>& cmap : mesh.geometry().cmaps())
+  for (const mesh::CoordinateElement<T>& cmap : mesh.geometry().cmaps())
     max_nodes = std::max(max_nodes, static_cast<std::size_t>(cmap.dim()));
   impl::ClosestEntityScratch<T> scratch{std::vector<T>(3 * max_nodes),
                                         cmap_dof_layout};
