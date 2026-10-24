@@ -157,6 +157,10 @@ public:
   ///
   /// @param[in] f Expression function to be interpolated.
   /// @param[in] cells Cells to interpolate on.
+  ///
+  /// @note For a symmetric rank-2 tensor space, `f` may return either
+  /// all `d * d` components or only the `d * (d + 1) / 2` components
+  /// the element stores; see fem::interpolate.
   void interpolate(
       const std::function<
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
@@ -193,7 +197,13 @@ public:
       if (fshape.size() != 2)
         throw std::invalid_argument("Expected 2D array of data");
 
-      if (fshape[0] != vs)
+      // A symmetric rank-2 tensor space also accepts only the
+      // components it stores
+      if (fshape[0] != vs
+          and !(_function_space->symmetric()
+                and fshape[0]
+                        == static_cast<std::size_t>(
+                            _function_space->element()->block_size())))
       {
         throw std::invalid_argument(
             "Data returned by callable has wrong shape(0) size");
