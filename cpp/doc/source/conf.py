@@ -74,7 +74,22 @@ exclude_patterns = []
 # html_theme = 'alabaster'
 # html_theme = "nature"
 html_theme = "pydata_sphinx_theme"
-html_title = f"DOLFINx C++ {release}"
+html_title = project
+
+# Version switcher. FEniCS/docs generates the version list from the
+# published documentation. CI sets DOCS_VERSION to the branch or tag
+# name the documentation is published under. The list has one entry per
+# release, shared by its .postN builds.
+html_theme_options = {
+    "switcher": {
+        "json_url": "https://docs.fenicsproject.org/dolfinx/switcher-cpp.json",
+        "version_match": re.sub(r"\.post\d+$", "", os.environ.get("DOCS_VERSION", "main")),
+    },
+    "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
+    # The version list is fetched by the browser; don't fetch it at build time
+    "check_switcher": False,
+    "show_version_warning_banner": True,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
