@@ -335,7 +335,8 @@ jobs:
           apt-get -y update
           apt-get install -y --no-install-recommends graphviz
           cd $RUNNER_TEMP
-          wget -nv https://www.doxygen.nl/files/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+          DOXYGEN_TAG=Release_$(echo ${DOXYGEN_VERSION} | tr . _)
+          wget -nv https://github.com/doxygen/doxygen/releases/download/${DOXYGEN_TAG}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
           tar -xzf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz doxygen-${DOXYGEN_VERSION}/bin/doxygen
           rm doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
           echo "$RUNNER_TEMP/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
