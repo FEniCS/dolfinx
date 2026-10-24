@@ -109,6 +109,21 @@ Code that called `create_entity_permutations()` in order to use
 <dolfinx.mesh.Topology.get_cell_permutation_info>` should now call
 `create_cell_permutations()`.
 
+Both are now computed from the global indices of a cell's own vertices, so
+neither creates mesh entities and neither is collective. The permutations of
+one dimension are unpacked from the packed cell info, which covers every
+dimension that has an orientation. `create_cell_permutations()` previously
+created every entity of dimension below the cell dimension, and
+`create_entity_permutations(dim)` created the entities of dimension `dim`;
+code that relied on either side effect should call
+{py:meth}`Topology.create_entities <dolfinx.mesh.Topology.create_entities>`
+itself. A form integrated over facets or ridges still creates the entities it
+integrates over.
+
+`get_cell_permutation_info()` now raises if `create_cell_permutations()` has
+not been called, including on a rank that holds no cells, where it previously
+returned an empty array.
+
 `Topology.get_facet_permutations` has been removed. Use the new
 {py:meth}`Topology.get_entity_permutations
 <dolfinx.mesh.Topology.get_entity_permutations>`, which takes the entity
@@ -121,6 +136,10 @@ returns only that dimension's permutations, the cell permutation info is
 returned by the new `mesh::compute_cell_permutations`, and
 `Topology::get_facet_permutations` has been removed in favour of
 `Topology::get_entity_permutations(dim)`.
+`mesh::compute_cell_permutations` requires only the cell-to-vertex
+connectivity and the vertex index map. `mesh::compute_entity_permutations`
+still measures the entities of a dimension against the cells incident to them,
+and so still requires those entities, but `Topology` no longer uses it.
 
 ### A first-class SNES interface for C++
 
