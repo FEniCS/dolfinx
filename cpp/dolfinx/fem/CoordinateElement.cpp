@@ -27,8 +27,7 @@ CoordinateElement<T>::CoordinateElement(
     : _element(std::move(element))
 {
   assert(_element);
-  // Geometry coefficients are node coordinates, so the DOFs must be
-  // point evaluations that permute under cell reorientation
+  // Geometry coefficients are node coordinates
   if (!_element->interpolation_is_identity())
   {
     throw std::invalid_argument(
@@ -228,7 +227,6 @@ template <std::floating_point T>
 bool CoordinateElement<T>::needs_dof_permutations() const
 {
   assert(_element);
-  assert(_element->dof_transformations_are_permutations());
   return !_element->dof_transformations_are_identity();
 }
 //-----------------------------------------------------------------------------

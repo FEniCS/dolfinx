@@ -39,11 +39,6 @@ class CoordinateElement
 {
 public:
   /// @brief Create a coordinate element from a Basix element.
-  ///
-  /// Geometry coefficients are interpreted as node coordinates, so the
-  /// element DOFs must be point evaluations whose transformations are
-  /// permutations.
-  ///
   /// @param[in] element Basix finite element
   /// @throws std::invalid_argument if `element` DOFs are not point
   /// evaluations or its DOF transformations are not permutations.
