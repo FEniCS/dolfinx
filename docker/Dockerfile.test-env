@@ -62,13 +62,14 @@ ENV OPENBLAS_NUM_THREADS=1 \
 # libfreetype-dev is needed to enable gmsh's OCC CAF support.
 # python3-adios2 carries the Python API and python3-adios2-mpi
 # the compiled bindings, so both are needed explicitly.
+# graphviz provides dot for the docs job's Doxygen graphs; Doxygen
+# itself is installed by that job.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install --no-install-recommends \
     catch2 \
     cmake \
-    doxygen \
     g++ \
     gfortran \
     git \

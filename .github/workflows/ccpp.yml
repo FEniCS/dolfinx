@@ -324,8 +324,9 @@ jobs:
           --check-build-dependencies
           --no-build-isolation
 
-      # The container's Doxygen (Ubuntu 26.04, 1.15) misparses attributes
-      # on alias declarations; use a pinned upstream release instead.
+      # Doxygen is not taken from the test-env image: Ubuntu 26.04's 1.15
+      # misparses attributes on alias declarations. Use a pinned upstream
+      # release.
       - name: Install Doxygen
         env:
           DOXYGEN_VERSION: 1.18.0
