@@ -25,6 +25,7 @@
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <format>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -45,7 +46,98 @@
 
 namespace dolfinx::fem
 {
-/// @brief Evaluate an Expression on cells or facets.
+namespace impl
+{
+/// @brief Check that an Expression can be evaluated over entities of a
+/// mesh.
+///
+/// @param[in] e Expression to evaluate.
+/// @param[in] mesh Mesh that the Expression is evaluated on.
+/// @param[in] rank Rank of the entities array: 1 for cell indices, 2
+/// for (cell, local entity index) pairs.
+/// @throws std::invalid_argument if `mesh` has more than one cell type,
+/// `e` was created on another mesh, its entity dimension does not fit
+/// `mesh` or `rank`, or its argument is on another mesh whose cells
+/// are not the entities evaluated over.
+template <dolfinx::scalar T, std::floating_point U>
+void check_expression_entities(const fem::Expression<T, U>& e,
+                               const mesh::Mesh<U>& mesh, std::size_t rank)
+{
+  // An Expression is compiled for one cell type, and cell indices are
+  // local to a cell type, so neither cells nor (cell, local index)
+  // pairs identify entities of a mesh with several cell types
+  if (mesh.topology()->cell_types().size() > 1)
+  {
+    throw std::invalid_argument("Evaluating an Expression on a mesh with "
+                                "multiple cell types is not supported.");
+  }
+
+  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
+  {
+    throw std::invalid_argument(
+        "Expression was created on a different mesh. Cannot tabulate.");
+  }
+
+  const int tdim = mesh.topology()->dim();
+  if (e.entity_dim() > tdim)
+  {
+    throw std::invalid_argument(
+        std::format("Cannot evaluate an Expression on entities of dimension "
+                    "{} on a mesh of dimension {}.",
+                    e.entity_dim(), tdim));
+  }
+
+  if (rank == 1 and e.entity_dim() != tdim)
+  {
+    throw std::invalid_argument(
+        "An Expression on facets, ridges or peaks must be evaluated on "
+        "(cell, local entity index) pairs.");
+  }
+
+  // An argument on another mesh must live on the evaluated entities
+  if (std::shared_ptr<const FunctionSpace<U>> V = e.argument_space();
+      V and V->mesh()->topology() != mesh.topology())
+  {
+    mesh::check_entity_cell_mapping(*V->mesh()->topology(), *mesh.topology(),
+                                    e.entity_dim());
+  }
+}
+} // namespace impl
+
+/// @brief Pack the coefficients of an Expression over entities of a
+/// mesh.
+///
+/// @tparam T Scalar type.
+/// @tparam U Geometry type.
+/// @param[in] e Expression to pack coefficients for.
+/// @param[in] mesh Mesh that the Expression is evaluated on.
+/// @param[in] entities Entities to pack over: either a rank-1 list of
+/// cell indices, or a rank-2 list of (cell, local entity index) pairs.
+/// @return Packed coefficients, shape `(entities.extent(0), cstride)`
+/// and row-major, and `cstride`.
+/// @throws std::invalid_argument if `e` cannot be evaluated over
+/// `entities` of `mesh`.
+template <dolfinx::scalar T, std::floating_point U>
+std::pair<std::vector<T>, int> pack_coefficients(const fem::Expression<T, U>& e,
+                                                 const mesh::Mesh<U>& mesh,
+                                                 fem::MDSpan2 auto entities)
+{
+  // Validate before packing
+  impl::check_expression_entities(e, mesh, entities.rank());
+
+  std::vector<int> coffsets = e.coefficient_offsets();
+  const int cstride = coffsets.back();
+  std::vector<T> coeffs(entities.extent(0) * cstride);
+  std::vector<std::reference_wrapper<const Function<T, U>>> c;
+  std::ranges::transform(e.coefficients(), std::back_inserter(c),
+                         [](const std::shared_ptr<const Function<T, U>>& f)
+                             -> const Function<T, U>& { return *f; });
+  fem::pack_coefficients(c, *mesh.topology(), entities, e.entity_dim(),
+                         e.entity_maps(), coffsets, std::span(coeffs));
+  return {std::move(coeffs), cstride};
+}
+
+/// @brief Evaluate an Expression on cells, facets, ridges or peaks.
 ///
 /// This function accepts packed coefficient data, which allows it be
 /// called without re-packing all coefficient data at each evaluation.
@@ -61,9 +153,9 @@ namespace dolfinx::fem
 /// @param[in] constants Packed constant data. Typically computed using
 /// fem::pack_constants.
 /// @param[in] entities Mesh entities to evaluate the expression over.
-/// For cells it is a list of cell indices. For facets is is a list of
-/// (cell index, local facet index) index pairs, i.e. `entities=[cell0,
-/// facet_local0, cell1, facet_local1, ...]`.
+/// For cells it is a list of cell indices. For facets, ridges and peaks
+/// it is a list of (cell index, local entity index) index pairs, i.e.
+/// `entities=[cell0, entity_local0, cell1, entity_local1, ...]`.
 /// @param[in] mesh Mesh that the Expression is evaluated on.
 /// @param[in] element Argument element and argument space dimension.
 /// @note An argument on a mesh other than `mesh` is mapped to its own
@@ -71,6 +163,8 @@ namespace dolfinx::fem
 /// transformations use that mesh's cell orientation data.
 /// @pre If the argument is on a mesh other than `mesh` and needs dof
 /// transformations, each of `entities` has a cell in that mesh.
+/// @throws std::invalid_argument if `e` cannot be evaluated over
+/// `entities` of `mesh`.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, const fem::Expression<T, U>& e,
@@ -81,12 +175,9 @@ void tabulate_expression(
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
-  // Check that domain is the same as mesh of the expression
-  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
-  {
-    throw std::invalid_argument(
-        "Expression was created on a different mesh. Cannot tabulate.");
-  }
+  impl::check_expression_entities(e, mesh, entities.rank());
+
+  std::shared_ptr<const FunctionSpace<U>> V = e.argument_space();
 
   // Topology providing the argument's cell orientation data and, when
   // the argument is on another mesh, its cell for each of `entities`.
@@ -97,11 +188,15 @@ void tabulate_expression(
   std::span<const std::uint32_t> cell_info;
   if (element and element->first.get().needs_dof_transformations())
   {
-    if (std::shared_ptr<const FunctionSpace<U>> V = e.argument_space();
-        V and V->mesh()->topology() != mesh.topology())
+    if (V and V->mesh()->topology() != mesh.topology())
+      topology_v = V->mesh()->topology_mutable();
+
+    topology_v->create_cell_permutations();
+    cell_info = topology_v->get_cell_permutation_info();
+
+    if (topology_v != mesh.topology_mutable())
     {
       const mesh::Topology& topology = *mesh.topology();
-      topology_v = V->mesh()->topology_mutable();
       const mesh::EntityMap& emap
           = mesh::find_entity_map(e.entity_maps(), topology, *topology_v);
       argument_cells = mesh::extract_cells_from_entities(
@@ -114,17 +209,14 @@ void tabulate_expression(
       }
 #endif
     }
-    topology_v->create_cell_permutations();
-    cell_info = topology_v->get_cell_permutation_info();
   }
 
-  auto [X, Xshape] = e.X();
-  impl::tabulate_expression(values, e.kernel(), Xshape, e.value_size(), coeffs,
-                            constants, mesh, entities, element, cell_info,
-                            argument_cells);
+  impl::tabulate_expression(values, e.kernel(), e.X().second, e.value_size(),
+                            coeffs, constants, mesh, entities, element,
+                            cell_info, argument_cells);
 }
 
-/// @brief Evaluate an Expression on cells or facets.
+/// @brief Evaluate an Expression on cells, facets, ridges or peaks.
 ///
 /// @tparam T Scalar type.
 /// @tparam U Geometry type
@@ -136,45 +228,28 @@ void tabulate_expression(
 /// @param[in] mesh Mesh to compute `e` on.
 /// @param[in] entities Mesh entities to evaluate the expression over.
 /// For expressions executed on cells, rank is 1 and size is the number
-/// of cells. For expressions executed on facets rank is 2, and shape is
-/// `(num_facets, 2)`, where `entities[i, 0]` is the cell index and
-/// `entities[i, 1]` is the local index of the facet relative to the
-/// cell.
+/// of cells. For expressions executed on facets, ridges or peaks rank
+/// is 2, and shape is `(num_entities, 2)`, where `entities[i, 0]` is the
+/// cell index and `entities[i, 1]` is the local index of the entity
+/// relative to the cell.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
 {
-  // Check that domain is the same as mesh of the expression
-  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
-  {
-    throw std::invalid_argument(
-        "Expression was created on a different mesh. Cannot tabulate.");
-  }
+  // Packing validates `e` against `mesh` and `entities` first
+  auto [coeffs, cstride] = fem::pack_coefficients(e, mesh, entities);
+  std::vector<T> constants = fem::pack_constants(e);
 
   std::optional<
       std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
       element = std::nullopt;
-  if (auto V = e.argument_space(); V)
+  if (std::shared_ptr<const FunctionSpace<U>> V = e.argument_space(); V)
   {
     std::size_t num_argument_dofs
         = V->dofmap()->element_dof_layout().num_dofs() * V->dofmap()->bs();
     assert(V->element());
     element = {std::cref(*V->element()), num_argument_dofs};
   }
-
-  std::vector<int> coffsets = e.coefficient_offsets();
-  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
-      = e.coefficients();
-  std::vector<T> coeffs(entities.extent(0) * coffsets.back());
-  int cstride = coffsets.back();
-  {
-    std::vector<std::reference_wrapper<const Function<T, U>>> c;
-    std::ranges::transform(coefficients, std::back_inserter(c),
-                           [](auto c) -> const Function<T, U>& { return *c; });
-    fem::pack_coefficients(c, mesh, entities, e.entity_maps(), coffsets,
-                           std::span(coeffs));
-  }
-  std::vector<T> constants = fem::pack_constants(e);
 
   tabulate_expression(
       values, e,
@@ -249,7 +324,7 @@ void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
 
   // Compatibility check
   {
-    auto [X0, shape0] = e0.X();
+    const auto& [X0, shape0] = e0.X();
     auto [X1, shape1] = V1->element()->interpolation_points();
     if (shape0 != shape1)
     {
@@ -270,7 +345,7 @@ void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
 
   // Array to hold evaluated Expression
   std::size_t num_cells = cells0.size();
-  std::size_t num_points = e0.X().second[0];
+  std::size_t num_points = e0.num_points();
   std::vector<T> fdata(num_cells * num_points * value_size);
   md::mdspan<const T, md::dextents<std::size_t, 3>> f(fdata.data(), num_cells,
                                                       num_points, value_size);

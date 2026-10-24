@@ -6,9 +6,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "uniform.h"
+#include <cstddef>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <format>
@@ -26,6 +28,7 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   // Requires edges (and facets for some 3D meshes) to be built already
   auto topology = mesh.topology();
   int tdim = topology->dim();
+  int gdim = mesh.geometry().dim();
   if (tdim < 2)
     throw std::invalid_argument("Uniform refinement only for 2D and 3D meshes");
 
@@ -114,11 +117,11 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     entity_offsets[i + 1] = entity_offsets[i] + index_maps[i]->size_local();
 
   // Copy existing vertices
-  std::vector<T> new_x(nlocal * 3);
+  std::vector<T> new_x(nlocal * gdim);
   std::span x_g = mesh.geometry().x();
   for (int i = 0; i < index_maps[0]->size_local(); ++i)
-    for (int j = 0; j < 3; ++j)
-      new_x[i * 3 + j] = x_g[vertex_to_x[i] * 3 + j];
+    for (int j = 0; j < gdim; ++j)
+      new_x[i * gdim + j] = x_g[vertex_to_x[i] * 3 + j];
 
   // Create vertices on edges, quad facet and hex cell centres
   for (int j = 1; j < static_cast<int>(index_maps.size()); ++j)
@@ -140,8 +143,8 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
       }
       // Get the (linear) center of the entity.
       // TODO: change for higher-order geometry to use map.
-      for (int k = 0; k < 3; ++k)
-        new_x[(w + w_off) * 3 + k] = v[k] / static_cast<T>(nv_ent);
+      for (int k = 0; k < gdim; ++k)
+        new_x[(w + w_off) * gdim + k] = v[k] / static_cast<T>(nv_ent);
     }
   }
 
@@ -319,8 +322,8 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     geometry_cmaps.push_back(cm);
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, geometry_cmaps, mesh.comm(), new_x,
-      {new_x.size() / 3, 3}, graph::Partitioner{.fn = partitioner}, ghost_mode,
-      2, 1);
+      {new_x.size() / gdim, static_cast<std::size_t>(gdim)},
+      graph::Partitioner{.fn = partitioner}, ghost_mode, 2, 1);
 
   return new_mesh;
 }

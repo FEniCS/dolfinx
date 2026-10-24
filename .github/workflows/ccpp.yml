@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - release
     tags:
       - "v*"
   pull_request:
@@ -16,7 +15,7 @@ on:
   workflow_dispatch:
 
 # Cancel superseded runs: a new commit on a pull request makes the
-# previous run's result irrelevant. Pushes to 'main' and 'release' are
+# previous run's result irrelevant. Pushes to 'main' and tags are
 # left to finish, since they populate caches and publish artefacts.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -324,6 +323,24 @@ jobs:
           pip install --group python/pyproject.toml:docs 'python/'
           --check-build-dependencies
           --no-build-isolation
+
+      # Doxygen and Graphviz (dot, for the Doxygen graphs) are not taken
+      # from the test-env image. Ubuntu 26.04's Doxygen 1.15 misparses
+      # attributes on alias declarations, so use a pinned upstream release.
+      - name: Install Doxygen and Graphviz
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          DOXYGEN_VERSION: 1.18.0
+        run: |
+          apt-get -y update
+          apt-get install -y --no-install-recommends graphviz
+          cd $RUNNER_TEMP
+          DOXYGEN_TAG=Release_$(echo ${DOXYGEN_VERSION} | tr . _)
+          wget -nv https://github.com/doxygen/doxygen/releases/download/${DOXYGEN_TAG}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+          tar -xzf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz doxygen-${DOXYGEN_VERSION}/bin/doxygen
+          rm doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+          echo "$RUNNER_TEMP/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
+          doxygen-${DOXYGEN_VERSION}/bin/doxygen --version
 
       - name: Build C++ interface documentation
         run: |

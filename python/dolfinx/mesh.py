@@ -406,6 +406,9 @@ class Topology:
         one integer per cell, for correcting element DOFs rather than
         quadrature points.
 
+        Not collective. Unpacked from the cell permutations (computed
+        if absent); creates no entities.
+
         Args:
             dim: Topological dimension of the entities, e.g. ``tdim - 1``
                 for facets. Must satisfy ``0 <= dim < tdim``.
@@ -431,6 +434,9 @@ class Topology:
         :attr:`dolfinx.fem.FiniteElement.needs_dof_transformations` is
         ``True``.
 
+        Not collective. The orientations follow from the global indices
+        of a cell's own vertices, so no mesh entities are created.
+
         Args:
             num_threads: Number of threads to use. Must be >= 1.
         """
@@ -452,90 +458,83 @@ class Topology:
         The returned data is used for packing coefficients and
         assembling of tensors. The bits of each integer encodes the
         number of reflections and permutations for each sub-entity of
-        the cell to be able to map it to the reference element. The
-        most significant bit marks a reversed cell (see
-        :meth:`cell_orientations`).
+        the cell to be able to map it to the reference element. On a
+        surface, four further bits mark the facets whose
+        degrees-of-freedom are negated (see :meth:`facet_orientations`).
+
+        Raises:
+            RuntimeError: If
+                :meth:`~dolfinx.mesh.Topology.create_cell_permutations`
+                has not been called, including on a rank that holds no
+                cells.
         """
         return self._cpp_object.get_cell_permutation_info()
 
-    def create_cell_orientations(self, orientations: npt.ArrayLike | None = None) -> None:
-        """Compute or set consistent orientation markers for manifolds.
+    def create_facet_orientations(self) -> None:
+        """Sign the facets on which two cells disagree on the normal.
 
-        The cells are not modified. On a surface, elements mapped by the
-        contravariant Piola map (e.g. Raviart-Thomas,
-        Brezzi-Douglas-Marini) are conforming only between cells whose
-        vertex orders give the same normal. On a manifold, these spaces
-        can therefore only be created once an orientation has been
-        computed or set with this call (see
-        :meth:`has_cell_orientations`). Lagrange and Nédélec spaces do
-        not need it. The result is read with :meth:`cell_orientations`.
+        On a manifold, elements mapped by the contravariant Piola map
+        (e.g. Raviart-Thomas, Brezzi-Douglas-Marini) are conforming only
+        across facets whose two cells agree on the normal, which the
+        vertex order of each cell fixes. Where they disagree, one cell
+        negates its degrees-of-freedom on that facet; only these have a
+        non-zero normal trace there. Cells are not reordered. As each
+        facet is treated on its own, surfaces that cannot be oriented,
+        such as a Möbius strip, work too.
 
-        If ``orientations`` is ``None``, one is computed from the vertex
-        orders alone, which additionally creates the edges it is computed
-        across. Which of its two orientations each connected surface gets
-        is then arbitrary, and depends on the partitioning. Pass
-        ``orientations`` when a consistent orientation is already known,
-        e.g. the outward normal of a closed surface; it is stored in the
-        same way, but is not checked for consistency between neighbouring
-        cells. On a mesh whose cells are consistently ordered, passing
-        all ``1`` keeps each cell's own vertex order.
+        Such spaces on a manifold can only be created after this call
+        (see :meth:`has_facet_orientations`); Lagrange and Nédélec spaces
+        do not need it. The signs are read with
+        :meth:`facet_orientations`.
 
         Warning:
-            Changing the orientation after creating such spaces
-            invalidates existing :class:`dolfinx.fem.Function` data on
-            them, as their degrees-of-freedom are not corrected.
+            Changing the signs after creating such spaces invalidates
+            existing :class:`dolfinx.fem.Function` data on them, as
+            their degrees-of-freedom are not corrected.
 
         Note:
-            Collective. The two branches do different collective work, so
-            ``orientations`` must be given on every rank or on none.
-
-        Args:
-            orientations: For each owned and ghost cell, ``-1`` if its
-                orientation is reversed relative to its vertex order and
-                ``1`` otherwise. A ghost cell must have the same
-                orientation as on its owner. If ``None``, a consistent
-                orientation is computed instead.
+            Collective.
 
         Raises:
-            ValueError: If the topological dimension is not 2, or
-                ``orientations`` does not have one entry per owned and
-                ghost cell.
-            RuntimeError: If no orientation is given and the surface is
-                not orientable, e.g. a Möbius strip, or an edge is shared
-                by more than two cells.
+            ValueError: If the topological dimension is not 2.
+            RuntimeError: If an edge is shared by more than two cells.
+                On every rank in Developer and Debug builds, otherwise
+                only on the ranks holding such an edge, while the others
+                return.
         """
-        self._cpp_object.create_cell_orientations(
-            None if orientations is None else np.asarray(orientations, dtype=np.int8)
-        )
+        self._cpp_object.create_facet_orientations()
 
-    def cell_orientations(self) -> npt.NDArray[np.int8]:
-        """Get the orientation of each cell relative to its surface.
+    def facet_orientations(self) -> npt.NDArray[np.int8]:
+        """Get the sign carried by each facet of each cell.
 
-        The orientation is set by :meth:`create_cell_orientations`.
-        Which of its two orientations each connected surface gets is
-        arbitrary, and depends on the partitioning. The basis functions
-        and the degrees-of-freedom change sign together, so the choice
-        changes no field.
+        See :meth:`create_facet_orientations`. Which of a facet's two
+        cells carries the sign, and how many facets are signed, follow
+        from the global numbering and so depend on the partitioning. The
+        space they define, and so the solution, does not.
 
         Returns:
-            For each owned and ghost cell, ``-1`` if its orientation is
-            reversed and ``1`` otherwise. All ``1`` if no orientation has
-            been computed or set (see :meth:`has_cell_orientations`).
+            For each owned and ghost cell and each of its facets, in
+            cell-local facet order and flattened row-wise, ``-1`` if the
+            degrees-of-freedom on that facet are negated and ``1``
+            otherwise. All ``1`` before :meth:`create_facet_orientations`
+            has been called. Signed facets do not mean the surface cannot
+            be oriented: a sphere with arbitrary vertex orders has many.
 
         Raises:
+            ValueError: If the topological dimension is not 2.
             RuntimeError: If the cell permutations have not been created
                 (see :meth:`create_cell_permutations`).
         """
-        return self._cpp_object.cell_orientations()
+        return self._cpp_object.facet_orientations()
 
-    def has_cell_orientations(self) -> bool:
-        """Check if a cell orientation has been computed or set.
+    def has_facet_orientations(self) -> bool:
+        """Check if the facet signs have been computed.
 
-        Function spaces whose basis depends on the cell orientation, e.g.
-        Raviart-Thomas on a manifold, can only be created once it has
-        (see :meth:`create_cell_orientations`).
+        A space whose basis depends on the facet signs, e.g.
+        Raviart-Thomas on a manifold, can only be created once they have
+        (see :meth:`create_facet_orientations`).
         """
-        return self._cpp_object.has_cell_orientations()
+        return self._cpp_object.has_facet_orientations()
 
     def get_entity_permutations(self, dim: int) -> npt.NDArray[np.uint8]:
         """Get the permutation integer for entities of a dimension.

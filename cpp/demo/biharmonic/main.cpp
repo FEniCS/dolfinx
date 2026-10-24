@@ -184,14 +184,14 @@ int main(int argc, char* argv[])
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          std::vector<T> f;
+          std::vector<T> f(x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
             auto pi = std::numbers::pi;
-            f.push_back(4.0 * std::pow(pi, 4) * std::sin(pi * x(0, p))
-                        * std::sin(pi * x(1, p)));
+            f[p] = 4.0 * std::pow(pi, 4) * std::sin(pi * x(0, p))
+                   * std::sin(pi * x(1, p));
           }
-          return {f, {f.size()}};
+          return {std::move(f), std::vector<std::size_t>{f.size()}};
         });
     auto alpha = std::make_shared<fem::Constant<T>>(8.0);
 

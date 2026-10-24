@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg, Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,8 +7,11 @@
 #pragma once
 
 #include <array>
+#include <basix/mdspan.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
@@ -162,91 +165,76 @@ public:
   connectivity(int d0, int d1) const;
 
   /// @brief Get the cell permutation information.
-  /// @throws std::runtime_error If create_entity_permutations has not
-  /// been called.
-  /// @throws std::out_of_range If there is more than one cell type
-  /// (see Topology::index_map).
-  const std::vector<std::uint32_t>& get_cell_permutation_info() const;
-
-  /// @brief Compute or set a per-cell marker for a consistent
-  /// orientation of a surface mesh.
   ///
-  /// The cells are not modified. A marker is stored for each cell in the
-  /// cell permutation info, where elements whose basis depends on the
-  /// cell orientation consume it.
+  /// Encodes, for each cell, how each of its sub-entities is reflected
+  /// and rotated relative to the reference cell (see
+  /// mesh::compute_cell_permutations for the bit layout). On a surface it
+  /// also holds the facet signs (see facet_orientations).
   ///
-  /// On a manifold mesh, whose topological dimension is less than its
-  /// geometric dimension, the contravariant Piola map scales by the
-  /// pseudo-determinant \f$\sqrt{\det(J^T J)}\f$ of the Jacobian
-  /// \f$J\f$. It is positive by construction, so it cannot encode an
-  /// orientation. Instead, the vertex order of each cell fixes its
-  /// normal, and elements mapped by the contravariant Piola map (e.g.
-  /// Raviart-Thomas, Brezzi-Douglas-Marini) are conforming only between
-  /// cells whose normals agree. A function space with such an element
-  /// can therefore only be created on a manifold mesh once an
-  /// orientation has been computed or set with this call (see
-  /// has_cell_orientations). Lagrange and Nédélec spaces do not need it.
-  ///
-  /// If no orientation is given, one is computed from the vertex orders
-  /// alone (see compute_cell_orientations), which additionally creates
-  /// the edges it is computed across and their orientations relative to
-  /// the cells. Which of its two orientations each connected surface
-  /// gets is then arbitrary, and depends on the partitioning. Pass
-  /// `orientations` instead when a consistent orientation is already
-  /// known, e.g. the outward normal of a closed surface; it is stored in
-  /// the same way, but is not checked for consistency between
-  /// neighbouring cells, and needs none of the above entities. On a mesh
-  /// whose cells are consistently ordered, passing all `1` keeps each
-  /// cell's own vertex order.
-  ///
-  /// The result can be read back with cell_orientations. On cells whose
-  /// vertex order disagrees with it, such elements negate their basis in
-  /// every later assembly, interpolation and evaluation. Reversing all
-  /// cells of a surface negates the basis functions and, with them, the
-  /// degrees-of-freedom, so the field they represent is unchanged.
-  ///
-  /// @warning Changing the orientation after creating spaces whose basis
-  /// depends on it invalidates existing Function data on them, as their
-  /// degrees-of-freedom are not corrected.
-  ///
-  /// @note Collective. The two branches do different collective work, so
-  /// `orientations` must be engaged on every rank or on none.
-  /// @pre `orientations` is engaged on every rank or on none.
-  /// @pre A ghost cell has the same orientation as on its owner.
-  /// @param[in] orientations For each owned and ghost cell, in local cell
-  /// order, `-1` if its orientation is reversed relative to its vertex
-  /// order and `1` otherwise. If `std::nullopt`, a consistent orientation
-  /// is computed instead.
-  /// @throws std::invalid_argument If the topological dimension is not
-  /// 2, or `orientations` does not have one entry per owned and ghost
-  /// cell.
-  /// @throws std::runtime_error If no orientation is given and the
-  /// surface is not orientable, e.g. a Möbius strip, or an edge is shared
-  /// by more than two cells.
-  /// @throws std::out_of_range If there is more than one cell type.
-  void create_cell_orientations(
-      std::optional<std::span<const std::int8_t>> orientations = std::nullopt);
-
-  /// @brief Get the orientation of each cell relative to the
-  /// orientation of its surface (see create_cell_orientations).
-  ///
-  /// @return For each owned and ghost cell, in local cell order, `-1`
-  /// if its orientation is reversed and `1` otherwise. All are `1` if
-  /// no orientation has been computed or set (see
-  /// has_cell_orientations).
   /// @throws std::runtime_error If create_cell_permutations has not
   /// been called.
-  /// @throws std::out_of_range If there is more than one cell type.
-  std::vector<std::int8_t> cell_orientations() const;
+  const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
-  /// @brief Check if a cell orientation has been computed or set (see
-  /// create_cell_orientations).
+  /// @brief Sign the facets on which two cells disagree on the normal.
   ///
-  /// Function spaces whose basis depends on the cell orientation can
-  /// only be created once it has.
+  /// On a manifold, the contravariant Piola map scales by the
+  /// pseudo-determinant \f$\sqrt{\det(J^T J)}\f$, which is positive, so
+  /// each cell's normal is fixed by its vertex order. Elements mapped by
+  /// it (e.g. Raviart-Thomas, Brezzi-Douglas-Marini) are conforming only
+  /// across facets whose two cells agree on the normal, i.e. run the
+  /// facet in opposite directions.
   ///
-  /// @return True if the cell orientation has been computed or set.
-  bool has_cell_orientations() const noexcept;
+  /// On each facet where they do not, one of the two cells negates its
+  /// degrees-of-freedom there (see compute_facet_orientations). Only a
+  /// facet's own basis functions have a non-zero normal trace on it, so
+  /// nothing else changes. Cells are not reordered. As each facet is
+  /// treated on its own, surfaces that cannot be oriented (e.g. a Möbius
+  /// strip) work too, and no ghost cells are needed. Creates the edges.
+  ///
+  /// A function space whose element needs the signs (see
+  /// fem::FiniteElement::depends_on_facet_orientations) can only be
+  /// created on a manifold after this call; Lagrange and Nédélec spaces
+  /// do not need them. The signs are read with facet_orientations.
+  ///
+  /// @warning Changing the signs after creating spaces that depend on
+  /// them invalidates existing Function data on those spaces.
+  ///
+  /// @note Collective.
+  /// @throws std::invalid_argument If the topological dimension is not
+  /// 2.
+  /// @throws std::runtime_error If an edge is shared by more than two
+  /// cells. On every process in Developer and Debug builds, otherwise
+  /// only on the processes holding such an edge, while the others
+  /// return.
+  /// @throws std::out_of_range If there is more than one cell type.
+  void create_facet_orientations();
+
+  /// @brief Get the sign carried by each facet of each cell (see
+  /// create_facet_orientations).
+  ///
+  /// @note Which of a facet's two cells carries the sign, and how many
+  /// facets are signed, follow from the global numbering and so depend
+  /// on the partitioning. The space they define does not.
+  ///
+  /// @return For each owned and ghost cell and each of its facets, in
+  /// cell-local facet order and flattened row-wise, `-1` if the
+  /// degrees-of-freedom on that facet are negated and `1` otherwise. All
+  /// are `1` before create_facet_orientations has been called.
+  /// @throws std::invalid_argument If the topological dimension is not
+  /// 2.
+  /// @throws std::runtime_error If create_cell_permutations has not been
+  /// called.
+  /// @throws std::out_of_range If there is more than one cell type.
+  std::vector<std::int8_t> facet_orientations() const;
+
+  /// @brief Check if the facet signs have been computed (see
+  /// create_facet_orientations).
+  ///
+  /// Function spaces whose basis depends on them can only be created
+  /// once they have.
+  ///
+  /// @return True if the facet signs have been computed.
+  bool has_facet_orientations() const noexcept;
 
   /// @brief Get the numbers that encode the permutation to apply to
   /// each cell-local entity of a given dimension.
@@ -319,7 +307,8 @@ public:
 
   /// @brief Compute entity permutations and reflections.
   ///
-  /// @note Collective.
+  /// @note Not collective. Unpacked from the cell permutations
+  /// (computed if absent); creates no entities.
   ///
   /// A permutation records how an entity is oriented as seen from a
   /// cell, relative to a low-to-high ordering of the entity's global
@@ -357,6 +346,7 @@ public:
   /// each cell at assembly time.
   ///
   /// Does nothing if the cell permutations have already been computed.
+  /// @note Not collective. Uses the cell vertices; creates no entities.
   ///
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
   /// @see create_entity_permutations, which gives the orientations of
@@ -398,11 +388,12 @@ private:
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
-  std::vector<std::uint32_t> _cell_permutations;
+  // Unset until computed; empty is valid (no cells).
+  std::optional<std::vector<std::uint32_t>> _cell_permutations;
 
-  // Whether a cell orientation has been computed or set. Not encoded in
-  // _cell_permutations, where an unset orientation reads as all 1.
-  bool _has_cell_orientations = false;
+  // Whether the facet signs have been computed. Not encoded in
+  // _cell_permutations, where unsigned facets read as all 1.
+  bool _has_facet_orientations = false;
 
   // List of facets that are on the inter-process boundary for each
   // facet type. _interprocess_facets[i] is the inter-process facets of
@@ -554,5 +545,21 @@ entities_to_index(const Topology& topology, int dim,
 /// @todo Remove redundant data.
 std::vector<std::vector<std::int32_t>>
 compute_mixed_cell_pairs(const Topology& topology, mesh::CellType facet_type);
+
+/// @brief Permutations of the cell-local entities of a given dimension.
+///
+/// Computes the permutations on `topology` if they are not already
+/// available. Returns an empty mdspan when the entity has no
+/// orientation to permute: cells (`dim == topology.dim()`) and
+/// vertices.
+///
+/// @param[in,out] topology Mesh topology.
+/// @param[in] dim Topological dimension of the entities.
+/// @param[in] cell_type_idx Index of the cell type, following the order
+/// of Topology::cell_types.
+/// @return Permutation of each cell-local entity of the cells of type
+/// `cell_type_idx`, shape `(num_cells, entities_per_cell)`.
+md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
+entity_permutations(Topology& topology, int dim, int cell_type_idx);
 
 } // namespace dolfinx::mesh
