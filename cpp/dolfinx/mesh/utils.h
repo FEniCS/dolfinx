@@ -1747,7 +1747,7 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
 /// @return A sub-geometry and a map from sub-geometry coordinate
 /// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
 template <std::floating_point T>
-std::pair<Geometry<T>, std::vector<int32_t>>
+std::pair<Geometry<T>, std::vector<std::int32_t>>
 create_subgeometry(const Mesh<T>& mesh, int dim,
                    std::span<const std::int32_t> subentity_to_entity)
 {

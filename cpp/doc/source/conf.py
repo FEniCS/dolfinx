@@ -15,6 +15,10 @@ import logging
 import os
 import re
 import sys
+import warnings
+
+from breathe.parser import ParseWarning
+from sphinx.util import logging as sphinx_logging
 
 import basix
 import dolfinx
@@ -116,57 +120,53 @@ primary_domain = "cpp"
 highlight_language = "cpp"
 
 # Enable nitpicky mode so an unresolvable :ref:/:doc:/cpp:* target
-# surfaces as a warning. Not paired with -W in CI (unlike the Python
-# docs): Breathe auto-links every identifier-shaped token in a
-# templated C++ signature, so a heavily generic API like DOLFINx's
-# produces a large volume of unresolvable references to its own
-# template parameters (`T`, `mesh::Mesh<T>`, `Form<T, U>`, ...) that no
-# amount of ignore-listing can distinguish from a genuine broken
-# reference. The categories below are the ones that can be told apart
-# precisely and safely.
+# surfaces as a warning, which fails the CI build (-W). Breathe links
+# every identifier-shaped token in a C++ signature, so a type used in
+# the documented API must itself be documented on one of these pages.
+# The categories below cannot be resolved and are ignored.
 nitpicky = True
 
+# Types from external libraries, which publish no C++ inventory to
+# link to with intersphinx.
+_EXTERNAL_TYPES = [
+    r"MPI_(Comm|Request|Datatype)",
+    r"Petsc(Scalar|Int|Real|ErrorCode)|Vec|Mat(NullSpace)?|IS",
+    r"KSP(ConvergedReason)?|EPS(ConvergedReason)?|InsertMode|ISLocalToGlobalMapping",
+    r"hid_t|herr_t",  # HDF5
+    r"int_t",  # SuperLU_DIST
+    r"pugi(::xml_node)?",
+    r"adios2(::(Dims|IO|Engine|Variable<\w+>|Attribute<\w+>))?",
+    r"boost(::multiprecision(::cpp_bin_float_double_extended)?|::unordered_flat_map<.*>)?",
+    r"ufcx_(form|expression)",
+    r"md::\w+",  # mdspan implementation
+]
+
 nitpick_ignore_regex = [
-    # Doxygen's own internal directory-sharded anchor/file IDs
-    # (e.g. 'da/dfe/namespacedolfinx_1_1MPI') leak through as :ref:
-    # targets when Breathe cannot map a Doxygen \ref/@ref tag onto a
-    # real Sphinx label (usually a \ref to an overload not rendered on
-    # this particular page). No hand-written label in this project
-    # uses this naming scheme, so the pattern cannot mask a genuine
-    # broken :ref:/:doc: link elsewhere.
+    # Doxygen anchor and file IDs (e.g. 'd8/d18/superlu__dist_8h'),
+    # which Breathe emits as :ref: targets for a Doxygen \ref to an
+    # entity not rendered on any page, e.g. a header file. No
+    # hand-written label uses this scheme.
     ("ref", r"^[0-9a-f]{2}/[0-9a-f]{3}/[\w]+$"),
-    # External C/C++ libraries (MPI, PETSc, SLEPc, HDF5, pugixml,
-    # ADIOS2, Boost) and ffcx-generated struct types: not part of
-    # DOLFINx's own Doxygen project, and none publish a C++ API
-    # inventory to intersphinx against.
+    ("cpp:identifier", "^(" + "|".join(_EXTERNAL_TYPES) + ")$"),
+    # A member type of a template parameter, which has no target.
+    ("cpp:identifier", r"^container_type::value_type$"),
+    # Correct references that the C++ domain cannot resolve because a
+    # function parameter has the same name as the leading namespace or
+    # type, e.g. `mesh::GhostMode` in `refine(const mesh::Mesh<T>& mesh,
+    # ..., mesh::GhostMode ghost_mode = mesh::GhostMode::none)`. The
+    # domain looks up the qualified name inside the parameter, whereas
+    # C++ ignores non-types when looking up a name followed by `::`.
     (
         "cpp:identifier",
-        r"^(MPI_(Comm|Request|Datatype)"
-        r"|Petsc(Scalar|Int|Real|ErrorCode)|Vec|Mat(NullSpace)?"
-        r"|KSP(ConvergedReason)?|EPS(ConvergedReason)?|IS"
-        r"|hid_t|u?int(8|16|32|64)_t|int_t)$",
+        r"^(mesh::(EntityMap|GhostMode(::none)?)|strategy::speed|tag::consensus_nbx)$",
     ),
-    ("cpp:identifier", r"^pugi(::xml_node)?$"),
-    ("cpp:identifier", r"^adios2(::(Dims|IO|Engine|Variable<\w+>|Attribute<\w+>))?$"),
+    # The namespace part of a qualified name, e.g. `graph` in
+    # `graph::AdjacencyList`. The C++ domain creates a reference for
+    # each part, but namespaces are not declarations it can link to.
     (
         "cpp:identifier",
-        r"^boost(::multiprecision(::cpp_bin_float_double_extended)?"
-        r"|::unordered_flat_map<.*>)?$",
-    ),
-    ("cpp:identifier", r"^ufcx_(form|expression)$"),
-    # A bare mention of one of DOLFINx's/basix's own namespaces (or a
-    # path of nothing but namespaces), with no member name after it, or
-    # `dolfinx::scalar` (a real C++20 concept, common/types.h, used as a
-    # template constraint): Breathe's signature linker tries to
-    # cross-reference the leading namespace-qualifier segment of a
-    # qualified name, or a concept used as a constraint, as if it were
-    # itself a standalone target it should be able to look up locally.
-    (
-        "cpp:identifier",
-        r"^(dolfinx|fem|mesh|graph|la|common|io|refinement|geometry|nls"
-        r"|basix|scotch|md"
-        r"|dolfinx::(fem(::petsc)?|graph(::(kahip|parmetis|scotch))?"
-        r"|MPI(::tag(::consensus_nbx)?)?|scalar)"
+        r"^(dolfinx|fem|graph|basix|scotch|md"
+        r"|dolfinx::(fem(::petsc)?|graph(::(kahip|parmetis|scotch))?)"
         r"|basix::(cell(::type)?|maps(::type)?))$",
     ),
     # A concrete instantiation of one of DOLFINx's own class/function
@@ -211,8 +211,7 @@ intersphinx_mapping = {
 # namespace-qualified prefix fragment. Silence this catalogued,
 # closed set; any other unparseable cross-reference still warns.
 _UNPARSEABLE_CPP_XREF_RE = re.compile(
-    r"^:(fem(::petsc)?|graph(::(kahip|parmetis|scotch))?"
-    r"|MPI(::tag(::consensus_nbx)?)?|scalar(_value_t<.*>)?)$"
+    r"^:(fem(::petsc)?|graph(::(kahip|parmetis|scotch))?|scalar_value_t<.*>)$"
 )
 
 
@@ -227,7 +226,25 @@ class _SuppressKnownUnparseableCppXrefs(logging.Filter):
         return True
 
 
+# Breathe reports problems in the Doxygen XML, e.g. elements it does not
+# recognise, as Python warnings, which bypass Sphinx and so -W. Report
+# them through Sphinx instead. Newer Doxygen versions add a
+# `conceptparts` element holding a concept's definition, which Breathe
+# does not parse; it renders a concept's name and description only.
+_IGNORED_BREATHE_PARSE_WARNING_RE = re.compile(r'unexpected element "conceptparts"$')
+_logger = sphinx_logging.getLogger("dolfinx.conf")
+_showwarning = warnings.showwarning
+
+
+def _report_breathe_parse_warning(message, category, filename, lineno, file=None, line=None):
+    if not issubclass(category, ParseWarning):
+        _showwarning(message, category, filename, lineno, file, line)
+    elif not _IGNORED_BREATHE_PARSE_WARNING_RE.search(str(message)):
+        _logger.warning(f"Breathe: {message}")
+
+
 def setup(app):
+    warnings.showwarning = _report_breathe_parse_warning
     # sphinx.util.logging.getLogger prepends its own "sphinx." namespace
     # onto a module's __name__, so the real stdlib logger name here is
     # "sphinx.sphinx.domains.cpp", not "sphinx.domains.cpp".

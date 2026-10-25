@@ -278,6 +278,7 @@ std::vector<std::ranges::range_value_t<U>>
 distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                 MPI_Comm comm1, const U& x, int shape1);
 
+/// @cond
 /// @private Type-dependent `false` for use in a `static_assert` that
 /// should only fire when a template is actually instantiated (a bare
 /// `static_assert(false, ...)` would fire unconditionally).
@@ -319,6 +320,7 @@ MPI_Datatype mpi_datatype()
     static_assert(dependent_false<T>::value,
                   "No MPI datatype registered for this type.");
 }
+/// @endcond
 
 /// @brief Retrieves the MPI data type associated to the provided type.
 /// @tparam T cpp type to map

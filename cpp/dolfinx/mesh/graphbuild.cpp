@@ -83,7 +83,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Return empty data if mesh is not distributed
   if (comm_size == 1)
   {
-    // Convert graph to int64_t and return
+    // Convert graph to std::int64_t and return
     return graph::AdjacencyList(
         std::vector<std::int64_t>(local_dual_graph.array().begin(),
                                   local_dual_graph.array().end()),
