@@ -145,13 +145,13 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::invalid_argument("At least one cell is required.");
 
-  for (int32_t i = 0; i < 3; i++)
+  for (std::int32_t i = 0; i < 3; i++)
   {
     if (p[0][i] >= p[1][i])
       throw std::invalid_argument("It must hold p[0] < p[1].");
   }
 
-  for (int32_t i = 0; i < 3; i++)
+  for (std::int32_t i = 0; i < 3; i++)
   {
     if (std::abs(p[1][i] - p[0][i]) / static_cast<T>(n[i])
         < 2.0 * std::numeric_limits<T>::epsilon())
@@ -249,7 +249,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::invalid_argument("At least one cell per dimension is required.");
 
-  for (int32_t i = 0; i < 2; i++)
+  for (std::int32_t i = 0; i < 2; i++)
   {
     if (p[0][i] >= p[1][i])
       throw std::invalid_argument("It must hold p[0] < p[1].");
