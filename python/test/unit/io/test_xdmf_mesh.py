@@ -17,6 +17,7 @@ import ufl
 from dolfinx import default_real_type, fem
 from dolfinx.io import XDMFFile
 from dolfinx.io.gmsh import cell_perm_array, ufl_mesh
+from dolfinx.io.utils import _serendipity_coordinate_element
 from dolfinx.mesh import (
     CellType,
     GhostMode,
@@ -215,15 +216,12 @@ def _serendipity_mesh(comm, cell_type):
 
     A serendipity cell has a node on each vertex and each edge and none
     inside, so the geometry is the linear one plus the edge midpoints.
+    The coordinate element evaluates at the edge midpoints rather than
+    taking Basix's edge moments, so the coefficients are node coordinates.
     """
     gdim = cell_dim(cell_type)
-    e = basix.ufl.element(
-        basix.ElementFamily.serendipity,
-        cell_type.name,
-        2,
-        lagrange_variant=basix.LagrangeVariant.equispaced,
-        dpc_variant=basix.DPCVariant.simplex_equispaced,
-        shape=(gdim,),
+    e = basix.ufl.blocked_element(
+        _serendipity_coordinate_element(cell_type, default_real_type), shape=(gdim,)
     )
 
     if comm.rank == 0:
