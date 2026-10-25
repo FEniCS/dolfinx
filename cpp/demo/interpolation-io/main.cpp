@@ -14,7 +14,7 @@
 // * Visualise an $H({\rm curl})$ function exactly by interpolating it
 //   into a discontinuous Lagrange space
 // * Write finite element functions to file using
-//   {cpp:class}`dolfinx::io::VTXWriter` (requires ADIOS2)
+//   `dolfinx::io::VTXWriter` (requires ADIOS2)
 // * Use `float`, `double` and their complex counterparts as the function
 //   scalar type, on meshes with `float` and `double` geometry
 //

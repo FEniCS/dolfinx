@@ -32,6 +32,8 @@ cpp/doxygen
 cpp/doc/source/demos
 cpp/doc/html
 cpp/doc/latex
+cpp/doc/node_modules
+cpp/doc/sphinx-warnings.log
 
 python/doc/source/demos
 python/doc/build

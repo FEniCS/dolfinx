@@ -52,7 +52,7 @@
 // which also returns a {cpp:class}`dolfinx::mesh::EntityMap` relating
 // submesh cells to parent mesh cells. The form $A_{\rm mixed}$ is
 // integrated over the parent mesh (the *integration domain*), and the
-// entity map is passed to {cpp:func}`dolfinx::fem::create_form` so that
+// entity map is passed to `dolfinx::fem::create_form` so that
 // the submesh trial function can be evaluated on parent mesh cells.
 
 #include "mixed_codim0.h"

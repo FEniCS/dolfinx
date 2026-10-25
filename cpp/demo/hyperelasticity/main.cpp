@@ -6,7 +6,7 @@
 // * Compute the residual and Jacobian of a nonlinear problem by automatic
 //   differentiation of an energy functional
 // * Evaluate a derived quantity (the Cauchy stress) using
-//   {cpp:class}`dolfinx::fem::Expression`
+//   `dolfinx::fem::Expression`
 //
 // ## Equation and problem definition
 //
@@ -86,7 +86,7 @@
 //    displacement $u$.
 // 3. Create the Dirichlet boundary conditions, interpolating the
 //    prescribed rotation into a {cpp:class}`dolfinx::fem::Function`.
-// 4. Create a {cpp:class}`dolfinx::nls::petsc::SNESSolver` with callbacks
+// 4. Create a `dolfinx::nls::petsc::SNESSolver` with callbacks
 //    that assemble the residual and Jacobian, configure it through the
 //    PETSc options database, and solve.
 // 5. Interpolate the Cauchy stress expression into a piecewise constant

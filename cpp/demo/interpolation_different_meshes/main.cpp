@@ -14,7 +14,7 @@
 //   and different Lagrange degrees
 // * Compute the point-ownership data for interpolation between
 //   non-matching meshes with
-//   {cpp:func}`dolfinx::fem::create_interpolation_data`
+//   `dolfinx::fem::create_interpolation_data`
 //
 // A vector field is first interpolated from an analytical expression
 // into a piecewise linear Lagrange space on the tetrahedral mesh, and
