@@ -1,8 +1,6 @@
 """Biharmonic equation using interior penalty method."""
 
-# The first step is to define the variational problem at hand. We define
-# the variational problem in UFL terms in a separate form file. We begin
-# by defining the finite element:
+# We begin by defining the finite element:
 
 from basix.ufl import element
 from ufl import (
@@ -25,15 +23,14 @@ from ufl import (
 
 e = element("Lagrange", "triangle", 2)
 
-# The first argument to {py:func}`element<basix.ufl.element>` is the
-# finite element family, the second argument specifies the domain,
-# while the third argument specifies the polynomial degree. Thus, in
-# this case, our element `e` consists of second-order, continuous
-# Lagrange basis functions on triangles (or in other words, continuous
-# piecewise quadratic polynomials on triangles).
+# The arguments to {py:func}`element<basix.ufl.element>` are the
+# finite element family, the cell type and the polynomial degree. The
+# element `e` is therefore the continuous piecewise quadratic Lagrange
+# element on triangles.
 #
-# Next, we use this element to initialize the trial and test functions
-# ($u$ and $v$) and the coefficient function $f$:
+# On a mesh described by a linear coordinate element, we define the
+# function space, the trial and test functions ($u$ and $v$) and the
+# coefficient $f$:
 
 coord_element = element("Lagrange", "triangle", 1, shape=(2,))
 mesh = Mesh(coord_element)
@@ -44,23 +41,20 @@ u = TrialFunction(V)
 v = TestFunction(V)
 f = Coefficient(V)
 
-# Next, the outward unit normal to cell boundaries and a measure of the
-# cell size are defined. The average size of cells sharing a facet will
-# be used (`h_avg`).  The UFL syntax `('+')` and `('-')` restricts a
-# function to the `('+')` and `('-')` sides of a facet, respectively.
-# The penalty parameter `alpha` is made a
-# {py:class}`Constant<ufl.Constant>` so that it can be changed in the
-# program without regenerating the code.
+# Next, we define the outward unit normal to cell boundaries and the
+# cell diameter. The average diameter of the two cells sharing a facet,
+# `h_avg`, is used for $h_E$; `h("+")` and `h("-")` restrict `h` to
+# either side of a facet. The penalty parameter `alpha` is a
+# {py:class}`Constant<ufl.Constant>`, so it can be changed in the C++
+# program without regenerating code.
 
-# Normal component, mesh size and right-hand side
 n = FacetNormal(mesh)
 h = CellDiameter(mesh)
 h_avg = (h("+") + h("-")) / 2
 alpha = Constant(mesh)
 
-# Finally, we define the bilinear and linear forms according to the
-# variational formulation of the equations. Integrals over
-# internal facets are indicated by `*dS`.
+# Finally, we define the bilinear and linear forms. Integrals over
+# interior facets use the measure `dS`.
 
 # Bilinear form
 a = (

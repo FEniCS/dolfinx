@@ -350,7 +350,27 @@ jobs:
           echo $DOLFINX_VERSION
           cd cpp/doc
           doxygen Doxyfile
-          python -m sphinx -b html source/ build/html
+          python -m sphinx -b html -w sphinx-warnings.log source/ build/html
+      # The API reference pages still have Breathe warnings, so only
+      # warnings from the demo pages fail the build
+      - name: Check C++ demo documentation for Sphinx warnings
+        working-directory: cpp/doc
+        run: |
+          if grep "/demos/" sphinx-warnings.log; then
+            exit 1
+          fi
+      - name: Install Node.js
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get -y update
+          apt-get install -y --no-install-recommends nodejs npm
+      # Sphinx does not parse LaTeX; MathJax typesets it in the browser
+      - name: Check C++ documentation math with MathJax
+        working-directory: cpp/doc
+        run: |
+          npm install --no-save --no-audit --no-fund @mathjax/src@4.1.3
+          node check_math.mjs build/html
       - name: Upload C++ Doxygen documentation artifact
         uses: actions/upload-artifact@v7
         with:

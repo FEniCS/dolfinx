@@ -1,10 +1,8 @@
 """Hyperelasticity variational forms."""
 
-# The first step is to define the variational problem at hand.
-#
-# We are interested in solving for a discrete vector field in three
-# dimensions, so first we need the appropriate finite element space and
-# trial and test functions on this space:
+# We solve for a vector field in three dimensions, so we need a
+# vector-valued finite element space and trial and test functions on
+# this space:
 
 from basix.ufl import element
 from ufl import (
@@ -36,18 +34,18 @@ V = FunctionSpace(mesh, e)
 du = TrialFunction(V)  # Incremental displacement
 v = TestFunction(V)  # Test function
 
-# Note that `element` with `shape=(3,)` creates a finite element space
-# of vector fields.
+# The argument `shape=(3,)` makes `element` vector-valued. The same
+# element describes the mesh geometry.
 #
-# Next, we will be needing functions for the boundary source `B`, the
-# traction `T` and the displacement solution itself `u`:
+# Next, we define the displacement `u`, the body force `B` and the
+# traction `T`:
 
 # Functions
 u = Coefficient(V)  # Displacement from previous iteration
 B = Constant(mesh, shape=(3,))  # Body force per unit volume
 T = Constant(mesh, shape=(3,))  # Traction force on the boundary
 
-# Now, we can define the kinematic quantities involved in the model:
+# The kinematic quantities are:
 
 # Kinematics
 d = len(u)
@@ -59,9 +57,8 @@ C = F.T * F  # Right Cauchy-Green tensor
 Ic = tr(C)
 J = det(F)
 
-# Before defining the energy density and thus the total potential
-# energy, it only remains to specify constants for the elasticity
-# parameters:
+# The Lamé parameters are computed from Young's modulus and Poisson's
+# ratio:
 
 # Elasticity parameters
 E = 10.0
@@ -69,9 +66,10 @@ nu = 0.3
 mu = E / (2 * (1 + nu))
 lmbda = E * nu / ((1 + nu) * (1 - 2 * nu))
 
-# Both the first variation of the potential energy, and the Jacobian of
-# the variation, can be automatically computed by a call to
-# `derivative`:
+# The residual (the first variation of the potential energy) and its
+# Jacobian are computed by {py:func}`derivative<ufl.derivative>`. The
+# Cauchy stress is computed by differentiating `psi` with respect to
+# `F`, which is why `F` was declared a `variable`:
 
 # Stored strain energy density (compressible neo-Hookean model)
 psi = (mu / 2) * (Ic - 3) - mu * ln(J) + (lmbda / 2) * (ln(J)) ** 2
@@ -91,4 +89,5 @@ sigma = (1 / J) * diff(psi, F) * F.T
 
 forms = [F_form, J_form]
 elements = [e]
+# Evaluate the stress at the reference cell midpoint
 expressions = [(sigma, [[0.25, 0.25, 0.25]])]

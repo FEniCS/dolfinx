@@ -12,14 +12,19 @@
 //   meshes that discretise the same domain with different cell types
 //   (a tetrahedral mesh and a hexahedral mesh)
 //   and different Lagrange degrees
-// * Create the point-ownership data needed by
-//   `dolfinx::fem::create_interpolation_data()` for a non-matching-mesh
-//   interpolation
+// * Compute the point-ownership data for interpolation between
+//   non-matching meshes with
+//   `dolfinx::fem::create_interpolation_data`
 //
 // A vector field is first interpolated from an analytical expression
 // into a piecewise linear Lagrange space on the tetrahedral mesh, and
-// is then interpolated from there into a piecewise quadratic Lagrange
-// space on the hexahedral mesh.
+// then from there into a piecewise quadratic Lagrange space on the
+// hexahedral mesh. The second step evaluates the tetrahedral-mesh
+// function at the interpolation points of the hexahedral-mesh space;
+// these points may lie on other MPI ranks, so the ranks that own each
+// point are found first.
+//
+// ## Implementation
 //
 // Running this demo requires the files:
 // {download}`demo_interpolation_different_meshes/main.cpp` and
@@ -90,7 +95,9 @@ int main(int argc, char* argv[])
     // Interpolate an expression into u_tet
     u_tet->interpolate(fun);
 
-    // Interpolate from u_tet to u_hex
+    // Interpolate from u_tet to u_hex. First find, for each
+    // interpolation point of V_hex, the rank and cell of mesh_tet that
+    // contain it (1e-8 is the padding of the bounding-box search).
     auto cell_map
         = mesh_hex->topology()->index_map(mesh_hex->topology()->dim());
     assert(cell_map);
@@ -101,7 +108,9 @@ int main(int argc, char* argv[])
             u_hex->function_space()->mesh()->geometry(),
             *u_hex->function_space()->element(),
             *u_tet->function_space()->mesh(), cells, 1e-8);
-    // Tolerance and maximum number of iterations for the pullback
+    // Tolerance and maximum number of Newton iterations for pulling
+    // points back to the reference cell of mesh_tet. They are needed
+    // only for non-affine geometry, so are ignored for this mesh.
     const double eps = 1.0e4 * std::numeric_limits<T>::epsilon();
     int max_iter = 15;
     u_hex->interpolate(*u_tet, cells, eps, max_iter, interpolation_data);
