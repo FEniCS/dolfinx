@@ -116,14 +116,10 @@ primary_domain = "cpp"
 highlight_language = "cpp"
 
 # Enable nitpicky mode so an unresolvable :ref:/:doc:/cpp:* target
-# surfaces as a warning. Not paired with -W in CI (unlike the Python
-# docs): Breathe auto-links every identifier-shaped token in a
-# templated C++ signature, so a heavily generic API like DOLFINx's
-# produces a large volume of unresolvable references to its own
-# template parameters (`T`, `mesh::Mesh<T>`, `Form<T, U>`, ...) that no
-# amount of ignore-listing can distinguish from a genuine broken
-# reference. The categories below are the ones that can be told apart
-# precisely and safely.
+# surfaces as a warning, which fails the CI build (-W). Breathe links
+# every identifier-shaped token in a C++ signature, so a type used in
+# the documented API must itself be documented on one of these pages.
+# The categories below cannot be resolved and are ignored.
 nitpicky = True
 
 nitpick_ignore_regex = [
@@ -144,7 +140,8 @@ nitpick_ignore_regex = [
         r"^(MPI_(Comm|Request|Datatype)"
         r"|Petsc(Scalar|Int|Real|ErrorCode)|Vec|Mat(NullSpace)?"
         r"|KSP(ConvergedReason)?|EPS(ConvergedReason)?|IS"
-        r"|hid_t|u?int(8|16|32|64)_t|int_t)$",
+        r"|InsertMode|ISLocalToGlobalMapping"
+        r"|hid_t|herr_t|u?int(8|16|32|64)_t|int_t)$",
     ),
     ("cpp:identifier", r"^pugi(::xml_node)?$"),
     ("cpp:identifier", r"^adios2(::(Dims|IO|Engine|Variable<\w+>|Attribute<\w+>))?$"),
@@ -154,6 +151,21 @@ nitpick_ignore_regex = [
         r"|::unordered_flat_map<.*>)?$",
     ),
     ("cpp:identifier", r"^ufcx_(form|expression)$"),
+    # Members of `md`, the namespace alias for the external mdspan
+    # implementation.
+    ("cpp:identifier", r"^md::\w+$"),
+    # A member type of a template parameter, which has no target.
+    ("cpp:identifier", r"^container_type::value_type$"),
+    # Correct references that the C++ domain cannot resolve because a
+    # function parameter has the same name as the leading namespace or
+    # type, e.g. `mesh::GhostMode` in `refine(const mesh::Mesh<T>& mesh,
+    # ..., mesh::GhostMode ghost_mode = mesh::GhostMode::none)`. The
+    # domain looks up the qualified name inside the parameter, whereas
+    # C++ ignores non-types when looking up a name followed by `::`.
+    (
+        "cpp:identifier",
+        r"^(mesh::(EntityMap|GhostMode(::none)?)|strategy::speed)$",
+    ),
     # A bare mention of one of DOLFINx's/basix's own namespaces (or a
     # path of nothing but namespaces), with no member name after it, or
     # `dolfinx::scalar` (a real C++20 concept, common/types.h, used as a

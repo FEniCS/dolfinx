@@ -341,8 +341,8 @@ public:
   /// 3D, etc. For blocked elements this is the value size of the full
   /// 'blocked' element.
   ///
-  /// @throws Exception is thrown for a mixed element as mixed elements
-  /// do not have a value shape.
+  /// @throws std::runtime_error for a mixed element, which does not
+  /// have a value shape.
   /// @return The value size.
   int value_size() const;
 
@@ -360,8 +360,8 @@ public:
   /// push-forward contracts the reference value axis with a Jacobian of
   /// shape `(gdim, tdim)`. See ::compute_value_shape.
   ///
-  /// @throws Exception is thrown for a mixed element as mixed elements
-  /// do not have a value shape.
+  /// @throws std::runtime_error for a mixed element, which does not
+  /// have a value shape.
   /// @return The value shape.
   std::span<const std::size_t> value_shape() const;
 
@@ -384,8 +384,8 @@ public:
   /// rank-2 tensor element that expression gives 4/3 or 9/6 rather than
   /// the correct value of 1.
   ///
-  /// @throws Exception is thrown for a mixed element as mixed elements
-  /// do not have a value shape.
+  /// @throws std::runtime_error for a mixed element, which does not
+  /// have a value shape.
   /// @return Number of physical components per block.
   int physical_base_value_size() const;
 
@@ -401,8 +401,8 @@ public:
   /// For blocked elements, this function returns the value size for
   /// the 'base' element from which the blocked element is composed.
   ///
-  /// @throws Exception is thrown for a mixed element as mixed elements
-  /// do not have a value shape.
+  /// @throws std::runtime_error for a mixed element, which does not
+  /// have a reference value shape.
   /// @return The value size.
   int reference_value_size() const;
 
@@ -417,8 +417,8 @@ public:
   ///
   /// Mixed elements do not have a reference value shape.
   ///
-  /// @throws Exception is thrown for a mixed element as mixed elements
-  /// do not have a value shape.
+  /// @throws std::runtime_error for a mixed element, which does not
+  /// have a reference value shape.
   /// @return The value shape.
   std::span<const std::size_t> reference_value_shape() const;
 
@@ -491,7 +491,7 @@ public:
   extract_sub_element(const std::vector<int>& component) const;
 
   /// @brief Return underlying Basix element (if it exists).
-  /// @throws Throws a std::runtime_error is there no Basix element.
+  /// @throws std::invalid_argument if there is no Basix element.
   const basix::FiniteElement<geometry_type>& basix_element() const;
 
   /// @brief Get the map type used by the element

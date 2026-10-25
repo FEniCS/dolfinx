@@ -8,6 +8,9 @@ Finite elements
    :project: DOLFINx
    :members:
 
+.. doxygenenum:: dolfinx::fem::doftransform
+   :project: DOLFINx
+
 
 Function spaces and functions
 -----------------------------
@@ -44,6 +47,9 @@ Forms
    :project: DOLFINx
    :members:
 
+.. doxygenenum:: dolfinx::fem::IntegralType
+   :project: DOLFINx
+
 
 Dirichlet boundary conditions
 -----------------------------
@@ -63,12 +69,20 @@ Degree-of-freedom maps
    :project: DOLFINx
    :members:
 
+.. doxygenclass:: dolfinx::fem::ElementDofLayout
+   :project: DOLFINx
+   :members:
+
 Assembly
 --------
 
-.. doxygenfile:: fem/assembler.h
+.. cpp:namespace-push:: dolfinx::fem
+
+.. doxygenfile:: assembler.h
    :project: DOLFINx
    :sections: func
+
+.. cpp:namespace-pop::
 
 
 Interpolation
@@ -77,12 +91,25 @@ Interpolation
 .. doxygenfunction:: dolfinx::fem::interpolation_coords
    :project: DOLFINx
 
+.. cpp:namespace-push:: dolfinx::fem
+
+.. doxygenfile:: interpolate_geometry.h
+   :project: DOLFINx
+   :sections: func
+
+.. cpp:namespace-pop::
+
 
 Sparsity pattern construction
 -----------------------------
 
-.. doxygenfunction:: dolfinx::fem::create_sparsity_pattern(const Form<T, U>&)
+.. cpp:namespace-push:: dolfinx::fem
+
+.. doxygenfile:: sparsitypattern.h
    :project: DOLFINx
+   :sections: func
+
+.. cpp:namespace-pop::
 
 
 PETSc helpers
@@ -93,15 +120,41 @@ PETSc helpers
    :content-only:
 
 
-Misc
-----
+Creating forms, function spaces and expressions
+-----------------------------------------------
 
-.. doxygenfile:: fem/utils.h
+.. cpp:namespace-push:: dolfinx::fem
+
+.. doxygenfile:: form_factory.h
    :project: DOLFINx
-   :no-link:
    :sections: func
-..    :path: ../../../cpp/dolfinx/fem/
 
-.. .. .. doxygennamespace:: dolfinx::fem
-.. ..    :project: DOLFINx
-.. ..    :members:
+.. cpp:namespace-pop::
+
+.. cpp:namespace-push:: dolfinx::fem
+
+.. doxygenfile:: functionspace_factory.h
+   :project: DOLFINx
+   :sections: func
+
+.. cpp:namespace-pop::
+
+.. cpp:namespace-push:: dolfinx::fem
+
+.. doxygenfile:: expression_factory.h
+   :project: DOLFINx
+   :sections: func
+
+.. cpp:namespace-pop::
+
+
+Integration domains
+-------------------
+
+.. cpp:namespace-push:: dolfinx::fem
+
+.. doxygenfile:: integration_domains.h
+   :project: DOLFINx
+   :sections: func
+
+.. cpp:namespace-pop::
