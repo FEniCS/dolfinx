@@ -9,9 +9,9 @@
 // ## Problem definition
 //
 // Let $\Omega = [0, 2] \times [0, 1]$ and let $\Omega_s \subset \Omega$
-// be the cells with $y \le 0.5$. With $V$ and $W$ the linear Lagrange
-// spaces on $\Omega$ and on the submesh $\Omega_s$, respectively, with
-// basis functions $\phi_i$ and $\psi_j$, we assemble the rectangular
+// be the cells with $y \le 0.5$. With $V$ and $W$ the bilinear (Q1)
+// Lagrange spaces on $\Omega$ and on the submesh $\Omega_s$, respectively,
+// with basis functions $\phi_i$ and $\psi_j$, we assemble the rectangular
 // matrix
 //
 // $$

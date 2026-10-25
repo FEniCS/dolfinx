@@ -348,7 +348,6 @@ int main(int argc, char* argv[])
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     common::petsc::set_option("ksp_type", "preonly");
     common::petsc::set_option("pc_type", "lu");
-    // MUMPS does not support 64-bit PetscInt
     if (sizeof(PetscInt) == 4)
       common::petsc::set_option("pc_factor_mat_solver_type", "mumps");
     else

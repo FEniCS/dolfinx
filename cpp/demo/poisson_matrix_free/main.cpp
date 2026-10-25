@@ -163,7 +163,7 @@ int cg(auto& x, auto& b, auto action, int kmax = 50, double rtol = 1e-8)
 // degrees-of-freedom are excluded from the solve by zeroing the
 // corresponding entries of the right-hand side and of each computed
 // action. The boundary values are inserted into the solution after the
-// solve, and the $L^2$ error is computed.
+// solve, and the squared $L^2$ error is computed.
 
 template <typename T, std::floating_point U>
 void solver(MPI_Comm comm)
