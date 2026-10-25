@@ -15,6 +15,10 @@ import logging
 import os
 import re
 import sys
+import warnings
+
+from breathe.parser import ParseWarning
+from sphinx.util import logging as sphinx_logging
 
 import basix
 import dolfinx
@@ -239,7 +243,25 @@ class _SuppressKnownUnparseableCppXrefs(logging.Filter):
         return True
 
 
+# Breathe reports problems in the Doxygen XML, e.g. elements it does not
+# recognise, as Python warnings, which bypass Sphinx and so -W. Report
+# them through Sphinx instead. Newer Doxygen versions add a
+# `conceptparts` element holding a concept's definition, which Breathe
+# does not parse; it renders a concept's name and description only.
+_IGNORED_BREATHE_PARSE_WARNING_RE = re.compile(r'unexpected element "conceptparts"$')
+_logger = sphinx_logging.getLogger("dolfinx.conf")
+_showwarning = warnings.showwarning
+
+
+def _report_breathe_parse_warning(message, category, filename, lineno, file=None, line=None):
+    if not issubclass(category, ParseWarning):
+        _showwarning(message, category, filename, lineno, file, line)
+    elif not _IGNORED_BREATHE_PARSE_WARNING_RE.search(str(message)):
+        _logger.warning(f"Breathe: {message}")
+
+
 def setup(app):
+    warnings.showwarning = _report_breathe_parse_warning
     # sphinx.util.logging.getLogger prepends its own "sphinx." namespace
     # onto a module's __name__, so the real stdlib logger name here is
     # "sphinx.sphinx.domains.cpp", not "sphinx.domains.cpp".
