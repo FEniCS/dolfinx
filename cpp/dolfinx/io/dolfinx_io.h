@@ -10,5 +10,6 @@ namespace dolfinx::io
 // DOLFINx io interface
 
 #include <dolfinx/io/ADIOS2Writers.h>
+#include <dolfinx/io/FileMode.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/VTKHDF.h>
