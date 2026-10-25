@@ -509,7 +509,7 @@ Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
 /// `entities`, map from entities of dimension `dim` in new sub-topology
 /// to entities in `topology`, and map from vertices in new sub-topology
 /// to vertices in `topology`.
-std::tuple<Topology, std::vector<int32_t>, std::vector<int32_t>>
+std::tuple<Topology, std::vector<std::int32_t>, std::vector<std::int32_t>>
 create_subtopology(const Topology& topology, int dim,
                    std::span<const std::int32_t> entities);
 

@@ -5,6 +5,13 @@ Common (``dolfinx::common``)
    :project: DOLFINx
    :members:
 
+MPI
+---
+
+.. doxygennamespace:: dolfinx::MPI
+   :project: DOLFINx
+   :members:
+
 Tables
 ------
 
@@ -14,6 +21,9 @@ Tables
 
 Concepts
 --------
+
+.. doxygenconcept:: dolfinx::scalar
+   :project: DOLFINx
 
 .. doxygenconcept:: dolfinx::common::LocalIndexRange
    :project: DOLFINx

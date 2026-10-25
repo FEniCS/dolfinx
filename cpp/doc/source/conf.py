@@ -126,38 +126,28 @@ highlight_language = "cpp"
 # The categories below cannot be resolved and are ignored.
 nitpicky = True
 
+# Types from external libraries, which publish no C++ inventory to
+# link to with intersphinx.
+_EXTERNAL_TYPES = [
+    r"MPI_(Comm|Request|Datatype)",
+    r"Petsc(Scalar|Int|Real|ErrorCode)|Vec|Mat(NullSpace)?|IS",
+    r"KSP(ConvergedReason)?|EPS(ConvergedReason)?|InsertMode|ISLocalToGlobalMapping",
+    r"hid_t|herr_t",  # HDF5
+    r"int_t",  # SuperLU_DIST
+    r"pugi(::xml_node)?",
+    r"adios2(::(Dims|IO|Engine|Variable<\w+>|Attribute<\w+>))?",
+    r"boost(::multiprecision(::cpp_bin_float_double_extended)?|::unordered_flat_map<.*>)?",
+    r"ufcx_(form|expression)",
+    r"md::\w+",  # mdspan implementation
+]
+
 nitpick_ignore_regex = [
-    # Doxygen's own internal directory-sharded anchor/file IDs
-    # (e.g. 'da/dfe/namespacedolfinx_1_1MPI') leak through as :ref:
-    # targets when Breathe cannot map a Doxygen \ref/@ref tag onto a
-    # real Sphinx label (usually a \ref to an overload not rendered on
-    # this particular page). No hand-written label in this project
-    # uses this naming scheme, so the pattern cannot mask a genuine
-    # broken :ref:/:doc: link elsewhere.
+    # Doxygen anchor and file IDs (e.g. 'd8/d18/superlu__dist_8h'),
+    # which Breathe emits as :ref: targets for a Doxygen \ref to an
+    # entity not rendered on any page, e.g. a header file. No
+    # hand-written label uses this scheme.
     ("ref", r"^[0-9a-f]{2}/[0-9a-f]{3}/[\w]+$"),
-    # External C/C++ libraries (MPI, PETSc, SLEPc, HDF5, pugixml,
-    # ADIOS2, Boost) and ffcx-generated struct types: not part of
-    # DOLFINx's own Doxygen project, and none publish a C++ API
-    # inventory to intersphinx against.
-    (
-        "cpp:identifier",
-        r"^(MPI_(Comm|Request|Datatype)"
-        r"|Petsc(Scalar|Int|Real|ErrorCode)|Vec|Mat(NullSpace)?"
-        r"|KSP(ConvergedReason)?|EPS(ConvergedReason)?|IS"
-        r"|InsertMode|ISLocalToGlobalMapping"
-        r"|hid_t|herr_t|u?int(8|16|32|64)_t|int_t)$",
-    ),
-    ("cpp:identifier", r"^pugi(::xml_node)?$"),
-    ("cpp:identifier", r"^adios2(::(Dims|IO|Engine|Variable<\w+>|Attribute<\w+>))?$"),
-    (
-        "cpp:identifier",
-        r"^boost(::multiprecision(::cpp_bin_float_double_extended)?"
-        r"|::unordered_flat_map<.*>)?$",
-    ),
-    ("cpp:identifier", r"^ufcx_(form|expression)$"),
-    # Members of `md`, the namespace alias for the external mdspan
-    # implementation.
-    ("cpp:identifier", r"^md::\w+$"),
+    ("cpp:identifier", "^(" + "|".join(_EXTERNAL_TYPES) + ")$"),
     # A member type of a template parameter, which has no target.
     ("cpp:identifier", r"^container_type::value_type$"),
     # Correct references that the C++ domain cannot resolve because a
@@ -168,21 +158,15 @@ nitpick_ignore_regex = [
     # C++ ignores non-types when looking up a name followed by `::`.
     (
         "cpp:identifier",
-        r"^(mesh::(EntityMap|GhostMode(::none)?)|strategy::speed)$",
+        r"^(mesh::(EntityMap|GhostMode(::none)?)|strategy::speed|tag::consensus_nbx)$",
     ),
-    # A bare mention of one of DOLFINx's/basix's own namespaces (or a
-    # path of nothing but namespaces), with no member name after it, or
-    # `dolfinx::scalar` (a real C++20 concept, common/types.h, used as a
-    # template constraint): Breathe's signature linker tries to
-    # cross-reference the leading namespace-qualifier segment of a
-    # qualified name, or a concept used as a constraint, as if it were
-    # itself a standalone target it should be able to look up locally.
+    # The namespace part of a qualified name, e.g. `graph` in
+    # `graph::AdjacencyList`. The C++ domain creates a reference for
+    # each part, but namespaces are not declarations it can link to.
     (
         "cpp:identifier",
-        r"^(dolfinx|fem|mesh|graph|la|common|io|refinement|geometry|nls"
-        r"|basix|scotch|md"
-        r"|dolfinx::(fem(::petsc)?|graph(::(kahip|parmetis|scotch))?"
-        r"|MPI(::tag(::consensus_nbx)?)?|scalar)"
+        r"^(dolfinx|fem|graph|basix|scotch|md"
+        r"|dolfinx::(fem(::petsc)?|graph(::(kahip|parmetis|scotch))?)"
         r"|basix::(cell(::type)?|maps(::type)?))$",
     ),
     # A concrete instantiation of one of DOLFINx's own class/function
@@ -227,8 +211,7 @@ intersphinx_mapping = {
 # namespace-qualified prefix fragment. Silence this catalogued,
 # closed set; any other unparseable cross-reference still warns.
 _UNPARSEABLE_CPP_XREF_RE = re.compile(
-    r"^:(fem(::petsc)?|graph(::(kahip|parmetis|scotch))?"
-    r"|MPI(::tag(::consensus_nbx)?)?|scalar(_value_t<.*>)?)$"
+    r"^:(fem(::petsc)?|graph(::(kahip|parmetis|scotch))?|scalar_value_t<.*>)$"
 )
 
 
