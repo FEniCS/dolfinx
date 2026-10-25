@@ -1,4 +1,4 @@
-"""UFL input for the Matrix-free Poisson demo."""
+"""UFL input for the matrix-free Poisson demo."""
 
 from basix.ufl import element
 from ufl import (
@@ -17,7 +17,7 @@ from ufl import (
 coord_element = element("Lagrange", "triangle", 1, shape=(2,))
 mesh = Mesh(coord_element)
 
-# Function Space
+# Function space
 e = element("Lagrange", "triangle", 2)
 V = FunctionSpace(mesh, e)
 
@@ -26,19 +26,17 @@ u = TrialFunction(V)
 v = TestFunction(V)
 
 # Constant RHS
-f = Constant(V)
+f = Constant(mesh)
 
-# Bilinear and linear forms according to the variational
-# formulation of the equations:
+# Bilinear and linear forms
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
 
-# Linear form representing the action of the form `a` on the
-# coefficient `ui`:
+# Linear form representing the action of `a` on the coefficient `ui`
 ui = Coefficient(V)
 M = action(a, ui)
 
-# Form to compute the L2 norm of the error
+# Form for the squared L2 norm of the error
 usol = Coefficient(V)
 uexact = Coefficient(V)
 E = inner(usol - uexact, usol - uexact) * dx

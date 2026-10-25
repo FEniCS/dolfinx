@@ -1,98 +1,111 @@
 // # Mixed Poisson equation
 //
-// This demo illustrates how to solve Poisson equation using a mixed
-// (two-field) formulation. In particular, it illustrates how to
+// This demo illustrates how to solve the Poisson equation using a mixed
+// (two-field) formulation. In particular, it illustrates how to:
 //
-// * Create a mixed finite element problem.
-// * Extract subspaces.
-// * Apply boundary conditions to different fields in a mixed problem.
-// * Create integration domain data to execute finite element kernels.
-//   over subsets of the boundary.
+// * Create a mixed finite element problem
+// * Extract subspaces
+// * Apply boundary conditions to different fields in a mixed problem
+// * Create integration domain data to execute finite element kernels
+//   over subsets of the boundary
 // * Use a submesh to represent boundary data
+//
+// ## Equation and problem definition
+//
+// A mixed formulation of the Poisson equation is obtained by introducing
+// the gradient $\sigma = \nabla u$ as an additional unknown. The
+// equations then read
+//
+// \begin{align*}
+//   \sigma - \nabla u &= 0 \quad {\rm in} \ \Omega, \\
+//   \nabla \cdot \sigma &= - f \quad {\rm in} \ \Omega,
+// \end{align*}
+//
+// with boundary conditions
+//
+// \begin{align*}
+//   u &= u_0 \quad {\rm on} \ \Gamma_{D}, \\
+//   \sigma \cdot n &= g \quad {\rm on} \ \Gamma_{N},
+// \end{align*}
+//
+// where $n$ is the outward unit normal to the boundary. In this
+// formulation the flux condition $\sigma \cdot n = g$ is essential (it
+// is imposed on the function space), while $u = u_0$ is natural (it
+// appears in the variational form). The variational problem reads: find
+// $(\sigma, u) \in \Sigma_g \times V$ such that
+//
+// $$
+//   a((\sigma, u), (\tau, v)) = L((\tau, v))
+//   \quad \forall \ (\tau, v) \in \Sigma_0 \times V,
+// $$
+//
+// where
+//
+// \begin{align*}
+//   a((\sigma, u), (\tau, v)) &=
+//     \int_{\Omega} \sigma \cdot \tau + \nabla \cdot \tau \ u
+//   + \nabla \cdot \sigma \ v \ {\rm d} x, \\
+//   L((\tau, v)) &= - \int_{\Omega} f v \ {\rm d} x
+//   + \int_{\Gamma_D} u_0 \tau \cdot n \ {\rm d} s,
+// \end{align*}
+//
+// $\Sigma_g = \{ \tau \in H({\rm div}, \Omega) : \tau \cdot n = g \
+// {\rm on} \ \Gamma_N \}$ and $V = L^2(\Omega)$.
+//
+// To discretise, we choose finite-dimensional subspaces
+// $\Sigma_{h} \subset H({\rm div}, \Omega)$ and $V_h \subset V$. A
+// stable choice is Raviart-Thomas elements of degree $k$ for
+// $\Sigma_{h}$ and discontinuous Lagrange elements of degree $k-1$ for
+// $V_h$. This demo uses $k = 1$.
+//
+// The boundaries are defined as in the
+// {doc}`Poisson demo <demo_poisson>`, but on the unit square:
+//
+// * $\Omega = [0,1] \times [0,1]$
+// * $\Gamma_{D} = \{(x, y) \in \partial \Omega : x = 0 \ {\rm or} \ x = 1\}$
+// * $\Gamma_{N} = \partial \Omega \setminus \Gamma_{D}$
+// * $u_0 = 20 y + 1$
+// * $g = 10$
+// * $f = \sin(5x) + 1$
+//
+// The boundary data $u_0$ is represented by a function on a submesh of
+// the facets of $\Gamma_{D}$. Assembling $L$ therefore involves two
+// meshes: the integration domain (the full mesh) and the submesh.
+//
+// ## Implementation
 //
 // Running this demo requires the files:
 // {download}`demo_mixed_poisson/main.cpp`,
 // {download}`demo_mixed_poisson/mixed_poisson.py` and
 // {download}`demo_mixed_poisson/CMakeLists.txt`.
 //
+// ### UFL form file
 //
-// # Mixed formulation for the Poisson equation
-//
-// ## Equation and problem definition
-//
-// A mixed formulation of Poisson equation can be formulated by
-// introducing an additional vector variable, the gradient
-// $\sigma = \nabla u$. The partial differential equations
-// then read
-//
-// $$
-// \begin{align}
-//   \sigma - \nabla u &= 0 \quad {\rm in} \ \Omega, \\
-//   \nabla \cdot \sigma &= - f \quad {\rm in} \ \Omega,
-// \end{align}
-// $$
-// with boundary conditions
-//
-// $$
-//   u = u_0 \quad {\rm on} \ \Gamma_{D},  \\
-//   \sigma \cdot n = g \quad {\rm on} \ \Gamma_{N}.
-// $$
-//
-// where $n$ denotes the outward unit normal vector on the boundary. We
-// see that the boundary condition for the flux ($\sigma \cdot n = g$)
-// is an essential boundary condition (which should be enforced in
-// the function space), while the other boundary condition ($u = u_0$)
-// is a natural boundary condition (which should be applied to the
-// variational form). Inserting the boundary conditions, this
-// variational problem can be phrased in the general form: find
-// $(\sigma, u) \in \Sigma_g \times V$ such that
-//
-// $$
-//    a((\sigma, u), (\tau, v)) = L((\tau, v))
-//    \quad \forall \ (\tau, v) \in \Sigma_0 \times V,
-// $$
-//
-// where the forms $a$ and $L$ are defined as
-//
-// $$
-// \begin{align}
-//   a((\sigma, u), (\tau, v)) &:=
-//     \int_{\Omega} \sigma \cdot \tau + \nabla \cdot \tau \ u
-//   + \nabla \cdot \sigma \ v \ {\rm d} x, \\
-//   L((\tau, v)) &:= - \int_{\Omega} f v \ {\rm d} x
-//   + \int_{\Gamma_D} u_0 \tau \cdot n  \ {\rm d} s,
-// \end{align}
-// $$
-// and $\Sigma_g := \{ \tau \in H({\rm div})$ such that $\tau \cdot
-// n|_{\Gamma_N} = g \}$ and $V := L^2(\Omega)$.
-//
-// To discretize the above formulation, discrete function spaces
-// $\Sigma_h \subset \Sigma$ and $V_h \subset V$ are needed to form a
-// mixed function space $\Sigma_h \times V_h$. A stable choice of finite
-// element spaces is to let $\Sigma_h$ be a Raviart-Thomas elements of
-// polynomial order $k$ and $V_h$ be discontinuous elements of
-// polynomial order $k-1$.
-//
-// We will use a similar definition of the boundaries as in the demo
-// for {doc}`the Poisson equation <demo_poisson>`, but here on a unit
-// square domain:
-//
-// * $\Omega = [0,1] \times [0,1]$ (a unit square)
-// * $\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}$
-// * $\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}$
-// * $u_0 = 20 y + 1$ on $\Gamma_{D}$
-// * $g = 10$ (flux) on $\Gamma_{N}$
-// * $f = \sin(5x) + 1$ (source term)
-
-// ## UFL form file
-//
-// The UFL file is implemented in
+// The UFL forms are defined in
 // {download}`demo_mixed_poisson/mixed_poisson.py`.
-// ````{admonition} UFL form implemented in python
+// ````{admonition} UFL form implemented in Python
 // :class: dropdown
 // ![ufl-code]
 // ````
 //
+// ### C++ program
+//
+// The `main` function performs the following steps:
+//
+// 1. Create the mesh, the mixed Raviart-Thomas/discontinuous Lagrange
+//    space and its subspaces.
+// 2. Interpolate $f$, and interpolate a vector field whose normal
+//    component on $\Gamma_{N}$ is $g$.
+// 3. Create a submesh of the facets of $\Gamma_{D}$ with
+//    {cpp:func}`dolfinx::mesh::create_submesh`, and interpolate $u_0$
+//    into a Lagrange space on it.
+// 4. Create a {cpp:class}`dolfinx::fem::DirichletBC` that constrains the
+//    normal component of $\sigma$ on $\Gamma_{N}$.
+// 5. Create integration domain data for the facets of $\Gamma_{D}$, which
+//    carry the `ds(1)` integral in the UFL file.
+// 6. Create the forms, passing the
+//    {cpp:class}`dolfinx::mesh::EntityMap` that relates the submesh to
+//    the mesh, then assemble and solve the linear system.
 
 #include "mixed_poisson.h"
 #include <basix/cell.h>
@@ -161,7 +174,7 @@ int main(int argc, char* argv[])
     auto W0 = std::make_shared<fem::FunctionSpace<U>>(V0->collapse().first);
     auto W1 = std::make_shared<fem::FunctionSpace<U>>(V1->collapse().first);
 
-    // Create source function and interpolate $\sin(5x) + 1$
+    // Create source function and interpolate sin(5x) + 1
     auto f = std::make_shared<fem::Function<T>>(W1);
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -175,8 +188,8 @@ int main(int argc, char* argv[])
           return {std::move(f), std::vector<std::size_t>{f.size()}};
         });
 
-    // Create boundary condition for $\sigma$ and interpolate such that
-    // flux = 10 (for top and bottom boundaries)
+    // Boundary value for sigma, chosen so that sigma.n = 10 on the top
+    // and bottom boundaries
     auto g = std::make_shared<fem::Function<T>>(W0);
     g->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -212,11 +225,9 @@ int main(int argc, char* argv[])
           return marker;
         });
 
-    // We'd like to represent `u_0` using a function space defined only
-    // on the facets in `dfacets`. To do so, we begin by calling
-    // `create_submesh` to get a `submesh` of those facets.  It also returns an
-    // `EntityMap` object, which relates entities in the submesh to entities in
-    // the original mesh. We will need this to assemble our mixed-domain form.
+    // Create a submesh of the facets in dfacets on which to represent
+    // u0. The returned EntityMap relates submesh entities to mesh
+    // entities, and is needed to assemble the mixed-domain form.
     int tdim = mesh->topology()->dim();
     int fdim = tdim - 1;
 
@@ -229,7 +240,7 @@ int main(int argc, char* argv[])
     };
     auto [submesh, entity_map] = submesh_data(*mesh, fdim, dfacets);
 
-    // Create an element for `u_0`
+    // Create an element for u0
     basix::cell::type submesh_cell_type
         = dolfinx::mesh::cell_type_to_basix_type(
             submesh->topology()->cell_type());
@@ -240,11 +251,11 @@ int main(int argc, char* argv[])
                                  basix::element::dpc_variant::unset, false),
         submesh->geometry().dim());
 
-    // Create a function space for `u_0` on the submesh
+    // Create a function space for u0 on the submesh
     auto Q = std::make_shared<fem::FunctionSpace<U>>(
         fem::create_functionspace<U>(submesh, Qe));
 
-    // Boundary condition value for u and interpolate $20 y + 1$
+    // Interpolate the boundary value u0 = 20y + 1
     auto u0 = std::make_shared<fem::Function<T>>(Q);
     u0->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -259,55 +270,40 @@ int main(int argc, char* argv[])
     io::VTKFile u0_file(MPI_COMM_WORLD, "u0.pvd", "w");
     u0_file.write<T>({*u0}, 0);
 
-    // Compute facets with $\sigma$ (flux) boundary condition facets,
-    // which is `{all boundary facet} - {u0 boundary facets}`
+    // Facets with the flux (sigma) boundary condition: all boundary
+    // facets except those in dfacets
     std::vector<std::int32_t> nfacets;
     std::ranges::set_difference(bfacets, dfacets, std::back_inserter(nfacets));
 
-    // Get dofs that are constrained by \sigma
+    // Get the sigma degrees-of-freedom on these facets, in V and in the
+    // collapsed space W0
     std::array<std::vector<std::int32_t>, 2> ndofs
         = fem::locate_dofs_topological(
             *mesh->topology(), {*V0->dofmap(), *W0->dofmap()}, 1, nfacets);
 
-    // Create boundary condition for $\sigma$. $\sigma \cdot n$ will be
-    // constrained to be equal to the normal component of $g$. The
-    // boundary conditions are applied to degrees-of-freedom ndofs, and
-    // `V0` is the subspace that is constrained.
+    // Create the boundary condition, constraining sigma.n to the normal
+    // component of g. V0 is the constrained subspace.
     fem::DirichletBC<T> bc(g, ndofs, V0);
 
-    // Create integration domain data for `u0` boundary condition
-    // (applied on the `ds(1)` in the UFL file). First we get facet data
-    // integration data for facets in dfacets.
+    // Compute the integration entities for the facets in dfacets, on
+    // which the ds(1) integral in the UFL file is evaluated
     std::vector<std::int32_t> domains = fem::compute_integration_domains(
         fem::IntegralType::exterior_facet, *mesh->topology(), dfacets);
 
-    // Create data structure for the `ds(1)` integration domain in form
-    // (see the UFL file). It is for en exterior facet integral (the key
-    // in the map), and exterior facet domain marked as '1' in the UFL
-    // file, and `domains` holds the necessary data to perform
-    // integration of selected facets.
+    // Map exterior facet integrals with subdomain ID 1 to these
+    // integration entities
     std::map<
         fem::IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
         subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
-    // Since we are doing a `ds(1)` integral on mesh and `u0` is defined
-    // on the `submesh`, our form involves more than one mesh. The mesh
-    // used to define the measure and passed to `create_form` is called
-    // the integration domain mesh (here, `mesh`). To assemble our
-    // mixed-domain form, we must provide an `EntityMap` for each
-    // additional mesh in the form. In this case, the only other mesh is
-    // `submesh`. Hence, we supply the entity map returned from
-    // `create_submesh`, which relates entities in `mesh` and `submesh`.
-
-    // Define variational forms and attach he required data
+    // Define the bilinear form
     fem::Form<T> a = fem::create_form<T>(*form_mixed_poisson_a, {V, V}, {}, {},
                                          subdomain_data, {});
 
-    // Since this form involves multiple domains (i.e. both `mesh` and
-    // `submesh` for the boundary condition), we must pass the entity
-    // maps just created. We must also tell the form which domain to
-    // integrate with respect to (in this case `mesh`)
+    // L involves mesh (the integration domain, passed last) and submesh
+    // (on which u0 is defined). An EntityMap must be supplied for each
+    // mesh other than the integration domain.
     fem::Form<T> L = fem::create_form<T>(
         *form_mixed_poisson_L, {V}, {{"f", f}, {"u0", u0}}, {}, subdomain_data,
         {entity_map}, V->mesh());
@@ -352,6 +348,7 @@ int main(int argc, char* argv[])
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     common::petsc::set_option("ksp_type", "preonly");
     common::petsc::set_option("pc_type", "lu");
+    // MUMPS does not support 64-bit PetscInt
     if (sizeof(PetscInt) == 4)
       common::petsc::set_option("pc_factor_mat_solver_type", "mumps");
     else

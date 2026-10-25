@@ -9,12 +9,16 @@
 // This demo illustrates how to:
 //
 // * Interpolate an analytical expression into a scalar Lagrange
-//   finite element space and into a vector-valued Nedelec
+//   finite element space and into a vector-valued Nédélec
 //   ($H({\rm curl})$) finite element space
-// * Write the resulting finite element functions to file for
-//   visualisation using `dolfinx::io::VTXWriter`
-// * Repeat the interpolation for `float`/`double` and their complex
-//   counterparts, and for meshes with `float`/`double` geometry
+// * Visualise an $H({\rm curl})$ function exactly by interpolating it
+//   into a discontinuous Lagrange space
+// * Write finite element functions to file using
+//   {cpp:class}`dolfinx::io::VTXWriter` (requires ADIOS2)
+// * Use `float`, `double` and their complex counterparts as the function
+//   scalar type, on meshes with `float` and `double` geometry
+//
+// ## Implementation
 //
 // Running this demo requires the files:
 // {download}`demo_interpolation-io/main.cpp` and
@@ -41,13 +45,13 @@
 using namespace dolfinx;
 
 /// @brief Interpolate a function into a Lagrange finite element space
-/// and outputs the finite element function to a VTX file for
+/// and output the finite element function to a VTX file for
 /// visualisation.
 ///
 /// @tparam T Scalar type of the finite element function.
 /// @tparam U Float type for the finite element basis and the mesh.
 /// @param mesh Mesh.
-/// @param filename Output filename. File output requires DOLFINX to be
+/// @param filename Output filename. File output requires DOLFINx to be
 /// configured with ADIOS2.
 template <typename T, std::floating_point U>
 void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
@@ -68,8 +72,7 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
   // Create a finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
 
-  // Interpolate sin(2 \pi x[0]) in the scalar Lagrange finite element
-  // space
+  // Interpolate sin(2 pi x0) into the scalar Lagrange space
   u->interpolate(
       [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
       {
@@ -99,14 +102,14 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
 /// @tparam T Scalar type of the finite element function.
 /// @tparam U Float type for the finite element basis and the mesh.
 /// @param mesh Mesh.
-/// @param filename Output filename. File output requires DOLFINX to be
+/// @param filename Output filename. File output requires DOLFINx to be
 /// configured with ADIOS2.
 template <typename T, std::floating_point U>
 void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
                          [[maybe_unused]] std::filesystem::path filename)
 {
-  // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on
-  // triangle)
+  // Create a Basix Nedelec (first kind) element of degree 2 (dimension
+  // 8 on a triangle)
   basix::FiniteElement e = basix::create_element<U>(
       basix::element::family::N1E,
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
@@ -126,11 +129,12 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   //      [x[0] + 1, x[1]]  if x[0] >= 0.5
   // in the Nedelec space.
   //
-  // Note that the x1 component of this field is continuous, and the x0
-  // component is discontinuous across x0 = 0.5. This function lies in
-  // the Nedelec space when there are cell edges aligned to x0 = 0.5.
+  // The x1 component of this field is continuous, and the x0 component
+  // is discontinuous across x0 = 0.5. The field is in the Nedelec space
+  // because cell edges are aligned with x0 = 0.5.
 
-  // Find cells with all vertices satisfying (0) x0 <= 0.5 and (1) x0 >= 0.5
+  // Find cells with all vertices satisfying (0) x0 <= 0.5 and (1) x0 >=
+  // 0.5
   std::vector cells0
       = mesh::locate_entities(*mesh, 2,
                               [](auto x)
@@ -169,14 +173,13 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
       },
       cells1);
 
-  // Nedelec spaces are not generally supported by visualisation tools.
-  // Simply evaluating a Nedelec function at cell vertices can
-  // mis-represent the function. However, we can represented a Nedelec
-  // function exactly in a discontinuous Lagrange space which we can
-  // then visualise. We do this here.
+  // Visualisation tools generally do not support Nedelec spaces, and
+  // evaluating a Nedelec function at cell vertices can misrepresent it.
+  // Instead, we interpolate it exactly into a discontinuous Lagrange
+  // space, which can be visualised.
 
-  // First create a degree 2 vector-valued discontinuous Lagrange space
-  // (which contains the N2 space):
+  // Create a degree 2 vector-valued discontinuous Lagrange space, which
+  // contains the degree 2 Nedelec space
   basix::FiniteElement e_l = basix::create_element<U>(
       basix::element::family::P,
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
@@ -195,10 +198,9 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   // space:
   u_l->interpolate(*u);
 
-// Output the discontinuous Lagrange space in VTX format. When plotting
-// the x0 component the field will appear discontinuous at x0 = 0.5
-// (jump in the normal component between cells) and the x1 component
-// will appear continuous (continuous tangent component between cells).
+// Output the discontinuous Lagrange function in VTX format. The x0
+// component (normal to x0 = 0.5) appears discontinuous at x0 = 0.5, and
+// the x1 component (tangential) appears continuous.
 #ifdef HAS_ADIOS2
   io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
                            {u_l}, "BP4");
@@ -207,8 +209,10 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
 #endif
 }
 
-/// @brief This program shows how to interpolate functions into different types
-/// of finite element spaces and output the result to file for visualisation.
+// The `main` function creates two meshes with the same topology, one
+// with `float` and one with `double` geometry, and calls the above
+// functions with each supported scalar type.
+
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
@@ -218,8 +222,8 @@ int main(int argc, char* argv[])
   // that depend on an MPI communicator are destroyed before MPI is
   // finalised at the end of this function.
   {
-    //  Create meshes. For what comes later in this demo we need to
-    //  ensure that a boundary between cells is located at x0=0.5
+    // Create meshes. The Nedelec example requires cell edges on
+    // x0 = 0.5.
 
     // Create mesh using float for geometry coordinates
     auto mesh0
@@ -227,8 +231,8 @@ int main(int argc, char* argv[])
             MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
             mesh::CellType::triangle, graph::partition_graph));
 
-    // Create mesh using same topology as mesh0, but with different
-    // scalar type for geometry
+    // Create a mesh with the same topology as mesh0, but with double
+    // geometry
     auto mesh1
         = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle<double>(
             MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
