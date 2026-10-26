@@ -1,0 +1,6 @@
+# EasyBuild resolves and orders dependencies across these roots with --robot.
+easyconfigs:
+  - FEniCS-UFL-2026.1.0-gfbf-2025b.eb
+  - FEniCS-Basix-Python-0.11.0-gfbf-2025b.eb
+  - FEniCS-FFCx-0.11.0-gfbf-2025b.eb
+  - FEniCS-DOLFINx-Python-0.11.0.post0-foss-2025b.eb

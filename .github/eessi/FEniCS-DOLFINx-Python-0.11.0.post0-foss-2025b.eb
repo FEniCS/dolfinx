@@ -1,0 +1,47 @@
+# Based on the work from PR #22700 and #22422
+
+easyblock = 'PythonBundle'
+
+name = 'FEniCS-DOLFINx-Python'
+version = '0.11.0.post0'
+
+homepage = 'https://docs.fenicsproject.org/dolfinx/main/python/'
+description = """
+DOLFINx is the next generation problem solving interface of the FEniCS Project - Python binding.
+"""
+
+toolchain = {'name': 'foss', 'version': '2025b'}
+
+builddependencies = [
+    ('pkgconf', '2.4.3'),
+    ('scikit-build-core', '0.11.5'),
+    ('nanobind', '2.9.2'),
+]
+
+dependencies = [
+    ('Python', '3.13.5'),
+    ('SciPy-bundle', '2025.07'),
+    ('petsc4py', '3.24.0'),
+    ('mpi4py', '4.1.0'),
+    ('slepc4py', '3.24.0'),
+    ('FEniCS-Basix-Python', '0.11.0'),
+    ('FEniCS-FFCx', '0.11.0'),
+    ('FEniCS-UFL', '2026.1.0'),
+    ('FEniCS-DOLFINx', '%(version)s'),
+]
+
+exts_list = [
+    ('fenics-dolfinx', version, {
+        'install_src': './python',
+        'modulename': False,
+        'source_urls': ['https://github.com/FEniCS/dolfinx/archive/refs/tags/'],
+        'sources': [{'filename': 'v%(version)s.tar.gz', 'alt_location': 'FEniCS-DOLFINx'}],
+        'checksums': ['47c635cb82a99482d23e2e6bca26c31c9b2297bcad1ab5f5c651541caaaec68f'],
+    }),
+]
+
+sanity_check_commands = [
+    'mpiexec -n 1 python -c "from mpi4py import MPI; import dolfinx"',
+]
+
+moduleclass = 'cae'
