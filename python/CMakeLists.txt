@@ -206,7 +206,7 @@ set(
 # it as dolfinx.cpp. Otherwise submodule references in the stubs resolve to
 # a bare "cpp" and become Any. The directory also fixes where stubgen writes.
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
-# Importing mpi4py and basix first makes their DLLs findable on Windows.
+# Import mpi4py and basix first so their libraries are loaded before cpp.
 file(
   WRITE ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/__init__.py
   "import mpi4py\nimport basix\n"
