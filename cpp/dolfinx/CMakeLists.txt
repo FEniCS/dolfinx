@@ -231,7 +231,6 @@ if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
     DIRECTORIES
       $<TARGET_FILE_DIR:Basix::basix>
       $<TARGET_FILE_DIR:Basix::basix>/../fenics_basix.libs
-      $<TARGET_FILE_DIR:hdf5::hdf5>
   )
 endif()
 
