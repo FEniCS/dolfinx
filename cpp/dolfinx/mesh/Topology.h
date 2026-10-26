@@ -7,8 +7,11 @@
 #pragma once
 
 #include <array>
+#include <basix/mdspan.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
@@ -168,10 +171,8 @@ public:
   /// mesh::compute_cell_permutations for the bit layout). On a surface it
   /// also holds the facet signs (see facet_orientations).
   ///
-  /// @throws std::runtime_error If create_entity_permutations has not
+  /// @throws std::runtime_error If create_cell_permutations has not
   /// been called.
-  /// @throws std::out_of_range If there is more than one cell type
-  /// (see Topology::index_map).
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
   /// @brief Sign the facets on which two cells disagree on the normal.
@@ -306,7 +307,8 @@ public:
 
   /// @brief Compute entity permutations and reflections.
   ///
-  /// @note Collective.
+  /// @note Not collective. Unpacked from the cell permutations
+  /// (computed if absent); creates no entities.
   ///
   /// A permutation records how an entity is oriented as seen from a
   /// cell, relative to a low-to-high ordering of the entity's global
@@ -344,6 +346,7 @@ public:
   /// each cell at assembly time.
   ///
   /// Does nothing if the cell permutations have already been computed.
+  /// @note Not collective. Uses the cell vertices; creates no entities.
   ///
   /// @param[in] num_threads Number of threads to use. Must be >= 1.
   /// @see create_entity_permutations, which gives the orientations of
@@ -385,7 +388,8 @@ private:
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
-  std::vector<std::uint32_t> _cell_permutations;
+  // Unset until computed; empty is valid (no cells).
+  std::optional<std::vector<std::uint32_t>> _cell_permutations;
 
   // Whether the facet signs have been computed. Not encoded in
   // _cell_permutations, where unsigned facets read as all 1.
@@ -505,7 +509,7 @@ Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
 /// `entities`, map from entities of dimension `dim` in new sub-topology
 /// to entities in `topology`, and map from vertices in new sub-topology
 /// to vertices in `topology`.
-std::tuple<Topology, std::vector<int32_t>, std::vector<int32_t>>
+std::tuple<Topology, std::vector<std::int32_t>, std::vector<std::int32_t>>
 create_subtopology(const Topology& topology, int dim,
                    std::span<const std::int32_t> entities);
 
@@ -541,5 +545,21 @@ entities_to_index(const Topology& topology, int dim,
 /// @todo Remove redundant data.
 std::vector<std::vector<std::int32_t>>
 compute_mixed_cell_pairs(const Topology& topology, mesh::CellType facet_type);
+
+/// @brief Permutations of the cell-local entities of a given dimension.
+///
+/// Computes the permutations on `topology` if they are not already
+/// available. Returns an empty mdspan when the entity has no
+/// orientation to permute: cells (`dim == topology.dim()`) and
+/// vertices.
+///
+/// @param[in,out] topology Mesh topology.
+/// @param[in] dim Topological dimension of the entities.
+/// @param[in] cell_type_idx Index of the cell type, following the order
+/// of Topology::cell_types.
+/// @return Permutation of each cell-local entity of the cells of type
+/// `cell_type_idx`, shape `(num_cells, entities_per_cell)`.
+md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
+entity_permutations(Topology& topology, int dim, int cell_type_idx);
 
 } // namespace dolfinx::mesh

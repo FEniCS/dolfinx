@@ -228,8 +228,8 @@ void add_group(hid_t handle, std::string_view dataset_path);
 template <native_scalar T>
 void write_dataset(hid_t file_handle, std::string_view dataset_path,
                    const T* data, std::array<std::int64_t, 2> range,
-                   const std::vector<int64_t>& global_size, bool use_mpi_io,
-                   bool use_chunking)
+                   const std::vector<std::int64_t>& global_size,
+                   bool use_mpi_io, bool use_chunking)
 {
   // Data rank. Validate before any collective call, so that all ranks
   // throw together.

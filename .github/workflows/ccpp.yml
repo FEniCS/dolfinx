@@ -324,13 +324,33 @@ jobs:
           --check-build-dependencies
           --no-build-isolation
 
+      # Doxygen and Graphviz (dot, for the Doxygen graphs) are not taken
+      # from the test-env image. Ubuntu 26.04's Doxygen 1.15 misparses
+      # attributes on alias declarations, so use a pinned upstream release.
+      - name: Install Doxygen and Graphviz
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          DOXYGEN_VERSION: 1.18.0
+        run: |
+          apt-get -y update
+          apt-get install -y --no-install-recommends graphviz
+          cd $RUNNER_TEMP
+          DOXYGEN_TAG=Release_$(echo ${DOXYGEN_VERSION} | tr . _)
+          wget -nv https://github.com/doxygen/doxygen/releases/download/${DOXYGEN_TAG}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+          tar -xzf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz doxygen-${DOXYGEN_VERSION}/bin/doxygen
+          rm doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+          echo "$RUNNER_TEMP/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
+          doxygen-${DOXYGEN_VERSION}/bin/doxygen --version
+
       - name: Build C++ interface documentation
+        env:
+          DOCS_VERSION: ${{ github.ref_name }}
         run: |
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
           echo $DOLFINX_VERSION
           cd cpp/doc
           doxygen Doxyfile
-          python -m sphinx -b html source/ build/html
+          python -m sphinx -W --keep-going -b html source/ build/html
       - name: Upload C++ Doxygen documentation artifact
         uses: actions/upload-artifact@v7
         with:
@@ -353,6 +373,8 @@ jobs:
           apt-get install -y libegl1 libxrender1
 
       - name: Build Python interface documentation
+        env:
+          DOCS_VERSION: ${{ github.ref_name }}
         run: |
           cd python/doc
           python -m sphinx -W -b html source/ build/html/
@@ -370,22 +392,18 @@ jobs:
           repository: "FEniCS/docs"
           path: "docs"
           ssh-key: "${{ secrets.SSH_GITHUB_DOCS_PRIVATE_KEY }}"
-      - name: Set version name
-        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
-        run: |
-          echo "VERSION_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Copy documentation into repository
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
         run: |
           cd docs
-          git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/cpp
-          git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/python
-          mkdir -p dolfinx/${{ env.VERSION_NAME }}/cpp
-          mkdir -p dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
-          mkdir -p dolfinx/${{ env.VERSION_NAME }}/python
-          cp -r ../cpp/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/
-          cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
-          cp -r ../python/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/python
+          git rm -r --ignore-unmatch dolfinx/${{ github.ref_name }}/cpp
+          git rm -r --ignore-unmatch dolfinx/${{ github.ref_name }}/python
+          mkdir -p dolfinx/${{ github.ref_name }}/cpp
+          mkdir -p dolfinx/${{ github.ref_name }}/cpp/doxygen
+          mkdir -p dolfinx/${{ github.ref_name }}/python
+          cp -r ../cpp/doc/build/html/* dolfinx/${{ github.ref_name }}/cpp/
+          cp -r ../cpp/doc/html/* dolfinx/${{ github.ref_name }}/cpp/doxygen
+          cp -r ../python/doc/build/html/* dolfinx/${{ github.ref_name }}/python
       - name: Commit and push documentation to FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
         run: |

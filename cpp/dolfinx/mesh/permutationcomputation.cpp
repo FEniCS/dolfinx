@@ -38,6 +38,10 @@
 namespace
 {
 constexpr int bitset_size = 32;
+
+// Largest supported cell (hexahedron) and face (quadrilateral)
+constexpr std::size_t max_cell_vertices = 8;
+constexpr std::size_t max_face_vertices = 4;
 } // namespace
 
 using namespace dolfinx;
@@ -45,8 +49,8 @@ using namespace dolfinx;
 namespace
 {
 std::pair<std::int8_t, std::int8_t>
-compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
-                             const std::vector<std::int64_t>& vertices)
+compute_triangle_rot_reflect(std::span<const int> e_vertices,
+                             std::span<const std::int64_t> vertices)
 {
 
   // Number of rotations
@@ -66,11 +70,11 @@ compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
 
   // g_pre is the (global) number of the next vertex clockwise from the lowest
   // numbered vertex
-  const int g_pre = vertices[(g_min_v + 2) % 3];
+  const std::int64_t g_pre = vertices[(g_min_v + 2) % 3];
 
   // g_post is the (global) number of the next vertex anticlockwise from the
   // lowest numbered vertex
-  const int g_post = vertices[(g_min_v + 1) % 3];
+  const std::int64_t g_post = vertices[(g_min_v + 1) % 3];
 
   std::uint8_t rots = 0;
   if (g_post > g_pre)
@@ -82,8 +86,8 @@ compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::int8_t, std::int8_t>
-compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
-                         const std::vector<std::int64_t>& vertices)
+compute_quad_rot_reflect(std::span<const int> e_vertices,
+                         std::span<const std::int64_t> vertices)
 {
   // Find minimum local cell vertex on facet
   std::uint8_t min_v = std::ranges::distance(
@@ -354,6 +358,47 @@ compute_face_permutations(const mesh::Topology& topology, int num_threads)
                                                              num_threads);
 }
 //-----------------------------------------------------------------------------
+void compute_cell_permutations_range(
+    std::array<std::int64_t, 2> range,
+    const graph::AdjacencyList<std::int32_t>& c_to_v,
+    const common::IndexMap& vertex_map, const graph::AdjacencyList<int>& edges,
+    const graph::AdjacencyList<int>& faces,
+    std::span<std::uint32_t> cell_permutation_info)
+{
+  const int edge_offset = 3 * faces.num_nodes();
+  std::array<std::int64_t, max_cell_vertices> cell_vertices;
+  std::array<std::int64_t, max_face_vertices> face_vertices;
+  for (std::int32_t c = range[0]; c < range[1]; ++c)
+  {
+    const std::span<const std::int32_t> vertices = c_to_v.links(c);
+    vertex_map.local_to_global(vertices,
+                               std::span(cell_vertices).first(vertices.size()));
+    std::uint32_t info = 0;
+    for (int f = 0; f < faces.num_nodes(); ++f)
+    {
+      const std::span<const int> e_vertices = faces.links(f);
+      for (std::size_t i = 0; i < e_vertices.size(); ++i)
+        face_vertices[i] = cell_vertices[e_vertices[i]];
+      const std::span<const std::int64_t> global_vertices
+          = std::span(face_vertices).first(e_vertices.size());
+      const auto [refl, rots]
+          = e_vertices.size() == 3
+                ? compute_triangle_rot_reflect(e_vertices, global_vertices)
+                : compute_quad_rot_reflect(e_vertices, global_vertices);
+      info |= std::uint32_t(refl + 2 * rots) << (3 * f);
+    }
+    for (int e = 0; e < edges.num_nodes(); ++e)
+    {
+      const std::span<const int> e_vertices = edges.links(e);
+      const bool reflected
+          = (e_vertices[1] < e_vertices[0])
+            == (cell_vertices[e_vertices[1]] > cell_vertices[e_vertices[0]]);
+      info |= std::uint32_t(reflected) << (edge_offset + e);
+    }
+    cell_permutation_info[c] = info;
+  }
+}
+//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -431,39 +476,48 @@ mesh::compute_cell_permutations(const mesh::Topology& topology, int num_threads)
   common::Timer t_perm("Compute cell permutations");
 
   const int tdim = topology.dim();
-  CellType cell_type = topology.cell_type();
-  const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
-
+  const CellType cell_type = topology.cell_type();
+  const auto c_to_v = topology.connectivity(tdim, 0);
+  assert(c_to_v);
+  const std::int32_t num_cells = c_to_v->num_nodes();
   std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
-  std::int32_t used_bits = 0;
-  if (tdim > 2)
-  {
-    // Each face occupies 3 bits: one reflection and two rotations. This
-    // will need increasing if faces with more than 4 sides are added.
-    logger().info("Compute face permutations");
-    const std::vector<std::bitset<bitset_size>> face_perm
-        = compute_face_permutations<bitset_size>(topology, num_threads);
-    for (std::int32_t c = 0; c < num_cells; ++c)
-      cell_permutation_info[c] = face_perm[c].to_ulong();
+  if (tdim < 2)
+    return cell_permutation_info;
 
-    used_bits += cell_num_entities(cell_type, 2) * 3;
-  }
+  const auto vertex_map = topology.index_map(0);
+  assert(vertex_map);
 
-  if (tdim > 1)
-  {
-    logger().info("Compute edge permutations");
-    const std::vector<std::bitset<bitset_size>> edge_perm
-        = compute_edge_reflections<bitset_size>(topology, num_threads);
-    for (std::int32_t c = 0; c < num_cells; ++c)
-      cell_permutation_info[c] |= edge_perm[c].to_ulong() << used_bits;
-
-    used_bits += cell_num_entities(cell_type, 1);
-  }
-  // A hexahedron takes bits 0 to 29, overlapping the facet sign bits 27
-  // to 30. Those are used only for tdim == 2, which takes one bit per
-  // edge.
+  // Reference-cell entities identify vertices without constructing mesh
+  // edges or faces and their distributed index maps.
+  const graph::AdjacencyList<int> edges = get_entity_vertices(cell_type, 1);
+  const graph::AdjacencyList<int> faces
+      = tdim > 2 ? get_entity_vertices(cell_type, 2)
+                 : graph::AdjacencyList<int>(0);
+  // A hexahedron takes bits 0 to 29. On a surface only one bit per edge
+  // is used, which leaves bits 27 to 30 for the facet signs (see
+  // ::reversed_facet_bit).
+  [[maybe_unused]] const int used_bits
+      = 3 * faces.num_nodes() + edges.num_nodes();
   assert(used_bits < bitset_size);
   assert(tdim != 2 or used_bits <= 27);
+
+  // Scratch capacity in ::compute_cell_permutations_range
+  assert(std::cmp_less_equal(num_cell_vertices(cell_type), max_cell_vertices));
+  assert(std::ranges::all_of(
+      std::views::iota(0, faces.num_nodes()),
+      [&faces](int f) { return faces.links(f).size() <= max_face_vertices; }));
+  {
+    std::vector<std::jthread> threads;
+    for (int i = 1; i < num_threads; ++i)
+      threads.emplace_back(compute_cell_permutations_range,
+                           common::local_range(i, num_cells, num_threads),
+                           std::cref(*c_to_v), std::cref(*vertex_map),
+                           std::cref(edges), std::cref(faces),
+                           std::span(cell_permutation_info));
+    compute_cell_permutations_range(
+        common::local_range(0, num_cells, num_threads), *c_to_v, *vertex_map,
+        edges, faces, cell_permutation_info);
+  }
 
   return cell_permutation_info;
 }

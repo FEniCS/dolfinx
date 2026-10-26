@@ -21,7 +21,7 @@
 /// Basix ordering is used for the geometry nodes, and is shown below
 /// for a range of cell types.
 /*!
-@verbatim
+@code{.txt}
 Triangle:               Triangle6:           Triangle10:
 v
 ^
@@ -116,7 +116,7 @@ Pyramid:                      Pyramid14:
      `\   |           `\  \        `\   |           `\  \
        `\.'             ` `\         `\.'             ` `\
           0-----------------1           0--------5--------1
-@endverbatim
+@endcode
 */
 namespace dolfinx::io::cells
 {

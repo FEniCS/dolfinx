@@ -31,10 +31,23 @@ Re-ordering
 .. doxygentypedef:: dolfinx::graph::Reorder
    :project: DOLFINx
 
+.. doxygentypedef:: dolfinx::graph::reorder_graph_fn
+   :project: DOLFINx
+
+.. doxygentypedef:: dolfinx::graph::reorder_geom_fn
+   :project: DOLFINx
+
 Partitioning
 ------------
 
 .. doxygenfunction:: dolfinx::graph::partition_graph
+   :project: DOLFINx
+
+.. doxygenstruct:: dolfinx::graph::Partitioner
+   :project: DOLFINx
+   :members:
+
+.. doxygenfunction:: dolfinx::graph::has_partitioner
    :project: DOLFINx
 
 .. doxygenfunction:: dolfinx::graph::scotch::partitioner
@@ -51,6 +64,15 @@ Enumerations and typedefs
 -------------------------
 
 .. doxygentypedef:: dolfinx::graph::partition_fn
+   :project: DOLFINx
+
+.. doxygentypedef:: dolfinx::graph::geom_partition_fn
+   :project: DOLFINx
+
+.. doxygentypedef:: dolfinx::graph::hybrid_partition_fn
+   :project: DOLFINx
+
+.. doxygentypedef:: dolfinx::graph::AnyPartitionFunction
    :project: DOLFINx
 
 

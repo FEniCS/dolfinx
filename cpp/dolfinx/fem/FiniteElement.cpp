@@ -468,7 +468,10 @@ FiniteElement<T>::tabulate(std::span<const T> X,
                            std::array<std::size_t, 2> shape, int order) const
 {
   assert(_element);
-  return _element->tabulate(order, X, shape);
+  std::array<std::size_t, 4> vshape = _element->tabulate_shape(order, shape[0]);
+  std::vector<T> values(vshape[0] * vshape[1] * vshape[2] * vshape[3]);
+  _element->tabulate(order, X, shape, values);
+  return {std::move(values), vshape};
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -662,11 +665,9 @@ void FiniteElement<T>::permute_inv(std::span<std::int32_t> doflist,
   _element->permute_inv(doflist, cell_permutation & ~_orientation_mask);
 }
 //-----------------------------------------------------------------------------
-/// @cond
 template <std::floating_point T>
 std::function<void(std::span<std::int32_t>, std::uint32_t)>
 FiniteElement<T>::dof_permutation_fn(bool inverse, bool scalar_element) const
-/// @endcond
 {
   if (!needs_dof_permutations())
     return [](std::span<std::int32_t>, std::uint32_t) {};

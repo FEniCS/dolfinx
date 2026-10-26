@@ -8,6 +8,7 @@
 
 #if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
 
+#include <cstdint>
 #include <dolfinx/common/petsc.h>
 #include <nanobind/nanobind.h>
 #include <petsc4py/petsc4py.h>
@@ -40,7 +41,7 @@
   {                                                                            \
   public:                                                                      \
     NB_TYPE_CASTER(TYPE, const_name(#NAME))                                    \
-    bool from_python(handle src, uint8_t, cleanup_list*) noexcept              \
+    bool from_python(handle src, std::uint8_t, cleanup_list*) noexcept         \
     {                                                                          \
       VERIFY_PETSC4PY_FROMPY(PyPetsc##P4PYTYPE##_Get);                         \
       if (PyObject_TypeCheck(src.ptr(), &PyPetsc##P4PYTYPE##_Type) != 0)       \

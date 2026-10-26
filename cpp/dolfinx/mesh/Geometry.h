@@ -198,7 +198,6 @@ private:
   std::vector<std::int64_t> _input_global_indices;
 };
 
-/// @cond
 /// Template type deduction
 template <typename U, typename V, typename W>
 Geometry(std::shared_ptr<const common::IndexMap>, U&&,
@@ -206,7 +205,6 @@ Geometry(std::shared_ptr<const common::IndexMap>, U&&,
              typename std::remove_reference_t<typename V::value_type>>>&,
          V&&, int, W&&)
     -> Geometry<typename std::remove_cvref_t<typename V::value_type>>;
-/// @endcond
 
 /// @brief Build Geometry from input data.
 ///
@@ -235,6 +233,10 @@ Geometry(std::shared_ptr<const common::IndexMap>, U&&,
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data.
 /// @pre `nodes` must be sorted.
+/// @pre If the coordinate element needs DOF permutations, i.e.
+/// `elements.front().needs_dof_permutations()`, then
+/// `topology.create_cell_permutations()` must have been called.
+/// Otherwise `std::runtime_error` is thrown.
 /// @note Experimental new interface for multiple cmap/dofmap
 /// @return A mesh geometry.
 template <typename U>
