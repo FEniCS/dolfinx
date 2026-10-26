@@ -159,4 +159,33 @@ std::vector<std::uint32_t> compute_cell_permutations(const Topology& topology,
 /// Debug builds, otherwise only on the processes holding such an edge.
 std::vector<std::uint32_t> compute_facet_orientations(const Topology& topology);
 
+/// @brief Compute a consistent orientation of the cells of a surface
+/// mesh.
+///
+/// The normal of a cell on a surface follows the order of its vertices,
+/// so neighbouring cells may point to opposite sides. This returns, for
+/// each cell, the sign that makes them agree, e.g. to give a consistent
+/// normal for the surface curl \f$n \cdot \nabla \times w\f$ of a
+/// vector field \f$w\f$. The result is not stored.
+///
+/// Cells connected through shared edges form a surface; cells meeting
+/// only at a vertex are not connected. Each surface is oriented by its
+/// cell with the lowest global index (which gets `1`), so the
+/// orientation is partition dependent.
+///
+/// @note Collective.
+/// @pre The cell-to-edge connectivity and the edge permutations (see
+/// Topology::create_entity_permutations) must have been created.
+/// @param[in] topology Topology of a mesh of triangles or
+/// quadrilaterals.
+/// @return For each owned and ghost cell, in local cell order, `1` if
+/// its vertex order agrees with the orientation of its surface and `-1`
+/// otherwise.
+/// @throws std::invalid_argument If the topological dimension is not
+/// 2.
+/// @throws std::runtime_error If the connectivity is missing, the
+/// topology has more than one cell type, the surface is not orientable,
+/// e.g. a Möbius strip, or an edge is shared by more than two cells.
+std::vector<std::int8_t> compute_cell_orientations(const Topology& topology);
+
 } // namespace dolfinx::mesh
