@@ -254,6 +254,8 @@ def test_superlu_solver_asymmetric_blocks(dtype) -> None:
         {},
         {"RowPerm": "NOROWPERM"},
         {"ColPerm": "MMD_AT_PLUS_A"},
+        {"ColPerm": "METIS_AT_PLUS_A"},
+        {"ColPerm": "PARMETIS", "ParSymbFact": "YES"},
     ],
 )
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")

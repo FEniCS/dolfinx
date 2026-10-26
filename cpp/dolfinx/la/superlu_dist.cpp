@@ -401,10 +401,9 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
             set_default_options_dist(o.get());
             o->PrintStat = NO;
 #ifdef HAVE_PARMETIS
-            // METIS_AT_PLUS_A deadlocks if ranks get different orderings.
-            // ParSymbFact stays off as it can hang, see
-            // https://github.com/xiaoyeli/superlu_dist/pull/231
+            // PARMETIS ordering scales better than METIS_AT_PLUS_A
             o->ColPerm = PARMETIS;
+            o->ParSymbFact = YES;
 #endif
             return o;
           }()),
@@ -625,9 +624,7 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
       _factored = false;
     }
 
-    // SamePattern crashes SuperLU_DIST with ParSymbFact
-    bool dofact = fact == "DOFACT" or _options->ParSymbFact == YES;
-    if (dofact)
+    if (fact == "DOFACT")
     {
       if constexpr (std::is_same_v<T, double>)
         dSolveFinalize(_options.get(), _solvestruct.get());
@@ -638,7 +635,7 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
       else
         static_assert(impl::always_false_v<T>, "Invalid scalar type");
     }
-    _options->Fact = dofact ? DOFACT : SamePattern;
+    _options->Fact = fact == "DOFACT" ? DOFACT : SamePattern;
   }
   else if (fact == "SamePattern_SameRowPerm")
   {
@@ -661,11 +658,6 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
 
   if (_options->ParSymbFact == YES and _options->ColPerm != PARMETIS)
     throw std::invalid_argument("ParSymbFact YES requires ColPerm PARMETIS");
-  if (_options->ParSymbFact == YES and _options->Fact == SamePattern)
-  {
-    throw std::invalid_argument(
-        "ParSymbFact YES does not support Fact SamePattern");
-  }
 
   // Warn if Factor is DOFACT but solve already appears to be initialised.
   if (_options->Fact == DOFACT && _options->SolveInitialized == YES)

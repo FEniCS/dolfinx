@@ -189,7 +189,8 @@ def superlu_dist_solver(A: SuperLUDistMatrix[_T]) -> SuperLUDistSolver[_T]:
 
     The SuperLU_DIST solver has options set to upstream defaults, except
     PrintStat (verbose solver output) set to NO and, when SuperLU_DIST is
-    built with ParMETIS support, ColPerm set to PARMETIS.
+    built with ParMETIS support, ColPerm set to PARMETIS and ParSymbFact
+    set to YES.
 
     Args:
         A: Assembled left-hand side matrix :math:`A`.
