@@ -1,0 +1,57 @@
+[tool.cibuildwheel]
+build-frontend = { name = "build", args = ["-nx"] }
+config-settings = { "wheel.py-api" = "cp312", "cmake.build-type" = "Release" }
+test-requires = ["pytest-xdist"]
+test-groups = ["test"]
+
+# Excluding libmpi and libbasix stops the repair tools vendoring a copy of them
+# and all of their dependencies. DOLFINx's __init__.py imports mpi4py and basix
+# first, which loads the needed libraries before `from dolfinx import cpp`.
+[tool.cibuildwheel.linux]
+config-settings = { "wheel.py-api" = "cp312", "cmake.build-type" = "Release", "cmake.args" = "-DCMAKE_PREFIX_PATH=/usr/lib64/mpich" }
+repair-wheel-command = [
+    "auditwheel repair --exclude libmpi.so* --exclude libbasix.so* -w {dest_dir} {wheel}",
+    "pipx run abi3audit --verbose --strict --report {wheel}",
+]
+test-command = [
+    '''echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json''',
+    ". /etc/profile",
+    "module load mpi/mpich-$(arch)",
+    'python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/test/unit',
+    'mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/test/unit',
+]
+
+# delocate leaves excluded libraries pointing at Homebrew, so they are
+# repointed at @rpath to match the install name of the copy that basix and
+# mpi4py already loaded. The wheel is then signed again since the edit breaks
+# the cryptographic hash.
+[tool.cibuildwheel.macos]
+repair-wheel-command = [
+    "delocate-listdeps --depending {wheel}",
+    "delocate-wheel --require-archs {delocate_archs} --exclude libmpi --exclude libbasix -w {dest_dir} {wheel}",
+    "wheel unpack {dest_dir}/*.whl -d {dest_dir}/unpacked",
+    "rm {dest_dir}/*.whl",
+    '''find {dest_dir}/unpacked \( -name "*.so" -o -name "*.dylib" \) | while read -r f; do for dep in $(otool -L "$f" | awk '/lib(mpi|basix)(\.[0-9]+)+\.dylib/{print $1}'); do install_name_tool -change "$dep" @rpath/$(basename "$dep") "$f"; done; done''',
+    '''find {dest_dir}/unpacked \( -name "*.so" -o -name "*.dylib" \) | xargs -I% codesign --force --sign - %''',
+    "wheel pack {dest_dir}/unpacked/* -d {dest_dir}",
+    "pipx run abi3audit --verbose --strict --report {wheel}",
+]
+test-command = [
+    '''echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json''',
+    'export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}"',
+    'mpiexec -n 1 python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/test/unit',
+    'mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/test/unit',
+]
+
+# The workflow builds the C++ library into C:/dolfinx-build-dir and installs it
+# into C:/dolfinx-install. The Visual Studio install that the JIT requires
+# already provides msvcp140.dll and msvcp140_atomic_wait.dll.
+[tool.cibuildwheel.windows]
+config-settings = { "wheel.py-api" = "cp312", "cmake.build-type" = "Release", "cmake.args" = "-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake;-DVCPKG_OVERLAY_PORTS=../cpp/cmake/vcpkg-overlay" }
+repair-wheel-command = 'delvewheel repair -v --exclude "impi.dll;libfabric.dll;msvcp140.dll;msvcp140_atomic_wait.dll;basix.dll" --add-path "C:/dolfinx-install/bin;C:/dolfinx-build-dir/vcpkg_installed/x64-windows/bin" -w {dest_dir} {wheel}'
+test-command = [
+    '''echo { "cffi_extra_compile_args": ["/Od" ] } > dolfinx_jit_options.json''',
+    "pip install impi-rt",
+    'python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/test/unit',
+    'mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/test/unit',
+]
