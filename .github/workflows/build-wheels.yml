@@ -201,7 +201,7 @@ jobs:
       - name: Prepare sources for wheels
         shell: bash
         run: |
-          python dolfinx/.github/wheels/wheels-modify-source.py \
+          python dolfinx/.github/wheels/wheels_modify_source.py \
             --dev-stamp ${{ needs.dev_version.outputs.stamp }} \
             ${{ env.BUILD_STACK == 'true' && '--build-stack' || '' }}
           git -C dolfinx diff python/pyproject.toml python/dolfinx/__init__.py
