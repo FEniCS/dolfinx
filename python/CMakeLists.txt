@@ -207,8 +207,11 @@ set(
 # a bare "cpp" and become Any. The directory also fixes where stubgen writes.
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
 if(WIN32)
-  # Importing basix first makes its vendored DLLs findable.
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/__init__.py "import basix\n")
+  # Importing mpi4py and basix first makes their DLLs findable.
+  file(
+    WRITE ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/__init__.py
+    "import mpi4py\nimport basix\n"
+  )
 else()
   file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/__init__.py)
 endif()
