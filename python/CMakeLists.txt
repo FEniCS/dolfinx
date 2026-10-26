@@ -206,7 +206,11 @@ set(
 # it as dolfinx.cpp. Otherwise submodule references in the stubs resolve to
 # a bare "cpp" and become Any. The directory also fixes where stubgen writes.
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
-file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/__init__.py)
+# Import mpi4py and basix first so their libraries are loaded before cpp.
+file(
+  WRITE ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/__init__.py
+  "import mpi4py\nimport basix\n"
+)
 # The generator expression stops Visual Studio adding a config subdirectory.
 set_target_properties(
   cpp
@@ -214,16 +218,12 @@ set_target_properties(
 )
 
 if(WIN32)
-  # The module can only be imported if the DLLs of DOLFINx and Basix sit
-  # next to it.
+  # The module can only be imported if the DLLs of DOLFINx sit next to it.
   add_custom_command(
     TARGET cpp
     POST_BUILD
     COMMAND
       ${CMAKE_COMMAND} -E copy_directory $<TARGET_FILE_DIR:dolfinx::dolfinx>
-      $<TARGET_FILE_DIR:cpp>
-    COMMAND
-      ${CMAKE_COMMAND} -E copy_directory $<TARGET_FILE_DIR:Basix::basix>
       $<TARGET_FILE_DIR:cpp>
   )
 endif()
