@@ -17,8 +17,8 @@ test-command = [
     '''echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json''',
     ". /etc/profile",
     "module load mpi/mpich-$(arch)",
-    'python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/test/unit',
-    'mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/test/unit',
+    'python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {package}/test/unit',
+    'mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {package}/test/unit',
 ]
 
 # delocate leaves excluded libraries pointing at Homebrew, so they are
@@ -39,8 +39,8 @@ repair-wheel-command = [
 test-command = [
     '''echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > dolfinx_jit_options.json''',
     'export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}"',
-    'mpiexec -n 1 python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/test/unit',
-    'mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/test/unit',
+    'mpiexec -n 1 python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {package}/test/unit',
+    'mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {package}/test/unit',
 ]
 
 # The workflow builds the C++ library into C:/dolfinx-build-dir and installs it
@@ -52,6 +52,6 @@ repair-wheel-command = 'delvewheel repair -v --exclude "impi.dll;libfabric.dll;m
 test-command = [
     '''echo { "cffi_extra_compile_args": ["/Od" ] } > dolfinx_jit_options.json''',
     "pip install impi-rt",
-    'python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {project}/test/unit',
-    'mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/test/unit',
+    'python -m pytest -n auto --durations=50 -m "not adios2 and not petsc4py" {package}/test/unit',
+    'mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {package}/test/unit',
 ]
