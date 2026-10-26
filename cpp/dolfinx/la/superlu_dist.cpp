@@ -403,7 +403,9 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
 #ifdef HAVE_PARMETIS
             // PARMETIS ordering scales better than METIS_AT_PLUS_A
             o->ColPerm = PARMETIS;
+#ifdef HAS_SUPERLU_DIST_FIXES
             o->ParSymbFact = YES;
+#endif
 #endif
             return o;
           }()),
@@ -469,6 +471,10 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
       _solvestruct(new typename map_t<T>::SOLVEstruct_t{},
                    SolveStructDeleter{_options.get()})
 {
+#ifndef HAS_SUPERLU_DIST_FIXES
+  logger().warn("SuperLU_DIST older than 9.3.2 detected. Some options are "
+                "restricted. Support for older versions will be dropped.");
+#endif
 }
 //----------------------------------------------------------------------------
 template <typename T>
@@ -624,7 +630,13 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
       _factored = false;
     }
 
-    if (fact == "DOFACT")
+#ifdef HAS_SUPERLU_DIST_FIXES
+    const bool dofact = fact == "DOFACT";
+#else
+    // SamePattern crashes SuperLU_DIST before 9.3.2 with ParSymbFact
+    const bool dofact = fact == "DOFACT" or _options->ParSymbFact == YES;
+#endif
+    if (dofact)
     {
       if constexpr (std::is_same_v<T, double>)
         dSolveFinalize(_options.get(), _solvestruct.get());
@@ -635,7 +647,7 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
       else
         static_assert(impl::always_false_v<T>, "Invalid scalar type");
     }
-    _options->Fact = fact == "DOFACT" ? DOFACT : SamePattern;
+    _options->Fact = dofact ? DOFACT : SamePattern;
   }
   else if (fact == "SamePattern_SameRowPerm")
   {
@@ -658,6 +670,13 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
 
   if (_options->ParSymbFact == YES and _options->ColPerm != PARMETIS)
     throw std::invalid_argument("ParSymbFact YES requires ColPerm PARMETIS");
+#ifndef HAS_SUPERLU_DIST_FIXES
+  if (_options->ParSymbFact == YES and _options->Fact == SamePattern)
+  {
+    throw std::invalid_argument(
+        "ParSymbFact YES does not support Fact SamePattern");
+  }
+#endif
 
   // Warn if Factor is DOFACT but solve already appears to be initialised.
   if (_options->Fact == DOFACT && _options->SolveInitialized == YES)

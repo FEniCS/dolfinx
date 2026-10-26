@@ -71,6 +71,7 @@ from dolfinx.common import (
     has_ptscotch,
     has_slepc,
     has_superlu_dist,
+    has_superlu_dist_fixes,
     ufcx_signature,
 )
 

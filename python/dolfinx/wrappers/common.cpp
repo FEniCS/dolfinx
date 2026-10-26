@@ -69,6 +69,7 @@ void common(nb::module_& m)
   m.attr("has_petsc4py") = has_petsc4py();
   m.attr("has_ptscotch") = dolfinx::has_ptscotch();
   m.attr("has_superlu_dist") = dolfinx::has_superlu_dist();
+  m.attr("has_superlu_dist_fixes") = dolfinx::has_superlu_dist_fixes();
   m.attr("has_slepc") = dolfinx::has_slepc();
   m.attr("ufcx_signature") = dolfinx::ufcx_signature();
   m.attr("version") = dolfinx::version();
