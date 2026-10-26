@@ -102,16 +102,6 @@ consteval bool has_superlu_dist()
 #endif
 }
 
-/// Return true if DOLFINx is compiled with SuperLU_DIST 9.3.2 or later
-consteval bool has_superlu_dist_fixes()
-{
-#ifdef HAS_SUPERLU_DIST_FIXES
-  return true;
-#else
-  return false;
-#endif
-}
-
 /// Return true if DOLFINx supports UFCx kernels with arguments of type C99
 /// _Complex. When DOLFINx was built with MSVC this returns false. This
 /// returning false does not preclude using DOLFINx with kernels accepting

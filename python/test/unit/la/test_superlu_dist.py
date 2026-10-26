@@ -12,6 +12,7 @@ import pytest
 
 import dolfinx
 from dolfinx.common import index_map
+from dolfinx.cpp.common import _has_superlu_dist_fixes  # noqa: TID251
 from dolfinx.fem import (
     Function,
     apply_lifting,
@@ -256,15 +257,11 @@ def test_superlu_solver_asymmetric_blocks(dtype) -> None:
         {"ColPerm": "MMD_AT_PLUS_A"},
         pytest.param(
             {"ColPerm": "METIS_AT_PLUS_A"},
-            marks=pytest.mark.skipif(
-                not dolfinx.has_superlu_dist_fixes, reason="SuperLU_DIST < 9.3.2"
-            ),
+            marks=pytest.mark.skipif(not _has_superlu_dist_fixes, reason="SuperLU_DIST < 9.3.2"),
         ),
         pytest.param(
             {"ColPerm": "PARMETIS", "ParSymbFact": "YES"},
-            marks=pytest.mark.skipif(
-                not dolfinx.has_superlu_dist_fixes, reason="SuperLU_DIST < 9.3.2"
-            ),
+            marks=pytest.mark.skipif(not _has_superlu_dist_fixes, reason="SuperLU_DIST < 9.3.2"),
         ),
     ],
 )
