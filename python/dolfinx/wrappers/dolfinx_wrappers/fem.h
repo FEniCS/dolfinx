@@ -695,6 +695,20 @@ void declare_objects(nb::module_& m, std::string type)
           nb::arg("u"), nb::arg("cells"), nb::arg("tol"), nb::arg("maxit"),
           nb::arg("interpolation_data"),
           "Interpolate a finite element Function on non-matching meshes")
+      .def(
+          "interpolate_transpose",
+          [](dolfinx::fem::Function<T, U>& self,
+             const dolfinx::fem::Function<T, U>& u,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+             double tol, int maxit,
+             const dolfinx::geometry::PointOwnershipData<U>& interpolation_data)
+          {
+            self.interpolate_transpose(u, std::span(cells.data(), cells.size()),
+                                       tol, maxit, interpolation_data);
+          },
+          nb::arg("u"), nb::arg("cells"), nb::arg("tol"), nb::arg("maxit"),
+          nb::arg("interpolation_data"),
+          "Apply the transpose of interpolation on non-matching meshes")
       // NOLINTBEGIN(performance-no-int-to-ptr)
       .def(
           "interpolate_ptr",

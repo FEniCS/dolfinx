@@ -301,6 +301,31 @@ public:
     fem::interpolate(*this, u, cells, tol, maxit, interpolation_data);
   }
 
+  /// @brief Apply the transpose of non-matching interpolation.
+  ///
+  /// Sets `this` to `P^T u`, where `P` is the operator applied by
+  /// `u.interpolate(*this, cells, tol, maxit, interpolation_data)`. See
+  /// fem::interpolate_transpose.
+  ///
+  /// @param[in] u Function on the mesh interpolated into by `P`.
+  /// @param[in] cells Cells in the mesh associated with `u`, as passed
+  /// to the forward interpolation.
+  /// @param[in] tol Tolerance for convergence in Newton method for
+  /// non-affine pullbacks. If the mesh geometry is affine this argument
+  /// is ignored.
+  /// @param[in] maxit Maximum number of Newton iterations in non-affine
+  /// pull-back. If the mesh geometry is affine this argument is ignored.
+  /// @param[in] interpolation_data Data associating the interpolation
+  /// points of `u` with cells in the mesh of `this`, as for the forward
+  /// interpolation.
+  void interpolate_transpose(
+      const Function<value_type, geometry_type>& u,
+      std::span<const std::int32_t> cells, double tol, int maxit,
+      const geometry::PointOwnershipData<U>& interpolation_data)
+  {
+    fem::interpolate_transpose(*this, u, cells, tol, maxit, interpolation_data);
+  }
+
   /// @brief Evaluate the Function at points.
   ///
   /// @param[in] x The coordinates of the points. It has shape

@@ -104,6 +104,9 @@ Linear solvers, preconditioners and matrix-free methods
   matrix format.
 * :doc:`demos/demo_poisson-matrix-free` -- solve the Poisson equation
   with a matrix-free conjugate gradient solver.
+* :doc:`demos/demo_gmg-matrix-free-transfers` -- solve the Poisson
+  equation with geometric multigrid, using matrix-free prolongation and
+  restriction operators between refined meshes.
 * :doc:`demos/demo_matrix-free-petsc` -- solve a blocked projection
   problem with a matrix-free PETSc ``SHELL`` operator.
 * :doc:`demos/demo_types` -- solve the Poisson equation using different
@@ -213,6 +216,7 @@ PETSc scalars.
    demos/demo_pyamg.md
    demos/demo_dd-solvers.md
    demos/demo_poisson-matrix-free.md
+   demos/demo_gmg-matrix-free-transfers.md
    demos/demo_matrix-free-petsc.md
    demos/demo_types.md
 

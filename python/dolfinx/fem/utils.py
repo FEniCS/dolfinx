@@ -133,6 +133,81 @@ def create_interpolation_data(
             )
 
 
+def create_hierarchy_interpolation_data(
+    V_to: FunctionSpace,
+    V_from: FunctionSpace,
+    parent_cells: npt.ArrayLike,
+) -> _PointOwnershipData:
+    """Generate data for interpolating from a mesh to its refinement.
+
+    Equivalent to :func:`create_interpolation_data` over the owned cells
+    of the mesh of ``V_to``, when that mesh is a refinement of the mesh
+    of ``V_from``. Each fine cell lies in its parent cell on the same
+    process, so every interpolation point is routed to its parent cell
+    without a geometric search or communication.
+
+    The data is used with all owned cells of the mesh of ``V_to``, i.e.
+    ``np.arange(num_owned_cells, dtype=np.int32)``, in
+    :meth:`dolfinx.fem.Function.interpolate_nonmatching` and
+    :meth:`dolfinx.fem.Function.interpolate_nonmatching_transpose`.
+
+    Args:
+        V_to: Function space on the refined mesh.
+        V_from: Function space on the mesh that was refined.
+        parent_cells: Parent cell of each owned cell of the refined
+            mesh, as returned by :func:`dolfinx.mesh.refine`, i.e. in
+            the cell order before the refined mesh is reordered.
+
+    Returns:
+        Data needed to interpolate from ``V_from`` into ``V_to``.
+
+    Note:
+        The refined mesh must not have been redistributed, i.e. it was
+        created with the default partitioner of
+        :func:`dolfinx.mesh.refine`.
+    """
+    tdim = V_to.mesh.topology.dim
+    cell_map = V_to.mesh.topology.index_map(tdim)
+    num_cells = cell_map.size_local
+    cells = np.arange(num_cells, dtype=np.int32)
+
+    parent = np.asarray(parent_cells, dtype=np.int32).reshape(-1)
+    if parent.size < num_cells:
+        raise ValueError("parent_cells must have an entry for each owned cell of the mesh of V_to.")
+
+    # parent_cells is in the cell order before reordering of the refined
+    # mesh, which original_cell_index maps to
+    original = np.asarray(V_to.mesh.topology._cpp_object.original_cell_index, dtype=np.int64)
+    parent = parent[original[:num_cells] - cell_map.local_range[0]]
+    coarse_map = V_from.mesh.topology.index_map(V_from.mesh.topology.dim)
+    num_coarse = coarse_map.size_local + coarse_map.num_ghosts
+    if num_cells > 0 and (parent.min() < 0 or parent.max() >= num_coarse):
+        raise ValueError("parent_cells contains indices outside the mesh of V_from.")
+
+    # Interpolation points of V_to in physical space, ordered by cell
+    dtype = V_from.mesh.geometry.x.dtype
+    if V_to.mesh.geometry.x.dtype != dtype:
+        raise TypeError(
+            "create_hierarchy_interpolation_data requires V_to and V_from to have the same dtype."
+        )
+    x = _cpp.fem.interpolation_coords(  # type: ignore[call-overload]
+        V_to.element._cpp_object, V_to.mesh.geometry._cpp_object, cells
+    ).T
+    num_ip = V_to.element.interpolation_points.shape[0]
+
+    # This process owns every point it requests
+    ranks = np.full(x.shape[0], V_to.mesh.comm.rank, dtype=np.int32)
+    cls = getattr(_cpp.geometry, f"PointOwnershipData_float{8 * np.dtype(dtype).itemsize}")
+    return _PointOwnershipData(
+        cls(
+            ranks,
+            ranks,
+            np.ascontiguousarray(x, dtype=dtype).reshape(-1),
+            np.ascontiguousarray(np.repeat(parent, num_ip), dtype=np.int32),
+        )
+    )
+
+
 def evaluate_basis_functions(
     V: FunctionSpace,
     x: npt.ArrayLike,

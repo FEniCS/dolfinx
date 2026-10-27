@@ -637,41 +637,8 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
         coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
     }
 
-    // Compute Jacobians and reference points for current cell. For an
-    // affine map the Jacobian (and hence its inverse and determinant)
-    // is constant over the cell, so it is computed once and broadcast
-    // to the remaining interpolation points rather than being
-    // recomputed Xshape[0] times.
-    std::ranges::fill(J_b, 0);
-    if (cmap.is_affine() and Xshape[0] > 0)
-    {
-      auto dphi
-          = md::submdspan(phi, std::pair(1, tdim + 1), 0, md::full_extent, 0);
-      auto _J = md::submdspan(J, 0, md::full_extent, md::full_extent);
-      cmap.compute_jacobian(dphi, coord_dofs, _J);
-      auto _K = md::submdspan(K, 0, md::full_extent, md::full_extent);
-      cmap.compute_jacobian_inverse(_J, _K);
-      detJ[0] = cmap.compute_jacobian_determinant(_J, det_scratch);
-      for (std::size_t p = 1; p < Xshape[0]; ++p)
-      {
-        std::copy_n(J_b.begin(), gdim * tdim, J_b.begin() + p * gdim * tdim);
-        std::copy_n(K_b.begin(), tdim * gdim, K_b.begin() + p * tdim * gdim);
-        detJ[p] = detJ[0];
-      }
-    }
-    else
-    {
-      for (std::size_t p = 0; p < Xshape[0]; ++p)
-      {
-        auto dphi
-            = md::submdspan(phi, std::pair(1, tdim + 1), p, md::full_extent, 0);
-        auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-        cmap.compute_jacobian(dphi, coord_dofs, _J);
-        auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-        cmap.compute_jacobian_inverse(_J, _K);
-        detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
-      }
-    }
+    // Compute Jacobians at the interpolation points of V1
+    cmap.compute_jacobians(phi, coord_dofs, J, K, detJ, det_scratch);
 
     // Copy evaluated basis on reference (a fresh copy is needed each
     // cell as DOF transformations below are applied in place), and
