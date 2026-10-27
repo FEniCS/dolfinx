@@ -28,8 +28,8 @@ from dolfinx.fem.assemble import (
     _apply_lifting_markers,
     _assemble_matrix_csr_markers,
     _assemble_vector_array,
-    _bc_dof_markers_by_space,
     _bc_lifting_values,
+    prepare_matrix_bcs,
 )
 from dolfinx.la import InsertMode, MatrixCSR, Vector
 from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
@@ -140,20 +140,18 @@ class LinearProblem:
     def bcs(self) -> tuple[DirichletBC, ...]:
         """Dirichlet boundary conditions applied to the problem.
 
-        Assigning rebuilds the cached dof markers that :meth:`solve`
-        reuses. These follow from the dofs a condition constrains,
-        which are fixed once it is built, and the sequence is copied,
-        so the cache cannot go stale. Condition *values* are re-read on
-        every solve.
+        Assigning rebuilds the cached boundary-condition data that
+        :meth:`solve` reuses. This follows from the dofs a condition
+        constrains, which are fixed once it is built, and the sequence
+        is copied, so the cache cannot go stale. Condition *values* are
+        re-read on every solve.
         """
         return self._bcs
 
     @bcs.setter
     def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
         self._bcs = tuple(bcs) if bcs is not None else ()
-        V0, V1 = self.a.function_spaces
-        marker0, marker1 = _bc_dof_markers_by_space([V0, V1], self._bcs)
-        self._bc_markers = (marker0, marker1)
+        self._bc_data = prepare_matrix_bcs(self.a, self._bcs)
 
     def solve(self) -> Function:
         """Solve the problem.
@@ -166,7 +164,14 @@ class LinearProblem:
         """
         # Assemble lhs
         self.A.set_value(self.A.data.dtype.type(0.0))
-        _assemble_matrix_csr_markers(self.A, self.a, *self._bc_markers)
+        _assemble_matrix_csr_markers(
+            self.A,
+            self.a,
+            self._bc_data.row_marker,
+            self._bc_data.column_marker,
+            diagonal_rows=self._bc_data.diagonal_rows,
+            diagonal_values=self._bc_data.diagonal_values,
+        )
         self.A.scatter_reverse()
 
         # SuperLU_DIST solves in-place, so a deep copy of A is required.
@@ -185,7 +190,9 @@ class LinearProblem:
             bc_values1 = _bc_lifting_values(
                 [self.a.function_spaces[1]], [self.bcs], self.b.array.dtype
             )
-            _apply_lifting_markers(self.b.array, [self.a], [self._bc_markers[1]], bc_values1)
+            _apply_lifting_markers(
+                self.b.array, [self.a], [self._bc_data.column_marker], bc_values1
+            )
             self.b.scatter_reverse(InsertMode.add)
             for bc in self.bcs:
                 bc.set(self.b.array)

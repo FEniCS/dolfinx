@@ -7,8 +7,10 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import typing
+import warnings
 from collections.abc import Callable, Sequence
 
 import numpy as np
@@ -407,9 +409,154 @@ def _owned_marked_rows(V: FunctionSpace, markers: npt.NDArray[np.int8]) -> npt.N
     """Locally owned dofs of ``V`` that are marked in ``markers``."""
     if markers.size == 0:
         return np.empty(0, dtype=np.int32)
+    return np.flatnonzero(markers[: _owned_unrolled_size(V)]).astype(np.int32)
+
+
+def _owned_unrolled_size(V: FunctionSpace) -> int:
+    """Number of owned dofs of ``V``, unrolled by its block size."""
     dofmap = V.dofmaps[0]
-    num_owned = dofmap.index_map_bs * dofmap.index_map.size_local
-    return np.flatnonzero(markers[:num_owned]).astype(np.int32)
+    return dofmap.index_map_bs * dofmap.index_map.size_local
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _PreparedMatrixBCData:
+    """Base of prepared matrix BC data, for every matrix type."""
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class MatrixBCData(_PreparedMatrixBCData):
+    """Prepared matrix constraints for a CSR matrix.
+
+    Markers cover owned and ghost dofs in unrolled local numbering.
+    Diagonal rows are owned, unrolled local indices, and are empty
+    unless the row and column spaces are the same. Diagonal values are
+    a scalar for every row, or one value per row. Treat the arrays as
+    read-only and rebuild with :func:`prepare_matrix_bcs` when
+    constrained dofs, spaces or diagonal values change.
+    """
+
+    row_marker: npt.NDArray[np.int8]
+    column_marker: npt.NDArray[np.int8]
+    diagonal_rows: npt.NDArray[np.int32]
+    diagonal_values: npt.NDArray | float | complex
+    row_space: FunctionSpace
+    column_space: FunctionSpace
+
+
+def prepare_matrix_bcs(
+    a: Form,
+    bcs: Sequence[DirichletBC] | None,
+    diag: float | complex = 1.0,
+) -> MatrixBCData:
+    """Prepare reusable boundary-condition data for CSR matrix assembly.
+
+    Args:
+        a: Bilinear form defining the row and column spaces.
+        bcs: Boundary conditions identifying constrained dofs.
+        diag: Value to set on constrained diagonal entries. Must be
+            real for a real form.
+
+    Returns:
+        Data accepted by ``assemble_matrix(..., bcs=data)``. The data
+        can be reused with forms on the same spaces. Changes to boundary
+        condition values alone do not invalidate it.
+    """
+    _check_diagonal_dtype(diag, a.dtype)
+    V0, V1 = a.function_spaces
+    marker0, marker1 = _bc_dof_markers_by_space([V0, V1], bcs)
+    rows = (
+        _owned_marked_rows(V0, marker0)
+        if V0._cpp_object is V1._cpp_object
+        else np.empty(0, dtype=np.int32)
+    )
+    return MatrixBCData(marker0, marker1, rows, diag, V0, V1)
+
+
+def _matrix_bc_diagonal(diag: float | complex | None) -> float | complex:
+    """Resolve the deprecated assembly diagonal argument.
+
+    Must be called from a function called by a ``singledispatch``
+    implementation, so that the warning is attributed to the user's
+    call (frames: this, caller, implementation, dispatch wrapper, user).
+    """
+    if diag is None:
+        return 1.0
+    warnings.warn(
+        "The diag argument to assemble_matrix is deprecated. "
+        "Use prepare_matrix_bcs(..., diag=...) and pass the result as bcs instead.",
+        DeprecationWarning,
+        stacklevel=5,
+    )
+    return diag
+
+
+def _reject_foreign_bc_data(bcs: object) -> None:
+    """Raise if ``bcs`` is prepared data for another matrix type.
+
+    Called where prepared data for the assembler's own matrix type has
+    already been handled, so any prepared data left is foreign.
+    """
+    if isinstance(bcs, _PreparedMatrixBCData):
+        raise TypeError(
+            f"{type(bcs).__module__}.{type(bcs).__name__} was prepared for a different "
+            "matrix type. Use the prepare_matrix_bcs of the assembler being called."
+        )
+
+
+def _check_diagonal_dtype(values: npt.ArrayLike, dtype: npt.DTypeLike) -> None:
+    """Raise if a complex diagonal is given for a real scalar type."""
+    if np.iscomplexobj(values) and not np.issubdtype(dtype, np.complexfloating):
+        raise ValueError(f"Complex diagonal value cannot be set in a {np.dtype(dtype)} matrix")
+
+
+def _check_matrix_bc_diagonal(
+    rows: npt.NDArray[np.int32],
+    values: npt.NDArray | float | complex,
+    num_rows: int,
+    dtype: npt.DTypeLike,
+) -> None:
+    """Check diagonal rows lie in ``[0, num_rows)`` and values fit."""
+    if not isinstance(rows, np.ndarray) or rows.ndim != 1 or rows.dtype != np.int32:
+        raise ValueError("Diagonal rows must be a 1D int32 array")
+    if rows.size > 0 and (rows.min() < 0 or rows.max() >= num_rows):
+        raise ValueError("Diagonal rows must be local rows written by this process")
+    if np.ndim(values) != 0 and np.shape(values) != rows.shape:
+        raise ValueError("Diagonal values must be a scalar or one value per row")
+    _check_diagonal_dtype(values, dtype)
+
+
+def _check_matrix_bc_marker(V: FunctionSpace | None, marker: npt.NDArray[np.int8]) -> None:
+    """Check the marker layout without inspecting its entries."""
+    size = 0 if V is None else _unrolled_size(V)
+    if (
+        marker.ndim != 1
+        or marker.dtype != np.int8
+        or not marker.flags.c_contiguous
+        or marker.size not in (0, size)
+    ):
+        raise ValueError("BC markers must be contiguous int8 arrays covering owned and ghost dofs")
+
+
+def _same_spaces(
+    spaces0: Sequence[FunctionSpace | None], spaces1: Sequence[FunctionSpace | None]
+) -> bool:
+    """Whether two lists hold the same spaces, ``None`` included."""
+    return len(spaces0) == len(spaces1) and all(
+        V is W if V is None or W is None else V._cpp_object is W._cpp_object
+        for V, W in zip(spaces0, spaces1, strict=False)
+    )
+
+
+def _check_prepared_matrix_bcs(a: Form, data: MatrixBCData) -> None:
+    """Raise if prepared data does not match the spaces of ``a``."""
+    V0, V1 = a.function_spaces
+    if not _same_spaces([V0, V1], [data.row_space, data.column_space]):
+        raise ValueError("Prepared matrix BC data belongs to different function spaces")
+    _check_matrix_bc_marker(V0, data.row_marker)
+    _check_matrix_bc_marker(V1, data.column_marker)
+    _check_matrix_bc_diagonal(
+        data.diagonal_rows, data.diagonal_values, _owned_unrolled_size(V0), a.dtype
+    )
 
 
 def _assemble_matrix_csr_markers(
@@ -417,15 +564,18 @@ def _assemble_matrix_csr_markers(
     a: Form,
     dof_marker0: npt.NDArray[np.int8],
     dof_marker1: npt.NDArray[np.int8],
-    diag: float = 1.0,
     constants: npt.NDArray | None = None,
     coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
+    *,
+    diagonal_rows: npt.NDArray[np.int32],
+    diagonal_values: npt.NDArray | float | complex,
 ) -> la.MatrixCSR:
     """Assemble a bilinear form into a matrix, given constrained dofs.
 
     Rows marked in ``dof_marker0`` and columns marked in
     ``dof_marker1`` are zeroed. If the test and trial spaces are the
-    same, ``diag`` is set on the diagonal of locally owned marked rows.
+    same, ``diagonal_values`` is set on the diagonal of
+    ``diagonal_rows``.
     See :func:`_bc_dof_markers` for the marker format; an empty array
     marks nothing.
     """
@@ -447,15 +597,15 @@ def _assemble_matrix_csr_markers(
     # If matrix is a 'diagonal' block, set diagonal entry for
     # constrained dofs. Assembly zeroed these rows, so adding sets it.
     if V0._cpp_object is V1._cpp_object:
-        la.set_diagonal(A, _owned_marked_rows(V0, dof_marker0), diag, la.InsertMode.add)
+        la.set_diagonal(A, diagonal_rows, diagonal_values, la.InsertMode.add)
     return A
 
 
 @functools.singledispatch
 def assemble_matrix(
     a: typing.Any,
-    bcs: Sequence[DirichletBC] | None = None,
-    diag: float = 1.0,
+    bcs: Sequence[DirichletBC] | MatrixBCData | None = None,
+    diag: float | complex | None = None,
     constants: npt.NDArray | None = None,
     coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
     block_mode: la.BlockMode | None = None,
@@ -464,13 +614,13 @@ def assemble_matrix(
 
     Args:
         a: The bilinear form assemble.
-        bcs: Boundary conditions that affect the assembled matrix.
+        bcs: Boundary conditions or data from :func:`prepare_matrix_bcs`.
+            With boundary conditions, the diagonal defaults to 1.
             Degrees-of-freedom constrained by a boundary condition will
-            have their rows/columns zeroed and the value ``diag``
-            set on the matrix diagonal.
-        diag: Value to set on the matrix diagonal for Dirichlet
-            boundary condition constrained degrees-of-freedom belonging
-            to the same trial and test space.
+            have their rows/columns zeroed and the diagonal value set.
+        diag: Deprecated diagonal value for boundary-condition objects.
+            Use :func:`prepare_matrix_bcs` for a custom diagonal. Cannot
+            be supplied with prepared data.
         constants: Constants that appear in the form. If ``None``,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
@@ -486,23 +636,19 @@ def assemble_matrix(
         accumulated.
 
     Note:
-        Convenience function for callers that have boundary conditions.
-        It rebuilds the constrained dof markers on every call, and
-        should not be called internally by the library.
+        Passing boundary-condition objects rebuilds the constrained dof
+        data on each call. Pass prepared data to reuse it.
     """
     A = create_matrix(a, block_mode)
-    V0, V1 = a.function_spaces
-    marker0, marker1 = _bc_dof_markers_by_space([V0, V1], bcs)
-    _assemble_matrix_csr_markers(A, a, marker0, marker1, diag, constants, coeffs)
-    return A
+    return _assemble_matrix_csr_bcs(A, a, bcs, diag, constants, coeffs)
 
 
 @assemble_matrix.register
 def _assemble_matrix_csr(
     A: la.MatrixCSR,
     a: Form,
-    bcs: Sequence[DirichletBC] | None = None,
-    diag: float = 1.0,
+    bcs: Sequence[DirichletBC] | MatrixBCData | None = None,
+    diag: float | complex | None = None,
     constants: npt.NDArray | None = None,
     coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
 ) -> la.MatrixCSR:
@@ -512,13 +658,13 @@ def _assemble_matrix_csr(
         A: The matrix to assemble into. It must have been initialized
             with the correct sparsity pattern.
         a: The bilinear form assemble.
-        bcs: Boundary conditions that affect the assembled matrix.
+        bcs: Boundary conditions or data from :func:`prepare_matrix_bcs`.
+            With boundary conditions, the diagonal defaults to 1.
             Degrees-of-freedom constrained by a boundary condition will
-            have their rows/columns zeroed and the value ``diag``
-            set on the diagonal.
-        diag: Value to set on the matrix diagonal for Dirichlet
-            boundary condition constrained degrees-of-freedom belonging
-            to the same trial and test space.
+            have their rows/columns zeroed and the diagonal value set.
+        diag: Deprecated diagonal value for boundary-condition objects.
+            Use :func:`prepare_matrix_bcs` for a custom diagonal. Cannot
+            be supplied with prepared data.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
@@ -532,13 +678,43 @@ def _assemble_matrix_csr(
         accumulated.
 
     Note:
-        Convenience function for callers that have boundary conditions.
-        It rebuilds the constrained dof markers on every call, and
-        should not be called internally by the library.
+        Passing boundary-condition objects rebuilds the constrained dof
+        data on each call. Pass prepared data to reuse it.
     """
-    V0, V1 = a.function_spaces
-    marker0, marker1 = _bc_dof_markers_by_space([V0, V1], bcs)
-    return _assemble_matrix_csr_markers(A, a, marker0, marker1, diag, constants, coeffs)
+    return _assemble_matrix_csr_bcs(A, a, bcs, diag, constants, coeffs)
+
+
+def _assemble_matrix_csr_bcs(
+    A: la.MatrixCSR,
+    a: Form,
+    bcs: Sequence[DirichletBC] | MatrixBCData | None,
+    diag: float | complex | None,
+    constants: npt.NDArray | None,
+    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None,
+) -> la.MatrixCSR:
+    """Body of the CSR :func:`assemble_matrix` implementations.
+
+    Called directly by each dispatched implementation, at the call
+    depth :func:`_matrix_bc_diagonal` assumes.
+    """
+    if isinstance(bcs, MatrixBCData):
+        if diag is not None:
+            raise ValueError("diag cannot be supplied with prepared matrix BC data")
+        _check_prepared_matrix_bcs(a, bcs)
+        data = bcs
+    else:
+        _reject_foreign_bc_data(bcs)
+        data = prepare_matrix_bcs(a, bcs, _matrix_bc_diagonal(diag))
+    return _assemble_matrix_csr_markers(
+        A,
+        a,
+        data.row_marker,
+        data.column_marker,
+        constants=constants,
+        coeffs=coeffs,
+        diagonal_rows=data.diagonal_rows,
+        diagonal_values=data.diagonal_values,
+    )
 
 
 def set_bc_diagonal(
@@ -592,7 +768,7 @@ def set_bc_diagonal(
 def assemble_matrix_fn(
     fn: Callable[[npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray], int],
     a: Form,
-    bcs: Sequence[DirichletBC] | None = None,
+    bcs: Sequence[DirichletBC] | MatrixBCData | None = None,
 ) -> None:
     """Assemble a bilinear form, inserting element matrices via ``fn``.
 
@@ -607,16 +783,21 @@ def assemble_matrix_fn(
             where ``vals`` has shape ``(len(rows), len(cols))``. Return
             ``0`` on success.
         a: Bilinear form to assemble.
-        bcs: Boundary conditions that affect the assembled matrix. Rows
+        bcs: Boundary conditions or prepared CSR matrix BC data. Rows
             and columns constrained by a boundary condition are zeroed.
 
     Note:
         Convenience function for callers that have boundary conditions.
-        It rebuilds the constrained dof markers on every call, and
-        should not be called internally by the library.
+        Pass prepared data to reuse the constrained dof markers.
+        Diagonal data is unused; this function only assembles
+        contributions.
     """
-    V0, V1 = a.function_spaces
-    marker0, marker1 = _bc_dof_markers_by_space([V0, V1], bcs)
+    if isinstance(bcs, MatrixBCData):
+        _check_prepared_matrix_bcs(a, bcs)
+        marker0, marker1 = bcs.row_marker, bcs.column_marker
+    else:
+        _reject_foreign_bc_data(bcs)
+        marker0, marker1 = _bc_dof_markers_by_space(a.function_spaces, bcs)
     typing.cast(typing.Any, _cpp.fem.assemble_matrix)(
         fn,
         a._cpp_object,
