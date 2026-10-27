@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "FileMode.h"
 #include "HDF5Interface.h"
 #include <concepts>
 #include <dolfinx/common/MPI.h>
@@ -68,7 +69,16 @@ public:
 
   /// Constructor
   XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
-           std::string_view file_mode, Encoding encoding = Encoding::HDF5);
+           FileMode file_mode, Encoding encoding = Encoding::HDF5);
+
+  /// @brief Construct an XDMF file using a legacy string mode.
+  ///
+  /// Prefer the type-safe overload taking `FileMode`.
+  XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
+           std::string_view file_mode, Encoding encoding = Encoding::HDF5)
+      : XDMFFile(comm, filename, file_mode_from_string(file_mode), encoding)
+  {
+  }
 
   // Copy constructor (deleted)
   XDMFFile(const XDMFFile& file) = delete;
@@ -232,7 +242,7 @@ private:
   std::filesystem::path _filename;
 
   // File mode
-  std::string _file_mode;
+  FileMode _file_mode;
 
   // HDF5 file handle. Owning, so that the identifier is released if the
   // constructor throws after opening the file, and on destruction.

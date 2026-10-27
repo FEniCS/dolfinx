@@ -92,6 +92,9 @@ TEST_CASE("HDF5 invalid arguments are rejected", "[hdf5]")
       io::hdf5::open_file(MPI_COMM_SELF, test_file("mode"), "rw", false),
       std::invalid_argument);
 
+  CHECK(io::file_mode_to_string(io::FileMode::write) == "w");
+  CHECK(io::file_mode_from_string("a") == io::FileMode::append);
+
   hid_t handle
       = io::hdf5::open_file(MPI_COMM_SELF, test_file("missing"), "w", false);
   CHECK_THROWS_AS(io::hdf5::open_dataset(handle, "/does/not/exist"),
