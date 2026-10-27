@@ -43,8 +43,9 @@
 # u_{\mathrm{ex}}(x, y) = \sin(\pi x)\sin(2\pi y) + xy.
 # $$
 #
-# The variational problem reads: find $u \in V$ with $u = u_{\mathrm{ex}}$
-# on $\partial\Omega$ such that
+# Let $V$ be the space of continuous piecewise linear functions on a mesh
+# of $\Omega$. The variational problem reads: find $u \in V$ with
+# $u = u_{\mathrm{ex}}$ on $\partial\Omega$ such that
 #
 # $$
 # \int_\Omega \nabla u \cdot \nabla v ~\mathrm{d}x
@@ -56,9 +57,11 @@
 #
 # ## Transfer operators
 #
-# Geometric multigrid solves a problem on a sequence of meshes, connected
-# by a *prolongation* $P_\ell$ from level $\ell$ to level $\ell + 1$ and
-# a *restriction* $R_\ell = P_\ell^T$ back. For nested Lagrange spaces,
+# Geometric multigrid solves a problem on a sequence of meshes, with a
+# space $V_\ell$ and a matrix $A_\ell$ of the bilinear form on each level
+# $\ell$. The levels are connected by a *prolongation* $P_\ell$ from level
+# $\ell$ to level $\ell + 1$ and a *restriction* $R_\ell = P_\ell^T$
+# back. For nested Lagrange spaces,
 # $P_\ell$ interpolates a coarse function into the fine space, which is
 # what {py:meth}`Function.interpolate_nonmatching
 # <dolfinx.fem.Function.interpolate_nonmatching>` computes. Its transpose
@@ -165,9 +168,11 @@ def dirichlet_bc(V: fem.FunctionSpace) -> fem.DirichletBC:
 # when it is applied. The multigrid preconditioner prolongs with
 # `mult` or `multAdd`, and restricts with `multTranspose` or
 # `multTransposeAdd`. Each method copies the owned entries of the input
-# vector into a {py:class}`Function <dolfinx.fem.Function>`, updates its
-# ghost entries, applies the interpolation or its transpose, and copies
-# the owned entries of the result into the output vector.
+# vector into a {py:class}`Function <dolfinx.fem.Function>`, applies the
+# interpolation or its transpose, and copies the owned entries of the
+# result into the output vector. The interpolation evaluates the coarse
+# function, so its ghost entries are updated first. The transpose does
+# not use the ghost entries of its input.
 
 
 class NonmatchingTransfer:
@@ -185,9 +190,10 @@ class NonmatchingTransfer:
         self.data = fem.create_hierarchy_interpolation_data(V_fine, V_coarse, parent_cells)
 
     @staticmethod
-    def _copy_in(x: PETSc.Vec, u: fem.Function) -> None:
+    def _copy_in(x: PETSc.Vec, u: fem.Function, scatter_forward: bool) -> None:
         u.x.array[: x.getLocalSize()] = x.array_r
-        u.x.scatter_forward()
+        if scatter_forward:
+            u.x.scatter_forward()
 
     @staticmethod
     def _owned(u: fem.Function) -> np.ndarray:
@@ -196,25 +202,25 @@ class NonmatchingTransfer:
 
     def mult(self, mat: PETSc.Mat, x: PETSc.Vec, y: PETSc.Vec) -> None:
         """Compute y = P x."""
-        self._copy_in(x, self.u_coarse)
+        self._copy_in(x, self.u_coarse, scatter_forward=True)
         self.u_fine.interpolate_nonmatching(self.u_coarse, self.cells, self.data)
         y.array_w[:] = self._owned(self.u_fine)
 
     def multTranspose(self, mat: PETSc.Mat, x: PETSc.Vec, y: PETSc.Vec) -> None:
         """Compute y = P^T x."""
-        self._copy_in(x, self.u_fine)
+        self._copy_in(x, self.u_fine, scatter_forward=False)
         self.u_coarse.interpolate_nonmatching_transpose(self.u_fine, self.cells, self.data)
         y.array_w[:] = self._owned(self.u_coarse)
 
     def multAdd(self, mat: PETSc.Mat, x: PETSc.Vec, y: PETSc.Vec, z: PETSc.Vec) -> None:
         """Compute z = y + P x."""
-        self._copy_in(x, self.u_coarse)
+        self._copy_in(x, self.u_coarse, scatter_forward=True)
         self.u_fine.interpolate_nonmatching(self.u_coarse, self.cells, self.data)
         z.array_w[:] = y.array_r + self._owned(self.u_fine)
 
     def multTransposeAdd(self, mat: PETSc.Mat, x: PETSc.Vec, y: PETSc.Vec, z: PETSc.Vec) -> None:
         """Compute z = y + P^T x."""
-        self._copy_in(x, self.u_fine)
+        self._copy_in(x, self.u_fine, scatter_forward=False)
         self.u_coarse.interpolate_nonmatching_transpose(self.u_fine, self.cells, self.data)
         z.array_w[:] = y.array_r + self._owned(self.u_coarse)
 

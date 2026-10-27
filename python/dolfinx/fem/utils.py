@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import typing
 
+from mpi4py import MPI as _MPI
+
 import numpy as np
 import numpy.typing as npt
 
@@ -142,78 +144,96 @@ def create_hierarchy_interpolation_data(
 
     Equivalent to :func:`create_interpolation_data` over the owned cells
     of the mesh of ``V_to``, when that mesh is a refinement of the mesh
-    of ``V_from``. Each fine cell lies in its parent cell on the same
-    process, so every interpolation point is routed to its parent cell
-    without a geometric search or communication. Interpolating with the
-    data still calls the collective point-value exchange, but no values
-    leave the process.
+    of ``V_from``. Each interpolation point is routed to the parent cell
+    of its fine cell, without a geometric search.
+
+    A fine cell is found through its original cell index, i.e. its
+    global index before the refined mesh was distributed. The process
+    that refined it holds its parent cell. If the refined mesh was not
+    redistributed (the default partitioner of
+    :func:`dolfinx.mesh.refine`), every point stays on its process. The
+    data is then process-local (see
+    :attr:`dolfinx.geometry.PointOwnershipData.process_local`), so
+    interpolating with it needs no communication.
 
     The data is used with all owned cells of the mesh of ``V_to``, i.e.
     ``np.arange(num_owned_cells, dtype=np.int32)``, in
     :meth:`dolfinx.fem.Function.interpolate_nonmatching` and
     :meth:`dolfinx.fem.Function.interpolate_nonmatching_transpose`.
 
+    Note:
+        Collective.
+
     Args:
         V_to: Function space on the refined mesh.
         V_from: Function space on the mesh that was refined.
-        parent_cells: Parent cell of each owned cell of the refined
-            mesh, as returned by :func:`dolfinx.mesh.refine`, i.e. in
-            the cell order before the refined mesh is reordered.
+        parent_cells: Parent cells, as returned on this process by
+            :func:`dolfinx.mesh.refine`.
 
     Returns:
         Data needed to interpolate from ``V_from`` into ``V_to``.
-
-    Note:
-        The refined mesh must not have been redistributed, i.e. it was
-        created with the default partitioner of
-        :func:`dolfinx.mesh.refine`.
     """
+    comm = V_to.mesh.comm
     tdim = V_to.mesh.topology.dim
     cell_map = V_to.mesh.topology.index_map(tdim)
     num_cells = cell_map.size_local
     cells = np.arange(num_cells, dtype=np.int32)
 
-    parent = np.asarray(parent_cells, dtype=np.int32).reshape(-1)
-    if parent.size < num_cells:
-        raise ValueError("parent_cells must have an entry for each owned cell of the mesh of V_to.")
-
-    # parent_cells is in the cell order before reordering of the refined
-    # mesh, which original_cell_index maps to
-    original = np.asarray(V_to.mesh.topology._cpp_object.original_cell_index, dtype=np.int64)
-    local = original[:num_cells] - cell_map.local_range[0]
-    if num_cells > 0 and (local.min() < 0 or local.max() >= parent.size):
-        raise ValueError(
-            "The mesh of V_to is not a refinement of the mesh of V_from on this process. "
-            "Was it redistributed after refinement?"
-        )
-    parent = parent[local]
-    coarse_map = V_from.mesh.topology.index_map(V_from.mesh.topology.dim)
-    num_coarse = coarse_map.size_local + coarse_map.num_ghosts
-    if num_cells > 0 and (parent.min() < 0 or parent.max() >= num_coarse):
-        raise ValueError("parent_cells contains indices outside the mesh of V_from.")
-
-    # Interpolation points of V_to in physical space, ordered by cell
     dtype = V_from.mesh.geometry.x.dtype
     if V_to.mesh.geometry.x.dtype != dtype:
         raise TypeError(
             "create_hierarchy_interpolation_data requires V_to and V_from to have the same dtype."
         )
+
+    # parent_cells holds the parent of each cell refined on this process,
+    # in the order of the original cell index, before the refined mesh
+    # was distributed and reordered
+    parent = np.asarray(parent_cells, dtype=np.int32).reshape(-1)
+    coarse_map = V_from.mesh.topology.index_map(V_from.mesh.topology.dim)
+    num_coarse = coarse_map.size_local + coarse_map.num_ghosts
+    if parent.size > 0 and (parent.min() < 0 or parent.max() >= num_coarse):
+        raise ValueError("parent_cells contains indices outside the mesh of V_from.")
+    offsets = np.zeros(comm.size + 1, dtype=np.int64)
+    offsets[1:] = np.cumsum(comm.allgather(parent.size))
+    if offsets[-1] != cell_map.size_global:
+        raise ValueError("parent_cells must have an entry for each cell of the mesh of V_to.")
+
+    # Process holding the parent of each owned fine cell, and the
+    # position of the parent in parent_cells on that process
+    original = np.asarray(V_to.mesh.topology.original_cell_index[:num_cells], dtype=np.int64)
+    if num_cells > 0 and (original.min() < 0 or original.max() >= offsets[-1]):
+        raise ValueError("The mesh of V_to is not a refinement of the mesh of V_from.")
+    owner = np.searchsorted(offsets, original, side="right").astype(np.int32) - 1
+    position = (original - offsets[owner]).astype(np.int32)
+
+    # Interpolation points of V_to in physical space, ordered by cell
     x = _cpp.fem.interpolation_coords(  # type: ignore[call-overload]
         V_to.element._cpp_object, V_to.mesh.geometry._cpp_object, cells
     ).T
     num_ip = V_to.element.interpolation_points.shape[0]
+    src_owner = np.repeat(owner, num_ip)
 
-    # This process owns every point it requests
-    ranks = np.full(x.shape[0], V_to.mesh.comm.rank, dtype=np.int32)
+    # Send the points, grouped by process and in point order within a
+    # process, as required of PointOwnershipData
+    order = np.argsort(src_owner, kind="stable")
+    send_counts = np.bincount(src_owner, minlength=comm.size).astype(np.int32)
+    recv_counts = np.asarray(comm.alltoall(send_counts.tolist()), dtype=np.int32)
+    send_x = np.ascontiguousarray(x[order], dtype=dtype)
+    recv_x = np.empty((recv_counts.sum(), 3), dtype=dtype)
+    comm.Alltoallv([send_x, 3 * send_counts], [recv_x, 3 * recv_counts])
+    send_position = np.ascontiguousarray(np.repeat(position, num_ip)[order])
+    recv_position = np.empty(recv_counts.sum(), dtype=np.int32)
+    comm.Alltoallv([send_position, send_counts], [recv_position, recv_counts])
+
     cls = getattr(_cpp.geometry, f"PointOwnershipData_float{8 * np.dtype(dtype).itemsize}")
-    return _PointOwnershipData(
-        cls(
-            ranks,
-            ranks,
-            np.ascontiguousarray(x, dtype=dtype).reshape(-1),
-            np.ascontiguousarray(np.repeat(parent, num_ip), dtype=np.int32),
-        )
+    data = cls(
+        src_owner,
+        np.repeat(np.arange(comm.size, dtype=np.int32), recv_counts),
+        recv_x.reshape(-1),
+        np.ascontiguousarray(parent[recv_position]),
     )
+    data.process_local = comm.allreduce(bool(np.all(owner == comm.rank)), op=_MPI.LAND)
+    return _PointOwnershipData(data)
 
 
 def evaluate_basis_functions(

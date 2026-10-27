@@ -11,8 +11,10 @@
 #include "FunctionSpace.h"
 #include "interpolate.h"
 #include <algorithm>
+#include <array>
 #include <basix/mdspan.hpp>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/la/Vector.h>
@@ -21,7 +23,6 @@
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
 #include <memory>
-#include <numeric>
 #include <span>
 #include <stdexcept>
 #include <string>

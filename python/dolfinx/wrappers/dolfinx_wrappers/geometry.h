@@ -326,6 +326,10 @@ void declare_bbtree(nb::module_& m, std::string_view type)
           },
           nb::arg("src_owner"), nb::arg("dest_owners"), nb::arg("dest_points"),
           nb::arg("dest_cells"))
+      .def_rw("process_local",
+              &dolfinx::geometry::PointOwnershipData<T>::process_local,
+              "True if no point leaves its process. Must be equal on all "
+              "processes.")
       .def_prop_ro(
           "src_owner",
           [](const dolfinx::geometry::PointOwnershipData<T>& self)

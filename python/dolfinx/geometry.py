@@ -71,6 +71,15 @@ class PointOwnershipData(typing.Generic[Real]):
         """Cell indices where each entry of ``dest_points`` is located."""
         return self._cpp_object.dest_cells
 
+    @property
+    def process_local(self) -> bool:
+        """``True`` if no point is owned by another process.
+
+        Holds on every process: each point is owned by the process that
+        sent it, so interpolation with the data needs no communication.
+        """
+        return self._cpp_object.process_local
+
 
 class BoundingBoxTree(typing.Generic[Real]):
     """Bounding box trees used in collision detection."""

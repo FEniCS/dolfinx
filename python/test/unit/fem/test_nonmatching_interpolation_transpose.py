@@ -13,6 +13,7 @@ import pytest
 import basix
 import basix.ufl
 from dolfinx import fem, mesh
+from dolfinx.graph import partitioner
 
 dtypes = [np.float32, np.float64, np.complex64, np.complex128]
 
@@ -195,31 +196,41 @@ def test_unowned_points(dtype):
     assert np.all(c.x.array == 0)
 
 
-def _refined(dtype):
+def _refined(dtype, redistribute=False):
     msh0 = mesh.create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=dtype)
     msh0.topology.create_entities(1)
-    msh1, parent_cells, _ = mesh.refine(msh0)
+    if redistribute:
+        msh1, parent_cells, _ = mesh.refine(msh0, partitioner=partitioner())
+    else:
+        msh1, parent_cells, _ = mesh.refine(msh0)
     return msh0, msh1, parent_cells
 
 
+@pytest.mark.parametrize("redistribute", [False, True])
 @pytest.mark.parametrize("dtype", dtypes)
-def test_hierarchy_interpolation_data(dtype):
+def test_hierarchy_interpolation_data(dtype, redistribute):
     xtype = _real_dtype(dtype)
-    msh0, msh1, parent_cells = _refined(xtype)
+    msh0, msh1, parent_cells = _refined(xtype, redistribute)
     V0 = fem.functionspace(msh0, ("Lagrange", 2))
     V1 = fem.functionspace(msh1, ("Lagrange", 2))
     cells1 = _all_cells(msh1)
     data = fem.create_hierarchy_interpolation_data(V1, V0, parent_cells)
 
-    # Routing is local to each process
-    rank = MPI.COMM_WORLD.rank
-    assert np.all(data.src_owner == rank)
-    assert np.all(data.dest_owner == rank)
+    # Without redistribution, routing is local to each process
+    comm = MPI.COMM_WORLD
+    assert len(set(comm.allgather(data.process_local))) == 1
+    if not redistribute:
+        assert np.all(data.src_owner == comm.rank)
+        assert np.all(data.dest_owner == comm.rank)
+        assert data.process_local
 
     # Same forward and transpose operators as the search-based data. The
     # default padding misses points on cell boundaries in float32.
     eps = np.finfo(xtype).eps
     data_search = fem.create_interpolation_data(V1, V0, cells1, padding=100 * eps)
+    assert len(set(comm.allgather(data_search.process_local))) == 1
+    if comm.size == 1:
+        assert data_search.process_local
     a = _random_function(V0, dtype, 4)
     b = _random_function(V1, dtype, 5)
     u, u_search = fem.Function(V1, dtype=dtype), fem.Function(V1, dtype=dtype)
@@ -238,10 +249,9 @@ def test_hierarchy_interpolation_data_invalid_parents():
     msh0, msh1, parent_cells = _refined(np.float64)
     V0 = fem.functionspace(msh0, ("Lagrange", 1))
     V1 = fem.functionspace(msh1, ("Lagrange", 1))
-    num_cells = msh1.topology.index_map(msh1.topology.dim).size_local
     with pytest.raises(ValueError):
-        fem.create_hierarchy_interpolation_data(V1, V0, parent_cells[: num_cells - 1])
-    if num_cells > 0:
+        fem.create_hierarchy_interpolation_data(V1, V0, parent_cells[:-1])
+    if parent_cells.size > 0:
         invalid = parent_cells.copy()
         invalid[0] = -1
         with pytest.raises(ValueError):
