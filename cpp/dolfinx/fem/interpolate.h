@@ -198,6 +198,13 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 #endif
 
     // Rows arrive in order at the positions with a non-negative rank
+    std::size_t num_rows = std::ranges::count_if(dest_ranks, [](std::int32_t r)
+                                                 { return r >= 0; });
+    if (num_rows != src_ranks.size())
+    {
+      throw std::invalid_argument(
+          "Process-local data must receive one row for each row sent.");
+    }
     std::ranges::fill(recv_values, T{0});
     std::size_t row = 0;
     for (std::size_t i = 0; i < dest_ranks.size(); ++i)
@@ -337,6 +344,34 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
     std::copy_n(vals_from, block_size, vals);
   }
 };
+
+/// @brief Scatter data as scatter_values, with the process-local flag
+/// known at runtime.
+/// @param[in] comm The MPI communicator.
+/// @param[in] process_local Selects the specialisation of
+/// scatter_values. Must be equal on all processes.
+/// @param[in] src_ranks Rank owning the values of each row in
+/// `send_values`.
+/// @param[in] dest_ranks List of ranks receiving data.
+/// @param[in] send_values Values to send back to owner.
+/// @param[in,out] recv_values Array to fill with values.
+template <typename T>
+  requires dolfinx::scalar<T> or std::integral<T>
+void scatter_values(MPI_Comm comm, bool process_local,
+                    std::span<const std::int32_t> src_ranks,
+                    std::span<const std::int32_t> dest_ranks,
+                    mdspan_t<const T, 2> send_values, std::span<T> recv_values)
+{
+  if (process_local)
+  {
+    scatter_values<true>(comm, src_ranks, dest_ranks, send_values, recv_values);
+  }
+  else
+  {
+    scatter_values<false>(comm, src_ranks, dest_ranks, send_values,
+                          recv_values);
+  }
+}
 
 /// @brief Apply interpolation operator Pi to data to evaluate the dof
 /// coefficients, or apply its transpose.
@@ -1590,10 +1625,11 @@ void interpolation_transpose(const FiniteElement<U>& element,
   std::array<std::size_t, 4> phi_shape{};
   if (num_maps > 0)
   {
-    phi_shape = cmap.tabulate_shape(1, num_points);
+    phi_shape = cmap.tabulate_shape(1, num_maps);
     phi_b.resize(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-    cmap.tabulate(1, X, Xshape, phi_b);
+    cmap.tabulate(1, std::span(X.data(), num_maps * Xshape[1]),
+                  {num_maps, Xshape[1]}, phi_b);
   }
   mdspan_t<const U, 4> phi(phi_b.data(), phi_shape);
   std::vector<U> J_b(num_maps * gdim * tdim), K_b(num_maps * tdim * gdim);
@@ -1974,16 +2010,8 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
   std::vector<T> values_b(dest_ranks.size() * value_size);
   md::mdspan<const T, md::dextents<std::size_t, 2>> _send_values(
       send_values.data(), src_ranks.size(), value_size);
-  if (interpolation_data.process_local)
-  {
-    impl::scatter_values<true>(comm, src_ranks, dest_ranks, _send_values,
-                               std::span(values_b));
-  }
-  else
-  {
-    impl::scatter_values<false>(comm, src_ranks, dest_ranks, _send_values,
-                                std::span(values_b));
-  }
+  impl::scatter_values(comm, interpolation_data.process_local, src_ranks,
+                       dest_ranks, _send_values, std::span(values_b));
 
   // Transpose received data
   md::mdspan<const T, md::dextents<std::size_t, 2>> values(
@@ -2138,16 +2166,8 @@ void interpolate_transpose(
   std::vector<T> recv_values(num_recv * value_size);
   impl::mdspan_t<const T, 2> send_values(send_values_b.data(),
                                          send_ranks.size(), value_size);
-  if (interpolation_data.process_local)
-  {
-    impl::scatter_values<true>(comm, send_ranks, dest_owners, send_values,
-                               std::span(recv_values));
-  }
-  else
-  {
-    impl::scatter_values<false>(comm, send_ranks, dest_owners, send_values,
-                                std::span(recv_values));
-  }
+  impl::scatter_values(comm, interpolation_data.process_local, send_ranks,
+                       dest_owners, send_values, std::span(recv_values));
 
   // Accumulate the transposed evaluation, transpose of Function::eval
   std::span<T> c0 = u0.x()->array();
@@ -2155,20 +2175,37 @@ void interpolate_transpose(
   auto dofmap0 = V0->dofmap();
   const int bs_dof = dofmap0->bs();
   const int bs_element = element0->block_size();
-  std::vector<std::int32_t> dof_pos(element0->space_dimension() / bs_element);
+  // Positions of the degrees-of-freedom of each block of the current
+  // cell, recomputed when the cell changes. Consecutive points usually
+  // share a cell.
+  const std::size_t num_scalar_dofs = element0->space_dimension() / bs_element;
+  std::vector<std::int32_t> dof_pos(bs_element * num_scalar_dofs);
+  std::int32_t dof_pos_cell = -1;
   int error = 0;
   try
   {
     impl::evaluate_basis<U>(
         *element0, *mesh0, std::span(dest_points), {num_recv, 3}, dest_cells,
         tol, maxit,
-        [&c0, &recv_values, &dofmap0, &dof_pos, bs_dof, bs_element, value_size](
+        [&c0, &recv_values, &dofmap0, &dof_pos, &dof_pos_cell, bs_dof,
+         bs_element, num_scalar_dofs, value_size](
             std::size_t p, std::int32_t c, impl::mdspan_t<const U, 2> basis)
         {
-          std::span<const std::int32_t> dofs = dofmap0->cell_dofs(c);
+          if (c != dof_pos_cell)
+          {
+            std::span<const std::int32_t> dofs = dofmap0->cell_dofs(c);
+            for (int k = 0; k < bs_element; ++k)
+            {
+              impl::block_dof_positions(
+                  dofs, k, bs_element, bs_dof,
+                  std::span(dof_pos).subspan(k * num_scalar_dofs,
+                                             num_scalar_dofs));
+            }
+            dof_pos_cell = c;
+          }
+
           for (int k = 0; k < bs_element; ++k)
           {
-            impl::block_dof_positions(dofs, k, bs_element, bs_dof, dof_pos);
             for (std::size_t i = 0; i < basis.extent(0); ++i)
             {
               T acc = 0;
@@ -2177,7 +2214,7 @@ void interpolate_transpose(
                 acc += basis(i, j)
                        * recv_values[p * value_size + j * bs_element + k];
               }
-              c0[dof_pos[i]] += acc;
+              c0[dof_pos[k * num_scalar_dofs + i]] += acc;
             }
           }
         });

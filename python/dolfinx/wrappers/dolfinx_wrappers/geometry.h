@@ -328,8 +328,9 @@ void declare_bbtree(nb::module_& m, std::string_view type)
           nb::arg("dest_cells"))
       .def_rw("process_local",
               &dolfinx::geometry::PointOwnershipData<T>::process_local,
-              "True if no point leaves its process. Must be equal on all "
-              "processes.")
+              "True if every point is owned by the process that sent it. "
+              "Set only if this holds on all processes: it is not checked "
+              "across processes, and a mismatch deadlocks interpolation.")
       .def_prop_ro(
           "src_owner",
           [](const dolfinx::geometry::PointOwnershipData<T>& self)
