@@ -20,6 +20,7 @@
 #include <limits>
 #include <memory>
 #include <span>
+#include <utility>
 
 namespace basix
 {
@@ -183,6 +184,57 @@ public:
       std::fill_n(BA.data_handle(), BA.size(), 0);
       math::dot(B, J, BA);
       return std::sqrt(math::det(BA));
+    }
+  }
+
+  /// @brief Compute the Jacobian, its inverse and its determinant of a
+  /// cell at reference points.
+  ///
+  /// For an affine map the Jacobian is constant, so it is computed at
+  /// the first point and copied to the others.
+  ///
+  /// @param[in] phi Basis functions and their first derivatives at the
+  /// reference points (`shape=(tdim + 1, num_points, num geometry
+  /// nodes, 1)`), see @ref tabulate.
+  /// @param[in] cell_geometry The cell nodes coordinates (`shape=(num
+  /// geometry nodes, gdim)`).
+  /// @param[out] J Jacobians (`shape=(num_points, gdim, tdim)`).
+  /// @param[out] K Inverse Jacobians (`shape=(num_points, tdim,
+  /// gdim)`).
+  /// @param[out] detJ Jacobian determinants (`shape=(num_points,)`).
+  /// @param[in] w Working memory of size at least `2 * gdim * tdim`.
+  template <typename U, typename V, typename W, typename X>
+  void compute_jacobians(const U& phi, const V& cell_geometry, W&& J, X&& K,
+                         std::span<T> detJ, std::span<T> w) const
+  {
+    const std::size_t num_points = J.extent(0);
+    const std::size_t tdim = J.extent(2);
+    const std::size_t num_computed
+        = _is_affine ? std::min<std::size_t>(num_points, 1) : num_points;
+    for (std::size_t p = 0; p < num_computed; ++p)
+    {
+      auto dphi
+          = md::submdspan(phi, std::pair(1, tdim + 1), p, md::full_extent, 0);
+      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+      for (std::size_t i = 0; i < _J.extent(0); ++i)
+        for (std::size_t j = 0; j < _J.extent(1); ++j)
+          _J(i, j) = 0;
+      compute_jacobian(dphi, cell_geometry, _J);
+      compute_jacobian_inverse(
+          _J, md::submdspan(K, p, md::full_extent, md::full_extent));
+      detJ[p] = compute_jacobian_determinant(_J, w);
+    }
+
+    // Affine: copy the Jacobian data of the first point
+    for (std::size_t p = num_computed; p < num_points; ++p)
+    {
+      for (std::size_t i = 0; i < J.extent(1); ++i)
+        for (std::size_t j = 0; j < J.extent(2); ++j)
+          J(p, i, j) = J(0, i, j);
+      for (std::size_t i = 0; i < K.extent(1); ++i)
+        for (std::size_t j = 0; j < K.extent(2); ++j)
+          K(p, i, j) = K(0, i, j);
+      detJ[p] = detJ[0];
     }
   }
 

@@ -327,6 +327,11 @@ void declare_bbtree(nb::module_& m, std::string_view type)
           nb::arg("src_owner"), nb::arg("dest_owners"), nb::arg("dest_points"),
           nb::arg("dest_cells"))
       .def_prop_ro(
+          "process_local",
+          [](const dolfinx::geometry::PointOwnershipData<T>& self)
+          { return self.process_local; },
+          "True if every point is owned by the process that sent it.")
+      .def_prop_ro(
           "src_owner",
           [](const dolfinx::geometry::PointOwnershipData<T>& self)
           {

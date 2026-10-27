@@ -520,6 +520,46 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             interpolation_data._cpp_object,  # type: ignore[arg-type]
         )
 
+    def interpolate_nonmatching_transpose(
+        self,
+        u1: Function[Scalar],
+        cells: npt.NDArray[np.int32],
+        interpolation_data: PointOwnershipData,
+        tol: float = 1e-6,
+        maxit: int = 15,
+    ) -> None:
+        """Apply the transpose of interpolation on a non-matching mesh.
+
+        ``u1.interpolate_nonmatching(self, cells, interpolation_data)``
+        applies a linear operator :math:`P` to the coefficients of
+        ``self``. This method sets the coefficients of ``self`` to
+        :math:`P^T` applied to the coefficients of ``u1``, e.g. the
+        restriction matching a multigrid prolongation :math:`P`.
+
+        Note:
+            This is not an interpolation of ``u1`` into the space of
+            ``self``, which is a different operator.
+
+        Args:
+            u1: Function on the mesh interpolated into by :math:`P`.
+            cells: The cells of the mesh of ``u1``, as passed to
+                :meth:`interpolate_nonmatching`.
+            interpolation_data: Data for the forward interpolation,
+                created by :func:`dolfinx.fem.create_interpolation_data`
+                or :func:`dolfinx.fem.create_hierarchy_interpolation_data`.
+            tol: Tolerance for convergence in Newton method for nonaffine
+                pullbacks. Ignored if mesh geometry is affine.
+            maxit: Maximum number of iterations for nonaffine pullback.
+                Ignored if mesh geometry is affine.
+        """
+        self._cpp_object.interpolate_transpose(
+            u1._cpp_object,  # type: ignore[arg-type]
+            cells,
+            tol,
+            maxit,
+            interpolation_data._cpp_object,  # type: ignore[arg-type]
+        )
+
     def interpolate(
         self,
         u0: Callable | Expression[Scalar] | Function[Scalar],

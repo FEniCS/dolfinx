@@ -695,6 +695,20 @@ void declare_objects(nb::module_& m, std::string type)
           nb::arg("u"), nb::arg("cells"), nb::arg("tol"), nb::arg("maxit"),
           nb::arg("interpolation_data"),
           "Interpolate a finite element Function on non-matching meshes")
+      .def(
+          "interpolate_transpose",
+          [](dolfinx::fem::Function<T, U>& self,
+             const dolfinx::fem::Function<T, U>& u,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+             double tol, int maxit,
+             const dolfinx::geometry::PointOwnershipData<U>& interpolation_data)
+          {
+            self.interpolate_transpose(u, std::span(cells.data(), cells.size()),
+                                       tol, maxit, interpolation_data);
+          },
+          nb::arg("u"), nb::arg("cells"), nb::arg("tol"), nb::arg("maxit"),
+          nb::arg("interpolation_data"),
+          "Apply the transpose of interpolation on non-matching meshes")
       // NOLINTBEGIN(performance-no-int-to-ptr)
       .def(
           "interpolate_ptr",
@@ -1453,6 +1467,21 @@ void declare_real_functions(nb::module_& m)
       },
       nb::arg("geometry0"), nb::arg("element0"), nb::arg("mesh1"),
       nb::arg("cells"), nb::arg("padding"), nb::arg("allow_extrapolation"));
+
+  m.def(
+      "create_hierarchy_interpolation_data",
+      [](const dolfinx::mesh::Mesh<T>& mesh0,
+         const dolfinx::fem::FiniteElement<T>& element0,
+         const dolfinx::mesh::Mesh<T>& mesh1,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+             parent_cells)
+      {
+        return dolfinx::fem::create_hierarchy_interpolation_data(
+            mesh0, element0, mesh1,
+            std::span(parent_cells.data(), parent_cells.size()));
+      },
+      nb::arg("mesh0"), nb::arg("element0"), nb::arg("mesh1"),
+      nb::arg("parent_cells"));
 }
 
 } // namespace dolfinx_wrappers

@@ -13,6 +13,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -42,6 +43,11 @@ struct PointOwnershipData
   std::vector<std::int32_t>
       dest_cells; ///< Cell indices (local to process) where each entry of
                   ///< `dest_points` is located
+  bool process_local
+      = false; ///< `true` if, on every process, each point is owned by the
+               ///< process that sent it, so that using the data needs no
+               ///< communication. Set by fem::create_interpolation_data and
+               ///< fem::create_hierarchy_interpolation_data.
 };
 
 /// @brief Compute the shortest vector from a mesh entity to a point.
@@ -1123,6 +1129,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
 
   MPI_Comm_free(&forward_comm);
   MPI_Comm_free(&reverse_comm);
+
   return PointOwnershipData<T>{.src_owner = std::move(point_owners),
                                .dest_owners = std::move(owned_recv_ranks),
                                .dest_points = std::move(owned_recv_points),

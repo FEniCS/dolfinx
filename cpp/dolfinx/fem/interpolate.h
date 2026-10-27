@@ -17,12 +17,16 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <exception>
 #include <functional>
+#include <iterator>
 #include <numeric>
 #include <ranges>
 #include <span>
@@ -168,8 +172,12 @@ using mdspan_t = md::mdspan<T, md::dextents<std::size_t, D>>;
 /// @pre It is required that src_ranks are sorted.
 /// @note `dest_ranks` can contain repeated entries.
 /// @note `dest_ranks` might contain -1 (no process owns the point).
+/// @tparam process_local If `true`, every process sends to and
+/// receives from itself only (see
+/// geometry::PointOwnershipData::process_local), and the values are
+/// copied without communication. Must be equal on all processes.
 /// @tparam T Scalar or integer value type, e.g. global indices.
-template <typename T>
+template <bool process_local = false, typename T>
   requires dolfinx::scalar<T> or std::integral<T>
 void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
                     std::span<const std::int32_t> dest_ranks,
@@ -178,6 +186,34 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   const std::size_t block_size = send_values.extent(1);
   assert(src_ranks.size() * block_size == send_values.size());
   assert(recv_values.size() == dest_ranks.size() * block_size);
+
+  if constexpr (process_local)
+  {
+#ifndef NDEBUG
+    const int rank = dolfinx::MPI::rank(comm);
+    assert(std::ranges::all_of(src_ranks,
+                               [rank](std::int32_t r) { return r == rank; }));
+    assert(std::ranges::all_of(dest_ranks, [rank](std::int32_t r)
+                               { return r < 0 or r == rank; }));
+#endif
+
+    // Rows arrive in order at the positions with a non-negative rank
+    assert(static_cast<std::size_t>(std::ranges::count_if(
+               dest_ranks, [](std::int32_t r) { return r >= 0; }))
+           == src_ranks.size());
+    std::ranges::fill(recv_values, T{0});
+    std::size_t row = 0;
+    for (std::size_t i = 0; i < dest_ranks.size(); ++i)
+    {
+      if (dest_ranks[i] >= 0)
+      {
+        std::copy_n(send_values.data_handle() + row * block_size, block_size,
+                    std::next(recv_values.begin(), i * block_size));
+        ++row;
+      }
+    }
+    return;
+  }
 
   // Build unique set of the sorted src_ranks
   std::vector<std::int32_t> out_ranks(src_ranks.size());
@@ -304,34 +340,88 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   }
 };
 
+/// @brief Scatter data as scatter_values, with the process-local flag
+/// known at runtime.
+/// @param[in] comm The MPI communicator.
+/// @param[in] process_local Selects the specialisation of
+/// scatter_values. Must be equal on all processes.
+/// @param[in] src_ranks Rank owning the values of each row in
+/// `send_values`.
+/// @param[in] dest_ranks List of ranks receiving data.
+/// @param[in] send_values Values to send back to owner.
+/// @param[in,out] recv_values Array to fill with values.
+template <typename T>
+  requires dolfinx::scalar<T> or std::integral<T>
+void scatter_values(MPI_Comm comm, bool process_local,
+                    std::span<const std::int32_t> src_ranks,
+                    std::span<const std::int32_t> dest_ranks,
+                    mdspan_t<const T, 2> send_values, std::span<T> recv_values)
+{
+  if (process_local)
+  {
+    scatter_values<true>(comm, src_ranks, dest_ranks, send_values, recv_values);
+  }
+  else
+  {
+    scatter_values<false>(comm, src_ranks, dest_ranks, send_values,
+                          recv_values);
+  }
+}
+
 /// @brief Apply interpolation operator Pi to data to evaluate the dof
-/// coefficients.
+/// coefficients, or apply its transpose.
+/// @tparam transpose If `true`, apply the transpose of Pi to `coeffs`
+/// and store the result in `data`.
 /// @param[in] Pi The interpolation matrix (`shape=(num dofs, num_points
 /// * value_size)`).
-/// @param[in] data Function evaluations, by point, e.g. (f0(x0),
-/// f1(x0), f0(x1), f1(x1), ...).
-/// @param[out] coeffs Degrees of freedom to compute.
+/// @param[in,out] data Function evaluations, by point, e.g. (f0(x0),
+/// f1(x0), f0(x1), f1(x1), ...). Output if `transpose` is `true`.
+/// @param[in,out] coeffs Degrees of freedom. Input if `transpose` is
+/// `true`.
 /// @param[in] bs The block size.
-template <dolfinx::MDSpanRank2 U, dolfinx::MDSpanRank2 V, dolfinx::scalar T>
+template <bool transpose = false, dolfinx::MDSpanRank2 U,
+          dolfinx::MDSpanRank2 V, dolfinx::scalar T>
 void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 {
   // Geometry (real) scalar type, taken from the interpolation operator Pi
   // rather than scalar_value_t<T> so it is independent of the value scalar T.
   using X = typename std::remove_cvref_t<U>::value_type;
 
-  // Compute coefficients = Pi * x (matrix-vector multiply)
+  // Compute coefficients = Pi * x (matrix-vector multiply), or
+  // x = Pi^T * coefficients
   if (bs == 1)
   {
     assert(data.extent(0) * data.extent(1) == Pi.extent(1));
-    for (std::size_t i = 0; i < Pi.extent(0); ++i)
+    if constexpr (transpose)
     {
-      coeffs[i] = 0.0;
+      // Rows of Pi in the outer loop, for contiguous access
       for (std::size_t k = 0; k < data.extent(1); ++k)
         for (std::size_t j = 0; j < data.extent(0); ++j)
+          data(j, k) = 0;
+      for (std::size_t i = 0; i < Pi.extent(0); ++i)
+      {
+        for (std::size_t k = 0; k < data.extent(1); ++k)
         {
-          coeffs[i]
-              += static_cast<X>(Pi(i, k * data.extent(0) + j)) * data(j, k);
+          for (std::size_t j = 0; j < data.extent(0); ++j)
+          {
+            data(j, k)
+                += static_cast<X>(Pi(i, k * data.extent(0) + j)) * coeffs[i];
+          }
         }
+      }
+    }
+    else
+    {
+      for (std::size_t i = 0; i < Pi.extent(0); ++i)
+      {
+        coeffs[i] = 0.0;
+        for (std::size_t k = 0; k < data.extent(1); ++k)
+          for (std::size_t j = 0; j < data.extent(0); ++j)
+          {
+            coeffs[i]
+                += static_cast<X>(Pi(i, k * data.extent(0) + j)) * data(j, k);
+          }
+      }
     }
   }
   else
@@ -339,14 +429,28 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
     assert(data.extent(0) == Pi.extent(1));
     assert(static_cast<int>(data.extent(1)) == bs);
     std::size_t cols = Pi.extent(1);
-    for (int k = 0; k < bs; ++k)
+    if constexpr (transpose)
     {
+      // Rows of Pi in the outer loop, so Pi is read once for all blocks
+      for (std::size_t j = 0; j < cols; ++j)
+        for (int k = 0; k < bs; ++k)
+          data(j, k) = 0;
       for (std::size_t i = 0; i < Pi.extent(0); ++i)
-      {
-        T acc = 0;
         for (std::size_t j = 0; j < cols; ++j)
-          acc += static_cast<X>(Pi(i, j)) * data(j, k);
-        coeffs[bs * i + k] = acc;
+          for (int k = 0; k < bs; ++k)
+            data(j, k) += static_cast<X>(Pi(i, j)) * coeffs[bs * i + k];
+    }
+    else
+    {
+      for (int k = 0; k < bs; ++k)
+      {
+        for (std::size_t i = 0; i < Pi.extent(0); ++i)
+        {
+          T acc = 0;
+          for (std::size_t j = 0; j < cols; ++j)
+            acc += static_cast<X>(Pi(i, j)) * data(j, k);
+          coeffs[bs * i + k] = acc;
+        }
       }
     }
   }
@@ -723,18 +827,8 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
         coord_dofs(i, j) = x_g[pos + j];
     }
 
-    // Compute Jacobians and reference points for current cell
-    std::ranges::fill(J_b, 0);
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
-    {
-      auto dphi
-          = md::submdspan(phi, std::pair(1, tdim + 1), p, md::full_extent, 0);
-      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-      cmap.compute_jacobian(dphi, coord_dofs, _J);
-      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-      cmap.compute_jacobian_inverse(_J, _K);
-      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
-    }
+    // Compute Jacobians at the reference points for current cell
+    cmap.compute_jacobians(phi, coord_dofs, J, K, detJ, det_scratch);
 
     // Copy evaluated basis on reference, apply DOF transformations, and
     // push forward to physical element
@@ -867,6 +961,36 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   }
 }
 
+/// @brief Positions in a coefficient array of the degrees-of-freedom of
+/// one block of a cell.
+///
+/// @param[in] dofs Degrees-of-freedom of the cell.
+/// @param[in] k Element block.
+/// @param[in] element_bs Element block size.
+/// @param[in] dofmap_bs Dofmap block size.
+/// @param[out] pos Position of each scalar degree-of-freedom of block
+/// `k`.
+inline void block_dof_positions(std::span<const std::int32_t> dofs, int k,
+                                int element_bs, int dofmap_bs,
+                                std::span<std::int32_t> pos)
+{
+  // Skip the div/mod when block sizes match (the common case)
+  if (element_bs == dofmap_bs)
+  {
+    for (std::size_t i = 0; i < pos.size(); ++i)
+      pos[i] = dofmap_bs * dofs[i] + k;
+  }
+  else
+  {
+    for (std::size_t i = 0; i < pos.size(); ++i)
+    {
+      const int j = i * element_bs + k;
+      std::div_t d = std::div(j, dofmap_bs);
+      pos[i] = dofmap_bs * dofs[d.quot] + d.rem;
+    }
+  }
+}
+
 /// @brief Interpolate data into coefficients for an identity-mapped
 /// point evaluation element.
 ///
@@ -897,8 +1021,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
           doftransform::inverse_transpose, true);
   std::vector<T> coeffs_b(num_scalar_dofs);
 
-  // Skip the div/mod below when block sizes match (the common case)
-  const bool same_bs = (dofmap_bs == element_bs);
+  std::vector<std::int32_t> dof_pos(num_scalar_dofs);
 
   if (symmetric)
   {
@@ -941,19 +1064,9 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
           apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
                                                  1);
         }
-        if (same_bs)
-        {
-          for (int i = 0; i < num_scalar_dofs; ++i)
-            coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
-        }
-        else
-        {
-          for (int i = 0; i < num_scalar_dofs; ++i)
-          {
-            std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
-            coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
-          }
-        }
+        block_dof_positions(dofs, k, element_bs, dofmap_bs, std::span(dof_pos));
+        for (int i = 0; i < num_scalar_dofs; ++i)
+          coeffs[dof_pos[i]] = coeffs_b[i];
       }
     }
   }
@@ -976,19 +1089,9 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
           apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
                                                  1);
         }
-        if (same_bs)
-        {
-          for (int i = 0; i < num_scalar_dofs; ++i)
-            coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
-        }
-        else
-        {
-          for (int i = 0; i < num_scalar_dofs; ++i)
-          {
-            std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
-            coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
-          }
-        }
+        block_dof_positions(dofs, k, element_bs, dofmap_bs, std::span(dof_pos));
+        for (int i = 0; i < num_scalar_dofs; ++i)
+          coeffs[dof_pos[i]] = coeffs_b[i];
       }
     }
   }
@@ -1043,8 +1146,7 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       = element.template dof_transformation_fn<T>(
           doftransform::inverse_transpose, true);
 
-  // Skip the div/mod below when block sizes match (the common case)
-  const bool same_bs = (dofmap_bs == element_bs);
+  std::vector<std::int32_t> dof_pos(num_scalar_dofs);
 
   // Loop over cells
   std::vector<T> ref_data_b(num_interp_points);
@@ -1072,19 +1174,9 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
         apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
                                                1);
       }
-      if (same_bs)
-      {
-        for (int i = 0; i < num_scalar_dofs; ++i)
-          coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
-      }
-      else
-      {
-        for (int i = 0; i < num_scalar_dofs; ++i)
-        {
-          std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
-          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
-        }
-      }
+      block_dof_positions(dofs, k, element_bs, dofmap_bs, std::span(dof_pos));
+      for (int i = 0; i < num_scalar_dofs; ++i)
+        coeffs[dof_pos[i]] = coeffs_b[i];
     }
   }
 }
@@ -1125,8 +1217,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const int value_size = element.physical_base_value_size();
   const int dofmap_bs = dofmap.bs();
 
-  // Skip the div/mod below when block sizes match (the common case)
-  const bool same_bs = (dofmap_bs == element_bs);
+  std::vector<std::int32_t> dof_pos(num_scalar_dofs);
 
   md::mdspan<const T, md::dextents<std::size_t, 2>> _f(f.data(), fshape);
 
@@ -1182,8 +1273,6 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
                                   md::dynamic_extent, md::dynamic_extent, 1>>
       phi(phi_b.data(), phi_shape);
   cmap.tabulate(1, X, Xshape, phi_b);
-  auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), md::full_extent,
-                            md::full_extent, 0);
 
   std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
@@ -1215,16 +1304,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
     }
 
     // Compute J, detJ and K
-    std::ranges::fill(J_b, 0);
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
-    {
-      auto _dphi = md::submdspan(dphi, md::full_extent, p, md::full_extent);
-      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-      cmap.compute_jacobian(_dphi, coord_dofs, _J);
-      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-      cmap.compute_jacobian_inverse(_J, _K);
-      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
-    }
+    cmap.compute_jacobians(phi, coord_dofs, J, K, detJ, det_scratch);
 
     const std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
     std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
@@ -1257,19 +1337,9 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
       // Copy interpolation dofs into coefficient vector
       assert(coeffs_b.size() == static_cast<std::size_t>(num_scalar_dofs));
-      if (same_bs)
-      {
-        for (int i = 0; i < num_scalar_dofs; ++i)
-          coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
-      }
-      else
-      {
-        for (int i = 0; i < num_scalar_dofs; ++i)
-        {
-          std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
-          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
-        }
-      }
+      block_dof_positions(dofs, k, element_bs, dofmap_bs, std::span(dof_pos));
+      for (int i = 0; i < num_scalar_dofs; ++i)
+        coeffs[dof_pos[i]] = coeffs_b[i];
     }
   }
 }
@@ -1335,8 +1405,6 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
       std::reduce(phi0_shape.begin(), phi0_shape.end(), 1, std::multiplies{}));
   mdspan_t<const T, 4> phi0(phi0_b.data(), phi0_shape);
   cmap.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi0_b);
-  auto dphi0
-      = md::submdspan(phi0, std::pair(1, tdim + 1), 0, md::full_extent, 0);
 
   // Geometry basis derivatives at a point (non-affine case)
   std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, 1);
@@ -1357,40 +1425,58 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
   std::vector<T> pull_back_scratch(
       cmap.is_affine() ? 0 : cmap.pull_back_working_size(gdim));
 
+  // Consecutive points often share a cell, e.g. the interpolation
+  // points of a cell, so the geometry of the previous cell is reused
+  // For affine cells, the Jacobian data of point p is stored at
+  // jacobian[p], the first point of its cell.
+  std::int32_t prev_cell = -1;
+  std::vector<std::size_t> jacobian(xshape[0]);
+  std::array<T, 3> x0{0, 0, 0};
   for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
   {
     if (*cell_it < 0)
       continue;
 
-    auto x_dofs = md::submdspan(x_dofmap, *cell_it, md::full_extent);
-    assert(x_dofs.size() == num_dofs_g);
-    for (std::size_t i = 0; i < num_dofs_g; ++i)
+    const bool same_cell = *cell_it == prev_cell;
+    if (!same_cell)
     {
-      const int pos = 3 * x_dofs[i];
+      auto x_dofs = md::submdspan(x_dofmap, *cell_it, md::full_extent);
+      assert(x_dofs.size() == num_dofs_g);
+      for (std::size_t i = 0; i < num_dofs_g; ++i)
+      {
+        const int pos = 3 * x_dofs[i];
+        for (std::size_t j = 0; j < gdim; ++j)
+          coord_dofs(i, j) = x_g[pos + j];
+      }
       for (std::size_t j = 0; j < gdim; ++j)
-        coord_dofs(i, j) = x_g[pos + j];
+        x0[j] = coord_dofs(0, j);
     }
 
     std::size_t p = std::ranges::distance(cells.begin(), cell_it);
     for (std::size_t j = 0; j < gdim; ++j)
       xp(0, j) = x[p * xshape[1] + j];
 
-    auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-    auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+    const bool reuse = cmap.is_affine() and same_cell;
+    jacobian[p] = reuse ? jacobian[p - 1] : p;
+    auto _J = md::submdspan(J, jacobian[p], md::full_extent, md::full_extent);
+    auto _K = md::submdspan(K, jacobian[p], md::full_extent, md::full_extent);
 
     std::array<T, 3> Xpb{0, 0, 0};
     md::mdspan<T, md::extents<std::size_t, 1, md::dynamic_extent>> Xp(
         Xpb.data(), 1, tdim);
     if (cmap.is_affine())
     {
-      CoordinateElement<T>::compute_jacobian(dphi0, coord_dofs, _J);
-      CoordinateElement<T>::compute_jacobian_inverse(_J, _K);
-      std::array<T, 3> x0{0, 0, 0};
-      for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
-        x0[i] += coord_dofs(0, i);
+      if (!reuse)
+      {
+        cmap.compute_jacobians(phi0, coord_dofs,
+                               md::submdspan(J, std::pair(p, p + 1),
+                                             md::full_extent, md::full_extent),
+                               md::submdspan(K, std::pair(p, p + 1),
+                                             md::full_extent, md::full_extent),
+                               std::span(detJ).subspan(p, 1),
+                               std::span(det_scratch));
+      }
       CoordinateElement<T>::pull_back_affine(Xp, _K, x0, xp);
-      detJ[p]
-          = CoordinateElement<T>::compute_jacobian_determinant(_J, det_scratch);
     }
     else
     {
@@ -1405,6 +1491,7 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
 
     for (std::size_t j = 0; j < X.extent(1); ++j)
       X(p, j) = Xpb[j];
+    prev_cell = *cell_it;
   }
 
   // Tabulate reference basis at all points
@@ -1445,10 +1532,208 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
 
     auto _U = md::submdspan(reference_basis, 0, p, md::full_extent,
                             md::full_extent);
-    auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-    auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-    push_forward_fn(basis, _U, _J, detJ[p], _K);
+    const std::size_t q = jacobian[p];
+    auto _J = md::submdspan(J, q, md::full_extent, md::full_extent);
+    auto _K = md::submdspan(K, q, md::full_extent, md::full_extent);
+    push_forward_fn(basis, _U, _J, detJ[q], _K);
     fn(p, *cell_it, mdspan_t<const T, 2>(basis));
+  }
+}
+
+/// @brief Apply the transpose of the local interpolation operator.
+///
+/// The local operator of `interpolate` maps values at the interpolation
+/// points of the cells to degree-of-freedom coefficients. This applies
+/// its transpose to coefficients `b`, reversing the stages of
+/// point_evaluation, identity_mapped_evaluation and
+/// piola_mapped_evaluation. Each owned degree-of-freedom contributes
+/// once, from the last cell in `cells` that contains it, matching the
+/// forward operator, where later cells overwrite earlier ones. Ghost
+/// degrees-of-freedom do not contribute.
+///
+/// @param[in] element Element of the space of `b`.
+/// @param[in] dofmap Dofmap of the space of `b`.
+/// @param[in] cells Cells of the mesh of `b`.
+/// @param[in] cell_info Cell permutation information, if `element`
+/// needs dof transformations.
+/// @param[in] mesh Mesh of the space of `b`.
+/// @param[in] b Coefficients, including ghosts.
+/// @param[in,out] g Values at the interpolation points, added to.
+/// Layout as the input of `interpolate`: `shape=(value_size,
+/// cells.size() * num_points)`, row-major.
+/// @param[in] gshape Shape of `g`.
+template <dolfinx::scalar T, std::floating_point U>
+void interpolation_transpose(const FiniteElement<U>& element,
+                             const DofMap& dofmap,
+                             std::span<const std::int32_t> cells,
+                             std::span<const std::uint32_t> cell_info,
+                             const mesh::Mesh<U>& mesh, std::span<const T> b,
+                             std::span<T> g, std::array<std::size_t, 2> gshape)
+{
+  const int element_bs = element.block_size();
+  const int num_scalar_dofs = element.space_dimension() / element_bs;
+  const int dofmap_bs = dofmap.bs();
+  const std::size_t N = gshape[1];
+  const std::size_t value_size = element.physical_base_value_size();
+  const std::size_t value_size_ref = element.reference_value_size();
+  const auto [X, Xshape] = element.interpolation_points();
+  const std::size_t num_points = Xshape[0];
+  const bool point_evaluation
+      = element.map_ident() and element.interpolation_ident();
+
+  // Blocked elements as supported by the forward operators
+  assert(point_evaluation or element_bs == 1
+         or (element.map_ident() and value_size_ref == 1));
+
+  // Owned degrees-of-freedom, each taken from one cell only
+  assert(dofmap.index_map);
+  const std::int32_t num_owned
+      = dofmap.index_map->size_local() * dofmap.index_map_bs();
+  std::vector<std::int8_t> used(num_owned, 0);
+
+  // Applied to one block at a time, so the scalar element transformation
+  auto apply_inverse_dof_transformation
+      = element.template dof_transformation_fn<T>(doftransform::inverse, true);
+  const auto [_Pi, pi_shape] = element.interpolation_operator();
+  mdspan_t<const U, 2> Pi(_Pi.data(), pi_shape);
+
+  // Geometry and pull-back matrices, for Piola-mapped elements. For
+  // affine maps they are constant over a cell, so they are computed at
+  // the first point only.
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology()->dim();
+  const CoordinateElement<U>& cmap = mesh.geometry().cmaps().front();
+  auto x_dofmap = mesh.geometry().dofmaps().front();
+  std::span<const U> x_g = mesh.geometry().x();
+  std::vector<U> coord_dofs_b(cmap.dim() * gdim);
+  mdspan_t<U, 2> coord_dofs(coord_dofs_b.data(), cmap.dim(), gdim);
+  const std::size_t num_maps
+      = element.map_ident()
+            ? 0
+            : (cmap.is_affine() ? std::min<std::size_t>(num_points, 1)
+                                : num_points);
+  std::vector<U> phi_b;
+  std::array<std::size_t, 4> phi_shape{};
+  if (num_maps > 0)
+  {
+    phi_shape = cmap.tabulate_shape(1, num_maps);
+    phi_b.resize(
+        std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+    cmap.tabulate(1, std::span(X.data(), num_maps * Xshape[1]),
+                  {num_maps, Xshape[1]}, phi_b);
+  }
+  mdspan_t<const U, 4> phi(phi_b.data(), phi_shape);
+  std::vector<U> J_b(num_maps * gdim * tdim), K_b(num_maps * tdim * gdim);
+  mdspan_t<U, 3> J(J_b.data(), num_maps, gdim, tdim);
+  mdspan_t<U, 3> K(K_b.data(), num_maps, tdim, gdim);
+  std::vector<U> detJ(num_maps), det_scratch(2 * gdim * tdim);
+
+  // Pull-back matrices, shape=(num_maps, value_size_ref, value_size)
+  using O_t = mdspan_t<U, 2>;
+  using P_t = mdspan_t<const U, 2>;
+  auto pull_back_fn
+      = element.basix_element().template map_fn<O_t, P_t, P_t, P_t>();
+  std::vector<U> unit_b(value_size), column_b(value_size_ref);
+  P_t unit(unit_b.data(), 1, value_size);
+  O_t column(column_b.data(), 1, value_size_ref);
+  std::vector<U> M_b(num_maps * value_size_ref * value_size);
+
+  std::vector<T> ref_b(pi_shape[1]);
+  std::vector<T> r_b(element_bs * num_scalar_dofs);
+  std::vector<std::int32_t> dof_pos(num_scalar_dofs);
+  for (std::size_t ci = cells.size(); ci-- > 0;)
+  {
+    const std::int32_t c = cells[ci];
+    std::span<const std::int32_t> dofs = dofmap.cell_dofs(c);
+
+    // Owned coefficients not taken by a later cell, by block
+    bool contributes = false;
+    for (int k = 0; k < element_bs; ++k)
+    {
+      block_dof_positions(dofs, k, element_bs, dofmap_bs, std::span(dof_pos));
+      for (int i = 0; i < num_scalar_dofs; ++i)
+      {
+        T& ri = r_b[k * num_scalar_dofs + i];
+        ri = 0;
+        if (std::int32_t pos = dof_pos[i]; pos < num_owned and !used[pos])
+        {
+          ri = b[pos];
+          used[pos] = 1;
+          contributes = true;
+        }
+      }
+    }
+    if (!contributes)
+      continue;
+
+    if (num_maps > 0)
+    {
+      auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
+      for (std::size_t i = 0; i < x_dofs.size(); ++i)
+        for (int j = 0; j < gdim; ++j)
+          coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
+      cmap.compute_jacobians(phi, coord_dofs, J, K, detJ, det_scratch);
+
+      // The pull-back is linear in the physical value, so its matrix is
+      // formed column by column by pulling back unit vectors
+      for (std::size_t p = 0; p < num_maps; ++p)
+      {
+        P_t Kp(K_b.data() + p * tdim * gdim, tdim, gdim);
+        P_t Jp(J_b.data() + p * gdim * tdim, gdim, tdim);
+        for (std::size_t m = 0; m < value_size; ++m)
+        {
+          std::ranges::fill(unit_b, 0);
+          unit_b[m] = 1;
+          pull_back_fn(column, unit, Kp, 1 / detJ[p], Jp);
+          for (std::size_t n = 0; n < value_size_ref; ++n)
+            M_b[(p * value_size_ref + n) * value_size + m] = column(0, n);
+        }
+      }
+    }
+
+    // Transpose of the forward operator, stage by stage in reverse
+    for (int k = 0; k < element_bs; ++k)
+    {
+      std::span<T> r(r_b.data() + k * num_scalar_dofs, num_scalar_dofs);
+      if (apply_inverse_dof_transformation)
+        apply_inverse_dof_transformation(r, cell_info, c, 1);
+
+      if (point_evaluation)
+      {
+        for (int i = 0; i < num_scalar_dofs; ++i)
+          g[k * N + ci * num_scalar_dofs + i] += r[i];
+      }
+      else if (element.map_ident())
+      {
+        // Pi^T, then the transpose of the copy into the reference values
+        interpolation_apply<true>(
+            Pi, mdspan_t<T, 2>(ref_b.data(), ref_b.size(), 1), r, 1);
+        const std::size_t npp = ref_b.size() / value_size_ref;
+        for (std::size_t m = 0; m < value_size_ref; ++m)
+          for (std::size_t j = 0; j < npp; ++j)
+            g[(m + k) * N + ci * npp + j] += ref_b[m * npp + j];
+      }
+      else
+      {
+        // Pi^T, then the transpose of the pull-back at each point
+        interpolation_apply<true>(
+            Pi, mdspan_t<T, 2>(ref_b.data(), num_points, value_size_ref), r, 1);
+        for (std::size_t p = 0; p < num_points; ++p)
+        {
+          std::span<const U> M(M_b.data()
+                                   + (num_maps == 1 ? 0 : p) * value_size_ref
+                                         * value_size,
+                               value_size_ref * value_size);
+          for (std::size_t m = 0; m < value_size; ++m)
+          {
+            T acc = 0;
+            for (std::size_t n = 0; n < value_size_ref; ++n)
+              acc += M[n * value_size + m] * ref_b[p * value_size_ref + n];
+            g[(k * value_size + m) * N + ci * num_points + p] += acc;
+          }
+        }
+      }
+    }
   }
 }
 
@@ -1584,8 +1869,214 @@ geometry::PointOwnershipData<T> create_interpolation_data(
       x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
-  return geometry::determine_point_ownership<T>(mesh1, x, padding, std::nullopt,
-                                                allow_extrapolation);
+  geometry::PointOwnershipData<T> data = geometry::determine_point_ownership<T>(
+      mesh1, x, padding, std::nullopt, allow_extrapolation);
+
+  // Process-local if no point leaves its process, so that interpolation
+  // with the data needs no communication
+  MPI_Comm comm = mesh1.comm();
+  const int rank = dolfinx::MPI::rank(comm);
+  int process_local = std::ranges::all_of(data.src_owner, [rank](int r)
+                                          { return r < 0 or r == rank; })
+                      and std::ranges::all_of(data.dest_owners, [rank](int r)
+                                              { return r == rank; });
+  MPI_Allreduce(MPI_IN_PLACE, &process_local, 1, MPI_INT, MPI_LAND, comm);
+  data.process_local = process_local;
+  return data;
+}
+
+/// @brief Generate data for interpolating from a mesh to its
+/// refinement.
+///
+/// Equivalent to create_interpolation_data over all owned cells of
+/// `mesh0`, when `mesh0` is a refinement of `mesh1`. Each interpolation
+/// point is routed to the parent of its cell without a geometric search.
+/// The parent is held by the process that refined the cell, which is
+/// found from the original cell index of the cell. If `mesh0` was not
+/// redistributed after refinement, every point stays on its process and
+/// the data is process-local.
+///
+/// @note Collective.
+///
+/// @param[in] mesh0 Refined mesh, i.e. the mesh of the space to
+/// interpolate into.
+/// @param[in] element0 Element of the space to interpolate into.
+/// @param[in] mesh1 Mesh that was refined.
+/// @param[in] parent_cells Parent cell in `mesh1` of each cell refined
+/// on this process, in the order of the original cell index, as
+/// computed by refinement::refine.
+/// @return Data for interpolating into all owned cells of `mesh0`.
+template <std::floating_point T>
+geometry::PointOwnershipData<T> create_hierarchy_interpolation_data(
+    const mesh::Mesh<T>& mesh0, const FiniteElement<T>& element0,
+    const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> parent_cells)
+{
+  MPI_Comm comm = mesh0.comm();
+  const int rank = dolfinx::MPI::rank(comm);
+  const int size = dolfinx::MPI::size(comm);
+  auto topology0 = mesh0.topology();
+  assert(topology0);
+  const int tdim = topology0->dim();
+  auto cell_map0 = topology0->index_map(tdim);
+  assert(cell_map0);
+  const std::int32_t num_cells = cell_map0->size_local();
+  auto cell_map1 = mesh1.topology()->index_map(mesh1.topology()->dim());
+  assert(cell_map1);
+  const std::int32_t num_cells1
+      = cell_map1->size_local() + cell_map1->num_ghosts();
+  if (topology0->original_cell_index.empty())
+    throw std::invalid_argument("mesh0 has no original cell indices.");
+  std::span<const std::int64_t> original
+      = topology0->original_cell_index.front();
+
+  // Number of cells refined on each process. Invalid parent cells are
+  // reported with them, so that all processes throw.
+  std::array<std::int64_t, 2> local
+      = {static_cast<std::int64_t>(parent_cells.size()),
+         std::ranges::any_of(parent_cells, [num_cells1](std::int32_t c)
+                             { return c < 0 or c >= num_cells1; })};
+  std::vector<std::int64_t> gathered(2 * size);
+  MPI_Allgather(local.data(), 2, MPI_INT64_T, gathered.data(), 2, MPI_INT64_T,
+                comm);
+  std::vector<std::int64_t> offsets(size + 1, 0);
+  bool invalid = false;
+  for (int r = 0; r < size; ++r)
+  {
+    offsets[r + 1] = offsets[r] + gathered[2 * r];
+    invalid = invalid or gathered[2 * r + 1] != 0;
+  }
+  if (invalid)
+    throw std::invalid_argument("parent_cells contains cells not in mesh1.");
+  if (offsets.back() != cell_map0->size_global())
+  {
+    throw std::invalid_argument(
+        "parent_cells must have an entry for each cell of mesh0.");
+  }
+
+  // Process that refined each owned cell, and the position of its parent
+  // in parent_cells on that process
+  std::vector<int> owner(num_cells);
+  std::vector<std::int32_t> position(num_cells);
+  for (std::int32_t c = 0; c < num_cells; ++c)
+  {
+    assert(original[c] >= 0 and original[c] < offsets.back());
+    auto it = std::ranges::upper_bound(offsets, original[c]);
+    owner[c] = std::ranges::distance(offsets.begin(), it) - 1;
+    position[c] = original[c] - offsets[owner[c]];
+  }
+
+  // Interpolation points of the owned cells, shape=(num_points, 3)
+  std::vector<std::int32_t> cells(num_cells);
+  std::iota(cells.begin(), cells.end(), 0);
+  std::vector<T> coords
+      = interpolation_coords(element0, mesh0.geometry(), std::span(cells));
+  const std::size_t num_points = coords.size() / 3;
+  const std::size_t num_ip = element0.interpolation_points().second[0];
+  std::vector<T> x(coords.size());
+  for (std::size_t i = 0; i < num_points; ++i)
+    for (std::size_t j = 0; j < 3; ++j)
+      x[3 * i + j] = coords[i + j * num_points];
+  std::vector<int> src_owner(num_points);
+  for (std::size_t p = 0; p < num_points; ++p)
+    src_owner[p] = owner[p / num_ip];
+
+  int process_local
+      = std::ranges::all_of(owner, [rank](int r) { return r == rank; });
+  MPI_Allreduce(MPI_IN_PLACE, &process_local, 1, MPI_INT, MPI_LAND, comm);
+  if (process_local)
+  {
+    std::vector<std::int32_t> dest_cells(num_points);
+    for (std::size_t p = 0; p < num_points; ++p)
+      dest_cells[p] = parent_cells[position[p / num_ip]];
+    return geometry::PointOwnershipData<T>{.src_owner = std::move(src_owner),
+                                           .dest_owners
+                                           = std::vector<int>(num_points, rank),
+                                           .dest_points = std::move(x),
+                                           .dest_cells = std::move(dest_cells),
+                                           .process_local = true};
+  }
+
+  // Send each point and the position of its parent to the process that
+  // refined its cell, grouped by process and in point order within a
+  // process, as required of PointOwnershipData
+  std::vector<std::int32_t> perm(num_points);
+  std::iota(perm.begin(), perm.end(), 0);
+  std::ranges::stable_sort(perm, std::ranges::less(),
+                           [&src_owner](std::int32_t p)
+                           { return src_owner[p]; });
+  std::vector<int> out_ranks;
+  std::vector<int> send_sizes;
+  for (std::int32_t p : perm)
+  {
+    if (out_ranks.empty() or out_ranks.back() != src_owner[p])
+    {
+      out_ranks.push_back(src_owner[p]);
+      send_sizes.push_back(0);
+    }
+    ++send_sizes.back();
+  }
+  std::vector<int> in_ranks = dolfinx::MPI::compute_graph_edges_nbx(
+      comm, std::span<const int>(out_ranks));
+  std::ranges::sort(in_ranks);
+
+  MPI_Comm neighbor_comm;
+  MPI_Dist_graph_create_adjacent(
+      comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
+      out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
+  std::vector<int> recv_sizes(in_ranks.size());
+  send_sizes.reserve(1);
+  recv_sizes.reserve(1);
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                        MPI_INT, neighbor_comm);
+
+  std::vector<int> send_disp(send_sizes.size() + 1, 0);
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_disp.begin()));
+  std::vector<int> recv_disp(recv_sizes.size() + 1, 0);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   std::next(recv_disp.begin()));
+  std::vector<std::int32_t> send_position(num_points);
+  std::vector<T> send_x(3 * num_points);
+  for (std::size_t i = 0; i < num_points; ++i)
+  {
+    send_position[i] = position[perm[i] / num_ip];
+    std::copy_n(std::next(x.begin(), 3 * perm[i]), 3,
+                std::next(send_x.begin(), 3 * i));
+  }
+  std::vector<std::int32_t> recv_position(recv_disp.back());
+  MPI_Neighbor_alltoallv(send_position.data(), send_sizes.data(),
+                         send_disp.data(), MPI_INT32_T, recv_position.data(),
+                         recv_sizes.data(), recv_disp.data(), MPI_INT32_T,
+                         neighbor_comm);
+
+  // Coordinates, three values per point
+  auto times3 = [](std::vector<int> v)
+  {
+    std::ranges::transform(v, v.begin(), [](int n) { return 3 * n; });
+    return v;
+  };
+  std::vector<T> recv_x(3 * recv_disp.back());
+  MPI_Neighbor_alltoallv(
+      send_x.data(), times3(send_sizes).data(), times3(send_disp).data(),
+      dolfinx::MPI::mpi_t<T>, recv_x.data(), times3(recv_sizes).data(),
+      times3(recv_disp).data(), dolfinx::MPI::mpi_t<T>, neighbor_comm);
+  MPI_Comm_free(&neighbor_comm);
+
+  std::vector<int> dest_owners(recv_disp.back());
+  for (std::size_t i = 0; i < in_ranks.size(); ++i)
+  {
+    std::fill(std::next(dest_owners.begin(), recv_disp[i]),
+              std::next(dest_owners.begin(), recv_disp[i + 1]), in_ranks[i]);
+  }
+  std::vector<std::int32_t> dest_cells(recv_position.size());
+  for (std::size_t i = 0; i < recv_position.size(); ++i)
+    dest_cells[i] = parent_cells[recv_position[i]];
+
+  return geometry::PointOwnershipData<T>{.src_owner = std::move(src_owner),
+                                         .dest_owners = std::move(dest_owners),
+                                         .dest_points = std::move(recv_x),
+                                         .dest_cells = std::move(dest_cells),
+                                         .process_local = false};
 }
 
 template <dolfinx::scalar T, std::floating_point U>
@@ -1716,8 +2207,8 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
   std::vector<T> values_b(dest_ranks.size() * value_size);
   md::mdspan<const T, md::dextents<std::size_t, 2>> _send_values(
       send_values.data(), src_ranks.size(), value_size);
-  impl::scatter_values(comm, src_ranks, dest_ranks, _send_values,
-                       std::span(values_b));
+  impl::scatter_values(comm, interpolation_data.process_local, src_ranks,
+                       dest_ranks, _send_values, std::span(values_b));
 
   // Transpose received data
   md::mdspan<const T, md::dextents<std::size_t, 2>> values(
@@ -1732,6 +2223,214 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
   // Call local interpolation operator
   fem::interpolate<T>(u1, valuesT_b, {valuesT.extent(0), valuesT.extent(1)},
                       cells);
+}
+
+/// @brief Apply the transpose of non-matching interpolation.
+///
+/// `u1.interpolate(u0, cells1, tol, maxit, interpolation_data)` applies
+/// a linear operator `P` from the coefficients of `u0` to those of
+/// `u1`. This function computes the coefficients of `u0` as `P^T`
+/// applied to the coefficients of `u1`. It is the restriction matching
+/// `P` as a prolongation in multigrid, and is not an interpolation from
+/// the space of `u1` into the space of `u0`.
+///
+/// Each owned degree-of-freedom of `u1` contributes through the last
+/// cell in `cells1` that contains it, as the forward operator takes its
+/// value from that cell. Interpolation points not owned by any process
+/// contribute nothing. `P` is real, so no complex conjugate is taken.
+///
+/// @note Collective.
+///
+/// @param[in,out] u0 Function to overwrite with `P^T u1`. Ghost values
+/// are updated.
+/// @param[in] u1 Function to apply the transpose to. Its ghost values
+/// are not used.
+/// @param[in] cells1 Cells of the mesh of `u1`, as passed to the
+/// forward interpolation.
+/// @param[in] tol Tolerance of the Newton method for non-affine
+/// pull-backs on the mesh of `u0`. Ignored for affine geometries.
+/// @param[in] maxit Maximum number of Newton iterations for non-affine
+/// pull-backs on the mesh of `u0`. Ignored for affine geometries.
+/// @param[in] interpolation_data Data associating the interpolation
+/// points of `u1` with cells of the mesh of `u0`, as for the forward
+/// interpolation. Computed by fem::create_interpolation_data.
+template <dolfinx::scalar T, std::floating_point U>
+void interpolate_transpose(
+    Function<T, U>& u0, const Function<T, U>& u1,
+    std::span<const std::int32_t> cells1, double tol, int maxit,
+    const geometry::PointOwnershipData<U>& interpolation_data)
+{
+  auto V0 = u0.function_space();
+  auto V1 = u1.function_space();
+  assert(V0);
+  assert(V1);
+  auto mesh0 = V0->mesh();
+  auto mesh1 = V1->mesh();
+  assert(mesh0);
+  assert(mesh1);
+  MPI_Comm comm = mesh1->comm();
+  {
+    int result;
+    MPI_Comm_compare(comm, mesh0->comm(), &result);
+    if (result == MPI_UNEQUAL)
+    {
+      throw std::invalid_argument("Interpolation on different meshes is only "
+                                  "supported on the same communicator.");
+    }
+  }
+
+  auto element0 = V0->element();
+  auto element1 = V1->element();
+  assert(element0);
+  assert(element1);
+  for (const FiniteElement<U>* e : {element0.get(), element1.get()})
+  {
+    if (e->symmetric())
+    {
+      throw std::invalid_argument(
+          "Transpose interpolation is not supported for symmetric elements.");
+    }
+    if (int num_sub = e->num_sub_elements();
+        num_sub > 0 and num_sub != e->block_size())
+    {
+      throw std::invalid_argument("Transpose interpolation is not supported "
+                                  "for mixed elements. Use subspaces.");
+    }
+  }
+
+  // Blocked elements are supported for point evaluations and scalar
+  // identity-mapped elements, as in the forward operator
+  if (element1->block_size() > 1
+      and !(element1->map_ident() and element1->interpolation_ident())
+      and (!element1->map_ident() or element1->reference_value_size() > 1))
+  {
+    throw std::invalid_argument(
+        "Transpose interpolation into this element is not supported.");
+  }
+
+  const std::size_t value_size = element1->value_size();
+  if (static_cast<std::size_t>(element0->value_size()) != value_size)
+  {
+    throw std::invalid_argument("Functions must have the same value size.");
+  }
+
+  const std::size_t num_points = element1->interpolation_points().second[0];
+  const std::vector<int>& src_owner = interpolation_data.src_owner;
+  const std::vector<int>& dest_owners = interpolation_data.dest_owners;
+  const std::vector<U>& dest_points = interpolation_data.dest_points;
+  const std::vector<std::int32_t>& dest_cells = interpolation_data.dest_cells;
+  if (src_owner.size() != cells1.size() * num_points)
+  {
+    throw std::invalid_argument("Interpolation data does not match the cells.");
+  }
+
+  std::span<const std::uint32_t> cell_info;
+  if (element1->needs_dof_transformations())
+  {
+    mesh1->topology_mutable()->create_cell_permutations();
+    cell_info = std::span(mesh1->topology()->get_cell_permutation_info());
+  }
+
+  // Values at the interpolation points of u1, shape=(value_size, N)
+  const std::size_t N = src_owner.size();
+  std::vector<T> g_b(value_size * N, 0);
+  impl::interpolation_transpose<T>(*element1, *V1->dofmap(), cells1, cell_info,
+                                   *mesh1, u1.x()->array(), std::span(g_b),
+                                   {value_size, N});
+
+  // Group values by the rank owning the point, by point within a rank
+  std::vector<std::int32_t> perm;
+  perm.reserve(N);
+  for (std::size_t p = 0; p < N; ++p)
+    if (src_owner[p] >= 0)
+      perm.push_back(p);
+  // Already grouped for e.g. hierarchy routing, where every point is
+  // owned by this process
+  auto owner = [&src_owner](std::int32_t p) { return src_owner[p]; };
+  if (!std::ranges::is_sorted(perm, std::ranges::less(), owner))
+    std::ranges::stable_sort(perm, std::ranges::less(), owner);
+  std::vector<std::int32_t> send_ranks(perm.size());
+  std::vector<T> send_values_b(perm.size() * value_size);
+  for (std::size_t i = 0; i < perm.size(); ++i)
+  {
+    send_ranks[i] = src_owner[perm[i]];
+    for (std::size_t j = 0; j < value_size; ++j)
+      send_values_b[i * value_size + j] = g_b[j * N + perm[i]];
+  }
+
+  // Send values to the owning process of each point
+  const std::size_t num_recv = dest_owners.size();
+  std::vector<T> recv_values(num_recv * value_size);
+  impl::mdspan_t<const T, 2> send_values(send_values_b.data(),
+                                         send_ranks.size(), value_size);
+  impl::scatter_values(comm, interpolation_data.process_local, send_ranks,
+                       dest_owners, send_values, std::span(recv_values));
+
+  // Accumulate the transposed evaluation, transpose of Function::eval
+  std::span<T> c0 = u0.x()->array();
+  std::ranges::fill(c0, 0);
+  auto dofmap0 = V0->dofmap();
+  const int bs_dof = dofmap0->bs();
+  const int bs_element = element0->block_size();
+  // Positions of the degrees-of-freedom of each block of the current
+  // cell, recomputed when the cell changes. Consecutive points usually
+  // share a cell.
+  const std::size_t num_scalar_dofs = element0->space_dimension() / bs_element;
+  std::vector<std::int32_t> dof_pos(bs_element * num_scalar_dofs);
+  std::int32_t dof_pos_cell = -1;
+  int error = 0;
+  try
+  {
+    impl::evaluate_basis<U>(
+        *element0, *mesh0, std::span(dest_points), {num_recv, 3}, dest_cells,
+        tol, maxit,
+        [&c0, &recv_values, &dofmap0, &dof_pos, &dof_pos_cell, bs_dof,
+         bs_element, num_scalar_dofs, value_size](
+            std::size_t p, std::int32_t c, impl::mdspan_t<const U, 2> basis)
+        {
+          if (c != dof_pos_cell)
+          {
+            std::span<const std::int32_t> dofs = dofmap0->cell_dofs(c);
+            for (int k = 0; k < bs_element; ++k)
+            {
+              impl::block_dof_positions(
+                  dofs, k, bs_element, bs_dof,
+                  std::span(dof_pos).subspan(k * num_scalar_dofs,
+                                             num_scalar_dofs));
+            }
+            dof_pos_cell = c;
+          }
+
+          for (int k = 0; k < bs_element; ++k)
+          {
+            for (std::size_t i = 0; i < basis.extent(0); ++i)
+            {
+              T acc = 0;
+              for (std::size_t j = 0; j < basis.extent(1); ++j)
+              {
+                acc += basis(i, j)
+                       * recv_values[p * value_size + j * bs_element + k];
+              }
+              c0[dof_pos[k * num_scalar_dofs + i]] += acc;
+            }
+          }
+        });
+  }
+  catch (const std::exception& e)
+  {
+    logger().error("Transpose interpolation failed: {}", e.what());
+    error = 1;
+  }
+
+  MPI_Allreduce(MPI_IN_PLACE, &error, 1, MPI_INT, MPI_MAX, comm);
+  if (error)
+  {
+    throw std::runtime_error("Transpose interpolation failed to evaluate "
+                             "the basis on some process.");
+  }
+
+  u0.x()->scatter_rev(std::plus<T>());
+  u0.x()->scatter_fwd();
 }
 
 /// @brief Interpolate from one finite element Function to another

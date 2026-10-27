@@ -19,6 +19,9 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.fem import build_sparsity_pattern as _build_sparsity_pattern
 from dolfinx.cpp.fem import compute_integration_domains as _compute_integration_domains
+from dolfinx.cpp.fem import (
+    create_hierarchy_interpolation_data as _create_hierarchy_interpolation_data,
+)
 from dolfinx.cpp.fem import create_interpolation_data as _create_interpolation_data
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_curl as _discrete_curl
@@ -130,6 +133,69 @@ def create_interpolation_data(
         case _:
             raise TypeError(
                 "create_interpolation_data requires V_to and V_from to have the same dtype."
+            )
+
+
+def create_hierarchy_interpolation_data(
+    V_to: FunctionSpace,
+    V_from: FunctionSpace,
+    parent_cells: npt.ArrayLike,
+) -> _PointOwnershipData:
+    """Generate data for interpolating from a mesh to its refinement.
+
+    Equivalent to :func:`create_interpolation_data` over the owned cells
+    of the mesh of ``V_to``, when that mesh is a refinement of the mesh
+    of ``V_from``. Each interpolation point is routed to the parent cell
+    of its fine cell, without a geometric search.
+
+    A fine cell is found through its original cell index, i.e. its
+    global index before the refined mesh was distributed. The process
+    that refined it holds its parent cell. If the refined mesh was not
+    redistributed (the default partitioner of
+    :func:`dolfinx.mesh.refine`), every point stays on its process. The
+    data is then process-local (see
+    :attr:`dolfinx.geometry.PointOwnershipData.process_local`), so
+    interpolating with it needs no communication.
+
+    The data is used with all owned cells of the mesh of ``V_to``, i.e.
+    ``np.arange(num_owned_cells, dtype=np.int32)``, in
+    :meth:`dolfinx.fem.Function.interpolate_nonmatching` and
+    :meth:`dolfinx.fem.Function.interpolate_nonmatching_transpose`.
+
+    Note:
+        Collective.
+
+    Args:
+        V_to: Function space on the refined mesh.
+        V_from: Function space on the mesh that was refined.
+        parent_cells: Parent cells, as returned on this process by
+            :func:`dolfinx.mesh.refine`.
+
+    Returns:
+        Data needed to interpolate from ``V_from`` into ``V_to``.
+    """
+    parent = np.ascontiguousarray(parent_cells, dtype=np.int32).reshape(-1)
+    match V_to.mesh._cpp_object, V_to.element._cpp_object, V_from.mesh._cpp_object:
+        case (
+            _cpp.mesh.Mesh_float32() as mesh0,
+            _cpp.fem.FiniteElement_float32() as element0,
+            _cpp.mesh.Mesh_float32() as mesh1,
+        ):
+            return _PointOwnershipData(
+                _create_hierarchy_interpolation_data(mesh0, element0, mesh1, parent)
+            )
+        case (
+            _cpp.mesh.Mesh_float64() as mesh0,
+            _cpp.fem.FiniteElement_float64() as element0,
+            _cpp.mesh.Mesh_float64() as mesh1,
+        ):
+            return _PointOwnershipData(
+                _create_hierarchy_interpolation_data(mesh0, element0, mesh1, parent)
+            )
+        case _:
+            raise TypeError(
+                "create_hierarchy_interpolation_data requires V_to and V_from to have the same "
+                "dtype."
             )
 
 
