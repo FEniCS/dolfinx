@@ -23,7 +23,9 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <exception>
 #include <functional>
+#include <iterator>
 #include <numeric>
 #include <ranges>
 #include <span>
@@ -331,16 +333,15 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
     assert(data.extent(0) * data.extent(1) == Pi.extent(1));
     if constexpr (transpose)
     {
+      // Loop over rows of Pi in the outer loop, for contiguous access
       for (std::size_t k = 0; k < data.extent(1); ++k)
-      {
         for (std::size_t j = 0; j < data.extent(0); ++j)
-        {
-          T acc = 0;
-          for (std::size_t i = 0; i < Pi.extent(0); ++i)
-            acc += static_cast<X>(Pi(i, k * data.extent(0) + j)) * coeffs[i];
-          data(j, k) = acc;
-        }
-      }
+          data(j, k) = 0;
+      for (std::size_t i = 0; i < Pi.extent(0); ++i)
+        for (std::size_t k = 0; k < data.extent(1); ++k)
+          for (std::size_t j = 0; j < data.extent(0); ++j)
+            data(j, k)
+                += static_cast<X>(Pi(i, k * data.extent(0) + j)) * coeffs[i];
     }
     else
     {
@@ -365,13 +366,12 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
     {
       if constexpr (transpose)
       {
+        // Loop over rows of Pi in the outer loop, for contiguous access
         for (std::size_t j = 0; j < cols; ++j)
-        {
-          T acc = 0;
-          for (std::size_t i = 0; i < Pi.extent(0); ++i)
-            acc += static_cast<X>(Pi(i, j)) * coeffs[bs * i + k];
-          data(j, k) = acc;
-        }
+          data(j, k) = 0;
+        for (std::size_t i = 0; i < Pi.extent(0); ++i)
+          for (std::size_t j = 0; j < cols; ++j)
+            data(j, k) += static_cast<X>(Pi(i, j)) * coeffs[bs * i + k];
       }
       else
       {
@@ -1537,6 +1537,14 @@ void interpolation_transpose(const FiniteElement<U>& element,
   P_t unit(unit_b.data(), 1, value_size);
   O_t column(column_b.data(), 1, value_size_ref);
 
+  // Pull-back matrix at each point, shape (num_points, value_size_ref,
+  // value_size). Only the first point is used for affine maps.
+  const bool affine = cmap.is_affine();
+  const std::size_t num_maps
+      = affine ? std::min<std::size_t>(num_points, 1) : num_points;
+  std::vector<T> M_b(
+      element.map_ident() ? 0 : num_maps * value_size_ref * value_size);
+
   std::vector<T> ref_b(pi_shape[1]);
   std::vector<T> r(num_scalar_dofs);
   std::vector<std::int32_t> dof_pos(num_scalar_dofs);
@@ -1552,6 +1560,22 @@ void interpolation_transpose(const FiniteElement<U>& element,
         for (int j = 0; j < gdim; ++j)
           coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
       cmap.compute_jacobians(phi, coord_dofs, J, K, detJ, det_scratch);
+
+      // The pull-back is linear in the physical value, so its matrix is
+      // formed column by column by pulling back unit vectors
+      for (std::size_t p = 0; p < num_maps; ++p)
+      {
+        Q_t Kp(K_b.data() + p * tdim * gdim, tdim, gdim);
+        Q_t Jp(J_b.data() + p * gdim * tdim, gdim, tdim);
+        for (std::size_t m = 0; m < value_size; ++m)
+        {
+          std::ranges::fill(unit_b, T(0));
+          unit_b[m] = 1;
+          pull_back_fn(column, unit, Kp, 1 / detJ[p], Jp);
+          for (std::size_t n = 0; n < value_size_ref; ++n)
+            M_b[(p * value_size_ref + n) * value_size + m] = column(0, n);
+        }
+      }
     }
 
     for (int k = 0; k < element_bs; ++k)
@@ -1595,18 +1619,14 @@ void interpolation_transpose(const FiniteElement<U>& element,
                                   std::span(r), element_bs);
         for (std::size_t p = 0; p < num_points; ++p)
         {
-          // The pull-back is linear in the physical value, so its matrix
-          // is formed column by column by pulling back unit vectors
-          Q_t Kp(K_b.data() + p * tdim * gdim, tdim, gdim);
-          Q_t Jp(J_b.data() + p * gdim * tdim, gdim, tdim);
+          std::span<const T> M(
+              M_b.data() + (affine ? 0 : p) * value_size_ref * value_size,
+              value_size_ref * value_size);
           for (std::size_t m = 0; m < value_size; ++m)
           {
-            std::ranges::fill(unit_b, T(0));
-            unit_b[m] = 1;
-            pull_back_fn(column, unit, Kp, 1 / detJ[p], Jp);
             T acc = 0;
             for (std::size_t n = 0; n < value_size_ref; ++n)
-              acc += column(0, n) * ref_b[p * value_size_ref + n];
+              acc += M[n * value_size + m] * ref_b[p * value_size_ref + n];
             g[(k * value_size + m) * N + ci * num_points + p] += acc;
           }
         }
@@ -2016,9 +2036,11 @@ void interpolate_transpose(
   for (std::size_t p = 0; p < N; ++p)
     if (src_owner[p] >= 0)
       perm.push_back(p);
-  std::ranges::stable_sort(perm, std::ranges::less(),
-                           [&src_owner](std::int32_t p)
-                           { return src_owner[p]; });
+  // Already grouped for e.g. hierarchy routing, where every point is
+  // owned by this process
+  auto owner = [&src_owner](std::int32_t p) { return src_owner[p]; };
+  if (!std::ranges::is_sorted(perm, std::ranges::less(), owner))
+    std::ranges::stable_sort(perm, std::ranges::less(), owner);
   std::vector<std::int32_t> send_ranks(perm.size());
   std::vector<T> send_values_b(perm.size() * value_size);
   for (std::size_t i = 0; i < perm.size(); ++i)
@@ -2042,18 +2064,20 @@ void interpolate_transpose(
   auto dofmap0 = V0->dofmap();
   const int bs_dof = dofmap0->bs();
   const int bs_element = element0->block_size();
+  std::vector<std::int32_t> dof_pos(element0->space_dimension() / bs_element);
   int error = 0;
   try
   {
     impl::evaluate_basis<U>(
         *element0, *mesh0, std::span(dest_points), {num_recv, 3}, dest_cells,
         tol, maxit,
-        [&c0, &recv_values, &dofmap0, bs_dof, bs_element, value_size](
+        [&c0, &recv_values, &dofmap0, &dof_pos, bs_dof, bs_element, value_size](
             std::size_t p, std::int32_t c, impl::mdspan_t<const U, 2> basis)
         {
           std::span<const std::int32_t> dofs = dofmap0->cell_dofs(c);
           for (int k = 0; k < bs_element; ++k)
           {
+            impl::block_dof_positions(dofs, k, bs_element, bs_dof, dof_pos);
             for (std::size_t i = 0; i < basis.extent(0); ++i)
             {
               T acc = 0;
@@ -2062,8 +2086,7 @@ void interpolate_transpose(
                 acc += basis(i, j)
                        * recv_values[p * value_size + j * bs_element + k];
               }
-              const std::size_t pos = bs_element * i + k;
-              c0[bs_dof * dofs[pos / bs_dof] + pos % bs_dof] += acc;
+              c0[dof_pos[i]] += acc;
             }
           }
         });

@@ -144,7 +144,9 @@ def create_hierarchy_interpolation_data(
     of the mesh of ``V_to``, when that mesh is a refinement of the mesh
     of ``V_from``. Each fine cell lies in its parent cell on the same
     process, so every interpolation point is routed to its parent cell
-    without a geometric search or communication.
+    without a geometric search or communication. Interpolating with the
+    data still calls the collective point-value exchange, but no values
+    leave the process.
 
     The data is used with all owned cells of the mesh of ``V_to``, i.e.
     ``np.arange(num_owned_cells, dtype=np.int32)``, in
@@ -178,7 +180,13 @@ def create_hierarchy_interpolation_data(
     # parent_cells is in the cell order before reordering of the refined
     # mesh, which original_cell_index maps to
     original = np.asarray(V_to.mesh.topology._cpp_object.original_cell_index, dtype=np.int64)
-    parent = parent[original[:num_cells] - cell_map.local_range[0]]
+    local = original[:num_cells] - cell_map.local_range[0]
+    if num_cells > 0 and (local.min() < 0 or local.max() >= parent.size):
+        raise ValueError(
+            "The mesh of V_to is not a refinement of the mesh of V_from on this process. "
+            "Was it redistributed after refinement?"
+        )
+    parent = parent[local]
     coarse_map = V_from.mesh.topology.index_map(V_from.mesh.topology.dim)
     num_coarse = coarse_map.size_local + coarse_map.num_ghosts
     if num_cells > 0 and (parent.min() < 0 or parent.max() >= num_coarse):
