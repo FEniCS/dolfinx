@@ -45,8 +45,9 @@ struct PointOwnershipData
                   ///< `dest_points` is located
   bool process_local
       = false; ///< `true` if, on every process, each point is owned by the
-               ///< process that sent it, so using the data needs no
-               ///< communication. Must be equal on all processes.
+               ///< process that sent it, so that using the data needs no
+               ///< communication. Set by fem::create_interpolation_data and
+               ///< fem::create_hierarchy_interpolation_data.
 };
 
 /// @brief Compute the shortest vector from a mesh entity to a point.
@@ -1129,19 +1130,10 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   MPI_Comm_free(&forward_comm);
   MPI_Comm_free(&reverse_comm);
 
-  // Determined once here, so that each use of the data can skip the
-  // communication if no point leaves its process
-  int process_local = std::ranges::all_of(point_owners, [rank](int r)
-                                          { return r < 0 or r == rank; })
-                      and std::ranges::all_of(owned_recv_ranks, [rank](int r)
-                                              { return r == rank; });
-  MPI_Allreduce(MPI_IN_PLACE, &process_local, 1, MPI_INT, MPI_LAND, comm);
-
   return PointOwnershipData<T>{.src_owner = std::move(point_owners),
                                .dest_owners = std::move(owned_recv_ranks),
                                .dest_points = std::move(owned_recv_points),
-                               .dest_cells = std::move(owned_recv_cells),
-                               .process_local = process_local != 0};
+                               .dest_cells = std::move(owned_recv_cells)};
 }
 
 } // namespace dolfinx::geometry

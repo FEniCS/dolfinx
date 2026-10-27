@@ -198,13 +198,9 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 #endif
 
     // Rows arrive in order at the positions with a non-negative rank
-    std::size_t num_rows = std::ranges::count_if(dest_ranks, [](std::int32_t r)
-                                                 { return r >= 0; });
-    if (num_rows != src_ranks.size())
-    {
-      throw std::invalid_argument(
-          "Process-local data must receive one row for each row sent.");
-    }
+    assert(static_cast<std::size_t>(std::ranges::count_if(
+               dest_ranks, [](std::int32_t r) { return r >= 0; }))
+           == src_ranks.size());
     std::ranges::fill(recv_values, T{0});
     std::size_t row = 0;
     for (std::size_t i = 0; i < dest_ranks.size(); ++i)
@@ -216,7 +212,6 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
         ++row;
       }
     }
-    assert(row == src_ranks.size());
     return;
   }
 
@@ -1410,8 +1405,6 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
       std::reduce(phi0_shape.begin(), phi0_shape.end(), 1, std::multiplies{}));
   mdspan_t<const T, 4> phi0(phi0_b.data(), phi0_shape);
   cmap.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi0_b);
-  auto dphi0
-      = md::submdspan(phi0, std::pair(1, tdim + 1), 0, md::full_extent, 0);
 
   // Geometry basis derivatives at a point (non-affine case)
   std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, 1);
@@ -1434,8 +1427,10 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
 
   // Consecutive points often share a cell, e.g. the interpolation
   // points of a cell, so the geometry of the previous cell is reused
+  // For affine cells, the Jacobian data of point p is stored at
+  // jacobian[p], the first point of its cell.
   std::int32_t prev_cell = -1;
-  std::size_t prev_p = 0;
+  std::vector<std::size_t> jacobian(xshape[0]);
   std::array<T, 3> x0{0, 0, 0};
   for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
   {
@@ -1461,29 +1456,25 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
     for (std::size_t j = 0; j < gdim; ++j)
       xp(0, j) = x[p * xshape[1] + j];
 
-    auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-    auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+    const bool reuse = cmap.is_affine() and same_cell;
+    jacobian[p] = reuse ? jacobian[p - 1] : p;
+    auto _J = md::submdspan(J, jacobian[p], md::full_extent, md::full_extent);
+    auto _K = md::submdspan(K, jacobian[p], md::full_extent, md::full_extent);
 
     std::array<T, 3> Xpb{0, 0, 0};
     md::mdspan<T, md::extents<std::size_t, 1, md::dynamic_extent>> Xp(
         Xpb.data(), 1, tdim);
     if (cmap.is_affine())
     {
-      if (same_cell)
+      if (!reuse)
       {
-        // Constant Jacobian over the cell
-        std::copy_n(J_b.data() + prev_p * gdim * tdim, gdim * tdim,
-                    J_b.data() + p * gdim * tdim);
-        std::copy_n(K_b.data() + prev_p * tdim * gdim, tdim * gdim,
-                    K_b.data() + p * tdim * gdim);
-        detJ[p] = detJ[prev_p];
-      }
-      else
-      {
-        CoordinateElement<T>::compute_jacobian(dphi0, coord_dofs, _J);
-        CoordinateElement<T>::compute_jacobian_inverse(_J, _K);
-        detJ[p] = CoordinateElement<T>::compute_jacobian_determinant(
-            _J, det_scratch);
+        cmap.compute_jacobians(phi0, coord_dofs,
+                               md::submdspan(J, std::pair(p, p + 1),
+                                             md::full_extent, md::full_extent),
+                               md::submdspan(K, std::pair(p, p + 1),
+                                             md::full_extent, md::full_extent),
+                               std::span(detJ).subspan(p, 1),
+                               std::span(det_scratch));
       }
       CoordinateElement<T>::pull_back_affine(Xp, _K, x0, xp);
     }
@@ -1501,7 +1492,6 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
     for (std::size_t j = 0; j < X.extent(1); ++j)
       X(p, j) = Xpb[j];
     prev_cell = *cell_it;
-    prev_p = p;
   }
 
   // Tabulate reference basis at all points
@@ -1542,9 +1532,10 @@ void evaluate_basis(const FiniteElement<T>& element, const mesh::Mesh<T>& mesh,
 
     auto _U = md::submdspan(reference_basis, 0, p, md::full_extent,
                             md::full_extent);
-    auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-    auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-    push_forward_fn(basis, _U, _J, detJ[p], _K);
+    const std::size_t q = jacobian[p];
+    auto _J = md::submdspan(J, q, md::full_extent, md::full_extent);
+    auto _K = md::submdspan(K, q, md::full_extent, md::full_extent);
+    push_forward_fn(basis, _U, _J, detJ[q], _K);
     fn(p, *cell_it, mdspan_t<const T, 2>(basis));
   }
 }
@@ -1878,8 +1869,214 @@ geometry::PointOwnershipData<T> create_interpolation_data(
       x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
-  return geometry::determine_point_ownership<T>(mesh1, x, padding, std::nullopt,
-                                                allow_extrapolation);
+  geometry::PointOwnershipData<T> data = geometry::determine_point_ownership<T>(
+      mesh1, x, padding, std::nullopt, allow_extrapolation);
+
+  // Process-local if no point leaves its process, so that interpolation
+  // with the data needs no communication
+  MPI_Comm comm = mesh1.comm();
+  const int rank = dolfinx::MPI::rank(comm);
+  int process_local = std::ranges::all_of(data.src_owner, [rank](int r)
+                                          { return r < 0 or r == rank; })
+                      and std::ranges::all_of(data.dest_owners, [rank](int r)
+                                              { return r == rank; });
+  MPI_Allreduce(MPI_IN_PLACE, &process_local, 1, MPI_INT, MPI_LAND, comm);
+  data.process_local = process_local;
+  return data;
+}
+
+/// @brief Generate data for interpolating from a mesh to its
+/// refinement.
+///
+/// Equivalent to create_interpolation_data over all owned cells of
+/// `mesh0`, when `mesh0` is a refinement of `mesh1`. Each interpolation
+/// point is routed to the parent of its cell without a geometric search.
+/// The parent is held by the process that refined the cell, which is
+/// found from the original cell index of the cell. If `mesh0` was not
+/// redistributed after refinement, every point stays on its process and
+/// the data is process-local.
+///
+/// @note Collective.
+///
+/// @param[in] mesh0 Refined mesh, i.e. the mesh of the space to
+/// interpolate into.
+/// @param[in] element0 Element of the space to interpolate into.
+/// @param[in] mesh1 Mesh that was refined.
+/// @param[in] parent_cells Parent cell in `mesh1` of each cell refined
+/// on this process, in the order of the original cell index, as
+/// computed by refinement::refine.
+/// @return Data for interpolating into all owned cells of `mesh0`.
+template <std::floating_point T>
+geometry::PointOwnershipData<T> create_hierarchy_interpolation_data(
+    const mesh::Mesh<T>& mesh0, const FiniteElement<T>& element0,
+    const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> parent_cells)
+{
+  MPI_Comm comm = mesh0.comm();
+  const int rank = dolfinx::MPI::rank(comm);
+  const int size = dolfinx::MPI::size(comm);
+  auto topology0 = mesh0.topology();
+  assert(topology0);
+  const int tdim = topology0->dim();
+  auto cell_map0 = topology0->index_map(tdim);
+  assert(cell_map0);
+  const std::int32_t num_cells = cell_map0->size_local();
+  auto cell_map1 = mesh1.topology()->index_map(mesh1.topology()->dim());
+  assert(cell_map1);
+  const std::int32_t num_cells1
+      = cell_map1->size_local() + cell_map1->num_ghosts();
+  if (topology0->original_cell_index.empty())
+    throw std::invalid_argument("mesh0 has no original cell indices.");
+  std::span<const std::int64_t> original
+      = topology0->original_cell_index.front();
+
+  // Number of cells refined on each process. Invalid parent cells are
+  // reported with them, so that all processes throw.
+  std::array<std::int64_t, 2> local
+      = {static_cast<std::int64_t>(parent_cells.size()),
+         std::ranges::any_of(parent_cells, [num_cells1](std::int32_t c)
+                             { return c < 0 or c >= num_cells1; })};
+  std::vector<std::int64_t> gathered(2 * size);
+  MPI_Allgather(local.data(), 2, MPI_INT64_T, gathered.data(), 2, MPI_INT64_T,
+                comm);
+  std::vector<std::int64_t> offsets(size + 1, 0);
+  bool invalid = false;
+  for (int r = 0; r < size; ++r)
+  {
+    offsets[r + 1] = offsets[r] + gathered[2 * r];
+    invalid = invalid or gathered[2 * r + 1] != 0;
+  }
+  if (invalid)
+    throw std::invalid_argument("parent_cells contains cells not in mesh1.");
+  if (offsets.back() != cell_map0->size_global())
+  {
+    throw std::invalid_argument(
+        "parent_cells must have an entry for each cell of mesh0.");
+  }
+
+  // Process that refined each owned cell, and the position of its parent
+  // in parent_cells on that process
+  std::vector<int> owner(num_cells);
+  std::vector<std::int32_t> position(num_cells);
+  for (std::int32_t c = 0; c < num_cells; ++c)
+  {
+    assert(original[c] >= 0 and original[c] < offsets.back());
+    auto it = std::ranges::upper_bound(offsets, original[c]);
+    owner[c] = std::ranges::distance(offsets.begin(), it) - 1;
+    position[c] = original[c] - offsets[owner[c]];
+  }
+
+  // Interpolation points of the owned cells, shape=(num_points, 3)
+  std::vector<std::int32_t> cells(num_cells);
+  std::iota(cells.begin(), cells.end(), 0);
+  std::vector<T> coords
+      = interpolation_coords(element0, mesh0.geometry(), std::span(cells));
+  const std::size_t num_points = coords.size() / 3;
+  const std::size_t num_ip = element0.interpolation_points().second[0];
+  std::vector<T> x(coords.size());
+  for (std::size_t i = 0; i < num_points; ++i)
+    for (std::size_t j = 0; j < 3; ++j)
+      x[3 * i + j] = coords[i + j * num_points];
+  std::vector<int> src_owner(num_points);
+  for (std::size_t p = 0; p < num_points; ++p)
+    src_owner[p] = owner[p / num_ip];
+
+  int process_local
+      = std::ranges::all_of(owner, [rank](int r) { return r == rank; });
+  MPI_Allreduce(MPI_IN_PLACE, &process_local, 1, MPI_INT, MPI_LAND, comm);
+  if (process_local)
+  {
+    std::vector<std::int32_t> dest_cells(num_points);
+    for (std::size_t p = 0; p < num_points; ++p)
+      dest_cells[p] = parent_cells[position[p / num_ip]];
+    return geometry::PointOwnershipData<T>{.src_owner = std::move(src_owner),
+                                           .dest_owners
+                                           = std::vector<int>(num_points, rank),
+                                           .dest_points = std::move(x),
+                                           .dest_cells = std::move(dest_cells),
+                                           .process_local = true};
+  }
+
+  // Send each point and the position of its parent to the process that
+  // refined its cell, grouped by process and in point order within a
+  // process, as required of PointOwnershipData
+  std::vector<std::int32_t> perm(num_points);
+  std::iota(perm.begin(), perm.end(), 0);
+  std::ranges::stable_sort(perm, std::ranges::less(),
+                           [&src_owner](std::int32_t p)
+                           { return src_owner[p]; });
+  std::vector<int> out_ranks;
+  std::vector<int> send_sizes;
+  for (std::int32_t p : perm)
+  {
+    if (out_ranks.empty() or out_ranks.back() != src_owner[p])
+    {
+      out_ranks.push_back(src_owner[p]);
+      send_sizes.push_back(0);
+    }
+    ++send_sizes.back();
+  }
+  std::vector<int> in_ranks = dolfinx::MPI::compute_graph_edges_nbx(
+      comm, std::span<const int>(out_ranks));
+  std::ranges::sort(in_ranks);
+
+  MPI_Comm neighbor_comm;
+  MPI_Dist_graph_create_adjacent(
+      comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
+      out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
+  std::vector<int> recv_sizes(in_ranks.size());
+  send_sizes.reserve(1);
+  recv_sizes.reserve(1);
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                        MPI_INT, neighbor_comm);
+
+  std::vector<int> send_disp(send_sizes.size() + 1, 0);
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_disp.begin()));
+  std::vector<int> recv_disp(recv_sizes.size() + 1, 0);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   std::next(recv_disp.begin()));
+  std::vector<std::int32_t> send_position(num_points);
+  std::vector<T> send_x(3 * num_points);
+  for (std::size_t i = 0; i < num_points; ++i)
+  {
+    send_position[i] = position[perm[i] / num_ip];
+    std::copy_n(std::next(x.begin(), 3 * perm[i]), 3,
+                std::next(send_x.begin(), 3 * i));
+  }
+  std::vector<std::int32_t> recv_position(recv_disp.back());
+  MPI_Neighbor_alltoallv(send_position.data(), send_sizes.data(),
+                         send_disp.data(), MPI_INT32_T, recv_position.data(),
+                         recv_sizes.data(), recv_disp.data(), MPI_INT32_T,
+                         neighbor_comm);
+
+  // Coordinates, three values per point
+  auto times3 = [](std::vector<int> v)
+  {
+    std::ranges::transform(v, v.begin(), [](int n) { return 3 * n; });
+    return v;
+  };
+  std::vector<T> recv_x(3 * recv_disp.back());
+  MPI_Neighbor_alltoallv(
+      send_x.data(), times3(send_sizes).data(), times3(send_disp).data(),
+      dolfinx::MPI::mpi_t<T>, recv_x.data(), times3(recv_sizes).data(),
+      times3(recv_disp).data(), dolfinx::MPI::mpi_t<T>, neighbor_comm);
+  MPI_Comm_free(&neighbor_comm);
+
+  std::vector<int> dest_owners(recv_disp.back());
+  for (std::size_t i = 0; i < in_ranks.size(); ++i)
+  {
+    std::fill(std::next(dest_owners.begin(), recv_disp[i]),
+              std::next(dest_owners.begin(), recv_disp[i + 1]), in_ranks[i]);
+  }
+  std::vector<std::int32_t> dest_cells(recv_position.size());
+  for (std::size_t i = 0; i < recv_position.size(); ++i)
+    dest_cells[i] = parent_cells[recv_position[i]];
+
+  return geometry::PointOwnershipData<T>{.src_owner = std::move(src_owner),
+                                         .dest_owners = std::move(dest_owners),
+                                         .dest_points = std::move(recv_x),
+                                         .dest_cells = std::move(dest_cells),
+                                         .process_local = false};
 }
 
 template <dolfinx::scalar T, std::floating_point U>

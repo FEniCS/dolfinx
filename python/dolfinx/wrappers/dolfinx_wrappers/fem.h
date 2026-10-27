@@ -1467,6 +1467,21 @@ void declare_real_functions(nb::module_& m)
       },
       nb::arg("geometry0"), nb::arg("element0"), nb::arg("mesh1"),
       nb::arg("cells"), nb::arg("padding"), nb::arg("allow_extrapolation"));
+
+  m.def(
+      "create_hierarchy_interpolation_data",
+      [](const dolfinx::mesh::Mesh<T>& mesh0,
+         const dolfinx::fem::FiniteElement<T>& element0,
+         const dolfinx::mesh::Mesh<T>& mesh1,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+             parent_cells)
+      {
+        return dolfinx::fem::create_hierarchy_interpolation_data(
+            mesh0, element0, mesh1,
+            std::span(parent_cells.data(), parent_cells.size()));
+      },
+      nb::arg("mesh0"), nb::arg("element0"), nb::arg("mesh1"),
+      nb::arg("parent_cells"));
 }
 
 } // namespace dolfinx_wrappers

@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import typing
 
-from mpi4py import MPI as _MPI
-
 import numpy as np
 import numpy.typing as npt
 
@@ -21,6 +19,9 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.fem import build_sparsity_pattern as _build_sparsity_pattern
 from dolfinx.cpp.fem import compute_integration_domains as _compute_integration_domains
+from dolfinx.cpp.fem import (
+    create_hierarchy_interpolation_data as _create_hierarchy_interpolation_data,
+)
 from dolfinx.cpp.fem import create_interpolation_data as _create_interpolation_data
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_curl as _discrete_curl
@@ -173,75 +174,29 @@ def create_hierarchy_interpolation_data(
     Returns:
         Data needed to interpolate from ``V_from`` into ``V_to``.
     """
-    comm = V_to.mesh.comm
-    tdim = V_to.mesh.topology.dim
-    cell_map = V_to.mesh.topology.index_map(tdim)
-    num_cells = cell_map.size_local
-    cells = np.arange(num_cells, dtype=np.int32)
-
-    # Local checks, before any collective operation
-    dtype = V_from.mesh.geometry.x.dtype
-    if V_to.mesh.geometry.x.dtype != dtype:
-        raise TypeError(
-            "create_hierarchy_interpolation_data requires V_to and V_from to have the same dtype."
-        )
-    parent = np.asarray(parent_cells, dtype=np.int32).reshape(-1)
-    coarse_map = V_from.mesh.topology.index_map(V_from.mesh.topology.dim)
-    num_coarse = coarse_map.size_local + coarse_map.num_ghosts
-    if parent.size > 0 and (parent.min() < 0 or parent.max() >= num_coarse):
-        raise ValueError("parent_cells contains indices outside the mesh of V_from.")
-    original = np.asarray(V_to.mesh.topology.original_cell_index[:num_cells], dtype=np.int64)
-    assert num_cells == 0 or (original.min() >= 0 and original.max() < cell_map.size_global)
-
-    # parent_cells holds the parent of each cell refined on this process,
-    # in the order of the original cell index, before the refined mesh
-    # was distributed and reordered. The check is equal on all processes.
-    offsets = np.zeros(comm.size + 1, dtype=np.int64)
-    offsets[1:] = np.cumsum(comm.allgather(parent.size))
-    if offsets[-1] != cell_map.size_global:
-        raise ValueError("parent_cells must have an entry for each cell of the mesh of V_to.")
-
-    # Process holding the parent of each owned fine cell, and the
-    # position of the parent in parent_cells on that process
-    owner = np.searchsorted(offsets, original, side="right").astype(np.int32) - 1
-    position = (original - offsets[owner]).astype(np.int32)
-
-    # Interpolation points of V_to in physical space, ordered by cell
-    x = _cpp.fem.interpolation_coords(  # type: ignore[call-overload]
-        V_to.element._cpp_object, V_to.mesh.geometry._cpp_object, cells
-    ).T
-    num_ip = V_to.element.interpolation_points.shape[0]
-    src_owner = np.repeat(owner, num_ip)
-    point_position = np.repeat(position, num_ip)
-
-    process_local = comm.allreduce(bool(np.all(owner == comm.rank)), op=_MPI.LAND)
-    if process_local:
-        dest_owners = src_owner
-        dest_x = np.ascontiguousarray(x, dtype=dtype)
-        dest_position = point_position
-    else:
-        # Send the points, grouped by process and in point order within a
-        # process, as required of PointOwnershipData
-        order = np.argsort(src_owner, kind="stable")
-        send_counts = np.bincount(src_owner, minlength=comm.size).astype(np.int32)
-        recv_counts = np.asarray(comm.alltoall(send_counts.tolist()), dtype=np.int32)
-        send_x = np.ascontiguousarray(x[order], dtype=dtype)
-        dest_x = np.empty((recv_counts.sum(), 3), dtype=dtype)
-        comm.Alltoallv([send_x, 3 * send_counts], [dest_x, 3 * recv_counts])
-        send_position = np.ascontiguousarray(point_position[order])
-        dest_position = np.empty(recv_counts.sum(), dtype=np.int32)
-        comm.Alltoallv([send_position, send_counts], [dest_position, recv_counts])
-        dest_owners = np.repeat(np.arange(comm.size, dtype=np.int32), recv_counts)
-
-    cls = getattr(_cpp.geometry, f"PointOwnershipData_float{8 * np.dtype(dtype).itemsize}")
-    data = cls(
-        src_owner,
-        dest_owners,
-        dest_x.reshape(-1),
-        np.ascontiguousarray(parent[dest_position]),
-    )
-    data.process_local = process_local
-    return _PointOwnershipData(data)
+    parent = np.ascontiguousarray(parent_cells, dtype=np.int32).reshape(-1)
+    match V_to.mesh._cpp_object, V_to.element._cpp_object, V_from.mesh._cpp_object:
+        case (
+            _cpp.mesh.Mesh_float32() as mesh0,
+            _cpp.fem.FiniteElement_float32() as element0,
+            _cpp.mesh.Mesh_float32() as mesh1,
+        ):
+            return _PointOwnershipData(
+                _create_hierarchy_interpolation_data(mesh0, element0, mesh1, parent)
+            )
+        case (
+            _cpp.mesh.Mesh_float64() as mesh0,
+            _cpp.fem.FiniteElement_float64() as element0,
+            _cpp.mesh.Mesh_float64() as mesh1,
+        ):
+            return _PointOwnershipData(
+                _create_hierarchy_interpolation_data(mesh0, element0, mesh1, parent)
+            )
+        case _:
+            raise TypeError(
+                "create_hierarchy_interpolation_data requires V_to and V_from to have the same "
+                "dtype."
+            )
 
 
 def evaluate_basis_functions(

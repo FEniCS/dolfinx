@@ -77,6 +77,8 @@ class PointOwnershipData(typing.Generic[Real]):
 
         Holds on every process: each point is owned by the process that
         sent it, so interpolation with the data needs no communication.
+        Set by :func:`dolfinx.fem.create_interpolation_data` and
+        :func:`dolfinx.fem.create_hierarchy_interpolation_data`.
         """
         return self._cpp_object.process_local
 

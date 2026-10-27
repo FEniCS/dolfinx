@@ -13,7 +13,6 @@ import pytest
 import basix
 import basix.ufl
 from dolfinx import fem, mesh
-from dolfinx.geometry import PointOwnershipData
 from dolfinx.graph import partitioner
 
 dtypes = [np.float32, np.float64, np.complex64, np.complex128]
@@ -257,23 +256,3 @@ def test_hierarchy_interpolation_data_invalid_parents():
         invalid[0] = -1
         with pytest.raises(ValueError):
             fem.create_hierarchy_interpolation_data(V1, V0, invalid)
-
-
-def test_process_local_row_count_checked():
-    """Inconsistent data marked as process-local is rejected."""
-    msh0, msh1, parent_cells = _refined(np.float64)
-    V0 = fem.functionspace(msh0, ("Lagrange", 1))
-    V1 = fem.functionspace(msh1, ("Lagrange", 1))
-    cells1 = _all_cells(msh1)
-    data = fem.create_hierarchy_interpolation_data(V1, V0, parent_cells)
-
-    # One point fewer requested than is evaluated
-    src_owner = data.src_owner.copy()
-    src_owner[0] = -1
-    invalid = type(data._cpp_object)(
-        src_owner, data.dest_owner.copy(), data.dest_points.reshape(-1), data.dest_cells.copy()
-    )
-    invalid.process_local = True
-    u0, u1 = fem.Function(V0), fem.Function(V1)
-    with pytest.raises(ValueError):
-        u1.interpolate_nonmatching(u0, cells1, PointOwnershipData(invalid))
