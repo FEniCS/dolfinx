@@ -2223,10 +2223,10 @@ class NonlinearProblem(typing.Generic[_U]):
 
             opts.prefixPop()
 
-        if self.P_mat is not None and kind == "nest":
-            # Transfer nest IS on self.P_mat to PC of main KSP. This allows
-            # fieldsplit preconditioning to be applied, if desired.
-            nest_IS = self.P_mat.getNestISs()
+        if kind == "nest":
+            # Transfer nest IS on self._A to PC of main KSP. This allows
+            # fieldsplit solvers to be used, if desired.
+            nest_IS = self._A.getNestISs()
             fieldsplit_IS = tuple(
                 [
                     (f"{u.name + '_' if u.name != 'f' else ''}{i}", IS)
