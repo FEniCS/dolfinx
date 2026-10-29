@@ -820,7 +820,7 @@ def test_de_rahm_2D(order) -> None:
     x = ufl.SpatialCoordinate(mesh)
     g_ex = ufl.as_vector((1 + x[1], 4 * x[1] + x[0]))
     assert np.abs(assemble_scalar(form(ufl.inner(q - g_ex, q - g_ex) * ufl.dx))) == pytest.approx(
-        0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
+        0, abs=float(np.sqrt(np.finfo(mesh.geometry.x.dtype).eps))
     )
 
     V = functionspace(mesh, ("BDM", order - 1))
@@ -832,7 +832,7 @@ def test_de_rahm_2D(order) -> None:
     v.interpolate(Expression(curl2D(ufl.grad(w)), V.element.interpolation_points))
     h_ex = ufl.as_vector((1, -1))
     assert np.abs(assemble_scalar(form(ufl.inner(v - h_ex, v - h_ex) * ufl.dx))) == pytest.approx(
-        0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
+        0, abs=float(np.sqrt(np.finfo(mesh.geometry.x.dtype).eps))
     )
 
 
