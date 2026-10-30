@@ -23,13 +23,19 @@ from dolfinx.cpp.fem import (
     create_hierarchy_interpolation_data as _create_hierarchy_interpolation_data,
 )
 from dolfinx.cpp.fem import create_interpolation_data as _create_interpolation_data
+from dolfinx.cpp.fem import (
+    create_nonmatching_hierarchy_interpolation_data as _create_nonmatching_hierarchy_data,
+)
+from dolfinx.cpp.fem import (
+    create_nonmatching_interpolation_data as _create_nonmatching_interpolation_data,
+)
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem import evaluate_basis_functions as _evaluate_basis_functions
 from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem.element import CoordinateElement
-from dolfinx.fem.function import FunctionSpace
+from dolfinx.fem.function import FunctionSpace, NonmatchingInterpolationData
 from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
 from dolfinx.la import MatrixCSR as _MatrixCSR
 from dolfinx.la import SparsityPattern as _SparsityPattern
@@ -442,3 +448,78 @@ def interpolate_geometry(msh: dolfinx.mesh.Mesh, cmap: CoordinateElement) -> dol
         )
     )
     return _mesh.Mesh(new_msh, domain)
+
+
+def create_nonmatching_interpolation_data(
+    V_to: FunctionSpace,
+    V_from: FunctionSpace,
+    cells: npt.NDArray[np.int32] | None = None,
+    parent_cells: npt.ArrayLike | None = None,
+    padding: float = 1e-14,
+    allow_extrapolation: bool = True,
+    tol: float = 1e-6,
+    maxit: int = 15,
+) -> NonmatchingInterpolationData:
+    """Generate data for repeated interpolation on non-matching meshes.
+
+    The data gives the same operator as
+    :func:`create_interpolation_data` (or, with ``parent_cells``,
+    :func:`create_hierarchy_interpolation_data`) in
+    :meth:`dolfinx.fem.Function.interpolate_nonmatching` and
+    :meth:`dolfinx.fem.Function.interpolate_nonmatching_transpose`, at a
+    lower cost per application: the points are pulled back to the
+    reference cells once, and for point-evaluation elements, e.g.
+    Lagrange, each degree-of-freedom is evaluated once.
+
+    Note:
+        Collective.
+
+    Args:
+        V_to: Function space to interpolate into.
+        V_from: Function space to interpolate from.
+        cells: Cells of the mesh of ``V_to`` to interpolate into. All
+            owned cells if ``None``. Must be ``None`` if
+            ``parent_cells`` is given.
+        parent_cells: If given, the mesh of ``V_to`` is a refinement of
+            the mesh of ``V_from`` with these parent cells, as returned
+            on this process by :func:`dolfinx.mesh.refine`, and points
+            are routed to the parents without a geometric search.
+        padding: See :func:`create_interpolation_data`.
+        allow_extrapolation: See :func:`create_interpolation_data`.
+        tol: Tolerance for convergence in Newton method for nonaffine
+            pullbacks on the mesh of ``V_from``. Ignored if its geometry
+            is affine.
+        maxit: Maximum number of iterations for nonaffine pullback.
+            Ignored if the geometry is affine.
+
+    Returns:
+        Data needed to interpolate from ``V_from`` into ``V_to``.
+    """
+    V1, V0 = V_to._cpp_object, V_from._cpp_object
+    if type(V1) is not type(V0):
+        raise TypeError(
+            "create_nonmatching_interpolation_data requires V_to and V_from to have the same dtype."
+        )
+    if parent_cells is not None:
+        if cells is not None:
+            raise ValueError("cells and parent_cells cannot both be given.")
+        parent = np.ascontiguousarray(parent_cells, dtype=np.int32).reshape(-1)
+        return NonmatchingInterpolationData(
+            _create_nonmatching_hierarchy_data(V1, V0, parent, tol, maxit)  # type: ignore[arg-type]
+        )
+    if cells is None:
+        tdim = V_to.mesh.topology.dim
+        cell_map = V_to.mesh.topology.index_map(tdim)
+        assert cell_map is not None
+        cells = np.arange(cell_map.size_local, dtype=np.int32)
+    return NonmatchingInterpolationData(
+        _create_nonmatching_interpolation_data(
+            V1,  # type: ignore[arg-type]
+            V0,  # type: ignore[arg-type]
+            cells,
+            padding,
+            allow_extrapolation,
+            tol,
+            maxit,
+        )
+    )

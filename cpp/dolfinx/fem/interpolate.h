@@ -28,9 +28,11 @@
 #include <functional>
 #include <iterator>
 #include <numeric>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <stdexcept>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -1737,6 +1739,634 @@ void interpolation_transpose(const FiniteElement<U>& element,
   }
 }
 
+/// @brief Whether interpolation into an element evaluates one point per
+/// degree-of-freedom block.
+///
+/// True for identity-mapped elements with an identity interpolation
+/// operator and no dof transformations, e.g. Lagrange and discontinuous
+/// Lagrange, scalar or blocked. Interpolation point `i` of a cell then
+/// gives the values of the cell's degree-of-freedom block `i`.
+template <std::floating_point T>
+bool is_point_evaluation(const FiniteElement<T>& element, const DofMap& dofmap)
+{
+  const int bs = element.block_size();
+  const int num_sub = element.num_sub_elements();
+  return element.map_ident() and element.interpolation_ident()
+         and !element.needs_dof_transformations() and !element.symmetric()
+         and dofmap.bs() == bs and (num_sub == 0 or num_sub == bs);
+}
+
+/// @brief Points at which to evaluate a function to interpolate it into
+/// a space on given cells.
+///
+/// For point-evaluation elements (see is_point_evaluation) there is one
+/// point per degree-of-freedom block of `cells`, owned or ghost, taken
+/// from the last cell in `cells` that contains it, as in the cell-wise
+/// interpolation where the last cell overwrites the others. Otherwise
+/// the points are the interpolation points of `cells`, cell by cell.
+///
+/// @param[in] V Space to interpolate into.
+/// @param[in] cells Cells to interpolate into.
+/// @return Points (`shape=(num_points, 3)`, row-major), the cell of
+/// each point, and the degree-of-freedom block of each point (empty
+/// unless the element is a point evaluation).
+template <std::floating_point T>
+std::tuple<std::vector<T>, std::vector<std::int32_t>, std::vector<std::int32_t>>
+evaluation_points(const FunctionSpace<T>& V,
+                  std::span<const std::int32_t> cells)
+{
+  auto element = V.element();
+  auto dofmap = V.dofmap();
+  auto mesh = V.mesh();
+  assert(element);
+  assert(dofmap);
+  assert(mesh);
+  const std::vector<T> coords
+      = interpolation_coords(*element, mesh->geometry(), cells);
+  const std::size_t num_cell_points = coords.size() / 3;
+  const std::size_t num_ip = element->interpolation_points().second[0];
+
+  std::vector<T> x;
+  std::vector<std::int32_t> point_cells, dofs;
+  if (is_point_evaluation(*element, *dofmap))
+  {
+    assert(dofmap->index_map);
+    const std::int32_t num_dofs
+        = dofmap->index_map->size_local() + dofmap->index_map->num_ghosts();
+
+    // Position in `cells` of the last cell containing each block
+    std::vector<std::int32_t> last(num_dofs, -1);
+    for (std::size_t c = 0; c < cells.size(); ++c)
+      for (std::int32_t d : dofmap->cell_dofs(cells[c]))
+        last[d] = static_cast<std::int32_t>(c);
+
+    for (std::size_t c = 0; c < cells.size(); ++c)
+    {
+      std::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cells[c]);
+      assert(cell_dofs.size() == num_ip);
+      for (std::size_t i = 0; i < num_ip; ++i)
+      {
+        if (std::int32_t d = cell_dofs[i];
+            last[d] == static_cast<std::int32_t>(c))
+        {
+          for (std::size_t j = 0; j < 3; ++j)
+            x.push_back(coords[j * num_cell_points + c * num_ip + i]);
+          point_cells.push_back(cells[c]);
+          dofs.push_back(d);
+        }
+      }
+    }
+  }
+  else
+  {
+    x.resize(coords.size());
+    point_cells.resize(num_cell_points);
+    for (std::size_t q = 0; q < num_cell_points; ++q)
+    {
+      for (std::size_t j = 0; j < 3; ++j)
+        x[3 * q + j] = coords[j * num_cell_points + q];
+      point_cells[q] = cells[q / num_ip];
+    }
+  }
+
+  return {std::move(x), std::move(point_cells), std::move(dofs)};
+}
+
+/// @brief Route points to the cells of a mesh containing them, by a
+/// geometric search.
+///
+/// @note Collective.
+///
+/// @param[in] mesh Mesh to locate the points in.
+/// @param[in] x Points, `shape=(num_points, 3)`, row-major.
+/// @param[in] padding Padding of the cell bounding boxes, see
+/// create_interpolation_data.
+/// @param[in] allow_extrapolation Whether a point outside the mesh is
+/// assigned the closest cell, see create_interpolation_data.
+/// @return Routing of the points, with PointOwnershipData::process_local
+/// set.
+template <std::floating_point T>
+geometry::PointOwnershipData<T> route_by_search(const mesh::Mesh<T>& mesh,
+                                                std::span<const T> x, T padding,
+                                                bool allow_extrapolation)
+{
+  geometry::PointOwnershipData<T> data = geometry::determine_point_ownership<T>(
+      mesh, x, padding, std::nullopt, allow_extrapolation);
+
+  // Process-local if no point leaves its process, so that interpolation
+  // with the data needs no communication
+  MPI_Comm comm = mesh.comm();
+  const int rank = dolfinx::MPI::rank(comm);
+  int process_local = std::ranges::all_of(data.src_owner, [rank](int r)
+                                          { return r < 0 or r == rank; })
+                      and std::ranges::all_of(data.dest_owners, [rank](int r)
+                                              { return r == rank; });
+  MPI_Allreduce(MPI_IN_PLACE, &process_local, 1, MPI_INT, MPI_LAND, comm);
+  data.process_local = process_local;
+  return data;
+}
+
+/// @brief Route points in the owned cells of a refined mesh to the
+/// parents of those cells.
+///
+/// See create_hierarchy_interpolation_data.
+///
+/// @note Collective.
+///
+/// @param[in] mesh0 Refined mesh.
+/// @param[in] mesh1 Mesh that was refined.
+/// @param[in] parent_cells Parent cell in `mesh1` of each cell refined
+/// on this process, in the order of the original cell index.
+/// @param[in] x Points, `shape=(num_points, 3)`, row-major.
+/// @param[in] point_cells Owned cell of `mesh0` containing each point.
+/// @return Routing of the points to their parent cells.
+template <std::floating_point T>
+geometry::PointOwnershipData<T>
+route_to_parents(const mesh::Mesh<T>& mesh0, const mesh::Mesh<T>& mesh1,
+                 std::span<const std::int32_t> parent_cells,
+                 std::span<const T> x,
+                 std::span<const std::int32_t> point_cells)
+{
+  MPI_Comm comm = mesh0.comm();
+  const int rank = dolfinx::MPI::rank(comm);
+  const int size = dolfinx::MPI::size(comm);
+  auto topology0 = mesh0.topology();
+  assert(topology0);
+  const int tdim = topology0->dim();
+  auto cell_map0 = topology0->index_map(tdim);
+  assert(cell_map0);
+  const std::int32_t num_cells = cell_map0->size_local();
+  auto cell_map1 = mesh1.topology()->index_map(mesh1.topology()->dim());
+  assert(cell_map1);
+  const std::int32_t num_cells1
+      = cell_map1->size_local() + cell_map1->num_ghosts();
+  if (topology0->original_cell_index.empty())
+    throw std::invalid_argument("mesh0 has no original cell indices.");
+  std::span<const std::int64_t> original
+      = topology0->original_cell_index.front();
+
+  // Number of cells refined on each process. Invalid parent cells are
+  // reported with them, so that all processes throw.
+  std::array<std::int64_t, 2> local
+      = {static_cast<std::int64_t>(parent_cells.size()),
+         std::ranges::any_of(parent_cells, [num_cells1](std::int32_t c)
+                             { return c < 0 or c >= num_cells1; })};
+  std::vector<std::int64_t> gathered(2 * size);
+  MPI_Allgather(local.data(), 2, MPI_INT64_T, gathered.data(), 2, MPI_INT64_T,
+                comm);
+  std::vector<std::int64_t> offsets(size + 1, 0);
+  bool invalid = false;
+  for (int r = 0; r < size; ++r)
+  {
+    offsets[r + 1] = offsets[r] + gathered[2 * r];
+    invalid = invalid or gathered[2 * r + 1] != 0;
+  }
+  if (invalid)
+    throw std::invalid_argument("parent_cells contains cells not in mesh1.");
+  if (offsets.back() != cell_map0->size_global())
+  {
+    throw std::invalid_argument(
+        "parent_cells must have an entry for each cell of mesh0.");
+  }
+
+  // Process that refined each owned cell, and the position of its parent
+  // in parent_cells on that process
+  std::vector<int> owner(num_cells);
+  std::vector<std::int32_t> position(num_cells);
+  for (std::int32_t c = 0; c < num_cells; ++c)
+  {
+    assert(original[c] >= 0 and original[c] < offsets.back());
+    auto it = std::ranges::upper_bound(offsets, original[c]);
+    owner[c] = std::ranges::distance(offsets.begin(), it) - 1;
+    position[c] = original[c] - offsets[owner[c]];
+  }
+
+  const std::size_t num_points = point_cells.size();
+  std::vector<int> src_owner(num_points);
+  for (std::size_t p = 0; p < num_points; ++p)
+  {
+    assert(point_cells[p] < num_cells);
+    src_owner[p] = owner[point_cells[p]];
+  }
+
+  int process_local
+      = std::ranges::all_of(owner, [rank](int r) { return r == rank; });
+  MPI_Allreduce(MPI_IN_PLACE, &process_local, 1, MPI_INT, MPI_LAND, comm);
+  if (process_local)
+  {
+    std::vector<std::int32_t> dest_cells(num_points);
+    for (std::size_t p = 0; p < num_points; ++p)
+      dest_cells[p] = parent_cells[position[point_cells[p]]];
+    return geometry::PointOwnershipData<T>{
+        .src_owner = std::move(src_owner),
+        .dest_owners = std::vector<int>(num_points, rank),
+        .dest_points = std::vector<T>(x.begin(), x.end()),
+        .dest_cells = std::move(dest_cells),
+        .process_local = true};
+  }
+
+  // Send each point and the position of its parent to the process that
+  // refined its cell, grouped by process and in point order within a
+  // process, as required of PointOwnershipData
+  std::vector<std::int32_t> perm(num_points);
+  std::iota(perm.begin(), perm.end(), 0);
+  std::ranges::stable_sort(perm, std::ranges::less(),
+                           [&src_owner](std::int32_t p)
+                           { return src_owner[p]; });
+  std::vector<int> out_ranks;
+  std::vector<int> send_sizes;
+  for (std::int32_t p : perm)
+  {
+    if (out_ranks.empty() or out_ranks.back() != src_owner[p])
+    {
+      out_ranks.push_back(src_owner[p]);
+      send_sizes.push_back(0);
+    }
+    ++send_sizes.back();
+  }
+  std::vector<int> in_ranks = dolfinx::MPI::compute_graph_edges_nbx(
+      comm, std::span<const int>(out_ranks));
+  std::ranges::sort(in_ranks);
+
+  MPI_Comm neighbor_comm;
+  MPI_Dist_graph_create_adjacent(
+      comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
+      out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
+  std::vector<int> recv_sizes(in_ranks.size());
+  send_sizes.reserve(1);
+  recv_sizes.reserve(1);
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                        MPI_INT, neighbor_comm);
+
+  std::vector<int> send_disp(send_sizes.size() + 1, 0);
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_disp.begin()));
+  std::vector<int> recv_disp(recv_sizes.size() + 1, 0);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   std::next(recv_disp.begin()));
+  std::vector<std::int32_t> send_position(num_points);
+  std::vector<T> send_x(3 * num_points);
+  for (std::size_t i = 0; i < num_points; ++i)
+  {
+    send_position[i] = position[point_cells[perm[i]]];
+    std::copy_n(std::next(x.begin(), 3 * perm[i]), 3,
+                std::next(send_x.begin(), 3 * i));
+  }
+  std::vector<std::int32_t> recv_position(recv_disp.back());
+  MPI_Neighbor_alltoallv(send_position.data(), send_sizes.data(),
+                         send_disp.data(), MPI_INT32_T, recv_position.data(),
+                         recv_sizes.data(), recv_disp.data(), MPI_INT32_T,
+                         neighbor_comm);
+
+  // Coordinates, three values per point
+  auto times3 = [](std::vector<int> v)
+  {
+    std::ranges::transform(v, v.begin(), [](int n) { return 3 * n; });
+    return v;
+  };
+  std::vector<T> recv_x(3 * recv_disp.back());
+  MPI_Neighbor_alltoallv(
+      send_x.data(), times3(send_sizes).data(), times3(send_disp).data(),
+      dolfinx::MPI::mpi_t<T>, recv_x.data(), times3(recv_sizes).data(),
+      times3(recv_disp).data(), dolfinx::MPI::mpi_t<T>, neighbor_comm);
+  MPI_Comm_free(&neighbor_comm);
+
+  std::vector<int> dest_owners(recv_disp.back());
+  for (std::size_t i = 0; i < in_ranks.size(); ++i)
+  {
+    std::fill(std::next(dest_owners.begin(), recv_disp[i]),
+              std::next(dest_owners.begin(), recv_disp[i + 1]), in_ranks[i]);
+  }
+  std::vector<std::int32_t> dest_cells(recv_position.size());
+  for (std::size_t i = 0; i < recv_position.size(); ++i)
+    dest_cells[i] = parent_cells[recv_position[i]];
+
+  return geometry::PointOwnershipData<T>{.src_owner = std::move(src_owner),
+                                         .dest_owners = std::move(dest_owners),
+                                         .dest_points = std::move(recv_x),
+                                         .dest_cells = std::move(dest_cells),
+                                         .process_local = false};
+}
+
+/// @brief Pull points back to the reference cells of the cells
+/// containing them.
+///
+/// @param[in] mesh Mesh of the cells.
+/// @param[in] x Points, `shape=(cells.size(), 3)`, row-major.
+/// @param[in] cells `cells[p]` is the cell containing point `p`. Points
+/// with a negative cell index are skipped.
+/// @param[in] tol Tolerance of the Newton method for non-affine
+/// pull-backs. Ignored for affine geometries.
+/// @param[in] maxit Maximum number of Newton iterations for non-affine
+/// pull-backs. Ignored for affine geometries.
+/// @return Reference coordinates, `shape=(cells.size(), tdim)`,
+/// row-major. Zero for skipped points.
+template <std::floating_point T>
+std::vector<T> pull_back(const mesh::Mesh<T>& mesh, std::span<const T> x,
+                         std::span<const std::int32_t> cells, double tol,
+                         int maxit)
+{
+  const std::size_t gdim = mesh.geometry().dim();
+  const std::size_t tdim = mesh.topology()->dim();
+  const CoordinateElement<T>& cmap = mesh.geometry().cmaps().front();
+  auto x_dofmap = mesh.geometry().dofmaps().front();
+  const std::size_t num_dofs_g = cmap.dim();
+  std::span<const T> x_g = mesh.geometry().x();
+
+  std::vector<T> coord_dofs_b(num_dofs_g * gdim);
+  mdspan_t<T, 2> coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
+  std::vector<T> xp_b(gdim);
+  mdspan_t<T, 2> xp(xp_b.data(), 1, gdim);
+
+  // Inverse Jacobian of an affine cell, from the derivatives of the
+  // geometry basis at the reference origin
+  std::array<std::size_t, 4> phi0_shape = cmap.tabulate_shape(1, 1);
+  std::vector<T> phi0_b(
+      std::reduce(phi0_shape.begin(), phi0_shape.end(), 1, std::multiplies{}));
+  mdspan_t<const T, 4> phi0(phi0_b.data(), phi0_shape);
+  cmap.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi0_b);
+  std::vector<T> J_b(gdim * tdim), K_b(tdim * gdim), detJ(1);
+  std::vector<T> det_scratch(2 * gdim * tdim);
+  mdspan_t<T, 3> J(J_b.data(), 1, gdim, tdim);
+  mdspan_t<T, 3> K(K_b.data(), 1, tdim, gdim);
+  mdspan_t<const T, 2> K0(K_b.data(), tdim, gdim);
+  std::vector<T> pull_back_scratch(
+      cmap.is_affine() ? 0 : cmap.pull_back_working_size(gdim));
+
+  std::vector<T> X(cells.size() * tdim, 0);
+  std::array<T, 3> x0{0, 0, 0};
+  std::int32_t prev_cell = -1;
+  for (std::size_t p = 0; p < cells.size(); ++p)
+  {
+    const std::int32_t c = cells[p];
+    if (c < 0)
+      continue;
+
+    if (c != prev_cell)
+    {
+      auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
+      for (std::size_t i = 0; i < num_dofs_g; ++i)
+        for (std::size_t j = 0; j < gdim; ++j)
+          coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
+      for (std::size_t j = 0; j < gdim; ++j)
+        x0[j] = coord_dofs(0, j);
+      if (cmap.is_affine())
+        cmap.compute_jacobians(phi0, coord_dofs, J, K, detJ, det_scratch);
+      prev_cell = c;
+    }
+
+    for (std::size_t j = 0; j < gdim; ++j)
+      xp(0, j) = x[3 * p + j];
+    mdspan_t<T, 2> Xp(X.data() + p * tdim, 1, tdim);
+    if (cmap.is_affine())
+      CoordinateElement<T>::pull_back_affine(Xp, K0, x0, xp);
+    else
+    {
+      cmap.pull_back_nonaffine(Xp, xp, coord_dofs, pull_back_scratch, tol,
+                               maxit);
+    }
+  }
+
+  return X;
+}
+
+/// @brief Pull the points of a routing back to the reference cells of
+/// their destination cells, throwing on all processes if the pull-back
+/// fails on any.
+///
+/// @note Collective.
+template <std::floating_point T>
+std::vector<T> pull_back_collective(const mesh::Mesh<T>& mesh,
+                                    const geometry::PointOwnershipData<T>& data,
+                                    double tol, int maxit)
+{
+  std::vector<T> X;
+  int error = 0;
+  try
+  {
+    X = pull_back<T>(mesh, data.dest_points, data.dest_cells, tol, maxit);
+  }
+  catch (const std::exception& e)
+  {
+    logger().error("Pull-back of interpolation points failed: {}", e.what());
+    error = 1;
+  }
+
+  MPI_Allreduce(MPI_IN_PLACE, &error, 1, MPI_INT, MPI_MAX, mesh.comm());
+  if (error)
+  {
+    throw std::runtime_error(
+        "Pull-back of interpolation points failed on some process.");
+  }
+  return X;
+}
+
+/// @brief Evaluate the basis functions of an element at points given in
+/// reference coordinates, passing the basis at each point to a
+/// callable.
+///
+/// As evaluate_basis, but with the points already pulled back, e.g. by
+/// create_nonmatching_interpolation_data. The reference basis is
+/// tabulated in batches of points and consumed point by point, so no
+/// array of the size of the point set is formed.
+///
+/// @param[in] element Element to evaluate. Its block size is ignored,
+/// i.e. the basis of one block is evaluated.
+/// @param[in] mesh Mesh that `element` is defined on.
+/// @param[in] X Reference coordinates, `shape=(cells.size(), tdim)`,
+/// row-major.
+/// @param[in] cells `cells[p]` is the cell of point `p`. Points with a
+/// negative cell index are skipped.
+/// @param[in] fn Callable `fn(p, cells[p], basis)` invoked for each
+/// point `p` with a non-negative cell index. `basis` has shape
+/// `(space_dimension / block_size, physical_base_value_size)` and is
+/// only valid during the call.
+template <std::floating_point T>
+void evaluate_basis_reference(const FiniteElement<T>& element,
+                              const mesh::Mesh<T>& mesh, std::span<const T> X,
+                              std::span<const std::int32_t> cells, auto&& fn)
+{
+  const std::size_t gdim = mesh.geometry().dim();
+  const std::size_t tdim = mesh.topology()->dim();
+  const CoordinateElement<T>& cmap = mesh.geometry().cmaps().front();
+  auto x_dofmap = mesh.geometry().dofmaps().front();
+  const std::size_t num_dofs_g = cmap.dim();
+  std::span<const T> x_g = mesh.geometry().x();
+  const std::size_t reference_value_size = element.reference_value_size();
+  const std::size_t value_size = element.physical_base_value_size();
+  const std::size_t space_dimension
+      = element.space_dimension() / element.block_size();
+  const std::size_t num_basis_values = space_dimension * reference_value_size;
+
+  std::span<const std::uint32_t> cell_info;
+  if (element.needs_dof_transformations())
+  {
+    mesh.topology_mutable()->create_cell_permutations();
+    cell_info = std::span(mesh.topology()->get_cell_permutation_info());
+  }
+  // The basis is tabulated for the scalar sub-element (one block)
+  auto apply_dof_transformation
+      = element.template dof_transformation_fn<T>(doftransform::standard, true);
+
+  // Geometry for the push-forward of non-identity maps
+  std::vector<T> coord_dofs_b(num_dofs_g * gdim);
+  mdspan_t<T, 2> coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
+  std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, 1);
+  std::vector<T> phi_b(
+      std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+  mdspan_t<const T, 4> phi(phi_b.data(), phi_shape);
+  std::vector<T> J_b(gdim * tdim), K_b(tdim * gdim), detJ(1);
+  std::vector<T> det_scratch(2 * gdim * tdim);
+  mdspan_t<T, 3> J(J_b.data(), 1, gdim, tdim);
+  mdspan_t<T, 3> K(K_b.data(), 1, tdim, gdim);
+  using u_t = mdspan_t<T, 2>;
+  using U_t = mdspan_t<const T, 2>;
+  auto push_forward_fn
+      = element.basix_element().template map_fn<u_t, U_t, U_t, U_t>();
+  std::vector<T> basis_b(space_dimension * value_size);
+  u_t basis(basis_b.data(), space_dimension, value_size);
+
+  // Reference basis of a batch of points
+  constexpr std::size_t batch = 64;
+  std::vector<T> reference_basis_b(batch * num_basis_values);
+  std::int32_t geometry_cell = -1;
+  for (std::size_t p0 = 0; p0 < cells.size(); p0 += batch)
+  {
+    const std::size_t n = std::min(batch, cells.size() - p0);
+    element.tabulate(std::span(reference_basis_b.data(), n * num_basis_values),
+                     X.subspan(p0 * tdim, n * tdim), {n, tdim}, 0);
+    for (std::size_t q = 0; q < n; ++q)
+    {
+      const std::size_t p = p0 + q;
+      const std::int32_t c = cells[p];
+      if (c < 0)
+        continue;
+
+      std::span<T> reference_basis(
+          reference_basis_b.data() + q * num_basis_values, num_basis_values);
+      if (apply_dof_transformation)
+      {
+        apply_dof_transformation(reference_basis, cell_info, c,
+                                 reference_value_size);
+      }
+      U_t U(reference_basis.data(), space_dimension, reference_value_size);
+      if (element.map_ident())
+      {
+        fn(p, c, U);
+        continue;
+      }
+
+      // Jacobian at the point, constant over an affine cell
+      if (c != geometry_cell or !cmap.is_affine())
+      {
+        if (c != geometry_cell)
+        {
+          auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
+          for (std::size_t i = 0; i < num_dofs_g; ++i)
+            for (std::size_t j = 0; j < gdim; ++j)
+              coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
+          geometry_cell = c;
+        }
+        cmap.tabulate(1, X.subspan(p * tdim, tdim), {1, tdim}, phi_b);
+        cmap.compute_jacobians(phi, coord_dofs, J, K, detJ, det_scratch);
+      }
+      push_forward_fn(basis, U, U_t(J_b.data(), gdim, tdim), detJ[0],
+                      U_t(K_b.data(), tdim, gdim));
+      fn(p, c, U_t(basis));
+    }
+  }
+}
+
+/// @brief Evaluate a Function at points given in reference coordinates.
+///
+/// @param[in] u Function to evaluate.
+/// @param[in] X Reference coordinates, `shape=(cells.size(), tdim)`,
+/// row-major.
+/// @param[in] cells `cells[p]` is the cell of point `p`. Points with a
+/// negative cell index are skipped (their values are zero).
+/// @param[out] values Values, `shape=(cells.size(), value_size)`,
+/// row-major.
+template <dolfinx::scalar T, std::floating_point U>
+void evaluate_reference(const Function<T, U>& u, std::span<const U> X,
+                        std::span<const std::int32_t> cells,
+                        std::span<T> values)
+{
+  auto V = u.function_space();
+  assert(V);
+  auto element = V->element();
+  auto mesh = V->mesh();
+  auto dofmap = V->dofmap();
+  assert(element);
+  assert(mesh);
+  assert(dofmap);
+  const int bs_element = element->block_size();
+  const int bs_dof = dofmap->bs();
+  const std::size_t value_size = element->value_size();
+  assert(values.size() == cells.size() * value_size);
+  const bool symmetric = element->symmetric();
+  int matrix_size = 0;
+  if (symmetric)
+  {
+    while (matrix_size * matrix_size < static_cast<int>(value_size))
+      ++matrix_size;
+  }
+
+  std::ranges::fill(values, T(0));
+  std::span<const T> v = u.x()->array();
+  std::vector<T> coefficients(element->space_dimension());
+  std::int32_t coefficient_cell = -1;
+  evaluate_basis_reference(
+      *element, *mesh, X, cells,
+      [&values, &coefficients, &coefficient_cell, &v, &dofmap, bs_dof,
+       bs_element, value_size, symmetric,
+       matrix_size](std::size_t p, std::int32_t c, mdspan_t<const U, 2> basis)
+      {
+        if (c != coefficient_cell)
+        {
+          std::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+          for (std::size_t i = 0; i < dofs.size(); ++i)
+            for (int k = 0; k < bs_dof; ++k)
+              coefficients[bs_dof * i + k] = v[bs_dof * dofs[i] + k];
+          coefficient_cell = c;
+        }
+
+        std::span<T> u_p = values.subspan(p * value_size, value_size);
+        if (symmetric)
+        {
+          // Expand the stored components to the full tensor, as in
+          // Function::eval
+          int row = 0;
+          int rowstart = 0;
+          for (int k = 0; k < bs_element; ++k)
+          {
+            if (k - rowstart > row)
+            {
+              ++row;
+              rowstart = k;
+            }
+            for (std::size_t i = 0; i < basis.extent(0); ++i)
+            {
+              for (std::size_t j = 0; j < basis.extent(1); ++j)
+              {
+                const T a = coefficients[bs_element * i + k] * basis(i, j);
+                u_p[j * bs_element + row * matrix_size + k - rowstart] += a;
+                if (k - rowstart != row)
+                  u_p[j * bs_element + row + matrix_size * (k - rowstart)] += a;
+              }
+            }
+          }
+        }
+        else
+        {
+          for (int k = 0; k < bs_element; ++k)
+            for (std::size_t i = 0; i < basis.extent(0); ++i)
+              for (std::size_t j = 0; j < basis.extent(1); ++j)
+                u_p[j * bs_element + k]
+                    += coefficients[bs_element * i + k] * basis(i, j);
+        }
+      });
+}
+
 } // namespace impl
 
 /// @brief Evaluate the basis functions of a finite element at points
@@ -1826,6 +2456,44 @@ void evaluate_basis_functions(const FunctionSpace<T>& V, std::span<const T> x,
                        });
 }
 
+/// @brief Data for repeated non-matching interpolation from one
+/// function space into another, and for its transpose.
+///
+/// Created by create_nonmatching_interpolation_data or
+/// create_nonmatching_hierarchy_interpolation_data, and used by
+/// interpolate(Function&, const Function&, const
+/// NonmatchingInterpolationData&) and interpolate_transpose(Function&,
+/// const Function&, const NonmatchingInterpolationData&).
+///
+/// Compared with geometry::PointOwnershipData, the reference coordinates
+/// of the points are computed once, and for point-evaluation elements,
+/// e.g. Lagrange, each degree-of-freedom block is evaluated once rather
+/// than once per cell containing it.
+template <std::floating_point T>
+struct NonmatchingInterpolationData
+{
+  /// Routing of the evaluation points to the cells of the mesh
+  /// interpolated from
+  geometry::PointOwnershipData<T> routing;
+
+  /// Reference coordinates of `routing.dest_points` in the cells
+  /// `routing.dest_cells`, `shape=(num_dest_points, tdim)`, row-major
+  std::vector<T> dest_reference_points;
+
+  /// Cells interpolated into
+  std::vector<std::int32_t> cells;
+
+  /// Degree-of-freedom block of each evaluation point if the element
+  /// interpolated into is a point evaluation, otherwise empty, in which
+  /// case the points are the interpolation points of `cells`, cell by
+  /// cell
+  std::vector<std::int32_t> dofs;
+
+  /// Number of degree-of-freedom blocks, owned and ghost, of the space
+  /// interpolated into, to check that the data is used with that space
+  std::int32_t num_dofs = 0;
+};
+
 /// @brief Generate data needed to interpolate finite element
 /// fem::Function's across different meshes.
 ///
@@ -1868,21 +2536,7 @@ geometry::PointOwnershipData<T> create_interpolation_data(
     for (std::size_t j = 0; j < 3; ++j)
       x[3 * i + j] = coords[i + j * num_points];
 
-  // Determine ownership of each point
-  geometry::PointOwnershipData<T> data = geometry::determine_point_ownership<T>(
-      mesh1, x, padding, std::nullopt, allow_extrapolation);
-
-  // Process-local if no point leaves its process, so that interpolation
-  // with the data needs no communication
-  MPI_Comm comm = mesh1.comm();
-  const int rank = dolfinx::MPI::rank(comm);
-  int process_local = std::ranges::all_of(data.src_owner, [rank](int r)
-                                          { return r < 0 or r == rank; })
-                      and std::ranges::all_of(data.dest_owners, [rank](int r)
-                                              { return r == rank; });
-  MPI_Allreduce(MPI_IN_PLACE, &process_local, 1, MPI_INT, MPI_LAND, comm);
-  data.process_local = process_local;
-  return data;
+  return impl::route_by_search<T>(mesh1, x, padding, allow_extrapolation);
 }
 
 /// @brief Generate data for interpolating from a mesh to its
@@ -1911,172 +2565,112 @@ geometry::PointOwnershipData<T> create_hierarchy_interpolation_data(
     const mesh::Mesh<T>& mesh0, const FiniteElement<T>& element0,
     const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> parent_cells)
 {
-  MPI_Comm comm = mesh0.comm();
-  const int rank = dolfinx::MPI::rank(comm);
-  const int size = dolfinx::MPI::size(comm);
+  // Interpolation points of the owned cells, shape=(num_points, 3)
   auto topology0 = mesh0.topology();
   assert(topology0);
-  const int tdim = topology0->dim();
-  auto cell_map0 = topology0->index_map(tdim);
+  auto cell_map0 = topology0->index_map(topology0->dim());
   assert(cell_map0);
-  const std::int32_t num_cells = cell_map0->size_local();
-  auto cell_map1 = mesh1.topology()->index_map(mesh1.topology()->dim());
-  assert(cell_map1);
-  const std::int32_t num_cells1
-      = cell_map1->size_local() + cell_map1->num_ghosts();
-  if (topology0->original_cell_index.empty())
-    throw std::invalid_argument("mesh0 has no original cell indices.");
-  std::span<const std::int64_t> original
-      = topology0->original_cell_index.front();
-
-  // Number of cells refined on each process. Invalid parent cells are
-  // reported with them, so that all processes throw.
-  std::array<std::int64_t, 2> local
-      = {static_cast<std::int64_t>(parent_cells.size()),
-         std::ranges::any_of(parent_cells, [num_cells1](std::int32_t c)
-                             { return c < 0 or c >= num_cells1; })};
-  std::vector<std::int64_t> gathered(2 * size);
-  MPI_Allgather(local.data(), 2, MPI_INT64_T, gathered.data(), 2, MPI_INT64_T,
-                comm);
-  std::vector<std::int64_t> offsets(size + 1, 0);
-  bool invalid = false;
-  for (int r = 0; r < size; ++r)
-  {
-    offsets[r + 1] = offsets[r] + gathered[2 * r];
-    invalid = invalid or gathered[2 * r + 1] != 0;
-  }
-  if (invalid)
-    throw std::invalid_argument("parent_cells contains cells not in mesh1.");
-  if (offsets.back() != cell_map0->size_global())
-  {
-    throw std::invalid_argument(
-        "parent_cells must have an entry for each cell of mesh0.");
-  }
-
-  // Process that refined each owned cell, and the position of its parent
-  // in parent_cells on that process
-  std::vector<int> owner(num_cells);
-  std::vector<std::int32_t> position(num_cells);
-  for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    assert(original[c] >= 0 and original[c] < offsets.back());
-    auto it = std::ranges::upper_bound(offsets, original[c]);
-    owner[c] = std::ranges::distance(offsets.begin(), it) - 1;
-    position[c] = original[c] - offsets[owner[c]];
-  }
-
-  // Interpolation points of the owned cells, shape=(num_points, 3)
-  std::vector<std::int32_t> cells(num_cells);
+  std::vector<std::int32_t> cells(cell_map0->size_local());
   std::iota(cells.begin(), cells.end(), 0);
   std::vector<T> coords
       = interpolation_coords(element0, mesh0.geometry(), std::span(cells));
   const std::size_t num_points = coords.size() / 3;
   const std::size_t num_ip = element0.interpolation_points().second[0];
   std::vector<T> x(coords.size());
-  for (std::size_t i = 0; i < num_points; ++i)
-    for (std::size_t j = 0; j < 3; ++j)
-      x[3 * i + j] = coords[i + j * num_points];
-  std::vector<int> src_owner(num_points);
+  std::vector<std::int32_t> point_cells(num_points);
   for (std::size_t p = 0; p < num_points; ++p)
-    src_owner[p] = owner[p / num_ip];
-
-  int process_local
-      = std::ranges::all_of(owner, [rank](int r) { return r == rank; });
-  MPI_Allreduce(MPI_IN_PLACE, &process_local, 1, MPI_INT, MPI_LAND, comm);
-  if (process_local)
   {
-    std::vector<std::int32_t> dest_cells(num_points);
-    for (std::size_t p = 0; p < num_points; ++p)
-      dest_cells[p] = parent_cells[position[p / num_ip]];
-    return geometry::PointOwnershipData<T>{.src_owner = std::move(src_owner),
-                                           .dest_owners
-                                           = std::vector<int>(num_points, rank),
-                                           .dest_points = std::move(x),
-                                           .dest_cells = std::move(dest_cells),
-                                           .process_local = true};
+    for (std::size_t j = 0; j < 3; ++j)
+      x[3 * p + j] = coords[p + j * num_points];
+    point_cells[p] = p / num_ip;
   }
 
-  // Send each point and the position of its parent to the process that
-  // refined its cell, grouped by process and in point order within a
-  // process, as required of PointOwnershipData
-  std::vector<std::int32_t> perm(num_points);
-  std::iota(perm.begin(), perm.end(), 0);
-  std::ranges::stable_sort(perm, std::ranges::less(),
-                           [&src_owner](std::int32_t p)
-                           { return src_owner[p]; });
-  std::vector<int> out_ranks;
-  std::vector<int> send_sizes;
-  for (std::int32_t p : perm)
-  {
-    if (out_ranks.empty() or out_ranks.back() != src_owner[p])
-    {
-      out_ranks.push_back(src_owner[p]);
-      send_sizes.push_back(0);
-    }
-    ++send_sizes.back();
-  }
-  std::vector<int> in_ranks = dolfinx::MPI::compute_graph_edges_nbx(
-      comm, std::span<const int>(out_ranks));
-  std::ranges::sort(in_ranks);
+  return impl::route_to_parents<T>(mesh0, mesh1, parent_cells, x, point_cells);
+}
 
-  MPI_Comm neighbor_comm;
-  MPI_Dist_graph_create_adjacent(
-      comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
-      out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
-  std::vector<int> recv_sizes(in_ranks.size());
-  send_sizes.reserve(1);
-  recv_sizes.reserve(1);
-  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
-                        MPI_INT, neighbor_comm);
+/// @brief Generate data for repeated interpolation of Function%s on
+/// non-matching meshes.
+///
+/// The data gives the same operator as create_interpolation_data with
+/// interpolate(Function&, const Function&, CellRange, double, int, const
+/// geometry::PointOwnershipData&), at a lower cost per application.
+///
+/// @note Collective.
+///
+/// @param[in] V1 Space to interpolate into.
+/// @param[in] V0 Space to interpolate from.
+/// @param[in] cells1 Cells of the mesh of `V1` to interpolate into.
+/// @param[in] padding See create_interpolation_data.
+/// @param[in] allow_extrapolation See create_interpolation_data.
+/// @param[in] tol Tolerance of the Newton method for non-affine
+/// pull-backs on the mesh of `V0`. Ignored for affine geometries.
+/// @param[in] maxit Maximum number of Newton iterations for non-affine
+/// pull-backs on the mesh of `V0`. Ignored for affine geometries.
+/// @return Interpolation data.
+template <std::floating_point T>
+NonmatchingInterpolationData<T> create_nonmatching_interpolation_data(
+    const FunctionSpace<T>& V1, const FunctionSpace<T>& V0,
+    std::span<const std::int32_t> cells1, T padding, bool allow_extrapolation,
+    double tol, int maxit)
+{
+  auto mesh0 = V0.mesh();
+  assert(mesh0);
+  auto [x, point_cells, dofs] = impl::evaluation_points(V1, cells1);
+  geometry::PointOwnershipData<T> routing
+      = impl::route_by_search<T>(*mesh0, x, padding, allow_extrapolation);
+  std::vector<T> X = impl::pull_back_collective(*mesh0, routing, tol, maxit);
+  auto index_map1 = V1.dofmap()->index_map;
+  return {.routing = std::move(routing),
+          .dest_reference_points = std::move(X),
+          .cells = std::vector<std::int32_t>(cells1.begin(), cells1.end()),
+          .dofs = std::move(dofs),
+          .num_dofs = index_map1->size_local() + index_map1->num_ghosts()};
+}
 
-  std::vector<int> send_disp(send_sizes.size() + 1, 0);
-  std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                   std::next(send_disp.begin()));
-  std::vector<int> recv_disp(recv_sizes.size() + 1, 0);
-  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                   std::next(recv_disp.begin()));
-  std::vector<std::int32_t> send_position(num_points);
-  std::vector<T> send_x(3 * num_points);
-  for (std::size_t i = 0; i < num_points; ++i)
-  {
-    send_position[i] = position[perm[i] / num_ip];
-    std::copy_n(std::next(x.begin(), 3 * perm[i]), 3,
-                std::next(send_x.begin(), 3 * i));
-  }
-  std::vector<std::int32_t> recv_position(recv_disp.back());
-  MPI_Neighbor_alltoallv(send_position.data(), send_sizes.data(),
-                         send_disp.data(), MPI_INT32_T, recv_position.data(),
-                         recv_sizes.data(), recv_disp.data(), MPI_INT32_T,
-                         neighbor_comm);
-
-  // Coordinates, three values per point
-  auto times3 = [](std::vector<int> v)
-  {
-    std::ranges::transform(v, v.begin(), [](int n) { return 3 * n; });
-    return v;
-  };
-  std::vector<T> recv_x(3 * recv_disp.back());
-  MPI_Neighbor_alltoallv(
-      send_x.data(), times3(send_sizes).data(), times3(send_disp).data(),
-      dolfinx::MPI::mpi_t<T>, recv_x.data(), times3(recv_sizes).data(),
-      times3(recv_disp).data(), dolfinx::MPI::mpi_t<T>, neighbor_comm);
-  MPI_Comm_free(&neighbor_comm);
-
-  std::vector<int> dest_owners(recv_disp.back());
-  for (std::size_t i = 0; i < in_ranks.size(); ++i)
-  {
-    std::fill(std::next(dest_owners.begin(), recv_disp[i]),
-              std::next(dest_owners.begin(), recv_disp[i + 1]), in_ranks[i]);
-  }
-  std::vector<std::int32_t> dest_cells(recv_position.size());
-  for (std::size_t i = 0; i < recv_position.size(); ++i)
-    dest_cells[i] = parent_cells[recv_position[i]];
-
-  return geometry::PointOwnershipData<T>{.src_owner = std::move(src_owner),
-                                         .dest_owners = std::move(dest_owners),
-                                         .dest_points = std::move(recv_x),
-                                         .dest_cells = std::move(dest_cells),
-                                         .process_local = false};
+/// @brief Generate data for repeated interpolation of Function%s from a
+/// mesh to its refinement.
+///
+/// As create_nonmatching_interpolation_data over all owned cells of the
+/// mesh of `V1`, with the points routed to parent cells as in
+/// create_hierarchy_interpolation_data.
+///
+/// @note Collective.
+///
+/// @param[in] V1 Space on the refined mesh, to interpolate into.
+/// @param[in] V0 Space on the mesh that was refined, to interpolate
+/// from.
+/// @param[in] parent_cells Parent cell of each cell refined on this
+/// process, see create_hierarchy_interpolation_data.
+/// @param[in] tol Tolerance of the Newton method for non-affine
+/// pull-backs on the mesh of `V0`. Ignored for affine geometries.
+/// @param[in] maxit Maximum number of Newton iterations for non-affine
+/// pull-backs on the mesh of `V0`. Ignored for affine geometries.
+/// @return Interpolation data.
+template <std::floating_point T>
+NonmatchingInterpolationData<T> create_nonmatching_hierarchy_interpolation_data(
+    const FunctionSpace<T>& V1, const FunctionSpace<T>& V0,
+    std::span<const std::int32_t> parent_cells, double tol, int maxit)
+{
+  auto mesh0 = V0.mesh();
+  auto mesh1 = V1.mesh();
+  assert(mesh0);
+  assert(mesh1);
+  auto topology1 = mesh1->topology();
+  assert(topology1);
+  auto cell_map1 = topology1->index_map(topology1->dim());
+  assert(cell_map1);
+  std::vector<std::int32_t> cells(cell_map1->size_local());
+  std::iota(cells.begin(), cells.end(), 0);
+  auto [x, point_cells, dofs] = impl::evaluation_points(V1, std::span(cells));
+  geometry::PointOwnershipData<T> routing
+      = impl::route_to_parents<T>(*mesh1, *mesh0, parent_cells, x, point_cells);
+  std::vector<T> X = impl::pull_back_collective(*mesh0, routing, tol, maxit);
+  auto index_map1 = V1.dofmap()->index_map;
+  return {.routing = std::move(routing),
+          .dest_reference_points = std::move(X),
+          .cells = std::move(cells),
+          .dofs = std::move(dofs),
+          .num_dofs = index_map1->size_local() + index_map1->num_ghosts()};
 }
 
 template <dolfinx::scalar T, std::floating_point U>
@@ -2147,6 +2741,280 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   }
 }
 
+namespace impl
+{
+/// @brief Throw if two Function%s are not on the same communicator.
+template <dolfinx::scalar T, std::floating_point U>
+void check_same_comm(const Function<T, U>& u0, const Function<T, U>& u1)
+{
+  int result;
+  MPI_Comm_compare(u0.function_space()->mesh()->comm(),
+                   u1.function_space()->mesh()->comm(), &result);
+  if (result == MPI_UNEQUAL)
+  {
+    throw std::invalid_argument("Interpolation on different meshes is only "
+                                "supported on the same communicator.");
+  }
+}
+
+/// @brief Throw if non-matching interpolation data does not fit the
+/// spaces of two Function%s.
+template <dolfinx::scalar T, std::floating_point U>
+void check_interpolation_data(const Function<T, U>& u0,
+                              const Function<T, U>& u1,
+                              const NonmatchingInterpolationData<U>& data)
+{
+  const std::size_t tdim0 = u0.function_space()->mesh()->topology()->dim();
+  if (data.dest_reference_points.size()
+      != data.routing.dest_cells.size() * tdim0)
+  {
+    throw std::invalid_argument(
+        "Interpolation data does not match the mesh interpolated from.");
+  }
+  const std::size_t num_ip
+      = u1.function_space()->element()->interpolation_points().second[0];
+  const std::size_t num_points
+      = data.dofs.empty() ? data.cells.size() * num_ip : data.dofs.size();
+  auto index_map1 = u1.function_space()->dofmap()->index_map;
+  if (data.routing.src_owner.size() != num_points
+      or data.num_dofs != index_map1->size_local() + index_map1->num_ghosts())
+  {
+    throw std::invalid_argument(
+        "Interpolation data does not match the space interpolated into.");
+  }
+}
+
+/// @brief Non-matching interpolation with the points pulled back.
+///
+/// @param[in,out] u1 Function to interpolate into.
+/// @param[in] u0 Function to interpolate from.
+/// @param[in] routing Routing of the evaluation points to the cells of
+/// the mesh of `u0`.
+/// @param[in] X0 Reference coordinates of `routing.dest_points`,
+/// `shape=(num_dest_points, tdim)`, row-major.
+/// @param[in] cells1 Cells of the mesh of `u1` interpolated into.
+/// @param[in] dofs1 Degree-of-freedom block of each evaluation point,
+/// or empty if the points are the interpolation points of `cells1`. See
+/// NonmatchingInterpolationData::dofs.
+template <dolfinx::scalar T, std::floating_point U>
+void interpolate_nonmatching(Function<T, U>& u1, const Function<T, U>& u0,
+                             const geometry::PointOwnershipData<U>& routing,
+                             std::span<const U> X0,
+                             mesh::CellRange auto&& cells1,
+                             std::span<const std::int32_t> dofs1)
+{
+  check_same_comm(u0, u1);
+  auto V1 = u1.function_space();
+  assert(V1);
+  auto element1 = V1->element();
+  assert(element1);
+  const std::size_t value_size = element1->value_size();
+  if (static_cast<std::size_t>(u0.function_space()->element()->value_size())
+      != value_size)
+  {
+    throw std::invalid_argument("Functions must have the same value size.");
+  }
+
+  // Evaluate u0 at the points received
+  const std::size_t num_recv = routing.dest_cells.size();
+  std::vector<T> send_values(num_recv * value_size);
+  evaluate_reference(u0, X0, routing.dest_cells, std::span(send_values));
+
+  // Send the values back to the processes of the points
+  const std::size_t N = routing.src_owner.size();
+  std::vector<T> values_b(N * value_size);
+  scatter_values(V1->mesh()->comm(), routing.process_local, routing.dest_owners,
+                 routing.src_owner,
+                 mdspan_t<const T, 2>(send_values.data(), num_recv, value_size),
+                 std::span(values_b));
+
+  if (!dofs1.empty())
+  {
+    // One point per degree-of-freedom block
+    std::span<T> x1 = u1.x()->array();
+    const int bs = V1->dofmap()->bs();
+    assert(static_cast<std::size_t>(bs) == value_size);
+    for (std::size_t p = 0; p < N; ++p)
+      for (int k = 0; k < bs; ++k)
+        x1[bs * dofs1[p] + k] = values_b[p * value_size + k];
+  }
+  else
+  {
+    // Local interpolation operator on the transposed values
+    std::vector<T> valuesT_b(value_size * N);
+    for (std::size_t p = 0; p < N; ++p)
+      for (std::size_t j = 0; j < value_size; ++j)
+        valuesT_b[j * N + p] = values_b[p * value_size + j];
+    fem::interpolate<T>(u1, valuesT_b, {value_size, N}, cells1);
+  }
+}
+
+/// @brief Transpose of non-matching interpolation with the points
+/// pulled back.
+///
+/// Arguments as for interpolate_nonmatching.
+template <dolfinx::scalar T, std::floating_point U>
+void interpolate_nonmatching_transpose(
+    Function<T, U>& u0, const Function<T, U>& u1,
+    const geometry::PointOwnershipData<U>& routing, std::span<const U> X0,
+    std::span<const std::int32_t> cells1, std::span<const std::int32_t> dofs1)
+{
+  check_same_comm(u0, u1);
+  auto V0 = u0.function_space();
+  auto V1 = u1.function_space();
+  assert(V0);
+  assert(V1);
+  auto mesh0 = V0->mesh();
+  auto mesh1 = V1->mesh();
+  assert(mesh0);
+  assert(mesh1);
+  auto element0 = V0->element();
+  auto element1 = V1->element();
+  assert(element0);
+  assert(element1);
+  for (const FiniteElement<U>* e : {element0.get(), element1.get()})
+  {
+    if (e->symmetric())
+    {
+      throw std::invalid_argument(
+          "Transpose interpolation is not supported for symmetric elements.");
+    }
+    if (int num_sub = e->num_sub_elements();
+        num_sub > 0 and num_sub != e->block_size())
+    {
+      throw std::invalid_argument("Transpose interpolation is not supported "
+                                  "for mixed elements. Use subspaces.");
+    }
+  }
+
+  // Blocked elements are supported for point evaluations and scalar
+  // identity-mapped elements, as in the forward operator
+  if (element1->block_size() > 1
+      and !(element1->map_ident() and element1->interpolation_ident())
+      and (!element1->map_ident() or element1->reference_value_size() > 1))
+  {
+    throw std::invalid_argument(
+        "Transpose interpolation into this element is not supported.");
+  }
+
+  const std::size_t value_size = element1->value_size();
+  if (static_cast<std::size_t>(element0->value_size()) != value_size)
+    throw std::invalid_argument("Functions must have the same value size.");
+
+  // Values at the points of u1, shape=(N, value_size). Only owned
+  // degrees-of-freedom contribute.
+  const std::vector<int>& src_owner = routing.src_owner;
+  const std::size_t N = src_owner.size();
+  std::span<const T> x1 = u1.x()->array();
+  std::vector<T> g_b(N * value_size, 0);
+  if (!dofs1.empty())
+  {
+    const int bs = V1->dofmap()->bs();
+    assert(static_cast<std::size_t>(bs) == value_size);
+    const std::int32_t num_owned = V1->dofmap()->index_map->size_local();
+    for (std::size_t p = 0; p < N; ++p)
+    {
+      if (dofs1[p] < num_owned)
+      {
+        for (int k = 0; k < bs; ++k)
+          g_b[p * value_size + k] = x1[bs * dofs1[p] + k];
+      }
+    }
+  }
+  else
+  {
+    std::span<const std::uint32_t> cell_info;
+    if (element1->needs_dof_transformations())
+    {
+      mesh1->topology_mutable()->create_cell_permutations();
+      cell_info = std::span(mesh1->topology()->get_cell_permutation_info());
+    }
+    std::vector<T> gT_b(value_size * N, 0);
+    interpolation_transpose<T>(*element1, *V1->dofmap(), cells1, cell_info,
+                               *mesh1, x1, std::span(gT_b), {value_size, N});
+    for (std::size_t p = 0; p < N; ++p)
+      for (std::size_t j = 0; j < value_size; ++j)
+        g_b[p * value_size + j] = gT_b[j * N + p];
+  }
+
+  // Group values by the rank owning the point, by point within a rank
+  std::vector<std::int32_t> perm;
+  perm.reserve(N);
+  for (std::size_t p = 0; p < N; ++p)
+    if (src_owner[p] >= 0)
+      perm.push_back(p);
+  // Already grouped for e.g. hierarchy routing, where every point is
+  // owned by this process
+  auto owner = [&src_owner](std::int32_t p) { return src_owner[p]; };
+  if (!std::ranges::is_sorted(perm, std::ranges::less(), owner))
+    std::ranges::stable_sort(perm, std::ranges::less(), owner);
+  std::vector<std::int32_t> send_ranks(perm.size());
+  std::vector<T> send_values_b(perm.size() * value_size);
+  for (std::size_t i = 0; i < perm.size(); ++i)
+  {
+    send_ranks[i] = src_owner[perm[i]];
+    std::copy_n(std::next(g_b.begin(), perm[i] * value_size), value_size,
+                std::next(send_values_b.begin(), i * value_size));
+  }
+
+  // Send values to the owning process of each point
+  const std::size_t num_recv = routing.dest_owners.size();
+  std::vector<T> recv_values(num_recv * value_size);
+  scatter_values(
+      mesh1->comm(), routing.process_local, send_ranks, routing.dest_owners,
+      mdspan_t<const T, 2>(send_values_b.data(), send_ranks.size(), value_size),
+      std::span(recv_values));
+
+  // Accumulate the transposed evaluation, transpose of Function::eval
+  std::span<T> c0 = u0.x()->array();
+  std::ranges::fill(c0, 0);
+  auto dofmap0 = V0->dofmap();
+  const int bs_dof = dofmap0->bs();
+  const int bs_element = element0->block_size();
+  // Positions of the degrees-of-freedom of each block of the current
+  // cell, recomputed when the cell changes. Consecutive points usually
+  // share a cell.
+  const std::size_t num_scalar_dofs = element0->space_dimension() / bs_element;
+  std::vector<std::int32_t> dof_pos(bs_element * num_scalar_dofs);
+  std::int32_t dof_pos_cell = -1;
+  evaluate_basis_reference<U>(
+      *element0, *mesh0, X0, routing.dest_cells,
+      [&c0, &recv_values, &dofmap0, &dof_pos, &dof_pos_cell, bs_dof, bs_element,
+       num_scalar_dofs,
+       value_size](std::size_t p, std::int32_t c, mdspan_t<const U, 2> basis)
+      {
+        if (c != dof_pos_cell)
+        {
+          std::span<const std::int32_t> dofs = dofmap0->cell_dofs(c);
+          for (int k = 0; k < bs_element; ++k)
+          {
+            block_dof_positions(dofs, k, bs_element, bs_dof,
+                                std::span(dof_pos).subspan(k * num_scalar_dofs,
+                                                           num_scalar_dofs));
+          }
+          dof_pos_cell = c;
+        }
+
+        for (int k = 0; k < bs_element; ++k)
+        {
+          for (std::size_t i = 0; i < basis.extent(0); ++i)
+          {
+            T acc = 0;
+            for (std::size_t j = 0; j < basis.extent(1); ++j)
+            {
+              acc += basis(i, j)
+                     * recv_values[p * value_size + j * bs_element + k];
+            }
+            c0[dof_pos[k * num_scalar_dofs + i]] += acc;
+          }
+        }
+      });
+
+  u0.x()->scatter_rev(std::plus<T>());
+  u0.x()->scatter_fwd();
+}
+} // namespace impl
+
 /// @brief Interpolate a finite element Function defined on a mesh to a
 /// finite element Function defined on different (non-matching) mesh.
 ///
@@ -2168,61 +3036,14 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
                  mesh::CellRange auto&& cells, double tol, int maxit,
                  const geometry::PointOwnershipData<U>& interpolation_data)
 {
-  auto mesh1 = u1.function_space()->mesh();
-  assert(mesh1);
-  MPI_Comm comm = mesh1->comm();
-  {
-    assert(u0.function_space());
-    auto mesh0 = u0.function_space()->mesh();
-    assert(mesh0);
-    int result;
-    MPI_Comm_compare(comm, mesh0->comm(), &result);
-    if (result == MPI_UNEQUAL)
-    {
-      throw std::invalid_argument("Interpolation on different meshes is only "
-                                  "supported on the same communicator.");
-    }
-  }
-
-  assert(mesh1->topology());
-  auto cell_map = mesh1->topology()->index_map(mesh1->topology()->dim());
-  assert(cell_map);
-  auto element1 = u1.function_space()->element();
-  assert(element1);
-  const std::size_t value_size = element1->value_size();
-
-  const std::vector<int>& dest_ranks = interpolation_data.src_owner;
-  const std::vector<int>& src_ranks = interpolation_data.dest_owners;
-  const std::vector<U>& recv_points = interpolation_data.dest_points;
-  const std::vector<std::int32_t>& evaluation_cells
-      = interpolation_data.dest_cells;
-
-  // Evaluate the interpolating function where possible
-  std::vector<T> send_values(recv_points.size() / 3 * value_size);
-  u0.eval(recv_points, {recv_points.size() / 3, (std::size_t)3},
-          evaluation_cells, send_values, {recv_points.size() / 3, value_size},
-          tol, maxit);
-
-  // Send values back to owning process
-  std::vector<T> values_b(dest_ranks.size() * value_size);
-  md::mdspan<const T, md::dextents<std::size_t, 2>> _send_values(
-      send_values.data(), src_ranks.size(), value_size);
-  impl::scatter_values(comm, interpolation_data.process_local, src_ranks,
-                       dest_ranks, _send_values, std::span(values_b));
-
-  // Transpose received data
-  md::mdspan<const T, md::dextents<std::size_t, 2>> values(
-      values_b.data(), dest_ranks.size(), value_size);
-  std::vector<T> valuesT_b(value_size * dest_ranks.size());
-  md::mdspan<T, md::dextents<std::size_t, 2>> valuesT(
-      valuesT_b.data(), value_size, dest_ranks.size());
-  for (std::size_t i = 0; i < values.extent(0); ++i)
-    for (std::size_t j = 0; j < values.extent(1); ++j)
-      valuesT(j, i) = values(i, j);
-
-  // Call local interpolation operator
-  fem::interpolate<T>(u1, valuesT_b, {valuesT.extent(0), valuesT.extent(1)},
-                      cells);
+  impl::check_same_comm(u0, u1);
+  auto mesh0 = u0.function_space()->mesh();
+  assert(mesh0);
+  std::vector<U> X0
+      = impl::pull_back<U>(*mesh0, interpolation_data.dest_points,
+                           interpolation_data.dest_cells, tol, maxit);
+  impl::interpolate_nonmatching(u1, u0, interpolation_data,
+                                std::span<const U>(X0), cells, {});
 }
 
 /// @brief Apply the transpose of non-matching interpolation.
@@ -2260,177 +3081,62 @@ void interpolate_transpose(
     std::span<const std::int32_t> cells1, double tol, int maxit,
     const geometry::PointOwnershipData<U>& interpolation_data)
 {
-  auto V0 = u0.function_space();
-  auto V1 = u1.function_space();
-  assert(V0);
-  assert(V1);
-  auto mesh0 = V0->mesh();
-  auto mesh1 = V1->mesh();
-  assert(mesh0);
-  assert(mesh1);
-  MPI_Comm comm = mesh1->comm();
-  {
-    int result;
-    MPI_Comm_compare(comm, mesh0->comm(), &result);
-    if (result == MPI_UNEQUAL)
-    {
-      throw std::invalid_argument("Interpolation on different meshes is only "
-                                  "supported on the same communicator.");
-    }
-  }
-
-  auto element0 = V0->element();
-  auto element1 = V1->element();
-  assert(element0);
+  impl::check_same_comm(u0, u1);
+  auto element1 = u1.function_space()->element();
   assert(element1);
-  for (const FiniteElement<U>* e : {element0.get(), element1.get()})
-  {
-    if (e->symmetric())
-    {
-      throw std::invalid_argument(
-          "Transpose interpolation is not supported for symmetric elements.");
-    }
-    if (int num_sub = e->num_sub_elements();
-        num_sub > 0 and num_sub != e->block_size())
-    {
-      throw std::invalid_argument("Transpose interpolation is not supported "
-                                  "for mixed elements. Use subspaces.");
-    }
-  }
-
-  // Blocked elements are supported for point evaluations and scalar
-  // identity-mapped elements, as in the forward operator
-  if (element1->block_size() > 1
-      and !(element1->map_ident() and element1->interpolation_ident())
-      and (!element1->map_ident() or element1->reference_value_size() > 1))
-  {
-    throw std::invalid_argument(
-        "Transpose interpolation into this element is not supported.");
-  }
-
-  const std::size_t value_size = element1->value_size();
-  if (static_cast<std::size_t>(element0->value_size()) != value_size)
-  {
-    throw std::invalid_argument("Functions must have the same value size.");
-  }
-
   const std::size_t num_points = element1->interpolation_points().second[0];
-  const std::vector<int>& src_owner = interpolation_data.src_owner;
-  const std::vector<int>& dest_owners = interpolation_data.dest_owners;
-  const std::vector<U>& dest_points = interpolation_data.dest_points;
-  const std::vector<std::int32_t>& dest_cells = interpolation_data.dest_cells;
-  if (src_owner.size() != cells1.size() * num_points)
-  {
+  if (interpolation_data.src_owner.size() != cells1.size() * num_points)
     throw std::invalid_argument("Interpolation data does not match the cells.");
-  }
 
-  std::span<const std::uint32_t> cell_info;
-  if (element1->needs_dof_transformations())
-  {
-    mesh1->topology_mutable()->create_cell_permutations();
-    cell_info = std::span(mesh1->topology()->get_cell_permutation_info());
-  }
+  auto mesh0 = u0.function_space()->mesh();
+  assert(mesh0);
+  std::vector<U> X0
+      = impl::pull_back_collective(*mesh0, interpolation_data, tol, maxit);
+  impl::interpolate_nonmatching_transpose(u0, u1, interpolation_data,
+                                          std::span<const U>(X0), cells1, {});
+}
 
-  // Values at the interpolation points of u1, shape=(value_size, N)
-  const std::size_t N = src_owner.size();
-  std::vector<T> g_b(value_size * N, 0);
-  impl::interpolation_transpose<T>(*element1, *V1->dofmap(), cells1, cell_info,
-                                   *mesh1, u1.x()->array(), std::span(g_b),
-                                   {value_size, N});
+/// @brief Interpolate a Function on a non-matching mesh, with
+/// precomputed data.
+///
+/// @param[in,out] u1 Function to interpolate into.
+/// @param[in] u0 Function to interpolate from.
+/// @param[in] data Data created by create_nonmatching_interpolation_data
+/// or create_nonmatching_hierarchy_interpolation_data for the spaces of
+/// `u1` and `u0`.
+template <dolfinx::scalar T, std::floating_point U>
+void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
+                 const NonmatchingInterpolationData<U>& data)
+{
+  impl::check_interpolation_data(u0, u1, data);
+  impl::interpolate_nonmatching(u1, u0, data.routing,
+                                std::span(data.dest_reference_points),
+                                std::span(data.cells), std::span(data.dofs));
+}
 
-  // Group values by the rank owning the point, by point within a rank
-  std::vector<std::int32_t> perm;
-  perm.reserve(N);
-  for (std::size_t p = 0; p < N; ++p)
-    if (src_owner[p] >= 0)
-      perm.push_back(p);
-  // Already grouped for e.g. hierarchy routing, where every point is
-  // owned by this process
-  auto owner = [&src_owner](std::int32_t p) { return src_owner[p]; };
-  if (!std::ranges::is_sorted(perm, std::ranges::less(), owner))
-    std::ranges::stable_sort(perm, std::ranges::less(), owner);
-  std::vector<std::int32_t> send_ranks(perm.size());
-  std::vector<T> send_values_b(perm.size() * value_size);
-  for (std::size_t i = 0; i < perm.size(); ++i)
-  {
-    send_ranks[i] = src_owner[perm[i]];
-    for (std::size_t j = 0; j < value_size; ++j)
-      send_values_b[i * value_size + j] = g_b[j * N + perm[i]];
-  }
-
-  // Send values to the owning process of each point
-  const std::size_t num_recv = dest_owners.size();
-  std::vector<T> recv_values(num_recv * value_size);
-  impl::mdspan_t<const T, 2> send_values(send_values_b.data(),
-                                         send_ranks.size(), value_size);
-  impl::scatter_values(comm, interpolation_data.process_local, send_ranks,
-                       dest_owners, send_values, std::span(recv_values));
-
-  // Accumulate the transposed evaluation, transpose of Function::eval
-  std::span<T> c0 = u0.x()->array();
-  std::ranges::fill(c0, 0);
-  auto dofmap0 = V0->dofmap();
-  const int bs_dof = dofmap0->bs();
-  const int bs_element = element0->block_size();
-  // Positions of the degrees-of-freedom of each block of the current
-  // cell, recomputed when the cell changes. Consecutive points usually
-  // share a cell.
-  const std::size_t num_scalar_dofs = element0->space_dimension() / bs_element;
-  std::vector<std::int32_t> dof_pos(bs_element * num_scalar_dofs);
-  std::int32_t dof_pos_cell = -1;
-  int error = 0;
-  try
-  {
-    impl::evaluate_basis<U>(
-        *element0, *mesh0, std::span(dest_points), {num_recv, 3}, dest_cells,
-        tol, maxit,
-        [&c0, &recv_values, &dofmap0, &dof_pos, &dof_pos_cell, bs_dof,
-         bs_element, num_scalar_dofs, value_size](
-            std::size_t p, std::int32_t c, impl::mdspan_t<const U, 2> basis)
-        {
-          if (c != dof_pos_cell)
-          {
-            std::span<const std::int32_t> dofs = dofmap0->cell_dofs(c);
-            for (int k = 0; k < bs_element; ++k)
-            {
-              impl::block_dof_positions(
-                  dofs, k, bs_element, bs_dof,
-                  std::span(dof_pos).subspan(k * num_scalar_dofs,
-                                             num_scalar_dofs));
-            }
-            dof_pos_cell = c;
-          }
-
-          for (int k = 0; k < bs_element; ++k)
-          {
-            for (std::size_t i = 0; i < basis.extent(0); ++i)
-            {
-              T acc = 0;
-              for (std::size_t j = 0; j < basis.extent(1); ++j)
-              {
-                acc += basis(i, j)
-                       * recv_values[p * value_size + j * bs_element + k];
-              }
-              c0[dof_pos[k * num_scalar_dofs + i]] += acc;
-            }
-          }
-        });
-  }
-  catch (const std::exception& e)
-  {
-    logger().error("Transpose interpolation failed: {}", e.what());
-    error = 1;
-  }
-
-  MPI_Allreduce(MPI_IN_PLACE, &error, 1, MPI_INT, MPI_MAX, comm);
-  if (error)
-  {
-    throw std::runtime_error("Transpose interpolation failed to evaluate "
-                             "the basis on some process.");
-  }
-
-  u0.x()->scatter_rev(std::plus<T>());
-  u0.x()->scatter_fwd();
+/// @brief Apply the transpose of non-matching interpolation, with
+/// precomputed data.
+///
+/// `P^T` for the operator `P` applied by `interpolate(u1, u0, data)`.
+/// See interpolate_transpose(Function&, const Function&,
+/// std::span<const std::int32_t>, double, int, const
+/// geometry::PointOwnershipData&).
+///
+/// @note Collective.
+///
+/// @param[in,out] u0 Function to overwrite with `P^T u1`. Ghost values
+/// are updated.
+/// @param[in] u1 Function to apply the transpose to. Its ghost values
+/// are not used.
+/// @param[in] data Data for the forward interpolation.
+template <dolfinx::scalar T, std::floating_point U>
+void interpolate_transpose(Function<T, U>& u0, const Function<T, U>& u1,
+                           const NonmatchingInterpolationData<U>& data)
+{
+  impl::check_interpolation_data(u0, u1, data);
+  impl::interpolate_nonmatching_transpose(
+      u0, u1, data.routing, std::span(data.dest_reference_points),
+      std::span(data.cells), std::span(data.dofs));
 }
 
 /// @brief Interpolate from one finite element Function to another

@@ -327,6 +327,33 @@ public:
     fem::interpolate_transpose(*this, u, cells, tol, maxit, interpolation_data);
   }
 
+  /// @brief Interpolate a Function defined on a different mesh, with
+  /// precomputed data.
+  ///
+  /// @param[in] u Function to be interpolated.
+  /// @param[in] data Data created by
+  /// fem::create_nonmatching_interpolation_data or
+  /// fem::create_nonmatching_hierarchy_interpolation_data.
+  void interpolate(const Function<value_type, geometry_type>& u,
+                   const NonmatchingInterpolationData<U>& data)
+  {
+    fem::interpolate(*this, u, data);
+  }
+
+  /// @brief Apply the transpose of non-matching interpolation, with
+  /// precomputed data.
+  ///
+  /// Sets `this` to `P^T u`, where `P` is the operator applied by
+  /// `u.interpolate(*this, data)`. See fem::interpolate_transpose.
+  ///
+  /// @param[in] u Function on the mesh interpolated into by `P`.
+  /// @param[in] data Data for the forward interpolation.
+  void interpolate_transpose(const Function<value_type, geometry_type>& u,
+                             const NonmatchingInterpolationData<U>& data)
+  {
+    fem::interpolate_transpose(*this, u, data);
+  }
+
   /// @brief Evaluate the Function at points.
   ///
   /// @param[in] x The coordinates of the points. It has shape

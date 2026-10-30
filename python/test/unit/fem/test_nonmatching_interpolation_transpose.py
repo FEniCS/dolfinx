@@ -104,50 +104,56 @@ def _all_cells(msh: mesh.Mesh) -> np.ndarray:
     return np.arange(msh.topology.index_map(tdim).size_local, dtype=np.int32)
 
 
+_cases = [
+    (
+        (mesh.CellType.triangle, mesh.CellType.triangle),
+        ("Lagrange", 1),
+        ("Lagrange", 1),
+    ),
+    (
+        (mesh.CellType.quadrilateral, mesh.CellType.triangle),
+        ("Lagrange", 2),
+        ("Lagrange", 3),
+    ),
+    (
+        (mesh.CellType.triangle, mesh.CellType.quadrilateral),
+        ("Lagrange", 2, (2,)),
+        ("DG", 1, (2,)),
+    ),
+    (
+        (mesh.CellType.triangle, mesh.CellType.triangle),
+        ("Lagrange", 2, (2,)),
+        ("RT", 1),
+    ),
+    (
+        (mesh.CellType.triangle, mesh.CellType.triangle),
+        ("Lagrange", 2),
+        ("Legendre DG", 2),
+    ),
+    (
+        (mesh.CellType.tetrahedron, mesh.CellType.tetrahedron),
+        ("N1curl", 2),
+        ("N1curl", 2),
+    ),
+    (
+        (mesh.CellType.hexahedron, mesh.CellType.tetrahedron),
+        ("Lagrange", 2),
+        ("Lagrange", 2),
+    ),
+]
+
+
 @pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
 @pytest.mark.parametrize("dtype", dtypes)
-@pytest.mark.parametrize(
-    "cell_types,element0,element1",
-    [
-        (
-            (mesh.CellType.triangle, mesh.CellType.triangle),
-            ("Lagrange", 1),
-            ("Lagrange", 1),
-        ),
-        (
-            (mesh.CellType.quadrilateral, mesh.CellType.triangle),
-            ("Lagrange", 2),
-            ("Lagrange", 3),
-        ),
-        (
-            (mesh.CellType.triangle, mesh.CellType.quadrilateral),
-            ("Lagrange", 2, (2,)),
-            ("DG", 1, (2,)),
-        ),
-        (
-            (mesh.CellType.triangle, mesh.CellType.triangle),
-            ("Lagrange", 2, (2,)),
-            ("RT", 1),
-        ),
-        (
-            (mesh.CellType.triangle, mesh.CellType.triangle),
-            ("Lagrange", 2),
-            ("Legendre DG", 2),
-        ),
-        (
-            (mesh.CellType.tetrahedron, mesh.CellType.tetrahedron),
-            ("N1curl", 2),
-            ("N1curl", 2),
-        ),
-        (
-            (mesh.CellType.hexahedron, mesh.CellType.tetrahedron),
-            ("Lagrange", 2),
-            ("Lagrange", 2),
-        ),
-    ],
-)
+@pytest.mark.parametrize("cell_types,element0,element1", _cases)
 def test_adjoint(cell_types, element0, element1, dtype, ghost_mode):
-    xtype = _real_dtype(dtype)
+    V0, V1 = _spaces(cell_types, element0, element1, _real_dtype(dtype), ghost_mode)
+    cells1 = _all_cells(V1.mesh)
+    data = fem.create_interpolation_data(V1, V0, cells1)
+    _check_adjoint(V0, V1, cells1, data, dtype)
+
+
+def _spaces(cell_types, element0, element1, xtype, ghost_mode):
     msh0, msh1 = _meshes(*cell_types, xtype, ghost_mode)
     if element1[0] == "Legendre DG":
         element1 = basix.ufl.element(
@@ -157,11 +163,46 @@ def test_adjoint(cell_types, element0, element1, dtype, ghost_mode):
             lagrange_variant=basix.LagrangeVariant.legendre,
             dtype=xtype,
         )
-    V0 = fem.functionspace(msh0, element0)
-    V1 = fem.functionspace(msh1, element1)
-    cells1 = _all_cells(msh1)
+    return fem.functionspace(msh0, element0), fem.functionspace(msh1, element1)
+
+
+def _check_same_operators(V0, V1, cells1, data, data_new, dtype, rtol):
+    """Check that two interpolation data give the same P and P^T."""
+    a = _random_function(V0, dtype, 6)
+    b = _random_function(V1, dtype, 7)
+    u, u_new = fem.Function(V1, dtype=dtype), fem.Function(V1, dtype=dtype)
+    u.interpolate_nonmatching(a, cells1, data)
+    u_new.interpolate_nonmatching(a, None, data_new)
+    np.testing.assert_allclose(u_new.x.array, u.x.array, atol=rtol * _owned_norm(u))
+    v, v_new = fem.Function(V0, dtype=dtype), fem.Function(V0, dtype=dtype)
+    v.interpolate_nonmatching_transpose(b, cells1, data)
+    v_new.interpolate_nonmatching_transpose(b, None, data_new)
+    np.testing.assert_allclose(v_new.x.array, v.x.array, atol=rtol * _owned_norm(v))
+
+
+@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize("dtype", dtypes)
+@pytest.mark.parametrize("cell_types,element0,element1", _cases)
+def test_nonmatching_interpolation_data(cell_types, element0, element1, dtype, ghost_mode):
+    """Cached data gives the operators of PointOwnershipData."""
+    xtype = _real_dtype(dtype)
+    V0, V1 = _spaces(cell_types, element0, element1, xtype, ghost_mode)
+    cells1 = _all_cells(V1.mesh)
     data = fem.create_interpolation_data(V1, V0, cells1)
-    _check_adjoint(V0, V1, cells1, data, dtype)
+    data_new = fem.create_nonmatching_interpolation_data(V1, V0)
+    np.testing.assert_array_equal(data_new.cells, cells1)
+
+    # One point per degree-of-freedom block of a point evaluation
+    if element1[0] in ("Lagrange", "DG"):
+        assert np.unique(data_new.dofs).size == data_new.dofs.size
+        num_owned = V1.dofmap.index_map.size_local
+        assert np.all(np.isin(np.arange(num_owned), data_new.dofs))
+    else:
+        assert data_new.dofs.size == 0
+
+    eps = np.finfo(xtype).eps
+    _check_same_operators(V0, V1, cells1, data, data_new, dtype, 1000 * eps)
+    _check_adjoint(V0, V1, None, data_new, dtype)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -256,3 +297,41 @@ def test_hierarchy_interpolation_data_invalid_parents():
         invalid[0] = -1
         with pytest.raises(ValueError):
             fem.create_hierarchy_interpolation_data(V1, V0, invalid)
+
+
+@pytest.mark.parametrize("redistribute", [False, True])
+@pytest.mark.parametrize("dtype", dtypes)
+@pytest.mark.parametrize("element", [("Lagrange", 2), ("Lagrange", 1, (2,)), ("RT", 1)])
+def test_nonmatching_hierarchy_interpolation_data(dtype, redistribute, element):
+    xtype = _real_dtype(dtype)
+    msh0, msh1, parent_cells = _refined(xtype, redistribute)
+    V0 = fem.functionspace(msh0, element)
+    V1 = fem.functionspace(msh1, element)
+    cells1 = _all_cells(msh1)
+    data = fem.create_hierarchy_interpolation_data(V1, V0, parent_cells)
+    data_new = fem.create_nonmatching_interpolation_data(V1, V0, parent_cells=parent_cells)
+    assert data_new.routing.process_local == data.process_local
+
+    eps = np.finfo(xtype).eps
+    _check_same_operators(V0, V1, cells1, data, data_new, dtype, 1000 * eps)
+    _check_adjoint(V0, V1, None, data_new, dtype)
+
+
+def test_nonmatching_interpolation_data_arguments():
+    msh0, msh1, parent_cells = _refined(np.float64)
+    V0 = fem.functionspace(msh0, ("Lagrange", 1))
+    V1 = fem.functionspace(msh1, ("Lagrange", 1))
+    cells1 = _all_cells(msh1)
+    with pytest.raises(ValueError):
+        fem.create_nonmatching_interpolation_data(V1, V0, cells=cells1, parent_cells=parent_cells)
+    data = fem.create_nonmatching_interpolation_data(V1, V0, parent_cells=parent_cells)
+    u0, u1 = fem.Function(V0), fem.Function(V1)
+    with pytest.raises(ValueError):
+        u1.interpolate_nonmatching(u0, cells1, data)
+    with pytest.raises(ValueError):
+        u0.interpolate_nonmatching_transpose(u1, cells1, data)
+
+    # Data for another space interpolated into
+    W1 = fem.functionspace(msh1, ("Lagrange", 2))
+    with pytest.raises(ValueError):
+        fem.Function(W1).interpolate_nonmatching(u0, None, data)

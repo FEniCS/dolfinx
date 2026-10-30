@@ -98,6 +98,48 @@ class Constant(ufl.Constant, Generic[Scalar]):
         return complex(self.value)
 
 
+class NonmatchingInterpolationData(Generic[Real]):
+    """Data for repeated interpolation on non-matching meshes.
+
+    Created by :func:`dolfinx.fem.create_nonmatching_interpolation_data`.
+    Compared with :class:`dolfinx.geometry.PointOwnershipData`, the
+    reference coordinates of the points are computed once, and for
+    point-evaluation elements, e.g. Lagrange, each degree-of-freedom is
+    evaluated once rather than once per cell containing it.
+    """
+
+    _cpp_object: (
+        _cpp.fem.NonmatchingInterpolationData_float32
+        | _cpp.fem.NonmatchingInterpolationData_float64
+    )
+
+    def __init__(
+        self,
+        data: _cpp.fem.NonmatchingInterpolationData_float32
+        | _cpp.fem.NonmatchingInterpolationData_float64,
+    ) -> None:
+        """Wrap a C++ NonmatchingInterpolationData."""
+        self._cpp_object = data
+
+    @property
+    def routing(self) -> PointOwnershipData[Real]:
+        """Routing of the evaluation points to the source cells."""
+        return PointOwnershipData(self._cpp_object.routing)
+
+    @property
+    def cells(self) -> npt.NDArray[np.int32]:
+        """Cells interpolated into."""
+        return self._cpp_object.cells
+
+    @property
+    def dofs(self) -> npt.NDArray[np.int32]:
+        """Degree-of-freedom block of each evaluation point.
+
+        Empty unless the element interpolated into is a point evaluation.
+        """
+        return self._cpp_object.dofs
+
+
 class Expression(Generic[Scalar]):
     """An object for evaluating functions of finite element functions.
 
@@ -493,8 +535,8 @@ class Function(ufl.Coefficient, Generic[Scalar]):
     def interpolate_nonmatching(
         self,
         u0: Function[Scalar],
-        cells: npt.NDArray[np.int32],
-        interpolation_data: PointOwnershipData,
+        cells: npt.NDArray[np.int32] | None,
+        interpolation_data: PointOwnershipData | NonmatchingInterpolationData,
         tol: float = 1e-6,
         maxit: int = 15,
     ) -> None:
@@ -502,16 +544,31 @@ class Function(ufl.Coefficient, Generic[Scalar]):
 
         Args:
             u0: Function to interpolate.
-            cells: The cells to interpolate over. If ``None`` then all
-                cells are interpolated over.
+            cells: The cells to interpolate over. Must be ``None`` if
+                ``interpolation_data`` is a
+                :class:`NonmatchingInterpolationData`, which holds the
+                cells.
             interpolation_data: Data needed to interpolate functions
                 defined on other meshes. Created by
-                :func:`dolfinx.fem.create_interpolation_data`.
+                :func:`dolfinx.fem.create_interpolation_data` or
+                :func:`dolfinx.fem.create_nonmatching_interpolation_data`.
             tol: Tolerance for convergence in Newton method for nonaffine
-                pullbacks. Ignored if mesh geometry is affine.
+                pullbacks. Ignored if mesh geometry is affine, or if
+                ``interpolation_data`` is a
+                :class:`NonmatchingInterpolationData`.
             maxit: Maximum number of iterations for nonaffine pullback.
-                Ignored if mesh geometry is affine.
+                Ignored as ``tol``.
         """
+        if isinstance(interpolation_data, NonmatchingInterpolationData):
+            if cells is not None:
+                raise ValueError("cells must be None with NonmatchingInterpolationData.")
+            self._cpp_object.interpolate(
+                u0._cpp_object,  # type: ignore[arg-type]
+                interpolation_data._cpp_object,  # type: ignore[arg-type]
+            )
+            return
+        if cells is None:
+            raise ValueError("cells is required with PointOwnershipData.")
         self._cpp_object.interpolate(
             u0._cpp_object,  # type: ignore[arg-type]
             cells,
@@ -523,8 +580,8 @@ class Function(ufl.Coefficient, Generic[Scalar]):
     def interpolate_nonmatching_transpose(
         self,
         u1: Function[Scalar],
-        cells: npt.NDArray[np.int32],
-        interpolation_data: PointOwnershipData,
+        cells: npt.NDArray[np.int32] | None,
+        interpolation_data: PointOwnershipData | NonmatchingInterpolationData,
         tol: float = 1e-6,
         maxit: int = 15,
     ) -> None:
@@ -545,13 +602,24 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             cells: The cells of the mesh of ``u1``, as passed to
                 :meth:`interpolate_nonmatching`.
             interpolation_data: Data for the forward interpolation,
-                created by :func:`dolfinx.fem.create_interpolation_data`
-                or :func:`dolfinx.fem.create_hierarchy_interpolation_data`.
+                created by :func:`dolfinx.fem.create_interpolation_data`,
+                :func:`dolfinx.fem.create_hierarchy_interpolation_data` or
+                :func:`dolfinx.fem.create_nonmatching_interpolation_data`.
             tol: Tolerance for convergence in Newton method for nonaffine
-                pullbacks. Ignored if mesh geometry is affine.
+                pullbacks. Ignored as in :meth:`interpolate_nonmatching`.
             maxit: Maximum number of iterations for nonaffine pullback.
-                Ignored if mesh geometry is affine.
+                Ignored as ``tol``.
         """
+        if isinstance(interpolation_data, NonmatchingInterpolationData):
+            if cells is not None:
+                raise ValueError("cells must be None with NonmatchingInterpolationData.")
+            self._cpp_object.interpolate_transpose(
+                u1._cpp_object,  # type: ignore[arg-type]
+                interpolation_data._cpp_object,  # type: ignore[arg-type]
+            )
+            return
+        if cells is None:
+            raise ValueError("cells is required with PointOwnershipData.")
         self._cpp_object.interpolate_transpose(
             u1._cpp_object,  # type: ignore[arg-type]
             cells,

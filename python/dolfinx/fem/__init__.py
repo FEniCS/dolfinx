@@ -53,6 +53,7 @@ from dolfinx.fem.function import (
     Expression,
     Function,
     FunctionSpace,
+    NonmatchingInterpolationData,
     functionspace,
 )
 from dolfinx.fem.utils import (
@@ -60,6 +61,7 @@ from dolfinx.fem.utils import (
     compute_integration_domains,
     create_hierarchy_interpolation_data,
     create_interpolation_data,
+    create_nonmatching_interpolation_data,
     create_sparsity_pattern,
     discrete_curl,
     discrete_gradient,
@@ -81,6 +83,7 @@ __all__ = [
     "Function",
     "FunctionSpace",
     "IntegralType",
+    "NonmatchingInterpolationData",
     "apply_lifting",
     "assemble_matrix",
     "assemble_matrix_fn",
@@ -96,6 +99,7 @@ __all__ = [
     "create_hierarchy_interpolation_data",
     "create_interpolation_data",
     "create_matrix",
+    "create_nonmatching_interpolation_data",
     "create_sparsity_pattern",
     "create_vector",
     "dirichletbc",

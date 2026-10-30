@@ -32,6 +32,7 @@
 #include <dolfinx/fem/interpolate_geometry.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/sparsitypattern.h>
+#include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <format>
@@ -450,6 +451,35 @@ void declare_function_space(nb::module_& m, std::string type)
                      &dolfinx::fem::FiniteElement<T>::needs_dof_transformations)
         .def_prop_ro("signature", &dolfinx::fem::FiniteElement<T>::signature);
   }
+
+  {
+    std::string pyclass_name = "NonmatchingInterpolationData_" + type;
+    nb::class_<dolfinx::fem::NonmatchingInterpolationData<T>>(
+        m, pyclass_name.c_str(),
+        "Data for interpolation on non-matching meshes")
+        .def_prop_ro(
+            "routing",
+            [](const dolfinx::fem::NonmatchingInterpolationData<T>& self)
+                -> const dolfinx::geometry::PointOwnershipData<T>&
+            { return self.routing; },
+            nb::rv_policy::reference_internal)
+        .def_prop_ro(
+            "cells",
+            [](const dolfinx::fem::NonmatchingInterpolationData<T>& self)
+            {
+              return nb::ndarray<const std::int32_t, nb::ndim<1>, nb::numpy>(
+                  self.cells.data(), {self.cells.size()});
+            },
+            nb::rv_policy::reference_internal)
+        .def_prop_ro(
+            "dofs",
+            [](const dolfinx::fem::NonmatchingInterpolationData<T>& self)
+            {
+              return nb::ndarray<const std::int32_t, nb::ndim<1>, nb::numpy>(
+                  self.dofs.data(), {self.dofs.size()});
+            },
+            nb::rv_policy::reference_internal);
+  }
 }
 
 template <typename T>
@@ -708,6 +738,22 @@ void declare_objects(nb::module_& m, std::string type)
           },
           nb::arg("u"), nb::arg("cells"), nb::arg("tol"), nb::arg("maxit"),
           nb::arg("interpolation_data"),
+          "Apply the transpose of interpolation on non-matching meshes")
+      .def(
+          "interpolate",
+          [](dolfinx::fem::Function<T, U>& self,
+             const dolfinx::fem::Function<T, U>& u,
+             const dolfinx::fem::NonmatchingInterpolationData<U>& data)
+          { self.interpolate(u, data); },
+          nb::arg("u"), nb::arg("data"),
+          "Interpolate a finite element Function on non-matching meshes")
+      .def(
+          "interpolate_transpose",
+          [](dolfinx::fem::Function<T, U>& self,
+             const dolfinx::fem::Function<T, U>& u,
+             const dolfinx::fem::NonmatchingInterpolationData<U>& data)
+          { self.interpolate_transpose(u, data); },
+          nb::arg("u"), nb::arg("data"),
           "Apply the transpose of interpolation on non-matching meshes")
       // NOLINTBEGIN(performance-no-int-to-ptr)
       .def(
@@ -1482,6 +1528,35 @@ void declare_real_functions(nb::module_& m)
       },
       nb::arg("mesh0"), nb::arg("element0"), nb::arg("mesh1"),
       nb::arg("parent_cells"));
+
+  m.def(
+      "create_nonmatching_interpolation_data",
+      [](const dolfinx::fem::FunctionSpace<T>& V1,
+         const dolfinx::fem::FunctionSpace<T>& V0,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells1,
+         T padding, bool allow_extrapolation, double tol, int maxit)
+      {
+        return dolfinx::fem::create_nonmatching_interpolation_data(
+            V1, V0, std::span(cells1.data(), cells1.size()), padding,
+            allow_extrapolation, tol, maxit);
+      },
+      nb::arg("V1"), nb::arg("V0"), nb::arg("cells1"), nb::arg("padding"),
+      nb::arg("allow_extrapolation"), nb::arg("tol"), nb::arg("maxit"));
+
+  m.def(
+      "create_nonmatching_hierarchy_interpolation_data",
+      [](const dolfinx::fem::FunctionSpace<T>& V1,
+         const dolfinx::fem::FunctionSpace<T>& V0,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+             parent_cells,
+         double tol, int maxit)
+      {
+        return dolfinx::fem::create_nonmatching_hierarchy_interpolation_data(
+            V1, V0, std::span(parent_cells.data(), parent_cells.size()), tol,
+            maxit);
+      },
+      nb::arg("V1"), nb::arg("V0"), nb::arg("parent_cells"), nb::arg("tol"),
+      nb::arg("maxit"));
 }
 
 } // namespace dolfinx_wrappers
