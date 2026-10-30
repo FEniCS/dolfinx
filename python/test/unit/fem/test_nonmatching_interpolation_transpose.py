@@ -12,7 +12,8 @@ import pytest
 
 import basix
 import basix.ufl
-from dolfinx import fem, mesh
+import ufl
+from dolfinx import common, fem, geometry, mesh
 from dolfinx.graph import partitioner
 
 dtypes = [np.float32, np.float64, np.complex64, np.complex128]
@@ -166,43 +167,66 @@ def _spaces(cell_types, element0, element1, xtype, ghost_mode):
     return fem.functionspace(msh0, element0), fem.functionspace(msh1, element1)
 
 
+def _cellwise_data(V1, V0, cells1, padding=1e-14):
+    """Data routing the interpolation points of every cell, by a search."""
+    msh = V1.mesh
+    xtype = msh.geometry.x.dtype
+    X = V1.element.interpolation_points
+    expr = fem.Expression(ufl.SpatialCoordinate(msh), X.astype(xtype), dtype=xtype)
+    x_g = expr.eval(msh, cells1).reshape(-1, msh.geometry.dim)
+    x = np.zeros((x_g.shape[0], 3), dtype=xtype)
+    x[:, : x_g.shape[1]] = x_g
+    return geometry.determine_point_ownership(V0.mesh, x, padding)
+
+
 def _check_same_operators(V0, V1, cells1, data, data_new, dtype, rtol):
     """Check that two interpolation data give the same P and P^T."""
     a = _random_function(V0, dtype, 6)
     b = _random_function(V1, dtype, 7)
     u, u_new = fem.Function(V1, dtype=dtype), fem.Function(V1, dtype=dtype)
     u.interpolate_nonmatching(a, cells1, data)
-    u_new.interpolate_nonmatching(a, None, data_new)
+    u_new.interpolate_nonmatching(a, cells1, data_new)
     np.testing.assert_allclose(u_new.x.array, u.x.array, atol=rtol * _owned_norm(u))
     v, v_new = fem.Function(V0, dtype=dtype), fem.Function(V0, dtype=dtype)
     v.interpolate_nonmatching_transpose(b, cells1, data)
-    v_new.interpolate_nonmatching_transpose(b, None, data_new)
+    v_new.interpolate_nonmatching_transpose(b, cells1, data_new)
     np.testing.assert_allclose(v_new.x.array, v.x.array, atol=rtol * _owned_norm(v))
 
 
 @pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
 @pytest.mark.parametrize("dtype", dtypes)
 @pytest.mark.parametrize("cell_types,element0,element1", _cases)
-def test_nonmatching_interpolation_data(cell_types, element0, element1, dtype, ghost_mode):
-    """Cached data gives the operators of PointOwnershipData."""
+def test_interpolation_data_layouts(cell_types, element0, element1, dtype, ghost_mode):
+    """One point per dof and the points of every cell give the same operators."""
     xtype = _real_dtype(dtype)
     V0, V1 = _spaces(cell_types, element0, element1, xtype, ghost_mode)
     cells1 = _all_cells(V1.mesh)
     data = fem.create_interpolation_data(V1, V0, cells1)
-    data_new = fem.create_nonmatching_interpolation_data(V1, V0)
-    np.testing.assert_array_equal(data_new.cells, cells1)
+    assert data.has_reference_points
+    data_cell = _cellwise_data(V1, V0, cells1)
+    assert not data_cell.has_reference_points
+    assert not data_cell.has_dofs
 
-    # One point per degree-of-freedom block of a point evaluation
-    if element1[0] in ("Lagrange", "DG"):
-        assert np.unique(data_new.dofs).size == data_new.dofs.size
-        num_owned = V1.dofmap.index_map.size_local
-        assert np.all(np.isin(np.arange(num_owned), data_new.dofs))
-    else:
-        assert data_new.dofs.size == 0
+    # Point evaluations route one point per dof block; shared nodes of
+    # continuous Lagrange are evaluated once
+    num_cell_points = cells1.size * V1.element.interpolation_points.shape[0]
+    if element1[0] == "Lagrange":
+        assert data.has_dofs
+    if element1[0] == "Lagrange" and cells1.size > 1:
+        assert data.src_owner.size < num_cell_points
+    elif element1[0] != "Lagrange":
+        assert data.src_owner.size == num_cell_points
 
     eps = np.finfo(xtype).eps
-    _check_same_operators(V0, V1, cells1, data, data_new, dtype, 1000 * eps)
-    _check_adjoint(V0, V1, None, data_new, dtype)
+    _check_same_operators(V0, V1, cells1, data_cell, data, dtype, 1000 * eps)
+    _check_adjoint(V0, V1, cells1, data, dtype)
+
+    # Reference points stored afterwards give the same operators
+    fem.compute_reference_points(data_cell, V0.mesh)
+    assert data_cell.has_reference_points
+    _check_same_operators(
+        V0, V1, cells1, _cellwise_data(V1, V0, cells1), data_cell, dtype, 1000 * eps
+    )
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -302,36 +326,47 @@ def test_hierarchy_interpolation_data_invalid_parents():
 @pytest.mark.parametrize("redistribute", [False, True])
 @pytest.mark.parametrize("dtype", dtypes)
 @pytest.mark.parametrize("element", [("Lagrange", 2), ("Lagrange", 1, (2,)), ("RT", 1)])
-def test_nonmatching_hierarchy_interpolation_data(dtype, redistribute, element):
+def test_hierarchy_interpolation_data_layouts(dtype, redistribute, element):
+    """Hierarchy data gives the operators of cell-wise search data."""
     xtype = _real_dtype(dtype)
     msh0, msh1, parent_cells = _refined(xtype, redistribute)
     V0 = fem.functionspace(msh0, element)
     V1 = fem.functionspace(msh1, element)
     cells1 = _all_cells(msh1)
     data = fem.create_hierarchy_interpolation_data(V1, V0, parent_cells)
-    data_new = fem.create_nonmatching_interpolation_data(V1, V0, parent_cells=parent_cells)
-    assert data_new.routing.process_local == data.process_local
-
+    assert data.has_reference_points
     eps = np.finfo(xtype).eps
-    _check_same_operators(V0, V1, cells1, data, data_new, dtype, 1000 * eps)
-    _check_adjoint(V0, V1, None, data_new, dtype)
+    data_cell = _cellwise_data(V1, V0, cells1, padding=100 * eps)
+    _check_same_operators(V0, V1, cells1, data_cell, data, dtype, 1000 * eps)
+    _check_adjoint(V0, V1, cells1, data, dtype)
 
 
-def test_nonmatching_interpolation_data_arguments():
+def test_interpolation_data_other_space():
+    """Data for one space interpolated into is rejected for another."""
     msh0, msh1, parent_cells = _refined(np.float64)
     V0 = fem.functionspace(msh0, ("Lagrange", 1))
     V1 = fem.functionspace(msh1, ("Lagrange", 1))
+    W1 = fem.functionspace(msh1, ("Lagrange", 2))
     cells1 = _all_cells(msh1)
+    data = fem.create_hierarchy_interpolation_data(V1, V0, parent_cells)
+    u0, w1 = fem.Function(V0), fem.Function(W1)
     with pytest.raises(ValueError):
-        fem.create_nonmatching_interpolation_data(V1, V0, cells=cells1, parent_cells=parent_cells)
-    data = fem.create_nonmatching_interpolation_data(V1, V0, parent_cells=parent_cells)
+        w1.interpolate_nonmatching(u0, cells1, data)
+    with pytest.raises(ValueError):
+        u0.interpolate_nonmatching_transpose(w1, cells1, data)
+
+
+@pytest.mark.skipif(not common.has_debug, reason="Stored dofs are only compared in debug builds")
+def test_interpolation_data_other_cells():
+    """Data for one set of cells interpolated into is rejected for another."""
+    msh0, msh1, parent_cells = _refined(np.float64)
+    V0 = fem.functionspace(msh0, ("Lagrange", 1))
+    V1 = fem.functionspace(msh1, ("Lagrange", 1))
+    data = fem.create_hierarchy_interpolation_data(V1, V0, parent_cells)
+    assert data.has_dofs
+    cells1 = _all_cells(msh1)[::-1].copy()
     u0, u1 = fem.Function(V0), fem.Function(V1)
     with pytest.raises(ValueError):
         u1.interpolate_nonmatching(u0, cells1, data)
     with pytest.raises(ValueError):
         u0.interpolate_nonmatching_transpose(u1, cells1, data)
-
-    # Data for another space interpolated into
-    W1 = fem.functionspace(msh1, ("Lagrange", 2))
-    with pytest.raises(ValueError):
-        fem.Function(W1).interpolate_nonmatching(u0, None, data)

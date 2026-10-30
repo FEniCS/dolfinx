@@ -23,19 +23,13 @@ from dolfinx.cpp.fem import (
     create_hierarchy_interpolation_data as _create_hierarchy_interpolation_data,
 )
 from dolfinx.cpp.fem import create_interpolation_data as _create_interpolation_data
-from dolfinx.cpp.fem import (
-    create_nonmatching_hierarchy_interpolation_data as _create_nonmatching_hierarchy_data,
-)
-from dolfinx.cpp.fem import (
-    create_nonmatching_interpolation_data as _create_nonmatching_interpolation_data,
-)
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem import evaluate_basis_functions as _evaluate_basis_functions
 from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem.element import CoordinateElement
-from dolfinx.fem.function import FunctionSpace, NonmatchingInterpolationData
+from dolfinx.fem.function import FunctionSpace
 from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
 from dolfinx.la import MatrixCSR as _MatrixCSR
 from dolfinx.la import SparsityPattern as _SparsityPattern
@@ -90,14 +84,27 @@ def create_interpolation_data(
     cells: npt.NDArray[np.int32],
     padding: float = 1e-14,
     allow_extrapolation: bool = True,
+    tol: float = 1e-6,
+    maxit: int = 15,
 ) -> _PointOwnershipData:
     """Generate data for interpolating functions on different meshes.
+
+    For point-evaluation elements, e.g. Lagrange and discontinuous
+    Lagrange, one point per degree-of-freedom is located, so a node
+    shared by several cells is evaluated once. For other elements, the
+    points are the interpolation points of every cell. The reference
+    coordinates of the points in the cells of ``V_from``'s mesh are
+    computed once and stored in the data.
+
+    Note:
+        Collective.
 
     Args:
         V_to: Function space to interpolate into.
         V_from: Function space to interpolate from.
         cells: Indices of the cells associated with `V_to` on which to
-            interpolate into.
+            interpolate into. The same cells must be passed to
+            :meth:`dolfinx.fem.Function.interpolate_nonmatching`.
         padding: Absolute padding applied to the bounding box of each
             cell in `V_from`'s mesh before searching for candidate
             cells. Increasing ``padding`` increases the number of
@@ -110,30 +117,33 @@ def create_interpolation_data(
             of `V_from`'s mesh is instead assigned the candidate cell
             closest to it (relevant e.g. if the two meshes do not fully
             overlap). If ``False``, such points are left unowned.
+        tol: Tolerance for convergence in Newton method for nonaffine
+            pullbacks on `V_from`'s mesh. Ignored if its geometry is
+            affine.
+        maxit: Maximum number of iterations for nonaffine pullback.
+            Ignored if the geometry is affine.
 
     Returns:
         Data needed to interpolation functions defined on function
         spaces on the meshes.
     """
-    match V_to.mesh._cpp_object.geometry, V_to.element._cpp_object, V_from.mesh._cpp_object:
+    match V_to._cpp_object, V_from.mesh._cpp_object:
         case (
-            _cpp.mesh.Geometry_float32() as geometry0,
-            _cpp.fem.FiniteElement_float32() as element0,
+            _cpp.fem.FunctionSpace_float32() as V0,
             _cpp.mesh.Mesh_float32() as mesh1,
         ):
             return _PointOwnershipData(
                 _create_interpolation_data(
-                    geometry0, element0, mesh1, cells, padding, allow_extrapolation
+                    V0, mesh1, cells, padding, allow_extrapolation, tol, maxit
                 )
             )
         case (
-            _cpp.mesh.Geometry_float64() as geometry0,
-            _cpp.fem.FiniteElement_float64() as element0,
+            _cpp.fem.FunctionSpace_float64() as V0,
             _cpp.mesh.Mesh_float64() as mesh1,
         ):
             return _PointOwnershipData(
                 _create_interpolation_data(
-                    geometry0, element0, mesh1, cells, padding, allow_extrapolation
+                    V0, mesh1, cells, padding, allow_extrapolation, tol, maxit
                 )
             )
         case _:
@@ -146,13 +156,15 @@ def create_hierarchy_interpolation_data(
     V_to: FunctionSpace,
     V_from: FunctionSpace,
     parent_cells: npt.ArrayLike,
+    tol: float = 1e-6,
+    maxit: int = 15,
 ) -> _PointOwnershipData:
     """Generate data for interpolating from a mesh to its refinement.
 
     Equivalent to :func:`create_interpolation_data` over the owned cells
     of the mesh of ``V_to``, when that mesh is a refinement of the mesh
-    of ``V_from``. Each interpolation point is routed to the parent cell
-    of its fine cell, without a geometric search.
+    of ``V_from``. Each point is routed to the parent cell of its fine
+    cell, without a geometric search.
 
     A fine cell is found through its original cell index, i.e. its
     global index before the refined mesh was distributed. The process
@@ -176,33 +188,68 @@ def create_hierarchy_interpolation_data(
         V_from: Function space on the mesh that was refined.
         parent_cells: Parent cells, as returned on this process by
             :func:`dolfinx.mesh.refine`.
+        tol: Tolerance for convergence in Newton method for nonaffine
+            pullbacks on `V_from`'s mesh. Ignored if its geometry is
+            affine.
+        maxit: Maximum number of iterations for nonaffine pullback.
+            Ignored if the geometry is affine.
 
     Returns:
         Data needed to interpolate from ``V_from`` into ``V_to``.
     """
     parent = np.ascontiguousarray(parent_cells, dtype=np.int32).reshape(-1)
-    match V_to.mesh._cpp_object, V_to.element._cpp_object, V_from.mesh._cpp_object:
+    match V_to._cpp_object, V_from.mesh._cpp_object:
         case (
-            _cpp.mesh.Mesh_float32() as mesh0,
-            _cpp.fem.FiniteElement_float32() as element0,
+            _cpp.fem.FunctionSpace_float32() as V0,
             _cpp.mesh.Mesh_float32() as mesh1,
         ):
             return _PointOwnershipData(
-                _create_hierarchy_interpolation_data(mesh0, element0, mesh1, parent)
+                _create_hierarchy_interpolation_data(V0, mesh1, parent, tol, maxit)
             )
         case (
-            _cpp.mesh.Mesh_float64() as mesh0,
-            _cpp.fem.FiniteElement_float64() as element0,
+            _cpp.fem.FunctionSpace_float64() as V0,
             _cpp.mesh.Mesh_float64() as mesh1,
         ):
             return _PointOwnershipData(
-                _create_hierarchy_interpolation_data(mesh0, element0, mesh1, parent)
+                _create_hierarchy_interpolation_data(V0, mesh1, parent, tol, maxit)
             )
         case _:
             raise TypeError(
                 "create_hierarchy_interpolation_data requires V_to and V_from to have the same "
                 "dtype."
             )
+
+
+def compute_reference_points(
+    data: _PointOwnershipData,
+    mesh: dolfinx.mesh.Mesh,
+    tol: float = 1e-6,
+    maxit: int = 15,
+) -> None:
+    """Store the reference coordinates of the points of interpolation data.
+
+    The points are pulled back to the reference cells of their cells in
+    ``mesh`` once, so that interpolating with the data needs no
+    pull-back. :func:`create_interpolation_data` and
+    :func:`create_hierarchy_interpolation_data` already do this; it is
+    needed only for data created otherwise, e.g. by
+    :func:`dolfinx.geometry.determine_point_ownership`.
+
+    Note:
+        Collective.
+
+    Args:
+        data: Interpolation data, updated in place.
+        mesh: Mesh containing the cells of the points, i.e. the mesh
+            interpolated from.
+        tol: Tolerance for convergence in Newton method for nonaffine
+            pullbacks. Ignored if the geometry is affine.
+        maxit: Maximum number of iterations for nonaffine pullback.
+            Ignored if the geometry is affine.
+    """
+    _cpp.fem.compute_reference_points(  # type: ignore[no-matching-overload]
+        data._cpp_object, mesh._cpp_object, tol, maxit
+    )
 
 
 def evaluate_basis_functions(
@@ -448,78 +495,3 @@ def interpolate_geometry(msh: dolfinx.mesh.Mesh, cmap: CoordinateElement) -> dol
         )
     )
     return _mesh.Mesh(new_msh, domain)
-
-
-def create_nonmatching_interpolation_data(
-    V_to: FunctionSpace,
-    V_from: FunctionSpace,
-    cells: npt.NDArray[np.int32] | None = None,
-    parent_cells: npt.ArrayLike | None = None,
-    padding: float = 1e-14,
-    allow_extrapolation: bool = True,
-    tol: float = 1e-6,
-    maxit: int = 15,
-) -> NonmatchingInterpolationData:
-    """Generate data for repeated interpolation on non-matching meshes.
-
-    The data gives the same operator as
-    :func:`create_interpolation_data` (or, with ``parent_cells``,
-    :func:`create_hierarchy_interpolation_data`) in
-    :meth:`dolfinx.fem.Function.interpolate_nonmatching` and
-    :meth:`dolfinx.fem.Function.interpolate_nonmatching_transpose`, at a
-    lower cost per application: the points are pulled back to the
-    reference cells once, and for point-evaluation elements, e.g.
-    Lagrange, each degree-of-freedom is evaluated once.
-
-    Note:
-        Collective.
-
-    Args:
-        V_to: Function space to interpolate into.
-        V_from: Function space to interpolate from.
-        cells: Cells of the mesh of ``V_to`` to interpolate into. All
-            owned cells if ``None``. Must be ``None`` if
-            ``parent_cells`` is given.
-        parent_cells: If given, the mesh of ``V_to`` is a refinement of
-            the mesh of ``V_from`` with these parent cells, as returned
-            on this process by :func:`dolfinx.mesh.refine`, and points
-            are routed to the parents without a geometric search.
-        padding: See :func:`create_interpolation_data`.
-        allow_extrapolation: See :func:`create_interpolation_data`.
-        tol: Tolerance for convergence in Newton method for nonaffine
-            pullbacks on the mesh of ``V_from``. Ignored if its geometry
-            is affine.
-        maxit: Maximum number of iterations for nonaffine pullback.
-            Ignored if the geometry is affine.
-
-    Returns:
-        Data needed to interpolate from ``V_from`` into ``V_to``.
-    """
-    V1, V0 = V_to._cpp_object, V_from._cpp_object
-    if type(V1) is not type(V0):
-        raise TypeError(
-            "create_nonmatching_interpolation_data requires V_to and V_from to have the same dtype."
-        )
-    if parent_cells is not None:
-        if cells is not None:
-            raise ValueError("cells and parent_cells cannot both be given.")
-        parent = np.ascontiguousarray(parent_cells, dtype=np.int32).reshape(-1)
-        return NonmatchingInterpolationData(
-            _create_nonmatching_hierarchy_data(V1, V0, parent, tol, maxit)  # type: ignore[arg-type]
-        )
-    if cells is None:
-        tdim = V_to.mesh.topology.dim
-        cell_map = V_to.mesh.topology.index_map(tdim)
-        assert cell_map is not None
-        cells = np.arange(cell_map.size_local, dtype=np.int32)
-    return NonmatchingInterpolationData(
-        _create_nonmatching_interpolation_data(
-            V1,  # type: ignore[arg-type]
-            V0,  # type: ignore[arg-type]
-            cells,
-            padding,
-            allow_extrapolation,
-            tol,
-            maxit,
-        )
-    )

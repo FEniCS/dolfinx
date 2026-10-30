@@ -1756,22 +1756,75 @@ bool is_point_evaluation(const FiniteElement<T>& element, const DofMap& dofmap)
          and dofmap.bs() == bs and (num_sub == 0 or num_sub == bs);
 }
 
+/// @brief Degree-of-freedom block of each evaluation point of a
+/// point-evaluation space (see is_point_evaluation).
+///
+/// There is one point per degree-of-freedom block of `cells`, owned or
+/// ghost, taken from the last cell in `cells` that contains it, as the
+/// cell-wise interpolation lets the last cell overwrite the others. The
+/// points are ordered by cell, then by local degree-of-freedom.
+/// create_interpolation_data stores the result in
+/// geometry::PointOwnershipData::src_dofs. Interpolation repeats the
+/// sweep for data without it.
+///
+/// @param[in] dofmap Degree-of-freedom map of the space.
+/// @param[in] cells Cells interpolated into.
+/// @return Degree-of-freedom block of each point, and the position of
+/// each point among the cell-wise interpolation points of `cells`
+/// (`c * num_cell_dofs + i` for local degree-of-freedom `i` of the `c`th
+/// cell).
+std::array<std::vector<std::int32_t>, 2>
+point_evaluation_dofs(const DofMap& dofmap, mesh::CellRange auto&& cells)
+{
+  assert(dofmap.index_map);
+  const std::int32_t num_dofs
+      = dofmap.index_map->size_local() + dofmap.index_map->num_ghosts();
+
+  // Position in `cells` of the last cell containing each block
+  std::vector<std::int32_t> last(num_dofs, -1);
+  std::int32_t c = 0;
+  for (std::int32_t cell : cells)
+  {
+    for (std::int32_t d : dofmap.cell_dofs(cell))
+      last[d] = c;
+    ++c;
+  }
+
+  std::vector<std::int32_t> dofs, positions;
+  c = 0;
+  for (std::int32_t cell : cells)
+  {
+    std::span<const std::int32_t> cell_dofs = dofmap.cell_dofs(cell);
+    for (std::size_t i = 0; i < cell_dofs.size(); ++i)
+    {
+      if (last[cell_dofs[i]] == c)
+      {
+        dofs.push_back(cell_dofs[i]);
+        positions.push_back(c * cell_dofs.size() + i);
+      }
+    }
+    ++c;
+  }
+
+  return {std::move(dofs), std::move(positions)};
+}
+
 /// @brief Points at which to evaluate a function to interpolate it into
 /// a space on given cells.
 ///
 /// For point-evaluation elements (see is_point_evaluation) there is one
-/// point per degree-of-freedom block of `cells`, owned or ghost, taken
-/// from the last cell in `cells` that contains it, as in the cell-wise
-/// interpolation where the last cell overwrites the others. Otherwise
-/// the points are the interpolation points of `cells`, cell by cell.
+/// point per degree-of-freedom block (see point_evaluation_dofs).
+/// Otherwise the points are the interpolation points of `cells`, cell by
+/// cell.
 ///
 /// @param[in] V Space to interpolate into.
 /// @param[in] cells Cells to interpolate into.
 /// @return Points (`shape=(num_points, 3)`, row-major), the cell of
-/// each point, and the degree-of-freedom block of each point (empty
-/// unless the element is a point evaluation).
+/// each point, and, for point-evaluation elements, the
+/// degree-of-freedom block of each point.
 template <std::floating_point T>
-std::tuple<std::vector<T>, std::vector<std::int32_t>, std::vector<std::int32_t>>
+std::tuple<std::vector<T>, std::vector<std::int32_t>,
+           std::optional<std::vector<std::int32_t>>>
 evaluation_points(const FunctionSpace<T>& V,
                   std::span<const std::int32_t> cells)
 {
@@ -1786,47 +1839,28 @@ evaluation_points(const FunctionSpace<T>& V,
   const std::size_t num_cell_points = coords.size() / 3;
   const std::size_t num_ip = element->interpolation_points().second[0];
 
-  std::vector<T> x;
-  std::vector<std::int32_t> point_cells, dofs;
+  // Positions of the points among the cell-wise interpolation points
+  std::vector<std::int32_t> positions;
+  std::optional<std::vector<std::int32_t>> dofs;
   if (is_point_evaluation(*element, *dofmap))
   {
-    assert(dofmap->index_map);
-    const std::int32_t num_dofs
-        = dofmap->index_map->size_local() + dofmap->index_map->num_ghosts();
-
-    // Position in `cells` of the last cell containing each block
-    std::vector<std::int32_t> last(num_dofs, -1);
-    for (std::size_t c = 0; c < cells.size(); ++c)
-      for (std::int32_t d : dofmap->cell_dofs(cells[c]))
-        last[d] = static_cast<std::int32_t>(c);
-
-    for (std::size_t c = 0; c < cells.size(); ++c)
-    {
-      std::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cells[c]);
-      assert(cell_dofs.size() == num_ip);
-      for (std::size_t i = 0; i < num_ip; ++i)
-      {
-        if (std::int32_t d = cell_dofs[i];
-            last[d] == static_cast<std::int32_t>(c))
-        {
-          for (std::size_t j = 0; j < 3; ++j)
-            x.push_back(coords[j * num_cell_points + c * num_ip + i]);
-          point_cells.push_back(cells[c]);
-          dofs.push_back(d);
-        }
-      }
-    }
+    auto [d, pos] = point_evaluation_dofs(*dofmap, cells);
+    dofs = std::move(d);
+    positions = std::move(pos);
   }
   else
   {
-    x.resize(coords.size());
-    point_cells.resize(num_cell_points);
-    for (std::size_t q = 0; q < num_cell_points; ++q)
-    {
-      for (std::size_t j = 0; j < 3; ++j)
-        x[3 * q + j] = coords[j * num_cell_points + q];
-      point_cells[q] = cells[q / num_ip];
-    }
+    positions.resize(num_cell_points);
+    std::iota(positions.begin(), positions.end(), 0);
+  }
+
+  std::vector<T> x(3 * positions.size());
+  std::vector<std::int32_t> point_cells(positions.size());
+  for (std::size_t p = 0; p < positions.size(); ++p)
+  {
+    for (std::size_t j = 0; j < 3; ++j)
+      x[3 * p + j] = coords[j * num_cell_points + positions[p]];
+    point_cells[p] = cells[positions[p] / num_ip];
   }
 
   return {std::move(x), std::move(point_cells), std::move(dofs)};
@@ -2166,7 +2200,7 @@ std::vector<T> pull_back_collective(const mesh::Mesh<T>& mesh,
 /// callable.
 ///
 /// As evaluate_basis, but with the points already pulled back, e.g. by
-/// create_nonmatching_interpolation_data. The reference basis is
+/// compute_reference_points. The reference basis is
 /// tabulated in batches of points and consumed point by point, so no
 /// array of the size of the point set is formed.
 ///
@@ -2456,221 +2490,131 @@ void evaluate_basis_functions(const FunctionSpace<T>& V, std::span<const T> x,
                        });
 }
 
-/// @brief Data for repeated non-matching interpolation from one
-/// function space into another, and for its transpose.
+/// @brief Pull the points of interpolation data back to the reference
+/// cells of their destination cells, and store them in the data.
 ///
-/// Created by create_nonmatching_interpolation_data or
-/// create_nonmatching_hierarchy_interpolation_data, and used by
-/// interpolate(Function&, const Function&, const
-/// NonmatchingInterpolationData&) and interpolate_transpose(Function&,
-/// const Function&, const NonmatchingInterpolationData&).
+/// Non-matching interpolation with the data then skips the pull-back.
+/// create_interpolation_data and create_hierarchy_interpolation_data
+/// call this. It is needed only for data created otherwise, e.g. by
+/// geometry::determine_point_ownership.
 ///
-/// Compared with geometry::PointOwnershipData, the reference coordinates
-/// of the points are computed once, and for point-evaluation elements,
-/// e.g. Lagrange, each degree-of-freedom block is evaluated once rather
-/// than once per cell containing it.
+/// @note Collective. If the pull-back fails on any process, every
+/// process throws.
+///
+/// @param[in,out] data Interpolation data. Its `dest_reference_points`
+/// are set.
+/// @param[in] mesh Mesh containing the destination cells, i.e. the mesh
+/// interpolated from.
+/// @param[in] tol Tolerance of the Newton method for non-affine
+/// pull-backs. Ignored for affine geometries.
+/// @param[in] maxit Maximum number of Newton iterations for non-affine
+/// pull-backs. Ignored for affine geometries.
 template <std::floating_point T>
-struct NonmatchingInterpolationData
+void compute_reference_points(geometry::PointOwnershipData<T>& data,
+                              const mesh::Mesh<T>& mesh, double tol, int maxit)
 {
-  /// Routing of the evaluation points to the cells of the mesh
-  /// interpolated from
-  geometry::PointOwnershipData<T> routing;
-
-  /// Reference coordinates of `routing.dest_points` in the cells
-  /// `routing.dest_cells`, `shape=(num_dest_points, tdim)`, row-major
-  std::vector<T> dest_reference_points;
-
-  /// Cells interpolated into
-  std::vector<std::int32_t> cells;
-
-  /// Degree-of-freedom block of each evaluation point if the element
-  /// interpolated into is a point evaluation, otherwise empty, in which
-  /// case the points are the interpolation points of `cells`, cell by
-  /// cell
-  std::vector<std::int32_t> dofs;
-
-  /// Number of degree-of-freedom blocks, owned and ghost, of the space
-  /// interpolated into, to check that the data is used with that space
-  std::int32_t num_dofs = 0;
-};
+  data.dest_reference_points
+      = impl::pull_back_collective(mesh, data, tol, maxit);
+}
 
 /// @brief Generate data needed to interpolate finite element
 /// fem::Function's across different meshes.
 ///
-/// @param[in] geometry0 Mesh geometry of the space to interpolate into.
-/// @param[in] element0 Element of the space to interpolate into.
+/// For point-evaluation elements, e.g. Lagrange and discontinuous
+/// Lagrange, one point per degree-of-freedom block of `cells` is routed
+/// (see impl::point_evaluation_dofs), so a node shared by several cells
+/// is evaluated once, and the degree-of-freedom block of each point is
+/// stored. For other elements, the points are the interpolation points
+/// of every cell. The reference coordinates of the points in the cells
+/// of `mesh1` are stored (see compute_reference_points), so
+/// interpolating with the data needs no pull-back.
+///
+/// @note Collective.
+///
+/// @param[in] V0 Space to interpolate into.
 /// @param[in] mesh1 Mesh of the function to interpolate from.
-/// @param[in] cells Indices of the cells in the destination mesh on
-/// which to interpolate. Should be the same as the list used when
-/// calling `interpolation_coords`.
+/// @param[in] cells Cells of the mesh of `V0` to interpolate into. The
+/// same cells must be passed to the interpolation.
 /// @param[in] padding Absolute padding applied to the bounding box of
 /// each cell in `mesh1` before searching for candidate cells.
 /// Increasing `padding` increases the number of `mesh1` cells
 /// considered as candidates for an interpolation point; it does not by
 /// itself decide whether a point with no actually-containing cell is
 /// assigned an owner, which is controlled by `allow_extrapolation`.
-/// @param[in] allow_extrapolation If `true` (default), a point from
-/// `mesh0` not actually contained in any candidate cell of `mesh1` is
+/// @param[in] allow_extrapolation If `true`, a point from the mesh of
+/// `V0` not actually contained in any candidate cell of `mesh1` is
 /// instead assigned the candidate cell closest to it (relevant e.g. if
-/// `mesh0` is not fully overlapped by `mesh1`). If `false`, such points
-/// are left unowned.
+/// the mesh of `V0` is not fully overlapped by `mesh1`). If `false`,
+/// such points are left unowned.
+/// @param[in] tol Tolerance of the Newton method for non-affine
+/// pull-backs on `mesh1`. Ignored for affine geometries.
+/// @param[in] maxit Maximum number of Newton iterations for non-affine
+/// pull-backs on `mesh1`. Ignored for affine geometries.
+/// @return Interpolation data.
 ///
 /// @note With `allow_extrapolation` set to `true`, setting `padding` to
 /// a large value will increase the runtime of this function, since a
 /// point not contained in any candidate then requires a GJK distance
 /// computation against every candidate cell.
 template <std::floating_point T>
-geometry::PointOwnershipData<T> create_interpolation_data(
-    const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
-    const mesh::Mesh<T>& mesh1, mesh::CellRange auto&& cells, T padding,
-    bool allow_extrapolation = true)
+geometry::PointOwnershipData<T>
+create_interpolation_data(const FunctionSpace<T>& V0,
+                          const mesh::Mesh<T>& mesh1,
+                          std::span<const std::int32_t> cells, T padding,
+                          bool allow_extrapolation, double tol, int maxit)
 {
-  // Collect all the points at which values are needed to define the
-  // interpolating function
-  std::vector<T> coords = interpolation_coords(element0, geometry0, cells);
-
-  // Transpose interpolation coords
-  std::vector<T> x(coords.size());
-  std::size_t num_points = coords.size() / 3;
-  for (std::size_t i = 0; i < num_points; ++i)
-    for (std::size_t j = 0; j < 3; ++j)
-      x[3 * i + j] = coords[i + j * num_points];
-
-  return impl::route_by_search<T>(mesh1, x, padding, allow_extrapolation);
+  auto [x, point_cells, dofs] = impl::evaluation_points(V0, cells);
+  geometry::PointOwnershipData<T> data
+      = impl::route_by_search<T>(mesh1, x, padding, allow_extrapolation);
+  data.src_dofs = std::move(dofs);
+  compute_reference_points(data, mesh1, tol, maxit);
+  return data;
 }
 
 /// @brief Generate data for interpolating from a mesh to its
 /// refinement.
 ///
-/// Equivalent to create_interpolation_data over all owned cells of
-/// `mesh0`, when `mesh0` is a refinement of `mesh1`. Each interpolation
-/// point is routed to the parent of its cell without a geometric search.
-/// The parent is held by the process that refined the cell, which is
-/// found from the original cell index of the cell. If `mesh0` was not
-/// redistributed after refinement, every point stays on its process and
-/// the data is process-local.
+/// Equivalent to create_interpolation_data over all owned cells of the
+/// mesh of `V0`, when it is a refinement of `mesh1`. Each point is routed
+/// to the parent of its cell without a geometric search. The parent is
+/// held by the process that refined the cell, which is found from the
+/// original cell index of the cell. If the refined mesh was not
+/// redistributed, every point stays on its process and the data is
+/// process-local.
 ///
 /// @note Collective.
 ///
-/// @param[in] mesh0 Refined mesh, i.e. the mesh of the space to
+/// @param[in] V0 Space on the refined mesh, i.e. the space to
 /// interpolate into.
-/// @param[in] element0 Element of the space to interpolate into.
 /// @param[in] mesh1 Mesh that was refined.
 /// @param[in] parent_cells Parent cell in `mesh1` of each cell refined
 /// on this process, in the order of the original cell index, as
 /// computed by refinement::refine.
-/// @return Data for interpolating into all owned cells of `mesh0`.
+/// @param[in] tol Tolerance of the Newton method for non-affine
+/// pull-backs on `mesh1`. Ignored for affine geometries.
+/// @param[in] maxit Maximum number of Newton iterations for non-affine
+/// pull-backs on `mesh1`. Ignored for affine geometries.
+/// @return Data for interpolating into all owned cells of the mesh of
+/// `V0`.
 template <std::floating_point T>
 geometry::PointOwnershipData<T> create_hierarchy_interpolation_data(
-    const mesh::Mesh<T>& mesh0, const FiniteElement<T>& element0,
-    const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> parent_cells)
+    const FunctionSpace<T>& V0, const mesh::Mesh<T>& mesh1,
+    std::span<const std::int32_t> parent_cells, double tol, int maxit)
 {
-  // Interpolation points of the owned cells, shape=(num_points, 3)
-  auto topology0 = mesh0.topology();
+  auto mesh0 = V0.mesh();
+  assert(mesh0);
+  auto topology0 = mesh0->topology();
   assert(topology0);
   auto cell_map0 = topology0->index_map(topology0->dim());
   assert(cell_map0);
   std::vector<std::int32_t> cells(cell_map0->size_local());
   std::iota(cells.begin(), cells.end(), 0);
-  std::vector<T> coords
-      = interpolation_coords(element0, mesh0.geometry(), std::span(cells));
-  const std::size_t num_points = coords.size() / 3;
-  const std::size_t num_ip = element0.interpolation_points().second[0];
-  std::vector<T> x(coords.size());
-  std::vector<std::int32_t> point_cells(num_points);
-  for (std::size_t p = 0; p < num_points; ++p)
-  {
-    for (std::size_t j = 0; j < 3; ++j)
-      x[3 * p + j] = coords[p + j * num_points];
-    point_cells[p] = p / num_ip;
-  }
-
-  return impl::route_to_parents<T>(mesh0, mesh1, parent_cells, x, point_cells);
-}
-
-/// @brief Generate data for repeated interpolation of Function%s on
-/// non-matching meshes.
-///
-/// The data gives the same operator as create_interpolation_data with
-/// interpolate(Function&, const Function&, CellRange, double, int, const
-/// geometry::PointOwnershipData&), at a lower cost per application.
-///
-/// @note Collective.
-///
-/// @param[in] V1 Space to interpolate into.
-/// @param[in] V0 Space to interpolate from.
-/// @param[in] cells1 Cells of the mesh of `V1` to interpolate into.
-/// @param[in] padding See create_interpolation_data.
-/// @param[in] allow_extrapolation See create_interpolation_data.
-/// @param[in] tol Tolerance of the Newton method for non-affine
-/// pull-backs on the mesh of `V0`. Ignored for affine geometries.
-/// @param[in] maxit Maximum number of Newton iterations for non-affine
-/// pull-backs on the mesh of `V0`. Ignored for affine geometries.
-/// @return Interpolation data.
-template <std::floating_point T>
-NonmatchingInterpolationData<T> create_nonmatching_interpolation_data(
-    const FunctionSpace<T>& V1, const FunctionSpace<T>& V0,
-    std::span<const std::int32_t> cells1, T padding, bool allow_extrapolation,
-    double tol, int maxit)
-{
-  auto mesh0 = V0.mesh();
-  assert(mesh0);
-  auto [x, point_cells, dofs] = impl::evaluation_points(V1, cells1);
-  geometry::PointOwnershipData<T> routing
-      = impl::route_by_search<T>(*mesh0, x, padding, allow_extrapolation);
-  std::vector<T> X = impl::pull_back_collective(*mesh0, routing, tol, maxit);
-  auto index_map1 = V1.dofmap()->index_map;
-  return {.routing = std::move(routing),
-          .dest_reference_points = std::move(X),
-          .cells = std::vector<std::int32_t>(cells1.begin(), cells1.end()),
-          .dofs = std::move(dofs),
-          .num_dofs = index_map1->size_local() + index_map1->num_ghosts()};
-}
-
-/// @brief Generate data for repeated interpolation of Function%s from a
-/// mesh to its refinement.
-///
-/// As create_nonmatching_interpolation_data over all owned cells of the
-/// mesh of `V1`, with the points routed to parent cells as in
-/// create_hierarchy_interpolation_data.
-///
-/// @note Collective.
-///
-/// @param[in] V1 Space on the refined mesh, to interpolate into.
-/// @param[in] V0 Space on the mesh that was refined, to interpolate
-/// from.
-/// @param[in] parent_cells Parent cell of each cell refined on this
-/// process, see create_hierarchy_interpolation_data.
-/// @param[in] tol Tolerance of the Newton method for non-affine
-/// pull-backs on the mesh of `V0`. Ignored for affine geometries.
-/// @param[in] maxit Maximum number of Newton iterations for non-affine
-/// pull-backs on the mesh of `V0`. Ignored for affine geometries.
-/// @return Interpolation data.
-template <std::floating_point T>
-NonmatchingInterpolationData<T> create_nonmatching_hierarchy_interpolation_data(
-    const FunctionSpace<T>& V1, const FunctionSpace<T>& V0,
-    std::span<const std::int32_t> parent_cells, double tol, int maxit)
-{
-  auto mesh0 = V0.mesh();
-  auto mesh1 = V1.mesh();
-  assert(mesh0);
-  assert(mesh1);
-  auto topology1 = mesh1->topology();
-  assert(topology1);
-  auto cell_map1 = topology1->index_map(topology1->dim());
-  assert(cell_map1);
-  std::vector<std::int32_t> cells(cell_map1->size_local());
-  std::iota(cells.begin(), cells.end(), 0);
-  auto [x, point_cells, dofs] = impl::evaluation_points(V1, std::span(cells));
-  geometry::PointOwnershipData<T> routing
-      = impl::route_to_parents<T>(*mesh1, *mesh0, parent_cells, x, point_cells);
-  std::vector<T> X = impl::pull_back_collective(*mesh0, routing, tol, maxit);
-  auto index_map1 = V1.dofmap()->index_map;
-  return {.routing = std::move(routing),
-          .dest_reference_points = std::move(X),
-          .cells = std::move(cells),
-          .dofs = std::move(dofs),
-          .num_dofs = index_map1->size_local() + index_map1->num_ghosts()};
+  auto [x, point_cells, dofs] = impl::evaluation_points(V0, std::span(cells));
+  geometry::PointOwnershipData<T> data
+      = impl::route_to_parents<T>(*mesh0, mesh1, parent_cells, x, point_cells);
+  data.src_dofs = std::move(dofs);
+  compute_reference_points(data, mesh1, tol, maxit);
+  return data;
 }
 
 template <dolfinx::scalar T, std::floating_point U>
@@ -2757,31 +2701,93 @@ void check_same_comm(const Function<T, U>& u0, const Function<T, U>& u1)
   }
 }
 
-/// @brief Throw if non-matching interpolation data does not fit the
-/// spaces of two Function%s.
-template <dolfinx::scalar T, std::floating_point U>
-void check_interpolation_data(const Function<T, U>& u0,
-                              const Function<T, U>& u1,
-                              const NonmatchingInterpolationData<U>& data)
+/// @brief Degree-of-freedom block of each point of interpolation data,
+/// or empty if the points are the interpolation points of every cell.
+///
+/// create_interpolation_data routes one point per degree-of-freedom
+/// block for point-evaluation elements (see point_evaluation_dofs), while
+/// data routed from the cell-wise interpolation points, e.g. by
+/// geometry::determine_point_ownership, has the interpolation points of
+/// every cell. The number of points tells them apart. Where no
+/// degree-of-freedom is shared between `cells` the two coincide.
+///
+/// @param[in] V Space interpolated into.
+/// @param[in] cells Cells interpolated into.
+/// @param[in] data Interpolation data.
+/// @return Degree-of-freedom block of each point, or empty.
+template <std::floating_point T>
+std::vector<std::int32_t>
+interpolation_point_dofs(const FunctionSpace<T>& V,
+                         mesh::CellRange auto&& cells,
+                         const geometry::PointOwnershipData<T>& data)
 {
-  const std::size_t tdim0 = u0.function_space()->mesh()->topology()->dim();
-  if (data.dest_reference_points.size()
-      != data.routing.dest_cells.size() * tdim0)
+  auto element = V.element();
+  auto dofmap = V.dofmap();
+  assert(element);
+  assert(dofmap);
+  const std::size_t num_points = data.src_owner.size();
+  if (is_point_evaluation(*element, *dofmap))
   {
-    throw std::invalid_argument(
-        "Interpolation data does not match the mesh interpolated from.");
+    std::vector<std::int32_t> dofs = point_evaluation_dofs(*dofmap, cells)[0];
+    if (dofs.size() == num_points)
+      return dofs;
   }
-  const std::size_t num_ip
-      = u1.function_space()->element()->interpolation_points().second[0];
-  const std::size_t num_points
-      = data.dofs.empty() ? data.cells.size() * num_ip : data.dofs.size();
-  auto index_map1 = u1.function_space()->dofmap()->index_map;
-  if (data.routing.src_owner.size() != num_points
-      or data.num_dofs != index_map1->size_local() + index_map1->num_ghosts())
+
+  const std::size_t num_ip = element->interpolation_points().second[0];
+  if (num_points != std::ranges::size(cells) * num_ip)
+    throw std::invalid_argument("Interpolation data does not match the cells.");
+  return {};
+}
+
+/// @brief Throw if the stored reference points of interpolation data do
+/// not fit the mesh interpolated from.
+template <std::floating_point T>
+void check_reference_points(const geometry::PointOwnershipData<T>& data,
+                            const mesh::Mesh<T>& mesh)
+{
+  assert(data.dest_reference_points);
+  const std::size_t tdim = mesh.topology()->dim();
+  if (data.dest_reference_points->size() != data.dest_cells.size() * tdim)
   {
-    throw std::invalid_argument(
-        "Interpolation data does not match the space interpolated into.");
+    throw std::invalid_argument("Reference points of the interpolation data "
+                                "do not match the mesh interpolated from.");
   }
+}
+
+/// @brief Throw if the stored degree-of-freedom blocks of interpolation
+/// data do not fit the space and cells interpolated into.
+///
+/// Without `NDEBUG`, the sweep of point_evaluation_dofs is repeated and
+/// compared. Otherwise only the sizes and index bounds are checked.
+template <std::floating_point T>
+void check_point_dofs(const FunctionSpace<T>& V, mesh::CellRange auto&& cells,
+                      const geometry::PointOwnershipData<T>& data)
+{
+  assert(data.src_dofs);
+  auto element = V.element();
+  auto dofmap = V.dofmap();
+  assert(element);
+  assert(dofmap);
+  const std::int32_t num_dofs
+      = dofmap->index_map->size_local() + dofmap->index_map->num_ghosts();
+  if (!is_point_evaluation(*element, *dofmap)
+      or data.src_dofs->size() != data.src_owner.size()
+      or std::ranges::any_of(*data.src_dofs, [num_dofs](std::int32_t d)
+                             { return d < 0 or d >= num_dofs; }))
+  {
+    throw std::invalid_argument("Degrees-of-freedom of the interpolation "
+                                "data do not match the space interpolated "
+                                "into.");
+  }
+
+#ifndef NDEBUG
+  if (point_evaluation_dofs(*dofmap, cells)[0] != *data.src_dofs)
+  {
+    throw std::invalid_argument("Degrees-of-freedom of the interpolation "
+                                "data do not match the cells interpolated "
+                                "into.");
+  }
+#endif
 }
 
 /// @brief Non-matching interpolation with the points pulled back.
@@ -2795,7 +2801,7 @@ void check_interpolation_data(const Function<T, U>& u0,
 /// @param[in] cells1 Cells of the mesh of `u1` interpolated into.
 /// @param[in] dofs1 Degree-of-freedom block of each evaluation point,
 /// or empty if the points are the interpolation points of `cells1`. See
-/// NonmatchingInterpolationData::dofs.
+/// interpolation_point_dofs.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate_nonmatching(Function<T, U>& u1, const Function<T, U>& u0,
                              const geometry::PointOwnershipData<U>& routing,
@@ -3022,28 +3028,51 @@ void interpolate_nonmatching_transpose(
 /// @tparam U mesh::Mesh geometry scalar type.
 /// @param u1 Function to interpolate into.
 /// @param u0 Function to interpolate from.
-/// @param cells Cells indices relative to the mesh associated with `u`
-/// that will be interpolated into.
-/// @param[in] tol Tolerance for convergence in Newton method for non-affine
-/// pullbacks. If the mesh geometry is affine this argument is ignored.
-/// @param[in] maxit Maximum number of Newton iterations in non-affine
-/// pull-back. If the mesh geometry is affine this argument is ignored.
-/// @param interpolation_data Data required for associating the interpolation
-/// points of `u` with cells in `v`. This is computed by
+/// @param cells Cells indices relative to the mesh associated with `u1`
+/// that will be interpolated into, as passed to
 /// fem::create_interpolation_data.
+/// @param[in] tol Tolerance for convergence in Newton method for non-affine
+/// pullbacks. Ignored if the geometry is affine, or if
+/// `interpolation_data` stores the reference points (see
+/// fem::compute_reference_points).
+/// @param[in] maxit Maximum number of Newton iterations in non-affine
+/// pull-back. Ignored as `tol`.
+/// @param interpolation_data Data required for associating the
+/// interpolation points of `u1` with cells of the mesh of `u0`. This is
+/// computed by fem::create_interpolation_data.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
                  mesh::CellRange auto&& cells, double tol, int maxit,
                  const geometry::PointOwnershipData<U>& interpolation_data)
 {
   impl::check_same_comm(u0, u1);
+  std::vector<std::int32_t> dofs0;
+  if (interpolation_data.src_dofs)
+    impl::check_point_dofs(*u1.function_space(), cells, interpolation_data);
+  else
+  {
+    dofs0 = impl::interpolation_point_dofs(*u1.function_space(), cells,
+                                           interpolation_data);
+  }
+  std::span<const std::int32_t> dofs
+      = interpolation_data.src_dofs
+            ? std::span<const std::int32_t>(*interpolation_data.src_dofs)
+            : std::span<const std::int32_t>(dofs0);
   auto mesh0 = u0.function_space()->mesh();
   assert(mesh0);
-  std::vector<U> X0
-      = impl::pull_back<U>(*mesh0, interpolation_data.dest_points,
-                           interpolation_data.dest_cells, tol, maxit);
-  impl::interpolate_nonmatching(u1, u0, interpolation_data,
-                                std::span<const U>(X0), cells, {});
+  std::vector<U> X0;
+  if (interpolation_data.dest_reference_points)
+    impl::check_reference_points(interpolation_data, *mesh0);
+  else
+  {
+    X0 = impl::pull_back<U>(*mesh0, interpolation_data.dest_points,
+                            interpolation_data.dest_cells, tol, maxit);
+  }
+  std::span<const U> X
+      = interpolation_data.dest_reference_points
+            ? std::span<const U>(*interpolation_data.dest_reference_points)
+            : std::span<const U>(X0);
+  impl::interpolate_nonmatching(u1, u0, interpolation_data, X, cells, dofs);
 }
 
 /// @brief Apply the transpose of non-matching interpolation.
@@ -3069,9 +3098,10 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
 /// @param[in] cells1 Cells of the mesh of `u1`, as passed to the
 /// forward interpolation.
 /// @param[in] tol Tolerance of the Newton method for non-affine
-/// pull-backs on the mesh of `u0`. Ignored for affine geometries.
+/// pull-backs on the mesh of `u0`. Ignored if the geometry is affine,
+/// or if `interpolation_data` stores the reference points.
 /// @param[in] maxit Maximum number of Newton iterations for non-affine
-/// pull-backs on the mesh of `u0`. Ignored for affine geometries.
+/// pull-backs on the mesh of `u0`. Ignored as `tol`.
 /// @param[in] interpolation_data Data associating the interpolation
 /// points of `u1` with cells of the mesh of `u0`, as for the forward
 /// interpolation. Computed by fem::create_interpolation_data.
@@ -3082,61 +3112,31 @@ void interpolate_transpose(
     const geometry::PointOwnershipData<U>& interpolation_data)
 {
   impl::check_same_comm(u0, u1);
-  auto element1 = u1.function_space()->element();
-  assert(element1);
-  const std::size_t num_points = element1->interpolation_points().second[0];
-  if (interpolation_data.src_owner.size() != cells1.size() * num_points)
-    throw std::invalid_argument("Interpolation data does not match the cells.");
-
+  std::vector<std::int32_t> dofs0;
+  if (interpolation_data.src_dofs)
+    impl::check_point_dofs(*u1.function_space(), cells1, interpolation_data);
+  else
+  {
+    dofs0 = impl::interpolation_point_dofs(*u1.function_space(), cells1,
+                                           interpolation_data);
+  }
+  std::span<const std::int32_t> dofs
+      = interpolation_data.src_dofs
+            ? std::span<const std::int32_t>(*interpolation_data.src_dofs)
+            : std::span<const std::int32_t>(dofs0);
   auto mesh0 = u0.function_space()->mesh();
   assert(mesh0);
-  std::vector<U> X0
-      = impl::pull_back_collective(*mesh0, interpolation_data, tol, maxit);
-  impl::interpolate_nonmatching_transpose(u0, u1, interpolation_data,
-                                          std::span<const U>(X0), cells1, {});
-}
-
-/// @brief Interpolate a Function on a non-matching mesh, with
-/// precomputed data.
-///
-/// @param[in,out] u1 Function to interpolate into.
-/// @param[in] u0 Function to interpolate from.
-/// @param[in] data Data created by create_nonmatching_interpolation_data
-/// or create_nonmatching_hierarchy_interpolation_data for the spaces of
-/// `u1` and `u0`.
-template <dolfinx::scalar T, std::floating_point U>
-void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
-                 const NonmatchingInterpolationData<U>& data)
-{
-  impl::check_interpolation_data(u0, u1, data);
-  impl::interpolate_nonmatching(u1, u0, data.routing,
-                                std::span(data.dest_reference_points),
-                                std::span(data.cells), std::span(data.dofs));
-}
-
-/// @brief Apply the transpose of non-matching interpolation, with
-/// precomputed data.
-///
-/// `P^T` for the operator `P` applied by `interpolate(u1, u0, data)`.
-/// See interpolate_transpose(Function&, const Function&,
-/// std::span<const std::int32_t>, double, int, const
-/// geometry::PointOwnershipData&).
-///
-/// @note Collective.
-///
-/// @param[in,out] u0 Function to overwrite with `P^T u1`. Ghost values
-/// are updated.
-/// @param[in] u1 Function to apply the transpose to. Its ghost values
-/// are not used.
-/// @param[in] data Data for the forward interpolation.
-template <dolfinx::scalar T, std::floating_point U>
-void interpolate_transpose(Function<T, U>& u0, const Function<T, U>& u1,
-                           const NonmatchingInterpolationData<U>& data)
-{
-  impl::check_interpolation_data(u0, u1, data);
-  impl::interpolate_nonmatching_transpose(
-      u0, u1, data.routing, std::span(data.dest_reference_points),
-      std::span(data.cells), std::span(data.dofs));
+  std::vector<U> X0;
+  if (interpolation_data.dest_reference_points)
+    impl::check_reference_points(interpolation_data, *mesh0);
+  else
+    X0 = impl::pull_back_collective(*mesh0, interpolation_data, tol, maxit);
+  std::span<const U> X
+      = interpolation_data.dest_reference_points
+            ? std::span<const U>(*interpolation_data.dest_reference_points)
+            : std::span<const U>(X0);
+  impl::interpolate_nonmatching_transpose(u0, u1, interpolation_data, X, cells1,
+                                          dofs);
 }
 
 /// @brief Interpolate from one finite element Function to another
