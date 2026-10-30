@@ -305,13 +305,33 @@ def _nonmatching_interpolation_data(
     expansion: PointExpansion | None,
     padding: float,
     allow_extrapolation: bool,
-) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.floating], _PointOwnershipData]:
-    """Cells, weights and point ownership for cross-mesh interpolation."""
+) -> tuple[
+    npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.floating], _PointOwnershipData
+]:
+    """Cells, row dofs, weights and point ownership across meshes.
+
+    For a point-evaluation ``V1`` without an ``expansion``, the points
+    are one per owned dof block (:func:`_point_evaluation_rows`) and the
+    row dofs are returned. Otherwise the points are the interpolation
+    points of every cell and the row dofs are empty.
+    """
     if cells is None:
         num_cells = V1.mesh.topology.index_map(V1.mesh.topology.dim).size_local
         _cells = np.arange(num_cells, dtype=np.int32)
     else:
         _cells = np.asarray(cells, dtype=np.int32).reshape(-1)
+
+    dtype = V0.mesh.geometry.x.dtype
+    if expansion is None:
+        x, _, dofs = _point_evaluation_rows(V1, _cells)
+        if dofs.size > 0:
+            data = _determine_point_ownership(
+                V0.mesh,
+                np.ascontiguousarray(x, dtype=dtype),
+                padding,
+                find_closest_cell=allow_extrapolation,
+            )
+            return _cells, dofs, np.ones(dofs.size, dtype=dtype), data
 
     # Interpolation points of V1 in physical space, ordered by cell
     x = _interpolation_coords(  # type: ignore[call-overload]
@@ -321,7 +341,6 @@ def _nonmatching_interpolation_data(
     num_ip = V1.element.interpolation_points.shape[0]
     point_cells = np.repeat(_cells, num_ip)
 
-    dtype = V0.mesh.geometry.x.dtype
     if expansion is None:
         points = x
         weights = np.ones(num_points, dtype=dtype)
@@ -346,13 +365,26 @@ def _nonmatching_interpolation_data(
         padding,
         find_closest_cell=allow_extrapolation,
     )
-    return _cells, np.ascontiguousarray(weights.reshape(-1)), data
+    return _cells, np.empty(0, dtype=np.int32), np.ascontiguousarray(weights.reshape(-1)), data
+
+
+def _point_evaluation_rows(
+    V1: FunctionSpace, cells: npt.NDArray[np.int32]
+) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.int32], npt.NDArray[np.int32]]:
+    """Points, cells and owned dof blocks of point-evaluation rows.
+
+    One point per owned dof block, from the first cell containing it, if
+    the element of ``V1`` is a point evaluation (e.g. Lagrange or DG).
+    All empty otherwise.
+    """
+    return _cpp.fem.point_evaluation_rows(V1._cpp_object, cells)  # type: ignore[arg-type]
 
 
 def _nonmatching_matrix_from_data(
     V0: FunctionSpace,
     V1: FunctionSpace,
     cells: npt.NDArray[np.int32],
+    dofs: npt.NDArray[np.int32],
     weights: npt.NDArray[np.floating],
     data: _PointOwnershipData,
     tol: float,
@@ -370,6 +402,7 @@ def _nonmatching_matrix_from_data(
             V0._cpp_object,
             V1._cpp_object,
             cells,
+            dofs,
             weights.astype(dtype),
             data._cpp_object,
             tol,
@@ -383,8 +416,10 @@ def _hierarchy_interpolation_data(
     V0: FunctionSpace,
     V1: FunctionSpace,
     parent_cells: npt.ArrayLike,
-) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.floating], _PointOwnershipData]:
-    """Cells, weights and point ownership for a refined mesh hierarchy.
+) -> tuple[
+    npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.floating], _PointOwnershipData
+]:
+    """Cells, row dofs, weights and point ownership for a hierarchy.
 
     :func:`_nonmatching_interpolation_data` finds the owning rank and
     cell of every point by searching a bounding-box tree. Here the mesh
@@ -419,12 +454,15 @@ def _hierarchy_interpolation_data(
     if num_cells > 0 and (_parent_final.min() < 0 or _parent_final.max() >= num_coarse):
         raise ValueError("parent_cells contains indices outside the mesh of V0.")
 
-    # Interpolation points of V1 in physical space, ordered by cell
-    x = _interpolation_coords(  # type: ignore[call-overload]
-        V1.element._cpp_object, V1.mesh.geometry._cpp_object, _cells
-    ).T
-    num_ip = V1.element.interpolation_points.shape[0]
-    point_cells = np.repeat(_cells, num_ip)
+    # One point per owned dof block for point-evaluation elements,
+    # otherwise the interpolation points of V1 ordered by cell
+    x, point_cells, dofs = _point_evaluation_rows(V1, _cells)
+    if dofs.size == 0:
+        x = _interpolation_coords(  # type: ignore[call-overload]
+            V1.element._cpp_object, V1.mesh.geometry._cpp_object, _cells
+        ).T
+        num_ip = V1.element.interpolation_points.shape[0]
+        point_cells = np.repeat(_cells, num_ip)
     dest_cells = _parent_final[point_cells]
 
     dtype = V0.mesh.geometry.x.dtype
@@ -443,7 +481,7 @@ def _hierarchy_interpolation_data(
             np.ascontiguousarray(dest_cells, dtype=np.int32),
         )
     )
-    return _cells, weights, data
+    return _cells, dofs, weights, data
 
 
 def hierarchy_interpolation_matrix(
@@ -489,8 +527,10 @@ def hierarchy_interpolation_matrix(
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    _cells, weights, data = _hierarchy_interpolation_data(V0, V1, parent_cells)
-    return _nonmatching_matrix_from_data(V0, V1, _cells, weights, data, tol, maxit, num_threads)
+    _cells, dofs, weights, data = _hierarchy_interpolation_data(V0, V1, parent_cells)
+    return _nonmatching_matrix_from_data(
+        V0, V1, _cells, dofs, weights, data, tol, maxit, num_threads
+    )
 
 
 def nonmatching_interpolation_matrix(
@@ -551,10 +591,12 @@ def nonmatching_interpolation_matrix(
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    _cells, weights, data = _nonmatching_interpolation_data(
+    _cells, dofs, weights, data = _nonmatching_interpolation_data(
         V0, V1, cells, expansion, padding, allow_extrapolation
     )
-    return _nonmatching_matrix_from_data(V0, V1, _cells, weights, data, tol, maxit, num_threads)
+    return _nonmatching_matrix_from_data(
+        V0, V1, _cells, dofs, weights, data, tol, maxit, num_threads
+    )
 
 
 def compute_integration_domains(

@@ -128,7 +128,7 @@ std::tuple<dolfinx::fem::NonmatchingBasisData<U>,
 create_nonmatching_sparsity(
     const dolfinx::fem::FunctionSpace<U>& V0,
     const dolfinx::fem::FunctionSpace<U>& V1,
-    std::span<const std::int32_t> cells,
+    std::span<const std::int32_t> cells, std::span<const std::int32_t> dofs,
     const dolfinx::geometry::PointOwnershipData<U>& interpolation_data,
     double tol, int maxit, int num_threads)
 {
@@ -154,7 +154,13 @@ create_nonmatching_sparsity(
   dolfinx::la::SparsityPattern sp(
       V1.mesh()->comm(), {dofmap1->index_map, column_map},
       {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-  dolfinx::fem::sparsity_nonmatching(sp, V0, V1, cells, data, *column_map);
+  if (dofs.empty())
+    dolfinx::fem::sparsity_nonmatching(sp, V0, V1, cells, data, *column_map);
+  else
+  {
+    dolfinx::fem::sparsity_nonmatching_point_evaluation(sp, V0, dofs, data,
+                                                        *column_map);
+  }
   sp.finalize();
   return {std::move(data), std::move(column_map), std::move(sp)};
 }
@@ -214,27 +220,38 @@ void declare_discrete_operators(nanobind::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> dofs,
          nb::ndarray<const U, nb::ndim<1>, nb::c_contig> weights,
          const dolfinx::geometry::PointOwnershipData<U>& interpolation_data,
          double tol, int maxit, int num_threads)
       {
         std::span<const std::int32_t> _cells(cells.data(), cells.size());
+        std::span<const std::int32_t> _dofs(dofs.data(), dofs.size());
         auto [data, column_map, sp] = create_nonmatching_sparsity(
-            V0, V1, _cells, interpolation_data, tol, maxit, num_threads);
+            V0, V1, _cells, _dofs, interpolation_data, tol, maxit, num_threads);
         dolfinx::la::MatrixCSR<T> A(sp);
         mat_add_dispatch(
             A,
-            [&V0, &V1, &_cells, &weights, &data, &column_map](auto&& mat_add)
+            [&V0, &V1, &_cells, &_dofs, &weights, &data,
+             &column_map](auto&& mat_add)
             {
-              dolfinx::fem::interpolation_matrix<T, U>(
-                  V0, V1, _cells, std::span(weights.data(), weights.size()),
-                  data, *column_map, mat_add);
+              if (_dofs.empty())
+              {
+                dolfinx::fem::interpolation_matrix<T, U>(
+                    V0, V1, _cells, std::span(weights.data(), weights.size()),
+                    data, *column_map, mat_add);
+              }
+              else
+              {
+                dolfinx::fem::interpolation_matrix_point_evaluation<T, U>(
+                    V0, V1, _dofs, data, *column_map, mat_add);
+              }
             });
         return A;
       },
-      nb::arg("V0"), nb::arg("V1"), nb::arg("cells"), nb::arg("weights"),
-      nb::arg("interpolation_data"), nb::arg("tol"), nb::arg("maxit"),
-      nb::arg("num_threads"));
+      nb::arg("V0"), nb::arg("V1"), nb::arg("cells"), nb::arg("dofs"),
+      nb::arg("weights"), nb::arg("interpolation_data"), nb::arg("tol"),
+      nb::arg("maxit"), nb::arg("num_threads"));
 
   m.def(
       "discrete_curl",

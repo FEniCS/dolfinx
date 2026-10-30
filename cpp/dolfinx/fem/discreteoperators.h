@@ -32,6 +32,7 @@
 #include <numeric>
 #include <span>
 #include <stdexcept>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -1164,6 +1165,133 @@ void sparsity_nonmatching(la::SparsityPattern& pattern,
   }
 }
 
+/// @brief Points of the owned rows of a nonmatching interpolation
+/// matrix into a point-evaluation space.
+///
+/// For an element whose degrees-of-freedom are point evaluations
+/// (identity map and interpolation operator, no dof transformations,
+/// e.g. Lagrange and discontinuous Lagrange, scalar or blocked), row
+/// block `d` of the matrix is the basis of the other space at the
+/// interpolation point of `d`. The basis then needs evaluating once per
+/// owned degree-of-freedom block instead of once per cell containing
+/// it. The point of each block is taken from the first cell in `cells`
+/// containing it, the cell interpolation_matrix fills the row from.
+///
+/// @param[in] V1 Space interpolated to.
+/// @param[in] cells Cells of the mesh of `V1` to interpolate on.
+/// @return Points (`shape=(num_rows, 3)`, row-major), the cell of each
+/// point and the owned degree-of-freedom block of each point. All empty
+/// if the element of `V1` is not a point evaluation.
+template <std::floating_point T>
+std::tuple<std::vector<T>, std::vector<std::int32_t>, std::vector<std::int32_t>>
+point_evaluation_rows(const FunctionSpace<T>& V1,
+                      std::span<const std::int32_t> cells)
+{
+  auto element = V1.element();
+  auto dofmap = V1.dofmap();
+  auto mesh = V1.mesh();
+  assert(element);
+  assert(dofmap);
+  assert(mesh);
+  const int bs = element->block_size();
+  const int num_sub = element->num_sub_elements();
+  if (!element->map_ident() or !element->interpolation_ident()
+      or element->needs_dof_transformations() or element->symmetric()
+      or dofmap->bs() != bs or (num_sub != 0 and num_sub != bs))
+  {
+    return {};
+  }
+
+  const std::vector<T> coords
+      = interpolation_coords(*element, mesh->geometry(), cells);
+  const std::size_t num_cell_points = coords.size() / 3;
+  const std::size_t num_ip = element->interpolation_points().second[0];
+  assert(dofmap->index_map);
+  const std::int32_t num_owned = dofmap->index_map->size_local();
+  std::vector<std::int8_t> seen(num_owned, 0);
+  std::vector<T> x;
+  std::vector<std::int32_t> point_cells, dofs;
+  for (std::size_t c = 0; c < cells.size(); ++c)
+  {
+    std::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cells[c]);
+    assert(cell_dofs.size() == num_ip);
+    for (std::size_t i = 0; i < num_ip; ++i)
+    {
+      if (std::int32_t d = cell_dofs[i]; d < num_owned and !seen[d])
+      {
+        seen[d] = 1;
+        for (std::size_t j = 0; j < 3; ++j)
+          x.push_back(coords[j * num_cell_points + c * num_ip + i]);
+        point_cells.push_back(cells[c]);
+        dofs.push_back(d);
+      }
+    }
+  }
+  return {std::move(x), std::move(point_cells), std::move(dofs)};
+}
+
+namespace impl
+{
+/// @brief Columns of one point of `data` where the basis does not
+/// vanish, sorted.
+template <std::floating_point T>
+void point_columns(std::span<const std::int32_t> columns,
+                   std::span<const T> values, std::size_t value_size,
+                   std::vector<std::int32_t>& cols)
+{
+  cols.clear();
+  for (std::size_t m = 0; m < columns.size(); ++m)
+  {
+    if (columns[m] < 0)
+      continue;
+    if (std::ranges::any_of(values.subspan(m * value_size, value_size),
+                            [](T v) { return v != T(0); }))
+    {
+      cols.push_back(columns[m]);
+    }
+  }
+  std::ranges::sort(cols);
+}
+} // namespace impl
+
+/// @brief Insert the non-zero pattern of a nonmatching interpolation
+/// matrix into a point-evaluation space, one row block per point.
+///
+/// As sparsity_nonmatching, for points from point_evaluation_rows.
+///
+/// @param[in,out] pattern Sparsity pattern with the index map of `V1`
+/// for the rows and `column_map` for the columns.
+/// @param[in] V0 Space interpolated from.
+/// @param[in] dofs Row block of each point, from point_evaluation_rows.
+/// @param[in] data Basis data from evaluate_basis_nonmatching at the
+/// points of `dofs`.
+/// @param[in] column_map Column index map from create_column_map.
+template <std::floating_point T>
+void sparsity_nonmatching_point_evaluation(la::SparsityPattern& pattern,
+                                           const FunctionSpace<T>& V0,
+                                           std::span<const std::int32_t> dofs,
+                                           const NonmatchingBasisData<T>& data,
+                                           const common::IndexMap& column_map)
+{
+  const std::size_t num_cell_dofs0 = V0.dofmap()->map().extent(1);
+  const std::size_t value_size0 = V0.element()->physical_base_value_size();
+  assert(data.dofs.size() == dofs.size() * num_cell_dofs0);
+  const std::vector<std::int32_t> columns
+      = impl::nonmatching_columns(data, column_map);
+  std::vector<std::int32_t> cols;
+  for (std::size_t p = 0; p < dofs.size(); ++p)
+  {
+    impl::point_columns(
+        std::span(columns).subspan(p * num_cell_dofs0, num_cell_dofs0),
+        std::span<const T>(data.values)
+            .subspan(p * num_cell_dofs0 * value_size0,
+                     num_cell_dofs0 * value_size0),
+        value_size0, cols);
+    if (!cols.empty())
+      pattern.insert(dofs.subspan(p, 1), cols);
+  }
+}
+
 /// @brief Assemble the interpolation operator from a space on one mesh
 /// to a space on another mesh.
 ///
@@ -1412,6 +1540,90 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
       }
       mat_add(std::span(row_dofs.data() + i, 1), dof_cols, Ai);
     }
+  }
+}
+
+/// @brief Assemble a nonmatching interpolation matrix into a
+/// point-evaluation space, one row block per point.
+///
+/// The same matrix as interpolation_matrix with unit weights, for
+/// points from point_evaluation_rows: row block `dofs[p]` is the basis
+/// of `V0` at point `p`, so no pull-back to `V1` and no interpolation
+/// operator are applied.
+///
+/// @param[in] V0 Space to interpolate from.
+/// @param[in] V1 Space to interpolate to. Its element must be a point
+/// evaluation (see point_evaluation_rows).
+/// @param[in] dofs Row block of each point, from point_evaluation_rows.
+/// @param[in] data Basis data from evaluate_basis_nonmatching at the
+/// points of `dofs`.
+/// @param[in] column_map Column index map from create_column_map.
+/// @param[in] mat_add Functor that adds values to a matrix, as for
+/// interpolation_matrix.
+template <dolfinx::scalar T, std::floating_point U>
+void interpolation_matrix_point_evaluation(const FunctionSpace<U>& V0,
+                                           const FunctionSpace<U>& V1,
+                                           std::span<const std::int32_t> dofs,
+                                           const NonmatchingBasisData<U>& data,
+                                           const common::IndexMap& column_map,
+                                           auto&& mat_add)
+{
+  std::shared_ptr<const FiniteElement<U>> e0 = V0.element();
+  std::shared_ptr<const FiniteElement<U>> e1 = V1.element();
+  assert(e0);
+  assert(e1);
+  if (!std::ranges::equal(e0->value_shape(), e1->value_shape()))
+  {
+    throw std::invalid_argument(
+        "Interpolation operator: elements have different value dimensions");
+  }
+
+  const std::size_t num_cell_dofs0 = V0.dofmap()->map().extent(1);
+  if (data.dofs.size() != dofs.size() * num_cell_dofs0)
+    throw std::invalid_argument("Basis data does not match the rows.");
+
+  // Basis of one block of V0, unrolled for its block size: component
+  // j * bs0 + b of basis function (m, b) is value j of basis function m
+  const int bs0 = e0->block_size();
+  const std::size_t value_size0 = e0->physical_base_value_size();
+  const int row_bs = V1.dofmap()->bs();
+  const std::vector<std::int32_t> columns
+      = impl::nonmatching_columns(data, column_map);
+  std::vector<std::int32_t> cols;
+  std::vector<T> Ai;
+  for (std::size_t p = 0; p < dofs.size(); ++p)
+  {
+    auto point_columns
+        = std::span(columns).subspan(p * num_cell_dofs0, num_cell_dofs0);
+    auto values = std::span<const U>(data.values)
+                      .subspan(p * num_cell_dofs0 * value_size0,
+                               num_cell_dofs0 * value_size0);
+    impl::point_columns(point_columns, values, value_size0, cols);
+    if (cols.empty())
+      continue;
+
+    // Row component k, column (n, b): component k of basis function
+    // (m, b), where cols[n] is the column of dof m
+    Ai.assign(static_cast<std::size_t>(row_bs) * cols.size() * bs0, 0);
+    for (std::size_t m = 0; m < num_cell_dofs0; ++m)
+    {
+      if (point_columns[m] < 0)
+        continue;
+      auto it = std::ranges::lower_bound(cols, point_columns[m]);
+      if (it == cols.end() or *it != point_columns[m])
+        continue;
+      const std::size_t n = std::ranges::distance(cols.begin(), it);
+      for (std::size_t j = 0; j < value_size0; ++j)
+      {
+        for (int b = 0; b < bs0; ++b)
+        {
+          const std::size_t k = j * bs0 + b;
+          if (k < static_cast<std::size_t>(row_bs))
+            Ai[(k * cols.size() + n) * bs0 + b] = values[m * value_size0 + j];
+        }
+      }
+    }
+    mat_add(dofs.subspan(p, 1), cols, Ai);
   }
 }
 

@@ -23,6 +23,7 @@
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/expression_evaluate.h>
 #include <dolfinx/fem/expression_factory.h>
@@ -1375,6 +1376,23 @@ void declare_real_functions(nb::module_& m)
             dolfinx::fem::locate_dofs_geometrical(V, to_cpp_marker<T>(marker)));
       },
       nb::arg("V"), nb::arg("marker"));
+
+  m.def(
+      "point_evaluation_rows",
+      [](const dolfinx::fem::FunctionSpace<T>& V1,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
+      {
+        auto [x, point_cells, dofs] = dolfinx::fem::point_evaluation_rows(
+            V1, std::span(cells.data(), cells.size()));
+        const std::size_t num_points = dofs.size();
+        return nb::make_tuple(
+            dolfinx_wrappers::as_nbarray(std::move(x), {num_points, 3}),
+            dolfinx_wrappers::as_nbarray(std::move(point_cells)),
+            dolfinx_wrappers::as_nbarray(std::move(dofs)));
+      },
+      nb::arg("V1"), nb::arg("cells"),
+      "Points, cells and owned dof blocks of the rows of a nonmatching "
+      "interpolation matrix into a point-evaluation space.");
 
   m.def(
       "interpolation_coords",
