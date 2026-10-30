@@ -159,15 +159,13 @@ void declare_petsc_discrete_operators(nb::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> dofs,
          nb::ndarray<const U, nb::ndim<1>, nb::c_contig> weights,
          const dolfinx::geometry::PointOwnershipData<U>& interpolation_data,
          double tol, int maxit, int num_threads)
       {
         std::span<const std::int32_t> _cells(cells.data(), cells.size());
-        std::span<const std::int32_t> _dofs(dofs.data(), dofs.size());
         auto [data, column_map, sp] = create_nonmatching_sparsity(
-            V0, V1, _cells, _dofs, interpolation_data, tol, maxit, num_threads);
+            V0, V1, _cells, interpolation_data, tol, maxit, num_threads);
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(V0.mesh()->comm(), sp);
@@ -176,17 +174,18 @@ void declare_petsc_discrete_operators(nb::module_& m)
           dolfinx::common::petsc::check(
               MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE),
               "MatSetOption");
-          if (_dofs.empty())
+          if (interpolation_data.src_dofs)
           {
-            dolfinx::fem::interpolation_matrix<T, U>(
-                V0, V1, _cells, std::span(weights.data(), weights.size()), data,
+            dolfinx::fem::interpolation_matrix_point_evaluation<T, U>(
+                V0, V1, std::span(*interpolation_data.src_dofs), data,
                 *column_map,
                 dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES));
           }
           else
           {
-            dolfinx::fem::interpolation_matrix_point_evaluation<T, U>(
-                V0, V1, _dofs, data, *column_map,
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, _cells, std::span(weights.data(), weights.size()), data,
+                *column_map,
                 dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES));
           }
         }
@@ -204,9 +203,8 @@ void declare_petsc_discrete_operators(nb::module_& m)
         return A;
       },
       nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"),
-      nb::arg("cells"), nb::arg("dofs"), nb::arg("weights"),
-      nb::arg("interpolation_data"), nb::arg("tol"), nb::arg("maxit"),
-      nb::arg("num_threads"));
+      nb::arg("cells"), nb::arg("weights"), nb::arg("interpolation_data"),
+      nb::arg("tol"), nb::arg("maxit"), nb::arg("num_threads"));
 }
 
 } // namespace dolfinx_wrappers

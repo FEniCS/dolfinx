@@ -71,6 +71,15 @@ class PointOwnershipData(typing.Generic[Real]):
         """Cell indices where each entry of ``dest_points`` is located."""
         return self._cpp_object.dest_cells
 
+    @property
+    def has_dofs(self) -> bool:
+        """``True`` if the dof block of each sent point is stored.
+
+        Set for point-evaluation elements, whose points are one per
+        degree-of-freedom block.
+        """
+        return self._cpp_object.has_dofs
+
 
 class BoundingBoxTree(typing.Generic[Real]):
     """Bounding box trees used in collision detection."""

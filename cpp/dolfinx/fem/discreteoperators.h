@@ -1140,7 +1140,7 @@ void sparsity_nonmatching(la::SparsityPattern& pattern,
       = dofmap1->index_map->size_local() * dofmap1->index_map_bs() / row_bs;
   std::vector<std::uint8_t> row_added(num_owned_rows, 0);
   std::vector<std::int32_t> dof_cols;
-  for (std::size_t i = 0; i < cells.size(); ++i)
+  for (std::size_t i = cells.size(); i-- > 0;)
   {
     auto point_columns
         = std::span(columns).subspan(i * entries_per_cell, entries_per_cell);
@@ -1165,23 +1165,28 @@ void sparsity_nonmatching(la::SparsityPattern& pattern,
   }
 }
 
-/// @brief Points of the owned rows of a nonmatching interpolation
-/// matrix into a point-evaluation space.
+/// @brief Points of the rows of a nonmatching interpolation matrix into
+/// a point-evaluation space.
 ///
 /// For an element whose degrees-of-freedom are point evaluations
 /// (identity map and interpolation operator, no dof transformations,
 /// e.g. Lagrange and discontinuous Lagrange, scalar or blocked), row
 /// block `d` of the matrix is the basis of the other space at the
 /// interpolation point of `d`. The basis then needs evaluating once per
-/// owned degree-of-freedom block instead of once per cell containing
-/// it. The point of each block is taken from the first cell in `cells`
-/// containing it, the cell interpolation_matrix fills the row from.
+/// degree-of-freedom block instead of once per cell containing it.
+///
+/// There is one point per degree-of-freedom block of `cells`, owned or
+/// ghost, taken from the last cell in `cells` containing it, as in
+/// interpolation_matrix and non-matching interpolation. The points are
+/// ordered by cell, then by local degree-of-freedom. The blocks are
+/// stored in geometry::PointOwnershipData::src_dofs; ghost blocks are
+/// not assembled.
 ///
 /// @param[in] V1 Space interpolated to.
 /// @param[in] cells Cells of the mesh of `V1` to interpolate on.
-/// @return Points (`shape=(num_rows, 3)`, row-major), the cell of each
-/// point and the owned degree-of-freedom block of each point. All empty
-/// if the element of `V1` is not a point evaluation.
+/// @return Points (`shape=(num_points, 3)`, row-major), the cell of each
+/// point and the degree-of-freedom block of each point. All empty if
+/// the element of `V1` is not a point evaluation.
 template <std::floating_point T>
 std::tuple<std::vector<T>, std::vector<std::int32_t>, std::vector<std::int32_t>>
 point_evaluation_rows(const FunctionSpace<T>& V1,
@@ -1202,13 +1207,19 @@ point_evaluation_rows(const FunctionSpace<T>& V1,
     return {};
   }
 
+  // Position in `cells` of the last cell containing each block
+  assert(dofmap->index_map);
+  const std::int32_t num_dofs
+      = dofmap->index_map->size_local() + dofmap->index_map->num_ghosts();
+  std::vector<std::int32_t> last(num_dofs, -1);
+  for (std::size_t c = 0; c < cells.size(); ++c)
+    for (std::int32_t d : dofmap->cell_dofs(cells[c]))
+      last[d] = c;
+
   const std::vector<T> coords
       = interpolation_coords(*element, mesh->geometry(), cells);
   const std::size_t num_cell_points = coords.size() / 3;
   const std::size_t num_ip = element->interpolation_points().second[0];
-  assert(dofmap->index_map);
-  const std::int32_t num_owned = dofmap->index_map->size_local();
-  std::vector<std::int8_t> seen(num_owned, 0);
   std::vector<T> x;
   std::vector<std::int32_t> point_cells, dofs;
   for (std::size_t c = 0; c < cells.size(); ++c)
@@ -1217,9 +1228,9 @@ point_evaluation_rows(const FunctionSpace<T>& V1,
     assert(cell_dofs.size() == num_ip);
     for (std::size_t i = 0; i < num_ip; ++i)
     {
-      if (std::int32_t d = cell_dofs[i]; d < num_owned and !seen[d])
+      if (std::int32_t d = cell_dofs[i];
+          last[d] == static_cast<std::int32_t>(c))
       {
-        seen[d] = 1;
         for (std::size_t j = 0; j < 3; ++j)
           x.push_back(coords[j * num_cell_points + c * num_ip + i]);
         point_cells.push_back(cells[c]);
@@ -1258,6 +1269,7 @@ void point_columns(std::span<const std::int32_t> columns,
 /// matrix into a point-evaluation space, one row block per point.
 ///
 /// As sparsity_nonmatching, for points from point_evaluation_rows.
+/// Ghost row blocks are skipped.
 ///
 /// @param[in,out] pattern Sparsity pattern with the index map of `V1`
 /// for the rows and `column_map` for the columns.
@@ -1278,9 +1290,13 @@ void sparsity_nonmatching_point_evaluation(la::SparsityPattern& pattern,
   assert(data.dofs.size() == dofs.size() * num_cell_dofs0);
   const std::vector<std::int32_t> columns
       = impl::nonmatching_columns(data, column_map);
+  assert(pattern.index_map(0));
+  const std::int32_t num_owned_rows = pattern.index_map(0)->size_local();
   std::vector<std::int32_t> cols;
   for (std::size_t p = 0; p < dofs.size(); ++p)
   {
+    if (dofs[p] >= num_owned_rows)
+      continue;
     impl::point_columns(
         std::span(columns).subspan(p * num_cell_dofs0, num_cell_dofs0),
         std::span<const T>(data.values)
@@ -1308,8 +1324,9 @@ void sparsity_nonmatching_point_evaluation(la::SparsityPattern& pattern,
 /// interpolation. More points can express e.g. an average over a circle
 /// around each interpolation point.
 ///
-/// Rows are only added for degrees-of-freedom owned by this process.
-/// Points that no process owns do not contribute.
+/// Rows are only added for degrees-of-freedom owned by this process,
+/// each from the last cell in `cells` containing it. Points that no
+/// process owns do not contribute.
 ///
 /// @param[in] V0 Space to interpolate from.
 /// @param[in] V1 Space to interpolate to.
@@ -1438,7 +1455,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const auto [support_offsets, support_points] = impl::dof_point_support(*e1);
   std::vector<std::int32_t> dof_cols;
   std::vector<T> Ai;
-  for (std::size_t ci = 0; ci < cells.size(); ++ci)
+  // Backwards, so that each row is filled from the last cell containing
+  // it, as non-matching interpolation lets the last cell overwrite
+  for (std::size_t ci = cells.size(); ci-- > 0;)
   {
     const std::int32_t c = cells[ci];
     auto point_columns
@@ -1512,8 +1531,8 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
                        points_per_cell * num_cell_dofs0 * value_size0);
     for (std::size_t i = 0; i < row_dofs.size(); ++i)
     {
-      // A row is filled from the first cell that owns it, so skip ghost
-      // rows and rows another cell has already added
+      // A row is filled from the last cell containing it, so skip ghost
+      // rows and rows a later cell has already added
       const std::int32_t r0 = row_dofs[i];
       if (r0 >= num_owned_rows or row_added[r0])
         continue;
@@ -1549,7 +1568,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 /// The same matrix as interpolation_matrix with unit weights, for
 /// points from point_evaluation_rows: row block `dofs[p]` is the basis
 /// of `V0` at point `p`, so no pull-back to `V1` and no interpolation
-/// operator are applied.
+/// operator are applied. Ghost row blocks are skipped.
 ///
 /// @param[in] V0 Space to interpolate from.
 /// @param[in] V1 Space to interpolate to. Its element must be a point
@@ -1587,12 +1606,15 @@ void interpolation_matrix_point_evaluation(const FunctionSpace<U>& V0,
   const int bs0 = e0->block_size();
   const std::size_t value_size0 = e0->physical_base_value_size();
   const int row_bs = V1.dofmap()->bs();
+  const std::int32_t num_owned_rows = V1.dofmap()->index_map->size_local();
   const std::vector<std::int32_t> columns
       = impl::nonmatching_columns(data, column_map);
   std::vector<std::int32_t> cols;
   std::vector<T> Ai;
   for (std::size_t p = 0; p < dofs.size(); ++p)
   {
+    if (dofs[p] >= num_owned_rows)
+      continue;
     auto point_columns
         = std::span(columns).subspan(p * num_cell_dofs0, num_cell_dofs0);
     auto values = std::span<const U>(data.values)

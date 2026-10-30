@@ -326,6 +326,26 @@ void declare_bbtree(nb::module_& m, std::string_view type)
           },
           nb::arg("src_owner"), nb::arg("dest_owners"), nb::arg("dest_points"),
           nb::arg("dest_cells"))
+      .def(
+          "set_src_dofs",
+          [](dolfinx::geometry::PointOwnershipData<T>& self,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> dofs)
+          {
+            if (dofs.size() != self.src_owner.size())
+            {
+              throw std::invalid_argument(
+                  "Number of degrees-of-freedom does not match the number "
+                  "of points.");
+            }
+            self.src_dofs = std::vector(dofs.data(), dofs.data() + dofs.size());
+          },
+          nb::arg("dofs"),
+          "Store the degree-of-freedom block of each sent point.")
+      .def_prop_ro(
+          "has_dofs", [](const dolfinx::geometry::PointOwnershipData<T>& self)
+          { return self.src_dofs.has_value(); },
+          "True if the degree-of-freedom block of each sent point is "
+          "stored.")
       .def_prop_ro(
           "src_owner",
           [](const dolfinx::geometry::PointOwnershipData<T>& self)

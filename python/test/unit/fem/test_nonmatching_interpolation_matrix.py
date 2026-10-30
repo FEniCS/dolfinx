@@ -347,6 +347,45 @@ def test_hierarchy_matches_nonmatching(degree):
     _assert_close(_apply(A, u0, V1), _apply(A_ref, u0, V1), dtype)
 
 
+@pytest.mark.parametrize("element1", [("Lagrange", 2), ("Lagrange", 1, (2,))])
+def test_hierarchy_rows_from_last_cell(element1):
+    """A node shared by fine cells takes its row from the last of them.
+
+    The source is discontinuous, so a fine node on a coarse facet has a
+    different value in each coarse cell next to it. The row must come
+    from the parent of the last fine cell containing the node, as in
+    non-matching interpolation.
+    """
+    dtype = default_real_type
+    coarse = mesh.create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
+    coarse.topology.create_entities(1)
+    fine, parent_cells, _ = mesh.refine(coarse)
+    V0 = fem.functionspace(coarse, ("DG", 1, *element1[2:]))
+    V1 = fem.functionspace(fine, element1)
+    u0 = _random_function(V0, dtype)
+    A = fem.hierarchy_interpolation_matrix(V0, V1, parent_cells)
+    u1 = _apply(A, u0, V1)
+
+    # Parent of each fine cell, in the order of the refined mesh
+    tdim = fine.topology.dim
+    num_cells = fine.topology.index_map(tdim).size_local
+    original = np.asarray(fine.topology._cpp_object.original_cell_index)[:num_cells]
+    offset = fine.topology.index_map(tdim).local_range[0]
+    parents = np.asarray(parent_cells)[original - offset]
+
+    # Evaluate u0 at each owned node in the parent of its last fine cell
+    num_owned = V1.dofmap.index_map.size_local
+    dofs = V1.dofmap.list[:num_cells]
+    last = np.full(num_owned + V1.dofmap.index_map.num_ghosts, -1, dtype=np.int32)
+    for c, cell_dofs in enumerate(dofs):
+        last[cell_dofs] = c
+    x = V1.tabulate_dof_coordinates()[:num_owned]
+    ref = u0.eval(x, parents[last[:num_owned]])
+    bs = V1.dofmap.index_map_bs
+    eps = np.finfo(dtype).eps
+    np.testing.assert_allclose(u1.x.array[: num_owned * bs], ref.reshape(-1), atol=1e3 * eps)
+
+
 def test_hierarchy_rejects_bad_parent_cells():
     dtype = default_real_type
     coarse = mesh.create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)

@@ -41,6 +41,12 @@ struct PointOwnershipData
   std::vector<std::int32_t>
       dest_cells; ///< Cell indices (local to process) where each entry of
                   ///< `dest_points` is located
+  std::optional<std::vector<std::int32_t>> src_dofs
+      = std::nullopt; ///< Degree-of-freedom block of the space interpolated
+                      ///< into for each point sent, indexed as `src_owner`.
+                      ///< Set for point-evaluation elements, whose points
+                      ///< are one per degree-of-freedom block (see
+                      ///< fem::point_evaluation_rows).
 };
 
 /// @brief Compute the shortest vector from a mesh entity to a point.

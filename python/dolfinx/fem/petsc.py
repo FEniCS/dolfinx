@@ -2461,10 +2461,10 @@ def nonmatching_interpolation_matrix(
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    _cells, dofs, weights, data = dolfinx.fem.utils._nonmatching_interpolation_data(
+    _cells, weights, data = dolfinx.fem.utils._nonmatching_interpolation_data(
         V0, V1, cells, expansion, padding, allow_extrapolation
     )
-    cpp_args = (V0._cpp_object, V1._cpp_object, _cells, dofs, weights, data._cpp_object)
+    cpp_args = (V0._cpp_object, V1._cpp_object, _cells, weights, data._cpp_object)
     return _nonmatching_interpolation_matrix(*cpp_args, tol, maxit, num_threads)  # type: ignore[arg-type]
 
 
@@ -2489,10 +2489,8 @@ def hierarchy_interpolation_matrix(
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    _cells, dofs, weights, data = dolfinx.fem.utils._hierarchy_interpolation_data(
-        V0, V1, parent_cells
-    )
-    cpp_args = (V0._cpp_object, V1._cpp_object, _cells, dofs, weights, data._cpp_object)
+    _cells, weights, data = dolfinx.fem.utils._hierarchy_interpolation_data(V0, V1, parent_cells)
+    cpp_args = (V0._cpp_object, V1._cpp_object, _cells, weights, data._cpp_object)
     return _nonmatching_interpolation_matrix(*cpp_args, tol, maxit, num_threads)  # type: ignore[arg-type]
 
 
