@@ -26,11 +26,15 @@
 // {download}`demo_interpolation_different_meshes/CMakeLists.txt`.
 
 #include <basix/e-lagrange.h>
+#include <cstdint>
 #include <dolfinx/fem/dolfinx_fem.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/mesh/generation.h>
+#include <limits>
 #include <memory>
-#include <ranges>
+#include <numeric>
+#include <span>
+#include <vector>
 
 using namespace dolfinx;
 using T = double;
@@ -94,16 +98,19 @@ int main(int argc, char* argv[])
     auto cell_map
         = mesh_hex->topology()->index_map(mesh_hex->topology()->dim());
     assert(cell_map);
-    auto cells = std::ranges::views::iota(0, cell_map->size_local()
-                                                 + cell_map->num_ghosts());
-    geometry::PointOwnershipData<T> interpolation_data
-        = fem::create_interpolation_data(
-            u_hex->function_space()->mesh()->geometry(),
-            *u_hex->function_space()->element(),
-            *u_tet->function_space()->mesh(), cells, 1e-8);
-    // Tolerance and maximum number of iterations for the pullback
+    std::vector<std::int32_t> cells(cell_map->size_local()
+                                    + cell_map->num_ghosts());
+    std::iota(cells.begin(), cells.end(), 0);
+
+    // Tolerance and maximum number of iterations for the pullback of the
+    // interpolation points to the cells of the tetrahedral mesh, done once
+    // when the interpolation data is created
     const double eps = 1.0e4 * std::numeric_limits<T>::epsilon();
     int max_iter = 15;
+    geometry::PointOwnershipData<T> interpolation_data
+        = fem::create_interpolation_data(
+            *u_hex->function_space(), *u_tet->function_space()->mesh(),
+            std::span<const std::int32_t>(cells), 1e-8, true, eps, max_iter);
     u_hex->interpolate(*u_tet, cells, eps, max_iter, interpolation_data);
 
 #ifdef HAS_ADIOS2

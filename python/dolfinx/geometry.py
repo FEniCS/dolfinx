@@ -82,6 +82,27 @@ class PointOwnershipData(typing.Generic[Real]):
         """
         return self._cpp_object.process_local
 
+    @property
+    def has_reference_points(self) -> bool:
+        """``True`` if the reference coordinates of the points are stored.
+
+        Set by :func:`dolfinx.fem.create_interpolation_data` and
+        :func:`dolfinx.fem.create_hierarchy_interpolation_data`, so that
+        interpolating with the data needs no pull-back.
+        """
+        return self._cpp_object.has_reference_points
+
+    @property
+    def has_dofs(self) -> bool:
+        """``True`` if the dof block of each sent point is stored.
+
+        Set by :func:`dolfinx.fem.create_interpolation_data` and
+        :func:`dolfinx.fem.create_hierarchy_interpolation_data` for
+        point-evaluation elements, so that interpolating with the data
+        needs no sweep over the dofmap.
+        """
+        return self._cpp_object.has_dofs
+
 
 class BoundingBoxTree(typing.Generic[Real]):
     """Bounding box trees used in collision detection."""

@@ -32,6 +32,7 @@
 #include <dolfinx/fem/interpolate_geometry.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/sparsitypattern.h>
+#include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <format>
@@ -1455,33 +1456,41 @@ void declare_real_functions(nb::module_& m)
 
   m.def(
       "create_interpolation_data",
-      [](const dolfinx::mesh::Geometry<T>& geometry0,
-         const dolfinx::fem::FiniteElement<T>& element0,
+      [](const dolfinx::fem::FunctionSpace<T>& V0,
          const dolfinx::mesh::Mesh<T>& mesh1,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
-         T padding, bool allow_extrapolation)
+         T padding, bool allow_extrapolation, double tol, int maxit)
       {
         return dolfinx::fem::create_interpolation_data(
-            geometry0, element0, mesh1, std::span(cells.data(), cells.size()),
-            padding, allow_extrapolation);
+            V0, mesh1, std::span(cells.data(), cells.size()), padding,
+            allow_extrapolation, tol, maxit);
       },
-      nb::arg("geometry0"), nb::arg("element0"), nb::arg("mesh1"),
-      nb::arg("cells"), nb::arg("padding"), nb::arg("allow_extrapolation"));
+      nb::arg("V0"), nb::arg("mesh1"), nb::arg("cells"), nb::arg("padding"),
+      nb::arg("allow_extrapolation"), nb::arg("tol"), nb::arg("maxit"));
 
   m.def(
       "create_hierarchy_interpolation_data",
-      [](const dolfinx::mesh::Mesh<T>& mesh0,
-         const dolfinx::fem::FiniteElement<T>& element0,
+      [](const dolfinx::fem::FunctionSpace<T>& V0,
          const dolfinx::mesh::Mesh<T>& mesh1,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
-             parent_cells)
+             parent_cells,
+         double tol, int maxit)
       {
         return dolfinx::fem::create_hierarchy_interpolation_data(
-            mesh0, element0, mesh1,
-            std::span(parent_cells.data(), parent_cells.size()));
+            V0, mesh1, std::span(parent_cells.data(), parent_cells.size()), tol,
+            maxit);
       },
-      nb::arg("mesh0"), nb::arg("element0"), nb::arg("mesh1"),
-      nb::arg("parent_cells"));
+      nb::arg("V0"), nb::arg("mesh1"), nb::arg("parent_cells"), nb::arg("tol"),
+      nb::arg("maxit"));
+
+  m.def(
+      "compute_reference_points",
+      [](dolfinx::geometry::PointOwnershipData<T>& data,
+         const dolfinx::mesh::Mesh<T>& mesh, double tol, int maxit)
+      { dolfinx::fem::compute_reference_points(data, mesh, tol, maxit); },
+      nb::arg("data"), nb::arg("mesh"), nb::arg("tol"), nb::arg("maxit"),
+      "Pull the points of interpolation data back to the reference cells "
+      "of their destination cells, and store them in the data.");
 }
 
 } // namespace dolfinx_wrappers

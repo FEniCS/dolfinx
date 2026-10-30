@@ -58,6 +58,7 @@ from dolfinx.fem.function import (
 from dolfinx.fem.utils import (
     build_sparsity_pattern,
     compute_integration_domains,
+    compute_reference_points,
     create_hierarchy_interpolation_data,
     create_interpolation_data,
     create_sparsity_pattern,
@@ -90,6 +91,7 @@ __all__ = [
     "build_sparsity_pattern",
     "compile_form",
     "compute_integration_domains",
+    "compute_reference_points",
     "coordinate_element",
     "create_dofmaps",
     "create_form",

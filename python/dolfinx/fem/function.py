@@ -508,9 +508,11 @@ class Function(ufl.Coefficient, Generic[Scalar]):
                 defined on other meshes. Created by
                 :func:`dolfinx.fem.create_interpolation_data`.
             tol: Tolerance for convergence in Newton method for nonaffine
-                pullbacks. Ignored if mesh geometry is affine.
+                pullbacks. Ignored if mesh geometry is affine, or if
+                ``interpolation_data`` stores the reference points (see
+                :attr:`dolfinx.geometry.PointOwnershipData.has_reference_points`).
             maxit: Maximum number of iterations for nonaffine pullback.
-                Ignored if mesh geometry is affine.
+                Ignored as ``tol``.
         """
         self._cpp_object.interpolate(
             u0._cpp_object,  # type: ignore[arg-type]
@@ -548,9 +550,9 @@ class Function(ufl.Coefficient, Generic[Scalar]):
                 created by :func:`dolfinx.fem.create_interpolation_data`
                 or :func:`dolfinx.fem.create_hierarchy_interpolation_data`.
             tol: Tolerance for convergence in Newton method for nonaffine
-                pullbacks. Ignored if mesh geometry is affine.
+                pullbacks. Ignored as in :meth:`interpolate_nonmatching`.
             maxit: Maximum number of iterations for nonaffine pullback.
-                Ignored if mesh geometry is affine.
+                Ignored as ``tol``.
         """
         self._cpp_object.interpolate_transpose(
             u1._cpp_object,  # type: ignore[arg-type]

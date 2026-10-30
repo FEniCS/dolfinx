@@ -48,6 +48,21 @@ struct PointOwnershipData
                ///< process that sent it, so that using the data needs no
                ///< communication. Set by fem::create_interpolation_data and
                ///< fem::create_hierarchy_interpolation_data.
+  std::optional<std::vector<T>> dest_reference_points
+      = std::nullopt; ///< Reference coordinates of `dest_points` in
+                      ///< the cells `dest_cells`,
+                      ///< `shape=(num_dest_points, tdim)`, row-major.
+                      ///< Set on every process or none by
+                      ///< fem::compute_reference_points, so that
+                      ///< non-matching interpolation skips the
+                      ///< pull-back.
+  std::optional<std::vector<std::int32_t>> src_dofs
+      = std::nullopt; ///< Degree-of-freedom block of the space interpolated
+                      ///< into for each point sent, indexed as
+                      ///< `src_owner`. Set by fem::create_interpolation_data
+                      ///< and fem::create_hierarchy_interpolation_data for
+                      ///< point-evaluation elements, so that non-matching
+                      ///< interpolation skips the sweep over the dofmap.
 };
 
 /// @brief Compute the shortest vector from a mesh entity to a point.

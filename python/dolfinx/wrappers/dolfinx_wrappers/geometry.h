@@ -332,6 +332,17 @@ void declare_bbtree(nb::module_& m, std::string_view type)
           { return self.process_local; },
           "True if every point is owned by the process that sent it.")
       .def_prop_ro(
+          "has_reference_points",
+          [](const dolfinx::geometry::PointOwnershipData<T>& self)
+          { return self.dest_reference_points.has_value(); },
+          "True if the reference coordinates of the destination points "
+          "are stored.")
+      .def_prop_ro(
+          "has_dofs", [](const dolfinx::geometry::PointOwnershipData<T>& self)
+          { return self.src_dofs.has_value(); },
+          "True if the degree-of-freedom block of each sent point is "
+          "stored.")
+      .def_prop_ro(
           "src_owner",
           [](const dolfinx::geometry::PointOwnershipData<T>& self)
           {
