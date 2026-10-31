@@ -401,10 +401,11 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
             set_default_options_dist(o.get());
             o->PrintStat = NO;
 #ifdef HAVE_PARMETIS
-            // METIS_AT_PLUS_A deadlocks if ranks get different orderings.
-            // ParSymbFact stays off as it can hang, see
-            // https://github.com/xiaoyeli/superlu_dist/pull/231
+            // PARMETIS ordering scales better than METIS_AT_PLUS_A
             o->ColPerm = PARMETIS;
+#ifdef HAS_SUPERLU_DIST_FIXES
+            o->ParSymbFact = YES;
+#endif
 #endif
             return o;
           }()),
@@ -470,6 +471,10 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
       _solvestruct(new typename map_t<T>::SOLVEstruct_t{},
                    SolveStructDeleter{_options.get()})
 {
+#ifndef HAS_SUPERLU_DIST_FIXES
+  logger().warn("SuperLU_DIST older than 9.3.2 detected. Some options are "
+                "restricted. Support for older versions will be dropped.");
+#endif
 }
 //----------------------------------------------------------------------------
 template <typename T>
@@ -625,8 +630,12 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
       _factored = false;
     }
 
-    // SamePattern crashes SuperLU_DIST with ParSymbFact
-    bool dofact = fact == "DOFACT" or _options->ParSymbFact == YES;
+#ifdef HAS_SUPERLU_DIST_FIXES
+    const bool dofact = fact == "DOFACT";
+#else
+    // SamePattern crashes SuperLU_DIST before 9.3.2 with ParSymbFact
+    const bool dofact = fact == "DOFACT" or _options->ParSymbFact == YES;
+#endif
     if (dofact)
     {
       if constexpr (std::is_same_v<T, double>)
@@ -661,11 +670,13 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
 
   if (_options->ParSymbFact == YES and _options->ColPerm != PARMETIS)
     throw std::invalid_argument("ParSymbFact YES requires ColPerm PARMETIS");
+#ifndef HAS_SUPERLU_DIST_FIXES
   if (_options->ParSymbFact == YES and _options->Fact == SamePattern)
   {
     throw std::invalid_argument(
         "ParSymbFact YES does not support Fact SamePattern");
   }
+#endif
 
   // Warn if Factor is DOFACT but solve already appears to be initialised.
   if (_options->Fact == DOFACT && _options->SolveInitialized == YES)
