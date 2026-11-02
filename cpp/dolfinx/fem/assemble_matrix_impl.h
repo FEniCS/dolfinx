@@ -138,7 +138,8 @@ void assemble_cells_matrix(
     std::int32_t cell0 = cells0[c];
     std::span<const std::int32_t, nd0> dofs0(
         dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
-    if (has_bc(dofs1, bc1, bs1) or has_bc(dofs0, bc0, bs0))
+    if ((!bc1.empty() and has_bc(dofs1, bc1, bs1))
+        or (!bc0.empty() and has_bc(dofs0, bc0, bs0)))
       constrained_cells.push_back(c);
     else
       unconstrained_cells.push_back(c);
