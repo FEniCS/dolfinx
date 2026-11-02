@@ -126,11 +126,30 @@ void assemble_cells_matrix(
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = coeffs.extent(1);
 
+  std::vector<std::int32_t> constrained_cells;
+  constrained_cells.reserve(cells.size());
+  std::vector<std::int32_t> unconstrained_cells;
+  unconstrained_cells.reserve(cells.size());
+  for (std::size_t c = 0; c < cells.size(); ++c)
+  {
+    std::int32_t cell1 = cells1[c];
+    std::span<const std::int32_t, nd1> dofs1(
+        dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
+    std::int32_t cell0 = cells0[c];
+    std::span<const std::int32_t, nd0> dofs0(
+        dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
+    if (has_bc(dofs1, bc1, bs1) or has_bc(dofs0, bc0, bs0))
+      constrained_cells.push_back(c);
+    else
+      unconstrained_cells.push_back(c);
+  }
+
   // Iterate over active cells
   const std::size_t num_cells = std::ranges::size(cells);
   assert(std::ranges::size(cells0) == num_cells);
   assert(std::ranges::size(cells1) == num_cells);
-  for (std::size_t c = 0; c < num_cells; ++c)
+
+  for (std::size_t c : constrained_cells)
   {
     // Cell index in integration domain mesh (c), test function mesh
     // (c0) and trial function mesh (c1)
@@ -201,6 +220,38 @@ void assemble_cells_matrix(
         }
       }
     }
+
+    mat_set(dofs0, dofs1, Ab);
+  }
+
+  if constexpr (LiftingMode)
+    return;
+
+  for (std::size_t c : unconstrained_cells)
+  {
+    // Cell index in integration domain mesh (c), test function mesh
+    // (c0) and trial function mesh (c1)
+    std::int32_t cell = cells[c];
+    std::int32_t cell0 = cells0[c];
+    std::int32_t cell1 = cells1[c];
+
+    std::span<const std::int32_t, nd0> dofs0(
+        dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
+    std::span<const std::int32_t, nd1> dofs1(
+        dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
+
+    gather_cell_coordinates(geometry, cell, cdofs_b.data());
+
+    // Tabulate tensor
+    std::ranges::fill(Ab, T(0));
+    kernel(Ab.data(), coeffs_data + c * cstride, constants.data(),
+           cdofs_b.data(), nullptr, nullptr, nullptr);
+
+    // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
+    if (p0_set)
+      P0(Ab, cell_info0, cell0, ndim1); // B = P0 \tilde{A}
+    if (p1t_set)
+      P1T(Ab, cell_info1, cell1, ndim0); // A =  B P1_T
 
     mat_set(dofs0, dofs1, Ab);
   }
