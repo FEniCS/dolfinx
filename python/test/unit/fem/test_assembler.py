@@ -246,14 +246,13 @@ def test_assembly_mixed_block_sizes(block_mode, cell, num_components, dtype) -> 
 @pytest.mark.parametrize("cell", [CellType.triangle, CellType.tetrahedron])
 @dtype_parametrize
 def test_assembly_subspace_block_sizes(block_mode, cell, dtype) -> None:
-    """Assemble forms with a sub-space argument into MatrixCSR.
+    """Assemble forms with a sub-space argument into a parent matrix.
 
-    A sub-space DOF map of a blocked space has block size 1 but the
-    parent's index map block size, so the element data block size,
-    (1, gdim) or (gdim, 1), differs from the (gdim, gdim) block size of
-    a compact matrix. The matrix uses the sparsity of the parent space,
-    and the result is compared with the parent-space form restricted to
-    component 0.
+    A sub-space is a view into the parent space: its DOF map has block
+    size 1 but the parent's index map and index map block size, so the
+    element data block size, (1, gdim) or (gdim, 1), differs from the
+    (gdim, gdim) block size of a compact parent matrix. The result is
+    compared with the parent-space form restricted to component 0.
     """
     xtype = dtype(0).real.dtype
     if cell == CellType.triangle:
