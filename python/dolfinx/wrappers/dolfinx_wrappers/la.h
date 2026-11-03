@@ -114,6 +114,8 @@ void declare_la_objects(nanobind::module_& m, std::string_view type)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
              int bs)
           {
+            if (bs < 1)
+              throw std::invalid_argument("bs must be positive.");
             if (x.size() != rows.size() * cols.size() * bs * bs)
             {
               throw std::invalid_argument(
@@ -122,10 +124,8 @@ void declare_la_objects(nanobind::module_& m, std::string_view type)
 
             const std::int32_t num_rows = self.num_all_rows();
             const int mat_bs0 = self.block_size()[0];
-            const std::int32_t max_row
-                = (mat_bs0 == bs) ? num_rows
-                                  : ((mat_bs0 == 1) ? (num_rows / bs)
-                                                    : (num_rows * mat_bs0));
+            // Rows of x are blocks of bs unrolled rows
+            const std::int32_t max_row = num_rows * mat_bs0 / bs;
             for (std::size_t i = 0; i < rows.size(); ++i)
             {
               if (rows.data()[i] < 0 or rows.data()[i] >= max_row)
@@ -146,10 +146,7 @@ void declare_la_objects(nanobind::module_& m, std::string_view type)
             else if (bs == 3)
               self.template add<3, 3>(x_span, rows_span, cols_span);
             else
-            {
-              throw std::invalid_argument(
-                  "Block size not supported in this function.");
-            }
+              self.add(x_span, rows_span, cols_span, bs, bs);
           },
           nb::arg("x"), nb::arg("rows"), nb::arg("cols"), nb::arg("bs"))
       .def(
@@ -160,6 +157,8 @@ void declare_la_objects(nanobind::module_& m, std::string_view type)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
              int bs)
           {
+            if (bs < 1)
+              throw std::invalid_argument("bs must be positive.");
             if (x.size() != rows.size() * cols.size() * bs * bs)
             {
               throw std::invalid_argument(
@@ -167,10 +166,8 @@ void declare_la_objects(nanobind::module_& m, std::string_view type)
             }
             const std::int32_t num_rows = self.num_all_rows();
             const int mat_bs0 = self.block_size()[0];
-            const std::int32_t max_row
-                = (mat_bs0 == bs) ? num_rows
-                                  : ((mat_bs0 == 1) ? (num_rows / bs)
-                                                    : (num_rows * mat_bs0));
+            // Rows of x are blocks of bs unrolled rows
+            const std::int32_t max_row = num_rows * mat_bs0 / bs;
             for (std::size_t i = 0; i < rows.size(); ++i)
             {
               if (rows.data()[i] < 0 or rows.data()[i] >= max_row)
@@ -191,10 +188,7 @@ void declare_la_objects(nanobind::module_& m, std::string_view type)
             else if (bs == 3)
               self.template set<3, 3>(x_span, rows_span, cols_span);
             else
-            {
-              throw std::invalid_argument(
-                  "Block size not supported in this function.");
-            }
+              self.set(x_span, rows_span, cols_span, bs, bs);
           },
           nb::arg("x"), nb::arg("rows"), nb::arg("cols"), nb::arg("bs"))
       .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
