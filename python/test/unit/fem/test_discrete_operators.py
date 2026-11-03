@@ -432,6 +432,38 @@ def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange) -> None:
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("shape", [(2,), (4,), (5,)])
+def test_interpolation_matrix_blocked(dtype, shape) -> None:
+    """Interpolation matrix between blocked spaces of any block size.
+
+    Block size 5 has no compile-time insertion in the wrappers.
+    """
+    from dolfinx.fem import interpolation_matrix
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 4, dtype=dtype)
+    V = functionspace(mesh, ("Lagrange", 1, shape))
+    W = functionspace(mesh, ("Lagrange", 2, shape))
+    G = interpolation_matrix(V, W)
+    G.scatter_reverse()
+    G_sp = G.to_scipy()
+
+    u = Function(V, dtype=dtype)
+    u.interpolate(lambda x: np.vstack([x[0] + (i + 1) * x[1] ** 2 for i in range(shape[0])]))
+    w_vec = Function(W, dtype=dtype)
+    w_vec.interpolate(u)
+
+    # Compute global matrix vector product
+    w = Function(W, dtype=dtype)
+    ux = np.zeros(G_sp.shape[1])
+    ux[: len(u.x.array)] = u.x.array[:]
+    w.x.array[: G_sp.shape[0]] = G_sp @ ux
+    w.x.scatter_forward()
+
+    atol = 100 * np.finfo(dtype).resolution
+    assert np.allclose(w_vec.x.array, w.x.array, atol=atol)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize(
     "cell_type",
     [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
