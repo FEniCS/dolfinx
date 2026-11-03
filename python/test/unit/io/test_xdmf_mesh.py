@@ -15,7 +15,7 @@ import basix.ufl
 import dolfinx
 import ufl
 from dolfinx import default_real_type, fem
-from dolfinx.io import XDMFFile
+from dolfinx.io import FileMode, XDMFFile
 from dolfinx.io.gmsh import cell_perm_array, ufl_mesh
 from dolfinx.io.utils import _serendipity_coordinate_element
 from dolfinx.mesh import (
@@ -51,6 +51,16 @@ def mesh_factory(tdim, n, ghost_mode=GhostMode.shared_facet, dtype=default_real_
         return create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode, dtype=dtype)
     else:
         raise ValueError(f"Unsupported {tdim=}")
+
+
+def test_file_mode_enum(tempdir) -> None:
+    """Use the type-safe file mode for an XDMF round trip."""
+    filename = Path(tempdir, "file_mode.xdmf")
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
+    with XDMFFile(mesh.comm, filename, FileMode.write) as file:
+        file.write_mesh(mesh)
+    with XDMFFile(mesh.comm, filename, FileMode.read) as file:
+        assert file.read_cell_type("mesh") == (CellType.triangle, 1)
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")

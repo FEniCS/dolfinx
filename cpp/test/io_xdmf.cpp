@@ -25,7 +25,7 @@ TEST_CASE("XDMFFile move constructor releases the HDF5 handle", "[xdmf]")
 {
   const ssize_t before = open_files();
   {
-    io::XDMFFile file(MPI_COMM_WORLD, "xdmf_move.xdmf", "w");
+    io::XDMFFile file(MPI_COMM_WORLD, "xdmf_move.xdmf", io::FileMode::write);
     io::XDMFFile moved(std::move(file));
     CHECK(open_files() == before + 1);
     moved.close();
@@ -39,8 +39,10 @@ TEST_CASE("XDMFFile move assignment releases the HDF5 handle", "[xdmf]")
 {
   const ssize_t before = open_files();
   {
-    io::XDMFFile file(MPI_COMM_WORLD, "xdmf_move_assign_a.xdmf", "w");
-    io::XDMFFile other(MPI_COMM_WORLD, "xdmf_move_assign_b.xdmf", "w");
+    io::XDMFFile file(MPI_COMM_WORLD, "xdmf_move_assign_a.xdmf",
+                      io::FileMode::write);
+    io::XDMFFile other(MPI_COMM_WORLD, "xdmf_move_assign_b.xdmf",
+                       io::FileMode::write);
     CHECK(open_files() == before + 2);
 
     // Assigning over `other` must close the file it held
@@ -54,7 +56,8 @@ TEST_CASE("XDMFFile constructor does not leak on failure", "[xdmf]")
 {
   // Create the HDF5 file that opening in "r" mode requires
   {
-    io::XDMFFile file(MPI_COMM_WORLD, "xdmf_ctor_throw.xdmf", "w");
+    io::XDMFFile file(MPI_COMM_WORLD, "xdmf_ctor_throw.xdmf",
+                      io::FileMode::write);
     file.close();
   }
 
@@ -65,7 +68,8 @@ TEST_CASE("XDMFFile constructor does not leak on failure", "[xdmf]")
   MPI_Barrier(MPI_COMM_WORLD);
 
   const ssize_t before = open_files();
-  CHECK_THROWS(io::XDMFFile(MPI_COMM_WORLD, "xdmf_ctor_throw.xdmf", "r"));
+  CHECK_THROWS(
+      io::XDMFFile(MPI_COMM_WORLD, "xdmf_ctor_throw.xdmf", io::FileMode::read));
 
   // A constructor that throws has no destructor call, so the HDF5 file
   // is released only if the handle owns it

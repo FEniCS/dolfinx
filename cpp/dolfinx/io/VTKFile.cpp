@@ -715,9 +715,12 @@ void write_function(
 
 //----------------------------------------------------------------------------
 io::VTKFile::VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
-                     std::string_view)
+                     FileMode file_mode)
     : _filename(filename), _comm(comm)
 {
+  if (file_mode != FileMode::write)
+    throw std::invalid_argument("VTKFile only supports write mode.");
+
   _pvd_xml = std::make_unique<pugi::xml_document>();
   assert(_pvd_xml);
   pugi::xml_node vtk_node = _pvd_xml->append_child("VTKFile");
