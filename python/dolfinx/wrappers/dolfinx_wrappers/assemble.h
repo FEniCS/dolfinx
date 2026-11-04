@@ -10,6 +10,7 @@
 #include "pycoeff.h"
 #include <array>
 #include <basix/mdspan.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/DofMap.h>
@@ -143,36 +144,47 @@ create_sparsity_entity_closure(const dolfinx::fem::FunctionSpace<U>& V0,
 /// `std::integral_constant`s for the sizes with compile-time insertion
 /// and as `int`s otherwise.
 ///
-/// Compile-time sizes are (k, k) for k in {1, 2, 3, 4, 6, 9}, i.e.
-/// scalar, vector and (symmetric) tensor spaces, and (1, k), (k, 1) for
-/// k in {2, 3}.
+/// Compile-time sizes are (k, k) for k in {1, ..., 9}, and (1, k),
+/// (k, 1) for k in {2, 3}.
 template <typename F>
 void visit_block_size(std::array<int, 2> bs, F&& f)
 {
-  auto visit =
-      [&bs, &f]<int BS0, int BS1>(std::integer_sequence<int, BS0, BS1>) -> bool
+  static constexpr std::array<std::array<int, 2>, 13> sizes{{
+      {1, 1},
+      {2, 2},
+      {3, 3},
+      {4, 4},
+      {5, 5},
+      {6, 6},
+      {7, 7},
+      {8, 8},
+      {9, 9},
+      {1, 2},
+      {2, 1},
+      {1, 3},
+      {3, 1},
+  }};
+
+  // Call f with sizes[I] as compile-time constants if it equals bs
+  auto try_size
+      = [&bs, &f]<std::size_t I>(std::integral_constant<std::size_t, I>) -> bool
   {
-    if (bs != std::array{BS0, BS1})
+    if (bs != sizes[I])
       return false;
 
-    f(std::integral_constant<int, BS0>{}, std::integral_constant<int, BS1>{});
+    f(std::integral_constant<int, sizes[I][0]>{},
+      std::integral_constant<int, sizes[I][1]>{});
     return true;
   };
 
-  using std::integer_sequence;
-  if (!(visit(integer_sequence<int, 1, 1>{})
-        or visit(integer_sequence<int, 2, 2>{})
-        or visit(integer_sequence<int, 3, 3>{})
-        or visit(integer_sequence<int, 4, 4>{})
-        or visit(integer_sequence<int, 6, 6>{})
-        or visit(integer_sequence<int, 9, 9>{})
-        or visit(integer_sequence<int, 1, 2>{})
-        or visit(integer_sequence<int, 2, 1>{})
-        or visit(integer_sequence<int, 1, 3>{})
-        or visit(integer_sequence<int, 3, 1>{})))
+  // Try each entry of sizes in order, stopping at the first match
+  bool found = [&try_size]<std::size_t... I>(std::index_sequence<I...>)
   {
+    return (try_size(std::integral_constant<std::size_t, I>{}) or ...);
+  }(std::make_index_sequence<sizes.size()>{});
+
+  if (!found)
     f(bs[0], bs[1]);
-  }
 }
 
 // Declare assembler function that have multiple scalar types

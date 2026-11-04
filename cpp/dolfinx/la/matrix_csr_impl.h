@@ -184,8 +184,8 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// @brief Incorporate data into a blocked matrix whose block size
 /// differs from the data block size.
 ///
-/// Each scalar entry is located separately, so this is slower than
-/// ::insert_csr and ::insert_blocked_csr.
+/// Each matrix block spanned by a data block is located separately, so
+/// this is slower than ::insert_csr and ::insert_blocked_csr.
 ///
 /// @note Matrix sparsity must be correct to accept the data.
 /// @note See ::insert_csr for data layout.
@@ -236,18 +236,34 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       // Columns indices for row
       auto cit0 = std::next(cols.begin(), row_ptr[rdiv.quot]);
       auto cit1 = std::next(cols.begin(), row_ptr[rdiv.quot + 1]);
+
+      // Position of matrix block column q, searching from first
+      auto locate = [&cit1](auto first, std::int32_t q)
+      {
+        auto it = std::lower_bound(first, cit1, q);
+        if (it == cit1 or *it != q)
+          throw std::out_of_range("Entry not in sparsity");
+        return it;
+      };
+
       for (std::size_t c = 0; c < nc; ++c)
       {
-        for (decltype(+bs1) j = 0; j < bs1; ++j)
+        // Matrix block column q and offset rem in it of the first
+        // column of data block c
+        std::int32_t c0 = xcols[c] * bs1;
+        std::int32_t q = c0 / mbs1;
+        int rem = c0 % mbs1;
+        auto it = locate(cit0, q);
+        for (decltype(+bs1) j = 0; j < bs1; ++j, ++rem)
         {
-          // Find position of column index
-          auto cdiv = std::div(xcols[c] * bs1 + j, mbs1);
-          auto it = std::lower_bound(cit0, cit1, cdiv.quot);
-          if (it == cit1 or *it != cdiv.quot)
-            throw std::out_of_range("Entry not in sparsity");
+          if (rem == mbs1)
+          {
+            rem = 0;
+            it = locate(it, ++q);
+          }
 
           std::size_t d = std::ranges::distance(cols.begin(), it);
-          std::size_t di = d * nbs + rdiv.rem * mbs1 + cdiv.rem;
+          std::size_t di = d * nbs + rdiv.rem * mbs1 + rem;
           assert(di < data.size());
           op(data[di], xr[c * bs1 + j]);
         }
