@@ -21,6 +21,18 @@ computes this concatenated layout of index maps, e.g. to create the vectors of a
 `LinearProblem([[a00, a01], [a10, a11]], [L0, L1], bcs=[bc0, bc1]).solve()` returns
 `(u0, u1)`. Passing `u` to its constructor no longer raises a spurious dtype mismatch.
 
+{py:class}`dolfinx.fem.problems.NonlinearProblem` solves single and blocked nonlinear problems
+by Newton's method without PETSc, e.g.
+`NonlinearProblem([F0, F1], [u0, u1], bcs=[bc0, bc1]).solve()`. Each Newton step is solved
+with SuperLU_DIST, reusing the sparsity pattern of the previous step. The Jacobian is derived
+from `F` unless given, with identically zero blocks omitted. `newton_options` sets the absolute
+and relative tolerances (`atol`, `rtol`), the maximum number of iterations (`max_it`), the
+convergence test on the residual or the update (`convergence`), the update `relaxation`, and
+whether non-convergence raises (`error_on_nonconvergence`). The default tolerances are at
+least 100 times the machine epsilon of the scalar type; given tolerances are used as they are.
+`converged`, `num_iterations` and `residual_norms` report each solve. Each block must have its
+own function space, as for the blocked `LinearProblem`.
+
 ### Expressions on ridges and peaks
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
