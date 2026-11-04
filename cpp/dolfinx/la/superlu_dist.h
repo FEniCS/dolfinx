@@ -13,6 +13,7 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -110,6 +111,31 @@ public:
   ///
   /// @param A Matrix.
   SuperLUDistMatrix(const MatrixCSR<T>& A);
+
+  /// @brief Create SuperLU_DIST matrix operator from blocks.
+  ///
+  /// Copies the blocks `A[i][j]` of a block matrix, e.g. assembled
+  /// from a block form, into SuperLU_DIST format, without forming a
+  /// monolithic matrix first. The rows are the owned rows of block row
+  /// 0, then of block row 1, ..., expanded by the block size, and the
+  /// columns likewise. This is the layout of a matrix with the sparsity
+  /// pattern of `la::SparsityPattern` created from blocks, i.e. of the
+  /// index map from `common::stack_index_maps`.
+  ///
+  /// The blocks of a block row must have the same owned rows, and the
+  /// blocks of a block column the same owned columns. Their block sizes
+  /// may differ. The column index map of a block may have more ghosts
+  /// than the other blocks of its block column.
+  ///
+  /// @note Collective. All ranks must pass the same block structure,
+  /// i.e. the same zero blocks.
+  ///
+  /// @param[in] A Blocks of the matrix, `A[i][j]` in block row `i` and
+  /// block column `j`, or `nullptr` for a zero block. Every block row
+  /// and block column must have at least one block.
+  /// @throws std::invalid_argument if the blocks do not satisfy the
+  /// above.
+  SuperLUDistMatrix(std::span<const std::vector<const MatrixCSR<T>*>> A);
 
   /// @brief Copy constructor (deleted)
   SuperLUDistMatrix(const SuperLUDistMatrix&) = delete;
@@ -266,7 +292,7 @@ public:
   /// @note The caller must `u.scatter_forward()` after the solve.
   /// @note The values of `A` are modified in-place during the solve.
   /// @note To solve with successive right-hand sides the caller must
-  ///   `solver.set_options("Factor", "FACTORED")` after the first solve.
+  ///   `solver.set_option("Fact", "FACTORED")` after the first solve.
   int solve(const Vector<T>& b, Vector<T>& u);
 
 private:
