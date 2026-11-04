@@ -7,6 +7,7 @@
 #pragma once
 
 #include "array.h"
+#include "block_size.h"
 #include "pycoeff.h"
 #include <array>
 #include <basix/mdspan.hpp>
@@ -44,7 +45,6 @@
 #include <span>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -140,53 +140,6 @@ create_sparsity_entity_closure(const dolfinx::fem::FunctionSpace<U>& V0,
   return sp;
 }
 
-/// @brief Call `f(bs0, bs1)` with data block sizes `bs`, as
-/// `std::integral_constant`s for the sizes with compile-time insertion
-/// and as `int`s otherwise.
-///
-/// Compile-time sizes are (k, k) for k in {1, ..., 9}, and (1, k),
-/// (k, 1) for k in {2, 3}.
-template <typename F>
-void visit_block_size(std::array<int, 2> bs, F&& f)
-{
-  static constexpr std::array<std::array<int, 2>, 13> sizes{{
-      {1, 1},
-      {2, 2},
-      {3, 3},
-      {4, 4},
-      {5, 5},
-      {6, 6},
-      {7, 7},
-      {8, 8},
-      {9, 9},
-      {1, 2},
-      {2, 1},
-      {1, 3},
-      {3, 1},
-  }};
-
-  // Call f with sizes[I] as compile-time constants if it equals bs
-  auto try_size
-      = [&bs, &f]<std::size_t I>(std::integral_constant<std::size_t, I>) -> bool
-  {
-    if (bs != sizes[I])
-      return false;
-
-    f(std::integral_constant<int, sizes[I][0]>{},
-      std::integral_constant<int, sizes[I][1]>{});
-    return true;
-  };
-
-  // Try each entry of sizes in order, stopping at the first match
-  bool found = [&try_size]<std::size_t... I>(std::index_sequence<I...>)
-  {
-    return (try_size(std::integral_constant<std::size_t, I>{}) or ...);
-  }(std::make_index_sequence<sizes.size()>{});
-
-  if (!found)
-    f(bs[0], bs[1]);
-}
-
 // Declare assembler function that have multiple scalar types
 template <typename T, typename U>
 void declare_discrete_operators(nanobind::module_& m)
@@ -202,14 +155,15 @@ void declare_discrete_operators(nanobind::module_& m)
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);
 
-        // Element data has the block sizes of V1 (rows) and V0 (columns)
-        visit_block_size(
-            {V1.element()->block_size(), V0.element()->block_size()},
-            [&V0, &V1, &A](auto bs0, auto bs1)
-            {
-              dolfinx::fem::interpolation_matrix<T, U>(
-                  V0, V1, A.mat_add_values(bs0, bs1));
-            });
+        // Cell data has the dofmap block sizes of V1 (rows) and V0
+        // (columns), which differ from the element block sizes for a
+        // sub-space
+        visit_block_size({V1.dofmap()->bs(), V0.dofmap()->bs()},
+                         [&V0, &V1, &A](auto bs0, auto bs1)
+                         {
+                           dolfinx::fem::interpolation_matrix<T, U>(
+                               V0, V1, A.mat_add_values(bs0, bs1));
+                         });
 
         return A;
       },

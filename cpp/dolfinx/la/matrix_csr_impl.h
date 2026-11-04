@@ -39,6 +39,19 @@ template <typename T>
 concept BlockSizeArg = std::integral<std::remove_cvref_t<T>>
                        or is_integral_constant<std::remove_cvref_t<T>>::value;
 
+/// @brief A block size argument as an `int` or a
+/// `std::integral_constant<int, N>`.
+/// @param[in] bs Block size of any integral type.
+/// @return `bs` with value type `int`, compile-time if `bs` is.
+constexpr auto int_block_size(BlockSizeArg auto bs)
+{
+  using B = std::remove_cvref_t<decltype(bs)>;
+  if constexpr (is_integral_constant<B>::value)
+    return std::integral_constant<int, B::value>{};
+  else
+    return static_cast<int>(bs);
+}
+
 /// @brief Incorporate data into a CSR matrix.
 ///
 /// @tparam OP The operation (usually "set" or "add").
@@ -152,7 +165,7 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
     // Row index and current data row
     auto row = xrows[r] * bs0;
 #ifndef NDEBUG
-    if (row >= num_rows)
+    if (row + bs0 > num_rows)
       throw std::out_of_range("Local row out of range");
 #endif
 
@@ -184,8 +197,9 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// @brief Incorporate data into a blocked matrix whose block size
 /// differs from the data block size.
 ///
-/// Each matrix block spanned by a data block is located separately, so
-/// this is slower than ::insert_csr and ::insert_blocked_csr.
+/// Each matrix block spanned by a data block is located separately,
+/// once for all data rows in the same matrix block row, so this is
+/// slower than ::insert_csr and ::insert_blocked_csr.
 ///
 /// @note Matrix sparsity must be correct to accept the data.
 /// @note See ::insert_csr for data layout.
@@ -222,12 +236,17 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
   assert(x.size() == xrows.size() * xcols.size() * bs0 * bs1);
   for (std::size_t r = 0; r < xrows.size(); ++r)
   {
-    for (decltype(+bs0) i = 0; i < bs0; ++i)
+    // Data rows i0, ..., i0 + ni - 1 of row block r lie in matrix block
+    // row rdiv.quot, from row rdiv.rem of that block. Only the first
+    // row of each group is visited, keeping the loop bound bs0.
+    for (decltype(+bs0) i0 = 0; i0 < bs0; ++i0)
     {
-      // Row index and current data row
-      auto rdiv = std::div(xrows[r] * bs0 + i, mbs0);
+      auto rdiv = std::div(xrows[r] * bs0 + i0, mbs0);
+      if (i0 > 0 and rdiv.rem > 0)
+        continue;
+      auto ni = std::min<decltype(+bs0)>(bs0 - i0, mbs0 - rdiv.rem);
       using T = typename X::value_type;
-      const T* xr = x.data() + (r * bs0 + i) * nc * bs1;
+      const T* xr = x.data() + (r * bs0 + i0) * nc * bs1;
 
 #ifndef NDEBUG
       if (rdiv.quot >= num_rows)
@@ -237,7 +256,10 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       auto cit0 = std::next(cols.begin(), row_ptr[rdiv.quot]);
       auto cit1 = std::next(cols.begin(), row_ptr[rdiv.quot + 1]);
 
-      // Position of matrix block column q, searching from first
+      // Position of matrix block column q, searching from first.
+      // std::lower_bound, not std::ranges::lower_bound: the latter made
+      // sub-space insertion ~25% slower (GCC 13, aarch64) as its loop
+      // is laid out with a taken branch on every step to the right.
       auto locate = [&cit1](auto first, std::int32_t q)
       {
         auto it = std::lower_bound(first, cit1, q);
@@ -264,8 +286,14 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
 
           std::size_t d = std::ranges::distance(cols.begin(), it);
           std::size_t di = d * nbs + rdiv.rem * mbs1 + rem;
-          assert(di < data.size());
-          op(data[di], xr[c * bs1 + j]);
+          std::size_t xi = c * bs1 + j;
+          for (decltype(+bs0) k = 0; k < ni; ++k)
+          {
+            assert(di < data.size());
+            op(data[di], xr[xi]);
+            di += mbs1;
+            xi += nc * bs1;
+          }
         }
       }
     }
