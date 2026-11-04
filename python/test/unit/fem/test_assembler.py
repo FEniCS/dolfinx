@@ -167,11 +167,29 @@ def test_basic_assembly(mode, dtype) -> None:
 
 
 def _bc_global_dofs(bc):
-    """Return the global unrolled indices of the DOFs constrained by ``bc``."""
+    """Return the global unrolled indices of the DOFs constrained by ``bc``.
+
+    The indices are gathered from all processes: a process can hold a
+    column of a constrained DOF that is not one of its own DOFs, e.g. in
+    a row it owns that other processes also assemble into.
+    """
     V = bc.function_space
     bs = V.dofmap.index_map_bs
     dofs = bc.dof_indices()[0]
-    return V.dofmap.index_map.local_to_global(dofs // bs) * bs + dofs % bs
+    local = V.dofmap.index_map.local_to_global(dofs // bs) * bs + dofs % bs
+    return np.unique(np.concatenate(V.mesh.comm.allgather(local)))
+
+
+def _assert_allclose(comm, actual, desired, atol):
+    """Assert that arrays are close on every process at once.
+
+    A failure on some processes only would leave the others waiting in
+    the next collective call, so all processes fail together.
+    """
+    close = np.allclose(actual, desired, rtol=1e-7, atol=atol)
+    if not comm.allreduce(close, op=MPI.LAND):
+        np.testing.assert_allclose(actual, desired, atol=atol)
+        raise AssertionError("Arrays are not close on another process.")
 
 
 @pytest.mark.parametrize("block_mode", [la.BlockMode.compact, la.BlockMode.expanded])
@@ -231,7 +249,7 @@ def test_assembly_mixed_block_sizes(block_mode, cell, num_components, dtype) -> 
                 expected[:, i::nc] = Ai.to_dense()
             else:
                 expected[i::nc, :] = Ai.to_dense()
-        np.testing.assert_allclose(dense, expected, atol=atol)
+        _assert_allclose(msh.comm, dense, expected, atol)
 
         # Rows and columns of constrained DOFs are zeroed
         bc0, bc1 = (bcs[0], bcs[1]) if k == 0 else (bcs[1], bcs[0])
@@ -239,7 +257,7 @@ def test_assembly_mixed_block_sizes(block_mode, cell, num_components, dtype) -> 
         expected[:, _bc_global_dofs(bc1)] = 0
         A = assemble_matrix(form(a, dtype=dtype), bcs=bcs, block_mode=block_mode)
         A.scatter_reverse()
-        np.testing.assert_allclose(A.to_dense(), expected, atol=atol)
+        _assert_allclose(msh.comm, A.to_dense(), expected, atol)
 
 
 @pytest.mark.parametrize("block_mode", [la.BlockMode.compact, la.BlockMode.expanded])
@@ -276,7 +294,7 @@ def test_assembly_subspace_block_sizes(block_mode, cell, dtype) -> None:
         A.scatter_reverse()
         B = assemble_matrix(form(a, dtype=dtype), block_mode=block_mode)
         B.scatter_reverse()
-        np.testing.assert_allclose(A.to_dense(), B.to_dense(), atol=atol)
+        _assert_allclose(msh.comm, A.to_dense(), B.to_dense(), atol)
 
 
 @pytest.mark.parametrize("block_mode", [la.BlockMode.compact, la.BlockMode.expanded])
@@ -304,7 +322,7 @@ def test_assembly_large_block_size(block_mode, dtype) -> None:
 
     expected = np.kron(M.to_dense(), np.eye(bs, dtype=dtype))
     atol = 10 * np.finfo(xtype).eps
-    np.testing.assert_allclose(A.to_dense(), expected, atol=atol)
+    _assert_allclose(msh.comm, A.to_dense(), expected, atol)
 
 
 def nest_matrix_norm(A):
