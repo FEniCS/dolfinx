@@ -99,6 +99,7 @@ msh = mesh.create_rectangle(
     cell_type=mesh.CellType.triangle,
 )
 V = fem.functionspace(msh, ("Lagrange", 1))
+
 # -
 
 # The second argument to {py:func}`functionspace

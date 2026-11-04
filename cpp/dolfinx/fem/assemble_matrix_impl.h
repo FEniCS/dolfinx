@@ -76,9 +76,9 @@ template <typename AB, MDSpan2Int32 XD, std::floating_point U,
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, GeometryPack<XD, U> geometry,
     const IndexList auto& cells, const FormArgumentCells<T> auto& arg0,
-    const FormArgumentCells<T> auto& arg1, std::span<const std::int8_t> bc0,
-    std::span<const std::int8_t> bc1, std::span<const std::int32_t> bc_cells,
-    const FEkernel<T, U> auto& kernel, std::span<const T> constants,
+    const FormArgumentCells<T> auto& arg1,
+    std::span<const std::int32_t> bc_cells, const FEkernel<T, U> auto& kernel,
+    std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs, AB Ab,
     ScratchBuffer<U> auto cdofs_b)
 {
@@ -787,38 +787,20 @@ void assemble_matrix(
         if ((!bc0.empty() and has_bc(dofs_cell0, bc0, bs0))
             or (!bc1.empty() and has_bc(dofs_cell1, bc1, bs1)))
           bc_cells.push_back(c);
-        else
+        else if constexpr (!LiftingMode)
           non_bc_cells.push_back(c);
       }
 
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
 
-      if constexpr (!LiftingMode)
-      {
-        // Assemble contributions from cells with no BCs
-        impl::dispatch_bs(
-            bs0, bs1,
-            [&mat_set, &geometry, &cells, &dofs0, &cells0, &P0, &cell_info0,
-             &dofs1, &cells1, &P1T, &cell_info1, &bc0, &bc1, &non_bc_cells, &fn,
-             &coeffs, cstride, &constants, &Ab1, &cdofs_b1](auto bs0, auto bs1)
-            {
-              impl::assemble_cells_matrix(
-                  mat_set, geometry, cells,
-                  FormArgument{DofMapPack{dofs0, bs0, cells0}, P0, cell_info0},
-                  FormArgument{DofMapPack{dofs1, bs1, cells1}, P1T, cell_info1},
-                  bc0, bc1, non_bc_cells, fn, constants,
-                  md::mdspan(coeffs.data(), cells.size(), cstride), Ab1,
-                  cdofs_b1);
-            });
-      }
-
       auto mat_set_bcs
-          = [&mat_set, &bs0, &bs1, &bc0,
-             &bc1](std::span<const std::int32_t> rdofs,
-                   std::span<const std::int32_t> cdofs, std::span<const T> Ab)
+          = [&mat_set, &bs0, &bs1, &bc0, &bc1, &Ae_block_b](
+                std::span<const std::int32_t> rdofs,
+                std::span<const std::int32_t> cdofs, std::span<const T> Ab)
       {
-        std::vector<T> Ab_copy(Ab.begin(), Ab.end());
+        std::span<T> Ab_copy = std::span(Ae_block_b).first(Ab.size());
+        std::ranges::copy(Ab, Ab_copy.begin());
         int ndim0 = rdofs.size() * bs0;
         int ndim1 = cdofs.size() * bs1;
 
@@ -860,40 +842,36 @@ void assemble_matrix(
         mat_set(rdofs, cdofs, Ab_copy);
       };
 
-      if constexpr (!LiftingMode)
+      auto& constrained_set = [&mat_set, &mat_set_bcs]() -> auto&
       {
-        impl::dispatch_bs(
-            bs0, bs1,
-            [&mat_set_bcs, &geometry, &cells, &dofs0, &cells0, &P0, &cell_info0,
-             &dofs1, &cells1, &P1T, &cell_info1, &bc0, &bc1, &bc_cells, &fn,
-             &coeffs, cstride, &constants, &Ab1, &cdofs_b1](auto bs0, auto bs1)
+        if constexpr (LiftingMode)
+          return mat_set;
+        else
+          return mat_set_bcs;
+      }();
+
+      impl::dispatch_bs(
+          bs0, bs1,
+          [&mat_set, &constrained_set, &geometry, &cells, &dofs0, &cells0, &P0,
+           &cell_info0, &dofs1, &cells1, &P1T, &cell_info1, &bc_cells,
+           &non_bc_cells, &fn, &coeffs, cstride, &constants, &Ab1,
+           &cdofs_b1](auto bs0, auto bs1)
+          {
+            auto arg0
+                = FormArgument{DofMapPack{dofs0, bs0, cells0}, P0, cell_info0};
+            auto arg1
+                = FormArgument{DofMapPack{dofs1, bs1, cells1}, P1T, cell_info1};
+            md::mdspan coefficient_data(coeffs.data(), cells.size(), cstride);
+            if constexpr (!LiftingMode)
             {
-              impl::assemble_cells_matrix(
-                  mat_set_bcs, geometry, cells,
-                  FormArgument{DofMapPack{dofs0, bs0, cells0}, P0, cell_info0},
-                  FormArgument{DofMapPack{dofs1, bs1, cells1}, P1T, cell_info1},
-                  bc0, bc1, bc_cells, fn, constants,
-                  md::mdspan(coeffs.data(), cells.size(), cstride), Ab1,
-                  cdofs_b1);
-            });
-      }
-      else
-      {
-        impl::dispatch_bs(
-            bs0, bs1,
-            [&mat_set, &geometry, &cells, &dofs0, &cells0, &P0, &cell_info0,
-             &dofs1, &cells1, &P1T, &cell_info1, &bc0, &bc1, &bc_cells, &fn,
-             &coeffs, cstride, &constants, &Ab1, &cdofs_b1](auto bs0, auto bs1)
-            {
-              impl::assemble_cells_matrix(
-                  mat_set, geometry, cells,
-                  FormArgument{DofMapPack{dofs0, bs0, cells0}, P0, cell_info0},
-                  FormArgument{DofMapPack{dofs1, bs1, cells1}, P1T, cell_info1},
-                  bc0, bc1, bc_cells, fn, constants,
-                  md::mdspan(coeffs.data(), cells.size(), cstride), Ab1,
-                  cdofs_b1);
-            });
-      }
+              impl::assemble_cells_matrix(mat_set, geometry, cells, arg0, arg1,
+                                          non_bc_cells, fn, constants,
+                                          coefficient_data, Ab1, cdofs_b1);
+            }
+            impl::assemble_cells_matrix(constrained_set, geometry, cells, arg0,
+                                        arg1, bc_cells, fn, constants,
+                                        coefficient_data, Ab1, cdofs_b1);
+          });
     }
 
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
