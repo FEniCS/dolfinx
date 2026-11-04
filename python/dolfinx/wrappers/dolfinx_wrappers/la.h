@@ -7,7 +7,9 @@
 #pragma once
 
 #include "array.h"
+#include "block_size.h"
 #include "numpy_dtype.h"
+#include <array>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
@@ -23,6 +25,7 @@
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string_view.h>
 #include <nanobind/stl/vector.h>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -139,14 +142,10 @@ void declare_la_objects(nanobind::module_& m, std::string_view type)
             std::span x_span = std::span(x.data(), x.size());
             std::span rows_span = std::span(rows.data(), rows.size());
             std::span cols_span = std::span(cols.data(), cols.size());
-            if (bs == 1)
-              self.template add<1, 1>(x_span, rows_span, cols_span);
-            else if (bs == 2)
-              self.template add<2, 2>(x_span, rows_span, cols_span);
-            else if (bs == 3)
-              self.template add<3, 3>(x_span, rows_span, cols_span);
-            else
-              self.add(x_span, rows_span, cols_span, bs, bs);
+            visit_block_size(
+                {bs, bs},
+                [&self, x_span, rows_span, cols_span](auto bs0, auto bs1)
+                { self.add(x_span, rows_span, cols_span, bs0, bs1); });
           },
           nb::arg("x"), nb::arg("rows"), nb::arg("cols"), nb::arg("bs"))
       .def(
@@ -181,14 +180,10 @@ void declare_la_objects(nanobind::module_& m, std::string_view type)
             std::span x_span = std::span(x.data(), x.size());
             std::span rows_span = std::span(rows.data(), rows.size());
             std::span cols_span = std::span(cols.data(), cols.size());
-            if (bs == 1)
-              self.template set<1, 1>(x_span, rows_span, cols_span);
-            else if (bs == 2)
-              self.template set<2, 2>(x_span, rows_span, cols_span);
-            else if (bs == 3)
-              self.template set<3, 3>(x_span, rows_span, cols_span);
-            else
-              self.set(x_span, rows_span, cols_span, bs, bs);
+            visit_block_size(
+                {bs, bs},
+                [&self, x_span, rows_span, cols_span](auto bs0, auto bs1)
+                { self.set(x_span, rows_span, cols_span, bs0, bs1); });
           },
           nb::arg("x"), nb::arg("rows"), nb::arg("cols"), nb::arg("bs"))
       .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
