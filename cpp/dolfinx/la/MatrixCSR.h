@@ -338,8 +338,8 @@ public:
   ///
   /// As set<BS0, BS1>(). The data block size may differ from the matrix
   /// block size. Insertion locates one entry per block when the matrix
-  /// block size is `(bs0, bs1)` or `(1, 1)`, and one per scalar entry
-  /// otherwise.
+  /// block size is `(bs0, bs1)` or `(1, 1)`, and otherwise one per
+  /// scalar row and matrix block it spans.
   ///
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
   /// set in the matrix
@@ -407,8 +407,8 @@ public:
   ///
   /// As add<BS0, BS1>(). The data block size may differ from the matrix
   /// block size. Insertion locates one entry per block when the matrix
-  /// block size is `(bs0, bs1)` or `(1, 1)`, and one per scalar entry
-  /// otherwise.
+  /// block size is `(bs0, bs1)` or `(1, 1)`, and otherwise one per
+  /// scalar row and matrix block it spans.
   ///
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
   /// add to the matrix
