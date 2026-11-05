@@ -12,7 +12,6 @@ import pytest
 
 import dolfinx
 import ufl
-from dolfinx import default_scalar_type
 from dolfinx.fem import (
     Constant,
     Function,
@@ -35,15 +34,16 @@ from ufl import (
     inner,
 )
 
+# Scalar types of SuperLU_DIST: all tests run over each, with the mesh of
+# the corresponding real type and tolerances from its machine epsilon
+_dtypes = [
+    np.float32,
+    np.float64,
+    pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+]
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+
+@pytest.mark.parametrize("dtype", _dtypes)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
 def test_superlu_problem(dtype) -> None:
     """Manufactured Poisson and screened problem with exact solution u = x[1]**3."""
@@ -107,14 +107,7 @@ def test_superlu_problem_default_args() -> None:
     _ = problem.solve()
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@pytest.mark.parametrize("dtype", _dtypes)
 @pytest.mark.parametrize("upper_coupling", [True, False])
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
 def test_superlu_problem_blocked(dtype, upper_coupling) -> None:
@@ -176,12 +169,13 @@ def test_superlu_problem_blocked(dtype, upper_coupling) -> None:
     assert isinstance(problem.u, tuple)
 
 
+@pytest.mark.parametrize("dtype", _dtypes)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_problem_compiled_and_zero_rhs() -> None:
+def test_superlu_problem_compiled_and_zero_rhs(dtype) -> None:
     """Compiled forms are accepted, and a None right-hand side is zero."""
     from dolfinx.fem.problems import LinearProblem
 
-    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype().real.dtype)
     V0 = functionspace(mesh, ("Lagrange", 2))
     V1 = functionspace(mesh, ("Lagrange", 1))
     u0, v0 = TrialFunction(V0), TestFunction(V0)
@@ -189,23 +183,31 @@ def test_superlu_problem_compiled_and_zero_rhs() -> None:
 
     # A single compiled form, as accepted before blocked problems
     a00 = inner(grad(u0), grad(v0)) * dx + inner(u0, v0) * dx
-    uh = LinearProblem(form(a00), form(inner(1.0, v0) * dx)).solve()
+    a00_c, L0_c = form(a00, dtype=dtype), form(inner(1.0, v0) * dx, dtype=dtype)
+    uh = LinearProblem(a00_c, L0_c, dtype=dtype).solve()
     assert isinstance(uh, Function)
 
     a = [[a00, inner(u1, v0) * dx], [inner(u0, v1) * dx, inner(u1, v1) * dx]]
     L0 = inner(1.0, v0) * dx
-    uh_none = LinearProblem(a, [L0, None]).solve()
-    uh_zero = LinearProblem(a, [L0, inner(Constant(mesh, 0.0), v1) * dx]).solve()
+    uh_none = LinearProblem(a, [L0, None], dtype=dtype).solve()
+    L1 = inner(Constant(mesh, dtype(0.0)), v1) * dx
+    uh_zero = LinearProblem(a, [L0, L1], dtype=dtype).solve()
+    eps = np.finfo(dtype).eps
     for x_none, x_zero in zip(uh_none, uh_zero, strict=True):
-        assert np.allclose(x_none.x.array, x_zero.x.array)
+        atol = 100 * eps * np.abs(x_zero.x.array).max()
+        assert np.allclose(x_none.x.array, x_zero.x.array, rtol=0, atol=atol)
 
 
+@pytest.mark.parametrize("dtype", _dtypes)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_problem_blocked_invalid() -> None:
+def test_superlu_problem_blocked_invalid(dtype) -> None:
     """Invalid blocked input raises before any solve."""
     from dolfinx.fem.problems import LinearProblem
 
-    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    def LP(*args, **kwargs):
+        return LinearProblem(*args, dtype=dtype, **kwargs)
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=dtype().real.dtype)
     V0 = functionspace(mesh, ("Lagrange", 2))
     V1 = functionspace(mesh, ("Lagrange", 1))
     u0, v0 = TrialFunction(V0), TestFunction(V0)
@@ -217,20 +219,20 @@ def test_superlu_problem_blocked_invalid() -> None:
     mesh.topology.create_connectivity(tdim - 1, tdim)
     facets = exterior_facet_indices(mesh.topology)
     dofs1 = locate_dofs_topological(V1, tdim - 1, facets)
-    bc1 = dirichletbc(np.array(0.0, dtype=default_scalar_type), dofs1, V1)
+    bc1 = dirichletbc(np.array(0.0, dtype=dtype), dofs1, V1)
 
     # A None diagonal block cannot hold the constrained rows' diagonal
     with pytest.raises(ValueError, match=r"a\[1\]\[1\] is None"):
-        LinearProblem(a, L, bcs=[bc1])
+        LP(a, L, bcs=[bc1])
 
     # Nor can a diagonal block with different test and trial spaces
     u1c = TrialFunction(V1.clone())
     a_c = [[a[0][0], inner(u1c, v0) * dx], [inner(u0, v1) * dx, inner(u1c, v1) * dx]]
     with pytest.raises(ValueError, match="different test and trial spaces"):
-        LinearProblem(a_c, L, bcs=[bc1])
+        LP(a_c, L, bcs=[bc1])
 
     # A rejected assignment keeps the previous conditions
-    problem = LinearProblem(a, L)
+    problem = LP(a, L)
     with pytest.raises(ValueError, match="is None"):
         problem.bcs = [bc1]
     assert problem.bcs == ()
@@ -238,44 +240,85 @@ def test_superlu_problem_blocked_invalid() -> None:
     # A space may appear in only one block row and one block column
     a_dup = [[inner(u0, v0) * dx, inner(u0, v0) * dx], [inner(u0, v0) * dx, inner(u0, v0) * dx]]
     with pytest.raises(ValueError, match="same test space"):
-        LinearProblem(a_dup, [inner(1.0, v0) * dx, inner(1.0, v0) * dx])
+        LP(a_dup, [inner(1.0, v0) * dx, inner(1.0, v0) * dx])
 
     # Square block array, one linear form per block row, and a and L
     # both blocked or both single forms
     with pytest.raises(ValueError, match="square"):
-        LinearProblem([a[0]], L[:1])
+        LP([a[0]], L[:1])
     with pytest.raises(ValueError, match="block rows"):
-        LinearProblem(a, L[:1])
+        LP(a, L[:1])
     with pytest.raises(ValueError, match="both be single forms"):
-        LinearProblem(a, L[0])
+        LP(a, L[0])
     with pytest.raises(ValueError, match="test space of L"):
-        LinearProblem(a, L[::-1])
+        LP(a, L[::-1])
 
     # One solution function per block column, on its trial space and of
-    # the given dtype
+    # the given dtype. The other dtype has the same real type, as the
+    # mesh.
+    other = {np.float32: np.complex64, np.float64: np.complex128, np.complex128: np.float64}[dtype]
     with pytest.raises(ValueError, match="functions"):
-        LinearProblem(a, L, u=[Function(V0)])
+        LP(a, L, u=[Function(V0, dtype=dtype)])
     with pytest.raises(ValueError, match="trial space"):
-        LinearProblem(a, L, u=[Function(V1), Function(V0)])
+        LP(a, L, u=[Function(V1, dtype=dtype), Function(V0, dtype=dtype)])
     with pytest.raises(ValueError, match=r"u\[1\]\.dtype"):
-        LinearProblem(a, L, u=[Function(V0), Function(V1, dtype=np.complex128)])
+        LP(a, L, u=[Function(V0, dtype=dtype), Function(V1, dtype=other)])
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+def _nonlinear_system(dtype, coupled):
+    """Coupled nonlinear system whose exact solution is in the discrete spaces.
+
+    ``-div((1 + u0**2) grad(u0)) + u1 = f0`` on P2 and
+    ``-div(grad(u1)) + u0 * u1 = f1`` on P1, where without ``coupled``
+    the second equation drops ``u0 * u1``, so the Jacobian block
+    ``J[1][0]`` is zero.
+    """
+    mesh_dtype = dtype().real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 5, dtype=mesh_dtype)
+    V0 = functionspace(mesh, ("Lagrange", 2))
+    V1 = functionspace(mesh, ("Lagrange", 1))
+    u0, u1 = Function(V0, dtype=dtype), Function(V1, dtype=dtype)
+    v0, v1 = TestFunction(V0), TestFunction(V1)
+    x = SpatialCoordinate(mesh)
+
+    def u0_ex(x):
+        return 1 + x[0] ** 2 + 2 * x[1]
+
+    def u1_ex(x):
+        return 1 + x[0] + x[1]
+
+    c = 1 if coupled else 0
+    f0 = -div((1 + u0_ex(x) ** 2) * grad(u0_ex(x))) + u1_ex(x)
+    f1 = -div(grad(u1_ex(x))) + c * u0_ex(x) * u1_ex(x)
+    F = [
+        inner((1 + u0**2) * grad(u0), grad(v0)) * dx + inner(u1 - f0, v0) * dx,
+        inner(grad(u1), grad(v1)) * dx + inner(c * u0 * u1 - f1, v1) * dx,
+    ]
+
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    facets = exterior_facet_indices(mesh.topology)
+    bcs = []
+    for V, ex in ((V0, u0_ex), (V1, u1_ex)):
+        g = Function(V, dtype=dtype)
+        g.interpolate(ex)
+        bcs.append(dirichletbc(g, locate_dofs_topological(V, tdim - 1, facets)))
+
+    def error(uh, ex):
+        M = form(inner(uh - ex(x), uh - ex(x)) * dx, dtype=dtype)
+        return np.sqrt(mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM).real)
+
+    return F, [u0, u1], bcs, [u0_ex, u1_ex], error
+
+
+@pytest.mark.parametrize("dtype", _dtypes)
 @pytest.mark.parametrize("coupled", [True, False])
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_nonlinear_problem_blocked(dtype, coupled, nonlinear_system) -> None:
+def test_superlu_nonlinear_problem_blocked(dtype, coupled) -> None:
     """Newton's method recovers the exact solution of a blocked system."""
     from dolfinx.fem.problems import NonlinearProblem
 
-    F, u, bcs, u_ex, error = nonlinear_system(dtype, coupled)
+    F, u, bcs, u_ex, error = _nonlinear_system(dtype, coupled)
     problem = NonlinearProblem(F, u, bcs=bcs)
     uh = problem.solve()
     assert uh[0] is u[0] and uh[1] is u[1]
@@ -297,13 +340,13 @@ def test_superlu_nonlinear_problem_blocked(dtype, coupled, nonlinear_system) -> 
     assert problem.converged and problem.num_iterations <= 2
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", _dtypes)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_nonlinear_problem_single(dtype, nonlinear_system) -> None:
+def test_superlu_nonlinear_problem_single(dtype) -> None:
     """Newton's method on a single nonlinear form, with a given Jacobian."""
     from dolfinx.fem.problems import NonlinearProblem
 
-    F, u, bcs, u_ex, error = nonlinear_system(dtype, coupled=False)
+    F, u, bcs, u_ex, error = _nonlinear_system(dtype, coupled=False)
     # The second block is linear and decoupled: solve the first alone
     # with its exact u1 in the form
     u1 = Function(u[1].function_space, dtype=dtype)
@@ -318,29 +361,30 @@ def test_superlu_nonlinear_problem_single(dtype, nonlinear_system) -> None:
     assert len(norms) == problem.num_iterations + 1 and norms[-1] < norms[0]
 
 
+@pytest.mark.parametrize("dtype", _dtypes)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_nonlinear_problem_stopping(nonlinear_system) -> None:
+def test_superlu_nonlinear_problem_stopping(dtype) -> None:
     """Stopping on the iteration limit and the divergence tolerance.
 
     From a zero guess the residual norm of the coupled system first grows
-    by more than 10 (see the ``nonlinear_system`` fixture).
+    by more than 10 (see :func:`_nonlinear_system`).
     """
     from dolfinx.fem.problems import ConvergedReason, NonlinearProblem
 
     # Not raising by default, as SNES
-    F, u, bcs, _, _ = nonlinear_system(np.float64, coupled=True)
+    F, u, bcs, _, _ = _nonlinear_system(dtype, coupled=True)
     problem = NonlinearProblem(F, u, bcs=bcs, newton_options={"max_it": 1})
     problem.solve()
     assert problem.converged_reason == ConvergedReason.DIVERGED_MAX_IT
     assert not problem.converged and problem.num_iterations == 1
     assert len(problem.residual_norms) == 2
 
-    F, u, bcs, _, _ = nonlinear_system(np.float64, coupled=True)
+    F, u, bcs, _, _ = _nonlinear_system(dtype, coupled=True)
     options = {"max_it": 1, "error_if_not_converged": True}
     with pytest.raises(RuntimeError, match="DIVERGED_MAX_IT"):
         NonlinearProblem(F, u, bcs=bcs, newton_options=options).solve()
 
-    F, u, bcs, _, _ = nonlinear_system(np.float64, coupled=True)
+    F, u, bcs, _, _ = _nonlinear_system(dtype, coupled=True)
     problem = NonlinearProblem(F, u, bcs=bcs, newton_options={"divergence_tolerance": 10})
     problem.solve()
     assert problem.converged_reason == ConvergedReason.DIVERGED_DTOL
@@ -348,16 +392,17 @@ def test_superlu_nonlinear_problem_stopping(nonlinear_system) -> None:
     assert norms[-1] > 10 * norms[0] and all(r <= 10 * norms[0] for r in norms[:-1])
 
 
+@pytest.mark.parametrize("dtype", _dtypes)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_nonlinear_problem_invalid(nonlinear_system) -> None:
+def test_superlu_nonlinear_problem_invalid(dtype) -> None:
     """Invalid input raises."""
     from dolfinx.fem.problems import NonlinearProblem
 
-    F, u, _, _, _ = nonlinear_system(np.float64, coupled=True)
+    F, u, _, _, _ = _nonlinear_system(dtype, coupled=True)
 
     # Two unknowns on one space, as from MixedFunctionSpace(V, V)
     V = u[1].function_space
-    w0, w1, q = Function(V), Function(V), TestFunction(V)
+    w0, w1, q = Function(V, dtype=dtype), Function(V, dtype=dtype), TestFunction(V)
     with pytest.raises(ValueError, match="same test space"):
         NonlinearProblem([inner(w0 - w1, q) * dx, inner(w1, q) * dx], [w0, w1])
 
@@ -369,37 +414,45 @@ def test_superlu_nonlinear_problem_invalid(nonlinear_system) -> None:
         NonlinearProblem(F, u[:1])
 
 
+@pytest.mark.parametrize("dtype", _dtypes)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_nonlinear_problem_tolerances() -> None:
-    """Given tolerances are used as they are, also below machine epsilon.
+def test_superlu_nonlinear_problem_tolerances(dtype) -> None:
+    """A given absolute tolerance is used as it is, also below eps.
 
     The residual is scaled by 1e-15, so its initial norm is below
-    ``100 * eps``. ``u = 1`` solves ``-div(grad(u)) + u**3 - 1 = 0``.
+    ``100 * eps``, and an absolute tolerance raised to that would stop
+    the solve at once. ``u = 1`` solves
+    ``-div(grad(u)) + u**3 - 1 = 0``.
     """
     from dolfinx.fem.problems import NonlinearProblem
 
-    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    eps = np.finfo(dtype).eps
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=dtype().real.dtype)
     V = functionspace(mesh, ("Lagrange", 1))
-    u, v = Function(V), TestFunction(V)
+    u, v = Function(V, dtype=dtype), TestFunction(V)
     u.x.array[:] = 0.5
     F = 1e-15 * (inner(grad(u), grad(v)) * dx + inner(u**3 - 1, v) * dx)
-    problem = NonlinearProblem(F, u, newton_options={"atol": 1e-30, "rtol": 1e-12, "stol": 1e-12})
+    options = {"atol": 1e-30, "rtol": 100 * eps, "stol": 100 * eps}
+    problem = NonlinearProblem(F, u, newton_options=options)
     problem.solve()
-    assert problem.residual_norms[0] < 100 * np.finfo(np.float64).eps
+    assert problem.residual_norms[0] < 100 * eps
     assert problem.converged and problem.num_iterations > 0
-    assert np.allclose(u.x.array, 1.0)
+    assert np.allclose(u.x.array, 1.0, rtol=0, atol=1e4 * eps)
 
 
+@pytest.mark.parametrize("dtype", _dtypes)
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_nonlinear_problem_nonfinite() -> None:
-    """Newton's method stops at a non-finite residual norm."""
+def test_superlu_nonlinear_problem_nonfinite(dtype) -> None:
+    """Newton's method stops at a non-finite residual norm.
+
+    ``1 / u`` at ``u = 0`` is infinite for real and complex types.
+    """
     from dolfinx.fem.problems import ConvergedReason, NonlinearProblem
 
-    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=dtype().real.dtype)
     V = functionspace(mesh, ("Lagrange", 1))
-    u, v = Function(V), TestFunction(V)
-    u.x.array[:] = -1.0
-    F = inner(ufl.ln(u), v) * dx
+    u, v = Function(V, dtype=dtype), TestFunction(V)
+    F = inner(1 / u, v) * dx
     problem = NonlinearProblem(F, u)
     problem.solve()
     assert problem.converged_reason == ConvergedReason.DIVERGED_FUNCTION_NANORINF
