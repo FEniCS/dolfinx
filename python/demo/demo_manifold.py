@@ -243,9 +243,8 @@ sigma_h, u_h, r_h = problem.solve()
 
 if dolfinx.has_adios2:
     V_out = dolfinx.fem.functionspace(mesh, ("DG", order))
-    v_out = dolfinx.fem.Function(V_out)
+    v_out = dolfinx.fem.Function(V_out, name="u_h")
     v_out.interpolate(u_h)
-    v_out.name = "u_h"
     with dolfinx.io.VTXWriter(mesh.comm, "u.bp", [v_out]) as vtx_writer:
         vtx_writer.write(0.0)
 

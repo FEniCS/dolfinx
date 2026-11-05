@@ -114,8 +114,7 @@ bcs = [dirichletbc(u_bc, dofs_D)]
 is_complex_mode = np.issubdtype(PETSc.ScalarType, np.complexfloating)
 PETSc.Sys.Print(f"PETSc is configured in complex mode: {is_complex_mode}")
 
-uh = Function(V)
-uh.name = "u"
+uh = Function(V, name="u")
 problem = LinearProblem(
     a,
     L,
