@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
         });
     std::vector bdofs = fem::locate_dofs_topological(
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    fem::DirichletBC<T> bc(0, bdofs, V);
+    fem::DirichletBC<T> bc(0, std::move(bdofs), V);
 
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>

@@ -189,9 +189,9 @@ int main(int argc, char* argv[])
           }
           return marker;
         });
-    std::vector bcs
-        = {fem::DirichletBC<T>(std::vector<T>{0, 0, 0}, bdofs_left, V),
-           fem::DirichletBC<T>(u_rotation, bdofs_right)};
+    std::vector bcs = {
+        fem::DirichletBC<T>(std::vector<T>{0, 0, 0}, std::move(bdofs_left), V),
+        fem::DirichletBC<T>(u_rotation, std::move(bdofs_right))};
 
     // `A_layout` and `b_layout` set the layout of the Jacobian and
     // residual that the solver works with. `u_vec` shares data with the
