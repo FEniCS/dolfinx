@@ -261,52 +261,6 @@ def test_superlu_problem_blocked_invalid() -> None:
         LinearProblem(a, L, u=[Function(V0), Function(V1, dtype=np.complex128)])
 
 
-def _nonlinear_system(dtype, coupled):
-    """Coupled nonlinear system whose exact solution is in the discrete spaces.
-
-    ``-div((1 + u0**2) grad(u0)) + u1 = f0`` on P2 and
-    ``-div(grad(u1)) + u0 * u1 = f1`` on P1, where without ``coupled``
-    the second equation drops ``u0 * u1``, so the Jacobian block
-    ``J[1][0]`` is zero.
-    """
-    mesh_dtype = dtype().real.dtype
-    mesh = create_unit_square(MPI.COMM_WORLD, 4, 5, dtype=mesh_dtype)
-    V0 = functionspace(mesh, ("Lagrange", 2))
-    V1 = functionspace(mesh, ("Lagrange", 1))
-    u0, u1 = Function(V0, dtype=dtype), Function(V1, dtype=dtype)
-    v0, v1 = TestFunction(V0), TestFunction(V1)
-    x = SpatialCoordinate(mesh)
-
-    def u0_ex(x):
-        return 1 + x[0] ** 2 + 2 * x[1]
-
-    def u1_ex(x):
-        return 1 + x[0] + x[1]
-
-    c = 1 if coupled else 0
-    f0 = -div((1 + u0_ex(x) ** 2) * grad(u0_ex(x))) + u1_ex(x)
-    f1 = -div(grad(u1_ex(x))) + c * u0_ex(x) * u1_ex(x)
-    F = [
-        inner((1 + u0**2) * grad(u0), grad(v0)) * dx + inner(u1 - f0, v0) * dx,
-        inner(grad(u1), grad(v1)) * dx + inner(c * u0 * u1 - f1, v1) * dx,
-    ]
-
-    tdim = mesh.topology.dim
-    mesh.topology.create_connectivity(tdim - 1, tdim)
-    facets = exterior_facet_indices(mesh.topology)
-    bcs = []
-    for V, ex in ((V0, u0_ex), (V1, u1_ex)):
-        g = Function(V, dtype=dtype)
-        g.interpolate(ex)
-        bcs.append(dirichletbc(g, locate_dofs_topological(V, tdim - 1, facets)))
-
-    def error(uh, ex):
-        M = form(inner(uh - ex(x), uh - ex(x)) * dx, dtype=dtype)
-        return np.sqrt(mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM).real)
-
-    return F, [u0, u1], bcs, [u0_ex, u1_ex], error
-
-
 @pytest.mark.parametrize(
     "dtype",
     [
@@ -316,24 +270,20 @@ def _nonlinear_system(dtype, coupled):
     ],
 )
 @pytest.mark.parametrize("coupled", [True, False])
-@pytest.mark.parametrize("convergence", ["residual", "incremental"])
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_nonlinear_problem_blocked(dtype, coupled, convergence) -> None:
+def test_superlu_nonlinear_problem_blocked(dtype, coupled, nonlinear_system) -> None:
     """Newton's method recovers the exact solution of a blocked system."""
     from dolfinx.fem.problems import NonlinearProblem
 
-    F, u, bcs, u_ex, error = _nonlinear_system(dtype, coupled)
-    # Tolerances above the residual's round-off floor, which in single
-    # precision is about 1e-5 for this problem
-    eps = np.finfo(dtype).eps
-    options = {"convergence": convergence, "atol": 1e4 * eps, "rtol": 1e3 * eps}
-    problem = NonlinearProblem(F, u, bcs=bcs, newton_options=options)
+    F, u, bcs, u_ex, error = nonlinear_system(dtype, coupled)
+    problem = NonlinearProblem(F, u, bcs=bcs)
     uh = problem.solve()
     assert uh[0] is u[0] and uh[1] is u[1]
 
     # From a zero initial guess, a few steps far from the solution
     # precede quadratic convergence
     assert problem.converged and 1 < problem.num_iterations <= 12
+    assert len(problem.residual_norms) == problem.num_iterations + 1
     A = problem.A
     assert isinstance(A, tuple) and (A[1][0] is None) != coupled  # derived zero block
 
@@ -341,20 +291,19 @@ def test_superlu_nonlinear_problem_blocked(dtype, coupled, convergence) -> None:
     for uhi, ex in zip(uh, u_ex, strict=True):
         assert error(uhi, ex) < tol
 
-    # Solving again from the solution takes at most one step, as the
-    # first solve may have stopped on rtol above atol
-    if convergence == "residual":
-        problem.solve()
-        assert problem.converged and problem.num_iterations <= 1
+    # From the solution, the residual is at its round-off floor, which
+    # rtol cannot improve on: the step tolerance stops the solve
+    problem.solve()
+    assert problem.converged and problem.num_iterations <= 2
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_nonlinear_problem_single(dtype) -> None:
+def test_superlu_nonlinear_problem_single(dtype, nonlinear_system) -> None:
     """Newton's method on a single nonlinear form, with a given Jacobian."""
     from dolfinx.fem.problems import NonlinearProblem
 
-    F, u, bcs, u_ex, error = _nonlinear_system(dtype, coupled=False)
+    F, u, bcs, u_ex, error = nonlinear_system(dtype, coupled=False)
     # The second block is linear and decoupled: solve the first alone
     # with its exact u1 in the form
     u1 = Function(u[1].function_space, dtype=dtype)
@@ -370,23 +319,41 @@ def test_superlu_nonlinear_problem_single(dtype) -> None:
 
 
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_nonlinear_problem_invalid() -> None:
-    """Non-convergence and invalid input raise."""
-    from dolfinx.fem.problems import NonlinearProblem
+def test_superlu_nonlinear_problem_stopping(nonlinear_system) -> None:
+    """Stopping on the iteration limit and the divergence tolerance.
 
-    F, u, bcs, _, _ = _nonlinear_system(np.float64, coupled=True)
+    From a zero guess the residual norm of the coupled system first grows
+    by more than 10 (see the ``nonlinear_system`` fixture).
+    """
+    from dolfinx.fem.problems import ConvergedReason, NonlinearProblem
 
-    # One iteration is not enough
+    # Not raising by default, as SNES
+    F, u, bcs, _, _ = nonlinear_system(np.float64, coupled=True)
     problem = NonlinearProblem(F, u, bcs=bcs, newton_options={"max_it": 1})
-    with pytest.raises(RuntimeError, match="did not converge"):
-        problem.solve()
-    F, u, bcs, _, _ = _nonlinear_system(np.float64, coupled=True)
-    problem = NonlinearProblem(
-        F, u, bcs=bcs, newton_options={"max_it": 1, "error_on_nonconvergence": False}
-    )
     problem.solve()
+    assert problem.converged_reason == ConvergedReason.DIVERGED_MAX_IT
     assert not problem.converged and problem.num_iterations == 1
     assert len(problem.residual_norms) == 2
+
+    F, u, bcs, _, _ = nonlinear_system(np.float64, coupled=True)
+    options = {"max_it": 1, "error_if_not_converged": True}
+    with pytest.raises(RuntimeError, match="DIVERGED_MAX_IT"):
+        NonlinearProblem(F, u, bcs=bcs, newton_options=options).solve()
+
+    F, u, bcs, _, _ = nonlinear_system(np.float64, coupled=True)
+    problem = NonlinearProblem(F, u, bcs=bcs, newton_options={"divergence_tolerance": 10})
+    problem.solve()
+    assert problem.converged_reason == ConvergedReason.DIVERGED_DTOL
+    norms = problem.residual_norms
+    assert norms[-1] > 10 * norms[0] and all(r <= 10 * norms[0] for r in norms[:-1])
+
+
+@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
+def test_superlu_nonlinear_problem_invalid(nonlinear_system) -> None:
+    """Invalid input raises."""
+    from dolfinx.fem.problems import NonlinearProblem
+
+    F, u, _, _, _ = nonlinear_system(np.float64, coupled=True)
 
     # Two unknowns on one space, as from MixedFunctionSpace(V, V)
     V = u[1].function_space
@@ -396,8 +363,6 @@ def test_superlu_nonlinear_problem_invalid() -> None:
 
     with pytest.raises(ValueError, match="Unknown Newton options"):
         NonlinearProblem(F, u, newton_options={"tol": 1e-8})
-    with pytest.raises(ValueError, match="'residual' or 'incremental'"):
-        NonlinearProblem(F, u, newton_options={"convergence": "energy"})
     with pytest.raises(ValueError, match="both be single"):
         NonlinearProblem(F, u[0])
     with pytest.raises(ValueError, match="2 forms but u has 1"):
@@ -418,7 +383,7 @@ def test_superlu_nonlinear_problem_tolerances() -> None:
     u, v = Function(V), TestFunction(V)
     u.x.array[:] = 0.5
     F = 1e-15 * (inner(grad(u), grad(v)) * dx + inner(u**3 - 1, v) * dx)
-    problem = NonlinearProblem(F, u, newton_options={"atol": 1e-30, "rtol": 1e-12})
+    problem = NonlinearProblem(F, u, newton_options={"atol": 1e-30, "rtol": 1e-12, "stol": 1e-12})
     problem.solve()
     assert problem.residual_norms[0] < 100 * np.finfo(np.float64).eps
     assert problem.converged and problem.num_iterations > 0
@@ -428,16 +393,17 @@ def test_superlu_nonlinear_problem_tolerances() -> None:
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
 def test_superlu_nonlinear_problem_nonfinite() -> None:
     """Newton's method stops at a non-finite residual norm."""
-    from dolfinx.fem.problems import NonlinearProblem
+    from dolfinx.fem.problems import ConvergedReason, NonlinearProblem
 
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = Function(V), TestFunction(V)
     u.x.array[:] = -1.0
     F = inner(ufl.ln(u), v) * dx
-    with pytest.raises(RuntimeError, match="non-finite"):
-        NonlinearProblem(F, u).solve()
-
-    problem = NonlinearProblem(F, u, newton_options={"error_on_nonconvergence": False})
+    problem = NonlinearProblem(F, u)
     problem.solve()
-    assert not problem.converged and problem.num_iterations == 0
+    assert problem.converged_reason == ConvergedReason.DIVERGED_FUNCTION_NANORINF
+    assert problem.num_iterations == 0
+
+    with pytest.raises(RuntimeError, match="DIVERGED_FUNCTION_NANORINF"):
+        NonlinearProblem(F, u, newton_options={"error_if_not_converged": True}).solve()

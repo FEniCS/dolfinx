@@ -9,6 +9,7 @@ Users with advanced requirements should use
 :mod:`dolfinx.fem.petsc`.
 """
 
+import enum
 import typing
 from collections.abc import Sequence
 
@@ -42,9 +43,35 @@ from dolfinx.la import InsertMode, MatrixCSR, Vector, norm
 from dolfinx.la.superlu_dist import SuperLUDistSolver, superlu_dist_matrix, superlu_dist_solver
 from dolfinx.mesh import EntityMap as EntityMap
 
-__all__ = ["LinearProblem", "NonlinearProblem"]
+__all__ = ["ConvergedReason", "LinearProblem", "NonlinearProblem"]
 
 _U = typing.TypeVar("_U", bound=Function | Sequence[Function])
+
+
+class ConvergedReason(enum.IntEnum):
+    """Why :meth:`NonlinearProblem.solve` stopped.
+
+    Names and values are those of PETSc's ``SNESConvergedReason``.
+    Positive values mean convergence, negative values divergence.
+    """
+
+    ITERATING = 0
+    """Still iterating."""
+    CONVERGED_FNORM_ABS = 2
+    r""":math:`\|F\| < \text{atol}`."""
+    CONVERGED_FNORM_RELATIVE = 3
+    r""":math:`\|F\| \le \text{rtol} \|F_0\|`."""
+    CONVERGED_SNORM_RELATIVE = 4
+    r""":math:`\|\delta u\| < \text{stol} \|u\|`."""
+    DIVERGED_LINEAR_SOLVE = -3
+    """The linear solve of a Newton step failed."""
+    DIVERGED_FUNCTION_NANORINF = -4
+    r""":math:`\|F\|` is NaN or infinite."""
+    DIVERGED_MAX_IT = -5
+    """The maximum number of iterations was reached."""
+    DIVERGED_DTOL = -9
+    r""":math:`\|F\| > \text{divergence\_tolerance} \|F_0\|`."""
+
 
 # Dof markers on the row and column spaces, and the conditions on each
 # row and column space
@@ -555,7 +582,7 @@ class NonlinearProblem(typing.Generic[_U]):
         jit_options: dict | None = None,
         entity_maps: Sequence[EntityMap] | None = None,
     ) -> None:
-        """Initialize a Newton solver for a nonlinear variational problem.
+        r"""Initialize a Newton solver for a nonlinear variational problem.
 
         Args:
             F: Residual UFL form, linear in the test function, or a list
@@ -569,23 +596,24 @@ class NonlinearProblem(typing.Generic[_U]):
                 ``None`` for a zero block. If not given, it is derived
                 from ``F`` with :func:`dolfinx.fem.forms.derivative_block`,
                 with ``None`` for blocks that are identically zero.
-            newton_options: Newton solver options:
+            newton_options: Newton solver options, named as the PETSc
+                SNES options without the ``snes_`` prefix, with the SNES
+                defaults (in single precision where they differ):
 
-                - ``"atol"``: absolute tolerance (default ``1e-10``),
-                - ``"rtol"``: relative tolerance (default ``1e-9``),
-                - ``"max_it"``: maximum number of iterations (default
-                  ``50``),
-                - ``"convergence"``: ``"residual"`` (default) to test the
-                  norm of ``F``, or ``"incremental"`` to test the norm of
-                  the Newton update,
-                - ``"relaxation"``: factor applied to each update
-                  (default ``1``),
-                - ``"error_on_nonconvergence"``: raise if not converged
-                  (default ``True``).
+                - ``"atol"``: absolute tolerance on :math:`\|F\|`
+                  (``1e-50``, ``1e-25``),
+                - ``"rtol"``: tolerance on :math:`\|F\|` relative to
+                  its initial value (``1e-8``, ``1e-5``),
+                - ``"stol"``: tolerance on the Newton step relative to
+                  :math:`\|u\|` (``1e-8``, ``1e-5``),
+                - ``"max_it"``: maximum number of iterations (``50``),
+                - ``"divergence_tolerance"``: stop when :math:`\|F\|`
+                  grows by this factor, ``-1`` for no limit (``1e4``),
+                - ``"linesearch_damping"``: factor applied to each step
+                  (``1``),
+                - ``"error_if_not_converged"``: raise if not converged
+                  (``False``).
 
-                The default tolerances are raised to ``100`` times the
-                machine epsilon of the scalar type where that is larger.
-                Given tolerances are used as they are.
             superlu_dist_options: Options passed to the SuperLU_DIST
                 solver. See the SuperLU_DIST User's Guide for
                 available options and values.
@@ -606,7 +634,25 @@ class NonlinearProblem(typing.Generic[_U]):
 
             problem = NonlinearProblem([F0, F1], [u0, u1], bcs=[bc0, bc1])
             u0, u1 = problem.solve()
+            assert problem.converged, problem.converged_reason
             print(problem.num_iterations, problem.residual_norms)
+
+        The defaults, the convergence test (PETSc's
+        ``SNESConvergedDefault``) and the Newton steps are those of
+        :class:`dolfinx.fem.petsc.NonlinearProblem` with the ``basic``
+        line search (``none`` from PETSc 3.26), so that, up to the
+        round-off of the linear solves, the same problem converges in
+        the same iterations with::
+
+            options = {"snes_linesearch_type": "basic",
+                       "ksp_type": "preonly", "pc_type": "lu",
+                       "pc_factor_mat_solver_type": "superlu_dist"}
+            dolfinx.fem.petsc.NonlinearProblem(
+                F, u, bcs=bcs, kind="mpi", petsc_options_prefix="nls_",
+                petsc_options=options)
+
+        PETSc's default line search is the backtracking ``bt``, which this
+        class does not provide.
 
         Note:
             Each block must have its own function space: two unknowns
@@ -669,26 +715,21 @@ class NonlinearProblem(typing.Generic[_U]):
 
         self.bcs = bcs
 
-        # Newton options. Default tolerances are no tighter than the
-        # scalar type can reach; given tolerances are used as they are.
-        eps = 100 * float(np.finfo(_u[0].x.array.dtype).eps)
+        # Newton options, with the SNES defaults
+        single = np.finfo(_u[0].x.array.dtype).bits == 32
         options: dict[str, typing.Any] = {
-            "atol": max(1e-10, eps),
-            "rtol": max(1e-9, eps),
+            "atol": 1e-25 if single else 1e-50,
+            "rtol": 1e-5 if single else 1e-8,
+            "stol": 1e-5 if single else 1e-8,
             "max_it": 50,
-            "convergence": "residual",
-            "relaxation": 1.0,
-            "error_on_nonconvergence": True,
+            "divergence_tolerance": 1e4,
+            "linesearch_damping": 1.0,
+            "error_if_not_converged": False,
         }
         unknown = set(newton_options or {}) - set(options)
         if unknown:
             raise ValueError(f"Unknown Newton options: {sorted(unknown)}.")
         options.update(newton_options or {})
-        if options["convergence"] not in ("residual", "incremental"):
-            raise ValueError(
-                f"Convergence criterion must be 'residual' or 'incremental', "
-                f"not {options['convergence']!r}."
-            )
         self._newton_options = options
         self._superlu_dist_options = superlu_dist_options
 
@@ -696,7 +737,7 @@ class NonlinearProblem(typing.Generic[_U]):
         self._packed: _Packed | None = None
         self._num_iterations = 0
         self._residual_norms: list[float] = []
-        self._converged = False
+        self._reason = ConvergedReason.ITERATING
 
     @property
     def bcs(self) -> tuple[DirichletBC, ...]:
@@ -736,68 +777,93 @@ class NonlinearProblem(typing.Generic[_U]):
         )
         return float(np.sqrt(sum(norm(bi) ** 2 for bi in self._b_blocks)))
 
+    def _converged_reason(
+        self, it: int, fnorm: float, xnorm: float = 0.0, ynorm: float = 0.0
+    ) -> ConvergedReason:
+        """Convergence test of PETSc's ``SNESConvergedDefault``.
+
+        ``fnorm`` is the residual norm at iteration ``it``, ``xnorm``
+        the norm of the iterate and ``ynorm`` that of the last
+        (undamped) Newton step.
+        """
+        options = self._newton_options
+        fnorm0 = self._residual_norms[0]
+        divtol = options["divergence_tolerance"]
+        if not np.isfinite(fnorm):
+            return ConvergedReason.DIVERGED_FUNCTION_NANORINF
+        if fnorm < options["atol"]:
+            return ConvergedReason.CONVERGED_FNORM_ABS
+        if it > 0:
+            if fnorm <= options["rtol"] * fnorm0:
+                return ConvergedReason.CONVERGED_FNORM_RELATIVE
+            if ynorm < options["stol"] * xnorm:
+                return ConvergedReason.CONVERGED_SNORM_RELATIVE
+            if divtol != -1 and fnorm > divtol * fnorm0:
+                return ConvergedReason.DIVERGED_DTOL
+        if it == options["max_it"]:
+            return ConvergedReason.DIVERGED_MAX_IT
+        return ConvergedReason.ITERATING
+
     def solve(self) -> _U:
-        """Solve the problem by Newton's method.
+        r"""Solve the problem by Newton's method.
 
         Starts from the current values of ``u``, which are updated in
-        place. Norms are reduced over all ranks, so every rank takes
-        the same convergence decision.
+        place. Each iteration solves :math:`J \delta u = F(u)` and sets
+        :math:`u \leftarrow u - \lambda \delta u`, with
+        :math:`\lambda` the ``linesearch_damping``, as PETSc SNES
+        ``newtonls`` with the ``basic`` line search. Norms are reduced
+        over all ranks, so every rank takes the same decision.
 
         Returns:
             The solution function, or one function per block for a
             blocked problem.
 
         Raises:
-            RuntimeError: If Newton's method does not converge, or stops
-                at a non-finite residual or update norm, and
-                ``error_on_nonconvergence`` is set.
+            RuntimeError: If ``error_if_not_converged`` is set and the
+                solve diverged (see :attr:`converged_reason`).
         """
         options = self._newton_options
-        atol, rtol = options["atol"], options["rtol"]
-        residual = options["convergence"] == "residual"
+        damping = options["linesearch_damping"]
+
+        def _norm(vectors: list[Vector]) -> float:
+            return float(np.sqrt(sum(norm(v) ** 2 for v in vectors)))
 
         self._num_iterations = 0
-        r = self._residual_norm()
-        self._residual_norms = [r]
-        r0, dx0 = r, None
-        finite = bool(np.isfinite(r))
-        self._converged = finite and residual and r < atol
-        while finite and not self._converged and self._num_iterations < options["max_it"]:
-            # Solve J dx = F(u) and update u <- u - relaxation * dx
+        self._residual_norms = [self._residual_norm()]
+        self._reason = self._converged_reason(0, self._residual_norms[0])
+        while self._reason == ConvergedReason.ITERATING:
+            # Solve J dx = F(u)
             if self._packed is None:
                 self._packed = _pack(self._J_blocks, self._b_blocks[0].array.dtype)
             _assemble_matrix_blocks(self._A_blocks, self._J_blocks, self._bc_cache, self._packed)
             self._solver = _factorise(
                 self._A_blocks, self._blocked, self._superlu_dist_options, self._solver
             )
-            _solve(self._solver, self._b_blocks, self._dx_blocks, self._blocked)
+            if self._blocked:
+                error = self._solver.solve(self._b_blocks, self._dx_blocks)
+            else:
+                error = self._solver.solve(self._b_blocks[0], self._dx_blocks[0])
+            if error != 0:
+                self._reason = ConvergedReason.DIVERGED_LINEAR_SOLVE
+                break
+
+            # u <- u - damping * dx
             for dxj, uj in zip(self._dx_blocks, self._u_blocks, strict=True):
-                uj.x.array[:] -= options["relaxation"] * dxj.array
+                dxj.scatter_forward()
+                uj.x.array[:] -= damping * dxj.array
             self._num_iterations += 1
 
-            if not residual:
-                dx = float(np.sqrt(sum(norm(dxj) ** 2 for dxj in self._dx_blocks)))
-                finite = bool(np.isfinite(dx))
-                dx0 = dx if dx0 is None else dx0
-                self._converged = finite and (dx < atol or dx < rtol * dx0)
-                if not finite or self._converged:
-                    break
+            fnorm = self._residual_norm()
+            self._residual_norms.append(fnorm)
+            xnorm = _norm([uj.x for uj in self._u_blocks])
+            ynorm = _norm(self._dx_blocks)
+            self._reason = self._converged_reason(self._num_iterations, fnorm, xnorm, ynorm)
 
-            r = self._residual_norm()
-            self._residual_norms.append(r)
-            finite = bool(np.isfinite(r))
-            if residual:
-                self._converged = finite and (r < atol or r < rtol * r0)
-
-        if not self._converged and options["error_on_nonconvergence"]:
-            if not finite:
-                raise RuntimeError(
-                    "Newton's method diverged: non-finite norm after "
-                    f"{self._num_iterations} iterations."
-                )
+        if self._reason < 0 and options["error_if_not_converged"]:
             raise RuntimeError(
-                f"Newton's method did not converge in {self._num_iterations} iterations "
-                f"(residual norm {self._residual_norms[-1]:.3e})."
+                f"Newton's method diverged ({self._reason.name}) after "
+                f"{self._num_iterations} iterations, residual norm "
+                f"{self._residual_norms[-1]:.3e}."
             )
         return self.u
 
@@ -807,16 +873,21 @@ class NonlinearProblem(typing.Generic[_U]):
         return self._num_iterations
 
     @property
+    def converged_reason(self) -> ConvergedReason:
+        """Why the last :meth:`solve` stopped."""
+        return self._reason
+
+    @property
     def converged(self) -> bool:
         """Whether the last :meth:`solve` converged."""
-        return self._converged
+        return self._reason > 0
 
     @property
     def residual_norms(self) -> tuple[float, ...]:
-        """Residual norm before each Newton iteration and after the last.
+        """Residual norm of the initial guess and after each iteration.
 
-        With the ``"incremental"`` criterion, the residual after the last
-        iteration is not assembled.
+        As PETSc's SNES convergence history, without a final entry if a
+        linear solve failed.
         """
         return tuple(self._residual_norms)
 
