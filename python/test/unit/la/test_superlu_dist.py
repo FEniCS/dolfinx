@@ -350,12 +350,14 @@ def test_superlu_block_matrix_invalid() -> None:
     with pytest.raises(ValueError):
         solver.solve([b_V, b_W], [x_V, x_V])
 
-    # Blocks of different dtypes, checked before their layout
-    mesh32 = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=np.float32)
-    V32 = functionspace(mesh32, ("Lagrange", 1))
-    a32 = form(inner(TrialFunction(V32), TestFunction(V32)) * dx, dtype=np.float32)
+    # Blocks of different dtypes, checked before their layout. The other
+    # dtype differs from the default scalar type of the build.
+    other = np.float64 if A_V.data.dtype == np.float32 else np.float32
+    mesh_other = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=other)
+    V_other = functionspace(mesh_other, ("Lagrange", 1))
+    a_other = form(inner(TrialFunction(V_other), TestFunction(V_other)) * dx, dtype=other)
     with pytest.raises(TypeError):
-        superlu_dist_matrix([[A_V, None], [None, assemble_matrix(a32)]])
+        superlu_dist_matrix([[A_V, None], [None, assemble_matrix(a_other)]])
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
