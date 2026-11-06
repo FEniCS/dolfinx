@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
     auto facets = mesh::exterior_facet_indices(*mesh->topology());
     const auto bdofs = fem::locate_dofs_topological(
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    fem::DirichletBC<T> bc(0, std::move(bdofs), V);
+    fem::DirichletBC<T> bc(0, bdofs, V);
 
     //  Now, we have specified the variational forms and can consider
     //  the solution of the variational problem. First, we need to

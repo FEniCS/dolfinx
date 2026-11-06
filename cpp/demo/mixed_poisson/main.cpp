@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
     // constrained to be equal to the normal component of $g$. The
     // boundary conditions are applied to degrees-of-freedom ndofs, and
     // `V0` is the subspace that is constrained.
-    fem::DirichletBC<T> bc(g, std::move(ndofs), V0);
+    fem::DirichletBC<T> bc(g, ndofs, V0);
 
     // Create integration domain data for `u0` boundary condition
     // (applied on the `ds(1)` in the UFL file). First we get facet data
