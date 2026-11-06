@@ -49,7 +49,7 @@ def test_matis_matches_aij(cell_type, degree, shape):
 
     A_converted = A_is.convert(PETSc.Mat.Type.AIJ)
     A_converted.axpy(-1.0, A_aij, PETSc.Mat.Structure.DIFFERENT_NONZERO_PATTERN)
-    eps = np.finfo(PETSc.ScalarType).eps
+    eps = float(np.finfo(PETSc.ScalarType).eps)
     assert A_converted.norm() == pytest.approx(0.0, abs=100 * eps * A_aij.norm())
 
     A_is.destroy(), A_aij.destroy(), A_converted.destroy()
@@ -118,7 +118,7 @@ def test_blocked_matis(kind):
     # Mat.convert is in place, so A_cmp is A with a further reference
     A_cmp = A.convert(PETSc.Mat.Type.AIJ)
     A_cmp.axpy(-1.0, A_ref, PETSc.Mat.Structure.DIFFERENT_NONZERO_PATTERN)
-    eps = np.finfo(PETSc.ScalarType).eps
+    eps = float(np.finfo(PETSc.ScalarType).eps)
     assert A_cmp.norm() == pytest.approx(0.0, abs=100 * eps * A_ref.norm())
     A.destroy(), A_ref.destroy(), A_cmp.destroy()
 

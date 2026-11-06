@@ -28,6 +28,7 @@ template <std::integral U, U N>
 struct is_integral_constant<std::integral_constant<U, N>> : std::true_type
 {
 };
+/// @endcond
 
 /// Concept for a block size argument: a run-time integral value or a
 /// compile-time `std::integral_constant<U, N>` for some integral type
@@ -35,7 +36,6 @@ struct is_integral_constant<std::integral_constant<U, N>> : std::true_type
 template <typename T>
 concept BlockSizeArg = std::integral<std::remove_cvref_t<T>>
                        or is_integral_constant<std::remove_cvref_t<T>>::value;
-/// @endcond
 
 /// @brief Incorporate data into a CSR matrix.
 ///

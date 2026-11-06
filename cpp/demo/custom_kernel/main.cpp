@@ -503,8 +503,8 @@ void assemble(MPI_Comm comm)
       = [A_hat
          = mdspan2_t<T, p1_triangle_dofs_per_cell, p1_triangle_dofs_per_cell>(
              A_hat_b.data()),
-         detJ](T* A, const T*, const T*, const T* x, const int*, const uint8_t*,
-               void*)
+         detJ](T* A, const T*, const T*, const T* x, const int*,
+               const std::uint8_t*, void*)
   {
     T scale = detJ(mdspan2_t<const T, 3, 3>(x));
     mdspan2_t<T, p1_triangle_dofs_per_cell, p1_triangle_dofs_per_cell> _A(A);
@@ -517,7 +517,7 @@ void assemble(MPI_Comm comm)
   // vector by value. The unused parameters are part of the UFCx kernel ABI.
   auto kernel_L = [b_hat = b_ref<T>(phi, weights),
                    detJ](T* b, const T*, const T*, const T* x, const int*,
-                         const uint8_t*, void*)
+                         const std::uint8_t*, void*)
   {
     T scale = detJ(mdspan2_t<const T, 3, 3>(x));
     for (std::size_t i = 0; i < p1_triangle_dofs_per_cell; ++i)
@@ -558,7 +558,7 @@ void assemble(MPI_Comm comm)
     auto kernel_a_ffcx
         = [](T* A, const T* w, const T* c, const T* coordinate_dofs,
              const int* entity_local_index,
-             const uint8_t* quadrature_permutation, void* d)
+             const std::uint8_t* quadrature_permutation, void* d)
     {
       tabulate_tensor_mass(A, w, c, coordinate_dofs, entity_local_index,
                            quadrature_permutation, d);
@@ -566,7 +566,7 @@ void assemble(MPI_Comm comm)
     auto kernel_L_ffcx
         = [](T* b, const T* w, const T* c, const T* coordinate_dofs,
              const int* entity_local_index,
-             const uint8_t* quadrature_permutation, void* d)
+             const std::uint8_t* quadrature_permutation, void* d)
     {
       tabulate_tensor_load(b, w, c, coordinate_dofs, entity_local_index,
                            quadrature_permutation, d);
