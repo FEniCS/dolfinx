@@ -77,8 +77,8 @@ void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, GeometryPack<XD, U> geometry,
     const IndexList auto& cells, const FormArgumentCells<T> auto& arg0,
     const FormArgumentCells<T> auto& arg1,
-    std::span<const std::int32_t> bc_cells, const FEkernel<T, U> auto& kernel,
-    std::span<const T> constants,
+    std::span<const std::int32_t> assemble_cells,
+    const FEkernel<T, U> auto& kernel, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs, AB Ab,
     ScratchBuffer<U> auto cdofs_b)
 {
@@ -122,7 +122,7 @@ void assemble_cells_matrix(
   const std::size_t num_cells = std::ranges::size(cells);
   assert(std::ranges::size(cells0) == num_cells);
   assert(std::ranges::size(cells1) == num_cells);
-  for (std::int32_t c : bc_cells)
+  for (std::int32_t c : assemble_cells)
   {
     // Cell index in integration domain mesh (c), test function mesh
     // (c0) and trial function mesh (c1)
