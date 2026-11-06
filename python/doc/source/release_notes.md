@@ -17,6 +17,10 @@ likewise. {py:meth}`dolfinx.la.superlu_dist.SuperLUDistSolver.solve` takes the b
 {py:func}`dolfinx.common.stack_index_maps` exposes `common::stack_index_maps` to Python. It
 computes this concatenated layout of index maps, e.g. to create the vectors of a block system.
 
+{py:class}`dolfinx.fem.problems.LinearProblem` solves blocked problems with these matrices, e.g.
+`LinearProblem([[a00, a01], [a10, a11]], [L0, L1], bcs=[bc0, bc1]).solve()` returns
+`(u0, u1)`. Passing `u` to its constructor no longer raises a spurious dtype mismatch.
+
 ### Expressions on ridges and peaks
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
