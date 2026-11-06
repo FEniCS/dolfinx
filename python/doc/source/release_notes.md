@@ -21,6 +21,21 @@ computes this concatenated layout of index maps, e.g. to create the vectors of a
 `LinearProblem([[a00, a01], [a10, a11]], [L0, L1], bcs=[bc0, bc1]).solve()` returns
 `(u0, u1)`. Passing `u` to its constructor no longer raises a spurious dtype mismatch.
 
+{py:class}`dolfinx.fem.problems.NonlinearProblem` solves single and blocked nonlinear problems
+by Newton's method without PETSc, e.g.
+`NonlinearProblem([F0, F1], [u0, u1], bcs=[bc0, bc1]).solve()`. Each Newton step is solved
+with SuperLU_DIST, reusing the sparsity pattern of the previous step. The Jacobian is derived
+from `F` unless given, with identically zero blocks omitted. The options, their defaults and
+the convergence test are those of PETSc SNES (`newtonls` with the `basic` line search): the
+`newton_options` `atol`, `rtol`, `stol`, `max_it`, `divergence_tolerance`,
+`linesearch_damping` and `error_if_not_converged` are the SNES options without the `snes_`
+prefix, and `converged_reason` is a {py:class}`dolfinx.fem.problems.ConvergedReason` with the
+values of `SNESConvergedReason`. With these options,
+{py:class}`dolfinx.fem.petsc.NonlinearProblem` converges in the same iterations, so it can
+replace this class where more features are needed. `num_iterations` and `residual_norms`
+report each solve. Each block must have its own function space, as for the blocked
+`LinearProblem`.
+
 ### Expressions on ridges and peaks
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
