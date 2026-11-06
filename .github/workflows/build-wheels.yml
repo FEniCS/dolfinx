@@ -360,7 +360,7 @@ jobs:
           CIBW_BEFORE_BUILD_WINDOWS: >
             pip -v install --pre fenics-basix fenics-ffcx &&
             pip -v install mpi4py ninja scikit-build-core[pyproject] nanobind delvewheel &&
-            cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
+            cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DCMAKE_BUILD_TYPE=Release -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=dolfinx/cpp/cmake/vcpkg-overlay &&
             cmake --build dolfinx-build-dir/ &&
             cmake --install dolfinx-build-dir/ --prefix %GITHUB_WORKSPACE%/dolfinx-install
 

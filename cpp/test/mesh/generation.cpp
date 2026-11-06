@@ -9,6 +9,7 @@
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partitioners.h>
@@ -131,8 +132,8 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
 
   CHECK(mesh.geometry().dim() == 1);
 
-  std::array<int32_t, 3> expected_local_vertex_count;
-  std::array<int32_t, 3> expected_num_ghosts;
+  std::array<std::int32_t, 3> expected_local_vertex_count;
+  std::array<std::int32_t, 3> expected_num_ghosts;
   std::vector<T> expected_x;
   std::array<std::vector<std::vector<std::int32_t>>, 3> expected_v_to_e;
 

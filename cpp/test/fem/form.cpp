@@ -140,7 +140,7 @@ TEST_CASE("Form with data on a mesh of the wrong dimension",
               element, mesh->geometry().dim(), std::vector<std::size_t>{})));
 
   auto kernel = [](double*, const double*, const double*, const double*,
-                   const int*, const uint8_t*, void*) {};
+                   const int*, const std::uint8_t*, void*) {};
   std::map integrals{
       std::pair{std::tuple{fem::IntegralType::ridge, -1, 0},
                 fem::integral_data<double>(kernel, std::vector<std::int32_t>{},

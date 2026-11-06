@@ -350,15 +350,7 @@ jobs:
           echo $DOLFINX_VERSION
           cd cpp/doc
           doxygen Doxyfile
-          python -m sphinx -b html -w sphinx-warnings.log source/ build/html
-      # The API reference pages still have Breathe warnings, so only
-      # warnings from the demo pages fail the build
-      - name: Check C++ demo documentation for Sphinx warnings
-        working-directory: cpp/doc
-        run: |
-          if grep "/demos/" sphinx-warnings.log; then
-            exit 1
-          fi
+          python -m sphinx -W --keep-going -b html source/ build/html
       - name: Install Node.js
         env:
           DEBIAN_FRONTEND: noninteractive

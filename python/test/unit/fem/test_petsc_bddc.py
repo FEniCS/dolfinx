@@ -240,7 +240,7 @@ def test_matis_bc_diagonal_matches_aij():
     assert A_is.getType() == PETSc.Mat.Type.IS
 
     A_cmp.axpy(-1.0, A_aij, PETSc.Mat.Structure.DIFFERENT_NONZERO_PATTERN)
-    eps = np.finfo(default_scalar_type).eps
+    eps = float(np.finfo(default_scalar_type).eps)
     assert A_cmp.norm() == pytest.approx(0.0, abs=100 * eps * A_aij.norm())
 
     A_is.destroy(), A_aij.destroy(), A_cmp.destroy()

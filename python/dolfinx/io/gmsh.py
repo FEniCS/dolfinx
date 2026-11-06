@@ -509,9 +509,9 @@ def model_to_mesh(
         mesh.topology.create_connectivity(tdim - codim, tdim)
         adj = adjacencylist(local_entities)
         et = meshtags_from_entities(
-            mesh, tdim - codim, adj, local_values.astype(np.int32, copy=False)
+            mesh, tdim - codim, adj, local_values.astype(np.int32, copy=False), name=key
         )
-        et.name = key
+
         dolfinx_meshtags[key] = et
 
     # Broadcast physical groups (string to integer mapping) to all ranks
