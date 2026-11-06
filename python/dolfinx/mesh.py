@@ -67,6 +67,7 @@ __all__ = [
     "cell_num_entities",
     "cell_num_vertices",
     "compute_cell_centroids",
+    "compute_cell_orientations",
     "compute_entity_permutations",
     "compute_incident_entities",
     "compute_midpoints",
@@ -1918,6 +1919,66 @@ def cell_normals(msh: Mesh[Real], dim: int, entities: npt.NDArray[np.int32]) -> 
         Normal vectors, ``shape=(len(entities), 3)``.
     """
     return _cpp.mesh.cell_normals(msh._cpp_object, dim, entities)  # type: ignore[return-value]
+
+
+def compute_cell_orientations(topology: Topology) -> npt.NDArray[np.int8]:
+    """Compute a consistent orientation of the cells of a surface mesh.
+
+    The normal of a cell on a surface, e.g. :class:`ufl.CellNormal`,
+    follows the order of its vertices, so neighbouring cells may point
+    to opposite sides. This returns, for each cell, the sign that makes
+    them agree.
+
+    Cells connected through shared edges form a surface; cells meeting
+    only at a vertex are not connected. Each surface is oriented by its
+    cell with the lowest global index (which gets ``1``), so the
+    orientation is partition dependent.
+
+    A consistent normal, e.g. for the surface curl
+    ``rot(w) = dot(n, curl(w))`` of a vector field ``w``, is then
+
+    .. code-block:: python
+
+        o = compute_cell_orientations(msh.topology)
+        Q = dolfinx.fem.functionspace(msh, ("DG", 0))
+        o_h = dolfinx.fem.Function(Q)
+        o_h.x.array[Q.dofmap.list[:, 0]] = o
+        n = o_h * ufl.CellNormal(msh)
+
+    Warning:
+        The values are in local cell order. The degrees-of-freedom of a
+        piecewise constant space are not guaranteed to follow that
+        order, as the dofmap may be reordered. Assign the values
+        through its dofmap, as above, rather than with
+        ``o_h.x.array[:] = o``.
+
+    Note:
+        Collective. Creates the edges, the cell-to-edge connectivity and
+        the edge permutations if not already created.
+
+    Args:
+        topology: Topology of a mesh of triangles or quadrilaterals.
+
+    Returns:
+        For each owned and ghost cell, in local cell order, ``1`` if its
+        vertex order agrees with the orientation of its surface and
+        ``-1`` otherwise.
+
+    Raises:
+        ValueError: If the topological dimension is not 2.
+        RuntimeError: If the surface cannot be oriented, e.g. a Möbius
+            strip, or an edge is shared by more than two cells.
+    """
+    # Checked before creating connectivities, which would be wasted or
+    # fail on a mesh that is not a surface. C++ raises the same error.
+    if topology.dim != 2:
+        raise ValueError(
+            "Cell orientations need a surface mesh (topological dimension 2), "
+            f"not dimension {topology.dim}."
+        )
+    topology.create_connectivity(2, 1)
+    topology.create_entity_permutations(1)
+    return _cpp.mesh.compute_cell_orientations(topology._cpp_object)
 
 
 def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:

@@ -199,6 +199,14 @@ void mesh(nb::module_& m)
       .def_prop_ro("sub_topology", &dolfinx::mesh::EntityMap::sub_topology);
 
   m.def(
+      "compute_cell_orientations",
+      [](const dolfinx::mesh::Topology& topology)
+      {
+        return as_nbarray(dolfinx::mesh::compute_cell_orientations(topology));
+      },
+      nb::arg("topology"),
+      "Compute a consistent orientation of the cells of a surface mesh.");
+  m.def(
       "extract_cells_from_entities",
       [](const dolfinx::mesh::Topology& topology_c,
          const dolfinx::mesh::Topology& topology,

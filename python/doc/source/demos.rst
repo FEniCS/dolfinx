@@ -57,8 +57,11 @@ Problems on manifolds
 
 * :doc:`demos/demo_manifold` -- solve the Poisson equation in mixed form
   on the sphere, with Raviart-Thomas elements on a surface taken from a
-  Gmsh volume mesh, widening the ghost layer with a custom partitioner
-  so that the facets can be signed in parallel.
+  Gmsh volume mesh, signing the facets whose cells disagree on the
+  normal.
+* :doc:`demos/demo_manifold_vorticity` -- solve the mixed Poisson
+  problem of :doc:`demos/demo_manifold` with a Nédélec flux rotated by a
+  consistently oriented cell normal, as in vorticity formulations.
 * :doc:`demos/demo_mobius` -- solve the same equation on a Möbius strip,
   where no consistent orientation of the cells exists, on a higher-order
   mesh built by hand, with a cylinder as a control.
@@ -132,9 +135,8 @@ Mesh generation, partitioning and parallel data
   communication pattern of a distributed mesh with NetworkX.
 * :doc:`demos/demo_mixed-topology` -- solve a Helmholtz problem on a
   mesh with mixed cell topology (in development, serial only).
-* :doc:`demos/demo_manifold` -- see *Problems on manifolds*: take a
-  surface from a Gmsh volume mesh, and ghost a cell wherever it shares a
-  vertex by writing a partitioner.
+* :doc:`demos/demo_manifold` -- see *Problems on manifolds*: take the
+  boundary of a Gmsh volume mesh as a submesh.
 * :doc:`demos/demo_mobius` -- see *Problems on manifolds*: build a
   non-orientable higher-order surface mesh by hand.
 
@@ -188,6 +190,7 @@ PETSc scalars.
 
    demos/demo_mixed-poisson.md
    demos/demo_manifold.md
+   demos/demo_manifold_vorticity.md
    demos/demo_mobius.md
    demos/demo_mobius_eikonal.md
    demos/demo_branching_manifold.md
