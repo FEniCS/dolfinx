@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 import dolfinx
-from dolfinx.common import index_map
+from dolfinx.common import index_map, stack_index_maps
 from dolfinx.fem import (
     Function,
     apply_lifting,
@@ -197,6 +197,167 @@ def test_superlu_solver_blocked(dtype) -> None:
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     eps = np.sqrt(np.finfo(dtype).eps)
     assert np.isclose(error, 0.0, atol=eps)
+
+
+@pytest.mark.parametrize("vector_field", [False, True], ids=["scalar", "vector"])
+@pytest.mark.parametrize("coupled", [True, False], ids=["coupled", "triangular"])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+@pytest.mark.parametrize("stacked", [False, True], ids=["block_vectors", "stacked"])
+@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
+def test_superlu_solver_block_matrix(dtype, coupled, vector_field, stacked) -> None:
+    """Coupled problem for two fields, solved from its blocks.
+
+    For a scalar u: -div(grad(u)) + u - w = f0 and
+    -div(grad(w)) + w - u = f1. For a vector u, with blocks of block
+    sizes (2, 1) and (1, 2): -div(grad(u)) + u + grad(w) = f0 and
+    -div(grad(w)) + w - div(u) = f1. The coupling of w to u is left out
+    (a zero block) if not ``coupled``. The exact solution is in the P2
+    spaces. The vectors are passed per block, or stacked by hand.
+    """
+    from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
+
+    mesh_dtype = dtype().real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 6, 5, dtype=mesh_dtype)
+    V = functionspace(mesh, ("Lagrange", 2, (2,) if vector_field else ()))
+    W = functionspace(mesh, ("Lagrange", 2))
+    u, v = TrialFunction(V), TestFunction(V)
+    w, q = TrialFunction(W), TestFunction(W)
+
+    x = SpatialCoordinate(mesh)
+    w_ex = x[0] * x[1] + x[0]
+    if vector_field:
+
+        def u_exact(x):
+            return np.vstack((1 + x[0] ** 2, 2 * x[1] ** 2 - x[0]))
+
+        u_ex = as_vector((1 + x[0] ** 2, 2 * x[1] ** 2 - x[0]))
+        a01, a10 = -inner(w, div(v)) * dx, -inner(div(u), q) * dx
+        f0 = -div(grad(u_ex)) + u_ex + grad(w_ex)
+        f1 = -div(grad(w_ex)) + w_ex - (div(u_ex) if coupled else 0)
+    else:
+
+        def u_exact(x):
+            return 1 + x[0] ** 2 + 2 * x[1] ** 2
+
+        u_ex = 1 + x[0] ** 2 + 2 * x[1] ** 2
+        a01, a10 = -inner(w, v) * dx, -inner(u, q) * dx
+        f0 = -div(grad(u_ex)) + u_ex - w_ex
+        f1 = -div(grad(w_ex)) + w_ex - (u_ex if coupled else 0)
+
+    a = [
+        [
+            form(inner(grad(u), grad(v)) * dx + inner(u, v) * dx, dtype=dtype),
+            form(a01, dtype=dtype),
+        ],
+        [
+            form(a10, dtype=dtype) if coupled else None,
+            form(inner(grad(w), grad(q)) * dx + inner(w, q) * dx, dtype=dtype),
+        ],
+    ]
+    L = [form(inner(f0, v) * dx, dtype=dtype), form(inner(f1, q) * dx, dtype=dtype)]
+
+    facetdim = mesh.topology.dim - 1
+    mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
+    bndry_facets = exterior_facet_indices(mesh.topology)
+    bcs = []
+    for space, exact in ((V, u_exact), (W, lambda x: x[0] * x[1] + x[0])):
+        g = Function(space, dtype=dtype)
+        g.interpolate(exact)
+        bcs.append(dirichletbc(g, locate_dofs_topological(space, facetdim, bndry_facets)))
+
+    # The blocks, each assembled into a matrix of its own
+    A = [[None if aij is None else assemble_matrix(aij, bcs=bcs) for aij in row] for row in a]
+    for row in A:
+        for Aij in row:
+            if Aij is not None:
+                Aij.scatter_reverse()
+
+    # The right-hand side of each field
+    b = []
+    for i, Li in enumerate(L):
+        bi = assemble_vector(Li)
+        apply_lifting(bi.array, a[i], bcs=[[bcs[0]], [bcs[1]]])
+        bi.scatter_reverse(InsertMode.add)
+        bcs[i].set(bi.array)
+        b.append(bi)
+    solver = superlu_dist_solver(superlu_dist_matrix(A))
+    uh, wh = Function(V, dtype=dtype), Function(W, dtype=dtype)
+    if stacked:
+        # The stacked layout of both fields, built by hand
+        maps = [
+            (V.dofmap.index_map, V.dofmap.index_map_bs),
+            (W.dofmap.index_map, W.dofmap.index_map_bs),
+        ]
+        offset, local_offsets, _, _ = stack_index_maps(maps)
+        stacked_map = index_map(mesh.comm, local_offsets[-1])
+        assert offset == stacked_map.local_range[0]
+        b_stacked = vector(stacked_map, dtype=dtype)
+        for i, bi in enumerate(b):
+            n = local_offsets[i + 1] - local_offsets[i]
+            b_stacked.array[local_offsets[i] : local_offsets[i + 1]] = bi.array[:n]
+        x_stacked = vector(stacked_map, dtype=dtype)
+        assert solver.solve(b_stacked, x_stacked) == 0
+        for i, fh in enumerate((uh, wh)):
+            n = local_offsets[i + 1] - local_offsets[i]
+            fh.x.array[:n] = x_stacked.array[local_offsets[i] : local_offsets[i + 1]]
+    else:
+        assert solver.solve(b, [uh.x, wh.x]) == 0
+    uh.x.scatter_forward()
+    wh.x.scatter_forward()
+
+    eps = np.sqrt(np.finfo(dtype).eps)
+    for fh, exact in ((uh, u_ex), (wh, w_ex)):
+        M = form(inner(exact - fh, exact - fh) * dx, dtype=dtype)
+        error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
+        assert np.isclose(error, 0.0, atol=eps)
+
+
+@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
+def test_superlu_block_matrix_invalid() -> None:
+    """Block matrices whose blocks do not form a block layout raise."""
+    from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    V = functionspace(mesh, ("Lagrange", 1))
+    W = functionspace(mesh, ("Lagrange", 2))
+    A_V = assemble_matrix(form(inner(TrialFunction(V), TestFunction(V)) * dx))
+    A_W = assemble_matrix(form(inner(TrialFunction(W), TestFunction(W)) * dx))
+
+    for A in (
+        [[A_V], [A_V, A_V]],  # not rectangular
+        [[A_V, None], [None, None]],  # block row and column without a block
+        [[A_V, A_W]],  # blocks of a block row with different rows
+        [[A_V], [A_W]],  # blocks of a block column with different columns
+        [[None]],  # no blocks
+    ):
+        with pytest.raises(ValueError):
+            superlu_dist_matrix(A)
+
+    # Vectors whose owned size differs from the rows of the matrix
+    solver = superlu_dist_solver(superlu_dist_matrix([[A_V, None], [None, A_W]]))
+    b_V = vector(V.dofmap.index_map, dtype=A_V.data.dtype)
+    x_V = vector(V.dofmap.index_map, dtype=A_V.data.dtype)
+    with pytest.raises(ValueError):
+        solver.solve(b_V, x_V)
+    b_W = vector(W.dofmap.index_map, dtype=A_V.data.dtype)
+    with pytest.raises(ValueError):
+        solver.solve([b_V, b_W], [x_V, x_V])
+
+    # Blocks of different dtypes, checked before their layout. The other
+    # dtype differs from the default scalar type of the build.
+    other = np.float64 if A_V.data.dtype == np.float32 else np.float32
+    mesh_other = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=other)
+    V_other = functionspace(mesh_other, ("Lagrange", 1))
+    a_other = form(inner(TrialFunction(V_other), TestFunction(V_other)) * dx, dtype=other)
+    with pytest.raises(TypeError):
+        superlu_dist_matrix([[A_V, None], [None, assemble_matrix(a_other)]])
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])

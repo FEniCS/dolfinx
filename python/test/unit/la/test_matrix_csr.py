@@ -339,27 +339,29 @@ def test_set_bc_diagonal_duplicate_rows(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-@pytest.mark.parametrize("mat_bs", [1, 2, 4])
+@pytest.mark.parametrize("mat_bs", [1, 2, 5, 10])
 @pytest.mark.parametrize("block_mode", [BlockMode.compact, BlockMode.expanded])
 def test_add_set_large_block(dtype, mat_bs, block_mode) -> None:
-    """Insert data of block size 4, which has no compile-time insertion.
+    """Insert data of block size 10, which has no compile-time insertion.
 
-    The data block (rows 4-7, columns 0-3 unrolled) goes into matrices of
-    block size 1, 2 and 4, and is compared with the same values inserted
-    as scalar entries.
+    The data block (rows 10-19, columns 0-9 unrolled) goes into matrices
+    of block size 1, 2, 5 and 10, and is compared with the same values
+    inserted as scalar entries.
     """
-    im = index_map(MPI.COMM_WORLD, 8 // mat_bs)
+    bs = 10
+    im = index_map(MPI.COMM_WORLD, 2 * bs // mat_bs)
     sp = sparsity_pattern(MPI.COMM_WORLD, [im, im], [mat_bs, mat_bs])
-    for i in range(4 // mat_bs, 8 // mat_bs):
-        for j in range(4 // mat_bs):
+    for i in range(bs // mat_bs, 2 * bs // mat_bs):
+        for j in range(bs // mat_bs):
             sp.insert(i, j)
     sp.finalize()
 
-    x = np.arange(1, 17, dtype=dtype)
-    rows, cols = np.arange(4, 8, dtype=np.int32), np.arange(4, dtype=np.int32)
+    x = np.arange(1, bs * bs + 1, dtype=dtype)
+    rows = np.arange(bs, 2 * bs, dtype=np.int32)
+    cols = np.arange(bs, dtype=np.int32)
     for op in ("add", "set"):
         A = matrix_csr(sp, block_mode, dtype=dtype)
-        getattr(A, op)(x, np.array([1], dtype=np.int32), np.array([0], dtype=np.int32), 4)
+        getattr(A, op)(x, np.array([1], dtype=np.int32), np.array([0], dtype=np.int32), bs)
         A_ref = matrix_csr(sp, block_mode, dtype=dtype)
         getattr(A_ref, op)(x, rows, cols, 1)
         assert np.linalg.norm(A_ref.to_dense()) > 0

@@ -2,6 +2,21 @@
 
 ## v0.12.0 (draft)
 
+### SuperLU_DIST matrices from blocks
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
+
+{py:func}`dolfinx.la.superlu_dist.superlu_dist_matrix` (and the C++ `la::SuperLUDistMatrix`)
+accepts a rectangular array of {py:class}`dolfinx.la.MatrixCSR` blocks, with `None` for a zero
+block, e.g. the blocks of a block form assembled one by one. The blocks are copied into
+SuperLU_DIST's format directly, without forming a monolithic matrix. The rows are the owned
+rows of block row 0, then of block row 1, ..., expanded by the block size, and the columns
+likewise. {py:meth}`dolfinx.la.superlu_dist.SuperLUDistSolver.solve` takes the blocks of
+`b` and `u`, e.g. `solver.solve([b0, b1], [u0.x, u1.x])`, or vectors in this stacked layout.
+
+{py:func}`dolfinx.common.stack_index_maps` exposes `common::stack_index_maps` to Python. It
+computes this concatenated layout of index maps, e.g. to create the vectors of a block system.
+
 ### Expressions on ridges and peaks
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
