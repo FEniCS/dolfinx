@@ -351,6 +351,18 @@ jobs:
           cd cpp/doc
           doxygen Doxyfile
           python -m sphinx -W --keep-going -b html source/ build/html
+      - name: Install Node.js
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get -y update
+          apt-get install -y --no-install-recommends nodejs npm
+      # Sphinx does not parse LaTeX; MathJax typesets it in the browser
+      - name: Check C++ documentation math with MathJax
+        working-directory: cpp/doc
+        run: |
+          npm install --no-save --no-audit --no-fund @mathjax/src@4.1.3
+          node check_math.mjs build/html
       - name: Upload C++ Doxygen documentation artifact
         uses: actions/upload-artifact@v7
         with:
