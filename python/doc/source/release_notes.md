@@ -2,6 +2,19 @@
 
 ## v0.12.0 (draft)
 
+### Interpolating the independent components of a symmetric tensor
+
+**Authors**: [Garth N. Wells](https://github.com/garth-wells)
+
+A callable interpolated into a symmetric rank-2 tensor space
+(`symmetry=True`) may now return only the `d * (d + 1) / 2` components the
+space stores, the lower triangle row by row, instead of all `d * d`
+components of the `(d, d)` tensor. For a `(3, 3)` tensor that is 6 rows
+ordered `(0, 0), (1, 0), (1, 1), (2, 0), (2, 1), (2, 2)`. Returning all
+`d * d` components still works. The same applies to `fem::interpolate` and
+`Function::interpolate` with a callable in C++
+([\#3159](https://github.com/FEniCS/dolfinx/issues/3159)).
+
 ### Expressions on ridges and peaks
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
