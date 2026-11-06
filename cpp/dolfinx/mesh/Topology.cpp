@@ -1647,7 +1647,7 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          {ghost_owners}, boundary_vertices, num_threads);
 }
 //-----------------------------------------------------------------------------
-std::tuple<Topology, std::vector<int32_t>, std::vector<int32_t>>
+std::tuple<Topology, std::vector<std::int32_t>, std::vector<std::int32_t>>
 mesh::create_subtopology(const Topology& topology, int dim,
                          std::span<const std::int32_t> entities)
 {
@@ -1658,7 +1658,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   // Create a map from an entity in the sub-topology to the
   // corresponding entity in the topology, and create an index map
   std::shared_ptr<common::IndexMap> submap;
-  std::vector<int32_t> subentities;
+  std::vector<std::int32_t> subentities;
   {
     // FIXME Make this an input requirement?
     std::vector<std::int32_t> _entities(entities.begin(), entities.end());
@@ -1697,11 +1697,11 @@ mesh::create_subtopology(const Topology& topology, int dim,
   // Create map from the vertices in the sub-topology to the vertices in
   // the parent topology, and an index map
   std::shared_ptr<common::IndexMap> submap0;
-  std::vector<int32_t> subvertices0;
+  std::vector<std::int32_t> subvertices0;
   {
     // An owner change is permitted here: a vertex may be incident to a
     // sub-topology entity on a ghosting rank but not on its owner.
-    std::tuple<common::IndexMap, std::vector<int32_t>, bool> map_data
+    std::tuple<common::IndexMap, std::vector<std::int32_t>, bool> map_data
         = common::create_sub_index_map(
             *map0, compute_incident_entities(topology, subentities, dim, 0),
             common::IndexMapOrder::any);

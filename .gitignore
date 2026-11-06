@@ -31,6 +31,8 @@ mock_cpp_modules.py
 cpp/doxygen
 cpp/doc/source/demos
 cpp/doc/html
+cpp/doc/xml
+cpp/doc/build
 cpp/doc/latex
 
 python/doc/source/demos

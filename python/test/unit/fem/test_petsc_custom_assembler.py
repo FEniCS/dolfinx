@@ -159,7 +159,7 @@ def test_custom_mesh_loop_petsc_rank2(set_vals, backend):
         A1.assemble()
     # The two assemblies differ only in summation order, so the residual
     # scales with eps * ||A||.
-    tol = max(1.0e-9, 10 * np.finfo(PETSc.ScalarType).eps * A0.norm())
+    tol = max(1.0e-9, 10 * float(np.finfo(PETSc.ScalarType).eps) * A0.norm())
     assert (A1 - A0).norm() == pytest.approx(0.0, abs=tol)
 
     A0.destroy()

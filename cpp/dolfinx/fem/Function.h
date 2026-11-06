@@ -51,10 +51,13 @@ public:
 
   /// @brief Create function on given function space.
   /// @param[in] V The function space
-  explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
-      : _function_space(V), _x(std::make_shared<la::Vector<value_type>>(
-                                V->dofmaps().front()->index_map,
-                                V->dofmaps().front()->index_map_bs()))
+  /// @param[in] name The function name.
+  explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V,
+                    std::string name = "u")
+      : name(std::move(name)), _function_space(V),
+        _x(std::make_shared<la::Vector<value_type>>(
+            V->dofmaps().front()->index_map,
+            V->dofmaps().front()->index_map_bs()))
   {
     if (!V->component().empty())
     {
@@ -72,9 +75,10 @@ public:
   ///
   /// @param[in] V The function space.
   /// @param[in] x The vector.
+  /// @param[in] name The function name.
   Function(std::shared_ptr<const FunctionSpace<geometry_type>> V,
-           std::shared_ptr<la::Vector<value_type>> x)
-      : _function_space(V), _x(x)
+           std::shared_ptr<la::Vector<value_type>> x, std::string name = "u")
+      : name(std::move(name)), _function_space(V), _x(x)
   {
     // NOTE: We do not check for a subspace since this constructor is
     // used for creating subfunctions
@@ -625,7 +629,7 @@ public:
   }
 
   /// Name
-  std::string name = "u";
+  std::string name;
 
 private:
   // Function space

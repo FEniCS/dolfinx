@@ -7,6 +7,7 @@
 #pragma once
 
 #include "mpi_wrappers.h"
+#include <cstdint>
 #include <mpi4py/mpi4py.h>
 #include <nanobind/nanobind.h>
 
@@ -21,7 +22,7 @@ public:
                  const_name("mpi4py.MPI.Comm"))
 
   // Python -> C++
-  bool from_python(handle src, uint8_t /*flags*/,
+  bool from_python(handle src, std::uint8_t /*flags*/,
                    cleanup_list* /*cleanup*/) noexcept
   {
     if (!PyMPIComm_Get)
@@ -71,7 +72,7 @@ public:
                  const_name("mpi4py.MPI.Request"))
 
   // Python -> C++
-  bool from_python(handle src, uint8_t /*flags*/,
+  bool from_python(handle src, std::uint8_t /*flags*/,
                    cleanup_list* /*cleanup*/) noexcept
   {
     if (!PyMPIRequest_Get)

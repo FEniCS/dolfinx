@@ -273,8 +273,7 @@ int main(int argc, char* argv[])
                       S_element, mesh->geometry().dim(),
                       std::vector<std::size_t>{3, 3})));
 
-    fem::Function<T> sigma(S);
-    sigma.name = "cauchy_stress";
+    fem::Function<T> sigma(S, "cauchy_stress");
     fem::interpolate(sigma, sigma_expression);
 
     // Save solution in VTK format
