@@ -1,8 +1,4 @@
-"""Mixed Poisson problem with weakly enforced boundary conditions."""
-# The first step is to define the variational problem at hand. We define
-# the variational problem in UFL terms in a separate form file
-# {download}`demo_mixed_poisson/mixed_poisson.py`.  We begin by defining
-# the finite element:
+"""Mixed Poisson problem with boundary data on a submesh."""
 
 from basix import CellType
 from basix.cell import sub_entity_type
@@ -22,12 +18,15 @@ from ufl import (
 # Cell type for the mesh
 msh_cell = CellType.triangle
 
-# Weakly enforced boundary data will be represented using a function
-# space defined over a submesh of the boundary. We get the submesh cell
-# type from then mesh cell type.
+# The Dirichlet data $u_0$, which is imposed weakly, is represented
+# using a function space on a submesh of the boundary. The submesh cell
+# type is the facet type of the mesh cell:
+
 submsh_cell = sub_entity_type(msh_cell, dim=1, index=0)
 
-# Define finite elements for the problem
+# The mixed element pairs degree 1 Raviart-Thomas with degree 0
+# discontinuous Lagrange:
+
 RT = element("RT", msh_cell, 1)
 P = element("DP", msh_cell, 0)
 ME = mixed_element([RT, P])
@@ -45,12 +44,17 @@ V = FunctionSpace(msh, ME)
 V0 = FunctionSpace(msh, P)
 f = Coefficient(V0)
 
-# We represent boundary data using a first-degree Lagrange space defined
-# over a submesh of the boundary
+# The boundary data is represented using a degree 1 Lagrange space on
+# the submesh:
+
 Q = FunctionSpace(submsh, element("Lagrange", submsh_cell, 1))
 u0 = Coefficient(Q)
 
-# Specify the weak form of the problem
+# The forms are defined with measures on the mesh `msh`, which is the
+# integration domain. `ds(1)` restricts the boundary integral to the
+# facets marked 1, which the C++ program sets to the facets of
+# $\Gamma_D$:
+
 dx = Measure("dx", msh)
 ds = Measure("ds", msh)
 a = inner(sigma, tau) * dx + inner(u, div(tau)) * dx + inner(div(sigma), v) * dx

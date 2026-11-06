@@ -3,57 +3,94 @@
 // This demo illustrates how to:
 //
 // * Solve a nonlinear elasticity problem with a Newton solver
-// * Compute the Jacobian of a nonlinear form using automatic
-//   differentiation
-// * Evaluate a derived quantity (the Cauchy stress) at points in the
-//   domain using `dolfinx::fem::Expression`
+// * Compute the residual and Jacobian of a nonlinear problem by automatic
+//   differentiation of an energy functional
+// * Evaluate a derived quantity (the Cauchy stress) using
+//   `dolfinx::fem::Expression`
 //
 // ## Equation and problem definition
 //
-// We solve a compressible neo-Hookean model in 3D, in which a unit
-// cube is deformed by rotating one face by 60 degrees about its
-// centre while the opposite face is held fixed. Denoting the
-// displacement by $u$ and the deformation gradient by
-// $F = I + \nabla u$, the stored strain energy density is
+// We consider a compressible neo-Hookean material occupying the unit
+// cube $\Omega = [0, 1]^3$. Denoting the displacement by $u$ and the
+// deformation gradient by $F = I + \nabla u$, the stored strain energy
+// density is
 //
 // $$
-//    \psi(F) = \frac{\mu}{2} ({\rm tr}(C) - 3) - \mu \ln(J)
-//    + \frac{\lambda}{2} (\ln(J))^{2},
+//   \psi(F) = \frac{\mu}{2} ({\rm tr}(C) - 3) - \mu \ln(J)
+//   + \frac{\lambda}{2} (\ln(J))^{2},
 // $$
 //
-// where $C = F^{T} F$ is the right Cauchy-Green tensor, $J =
-// \det(F)$, and $\mu$ and $\lambda$ are the Lame parameters. The
-// total potential energy is
+// where $C = F^{T} F$ is the right Cauchy-Green tensor, $J = \det(F)$,
+// and $\mu$ and $\lambda$ are the Lamé parameters. The total potential
+// energy is
 //
 // $$
-//    \Pi(u) = \int_{\Omega} \psi(F) \, {\rm d} x
-//    - \int_{\Omega} B \cdot u \, {\rm d} x
-//    - \int_{\Gamma_{N}} T \cdot u \, {\rm d} s,
+//   \Pi(u) = \int_{\Omega} \psi(F) \, {\rm d} x
+//   - \int_{\Omega} B \cdot u \, {\rm d} x
+//   - \int_{\partial\Omega} T \cdot u \, {\rm d} s,
 // $$
 //
-// where $B$ is a body force per unit volume and $T$ is a traction
-// on the (Neumann) boundary. The equilibrium displacement is the
-// stationary point of $\Pi$, found here by computing the first
-// variation of $\Pi$ (the residual $F(u; v)$) and its Jacobian
-// $J(u; du, v)$, and solving $F(u; v) = 0$ for all test functions $v$
-// with Newton's method.
+// where $B$ is a body force per unit volume and $T$ is a boundary
+// traction. The equilibrium displacement makes $\Pi$ stationary, i.e. it
+// solves
+//
+// $$
+//   L(u; v) = D_{u}\Pi(u)[v] = 0 \quad \forall \ v,
+// $$
+//
+// where $v$ satisfies homogeneous Dirichlet conditions. This nonlinear
+// problem is solved by Newton's method, which requires the Jacobian
+// $a(u; \delta u, v) = D_{u}L(u; v)[\delta u]$. Both $L$ and $a$ are
+// computed by UFL from $\Pi$. After solving, the Cauchy stress
+//
+// $$
+//   \sigma = \frac{1}{J} \frac{\partial \psi}{\partial F} F^{T}
+// $$
+//
+// is evaluated at the midpoint of each cell.
+//
+// This demo uses:
+//
+// * $E = 10$ and $\nu = 0.3$ (Young's modulus and Poisson's ratio), from
+//   which $\mu$ and $\lambda$ are computed
+// * $B = T = 0$
+// * $u = 0$ on the face $x = 0$
+// * On the face $x = 1$, a displacement equal to $0.005$ times that of a
+//   $60^{\circ}$ rotation of the face about its centre in the $y$-$z$
+//   plane
+//
+// ## Implementation
 //
 // Running this demo requires the files:
 // {download}`demo_hyperelasticity/main.cpp`,
 // {download}`demo_hyperelasticity/hyperelasticity.py` and
 // {download}`demo_hyperelasticity/CMakeLists.txt`.
-
-// ## UFL form file
 //
-// The UFL file is implemented in
+// ### UFL form file
+//
+// The UFL forms and the stress expression are defined in
 // {download}`demo_hyperelasticity/hyperelasticity.py`.
-// ````{admonition} UFL form implemented in python
+// ````{admonition} UFL form implemented in Python
 // :class: dropdown
 // ![ufl-code]
 // ````
 //
-
-// ## C++ program
+// ### C++ program
+//
+// The `main` function performs the following steps:
+//
+// 1. Create a tetrahedral mesh of $\Omega$ with $10 \times 10 \times 10$
+//    cubes each divided into tetrahedra, and a vector-valued linear
+//    Lagrange space on it.
+// 2. Create the residual and Jacobian forms, which depend on the
+//    displacement $u$.
+// 3. Create the Dirichlet boundary conditions, interpolating the
+//    prescribed rotation into a {cpp:class}`dolfinx::fem::Function`.
+// 4. Create a `dolfinx::nls::petsc::SNESSolver` with callbacks
+//    that assemble the residual and Jacobian, configure it through the
+//    PETSc options database, and solve.
+// 5. Interpolate the Cauchy stress expression into a piecewise constant
+//    tensor-valued space, and write the displacement and stress to file.
 
 #include "hyperelasticity.h"
 #include <basix/finite-element.h>
@@ -95,13 +132,6 @@ int main(int argc, char* argv[])
       = std::format("[%Y-%m-%d %H:%M:%S.%e] [RANK {}] [%l] %v", mpi_rank);
   spdlog::set_pattern(fmt);
   {
-    // Inside the `main` function, we begin by defining a tetrahedral
-    // mesh of the domain and the function space on this mesh. Here, we
-    // choose to create a unit cube mesh with 25 ( = 24 + 1) vertices in
-    // one direction and 17 ( = 16 + 1) vertices in the other two
-    // directions. With this mesh, we initialize the (finite element)
-    // function space defined by the generated code.
-
     // Create mesh and define function space
     auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_box<U>(
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
@@ -118,10 +148,12 @@ int main(int argc, char* argv[])
             std::make_shared<fem::FiniteElement<U>>(
                 element, mesh->geometry().dim(), std::vector<std::size_t>{3})));
 
+    // Body force and traction (zero)
     auto B = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
     auto traction = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
 
-    // Define solution function
+    // Define the solution function and the residual (L) and Jacobian
+    // (a) forms
     auto u = std::make_shared<fem::Function<T>>(V);
     fem::Form<T> a
         = fem::create_form<T>(*form_hyperelasticity_J_form, {V, V}, {{"u", u}},
@@ -130,6 +162,8 @@ int main(int argc, char* argv[])
         = fem::create_form<T>(*form_hyperelasticity_F_form, {V}, {{"u", u}},
                               {{"B", B}, {"T", traction}}, {}, {});
 
+    // Prescribed displacement on the face x = 1: 0.005 times the
+    // displacement of a rotation about the face centre
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -254,8 +288,8 @@ int main(int argc, char* argv[])
     std::cout << "Number of linear solver iterations: " << lin_iter
               << std::endl;
 
-    // Compute Cauchy stress. Construct appropriate Basix element for
-    // stress.
+    // Interpolate the Cauchy stress into a piecewise constant
+    // tensor-valued space
     fem::Expression sigma_expression = fem::create_expression<T, U>(
         *expression_hyperelasticity_sigma, {{"u", u}}, {}, {});
 
