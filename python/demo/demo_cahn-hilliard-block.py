@@ -69,10 +69,11 @@
 # $$
 #
 # A direct solver treats this as one matrix. A block preconditioner
-# instead uses the factorisation
+# instead works with the blocks, starting from the block $LDU$
+# factorisation
 #
 # $$
-# J =
+# J = L D U =
 # \begin{bmatrix} I & 0 \\ -(N + \lambda K) M^{-1} & I \end{bmatrix}
 # \begin{bmatrix} M & 0 \\ 0 & S \end{bmatrix}
 # \begin{bmatrix} I & M^{-1} \theta \Delta t\, K \\ 0 & I \end{bmatrix},
@@ -80,12 +81,34 @@
 # S = M + (N + \lambda K) M^{-1} \theta \Delta t\, K ,
 # $$
 #
-# where $S$ is the Schur complement. The factorisation is exact, so a
-# Krylov method converges in a bounded number of steps given solves with
-# the two diagonal blocks $M$ and $S$. The $(0,0)$ block is a mass
-# matrix, which conjugate gradients with a diagonal preconditioner solves
-# in a mesh-independent number of steps. The work is therefore in $S$,
-# which is dense and never formed.
+# where $S$ is the Schur complement of $M$ in $J$. This is Gaussian
+# elimination applied to blocks: multiplying the first block row by
+# $(N + \lambda K) M^{-1}$ and adding it to the second removes the
+# $(1,0)$ block and leaves $S$ in the $(1,1)$ position. Multiplying the
+# factors out recovers $J$. The $(0,0)$, $(0,1)$ and $(1,0)$ blocks
+# follow directly, and the $(1,1)$ block is
+#
+# $$
+# -(N + \lambda K) M^{-1} \theta \Delta t\, K + S = M .
+# $$
+#
+# The factorisation is useful because each factor is easy to invert.
+# $L$ and $U$ are block triangular with identity diagonal blocks, so
+# their inverses are the same matrices with the off-diagonal block
+# negated, and $D$ is block diagonal. Hence
+#
+# $$
+# J^{-1} = U^{-1} D^{-1} L^{-1} =
+# \begin{bmatrix} I & -M^{-1} \theta \Delta t\, K \\ 0 & I \end{bmatrix}
+# \begin{bmatrix} M^{-1} & 0 \\ 0 & S^{-1} \end{bmatrix}
+# \begin{bmatrix} I & 0 \\ (N + \lambda K) M^{-1} & I \end{bmatrix},
+# $$
+#
+# so solving with $J$ needs only solves with the two diagonal blocks $M$
+# and $S$, and products with the off-diagonal blocks. The $(0,0)$ block
+# is a mass matrix, which conjugate gradients with a diagonal
+# preconditioner solves in a mesh-independent number of steps. The work
+# is therefore in $S$, which is dense and never formed.
 #
 # ## Approximating the Schur complement
 #
@@ -151,12 +174,12 @@
 #
 # ## The preconditioner
 #
-# The preconditioner keeps the upper triangular factor of the
-# factorisation above, drops the lower one, and replaces $S$ with
-# $\hat{S}$:
+# The preconditioner drops $L$ from the factorisation above and replaces
+# $S$ in $D$ with $\hat{S}$, giving
+# $\hat{D} = {\rm diag}(M, \hat{S})$ and
 #
 # $$
-# P =
+# P = \hat{D} U =
 # \begin{bmatrix}
 #   M & \theta \Delta t\, K \\
 #   0 & \hat{S}
@@ -171,9 +194,10 @@
 # \hat{S} = (M + aK) M^{-1} (M + aK) .
 # $$
 #
-# With $\hat{S} = S$, the preconditioned matrix $J P^{-1}$ has the
-# single eigenvalue $1$ and GMRES converges in two iterations; the
-# eigenvalue bounds above measure how far $\hat{S}$ is from that.
+# With $\hat{S} = S$, $P = DU$ and the preconditioned matrix is
+# $J P^{-1} = L$. $L - I$ has only an off-diagonal block, so
+# $(L - I)^2 = 0$ and GMRES converges in two iterations. The eigenvalue
+# bounds above measure how far $\hat{S}$ is from $S$.
 # Applying $P^{-1}$ takes one solve with $\hat{S}$, one product with
 # $\theta \Delta t\, K$ and one solve with $M$. In the code, $M^{-1}$ is
 # applied by conjugate gradients with a Jacobi preconditioner to a
