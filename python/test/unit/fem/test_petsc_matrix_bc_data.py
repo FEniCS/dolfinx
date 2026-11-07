@@ -240,7 +240,7 @@ def test_nonlinear_problem_reuses_bc_data(layout, monkeypatch):
     eps = 1000 * np.finfo(PETSc.RealType).eps
 
     def unexpected(*args, **kwargs):
-        raise AssertionError("Newton callbacks must not rebuild or re-check BC data")
+        raise AssertionError("Newton callbacks must not rebuild BC data")
 
     def compare(actual, expected):
         if actual.getType() == PETSc.Mat.Type.NEST:
@@ -270,14 +270,11 @@ def test_nonlinear_problem_reuses_bc_data(layout, monkeypatch):
                 petsc.assign(problem.u, problem.x)
                 with monkeypatch.context() as patch:
                     for name in (
-                        "_check_preconditioner_spaces",
-                        "_check_prepared_matrix_bcs",
                         "_matrix_bc_data",
                         "_matrix_diag_data",
                         "_matis_diag_data",
                         "_block_index_sets",
                         "_lifting_bc_markers",
-                        "_extract_function_spaces",
                         "_bcs_by_block",
                     ):
                         patch.setattr(petsc, name, unexpected)
