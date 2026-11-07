@@ -115,6 +115,11 @@ def test_prepared_matrix_bcs(kind, shape, constrained, monkeypatch):
         if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
             with pytest.raises(ValueError, match="Complex diagonal"):
                 petsc.prepare_matrix_bcs(A, a, bcs, diag=1 + 1j)
+        if kind == "aij":
+            blocked = petsc.create_matrix([[a]])
+            matrices.append(blocked)
+            with pytest.raises(ValueError, match="single form"):
+                petsc.assemble_matrix(blocked, [[a]], bcs=data)
         if kind == "is":
             other = petsc.create_matrix(a, kind="aij")
             matrices.append(other)
@@ -169,6 +174,7 @@ def test_prepared_matrix_bcs_different_form(source_kind, target_kind, shape, mon
 
     monkeypatch.setattr(petsc, "_matrix_bc_data", unexpected)
     monkeypatch.setattr(petsc, "_matrix_diag_data", unexpected)
+    monkeypatch.setattr(petsc, "_block_index_sets", unexpected)
     try:
         for _ in range(2):
             target.zeroEntries()

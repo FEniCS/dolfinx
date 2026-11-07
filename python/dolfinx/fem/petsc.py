@@ -115,8 +115,8 @@ class BlockMatrixBCData(_PreparedMatrixBCData):
     ``diagonal_ghosts`` true (MATIS), the rows include ghosts and each
     value is this rank's share, i.e. the diagonal value divided by the
     number of ranks sharing the row. ``index_sets`` address the blocks
-    of a blocked (non-nest) matrix, and are ``None`` otherwise. Arrays
-    are read-only.
+    of a blocked (non-nest) matrix; they are built for a form array and
+    are ``None`` for a single form. Arrays are read-only.
     """
 
     row_markers: tuple[npt.NDArray[np.int8], ...]
@@ -805,11 +805,7 @@ def prepare_matrix_bcs(
         diagonal_rows=tuple(diagonal_rows),
         diagonal_values=tuple(diagonal_values),
         diagonal_ghosts=tuple(ghosts),
-        index_sets=(
-            _block_index_sets(V0, V1)
-            if isinstance(a, Sequence) and A.getType() != PETSc.Mat.Type.NEST
-            else None
-        ),
+        index_sets=_block_index_sets(V0, V1) if isinstance(a, Sequence) else None,
     )
 
 
@@ -822,6 +818,8 @@ def _check_prepared_matrix_bcs(
         raise ValueError("Prepared matrix BC data belongs to different function spaces")
     if tuple(_diag_on_ghost_rows(A, a)) != data.diagonal_ghosts:
         raise ValueError("Prepared matrix BC data has an incompatible diagonal layout")
+    if isinstance(a, Sequence) and data.index_sets is None:
+        raise ValueError("Prepared matrix BC data was prepared for a single form, not a form array")
     for spaces, marker_list in ((V0, data.row_markers), (V1, data.column_markers)):
         for V, marker in zip(spaces, marker_list, strict=True):
             _check_matrix_bc_marker(V, marker)
@@ -1064,8 +1062,7 @@ def _assemble_matrix_petsc(
 
     ``data``, from :func:`prepare_matrix_bcs`, is fixed for the
     lifetime of the boundary conditions. Constants and coefficients are
-    supplied afresh by the caller. Block index sets are built here if
-    ``A`` is blocked but ``data`` was prepared for a non-blocked matrix.
+    supplied afresh by the caller.
     """
     _check_nest_forms(A, a)
     if A.getType() == PETSc.Mat.Type.NEST:
@@ -1083,16 +1080,13 @@ def _assemble_matrix_petsc(
             None,
         )
     elif isinstance(a, Sequence):
-        index_sets = data.index_sets
-        if index_sets is None:
-            index_sets = _block_index_sets(data.row_spaces, data.column_spaces)
         return _assemble_matrix_blocked(
             A,
             a,
             data,
             constants,  # type: ignore[arg-type]
             coeffs,  # type: ignore[arg-type]
-            index_sets,
+            data.index_sets,
         )
     else:
         _assemble_matrix_single(
