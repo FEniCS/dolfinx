@@ -425,15 +425,14 @@ class _PreparedMatrixBCData:
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class MatrixBCData(_PreparedMatrixBCData):
-    """Prepared matrix constraints for a bilinear form.
+    """Boundary-condition data for assembling a bilinear form.
 
-    Accepted by :func:`assemble_matrix` and :func:`assemble_matrix_fn`.
-    Markers cover owned and ghost dofs in unrolled local numbering.
-    Diagonal rows are owned, unrolled local indices, and are empty
-    unless the row and column spaces are the same. Diagonal values are
-    a scalar for every row, or one value per row. Arrays returned by
-    :func:`prepare_matrix_bcs` are read-only. Rebuild when
-    constrained dofs, spaces or diagonal values change.
+    Created by :func:`prepare_matrix_bcs` and accepted as ``bcs`` by
+    :func:`assemble_matrix` and :func:`assemble_matrix_fn`. Markers
+    cover owned and ghost dofs, and diagonal rows are owned dofs, both
+    in unrolled local numbering. Diagonal rows are empty unless the row
+    and column spaces are the same. The diagonal value is a scalar, or
+    one value per row. Arrays are read-only.
     """
 
     row_marker: npt.NDArray[np.int8]
@@ -451,6 +450,10 @@ def prepare_matrix_bcs(
 ) -> MatrixBCData:
     """Prepare reusable boundary-condition data for a bilinear form.
 
+    The data depends on the function spaces and the constrained dofs,
+    not on boundary condition values. It can be reused with any form
+    on the same spaces.
+
     Args:
         a: Bilinear form defining the row and column spaces.
         bcs: Boundary conditions identifying constrained dofs.
@@ -458,10 +461,8 @@ def prepare_matrix_bcs(
             real for a real form.
 
     Returns:
-        Data accepted by :func:`assemble_matrix` and
-        :func:`assemble_matrix_fn` as ``bcs``. The data can be reused
-        with forms on the same spaces. Changes to boundary condition
-        values alone do not invalidate it.
+        Data accepted as ``bcs`` by :func:`assemble_matrix` and
+        :func:`assemble_matrix_fn`.
     """
     _check_diagonal_dtype(diag, a.dtype)
     V0, V1 = a.function_spaces
@@ -569,7 +570,7 @@ def _check_prepared_matrix_bcs(a: Form, data: MatrixBCData) -> None:
     )
 
 
-def _assemble_matrix_csr_markers(
+def _assemble_matrix_csr_prepared(
     A: la.MatrixCSR,
     a: Form,
     data: MatrixBCData,
@@ -617,13 +618,12 @@ def assemble_matrix(
 
     Args:
         a: The bilinear form assemble.
-        bcs: Boundary conditions or data from :func:`prepare_matrix_bcs`.
-            With boundary conditions, the diagonal defaults to 1.
-            Degrees-of-freedom constrained by a boundary condition will
-            have their rows/columns zeroed and the diagonal value set.
-        diag: Deprecated diagonal value for boundary-condition objects.
-            Use :func:`prepare_matrix_bcs` for a custom diagonal. Cannot
-            be supplied with prepared data.
+        bcs: Boundary conditions, or data from
+            :func:`prepare_matrix_bcs`. Rows and columns of constrained
+            dofs are zeroed and, if the test and trial spaces are the
+            same, the diagonal is set (to 1 for boundary conditions).
+        diag: Deprecated. Pass ``prepare_matrix_bcs(a, bcs, diag)`` as
+            ``bcs`` instead. Cannot be combined with prepared data.
         constants: Constants that appear in the form. If ``None``,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
@@ -639,8 +639,8 @@ def assemble_matrix(
         accumulated.
 
     Note:
-        Passing boundary-condition objects rebuilds the constrained dof
-        data on each call. Pass prepared data to reuse it.
+        Boundary conditions are processed on every call. Prepared data
+        avoids this for repeated assembly.
     """
     A = create_matrix(a, block_mode)
     return _assemble_matrix_csr_bcs(A, a, bcs, diag, constants, coeffs)
@@ -661,13 +661,12 @@ def _assemble_matrix_csr(
         A: The matrix to assemble into. It must have been initialized
             with the correct sparsity pattern.
         a: The bilinear form assemble.
-        bcs: Boundary conditions or data from :func:`prepare_matrix_bcs`.
-            With boundary conditions, the diagonal defaults to 1.
-            Degrees-of-freedom constrained by a boundary condition will
-            have their rows/columns zeroed and the diagonal value set.
-        diag: Deprecated diagonal value for boundary-condition objects.
-            Use :func:`prepare_matrix_bcs` for a custom diagonal. Cannot
-            be supplied with prepared data.
+        bcs: Boundary conditions, or data from
+            :func:`prepare_matrix_bcs`. Rows and columns of constrained
+            dofs are zeroed and, if the test and trial spaces are the
+            same, the diagonal is set (to 1 for boundary conditions).
+        diag: Deprecated. Pass ``prepare_matrix_bcs(a, bcs, diag)`` as
+            ``bcs`` instead. Cannot be combined with prepared data.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
@@ -681,8 +680,8 @@ def _assemble_matrix_csr(
         accumulated.
 
     Note:
-        Passing boundary-condition objects rebuilds the constrained dof
-        data on each call. Pass prepared data to reuse it.
+        Boundary conditions are processed on every call. Prepared data
+        avoids this for repeated assembly.
     """
     return _assemble_matrix_csr_bcs(A, a, bcs, diag, constants, coeffs)
 
@@ -708,7 +707,7 @@ def _assemble_matrix_csr_bcs(
     else:
         _reject_foreign_bc_data(bcs)
         data = prepare_matrix_bcs(a, bcs, _matrix_bc_diagonal(diag))
-    return _assemble_matrix_csr_markers(A, a, data, constants, coeffs)
+    return _assemble_matrix_csr_prepared(A, a, data, constants, coeffs)
 
 
 def set_bc_diagonal(
@@ -768,24 +767,17 @@ def assemble_matrix_fn(
 
     Rather than assembling into a :class:`~dolfinx.la.MatrixCSR` or a
     PETSc matrix, ``fn`` is called once per cell/facet contribution with
-    the local-to-global row indices, column indices, and the element
-    matrix values, and is responsible for inserting them into a
-    caller-owned matrix representation.
+    the process-local row and column indices and the element matrix,
+    and is responsible for inserting them into a caller-owned matrix.
 
     Args:
         fn: Called as ``fn(rows, cols, vals)`` for each contribution,
             where ``vals`` has shape ``(len(rows), len(cols))``. Return
             ``0`` on success.
         a: Bilinear form to assemble.
-        bcs: Boundary conditions or data from
-            :func:`prepare_matrix_bcs`. Rows and columns constrained by
-            a boundary condition are zeroed.
-
-    Note:
-        Convenience function for callers that have boundary conditions.
-        Pass prepared data to reuse the constrained dof markers.
-        Diagonal data is unused; this function only assembles
-        contributions.
+        bcs: Boundary conditions, or data from
+            :func:`prepare_matrix_bcs`. Rows and columns of constrained
+            dofs are zeroed. The diagonal is not set.
     """
     if isinstance(bcs, MatrixBCData):
         _check_prepared_matrix_bcs(a, bcs)

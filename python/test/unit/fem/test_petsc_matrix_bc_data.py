@@ -21,6 +21,17 @@ from dolfinx.fem import petsc  # noqa: E402
 pytestmark = pytest.mark.petsc4py
 
 
+def _assert_equal(A, B):
+    """Assert two assembled PETSc matrices are equal."""
+    result, expected = A.copy().convert("aij"), B.copy().convert("aij")
+    try:
+        result.axpy(-1, expected)
+        assert result.norm() < 1e-12
+    finally:
+        result.destroy()
+        expected.destroy()
+
+
 @pytest.mark.parametrize("kind", ["aij", "is", "nest", "blocked"])
 @pytest.mark.parametrize("shape", [(), (2,)])
 @pytest.mark.parametrize("constrained", [False, True])
@@ -70,26 +81,17 @@ def test_prepared_matrix_bcs(kind, shape, constrained, monkeypatch):
     monkeypatch.setattr(petsc, "_matrix_diag_data", unexpected)
     monkeypatch.setattr(petsc, "_block_index_sets", unexpected)
 
-    def assert_matches_reference(M):
-        M.assemble()
-        result, expected = M.copy().convert("aij"), reference.copy().convert("aij")
-        try:
-            result.axpy(-1, expected)
-            assert result.norm() < 1e-12
-        finally:
-            result.destroy()
-            expected.destroy()
-
     matrices = [reference, A]
     try:
-        petsc.assemble_matrix(A, a, bcs=data)
-        assert_matches_reference(A)
-        A.zeroEntries()
-        petsc.assemble_matrix(A, a, bcs=data)
-        assert_matches_reference(A)
+        for _ in range(2):
+            A.zeroEntries()
+            petsc.assemble_matrix(A, a, bcs=data)
+            A.assemble()
+            _assert_equal(A, reference)
         B = petsc.assemble_matrix(a, bcs=data, kind=matrix_kind)
         matrices.append(B)
-        assert_matches_reference(B)
+        B.assemble()
+        _assert_equal(B, reference)
         with pytest.raises(ValueError, match="diag cannot"):
             petsc.assemble_matrix(A, a, bcs=data, diag=1)
         if kind in ("aij", "is"):
@@ -172,13 +174,7 @@ def test_prepared_matrix_bcs_different_form(source_kind, target_kind, shape, mon
             target.zeroEntries()
             petsc.assemble_matrix(target, stiffness, bcs=data)
             target.assemble()
-            result, expected = target.copy().convert("aij"), reference.copy().convert("aij")
-            try:
-                result.axpy(-1, expected)
-                assert result.norm() < 1e-12
-            finally:
-                result.destroy()
-                expected.destroy()
+            _assert_equal(target, reference)
     finally:
         source.destroy()
         target.destroy()

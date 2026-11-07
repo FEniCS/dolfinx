@@ -26,7 +26,7 @@ from dolfinx.fem import (
 )
 from dolfinx.fem.assemble import (
     _apply_lifting_markers,
-    _assemble_matrix_csr_markers,
+    _assemble_matrix_csr_prepared,
     _assemble_vector_array,
     _bc_lifting_values,
     prepare_matrix_bcs,
@@ -140,11 +140,11 @@ class LinearProblem:
     def bcs(self) -> tuple[DirichletBC, ...]:
         """Dirichlet boundary conditions applied to the problem.
 
-        Assigning rebuilds the cached boundary-condition data that
-        :meth:`solve` reuses. This follows from the dofs a condition
-        constrains, which are fixed once it is built, and the sequence
-        is copied, so the cache cannot go stale. Condition *values* are
-        re-read on every solve.
+        Assigning prepares the boundary-condition data that
+        :meth:`solve` reuses. It depends only on the constrained dofs,
+        which are fixed once a condition is built, and the sequence is
+        copied, so it cannot go stale. Condition *values* are re-read
+        on every solve.
         """
         return self._bcs
 
@@ -164,7 +164,7 @@ class LinearProblem:
         """
         # Assemble lhs
         self.A.set_value(self.A.data.dtype.type(0.0))
-        _assemble_matrix_csr_markers(self.A, self.a, self._bc_data)
+        _assemble_matrix_csr_prepared(self.A, self.a, self._bc_data)
         self.A.scatter_reverse()
 
         # SuperLU_DIST solves in-place, so a deep copy of A is required.
@@ -181,7 +181,7 @@ class LinearProblem:
         # Apply boundary conditions to the rhs
         if self.bcs:
             bc_values1 = _bc_lifting_values(
-                [self.a.function_spaces[1]], [self.bcs], self.b.array.dtype
+                [self._bc_data.column_space], [self.bcs], self.b.array.dtype
             )
             _apply_lifting_markers(
                 self.b.array, [self.a], [self._bc_data.column_marker], bc_values1

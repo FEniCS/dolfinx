@@ -104,24 +104,19 @@ __all__ = [
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class BlockMatrixBCData(_PreparedMatrixBCData):
-    """Prepared matrix constraints for PETSc matrix assembly.
+    """Boundary-condition data for PETSc matrix assembly.
 
-    Fields hold one entry per block row or column; a single form has
-    one of each. Markers cover owned and ghost dofs in unrolled local
-    numbering, and markers for a shared test/trial space share an
-    array. Diagonal rows are in unrolled local numbering. Block rows
-    with ``diagonal_ghosts`` false (assembled matrices) have owned rows
-    and, as prepared, a scalar value. Block rows with
-    ``diagonal_ghosts`` true (MATIS) have owned and ghost rows and an
-    array holding this rank's share of the value on each row, i.e. the
-    value divided by the number of ranks sharing the row.
-    ``index_sets`` address the blocks of a blocked (non-nest) matrix,
-    and are ``None`` otherwise.
-
-    Arrays returned by :func:`prepare_matrix_bcs` are read-only.
-    Rebuild with :func:`prepare_matrix_bcs`
-    when constrained dofs, spaces, diagonal values or the relevant
-    matrix layout change, but not when BC values change.
+    Created by :func:`prepare_matrix_bcs` and accepted as ``bcs`` by
+    :func:`assemble_matrix`. Fields hold one entry per block row or
+    column; a single form has one. Markers cover owned and ghost dofs,
+    in unrolled local numbering. For a block row with
+    ``diagonal_ghosts`` false (assembled matrix), the diagonal rows are
+    owned dofs and the value is, as prepared, a scalar. For one with
+    ``diagonal_ghosts`` true (MATIS), the rows include ghosts and each
+    value is this rank's share, i.e. the diagonal value divided by the
+    number of ranks sharing the row. ``index_sets`` address the blocks
+    of a blocked (non-nest) matrix, and are ``None`` otherwise. Arrays
+    are read-only.
     """
 
     row_markers: tuple[npt.NDArray[np.int8], ...]
@@ -533,9 +528,9 @@ def assemble_matrix(
           of PETSc matrix types, the returned matrix has type
           ``PETSc.Mat.Type.NEST``.
 
-    Rows/columns that are constrained by a Dirichlet boundary condition
-    are zeroed, with the constrained diagonal set to 1 by default or
-    to the values in prepared data.
+    Rows and columns of dofs constrained by a Dirichlet boundary
+    condition are zeroed, and the diagonal of diagonal blocks is set
+    (to 1 for boundary conditions, or as given in prepared data).
 
     Constant and coefficient data that appear in the form(s) can be
     packed outside of this function to avoid re-packing by this
@@ -549,12 +544,10 @@ def assemble_matrix(
 
     Args:
         a: Bilinear form(s) to assembled into a matrix.
-        bcs: Dirichlet boundary conditions or data from
-            :func:`prepare_matrix_bcs`. With boundary conditions, the
-            diagonal defaults to 1.
-        diag: Deprecated diagonal value for boundary-condition objects.
-            Use :func:`prepare_matrix_bcs` for a custom diagonal. Cannot
-            be supplied with prepared data.
+        bcs: Dirichlet boundary conditions, or data from
+            :func:`prepare_matrix_bcs`.
+        diag: Deprecated. Pass ``prepare_matrix_bcs(A, a, bcs, diag)``
+            as ``bcs`` instead. Cannot be combined with prepared data.
         constants: Constants appearing in the form.
         coeffs: Coefficients appearing in the form.
         kind: PETSc matrix type (``MatType``).
@@ -563,8 +556,8 @@ def assemble_matrix(
         Matrix representing the bilinear form.
 
     Note:
-        Passing boundary-condition objects rebuilds the constrained dof
-        data on each call. Pass prepared data to reuse it.
+        Boundary conditions are processed on every call. Prepared data
+        avoids this for repeated assembly.
     """  # noqa: D301
     return _assemble_matrix_mat_bcs(create_matrix(a, kind), a, bcs, diag, constants, coeffs)
 
@@ -592,8 +585,8 @@ def _assemble_matrix_mat(
     accumulated.
 
     Note:
-        Passing boundary-condition objects rebuilds the constrained dof
-        data on each call. Pass prepared data to reuse it.
+        Boundary conditions are processed on every call. Prepared data
+        avoids this for repeated assembly.
     """
     return _assemble_matrix_mat_bcs(A, a, bcs, diag, constants, coeffs)
 
@@ -768,18 +761,6 @@ def _block_index_sets(
     return tuple(sets(row_spaces, "row")), tuple(sets(column_spaces, "column"))
 
 
-def _matrix_index_sets(
-    A: PETSc.Mat,
-    a: Form | Sequence[Sequence[Form | None]],
-    row_spaces: Sequence[_FunctionSpace | None],
-    column_spaces: Sequence[_FunctionSpace | None],
-) -> tuple[tuple[PETSc.IS, ...], tuple[PETSc.IS, ...]] | None:
-    """Block index sets for a blocked (non-nest) ``A``, else ``None``."""
-    if isinstance(a, Sequence) and A.getType() != PETSc.Mat.Type.NEST:
-        return _block_index_sets(row_spaces, column_spaces)
-    return None
-
-
 def prepare_matrix_bcs(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form | None]],
@@ -788,17 +769,21 @@ def prepare_matrix_bcs(
 ) -> BlockMatrixBCData:
     """Prepare reusable boundary-condition data for PETSc matrix assembly.
 
+    The data depends on the function spaces, the constrained dofs and
+    the matrix type, not on boundary condition values. It can be reused
+    with any form(s) on the same spaces, assembled into any matrix whose
+    diagonal blocks are of the same kind (assembled or MATIS).
+
     Args:
-        A: Target matrix determining the diagonal layout.
+        A: Matrix whose type (assembled or MATIS, and per block for a
+            nest) determines where the diagonal is written.
         a: Bilinear form or rectangular array of forms.
         bcs: Boundary conditions identifying constrained dofs.
         diag: Value to set on constrained diagonal entries. Must be
             real for a real PETSc build.
 
     Returns:
-        Data accepted by ``assemble_matrix(..., bcs=data)``. It can be
-        reused with forms on the same spaces and matrices with the same
-        relevant layout.
+        Data accepted as ``bcs`` by :func:`assemble_matrix`.
 
     Note:
         Collective when a diagonal block uses MATIS, including on ranks
@@ -820,7 +805,11 @@ def prepare_matrix_bcs(
         diagonal_rows=tuple(diagonal_rows),
         diagonal_values=tuple(diagonal_values),
         diagonal_ghosts=tuple(ghosts),
-        index_sets=_matrix_index_sets(A, a, V0, V1),
+        index_sets=(
+            _block_index_sets(V0, V1)
+            if isinstance(a, Sequence) and A.getType() != PETSc.Mat.Type.NEST
+            else None
+        ),
     )
 
 
@@ -941,10 +930,6 @@ def _matrix_diag_data(
     Where only owned rows are written, the owned constrained rows in
     ``row_markers`` take ``diagonal`` as it stands. Where ghost rows
     are written too, :func:`_matis_diag_data` supplies both.
-
-    The result depends only on the matrix type and on the dofs the
-    boundary conditions constrain, both fixed, so a repeated caller
-    should resolve once and reuse.
 
     Args:
         row_spaces: Space of each block row.
@@ -1795,19 +1780,18 @@ class LinearProblem(typing.Generic[_U]):
     def bcs(self) -> tuple[DirichletBC, ...]:
         """Dirichlet boundary conditions applied to the problem.
 
-        Assigning rebuilds the cached dof markers, diagonal rows and
-        per-block grouping that :meth:`solve` reuses. These follow from
-        the dofs a condition constrains, which are fixed once it is
-        built, and the sequence is copied, so the cache cannot go
-        stale. Condition *values* are re-read on every solve.
+        Assigning prepares the boundary-condition data and per-block
+        grouping that :meth:`solve` reuses. These depend only on the
+        constrained dofs, which are fixed once a condition is built,
+        and the sequence is copied, so they cannot go stale. Condition
+        *values* are re-read on every solve.
         """
         return self._bcs
 
     @bcs.setter
     def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
         self._bcs = tuple(bcs) if bcs is not None else ()
-        # Resolving the diagonal is collective for a MATIS operator, so
-        # it is done here rather than on every solve
+        # Prepared once: resolving the diagonal is collective for MATIS
         self._a_bcs = prepare_matrix_bcs(self.A, self.a, self._bcs)
         # Which block each condition belongs to follows from the spaces,
         # so group once here and re-read only the values in solve().
@@ -2079,10 +2063,9 @@ def assemble_jacobian(
         jacobian: Compiled form of the Jacobian.
         preconditioner: Compiled form of the preconditioner, over the
             function spaces of ``jacobian``.
-        bcs: Dirichlet boundary conditions to apply to the Jacobian and
-            preconditioner matrices, or data from
-            :func:`prepare_matrix_bcs` to avoid rebuilding it on each
-            call.
+        bcs: Dirichlet boundary conditions applied to the Jacobian and
+            preconditioner, or data from :func:`prepare_matrix_bcs`,
+            which avoids processing them on every call.
     """
     _check_preconditioner_spaces(jacobian, preconditioner)
     if isinstance(bcs, BlockMatrixBCData):
@@ -2337,12 +2320,12 @@ class NonlinearProblem(typing.Generic[_U]):
     def bcs(self) -> tuple[DirichletBC, ...]:
         """Dirichlet boundary conditions applied to the problem.
 
-        Assigning rebuilds the cached lifting markers and re-registers
-        both SNES callbacks, so the residual reuses the markers rather
-        than rebuilding them each Newton step. The markers follow from
-        the dofs a condition constrains, which are fixed once it is
-        built, and the sequence is copied, so the cache cannot go
-        stale. Condition *values* are re-read on every step.
+        Assigning prepares the boundary-condition data and re-registers
+        both SNES callbacks with it, so neither the Jacobian nor the
+        residual rebuilds it each Newton step. The data depends only on
+        the constrained dofs, which are fixed once a condition is
+        built, and the sequence is copied, so it cannot go stale.
+        Condition *values* are re-read on every step.
         """
         return self._bcs
 
