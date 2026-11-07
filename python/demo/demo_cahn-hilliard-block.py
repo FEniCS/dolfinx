@@ -93,8 +93,8 @@
 # $S \approx M + \theta \Delta t\, \lambda\, K M^{-1} K$: a sum of a mass
 # term and a term that is fourth order in the mesh size. Neither AMG nor
 # a simple relaxation handles that sum well on its own, but it factorises
-# almost exactly. Following the *matching* strategy of Pearson and
-# Wathen, look for an approximation of the form
+# almost exactly. Following the *matching* strategy of
+# {cite:t}`Pearson2012schur`, look for an approximation of the form
 # $\hat{S} = S_1 M^{-1} S_2$ and choose the factors so that the product
 # reproduces both terms. Taking $S_1 = S_2 = M + a K$ gives
 #
@@ -116,11 +116,8 @@
 # and $0 \le \lVert u - w \rVert^{2}$ gives $2u^{T}w \le u^{T}u +
 # w^{T}w$. For the Schur complement with $N$ dropped, the eigenvalues of
 # $\hat{S}^{-1} S$ therefore lie in $[1/2, 1]$ whatever the mesh size,
-# the time step and $\lambda$. This is the bound proved by Bergermann,
-# Deibel, Herzog, MacKenzie, Pietschmann and Stoll, *Preconditioning for
-# a phase-field model with application to morphology evolution in
-# organic semiconductors* (2022),
-# [arXiv:2204.03575](https://arxiv.org/abs/2204.03575).
+# the time step and $\lambda$. This is the bound proved by
+# {cite:t}`Bergermann2023phasefield`.
 #
 # The bound does not cover the dropped term
 # $\theta \Delta t\, N M^{-1} K$. Treating $f''(c)$ as locally constant,
@@ -151,6 +148,38 @@
 # costs two AMG applications and one sparse matrix-vector product, and
 # $M + aK$ does not change from step to step, so it is assembled and its
 # AMG hierarchy built once.
+#
+# ## The preconditioner
+#
+# The preconditioner keeps the upper triangular factor of the
+# factorisation above, drops the lower one, and replaces $S$ with
+# $\hat{S}$:
+#
+# $$
+# P =
+# \begin{bmatrix}
+#   M & \theta \Delta t\, K \\
+#   0 & \hat{S}
+# \end{bmatrix},
+# \qquad
+# P^{-1} =
+# \begin{bmatrix}
+#   M^{-1} & -M^{-1} \theta \Delta t\, K \hat{S}^{-1} \\
+#   0 & \hat{S}^{-1}
+# \end{bmatrix},
+# \qquad
+# \hat{S} = (M + aK) M^{-1} (M + aK) .
+# $$
+#
+# With $\hat{S} = S$, the preconditioned matrix $J P^{-1}$ has the
+# single eigenvalue $1$ and GMRES converges in two iterations; the
+# eigenvalue bounds above measure how far $\hat{S}$ is from that.
+# Applying $P^{-1}$ takes one solve with $\hat{S}$, one product with
+# $\theta \Delta t\, K$ and one solve with $M$. In the code, $M^{-1}$ is
+# applied by conjugate gradients with a Jacobi preconditioner to a
+# relative tolerance of $10^{-2}$, and each $(M + aK)^{-1}$ by a single
+# AMG V-cycle. This is PETSc's `PCFIELDSPLIT` with a Schur complement
+# factorisation of type `upper`.
 
 # +
 import os
@@ -587,3 +616,8 @@ if msh.comm.rank == 0:
 # nonlinear problem rather than by the preconditioner: at
 # $\Delta t = 5 \times 10^{-5}$, or at $\lambda = 10^{-3}$ with this time
 # step, Newton's method fails with a direct solver too.
+#
+# ## References
+# ```{bibliography}
+# :filter: docname in docnames
+# ```
