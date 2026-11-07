@@ -106,6 +106,12 @@ def test_prepared_matrix_bcs(kind, shape, constrained, monkeypatch):
         )
         with pytest.raises(ValueError, match="BC markers"):
             petsc.assemble_matrix(A, a, bcs=invalid)
+        # Rejected before any block is modified
+        invalid = dataclasses.replace(
+            data, column_markers=(*data.column_markers[:-1], data.column_markers[-1][None, :])
+        )
+        with pytest.raises(ValueError, match="BC markers must be 1D"):
+            petsc.assemble_matrix(A, a, bcs=invalid)
         num_rows = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
         invalid = dataclasses.replace(
             data, diagonal_rows=tuple(np.array([num_rows], dtype=np.int32) for _ in spaces)

@@ -2068,7 +2068,9 @@ def assemble_jacobian(
         _snes: The solver instance.
         x: Vector containing the point to evaluate at.
         J: Matrix to assemble the Jacobian into.
-        P_mat: Matrix to assemble the preconditioner into.
+        P_mat: Matrix to assemble the preconditioner into. When
+            ``preconditioner`` is given, it must not share storage with
+            ``J``.
         u: Unknown function(s) in ``jacobian`` and ``preconditioner``.
             Set from ``x`` before assembly.
         jacobian: Compiled form of the Jacobian.

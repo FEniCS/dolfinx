@@ -538,11 +538,14 @@ def _check_matrix_bc_diagonal(
 
 
 def _check_matrix_bc_marker(V: FunctionSpace | None, marker: npt.NDArray[np.int8]) -> None:
-    """Raise if a marker is neither empty nor sized for ``V``.
+    """Raise if a marker is not 1D, or neither empty nor sized for ``V``.
 
-    C++ assembly indexes the marker without bounds checks. Type and
-    layout are enforced by the nanobind bindings.
+    C++ assembly indexes the marker without bounds checks. The bindings
+    convert dtype and layout but reject other dimensions, which for a
+    block matrix would be after earlier blocks were modified.
     """
+    if np.ndim(marker) != 1:
+        raise ValueError("BC markers must be 1D arrays")
     size = 0 if V is None else _unrolled_size(V)
     if marker.size not in (0, size):
         raise ValueError("BC markers must be empty or cover owned and ghost dofs")
