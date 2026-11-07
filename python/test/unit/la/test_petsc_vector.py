@@ -34,7 +34,7 @@ def test_nest_ghost_update_duplicated_subvectors() -> None:
     imap = create_index_map(comm, n, ghosts)
     v = create_vector([(imap, 1)])
     w = v.duplicate()
-    x = PETSc.Vec().createNest([v, w], comm=comm)
+    x = PETSc.Vec().createNest([v, w], comm=comm)  # type: ignore[arg-type]
     try:
         offset = comm.rank * n
         for scale, sub in enumerate((v, w), start=1):
