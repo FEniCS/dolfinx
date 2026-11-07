@@ -10,6 +10,12 @@
 
 # # Cahn-Hilliard equation with a scalable block preconditioner
 #
+# Copyright (C) 2026 Garth N. Wells
+#
+# This file is part of DOLFINx (<https://www.fenicsproject.org>)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+#
 # ```{admonition} Download sources
 # :class: download
 # * {download}`Python script <./demo_cahn-hilliard-block.py>`
@@ -108,15 +114,31 @@
 # $$
 #
 # and $0 \le \lVert u - w \rVert^{2}$ gives $2u^{T}w \le u^{T}u +
-# w^{T}w$. The eigenvalues of $\hat{S}^{-1} S$ therefore lie in
-# $[1/2, 1]$ whatever the mesh size, the time step and $\lambda$: the
-# factor of two is the whole of the error. This is the bound proved by
-# Bergermann, Deibel, Herzog, MacKenzie, Pietschmann and Stoll,
-# *Preconditioning for a phase-field model with application to
-# morphology evolution in organic semiconductors* (2022),
-# [arXiv:2204.03575](https://arxiv.org/abs/2204.03575), and it is why
-# the iteration counts at the end of this demo do not move under
-# refinement.
+# w^{T}w$. For the Schur complement with $N$ dropped, the eigenvalues of
+# $\hat{S}^{-1} S$ therefore lie in $[1/2, 1]$ whatever the mesh size,
+# the time step and $\lambda$. This is the bound proved by Bergermann,
+# Deibel, Herzog, MacKenzie, Pietschmann and Stoll, *Preconditioning for
+# a phase-field model with application to morphology evolution in
+# organic semiconductors* (2022),
+# [arXiv:2204.03575](https://arxiv.org/abs/2204.03575).
+#
+# The bound does not cover the dropped term
+# $\theta \Delta t\, N M^{-1} K$. Treating $f''(c)$ as locally constant,
+# so that $N \approx f''(c) M$, this term is
+# $\theta \Delta t\, f''(c) K$. Since $\hat{S} \ge 2aK$, its size
+# relative to $\hat{S}$ is at most
+#
+# $$
+# \frac{\theta \Delta t\, |f''(c)|}{2a}
+#   = \frac{|f''(c)|}{2} \sqrt{\frac{\theta \Delta t}{\lambda}} .
+# $$
+#
+# This ratio is independent of the mesh size, which is why the iteration
+# counts at the end of this demo barely move under refinement. It is not
+# small, though. At the initial $c \approx 0.63$, $f''(c) \approx -80$
+# and the ratio is about $0.6$. As the phases separate, $c$ approaches 0
+# or 1, where $f'' = 200$, and the ratio rises to about $1.6$. The
+# ratio grows with $\Delta t$ and as $\lambda$ decreases.
 #
 # The point of the construction is that $M + aK$ is a shifted Laplacian:
 # symmetric, positive definite, and exactly what algebraic multigrid is
@@ -142,7 +164,7 @@ from petsc4py import PETSc
 import numpy as np
 
 import ufl
-from dolfinx import fem, io, mesh
+from dolfinx import default_real_type, fem, io, mesh
 from dolfinx.fem.petsc import (
     assemble_matrix,
     assemble_vector,
@@ -203,15 +225,16 @@ F1 = (
 
 # The residual and Jacobian are given as a list and a list of lists. This
 # is what marks the problem as blocked; the shape of these containers is
-# the block structure of the system.
+# the block structure of the system. The $(1,0)$ Jacobian block is
+# compiled on its own as `J10`, because it is the one block that is
+# reassembled at each Newton step.
 
 F = fem.form([F0, F1])
-J = fem.form(
-    [
-        [ufl.derivative(F0, c, dc), ufl.derivative(F0, mu, dmu)],
-        [ufl.derivative(F1, c, dc), ufl.derivative(F1, mu, dmu)],
-    ]
-)
+J10 = fem.form(ufl.derivative(F1, c, dc))
+J = [
+    [fem.form(ufl.derivative(F0, c, dc)), fem.form(ufl.derivative(F0, mu, dmu))],
+    [J10, fem.form(ufl.derivative(F1, mu, dmu))],
+]
 
 # The two operators the Schur approximation needs. Both are independent
 # of the solution and of time, so they are assembled once.
@@ -237,14 +260,14 @@ M_mat.assemble()
 class MatchedSchur:
     """Apply the inverse of the matched Schur approximation."""
 
-    def __init__(self, S: PETSc.Mat, M: PETSc.Mat, amg: str):
+    def __init__(self, S: PETSc.Mat, M: PETSc.Mat, amg: str, prefix: str):
         """Build the AMG solver for the repeated factor ``S``."""
         self.M = M
         self.ksp = PETSc.KSP().create(S.getComm())
         self.ksp.setOperators(S)
         self.ksp.setType("preonly")
         self.ksp.getPC().setType(amg)
-        self.ksp.setOptionsPrefix("schur_")
+        self.ksp.setOptionsPrefix(prefix)
         self.ksp.setFromOptions()
         self.work = M.createVecLeft()
         self.rhs = M.createVecLeft()
@@ -267,7 +290,6 @@ A = create_matrix(J, kind="nest")
 b = create_vector([V, W], kind="nest")
 x = create_vector([V, W], kind="nest")
 
-J10 = fem.form(ufl.derivative(F1, c, dc))
 assemble_matrix(A, J)
 A.assemble()
 # -
@@ -292,9 +314,8 @@ A.assemble()
 # Only one of the four Jacobian blocks depends on the solution: the
 # $(1,0)$ block $-(N + \lambda K)$, through $f''(c)$ in $N$. The other
 # three are $M$, $\theta \Delta t\, K$ and $M$, which is why the matrix
-# was assembled in full just above. `J10` is that block compiled on its
-# own; the callback rebuilds it and leaves the rest of the nest as it
-# is.
+# was assembled in full just above. `J10` is that block; the callback
+# rebuilds it and leaves the rest of the nest as it is.
 
 
 # +
@@ -314,10 +335,9 @@ def residual(_snes: PETSc.SNES, x: PETSc.Vec, b: PETSc.Vec) -> None:
             sub_local.set(0.0)
     assemble_vector(b, F)
 
-    # Each process has contributed to entries owned by another; add
-    # those in, then publish the result back to the ghosts
+    # Add contributions made to entries owned by other processes. SNES
+    # reads only owned entries, so the ghosts are not updated
     ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
-    ghost_update(b, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
 
 
 def jacobian(_snes: PETSc.SNES, x: PETSc.Vec, J_mat: PETSc.Mat, _P: PETSc.Mat) -> None:
@@ -328,11 +348,9 @@ def jacobian(_snes: PETSc.SNES, x: PETSc.Vec, J_mat: PETSc.Mat, _P: PETSc.Mat) -
     A10 = J_mat.getNestSubMatrix(1, 0)
     A10.zeroEntries()
     assemble_matrix(A10, J10)
-    A10.assemble()
 
-    # Assembling a sub-matrix does not mark the nest itself as changed,
-    # and a preconditioner that reads the Jacobian would go on using a
-    # stale copy. Nothing here does, but say it anyway
+    # Assembling the nest assembles each block, A10 included, and marks
+    # the nest as changed, so PCFIELDSPLIT sees the new block
     J_mat.assemble()
 
 
@@ -365,31 +383,47 @@ snes.setJacobian(jacobian, A, None)
 # the problem is real-valued whatever PETSc's scalar type is
 complex_scalars = np.issubdtype(PETSc.ScalarType, np.complexfloating)
 amg = "hypre" if PETSc.Sys().hasExternalPackage("hypre") and not complex_scalars else "gamg"
-opts = PETSc.Options()
-opts["snes_type"] = "newtonls"
-opts["snes_linesearch_type"] = "basic"
-opts["snes_rtol"] = 1.0e-9
-opts["ksp_type"] = "fgmres"
-opts["ksp_rtol"] = 1.0e-6
-opts["pc_type"] = "fieldsplit"
-opts["pc_fieldsplit_type"] = "schur"
-opts["pc_fieldsplit_schur_fact_type"] = "upper"
-# The (0,0) block is a mass matrix: CG with Jacobi is mesh independent
-opts["fieldsplit_c_ksp_type"] = "cg"
-opts["fieldsplit_c_ksp_rtol"] = 1.0e-2
-opts["fieldsplit_c_pc_type"] = "jacobi"
-opts["fieldsplit_mu_ksp_type"] = "preonly"
+
+# The tolerances are for double precision. In single precision they are
+# raised to a fixed multiple of machine epsilon, which keeps them
+# reachable
+eps = float(np.finfo(default_real_type).eps)
+petsc_options: dict[str, str | float | int] = {
+    "snes_type": "newtonls",
+    "snes_linesearch_type": "basic",
+    "snes_rtol": max(1.0e-9, 1.0e3 * eps),
+    "ksp_type": "fgmres",
+    "ksp_rtol": max(1.0e-6, 1.0e2 * eps),
+    "pc_type": "fieldsplit",
+    "pc_fieldsplit_type": "schur",
+    "pc_fieldsplit_schur_fact_type": "upper",
+    # The (0,0) block is a mass matrix: CG with Jacobi is mesh independent
+    "fieldsplit_c_ksp_type": "cg",
+    "fieldsplit_c_ksp_rtol": 1.0e-2,
+    "fieldsplit_c_pc_type": "jacobi",
+    "fieldsplit_mu_ksp_type": "preonly",
+}
 if amg == "hypre":
     # BoomerAMG's defaults suit two dimensions. These are its documented
     # three-dimensional settings; they keep the coarse operators sparse,
     # which is most of the cost of a V-cycle here
-    opts["schur_pc_hypre_type"] = "boomeramg"
-    opts["schur_pc_hypre_boomeramg_strong_threshold"] = 0.7
-    opts["schur_pc_hypre_boomeramg_coarsen_type"] = "HMIS"
-    opts["schur_pc_hypre_boomeramg_interp_type"] = "ext+i"
-    opts["schur_pc_hypre_boomeramg_P_max"] = 4
-    opts["schur_pc_hypre_boomeramg_truncfactor"] = 0.3
-    opts["schur_pc_hypre_boomeramg_agg_nl"] = 1
+    petsc_options |= {
+        "schur_pc_hypre_type": "boomeramg",
+        "schur_pc_hypre_boomeramg_strong_threshold": 0.7,
+        "schur_pc_hypre_boomeramg_coarsen_type": "HMIS",
+        "schur_pc_hypre_boomeramg_interp_type": "ext+i",
+        "schur_pc_hypre_boomeramg_P_max": 4,
+        "schur_pc_hypre_boomeramg_truncfactor": 0.3,
+        "schur_pc_hypre_boomeramg_agg_nl": 1,
+    }
+
+# The options go into PETSc's global options database under a prefix
+# that only this solver uses, and are removed once the run is over
+prefix = "demo_cahn-hilliard-block_"
+opts = PETSc.Options()
+for key, value in petsc_options.items():
+    opts[prefix + key] = value
+snes.setOptionsPrefix(prefix)
 snes.setFromOptions()
 # -
 
@@ -418,7 +452,7 @@ pc.setUp()
 
 schur_pc = pc.getFieldSplitSubKSP()[1].getPC()
 schur_pc.setType("python")
-schur_pc.setPythonContext(MatchedSchur(S_mat, M_mat, amg))
+schur_pc.setPythonContext(MatchedSchur(S_mat, M_mat, amg, prefix + "schur_"))
 schur_pc.setUp()
 # -
 
@@ -467,7 +501,7 @@ for step in range(num_steps):
     # needs roughly one iteration per step fewer. It takes two solved
     # steps to extrapolate from: only $c$ is given at $t = 0$, and
     # $\mu$ there is the zero it was initialised with, so neither is
-    # extrapolated until the second step
+    # extrapolated until the third step
     if step > 1:
         c.x.array[:] = 2.0 * c0.x.array - c_prev
         mu.x.array[:] = 2.0 * mu0.x.array - mu_prev
@@ -494,6 +528,8 @@ for step in range(num_steps):
     file.write_function(c, t)
 
 file.close()
+for key in petsc_options:
+    del opts[prefix + key]
 # -
 
 # The figure of merit is the number of Krylov iterations per Newton step.
@@ -505,7 +541,8 @@ num_dofs = V.dofmap.index_map.size_global + W.dofmap.index_map.size_global
 if msh.comm.rank == 0:
     print(f"Degrees of freedom:            {num_dofs}")
     print(f"Newton iterations:             {newton_total}")
-    print(f"Krylov iterations per Newton:  {krylov_total / newton_total:.1f}")
+    if newton_total > 0:
+        print(f"Krylov iterations per Newton:  {krylov_total / newton_total:.1f}")
 # -
 
 # Measured on this problem, running the thirty steps above on one
@@ -543,12 +580,13 @@ if msh.comm.rank == 0:
 # The matched approximation needs more iterations than `selfp` on the
 # coarsest mesh, 13.8 against 9.0, and fewer on the finest, 17.2 against
 # 25.7. Its iteration count rises by a quarter over a fifty-six-fold
-# increase in problem size, which is what the $[1/2, 1]$ bound allows,
-# whereas the automatic approximation nearly triples; the two cross at
-# about $2 \times 10^{5}$ unknowns. In wall-clock terms the matched
-# approximation is ahead at every size, by 30% at the coarsest mesh and
-# by a factor of two and a third at the finest, because an application
-# of it is cheaper even where it converges more slowly.
+# increase in problem size, consistent with the mesh-independent
+# estimate above, whereas the automatic approximation nearly triples;
+# the two cross at about $2 \times 10^{5}$ unknowns. In wall-clock terms
+# the matched approximation is ahead at every size, by 30% at the
+# coarsest mesh and by a factor of two and a third at the finest,
+# because an application of it is cheaper even where it converges more
+# slowly.
 #
 # The cost of an application explains the rest. $M + aK$ is fixed, so
 # its multigrid hierarchy is built once for the whole run, whereas
