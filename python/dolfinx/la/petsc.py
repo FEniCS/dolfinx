@@ -37,10 +37,17 @@ __all__ = ["assign", "create_vector", "create_vector_wrap", "set_diagonal"]
 def _ghost_update(
     x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode
 ) -> None:
-    """Helper function for ghost updating PETSc vectors."""
+    """Helper function for ghost updating PETSc vectors.
+
+    For a nest vector, the sub-vector updates are all started before
+    any is finished, so their communication overlaps.
+    """
     if x.getType() == PETSc.Vec.Type.NEST:
-        for x_sub in x.getNestSubVecs():
-            x_sub.ghostUpdate(addv=insert_mode, mode=scatter_mode)
+        x_subs = x.getNestSubVecs()
+        for x_sub in x_subs:
+            x_sub.ghostUpdateBegin(addv=insert_mode, mode=scatter_mode)
+        for x_sub in x_subs:
+            x_sub.ghostUpdateEnd(addv=insert_mode, mode=scatter_mode)
             x_sub.destroy()
     else:
         x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
