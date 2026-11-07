@@ -227,7 +227,10 @@ if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
     RUNTIME_DEPENDENCY_SET dependencies DESTINATION ${CMAKE_INSTALL_BINDIR}
     PRE_EXCLUDE_REGEXES [[api-ms-win-.*]] [[ext-ms-.*]]
     POST_EXCLUDE_REGEXES [[.*(\\|/)system32(\\|/).*\.dll]]
-    DIRECTORIES $<TARGET_FILE_DIR:Basix::basix> $<TARGET_FILE_DIR:hdf5::hdf5>
+    # delvewheel puts the Basix wheel dependencies in a sibling .libs directory.
+    DIRECTORIES
+      $<TARGET_FILE_DIR:Basix::basix>
+      $<TARGET_FILE_DIR:Basix::basix>/../fenics_basix.libs
   )
 endif()
 
@@ -245,7 +248,7 @@ include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
   ${PROJECT_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
   VERSION ${DOLFINX_VERSION}
-  COMPATIBILITY AnyNewerVersion
+  COMPATIBILITY SameMinorVersion
 )
 
 configure_package_config_file(

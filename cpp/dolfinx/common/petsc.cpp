@@ -35,7 +35,7 @@ void common::petsc::error(PetscErrorCode error_code,
       static_cast<int>(error_code),
       (error_msg == PETSC_SUCCESS) ? desc
                                    : "(could not retrieve error description)");
-  spdlog::error("{}", msg);
+  logger().error("{}", msg);
   throw std::runtime_error(msg);
 }
 //-----------------------------------------------------------------------------

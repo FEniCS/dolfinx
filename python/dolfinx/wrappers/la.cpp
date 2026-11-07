@@ -109,7 +109,7 @@ void la(nb::module_& m)
           },
           nb::arg("rows"), nb::arg("cols"))
       .def("insert",
-           nb::overload_cast<int32_t, int32_t>(
+           nb::overload_cast<std::int32_t, std::int32_t>(
                &dolfinx::la::SparsityPattern::insert),
            nb::arg("row"), nb::arg("col"))
       .def(

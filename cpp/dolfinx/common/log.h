@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Chris Richardson
+// Copyright (C) 2019-2026 Chris Richardson and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -23,5 +23,11 @@ namespace dolfinx
 /// @param[in] argc Number of command line arguments.
 /// @param[in] argv Command line argument vector.
 void init_logging(int argc, char* argv[]);
+
+/// @brief Dolfinx's logger.
+///
+/// This logger should be used for all logging performed from within the dolfinx
+/// namespace.
+auto logger() -> spdlog::logger&;
 
 } // namespace dolfinx

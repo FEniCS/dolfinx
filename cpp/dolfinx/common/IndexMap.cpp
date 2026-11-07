@@ -714,7 +714,7 @@ compute_submap_ghost_indices(std::span<const int> submap_src,
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<int32_t>
+std::vector<std::int32_t>
 common::compute_owned_indices(std::span<const std::int32_t> indices,
                               const IndexMap& map)
 {

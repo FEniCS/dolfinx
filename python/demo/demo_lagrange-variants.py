@@ -71,8 +71,9 @@ if MPI.COMM_WORLD.size == 1:
     plt.clf()
 # -
 
-# ![The basis functions of a degree 10 Lagrange space defined using
-# equispaced points.](demo_lagrange_variants_equispaced_10.png)
+# ```{figure} demo_lagrange_variants_equispaced_10.png
+# :alt: Degree 10 Lagrange basis functions on equispaced points.
+# ```
 #
 # The basis functions exhibit large peaks towards the ends of the
 # interval. This is known as [Runge's
@@ -103,8 +104,9 @@ if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
     plt.clf()
 # -
 
-# ![The basis functions of a degree 10 Lagrange space defined using GLL
-# points.](demo_lagrange_variants_gll_10.png)
+# ```{figure} demo_lagrange_variants_gll_10.png
+# :alt: Degree 10 Lagrange basis functions on GLL points.
+# ```
 #
 # The points are clustered towards the endpoints of the interval, and
 # the basis functions do not exhibit Runge's phenomenon.

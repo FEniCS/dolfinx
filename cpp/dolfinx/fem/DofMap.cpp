@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
@@ -47,7 +48,7 @@ void reject_owner_change([[maybe_unused]] const common::IndexMap& map,
 // doesn't build a new re-ordered dofmap.
 fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view)
 {
-  spdlog::info("Build collapsed DofMap");
+  logger().info("Build collapsed DofMap");
 
   if (dofmap_view.element_dof_layout().block_size() > 1)
   {
@@ -75,7 +76,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view)
   // Map from indices in the sub-index map to indices in the original
   // index map
   std::vector<std::int32_t> sub_imap_to_imap;
-  spdlog::debug("bs_view={}", bs_view);
+  logger().debug("bs_view={}", bs_view);
   if (bs_view == 1)
   {
     auto [_index_map, _sub_imap_to_imap, owners_changed]
@@ -99,7 +100,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view)
     sub_imap_to_imap = std::move(_sub_imap_to_imap);
   }
 
-  spdlog::debug("Map old to new dofs");
+  logger().debug("Map old to new dofs");
   // Create a map from old dofs to new dofs
   std::size_t array_size = dofs_view.empty() ? 0 : dofs_view.back() + bs_view;
   std::vector<std::int32_t> old_to_new(array_size, -1);
@@ -113,7 +114,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view)
     }
   }
 
-  spdlog::debug("Map to new collapsed indices");
+  logger().debug("Map to new collapsed indices");
   // Map dofs to new collapsed indices for new dofmap
   auto dof_array_view = dofmap_view.map();
   std::vector<std::int32_t> dofmap;
@@ -130,7 +131,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view)
   assert(dofmap.size() % dofmap_view.element_dof_layout().num_dofs() == 0);
 
   // Copy dof layout, discarding parent data
-  spdlog::debug("Copy element layout");
+  logger().debug("Copy element layout");
   ElementDofLayout element_dof_layout = dofmap_view.element_dof_layout().copy();
 
   // Create new dofmap and return
@@ -237,7 +238,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>&&
         reorder_fn) const
 {
-  spdlog::debug("DofMap::collapse");
+  logger().debug("DofMap::collapse");
   if (!reorder_fn)
     reorder_fn = graph::reorder_rcm;
   // Create new dofmap
@@ -269,7 +270,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
       comm, index_map_bs(), _element_dof_layout, topology, reorder_fn, *this);
 
   // Build map from collapsed dof index to original dof index
-  spdlog::debug("New IndexMap");
+  logger().debug("New IndexMap");
   auto index_map_new = dofmap_new.index_map;
   const std::int32_t size
       = (index_map_new->size_local() + index_map_new->num_ghosts())

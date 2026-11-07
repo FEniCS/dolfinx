@@ -340,13 +340,11 @@ class MatrixCSR(Generic[Scalar]):
             or self.index_map(1).size_global != B.index_map(0).size_global
         ):
             raise ValueError("Invalid matrix sizes for matmul.")
-        if (
-            self.block_size[0] != 1
-            or self.block_size[1] != 1
-            or B.block_size[0] != 1
-            or B.block_size[1] != 1
-        ):
-            raise ValueError("Block size not supported in matmul.")
+        bs = self.block_size
+        if bs[0] != bs[1]:
+            raise ValueError("matmul: only square block sizes are supported.")
+        if bs != B.block_size:
+            raise ValueError("matmul: A and B must have the same block size.")
 
         return MatrixCSR(self._cpp_object.mult(B._cpp_object))  # type: ignore[arg-type]
 

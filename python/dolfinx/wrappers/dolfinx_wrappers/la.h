@@ -203,7 +203,17 @@ void declare_la_objects(nanobind::module_& m, std::string_view type)
           "mult",
           [](const dolfinx::la::MatrixCSR<T>& self,
              const dolfinx::la::MatrixCSR<T>& B)
-          { return dolfinx::la::matmul(self, B); },
+          {
+            std::array<int, 2> bs = self.block_size();
+            if (bs[0] == 1 and bs[1] == 1)
+              return dolfinx::la::matmul<T, 1>(self, B);
+            else if (bs[0] == 2 and bs[1] == 2)
+              return dolfinx::la::matmul<T, 2>(self, B);
+            else if (bs[0] == 3 and bs[1] == 3)
+              return dolfinx::la::matmul<T, 3>(self, B);
+            else
+              return dolfinx::la::matmul(self, B);
+          },
           nb::arg("B"))
       .def("multT", &dolfinx::la::MatrixCSR<T>::multT, nb::arg("x"),
            nb::arg("y"))

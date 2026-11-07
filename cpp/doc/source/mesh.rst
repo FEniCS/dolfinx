@@ -6,3 +6,12 @@ Mesh (``dolfinx::mesh``)
 .. doxygennamespace:: dolfinx::mesh
    :project: DOLFINx
    :members:
+
+Concepts
+--------
+
+.. doxygenconcept:: dolfinx::mesh::CellRange
+   :project: DOLFINx
+
+.. doxygenconcept:: dolfinx::mesh::MarkerFn
+   :project: DOLFINx

@@ -37,8 +37,9 @@ namespace dolfinx::fem::impl
 /// value_size, num_argument_dofs)`. Storage is row-major. Data is set
 /// in `values` (not accumulated).
 /// @param[in] fn Expression kernel to execute.
-/// @param[in] Xshape Shape `(num_points, geometric dimensions)` of
-/// points array at which the expression is evaluated by the kernel.
+/// @param[in] Xshape Shape `(num_points, entity dimension)` of the
+/// points, on the reference cell of the entities, at which the
+/// expression is evaluated by the kernel.
 /// @param[in] value_size Value size of the evaluated expression at a
 /// point, e.g. 1 for a scalar field, 3 for a vector field in 3D, 4 for
 /// a second-order tensor in 2D.
@@ -55,10 +56,10 @@ namespace dolfinx::fem::impl
 /// expression. Usually packed using fem::pack_constants.
 /// @param[in] entities Mesh entities to evaluate the expression over.
 /// For expressions executed on cells, rank is 1 and size is the number
-/// of cells. For expressions executed on facets rank is 2, and shape is
-/// `(num_facets, 2)`, where `entities[i, 0]` is the cell index and
-/// `entities[i, 1]` is the local index of the facet relative to the
-/// cell.
+/// of cells. For expressions executed on facets, ridges or peaks rank
+/// is 2, and shape is `(num_entities, 2)`, where `entities[i, 0]` is the
+/// cell index and `entities[i, 1]` is the local index of the entity
+/// relative to the cell.
 /// @param[in] cell_info Cell orientation data for use in `P0`.
 /// @param[in] argument_cells Cell of the argument's mesh for each of
 /// `entities`, for use in `P0`. Empty if the argument is defined on the
@@ -140,8 +141,9 @@ void tabulate_expression(
 /// (`entities.extent(0), Xshape[0], value_size)`. Storage is row-major.
 /// Data is set (not accumulated).
 /// @param[in] fn Expression kernel to execute.
-/// @param[in] Xshape Shape `(num_points, geometric dimensions)` of
-/// points array at which the expression is evaluated by the kernel.
+/// @param[in] Xshape Shape `(num_points, entity dimension)` of the
+/// points, on the reference cell of the entities, at which the
+/// expression is evaluated by the kernel.
 /// @param[in] value_size Value size of the evaluated expression at a
 /// point, e.g. 1 for a scalar field and 3 for a vector field in 3D.
 /// @param[in] coeffs Coefficient data that appears in the Expression.
@@ -152,10 +154,10 @@ void tabulate_expression(
 /// @param[in] mesh Mesh to execute the expression kernel on.
 /// @param[in] entities Mesh entities to evaluate the expression over.
 /// For expressions executed on cells, rank is 1 and size is the number
-/// of cells. For expressions executed on facets rank is 2, and shape is
-/// `(num_facets, 2)`, where `entities[i, 0]` is the cell index and
-/// `entities[i, 1]` is the local index of the facet relative to the
-/// cell.
+/// of cells. For expressions executed on facets, ridges or peaks rank
+/// is 2, and shape is `(num_entities, 2)`, where `entities[i, 0]` is the
+/// cell index and `entities[i, 1]` is the local index of the entity
+/// relative to the cell.
 /// @param[in] element Argument element and argument space dimension.
 /// Used to computed a 1-form expression, e.g. can be used to create a
 /// matrix that when applied to a degree-of-freedom vector gives the
@@ -200,22 +202,20 @@ void tabulate_expression(
     }
   }
 
-  // An expression has no notion of requiring a facet permutation.
-  md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
+  // The kernel is passed the permutation of the entity it is evaluated
+  // on, so that the evaluation points are ordered consistently with a
+  // neighbouring cell's. The points are given on the reference cell of
+  // the entity, so `Xshape[1]` is the entity dimension. The mesh has a
+  // single cell type, see fem::impl::check_expression_entities.
+  md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
   if constexpr (std::remove_cvref_t<decltype(entities)>::rank() == 2)
   {
-    const int facet_dim = mesh.topology()->dim() - 1;
-    mesh::CellType cell_type = mesh.topology()->cell_types()[0];
-    int num_facets_per_cell = mesh::cell_num_entities(cell_type, facet_dim);
-    mesh.topology_mutable()->create_entity_permutations(facet_dim);
-    const std::vector<std::uint8_t>& p
-        = mesh.topology()->get_entity_permutations(facet_dim);
-    facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
-                             num_facets_per_cell);
+    perms = mesh::entity_permutations(*mesh.topology_mutable(), Xshape[1], 0);
   }
+
   tabulate_expression(values, fn, Xshape, value_size, num_argument_dofs,
                       mesh.geometry().dofmaps().front(), mesh.geometry().x(),
                       coeffs, constants, entities, cell_info, argument_cells,
-                      post_dof_transform, facet_perms);
+                      post_dof_transform, perms);
 }
 } // namespace dolfinx::fem::impl

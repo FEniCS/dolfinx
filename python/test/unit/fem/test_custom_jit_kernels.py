@@ -6,6 +6,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import importlib.util
 import os
 import sys
 
@@ -154,10 +155,11 @@ def test_coefficient(dtype):
 
 
 @pytest.mark.skip_in_parallel
-def test_cffi_assembly():
+def test_cffi_assembly(tempdir):
     pytest.importorskip("cffi")
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13, dtype=np.float64)
     V = functionspace(mesh, ("Lagrange", 1))
+    lib_path = None
     if mesh.comm.rank == 0:
         from cffi import FFI
 
@@ -269,10 +271,13 @@ def test_cffi_assembly():
         """
         )
 
-        ffibuilder.compile(verbose=True)
+        lib_path = ffibuilder.compile(tmpdir=tempdir, verbose=True)
 
-    mesh.comm.Barrier()
-    from _cffi_kernelA import ffi, lib
+    lib_path = mesh.comm.bcast(lib_path, root=0)
+    spec = importlib.util.spec_from_file_location("_cffi_kernelA", lib_path)
+    kernel_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(kernel_mod)
+    ffi, lib = kernel_mod.ffi, kernel_mod.lib
 
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
 

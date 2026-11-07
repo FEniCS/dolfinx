@@ -35,6 +35,139 @@ def test_transpose(degree, symmetry) -> None:
     assert np.isclose(dolfinx.fem.assemble_scalar(form), 0) == symmetry
 
 
+@pytest.mark.parametrize("n", [2, 3])
+def test_interpolation_nonsymmetric_data(n) -> None:
+    """Non-symmetric input is accepted and produces a symmetric tensor.
+
+    The diagonal of the result is the diagonal of the input; which
+    off-diagonal components are retained is unspecified, so it is not
+    checked.
+    """
+    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 2)
+    mat = np.arange(1, n * n + 1, dtype=dolfinx.default_scalar_type).reshape(n, n)
+
+    def tensor(x):
+        return np.broadcast_to(mat.reshape(n * n, 1), (n * n, x.shape[1]))
+
+    def space(symmetry):
+        e = basix.ufl.element(
+            "DG",
+            mesh.basix_cell(),
+            0,
+            shape=(n, n),
+            symmetry=symmetry,
+            dtype=dolfinx.default_real_type,
+        )
+        return dolfinx.fem.functionspace(mesh, e)
+
+    V = space(True)
+    cells = np.arange(mesh.topology.index_map(2).size_local, dtype=np.int32)
+    points = dolfinx.mesh.compute_midpoints(mesh, 2, cells)
+    atol = 10 * np.finfo(dolfinx.default_scalar_type).resolution
+
+    # Callable source
+    f = dolfinx.fem.Function(V)
+    f.interpolate(tensor)
+    values = f.eval(points, cells).reshape(-1, n, n)
+    assert np.allclose(values, values.swapaxes(1, 2), atol=atol)
+    assert np.allclose(np.diagonal(values, axis1=1, axis2=2), np.diag(mat), atol=atol)
+
+    # Expression source, built on a non-symmetric Function
+    g = dolfinx.fem.Function(space(False))
+    g.interpolate(tensor)
+    f.x.array[:] = 0
+    f.interpolate(dolfinx.fem.Expression(2 * g, V.element.interpolation_points))
+    values = f.eval(points, cells).reshape(-1, n, n)
+    assert np.allclose(values, values.swapaxes(1, 2), atol=atol)
+    assert np.allclose(np.diagonal(values, axis1=1, axis2=2), 2 * np.diag(mat), atol=atol)
+
+    # Direct Function source
+    f.x.array[:] = 0
+    f.interpolate(g)
+    values = f.eval(points, cells).reshape(-1, n, n)
+    assert np.allclose(values, values.swapaxes(1, 2), atol=atol)
+    assert np.allclose(np.diagonal(values, axis1=1, axis2=2), np.diag(mat), atol=atol)
+
+
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("family", ["Lagrange", "DG"])
+@pytest.mark.parametrize("degrees", [(1, 1), (1, 2), (2, 1), (2, 2)])
+@pytest.mark.parametrize("source_symmetry", [True, False])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_interpolation_between_tensor_layouts(dim, family, degrees, source_symmetry, dtype):
+    """Interpolate exact tensor values between full and independent component layouts."""
+    real_type = dtype(0).real.dtype
+    if dim == 2:
+        mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 2, dtype=real_type)
+    else:
+        mesh = dolfinx.mesh.create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=real_type)
+
+    def tensor(x):
+        points = x[:dim, None] ** min(degrees)
+        values = points + points.swapaxes(0, 1) + np.eye(dim)[:, :, None]
+        if np.issubdtype(dtype, np.complexfloating):
+            values = (1 + 2j) * values
+        return values.reshape(dim * dim, -1)
+
+    functions = []
+    for degree, symmetry in zip(degrees, [source_symmetry, not source_symmetry], strict=True):
+        element = basix.ufl.element(
+            family, mesh.basix_cell(), degree, shape=(dim, dim), symmetry=symmetry, dtype=real_type
+        )
+        functions.append(
+            dolfinx.fem.Function(dolfinx.fem.functionspace(mesh, element), dtype=dtype)
+        )
+    source, target = functions
+    source.interpolate(tensor)
+    target.interpolate(source)
+
+    cells = np.arange(mesh.topology.index_map(dim).size_local, dtype=np.int32)
+    points = dolfinx.mesh.compute_midpoints(mesh, dim, cells)
+    values = target.eval(points, cells)
+    expected = tensor(points.T).T
+    atol = 100 * np.finfo(real_type).eps
+    np.testing.assert_allclose(values, expected, rtol=atol, atol=atol)
+
+
+@pytest.mark.parametrize("source_symmetry", [True, False])
+def test_interpolation_tensor_layouts_cell_selection(source_symmetry):
+    """Convert tensor layouts on a subset of cells with reordered source cells."""
+    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 2)
+    functions = []
+    for symmetry in [source_symmetry, not source_symmetry]:
+        element = basix.ufl.element(
+            "DG",
+            mesh.basix_cell(),
+            0,
+            shape=(2, 2),
+            symmetry=symmetry,
+            dtype=dolfinx.default_real_type,
+        )
+        functions.append(dolfinx.fem.Function(dolfinx.fem.functionspace(mesh, element)))
+    source, target = functions
+    source.interpolate(lambda x: [x[0], x[1], x[1], 2 * x[0]])
+    target.x.array[:] = np.nan
+
+    all_cells = np.arange(mesh.topology.index_map(2).size_local, dtype=np.int32)
+    cells = all_cells[::2].copy()
+    # `cells0[i]` and `cells1[i]` are documented to be the same cell, so on a
+    # single mesh they would normally be equal. Reversing `cells0` only checks
+    # that the two lists are not transposed internally, and is safe here solely
+    # because DG0 is identity mapped: the conversion path takes the cell
+    # geometry from `cells0` while writing the dofs of `cells1`.
+    source_cells = cells[::-1].copy()
+    target.interpolate(source, cells0=source_cells, cells1=cells)
+    points = dolfinx.mesh.compute_midpoints(mesh, 2, cells)
+    source_points = dolfinx.mesh.compute_midpoints(mesh, 2, source_cells)
+    atol = 100 * np.finfo(dolfinx.default_real_type).eps
+    np.testing.assert_allclose(
+        target.eval(points, cells), source.eval(source_points, source_cells), rtol=atol, atol=atol
+    )
+    untouched_cells = all_cells[1::2].copy()
+    untouched_points = dolfinx.mesh.compute_midpoints(mesh, 2, untouched_cells)
+    assert np.isnan(target.eval(untouched_points, untouched_cells)).all()
+
+
 def test_interpolation() -> None:
     """Test that a symmetric 3x3 2-tensor is correctly interpolated."""
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)

@@ -1,10 +1,11 @@
 vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
-vcpkg_from_github(
+vcpkg_from_gitlab(
+  GITLAB_URL https://gitlab.inria.fr
   OUT_SOURCE_PATH SOURCE_PATH
-  REPO jhale/scotch
-  REF 7fe04d6cf2d954d2a2cbb71c1c8b3dd5134837f9
-  SHA512 dc009d685c2a88bd036e2496e347432bcdc4ab3b0d1d9a51a6d9a977e4f647466ea0071da2ba9c638de971dacc1066de00f812d480ed1a36c28de65c51ec1af5
-  HEAD_REF jhale/windows-fixes-squash
+  REPO scotch/scotch
+  REF "v${VERSION}"
+  SHA512 dbb41f82b1113f7e109c600ace9dbcf82fec5cff8944d92ed2f62917aef3c619b580421bb847b7108197ce6139302f7af0d4088b0447710f693606608b60ed5f
+  HEAD_REF master
 )
 
 vcpkg_find_acquire_program(FLEX)

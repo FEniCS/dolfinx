@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the Function class."""
 
-import importlib
+import importlib.util
 import sys
 
 from mpi4py import MPI
@@ -259,7 +259,7 @@ def test_interpolation_rank1(W) -> None:
 
 
 @pytest.mark.parametrize("dtype,cdtype", [(np.float32, "float"), (np.float64, "double")])
-def test_cffi_expression(dtype, cdtype):
+def test_cffi_expression(tempdir, dtype, cdtype):
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=dtype)
     V = functionspace(mesh, ("Lagrange", 1))
 
@@ -279,10 +279,12 @@ def test_cffi_expression(dtype, cdtype):
     ffi = cffi.FFI()
     ffi.set_source(module, code_c)
     ffi.cdef(code_h)
-    ffi.compile()
+    lib_path = ffi.compile(tmpdir=tempdir)
 
     # Import the compiled kernel
-    kernel_mod = importlib.import_module(module)
+    spec = importlib.util.spec_from_file_location(module, lib_path)
+    kernel_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(kernel_mod)
     ffi, lib = kernel_mod.ffi, kernel_mod.lib
 
     # Get pointer to the compiled function

@@ -44,10 +44,11 @@ def mat_gather():
 @pytest.fixture
 def mat_random():
     """Return a function that creates a random (dense) MatrixCSR for testing."""
+    # Matrices in one test share a mesh since partitioning need not be repeatable.
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 4)
+    mesh.topology.create_entities(1)
 
     def _mat_random(dim0, dim1, seed, dtype, bs=[1, 1]):
-        mesh = create_unit_square(MPI.COMM_WORLD, 5, 4)
-        mesh.topology.create_entities(1)
         imap0 = mesh.topology.index_map(dim0)
         imap1 = mesh.topology.index_map(dim1)
         sp = dolfinx.la.sparsity_pattern(mesh.comm, [imap0, imap1], bs)

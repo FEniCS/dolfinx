@@ -21,6 +21,7 @@ from dolfinx.mesh import (
     create_rectangle,
     create_submesh,
     create_unit_cube,
+    create_unit_interval,
     create_unit_square,
     exterior_facet_indices,
     locate_entities,
@@ -765,3 +766,238 @@ def test_skewed_quadrature(dtype) -> None:
     values_parent = expr_parent.eval(mesh, entities.reshape(-1, 2))
 
     np.testing.assert_allclose(values_codim, values_parent, atol=tol)
+
+
+def compute_ridge_entities(mesh):
+    """(cell, local ridge index) pairs for every owned ridge of ``mesh``."""
+    tdim = mesh.topology.dim
+    mesh.topology.create_entities(tdim - 2)
+    mesh.topology.create_connectivity(tdim - 2, tdim)
+    mesh.topology.create_connectivity(tdim, tdim - 2)
+    ridges = np.arange(mesh.topology.index_map(tdim - 2).size_local, dtype=np.int32)
+    entities = fem.compute_integration_domains(fem.IntegralType.ridge, mesh.topology, ridges)
+    return ridges, entities.reshape(-1, 2)
+
+
+def compute_vertex_entities(mesh):
+    """(cell, local vertex index) pairs for every owned vertex of ``mesh``."""
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(0, tdim)
+    mesh.topology.create_connectivity(tdim, 0)
+    vertices = np.arange(mesh.topology.index_map(0).size_local, dtype=np.int32)
+    entities = fem.compute_integration_domains(fem.IntegralType.vertex, mesh.topology, vertices)
+    return vertices, entities.reshape(-1, 2)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+@pytest.mark.parametrize("tdim", [2, 3])
+def test_ridge_expression(dtype, tdim):
+    """Evaluate an Expression on the ridges of a 2D or 3D mesh.
+
+    A ridge of a 3D mesh is an edge, so the evaluation points are given
+    on the reference interval. A ridge of a 2D mesh is a vertex, which
+    has no interior, so the points array has zero columns.
+    """
+    xtype = dtype(0).real.dtype
+    if tdim == 3:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, dtype=xtype)
+        # The cells are affine, so the midpoint of a ridge is the image
+        # of the midpoint of the reference interval
+        points = np.array([[0.5]], dtype=xtype)
+    else:
+        mesh = create_unit_square(MPI.COMM_WORLD, 3, 2, dtype=xtype)
+        points = np.zeros((1, 0), dtype=xtype)
+
+    ridges, entities = compute_ridge_entities(mesh)
+
+    weights = np.array([1.0, 2.0, -3.0][:tdim], dtype=xtype)
+    x = ufl.SpatialCoordinate(mesh)
+    expr = Expression(ufl.dot(ufl.as_vector(weights), x), points, dtype=dtype)
+    assert expr.entity_dim == tdim - 2
+    values = expr.eval(mesh, entities)
+
+    midpoints = compute_midpoints(mesh, tdim - 2, ridges)
+    exact = midpoints[:, :tdim] @ weights
+    np.testing.assert_allclose(
+        values[:, 0], exact.astype(dtype), atol=50 * np.finfo(xtype).resolution
+    )
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+@pytest.mark.parametrize("tdim", [2, 3])
+def test_submesh_codim_two(dtype, tdim):
+    """Evaluate a ridge Expression with a coefficient on a ridge submesh.
+
+    The ridges of a 3D mesh are edges, so the submesh is a mesh of
+    intervals. The ridges of a 2D mesh are vertices, so the submesh is a
+    mesh of points, on which only degree 0 is defined.
+    """
+    xtype = dtype(0).real.dtype
+    if tdim == 3:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, dtype=xtype)
+        quadrature_points = np.array([[0.31], [0.77]], dtype=xtype)
+        # A ridge is a straight line, so `expr1` restricted to it is
+        # quadratic in the arc length and is captured exactly by P2
+        sub_element = ("Lagrange", 2)
+    else:
+        mesh = create_unit_square(MPI.COMM_WORLD, 3, 2, dtype=xtype)
+        quadrature_points = np.zeros((1, 0), dtype=xtype)
+        sub_element = ("Lagrange", 0)
+
+    ridges, entities = compute_ridge_entities(mesh)
+
+    def expr0(x):
+        return x[0] + 2.0 * x[1]
+
+    def expr1(x):
+        return x[1] ** 2 - x[0]
+
+    u = Function(functionspace(mesh, ("Lagrange", 1)), dtype=dtype)
+    u.interpolate(expr0)
+
+    submesh, entity_map, _, _ = create_submesh(mesh, tdim - 2, ridges)
+    u_sub = Function(functionspace(submesh, sub_element), dtype=dtype)
+    u_sub.interpolate(expr1)
+
+    expr = Expression(u * u_sub, quadrature_points, dtype=dtype, entity_maps=[entity_map])
+    values = expr.eval(mesh, entities)
+
+    x = ufl.SpatialCoordinate(mesh)
+    expr_exact = Expression(expr0(x) * expr1(x), quadrature_points, dtype=dtype)
+    values_exact = expr_exact.eval(mesh, entities)
+    np.testing.assert_allclose(values, values_exact, atol=50 * np.finfo(xtype).resolution)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+@pytest.mark.parametrize("tdim", [1, 2, 3])
+def test_vertex_expression(dtype, tdim):
+    """Evaluate an Expression at the vertices of a 1D, 2D or 3D mesh.
+
+    Zero-dimensional points give a facet Expression in 1D, a ridge
+    Expression in 2D and a peak Expression in 3D: a peak, of dimension
+    ``tdim - 3``, only exists on a 3D mesh.
+    """
+    xtype = dtype(0).real.dtype
+    if tdim == 1:
+        mesh = create_unit_interval(MPI.COMM_WORLD, 4, dtype=xtype)
+    elif tdim == 2:
+        mesh = create_unit_square(MPI.COMM_WORLD, 3, 2, dtype=xtype)
+    else:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xtype)
+
+    points = np.zeros((1, 0), dtype=xtype)
+    x = ufl.SpatialCoordinate(mesh)
+    expr = Expression(x[0], points, dtype=dtype)
+    assert expr.entity_dim == 0
+
+    vertices, entities = compute_vertex_entities(mesh)
+    values = expr.eval(mesh, entities)
+
+    exact = compute_midpoints(mesh, 0, vertices)[:, 0]
+    np.testing.assert_allclose(
+        values[:, 0], exact.astype(dtype), atol=50 * np.finfo(xtype).resolution
+    )
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_submesh_codim_three(dtype):
+    """Evaluate a peak Expression with a coefficient on a peak submesh.
+
+    The peaks of a 3D mesh are its vertices, so the submesh is a mesh of
+    points, on which only degree 0 is defined.
+    """
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 2, dtype=xtype)
+    points = np.zeros((1, 0), dtype=xtype)
+    vertices, entities = compute_vertex_entities(mesh)
+
+    def expr0(x):
+        return x[0] + 2.0 * x[1]
+
+    def expr1(x):
+        return x[1] ** 2 - x[0] * x[2]
+
+    u = Function(functionspace(mesh, ("Lagrange", 1)), dtype=dtype)
+    u.interpolate(expr0)
+
+    submesh, entity_map, _, _ = create_submesh(mesh, 0, vertices)
+    u_sub = Function(functionspace(submesh, ("Lagrange", 0)), dtype=dtype)
+    u_sub.interpolate(expr1)
+
+    expr = Expression(u * u_sub, points, dtype=dtype, entity_maps=[entity_map])
+    assert expr.entity_dim == 0
+    values = expr.eval(mesh, entities)
+
+    x = ufl.SpatialCoordinate(mesh)
+    expr_exact = Expression(expr0(x) * expr1(x), points, dtype=dtype)
+    values_exact = expr_exact.eval(mesh, entities)
+    np.testing.assert_allclose(values, values_exact, atol=50 * np.finfo(xtype).resolution)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+@pytest.mark.parametrize("tdim", [2, 3])
+def test_expression_invalid_entities(dtype, tdim):
+    """Evaluating an Expression on entities of the wrong layout raises.
+
+    Facets, ridges and peaks must be given as (cell, local entity index)
+    pairs: a list of cells does not say which of the cell's entities to
+    evaluate on.
+    """
+    xtype = dtype(0).real.dtype
+    if tdim == 3:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xtype)
+    else:
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, dtype=xtype)
+    x = ufl.SpatialCoordinate(mesh)
+    cells = np.arange(mesh.topology.index_map(tdim).size_local, dtype=np.int32)
+
+    # Ridges, and for a 3D mesh also peaks
+    for edim in range(tdim - 2, -1, -1):
+        expr = Expression(x[0], np.full((1, edim), 0.5, dtype=xtype), dtype=dtype)
+        with pytest.raises(ValueError, match="local entity index"):
+            expr.eval(mesh, cells)
+
+    # Pairs need exactly two columns
+    expr = Expression(x[0], np.full((1, tdim - 1), 0.5, dtype=xtype), dtype=dtype)
+    with pytest.raises(ValueError, match="entities must have shape"):
+        expr.eval(mesh, np.zeros((cells.size, 3), dtype=np.int32))

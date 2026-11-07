@@ -39,13 +39,13 @@ PetscErrorCode invoke(F&& f, std::exception_ptr& exception)
   {
     // Logging matters when the caller ran SNESSolve directly, as
     // nothing then re-throws `exception`
-    spdlog::error("Exception raised in a SNES callback: {}", e.what());
+    logger().error("Exception raised in a SNES callback: {}", e.what());
     exception = std::current_exception();
     return PETSC_ERR_LIB;
   }
   catch (...)
   {
-    spdlog::error("Unknown exception raised in a SNES callback.");
+    logger().error("Unknown exception raised in a SNES callback.");
     exception = std::current_exception();
     return PETSC_ERR_LIB;
   }
@@ -180,7 +180,7 @@ SNESConvergedReason nls::petsc::SNESSolver::solve(Vec x)
   assert(_snes);
   assert(x);
 
-  spdlog::info("PETSc SNES solver starting to solve system.");
+  logger().info("PETSc SNES solver starting to solve system.");
 
   // Discard an exception from a solve that bypassed this one
   _exception = nullptr;
@@ -208,9 +208,9 @@ SNESConvergedReason nls::petsc::SNESSolver::solve(Vec x)
     const char* reason_str;
     common::petsc::check(SNESGetConvergedReasonString(_snes, &reason_str),
                          "SNESGetConvergedReasonString");
-    spdlog::warn("PETSc SNES solver did not converge in {} iterations "
-                 "(PETSc reason: {}).",
-                 num_iterations, reason_str);
+    logger().warn("PETSc SNES solver did not converge in {} iterations "
+                  "(PETSc reason: {}).",
+                  num_iterations, reason_str);
   }
 
   return reason;

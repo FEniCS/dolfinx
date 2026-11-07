@@ -31,7 +31,10 @@ mock_cpp_modules.py
 cpp/doxygen
 cpp/doc/source/demos
 cpp/doc/html
+cpp/doc/xml
+cpp/doc/build
 cpp/doc/latex
+cpp/doc/node_modules
 
 python/doc/source/demos
 python/doc/build
@@ -83,6 +86,7 @@ cpp/demo/**/**/*.h
 *.bp
 *.png
 *.vtkhdf
+*.csv
 
 CMakeCache.txt
 CMakeFiles

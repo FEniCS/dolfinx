@@ -7,6 +7,7 @@
 #include "CoordinateElement.h"
 #include <algorithm>
 #include <basix/finite-element.h>
+#include <cassert>
 #include <cmath>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -25,6 +26,15 @@ CoordinateElement<T>::CoordinateElement(
     std::shared_ptr<const basix::FiniteElement<T>> element)
     : _element(std::move(element))
 {
+  assert(_element);
+  // Geometry coefficients are node coordinates
+  if (!_element->interpolation_is_identity())
+  {
+    throw std::invalid_argument(
+        "Coordinate element DOFs must be unit-weight point evaluations "
+        "(identity interpolation matrix), e.g. Lagrange.");
+  }
+
   int degree = _element->degree();
   mesh::CellType cell = this->cell_shape();
   _is_affine = mesh::is_simplex(cell) and degree == 1;
@@ -74,7 +84,7 @@ void CoordinateElement<T>::permute_subentity_closure(std::span<std::int32_t> d,
 {
   assert(_element);
   _element->permute_subentity_closure_inv(
-      d, cell_info & ~mesh::reversed_cell_bit,
+      d, cell_info & ~mesh::orientation_mask(mesh::cell_dim(cell_shape())),
       mesh::cell_type_to_basix_type(entity_type), entity_index);
 }
 //--------------------------------------------------------------------------------
@@ -195,7 +205,8 @@ void CoordinateElement<T>::permute(std::span<std::int32_t> dofs,
                                    std::uint32_t cell_perm) const
 {
   assert(_element);
-  _element->permute(dofs, cell_perm & ~mesh::reversed_cell_bit);
+  _element->permute(
+      dofs, cell_perm & ~mesh::orientation_mask(mesh::cell_dim(cell_shape())));
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -203,7 +214,8 @@ void CoordinateElement<T>::permute_inv(std::span<std::int32_t> dofs,
                                        std::uint32_t cell_perm) const
 {
   assert(_element);
-  _element->permute_inv(dofs, cell_perm & ~mesh::reversed_cell_bit);
+  _element->permute_inv(
+      dofs, cell_perm & ~mesh::orientation_mask(mesh::cell_dim(cell_shape())));
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

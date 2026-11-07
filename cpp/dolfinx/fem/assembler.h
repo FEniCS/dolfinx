@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/la/utils.h>
@@ -700,7 +701,7 @@ void set_diagonal(
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs,
     T diagonal = T(1))
 {
-  spdlog::debug("Set diagonal");
+  logger().debug("Set diagonal");
 
   std::vector<std::int32_t> rows;
   for (auto& bc : bcs)

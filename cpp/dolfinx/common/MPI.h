@@ -278,6 +278,7 @@ std::vector<std::ranges::range_value_t<U>>
 distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                 MPI_Comm comm1, const U& x, int shape1);
 
+/// @cond
 /// @private Type-dependent `false` for use in a `static_assert` that
 /// should only fire when a template is actually instantiated (a bare
 /// `static_assert(false, ...)` would fire unconditionally).
@@ -319,6 +320,7 @@ MPI_Datatype mpi_datatype()
     static_assert(dependent_false<T>::value,
                   "No MPI datatype registered for this type.");
 }
+/// @endcond
 
 /// @brief Retrieves the MPI data type associated to the provided type.
 /// @tparam T cpp type to map
@@ -622,7 +624,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   assert(x.size() % shape[1] == 0);
   const std::int32_t shape0_local = x.size() / shape[1];
 
-  spdlog::debug("Sending data to post offices (distribute_to_postoffice)");
+  logger().debug("Sending data to post offices (distribute_to_postoffice)");
 
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
@@ -631,14 +633,14 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
 
   // Determine source ranks
   const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
-  spdlog::info(
+  logger().info(
       "Number of neighbourhood source ranks in distribute_to_postoffice: {}",
       src.size());
 
   auto result
       = impl::postoffice_exchange(comm, x, shape, rank_offset, dest,
                                   num_items_per_dest, pos_to_neigh_rank, src);
-  spdlog::debug("Completed send data to post offices.");
+  logger().debug("Completed send data to post offices.");
   return result;
 }
 //---------------------------------------------------------------------------
@@ -719,7 +721,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   auto [post_src, dest] = dolfinx::MPI::compute_graph_edges_nbx(
       comm, send_dest, static_cast<int>(tag::consensus_nbx), src,
       static_cast<int>(tag::consensus_nbx) + 1);
-  spdlog::info(
+  logger().info(
       "Neighbourhood destination ranks from post office in "
       "distribute_data (rank, num dests, num dests/mpi_size): {}, {}, {}",
       rank, dest.size(), static_cast<double>(dest.size()) / size);

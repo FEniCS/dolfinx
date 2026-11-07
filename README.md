@@ -23,71 +23,23 @@ Documentation can be viewed [here](https://docs.fenicsproject.org).
 
 ## Installation
 
-### From source
-
-For detailed instructions and a list of dependencies, see
-[here](https://docs.fenicsproject.org/dolfinx/main/python/installation).
-
-#### C++ core
-
-To build and install the C++ core, in the `cpp/` directory, run:
-
-```shell
-mkdir build
-cd build
-cmake ..
-make install
-```
-
-#### Python interface
-
-To install the Python interface, first install the C++ core, and then in
-the `python/` directory run:
-
-```shell
-pip install --group pyproject.toml:build
-pip install --check-build-dependencies --no-build-isolation .
-```
-
-### Spack
-
-To build the most recent release using
-[Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
-shell):
-
-```shell
-git clone https://github.com/spack/spack.git
-. ./spack/share/spack/setup-env.sh
-spack env create fenicsx-env
-spack env activate fenicsx-env
-spack install --add py-fenics-dolfinx+petsc4py+slepc4py
-```
-
-Spack is the recommended approach for HPC systems.
-
-Although Spack already contains FEniCS Project packages, we also maintain a
-separate [overlay package repository](https://github.com/FEniCS/spack-fenics)
-which may contain bug fixes and package specs for newer releases of the FEniCS
-Project components, particularly after a recent release.
-
-```shell
-spack repo add https://github.com/fenics/spack-fenics
-spack repo ls # shows fenics above builtin
-```
-
-### Binary packages
+DOLFINx can be installed from [binary packages](#binary-packages) or
+[source](#from-source).
 
 **Recommendations**
 
-- macOS: [conda](#conda).
-- Linux: [apt](#ubuntu-packages)
-  ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)),
-  [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
-- Windows: [docker](#docker-images), or install
-  [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use
-  [Ubuntu](#ubuntu-packages). [conda](#conda) packages in beta testing.
+- Most users: [conda](#conda) or [pip (beta)](#pip-beta) on Linux,
+  macOS and Windows. *pip does not include PETSc yet*, and conda does
+  not include PETSc on Windows.
+- With PETSc: [conda](#conda) (Linux and macOS),
+  [Ubuntu](#ubuntu-packages)/[Debian](#debian-packages) packages or
+  [Docker](#docker-images). On Windows, install
+  [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) and use
+  [Ubuntu](#ubuntu-packages).
 - High performance computers: [Spack](#spack) or
   [from source](#from-source), both using system-provided MPI.
+
+### Binary packages
 
 #### conda
 
@@ -101,9 +53,8 @@ conda install -c conda-forge fenics-dolfinx mpich pyvista # Linux and macOS
 conda install -c conda-forge fenics-dolfinx pyvista pyamg # Windows
 ```
 
-*Windows only*: Windows conda packages are currently in beta testing. PETSc
-and petsc4py are not available on Windows. Because FEniCS uses just-in-time
-compilation it necessary to install
+*Windows only*: PETSc and petsc4py are not available on Windows. Because
+FEniCS uses just-in-time compilation it is necessary to install
 [Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/).
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
@@ -182,6 +133,112 @@ docker run -ti dolfinx/dev-env:current
 The Docker images support arm64 and amd64 architectures. For a full list
 of tags, including versioned images, see
 <https://hub.docker.com/u/dolfinx>
+
+#### pip (beta)
+
+Beta binary wheels of `main` are built twice a week and available from
+[Test PyPI](https://test.pypi.org/) for Python 3.12+. They are built without
+PETSc and with SuperLU_DIST for sparse direct solves.
+
+Linux (x86_64 and aarch64):
+
+```shell
+python3 -m venv fenicsx-env
+source fenicsx-env/bin/activate
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" mpich
+```
+
+The Linux wheels need glibc 2.34 or later, e.g. RHEL 9 or Ubuntu 22.04. Check
+with `ldd --version`. On older systems pip reports `from versions: none`.
+
+macOS (Apple silicon and Intel), with the Xcode Command Line Tools:
+
+```shell
+python3 -m venv fenicsx-env
+source fenicsx-env/bin/activate
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" openmpi
+```
+
+The macOS wheels need macOS 15 or later. Check with `sw_vers -productVersion`.
+On older systems pip reports `from versions: none`.
+
+Windows (x86_64), in PowerShell:
+
+```powershell
+# Or install Python 3.12 or later and the Visual Studio C++ build tools manually
+winget install -e --id Python.Python.3.13
+winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+```
+
+Then in a new PowerShell:
+
+```powershell
+py -3 -m venv fenicsx-env
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned -Force
+fenicsx-env\Scripts\Activate.ps1
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "fenics-dolfinx>=0.12.0.dev0" impi-rt
+# Put mpiexec from impi-rt on the PATH, in each new session
+$env:Path = "$env:VIRTUAL_ENV\Library\bin;$env:Path"
+```
+
+Check that `mpiexec` comes from `fenicsx-env`, since another MPI on the `PATH`,
+e.g. from Homebrew, can shadow it. `which -a mpiexec` on Linux and macOS, or
+`Get-Command -All mpiexec` on Windows, should list the virtual environment's
+`mpiexec` first.
+
+With `uv pip install`, also pass `--index-strategy unsafe-best-match`.
+
+### From source
+
+For detailed instructions and a list of dependencies, see
+[here](https://docs.fenicsproject.org/dolfinx/main/python/installation).
+
+#### C++ core
+
+To build and install the C++ core, in the `cpp/` directory, run:
+
+```shell
+mkdir build
+cd build
+cmake ..
+make install
+```
+
+#### Python interface
+
+To install the Python interface, first install the C++ core, and then in
+the `python/` directory run:
+
+```shell
+pip install --group pyproject.toml:build
+pip install --check-build-dependencies --no-build-isolation .
+```
+
+### Spack
+
+To build the most recent release using
+[Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
+shell):
+
+```shell
+git clone https://github.com/spack/spack.git
+. ./spack/share/spack/setup-env.sh
+spack env create fenicsx-env
+spack env activate fenicsx-env
+spack install --add py-fenics-dolfinx+petsc4py+slepc4py
+```
+
+Spack is the recommended approach for HPC systems.
+
+Although Spack already contains FEniCS Project packages, we also maintain a
+separate [overlay package repository](https://github.com/FEniCS/spack-fenics)
+which may contain bug fixes and package specs for newer releases of the FEniCS
+Project components, particularly after a recent release.
+
+```shell
+spack repo add https://github.com/fenics/spack-fenics
+spack repo ls # shows fenics above builtin
+```
 
 ## Contributing
 

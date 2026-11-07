@@ -256,7 +256,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                 std::optional<std::span<const std::int32_t>> edge_weights,
                 bool ghosting)
   {
-    spdlog::info("Compute graph partition using PT-SCOTCH");
+    logger().info("Compute graph partition using PT-SCOTCH");
     common::Timer timer("Compute graph partition (SCOTCH)");
 
     // Note: SCOTCH requires an array to be null on all ranks or on none, ref.
@@ -570,12 +570,12 @@ ParmetisWeights build_parmetis_weights(
 
   if (!w.elmwgt.empty())
   {
-    spdlog::info("ParMETIS: applying node weights");
+    logger().info("ParMETIS: applying node weights");
     w.wgtflag += 2;
   }
   if (!w.edgwgt.empty())
   {
-    spdlog::info("ParMETIS: applying edge weights");
+    logger().info("ParMETIS: applying edge weights");
     w.wgtflag += 1;
   }
 
@@ -594,7 +594,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
                    std::optional<std::span<const std::int32_t>> edge_weights,
                    bool ghosting)
   {
-    spdlog::info("Compute graph partition using ParMETIS");
+    logger().info("Compute graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS)");
 
     if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
@@ -652,7 +652,7 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
                    std::optional<std::span<const std::int32_t>> edge_weights,
                    bool ghosting)
   {
-    spdlog::info("Compute graph re-partition using ParMETIS");
+    logger().info("Compute graph re-partition using ParMETIS");
     common::Timer timer("Compute graph re-partition (ParMETIS)");
 
     const int rank = dolfinx::MPI::rank(comm);
@@ -727,7 +727,7 @@ std::vector<int> graph::parmetis::geom_partitioner(
         "ParMETIS_V3_PartGeom does not support node weights.");
   }
 
-  spdlog::info("Compute geometric graph partition using ParMETIS");
+  logger().info("Compute geometric graph partition using ParMETIS");
   common::Timer timer("Compute graph partition (ParMETIS geometric)");
 
   const idx_t num_nodes = x.size() / gdim;
@@ -790,7 +790,7 @@ graph::parmetis::geom_partitioner_kway(double imbalance,
                    std::optional<std::span<const std::int32_t>> edge_weights,
                    bool ghosting)
   {
-    spdlog::info("Compute geometric graph partition using ParMETIS");
+    logger().info("Compute geometric graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS geometric)");
 
     const idx_t num_nodes = graph.num_nodes();
@@ -863,7 +863,7 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
              std::optional<std::span<const std::int32_t>> edge_weights,
              bool ghosting)
   {
-    spdlog::info("Compute graph partition using (parallel) KaHIP");
+    logger().info("Compute graph partition using (parallel) KaHIP");
 
     // KaHIP integer type
     using T = unsigned long long;

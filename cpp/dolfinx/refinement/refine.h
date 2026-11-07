@@ -17,9 +17,9 @@
 #include "plaza.h"
 #include <algorithm>
 #include <concepts>
+#include <dolfinx/common/log.h>
 #include <mpi.h>
 #include <optional>
-#include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <utility>
 #include <variant>
@@ -161,7 +161,7 @@ refine(const mesh::Mesh<T>& mesh,
   const int D = topology->dim();
   const std::int64_t n0 = topology->index_map(D)->size_global();
   const std::int64_t n1 = mesh1.topology()->index_map(D)->size_global();
-  spdlog::info(
+  logger().info(
       "Number of cells increased from {} to {} ({}% increase).", n0, n1,
       100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 

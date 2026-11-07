@@ -146,8 +146,11 @@ class Expression(Generic[Scalar]):
 
         Args:
             e: UFL expression.
-            X: Array of points of shape ``(num_points, tdim)`` on the
-                reference element.
+            X: Array of points on the reference cell of the entities
+                the Expression is evaluated on, of shape
+                ``(num_points, entity_dim)``: ``tdim`` for cells,
+                ``tdim - 1`` for facets, ``tdim - 2`` for ridges and
+                ``tdim - 3`` for peaks.
             comm: Communicator that the Expression is defined on.
             form_compiler_options: Options used in FFCx compilation of
                 this Expression. Run ``ffcx --help`` in the commandline
@@ -255,8 +258,9 @@ class Expression(Generic[Scalar]):
         Args:
             mesh: Mesh to evaluate Expression on.
             entities: Entities to evaluate the Expression over. For
-                cells, it is a list of cell indices. For facets, it is a
-                2D array of (cell index, local facet index).
+                cells, it is a list of cell indices. For facets, ridges
+                and peaks, it is a 2D array of (cell index, local entity
+                index).
             values: Array to fill with evaluated values. If ``None``,
                 storage will be allocated. Otherwise it must have shape
                 ``(entities.shape[0], num_points, *value_shape)`` if
@@ -272,21 +276,15 @@ class Expression(Generic[Scalar]):
             num_points, *value_shape, argument_space_dim)`` if the
             Expression does have an argument function.
         """
+        # Packing the coefficients checks that the Expression can be
+        # evaluated over `entities`
         _entities = np.asarray(entities, dtype=np.int32)
-        if (tdim := mesh.topology.dim) != (expr_dim := self._cpp_object.X().shape[1]):
-            if expr_dim != tdim - 1:
-                raise ValueError("Expression must be defined on the mesh or its facets.")
-            if entities.ndim != 2:
-                raise ValueError(
-                    "entities list should have two dimensions for expression evaluation on facets."
-                )
-
         if self.argument_space is None:
-            values_shape = (_entities.shape[0], self.X().shape[0], *self.value_shape)
+            values_shape = (_entities.shape[0], self.num_points, *self.value_shape)
         else:
             values_shape = (
                 _entities.shape[0],
-                self.X().shape[0],
+                self.num_points,
                 *self.value_shape,
                 self.argument_space.element.space_dimension,
             )
@@ -317,8 +315,23 @@ class Expression(Generic[Scalar]):
         return values
 
     def X(self) -> npt.NDArray:
-        """Evaluation points on the reference cell."""
+        """Evaluation points on the reference entity."""
         return self._cpp_object.X()
+
+    @property
+    def num_points(self) -> int:
+        """Number of evaluation points."""
+        return self._cpp_object.num_points
+
+    @property
+    def entity_dim(self) -> int:
+        """Topological dimension of the entities evaluated on.
+
+        The evaluation points are given on the reference entity, e.g. on a
+        tetrahedral mesh this is 3 for cells, 2 for facets, 1 for ridges
+        and 0 for peaks.
+        """
+        return self._cpp_object.entity_dim
 
     @property
     def ufl_expression(self) -> ufl.core.expr.Expr:
@@ -537,6 +550,27 @@ class Function(ufl.Coefficient, Generic[Scalar]):
                 interpolate over. If ``None``, then taken to be the same
                 cells as ``cells0``. If ``cells1`` is not ``None`` it
                 must have the same length as ``cells0``.
+
+        Note:
+            A symmetric rank-2 tensor space (``symmetry=True`` on the
+            element) stores only the ``d * (d + 1) / 2`` independent
+            components of a ``(d, d)`` tensor, but its value size is
+            ``d * d``, so a callable or :class:`Expression` ``u0`` must
+            supply all ``d * d`` components, row-major. The input should
+            be symmetric. Symmetry is not checked. The diagonal is taken
+            from the diagonal of the input; the choice of off-diagonal
+            components retained from non-symmetric data is unspecified.
+
+            Direct Function-to-Function interpolation between a blocked
+            tensor element with ``symmetry=True`` and an element using a
+            full tensor representation is supported. Regge and HHJ
+            tensors are mathematically symmetric, but use a full tensor
+            representation. A blocked source with ``symmetry=True`` has
+            its stored components expanded to the full tensor. When
+            interpolating into a symmetric space, the input should be
+            symmetric. The diagonal is taken from the diagonal of the
+            input; the choice of off-diagonal components retained from
+            non-symmetric data is unspecified.
         """
 
         @singledispatch

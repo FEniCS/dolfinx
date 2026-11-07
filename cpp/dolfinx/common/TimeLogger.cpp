@@ -26,7 +26,7 @@ void TimeLogger::register_timing(
     std::string_view task, std::chrono::duration<double, std::ratio<1>> time)
 {
   // Print a message
-  spdlog::debug("Elapsed time: {} ({})", time.count(), task);
+  logger().debug("Elapsed time: {} ({})", time.count(), task);
 
   // Store values for summary
   if (auto it = _timings.find(task); it != _timings.end())

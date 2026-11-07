@@ -11,6 +11,7 @@
 #include <basix/mdspan.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
@@ -50,7 +51,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
                                  double t, pugi::xml_node& xml_node,
                                  hid_t h5_id)
 {
-  spdlog::info("Adding function to node \"{}\"", xml_node.path('/'));
+  logger().info("Adding function to node \"{}\"", xml_node.path('/'));
 
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();

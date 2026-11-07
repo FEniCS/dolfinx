@@ -415,7 +415,7 @@ for fraction in (0.0, 0.5, 1.0):
 # PT-SCOTCH and ParMETIS support cell weights. The following example makes
 # every second local input cell twice as expensive and creates a weighted
 # partition. KaHIP is not used here because it ignores weights.
-#
+
 # +
 weighted_partitioner = (
     graph.partitioner_scotch()

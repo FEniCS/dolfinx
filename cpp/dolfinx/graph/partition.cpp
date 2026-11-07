@@ -352,8 +352,8 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   MPI_Type_free(&compound_type);
   MPI_Comm_free(&plan.neigh_comm);
 
-  spdlog::debug("Received {} data on {} [{}]", recv_disp.back(), rank,
-                shape[1]);
+  logger().debug("Received {} data on {} [{}]", recv_disp.back(), rank,
+                 shape[1]);
 
   // Unpack receive buffer
   std::vector<std::int64_t> data, data1;
@@ -404,7 +404,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
     std::span<const int> ghost_owners, int num_threads)
 {
   common::Timer timer("Compute ghost indices");
-  spdlog::info("Compute ghost indices");
+  logger().info("Compute ghost indices");
 
   // Get number of local cells determine global offset
   std::int64_t offset_local = 0;

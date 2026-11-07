@@ -5,6 +5,7 @@
 import datetime as dt
 import importlib.metadata
 import os
+import re
 import sys
 
 import mpi4py
@@ -22,7 +23,11 @@ import jupytext_process  # isort:skip
 
 myst_heading_anchors = 3
 
-jupytext_process.process()
+# Demos that save figures are executed to generate their images, which
+# dominates the build time. Set DOLFINX_DOC_SKIP_DEMO_IMAGES=1 to reuse
+# the images from an earlier build instead.
+_skip_demo_images = os.environ.get("DOLFINX_DOC_SKIP_DEMO_IMAGES", "")
+jupytext_process.process(run_demos=_skip_demo_images.lower() not in ("1", "true", "yes", "on"))
 
 # -- General configuration ------------------------------------------------
 
@@ -44,6 +49,7 @@ extensions = [
     "sphinx_codeautolink",
     "sphinx.ext.intersphinx",
     "sphinxcontrib.bibtex",
+    "sphinx_togglebutton",
 ]
 
 # Bibligraphy file
@@ -102,13 +108,22 @@ todo_include_todos = True
 # a list of builtin themes.
 #
 html_theme = "pydata_sphinx_theme"
-html_title = f"DOLFINx Python {release}"
+html_title = project
 
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#
-# html_theme_options = {}
+# Version switcher. FEniCS/docs generates the version list from the
+# published documentation. CI sets DOCS_VERSION to the branch or tag
+# name the documentation is published under. The list has one entry per
+# release, shared by its .postN builds.
+html_theme_options = {
+    "switcher": {
+        "json_url": "https://docs.fenicsproject.org/dolfinx/switcher-python.json",
+        "version_match": re.sub(r"\.post\d+$", "", os.environ.get("DOCS_VERSION", "main")),
+    },
+    "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
+    # The version list is fetched by the browser; don't fetch it at build time
+    "check_switcher": False,
+    "show_version_warning_banner": True,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

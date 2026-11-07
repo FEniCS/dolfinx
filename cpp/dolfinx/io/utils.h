@@ -9,6 +9,7 @@
 #include <array>
 #include <basix/mdspan.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Topology.h>
@@ -69,7 +70,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
 {
   assert(entities.extent(0) == data.size());
 
-  spdlog::info("XDMF distribute entity data");
+  logger().info("XDMF distribute entity data");
   mesh::CellType cell_type = topology.cell_type();
 
   // Get layout of dofs on 0th cell entity of dimension entity_dim
@@ -433,7 +434,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
                             std::span<const int> cell_vertex_dofs,
                             auto entities_data, std::span<const T> values)
   {
-    spdlog::info("XDMF build map");
+    logger().info("XDMF build map");
     auto c_to_v = topo.connectivity(topo.dim(), 0);
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");

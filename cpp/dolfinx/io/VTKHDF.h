@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
@@ -332,7 +333,7 @@ void write_data(std::string_view point_or_cell,
     throw std::runtime_error(
         "Data width is zero, or differs between processes.");
   }
-  spdlog::debug("Data vector width={}", data_width);
+  logger().debug("Data vector width={}", data_width);
 
   hdf5::Handle h5file(hdf5::open_file(mesh.comm(), filename, "a", true),
                       H5Fclose);
@@ -555,7 +556,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
 
   std::vector npoints = hdf5::read_dataset<std::int64_t>(
       h5file, "/VTKHDF/NumberOfPoints", {0, 1}, true);
-  spdlog::info("Mesh with {} points", npoints[0]);
+  logger().info("Mesh with {} points", npoints[0]);
   std::array<std::int64_t, 2> local_point_range
       = common::local_range(rank, npoints[0], mpi_size);
 

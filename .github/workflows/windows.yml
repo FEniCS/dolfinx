@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - release
     tags:
       - "v*"
   pull_request:
@@ -13,7 +12,7 @@ on:
   workflow_dispatch:
 
 # Cancel superseded runs: a new commit on a pull request makes the
-# previous run's result irrelevant. Pushes to 'main' and 'release' are
+# previous run's result irrelevant. Pushes to 'main' and tags are
 # left to finish, since they populate caches and publish artefacts.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -201,7 +200,7 @@ jobs:
         run: |
           pip install gmsh networkx matplotlib scipy pyvista
 
-      - uses: pyvista/setup-headless-display-action@v5.1.0
+      - uses: pyvista/setup-headless-display-action@v5.2.0
 
       - name: Run Python demos, skip demo_comm-pattern (serial)
         working-directory: dolfinx-src/python/demo

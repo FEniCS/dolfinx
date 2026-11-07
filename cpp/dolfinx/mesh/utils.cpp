@@ -46,8 +46,8 @@ std::vector<std::int64_t> mesh::impl::reorder_cells(
   // on the process boundary and (ii) apply re-ordering to cells for
   // locality
 
-  spdlog::info("Build local dual graphs, re-order cells, and compute process "
-               "boundary vertices.");
+  logger().info("Build local dual graphs, re-order cells, and compute process "
+                "boundary vertices.");
 
   // Unmatched facets (process boundary candidates) per cell type: the
   // flattened, row-major vertex data and the row width (number of

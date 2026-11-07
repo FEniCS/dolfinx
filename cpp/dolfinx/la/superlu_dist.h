@@ -196,7 +196,9 @@ public:
   /// Solves linear system Au = b via LU decomposition.
   ///
   /// The SuperLU_DIST solver has options set to upstream defaults,
-  /// except PrintStat (verbose solver output) set to NO.
+  /// except PrintStat (verbose solver output) set to NO and, when
+  /// SuperLU_DIST is built with ParMETIS support, ColPerm set to
+  /// PARMETIS.
   ///
   /// @param A Assembled left-hand side matrix.
   SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A);
