@@ -187,61 +187,128 @@ def test_prepared_matrix_bcs_different_form(source_kind, target_kind, shape, mon
         reference.destroy()
 
 
-@pytest.mark.parametrize("kind", [None, "mpi", "nest"])
-def test_nonlinear_problem_reuses_bc_data(kind, monkeypatch):
-    msh = mesh.create_unit_square(MPI.COMM_WORLD, 4, 4)
+@pytest.mark.parametrize("layout", ["single", "blocked", "nest", "is", "nest_is"])
+def test_nonlinear_problem_reuses_bc_data(layout, monkeypatch):
+    """Newton callbacks reuse prepared BC data and match fresh assembly.
+
+    Coefficients, boundary values and the conditions themselves change
+    between evaluations; each callback result is compared with the
+    public assembly functions, which prepare everything afresh.
+    """
+    msh = mesh.create_unit_square(
+        MPI.COMM_WORLD, 4, 4, dtype=PETSc.RealType, ghost_mode=mesh.GhostMode.none
+    )
     V = fem.functionspace(msh, ("Lagrange", 1))
-    spaces = [V] if kind is None else [V, V.clone()]
-    bcs = []
-    for W in spaces:
-        dofs = fem.locate_dofs_geometrical(W, lambda x: np.isclose(x[0], 0))
-        bcs.append(fem.dirichletbc(PETSc.ScalarType(1), dofs, W))
+    block = layout in ("blocked", "nest", "nest_is")
+    spaces = [V, V.clone()] if block else [V]
+    functions = [fem.Function(W) for W in spaces]
+    coefficient = fem.Constant(msh, PETSc.ScalarType(2))
+    residuals = [
+        ufl.inner(coefficient * u + u**3, ufl.TestFunction(W)) * ufl.dx
+        for u, W in zip(functions, spaces, strict=True)
+    ]
+    preconditioners = [
+        coefficient * ufl.inner(ufl.TrialFunction(W), ufl.TestFunction(W)) * ufl.dx for W in spaces
+    ]
+    P = [[preconditioners[0], None], [None, preconditioners[1]]] if block else preconditioners[0]
+    kind = {
+        "single": None,
+        "blocked": "mpi",
+        "nest": "nest",
+        "is": "is",
+        "nest_is": [["is", None], [None, "is"]],
+    }[layout]
+    boundary = fem.Constant(msh, PETSc.ScalarType(3))
+    left = fem.locate_dofs_geometrical(V, lambda x: x[0] < 1.0e-3)
+    right = fem.locate_dofs_geometrical(V, lambda x: x[0] > 1 - 1.0e-3)
+    conditions = [
+        fem.dirichletbc(boundary, dofs, W)
+        for dofs, W in zip((left, right)[: len(spaces)], spaces, strict=True)
+    ]
+    problem = petsc.NonlinearProblem(
+        residuals if block else residuals[0],
+        functions if block else functions[0],
+        bcs=conditions,
+        P=P,
+        kind=kind,
+        petsc_options_prefix=f"test_nonlinear_reuse_{layout}_",
+    )
+    assert problem.preconditioner is not None and problem.P_mat is not None
+    A_ref = petsc.create_matrix(problem.J, kind=kind)
+    P_ref = petsc.create_matrix(problem.preconditioner, kind=kind)
+    b_ref = problem.b.duplicate()
     eps = 1000 * np.finfo(PETSc.RealType).eps
 
-    def make_problem(label):
-        u = [fem.Function(W) for W in spaces]
-        F = [
-            ufl.inner(ui**2 - 2, ufl.TestFunction(W)) * ufl.dx
-            for ui, W in zip(u, spaces, strict=True)
-        ]
-        return petsc.NonlinearProblem(
-            F[0] if kind is None else F,
-            u[0] if kind is None else u,
-            bcs=bcs,
-            kind=kind,
-            petsc_options_prefix=f"test_nonlinear_reuse_{kind}_{label}_",
-            petsc_options={
-                "snes_rtol": eps,
-                "snes_error_if_not_converged": True,
-                "ksp_type": "gmres",
-                "ksp_rtol": eps,
-                "pc_type": "none",
-            },
-        )
-
-    reference = make_problem("reference")
-    problem = make_problem("reuse")
-    for p in (reference, problem):
-        for ui in [p.u] if kind is None else p.u:
-            ui.x.array[:] = 1
-    reference.solve()
-
     def unexpected(*args, **kwargs):
-        raise AssertionError("Newton steps must not rebuild or re-check BC data")
+        raise AssertionError("Newton callbacks must not rebuild or re-check BC data")
 
-    for name in (
-        "_bcs_by_block",
-        "_check_preconditioner_spaces",
-        "_check_prepared_matrix_bcs",
-        "_matrix_bc_data",
-        "_matrix_diag_data",
-        "_block_index_sets",
-        "_lifting_bc_markers",
-        "_extract_function_spaces",
-    ):
-        monkeypatch.setattr(petsc, name, unexpected)
-    problem.solve()
-    actual = [problem.u] if kind is None else problem.u
-    expected = [reference.u] if kind is None else reference.u
-    for u, u_ref in zip(actual, expected, strict=True):
-        np.testing.assert_allclose(u.x.array, u_ref.x.array, rtol=1e-10, atol=1e-10)
+    def compare(actual, expected):
+        if actual.getType() == PETSc.Mat.Type.NEST:
+            for i in range(len(spaces)):
+                for j in range(len(spaces)):
+                    if actual.getNestSubMatrix(i, j):
+                        compare(actual.getNestSubMatrix(i, j), expected.getNestSubMatrix(i, j))
+            return
+        a = actual.copy().convert(PETSc.Mat.Type.AIJ)
+        e = expected.copy().convert(PETSc.Mat.Type.AIJ)
+        try:
+            a.axpy(-1, e, PETSc.Mat.Structure.DIFFERENT_NONZERO_PATTERN)
+            assert a.norm() <= eps * max(1, e.norm())
+        finally:
+            a.destroy()
+            e.destroy()
+
+    try:
+        # Reassignment also removes formerly constrained dofs
+        for bcs in (conditions, conditions[1:], []):
+            problem.bcs = bcs
+            for step in (1, 2):
+                boundary.value = PETSc.ScalarType(step + 3)
+                coefficient.value = PETSc.ScalarType(step + 1)
+                for i, u in enumerate(functions):
+                    u.x.array[:] = PETSc.ScalarType(step + i)
+                petsc.assign(problem.u, problem.x)
+                with monkeypatch.context() as patch:
+                    for name in (
+                        "_check_preconditioner_spaces",
+                        "_check_prepared_matrix_bcs",
+                        "_matrix_bc_data",
+                        "_matrix_diag_data",
+                        "_matis_diag_data",
+                        "_block_index_sets",
+                        "_lifting_bc_markers",
+                        "_extract_function_spaces",
+                        "_bcs_by_block",
+                    ):
+                        patch.setattr(petsc, name, unexpected)
+                    problem.solver.computeFunction(problem.x, problem.b)
+                    problem.solver.computeJacobian(problem.x, problem.A, problem.P_mat)
+
+                petsc.assemble_residual(
+                    problem.solver,
+                    problem.x,
+                    b_ref,
+                    problem.u,
+                    problem.F,
+                    problem.J,
+                    problem.bcs,
+                    problem.b.getAttr("_blocks"),
+                )
+                petsc.assemble_jacobian(
+                    problem.solver,
+                    problem.x,
+                    A_ref,
+                    P_ref,
+                    problem.u,
+                    problem.J,
+                    problem.preconditioner,
+                    problem.bcs,
+                )
+                compare(problem.A, A_ref)
+                compare(problem.P_mat, P_ref)
+                b_ref.axpy(-1, problem.b)
+                assert b_ref.norm() <= eps * max(1, problem.b.norm())
+    finally:
+        b_ref.destroy()
+        A_ref.destroy()
+        P_ref.destroy()
