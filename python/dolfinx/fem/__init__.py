@@ -12,6 +12,7 @@ Note:
 
 from dolfinx.cpp.fem import IntegralType as IntegralType
 from dolfinx.fem.assemble import (
+    MatrixBCData,
     apply_lifting,
     assemble_matrix,
     assemble_matrix_fn,
@@ -21,6 +22,7 @@ from dolfinx.fem.assemble import (
     create_vector,
     pack_coefficients,
     pack_constants,
+    prepare_matrix_bcs,
     set_bc_diagonal,
 )
 from dolfinx.fem.bcs import (
@@ -79,6 +81,7 @@ __all__ = [
     "Function",
     "FunctionSpace",
     "IntegralType",
+    "MatrixBCData",
     "apply_lifting",
     "assemble_matrix",
     "assemble_matrix_fn",
@@ -110,6 +113,7 @@ __all__ = [
     "mixed_topology_form",
     "pack_coefficients",
     "pack_constants",
+    "prepare_matrix_bcs",
     "set_bc_diagonal",
     "transpose_dofmap",
 ]
