@@ -528,15 +528,14 @@ def _check_matrix_bc_diagonal(
 
 
 def _check_matrix_bc_marker(V: FunctionSpace | None, marker: npt.NDArray[np.int8]) -> None:
-    """Check the marker layout without inspecting its entries."""
+    """Raise if a marker is neither empty nor sized for ``V``.
+
+    C++ assembly indexes the marker without bounds checks. Type and
+    layout are enforced by the nanobind bindings.
+    """
     size = 0 if V is None else _unrolled_size(V)
-    if (
-        marker.ndim != 1
-        or marker.dtype != np.int8
-        or not marker.flags.c_contiguous
-        or marker.size not in (0, size)
-    ):
-        raise ValueError("BC markers must be contiguous int8 arrays covering owned and ghost dofs")
+    if marker.size not in (0, size):
+        raise ValueError("BC markers must be empty or cover owned and ghost dofs")
 
 
 def _same_spaces(
