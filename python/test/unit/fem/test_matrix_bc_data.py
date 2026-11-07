@@ -50,6 +50,10 @@ def test_prepared_matrix_bcs(shape, constrained, dtype, monkeypatch):
         fem.assemble_matrix(fem.create_matrix(a), a, bcs=bcs, diag=diagonal)
     assert record[0].filename == __file__
     data = fem.prepare_matrix_bcs(a, bcs, diag=diagonal)
+    for array in (data.row_marker, data.column_marker, data.diagonal_rows):
+        assert not array.flags.writeable
+        with pytest.raises(ValueError, match="read-only"):
+            array[:] = 0
     data = dataclasses.replace(
         data, diagonal_values=np.full(data.diagonal_rows.size, diagonal, dtype=dtype)
     )
@@ -97,6 +101,22 @@ def test_prepared_matrix_bcs_invalid_diagonal():
             fem.assemble_matrix(A, a, bcs=invalid)
     with pytest.raises(ValueError, match="Complex diagonal"):
         fem.prepare_matrix_bcs(a, [], diag=1 + 1j)
+
+
+def test_prepared_matrix_bcs_different_form():
+    msh = mesh.create_unit_square(MPI.COMM_WORLD, 3, 3)
+    V = fem.functionspace(msh, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    mass = fem.form(ufl.inner(u, v) * ufl.dx)
+    stiffness = fem.form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
+    dofs = fem.locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0))
+    bcs = [fem.dirichletbc(np.array(0, dtype=mass.dtype), dofs, V)]
+    data = fem.prepare_matrix_bcs(mass, bcs)
+    reference = fem.assemble_matrix(stiffness, bcs=bcs)
+    A = fem.assemble_matrix(stiffness, bcs=data)
+    reference.scatter_reverse()
+    A.scatter_reverse()
+    np.testing.assert_allclose(A.data, reference.data)
 
 
 def test_prepared_matrix_bcs_rectangular():

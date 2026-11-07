@@ -431,8 +431,8 @@ class MatrixBCData(_PreparedMatrixBCData):
     Markers cover owned and ghost dofs in unrolled local numbering.
     Diagonal rows are owned, unrolled local indices, and are empty
     unless the row and column spaces are the same. Diagonal values are
-    a scalar for every row, or one value per row. Treat the arrays as
-    read-only and rebuild with :func:`prepare_matrix_bcs` when
+    a scalar for every row, or one value per row. Arrays returned by
+    :func:`prepare_matrix_bcs` are read-only. Rebuild when
     constrained dofs, spaces or diagonal values change.
     """
 
@@ -471,7 +471,16 @@ def prepare_matrix_bcs(
         if V0._cpp_object is V1._cpp_object
         else np.empty(0, dtype=np.int32)
     )
-    return MatrixBCData(marker0, marker1, rows, diag, V0, V1)
+    for array in (marker0, marker1, rows):
+        array.flags.writeable = False
+    return MatrixBCData(
+        row_marker=marker0,
+        column_marker=marker1,
+        diagonal_rows=rows,
+        diagonal_values=diag,
+        row_space=V0,
+        column_space=V1,
+    )
 
 
 def _matrix_bc_diagonal(diag: float | complex | None) -> float | complex:

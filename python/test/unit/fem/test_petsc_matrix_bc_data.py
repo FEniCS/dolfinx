@@ -47,6 +47,21 @@ def test_prepared_matrix_bcs(kind, shape, constrained, monkeypatch):
     reference.assemble()
     A = petsc.create_matrix(a, kind=matrix_kind)
     data = petsc.prepare_matrix_bcs(A, a, bcs, diag=2)
+    for field in dataclasses.fields(data):
+        value = getattr(data, field.name)
+        assert value is None or isinstance(value, tuple)
+    if data.index_sets is not None:
+        assert all(isinstance(sets, tuple) for sets in data.index_sets)
+    for array in (
+        *data.row_markers,
+        *data.column_markers,
+        *data.diagonal_rows,
+        *data.diagonal_values,
+    ):
+        if isinstance(array, np.ndarray):
+            assert not array.flags.writeable
+            with pytest.raises(ValueError, match="read-only"):
+                array[:] = 0
 
     def unexpected(*args, **kwargs):
         raise AssertionError("Prepared assembly must not rebuild BC data")
@@ -85,13 +100,13 @@ def test_prepared_matrix_bcs(kind, shape, constrained, monkeypatch):
             with pytest.raises(TypeError, match="different matrix type"):
                 fem.assemble_matrix_fn(lambda rows, cols, vals: 0, a, bcs=data)
         invalid = dataclasses.replace(
-            data, column_markers=[np.zeros(1, dtype=np.int8) for _ in spaces]
+            data, column_markers=tuple(np.zeros(1, dtype=np.int8) for _ in spaces)
         )
         with pytest.raises(ValueError, match="BC markers"):
             petsc.assemble_matrix(A, a, bcs=invalid)
         num_rows = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
         invalid = dataclasses.replace(
-            data, diagonal_rows=[np.array([num_rows], dtype=np.int32) for _ in spaces]
+            data, diagonal_rows=tuple(np.array([num_rows], dtype=np.int32) for _ in spaces)
         )
         with pytest.raises(ValueError, match="Diagonal rows"):
             petsc.assemble_matrix(A, a, bcs=invalid)
@@ -106,3 +121,65 @@ def test_prepared_matrix_bcs(kind, shape, constrained, monkeypatch):
     finally:
         for matrix in matrices:
             matrix.destroy()
+
+
+@pytest.mark.parametrize(
+    "source_kind, target_kind",
+    [
+        ("aij", "aij"),
+        ("is", "is"),
+        ("nest", "nest"),
+        ("nest", "blocked"),
+        ("blocked", "nest"),
+        ("blocked", "blocked"),
+    ],
+)
+@pytest.mark.parametrize("shape", [(), (2,)])
+def test_prepared_matrix_bcs_different_form(source_kind, target_kind, shape, monkeypatch):
+    msh = mesh.create_unit_square(MPI.COMM_WORLD, 3, 3, ghost_mode=mesh.GhostMode.none)
+    V = fem.functionspace(msh, ("Lagrange", 1, shape))
+    spaces = [V, V.clone()] if source_kind in ("nest", "blocked") else [V]
+    mass = []
+    stiffness = []
+    bcs = []
+    for T in spaces:
+        mass_row, stiffness_row = [], []
+        for U in spaces:
+            u, v = ufl.TrialFunction(U), ufl.TestFunction(T)
+            mass_row.append(fem.form(ufl.inner(u, v) * ufl.dx))
+            stiffness_row.append(fem.form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx))
+        mass.append(mass_row)
+        stiffness.append(stiffness_row)
+        dofs = fem.locate_dofs_geometrical(T, lambda x: np.isclose(x[0], 0))
+        bcs.append(fem.dirichletbc(np.zeros(shape, dtype=PETSc.ScalarType), dofs, T))
+    if len(spaces) == 1:
+        mass, stiffness = mass[0][0], stiffness[0][0]
+    source = petsc.create_matrix(mass, kind="aij" if source_kind == "blocked" else source_kind)
+    target = petsc.create_matrix(stiffness, kind="aij" if target_kind == "blocked" else target_kind)
+    reference = petsc.assemble_matrix(
+        stiffness, bcs=bcs, kind="aij" if target_kind == "blocked" else target_kind
+    )
+    reference.assemble()
+    data = petsc.prepare_matrix_bcs(source, mass, bcs)
+
+    def unexpected(*args, **kwargs):
+        raise AssertionError("Reusing prepared data must not rebuild BC data")
+
+    monkeypatch.setattr(petsc, "_matrix_bc_data", unexpected)
+    monkeypatch.setattr(petsc, "_matrix_diag_data", unexpected)
+    try:
+        for _ in range(2):
+            target.zeroEntries()
+            petsc.assemble_matrix(target, stiffness, bcs=data)
+            target.assemble()
+            result, expected = target.copy().convert("aij"), reference.copy().convert("aij")
+            try:
+                result.axpy(-1, expected)
+                assert result.norm() < 1e-12
+            finally:
+                result.destroy()
+                expected.destroy()
+    finally:
+        source.destroy()
+        target.destroy()
+        reference.destroy()

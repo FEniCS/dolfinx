@@ -118,19 +118,20 @@ class BlockMatrixBCData(_PreparedMatrixBCData):
     ``index_sets`` address the blocks of a blocked (non-nest) matrix,
     and are ``None`` otherwise.
 
-    Treat arrays as read-only. Rebuild with :func:`prepare_matrix_bcs`
+    Arrays returned by :func:`prepare_matrix_bcs` are read-only.
+    Rebuild with :func:`prepare_matrix_bcs`
     when constrained dofs, spaces, diagonal values or the relevant
     matrix layout change, but not when BC values change.
     """
 
-    row_markers: list[npt.NDArray[np.int8]]
-    column_markers: list[npt.NDArray[np.int8]]
-    row_spaces: list[_FunctionSpace | None]
-    column_spaces: list[_FunctionSpace | None]
-    diagonal_rows: list[npt.NDArray[np.int32]]
-    diagonal_values: list[npt.NDArray | float | complex]
+    row_markers: tuple[npt.NDArray[np.int8], ...]
+    column_markers: tuple[npt.NDArray[np.int8], ...]
+    row_spaces: tuple[_FunctionSpace | None, ...]
+    column_spaces: tuple[_FunctionSpace | None, ...]
+    diagonal_rows: tuple[npt.NDArray[np.int32], ...]
+    diagonal_values: tuple[npt.NDArray | float | complex, ...]
     diagonal_ghosts: tuple[bool, ...]
-    index_sets: tuple[list, list] | None
+    index_sets: tuple[tuple[PETSc.IS, ...], tuple[PETSc.IS, ...]] | None
 
 
 # -- Vector instantiation -------------------------------------------------
@@ -735,7 +736,7 @@ def _matrix_bc_data(
 def _block_index_sets(
     row_spaces: Sequence[_FunctionSpace | None],
     column_spaces: Sequence[_FunctionSpace | None],
-) -> tuple[list, list]:
+) -> tuple[tuple[PETSc.IS, ...], tuple[PETSc.IS, ...]]:
     """Index sets addressing the block rows and columns of a form array.
 
     :meth:`PETSc.Mat.getLocalSubMatrix` takes these to reach a block of
@@ -764,7 +765,7 @@ def _block_index_sets(
             ]
         )
 
-    return sets(row_spaces, "row"), sets(column_spaces, "column")
+    return tuple(sets(row_spaces, "row")), tuple(sets(column_spaces, "column"))
 
 
 def _matrix_index_sets(
@@ -772,7 +773,7 @@ def _matrix_index_sets(
     a: Form | Sequence[Sequence[Form | None]],
     row_spaces: Sequence[_FunctionSpace | None],
     column_spaces: Sequence[_FunctionSpace | None],
-) -> tuple[list, list] | None:
+) -> tuple[tuple[PETSc.IS, ...], tuple[PETSc.IS, ...]] | None:
     """Block index sets for a blocked (non-nest) ``A``, else ``None``."""
     if isinstance(a, Sequence) and A.getType() != PETSc.Mat.Type.NEST:
         return _block_index_sets(row_spaces, column_spaces)
@@ -808,15 +809,18 @@ def prepare_matrix_bcs(
     row_markers, column_markers = _matrix_bc_data(V0, V1, bcs)
     ghosts = _diag_on_ghost_rows(A, a)
     diagonal_rows, diagonal_values = _matrix_diag_data(V0, row_markers, diag, ghosts)
+    for array in (*row_markers, *column_markers, *diagonal_rows, *diagonal_values):
+        if isinstance(array, np.ndarray):
+            array.flags.writeable = False
     return BlockMatrixBCData(
-        row_markers,
-        column_markers,
-        V0,
-        V1,
-        diagonal_rows,
-        diagonal_values,
-        tuple(ghosts),
-        _matrix_index_sets(A, a, V0, V1),
+        row_markers=tuple(row_markers),
+        column_markers=tuple(column_markers),
+        row_spaces=tuple(V0),
+        column_spaces=tuple(V1),
+        diagonal_rows=tuple(diagonal_rows),
+        diagonal_values=tuple(diagonal_values),
+        diagonal_ghosts=tuple(ghosts),
+        index_sets=_matrix_index_sets(A, a, V0, V1),
     )
 
 
