@@ -185,3 +185,62 @@ def test_prepared_matrix_bcs_different_form(source_kind, target_kind, shape, mon
         source.destroy()
         target.destroy()
         reference.destroy()
+
+
+@pytest.mark.parametrize("kind", [None, "mpi", "nest"])
+def test_nonlinear_problem_reuses_bc_data(kind, monkeypatch):
+    msh = mesh.create_unit_square(MPI.COMM_WORLD, 4, 4)
+    V = fem.functionspace(msh, ("Lagrange", 1))
+    spaces = [V] if kind is None else [V, V.clone()]
+    bcs = []
+    for W in spaces:
+        dofs = fem.locate_dofs_geometrical(W, lambda x: np.isclose(x[0], 0))
+        bcs.append(fem.dirichletbc(PETSc.ScalarType(1), dofs, W))
+    eps = 1000 * np.finfo(PETSc.RealType).eps
+
+    def make_problem(label):
+        u = [fem.Function(W) for W in spaces]
+        F = [
+            ufl.inner(ui**2 - 2, ufl.TestFunction(W)) * ufl.dx
+            for ui, W in zip(u, spaces, strict=True)
+        ]
+        return petsc.NonlinearProblem(
+            F[0] if kind is None else F,
+            u[0] if kind is None else u,
+            bcs=bcs,
+            kind=kind,
+            petsc_options_prefix=f"test_nonlinear_reuse_{kind}_{label}_",
+            petsc_options={
+                "snes_rtol": eps,
+                "snes_error_if_not_converged": True,
+                "ksp_type": "gmres",
+                "ksp_rtol": eps,
+                "pc_type": "none",
+            },
+        )
+
+    reference = make_problem("reference")
+    problem = make_problem("reuse")
+    for p in (reference, problem):
+        for ui in [p.u] if kind is None else p.u:
+            ui.x.array[:] = 1
+    reference.solve()
+
+    def unexpected(*args, **kwargs):
+        raise AssertionError("Newton steps must not rebuild or re-check BC data")
+
+    for name in (
+        "_bcs_by_block",
+        "_check_preconditioner_spaces",
+        "_check_prepared_matrix_bcs",
+        "_matrix_bc_data",
+        "_matrix_diag_data",
+        "_block_index_sets",
+        "_lifting_bc_markers",
+    ):
+        monkeypatch.setattr(petsc, name, unexpected)
+    problem.solve()
+    actual = [problem.u] if kind is None else problem.u
+    expected = [reference.u] if kind is None else reference.u
+    for u, u_ref in zip(actual, expected, strict=True):
+        np.testing.assert_allclose(u.x.array, u_ref.x.array, rtol=1e-10, atol=1e-10)
