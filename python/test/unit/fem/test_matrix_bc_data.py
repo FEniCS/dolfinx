@@ -78,7 +78,7 @@ def test_prepared_matrix_bcs(shape, constrained, dtype, monkeypatch):
 
 
 def test_prepared_matrix_bcs_invalid_diagonal():
-    msh = mesh.create_unit_square(MPI.COMM_WORLD, 3, 3)
+    msh = mesh.create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=np.float64)
     V = fem.functionspace(msh, ("Lagrange", 1))
     a = fem.form(ufl.inner(ufl.TrialFunction(V), ufl.TestFunction(V)) * ufl.dx, dtype=np.float64)
     dofs = fem.locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0))
