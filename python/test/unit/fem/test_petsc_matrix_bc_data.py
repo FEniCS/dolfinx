@@ -237,6 +237,7 @@ def test_nonlinear_problem_reuses_bc_data(kind, monkeypatch):
         "_matrix_diag_data",
         "_block_index_sets",
         "_lifting_bc_markers",
+        "_extract_function_spaces",
     ):
         monkeypatch.setattr(petsc, name, unexpected)
     problem.solve()

@@ -1725,7 +1725,7 @@ class LinearProblem(typing.Generic[_U]):
         _assemble_matrix_petsc(
             self.A, self.a, self._a_bcs, pack_constants(self.a), pack_coefficients(self.a)
         )
-        self.A.assembleBegin()
+        self.A.assemblyBegin()
 
         # Assemble preconditioner
         if self.preconditioner is not None:
@@ -1741,7 +1741,7 @@ class LinearProblem(typing.Generic[_U]):
                 pack_constants(self.preconditioner),
                 pack_coefficients(self.preconditioner),
             )
-            self.P_mat.assembleBegin()
+            self.P_mat.assemblyBegin()
 
         # Assemble rhs
         dolfinx.la.petsc._zero_vector(self.b)
@@ -1772,10 +1772,10 @@ class LinearProblem(typing.Generic[_U]):
             for bc in self.bcs:
                 bc.set(self.b.array_w)
 
-        self.A.assembleEnd()
+        self.A.assemblyEnd()
         if self.preconditioner is not None:
             assert self.P_mat is not None
-            self.P_mat.assembleEnd()
+            self.P_mat.assemblyEnd()
 
         # Solve linear system and update ghost values in the solution
         self.solver.solve(self.b, self.x)
@@ -1938,14 +1938,16 @@ def _assemble_residual(
     _blocks: tuple[tuple[int, int, int], ...] | None,
     lifting_markers: Sequence[npt.NDArray[np.int8]] | None,
     bcs_by_block: tuple[list[list[DirichletBC]], list[list[DirichletBC]]] | None = None,
+    lifting_spaces: Sequence[_FunctionSpace | None] | None = None,
 ) -> None:
     """Assemble the residual with cached boundary-condition data.
 
     As :func:`assemble_residual`, with ``lifting_markers`` from
     :func:`_lifting_bc_markers` and, for a form array, ``bcs_by_block``
     holding ``bcs`` grouped by residual block and by Jacobian column
-    block. ``None`` builds them from ``bcs`` here. They must match
-    ``bcs``, which is why the public function does not take them.
+    block, and ``lifting_spaces`` holding the Jacobian column spaces.
+    ``None`` builds them here. They must match ``bcs`` and
+    ``jacobian``, which is why the public function does not take them.
     Values are read afresh from ``bcs``.
     """
     # Update input vector before assigning
@@ -1970,9 +1972,12 @@ def _assemble_residual(
         # Nest and blocked lifting
         if not isinstance(residual, Sequence):
             raise ValueError("Expected a sequence of forms for a block/nest residual.")
+        spaces1 = (
+            _extract_function_spaces(jacobian, 1) if lifting_spaces is None else lifting_spaces
+        )
         if bcs_by_block is None:
             bcs0 = _bcs_by_block(_extract_function_spaces(residual), bcs)
-            bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)
+            bcs1 = _bcs_by_block(spaces1, bcs)
         else:
             bcs0, bcs1 = bcs_by_block
         markers = (
@@ -1982,7 +1987,7 @@ def _assemble_residual(
             b,
             jacobian,
             markers,
-            _lifting_bc_values(jacobian, bcs1),  # type: ignore[arg-type]
+            _bc_lifting_values(spaces1, bcs1, PETSc.ScalarType),
             x0=x,  # type: ignore[arg-type]
             alpha=-1.0,
         )
@@ -2399,6 +2404,7 @@ class NonlinearProblem(typing.Generic[_U]):
             "bcs": conditions,
             "lifting_markers": bc_data.column_markers,
             "bcs_by_block": bcs_by_block,
+            "lifting_spaces": bc_data.column_spaces,
             "_blocks": self.b.getAttr("_blocks"),
         }
         self.solver.setFunction(_assemble_residual, self.b, kargs=function_ctx)  # type: ignore[arg-type]
