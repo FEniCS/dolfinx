@@ -153,8 +153,6 @@
 # AMG hierarchy built once.
 
 # +
-from __future__ import annotations
-
 import os
 from pathlib import Path
 
@@ -225,9 +223,8 @@ F1 = (
 
 # The residual and Jacobian are given as a list and a list of lists. This
 # is what marks the problem as blocked; the shape of these containers is
-# the block structure of the system. The $(1,0)$ Jacobian block is
-# compiled on its own as `J10`, because it is the one block that is
-# reassembled at each Newton step.
+# the block structure of the system. The $(1,0)$ block is kept as `J10`
+# for the Jacobian callback below.
 
 F = fem.form([F0, F1])
 J10 = fem.form(ufl.derivative(F1, c, dc))
@@ -236,19 +233,17 @@ J = [
     [J10, fem.form(ufl.derivative(F1, mu, dmu))],
 ]
 
-# The two operators the Schur approximation needs. Both are independent
-# of the solution and of time, so they are assembled once.
+# The Schur approximation needs $M + aK$ and $M$. $M + aK$ is
+# independent of the solution and of time, so it is assembled once. $M$
+# is the $(1,1)$ Jacobian block, which never changes, so it is taken
+# from the Jacobian below rather than assembled again.
 
 # +
 a_schur = np.sqrt(theta * dt * lmbda)
-dw, w = ufl.TrialFunction(W), ufl.TestFunction(W)
-
 S_mat = assemble_matrix(
-    fem.form(ufl.inner(dw, w) * ufl.dx + a_schur * ufl.inner(ufl.grad(dw), ufl.grad(w)) * ufl.dx)
+    fem.form(ufl.inner(dmu, v) * ufl.dx + a_schur * ufl.inner(ufl.grad(dmu), ufl.grad(v)) * ufl.dx)
 )
 S_mat.assemble()
-M_mat = assemble_matrix(fem.form(ufl.inner(dw, w) * ufl.dx))
-M_mat.assemble()
 # -
 
 # A PETSc Python preconditioner is any object with an `apply` method.
@@ -260,13 +255,11 @@ M_mat.assemble()
 class MatchedSchur:
     """Apply the inverse of the matched Schur approximation."""
 
-    def __init__(self, S: PETSc.Mat, M: PETSc.Mat, amg: str, prefix: str):
+    def __init__(self, S: PETSc.Mat, M: PETSc.Mat, prefix: str):
         """Build the AMG solver for the repeated factor ``S``."""
         self.M = M
         self.ksp = PETSc.KSP().create(S.getComm())
         self.ksp.setOperators(S)
-        self.ksp.setType("preonly")
-        self.ksp.getPC().setType(amg)
         self.ksp.setOptionsPrefix(prefix)
         self.ksp.setFromOptions()
         self.work = M.createVecLeft()
@@ -402,6 +395,9 @@ petsc_options: dict[str, str | float | int] = {
     "fieldsplit_c_ksp_rtol": 1.0e-2,
     "fieldsplit_c_pc_type": "jacobi",
     "fieldsplit_mu_ksp_type": "preonly",
+    # One AMG V-cycle per application of (M + aK)^{-1}
+    "schur_ksp_type": "preonly",
+    "schur_pc_type": amg,
 }
 if amg == "hypre":
     # BoomerAMG's defaults suit two dimensions. These are its documented
@@ -418,7 +414,7 @@ if amg == "hypre":
     }
 
 # The options go into PETSc's global options database under a prefix
-# that only this solver uses, and are removed once the run is over
+# that only this solver uses, and are removed once the solver is set up
 prefix = "demo_cahn-hilliard-block_"
 opts = PETSc.Options()
 for key, value in petsc_options.items():
@@ -442,7 +438,6 @@ assign([c, mu], x)
 # preconditioner for the Schur block is then replaced by the Python one.
 
 # +
-snes.computeJacobian(x, A, A)
 ksp = snes.getKSP()
 ksp.setOperators(A, A)
 pc = ksp.getPC()
@@ -452,28 +447,18 @@ pc.setUp()
 
 schur_pc = pc.getFieldSplitSubKSP()[1].getPC()
 schur_pc.setType("python")
-schur_pc.setPythonContext(MatchedSchur(S_mat, M_mat, amg, prefix + "schur_"))
+schur_pc.setPythonContext(MatchedSchur(S_mat, A.getNestSubMatrix(1, 1), prefix + "schur_"))
 schur_pc.setUp()
+
+for key in petsc_options:
+    del opts[prefix + key]
 # -
 
-# A `SNES` monitor fires once before each Newton iteration and once
-# more when the solve stops, and `getLinearSolveIterations` reports the
-# Krylov iterations used so far in the current solve. Differencing
-# successive calls therefore gives the cost of each individual Newton
-# step, which is the quantity that should stay flat under refinement.
+# `SNES` can record the Krylov iterations each Newton step takes, which
+# is the quantity that should stay flat under refinement. `reset=True`
+# clears the record at the start of each solve.
 
-# +
-krylov_its: list[int] = []
-
-
-def newton_monitor(snes: PETSc.SNES, it: int, _norm: float) -> None:
-    """Record the Krylov iterations used by the Newton step just taken."""
-    if it > 0:
-        krylov_its.append(snes.getLinearSolveIterations() - sum(krylov_its))
-
-
-snes.setMonitor(newton_monitor)
-# -
+snes.setConvergenceHistory(reset=True)
 
 # Step in time, reporting the work each step took. The solution of the
 # previous step is kept as well as the current one, so that each solve
@@ -507,7 +492,6 @@ for step in range(num_steps):
         mu.x.array[:] = 2.0 * mu0.x.array - mu_prev
 
     assign([c, mu], x)
-    krylov_its.clear()
     snes.solve(None, x)
     assign(x, [c, mu])
     c.x.scatter_forward()
@@ -520,7 +504,8 @@ for step in range(num_steps):
     newton_total += num_newton
     krylov_total += num_krylov
     if msh.comm.rank == 0:
-        per_step = " ".join(str(k) for k in krylov_its)
+        # Entry 0 of the history is the initial residual, before any step
+        per_step = " ".join(str(k) for k in snes.getConvergenceHistory()[1][1:])
         print(
             f"step {step + 1:3d}  t = {t:.2e}  Newton {num_newton}  "
             f"Krylov {num_krylov} ({per_step})"
@@ -528,8 +513,6 @@ for step in range(num_steps):
     file.write_function(c, t)
 
 file.close()
-for key in petsc_options:
-    del opts[prefix + key]
 # -
 
 # The figure of merit is the number of Krylov iterations per Newton step.
