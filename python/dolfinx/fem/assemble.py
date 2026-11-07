@@ -425,8 +425,9 @@ class _PreparedMatrixBCData:
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class MatrixBCData(_PreparedMatrixBCData):
-    """Prepared matrix constraints for a CSR matrix.
+    """Prepared matrix constraints for a bilinear form.
 
+    Accepted by :func:`assemble_matrix` and :func:`assemble_matrix_fn`.
     Markers cover owned and ghost dofs in unrolled local numbering.
     Diagonal rows are owned, unrolled local indices, and are empty
     unless the row and column spaces are the same. Diagonal values are
@@ -448,7 +449,7 @@ def prepare_matrix_bcs(
     bcs: Sequence[DirichletBC] | None,
     diag: float | complex = 1.0,
 ) -> MatrixBCData:
-    """Prepare reusable boundary-condition data for CSR matrix assembly.
+    """Prepare reusable boundary-condition data for a bilinear form.
 
     Args:
         a: Bilinear form defining the row and column spaces.
@@ -457,9 +458,10 @@ def prepare_matrix_bcs(
             real for a real form.
 
     Returns:
-        Data accepted by ``assemble_matrix(..., bcs=data)``. The data
-        can be reused with forms on the same spaces. Changes to boundary
-        condition values alone do not invalidate it.
+        Data accepted by :func:`assemble_matrix` and
+        :func:`assemble_matrix_fn` as ``bcs``. The data can be reused
+        with forms on the same spaces. Changes to boundary condition
+        values alone do not invalidate it.
     """
     _check_diagonal_dtype(diag, a.dtype)
     V0, V1 = a.function_spaces
@@ -767,8 +769,9 @@ def assemble_matrix_fn(
             where ``vals`` has shape ``(len(rows), len(cols))``. Return
             ``0`` on success.
         a: Bilinear form to assemble.
-        bcs: Boundary conditions or prepared CSR matrix BC data. Rows
-            and columns constrained by a boundary condition are zeroed.
+        bcs: Boundary conditions or data from
+            :func:`prepare_matrix_bcs`. Rows and columns constrained by
+            a boundary condition are zeroed.
 
     Note:
         Convenience function for callers that have boundary conditions.

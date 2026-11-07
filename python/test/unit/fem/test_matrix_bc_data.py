@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Tests for reusable CSR matrix boundary-condition data."""
+"""Tests for reusable matrix boundary-condition data."""
 
 import dataclasses
 
