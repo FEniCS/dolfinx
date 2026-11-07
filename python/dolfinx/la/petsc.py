@@ -51,11 +51,11 @@ def _zero_vector(x: PETSc.Vec) -> None:
     if x.getType() == PETSc.Vec.Type.NEST:
         for x_sub in x.getNestSubVecs():
             with x_sub.localForm() as x_sub_local:
-                x_sub_local.set(0.0)
+                x_sub_local.set(0)
             x_sub.destroy()
     else:
         with x.localForm() as x_local:
-            x_local.set(0.0)
+            x_local.set(0)
 
 
 def create_vector_wrap(x: Vector) -> PETSc.Vec:
