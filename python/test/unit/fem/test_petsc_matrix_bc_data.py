@@ -85,19 +85,13 @@ def test_prepared_matrix_bcs(kind, shape, constrained, monkeypatch):
             with pytest.raises(TypeError, match="different matrix type"):
                 fem.assemble_matrix_fn(lambda rows, cols, vals: 0, a, bcs=data)
         invalid = dataclasses.replace(
-            data,
-            markers=data.markers._replace(
-                column_markers=[np.zeros(1, dtype=np.int8) for _ in spaces]
-            ),
+            data, column_markers=[np.zeros(1, dtype=np.int8) for _ in spaces]
         )
         with pytest.raises(ValueError, match="BC markers"):
             petsc.assemble_matrix(A, a, bcs=invalid)
         num_rows = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
         invalid = dataclasses.replace(
-            data,
-            diagonal=data.diagonal._replace(
-                rows=[np.array([num_rows], dtype=np.int32) for _ in spaces]
-            ),
+            data, diagonal_rows=[np.array([num_rows], dtype=np.int32) for _ in spaces]
         )
         with pytest.raises(ValueError, match="Diagonal rows"):
             petsc.assemble_matrix(A, a, bcs=invalid)

@@ -295,9 +295,8 @@ nitpick_ignore = [
 #   not classes at all (a TypeVar is not a class) or have no page in
 #   the generated API reference (neither is re-exported from a
 #   documented module);
-# - private classes of the prepared matrix BC data (base class and
-#   field types of the public MatrixBCData/BlockMatrixBCData), which
-#   are deliberately undocumented.
+# - the private base class of the public MatrixBCData and
+#   BlockMatrixBCData, which is deliberately undocumented.
 _any_role = r"py:(attr|class|data|func|meth|obj)"
 nitpick_ignore_regex = [
     (_any_role, r"^numpy\.(u?int(8|16|32|64)|float(16|32|64)|complex(64|128))$"),
@@ -333,10 +332,7 @@ nitpick_ignore_regex = [
     (_any_role, r"^(Real|Scalar)$"),
     (_any_role, r"^PartitioningFunc$"),
     (_any_role, r"^dolfinx\.(la\._T|la\.superlu_dist\._T|fem\.petsc\._U)$"),
-    (
-        _any_role,
-        r"^dolfinx\.fem\.(assemble\._PreparedMatrixBCData|petsc\._Matrix(BC|Diag)Data)$",
-    ),
+    (_any_role, r"^dolfinx\.fem\.assemble\._PreparedMatrixBCData$"),
     (_any_role, r"^_EntityMap$"),
     (_any_role, r"^(dolfinx\.fem\.forms\.)?CompiledForm$"),
     (_any_role, r"^dolfinx\.plot\._$"),
