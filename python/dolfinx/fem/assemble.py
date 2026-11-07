@@ -562,22 +562,15 @@ def _check_prepared_matrix_bcs(a: Form, data: MatrixBCData) -> None:
 def _assemble_matrix_csr_markers(
     A: la.MatrixCSR,
     a: Form,
-    dof_marker0: npt.NDArray[np.int8],
-    dof_marker1: npt.NDArray[np.int8],
+    data: MatrixBCData,
     constants: npt.NDArray | None = None,
     coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
-    *,
-    diagonal_rows: npt.NDArray[np.int32],
-    diagonal_values: npt.NDArray | float | complex,
 ) -> la.MatrixCSR:
-    """Assemble a bilinear form into a matrix, given constrained dofs.
+    """Assemble a bilinear form into a matrix, given prepared BC data.
 
-    Rows marked in ``dof_marker0`` and columns marked in
-    ``dof_marker1`` are zeroed. If the test and trial spaces are the
-    same, ``diagonal_values`` is set on the diagonal of
-    ``diagonal_rows``.
-    See :func:`_bc_dof_markers` for the marker format; an empty array
-    marks nothing.
+    Rows and columns marked in ``data`` are zeroed. If the test and
+    trial spaces are the same, the diagonal values are set on the
+    diagonal rows.
     """
     if constants is None:
         constants = pack_constants(a)
@@ -590,14 +583,14 @@ def _assemble_matrix_csr_markers(
         a._cpp_object,
         constants,
         coeffs,  # type: ignore[arg-type]
-        dof_marker0,
-        dof_marker1,
+        data.row_marker,
+        data.column_marker,
     )
 
     # If matrix is a 'diagonal' block, set diagonal entry for
     # constrained dofs. Assembly zeroed these rows, so adding sets it.
     if V0._cpp_object is V1._cpp_object:
-        la.set_diagonal(A, diagonal_rows, diagonal_values, la.InsertMode.add)
+        la.set_diagonal(A, data.diagonal_rows, data.diagonal_values, la.InsertMode.add)
     return A
 
 
@@ -705,16 +698,7 @@ def _assemble_matrix_csr_bcs(
     else:
         _reject_foreign_bc_data(bcs)
         data = prepare_matrix_bcs(a, bcs, _matrix_bc_diagonal(diag))
-    return _assemble_matrix_csr_markers(
-        A,
-        a,
-        data.row_marker,
-        data.column_marker,
-        constants=constants,
-        coeffs=coeffs,
-        diagonal_rows=data.diagonal_rows,
-        diagonal_values=data.diagonal_values,
-    )
+    return _assemble_matrix_csr_markers(A, a, data, constants, coeffs)
 
 
 def set_bc_diagonal(

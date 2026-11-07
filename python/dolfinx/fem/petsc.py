@@ -620,11 +620,9 @@ def _assemble_matrix_mat_bcs(
     return _assemble_matrix_petsc(
         A,
         a,
-        data.markers,
-        data.diagonal,
+        data,
         pack_constants(a) if constants is None else constants,
         pack_coefficients(a) if coeffs is None else coeffs,
-        data.index_sets,
     )
 
 
@@ -843,23 +841,13 @@ def _check_prepared_matrix_bcs(
         raise ValueError("Prepared matrix BC data belongs to different function spaces")
     if tuple(_diag_on_ghost_rows(A, a)) != data.diagonal_ghosts:
         raise ValueError("Prepared matrix BC data has an incompatible diagonal layout")
-    if (
-        len(markers.row_markers) != len(V0)
-        or len(markers.column_markers) != len(V1)
-        or len(diagonal.rows) != len(V0)
-        or len(diagonal.values) != len(V0)
-    ):
-        raise ValueError("Prepared matrix BC data has inconsistent block counts")
     for spaces, marker_list in ((V0, markers.row_markers), (V1, markers.column_markers)):
         for V, marker in zip(spaces, marker_list, strict=True):
             _check_matrix_bc_marker(V, marker)
     for V, rows, values, ghosts in zip(
         V0, diagonal.rows, diagonal.values, data.diagonal_ghosts, strict=True
     ):
-        if V is None:
-            num_rows = 0
-        else:
-            num_rows = _unrolled_size(V) if ghosts else _owned_unrolled_size(V)
+        num_rows = 0 if V is None else (_unrolled_size(V) if ghosts else _owned_unrolled_size(V))
         _check_matrix_bc_diagonal(rows, values, num_rows, PETSc.ScalarType)
 
 
@@ -1089,25 +1077,21 @@ def _assemble_matrix_blocked(
 def _assemble_matrix_petsc(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form | None]],
-    bc_data: _MatrixBCData,
-    diag_data: _MatrixDiagData,
+    data: BlockMatrixBCData,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray | None]],
     coeffs: (
         dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
         | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
     ),
-    index_sets: tuple[list, list] | None = None,
 ) -> PETSc.Mat:
-    """Assemble form(s) with cached BC data; do not zero or finalise ``A``.
+    """Assemble form(s) with prepared BC data, without zeroing ``A``.
 
-    ``bc_data`` supplies the row and column markers from
-    :func:`_matrix_bc_data`, and ``diag_data`` the constrained rows and
-    the value on each from :func:`_matrix_diag_data`. Both are fixed
-    for the lifetime of the boundary conditions. Constants and
-    coefficients are supplied afresh by the caller. ``index_sets``,
-    from :func:`_matrix_index_sets`, are built here if ``None`` and
-    ``A`` is blocked.
+    ``data``, from :func:`prepare_matrix_bcs`, is fixed for the
+    lifetime of the boundary conditions. Constants and coefficients are
+    supplied afresh by the caller. Block index sets are built here if
+    ``A`` is blocked but ``data`` was prepared for a non-blocked matrix.
     """
+    bc_data, diag_data = data.markers, data.diagonal
     _check_nest_forms(A, a)
     if A.getType() == PETSc.Mat.Type.NEST:
         assert isinstance(a, Sequence)  # _check_nest_forms has ruled out a single form
@@ -1132,7 +1116,7 @@ def _assemble_matrix_petsc(
             diag_data,
             constants,  # type: ignore[arg-type]
             coeffs,  # type: ignore[arg-type]
-            _block_index_sets(bc_data) if index_sets is None else index_sets,
+            _block_index_sets(bc_data) if data.index_sets is None else data.index_sets,
         )
     else:
         _assemble_matrix_single(
@@ -1762,13 +1746,7 @@ class LinearProblem(typing.Generic[_U]):
         # Assemble lhs
         self.A.zeroEntries()
         _assemble_matrix_petsc(
-            self.A,
-            self.a,
-            self._a_bc_data,
-            self._a_diag_data,
-            pack_constants(self.a),
-            pack_coefficients(self.a),
-            self._a_index_sets,
+            self.A, self.a, self._a_bcs, pack_constants(self.a), pack_coefficients(self.a)
         )
         self.A.assemble()
 
@@ -1782,11 +1760,9 @@ class LinearProblem(typing.Generic[_U]):
             _assemble_matrix_petsc(
                 self.P_mat,
                 self.preconditioner,
-                self._a_bc_data,
-                self._a_diag_data,
+                self._a_bcs,
                 pack_constants(self.preconditioner),
                 pack_coefficients(self.preconditioner),
-                self._a_index_sets,
             )
             self.P_mat.assemble()
 
@@ -1804,8 +1780,8 @@ class LinearProblem(typing.Generic[_U]):
         _apply_lifting_petsc(
             self.b,
             a if block else [a],  # type: ignore[arg-type]
-            self._a_bc_data.column_markers,
-            _bc_lifting_values(self._a_bc_data.column_spaces, self._bcs1, PETSc.ScalarType),
+            self._a_bcs.markers.column_markers,
+            _bc_lifting_values(self._a_bcs.markers.column_spaces, self._bcs1, PETSc.ScalarType),
         )
         dolfinx.la.petsc._ghost_update(
             self.b,
@@ -1839,18 +1815,14 @@ class LinearProblem(typing.Generic[_U]):
     @bcs.setter
     def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
         self._bcs = tuple(bcs) if bcs is not None else ()
-        self._a_bc_data = _matrix_bc_data(self.a, self._bcs)
         # Resolving the diagonal is collective for a MATIS operator, so
         # it is done here rather than on every solve
-        self._a_diag_data = _matrix_diag_data(
-            self._a_bc_data, 1, _diag_on_ghost_rows(self.A, self.a)
-        )
-        self._a_index_sets = _matrix_index_sets(self.A, self.a, self._a_bc_data)
+        self._a_bcs = prepare_matrix_bcs(self.A, self.a, self._bcs)
         # Which block each condition belongs to follows from the spaces,
         # so group once here and re-read only the values in solve().
         L = self.L
         if isinstance(self.u, Sequence):  # block or nest
-            self._bcs1 = _bcs_by_block(self._a_bc_data.column_spaces, self._bcs)
+            self._bcs1 = _bcs_by_block(self._a_bcs.markers.column_spaces, self._bcs)
             # A single form here is rejected by solve(), which reads these.
             self._bcs0 = (
                 _bcs_by_block(_extract_function_spaces(L), self._bcs)
@@ -2070,17 +2042,9 @@ def _check_preconditioner_spaces(
         "Preconditioner form must be over the same function space objects as the "
         "operator it preconditions, not separately built equivalents."
     )
-    if isinstance(a, Sequence):
-        if not isinstance(preconditioner, Sequence):
-            raise ValueError(message)
-        spaces = [
-            (_extract_function_spaces(a, i), _extract_function_spaces(preconditioner, i))
-            for i in range(2)
-        ]
-    else:
-        if isinstance(preconditioner, Sequence):
-            raise ValueError(message)
-        spaces = [(a.function_spaces, preconditioner.function_spaces)]
+    if isinstance(a, Sequence) != isinstance(preconditioner, Sequence):
+        raise ValueError(message)
+    spaces = zip(_form_block_spaces(a), _form_block_spaces(preconditioner), strict=True)
     if not all(_same_spaces(A_spaces, P_spaces) for A_spaces, P_spaces in spaces):
         raise ValueError(message)
 
@@ -2093,7 +2057,7 @@ def assemble_jacobian(
     u: Sequence[_Function] | _Function,
     jacobian: Form | Sequence[Sequence[Form]],
     preconditioner: Form | Sequence[Sequence[Form]] | None,
-    bcs: Sequence[DirichletBC],
+    bcs: Sequence[DirichletBC] | BlockMatrixBCData,
 ) -> None:
     """Assemble the Jacobian and preconditioner matrices.
 
@@ -2125,11 +2089,16 @@ def assemble_jacobian(
         preconditioner: Compiled form of the preconditioner, over the
             function spaces of ``jacobian``.
         bcs: Dirichlet boundary conditions to apply to the Jacobian and
-            preconditioner matrices.
+            preconditioner matrices, or data from
+            :func:`prepare_matrix_bcs` to avoid rebuilding it on each
+            call.
     """
     _check_preconditioner_spaces(jacobian, preconditioner)
-    bc_data = _matrix_bc_data(jacobian, bcs)
-    diag_data = _matrix_diag_data(bc_data, 1.0, _diag_on_ghost_rows(J, jacobian))
+    if isinstance(bcs, BlockMatrixBCData):
+        _check_prepared_matrix_bcs(J, jacobian, bcs)
+        data = bcs
+    else:
+        data = prepare_matrix_bcs(J, jacobian, bcs)
 
     # Copy existing solution into the function used in the residual and
     # Jacobian
@@ -2138,14 +2107,7 @@ def assemble_jacobian(
 
     # Assemble Jacobian
     J.zeroEntries()
-    _assemble_matrix_petsc(
-        J,
-        jacobian,
-        bc_data,
-        diag_data,
-        pack_constants(jacobian),
-        pack_coefficients(jacobian),
-    )
+    _assemble_matrix_petsc(J, jacobian, data, pack_constants(jacobian), pack_coefficients(jacobian))
     J.assemble()
     if preconditioner is not None:
         # Assembled with the same markers, rows and values, which
@@ -2155,8 +2117,7 @@ def assemble_jacobian(
         _assemble_matrix_petsc(
             P_mat,
             preconditioner,
-            bc_data,
-            diag_data,
+            data,
             pack_constants(preconditioner),
             pack_coefficients(preconditioner),
         )
@@ -2397,22 +2358,22 @@ class NonlinearProblem(typing.Generic[_U]):
     @bcs.setter
     def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
         conditions = tuple(bcs) if bcs is not None else ()
+        bc_data = prepare_matrix_bcs(self.A, self.J, conditions)
         jacobian_ctx = {
             "u": self.u,
             "jacobian": self.J,
             "preconditioner": self.preconditioner,
-            "bcs": conditions,
+            "bcs": bc_data,
         }
         self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=jacobian_ctx)  # type: ignore[arg-type]
         # Get potential attributes from the residual to pass to the
         # residual assembly function, e.g. block layout for block assembly.
-        bc_data = _matrix_bc_data(self.J, conditions)
         function_ctx = {
             "u": self.u,
             "residual": self.F,
             "jacobian": self.J,
             "bcs": conditions,
-            "lifting_markers": bc_data.column_markers,
+            "lifting_markers": bc_data.markers.column_markers,
             "_blocks": self.b.getAttr("_blocks"),
         }
         self.solver.setFunction(_assemble_residual, self.b, kargs=function_ctx)  # type: ignore[arg-type]

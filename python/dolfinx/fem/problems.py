@@ -164,14 +164,7 @@ class LinearProblem:
         """
         # Assemble lhs
         self.A.set_value(self.A.data.dtype.type(0.0))
-        _assemble_matrix_csr_markers(
-            self.A,
-            self.a,
-            self._bc_data.row_marker,
-            self._bc_data.column_marker,
-            diagonal_rows=self._bc_data.diagonal_rows,
-            diagonal_values=self._bc_data.diagonal_values,
-        )
+        _assemble_matrix_csr_markers(self.A, self.a, self._bc_data)
         self.A.scatter_reverse()
 
         # SuperLU_DIST solves in-place, so a deep copy of A is required.
