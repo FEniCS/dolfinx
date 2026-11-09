@@ -11,7 +11,6 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
-#include <cstdlib>
 #include <iterator>
 #include <span>
 #include <stdexcept>
@@ -230,36 +229,43 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
                            int mbs0, int mbs1, BlockSizeArg auto bs0,
                            BlockSizeArg auto bs1)
 {
+  // x is row-major, (xrows.size() * bs0) x (xcols.size() * bs1). Entry
+  // (i, j) of data block (r, c) is matrix entry
+  // (xrows[r] * bs0 + i, xcols[c] * bs1 + j), which lies in matrix
+  // block (p, q) of size mbs0 x mbs1.
   const std::size_t nc = xcols.size();
+  const std::size_t x_row_size = nc * bs1;
   const int nbs = mbs0 * mbs1;
-
-  assert(x.size() == xrows.size() * xcols.size() * bs0 * bs1);
+  assert(x.size() == xrows.size() * x_row_size * bs0);
   for (std::size_t r = 0; r < xrows.size(); ++r)
   {
-    // Data rows i0, ..., i0 + ni - 1 of row block r lie in matrix block
-    // row rdiv.quot, from row rdiv.rem of that block. Only the first
-    // row of each group is visited, keeping the loop bound bs0.
-    for (decltype(+bs0) i0 = 0; i0 < bs0; ++i0)
+    // Looping over all bs0 rows, rather than stepping by ni, keeps a
+    // compile-time bound
+    for (decltype(+bs0) i = 0; i < bs0; ++i)
     {
-      auto rdiv = std::div(xrows[r] * bs0 + i0, mbs0);
-      if (i0 > 0 and rdiv.rem > 0)
+      // Map data row i to row block_row of matrix block row p
+      const std::int32_t row = xrows[r] * bs0 + i;
+      const std::int32_t p = row / mbs0;
+      const std::int32_t block_row = row % mbs0;
+
+      // Already written with the first data row in p
+      if (i > 0 and block_row > 0)
         continue;
-      auto ni = std::min<decltype(+bs0)>(bs0 - i0, mbs0 - rdiv.rem);
-      using T = typename X::value_type;
-      const T* xr = x.data() + (r * bs0 + i0) * nc * bs1;
+
+      // Data rows i, ..., i + ni - 1 lie in p and are written together
+      const int ni = std::min<int>(bs0 - i, mbs0 - block_row);
+      const typename X::value_type* xr = x.data() + (r * bs0 + i) * x_row_size;
 
 #ifndef NDEBUG
-      if (rdiv.quot >= num_rows)
+      if (p >= num_rows)
         throw std::out_of_range("Local row out of range");
 #endif
-      // Columns indices for row
-      auto cit0 = std::next(cols.begin(), row_ptr[rdiv.quot]);
-      auto cit1 = std::next(cols.begin(), row_ptr[rdiv.quot + 1]);
-
-      // Position of matrix block column q, searching from first.
-      // std::lower_bound, not std::ranges::lower_bound: the latter made
-      // sub-space insertion ~25% slower (GCC 13, aarch64) as its loop
-      // is laid out with a taken branch on every step to the right.
+      // Locate block column q in row p, searching from first.
+      // std::lower_bound rather than std::ranges::lower_bound: GCC lays
+      // out the latter's search loop with a taken branch on every step
+      // right, which is measurably slower for sub-space insertion.
+      auto cit0 = std::next(cols.begin(), row_ptr[p]);
+      auto cit1 = std::next(cols.begin(), row_ptr[p + 1]);
       auto locate = [&cit1](auto first, std::int32_t q)
       {
         auto it = std::lower_bound(first, cit1, q);
@@ -270,29 +276,32 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
 
       for (std::size_t c = 0; c < nc; ++c)
       {
-        // Matrix block column q and offset rem in it of the first
-        // column of data block c
-        std::int32_t c0 = xcols[c] * bs1;
-        std::int32_t q = c0 / mbs1;
-        int rem = c0 % mbs1;
+        // Map data column j to column block_col of matrix block column q
+        const std::int32_t col = xcols[c] * bs1;
+        std::int32_t q = col / mbs1;
+        std::int32_t block_col = col % mbs1;
         auto it = locate(cit0, q);
-        for (decltype(+bs1) j = 0; j < bs1; ++j, ++rem)
+        for (decltype(+bs1) j = 0; j < bs1; ++j, ++block_col)
         {
-          if (rem == mbs1)
+          // Crossed into block column q + 1, which follows q in cols
+          if (block_col == mbs1)
           {
-            rem = 0;
             it = locate(it, ++q);
+            block_col = 0;
           }
 
-          std::size_t d = std::ranges::distance(cols.begin(), it);
-          std::size_t di = d * nbs + rdiv.rem * mbs1 + rem;
+          // Entry (i + k, j) of the data block is entry
+          // (block_row + k, block_col) of matrix block (p, q), the d-th
+          // block in data. Carrying d (or d * nbs) across j instead
+          // costs GCC an extra instruction per data column, which is
+          // measurably slower for sub-space insertion.
+          const std::size_t d = std::ranges::distance(cols.begin(), it);
+          std::size_t di = d * nbs + block_row * mbs1 + block_col;
           std::size_t xi = c * bs1 + j;
-          for (decltype(+bs0) k = 0; k < ni; ++k)
+          for (int k = 0; k < ni; ++k, di += mbs1, xi += x_row_size)
           {
             assert(di < data.size());
             op(data[di], xr[xi]);
-            di += mbs1;
-            xi += nc * bs1;
           }
         }
       }

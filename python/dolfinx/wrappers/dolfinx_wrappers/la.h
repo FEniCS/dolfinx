@@ -9,6 +9,7 @@
 #include "array.h"
 #include "block_size.h"
 #include "numpy_dtype.h"
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -45,6 +46,52 @@ enum class PyInsertMode : std::uint8_t
   add,
   insert
 };
+
+/// Add (`Add = true`) or set data block values of `A` from Python.
+/// @param[in,out] A Matrix to insert into.
+/// @param[in] x Row-major values, `rows.size() * bs[0]` by
+/// `cols.size() * bs[1]`.
+/// @param[in] rows Data block row indices.
+/// @param[in] cols Data block column indices.
+/// @param[in] bs Data block size.
+template <bool Add, typename T>
+void mat_insert(dolfinx::la::MatrixCSR<T>& A,
+                nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x,
+                nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+                nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
+                std::array<int, 2> bs)
+{
+  if (bs[0] < 1 or bs[1] < 1)
+    throw std::invalid_argument("bs must be positive.");
+  if (x.size() != rows.size() * cols.size() * bs[0] * bs[1])
+  {
+    throw std::invalid_argument(
+        "x size must equal rows size * cols size * bs[0] * bs[1].");
+  }
+
+  const std::span x_span(x.data(), x.size());
+  const std::span rows_span(rows.data(), rows.size());
+  const std::span cols_span(cols.data(), cols.size());
+
+  // Rows of x are blocks of bs[0] unrolled rows
+  const std::int32_t max_row = A.num_all_rows() * A.block_size()[0] / bs[0];
+  if (std::ranges::any_of(rows_span, [max_row](std::int32_t r)
+                          { return r < 0 or r >= max_row; }))
+  {
+    throw std::out_of_range("Index out of range in rows array.");
+  }
+  if (std::ranges::any_of(cols_span, [](std::int32_t c) { return c < 0; }))
+    throw std::out_of_range("Index out of range in cols array.");
+
+  visit_block_size(bs,
+                   [&A, &x_span, &rows_span, &cols_span](auto bs0, auto bs1)
+                   {
+                     if constexpr (Add)
+                       A.add(x_span, rows_span, cols_span, bs0, bs1);
+                     else
+                       A.set(x_span, rows_span, cols_span, bs0, bs1);
+                   });
+}
 
 /// Declare linear algebra objects (Vector, MatrixCSR) for a given scalar type
 /// @param m The nanobind module
@@ -109,83 +156,10 @@ void declare_la_objects(nanobind::module_& m, std::string_view type)
       .def_prop_ro("bs", &dolfinx::la::MatrixCSR<T>::block_size)
       .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
       .def("index_map", &dolfinx::la::MatrixCSR<T>::index_map, nb::arg("dim"))
-      .def(
-          "add",
-          [](dolfinx::la::MatrixCSR<T>& self,
-             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
-             int bs)
-          {
-            if (bs < 1)
-              throw std::invalid_argument("bs must be positive.");
-            if (x.size() != rows.size() * cols.size() * bs * bs)
-            {
-              throw std::invalid_argument(
-                  "x size must equal rows size * cols size * bs * bs.");
-            }
-
-            const std::int32_t num_rows = self.num_all_rows();
-            const int mat_bs0 = self.block_size()[0];
-            // Rows of x are blocks of bs unrolled rows
-            const std::int32_t max_row = num_rows * mat_bs0 / bs;
-            for (std::size_t i = 0; i < rows.size(); ++i)
-            {
-              if (rows.data()[i] < 0 or rows.data()[i] >= max_row)
-                throw std::out_of_range("Index out of range in rows array.");
-            }
-            for (std::size_t i = 0; i < cols.size(); ++i)
-            {
-              if (cols.data()[i] < 0)
-                throw std::out_of_range("Index out of range in cols array.");
-            }
-            std::span x_span = std::span(x.data(), x.size());
-            std::span rows_span = std::span(rows.data(), rows.size());
-            std::span cols_span = std::span(cols.data(), cols.size());
-            visit_block_size(
-                {bs, bs},
-                [&self, x_span, rows_span, cols_span](auto bs0, auto bs1)
-                { self.add(x_span, rows_span, cols_span, bs0, bs1); });
-          },
-          nb::arg("x"), nb::arg("rows"), nb::arg("cols"), nb::arg("bs"))
-      .def(
-          "set",
-          [](dolfinx::la::MatrixCSR<T>& self,
-             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
-             int bs)
-          {
-            if (bs < 1)
-              throw std::invalid_argument("bs must be positive.");
-            if (x.size() != rows.size() * cols.size() * bs * bs)
-            {
-              throw std::invalid_argument(
-                  "x size must equal rows size * cols size * bs * bs.");
-            }
-            const std::int32_t num_rows = self.num_all_rows();
-            const int mat_bs0 = self.block_size()[0];
-            // Rows of x are blocks of bs unrolled rows
-            const std::int32_t max_row = num_rows * mat_bs0 / bs;
-            for (std::size_t i = 0; i < rows.size(); ++i)
-            {
-              if (rows.data()[i] < 0 or rows.data()[i] >= max_row)
-                throw std::out_of_range("Index out of range in rows array.");
-            }
-            for (std::size_t i = 0; i < cols.size(); ++i)
-            {
-              if (cols.data()[i] < 0)
-                throw std::out_of_range("Index out of range in cols array.");
-            }
-            std::span x_span = std::span(x.data(), x.size());
-            std::span rows_span = std::span(rows.data(), rows.size());
-            std::span cols_span = std::span(cols.data(), cols.size());
-            visit_block_size(
-                {bs, bs},
-                [&self, x_span, rows_span, cols_span](auto bs0, auto bs1)
-                { self.set(x_span, rows_span, cols_span, bs0, bs1); });
-          },
-          nb::arg("x"), nb::arg("rows"), nb::arg("cols"), nb::arg("bs"))
+      .def("add", &mat_insert<true, T>, nb::arg("x"), nb::arg("rows"),
+           nb::arg("cols"), nb::arg("bs"))
+      .def("set", &mat_insert<false, T>, nb::arg("x"), nb::arg("rows"),
+           nb::arg("cols"), nb::arg("bs"))
       .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
       .def("mult", &dolfinx::la::MatrixCSR<T>::mult, nb::arg("x"), nb::arg("y"))
       .def(

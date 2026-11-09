@@ -360,8 +360,8 @@ void declare_assembly_functions(nanobind::module_& m)
         // are the same for all DOF maps of a mixed-topology mesh
         visit_block_size({a.function_spaces().at(0)->dofmaps().front()->bs(),
                           a.function_spaces().at(1)->dofmaps().front()->bs()},
-                         [&A, &a, _constants, &_coefficients, _dof_marker0,
-                          _dof_marker1](auto bs0, auto bs1)
+                         [&A, &a, &_constants, &_coefficients, &_dof_marker0,
+                          &_dof_marker1](auto bs0, auto bs1)
                          {
                            dolfinx::fem::assemble_matrix(
                                A.mat_add_values(bs0, bs1), a, _constants,
