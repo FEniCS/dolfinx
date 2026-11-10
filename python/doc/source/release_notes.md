@@ -28,6 +28,10 @@ b0 = dolfinx.la.vector(V1.dofmap.index_map, dtype=A11.data.dtype)
 solver.solve([b0, b1], [u0.x, u1.x])
 ```
 
+{py:class}`dolfinx.fem.problems.LinearProblem` solves blocked problems with these matrices, e.g.
+`LinearProblem([[a00, a01], [a10, a11]], [L0, L1], bcs=[bc0, bc1]).solve()` returns
+`(u0, u1)`. Passing `u` to its constructor no longer raises a spurious dtype mismatch.
+
 ### Expressions on ridges and peaks
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)

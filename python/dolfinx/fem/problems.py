@@ -12,6 +12,7 @@ Users with advanced requirements should use
 import typing
 from collections.abc import Sequence
 
+import numpy as np
 import numpy.typing as npt
 
 import ufl
@@ -20,8 +21,11 @@ from dolfinx.fem import (
     DirichletBC,
     Form,
     Function,
+    FunctionSpace,
+    bcs_by_block,
     create_matrix,
     create_vector,
+    extract_function_spaces,
     form,
 )
 from dolfinx.fem.assemble import (
@@ -37,24 +41,54 @@ from dolfinx.mesh import EntityMap as EntityMap
 
 __all__ = ["LinearProblem"]
 
+_U = typing.TypeVar("_U", bound=Function | Sequence[Function])
 
-class LinearProblem:
+
+class LinearProblem(typing.Generic[_U]):
     r"""High-level class for solving linear problems using SuperLU_DIST.
 
-    Solves problems of the form :math:`a(u, v) = L(v) \; \forall v \in V`
-    using :class:`dolfinx.la.superlu_dist.SuperLUDistSolver` as the
-    linear solver.
+    Solves problems of the form
+    :math:`\sum_j a_{ij}(u_j, v_i) = L_i(v_i) \; \forall v_i \in V_i`,
+    where a single form is the case of one block, using
+    :class:`dolfinx.la.superlu_dist.SuperLUDistSolver` as the linear
+    solver.
 
     Note:
         DOLFINx must be built with SuperLU_DIST to use this class.
     """
 
+    @typing.overload
     def __init__(
-        self,
+        self: "LinearProblem[Function]",
         a: ufl.Form,
         L: ufl.Form,
         bcs: Sequence[DirichletBC] | None = None,
         u: Function | None = None,
+        dtype: npt.DTypeLike = default_scalar_type,
+        superlu_dist_options: dict | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        entity_maps: Sequence[EntityMap] | None = None,
+    ) -> None: ...
+    @typing.overload
+    def __init__(
+        self: "LinearProblem[Sequence[Function]]",
+        a: Sequence[Sequence[ufl.Form | None]],
+        L: Sequence[ufl.Form | None],
+        bcs: Sequence[DirichletBC] | None = None,
+        u: Sequence[Function] | None = None,
+        dtype: npt.DTypeLike = default_scalar_type,
+        superlu_dist_options: dict | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        entity_maps: Sequence[EntityMap] | None = None,
+    ) -> None: ...
+    def __init__(
+        self,
+        a: ufl.Form | Sequence[Sequence[ufl.Form | None]],
+        L: ufl.Form | Sequence[ufl.Form | None],
+        bcs: Sequence[DirichletBC] | None = None,
+        u: Function | Sequence[Function] | None = None,
         dtype: npt.DTypeLike = default_scalar_type,
         superlu_dist_options: dict | None = None,
         form_compiler_options: dict | None = None,
@@ -65,12 +99,19 @@ class LinearProblem:
 
         Args:
             a: Bilinear UFL form, the left-hand side of the variational
-               problem.
+               problem, or a square array of forms for a blocked
+               problem, with ``None`` for a zero block. The test spaces
+               of the block rows must be distinct, and likewise the
+               trial spaces of the block columns.
             L: Linear UFL form, the right-hand side of the variational
-               problem.
+               problem, or a list with one form per block row, with
+               ``None`` for a zero right-hand side.
             bcs: Dirichlet boundary conditions to apply to the variational
-               problem.
-            u: Solution function. Created if not provided.
+               problem. For a blocked problem, each condition applies to
+               the blocks whose space contains its space.
+            u: Solution function, or one function per block column on
+               its trial space for a blocked problem. Created if not
+               provided.
             dtype: Scalar type for form compilation. Must match
                ``u.dtype`` if ``u`` is provided.
             superlu_dist_options: Options passed to the SuperLU_DIST
@@ -94,43 +135,86 @@ class LinearProblem:
             problem = LinearProblem(a, L, bcs=bc,
                 superlu_dist_options={"SymmetricMode": "YES"})
             u_h = problem.solve()
+
+        Blocked problems take an array of forms and return one function
+        per block::
+
+            problem = LinearProblem([[a00, a01], [a10, None]], [L0, L1],
+                bcs=[bc0, bc1])
+            u_h, p_h = problem.solve()
+
+        Note:
+            If a boundary condition constrains block ``i``, the
+            diagonal block ``a[i][i]`` must be given, with the same test
+            and trial space, as the constrained rows need a diagonal
+            entry.
         """
-        if u is not None:
-            _dtype = u.dtype
-            if dtype is not u.dtype:
-                raise ValueError(f"dtype ({dtype}) does not match u.dtype ({u.dtype}).")
-        else:
-            _dtype = dtype
+        self._blocked = isinstance(a, Sequence)
+        if isinstance(L, Sequence) != self._blocked:
+            raise ValueError(
+                "a and L must both be single forms, or an array of forms and a list of forms."
+            )
 
-        self._a = typing.cast(
-            Form,
-            form(
-                a,
-                _dtype,
-                form_compiler_options=form_compiler_options,
-                jit_options=jit_options,
-                entity_maps=entity_maps,
-            ),
-        )
-        self._L = typing.cast(
-            Form,
-            form(
-                L,
-                _dtype,
-                form_compiler_options=form_compiler_options,
-                jit_options=jit_options,
-                entity_maps=entity_maps,
-            ),
-        )
-        self._A = create_matrix(self._a)
-        self._x = create_vector(L.arguments()[0].ufl_function_space(), dtype=_dtype)
-        self._b = create_vector(L.arguments()[0].ufl_function_space(), dtype=_dtype)
+        a_blocks = [list(row) for row in a] if self._blocked else [[a]]  # type: ignore[union-attr]
+        L_blocks = list(L) if self._blocked else [L]  # type: ignore[arg-type]
+        n = len(a_blocks)
+        if n == 0 or any(len(row) != n for row in a_blocks):
+            raise ValueError("a must be a square, non-empty array of forms.")
+        if len(L_blocks) != n:
+            raise ValueError(f"a has {n} block rows but L has {len(L_blocks)} forms.")
 
-        self._u: Function
+        _u: list[Function]
         if u is None:
-            self._u = Function(L.arguments()[0].ufl_function_space(), dtype=_dtype)
+            _u = []
+        elif isinstance(u, Function):
+            _u = [u]
         else:
-            self._u = u
+            _u = list(u)
+        if len(_u) not in (0, n):
+            raise ValueError(f"u has {len(_u)} functions but the problem has {n} blocks.")
+        for j, uj in enumerate(_u):
+            if np.dtype(dtype) != uj.dtype:
+                raise ValueError(f"dtype ({dtype}) does not match u[{j}].dtype ({uj.dtype}).")
+        _dtype = _u[0].dtype if len(_u) > 0 else dtype
+
+        def _form(f):
+            return form(
+                f,
+                _dtype,
+                form_compiler_options=form_compiler_options,
+                jit_options=jit_options,
+                entity_maps=entity_maps,
+            )
+
+        self._a_blocks: list[list[Form | None]] = _form(a_blocks)
+        self._L_blocks: list[Form | None] = _form(L_blocks)
+
+        # Test spaces of the block rows and trial spaces of the block
+        # columns, distinct so that no off-diagonal block maps a space
+        # to itself
+        V0 = extract_function_spaces(self._a_blocks, 0)
+        V1 = extract_function_spaces(self._a_blocks, 1)
+        for name, spaces in (("row", V0), ("column", V1)):
+            for j, Vj in enumerate(spaces):
+                if Vj is None:
+                    raise ValueError(f"Block {name} {j} of a has no form.")
+                if any(Vj == Vk for Vk in spaces[:j]):
+                    raise ValueError(f"The space of block {name} {j} appears in another {name}.")
+        self._V0 = typing.cast(list[FunctionSpace], V0)
+        self._V1 = typing.cast(list[FunctionSpace], V1)
+        for i, (Li, V0i) in enumerate(zip(self._L_blocks, self._V0, strict=True)):
+            if Li is not None and Li.function_spaces[0] != V0i:
+                raise ValueError(f"The test space of L[{i}] differs from that of block row {i}.")
+        for j, uj in enumerate(_u):
+            if uj.function_space != self._V1[j]:
+                raise ValueError(f"u[{j}] is not on the trial space of block column {j}.")
+
+        self._A_blocks: list[list[MatrixCSR | None]] = [
+            [None if aij is None else create_matrix(aij) for aij in row] for row in self._a_blocks
+        ]
+        self._b_blocks = [create_vector(V, dtype=_dtype) for V in self._V0]
+        self._x_blocks = [create_vector(V, dtype=_dtype) for V in self._V1]
+        self._u_blocks = _u if len(_u) > 0 else [Function(V, dtype=_dtype) for V in self._V1]
 
         self.bcs = bcs
 
@@ -144,98 +228,138 @@ class LinearProblem:
         reuses. These follow from the dofs a condition constrains,
         which are fixed once it is built, and the sequence is copied,
         so the cache cannot go stale. Condition *values* are re-read on
-        every solve.
+        every solve. An invalid assignment raises and leaves the
+        previous conditions in place.
         """
         return self._bcs
 
     @bcs.setter
     def bcs(self, bcs: Sequence[DirichletBC] | None) -> None:
-        self._bcs = tuple(bcs) if bcs is not None else ()
-        V0, V1 = self.a.function_spaces
-        marker0, marker1 = _bc_dof_markers_by_space([V0, V1], self._bcs)
-        self._bc_markers = (marker0, marker1)
+        _bcs = tuple(bcs) if bcs is not None else ()
+        markers0 = _bc_dof_markers_by_space(self._V0, _bcs)
+        markers1 = _bc_dof_markers_by_space(self._V1, _bcs)
 
-    def solve(self) -> Function:
+        # Constrained rows need a diagonal entry, which assembly sets
+        # only in a diagonal block whose test and trial spaces are the
+        # same. Markers are empty on every rank when no condition
+        # applies to a space, so all ranks agree.
+        for i, row in enumerate(self._a_blocks):
+            if markers0[i].size == 0 and markers1[i].size == 0:
+                continue
+            aii = row[i]
+            if aii is None:
+                raise ValueError(
+                    f"Boundary conditions constrain block {i}, but a[{i}][{i}] is None."
+                )
+            V0, V1 = aii.function_spaces
+            if V0._cpp_object is not V1._cpp_object:
+                raise ValueError(
+                    f"Boundary conditions constrain block {i}, but a[{i}][{i}] has "
+                    "different test and trial spaces."
+                )
+
+        self._bcs = _bcs
+        self._bc_markers0 = markers0
+        self._bc_markers1 = markers1
+        self._bcs0 = bcs_by_block(self._V0, _bcs)
+        self._bcs1 = bcs_by_block(self._V1, _bcs)
+
+    def solve(self) -> _U:
         """Solve the problem.
 
-        This method updates the solution function ``u`` stored in the
-        problem instance.
+        This method updates the solution function(s) ``u`` stored in
+        the problem instance.
 
         Returns:
-            The solution function.
+            The solution function, or one function per block for a
+            blocked problem.
         """
         # Assemble lhs
-        self.A.set_value(self.A.data.dtype.type(0.0))
-        _assemble_matrix_csr_markers(self.A, self.a, *self._bc_markers)
-        self.A.scatter_reverse()
+        for i, row in enumerate(self._A_blocks):
+            for j, Aij in enumerate(row):
+                if Aij is not None:
+                    Aij.set_value(Aij.data.dtype.type(0.0))
+                    _assemble_matrix_csr_markers(
+                        Aij,
+                        self._a_blocks[i][j],  # type: ignore[arg-type]
+                        self._bc_markers0[i],
+                        self._bc_markers1[j],
+                    )
+                    Aij.scatter_reverse()
 
         # SuperLU_DIST solves in-place, so a deep copy of A is required.
-        A_superlu_dist = superlu_dist_matrix(self.A)
+        A_superlu_dist = superlu_dist_matrix(
+            self._A_blocks if self._blocked else self._A_blocks[0][0]  # type: ignore[arg-type]
+        )
         solver = superlu_dist_solver(A_superlu_dist)
         if self._superlu_dist_options is not None:
             for option, value in self._superlu_dist_options.items():
                 solver.set_option(option, value)
 
-        # Assemble rhs
-        self.b.array[:] = 0.0
-        _assemble_vector_array(self.b.array, self.L)
-
-        # Apply boundary conditions to the rhs
-        if self.bcs:
-            bc_values1 = _bc_lifting_values(
-                [self.a.function_spaces[1]], [self.bcs], self.b.array.dtype
-            )
-            _apply_lifting_markers(self.b.array, [self.a], [self._bc_markers[1]], bc_values1)
-            self.b.scatter_reverse(InsertMode.add)
-            for bc in self.bcs:
-                bc.set(self.b.array)
-        else:
-            self.b.scatter_reverse(InsertMode.add)
+        # Assemble rhs and apply boundary conditions
+        bc_values1 = _bc_lifting_values(self._V1, self._bcs1, self._b_blocks[0].array.dtype)
+        for i, (bi, Li) in enumerate(zip(self._b_blocks, self._L_blocks, strict=True)):
+            bi.array[:] = 0.0
+            if Li is not None:
+                _assemble_vector_array(bi.array, Li)
+            if self.bcs:
+                _apply_lifting_markers(bi.array, self._a_blocks[i], self._bc_markers1, bc_values1)
+            bi.scatter_reverse(InsertMode.add)
+            for bc in self._bcs0[i]:
+                bc.set(bi.array)
 
         # Solve linear system and update ghost values in the solution
-        error = solver.solve(self.b, self.x)
+        if self._blocked:
+            error = solver.solve(self._b_blocks, self._x_blocks)
+        else:
+            error = solver.solve(self._b_blocks[0], self._x_blocks[0])
         if error > 0:
             raise RuntimeError(f"SuperLU_DIST returned non-zero error code: {error}")
-        self.x.scatter_forward()
-        self.u.x.array[:] = self.x.array
+        for xi, ui in zip(self._x_blocks, self._u_blocks, strict=True):
+            xi.scatter_forward()
+            ui.x.array[:] = xi.array
         return self.u
 
     @property
-    def L(self) -> Form:
-        """The compiled linear form representing the right-hand side."""
-        return self._L
+    def L(self) -> Form | tuple[Form | None, ...]:
+        """The compiled linear form(s) representing the right-hand side."""
+        return tuple(self._L_blocks) if self._blocked else self._L_blocks[0]  # type: ignore[return-value]
 
     @property
-    def a(self) -> Form:
-        """The compiled bilinear form representing the left-hand side."""
-        return self._a
+    def a(self) -> Form | tuple[tuple[Form | None, ...], ...]:
+        """The compiled bilinear form(s) of the left-hand side."""
+        if self._blocked:
+            return tuple(tuple(row) for row in self._a_blocks)
+        return self._a_blocks[0][0]  # type: ignore[return-value]
 
     @property
-    def A(self) -> MatrixCSR:
-        """Left-hand side matrix."""
-        return self._A
+    def A(self) -> MatrixCSR | tuple[tuple[MatrixCSR | None, ...], ...]:
+        """Left-hand side matrix, or its blocks for a blocked problem."""
+        if self._blocked:
+            return tuple(tuple(row) for row in self._A_blocks)
+        return self._A_blocks[0][0]  # type: ignore[return-value]
 
     @property
-    def b(self) -> Vector:
-        """Right-hand side vector."""
-        return self._b
+    def b(self) -> Vector | tuple[Vector, ...]:
+        """Right-hand side vector, one per block row if blocked."""
+        return tuple(self._b_blocks) if self._blocked else self._b_blocks[0]
 
     @property
-    def x(self) -> Vector:
-        """Solution vector.
+    def x(self) -> Vector | tuple[Vector, ...]:
+        """Solution vector, one per block column for a blocked problem.
 
         Note:
             The vector does not share memory with the solution
             function ``u``.
         """
-        return self._x
+        return tuple(self._x_blocks) if self._blocked else self._x_blocks[0]
 
     @property
-    def u(self) -> Function:
-        """Solution function.
+    def u(self) -> _U:
+        """Solution function, one per block column for a blocked problem.
 
         Note:
             The function does not share memory with the solution
             vector ``x``.
         """
-        return self._u
+        return typing.cast(_U, tuple(self._u_blocks) if self._blocked else self._u_blocks[0])
