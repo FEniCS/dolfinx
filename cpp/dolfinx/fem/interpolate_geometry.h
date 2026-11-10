@@ -108,7 +108,7 @@ mesh::Mesh<T> interpolate_geometry(
 
   std::vector<std::vector<std::int32_t>> dofmaps;
   dofmaps.emplace_back(std::move(dofmap_flat));
-  mesh::Geometry<T> geometry(new_imap, dofmaps,
+  mesh::Geometry<T> geometry(new_imap, std::move(dofmaps),
                              std::vector<CoordinateElement<T>>{new_cmap},
                              std::move(x_new), gdim, std::move(igi));
 
