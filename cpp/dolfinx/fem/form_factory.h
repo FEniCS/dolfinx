@@ -95,6 +95,16 @@ Form<T, U> create_form_factory(
         entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
+  // check alignment of ufcx integral_type and IntegralType.
+  static_assert(static_cast<int>(cell) == static_cast<int>(IntegralType::cell));
+  static_assert(static_cast<int>(exterior_facet)
+                == static_cast<int>(IntegralType::exterior_facet));
+  static_assert(static_cast<int>(interior_facet)
+                == static_cast<int>(IntegralType::interior_facet));
+  static_assert(static_cast<int>(ridge)
+                == static_cast<int>(IntegralType::ridge));
+  static_assert(static_cast<int>(peak) == static_cast<int>(IntegralType::peak));
+
   for (std::size_t c = 0; c < coefficients.size(); ++c)
   {
     if (!coefficients[c])
