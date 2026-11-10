@@ -207,13 +207,6 @@ Form<T, U> create_form_factory(
   for (std::size_t i = 0; i < num_integrals_type.size(); ++i)
     num_integrals_type[i] = integral_offsets[i + 1] - integral_offsets[i];
 
-  // Create vertices, if required
-  if (num_integrals_type[vertex] > 0)
-  {
-    mesh->topology_mutable()->create_connectivity(0, tdim);
-    mesh->topology_mutable()->create_connectivity(tdim, 0);
-  }
-
   // Create facets, if required
   // NOTE: exterior_facet and interior_facet is declared in ufcx.h
   if (num_integrals_type[exterior_facet] > 0
@@ -230,6 +223,13 @@ Form<T, U> create_form_factory(
     mesh->topology_mutable()->create_entities(tdim - 2);
     mesh->topology_mutable()->create_connectivity(tdim - 2, tdim);
     mesh->topology_mutable()->create_connectivity(tdim, tdim - 2);
+  }
+
+  // Create peaks, if required
+  if (num_integrals_type[peak] > 0)
+  {
+    mesh->topology_mutable()->create_connectivity(tdim - 3, tdim);
+    mesh->topology_mutable()->create_connectivity(tdim, tdim - 3);
   }
 
   // Get list of integral IDs, and load tabulate tensor into memory for
