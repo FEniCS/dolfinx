@@ -73,8 +73,8 @@ def superlu_dist_matrix(
     """Create a SuperLU_DIST matrix.
 
     Note:
-        The matrix is copied into a SuperLU_DIST matrix, rather than being a
-        view of the original matrices.
+        The matrix is copied into a SuperLU_DIST matrix, rather than
+        being a view of the original matrices.
 
     Args:
         A: Assembled matrix, or a rectangular array of assembled blocks
