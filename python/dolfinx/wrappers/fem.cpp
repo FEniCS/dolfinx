@@ -159,8 +159,8 @@ void fem(nb::module_& m)
              "exterior facet integral")
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet,
              "interior facet integral")
-      .value("vertex", dolfinx::fem::IntegralType::vertex, "vertex integral")
-      .value("ridge", dolfinx::fem::IntegralType::ridge, "ridge integral");
+      .value("ridge", dolfinx::fem::IntegralType::ridge, "ridge integral")
+      .value("peak", dolfinx::fem::IntegralType::peak, "peak integral");
 
   declare_constant<float>(m, "float32");
   declare_constant<double>(m, "float64");

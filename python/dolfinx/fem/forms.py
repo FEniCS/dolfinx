@@ -196,13 +196,13 @@ def get_integration_domains(
                 topology.create_connectivity(tdim - 1, tdim)
                 topology.create_connectivity(tdim, tdim - 1)
 
-            if integral_type is IntegralType.vertex:
-                topology.create_connectivity(0, tdim)
-                topology.create_connectivity(tdim, 0)
-
             if integral_type is IntegralType.ridge:
                 topology.create_connectivity(tdim - 2, tdim)
                 topology.create_connectivity(tdim, tdim - 2)
+
+            if integral_type is IntegralType.peak:
+                topology.create_connectivity(tdim - 3, tdim)
+                topology.create_connectivity(tdim, tdim - 3)
 
             # Special handling for exterior facets, compared to other
             # one-sided entity integrals
@@ -271,8 +271,8 @@ _ufl_to_dolfinx_domain = {
     "cell": IntegralType.cell,
     "exterior_facet": IntegralType.exterior_facet,
     "interior_facet": IntegralType.interior_facet,
-    "vertex": IntegralType.vertex,
     "ridge": IntegralType.ridge,
+    "peak": IntegralType.peak,
 }
 
 
