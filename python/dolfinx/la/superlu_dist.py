@@ -72,12 +72,9 @@ def superlu_dist_matrix(
 ) -> SuperLUDistMatrix[_T]:
     """Create a SuperLU_DIST matrix.
 
-    Deep copies all required data from ``A``. A block matrix is copied
-    block by block, without forming a monolithic matrix: its rows are
-    the owned rows of block row 0, then of block row 1, ..., expanded
-    by the block size, and its columns likewise. Vectors for
-    :meth:`SuperLUDistSolver.solve` have the same layout, e.g. on an
-    index map from :func:`dolfinx.common.stack_index_maps`.
+    Note:
+        The matrix is copied into a SuperLU_DIST matrix, rather than being a
+        view of the original matrices.
 
     Args:
         A: Assembled matrix, or a rectangular array of assembled blocks
