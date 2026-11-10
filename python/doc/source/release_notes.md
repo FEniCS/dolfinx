@@ -6,16 +6,27 @@
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
 
-{py:func}`dolfinx.la.superlu_dist.superlu_dist_matrix` (and the C++ `la::SuperLUDistMatrix`)
-accepts a rectangular array of {py:class}`dolfinx.la.MatrixCSR` blocks, with `None` for a zero
-block, e.g. the blocks of a block form assembled one by one. The blocks are copied into
-SuperLU_DIST's format directly, without forming a monolithic matrix. The rows are the owned
-rows of block row 0, then of block row 1, ..., expanded by the block size, and the columns
-likewise. {py:meth}`dolfinx.la.superlu_dist.SuperLUDistSolver.solve` takes the blocks of
-`b` and `u`, e.g. `solver.solve([b0, b1], [u0.x, u1.x])`, or vectors in this stacked layout.
+{py:func}`dolfinx.la.superlu_dist.superlu_dist_matrix` supports a rectangular array of
+{py:class}`dolfinx.la.MatrixCSR` blocks, with `None` for a zero.
+In turn to solve linear systems
+with blocks, {py:meth}`dolfinx.la.superlu_dist.SuperLUDistSolver.solve` takes a
+sequence of {py:class}`vectors<dolfinx.la.Vector>`
 
-{py:func}`dolfinx.common.stack_index_maps` exposes `common::stack_index_maps` to Python. It
-computes this concatenated layout of index maps, e.g. to create the vectors of a block system.
+```python
+V0 = dolfinx.fem.functionspace(mesh, ("Lagrange", 1))
+V1 = dolfinx.fem.functionspace(mesh, ("Lagrange", 2))
+a00 = dolfinx.fem.form(ufl.inner(ufl.TrialFunction(V), ufl.TestFunction(V)) * ufl.dx)
+A00 = dolfinx.fem.assemble_matrix()
+A11 = dolfinx.fem.assemble_matrix(
+    dolfinx.fem.form(ufl.inner(ufl.TrialFunction(W), ufl.TestFunction(W)) * ufl.dx)
+)
+A = superlu_dist_matrix([[A00, None], [None, A11]])
+u0 = dolfinx.fem.Function(V0)
+u1 = dolfinx.fem.Function(V1)
+b0 = dolfinx.la.vector(V0.dofmap.index_map, dtype=A00.data.dtype)
+b0 = dolfinx.la.vector(V1.dofmap.index_map, dtype=A11.data.dtype)
+solver.solve([b0, b1], [u0.x, u1.x])
+```
 
 ### Expressions on ridges and peaks
 
