@@ -342,6 +342,13 @@ void declare_superlu_dist_matrix(nanobind::module_& m, std::string_view type)
              const dolfinx::la::MatrixCSR<T>& Amat)
           { new (Amat_superlu) dolfinx::la::SuperLUDistMatrix<T>(Amat); },
           nb::arg("A"))
+      .def(
+          "__init__",
+          [](dolfinx::la::SuperLUDistMatrix<T>* Amat_superlu,
+             const std::vector<std::vector<const dolfinx::la::MatrixCSR<T>*>>&
+                 A)
+          { new (Amat_superlu) dolfinx::la::SuperLUDistMatrix<T>(A); },
+          nb::arg("A"))
       .def_prop_ro("dtype", [](const dolfinx::la::SuperLUDistMatrix<T>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; });
 }

@@ -1,5 +1,5 @@
 // Copyright (C) 2026 Jack S. Hale, Chris N. Richardson
-// Copyright (C) 2026 Garth N. Wells
+// Copyright (C) 2026 Garth N. Wells, Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -16,15 +16,29 @@ extern "C"
 }
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
+#include <complex>
+#include <cstdint>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
+#include <format>
+#include <functional>
 #include <initializer_list>
-#include <numeric>
+#include <iterator>
+#include <limits>
+#include <memory>
+#include <mpi.h>
+#include <optional>
 #include <ranges>
+#include <span>
 #include <stdexcept>
+#include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -52,141 +66,50 @@ void SuperMatrixDeleter::operator()(
 //----------------------------------------------------------------------------
 namespace
 {
-// Expand MatrixCSR block column indices to flattened column indices.
-std::vector<int_t> col_indices(const auto& A)
+/// @brief Check that a size or index fits in SuperLU_DIST's `int_t`.
+/// @param[in] x Size or index.
+/// @throws std::out_of_range if `x` exceeds the range of `int_t`.
+void check_int_t(std::int64_t x)
 {
-  std::array<int, 2> bs = A.block_size();
-  std::int32_t m_loc_block = A.num_owned_rows();
-  std::int64_t nnz_loc_block = A.row_ptr().at(m_loc_block);
-  std::vector global_indices(A.index_map(1)->global_indices());
-
-  if (bs[0] == 1 and bs[1] == 1)
-  {
-    std::vector<int_t> col_indices(nnz_loc_block);
-    std::transform(A.cols().begin(), std::next(A.cols().begin(), nnz_loc_block),
-                   col_indices.begin(), [&global_indices](auto idx) -> int_t
-                   { return global_indices[idx]; });
-    return col_indices;
-  }
-
-  std::vector<int_t> col_indices(nnz_loc_block * bs[0] * bs[1]);
-  const auto& A_cols = A.cols();
-  const auto& A_rowptr = A.row_ptr();
-  std::int64_t pos = 0;
-  for (std::int32_t i = 0; i < m_loc_block; ++i)
-  {
-    for (int i0 = 0; i0 < bs[0]; ++i0)
-    {
-      for (std::int64_t j = A_rowptr[i]; j < A_rowptr[i + 1]; ++j)
-      {
-        int_t col_block = global_indices[A_cols[j]];
-        for (int i1 = 0; i1 < bs[1]; ++i1)
-          col_indices[pos++] = col_block * bs[1] + i1;
-      }
-    }
-  }
-  return col_indices;
+  if (x >= static_cast<std::int64_t>(std::numeric_limits<int_t>::max()))
+    throw std::out_of_range("Value outside upper range of SuperLU_DIST int_t.");
 }
 //----------------------------------------------------------------------------
-// Expand MatrixCSR block row pointer to flattened row pointer.
-std::vector<int_t> row_indices(const auto& A)
-{
-  std::array<int, 2> bs = A.block_size();
-  std::int32_t m_loc_block = A.num_owned_rows();
-  const auto& A_rowptr = A.row_ptr();
-
-  if (bs[0] == 1 and bs[1] == 1)
-  {
-    return std::vector<int_t>(A_rowptr.begin(),
-                              std::next(A_rowptr.begin(), m_loc_block + 1));
-  }
-
-  // Write the per-scalar-row entry counts into `flattened_rowptr[1:]`, with
-  // each block-row contributing `bs[0]` copies.
-  std::vector<int_t> flattened_rowptr(m_loc_block * bs[0] + 1);
-  flattened_rowptr[0] = A_rowptr[0] * bs[1];
-  for (std::int32_t i = 0; i < m_loc_block; ++i)
-  {
-    int_t delta = (A_rowptr[i + 1] - A_rowptr[i]) * bs[1];
-    std::fill_n(std::next(flattened_rowptr.begin(), 1 + i * bs[0]), bs[0],
-                delta);
-  }
-  std::inclusive_scan(std::next(flattened_rowptr.begin()),
-                      flattened_rowptr.end(),
-                      std::next(flattened_rowptr.begin()));
-  return flattened_rowptr;
-}
-//----------------------------------------------------------------------------
-// Expand MatrixCSR block values to flattened CSR layout.
-template <typename T>
-std::vector<T> matrix_values(const MatrixCSR<T>& A)
-{
-  std::array<int, 2> bs = A.block_size();
-  std::int32_t m_loc_block = A.num_owned_rows();
-  std::int64_t nnz_loc_block = A.row_ptr().at(m_loc_block);
-
-  if (bs[0] == 1 and bs[1] == 1)
-  {
-    return std::vector<T>(A.values().begin(),
-                          std::next(A.values().begin(), nnz_loc_block));
-  }
-
-  std::vector<T> flattened_values(nnz_loc_block * bs[0] * bs[1]);
-  const auto& A_values = A.values();
-  const auto& A_rowptr = A.row_ptr();
-  std::int64_t pos = 0;
-  for (std::int32_t i = 0; i < m_loc_block; ++i)
-  {
-    for (int i0 = 0; i0 < bs[0]; ++i0)
-    {
-      for (std::int64_t j = A_rowptr[i]; j < A_rowptr[i + 1]; ++j)
-      {
-        for (int i1 = 0; i1 < bs[1]; ++i1)
-        {
-          flattened_values[pos++]
-              = A_values[j * bs[0] * bs[1] + i0 * bs[1] + i1];
-        }
-      }
-    }
-  }
-  return flattened_values;
-}
-//----------------------------------------------------------------------------
+/// @brief Create a SuperMatrix from the local rows of a distributed
+/// matrix.
+///
+/// Sizes and indices are of unrolled (scalar) rows and columns.
+///
+/// @param[in] m Global number of rows.
+/// @param[in] n Global number of columns.
+/// @param[in] m_loc Number of local rows.
+/// @param[in] first_row Global index of the first local row.
+/// @param[in] A_mat_values Values of the local rows.
+/// @param[in] rowptr Row pointer of the local rows.
+/// @param[in] cols Global column indices of the local rows.
+/// @return The SuperMatrix, which references the arrays.
+/// @throws std::invalid_argument if `m != n`.
+/// @throws std::out_of_range if a size or index exceeds `int_t`.
 template <typename T>
 std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
-create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
+create_supermatrix(std::int64_t m, std::int64_t n, std::int32_t m_loc,
+                   std::int64_t first_row, auto& A_mat_values, auto& rowptr,
+                   auto& cols)
 {
   logger().info("Start create_supermatrix");
 
-  auto map0 = A.index_map(0);
-  auto map1 = A.index_map(1);
-  std::array<int, 2> bs = A.block_size();
-
-  // Global size (scalar, after block expansion)
-  std::int64_t m = map0->size_global() * bs[0];
-  std::int64_t n = map1->size_global() * bs[1];
   if (m != n)
     throw std::invalid_argument("Cannot solve non-square system");
 
-  // Number of local rows, first row and local number of non-zeros.
-  std::int32_t m_loc = A.num_owned_rows() * bs[0];
-  std::int64_t first_row = map0->local_range().front() * bs[0];
-  std::int64_t nnz_loc = A.row_ptr().at(A.num_owned_rows()) * bs[0] * bs[1];
+  // Local number of non-zeros, checked by the caller before `rowptr`
+  // was built in `int_t`
+  std::int64_t nnz_loc = rowptr.vec.at(m_loc);
 
-  // Check values fit into upper range of int_t.
-  auto check = [](std::int64_t x)
-  {
-    if (x >= static_cast<std::int64_t>(std::numeric_limits<int_t>::max()))
-    {
-      throw std::out_of_range(
-          "Value outside upper range of SuperLU_DIST int_t.");
-    }
-  };
-  check(m);
-  check(n);
-  check(m_loc);
-  check(first_row);
-  check(nnz_loc);
+  check_int_t(m);
+  check_int_t(n);
+  check_int_t(m_loc);
+  check_int_t(first_row);
+  check_int_t(nnz_loc);
 
   std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter> p(
       new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{});
@@ -216,16 +139,513 @@ create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
   logger().info("Finished create_supermatrix");
   return p;
 }
+//----------------------------------------------------------------------------
+/// Blocks `A[i][j]` of a block matrix, `nullptr` for a zero block.
+template <typename T>
+using Blocks = std::span<const std::vector<const MatrixCSR<T>*>>;
+
+/// Owned range `[first, last)` and global number of the unrolled rows
+/// or columns of a matrix, or of a block row or block column.
+using Layout = std::array<std::int64_t, 3>;
+
+/// @brief Layout of the unrolled rows or columns of a matrix.
+/// @param[in] A Matrix.
+/// @param[in] dim 0 for rows, 1 for columns.
+/// @return Owned range `[first, last)` and global number.
+template <typename T>
+Layout index_layout(const MatrixCSR<T>& A, int dim)
+{
+  std::shared_ptr<const common::IndexMap> map = A.index_map(dim);
+  std::array<std::int64_t, 2> r = map->local_range();
+  const int bs = A.block_size()[dim];
+  return {r[0] * bs, r[1] * bs, map->size_global() * bs};
+}
+
+/// @brief Communicator and row and column layouts of a block matrix.
+///
+/// The layouts are of unrolled indices, in the numbering of the blocks
+/// of each block row and block column.
+///
+/// Every check but the one of owned ranges uses data that is the same
+/// on all ranks, so all ranks throw together. Owned ranges can differ
+/// on some ranks only; in Debug builds the ranks agree before
+/// throwing.
+///
+/// @param[in] A Blocks of the matrix. The blocks of a block row must
+/// have the same rows, and the blocks of a block column the same
+/// columns. Every block row and block column must have a block, and all
+/// blocks congruent communicators.
+/// @return (0) Communicator of the blocks, (1) layout of each block
+/// row, and (2) of each block column.
+/// @throws std::invalid_argument if `A` does not satisfy the above.
+template <typename T>
+std::tuple<MPI_Comm, std::vector<Layout>, std::vector<Layout>>
+block_layout(Blocks<T> A)
+{
+  if (A.empty() or A.front().empty())
+    throw std::invalid_argument("Block matrix has no blocks.");
+  const std::size_t ncols = A.front().size();
+  if (std::ranges::any_of(A,
+                          [ncols](const std::vector<const MatrixCSR<T>*>& row)
+                          { return row.size() != ncols; }))
+  {
+    throw std::invalid_argument("Block matrix is not rectangular.");
+  }
+
+  constexpr Layout unset = {-1, -1, -1};
+  std::vector rows(A.size(), unset);
+  std::vector cols(ncols, unset);
+  MPI_Comm comm = MPI_COMM_NULL;
+  bool owned_mismatch = false;
+  for (std::size_t i = 0; i < rows.size(); ++i)
+  {
+    for (std::size_t j = 0; j < ncols; ++j)
+    {
+      const MatrixCSR<T>* B = A[i][j];
+      if (!B)
+        continue;
+
+      if (comm == MPI_COMM_NULL)
+        comm = B->comm();
+      else
+      {
+        int result = MPI_UNEQUAL;
+        int ierr = MPI_Comm_compare(comm, B->comm(), &result);
+        dolfinx::MPI::check_error(comm, ierr);
+        if (result != MPI_IDENT and result != MPI_CONGRUENT)
+        {
+          throw std::invalid_argument(
+              "Blocks have communicators that are not congruent.");
+        }
+      }
+
+      Layout r = index_layout(*B, 0);
+      Layout c = index_layout(*B, 1);
+      if ((rows[i] != unset and rows[i][2] != r[2])
+          or (cols[j] != unset and cols[j][2] != c[2]))
+      {
+        throw std::invalid_argument("Blocks of a block row or block column "
+                                    "have different global sizes.");
+      }
+      owned_mismatch = owned_mismatch or (rows[i] != unset and rows[i] != r)
+                       or (cols[j] != unset and cols[j] != c);
+      rows[i] = r;
+      cols[j] = c;
+    }
+  }
+
+  if (std::ranges::find(rows, unset) != rows.end()
+      or std::ranges::find(cols, unset) != cols.end())
+  {
+    throw std::invalid_argument(
+        "Every block row and block column must have a block.");
+  }
+
+#ifndef NDEBUG
+  // Agree across ranks, so that no rank is left in a collective
+  int mismatch = owned_mismatch;
+  int ierr = MPI_Allreduce(MPI_IN_PLACE, &mismatch, 1, MPI_INT, MPI_LOR, comm);
+  dolfinx::MPI::check_error(comm, ierr);
+  owned_mismatch = mismatch;
+#endif
+  if (owned_mismatch)
+  {
+    throw std::invalid_argument(
+        "Blocks of a block row or block column have different owned ranges.");
+  }
+
+  return {comm, std::move(rows), std::move(cols)};
+}
+
+/// @brief Global layout of the rows or columns of a block matrix.
+///
+/// The owned rows (columns) of the block rows (columns) follow one
+/// another on each process, so the first local row (column) is the sum
+/// of the first owned rows (columns) of the block rows (columns).
+///
+/// @param[in] layouts Layout of each block row (column), from
+/// block_layout().
+/// @return Global index of (0) the first local row (column) and (1) the
+/// global number of rows (columns).
+std::array<std::int64_t, 2> block_range(std::span<const Layout> layouts)
+{
+  std::array<std::int64_t, 2> range = {0, 0};
+  for (const Layout& l : layouts)
+  {
+    range[0] += l[0];
+    range[1] += l[2];
+  }
+  return range;
+}
+
+/// @brief Number of unrolled entries in the owned rows of a block
+/// matrix.
+/// @param[in] A Blocks of the matrix, see block_layout().
+/// @return Number of entries.
+template <typename T>
+std::int64_t num_entries(Blocks<T> A)
+{
+  std::int64_t nnz = 0;
+  for (const std::vector<const MatrixCSR<T>*>& row : A)
+  {
+    for (const MatrixCSR<T>* B : row)
+    {
+      if (B)
+      {
+        std::array<int, 2> bs = B->block_size();
+        nnz += B->row_ptr()[B->num_owned_rows()] * bs[0] * bs[1];
+      }
+    }
+  }
+  return nnz;
+}
+
+/// @brief Block column of the only block of a block row.
+///
+/// The owned entries of such a block row are those of its block, in
+/// the same order, so they are unrolled block row by block row.
+///
+/// @param[in] row Blocks of a block row.
+/// @return Block column of the block, or no value if the block row has
+/// more than one block.
+template <typename T>
+std::optional<std::size_t>
+single_block(const std::vector<const MatrixCSR<T>*>& row)
+{
+  std::optional<std::size_t> single;
+  for (std::size_t j = 0; j < row.size(); ++j)
+  {
+    if (!row[j])
+      continue;
+    if (single)
+      return std::nullopt;
+    single = j;
+  }
+  return single;
+}
+
+/// @brief Flattened row pointer of the owned rows of a block matrix.
+///
+/// Each row of a block row has the entries of that row in each of its
+/// blocks.
+///
+/// @param[in] A Blocks of the matrix, see block_layout().
+/// @param[in] rows Layout of each block row, from
+/// block_layout().
+/// @return Row pointer of the unrolled owned rows.
+template <typename T>
+std::vector<int_t> row_indices(Blocks<T> A, std::span<const Layout> rows)
+{
+  std::int64_t num_rows_local = 0;
+  for (const Layout& r : rows)
+    num_rows_local += r[1] - r[0];
+
+  // One block of block size (1, 1): its owned row pointer as is
+  if (A.size() == 1 and single_block(A[0]))
+  {
+    const MatrixCSR<T>* B = A[0][*single_block(A[0])];
+    if (B->block_size() == std::array{1, 1})
+    {
+      const std::vector<std::int64_t>& B_rowptr = B->row_ptr();
+      return std::vector<int_t>(
+          B_rowptr.begin(), std::next(B_rowptr.begin(), num_rows_local + 1));
+    }
+  }
+
+  std::vector<int_t> flattened_rowptr(num_rows_local + 1, 0);
+  std::int64_t pos = 0;
+  for (std::size_t i = 0; i < A.size(); ++i)
+  {
+    const std::int32_t num_rows = rows[i][1] - rows[i][0];
+    if (std::optional<std::size_t> j = single_block(A[i]); j)
+    {
+      const MatrixCSR<T>* B = A[i][*j];
+      std::array<int, 2> bs = B->block_size();
+      const std::vector<std::int64_t>& B_rowptr = B->row_ptr();
+      for (std::int32_t rb = 0; rb < num_rows / bs[0]; ++rb)
+      {
+        const int_t delta = (B_rowptr[rb + 1] - B_rowptr[rb]) * bs[1];
+        for (int i0 = 0; i0 < bs[0]; ++i0, ++pos)
+          flattened_rowptr[pos + 1] = flattened_rowptr[pos] + delta;
+      }
+      continue;
+    }
+
+    for (std::int32_t r = 0; r < num_rows; ++r, ++pos)
+    {
+      int_t delta = 0;
+      for (const MatrixCSR<T>* B : A[i])
+      {
+        if (!B)
+          continue;
+        std::array<int, 2> bs = B->block_size();
+        const std::vector<std::int64_t>& B_rowptr = B->row_ptr();
+        delta += (B_rowptr[r / bs[0] + 1] - B_rowptr[r / bs[0]]) * bs[1];
+      }
+      flattened_rowptr[pos + 1] = flattened_rowptr[pos] + delta;
+    }
+  }
+  return flattened_rowptr;
+}
+
+/// @brief Flattened global column indices of the owned rows of a block
+/// matrix, in the layout of block_range().
+///
+/// The column index map of a block may have more ghosts than the other
+/// blocks of its block column, so the ghosts of each block row are
+/// numbered with common::stack_index_maps().
+///
+/// @note Collective if there is more than one block column.
+///
+/// @param[in] A Blocks of the matrix, see block_layout().
+/// @param[in] rows Layout of each block row, from
+/// block_layout().
+/// @param[in] cols Layout of each block column, from
+/// block_layout().
+/// @param[in] first_col Global index of the first local column, from
+/// block_range().
+/// @param[in] nnz Number of local entries, from num_entries().
+/// @return Global unrolled column index of each entry, in the order of
+/// row_indices().
+template <typename T>
+std::vector<int_t> col_indices(Blocks<T> A, std::span<const Layout> rows,
+                               std::span<const Layout> cols,
+                               [[maybe_unused]] std::int64_t first_col,
+                               std::int64_t nnz)
+{
+  const std::size_t ncols = cols.size();
+
+  // Column map and block size of a block of each block column, for the
+  // zero blocks of a block row
+  std::vector<std::pair<std::reference_wrapper<const common::IndexMap>, int>>
+      col_maps;
+  for (std::size_t j = 0; j < ncols; ++j)
+  {
+    for (const std::vector<const MatrixCSR<T>*>& row : A)
+    {
+      if (const MatrixCSR<T>* B = row[j]; B)
+      {
+        col_maps.emplace_back(*B->index_map(1), B->block_size()[1]);
+        break;
+      }
+    }
+  }
+
+  std::vector<int_t> col_indices(nnz);
+  std::int64_t pos = 0;
+  for (std::size_t i = 0; i < A.size(); ++i)
+  {
+    // Global index in the block matrix of the first flattened column of
+    // each local column of each block of the block row
+    std::vector<std::vector<int_t>> global_cols(ncols);
+    if (ncols == 1)
+    {
+      // The block matrix numbering is that of the block
+      const MatrixCSR<T>* B = A[i][0];
+      const int bs1 = B->block_size()[1];
+      std::vector<std::int64_t> global_indices
+          = B->index_map(1)->global_indices();
+      global_cols[0].resize(global_indices.size());
+      std::ranges::transform(global_indices, global_cols[0].begin(),
+                             [bs1](std::int64_t g) -> int_t
+                             { return g * bs1; });
+    }
+    else
+    {
+      // Ghost columns of the blocks of the block row, in the block
+      // matrix numbering. Collective: every rank has the same blocks.
+      std::vector<
+          std::pair<std::reference_wrapper<const common::IndexMap>, int>>
+          maps = col_maps;
+      for (std::size_t j = 0; j < ncols; ++j)
+      {
+        if (const MatrixCSR<T>* B = A[i][j]; B)
+          maps[j] = {*B->index_map(1), B->block_size()[1]};
+      }
+      auto [offset, local_offsets, ghosts, owners]
+          = common::stack_index_maps(maps);
+      assert(offset == first_col);
+
+      for (std::size_t j = 0; j < ncols; ++j)
+      {
+        if (!A[i][j])
+          continue;
+        const common::IndexMap& map = maps[j].first.get();
+        const int bs1 = maps[j].second;
+        const std::int32_t size_local = map.size_local();
+        global_cols[j].resize(size_local + map.num_ghosts());
+        for (std::int32_t c = 0; c < size_local; ++c)
+          global_cols[j][c] = offset + local_offsets[j] + c * bs1;
+        for (std::int32_t g = 0; g < map.num_ghosts(); ++g)
+          global_cols[j][size_local + g] = ghosts[j][g * bs1];
+      }
+    }
+
+    const std::int32_t num_rows = rows[i][1] - rows[i][0];
+    if (std::optional<std::size_t> j = single_block(A[i]); j)
+    {
+      const MatrixCSR<T>* B = A[i][*j];
+      std::array<int, 2> bs = B->block_size();
+      const std::vector<std::int32_t>& B_cols = B->cols();
+      const std::vector<std::int64_t>& B_rowptr = B->row_ptr();
+      const std::vector<int_t>& g = global_cols[*j];
+      if (bs[0] == 1 and bs[1] == 1)
+      {
+        // Same layout: map the columns of the block
+        std::span<const std::int32_t> owned
+            = std::span(B_cols).first(B_rowptr[num_rows]);
+        std::ranges::transform(owned, std::next(col_indices.begin(), pos),
+                               [&g](std::int32_t c) { return g[c]; });
+        pos += owned.size();
+        continue;
+      }
+
+      for (std::int32_t rb = 0; rb < num_rows / bs[0]; ++rb)
+        for (int i0 = 0; i0 < bs[0]; ++i0)
+          for (std::int64_t k = B_rowptr[rb]; k < B_rowptr[rb + 1]; ++k)
+            for (int i1 = 0; i1 < bs[1]; ++i1)
+              col_indices[pos++] = g[B_cols[k]] + i1;
+      continue;
+    }
+
+    for (std::int32_t r = 0; r < num_rows; ++r)
+    {
+      for (std::size_t j = 0; j < ncols; ++j)
+      {
+        const MatrixCSR<T>* B = A[i][j];
+        if (!B)
+          continue;
+        std::array<int, 2> bs = B->block_size();
+        const std::vector<std::int32_t>& B_cols = B->cols();
+        const std::vector<std::int64_t>& B_rowptr = B->row_ptr();
+        for (std::int64_t k = B_rowptr[r / bs[0]]; k < B_rowptr[r / bs[0] + 1];
+             ++k)
+        {
+          for (int i1 = 0; i1 < bs[1]; ++i1)
+            col_indices[pos++] = global_cols[j][B_cols[k]] + i1;
+        }
+      }
+    }
+  }
+  assert(pos == nnz);
+  return col_indices;
+}
+
+/// @brief Flattened values of the owned rows of a block matrix.
+/// @param[in] A Blocks of the matrix, see block_layout().
+/// @param[in] rows Layout of each block row, from
+/// block_layout().
+/// @param[in] nnz Number of local entries, from num_entries().
+/// @return Value of each entry, in the order of row_indices().
+template <typename T>
+std::vector<T> matrix_values(Blocks<T> A, std::span<const Layout> rows,
+                             std::int64_t nnz)
+{
+  // One block of block size (1, 1): its owned values as is
+  if (A.size() == 1 and single_block(A[0]))
+  {
+    const MatrixCSR<T>* B = A[0][*single_block(A[0])];
+    if (B->block_size() == std::array{1, 1})
+    {
+      const std::vector<T>& B_values = B->values();
+      return std::vector<T>(B_values.begin(), std::next(B_values.begin(), nnz));
+    }
+  }
+
+  std::vector<T> flattened_values(nnz);
+  std::int64_t pos = 0;
+  for (std::size_t i = 0; i < A.size(); ++i)
+  {
+    const std::int32_t num_rows = rows[i][1] - rows[i][0];
+    if (std::optional<std::size_t> j = single_block(A[i]); j)
+    {
+      const MatrixCSR<T>* B = A[i][*j];
+      std::array<int, 2> bs = B->block_size();
+      const std::vector<T>& B_values = B->values();
+      const std::vector<std::int64_t>& B_rowptr = B->row_ptr();
+      if (bs[0] == 1 and bs[1] == 1)
+      {
+        // Same layout: copy as a whole
+        std::copy_n(B_values.begin(), B_rowptr[num_rows],
+                    std::next(flattened_values.begin(), pos));
+        pos += B_rowptr[num_rows];
+        continue;
+      }
+
+      for (std::int32_t rb = 0; rb < num_rows / bs[0]; ++rb)
+      {
+        for (int i0 = 0; i0 < bs[0]; ++i0)
+        {
+          for (std::int64_t k = B_rowptr[rb]; k < B_rowptr[rb + 1]; ++k)
+          {
+            for (int i1 = 0; i1 < bs[1]; ++i1)
+            {
+              flattened_values[pos++]
+                  = B_values[k * bs[0] * bs[1] + i0 * bs[1] + i1];
+            }
+          }
+        }
+      }
+      continue;
+    }
+
+    for (std::int32_t r = 0; r < num_rows; ++r)
+    {
+      for (const MatrixCSR<T>* B : A[i])
+      {
+        if (!B)
+          continue;
+        std::array<int, 2> bs = B->block_size();
+        const std::vector<T>& B_values = B->values();
+        const std::vector<std::int64_t>& B_rowptr = B->row_ptr();
+        const int i0 = r % bs[0];
+        for (std::int64_t k = B_rowptr[r / bs[0]]; k < B_rowptr[r / bs[0] + 1];
+             ++k)
+        {
+          for (int i1 = 0; i1 < bs[1]; ++i1)
+          {
+            flattened_values[pos++]
+                = B_values[k * bs[0] * bs[1] + i0 * bs[1] + i1];
+          }
+        }
+      }
+    }
+  }
+  assert(pos == nnz);
+  return flattened_values;
+}
 } // namespace
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistMatrix<T>::SuperLUDistMatrix(const MatrixCSR<T>& A)
-    : _comm(A.comm()), _matA_values(matrix_values(A)),
-      _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(A))),
-      _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(A))),
-      _supermatrix(create_supermatrix<T>(A, _matA_values, *_rowptr, *_cols))
+    : SuperLUDistMatrix(std::vector<std::vector<const MatrixCSR<T>*>>{{&A}})
 {
 }
+//----------------------------------------------------------------------------
+template <typename T>
+SuperLUDistMatrix<T>::SuperLUDistMatrix(
+    std::span<const std::vector<const MatrixCSR<T>*>> A)
+    : _comm(MPI_COMM_NULL, false)
+{
+  // Validate locally, before the first collective (the duplication of
+  // the communicator)
+  auto [comm, rows, cols] = block_layout(A);
+  const std::int64_t nnz = num_entries(A);
+  check_int_t(nnz);
+
+  auto [first_row, m] = block_range(rows);
+  auto [first_col, n] = block_range(cols);
+  _comm = dolfinx::MPI::Comm(comm);
+
+  _rowptr
+      = std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(A, rows));
+  _cols = std::make_unique<SuperLUDistStructs::vec_int_t>(
+      col_indices(A, rows, cols, first_col, nnz));
+  _matA_values = matrix_values(A, rows, nnz);
+  _supermatrix = create_supermatrix<T>(m, n, _rowptr->vec.size() - 1, first_row,
+                                       _matA_values, *_rowptr, *_cols);
+}
+//----------------------------------------------------------------------------
 /// @brief Get MPI communicator that matrix is defined on.
 template <typename T>
 MPI_Comm SuperLUDistMatrix<T>::comm() const
@@ -658,6 +1078,17 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
 
   if (b.array().size() != u.array().size())
     throw std::invalid_argument("b and u have incompatible size/layout");
+  const int_t m_loc_A
+      = static_cast<NRformat_loc*>(_superlu_matA->supermatrix()->Store)->m_loc;
+  if (b.index_map()->size_local() * b.bs() != m_loc_A
+      or u.index_map()->size_local() * u.bs() != m_loc_A)
+  {
+    throw std::invalid_argument(std::format(
+        "Owned sizes of b ({}) and u ({}) differ from the {} owned rows of "
+        "A.",
+        b.index_map()->size_local() * b.bs(),
+        u.index_map()->size_local() * u.bs(), m_loc_A));
+  }
 
   if (_options->ParSymbFact == YES and _options->ColPerm != PARMETIS)
     throw std::invalid_argument("ParSymbFact YES requires ColPerm PARMETIS");

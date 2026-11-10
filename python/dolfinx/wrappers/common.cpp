@@ -21,6 +21,7 @@
 #include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
+#include <functional>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
@@ -37,6 +38,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -323,5 +325,42 @@ void common(nb::module_& m)
       "indices in the parent map, and a rank-local flag indicating whether "
       "an index acquired a new owner. Reduce the flag across the communicator "
       "before using it to make a collective control-flow decision.");
+
+  m.def(
+      "stack_index_maps",
+      [](const std::vector<std::pair<const dolfinx::common::IndexMap*, int>>&
+             maps)
+      {
+        if (maps.empty())
+          throw std::invalid_argument("No index maps to stack.");
+        std::vector<std::pair<
+            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
+            _maps;
+        _maps.reserve(maps.size());
+        for (auto [map, bs] : maps)
+        {
+          if (!map)
+            throw std::invalid_argument("Index map is None.");
+          if (bs < 1)
+            throw std::invalid_argument("Block sizes must be positive.");
+          _maps.emplace_back(*map, bs);
+        }
+        auto [offset, local_offsets, ghosts, owners]
+            = dolfinx::common::stack_index_maps(_maps);
+        std::vector<nb::ndarray<std::int64_t, nb::numpy>> _ghosts;
+        for (auto& g : ghosts)
+          _ghosts.push_back(dolfinx_wrappers::as_nbarray(std::move(g)));
+        std::vector<nb::ndarray<int, nb::numpy>> _owners;
+        for (auto& o : owners)
+          _owners.push_back(dolfinx_wrappers::as_nbarray(std::move(o)));
+        return std::tuple(
+            offset, dolfinx_wrappers::as_nbarray(std::move(local_offsets)),
+            std::move(_ghosts), std::move(_owners));
+      },
+      nb::arg("maps"),
+      "Compute the layout of index maps concatenated into one, collectively. "
+      "Returns the global offset of the calling rank, the local offsets of "
+      "the owned entries of each map, and the global ghost indices and owner "
+      "ranks of each map.");
 }
 } // namespace dolfinx_wrappers

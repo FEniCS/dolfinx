@@ -11,7 +11,7 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx.common import create_sub_index_map, index_map, scatterer
+from dolfinx.common import create_sub_index_map, index_map, scatterer, stack_index_maps
 from dolfinx.fem import functionspace
 from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square
 
@@ -347,3 +347,40 @@ def test_index_to_dest_ranks_mesh(ghost_mode, tdim) -> None:
     for d in range(tdim + 1):
         msh.topology.create_entities(d)
         _check_index_to_dest_ranks(msh.topology.index_map(d))
+
+
+def test_stack_index_maps() -> None:
+    """Index maps of two spaces, concatenated with their block sizes."""
+    comm = MPI.COMM_WORLD
+    mesh = create_unit_square(comm, 5, 4)
+    V = functionspace(mesh, ("Lagrange", 2, (2,)))
+    Q = functionspace(mesh, ("Lagrange", 1))
+    maps = [
+        (V.dofmap.index_map, V.dofmap.index_map_bs),
+        (Q.dofmap.index_map, Q.dofmap.index_map_bs),
+    ]
+    offset, local_offsets, ghosts, owners = stack_index_maps(maps)
+
+    # The owned indices of each map follow one another
+    sizes = [imap.size_local * bs for imap, bs in maps]
+    assert np.array_equal(local_offsets, np.cumsum([0, *sizes]))
+    # exscan is collective, and undefined on rank 0
+    expected = comm.exscan(sum(sizes))
+    assert offset == (expected if comm.rank > 0 else 0)
+
+    # The ghosts of each map, unrolled, keep their owners and are owned
+    # by another process in the concatenated layout
+    total = comm.allreduce(sum(sizes))
+    for (imap, bs), g, o in zip(maps, ghosts, owners, strict=True):
+        assert len(g) == imap.num_ghosts * bs
+        assert np.array_equal(o, np.repeat(imap.owners, bs))
+        assert np.all((g >= 0) & (g < total))
+        assert not np.any((g >= offset) & (g < offset + sum(sizes)))
+
+
+def test_stack_index_maps_invalid() -> None:
+    """An empty list of maps or a non-positive block size raises."""
+    imap = index_map(MPI.COMM_WORLD, 3)
+    for maps in ([], [(imap, 0)], [(imap, -2)]):
+        with pytest.raises(ValueError):
+            stack_index_maps(maps)

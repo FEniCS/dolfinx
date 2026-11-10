@@ -56,6 +56,7 @@ __all__ = [
     "local_range",
     "num_sharing_ranks",
     "scatterer",
+    "stack_index_maps",
     "timed",
     "timing",
     "ufcx_signature",
@@ -464,6 +465,31 @@ def create_sub_index_map(
         imap._cpp_object, indices
     )
     return IndexMap(submap), submap_to_map, owners_changed
+
+
+def stack_index_maps(
+    maps: Sequence[tuple[IndexMap, int]],
+) -> tuple[int, npt.NDArray[np.int32], list[npt.NDArray[np.int64]], list[npt.NDArray[np.int32]]]:
+    """Compute the layout of index maps concatenated into one.
+
+    The owned indices of the maps, unrolled by their block sizes, follow
+    one another on each process, as in a matrix assembled from a block
+    form. The ghosts are grouped by map.
+
+    Note:
+        Collective. All processes must give corresponding maps in the
+        same order.
+
+    Args:
+        maps: Pairs of an index map and a block size.
+
+    Returns:
+        The global index of the first owned index of the calling
+        process, the local offset of the owned indices of each map (and
+        their number at the end), and for each map the global indices of
+        its ghosts and their owner ranks, in the concatenated layout.
+    """
+    return _cpp.common.stack_index_maps([(imap._cpp_object, bs) for imap, bs in maps])
 
 
 def num_sharing_ranks(

@@ -632,7 +632,7 @@ def assemble_matrix_fn(
 
 def apply_lifting(
     b: npt.NDArray,
-    a: Sequence[Form],
+    a: Sequence[Form | None],
     bcs: Sequence[Sequence[DirichletBC]],
     x0: Sequence[npt.NDArray] | None = None,
     alpha: float = 1,
@@ -700,9 +700,9 @@ def apply_lifting(
     Args:
         b: The array to modify inplace.
         a: List of bilinear forms, where ``a[i]`` is the form that
-            generates the matrix :math:`A_{i}`. All forms in ``a`` must
-            share the same test function space. The trial function
-            spaces can differ.
+            generates the matrix :math:`A_{i}`, or ``None`` if
+            :math:`A_{i}` is zero. All forms in ``a`` must share the same
+            test function space. The trial function spaces can differ.
         bcs: Boundary conditions that provide the :math:`g_{i}` values.
             ``bcs[i]`` is the sequence of boundary conditions on
             :math:`u_{i}`. Helper functions exist to build a
