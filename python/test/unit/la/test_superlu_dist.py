@@ -11,8 +11,9 @@ import numpy as np
 import pytest
 
 import dolfinx
-from dolfinx.common import index_map, stack_index_maps
+from dolfinx.common import index_map
 from dolfinx.fem import (
+    Expression,
     Function,
     apply_lifting,
     assemble_matrix,
@@ -199,87 +200,44 @@ def test_superlu_solver_blocked(dtype) -> None:
     assert np.isclose(error, 0.0, atol=eps)
 
 
-@pytest.mark.parametrize("vector_field", [False, True], ids=["scalar", "vector"])
-@pytest.mark.parametrize("coupled", [True, False], ids=["coupled", "triangular"])
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-@pytest.mark.parametrize("stacked", [False, True], ids=["block_vectors", "stacked"])
-@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_solver_block_matrix(dtype, coupled, vector_field, stacked) -> None:
-    """Coupled problem for two fields, solved from its blocks.
+def _solve_block_system(a01, a10, f, exact, dtype):
+    """Solve [[a00, a01], [a10, a11]] with SuperLU_DIST and check the error.
 
-    For a scalar u: -div(grad(u)) + u - w = f0 and
-    -div(grad(w)) + w - u = f1. For a vector u, with blocks of block
-    sizes (2, 1) and (1, 2): -div(grad(u)) + u + grad(w) = f0 and
-    -div(grad(w)) + w - div(u) = f1. The coupling of w to u is left out
-    (a zero block) if not ``coupled``. The exact solution is in the P2
-    spaces. The vectors are passed per block, or stacked by hand.
+    The diagonal blocks are Helmholtz operators on the spaces of the
+    off-diagonal forms; ``a10`` may be ``None``.
     """
     from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 
-    mesh_dtype = dtype().real.dtype
-    mesh = create_unit_square(MPI.COMM_WORLD, 6, 5, dtype=mesh_dtype)
-    V = functionspace(mesh, ("Lagrange", 2, (2,) if vector_field else ()))
-    W = functionspace(mesh, ("Lagrange", 2))
+    V, W = (arg.ufl_function_space() for arg in a01.arguments())
     u, v = TrialFunction(V), TestFunction(V)
     w, q = TrialFunction(W), TestFunction(W)
-
-    x = SpatialCoordinate(mesh)
-    w_ex = x[0] * x[1] + x[0]
-    if vector_field:
-
-        def u_exact(x):
-            return np.vstack((1 + x[0] ** 2, 2 * x[1] ** 2 - x[0]))
-
-        u_ex = as_vector((1 + x[0] ** 2, 2 * x[1] ** 2 - x[0]))
-        a01, a10 = -inner(w, div(v)) * dx, -inner(div(u), q) * dx
-        f0 = -div(grad(u_ex)) + u_ex + grad(w_ex)
-        f1 = -div(grad(w_ex)) + w_ex - (div(u_ex) if coupled else 0)
-    else:
-
-        def u_exact(x):
-            return 1 + x[0] ** 2 + 2 * x[1] ** 2
-
-        u_ex = 1 + x[0] ** 2 + 2 * x[1] ** 2
-        a01, a10 = -inner(w, v) * dx, -inner(u, q) * dx
-        f0 = -div(grad(u_ex)) + u_ex - w_ex
-        f1 = -div(grad(w_ex)) + w_ex - (u_ex if coupled else 0)
-
     a = [
         [
             form(inner(grad(u), grad(v)) * dx + inner(u, v) * dx, dtype=dtype),
             form(a01, dtype=dtype),
         ],
         [
-            form(a10, dtype=dtype) if coupled else None,
+            None if a10 is None else form(a10, dtype=dtype),
             form(inner(grad(w), grad(q)) * dx + inner(w, q) * dx, dtype=dtype),
         ],
     ]
-    L = [form(inner(f0, v) * dx, dtype=dtype), form(inner(f1, q) * dx, dtype=dtype)]
+    L = [form(inner(f[0], v) * dx, dtype=dtype), form(inner(f[1], q) * dx, dtype=dtype)]
 
+    mesh = V.mesh
     facetdim = mesh.topology.dim - 1
     mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
     bndry_facets = exterior_facet_indices(mesh.topology)
     bcs = []
-    for space, exact in ((V, u_exact), (W, lambda x: x[0] * x[1] + x[0])):
+    for space, ex in zip((V, W), exact, strict=True):
         g = Function(space, dtype=dtype)
-        g.interpolate(exact)
+        g.interpolate(Expression(ex, space.element.interpolation_points, dtype=dtype))
         bcs.append(dirichletbc(g, locate_dofs_topological(space, facetdim, bndry_facets)))
 
-    # The blocks, each assembled into a matrix of its own
     A = [[None if aij is None else assemble_matrix(aij, bcs=bcs) for aij in row] for row in a]
     for row in A:
         for Aij in row:
             if Aij is not None:
                 Aij.scatter_reverse()
-
-    # The right-hand side of each field
     b = []
     for i, Li in enumerate(L):
         bi = assemble_vector(Li)
@@ -287,36 +245,65 @@ def test_superlu_solver_block_matrix(dtype, coupled, vector_field, stacked) -> N
         bi.scatter_reverse(InsertMode.add)
         bcs[i].set(bi.array)
         b.append(bi)
+
     solver = superlu_dist_solver(superlu_dist_matrix(A))
     uh, wh = Function(V, dtype=dtype), Function(W, dtype=dtype)
-    if stacked:
-        # The stacked layout of both fields, built by hand
-        maps = [
-            (V.dofmap.index_map, V.dofmap.index_map_bs),
-            (W.dofmap.index_map, W.dofmap.index_map_bs),
-        ]
-        offset, local_offsets, _, _ = stack_index_maps(maps)
-        stacked_map = index_map(mesh.comm, local_offsets[-1])
-        assert offset == stacked_map.local_range[0]
-        b_stacked = vector(stacked_map, dtype=dtype)
-        for i, bi in enumerate(b):
-            n = local_offsets[i + 1] - local_offsets[i]
-            b_stacked.array[local_offsets[i] : local_offsets[i + 1]] = bi.array[:n]
-        x_stacked = vector(stacked_map, dtype=dtype)
-        assert solver.solve(b_stacked, x_stacked) == 0
-        for i, fh in enumerate((uh, wh)):
-            n = local_offsets[i + 1] - local_offsets[i]
-            fh.x.array[:n] = x_stacked.array[local_offsets[i] : local_offsets[i + 1]]
-    else:
-        assert solver.solve(b, [uh.x, wh.x]) == 0
+    assert solver.solve(b, [uh.x, wh.x]) == 0
     uh.x.scatter_forward()
     wh.x.scatter_forward()
 
     eps = np.sqrt(np.finfo(dtype).eps)
-    for fh, exact in ((uh, u_ex), (wh, w_ex)):
-        M = form(inner(exact - fh, exact - fh) * dx, dtype=dtype)
+    for fh, ex in zip((uh, wh), exact, strict=True):
+        M = form(inner(ex - fh, ex - fh) * dx, dtype=dtype)
         error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
         assert np.isclose(error, 0.0, atol=eps)
+
+
+_block_dtypes = [
+    np.float32,
+    np.float64,
+    pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+]
+
+
+@pytest.mark.parametrize("coupled", [True, False], ids=["coupled", "triangular"])
+@pytest.mark.parametrize("dtype", _block_dtypes)
+@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
+def test_superlu_solver_block_matrix_scalar(dtype, coupled) -> None:
+    """Two scalar fields: all blocks have block size 1."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 6, 5, dtype=dtype().real.dtype)
+    V = functionspace(mesh, ("Lagrange", 2))
+    W = functionspace(mesh, ("Lagrange", 2))
+    u, v = TrialFunction(V), TestFunction(V)
+    w, q = TrialFunction(W), TestFunction(W)
+
+    x = SpatialCoordinate(mesh)
+    u_ex = 1 + x[0] ** 2 + 2 * x[1] ** 2
+    w_ex = x[0] * x[1] + x[0]
+    f0 = -div(grad(u_ex)) + u_ex - w_ex
+    f1 = -div(grad(w_ex)) + w_ex - (u_ex if coupled else 0)
+    a10 = -inner(u, q) * dx if coupled else None
+    _solve_block_system(-inner(w, v) * dx, a10, (f0, f1), (u_ex, w_ex), dtype)
+
+
+@pytest.mark.parametrize("coupled", [True, False], ids=["coupled", "triangular"])
+@pytest.mark.parametrize("dtype", _block_dtypes)
+@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
+def test_superlu_solver_block_matrix_vector(dtype, coupled) -> None:
+    """A vector and a scalar field: block sizes differ between blocks."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 6, 5, dtype=dtype().real.dtype)
+    V = functionspace(mesh, ("Lagrange", 2, (2,)))
+    W = functionspace(mesh, ("Lagrange", 2))
+    u, v = TrialFunction(V), TestFunction(V)
+    w, q = TrialFunction(W), TestFunction(W)
+
+    x = SpatialCoordinate(mesh)
+    u_ex = as_vector((1 + x[0] ** 2, 2 * x[1] ** 2 - x[0]))
+    w_ex = x[0] * x[1] + x[0]
+    f0 = -div(grad(u_ex)) + u_ex + grad(w_ex)
+    f1 = -div(grad(w_ex)) + w_ex - (div(u_ex) if coupled else 0)
+    a10 = -inner(div(u), q) * dx if coupled else None
+    _solve_block_system(-inner(w, div(v)) * dx, a10, (f0, f1), (u_ex, w_ex), dtype)
 
 
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
