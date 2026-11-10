@@ -905,7 +905,7 @@ void assemble_matrix(
     }
 
     for (auto itg_type : {fem::IntegralType::exterior_facet,
-                          fem::IntegralType::vertex, fem::IntegralType::ridge})
+                          fem::IntegralType::ridge, fem::IntegralType::peak})
     {
       const int num_itg = a.num_integrals(itg_type, cell_type_idx);
       if (num_itg == 0)

@@ -584,7 +584,7 @@ void assemble_vector(
     }
 
     for (auto itg_type : {fem::IntegralType::exterior_facet,
-                          fem::IntegralType::vertex, fem::IntegralType::ridge})
+                          fem::IntegralType::ridge, fem::IntegralType::peak})
     {
       const int num_itg = L.num_integrals(itg_type, 0);
       if (num_itg == 0)

@@ -413,7 +413,7 @@ Form<T, U> create_form_factory(
   // Attach exterior entity integrals
   {
     for (IntegralType itg_type : {IntegralType::exterior_facet,
-                                  IntegralType::vertex, IntegralType::ridge})
+                                  IntegralType::ridge, IntegralType::peak})
     {
       const std::size_t dim = integral_entity_dim(itg_type, tdim);
 
