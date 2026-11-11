@@ -85,7 +85,7 @@ struct integral_data
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
                  std::function<void(T*, const T*, const T*, const U*,
-                                    const int*, const uint8_t*, void*)>>
+                                    const int*, const std::uint8_t*, void*)>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
@@ -98,7 +98,7 @@ struct integral_data
 
   /// @brief The integration kernel.
   std::function<void(T*, const T*, const T*, const U*, const int*,
-                     const uint8_t*, void*)>
+                     const std::uint8_t*, void*)>
       kernel;
 
   /// @brief The entities to integrate over for this integral. These are
@@ -369,7 +369,8 @@ public:
   /// kernels for a given idx in mixed-topology meshes).
   /// @return Function to call for `tabulate_tensor`.
   std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                     const geometry_type*, const int*, const uint8_t*, void*)>
+                     const geometry_type*, const int*, const std::uint8_t*,
+                     void*)>
   kernel(IntegralType type, int idx, int kernel_idx) const
   {
     auto it = _integrals.find({type, idx, kernel_idx});

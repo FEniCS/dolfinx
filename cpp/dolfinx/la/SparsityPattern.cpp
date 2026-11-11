@@ -755,7 +755,7 @@ void SparsityPattern::finalize()
     std::ranges::fill(last_seen, -1);
     _edges.reserve(num_edges);
 
-    // Build CSR offsets as we go. Offsets are int64_t to avoid overflow.
+    // Build CSR offsets as we go. Offsets are std::int64_t to avoid overflow.
     // _edges is reserved to the exact edge count above, so appending in
     // place never reallocates.
     _offsets.reserve(num_rows0 + 1);
