@@ -1,0 +1,80 @@
+name: FEniCSx EasyBuild on EESSI
+
+on:
+  push:
+    branches: [main]
+    tags: ['*']
+  pull_request:
+    branches: [main]
+  merge_group:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build and check FEniCSx (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(vars.EESSI_RUNNERS || '["ubuntu-24.04", "ubuntu-24.04-arm"]') }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      EASYBUILD_MODULE_NAMING_SCHEME: EasyBuildMNS
+      PYTHONNOUSERSITE: '1'
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMPI_MCA_rmaps_base_oversubscribe: '1'
+      PRTE_MCA_rmaps_default_mapping_policy: ':oversubscribe'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout dependency recipes
+        uses: actions/checkout@v4
+        with:
+          repository: gkaf89/FEniCS-EESSI-demo
+          ref: d05588835643a1782777fce313299ec42b4e3575
+          path: .eessi-dependencies/recipes
+          persist-credentials: false
+      - name: Set up EESSI
+        uses: eessi/github-action-eessi@v3
+        with:
+          eessi_stack_version: '2025.06'
+      # Sources, build steps, tests and sanity checks are defined in the
+      # copied demo recipes. They build releases, not the checked-out commit.
+      - name: Build and check packages with EasyBuild
+        # The Basix recipe references its smoke test relative to this directory.
+        working-directory: .eessi-dependencies/recipes
+        env:
+          EESSI_USER_INSTALL: ${{ runner.temp }}/fenics-eessi-${{ github.run_id }}-${{ github.run_attempt }}
+          EASYBUILD_BUILDPATH: ${{ runner.temp }}/fenics-eessi-build-${{ github.run_id }}-${{ github.run_attempt }}
+          EASYBUILD_SOURCEPATH: ${{ runner.temp }}/fenics-eessi-sources
+          EASYBUILD_TMP_LOGDIR: ${{ runner.temp }}
+        run: |
+          module load EESSI-extend/2025.06-easybuild
+          unset EASYBUILD_DEBUG
+          eb --robot \
+            --robot-paths="$GITHUB_WORKSPACE/.github/eessi:$PWD:" \
+            --easystack="$GITHUB_WORKSPACE/.github/eessi/fenicsx.yml"
+      - name: Upload test and build reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eessi-reports-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/easybuild-*.log
+            ${{ runner.temp }}/fenics-eessi-${{ github.run_id }}-${{ github.run_attempt }}/**/easybuild/*.log
+          if-no-files-found: warn
+          retention-days: 7

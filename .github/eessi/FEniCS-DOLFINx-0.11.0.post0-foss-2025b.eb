@@ -1,0 +1,55 @@
+# Based on the work from PR #22700 and #22422
+
+easyblock = 'CMakeMake'
+
+name = 'FEniCS-DOLFINx'
+version = '0.11.0.post0'
+
+homepage = 'https://docs.fenicsproject.org/dolfinx/main/python/'
+description = """
+DOLFINx is the next generation problem solving interface of the FEniCS Project  - C++ library.
+"""
+
+toolchain = {'name': 'foss', 'version': '2025b'}
+
+source_urls = ['https://github.com/FEniCS/dolfinx/archive/refs/tags/']
+sources = [f'v{version}.tar.gz']
+checksums = ['47c635cb82a99482d23e2e6bca26c31c9b2297bcad1ab5f5c651541caaaec68f']
+
+builddependencies = [
+    ('pkgconf', '2.4.3'),
+    ('make', '4.4.1'),
+    ('CMake', '4.0.3'),
+]
+
+dependencies = [
+    ('Boost', '1.88.0'),
+    ('KaHIP', '3.19'),
+    ('ParMETIS', '4.0.3'),
+    ('HDF5', '1.14.6'),
+    ('PETSc', '3.24.0'),
+    ('SLEPc', '3.24.0'),
+    ('pugixml', '1.15'),
+    ('FEniCS-Basix', '0.11.0'),
+    ('FEniCS-UFL', '2026.1.0'),
+    ('FEniCS-ufcx', '0.11.0'),
+    ('spdlog', '1.15.3'),
+]
+
+srcdir = 'cpp'
+
+configopts = (
+    ' -DDOLFINX_UFCX_PYTHON=OFF '
+    ' -DDOLFINX_BASIX_PYTHON=OFF '
+    ' -DDOLFINX_ENABLE_KAHIP=ON '
+    ' -DDOLFINX_ENABLE_PETSC=ON '
+    ' -DDOLFINX_ENABLE_SLEPC=ON '
+    # ' -DDOLFINX_ENABLE_PARMETIS=ON ' # Strict check disabled to enable EESSI build.
+)
+
+sanity_check_paths = {
+    'files': ['include/dolfinx.h', f'lib/libdolfinx.{SHLIB_EXT}', 'include/dolfinx/common/version.h'],
+    'dirs': ['include/dolfinx', 'lib/cmake/dolfinx'],
+}
+
+moduleclass = 'cae'
