@@ -103,14 +103,8 @@ void set_attribute_int32(hid_t handle, const std::string& name,
 
 //-----------------------------------------------------------------------------
 hid_t io::hdf5::open_file(MPI_Comm comm, const std::filesystem::path& filename,
-                          std::string_view mode, bool use_mpi_io)
+                          io::FileMode mode, bool use_mpi_io)
 {
-  if (mode != "w" and mode != "a" and mode != "r")
-  {
-    throw std::invalid_argument(std::format(
-        "Unknown HDF5 file mode \"{}\". Use \"w\", \"a\" or \"r\".", mode));
-  }
-
   // Set parallel access with communicator
   const Handle plist_id(H5Pcreate(H5P_FILE_ACCESS), H5Pclose);
   if (plist_id < 0)
@@ -127,7 +121,8 @@ hid_t io::hdf5::open_file(MPI_Comm comm, const std::filesystem::path& filename,
   }
 
   hid_t file_id = H5I_INVALID_HID;
-  if (mode == "w") // Create file for write, overwriting any existing file
+  // Create file for write, overwriting any existing file
+  if (mode == io::FileMode::write)
   {
     if (auto d = filename.parent_path(); !d.empty())
       std::filesystem::create_directories(d);
@@ -136,7 +131,8 @@ hid_t io::hdf5::open_file(MPI_Comm comm, const std::filesystem::path& filename,
     if (file_id < 0)
       throw std::runtime_error("Failed to create HDF5 file.");
   }
-  else if (mode == "a") // Open file to append, creating if does not exist
+  // Open file to append, creating if does not exist
+  else if (mode == io::FileMode::append)
   {
     if (std::filesystem::exists(filename))
       file_id = H5Fopen(filename.string().c_str(), H5F_ACC_RDWR, plist_id);
@@ -154,7 +150,7 @@ hid_t io::hdf5::open_file(MPI_Comm comm, const std::filesystem::path& filename,
           "Failed to create/open HDF5 file (append mode).");
     }
   }
-  else // Open file to read
+  else if (mode == io::FileMode::read) // Open file to read
   {
     if (!std::filesystem::exists(filename))
     {
@@ -167,6 +163,8 @@ hid_t io::hdf5::open_file(MPI_Comm comm, const std::filesystem::path& filename,
     if (file_id < 0)
       throw std::runtime_error("Failed to open HDF5 file.");
   }
+  else
+    throw std::invalid_argument("Unknown HDF5 file mode.");
 
   return file_id;
 }

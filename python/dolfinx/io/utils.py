@@ -19,12 +19,30 @@ import basix
 import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
+from dolfinx.cpp.io import FileMode as FileMode
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
 from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags, _get_mesh_partitioner
 
-__all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
+__all__ = [
+    "FileMode",
+    "VTKFile",
+    "XDMFFile",
+    "cell_perm_gmsh",
+    "cell_perm_vtk",
+    "distribute_entity_data",
+]
+
+
+def _coerce_file_mode(mode: FileMode | str) -> FileMode:
+    """Convert a legacy string mode to :class:`FileMode`."""
+    if isinstance(mode, str):
+        try:
+            return {"r": FileMode.read, "w": FileMode.write, "a": FileMode.append}[mode]
+        except KeyError as exc:
+            raise ValueError('Unknown file mode. Use "r", "w" or "a".') from exc
+    return mode
 
 
 def _serendipity_coordinate_element(
@@ -176,15 +194,17 @@ class VTKFile:
 
     _cpp_object: _cpp.io.VTKFile
 
-    def __init__(self, comm: _MPI.Comm, filename: str | Path, mode: str):
+    def __init__(self, comm: _MPI.Comm, filename: str | Path, mode: FileMode | str):
         """Open a VTK file.
 
         Args:
             comm: MPI communicator used when opening the file.
             filename: Name of the file to open.
-            mode: File opening mode, e.g. ``"w"`` for writing.
+            mode: File opening mode. ``FileMode.write`` is supported.
+                The strings ``"w"`` and ``"r"`` are accepted for
+                compatibility.
         """
-        self._cpp_object = _cpp.io.VTKFile(comm, filename, mode)
+        self._cpp_object = _cpp.io.VTKFile(comm, filename, _coerce_file_mode(mode))
 
     def __enter__(self) -> Self:
         """Enter context manager."""
@@ -224,7 +244,7 @@ class XDMFFile:
         self,
         comm: _MPI.Comm,
         filename: str | Path,
-        file_mode: str,
+        file_mode: FileMode | str,
         encoding: _cpp.io.XDMFFile.Encoding = Encoding.HDF5,
     ):
         """Open an XDMF file.
@@ -232,11 +252,13 @@ class XDMFFile:
         Args:
             comm: MPI communicator used when opening the file.
             filename: Name of the file to open.
-            file_mode: File opening mode, e.g. ``"r"`` for reading or
-                ``"w"`` for writing.
+            file_mode: File opening mode. Use ``FileMode.read``,
+                ``FileMode.write`` or ``FileMode.append``. The strings
+                ``"r"``, ``"w"`` and ``"a"`` are accepted for
+                compatibility.
             encoding: File encoding.
         """
-        self._cpp_object = _cpp.io.XDMFFile(comm, filename, file_mode, encoding)
+        self._cpp_object = _cpp.io.XDMFFile(comm, filename, _coerce_file_mode(file_mode), encoding)
 
     def __enter__(self) -> Self:
         """Enter context manager."""

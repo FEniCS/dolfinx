@@ -16,7 +16,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
 from dolfinx.fem import Function, functionspace
-from dolfinx.io import VTKFile
+from dolfinx.io import FileMode, VTKFile
 from dolfinx.io.utils import cell_perm_vtk  # F401
 from dolfinx.mesh import (
     CellType,
@@ -34,7 +34,7 @@ cell_types_3D = [CellType.tetrahedron, CellType.hexahedron]
 def test_save_1d_mesh_subdir(tempdir) -> None:
     filename = Path(tempdir, "mesh.pvd")
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
-    with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
+    with VTKFile(MPI.COMM_WORLD, filename, FileMode.write) as vtk:
         vtk.write_mesh(mesh)
         vtk.write_mesh(mesh, 1)
 
