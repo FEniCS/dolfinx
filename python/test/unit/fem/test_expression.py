@@ -29,6 +29,23 @@ from dolfinx.mesh import (
 
 
 @pytest.mark.parametrize(
+    "operator",
+    [ufl.jump, ufl.avg, lambda u: u("+"), lambda u: u("-"), lambda u: ufl.grad(u("+"))],
+    ids=["jump", "average", "positive", "negative", "nested"],
+)
+@pytest.mark.parametrize("entity_dim", [1, 2])
+def test_restricted_expression(operator, entity_dim):
+    """Reject expressions requiring cell restrictions before kernel compilation."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
+    V = functionspace(mesh, ("CR", 1))
+    V_dg = functionspace(mesh, basix.ufl.element("CR", mesh.basix_cell(), 1, discontinuous=True))
+    u = Function(V_dg)
+    points = V.element.interpolation_points if entity_dim == 2 else np.array([[0.5]])
+    with pytest.raises(ValueError, match="Expressions with restrictions are not supported"):
+        Expression(operator(u), points)
+
+
+@pytest.mark.parametrize(
     "dtype",
     [
         np.float32,
