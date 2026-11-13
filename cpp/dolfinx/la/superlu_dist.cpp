@@ -19,8 +19,6 @@
 #include <numeric>
 #include <ranges>
 #include <stdexcept>
-// No extern "C": these headers declare C linkage themselves, and with
-// OpenMP they include omp.h, which has C++ templates from GCC 15
 #include <superlu_ddefs.h>
 #include <superlu_sdefs.h>
 #include <superlu_zdefs.h>
