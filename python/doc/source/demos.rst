@@ -76,6 +76,9 @@ Time-dependent and nonlinear problems
 
 * :doc:`demos/demo_cahn-hilliard` -- solve the time-dependent, nonlinear
   Cahn-Hilliard equation with a Newton solver.
+* :doc:`demos/demo_cahn-hilliard-block` -- solve the same equation with
+  a Schur complement block preconditioner whose iteration count barely
+  moves as the mesh is refined, driving PETSc's ``SNES`` directly.
 * :doc:`demos/demo_snap-through` -- trace the snap-through buckling of a
   hyperelastic arch past a limit point, using PETSc's ``SNESNEWTONAL``
   arc-length continuation solver.
@@ -98,6 +101,10 @@ Linear solvers, preconditioners and matrix-free methods
 * :doc:`demos/demo_mixed-poisson` -- see *Mixed and hybridised
   formulations*: a block-preconditioned solver, including a Hypre AMS
   preconditioner for :math:`H(\mathrm{div})`.
+* :doc:`demos/demo_cahn-hilliard-block` -- see *Time-dependent and
+  nonlinear problems*: a Schur complement block preconditioner for the
+  Cahn-Hilliard equation, with a user-supplied PETSc Python
+  preconditioner.
 * :doc:`demos/demo_dd-solvers` -- solve the Poisson, linearised
   elasticity and curl-curl equations with BDDC and PCHPDDM domain
   decomposition preconditioners, using PETSc's unassembled ``MATIS``
@@ -202,6 +209,7 @@ PETSc scalars.
    :caption: Time-dependent and nonlinear problems
 
    demos/demo_cahn-hilliard.md
+   demos/demo_cahn-hilliard-block.md
    demos/demo_snap-through.md
 
 .. toctree::
