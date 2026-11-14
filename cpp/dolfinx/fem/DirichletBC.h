@@ -325,7 +325,7 @@ public:
             && std::is_convertible_v<std::remove_cvref_t<X>,
                                      std::vector<std::int32_t>>
   DirichletBC(const S& g, X&& dofs, std::shared_ptr<const FunctionSpace<U>> V)
-      : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
+      : DirichletBC(std::make_shared<Constant<T>>(g), std::forward<X>(dofs), V)
   {
   }
 
@@ -437,15 +437,15 @@ public:
   /// dof block.
   /// @param[in] V The function (sub)space on which the boundary
   /// condition is applied
-  /// @note The indices in `dofs` are unrolled and not for blocks.
+  /// @note The indices in `V_g_dofs` are unrolled and not for blocks.
   template <typename X>
   DirichletBC(std::shared_ptr<const Function<T, U>> g, X&& V_g_dofs,
               std::shared_ptr<const FunctionSpace<U>> V)
+    requires std::same_as<std::remove_cvref_t<X>,
+                          std::array<std::vector<std::int32_t>, 2>>
       : _function_space(V), _g(g),
-        _dofs0(std::forward<typename std::remove_reference_t<X>::value_type>(
-            V_g_dofs[0])),
-        _dofs1_g(std::forward<typename std::remove_reference_t<X>::value_type>(
-            V_g_dofs[1])),
+        _dofs0(std::get<0>(std::forward<X>(V_g_dofs))),
+        _dofs1_g(std::get<1>(std::forward<X>(V_g_dofs))),
         _owned_indices0(num_owned(*_function_space->dofmap(), _dofs0))
   {
     check_dofs_strictly_increasing(_dofs0);
