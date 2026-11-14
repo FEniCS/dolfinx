@@ -39,6 +39,8 @@ def _ghost_update(
 ) -> None:
     """Helper function for ghost updating PETSc vectors."""
     if x.getType() == PETSc.Vec.Type.NEST:
+        # Sequential: sub-vectors made by duplicate() share a ghost
+        # scatter, which allows only one update in flight
         for x_sub in x.getNestSubVecs():
             x_sub.ghostUpdate(addv=insert_mode, mode=scatter_mode)
             x_sub.destroy()
@@ -51,11 +53,11 @@ def _zero_vector(x: PETSc.Vec) -> None:
     if x.getType() == PETSc.Vec.Type.NEST:
         for x_sub in x.getNestSubVecs():
             with x_sub.localForm() as x_sub_local:
-                x_sub_local.set(0.0)
+                x_sub_local.set(0)
             x_sub.destroy()
     else:
         with x.localForm() as x_local:
-            x_local.set(0.0)
+            x_local.set(0)
 
 
 def create_vector_wrap(x: Vector) -> PETSc.Vec:
