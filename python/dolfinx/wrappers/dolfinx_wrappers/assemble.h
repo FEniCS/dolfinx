@@ -7,9 +7,11 @@
 #pragma once
 
 #include "array.h"
+#include "block_size.h"
 #include "pycoeff.h"
 #include <array>
 #include <basix/mdspan.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/DofMap.h>
@@ -23,8 +25,8 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <format>
 #include <functional>
+#include <map>
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -153,49 +155,15 @@ void declare_discrete_operators(nanobind::module_& m)
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);
 
-        auto [bs0, bs1] = A.block_size();
-        if (bs0 == 1 and bs1 == 1)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<1, 1>());
-        }
-        else if (bs0 == 2 and bs1 == 1)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<2, 1>());
-        }
-        else if (bs0 == 1 and bs1 == 2)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<1, 2>());
-        }
-        else if (bs0 == 2 and bs1 == 2)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<2, 2>());
-        }
-        else if (bs0 == 3 and bs1 == 1)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<3, 1>());
-        }
-        else if (bs0 == 1 and bs1 == 3)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<1, 3>());
-        }
-        else if (bs0 == 3 and bs1 == 3)
-        {
-          dolfinx::fem::interpolation_matrix<T, U>(
-              V0, V1, A.template mat_add_values<3, 3>());
-        }
-        else
-        {
-          throw std::invalid_argument(std::format(
-              "Interpolation matrix not supported between block sizes "
-              "{} and {}.",
-              bs0, bs1));
-        }
+        // Cell data has the dofmap block sizes of V1 (rows) and V0
+        // (columns), which differ from the element block sizes for a
+        // sub-space
+        visit_block_size({V1.dofmap()->bs(), V0.dofmap()->bs()},
+                         [&V0, &V1, &A](auto bs0, auto bs1)
+                         {
+                           dolfinx::fem::interpolation_matrix<T, U>(
+                               V0, V1, A.mat_add_values(bs0, bs1));
+                         });
 
         return A;
       },
@@ -379,97 +347,26 @@ void declare_assembly_functions(nanobind::module_& m)
          nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> dof_marker0,
          nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> dof_marker1)
       {
+        std::span<const T> _constants(constants.data(), constants.size());
+        const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                       std::pair<std::span<const T>, int>>
+            _coefficients = dolfinx_wrappers::py_to_cpp_coeffs(coefficients);
         std::span<const std::int8_t> _dof_marker0(dof_marker0.data(),
                                                   dof_marker0.size());
         std::span<const std::int8_t> _dof_marker1(dof_marker1.data(),
                                                   dof_marker1.size());
 
-        // Get index map block size. Note that mixed-topology meshes
-        // will have multiple DOF maps, but the block sizes are the same.
-        const std::array<int, 2> data_bs
-            = {a.function_spaces().at(0)->dofmaps().front()->index_map_bs(),
-               a.function_spaces().at(1)->dofmaps().front()->index_map_bs()};
-
-        if (data_bs[0] != data_bs[1])
-        {
-          throw std::invalid_argument(
-              "Non-square blocksize unsupported in Python.");
-        }
-
-        if (data_bs[0] == 1)
-        {
-          dolfinx::fem::assemble_matrix(
-              A.mat_add_values(), a,
-              std::span<const T>(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
-              _dof_marker1);
-        }
-        else if (data_bs[0] == 2)
-        {
-          auto mat_add = A.template mat_add_values<2, 2>();
-          dolfinx::fem::assemble_matrix(
-              mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
-              _dof_marker1);
-        }
-        else if (data_bs[0] == 3)
-        {
-          auto mat_add = A.template mat_add_values<3, 3>();
-          dolfinx::fem::assemble_matrix(
-              mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
-              _dof_marker1);
-        }
-        else if (data_bs[0] == 4)
-        {
-          auto mat_add = A.template mat_add_values<4, 4>();
-          dolfinx::fem::assemble_matrix(
-              mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
-              _dof_marker1);
-        }
-        else if (data_bs[0] == 5)
-        {
-          auto mat_add = A.template mat_add_values<5, 5>();
-          dolfinx::fem::assemble_matrix(
-              mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
-              _dof_marker1);
-        }
-        else if (data_bs[0] == 6)
-        {
-          auto mat_add = A.template mat_add_values<6, 6>();
-          dolfinx::fem::assemble_matrix(
-              mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
-              _dof_marker1);
-        }
-        else if (data_bs[0] == 7)
-        {
-          auto mat_add = A.template mat_add_values<7, 7>();
-          dolfinx::fem::assemble_matrix(
-              mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
-              _dof_marker1);
-        }
-        else if (data_bs[0] == 8)
-        {
-          auto mat_add = A.template mat_add_values<8, 8>();
-          dolfinx::fem::assemble_matrix(
-              mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
-              _dof_marker1);
-        }
-        else if (data_bs[0] == 9)
-        {
-          auto mat_add = A.template mat_add_values<9, 9>();
-          dolfinx::fem::assemble_matrix(
-              mat_add, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _dof_marker0,
-              _dof_marker1);
-        }
-        else
-          throw std::invalid_argument("Block size not supported in Python.");
+        // Element data block sizes are the DOF map block sizes, which
+        // are the same for all DOF maps of a mixed-topology mesh
+        visit_block_size({a.function_spaces().at(0)->dofmaps().front()->bs(),
+                          a.function_spaces().at(1)->dofmaps().front()->bs()},
+                         [&A, &a, &_constants, &_coefficients, &_dof_marker0,
+                          &_dof_marker1](auto bs0, auto bs1)
+                         {
+                           dolfinx::fem::assemble_matrix(
+                               A.mat_add_values(bs0, bs1), a, _constants,
+                               _coefficients, _dof_marker0, _dof_marker1);
+                         });
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
       nb::arg("dof_marker0"), nb::arg("dof_marker1"), "Experimental.");
