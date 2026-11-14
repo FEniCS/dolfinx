@@ -48,7 +48,7 @@ from dolfinx.mesh import (
     locate_entities_boundary,
     meshtags,
 )
-from ufl import derivative, dP, dr, dS, ds, dx, inner
+from ufl import derivative, dr, dS, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
 
 dtype_parametrize = pytest.mark.parametrize(
@@ -242,30 +242,29 @@ class TestPETScAssemblers:
         V = functionspace(mesh, ("Lagrange", 1))
         u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
+        # A ridge of a 2D mesh is a vertex. A form takes one set of tags
+        # per integral type, so tag the exterior ridges on the left and
+        # top boundary with 1 and the remaining exterior ridges with 2.
         exterior_ridges = locate_entities_boundary(
             mesh, mesh.topology.dim - 2, lambda x: np.full(x.shape[1], True, dtype=bool)
         )
+        marked_ridges = locate_entities_boundary(
+            mesh, mesh.topology.dim - 2, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
+        )
+        ridge_values = np.full_like(exterior_ridges, 2, dtype=np.int32)
+        ridge_values[np.isin(exterior_ridges, marked_ridges)] = 1
         ridge_tags = dolfinx.mesh.meshtags(
-            mesh,
-            mesh.topology.dim - 2,
-            exterior_ridges,
-            np.ones_like(exterior_ridges, dtype=np.int32),
+            mesh, mesh.topology.dim - 2, exterior_ridges, ridge_values
         )
-        dr_exterior = dr(subdomain_data=ridge_tags, subdomain_id=1)
-        exterior_vertices = locate_entities_boundary(
-            mesh, 0, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
-        )
-        vertex_tags = dolfinx.mesh.meshtags(
-            mesh, 0, exterior_vertices, np.ones_like(exterior_vertices, dtype=np.int32)
-        )
-        dP_exterior = dP(subdomain_data=vertex_tags, subdomain_id=1)
+        dr_exterior = dr(subdomain_data=ridge_tags, subdomain_id=(1, 2))
+        dr_marked = dr(subdomain_data=ridge_tags, subdomain_id=1)
         x = ufl.SpatialCoordinate(mesh)
         f = ufl.exp(x[0] + x[1])
         a = form(
             inner(u, v) * dx
             + inner(u, v) * ds
             - inner(u, v) * dr_exterior
-            + f * inner(u, v) * dP_exterior
+            + f * inner(u, v) * dr_marked
         )
         L = form(inner(1.0, v) * dx)
 
@@ -1653,6 +1652,29 @@ def vertex_to_dof_map(V):
     return vertex_to_dof_map
 
 
+def vertex_measure(msh, **kwargs):
+    """Measure over the vertices of a mesh.
+
+    A vertex is a facet of a 1D mesh, a ridge of a 2D mesh and a peak of
+    a 3D mesh.
+    """
+    integral_type = {1: "exterior_facet", 2: "ridge", 3: "peak"}[msh.topology.dim]
+    return ufl.Measure(integral_type, domain=msh, **kwargs)
+
+
+def vertex_measure_entities(msh):
+    """Owned vertices that `vertex_measure` integrates over by default.
+
+    These are all owned vertices, except in 1D, where the measure is
+    `ds` and covers the exterior vertices only.
+    """
+    tdim = msh.topology.dim
+    if tdim == 1:
+        msh.topology.create_connectivity(0, tdim)
+        return mesh.exterior_facet_indices(msh.topology)
+    return np.arange(msh.topology.index_map(0).size_local, dtype=np.int32)
+
+
 @pytest.mark.parametrize(
     "cell_type",
     [
@@ -1722,8 +1744,12 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     num_vertices = vertex_map.size_local
     x = ufl.SpatialCoordinate(msh)
 
+    # Vertex measure, and the owned vertices it covers
+    dv = vertex_measure(msh)
+    vertices_dv = vertex_measure_entities(msh)
+
     # Full domain
-    check_vertex_integral_against_sum(x[0] * ufl.dP, np.arange(num_vertices))
+    check_vertex_integral_against_sum(x[0] * dv, vertices_dv)
 
     # Split domain into left half of vertices (1) and right half of vertices (2)
     vertices_1 = mesh.locate_entities(msh, 0, lambda x: x[0] <= 0.5)
@@ -1736,12 +1762,14 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     vertices = np.arange(0, num_vertices, dtype=np.int32)
     meshtags = mesh.meshtags(msh, 0, vertices, tags)
 
-    dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
+    dv_tagged = vertex_measure(msh, subdomain_data=meshtags)
+    vertices_1 = np.intersect1d(vertices_1, vertices_dv)
+    vertices_2 = np.intersect1d(vertices_2, vertices_dv)
 
     # Combinations of sub domains
-    check_vertex_integral_against_sum(x[0] * dP(1), vertices_1)
-    check_vertex_integral_against_sum(x[0] * dP(2), vertices_2)
-    check_vertex_integral_against_sum(x[0] * (dP(1) + dP(2)), np.arange(num_vertices))
+    check_vertex_integral_against_sum(x[0] * dv_tagged(1), vertices_1)
+    check_vertex_integral_against_sum(x[0] * dv_tagged(2), vertices_2)
+    check_vertex_integral_against_sum(x[0] * (dv_tagged(1) + dv_tagged(2)), vertices_dv)
 
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V, dtype=dtype)
@@ -1749,10 +1777,10 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     vertices = np.arange(num_vertices + vertex_map.num_ghosts)
     u.x.array[vertex_to_dof[vertices]] = vertex_map.local_to_global(vertices)
 
-    check_vertex_integral_against_sum(u * x[0] * ufl.dP, np.arange(num_vertices), True)
-    check_vertex_integral_against_sum(u * x[0] * dP(1), vertices_1, True)
-    check_vertex_integral_against_sum(u * x[0] * dP(2), vertices_2, True)
-    check_vertex_integral_against_sum(u * x[0] * (dP(1) + dP(2)), np.arange(num_vertices), True)
+    check_vertex_integral_against_sum(u * x[0] * dv, vertices_dv, True)
+    check_vertex_integral_against_sum(u * x[0] * dv_tagged(1), vertices_1, True)
+    check_vertex_integral_against_sum(u * x[0] * dv_tagged(2), vertices_2, True)
+    check_vertex_integral_against_sum(u * x[0] * (dv_tagged(1) + dv_tagged(2)), vertices_dv, True)
 
     # Check custom packing
     if cell_type is mesh.CellType.prism:
@@ -1770,9 +1798,10 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
         v_l = np.where(c_to_v.links(c) == v)[0]
         cell_vertex_pairs = np.append(cell_vertex_pairs, [c, *v_l])
 
-    # a) With subdomain_data
+    # a) With subdomain_data. Explicit (cell, local vertex) pairs are
+    # integrated over as given, so this covers every vertex, also in 1D.
     check_vertex_integral_against_sum(
-        x[0] * ufl.dP(domain=msh, subdomain_data=[(1, cell_vertex_pairs)], subdomain_id=1),
+        x[0] * vertex_measure(msh, subdomain_data=[(1, cell_vertex_pairs)], subdomain_id=1),
         np.arange(num_vertices),
     )
 
@@ -1781,11 +1810,9 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     fem.compute_integration_domains(fem.IntegralType.exterior_facet, msh.topology, vertices)
     subdomains = {fem.IntegralType.exterior_facet: [(0, cell_vertex_pairs)]}
 
-    compiled_form = fem.compile_form(
-        comm, x[0] * ufl.dP, form_compiler_options={"scalar_type": dtype}
-    )
+    compiled_form = fem.compile_form(comm, x[0] * dv, form_compiler_options={"scalar_type": dtype})
     form = fem.create_form(compiled_form, [], msh, subdomains, {}, {}, [])
-    expected_value_l = np.sum(msh.geometry.x[vertices, 0])
+    expected_value_l = np.sum(msh.geometry.x[vertices_dv, 0])
     value_l = fem.assemble_scalar(form)
     assert expected_value_l == pytest.approx(value_l, abs=float(5e4 * np.finfo(rdtype).eps))
 
@@ -1862,8 +1889,12 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     V = fem.functionspace(msh, ("P", 1))
     v = ufl.conj(ufl.TestFunction(V))
 
+    # Vertex measure, and the owned vertices it covers
+    dv = vertex_measure(msh)
+    vertices_dv = vertex_measure_entities(msh)
+
     # Full domain
-    check_vertex_integral_against_sum(x[0] * v * ufl.dP, np.arange(num_vertices))
+    check_vertex_integral_against_sum(x[0] * v * dv, vertices_dv)
 
     # Split domain into left half of vertices (1) and right half of vertices (2)
     vertices_1 = mesh.locate_entities(msh, 0, lambda x: x[0] <= 0.5)
@@ -1876,11 +1907,13 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     vertices = np.arange(0, num_vertices, dtype=np.int32)
     meshtags = mesh.meshtags(msh, 0, vertices, tags)
 
-    dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
+    dv_tagged = vertex_measure(msh, subdomain_data=meshtags)
+    vertices_1 = np.intersect1d(vertices_1, vertices_dv)
+    vertices_2 = np.intersect1d(vertices_2, vertices_dv)
 
-    check_vertex_integral_against_sum(x[0] * v * dP(1), vertices_1)
-    check_vertex_integral_against_sum(x[0] * v * dP(2), vertices_2)
-    check_vertex_integral_against_sum(x[0] * v * (dP(1) + dP(2)), np.arange(num_vertices))
+    check_vertex_integral_against_sum(x[0] * v * dv_tagged(1), vertices_1)
+    check_vertex_integral_against_sum(x[0] * v * dv_tagged(2), vertices_2)
+    check_vertex_integral_against_sum(x[0] * v * (dv_tagged(1) + dv_tagged(2)), vertices_dv)
 
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V, dtype=dtype)
@@ -1889,10 +1922,12 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     vertices = np.arange(num_vertices + vertex_map.num_ghosts)
     u.x.array[vertex_to_dof[vertices]] = vertex_map.local_to_global(vertices)
 
-    check_vertex_integral_against_sum(u * x[0] * v * ufl.dP, np.arange(num_vertices), True)
-    check_vertex_integral_against_sum(u * x[0] * v * dP(1), vertices_1, True)
-    check_vertex_integral_against_sum(u * x[0] * v * dP(2), vertices_2, True)
-    check_vertex_integral_against_sum(u * x[0] * v * (dP(1) + dP(2)), np.arange(num_vertices), True)
+    check_vertex_integral_against_sum(u * x[0] * v * dv, vertices_dv, True)
+    check_vertex_integral_against_sum(u * x[0] * v * dv_tagged(1), vertices_1, True)
+    check_vertex_integral_against_sum(u * x[0] * v * dv_tagged(2), vertices_2, True)
+    check_vertex_integral_against_sum(
+        u * x[0] * v * (dv_tagged(1) + dv_tagged(2)), vertices_dv, True
+    )
 
     # Check custom packing
     if cell_type is mesh.CellType.prism:
@@ -1910,10 +1945,11 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
         v_l = np.where(c_to_v.links(c) == v)[0]
         cell_vertex_pairs = np.append(cell_vertex_pairs, [c, *v_l])
 
-    # a) With subdomain_data
+    # a) With subdomain_data. Explicit (cell, local vertex) pairs are
+    # integrated over as given, so this covers every vertex, also in 1D.
     v = ufl.conj(ufl.TestFunction(V))
     check_vertex_integral_against_sum(
-        x[0] * v * ufl.dP(domain=msh, subdomain_data=[(1, cell_vertex_pairs)], subdomain_id=1),
+        x[0] * v * vertex_measure(msh, subdomain_data=[(1, cell_vertex_pairs)], subdomain_id=1),
         np.arange(num_vertices),
     )
 
@@ -1923,11 +1959,11 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     subdomains = {fem.IntegralType.exterior_facet: [(0, cell_vertex_pairs)]}
 
     compiled_form = fem.compile_form(
-        comm, x[0] * v * ufl.dP, form_compiler_options={"scalar_type": dtype}
+        comm, x[0] * v * dv, form_compiler_options={"scalar_type": dtype}
     )
     form = fem.create_form(compiled_form, [V], msh, subdomains, {}, {}, [])
     expected_value_l = np.zeros(num_vertices, dtype=rdtype)
-    expected_value_l[vertices] = msh.geometry.x[vertices, 0]
+    expected_value_l[vertices_dv] = msh.geometry.x[vertices_dv, 0]
     value_l = fem.assemble_vector(form)
     assert expected_value_l == pytest.approx(
         value_l.array[: expected_value_l.size], abs=float(5e4 * np.finfo(rdtype).eps)
@@ -1979,11 +2015,13 @@ def test_ridge_integrals_rank1_2D(cell_type, ghost_mode, dtype) -> None:
     F = dolfinx.fem.form(integrand * dr, dtype=dtype)
     b = dolfinx.fem.assemble_vector(F)
 
-    dP = ufl.Measure("dP", domain=msh)
-    Fp = dolfinx.fem.form(integrand * dP, dtype=dtype)
-    b_p = dolfinx.fem.assemble_vector(Fp)
-    tol = np.finfo(rdtype).eps
-    np.testing.assert_allclose(b.array, b_p.array, atol=tol, rtol=tol)
+    # A ridge of a 2D mesh is a vertex, so the integral evaluates the
+    # integrand at each owned vertex
+    vertices = np.arange(msh.topology.index_map(0).size_local, dtype=np.int32)
+    b_ref = np.zeros_like(b.array)
+    b_ref[vertex_to_dof_map(V)[vertices]] = mesh.compute_midpoints(msh, 0, vertices)[:, gdim - 1]
+    tol = 50 * np.finfo(rdtype).eps
+    np.testing.assert_allclose(b.array, b_ref, atol=tol, rtol=tol)
 
 
 @pytest.mark.parametrize(

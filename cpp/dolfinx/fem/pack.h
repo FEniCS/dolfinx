@@ -200,10 +200,10 @@ allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
 
     // `domain()` returns entities flattened as (cell,) for cell
     // integrals, (cell, local_entity_index) pairs for exterior_facet/
-    // vertex/ridge integrals, and (cell, local_facet, cell,
+    // peak/ridge integrals, and (cell, local_facet, cell,
     // local_facet) quadruples for interior_facet integrals (one '+'
     // and one '-' side). Dividing by 2 therefore gives the number of
-    // entities for exterior_facet/vertex/ridge integrals, but *twice*
+    // entities for exterior_facet/ridge/peak integrals, but *twice*
     // the number of facets for interior_facet integrals -- which is
     // exactly the entity count required, since interior_facet
     // coefficient data is packed at a doubled `cstride` (one side
@@ -257,7 +257,7 @@ allocate_coefficient_storage(const Form<T, U>& form)
 /// - `coeffs` is flattened using  row-major layout.
 ///
 /// @note The `(num_int_entities, cstride)` shape above holds as stated
-/// for `IntegralType::cell`, `exterior_facet`, `vertex`, and `ridge`
+/// for `IntegralType::cell`, `exterior_facet`, `ridge`, and `peak`
 /// integrals. For `IntegralType::interior_facet`, each facet's row
 /// holds `2 * cstride` values -- one side's worth of data per
 /// coefficient immediately followed by the other's -- and
@@ -355,11 +355,11 @@ void pack_coefficients(const Form<T, U>& form,
         break;
       }
       case IntegralType::exterior_facet:
-      case IntegralType::vertex:
       case IntegralType::ridge:
+      case IntegralType::peak:
       {
         // Iterate over coefficients that are active in exterior_facet,
-        // vertex, and ridge integrals (all use the same (cell,
+        // ridge, and peak integrals (all use the same (cell,
         // local_entity_index) entity layout)
         for (int coeff : form.active_coeffs(integral_type, idx))
         {
