@@ -29,7 +29,7 @@ using namespace dolfinx::io;
 
 //-----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
-                   std::string_view file_mode, Encoding encoding)
+                   FileMode file_mode, Encoding encoding)
     : _comm(comm), _filename(filename), _file_mode(file_mode),
       _xml_doc(new pugi::xml_document), _encoding(encoding)
 {
@@ -52,7 +52,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
     logger().info("Opened HDF5 file with id \"{}\"", hid_t(_h5_id));
   }
 
-  if (_file_mode == "r")
+  if (_file_mode == FileMode::read)
   {
     // Load XML doc from file
     pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
@@ -65,7 +65,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
     if (_xml_doc->child("Xdmf").child("Domain").empty())
       throw std::runtime_error("Empty <Domain> node.");
   }
-  else if (_file_mode == "w")
+  else if (_file_mode == FileMode::write)
   {
     if (_encoding == Encoding::ASCII and dolfinx::MPI::size(_comm.comm()) > 1)
     {
@@ -87,7 +87,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
     if (!domain_node)
       throw std::runtime_error("Failed to append xml/xdmf Domain.");
   }
-  else if (_file_mode == "a")
+  else if (_file_mode == FileMode::append)
   {
     if (_encoding == Encoding::ASCII and dolfinx::MPI::size(_comm.comm()) > 1)
     {
@@ -127,6 +127,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
         throw std::runtime_error("Failed to append xml/xdmf Domain.");
     }
   }
+  else
+    throw std::invalid_argument("Unknown XDMF file mode.");
 }
 //-----------------------------------------------------------------------------
 XDMFFile::XDMFFile(XDMFFile&& file) noexcept = default;

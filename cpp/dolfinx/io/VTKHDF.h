@@ -143,8 +143,8 @@ void write_mesh(const std::filesystem::path& filename,
         cell_types[i], mesh.geometry().cmaps().at(i).dim()));
   }
 
-  hdf5::Handle h5file(hdf5::open_file(mesh.comm(), filename, "w", true),
-                      H5Fclose);
+  hdf5::Handle h5file(
+      hdf5::open_file(mesh.comm(), filename, FileMode::write, true), H5Fclose);
 
   // Create VTKHDF group
   hdf5::add_group(h5file, "VTKHDF");
@@ -335,8 +335,8 @@ void write_data(std::string_view point_or_cell,
   }
   logger().debug("Data vector width={}", data_width);
 
-  hdf5::Handle h5file(hdf5::open_file(mesh.comm(), filename, "a", true),
-                      H5Fclose);
+  hdf5::Handle h5file(
+      hdf5::open_file(mesh.comm(), filename, FileMode::append, true), H5Fclose);
   hdf5::add_group(h5file, "VTKHDF/Steps");
 
   std::int64_t point_data_offset = 0;
@@ -474,7 +474,8 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
         "Geometric dimension must be less than or equal to 3.");
   }
 
-  hdf5::Handle h5file(hdf5::open_file(comm, filename, "r", true), H5Fclose);
+  hdf5::Handle h5file(hdf5::open_file(comm, filename, FileMode::read, true),
+                      H5Fclose);
 
   std::vector<std::int64_t> shape
       = hdf5::get_dataset_shape(h5file, "/VTKHDF/Types");

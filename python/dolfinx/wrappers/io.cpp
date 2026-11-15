@@ -80,6 +80,13 @@ void io(nb::module_& m)
   m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<float>,
         nb::arg("point_or_cell"), nb::arg("filename"), nb::arg("mesh"),
         nb::arg("data"), nb::arg("time"));
+
+  nb::enum_<dolfinx::io::FileMode>(m, "FileMode")
+      .value("read", dolfinx::io::FileMode::read, "Open an existing file")
+      .value("write", dolfinx::io::FileMode::write,
+             "Create or overwrite a file")
+      .value("append", dolfinx::io::FileMode::append,
+             "Append to a file or create it");
   m.def(
       "read_vtkhdf_mesh_float64",
       [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
@@ -136,7 +143,7 @@ void io(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::io::XDMFFile* x, MPICommWrapper comm,
-             std::filesystem::path filename, const std::string& file_mode,
+             std::filesystem::path filename, dolfinx::io::FileMode file_mode,
              dolfinx::io::XDMFFile::Encoding encoding)
           {
             new (x) dolfinx::io::XDMFFile(comm.get(), filename, file_mode,
@@ -198,7 +205,7 @@ void io(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::io::VTKFile* v, MPICommWrapper comm,
-             std::filesystem::path filename, const std::string& mode)
+             std::filesystem::path filename, dolfinx::io::FileMode mode)
           { new (v) dolfinx::io::VTKFile(comm.get(), filename, mode); },
           nb::arg("comm"), nb::arg("filename"), nb::arg("mode"))
       .def("close", &dolfinx::io::VTKFile::close);

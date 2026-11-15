@@ -18,6 +18,7 @@ target_sources(
     FILE_SET HEADERS
       FILES
         ADIOS2Writers.h
+        FileMode.h
         HDF5Interface.h
         VTKFile.h
         VTKHDF.h

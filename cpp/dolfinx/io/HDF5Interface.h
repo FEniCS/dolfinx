@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "FileMode.h"
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -140,10 +141,23 @@ hid_t hdf5_type()
 /// Open HDF5 and return file descriptor
 /// @param[in] comm MPI communicator
 /// @param[in] filename Name of the HDF5 file to open
-/// @param[in] mode Mode in which to open the file (w, r, a)
+/// @param[in] mode Mode in which to open the file
 /// @param[in] use_mpi_io True if MPI-IO should be used
 hid_t open_file(MPI_Comm comm, const std::filesystem::path& filename,
-                std::string_view mode, bool use_mpi_io);
+                FileMode mode, bool use_mpi_io);
+
+/// @brief Open an HDF5 file using a legacy string mode.
+///
+/// Prefer the type-safe overload taking `FileMode`.
+/// @param[in] comm MPI communicator
+/// @param[in] filename Name of the HDF5 file to open
+/// @param[in] mode Mode in which to open the file (`w`, `r` or `a`)
+/// @param[in] use_mpi_io True if MPI-IO should be used
+inline hid_t open_file(MPI_Comm comm, const std::filesystem::path& filename,
+                       std::string_view mode, bool use_mpi_io)
+{
+  return open_file(comm, filename, file_mode_from_string(mode), use_mpi_io);
+}
 
 /// Close HDF5 file
 /// @param[in] handle HDF5 file handle
