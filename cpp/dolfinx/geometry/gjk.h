@@ -447,6 +447,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
                  static_cast<double>(eps));
 
     // Add new vertex to simplex
+    assert(simplex_size < 4);
     std::ranges::copy(s_k, s.begin() + 3 * simplex_size);
     ++simplex_size;
 
@@ -483,6 +484,15 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
       }
     }
     simplex_size = j;
+
+    // Origin is in the interior of a tetrahedron: bodies intersect. Exit
+    // here, since rounding can leave |x_k| above the tolerance of the 3rd
+    // exit condition and the simplex cannot grow further.
+    if (simplex_size == 4)
+    {
+      x_k = {0.0, 0.0, 0.0};
+      break;
+    }
 
     // 2nd exit condition - strict monotonicity
     const U x_next_norm2 = impl_gjk::dot3(x_k, x_k);
