@@ -10,16 +10,18 @@
 #include <algorithm>
 #include <array>
 #include <boost/multiprecision/cpp_bin_float.hpp>
+#include <cassert>
 #include <cmath>
 #include <concepts>
+#include <cstddef>
 #include <dolfinx/common/local_range.h>
+#include <functional>
+#include <iterator>
 #include <limits>
-#include <numeric>
 #include <span>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <thread>
-#include <utility>
 #include <vector>
 
 namespace dolfinx::geometry
@@ -221,10 +223,12 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
       {
         std::span<const T, 3> sj(s.begin() + j * 3, 3);
         if (i != j)
+        {
           d[i][j] = (sii - dot3(si, sj));
-        SPDLOG_DEBUG("d[{}][{}] = {}", i, j, static_cast<double>(d[i][j]));
-        if (d[i][j] > 0.0)
-          out = false;
+          SPDLOG_DEBUG("d[{}][{}] = {}", i, j, static_cast<double>(d[i][j]));
+          if (d[i][j] > 0.0)
+            out = false;
+        }
       }
       if (out)
       {
@@ -447,6 +451,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
                  static_cast<double>(eps));
 
     // Add new vertex to simplex
+    assert(simplex_size < 4);
     std::ranges::copy(s_k, s.begin() + 3 * simplex_size);
     ++simplex_size;
 
@@ -483,6 +488,12 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
       }
     }
     simplex_size = j;
+
+    // Origin is in the interior of a tetrahedron: bodies intersect. Exit
+    // here, since rounding can leave |x_k| above the tolerance of the 3rd
+    // exit condition and the simplex cannot grow further.
+    if (simplex_size == 4)
+      break;
 
     // 2nd exit condition - strict monotonicity
     const U x_next_norm2 = impl_gjk::dot3(x_k, x_k);
