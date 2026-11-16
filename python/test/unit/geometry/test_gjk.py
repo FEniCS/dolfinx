@@ -102,6 +102,37 @@ def test_tetra_collision_3d(delta) -> None:
         assert np.isclose(distance, actual_distance, atol=1e-15)
 
 
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_point_enclosed_by_tetrahedron_simplex(dtype) -> None:
+    """Check that GJK returns a zero distance when its simplex encloses the origin.
+
+    The point lies just inside the hull of the nodes of a P2 tetrahedron.
+    GJK ends on a tetrahedron enclosing the origin, but rounding leaves the
+    residual above the exit tolerance. GJK used to keep iterating and write
+    a fifth vertex past its simplex array.
+    """
+    nodes = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [-1.326575, -0.125697, 1.564126],
+            [-1.709156, 2.721552, -0.127763],
+            [-2.829747, 0.88992, 0.127775],
+            [-2.262845, 1.801349, -0.000755],
+            [-2.0781, 0.382074, 0.845939],
+            [-1.522157, 1.30023, 0.719219],
+            [-1.414813, 0.444922, 0.063876],
+            [-0.858869, 1.363078, -0.062844],
+            [-0.663287, -0.062848, 0.782063],
+        ],
+        dtype=dtype,
+    )
+    point = np.array([[-1.492347, 0.107545, 1.069778]], dtype=dtype)
+    d = compute_distance_gjk(point, nodes)
+    assert d.dtype == dtype
+    eps = np.finfo(dtype).eps
+    assert np.linalg.norm(d) < 10 * eps * np.abs(nodes).max()
+
+
 @pytest.mark.parametrize("delta", [0, -0.1, -0.49, -0.51])
 def test_hex_collision_3d(delta) -> None:
     hex_1 = np.array(
