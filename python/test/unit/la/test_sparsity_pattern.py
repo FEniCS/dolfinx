@@ -81,3 +81,25 @@ def test_index_map_column_growth() -> None:
     if comm.rank == 0:
         assert pattern.index_map(1).num_ghosts == 1
         assert pattern.index_map(1).ghosts[0] == 1
+
+
+def test_index_map_wrapper_identity_is_stable() -> None:
+    """Repeated access returns the same index map wrapper."""
+    comm = MPI.COMM_WORLD
+    msh = create_unit_square(comm, 4, 4)
+    V = functionspace(msh, ("Lagrange", 1))
+    imap = V.dofmap.index_map
+    pattern = sparsity_pattern(comm, [imap, imap], [1, 1])
+    pattern.insert_diagonal(np.arange(imap.size_local, dtype=np.int32))
+
+    assert pattern.index_map(0) is pattern.index_map(0)
+    assert pattern.input_index_map(0) is pattern.input_index_map(0)
+    # Equality is on the wrapped C++ map, so a fresh wrapper still compares equal
+    assert pattern.input_index_map(0) == imap
+
+    pattern.finalize()
+    assert pattern.index_map(1) is pattern.index_map(1)
+    assert pattern.input_index_map(1) is pattern.input_index_map(1)
+    # finalize can add column ghosts, so the column map may be a new
+    # object, but it never gains fewer ghosts than the input map
+    assert pattern.index_map(1).num_ghosts >= pattern.input_index_map(1).num_ghosts
