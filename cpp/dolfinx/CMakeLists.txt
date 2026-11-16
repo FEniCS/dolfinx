@@ -72,6 +72,14 @@ set_target_properties(
     SOVERSION ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR}
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
+option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
+if(ENABLE_CLANG_TIDY)
+  find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
+  set_target_properties(
+    dolfinx
+    PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--experimental-custom-checks"
+  )
+endif()
 
 # Add git revision and UFCx signature
 target_compile_definitions(

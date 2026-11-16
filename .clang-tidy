@@ -1,0 +1,18 @@
+WarningsAsErrors: "*"
+UseColor: true
+HeaderFilterRegex: ".*"
+# Cython-generated mpi4py/petsc4py headers are pulled in from Python
+# packages and are not classified as system headers.
+ExcludeHeaderFilterRegex: ".*/(MPI|PETSc)_api\\.h$"
+ExtraArgsBefore:
+  - "-Wno-unknown-warning-option"
+
+Checks: >
+  -*,
+  performance-unnecessary-value-param
+# performance-*,
+
+CheckOptions:
+  # Design decision: pass nb::ndarray by value, not const ref.
+  - key: performance-unnecessary-value-param.AllowedTypes
+    value: 'nanobind::ndarray'

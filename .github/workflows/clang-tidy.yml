@@ -1,0 +1,93 @@
+name: clang-tidy
+
+on:
+  # schedule:
+  #   # daily at 1am
+  #   - cron: "0 1 * * *"
+  # pull_request:
+  #   branches:
+  #     - main
+  # push:
+  #   branches:
+  #     - "**"
+  #   tags:
+  #     - "v*"
+  # merge_group:
+  #   branches:
+  #     - main
+  workflow_dispatch:
+
+jobs:
+  clang-tidy:
+    runs-on: ubuntu-26.04
+    container: "ghcr.io/fenics/test-env:current"
+    env:
+      # The custom checks in .clang-tidy need clang-tidy >= 22
+      CLANG_TIDY: /usr/bin/clang-tidy-22
+      PETSC_ARCH: linux-gnu-real64-32
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y clang-tidy-22
+          $CLANG_TIDY --version
+
+      - name: Install Python build dependencies
+        working-directory: python
+        run: |
+          pip install --group pyproject.toml:build
+
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
+      - name: Install FEniCS Python components
+        run: |
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+
+      - name: Configure (C++ lib)
+        run: >
+          cmake -G Ninja
+          -B build
+          -S cpp/
+          -DCMAKE_BUILD_TYPE=Developer
+          -DENABLE_CLANG_TIDY=ON
+          -DCLANG_TIDY=$CLANG_TIDY
+          -DDOLFINX_ENABLE_ADIOS2=ON
+          -DDOLFINX_ENABLE_KAHIP=ON
+          -DDOLFINX_ENABLE_PETSC=ON
+          -DDOLFINX_ENABLE_SCOTCH=ON
+          -DDOLFINX_ENABLE_SLEPC=ON
+          -DDOLFINX_ENABLE_PARMETIS=OFF
+
+      - name: Build (C++ lib)
+        run: cmake --build build
+
+      - name: Install (C++ lib)
+        run: cmake --install build
+
+      - name: Configure (C++ test)
+        run: >
+          cmake -G Ninja
+          -B build-test
+          -S cpp/test/
+          -DENABLE_CLANG_TIDY=ON
+          -DCLANG_TIDY=$CLANG_TIDY
+
+      - name: Build (C++ test)
+        run: cmake --build build-test
+
+      - name: Build (Python)
+        working-directory: python
+        run: >
+          pip install .
+          --no-build-isolation
+          --verbose
+          --config-settings=cmake.define.ENABLE_CLANG_TIDY=ON
+          --config-settings=cmake.define.CLANG_TIDY=$CLANG_TIDY

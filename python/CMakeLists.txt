@@ -14,6 +14,13 @@ find_package(
 # Options
 include(FeatureSummary)
 
+option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
+add_feature_info(
+  ENABLE_CLANG_TIDY
+  ENABLE_CLANG_TIDY
+  "Run clang-tidy while building"
+)
+
 option(
   DOLFINX_INSTALL_RPATH_USE_LINK_PATH
   "Add linker search paths to rpath of dolfinx target. Packagers may want to set to FALSE."
@@ -119,6 +126,14 @@ target_compile_definitions(
     $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 target_compile_features(cpp PRIVATE cxx_std_20)
+
+if(ENABLE_CLANG_TIDY)
+  find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
+  set_target_properties(
+    cpp
+    PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--experimental-custom-checks"
+  )
+endif()
 
 # Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx::dolfinx)

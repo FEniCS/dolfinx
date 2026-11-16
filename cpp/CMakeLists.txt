@@ -129,6 +129,10 @@ dolfinx_option(
   ON
 )
 
+# Uses the .clang-tidy at the repository root, whose custom checks need
+# clang-tidy >= 22. Set CLANG_TIDY to choose the executable.
+dolfinx_option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
+
 # ------------------------------------------------------------------------------
 # Enable or disable optional packages
 

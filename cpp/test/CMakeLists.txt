@@ -111,6 +111,15 @@ if(DEFINED DOLFINX_CXX_DEVELOPER_DEFINITIONS)
   )
 endif()
 
+option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
+if(ENABLE_CLANG_TIDY)
+  find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
+  set_target_properties(
+    unittests
+    PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--experimental-custom-checks"
+  )
+endif()
+
 # Uncommenting line allows for debugging individual tests, but slow.
 #catch_discover_tests(unittests)
 
