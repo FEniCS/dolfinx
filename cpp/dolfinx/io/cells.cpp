@@ -494,12 +494,12 @@ LatticePoint operator*(int s, const LatticePoint& a)
 /// Example: the Basix quadrilateral has the vertices x_0 = (0, 0),
 /// x_1 = (1, 0), x_2 = (0, 1) and x_3 = (1, 1). The axes are
 /// a_0 = x_1 - x_0 = (1, 0) and a_1 = x_2 - x_0 = (0, 1), and a point x
-/// has the frame coordinates c with x = x_0 + c_0 a_0 + c_1 a_1. The cell midpoint (1/2, 1/2) has
-/// frame coordinates (1/2, 1/2), and x_3 has (1, 1). Were the reference
-/// cell [-1, 1]^2 instead, with x_0 = (-1, -1), x_1 = (1, -1) and
-/// x_2 = (-1, 1), the axes would be (2, 0) and (0, 2), and the midpoint
-/// (0, 0) and x_3 = (1, 1) would have the same frame coordinates (1/2, 1/2)
-/// and (1, 1).
+/// has the frame coordinates c with x = x_0 + c_0 a_0 + c_1 a_1. The cell
+/// midpoint (1/2, 1/2) has frame coordinates (1/2, 1/2), and x_3 has
+/// (1, 1). Were the reference cell [-1, 1]^2 instead, with
+/// x_0 = (-1, -1), x_1 = (1, -1) and x_2 = (-1, 1), the axes would be
+/// (2, 0) and (0, 2), and the midpoint (0, 0) and x_3 = (1, 1) would have
+/// the same frame coordinates (1/2, 1/2) and (1, 1).
 ///
 /// @param[in] cell Cell type.
 /// @param[in] x Points on the reference cell, row-major, shape
