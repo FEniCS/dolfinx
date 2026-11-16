@@ -1823,10 +1823,10 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
                          [&igi](auto sub_x_dof) { return igi[sub_x_dof]; });
 
   // Create geometry
-  return {Geometry(
-              sub_x_dof_index_map,
-              std::vector<std::vector<std::int32_t>>{std::move(sub_x_dofmap)},
-              {sub_cmap}, std::move(sub_x), geometry.dim(), std::move(sub_igi)),
+  std::vector<std::vector<std::int32_t>> dofmaps;
+  dofmaps.emplace_back(std::move(sub_x_dofmap));
+  return {Geometry(sub_x_dof_index_map, std::move(dofmaps), {sub_cmap},
+                   std::move(sub_x), geometry.dim(), std::move(sub_igi)),
           std::move(subx_to_x_dofmap)};
 }
 

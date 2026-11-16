@@ -106,10 +106,11 @@ mesh::Mesh<T> interpolate_geometry(
   std::vector<std::int64_t> igi(num_nodes);
   new_imap->local_to_global(local, igi);
 
-  mesh::Geometry<T> geometry(
-      new_imap, std::vector<std::vector<std::int32_t>>{std::move(dofmap_flat)},
-      std::vector<CoordinateElement<T>>{new_cmap}, std::move(x_new), gdim,
-      std::move(igi));
+  std::vector<std::vector<std::int32_t>> dofmaps;
+  dofmaps.emplace_back(std::move(dofmap_flat));
+  mesh::Geometry<T> geometry(new_imap, std::move(dofmaps),
+                             std::vector<CoordinateElement<T>>{new_cmap},
+                             std::move(x_new), gdim, std::move(igi));
 
   return mesh::Mesh<T>(mesh->comm(), mesh->topology(), std::move(geometry));
 }

@@ -233,12 +233,11 @@ void declare_mesh(nb::module_& m, std::string_view type)
                   x_vec[3 * i + j] = _x(i, j);
             }
 
+            std::vector<std::vector<std::int32_t>> dofmaps;
+            dofmaps.emplace_back(dofmap.data(), dofmap.data() + dofmap.size());
             new (self) dolfinx::mesh::Geometry<T>(
-                std::move(index_map),
-                std::vector<std::vector<std::int32_t>>(
-                    1, std::vector<std::int32_t>(
-                           dofmap.data(), dofmap.data() + dofmap.size())),
-                {element}, std::move(x_vec), shape1,
+                std::move(index_map), std::move(dofmaps), {element},
+                std::move(x_vec), shape1,
                 std::vector(input_global_indices.data(),
                             input_global_indices.data()
                                 + input_global_indices.size()));
