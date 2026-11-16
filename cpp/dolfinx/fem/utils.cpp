@@ -235,8 +235,8 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     break;
   }
   case IntegralType::exterior_facet:
-  case IntegralType::vertex:
   case IntegralType::ridge:
+  case IntegralType::peak:
   {
     auto [e_to_c, c_to_e] = get_connectivities(dim);
     for (auto entity : entities)

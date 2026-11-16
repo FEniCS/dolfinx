@@ -42,8 +42,8 @@ enum class IntegralType : std::int8_t
   cell = 0,           ///< Cell
   exterior_facet = 1, ///< Exterior facet
   interior_facet = 2, ///< Interior facet
-  vertex = 3,         ///< Vertex
-  ridge = 4           ///< Ridge
+  ridge = 3,          ///< Ridge
+  peak = 4,           ///< Peak
 };
 
 /// @brief Topological dimension of the mesh entities an integral of the
@@ -61,8 +61,8 @@ constexpr int integral_entity_dim(IntegralType type, int tdim)
     return tdim - 1;
   case IntegralType::ridge:
     return tdim - 2;
-  case IntegralType::vertex:
-    return 0;
+  case IntegralType::peak:
+    return tdim - 3;
   case IntegralType::cell:
     return tdim;
   }
@@ -218,10 +218,10 @@ public:
             std::cref(emap));
       }
 
-      if (type == IntegralType::vertex)
+      if (type == IntegralType::peak)
       {
         throw std::invalid_argument(
-            "Vertex integrals are not supported for a form with an argument "
+            "Peak integrals are not supported for a form with an argument "
             "or coefficient on another mesh. Supported types are cell, "
             "exterior facet, interior facet and ridge.");
       }
