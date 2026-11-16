@@ -212,25 +212,40 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
     // outcomes (4 vertices, 6 edges, 4 facets and the interior).
     std::ranges::fill(coordinates, 0.0);
 
-    T d[4][4];
+    // d[i][j] = s_i.(s_i - s_j), i != j. d[i][j] > 0 means the origin
+    // lies towards s_j as seen from s_i; vertex i is closest iff
+    // d[i][j] <= 0 for all j.
+    //
+    // Each s_i.s_j, j > i, is computed once and gives both d[i][j] and
+    // d[j][i]. Row i of d is complete at the end of iteration i.
+    std::array<T, 4> sii;
     for (int i = 0; i < 4; ++i)
-    // Compute dot products at each vertex
     {
       std::span<const T, 3> si(s.begin() + i * 3, 3);
-      T sii = dot3(si, si);
-      bool out = true;
-      for (int j = 0; j < 4; ++j)
+      sii[i] = dot3(si, si);
+    }
+
+    T d[4][4];
+    std::array<bool, 4> out = {true, true, true, true};
+    for (int i = 0; i < 4; ++i)
+    {
+      std::span<const T, 3> si(s.begin() + i * 3, 3);
+      for (int j = i + 1; j < 4; ++j)
       {
         std::span<const T, 3> sj(s.begin() + j * 3, 3);
-        if (i != j)
-        {
-          d[i][j] = (sii - dot3(si, sj));
-          SPDLOG_DEBUG("d[{}][{}] = {}", i, j, static_cast<double>(d[i][j]));
-          if (d[i][j] > 0.0)
-            out = false;
-        }
+        T sij = dot3(si, sj);
+        d[i][j] = sii[i] - sij;
+        d[j][i] = sii[j] - sij;
+        SPDLOG_DEBUG("d[{}][{}] = {}, d[{}][{}] = {}", i, j,
+                     static_cast<double>(d[i][j]), j, i,
+                     static_cast<double>(d[j][i]));
+        if (d[i][j] > 0.0)
+          out[i] = false;
+        if (d[j][i] > 0.0)
+          out[j] = false;
       }
-      if (out)
+
+      if (out[i])
       {
         // Return if a vertex is closest
         coordinates[i] = 1.0;
