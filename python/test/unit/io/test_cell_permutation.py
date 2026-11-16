@@ -199,14 +199,18 @@ _vtk_layouts = (
     + [(CellType.pyramid, n) for n in (5, 13, 14)]
 )
 
+# Every complete Lagrange layout Gmsh defines, up to degree 10 (9 for
+# hexahedra, prisms and pyramids), and the serendipity prism and pyramid.
 _gmsh_layouts = (
-    [(CellType.interval, n) for n in (2, 3, 4, 5)]
-    + [(CellType.triangle, n) for n in (3, 6, 10)]
-    + [(CellType.quadrilateral, n) for n in (4, 9, 16)]
-    + [(CellType.tetrahedron, n) for n in (4, 10, 20)]
-    + [(CellType.hexahedron, n) for n in (8, 27)]
-    + [(CellType.prism, n) for n in (6, 15, 18)]
-    + [(CellType.pyramid, n) for n in (5, 13, 14)]
+    [(CellType.interval, k + 1) for k in range(1, 11)]
+    + [(CellType.triangle, (k + 1) * (k + 2) // 2) for k in range(1, 11)]
+    + [(CellType.quadrilateral, (k + 1) ** 2) for k in range(1, 11)]
+    + [(CellType.tetrahedron, (k + 1) * (k + 2) * (k + 3) // 6) for k in range(1, 11)]
+    + [(CellType.hexahedron, (k + 1) ** 3) for k in range(1, 10)]
+    + [(CellType.prism, (k + 1) ** 2 * (k + 2) // 2) for k in range(1, 10)]
+    + [(CellType.prism, 15)]
+    + [(CellType.pyramid, (k + 1) * (k + 2) * (2 * k + 3) // 6) for k in range(1, 10)]
+    + [(CellType.pyramid, 13)]
 )
 
 

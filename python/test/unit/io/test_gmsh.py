@@ -31,43 +31,68 @@ def gmsh_model(gmsh_session):
     return gmsh_session.model
 
 
+# Gmsh element family, the Gmsh vertex order on the Basix reference
+# cell, and the highest degree Gmsh defines
+_gmsh_cells = {
+    "interval": ("Line", [0, 1], 10),
+    "triangle": ("Triangle", [0, 1, 2], 10),
+    "quadrilateral": ("Quadrangle", [0, 1, 3, 2], 10),
+    "tetrahedron": ("Tetrahedron", [0, 1, 2, 3], 10),
+    "hexahedron": ("Hexahedron", [0, 1, 3, 2, 4, 5, 7, 6], 9),
+    "prism": ("Prism", [0, 1, 2, 3, 4, 5], 9),
+    "pyramid": ("Pyramid", [0, 1, 3, 2, 4], 9),
+}
+
+
 @pytest.mark.parametrize(
-    "cell_name,vertex_order",
+    "cell_name,degree",
     [
-        ("Hexahedron", [0, 1, 3, 2, 4, 5, 7, 6]),
-        ("Prism", [0, 1, 2, 3, 4, 5]),
-        ("Pyramid", [0, 1, 3, 2, 4]),
+        (cell, k)
+        for cell, (_, _, max_degree) in _gmsh_cells.items()
+        for k in range(1, max_degree + 1)
     ],
 )
-@pytest.mark.parametrize("degree", [1, 2, 3])
-def test_cell_import(gmsh_model, cell_name, vertex_order, degree):
-    """Check Gmsh node ordering and import against Basix reference cells."""
+def test_cell_import(gmsh_model, cell_name, degree):
+    """Check the Gmsh node ordering and the import of every Gmsh cell.
+
+    One Gmsh element is placed on the Basix reference vertices and raised
+    to the degree with ``setOrder``, which puts its nodes on the Basix
+    equispaced points. Permuted to DOLFINx order, and in the mesh read
+    with ``model_to_mesh``, they must be the points of the equispaced
+    Basix element.
+    """
     from dolfinx.io import gmsh as gmshio
 
     model = gmsh_model
-    basix_cell = getattr(basix.CellType, cell_name.lower())
+    family, vertex_order, _ = _gmsh_cells[cell_name]
+    basix_cell = getattr(basix.CellType, cell_name)
     vertices = basix.geometry(basix_cell)[vertex_order]
-    entity = model.addDiscreteEntity(3)
+    tdim = vertices.shape[1]
+    x = np.zeros((len(vertices), 3))
+    x[:, :tdim] = vertices
+    entity = model.addDiscreteEntity(tdim)
     node_tags = np.arange(1, len(vertices) + 1)
-    model.mesh.addNodes(3, entity, node_tags, vertices.flatten())
-    model.mesh.addElementsByType(entity, model.mesh.getElementType(cell_name, 1), [1], node_tags)
-    model.addPhysicalGroup(3, [entity], tag=1)
-    peak = model.addDiscreteEntity(0)
-    model.mesh.addElementsByType(peak, model.mesh.getElementType("Point", 1), [2], [1])
-    model.addPhysicalGroup(0, [peak], tag=2)
+    model.mesh.addNodes(tdim, entity, node_tags, x.flatten())
+    model.mesh.addElementsByType(entity, model.mesh.getElementType(family, 1), [1], node_tags)
+    model.addPhysicalGroup(tdim, [entity], tag=1)
+    if tdim == 3:
+        peak = model.addDiscreteEntity(0)
+        model.mesh.addElementsByType(peak, model.mesh.getElementType("Point", 1), [2], [1])
+        model.addPhysicalGroup(0, [peak], tag=2)
     model.mesh.setOrder(degree)
-    element_types, _, element_nodes = model.mesh.getElements(3, entity)
+    element_types, _, element_nodes = model.mesh.getElements(tdim, entity)
+    assert element_types[0] == model.mesh.getElementType(family, degree)
+    assert gmshio._gmsh_to_cells[element_types[0]] == (cell_name, degree)
     all_node_tags, coordinates, _ = model.mesh.getNodes()
     nodes = dict(zip(all_node_tags, coordinates.reshape(-1, 3), strict=True))
-    points = np.array([nodes[tag] for tag in element_nodes[0]])
+    points = np.array([nodes[tag][:tdim] for tag in element_nodes[0]])
 
-    domain = gmshio.ufl_mesh(element_types[0], 3, np.float64)
-    element = domain.ufl_coordinate_element().basix_element
-    assert element.degree == degree
-    assert element.cell_type.name == cell_name.lower()
-    cell_type = getattr(dolfinx.mesh.CellType, cell_name.lower())
+    element = basix.create_element(
+        basix.ElementFamily.P, basix_cell, degree, basix.LagrangeVariant.equispaced
+    )
+    cell_type = getattr(dolfinx.mesh.CellType, cell_name)
     permutation = gmshio.cell_perm_array(cell_type, element.dim)
-    np.testing.assert_allclose(points[permutation], element.points, atol=1e-14, rtol=0)
+    np.testing.assert_allclose(points[permutation], element.points, atol=1e-12, rtol=0)
 
     comm = MPI.COMM_WORLD
 
@@ -75,17 +100,27 @@ def test_cell_import(gmsh_model, cell_name, vertex_order, degree):
         return dolfinx.graph.adjacencylist(np.zeros((dual_graph.num_nodes, 1), dtype=np.int32))
 
     data = gmshio.model_to_mesh(model, comm, 0, partitioner=partitioner)
-    assert data.mesh.geometry.cmaps[0].degree == degree
-    assert data.mesh.topology.index_map(3).size_global == 1
+    mesh = data.mesh
+    assert mesh.geometry.cmaps[0].degree == degree
+    assert mesh.topology.index_map(tdim).size_global == 1
     assert data.cell_tags is not None
     assert np.all(data.cell_tags.values == 1)
-    assert data.peak_tags is not None
-    assert np.all(data.peak_tags.values == 2)
-    assert comm.allreduce(len(data.peak_tags.values), op=MPI.SUM) == 1
-    volume = comm.allreduce(
-        dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=data.mesh))), op=MPI.SUM
-    )
-    assert np.isclose(volume, basix.cell.volume(basix_cell))
+    if tdim == 3:
+        assert data.peak_tags is not None
+        assert np.all(data.peak_tags.values == 2)
+        assert comm.allreduce(len(data.peak_tags.values), op=MPI.SUM) == 1
+
+    # The nodes of the cell in the mesh, in DOLFINx order
+    if mesh.topology.index_map(tdim).size_local == 1:
+        cell_nodes = mesh.geometry.x[mesh.geometry.dofmaps[0][0], :tdim]
+        np.testing.assert_allclose(cell_nodes, element.points, atol=1e-12, rtol=0)
+
+    # JIT-compiling a form for high-degree geometry is slow
+    if degree <= 3:
+        volume = comm.allreduce(
+            dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=mesh))), op=MPI.SUM
+        )
+        assert np.isclose(volume, basix.cell.volume(basix_cell))
 
 
 @pytest.mark.parametrize(
