@@ -339,6 +339,71 @@ def test_set_bc_diagonal_duplicate_rows(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("mat_bs", [1, 2, 4])
+@pytest.mark.parametrize("block_mode", [BlockMode.compact, BlockMode.expanded])
+def test_add_set_large_block(dtype, mat_bs, block_mode) -> None:
+    """Insert data of block size 4, which has no compile-time insertion.
+
+    The data block (rows 4-7, columns 0-3 unrolled) goes into matrices of
+    block size 1, 2 and 4, and is compared with the same values inserted
+    as scalar entries.
+    """
+    im = index_map(MPI.COMM_WORLD, 8 // mat_bs)
+    sp = sparsity_pattern(MPI.COMM_WORLD, [im, im], [mat_bs, mat_bs])
+    for i in range(4 // mat_bs, 8 // mat_bs):
+        for j in range(4 // mat_bs):
+            sp.insert(i, j)
+    sp.finalize()
+
+    x = np.arange(1, 17, dtype=dtype)
+    rows, cols = np.arange(4, 8, dtype=np.int32), np.arange(4, dtype=np.int32)
+    for op in ("add", "set"):
+        A = matrix_csr(sp, block_mode, dtype=dtype)
+        getattr(A, op)(x, np.array([1], dtype=np.int32), np.array([0], dtype=np.int32), 4)
+        A_ref = matrix_csr(sp, block_mode, dtype=dtype)
+        getattr(A_ref, op)(x, rows, cols, 1)
+        assert np.linalg.norm(A_ref.to_dense()) > 0
+        assert np.array_equal(A.to_dense(), A_ref.to_dense())
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("mat_bs", [1, 2, 3, 4])
+@pytest.mark.parametrize("bs", [(1, 3), (3, 1), (2, 3), (3, 3), (5, 5), (3, 5)])
+@pytest.mark.parametrize("block_mode", [BlockMode.compact, BlockMode.expanded])
+def test_add_set_unaligned_blocks(dtype, mat_bs, bs, block_mode) -> None:
+    """Insert data blocks that start inside, and straddle, matrix blocks.
+
+    Every data block index is inserted in reverse order, so data blocks
+    start at every offset within a matrix block. The result is compared
+    with the dense matrix built from the documented layout of ``x``.
+    """
+    n = 24
+    im = index_map(MPI.COMM_WORLD, n // mat_bs)
+    sp = sparsity_pattern(MPI.COMM_WORLD, [im, im], [mat_bs, mat_bs])
+    blocks = np.arange(n // mat_bs, dtype=np.int32)
+    sp.insert(blocks, blocks)
+    sp.finalize()
+
+    bs0, bs1 = bs
+    rows = np.arange(n // bs0, dtype=np.int32)[::-1].copy()
+    cols = np.arange(n // bs1, dtype=np.int32)[::-1].copy()
+    x = np.arange(1, rows.size * bs0 * cols.size * bs1 + 1).astype(dtype)
+
+    # Scalar rows and global scalar columns of the entries of x
+    R = (rows[:, None] * bs0 + np.arange(bs0)).ravel()
+    C = (cols[:, None] * bs1 + np.arange(bs1)).ravel() + im.local_range[0] * mat_bs
+    X = np.zeros((n, im.size_global * mat_bs), dtype=dtype)
+    X[np.ix_(R, C)] = x.reshape(R.size, C.size)
+
+    A = matrix_csr(sp, block_mode, dtype=dtype)
+    A.add(x, rows, cols, bs)
+    A.add(x, rows, cols, bs)
+    assert np.array_equal(A.to_dense(), 2 * X)
+    A.set(x, rows, cols, bs)
+    assert np.array_equal(A.to_dense(), X)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_bad_entry(dtype) -> None:
     sp = create_test_sparsity(6, 1)
     mat1 = matrix_csr(sp, dtype=dtype)

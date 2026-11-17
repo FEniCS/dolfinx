@@ -263,6 +263,14 @@ class SparsityPattern:
         return self._cpp_object.graph
 
 
+def _data_block_size(bs: int | Sequence[int]) -> list[int]:
+    """Data block size ``bs`` as ``[bs0, bs1]``."""
+    if isinstance(bs, (int, np.integer)):
+        return [int(bs), int(bs)]
+    bs0, bs1 = bs
+    return [int(bs0), int(bs1)]
+
+
 class MatrixCSR(Generic[Scalar]):
     """Distributed compressed sparse row matrix."""
 
@@ -362,20 +370,38 @@ class MatrixCSR(Generic[Scalar]):
         x: npt.NDArray[Scalar],
         rows: npt.NDArray[np.int32],
         cols: npt.NDArray[np.int32],
-        bs: int = 1,
+        bs: int | Sequence[int] = 1,
     ) -> None:
-        """Add a block of values in the matrix."""
-        self._cpp_object.add(x, rows, cols, bs)  # type: ignore[arg-type]
+        """Add a block of values to the matrix.
+
+        Args:
+            x: Values, a row-major ``len(rows) * bs0`` by
+                ``len(cols) * bs1`` array, flattened.
+            rows: Row indices, in units of ``bs0`` rows.
+            cols: Column indices, in units of ``bs1`` columns.
+            bs: Data block size ``(bs0, bs1)``, or ``bs`` for
+                ``(bs, bs)``. Need not match the matrix block size.
+        """
+        self._cpp_object.add(x, rows, cols, _data_block_size(bs))  # type: ignore[arg-type]
 
     def set(
         self,
         x: npt.NDArray[Scalar],
         rows: npt.NDArray[np.int32],
         cols: npt.NDArray[np.int32],
-        bs: int = 1,
+        bs: int | Sequence[int] = 1,
     ) -> None:
-        """Set a block of values in the matrix."""
-        self._cpp_object.set(x, rows, cols, bs)  # type: ignore[arg-type]
+        """Set a block of values in the matrix.
+
+        Args:
+            x: Values, a row-major ``len(rows) * bs0`` by
+                ``len(cols) * bs1`` array, flattened.
+            rows: Row indices, in units of ``bs0`` rows.
+            cols: Column indices, in units of ``bs1`` columns.
+            bs: Data block size ``(bs0, bs1)``, or ``bs`` for
+                ``(bs, bs)``. Need not match the matrix block size.
+        """
+        self._cpp_object.set(x, rows, cols, _data_block_size(bs))  # type: ignore[arg-type]
 
     def set_value(self, x: Scalar) -> None:
         """Set all non-zero entries to a value.
