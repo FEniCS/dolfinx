@@ -52,7 +52,8 @@ _gmsh_cells = {
         for k in range(1, max_degree + 1)
     ],
 )
-def test_cell_import(gmsh_model, cell_name, degree):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_cell_import(gmsh_model, cell_name, degree, dtype):
     """Check the Gmsh node ordering and the import of every Gmsh cell.
 
     One Gmsh element is placed on the Basix reference vertices and raised
@@ -99,9 +100,11 @@ def test_cell_import(gmsh_model, cell_name, degree):
     def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
         return dolfinx.graph.adjacencylist(np.zeros((dual_graph.num_nodes, 1), dtype=np.int32))
 
-    data = gmshio.model_to_mesh(model, comm, 0, partitioner=partitioner)
+    data = gmshio.model_to_mesh(model, comm, 0, partitioner=partitioner, dtype=dtype)
     mesh = data.mesh
+    assert mesh.geometry.x.dtype == dtype
     assert mesh.geometry.cmaps[0].degree == degree
+    eps = np.finfo(dtype).eps
     assert mesh.topology.index_map(tdim).size_global == 1
     assert data.cell_tags is not None
     assert np.all(data.cell_tags.values == 1)
@@ -113,14 +116,15 @@ def test_cell_import(gmsh_model, cell_name, degree):
     # The nodes of the cell in the mesh, in DOLFINx order
     if mesh.topology.index_map(tdim).size_local == 1:
         cell_nodes = mesh.geometry.x[mesh.geometry.dofmaps[0][0], :tdim]
-        np.testing.assert_allclose(cell_nodes, element.points, atol=1e-12, rtol=0)
+        np.testing.assert_allclose(cell_nodes, element.points, atol=10 * eps, rtol=0)
 
     # JIT-compiling a form for high-degree geometry is slow
     if degree <= 3:
         volume = comm.allreduce(
-            dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=mesh))), op=MPI.SUM
+            dolfinx.fem.assemble_scalar(dolfinx.fem.form(1 * ufl.dx(domain=mesh), dtype=dtype)),
+            op=MPI.SUM,
         )
-        assert np.isclose(volume, basix.cell.volume(basix_cell))
+        assert np.isclose(volume, basix.cell.volume(basix_cell), rtol=100 * eps)
 
 
 @pytest.mark.parametrize(
