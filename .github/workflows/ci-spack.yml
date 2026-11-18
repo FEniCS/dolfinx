@@ -25,7 +25,7 @@ env:
   OMPI_ALLOW_RUN_AS_ROOT: 1
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
-  PYTEST_ADDOPTS: "-W error"
+  PYTEST_ADDOPTS: "-W error -s"
   # Spack environment activation does not add the view's library
   # directories to the runtime linker search path, so packages that are
   # only present in the environment (not linked via RPATH into a
