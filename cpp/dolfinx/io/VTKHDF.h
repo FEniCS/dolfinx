@@ -494,9 +494,11 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   // The VTK type identifies the family; degree distinguishes Lagrange layouts.
   std::vector<std::array<std::uint8_t, 2>> types_unique;
   std::vector<std::uint8_t> cell_degrees;
+  std::vector<std::pair<std::uint8_t, std::int64_t>> layouts;
   for (std::size_t i = 0; i < types.size(); ++i)
   {
     std::int64_t num_nodes = offsets[i + 1] - offsets[i];
+    layouts.push_back({types[i], num_nodes});
     auto [cell_type, degree] = io::cells::vtk_to_dolfinx(types[i]);
     // If arbitrary order Lagrange VTK cell (indicated by -1), determine degree
     // from number of nodes
@@ -511,6 +513,17 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
     std::ranges::sort(types_unique);
     auto [unique_end, range_end] = std::ranges::unique(types_unique);
     types_unique.erase(unique_end, range_end);
+  }
+
+  // Fail on a VTK layout DOLFINx cannot permute before any coordinate
+  // element is built for it
+  {
+    std::ranges::sort(layouts);
+    auto [unique_end, range_end] = std::ranges::unique(layouts);
+    layouts.erase(unique_end, range_end);
+    for (auto [vtk_type, num_nodes] : layouts)
+      io::cells::perm_vtk(std::get<0>(io::cells::vtk_to_dolfinx(vtk_type)),
+                          num_nodes);
   }
 
   // Share cell types with all processes to make global list of cell
