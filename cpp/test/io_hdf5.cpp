@@ -137,6 +137,41 @@ TEST_CASE("HDF5 dataset round-trip", "[hdf5]")
   io::hdf5::close_file(handle);
 }
 
+TEST_CASE("HDF5 chunks are whole rows, 1024 to 1048576 of them", "[hdf5]")
+{
+  hid_t handle
+      = io::hdf5::open_file(MPI_COMM_SELF, test_file("chunks"), "w", false);
+  auto chunk_dims = [handle](const std::string& path)
+  {
+    io::hdf5::Handle dset(io::hdf5::open_dataset(handle, path), H5Dclose);
+    io::hdf5::Handle plist(H5Dget_create_plist(dset), H5Pclose);
+    std::vector<hsize_t> dims(2, 0);
+    const int rank = H5Pget_chunk(plist, 2, dims.data());
+    REQUIRE(rank > 0);
+    dims.resize(rank);
+    return dims;
+  };
+
+  // Half of the initial rows, whatever the size of a row
+  const std::vector<double> x(200000 * 3, 1.0);
+  io::hdf5::write_dataset(handle, "/half", x.data(), {0, 200000}, {200000, 3},
+                          false, true);
+  CHECK(chunk_dims("/half") == std::vector<hsize_t>{100000, 3});
+
+  // At least 1024 rows
+  io::hdf5::write_dataset(handle, "/min", x.data(), {0, 10}, {10, 3}, false,
+                          true);
+  CHECK(chunk_dims("/min") == std::vector<hsize_t>{1024, 3});
+
+  // At most 1048576 rows
+  const std::vector<std::int32_t> y(2200000, 1);
+  io::hdf5::write_dataset(handle, "/max", y.data(), {0, 2200000}, {2200000},
+                          false, true);
+  CHECK(chunk_dims("/max") == std::vector<hsize_t>{1048576});
+
+  io::hdf5::close_file(handle);
+}
+
 TEST_CASE("HDF5 identifiers are not leaked", "[hdf5]")
 {
   const ssize_t before = open_ids();
