@@ -8,12 +8,6 @@
 #ifdef HAS_SUPERLU_DIST
 
 #include "superlu_dist.h"
-extern "C"
-{
-#include <superlu_ddefs.h>
-#include <superlu_sdefs.h>
-#include <superlu_zdefs.h>
-}
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -25,6 +19,9 @@ extern "C"
 #include <numeric>
 #include <ranges>
 #include <stdexcept>
+#include <superlu_ddefs.h>
+#include <superlu_sdefs.h>
+#include <superlu_zdefs.h>
 #include <utility>
 #include <vector>
 

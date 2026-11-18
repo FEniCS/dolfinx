@@ -194,6 +194,65 @@ def test_interpolation() -> None:
     atol = 10 * np.finfo(dolfinx.default_scalar_type).resolution
     assert np.isclose(l2_error, 0.0, atol=atol)
 
+    # Only the stored components: the lower triangle, row by row
+    def stored_tensor(x):
+        mat = np.array([[0], [1], [3], [2], [4], [5]])
+        return np.broadcast_to(mat, (6, x.shape[1]))
+
+    symm_f.x.array[:] = 0
+    symm_f.interpolate(stored_tensor)
+    l2_error = dolfinx.fem.assemble_scalar(dolfinx.fem.form((f - symm_f) ** 2 * ufl.dx))
+    assert np.isclose(l2_error, 0.0, atol=atol)
+
+
+@pytest.mark.parametrize("n", [2, 3])
+@pytest.mark.parametrize("family, degree", [("DG", 0), ("Lagrange", 2)])
+def test_interpolation_stored_components(n, family, degree) -> None:
+    """A callable may return only the n * (n + 1) / 2 stored components.
+
+    They are the lower triangle, row by row, and give the same result as
+    returning all n * n components.
+    """
+    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 3, 3)
+    lower = [(i, j) for i in range(n) for j in range(i + 1)]
+
+    def stored(x):
+        return np.stack([(k + 1) * x[0] + x[1] ** 2 - k * x[0] * x[1] for k in range(len(lower))])
+
+    def full(x):
+        s = stored(x)
+        return np.stack(
+            [s[lower.index((max(i, j), min(i, j)))] for i in range(n) for j in range(n)]
+        )
+
+    def space(symmetry):
+        e = basix.ufl.element(
+            family,
+            mesh.basix_cell(),
+            degree,
+            shape=(n, n),
+            symmetry=symmetry,
+            dtype=dolfinx.default_real_type,
+        )
+        return dolfinx.fem.functionspace(mesh, e)
+
+    V = space(True)
+    f_full = dolfinx.fem.Function(V)
+    f_full.interpolate(full)
+    f_stored = dolfinx.fem.Function(V)
+    f_stored.interpolate(stored)
+    assert np.any(f_full.x.array != 0)
+    assert np.array_equal(f_stored.x.array, f_full.x.array)
+
+    # Other sizes are rejected
+    with pytest.raises(ValueError, match="wrong shape"):
+        f_stored.interpolate(lambda x: stored(x)[:-1])
+
+    # A non-symmetric space still requires all n * n components
+    g = dolfinx.fem.Function(space(False))
+    with pytest.raises(ValueError, match="wrong shape"):
+        g.interpolate(stored)
+
 
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("symmetry", [True, False])

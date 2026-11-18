@@ -128,13 +128,14 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 /// interpolate. Should be the same as the list of cells used when
 /// calling `interpolation_coords`.
 ///
-/// @note If `u` is in a symmetric rank-2 tensor space, `f` holds all
-/// `d * d` components of the `(d, d)` tensor rather than the
-/// `d * (d + 1) / 2` components the element stores, since
-/// FiniteElement::value_size is `d * d`. The input should be symmetric.
-/// Symmetry is not checked. The diagonal is taken from the diagonal of
-/// the input; the choice of off-diagonal components retained from
-/// non-symmetric data is unspecified.
+/// @note If `u` is in a symmetric rank-2 tensor space, `f` holds
+/// either all `d * d` components of the `(d, d)` tensor, row-major
+/// (FiniteElement::value_size is `d * d`), or only the `d * (d + 1) /
+/// 2` components the element stores: the lower triangle, row by row,
+/// i.e. `(0, 0), (1, 0), (1, 1), (2, 0), ...`. All `d * d` components
+/// should be symmetric. Symmetry is not checked. The diagonal is taken
+/// from the diagonal of the input; the choice of off-diagonal
+/// components retained from non-symmetric data is unspecified.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
@@ -825,10 +826,16 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
 
   if (symmetric)
   {
+    // f holds all d * d components of the (d, d) tensor, or only the
+    // d * (d + 1) / 2 the element stores, in the order below
+    const bool stored_only = fshape[0] == static_cast<std::size_t>(element_bs);
     std::size_t matrix_size = 0;
-    while (matrix_size * matrix_size < fshape[0])
+    while (matrix_size * (matrix_size + 1) / 2
+           < static_cast<std::size_t>(element_bs))
+    {
       ++matrix_size;
-    assert(matrix_size * matrix_size == fshape[0]);
+    }
+    assert(stored_only or matrix_size * matrix_size == fshape[0]);
 
     // Loop over cells
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
@@ -853,11 +860,15 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
           rowstart = k;
         }
 
+        // Row of f holding entry (row, k - rowstart)
+        const std::size_t f_row = stored_only
+                                      ? static_cast<std::size_t>(k)
+                                      : row * matrix_size + k - rowstart;
+
         // num_scalar_dofs is the number of interpolation points per
         // cell in this case (interpolation matrix is identity)
         std::copy_n(
-            std::next(f.begin(), (row * matrix_size + k - rowstart) * fshape[1]
-                                     + offset * num_scalar_dofs),
+            std::next(f.begin(), f_row * fshape[1] + offset * num_scalar_dofs),
             num_scalar_dofs, coeffs_b.data());
         if (apply_inv_transpose_dof_transformation)
         {
@@ -1269,8 +1280,13 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   auto mesh = u.function_space()->mesh();
   assert(mesh);
 
-  if (fshape[0]
-          != (std::size_t)u.function_space()->elements(index)->value_size()
+  // A symmetric rank-2 tensor space also accepts only the components
+  // it stores
+  const bool symmetric_stored_only
+      = u.function_space()->symmetric()
+        and fshape[0] == static_cast<std::size_t>(element_bs);
+  if ((fshape[0] != static_cast<std::size_t>(element->value_size())
+       and !symmetric_stored_only)
       or f.size() != fshape[0] * fshape[1])
   {
     throw std::invalid_argument("Interpolation data has the wrong shape/size.");
