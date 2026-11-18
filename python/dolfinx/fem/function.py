@@ -160,11 +160,19 @@ class Expression(Generic[Scalar]):
                 the dtype is deduced from the UFL expression.
             entity_maps: Maps between different meshes.
 
+        Raises:
+            ValueError: If ``e`` contains restrictions, including those
+                introduced by ``ufl.jump`` or ``ufl.avg``. Expression
+                evaluation provides data from only one cell at a time.
+
         Note:
             This wrapper is responsible for the FFCx compilation of the
             UFL Expr and attaching the correct data to the underlying
             C++ Expression.
         """
+        if ufl.algorithms.analysis.has_type(e, ufl.classes.Restricted):
+            raise ValueError("Expressions with restrictions are not supported.")
+
         if X.ndim >= 3:
             raise ValueError("X must be a 1D or 2D array of points.")
         num_points = X.shape[0] if X.ndim == 2 else 1
