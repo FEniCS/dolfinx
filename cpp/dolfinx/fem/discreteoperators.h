@@ -10,6 +10,7 @@
 #include "ElementDofLayout.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
+#include "interpolate.h"
 #include "sparsitybuild.h"
 #include <algorithm>
 #include <array>
@@ -583,7 +584,10 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const auto [_Pi_1, pi_shape] = e1->interpolation_operator();
   cmdspan2_t Pi_1(_Pi_1.data(), pi_shape);
 
-  bool interpolation_ident = e1->interpolation_ident();
+  // Select how Pi_1 is applied once, outside the cell loop
+  auto apply_Pi_1 = e1->interpolation_ident()
+                        ? impl::interpolation_apply_columns<true, T, U>
+                        : impl::interpolation_apply_columns<false, T, U>;
 
   using u_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
   using U_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
@@ -720,59 +724,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 
     // Apply interpolation matrix to basis values of V0 at the
     // interpolation points of V1
-    if (interpolation_ident)
-    {
-      md::mdspan<T, md::dextents<std::size_t, 3>> A(
-          Ab.data(), Xshape[0], value_size_ref1, space_dim0);
-      for (std::size_t i = 0; i < mapped_values.extent(0); ++i)
-        for (std::size_t j = 0; j < mapped_values.extent(1); ++j)
-          for (std::size_t k = 0; k < mapped_values.extent(2); ++k)
-            A(i, k, j) = mapped_values(i, j, k);
-    }
-    else
-    {
-      // Apply interpolation matrix to basis values of V0 at the
-      // interpolation points of V1. Pi_1 does not depend on the basis
-      // function index i, so all space_dim0 applications are combined
-      // into a single loop nest (rather than calling
-      // interpolation_apply once per basis function) so that each row
-      // of Pi_1 is read from memory once instead of space_dim0 times.
-      // This mirrors the two cases handled by interpolation_apply
-      // (interpolate.h): bs1 == 1 (columns of Pi_1 fold the point and
-      // component indices together) and bs1 != 1 (each block/component
-      // is handled by a separate outer loop, columns of Pi_1 index
-      // points only).
-      std::ranges::fill(Ab, T(0));
-      std::size_t num_pts = mapped_values.extent(0);
-      if (bs1 == 1)
-      {
-        for (std::size_t idof = 0; idof < Pi_1.extent(0); ++idof)
-          for (std::size_t k = 0; k < mapped_values.extent(2); ++k)
-            for (std::size_t p = 0; p < num_pts; ++p)
-            {
-              U pi_val = Pi_1(idof, k * num_pts + p);
-              for (std::size_t i = 0; i < space_dim0; ++i) // V0 basis fn
-              {
-                Ab[space_dim0 * idof + i]
-                    += static_cast<T>(pi_val * mapped_values(p, i, k));
-              }
-            }
-      }
-      else
-      {
-        for (std::size_t idof = 0; idof < Pi_1.extent(0); ++idof)
-          for (int k = 0; k < bs1; ++k)
-            for (std::size_t p = 0; p < num_pts; ++p)
-            {
-              U pi_val = Pi_1(idof, p);
-              for (std::size_t i = 0; i < space_dim0; ++i) // V0 basis fn
-              {
-                Ab[space_dim0 * (bs1 * idof + k) + i]
-                    += static_cast<T>(pi_val * mapped_values(p, i, k));
-              }
-            }
-      }
-    }
+    apply_Pi_1(Pi_1, mapped_values, bs1, Ab);
 
     if (apply_inverse_dof_transform1)
       apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
