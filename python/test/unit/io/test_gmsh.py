@@ -40,7 +40,7 @@ _gmsh_cells = {
     "tetrahedron": ("Tetrahedron", [0, 1, 2, 3], 10),
     "hexahedron": ("Hexahedron", [0, 1, 3, 2, 4, 5, 7, 6], 9),
     "prism": ("Prism", [0, 1, 2, 3, 4, 5], 9),
-    "pyramid": ("Pyramid", [0, 1, 3, 2, 4], 9),
+    "pyramid": ("Pyramid", [0, 1, 3, 2, 4], 8),
 }
 
 
