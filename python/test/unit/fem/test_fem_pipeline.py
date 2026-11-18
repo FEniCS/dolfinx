@@ -26,6 +26,7 @@ from dolfinx.fem import (
     form,
     functionspace,
     locate_dofs_topological,
+    prepare_matrix_bcs,
 )
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (
@@ -262,7 +263,7 @@ def test_curl_curl_eigenvalue(family, order, dtype) -> None:
     a, b = form(a, dtype=dtype), form(b, dtype=dtype)
     A = assemble_matrix(a, bcs=bcs)
     A.scatter_reverse()
-    B = assemble_matrix(b, bcs=bcs, diag=0.01)
+    B = assemble_matrix(b, bcs=prepare_matrix_bcs(b, bcs, diag=0.01))
     B.scatter_reverse()
     solver_dtype = np.result_type(dtype, np.float64)
     A_scipy = A.to_scipy().astype(solver_dtype, copy=False)
