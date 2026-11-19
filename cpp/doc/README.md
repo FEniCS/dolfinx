@@ -26,5 +26,19 @@ doxygen Doxyfile
 python -m sphinx -b html source/ build/html/
 ```
 
-Sphinx/Breathe documentation is in `build/html`and the Doxygen generated
+Sphinx/Breathe documentation is in `build/html` and the Doxygen generated
 HTML is in `html/`.
+
+## Checking
+
+Sphinx does not parse LaTeX; MathJax typesets it in the browser. To
+check that MathJax can typeset all math in the built documentation
+(requires [Node.js](https://nodejs.org/)):
+
+```bash
+npm install --no-save @mathjax/src@4.1.3
+node check_math.mjs build/html
+```
+
+Converting the demos fails if a code comment contains MyST markup such
+as `$...$` or `{cpp:func}`, which is rendered only in Markdown cells.

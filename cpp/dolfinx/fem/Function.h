@@ -51,10 +51,13 @@ public:
 
   /// @brief Create function on given function space.
   /// @param[in] V The function space
-  explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
-      : _function_space(V), _x(std::make_shared<la::Vector<value_type>>(
-                                V->dofmaps().front()->index_map,
-                                V->dofmaps().front()->index_map_bs()))
+  /// @param[in] name The function name.
+  explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V,
+                    std::string name = "u")
+      : name(std::move(name)), _function_space(V),
+        _x(std::make_shared<la::Vector<value_type>>(
+            V->dofmaps().front()->index_map,
+            V->dofmaps().front()->index_map_bs()))
   {
     if (!V->component().empty())
     {
@@ -72,9 +75,10 @@ public:
   ///
   /// @param[in] V The function space.
   /// @param[in] x The vector.
+  /// @param[in] name The function name.
   Function(std::shared_ptr<const FunctionSpace<geometry_type>> V,
-           std::shared_ptr<la::Vector<value_type>> x)
-      : _function_space(V), _x(x)
+           std::shared_ptr<la::Vector<value_type>> x, std::string name = "u")
+      : name(std::move(name)), _function_space(V), _x(x)
   {
     // NOTE: We do not check for a subspace since this constructor is
     // used for creating subfunctions
@@ -157,6 +161,10 @@ public:
   ///
   /// @param[in] f Expression function to be interpolated.
   /// @param[in] cells Cells to interpolate on.
+  ///
+  /// @note For a symmetric rank-2 tensor space, `f` may return either
+  /// all `d * d` components or only the `d * (d + 1) / 2` components
+  /// the element stores; see fem::interpolate.
   void interpolate(
       const std::function<
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
@@ -193,7 +201,13 @@ public:
       if (fshape.size() != 2)
         throw std::invalid_argument("Expected 2D array of data");
 
-      if (fshape[0] != vs)
+      // A symmetric rank-2 tensor space also accepts only the
+      // components it stores
+      if (fshape[0] != vs
+          and !(_function_space->symmetric()
+                and fshape[0]
+                        == static_cast<std::size_t>(
+                            _function_space->element()->block_size())))
       {
         throw std::invalid_argument(
             "Data returned by callable has wrong shape(0) size");
@@ -615,7 +629,7 @@ public:
   }
 
   /// Name
-  std::string name = "u";
+  std::string name;
 
 private:
   // Function space

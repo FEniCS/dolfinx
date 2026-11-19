@@ -40,8 +40,7 @@ def test_3d(tempdir, cell_type, encoding):
     left_values = np.full(left_facets.shape, 2, dtype=np.int32)
 
     indices, pos = np.unique(np.hstack((bottom_facets, left_facets)), return_index=True)
-    mt = meshtags(mesh, 2, indices, np.hstack((bottom_values, left_values))[pos])
-    mt.name = "facets"
+    mt = meshtags(mesh, 2, indices, np.hstack((bottom_values, left_values))[pos], name="facets")
 
     top_lines = locate_entities(mesh, 1, lambda x: np.isclose(x[2], 1.0))
     top_values = np.full(top_lines.shape, 3, dtype=np.int32)
@@ -49,8 +48,7 @@ def test_3d(tempdir, cell_type, encoding):
     right_values = np.full(right_lines.shape, 4, dtype=np.int32)
 
     indices, pos = np.unique(np.hstack((top_lines, right_lines)), return_index=True)
-    mt_lines = meshtags(mesh, 1, indices, np.hstack((top_values, right_values))[pos])
-    mt_lines.name = "lines"
+    mt_lines = meshtags(mesh, 1, indices, np.hstack((top_values, right_values))[pos], name="lines")
 
     mesh.topology.create_connectivity(1, 3)
     mesh.topology.create_connectivity(2, 3)
@@ -113,12 +111,10 @@ def test_read_named_meshtags(tempdir, cell_type, encoding):
 
     indices = np.arange(mesh.topology.index_map(3).size_local)
     domain_values = np.full(indices.shape, domain_value, dtype=np.int32)
-    mt_domains = meshtags(mesh, 3, indices, domain_values)
-    mt_domains.name = "domain"
+    mt_domains = meshtags(mesh, 3, indices, domain_values, name="domain")
 
     material_values = np.full(indices.shape, material_value, dtype=np.int32)
-    mt_materials = meshtags(mesh, 3, indices, material_values)
-    mt_materials.name = "material"
+    mt_materials = meshtags(mesh, 3, indices, material_values, name="material")
 
     with XDMFFile(comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)

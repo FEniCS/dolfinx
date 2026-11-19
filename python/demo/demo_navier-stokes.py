@@ -335,8 +335,7 @@ solver_options = {
     "ksp_error_if_not_converged": 1,
 }
 u_h = fem.Function(V)
-p_h = fem.Function(Q)
-p_h.name = "p"
+p_h = fem.Function(Q, name="p")
 a_blocks: list[list[ufl.Form | None]] = ufl.extract_blocks(a)  # type: ignore[assignment]
 L_blocks: list[ufl.Form] = ufl.extract_blocks(L)  # type: ignore[assignment]
 stokes_problem = LinearProblem(

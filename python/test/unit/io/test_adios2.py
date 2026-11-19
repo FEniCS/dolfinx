@@ -170,9 +170,8 @@ class TestVTX:
         P = element("Discontinuous Lagrange", mesh.basix_cell(), 0, dtype=default_real_type)
 
         V = functionspace(mesh, P)
-        u = Function(V)
+        u = Function(V, name="A")
         u.interpolate(lambda x: 0.5 * x[0])
-        u.name = "A"
 
         filename = Path(tempdir, "v.bp")
         f = VTXWriter(mesh.comm, filename, [u])
@@ -220,9 +219,8 @@ class TestVTX:
         adios2 = import_adios2()
 
         mesh = generate_mesh(dim, simplex)
-        v = Function(functionspace(mesh, ("Lagrange", 1)))
+        v = Function(functionspace(mesh, ("Lagrange", 1)), name="v")
         filename = Path(tempdir, "v.bp")
-        v.name = "v"
         policy = VTXMeshPolicy.reuse if reuse else VTXMeshPolicy.update
 
         # Save three steps
@@ -256,13 +254,11 @@ class TestVTX:
 
         adios2 = import_adios2()
         mesh = generate_mesh(2, False)
-        v = Function(functionspace(mesh, ("Lagrange", 2, (2,))))
+        v = Function(functionspace(mesh, ("Lagrange", 2, (2,))), name="v")
         filename = Path(tempdir, "v.bp")
-        v.name = "v"
         v.interpolate(lambda x: (x[0], -x[1]))
 
-        q = Function(functionspace(mesh, ("DG", 0, (2,))))
-        q.name = "q"
+        q = Function(functionspace(mesh, ("DG", 0, (2,))), name="q")
         q.x.array[:] = np.arange(q.x.array.size, dtype=q.x.array.dtype)
 
         # Save three steps

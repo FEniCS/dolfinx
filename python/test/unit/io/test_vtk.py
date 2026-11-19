@@ -157,11 +157,9 @@ def test_save_vtk_mixed(tempdir) -> None:
     U.sub(0).interpolate(lambda x: np.vstack((x[0], 0.2 * x[1], np.zeros_like(x[0]))))
     U.sub(1).interpolate(lambda x: 0.5 * x[0])
 
-    U1, U2 = Function(V1), Function(V2)
+    U1, U2 = Function(V1, name="u"), Function(V2, name="p")
     U1.interpolate(U.sub(1))
     U2.interpolate(U.sub(0))
-    U2.name = "u"
-    U1.name = "p"
 
     filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:

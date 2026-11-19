@@ -50,6 +50,7 @@ add_executable(
   fem/assembly_kernels.cpp
   fem/form.cpp
   fem/functionspace.cpp
+  fem/interpolation.cpp
   mesh/branching_manifold.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp

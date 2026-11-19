@@ -1193,7 +1193,7 @@ class TestPETScAssemblers:
 
         constants = pack_constants(J)
         coeffs = pack_coefficients(J)
-        tol = 100 * np.finfo(default_scalar_type()).eps
+        tol = float(100 * np.finfo(default_scalar_type()).eps)
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
             A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1], kind=kind)
             A.assemble()
@@ -1302,7 +1302,7 @@ class TestPETScAssemblers:
         b0 = petsc_assemble_vector(F)
         b0.assemble()
         assert np.linalg.norm(b0.array) == pytest.approx(
-            0.0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
+            0.0, abs=float(np.sqrt(np.finfo(mesh.geometry.x.dtype).eps))
         )
 
         # -- Exterior facet integral vector
@@ -1310,7 +1310,7 @@ class TestPETScAssemblers:
         b0 = petsc_assemble_vector(F)
         b0.assemble()
         assert np.linalg.norm(b0.array) == pytest.approx(
-            0.0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
+            0.0, abs=float(np.sqrt(np.finfo(mesh.geometry.x.dtype).eps))
         )
 
         # -- Interior facet integral vector
@@ -1331,7 +1331,7 @@ class TestPETScAssemblers:
         b0 = petsc_assemble_vector(F)
         b0.assemble()
         assert np.linalg.norm(b0.array) == pytest.approx(
-            0.0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
+            0.0, abs=float(np.sqrt(np.finfo(mesh.geometry.x.dtype).eps))
         )
 
         b0.destroy()
@@ -1434,7 +1434,7 @@ class TestPETScAssemblers:
             inf = PETSc.NormType.INFINITY
             D = A_sub.copy()
             D.axpy(-1.0, A0, structure=PETSc.Mat.Structure.SAME_NONZERO_PATTERN)
-            tol = max(1.0e-12, 100 * np.finfo(PETSc.ScalarType).eps * A0.norm(inf))
+            tol = max(1.0e-12, 100 * float(np.finfo(PETSc.ScalarType).eps) * A0.norm(inf))
             assert D.norm(inf) == pytest.approx(0.0, abs=tol)
             D.destroy()
 
@@ -1713,11 +1713,11 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
         weights = vertex_map.local_to_global(vertices) if weighted else np.ones_like(vertices)
         expected_value_l = np.sum(msh.geometry.x[vertices, 0] * weights)
         value_l = fem.assemble_scalar(fem.form(form, dtype=dtype))
-        assert expected_value_l == pytest.approx(value_l, abs=5e4 * np.finfo(rdtype).eps)
+        assert expected_value_l == pytest.approx(value_l, abs=float(5e4 * np.finfo(rdtype).eps))
 
         expected_value = comm.allreduce(expected_value_l)
         value = comm.allreduce(value_l)
-        assert expected_value == pytest.approx(value, abs=5e4 * np.finfo(rdtype).eps)
+        assert expected_value == pytest.approx(value, abs=float(5e4 * np.finfo(rdtype).eps))
 
     num_vertices = vertex_map.size_local
     x = ufl.SpatialCoordinate(msh)
@@ -1787,7 +1787,7 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     form = fem.create_form(compiled_form, [], msh, subdomains, {}, {}, [])
     expected_value_l = np.sum(msh.geometry.x[vertices, 0])
     value_l = fem.assemble_scalar(form)
-    assert expected_value_l == pytest.approx(value_l, abs=5e4 * np.finfo(rdtype).eps)
+    assert expected_value_l == pytest.approx(value_l, abs=float(5e4 * np.finfo(rdtype).eps))
 
 
 @pytest.mark.parametrize(
@@ -1930,7 +1930,7 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     expected_value_l[vertices] = msh.geometry.x[vertices, 0]
     value_l = fem.assemble_vector(form)
     assert expected_value_l == pytest.approx(
-        value_l.array[: expected_value_l.size], abs=5e4 * np.finfo(rdtype).eps
+        value_l.array[: expected_value_l.size], abs=float(5e4 * np.finfo(rdtype).eps)
     )
 
 

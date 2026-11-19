@@ -117,6 +117,6 @@ def test_ghost_mesh_dS_assembly(mode, dS, dtype) -> None:
     assert isinstance(A, la.MatrixCSR)
 
     # Check that the norms are the same for all three modes.
-    abs_tol = max(1.0e-12, 100 * np.finfo(dtype).eps)
+    abs_tol = max(1.0e-12, 100 * float(np.finfo(dtype).eps))
     normA = np.sqrt(A.squared_norm())
     assert normA == pytest.approx(2.1834054713561906, rel=1.0e-5, abs=abs_tol)

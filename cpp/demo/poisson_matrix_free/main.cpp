@@ -7,44 +7,61 @@
 // # Matrix-free conjugate gradient (CG) solver
 //
 // This demo illustrates how to:
+//
 // * Solve a linear partial differential equation using a matrix-free CG
 //   solver
 // * Create and apply Dirichlet boundary conditions
 // * Compute errors
+//
+// ## Equation and problem definition
+//
+// We solve the Poisson problem
+//
+// \begin{align*}
+//   - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
+//   u &= u_D \quad {\rm on} \ \partial\Omega,
+// \end{align*}
+//
+// on $\Omega = [0, 1] \times [0, 1]$, with
+//
+// \begin{align*}
+//   u_D &= 1 + x^2 + 2y^2, \\
+//   f &= -6.
+// \end{align*}
+//
+// The exact solution is $u = u_D$, which lies in the quadratic Lagrange
+// space used here, so the error is limited by the solver tolerance and
+// rounding.
+//
+// In a matrix-free method the system matrix $A$ is never formed.
+// Instead, the CG solver uses a function that computes the product
+// $y = Ax$ by assembling the action of the bilinear form,
+// $M(v) = a(u_i, v)$, where the coefficient $u_i$ holds the entries of
+// $x$.
+//
+// ```{note}
+// This demo illustrates the use of a matrix-free conjugate gradient
+// solver. Many practical problems will also require a preconditioner to
+// create an efficient solver.
+// ```
+//
+// ## Implementation
 //
 // Running this demo requires the files:
 // {download}`demo_poisson_matrix_free/main.cpp`,
 // {download}`demo_poisson_matrix_free/poisson.py` and
 // {download}`demo_poisson_matrix_free/CMakeLists.txt`.
 //
-// \begin{align*}
-//    - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
-//      u &= u_D \quad {\rm on} \ \Gamma_{D}
-// \end{align*}
+// ### UFL form file
 //
-//  where
-// \begin{align*}
-//    u_D &= 1 + x^2 + 2y^2, \\
-//    f = -6
-// \end{align*}
-//
-// ```{note}
-// This demo illustrates the use of a matrix-free Conjugate
-// Gradient solver. Many practical problems will also require
-// a preconditioner to create an efficient solver.
-// ```
-//
-
-// ## UFL form file
-//
-// The UFL file is implemented in
+// The UFL forms are defined in
 // {download}`demo_poisson_matrix_free/poisson.py`.
-// ````{admonition} UFL form implemented in python
+// ````{admonition} UFL form implemented in Python
 // :class: dropdown
 // ![ufl-code]
 // ````
 //
-// ## C++ program
+// ### C++ program
 
 #include "poisson.h"
 #include <algorithm>
@@ -59,6 +76,9 @@
 #include <petscsystypes.h>
 
 using namespace dolfinx;
+
+// We first implement a simple CG solver that needs only the action of
+// the operator.
 
 namespace linalg
 {
@@ -76,13 +96,13 @@ void axpy(auto&& r, auto alpha, auto&& x, auto&& y)
 /// @brief Solve problem A.x = b using the conjugate gradient (CG)
 /// method.
 ///
-/// @param[in, out] x Solution vector, may be set to an initial guess
-/// hence no zeroed.
+/// @param[in,out] x Solution vector, which may be set to an initial
+/// guess and is therefore not zeroed.
 /// @param[in] b Right-hand side vector.
 /// @param[in] action Function that computes the action of the linear
 /// operator on a vector.
 /// @param[in] kmax Maximum number of iterations
-/// @param[in] rtol Relative tolerances for convergence
+/// @param[in] rtol Relative tolerance for convergence
 /// @return Number of CG iterations.
 /// @pre The ghost values of `x` and `b` must be updated before this
 /// function is called.
@@ -137,6 +157,14 @@ int cg(auto& x, auto& b, auto action, int kmax = 50, double rtol = 1e-8)
 }
 } // namespace linalg
 
+// The `solver` function creates the mesh and function space, applies
+// the Dirichlet boundary condition to the right-hand side vector by
+// lifting, and defines the operator action. Constrained
+// degrees-of-freedom are excluded from the solve by zeroing the
+// corresponding entries of the right-hand side and of each computed
+// action. The boundary values are inserted into the solution after the
+// solve, and the squared $L^2$ error is computed.
+
 template <typename T, std::floating_point U>
 void solver(MPI_Comm comm)
 {
@@ -152,14 +180,14 @@ void solver(MPI_Comm comm)
       mesh, std::make_shared<fem::FiniteElement<U>>(element,
                                                     mesh->geometry().dim())));
 
-  // Prepare and set Constants for the bilinear form
+  // Constant source term for the linear form
   auto f = std::make_shared<fem::Constant<T>>(-6.0);
 
   // Define variational forms
   fem::Form<T, U> L
       = fem::create_form<T>(*form_poisson_L, {V}, {}, {{"f", f}}, {}, {});
 
-  // Action of the bilinear form "a" on a function ui
+  // Action of the bilinear form a on the function ui
   auto ui = std::make_shared<fem::Function<T, U>>(V);
   fem::Form<T, U> M
       = fem::create_form<T>(*form_poisson_M, {V}, {{"ui", ui}}, {{}}, {}, {});
@@ -234,8 +262,7 @@ void solver(MPI_Comm comm)
   // Set BC values in the solution vectors
   bc->set(u->x()->array(), std::nullopt, T(1));
 
-  // Compute L2 error (squared) of the solution vector e = (u - u_d, u
-  // - u_d)*dx
+  // Compute the squared L2 error, (u - u_D, u - u_D)
   fem::Form<T> E = fem::create_form<T, U>(
       *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, {}, mesh);
   T error = fem::assemble_scalar(E);
