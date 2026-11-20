@@ -181,6 +181,27 @@ def test_geometric_callback() -> None:
     assert msh.topology.index_map(2).size_global == 2 * 12 * 12
 
 
+@pytest.mark.parametrize("factory_name", ["partitioner_parmetis", "partitioner_parmetis_hybrid"])
+@pytest.mark.parametrize("on_root", [True, False])
+def test_parmetis_graph_without_edges(factory_name, on_root) -> None:
+    """ParMETIS partitions a graph without edges, also when only rank 0 holds nodes."""
+    factory = getattr(graph, factory_name, None)
+    if factory is None:
+        pytest.skip(f"DOLFINx built without {factory_name}")
+    comm = MPI.COMM_WORLD
+    num_nodes = 4 if comm.rank == 0 or not on_root else 0
+    g = graph.adjacencylist(np.zeros(0, dtype=np.int64), np.zeros(num_nodes + 1, dtype=np.int32))
+    nparts = max(comm.size, 2)
+    if factory_name == "partitioner_parmetis_hybrid":
+        x = np.column_stack([np.arange(num_nodes, dtype=np.float64), np.zeros(num_nodes)])
+        destinations = factory()(comm, nparts, g, x)
+    else:
+        destinations = factory()(comm, nparts, g)
+    assert destinations.num_nodes == num_nodes
+    parts = owners(destinations)
+    assert np.all((parts >= 0) & (parts < nparts))
+
+
 @pytest.mark.skipif(
     not hasattr(graph, "partitioner_parmetis_hybrid"), reason="DOLFINx built without ParMETIS"
 )

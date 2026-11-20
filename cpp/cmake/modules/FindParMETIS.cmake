@@ -58,7 +58,7 @@ find_path(
 find_library(METIS_LIBRARY metis DOC "Path to the METIS library.")
 
 # Newer METIS and ParMETIS build against separate GKLib
-find_library(GKLIB_LIBRARY gklib DOC "Path to the gklib library.")
+find_library(GKLIB_LIBRARY GKlib DOC "Path to the GKlib library.")
 
 # Build the list of link libraries for the compile/link test
 set(_parmetis_link_libraries ${PARMETIS_LIBRARY})
