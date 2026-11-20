@@ -210,5 +210,5 @@ def test_quadrature_assembly(degree) -> None:
     # by round-off. Set the tolerance from the scalar type: the
     # assert_allclose default (1e-7) is below the float32 epsilon.
     np.testing.assert_allclose(
-        b.array, b_ref.array, rtol=100 * np.finfo(dolfinx.default_scalar_type).eps
+        b.array, b_ref.array, rtol=float(100 * np.finfo(dolfinx.default_scalar_type).eps)
     )

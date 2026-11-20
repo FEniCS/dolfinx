@@ -20,7 +20,7 @@ import numpy as np
 import numpy.typing as npt
 
 import ffcx
-import ufl
+import ufl.algorithms
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
@@ -353,7 +353,7 @@ def mixed_topology_form(
     f = ftype(
         [
             int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))
-            for ufcx_form in ufcx_forms
+            for ufcx_form, module in zip(ufcx_forms, modules, strict=True)
         ],
         [V._cpp_object for V in spaces],
         [],
