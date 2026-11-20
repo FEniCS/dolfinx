@@ -20,7 +20,7 @@ import numpy as np
 import numpy.typing as npt
 
 import ffcx
-import ufl
+import ufl.algorithms
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType

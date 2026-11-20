@@ -2103,7 +2103,7 @@ def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype, coefficient) -> 
 
     el = ("Lagrange", 3, (gdim,))
 
-    volume_element = basix.ufl.element(el[0], msh.basix_cell(), el[1], shape=el[2], dtype=rdtype)
+    volume_element = element(el[0], msh.basix_cell(), el[1], shape=el[2], dtype=rdtype)
     V = dolfinx.fem.functionspace(msh, volume_element)
 
     x = ufl.SpatialCoordinate(msh)
@@ -2155,9 +2155,7 @@ def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype, coefficient) -> 
         connectivity = np.zeros((0, 2), dtype=np.int64)
 
     c_el = ufl.Mesh(
-        basix.ufl.element(
-            "Lagrange", basix.CellType.interval, 1, shape=(nodes.shape[1],), dtype=rdtype
-        ),
+        element("Lagrange", basix.CellType.interval, 1, shape=(nodes.shape[1],), dtype=rdtype),
     )
     line_mesh = dolfinx.mesh.create_mesh(
         MPI.COMM_WORLD,
@@ -2168,9 +2166,7 @@ def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype, coefficient) -> 
         ghost_mode=ghost_mode,
     )
 
-    line_element = basix.ufl.element(
-        el[0], line_mesh.basix_cell(), el[1], shape=el[2], dtype=rdtype
-    )
+    line_element = element(el[0], line_mesh.basix_cell(), el[1], shape=el[2], dtype=rdtype)
     Q = dolfinx.fem.functionspace(line_mesh, line_element)
     q = ufl.TestFunction(Q)
 

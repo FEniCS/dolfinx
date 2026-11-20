@@ -23,7 +23,7 @@ def close(comm, a, b, eps) -> bool:
     the test failed. Where a collective call follows, the processes
     that carry on then hang waiting for the one that left.
     """
-    return comm.allreduce(bool(np.allclose(a, b, atol=eps, rtol=eps)), op=MPI.LAND)
+    return comm.allreduce(np.allclose(a, b, atol=eps, rtol=eps), op=MPI.LAND)
 
 
 @pytest.mark.petsc4py

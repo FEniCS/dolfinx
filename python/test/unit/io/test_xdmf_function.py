@@ -11,7 +11,7 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-import basix
+import basix.ufl
 from dolfinx import default_real_type
 from dolfinx.fem import Function, functionspace
 from dolfinx.io import XDMFFile

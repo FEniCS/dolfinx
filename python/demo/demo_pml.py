@@ -39,7 +39,8 @@ import gmsh
 import numpy as np
 from scipy.special import h2vp, hankel2, jv, jvp
 
-import ufl
+import ufl.algebra
+import ufl.indexed
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type, fem, graph, mesh, plot
 from dolfinx.fem.petsc import LinearProblem

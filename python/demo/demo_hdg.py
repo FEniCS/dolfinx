@@ -31,7 +31,7 @@ from petsc4py import PETSc
 
 import numpy as np
 
-import ufl
+import ufl.core.expr
 from dolfinx import fem, has_adios2, mesh
 from dolfinx.fem import extract_function_spaces
 from dolfinx.fem.petsc import (
