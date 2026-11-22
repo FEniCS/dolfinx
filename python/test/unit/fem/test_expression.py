@@ -785,7 +785,12 @@ def compute_vertex_entities(mesh):
     mesh.topology.create_connectivity(0, tdim)
     mesh.topology.create_connectivity(tdim, 0)
     vertices = np.arange(mesh.topology.index_map(0).size_local, dtype=np.int32)
-    entities = fem.compute_integration_domains(fem.IntegralType.vertex, mesh.topology, vertices)
+    integral_type = {
+        1: fem.IntegralType.exterior_facet,
+        2: fem.IntegralType.ridge,
+        3: fem.IntegralType.peak,
+    }[tdim]
+    entities = fem.compute_integration_domains(integral_type, mesh.topology, vertices)
     return vertices, entities.reshape(-1, 2)
 
 
