@@ -194,6 +194,10 @@ endif()
 # SuperLU_DIST
 if(_DOLFINX_USE_SUPERLU_DIST AND TARGET PkgConfig::SUPERLU_DIST)
   target_compile_definitions(dolfinx PUBLIC HAS_SUPERLU_DIST)
+  # Versions up to 9.3.1 both report 9.3.0, so only 9.3.2 or later is detected
+  if(SUPERLU_DIST_VERSION VERSION_GREATER_EQUAL 9.3.2)
+    target_compile_definitions(dolfinx PUBLIC HAS_SUPERLU_DIST_FIXES)
+  endif()
   target_link_libraries(dolfinx PRIVATE PkgConfig::SUPERLU_DIST)
 endif()
 

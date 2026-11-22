@@ -3,9 +3,8 @@ vcpkg_from_github(
   OUT_SOURCE_PATH SOURCE_PATH
   REPO xiaoyeli/superlu_dist
   REF "v${VERSION}"
-  SHA512 aaf399384d74e770081b18c54cd05a1dd0921cfe99ca6b871eb66f4b90246fe21c1dcf572099fbbf1a36a38f3c270271b65a5f4db0b02a0c7026c925d5718b0d
+  SHA512 8eec6c1c79e17f64c3f126bd7062ed59d494716ed167abdd4c8be9953181d74642a7375ad7d3f09b5c942fef7c2c99328dd12d8f7d6f710b7bd36ab58942790f
   HEAD_REF master
-  PATCHES msvc-no-libm.patch
 )
 
 # SuperLU_DIST's ParMETIS TPL is satisfied by the ScotchParMETIS
