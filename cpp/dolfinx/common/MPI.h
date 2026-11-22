@@ -317,8 +317,11 @@ MPI_Datatype mpi_datatype()
   else if constexpr (std::same_as<T, std::uint64_t>)
     return MPI_UINT64_T;
   else
+  {
     static_assert(dependent_false<T>::value,
                   "No MPI datatype registered for this type.");
+    return MPI_DATATYPE_NULL; // Unreachable; avoids nvc++ missing-return error
+  }
 }
 /// @endcond
 

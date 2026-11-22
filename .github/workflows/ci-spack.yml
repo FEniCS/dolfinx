@@ -269,7 +269,8 @@ jobs:
             -DCMAKE_PREFIX_PATH=/opt/basix -DDOLFINX_BASIX_PYTHON=OFF \
             -DDOLFINX_ENABLE_PETSC=false -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_PARMETIS=false \
             -B build -S dolfinx-src/cpp/
-          cmake --build build
+          # -k 0: report every file nvc++ rejects, not only the first
+          cmake --build build -- -k 0
 
       - name: Run C++ unit tests (serial and MPI np=2)
         working-directory: build
