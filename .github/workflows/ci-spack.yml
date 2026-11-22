@@ -41,6 +41,11 @@ jobs:
     name: AlmaLinux build and test
     runs-on: ubuntu-26.04
     container: ghcr.io/almalinux/almalinux:10
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      built_from_source: ${{ steps.built.outputs.built }}
     strategy:
       # One compiler failing must not cancel the other: a cancelled leg
       # loses its diagnostics and the packages it has yet to build.
@@ -78,6 +83,7 @@ jobs:
       # Push each package as soon as it is built, so a cancelled or
       # timed-out run keeps it. Exclusions are in the environment file.
       - name: Enable build cache autopush
+        id: autopush
         if: env.CACHE_PUSH == 'true'
         run: spack -e py mirror set --autopush local-buildcache
 
@@ -109,23 +115,15 @@ jobs:
       - name: Install Spack packages
         run: spack -e py install -j $(nproc) --use-buildcache auto
 
-      # Autopush does not update the index. A marker tells the
-      # update-buildcache-index job that this leg pushed something.
+      # Emit only true, so an empty output from another leg cannot overwrite it.
       - name: Check for packages built from source
         id: built
-        if: ${{ !cancelled() && env.CACHE_PUSH == 'true' }}
+        if: ${{ !cancelled() && steps.autopush.outcome == 'success' }}
         run: |
-          # Assigned first so that a failing script fails the step.
           built=$(spack -e py python dolfinx-src/.github/workflows/spack-config/built_from_source.py)
-          echo "built=$built" >> $GITHUB_OUTPUT
-          echo "$built" > built-from-source
-      - name: Upload source-build marker
-        if: ${{ !cancelled() && steps.built.outputs.built == 'true' }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: spack-built-${{ strategy.job-index }}
-          path: built-from-source
-          retention-days: 1
+          if [ "$built" = true ]; then
+            echo "built=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Load FEniCS testing environment variables
         run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -200,40 +198,10 @@ jobs:
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
         shell: spack-bash {0}
 
-  # Rebuilding the index scans the whole cache and uploads a new one, so
-  # concurrent rebuilds can overwrite each other's updates. Rebuild once
-  # per run, serialised with the other Spack workflow, and only when a
-  # leg pushed something. The scan also indexes packages pushed by
-  # earlier cancelled runs.
   update-buildcache-index:
-    name: Update Spack build cache index
     needs: ci-spack-build
-    if: ${{ !cancelled() }}
-    runs-on: ubuntu-26.04
-    concurrency:
-      group: spack-buildcache-index
-    steps:
-      - name: Download source-build markers
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          pattern: spack-built-*
-          path: spack-built
-
-      - name: Check for source-build markers
-        id: built
-        run: echo "any=$([ -n "$(ls -A spack-built 2>/dev/null)" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-
-      - name: Set up Spack
-        if: steps.built.outputs.any == 'true'
-        uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
-        with:
-          spack_ref: v1.2.2
-          packages_ref: c0109598cd38b30d9af1d4fbbbbba23eb2efa828
-          buildcache: false
-
-      - name: Update build cache index
-        if: steps.built.outputs.any == 'true'
-        run: |
-          spack mirror add --unsigned --oci-username-variable GITHUB_USER \
-            --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
-          spack buildcache update-index local-buildcache
+    if: ${{ !cancelled() && needs.ci-spack-build.outputs.built_from_source == 'true' }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/spack-buildcache-index.yml
