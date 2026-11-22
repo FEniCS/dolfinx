@@ -1,3 +1,8 @@
+# Copyright (C) 2026 Garth N. Wells
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
 """Print 'true' if a package autopush sends to local-buildcache was built from source.
 
 Run with 'spack -e <env> python'. A package installed from a build cache
