@@ -44,9 +44,12 @@ elseif(NOT CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")
 endif()
 
 # Debug flags
-check_cxx_compiler_flag(-g DOLFINX_HAVE_G)
-if(DOLFINX_HAVE_G)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -g)
+option(DOLFINX_DEVELOPER_DEBUG_INFO "Add -g to Developer builds." ON)
+if(DOLFINX_DEVELOPER_DEBUG_INFO)
+  check_cxx_compiler_flag(-g DOLFINX_HAVE_G)
+  if(DOLFINX_HAVE_G)
+    list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -g)
+  endif()
 endif()
 
 # Optimisation
