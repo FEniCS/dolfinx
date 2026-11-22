@@ -64,7 +64,8 @@ import numpy as np
 
 import basix.ufl
 import dolfinx.fem.petsc
-import ufl
+import dolfinx.la.petsc
+import ufl.core.expr
 
 # -
 

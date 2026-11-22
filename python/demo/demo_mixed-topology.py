@@ -32,8 +32,7 @@ from mpi4py import MPI
 import numpy as np
 from scipy.sparse.linalg import spsolve
 
-import basix
-import basix._basixcpp
+import basix.ufl
 import dolfinx.cpp as _cpp
 import ufl
 from dolfinx.cpp.mesh import _create_mixed_mesh

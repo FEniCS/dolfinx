@@ -13,7 +13,7 @@ from mpi4py import MPI as _MPI
 import numpy as np
 import numpy.typing as npt
 
-import basix
+import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import (

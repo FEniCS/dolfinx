@@ -213,17 +213,35 @@ class DirichletBC(Generic[Scalar]):
         return self._cpp_object.dof_indices()
 
 
+@overload
+def dirichletbc(
+    value: npt.NDArray[Scalar],
+    dofs: npt.NDArray[np.int32] | Sequence[npt.NDArray[np.int32]],
+    V: FunctionSpace | None = None,
+) -> DirichletBC[Scalar]: ...
+@overload
 def dirichletbc(
     value: Function
     | Constant
-    | npt.NDArray[Scalar]
+    | npt.NDArray[np.floating | np.complexfloating]
     | np.floating
     | np.complexfloating
     | float
     | complex,
     dofs: npt.NDArray[np.int32] | Sequence[npt.NDArray[np.int32]],
     V: FunctionSpace | None = None,
-) -> DirichletBC[Scalar]:
+) -> DirichletBC: ...
+def dirichletbc(
+    value: Function
+    | Constant
+    | npt.NDArray[np.floating | np.complexfloating]
+    | np.floating
+    | np.complexfloating
+    | float
+    | complex,
+    dofs: npt.NDArray[np.int32] | Sequence[npt.NDArray[np.int32]],
+    V: FunctionSpace | None = None,
+) -> DirichletBC:
     """Representation of Dirichlet boundary condition.
 
     Args:

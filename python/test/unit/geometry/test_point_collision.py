@@ -3,7 +3,7 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-import basix
+import basix.ufl
 import dolfinx
 import ufl
 
