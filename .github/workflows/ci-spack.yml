@@ -1,4 +1,4 @@
-name: "CI (RHEL clone: gcc, oneAPI)"
+name: "CI (RHEL clone: gcc, oneAPI; Ubuntu: NVIDIA HPC SDK)"
 
 on:
   push:
@@ -177,3 +177,127 @@ jobs:
           python -m pytest -n auto -m "not adios2" --durations=50 dolfinx-src/python/test/unit/
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
         shell: spack-bash {0}
+
+  # DOLFINx built with the NVIDIA HPC SDK C/C++ compilers (nvc, nvc++),
+  # whose EDG-based front end rejects some code that gcc and clang accept.
+  # Dependencies come from Ubuntu and are built with gcc; nvc++ uses
+  # gcc's libstdc++, so they are ABI-compatible.
+  nvhpc-build:
+    name: Ubuntu build and test (nvhpc)
+    runs-on: ubuntu-26.04
+    container:
+      image: ubuntu:26.04
+      # Host directories removed below to make room for the HPC SDK
+      # (~16 GB installed).
+      volumes:
+        - /usr/local/lib/android:/host/android
+        - /usr/share/dotnet:/host/dotnet
+        - /opt/hostedtoolcache:/host/toolcache
+    env:
+      NVHPC_VERSION: "26.11"
+      # Ubuntu 26.04's OpenMPI 5.0.10 can deadlock in
+      # MPI_Dist_graph_create under the treematch component; see
+      # docker/Dockerfile.test-env.
+      OMPI_MCA_topo: basic
+      # Select Ubuntu's MPI HDF5 over its serial build.
+      HDF5_ROOT: /usr/lib/x86_64-linux-gnu/hdf5/openmpi
+      LD_LIBRARY_PATH: ""
+
+    steps:
+      - name: Free disk space on host
+        run: |
+          df -h /
+          rm -rf /host/android/* /host/dotnet/* /host/toolcache/*
+          df -h /
+
+      - name: Install dependencies
+        run: |
+          apt-get -y update
+          apt-get install -y --no-install-recommends ca-certificates catch2 cmake curl g++ git gpg \
+            libboost-dev libhdf5-mpi-dev libptscotch-dev libpugixml-dev libspdlog-dev \
+            mpi-default-dev ninja-build pkg-config python3-dev python3-venv
+
+      - name: Install NVIDIA HPC SDK
+        run: |
+          curl -fsSL https://developer.download.nvidia.com/hpc-sdk/ubuntu/DEB-GPG-KEY-NVIDIA-HPC-SDK \
+            | gpg --dearmor -o /usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /" \
+            > /etc/apt/sources.list.d/nvhpc.list
+          apt-get -y update
+          apt-get install -y --no-install-recommends nvhpc-${NVHPC_VERSION/./-}
+          apt-get clean
+          # Only the compilers are used
+          sdk=/opt/nvidia/hpc_sdk/Linux_x86_64/${NVHPC_VERSION}
+          rm -rf $sdk/comm_libs $sdk/math_libs $sdk/cuda $sdk/profilers $sdk/examples
+          echo "$sdk/compilers/bin" >> $GITHUB_PATH
+          df -h /
+
+      - name: Show compiler versions
+        run: |
+          nvc --version
+          nvc++ --version
+
+      - name: Checkout DOLFINx
+        uses: actions/checkout@v7
+        with:
+          path: dolfinx-src
+
+      - name: Load FEniCS testing environment variables
+        run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
+      # Basix's Python package and FFCx are built with gcc; they only
+      # generate the forms compiled into the C++ tests and demos.
+      - name: Install FEniCS Python components
+        run: |
+          python3 -m venv /venv
+          . /venv/bin/activate
+          pip install nanobind scikit-build-core[pyproject] numpy cffi setuptools
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+          echo "/venv/bin" >> $GITHUB_PATH
+
+      - name: Build and install Basix (C++) with nvc++
+        env:
+          CC: nvc
+          CXX: nvc++
+        run: |
+          git clone --depth 1 --branch ${{ env.basix_ref }} https://github.com/${{ env.basix_repository }}.git basix-src
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DCMAKE_INSTALL_PREFIX=/opt/basix \
+            -B build-basix -S basix-src/cpp
+          cmake --build build-basix
+          cmake --install build-basix
+
+      # DOLFINX_BASIX_PYTHON=OFF: use the nvc++ Basix, not the gcc one
+      # in the Python package.
+      - name: Configure and build DOLFINx (C++) with nvc++
+        env:
+          CC: nvc
+          CXX: nvc++
+        run: |
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
+            -DCMAKE_PREFIX_PATH=/opt/basix -DDOLFINX_BASIX_PYTHON=OFF \
+            -DDOLFINX_ENABLE_PETSC=false -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_PARMETIS=false \
+            -B build -S dolfinx-src/cpp/
+          cmake --build build
+
+      - name: Run C++ unit tests (serial and MPI np=2)
+        working-directory: build
+        run: |
+          ctest -V --output-on-failure -R unittests_np_1
+          ctest -V --output-on-failure -R unittests_np_2
+
+      - name: Install DOLFINx (C++)
+        run: cmake --install build
+
+      - name: Build and run C++ demos (serial and MPI np=2)
+        env:
+          CC: nvc
+          CXX: nvc++
+        run: |
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer \
+            -DCMAKE_PREFIX_PATH=/opt/basix -B build/demo/ -S dolfinx-src/cpp/demo/
+          cmake --build build/demo
+          cd build/demo
+          ctest -V --output-on-failure -R "demo_.*_np_1"
+          ctest -V --output-on-failure -R "demo_.*_np_2"
