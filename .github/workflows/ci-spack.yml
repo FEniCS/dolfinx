@@ -185,14 +185,10 @@ jobs:
   nvhpc-build:
     name: Ubuntu build and test (nvhpc)
     runs-on: ubuntu-26.04
-    container:
-      image: ubuntu:26.04
-      # Host directories removed below to make room for the HPC SDK
-      # (~16 GB installed).
-      volumes:
-        - /usr/local/lib/android:/host/android
-        - /usr/share/dotnet:/host/dotnet
-        - /opt/hostedtoolcache:/host/toolcache
+    container: ubuntu:26.04
+    defaults:
+      run:
+        shell: bash
     env:
       NVHPC_VERSION: "26.11"
       # Ubuntu 26.04's OpenMPI 5.0.10 can deadlock in
@@ -204,12 +200,6 @@ jobs:
       LD_LIBRARY_PATH: ""
 
     steps:
-      - name: Free disk space on host
-        run: |
-          df -h /
-          rm -rf /host/android/* /host/dotnet/* /host/toolcache/*
-          df -h /
-
       - name: Install dependencies
         run: |
           apt-get -y update
@@ -224,13 +214,13 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /" \
             > /etc/apt/sources.list.d/nvhpc.list
           apt-get -y update
-          apt-get install -y --no-install-recommends nvhpc-${NVHPC_VERSION/./-}
+          # POSIX sh (dash): no ${var/./-} substitution.
+          apt-get install -y --no-install-recommends "nvhpc-$(echo "$NVHPC_VERSION" | tr . -)"
           apt-get clean
           # Only the compilers are used
           sdk=/opt/nvidia/hpc_sdk/Linux_x86_64/${NVHPC_VERSION}
           rm -rf $sdk/comm_libs $sdk/math_libs $sdk/cuda $sdk/profilers $sdk/examples
           echo "$sdk/compilers/bin" >> $GITHUB_PATH
-          df -h /
 
       - name: Show compiler versions
         run: |
