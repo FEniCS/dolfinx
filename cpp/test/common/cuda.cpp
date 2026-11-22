@@ -10,5 +10,10 @@
 
 TEST_CASE("DOLFINx code compiled by nvcc", "[cuda]")
 {
-  CHECK(dolfinx_test::cuda_nvcc_host_code(MPI_COMM_WORLD));
+  dolfinx_test::CudaNvccResults r
+      = dolfinx_test::cuda_nvcc_host_code(MPI_COMM_WORLD);
+  CHECK(r.interpolation);
+  CHECK(r.submesh);
+  CHECK(r.assembly);
+  CHECK(r.assembly_with_bc);
 }

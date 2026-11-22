@@ -295,9 +295,14 @@ set_package_properties(
     PURPOSE "Linear Algebra Solver"
 )
 
-# Off by default: a CUDA toolkit on the system should not by itself
-# add a CUDA dependency to DOLFINx.
-dolfinx_enable_option(DOLFINX_ENABLE_CUDA "Compile with support for CUDA." OFF)
+# Enables the CUDA language. DOLFINx has no CUDA sources; with BUILD_TESTING
+# the unit tests compile DOLFINx code with nvcc. Off by default, so that an
+# installed CUDA toolkit is not used unless requested.
+dolfinx_enable_option(
+  DOLFINX_ENABLE_CUDA
+  "Enable CUDA (nvcc compilation of DOLFINx code in the unit tests)."
+  OFF
+)
 
 # ------------------------------------------------------------------------------
 # Check for MPI

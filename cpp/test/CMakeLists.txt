@@ -78,11 +78,55 @@ if(PROJECT_IS_TOP_LEVEL)
 endif()
 if(CMAKE_CUDA_COMPILER)
   enable_language(CUDA)
-  target_sources(unittests PRIVATE common/cuda.cpp common/cuda_nvcc.cu)
-  set_target_properties(
-    unittests
-    PROPERTIES CUDA_STANDARD 20 CUDA_STANDARD_REQUIRED ON CUDA_EXTENSIONS OFF
+
+  # cuda_headers.cu includes every installed DOLFINx header, from the
+  # public header sets of the (in-tree or imported) dolfinx target.
+  get_target_property(_dolfinx dolfinx::dolfinx ALIASED_TARGET)
+  if(NOT _dolfinx)
+    set(_dolfinx dolfinx::dolfinx)
+  endif()
+  get_target_property(_sets ${_dolfinx} INTERFACE_HEADER_SETS)
+  set(_includes "")
+  foreach(_set IN LISTS _sets)
+    if(_set STREQUAL "HEADERS")
+      get_target_property(_files ${_dolfinx} HEADER_SET)
+      get_target_property(_dirs ${_dolfinx} HEADER_DIRS)
+    else()
+      get_target_property(_files ${_dolfinx} HEADER_SET_${_set})
+      get_target_property(_dirs ${_dolfinx} HEADER_DIRS_${_set})
+    endif()
+    foreach(_file IN LISTS _files)
+      foreach(_dir IN LISTS _dirs)
+        cmake_path(IS_PREFIX _dir "${_file}" NORMALIZE _in_dir)
+        if(_in_dir)
+          cmake_path(
+            RELATIVE_PATH _file
+            BASE_DIRECTORY "${_dir}"
+            OUTPUT_VARIABLE _rel
+          )
+          string(APPEND _includes "#include <${_rel}>\n")
+          break()
+        endif()
+      endforeach()
+    endforeach()
+  endforeach()
+  if(NOT _includes)
+    message(FATAL_ERROR "No DOLFINx headers found for the nvcc test.")
+  endif()
+  file(
+    GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_headers.cu
+    CONTENT "${_includes}"
   )
+
+  target_sources(
+    unittests
+    PRIVATE
+      common/cuda.cpp
+      common/cuda_nvcc.cu
+      ${CMAKE_CURRENT_BINARY_DIR}/cuda_headers.cu
+  )
+  target_compile_features(unittests PRIVATE cuda_std_20)
+  set_target_properties(unittests PROPERTIES CUDA_EXTENSIONS OFF)
 endif()
 
 # NOTE: Fixes when using Catch2 <= 3.13 with Clang 22 and derivatives.
