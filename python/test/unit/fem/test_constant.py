@@ -29,7 +29,7 @@ def test_reshape() -> None:
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     c = Constant(mesh, 1.0)
     with pytest.raises(ValueError):
-        c.value.resize(100)
+        c.value = np.zeros(100)
 
 
 def test_wrong_dim() -> None:

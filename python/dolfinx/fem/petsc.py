@@ -384,16 +384,10 @@ def _assemble_vector_petsc(
                 "Must provide a sequence of coefficients when assembling blocked forms"
             )
         constants_block: Sequence[npt.NDArray] = (
-            pack_constants(L)
-            if constants is None
-            else typing.cast(Sequence[npt.NDArray], constants)
+            pack_constants(L) if constants is None else constants
         )
         coeffs_block: Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]] = (
-            pack_coefficients(L)
-            if coeffs is None
-            else typing.cast(
-                Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]], coeffs
-            )
+            pack_coefficients(L) if coeffs is None else coeffs
         )
         offset0, offset1 = b.getAttr("_blocks")  # type: ignore
         with b.localForm() as b_l:
@@ -1662,7 +1656,7 @@ class LinearProblem(typing.Generic[_U]):
         )
         if block:
             assert self._bcs0 is not None
-            dolfinx.fem.petsc.set_bc(self.b, self._bcs0)
+            set_bc(self.b, self._bcs0)
         else:
             for bc in self.bcs:
                 bc.set(self.b.array_w)
@@ -2570,32 +2564,32 @@ class numba_utils:
 
         import llvmlite as _llvmlite
         import numba as _numba
+        import numba.core.types as _numba_types
+        import numba.core.typing as _numba_typing
 
         _llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
 
         _int = _numba.from_dtype(_PETSc.IntType)
         _scalar = _numba.from_dtype(_PETSc.ScalarType)
         _real = _numba.from_dtype(_PETSc.RealType)
-        _int_ptr = _numba.core.types.CPointer(_int)
-        _scalar_ptr = _numba.core.types.CPointer(_scalar)
-        _MatSetValues_sig = _numba.core.typing.signature(
-            _numba.core.types.intc,
-            _numba.core.types.uintp,
+        _int_ptr = _numba_types.CPointer(_int)
+        _scalar_ptr = _numba_types.CPointer(_scalar)
+        _MatSetValues_sig = _numba_typing.signature(
+            _numba_types.intc,
+            _numba_types.uintp,
             _int,
             _int_ptr,
             _int,
             _int_ptr,
             _scalar_ptr,
-            _numba.core.types.intc,
+            _numba_types.intc,
         )
-        MatSetValuesLocal = _numba.core.types.ExternalFunction(
-            "MatSetValuesLocal", _MatSetValues_sig
-        )
+        MatSetValuesLocal = _numba_types.ExternalFunction("MatSetValuesLocal", _MatSetValues_sig)
         """See PETSc `MatSetValuesLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesLocal>`_
         documentation."""
 
-        MatSetValuesBlockedLocal = _numba.core.types.ExternalFunction(
+        MatSetValuesBlockedLocal = _numba_types.ExternalFunction(
             "MatSetValuesBlockedLocal", _MatSetValues_sig
         )
         """See PETSc `MatSetValuesBlockedLocal

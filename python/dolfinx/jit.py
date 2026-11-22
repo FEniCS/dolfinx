@@ -19,7 +19,7 @@ from mpi4py import MPI
 
 import ffcx
 import ffcx.codegeneration.jit
-import ufl
+import ufl.core.expr
 
 __all__ = ["ffcx_jit", "get_options", "mpi_jit_decorator"]
 

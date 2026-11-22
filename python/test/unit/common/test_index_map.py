@@ -43,7 +43,7 @@ def test_sub_index_map() -> None:
 
     # Build list for each rank of the first (myrank + myrank % 2) local
     # indices
-    submap_local_size = [int(rank + rank % 2) for rank in range(comm.size)]
+    submap_local_size = [rank + rank % 2 for rank in range(comm.size)]
     local_indices = [
         np.arange(submap_local_size[rank], dtype=np.int32) for rank in range(comm.size)
     ]

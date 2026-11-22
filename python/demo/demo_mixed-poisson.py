@@ -111,7 +111,7 @@ import numpy as np
 import ufl
 from basix.ufl import element
 from dolfinx import fem, has_adios2, mesh
-from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
+from dolfinx.fem.petsc import LinearProblem, discrete_gradient, interpolation_matrix
 from dolfinx.mesh import CellType, GhostMode, create_unit_square
 
 # Solution scalar (e.g., float32, complex128) and geometry (float32/64)
@@ -271,7 +271,7 @@ def solve(k: int, use_hypre: bool, forms) -> tuple[fem.Function, fem.Function]:
         raise RuntimeError("Hypre AMS does not support complex scalar types.")
 
     V, a, L, a_p, bcs, sigma, u = forms
-    problem = fem.petsc.LinearProblem(
+    problem = LinearProblem(
         a,
         L,
         u=[sigma, u],
@@ -364,7 +364,7 @@ def solve_bddc(k: int, forms) -> tuple[fem.Function, fem.Function]:
     coarse = [("cholesky", "mumps"), ("lu", "superlu_dist")]
 
     _, a, L, _, bcs, sigma, u = forms
-    problem = fem.petsc.LinearProblem(
+    problem = LinearProblem(
         a,
         L,
         u=[sigma, u],

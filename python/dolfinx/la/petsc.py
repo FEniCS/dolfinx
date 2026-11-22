@@ -138,11 +138,11 @@ def create_vector(
 
     _maps = [(m._cpp_object, bs) for m, bs in maps]
     if kind is None or kind == PETSc.Vec.Type.MPI:
-        b = dolfinx.cpp.fem.petsc.create_vector_block(_maps)
+        b = _cpp.fem.petsc.create_vector_block(_maps)
         _assign_block_data(maps, b)
         return b
     elif kind == PETSc.Vec.Type.NEST:
-        return dolfinx.cpp.fem.petsc.create_vector_nest(_maps)
+        return _cpp.fem.petsc.create_vector_nest(_maps)
     else:
         raise ValueError(
             "Vector type must be specified for blocked/nested assembly."
