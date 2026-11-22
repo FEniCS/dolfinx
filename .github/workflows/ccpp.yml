@@ -139,9 +139,7 @@ jobs:
 
       - name: Run pkg-config test (C++)
         working-directory: cpp/test/pkgconfig
-        run: |
-          make
-          make run
+        run: make run-shared
 
       - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
@@ -241,8 +239,7 @@ jobs:
         working-directory: cpp/test/pkgconfig
         run: |
           export PKG_CONFIG_PATH=$PETSC_DIR/$PETSC_ARCH/lib/pkgconfig:$SLEPC_DIR/$PETSC_ARCH/lib/pkgconfig:$PKG_CONFIG_PATH
-          make
-          make run
+          make run-shared
 
       - name: Run unit tests and demos via target (C++, serial and parallel)
         working-directory: cpp/build
