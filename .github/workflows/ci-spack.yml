@@ -69,15 +69,19 @@ jobs:
         run: spack env create py dolfinx-src/.github/workflows/spack-config/gh-actions-rh.yml
 
       # Push each package as soon as it is built from source, so a run
-      # that is cancelled or times out keeps what it built. The push step
-      # below still copies in packages taken from Spack's public cache,
-      # attaches the base image and updates the index. Pull requests from
-      # forks have a read-only GITHUB_TOKEN, so they do not push.
+      # that is cancelled or times out keeps what it built. Pull requests
+      # from forks have a read-only GITHUB_TOKEN, so they do not push.
+      #
+      # Unlike 'buildcache push', autopush ignores a package's
+      # 'redistribute' setting, so non-redistributable packages are
+      # excluded explicitly.
       - name: Enable build cache autopush
         if: >-
           ${{ github.event_name != 'pull_request'
           || github.event.pull_request.head.repo.full_name == github.repository }}
-        run: spack -e py mirror set --autopush local-buildcache
+        run: |
+          spack -e py mirror set --autopush local-buildcache
+          spack -e py config add "mirrors:local-buildcache:push:exclude_binary:[intel-oneapi-compilers]"
 
       - name: Add dependencies to environment
         run: |
@@ -107,13 +111,12 @@ jobs:
       - name: Install Spack packages
         run: spack -e py install -j $(nproc) --use-buildcache auto
 
-      - name: Push packages to Spack cache and update index
-        env:
-          GITHUB_USER: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Autopush does not update the index. Rebuilding it scans the whole
+      # cache, so packages pushed by a cancelled run are indexed here too.
+      - name: Update build cache index
         run: |
           spack debug report
-          spack -d -e py buildcache push --base-image ghcr.io/almalinux/almalinux:10 --allow-missing --update-index local-buildcache
+          spack -e py buildcache update-index local-buildcache
         if: >-
           ${{ !cancelled() && (github.event_name != 'pull_request'
           || github.event.pull_request.head.repo.full_name == github.repository) }}

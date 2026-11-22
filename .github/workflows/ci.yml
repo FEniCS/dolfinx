@@ -138,9 +138,12 @@ jobs:
 
       # Push each package as soon as it is built from source, so a run
       # that is cancelled or times out keeps what it built. DOLFINx is
-      # built at this commit and never reused, so it is not pushed. The
-      # push steps below still copy in packages taken from Spack's public
-      # cache, attach the base image and update the index.
+      # built at this commit and never reused, so it is not pushed.
+      #
+      # Skipped for pull requests from forks: those run with a read-only
+      # GITHUB_TOKEN whatever 'permissions' asks for, so a push would 401
+      # and fail the build. Reads are anonymous, so their builds still
+      # take from the cache.
       - name: Enable build cache autopush
         if: >-
           ${{ github.event_name != 'pull_request'
@@ -179,22 +182,13 @@ jobs:
           spack -e ci concretize -j $(nproc)
           spack -e ci install -j $(nproc) --use-buildcache auto
 
-      # Pushed before the test steps so the artifacts are cached even if a
-      # later step fails. The index is rebuilt by the final push.
-      #
-      # Pushes, autopush included, are skipped for pull requests from
-      # forks: those run with a read-only GITHUB_TOKEN whatever
-      # 'permissions' asks for, so the push would 401 as soon as it had
-      # anything to upload, failing a contributor's job on a step that
-      # tests nothing. Reads are anonymous, so their builds still take
-      # from the cache.
-      - name: Push packages to cache
+      # Autopush does not update the index. Rebuilding it scans the whole
+      # cache, so packages pushed by a cancelled run are indexed here too.
+      - name: Update build cache index
         if: >-
           ${{ !cancelled() && (github.event_name != 'pull_request'
           || github.event.pull_request.head.repo.full_name == github.repository) }}
-        run: |
-          spack -e ci buildcache push --base-image ubuntu:26.04 --only dependencies \
-            --with-build-dependencies --allow-missing local-buildcache
+        run: spack -e ci buildcache update-index local-buildcache
 
       - name: Build and run C++ unit tests (serial and MPI)
         shell: spack-bash {0}
@@ -344,14 +338,3 @@ jobs:
           spack env activate ci
           spack load gcc
           mpiexec -np 3 python -m pytest --durations=50 -m petsc4py dolfinx-src/python/test/unit/
-
-      # The test tools are environment roots, so '--only dependencies'
-      # skips them and they need naming explicitly. Only the final push
-      # rebuilds the index, which is the expensive part.
-      - name: Push test packages to cache and update index
-        if: >-
-          ${{ !cancelled() && (github.event_name != 'pull_request'
-          || github.event.pull_request.head.repo.full_name == github.repository) }}
-        run: |
-          spack -e ci buildcache push --base-image ubuntu:26.04 --allow-missing --update-index local-buildcache \
-            catch2 py-gmsh py-matplotlib py-networkx py-numba py-pyamg py-pytest py-pytest-xdist py-scipy py-pyvista
