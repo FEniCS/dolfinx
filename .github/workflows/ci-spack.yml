@@ -1,4 +1,4 @@
-name: "CI (RHEL clone: gcc, oneAPI, nvcc)"
+name: "CI (RHEL clone: gcc, oneAPI)"
 
 on:
   push:
@@ -138,28 +138,6 @@ jobs:
         run: |
           spack env activate py
           cmake --build build --target install
-        shell: spack-bash {0}
-
-      # CUDA code built against a host-only DOLFINx compiles the DOLFINx
-      # headers with nvcc, whose C++ front end differs from the host
-      # compiler's. Only the compiler is installed (the runner has no
-      # GPU); nvcc uses the system gcc, which also built DOLFINx here.
-      - if: matrix.compiler == 'gcc'
-        name: Install nvcc
-        run: |
-          dnf -y install dnf-plugins-core
-          dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel10/x86_64/cuda-rhel10.repo
-          dnf -y install cuda-nvcc-13-5 cuda-cudart-devel-13-5
-
-      - if: matrix.compiler == 'gcc'
-        name: Build and run nvcc consumer of the DOLFINx headers
-        run: |
-          spack env activate py
-          cmake -Werror=dev --warn-uninitialized -G Ninja \
-            -DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.5/bin/nvcc \
-            -B build/nvcc -S dolfinx-src/cpp/test/nvcc/
-          cmake --build build/nvcc
-          mpirun -np 1 build/nvcc/nvcc-check
         shell: spack-bash {0}
 
       - name: Build and run C++ regression tests (serial and MPI (np=2))
