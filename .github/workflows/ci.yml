@@ -136,6 +136,19 @@ jobs:
             spack -e ci develop --no-clone --path $GITHUB_WORKSPACE/${pkg#*:}-src ${pkg%%:*}@main
           done
 
+      # Push each package as soon as it is built from source, so a run
+      # that is cancelled or times out keeps what it built. DOLFINx is
+      # built at this commit and never reused, so it is not pushed. The
+      # push steps below still copy in packages taken from Spack's public
+      # cache, attach the base image and update the index.
+      - name: Enable build cache autopush
+        if: >-
+          ${{ github.event_name != 'pull_request'
+          || github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          spack -e ci mirror set --autopush local-buildcache
+          spack -e ci config add "mirrors:local-buildcache:push:exclude_binary:[fenics-dolfinx, py-fenics-dolfinx]"
+
       # A single environment builds DOLFINx once for both the C++ and the
       # Python test steps. Separate environments resolve to an identical
       # runtime spec and differ only in build-time dependencies, so the
@@ -169,11 +182,12 @@ jobs:
       # Pushed before the test steps so the artifacts are cached even if a
       # later step fails. The index is rebuilt by the final push.
       #
-      # Both pushes are skipped for pull requests from forks: those run
-      # with a read-only GITHUB_TOKEN whatever 'permissions' asks for, so
-      # the push would 401 as soon as it had anything to upload, failing a
-      # contributor's job on a step that tests nothing. Reads are
-      # anonymous, so their builds still take from the cache.
+      # Pushes, autopush included, are skipped for pull requests from
+      # forks: those run with a read-only GITHUB_TOKEN whatever
+      # 'permissions' asks for, so the push would 401 as soon as it had
+      # anything to upload, failing a contributor's job on a step that
+      # tests nothing. Reads are anonymous, so their builds still take
+      # from the cache.
       - name: Push packages to cache
         if: >-
           ${{ !cancelled() && (github.event_name != 'pull_request'
