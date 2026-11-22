@@ -22,11 +22,15 @@ pytestmark = pytest.mark.petsc4py
 
 
 def _assert_equal(A, B):
-    """Assert two assembled PETSc matrices are equal."""
+    """Assert two assembled PETSc matrices are equal to rounding.
+
+    Off-process contributions may be summed in a different order.
+    """
     result, expected = A.copy().convert("aij"), B.copy().convert("aij")
     try:
         result.axpy(-1, expected)
-        assert result.norm() < 1e-12
+        eps = 100 * np.finfo(PETSc.RealType).eps
+        assert result.norm() <= eps * max(1, expected.norm())
     finally:
         result.destroy()
         expected.destroy()
