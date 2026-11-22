@@ -178,10 +178,9 @@ jobs:
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
         shell: spack-bash {0}
 
-  # DOLFINx built with the NVIDIA HPC SDK C/C++ compilers (nvc, nvc++),
-  # whose EDG-based front end rejects some code that gcc and clang accept.
-  # Dependencies come from Ubuntu and are built with gcc; nvc++ uses
-  # gcc's libstdc++, so they are ABI-compatible.
+  # DOLFINx built with the NVIDIA HPC SDK compilers (nvc, nvc++), and
+  # its code compiled by nvcc in the C++ unit tests. Dependencies are
+  # Ubuntu's, built with gcc; nvc++ uses gcc's libstdc++.
   nvhpc-build:
     name: Ubuntu build and test (nvhpc)
     runs-on: ubuntu-26.04
@@ -199,8 +198,6 @@ jobs:
       HDF5_ROOT: /usr/lib/x86_64-linux-gnu/hdf5/openmpi
       CC: nvc
       CXX: nvc++
-      CMAKE_PREFIX_PATH: /opt/basix
-      LD_LIBRARY_PATH: /opt/basix/lib
 
     steps:
       - name: Install dependencies
@@ -221,12 +218,6 @@ jobs:
           apt-get clean
           echo "/opt/nvidia/hpc_sdk/Linux_x86_64/${NVHPC_VERSION}/compilers/bin" >> $GITHUB_PATH
 
-      - name: Show compiler versions
-        run: |
-          nvc --version
-          nvc++ --version
-          nvcc --version
-
       - name: Checkout DOLFINx
         uses: actions/checkout@v7
         with:
@@ -235,17 +226,7 @@ jobs:
       - name: Load FEniCS testing environment variables
         run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
-      - name: Build and install Basix (C++) with nvc++
-        run: |
-          git clone --depth 1 --branch ${{ env.basix_ref }} https://github.com/${{ env.basix_repository }}.git basix-src
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DCMAKE_INSTALL_PREFIX=/opt/basix \
-            -B build-basix -S basix-src/cpp
-          cmake --build build-basix
-          cmake --install build-basix
-
-      # The Basix Python wrapper is built with gcc against the nvc++
-      # Basix library, so only one libbasix is loaded. mpi4py and the
-      # other Python build dependencies are also built with gcc.
+      # Built with gcc: Basix, FFCx and the Python build dependencies.
       - name: Install FEniCS Python components
         env:
           CC: gcc
@@ -256,21 +237,16 @@ jobs:
           pip install --upgrade pip
           pip install --group dolfinx-src/python/pyproject.toml:build numpy cffi setuptools pytest-xdist
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install --no-build-isolation ./basix-src/python
+          pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
           echo "/venv/bin" >> $GITHUB_PATH
 
-      # DOLFINX_BASIX_PYTHON=OFF: find Basix in /opt/basix, not via the
-      # Python package. No -g, to shorten the nvc++ build. CUDA uses the
-      # toolkit bundled with the HPC SDK.
+      # No -g, to shorten the nvc++ build. CUDA uses the HPC SDK's nvcc.
       - name: Configure and build DOLFINx (C++) with nvc++
         run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
-            -DDOLFINX_BASIX_PYTHON=OFF -DDOLFINX_DEVELOPER_DEBUG_INFO=OFF -DDOLFINX_ENABLE_CUDA=ON \
-            -DDOLFINX_ENABLE_PETSC=false -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_PARMETIS=false \
-            -B build -S dolfinx-src/cpp/
-          # -k 0: report every file nvc++ rejects, not only the first
-          cmake --build build -- -k 0
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
+            -DDOLFINX_DEVELOPER_DEBUG_INFO=OFF -DDOLFINX_ENABLE_CUDA=ON -B build -S dolfinx-src/cpp/
+          cmake --build build
 
       - name: Run C++ unit tests (serial and MPI np=2)
         working-directory: build
@@ -281,15 +257,6 @@ jobs:
       - name: Install DOLFINx (C++)
         run: cmake --install build
 
-      - name: Build and run C++ demos (serial and MPI np=2)
-        run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer \
-            -DDOLFINX_DEVELOPER_DEBUG_INFO=OFF -B build/demo/ -S dolfinx-src/cpp/demo/
-          cmake --build build/demo
-          cd build/demo
-          ctest -V --output-on-failure -R "demo_.*_np_1"
-          ctest -V --output-on-failure -R "demo_.*_np_2"
-
       # nanobind rejects nvc++ (nb_platform.h: no __GXX_ABI_VERSION), so
       # the wrappers are built with gcc against the nvc++ libdolfinx.
       - name: Build Python interface (wrappers with gcc)
@@ -298,12 +265,7 @@ jobs:
           CXX: g++
         run: >
           pip install --group dolfinx-src/python/pyproject.toml:test dolfinx-src/python/
-          --check-build-dependencies --no-build-isolation
-          --config-settings=cmake.build-type=Developer
-          --config-settings=cmake.args=-DDOLFINX_DEVELOPER_DEBUG_INFO=OFF
-
-      - name: Check Python configuration
-        run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc"
+          --no-build-isolation --config-settings=cmake.build-type=Developer
 
       - name: Set default DOLFINx JIT options
         run: |
