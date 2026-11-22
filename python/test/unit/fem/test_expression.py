@@ -12,7 +12,7 @@ import pytest
 
 import basix
 import ufl
-from basix.ufl import quadrature_element
+from basix.ufl import element, mixed_element, quadrature_element
 from dolfinx import default_real_type, fem, la
 from dolfinx.fem import Constant, Expression, Function, form, functionspace
 from dolfinx.mesh import (
@@ -466,9 +466,9 @@ def test_facet_expression(dtype) -> None:
             raise ValueError("Invalid midpoint")
 
     # Check expression with coefficients from mixed space
-    el_v = basix.ufl.element("Lagrange", "triangle", 2, shape=(2,), dtype=xtype)
-    el_p = basix.ufl.element("Lagrange", "triangle", 1, dtype=xtype)
-    mixed_el = basix.ufl.mixed_element([el_v, el_p])
+    el_v = element("Lagrange", "triangle", 2, shape=(2,), dtype=xtype)
+    el_p = element("Lagrange", "triangle", 1, dtype=xtype)
+    mixed_el = mixed_element([el_v, el_p])
     W = fem.functionspace(mesh, mixed_el)
     w = fem.Function(W, dtype=dtype)
     w.sub(0).interpolate(lambda x: (x[1] ** 2 + 3 * x[0] ** 2, -5 * x[1] ** 2 - 7 * x[0] ** 2))
@@ -604,7 +604,7 @@ def test_submesh_codim_one(dtype, qdegree) -> None:
     mesh = create_rectangle(
         MPI.COMM_WORLD, np.array([[0, 0], [L, 2.0]], dtype=xtype), [5, 3], dtype=xtype
     )
-    el = basix.ufl.element("Lagrange", mesh.basix_cell(), 1, shape=(), dtype=xtype)
+    el = element("Lagrange", mesh.basix_cell(), 1, shape=(), dtype=xtype)
     V = fem.functionspace(mesh, el)
     u = fem.Function(V, dtype=dtype)
 
@@ -618,7 +618,7 @@ def test_submesh_codim_one(dtype, qdegree) -> None:
     mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
     exterior_facets = exterior_facet_indices(mesh.topology)
     submesh, entity_map, _, _ = create_submesh(mesh, mesh.topology.dim - 1, exterior_facets)
-    sub_el = basix.ufl.element(
+    sub_el = element(
         "Lagrange", submesh.basix_cell(), 2, shape=(submesh.geometry.dim,), dtype=xtype
     )
     u_sub = fem.Function(fem.functionspace(submesh, sub_el), dtype=dtype)
@@ -736,7 +736,7 @@ def test_skewed_quadrature(dtype) -> None:
     exterior_facets = exterior_facet_indices(mesh.topology)
 
     submesh, entity_map, _, _ = create_submesh(mesh, mesh.topology.dim - 1, exterior_facets)
-    sub_el = basix.ufl.element(
+    sub_el = element(
         "Lagrange", submesh.basix_cell(), 2, shape=(submesh.geometry.dim,), dtype=xtype
     )
     u_sub = fem.Function(fem.functionspace(submesh, sub_el), dtype=dtype)

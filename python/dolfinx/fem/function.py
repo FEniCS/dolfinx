@@ -16,8 +16,9 @@ from typing import Generic, Self
 import numpy as np
 import numpy.typing as npt
 
-import basix
-import ufl
+import basix.ufl
+import ufl.algorithms
+import ufl.core.expr
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem.dofmap import DofMap

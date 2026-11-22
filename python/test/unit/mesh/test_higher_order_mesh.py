@@ -761,7 +761,7 @@ def test_gmsh_mixed_mesh_2d(order, dtype) -> None:
             cell_name = cell_type.name
             cmap = mesh.geometry.cmaps[i]
             domain = ufl.Mesh(
-                basix.ufl.element(
+                element(
                     "Lagrange",
                     cell_name,
                     cmap.degree,
@@ -886,7 +886,7 @@ def test_gmsh_mixed_mesh_3d(order, dtype) -> None:
             cell_name = cell_type.name
             cmap = mesh.geometry.cmaps[i]
             domain = ufl.Mesh(
-                basix.ufl.element(
+                element(
                     "Lagrange",
                     cell_name,
                     cmap.degree,

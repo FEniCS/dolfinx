@@ -69,7 +69,7 @@ def _serendipity_coordinate_element(
 if _cpp.common.has_adios2:
     from dolfinx.cpp.io import VTXMeshPolicy
 
-    __all__ = [*__all__, "VTXWriter", "VTXMeshPolicy"]
+    __all__ += ["VTXMeshPolicy", "VTXWriter"]
 
     class VTXWriter:
         """Writer for VTX files, using ADIOS2 to create the files.
