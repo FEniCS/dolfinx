@@ -197,7 +197,7 @@ jobs:
       OMPI_MCA_topo: basic
       # Select Ubuntu's MPI HDF5 over its serial build.
       HDF5_ROOT: /usr/lib/x86_64-linux-gnu/hdf5/openmpi
-      LD_LIBRARY_PATH: ""
+      LD_LIBRARY_PATH: /opt/basix/lib
 
     steps:
       - name: Install dependencies
@@ -235,18 +235,6 @@ jobs:
       - name: Load FEniCS testing environment variables
         run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
-      # Basix's Python package and FFCx are built with gcc; they only
-      # generate the forms compiled into the C++ tests and demos.
-      - name: Install FEniCS Python components
-        run: |
-          python3 -m venv /venv
-          . /venv/bin/activate
-          pip install nanobind scikit-build-core[pyproject] numpy cffi setuptools
-          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
-          echo "/venv/bin" >> $GITHUB_PATH
-
       - name: Build and install Basix (C++) with nvc++
         env:
           CC: nvc
@@ -258,8 +246,22 @@ jobs:
           cmake --build build-basix
           cmake --install build-basix
 
-      # DOLFINX_BASIX_PYTHON=OFF: use the nvc++ Basix, not the gcc one
-      # in the Python package. DOLFINX_HAVE_G=OFF presets the probe that
+      # The Basix Python wrapper is built with gcc against the nvc++
+      # Basix library, so only one libbasix is loaded. mpi4py and the
+      # other Python build dependencies are also built with gcc.
+      - name: Install FEniCS Python components
+        run: |
+          python3 -m venv /venv
+          . /venv/bin/activate
+          pip install --upgrade pip
+          pip install --group dolfinx-src/python/pyproject.toml:build numpy cffi setuptools pytest-xdist
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          CMAKE_PREFIX_PATH=/opt/basix pip install --no-build-isolation ./basix-src/python
+          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+          echo "/venv/bin" >> $GITHUB_PATH
+
+      # DOLFINX_BASIX_PYTHON=OFF: find Basix in /opt/basix, not via the
+      # Python package. DOLFINX_HAVE_G=OFF presets the probe that
       # adds -g to Developer builds, to shorten the nvc++ build.
       - name: Configure and build DOLFINx (C++) with nvc++
         env:
@@ -293,3 +295,26 @@ jobs:
           cd build/demo
           ctest -V --output-on-failure -R "demo_.*_np_1"
           ctest -V --output-on-failure -R "demo_.*_np_2"
+
+      - name: Build Python interface with nvc++
+        env:
+          CC: nvc
+          CXX: nvc++
+        run: >
+          pip install --group dolfinx-src/python/pyproject.toml:test dolfinx-src/python/
+          --check-build-dependencies --no-build-isolation
+          --config-settings=cmake.build-type=Developer
+          --config-settings=cmake.args="-DCMAKE_PREFIX_PATH=/opt/basix;-DDOLFINX_HAVE_G=OFF"
+
+      - name: Check Python configuration
+        run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc"
+
+      - name: Set default DOLFINx JIT options
+        run: |
+          mkdir -p ~/.config/dolfinx
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
+
+      - name: Run Python unit tests (serial and MPI np=2)
+        run: |
+          python -m pytest -n auto -m "not petsc4py and not adios2" --durations=50 dolfinx-src/python/test/unit/
+          mpirun -np 2 python -m pytest -m "not petsc4py and not adios2" dolfinx-src/python/test/unit/
