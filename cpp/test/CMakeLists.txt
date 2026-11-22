@@ -10,6 +10,14 @@ endif()
 
 find_package(Catch2 3 REQUIRED)
 
+# Enable CUDA, if nvcc is found or CMAKE_CUDA_COMPILER is set, before
+# targets are created so they get the default CUDA_ARCHITECTURES.
+include(CheckLanguage)
+check_language(CUDA)
+if(CMAKE_CUDA_COMPILER)
+  enable_language(CUDA)
+endif()
+
 # FFCx compile: expr.py -> expr.c
 add_custom_command(
   OUTPUT expr.c
@@ -70,13 +78,9 @@ target_compile_features(unittests PRIVATE cxx_std_20 c_std_17)
 set_target_properties(unittests PROPERTIES CXX_EXTENSIONS OFF)
 
 # CUDA code built against DOLFINx compiles the DOLFINx headers with
-# nvcc. If nvcc is found (or CMAKE_CUDA_COMPILER is set), compile
-# DOLFINx code with nvcc too.
-include(CheckLanguage)
-check_language(CUDA)
+# nvcc. If nvcc is found (CUDA enabled above), compile DOLFINx code with
+# nvcc too.
 if(CMAKE_CUDA_COMPILER)
-  enable_language(CUDA)
-
   # cuda_headers.cu includes every installed DOLFINx header, from the
   # public header sets of the (in-tree or imported) dolfinx target.
   get_target_property(_dolfinx dolfinx::dolfinx ALIASED_TARGET)
