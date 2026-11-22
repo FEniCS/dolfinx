@@ -178,9 +178,8 @@ jobs:
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
         shell: spack-bash {0}
 
-  # DOLFINx built with the NVIDIA HPC SDK compilers (nvc, nvc++), and
-  # its code compiled by nvcc in the C++ unit tests. Dependencies are
-  # Ubuntu's, built with gcc; nvc++ uses gcc's libstdc++.
+  # DOLFINx code compiled by nvcc (from the NVIDIA HPC SDK) in the C++
+  # unit tests, as CUDA code built against DOLFINx is.
   nvhpc-build:
     name: Ubuntu build and test (nvhpc)
     runs-on: ubuntu-26.04
@@ -196,8 +195,6 @@ jobs:
       OMPI_MCA_topo: basic
       # Select Ubuntu's MPI HDF5 over its serial build.
       HDF5_ROOT: /usr/lib/x86_64-linux-gnu/hdf5/openmpi
-      CC: nvc
-      CXX: nvc++
 
     steps:
       - name: Install dependencies
@@ -226,11 +223,7 @@ jobs:
       - name: Load FEniCS testing environment variables
         run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
-      # Built with gcc: Basix, FFCx and the Python build dependencies.
       - name: Install FEniCS Python components
-        env:
-          CC: gcc
-          CXX: g++
         run: |
           python3 -m venv /venv
           . /venv/bin/activate
@@ -241,11 +234,10 @@ jobs:
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
           echo "/venv/bin" >> $GITHUB_PATH
 
-      # No -g, to shorten the nvc++ build. CUDA uses the HPC SDK's nvcc.
-      - name: Configure and build DOLFINx (C++) with nvc++
+      - name: Configure and build DOLFINx (C++)
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
-            -DDOLFINX_DEVELOPER_DEBUG_INFO=OFF -DDOLFINX_ENABLE_CUDA=ON -B build -S dolfinx-src/cpp/
+            -DDOLFINX_ENABLE_CUDA=ON -B build -S dolfinx-src/cpp/
           cmake --build build
 
       - name: Run C++ unit tests (serial and MPI np=2)
@@ -257,12 +249,7 @@ jobs:
       - name: Install DOLFINx (C++)
         run: cmake --install build
 
-      # nanobind rejects nvc++ (nb_platform.h: no __GXX_ABI_VERSION), so
-      # the wrappers are built with gcc against the nvc++ libdolfinx.
-      - name: Build Python interface (wrappers with gcc)
-        env:
-          CC: gcc
-          CXX: g++
+      - name: Build Python interface
         run: >
           pip install --group dolfinx-src/python/pyproject.toml:test dolfinx-src/python/
           --no-build-isolation --config-settings=cmake.build-type=Developer
@@ -272,11 +259,7 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
-      # JIT-compiled kernels use gcc, as in the other jobs.
       - name: Run Python unit tests (serial and MPI np=2)
-        env:
-          CC: gcc
-          CXX: g++
         run: |
           python -m pytest -n auto -m "not petsc4py and not adios2" --durations=50 dolfinx-src/python/test/unit/
           mpirun -np 2 python -m pytest -m "not petsc4py and not adios2" dolfinx-src/python/test/unit/
