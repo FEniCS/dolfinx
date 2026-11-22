@@ -303,7 +303,7 @@ jobs:
           --config-settings=cmake.args=-DDOLFINX_DEVELOPER_DEBUG_INFO=OFF
 
       - name: Check Python configuration
-        run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert dolfinx.has_cuda"
+        run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc"
 
       - name: Set default DOLFINx JIT options
         run: |

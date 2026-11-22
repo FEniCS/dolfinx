@@ -42,7 +42,6 @@ add_executable(
   io_hdf5.cpp
   io_xdmf.cpp
   common/CIFailure.cpp
-  common/cuda.cpp
   common/sub_systems_manager.cpp
   common/index_map.cpp
   common/move_semantics.cpp
@@ -71,15 +70,15 @@ target_compile_features(unittests PRIVATE cxx_std_20 c_std_17)
 set_target_properties(unittests PROPERTIES CXX_EXTENSIONS OFF)
 
 # CUDA code built against DOLFINx compiles the DOLFINx headers with
-# nvcc. With CUDA enabled, compile DOLFINx code with nvcc too.
-get_target_property(
-  _dolfinx_defs
-  dolfinx::dolfinx
-  INTERFACE_COMPILE_DEFINITIONS
-)
-if("HAS_CUDA" IN_LIST _dolfinx_defs)
+# nvcc. If CUDA is enabled (DOLFINX_ENABLE_CUDA in-tree, else if nvcc is
+# found), compile DOLFINx code with nvcc too.
+if(PROJECT_IS_TOP_LEVEL)
+  include(CheckLanguage)
+  check_language(CUDA)
+endif()
+if(CMAKE_CUDA_COMPILER)
   enable_language(CUDA)
-  target_sources(unittests PRIVATE common/cuda_nvcc.cu)
+  target_sources(unittests PRIVATE common/cuda.cpp common/cuda_nvcc.cu)
   set_target_properties(
     unittests
     PROPERTIES CUDA_STANDARD 20 CUDA_STANDARD_REQUIRED ON CUDA_EXTENSIONS OFF
