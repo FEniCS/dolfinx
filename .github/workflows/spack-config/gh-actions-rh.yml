@@ -30,3 +30,8 @@ spack:
         id_variable: GITHUB_USER
         secret_variable: GITHUB_TOKEN
 
+      # Not redistributable. 'buildcache push' skips such packages, but
+      # autopush does not, so they must be listed here.
+      push:
+        exclude_binary:
+        - intel-oneapi-compilers

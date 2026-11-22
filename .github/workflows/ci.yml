@@ -25,6 +25,10 @@ env:
   OMPI_ALLOW_RUN_AS_ROOT: 1
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
+  # Pull requests from forks get a read-only GITHUB_TOKEN whatever
+  # 'permissions' asks for, so they must not push to the build cache.
+  # Reads are anonymous, so they still take from it.
+  CACHE_PUSH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
 
 jobs:
   ci-build:
@@ -136,21 +140,11 @@ jobs:
             spack -e ci develop --no-clone --path $GITHUB_WORKSPACE/${pkg#*:}-src ${pkg%%:*}@main
           done
 
-      # Push each package as soon as it is built from source, so a run
-      # that is cancelled or times out keeps what it built. DOLFINx is
-      # built at this commit and never reused, so it is not pushed.
-      #
-      # Skipped for pull requests from forks: those run with a read-only
-      # GITHUB_TOKEN whatever 'permissions' asks for, so a push would 401
-      # and fail the build. Reads are anonymous, so their builds still
-      # take from the cache.
+      # Push each package as soon as it is built, so a cancelled or
+      # timed-out run keeps it. Exclusions are in the environment file.
       - name: Enable build cache autopush
-        if: >-
-          ${{ github.event_name != 'pull_request'
-          || github.event.pull_request.head.repo.full_name == github.repository }}
-        run: |
-          spack -e ci mirror set --autopush local-buildcache
-          spack -e ci config add "mirrors:local-buildcache:push:exclude_binary:[fenics-dolfinx, py-fenics-dolfinx]"
+        if: env.CACHE_PUSH == 'true'
+        run: spack -e ci mirror set --autopush local-buildcache
 
       # A single environment builds DOLFINx once for both the C++ and the
       # Python test steps. Separate environments resolve to an identical
@@ -181,14 +175,6 @@ jobs:
           spack -e ci add catch2 ninja
           spack -e ci concretize -j $(nproc)
           spack -e ci install -j $(nproc) --use-buildcache auto
-
-      # Autopush does not update the index. Rebuilding it scans the whole
-      # cache, so packages pushed by a cancelled run are indexed here too.
-      - name: Update build cache index
-        if: >-
-          ${{ !cancelled() && (github.event_name != 'pull_request'
-          || github.event.pull_request.head.repo.full_name == github.repository) }}
-        run: spack -e ci buildcache update-index local-buildcache
 
       - name: Build and run C++ unit tests (serial and MPI)
         shell: spack-bash {0}
@@ -338,3 +324,13 @@ jobs:
           spack env activate ci
           spack load gcc
           mpiexec -np 3 python -m pytest --durations=50 -m petsc4py dolfinx-src/python/test/unit/
+
+      # Autopush does not update the index, and rebuilding it scans the
+      # whole cache, so it is done only when this run pushed something.
+      # The scan also indexes packages pushed by earlier cancelled runs.
+      - name: Update build cache index
+        if: ${{ !cancelled() && env.CACHE_PUSH == 'true' }}
+        run: |
+          if [ "$(spack -e ci python dolfinx-src/.github/workflows/spack-config/built_from_source.py)" = true ]; then
+            spack -e ci buildcache update-index local-buildcache
+          fi
