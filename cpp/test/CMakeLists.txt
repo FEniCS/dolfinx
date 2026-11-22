@@ -42,6 +42,7 @@ add_executable(
   io_hdf5.cpp
   io_xdmf.cpp
   common/CIFailure.cpp
+  common/cuda.cpp
   common/sub_systems_manager.cpp
   common/index_map.cpp
   common/move_semantics.cpp

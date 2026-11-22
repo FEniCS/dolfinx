@@ -225,6 +225,7 @@ jobs:
         run: |
           nvc --version
           nvc++ --version
+          nvcc --version
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v7
@@ -260,11 +261,12 @@ jobs:
           echo "/venv/bin" >> $GITHUB_PATH
 
       # DOLFINX_BASIX_PYTHON=OFF: find Basix in /opt/basix, not via the
-      # Python package. No -g, to shorten the nvc++ build.
+      # Python package. No -g, to shorten the nvc++ build. CUDA uses the
+      # toolkit bundled with the HPC SDK.
       - name: Configure and build DOLFINx (C++) with nvc++
         run: |
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
-            -DDOLFINX_BASIX_PYTHON=OFF -DDOLFINX_DEVELOPER_DEBUG_INFO=OFF \
+            -DDOLFINX_BASIX_PYTHON=OFF -DDOLFINX_DEVELOPER_DEBUG_INFO=OFF -DDOLFINX_ENABLE_CUDA=ON \
             -DDOLFINX_ENABLE_PETSC=false -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_PARMETIS=false \
             -B build -S dolfinx-src/cpp/
           # -k 0: report every file nvc++ rejects, not only the first
@@ -301,7 +303,7 @@ jobs:
           --config-settings=cmake.args=-DDOLFINX_DEVELOPER_DEBUG_INFO=OFF
 
       - name: Check Python configuration
-        run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc"
+        run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert dolfinx.has_cuda"
 
       - name: Set default DOLFINx JIT options
         run: |

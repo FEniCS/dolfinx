@@ -191,6 +191,12 @@ if(_DOLFINX_USE_KAHIP AND TARGET KaHIP::KaHIP)
   target_link_libraries(dolfinx PRIVATE KaHIP::KaHIP)
 endif()
 
+# CUDA
+if(_DOLFINX_USE_CUDA AND TARGET CUDA::cudart)
+  target_compile_definitions(dolfinx PUBLIC HAS_CUDA)
+  target_link_libraries(dolfinx PUBLIC CUDA::cudart)
+endif()
+
 # SuperLU_DIST
 if(_DOLFINX_USE_SUPERLU_DIST AND TARGET PkgConfig::SUPERLU_DIST)
   target_compile_definitions(dolfinx PUBLIC HAS_SUPERLU_DIST)

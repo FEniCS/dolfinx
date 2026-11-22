@@ -102,6 +102,16 @@ consteval bool has_superlu_dist()
 #endif
 }
 
+/// Return true if DOLFINx is compiled with CUDA
+consteval bool has_cuda()
+{
+#ifdef HAS_CUDA
+  return true;
+#else
+  return false;
+#endif
+}
+
 /// Return true if DOLFINx supports UFCx kernels with arguments of type C99
 /// _Complex. When DOLFINx was built with MSVC this returns false. This
 /// returning false does not preclude using DOLFINx with kernels accepting

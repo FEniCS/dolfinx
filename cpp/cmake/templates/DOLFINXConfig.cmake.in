@@ -125,6 +125,10 @@ if("@ADIOS2_FOUND@")
   )
 endif()
 
+if("@CUDAToolkit_FOUND@")
+  find_dependency(CUDAToolkit)
+endif()
+
 # Graph partitioners and SuperLU_DIST are linked PRIVATE, so they only
 # appear in the exported link interface of a static build, where the
 # consumer has to be able to resolve them too.
