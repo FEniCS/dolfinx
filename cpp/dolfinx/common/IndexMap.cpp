@@ -1109,12 +1109,12 @@ void IndexMap::local_to_global(std::span<const std::int32_t> local,
 #endif
   std::ranges::transform(
       local, global.begin(),
-      [local_size, local_range = _local_range[0], &ghosts = _ghosts](auto i)
+      [local_size, local_range = _local_range[0], &ghosts = _ghosts](auto local)
       {
-        if (i < local_size)
-          return local_range + i;
+        if (local < local_size)
+          return local_range + local;
         else
-          return ghosts[i - local_size];
+          return ghosts[local - local_size];
       });
 }
 //-----------------------------------------------------------------------------

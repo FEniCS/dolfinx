@@ -35,7 +35,7 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
                              "attribute.");
   }
 
-  const static std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
+  static const std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
       = {{"polyvertex", {"point", 1}},
          {"polyline", {"interval", 1}},
          {"edge_3", {"interval", 2}},

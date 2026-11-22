@@ -26,7 +26,8 @@ endif()
 # an idiom used throughout this library's public headers. Use the
 # narrower -Wshadow=compatible-local on GCC, which is restricted to
 # local variable/parameter shadowing of a compatible type; Clang's
-# single -Wshadow is already scoped that way.
+# single -Wshadow is already scoped that way. nvc++'s -Wshadow is as broad
+# as GCC's plain -Wshadow, so it is not used.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   check_cxx_compiler_flag(
     -Wshadow=compatible-local
@@ -35,7 +36,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   if(DOLFINX_HAVE_WSHADOW_COMPATIBLE_LOCAL)
     list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wshadow=compatible-local)
   endif()
-else()
+elseif(NOT CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")
   check_cxx_compiler_flag(-Wshadow DOLFINX_HAVE_WSHADOW)
   if(DOLFINX_HAVE_WSHADOW)
     list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wshadow)
