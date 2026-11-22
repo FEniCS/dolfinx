@@ -234,7 +234,7 @@ jobs:
       - name: Configure and build DOLFINx (C++)
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
-            -DDOLFINX_ENABLE_CUDA=ON -B build -S dolfinx-src/cpp/
+            -DCMAKE_CUDA_COMPILER=nvcc -B build -S dolfinx-src/cpp/
           cmake --build build
 
       - name: Run C++ unit tests (serial and MPI np=2)

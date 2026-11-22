@@ -70,12 +70,10 @@ target_compile_features(unittests PRIVATE cxx_std_20 c_std_17)
 set_target_properties(unittests PROPERTIES CXX_EXTENSIONS OFF)
 
 # CUDA code built against DOLFINx compiles the DOLFINx headers with
-# nvcc. If CUDA is enabled (DOLFINX_ENABLE_CUDA in-tree, else if nvcc is
-# found), compile DOLFINx code with nvcc too.
-if(PROJECT_IS_TOP_LEVEL)
-  include(CheckLanguage)
-  check_language(CUDA)
-endif()
+# nvcc. If nvcc is found (or CMAKE_CUDA_COMPILER is set), compile
+# DOLFINx code with nvcc too.
+include(CheckLanguage)
+check_language(CUDA)
 if(CMAKE_CUDA_COMPILER)
   enable_language(CUDA)
 

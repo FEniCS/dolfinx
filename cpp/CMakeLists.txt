@@ -134,8 +134,7 @@ dolfinx_option(
 
 # Declare an optional-dependency switch DOLFINX_ENABLE_<X>.
 #
-# Each switch is AUTO, ON (required) or OFF (disabled), defaulting to AUTO
-# unless an optional third argument gives another default. AUTO
+# Each switch is AUTO (the default), ON (required) or OFF (disabled). AUTO
 # discovers a package without requiring it, while ON makes a missing package a
 # configuration error. This avoids inferring the user's intent from the cache
 # entry type, which cannot distinguish a default from an explicit ON after the
@@ -151,11 +150,6 @@ dolfinx_option(
 #   _REQUIRE_<X>          TRUE/FALSE
 #   _REQUIRE_<X>_KEYWORD  "REQUIRED" or "" (empty)
 function(dolfinx_enable_option name description)
-  if(ARGC GREATER 2)
-    set(default "${ARGV2}")
-  else()
-    set(default AUTO)
-  endif()
   string(REPLACE "DOLFINX_ENABLE_" "_REQUIRE_" require_var "${name}")
   string(REPLACE "DOLFINX_ENABLE_" "_DOLFINX_USE_" use_var "${name}")
   get_property(cache_type CACHE ${name} PROPERTY TYPE)
@@ -174,7 +168,7 @@ function(dolfinx_enable_option name description)
     endif()
     set(${name} ${mode} CACHE STRING "${description}" FORCE)
   else()
-    set(${name} ${default} CACHE STRING "${description}")
+    set(${name} AUTO CACHE STRING "${description}")
     string(TOUPPER "${${name}}" mode)
   endif()
 
@@ -293,15 +287,6 @@ set_package_properties(
     DESCRIPTION "Distributed direct LU Solver"
     URL "https://portal.nersc.gov/project/sparse/superlu/"
     PURPOSE "Linear Algebra Solver"
-)
-
-# Enables the CUDA language. DOLFINx has no CUDA sources; with BUILD_TESTING
-# the unit tests compile DOLFINx code with nvcc. Off by default, so that an
-# installed CUDA toolkit is not used unless requested.
-dolfinx_enable_option(
-  DOLFINX_ENABLE_CUDA
-  "Enable CUDA (nvcc compilation of DOLFINx code in the unit tests)."
-  OFF
 )
 
 # ------------------------------------------------------------------------------
@@ -453,19 +438,6 @@ set_package_properties(
 
 # ------------------------------------------------------------------------------
 # Find optional packages
-if(_DOLFINX_USE_CUDA)
-  include(CheckLanguage)
-  check_language(CUDA)
-  if(CMAKE_CUDA_COMPILER)
-    enable_language(CUDA)
-  elseif(_REQUIRE_CUDA)
-    message(
-      FATAL_ERROR
-      "DOLFINX_ENABLE_CUDA is ON, but no CUDA compiler was found."
-    )
-  endif()
-endif()
-
 if(_DOLFINX_USE_ADIOS2)
   find_package(ADIOS2 2.8.1 ${_REQUIRE_ADIOS2_KEYWORD} COMPONENTS CXX MPI)
 endif()
@@ -587,7 +559,6 @@ dolfinx_feature_info(DOLFINX_ENABLE_SCOTCH TARGET SCOTCH::ptscotch)
 dolfinx_feature_info(DOLFINX_ENABLE_PARMETIS TARGET ParMETIS::ParMETIS)
 dolfinx_feature_info(DOLFINX_ENABLE_KAHIP TARGET KaHIP::KaHIP)
 dolfinx_feature_info(DOLFINX_ENABLE_SUPERLU_DIST TARGET PkgConfig::SUPERLU_DIST)
-dolfinx_feature_info(DOLFINX_ENABLE_CUDA CMAKE_CUDA_COMPILER)
 
 # ------------------------------------------------------------------------------
 # Print summary of found and not found optional packages
