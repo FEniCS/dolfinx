@@ -1,4 +1,4 @@
-name: "CI (RHEL clone: gcc, oneAPI; Ubuntu: NVIDIA HPC SDK)"
+name: "CI (RHEL clone: gcc, oneAPI; Ubuntu: nvcc)"
 
 on:
   push:
@@ -178,17 +178,17 @@ jobs:
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
         shell: spack-bash {0}
 
-  # DOLFINx code compiled by nvcc (from the NVIDIA HPC SDK) in the C++
-  # unit tests, as CUDA code built against DOLFINx is.
-  nvhpc-build:
-    name: Ubuntu build and test (nvhpc)
+  # DOLFINx code compiled by nvcc in the C++ unit tests, as CUDA code
+  # built against DOLFINx is.
+  nvcc-build:
+    name: Ubuntu build and test (nvcc)
     runs-on: ubuntu-26.04
     container: ubuntu:26.04
     defaults:
       run:
         shell: bash
     env:
-      NVHPC_VERSION: "26.11"
+      CUDA_VERSION: "13.5"
       # Ubuntu 26.04's OpenMPI 5.0.10 can deadlock in
       # MPI_Dist_graph_create under the treematch component; see
       # docker/Dockerfile.test-env.
@@ -200,20 +200,17 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get -y update
-          apt-get install -y --no-install-recommends ca-certificates catch2 cmake curl g++ git gpg \
+          apt-get install -y --no-install-recommends ca-certificates catch2 cmake curl g++ git \
             libblas-dev libboost-dev libhdf5-mpi-dev liblapack-dev libptscotch-dev libpugixml-dev libspdlog-dev \
             mpi-default-dev ninja-build pkg-config python3-dev python3-venv
 
-      - name: Install NVIDIA HPC SDK
+      - name: Install nvcc
         run: |
-          curl -fsSL https://developer.download.nvidia.com/hpc-sdk/ubuntu/DEB-GPG-KEY-NVIDIA-HPC-SDK \
-            | gpg --dearmor -o /usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /" \
-            > /etc/apt/sources.list.d/nvhpc.list
+          curl -fsSLO https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2604/x86_64/cuda-keyring_1.1-1_all.deb
+          dpkg -i cuda-keyring_1.1-1_all.deb
           apt-get -y update
-          apt-get install -y --no-install-recommends nvhpc-${NVHPC_VERSION/./-}
-          apt-get clean
-          echo "/opt/nvidia/hpc_sdk/Linux_x86_64/${NVHPC_VERSION}/compilers/bin" >> $GITHUB_PATH
+          apt-get install -y --no-install-recommends cuda-nvcc-${CUDA_VERSION/./-} cuda-cudart-dev-${CUDA_VERSION/./-}
+          echo "/usr/local/cuda-${CUDA_VERSION}/bin" >> $GITHUB_PATH
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v7
