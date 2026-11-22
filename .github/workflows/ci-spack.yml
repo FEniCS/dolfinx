@@ -259,14 +259,15 @@ jobs:
           cmake --install build-basix
 
       # DOLFINX_BASIX_PYTHON=OFF: use the nvc++ Basix, not the gcc one
-      # in the Python package.
+      # in the Python package. DOLFINX_HAVE_G=OFF presets the probe that
+      # adds -g to Developer builds, to shorten the nvc++ build.
       - name: Configure and build DOLFINx (C++) with nvc++
         env:
           CC: nvc
           CXX: nvc++
         run: |
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
-            -DCMAKE_PREFIX_PATH=/opt/basix -DDOLFINX_BASIX_PYTHON=OFF \
+            -DCMAKE_PREFIX_PATH=/opt/basix -DDOLFINX_BASIX_PYTHON=OFF -DDOLFINX_HAVE_G=OFF \
             -DDOLFINX_ENABLE_PETSC=false -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_PARMETIS=false \
             -B build -S dolfinx-src/cpp/
           # -k 0: report every file nvc++ rejects, not only the first
@@ -287,7 +288,7 @@ jobs:
           CXX: nvc++
         run: |
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer \
-            -DCMAKE_PREFIX_PATH=/opt/basix -B build/demo/ -S dolfinx-src/cpp/demo/
+            -DCMAKE_PREFIX_PATH=/opt/basix -DDOLFINX_HAVE_G=OFF -B build/demo/ -S dolfinx-src/cpp/demo/
           cmake --build build/demo
           cd build/demo
           ctest -V --output-on-failure -R "demo_.*_np_1"
