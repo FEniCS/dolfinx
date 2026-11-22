@@ -191,10 +191,9 @@ if(_DOLFINX_USE_KAHIP AND TARGET KaHIP::KaHIP)
   target_link_libraries(dolfinx PRIVATE KaHIP::KaHIP)
 endif()
 
-# CUDA
-if(_DOLFINX_USE_CUDA AND TARGET CUDA::cudart)
+# CUDA (language only; no CUDA sources yet)
+if(_DOLFINX_USE_CUDA AND CMAKE_CUDA_COMPILER)
   target_compile_definitions(dolfinx PUBLIC HAS_CUDA)
-  target_link_libraries(dolfinx PUBLIC CUDA::cudart)
 endif()
 
 # SuperLU_DIST

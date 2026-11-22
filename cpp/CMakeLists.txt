@@ -298,14 +298,6 @@ set_package_properties(
 # Off by default: a CUDA toolkit on the system should not by itself
 # add a CUDA dependency to DOLFINx.
 dolfinx_enable_option(DOLFINX_ENABLE_CUDA "Compile with support for CUDA." OFF)
-set_package_properties(
-  CUDAToolkit
-  PROPERTIES
-    TYPE OPTIONAL
-    DESCRIPTION "NVIDIA CUDA Toolkit"
-    URL "https://developer.nvidia.com/cuda-toolkit"
-    PURPOSE "CUDA language and runtime"
-)
 
 # ------------------------------------------------------------------------------
 # Check for MPI
@@ -461,7 +453,6 @@ if(_DOLFINX_USE_CUDA)
   check_language(CUDA)
   if(CMAKE_CUDA_COMPILER)
     enable_language(CUDA)
-    find_package(CUDAToolkit ${_REQUIRE_CUDA_KEYWORD})
   elseif(_REQUIRE_CUDA)
     message(
       FATAL_ERROR
@@ -591,7 +582,7 @@ dolfinx_feature_info(DOLFINX_ENABLE_SCOTCH TARGET SCOTCH::ptscotch)
 dolfinx_feature_info(DOLFINX_ENABLE_PARMETIS TARGET ParMETIS::ParMETIS)
 dolfinx_feature_info(DOLFINX_ENABLE_KAHIP TARGET KaHIP::KaHIP)
 dolfinx_feature_info(DOLFINX_ENABLE_SUPERLU_DIST TARGET PkgConfig::SUPERLU_DIST)
-dolfinx_feature_info(DOLFINX_ENABLE_CUDA TARGET CUDA::cudart)
+dolfinx_feature_info(DOLFINX_ENABLE_CUDA CMAKE_CUDA_COMPILER)
 
 # ------------------------------------------------------------------------------
 # Print summary of found and not found optional packages
