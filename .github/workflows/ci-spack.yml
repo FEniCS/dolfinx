@@ -204,7 +204,7 @@ jobs:
         run: |
           apt-get -y update
           apt-get install -y --no-install-recommends ca-certificates catch2 cmake curl g++ git gpg \
-            libboost-dev libhdf5-mpi-dev libptscotch-dev libpugixml-dev libspdlog-dev \
+            libblas-dev libboost-dev libhdf5-mpi-dev liblapack-dev libptscotch-dev libpugixml-dev libspdlog-dev \
             mpi-default-dev ninja-build pkg-config python3-dev python3-venv
 
       - name: Install NVIDIA HPC SDK
