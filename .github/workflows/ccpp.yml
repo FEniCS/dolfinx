@@ -292,6 +292,7 @@ jobs:
     needs: [lint]
     container: "ghcr.io/fenics/test-env:current"
     env:
+      CUDA_VERSION: "13.5"
       PETSC_ARCH: linux-gnu-real64-32
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
@@ -307,7 +308,8 @@ jobs:
           wget -q https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2604/x86_64/cuda-keyring_1.1-1_all.deb
           dpkg -i cuda-keyring_1.1-1_all.deb
           apt-get -y update
-          apt-get install -y --no-install-recommends cuda-nvcc-13-5 cuda-cudart-dev-13-5
+          v=$(echo "$CUDA_VERSION" | tr . -)
+          apt-get install -y --no-install-recommends cuda-nvcc-$v cuda-cudart-dev-$v
 
       - name: Install FEniCS Python components
         run: |
@@ -319,7 +321,7 @@ jobs:
       - name: Configure and build (C++)
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
-            -DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.5/bin/nvcc -B build -S cpp/
+            -DCMAKE_CUDA_COMPILER=/usr/local/cuda-$CUDA_VERSION/bin/nvcc -B build -S cpp/
           cmake --build build
 
       - name: Run nvcc unit tests (serial and MPI np=2)
