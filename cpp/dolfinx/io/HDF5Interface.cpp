@@ -268,10 +268,15 @@ void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
 //-----------------------------------------------------------------------------
 hid_t io::hdf5::open_dataset(hid_t handle, std::string_view path)
 {
-  const std::string name(path);
-  hid_t dset_id;
-  H5E_BEGIN_TRY { dset_id = H5Dopen2(handle, name.c_str(), H5P_DEFAULT); }
-  H5E_END_TRY
+  // Checked first: a failed H5Dopen2 prints HDF5's error stack, which
+  // is kept for failures other than a missing dataset
+  if (!has_dataset(handle, path))
+  {
+    throw std::runtime_error(
+        std::format("HDF5 dataset \"{}\" does not exist.", path));
+  }
+
+  hid_t dset_id = H5Dopen2(handle, std::string(path).c_str(), H5P_DEFAULT);
   if (dset_id < 0)
   {
     throw std::runtime_error(
