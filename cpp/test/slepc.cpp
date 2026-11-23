@@ -147,27 +147,15 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
       CHECK(VecDestroy(&c) == 0);
     }
 
-    // SLEPc rejects these itself; the point is that the return code is
-    // checked, so they throw rather than leaving the outputs untouched
-    SECTION("Out-of-range indices throw rather than return garbage")
+    SECTION("Out-of-range indices throw")
     {
       PetscScalar lr = 0, lc = 0;
-      CHECK_THROWS_AS(
-          dolfinx_test::call_quietly([&solver] { solver.get_eigenvalue(-1); }),
-          std::runtime_error);
-      CHECK_THROWS_AS(dolfinx_test::call_quietly(
-                          [&solver, nconv] { solver.get_eigenvalue(nconv); }),
-                      std::runtime_error);
-      CHECK_THROWS_AS(
-          dolfinx_test::call_quietly(
-              [&solver, &lr, &lc]
-              { solver.get_eigenpair(lr, lc, nullptr, nullptr, -1); }),
-          std::runtime_error);
-      CHECK_THROWS_AS(
-          dolfinx_test::call_quietly(
-              [&solver, &lr, &lc, nconv]
-              { solver.get_eigenpair(lr, lc, nullptr, nullptr, nconv); }),
-          std::runtime_error);
+      CHECK_THROWS_AS(solver.get_eigenvalue(-1), std::out_of_range);
+      CHECK_THROWS_AS(solver.get_eigenvalue(nconv), std::out_of_range);
+      CHECK_THROWS_AS(solver.get_eigenpair(lr, lc, nullptr, nullptr, -1),
+                      std::out_of_range);
+      CHECK_THROWS_AS(solver.get_eigenpair(lr, lc, nullptr, nullptr, nconv),
+                      std::out_of_range);
     }
 
     CHECK(MatDestroy(&A) == 0);

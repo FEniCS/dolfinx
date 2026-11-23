@@ -593,10 +593,10 @@ Vec petsc::Matrix::create_vector(std::size_t dim) const
     common::petsc::check(MatCreateVecs(_matA, &x, nullptr), "MatCreateVecs");
   else
   {
-    logger().error("Cannot initialize PETSc vector to match PETSc matrix. "
-                   "Dimension must be 0 or 1, not {}",
-                   dim);
-    throw std::invalid_argument("Invalid dimension");
+    throw std::invalid_argument(
+        std::format("Cannot create a PETSc vector to match a PETSc matrix: "
+                    "dimension must be 0 or 1, not {}.",
+                    dim));
   }
 
   return x;
