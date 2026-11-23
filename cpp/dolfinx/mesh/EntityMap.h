@@ -125,7 +125,7 @@ public:
   /// `this->sub_topology()`.
   /// @return A list of mapped entity indices. Entities that do not
   /// exist in the target topology are marked as -1.
-  // Not an abbreviated template: nvcc 13 aborts on that form here.
+  // nvcc 13 crashes on the abbreviated-template form.
   template <CellRange R>
   std::vector<std::int32_t> sub_topology_to_topology(R&& entities,
                                                      bool inverse) const

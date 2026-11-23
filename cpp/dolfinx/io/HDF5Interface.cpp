@@ -58,13 +58,8 @@ std::optional<H5O_type_t> object_type(hid_t handle, const std::string& name)
 bool has_object(hid_t handle, std::string_view name, H5O_type_t type)
 {
   // HDF5 accepts trailing slashes and dot components on dataset paths.
-  while (name.size() > 1)
-  {
-    if (name.ends_with('/') or name.ends_with("/."))
-      name.remove_suffix(1);
-    else
-      break;
-  }
+  while (name.size() > 1 and (name.ends_with('/') or name.ends_with("/.")))
+    name.remove_suffix(1);
 
   // H5Lexists fails, printing HDF5's error stack, if a group on the
   // path is missing, so check the path one component at a time
@@ -72,9 +67,7 @@ bool has_object(hid_t handle, std::string_view name, H5O_type_t type)
   while (end != std::string_view::npos)
   {
     if (object_type(handle, std::string(name.substr(0, end))) != H5O_TYPE_GROUP)
-    {
       return false;
-    }
     end = name.find('/', end + 1);
   }
   return object_type(handle, std::string(name)) == type;
@@ -305,8 +298,9 @@ void io::hdf5::add_group(hid_t handle, std::string_view dataset_path)
   {
     pos++;
     pos = _group_name.find('/', pos);
+    // Groups above parent_name exist, from the previous iteration
     const std::string parent_name(_group_name, 0, pos);
-    if (!has_object(handle, parent_name, H5O_TYPE_GROUP))
+    if (object_type(handle, parent_name) != H5O_TYPE_GROUP)
     {
       const Handle group_id(H5Gcreate2(handle, parent_name.c_str(), H5P_DEFAULT,
                                        H5P_DEFAULT, H5P_DEFAULT),

@@ -77,16 +77,11 @@ target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx::dolfinx)
 target_compile_features(unittests PRIVATE cxx_std_20 c_std_17)
 set_target_properties(unittests PROPERTIES CXX_EXTENSIONS OFF)
 
-# CUDA code built against DOLFINx compiles the DOLFINx headers with
-# nvcc. If nvcc is found (CUDA enabled above), compile DOLFINx code with
-# nvcc too.
+# If CUDA is enabled, compile DOLFINx headers and code with nvcc.
 if(CMAKE_CUDA_COMPILER)
-  # cuda_headers.cu includes every installed DOLFINx header, from the
-  # public header sets of the (in-tree or imported) dolfinx target.
-  get_target_property(_dolfinx dolfinx::dolfinx ALIASED_TARGET)
-  if(NOT _dolfinx)
-    set(_dolfinx dolfinx::dolfinx)
-  endif()
+  # dolfinx_headers.h, included by cuda_nvcc.cu, includes every
+  # installed DOLFINx header (the dolfinx target's public header sets)
+  set(_dolfinx dolfinx::dolfinx)
   get_target_property(_sets ${_dolfinx} INTERFACE_HEADER_SETS)
   set(_includes "")
   foreach(_set IN LISTS _sets)
@@ -116,17 +111,11 @@ if(CMAKE_CUDA_COMPILER)
     message(FATAL_ERROR "No DOLFINx headers found for the nvcc test.")
   endif()
   file(
-    GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_headers.cu
-    CONTENT "${_includes}"
+    GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dolfinx_headers.h
+    CONTENT "#pragma once\n${_includes}"
   )
 
-  target_sources(
-    unittests
-    PRIVATE
-      common/cuda.cpp
-      common/cuda_nvcc.cu
-      ${CMAKE_CURRENT_BINARY_DIR}/cuda_headers.cu
-  )
+  target_sources(unittests PRIVATE common/cuda.cpp common/cuda_nvcc.cu)
   target_compile_features(unittests PRIVATE cuda_std_20)
   set_target_properties(unittests PROPERTIES CUDA_EXTENSIONS OFF)
 endif()

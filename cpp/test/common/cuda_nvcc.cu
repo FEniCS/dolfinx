@@ -5,11 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 // Compiled by nvcc, as CUDA code built against DOLFINx is: the DOLFINx
-// headers must pass nvcc's host and device front ends. Called from the
-// host-compiled test in cuda.cpp. cuda_headers.cu (generated) includes
-// every installed header.
+// headers must pass nvcc's host and device front ends. dolfinx_headers.h
+// (generated) includes every installed DOLFINx header. Called from the
+// host-compiled test in cuda.cpp.
 
 #include "cuda_nvcc.h"
+#include "dolfinx_headers.h"
 #include "poisson.h"
 #include <algorithm>
 #include <basix/finite-element.h>
@@ -62,20 +63,26 @@ __global__ void axpy(int n, double a, const double* x, double* y)
 
 namespace
 {
-/// Interpolate x0 + x1 into P1 and check it at the dof coordinates.
-bool check_interpolation(MPI_Comm comm)
+/// Create a degree `degree` Lagrange space on `mesh`.
+std::shared_ptr<fem::FunctionSpace<double>>
+create_p_space(std::shared_ptr<mesh::Mesh<double>> mesh, basix::cell::type cell,
+               int degree)
 {
-  auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle(
-      comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {8, 8}, mesh::CellType::triangle));
   basix::FiniteElement element = basix::create_element<double>(
-      basix::element::family::P, basix::cell::type::triangle, 1,
+      basix::element::family::P, cell, degree,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
-  auto V = std::make_shared<fem::FunctionSpace<double>>(
+  return std::make_shared<fem::FunctionSpace<double>>(
       fem::create_functionspace<double>(
           mesh, std::make_shared<fem::FiniteElement<double>>(
                     element, mesh->geometry().dim())));
+}
 
+/// Interpolate x0 + x1 into P1 and check it at the dof coordinates.
+bool check_interpolation(std::shared_ptr<mesh::Mesh<double>> mesh)
+{
+  std::shared_ptr<fem::FunctionSpace<double>> V
+      = create_p_space(mesh, basix::cell::type::triangle, 1);
   fem::Function<double> u(V);
   u.interpolate(
       [](auto x) -> std::pair<std::vector<double>, std::vector<std::size_t>>
@@ -97,13 +104,11 @@ bool check_interpolation(MPI_Comm comm)
 }
 
 /// Map sub-mesh cells to the parent mesh and back.
-bool check_submesh(MPI_Comm comm)
+bool check_submesh(const mesh::Mesh<double>& mesh)
 {
-  auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle(
-      comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {8, 8}, mesh::CellType::triangle));
-  const int tdim = mesh->topology()->dim();
+  const int tdim = mesh.topology()->dim();
   std::vector<std::int32_t> cells
-      = mesh::locate_entities(*mesh, tdim,
+      = mesh::locate_entities(mesh, tdim,
                               [](auto x)
                               {
                                 std::vector<std::int8_t> marker(x.extent(1));
@@ -112,7 +117,7 @@ bool check_submesh(MPI_Comm comm)
                                 return marker;
                               });
   auto [submesh, cell_map, vertex_map, x_map]
-      = mesh::create_submesh(*mesh, tdim, cells);
+      = mesh::create_submesh(mesh, tdim, cells);
   std::vector<std::int32_t> subcells(
       submesh.topology()->index_map(tdim)->size_local());
   std::iota(subcells.begin(), subcells.end(), 0);
@@ -122,27 +127,17 @@ bool check_submesh(MPI_Comm comm)
              std::span<const std::int32_t>(parent_cells), true)
          == subcells;
 }
-} // namespace
 
-//-----------------------------------------------------------------------------
-dolfinx_test::CudaNvccResults dolfinx_test::cuda_nvcc_host_code(MPI_Comm comm)
+/// Assemble the FFCx Poisson stiffness matrix (P2, tetrahedra).
+/// @return Whether the matrix annihilates constants, and whether
+/// assembly with a Dirichlet boundary condition gives a non-zero matrix.
+std::pair<bool, bool> check_assembly(MPI_Comm comm)
 {
-  CudaNvccResults results{};
-  results.interpolation = check_interpolation(comm);
-  results.submesh = check_submesh(comm);
-
-  // Assemble the FFCx Poisson stiffness matrix (P2, tetrahedra)
   auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {3, 3, 3},
                        mesh::CellType::tetrahedron));
-  basix::FiniteElement element = basix::create_element<double>(
-      basix::element::family::P, basix::cell::type::tetrahedron, 2,
-      basix::element::lagrange_variant::unset,
-      basix::element::dpc_variant::unset, false);
-  auto V = std::make_shared<fem::FunctionSpace<double>>(
-      fem::create_functionspace<double>(
-          mesh, std::make_shared<fem::FiniteElement<double>>(
-                    element, mesh->geometry().dim())));
+  std::shared_ptr<fem::FunctionSpace<double>> V
+      = create_p_space(mesh, basix::cell::type::tetrahedron, 2);
   auto kappa = std::make_shared<fem::Constant<double>>(2.0);
   fem::Form<double> a = fem::create_form<double, double>(
       *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}, {});
@@ -157,10 +152,10 @@ dolfinx_test::CudaNvccResults dolfinx_test::cuda_nvcc_host_code(MPI_Comm comm)
   la::Vector<double> y(A.index_map(1), 1);
   std::ranges::fill(x.array(), 1.0);
   A.mult(x, y);
-  auto y_owned
+  std::span<const double> y_owned
       = std::span<const double>(y.array()).first(A.index_map(0)->size_local());
-  results.assembly = std::ranges::all_of(y_owned, [](double v)
-                                         { return std::abs(v) < 1e-12; });
+  bool annihilates_constants = std::ranges::all_of(
+      y_owned, [](double v) { return std::abs(v) < 1e-12; });
 
   // Assembly with a Dirichlet condition on the boundary
   const int tdim = mesh->topology()->dim();
@@ -174,8 +169,20 @@ dolfinx_test::CudaNvccResults dolfinx_test::cuda_nvcc_host_code(MPI_Comm comm)
   fem::assemble_matrix(A_bc.mat_add_values(), a, {std::cref(bc)});
   fem::set_diagonal<double>(A_bc.mat_set_values(), *V, {std::cref(bc)});
   A_bc.scatter_rev();
-  results.assembly_with_bc = A_bc.squared_norm() > 0.0;
 
-  return results;
+  return {annihilates_constants, A_bc.squared_norm() > 0.0};
+}
+} // namespace
+
+//-----------------------------------------------------------------------------
+dolfinx_test::CudaNvccResults dolfinx_test::cuda_nvcc_host_code(MPI_Comm comm)
+{
+  auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle(
+      comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {8, 8}, mesh::CellType::triangle));
+  auto [assembly, assembly_with_bc] = check_assembly(comm);
+  return {.interpolation = check_interpolation(mesh),
+          .submesh = check_submesh(*mesh),
+          .assembly = assembly,
+          .assembly_with_bc = assembly_with_bc};
 }
 //-----------------------------------------------------------------------------

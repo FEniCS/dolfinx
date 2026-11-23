@@ -152,18 +152,19 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     SECTION("Out-of-range indices throw rather than return garbage")
     {
       PetscScalar lr = 0, lc = 0;
-      using dolfinx_test::call_quietly;
-      CHECK_THROWS_AS(call_quietly([&solver] { solver.get_eigenvalue(-1); }),
+      CHECK_THROWS_AS(
+          dolfinx_test::call_quietly([&solver] { solver.get_eigenvalue(-1); }),
+          std::runtime_error);
+      CHECK_THROWS_AS(dolfinx_test::call_quietly(
+                          [&solver, nconv] { solver.get_eigenvalue(nconv); }),
                       std::runtime_error);
       CHECK_THROWS_AS(
-          call_quietly([&solver, nconv] { solver.get_eigenvalue(nconv); }),
+          dolfinx_test::call_quietly(
+              [&solver, &lr, &lc]
+              { solver.get_eigenpair(lr, lc, nullptr, nullptr, -1); }),
           std::runtime_error);
       CHECK_THROWS_AS(
-          call_quietly([&solver, &lr, &lc]
-                       { solver.get_eigenpair(lr, lc, nullptr, nullptr, -1); }),
-          std::runtime_error);
-      CHECK_THROWS_AS(
-          call_quietly(
+          dolfinx_test::call_quietly(
               [&solver, &lr, &lc, nconv]
               { solver.get_eigenpair(lr, lc, nullptr, nullptr, nconv); }),
           std::runtime_error);

@@ -178,8 +178,7 @@ jobs:
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
         shell: spack-bash {0}
 
-  # DOLFINx code compiled by nvcc in the C++ unit tests, as CUDA code
-  # built against DOLFINx is.
+  # Compile DOLFINx headers and code with nvcc in the C++ unit tests.
   nvcc-build:
     name: Ubuntu build and test (nvcc)
     runs-on: ubuntu-26.04
