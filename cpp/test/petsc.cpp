@@ -8,6 +8,7 @@
 
 #ifdef HAS_PETSC
 
+#include "common/petsc_test.h"
 #include <algorithm>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -39,6 +40,7 @@ void init_petsc()
   int argc = 0;
   char** argv = nullptr;
   REQUIRE(PetscInitialize(&argc, &argv, nullptr, nullptr) == 0);
+  dolfinx_test::set_petsc_error_handler();
 }
 } // namespace
 

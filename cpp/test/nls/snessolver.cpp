@@ -11,9 +11,11 @@
 
 #ifdef HAS_PETSC
 
+#include "../common/petsc_test.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <dolfinx/common/log.h>
 #include <dolfinx/nls/SNESSolver.h>
 #include <limits>
 #include <mpi.h>
@@ -22,6 +24,7 @@
 #include <petscsys.h>
 #include <petscvec.h>
 #include <span>
+#include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -179,6 +182,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
   int argc = 0;
   char** argv = nullptr;
   REQUIRE(PetscInitialize(&argc, &argv, nullptr, nullptr) == 0);
+  dolfinx_test::set_petsc_error_handler();
 
   MPI_Comm comm = MPI_COMM_WORLD;
   Vec x, b;
@@ -469,7 +473,12 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_options_prefix("max_it_");
     solver.set_from_options();
 
+    // Non-convergence is logged as a warning, which is expected here
+    spdlog::logger& log = dolfinx::logger();
+    const spdlog::level::level_enum level = log.level();
+    log.set_level(spdlog::level::err);
     CHECK_NOTHROW(solver.solve(x));
+    log.set_level(level);
     SNESConvergedReason reason;
     CHECK(SNESGetConvergedReason(solver.snes(), &reason) == 0);
     CHECK(reason == SNES_DIVERGED_MAX_IT);

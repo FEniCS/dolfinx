@@ -10,11 +10,27 @@
 #include "petsc.h"
 #include <cassert>
 #include <dolfinx/common/log.h>
+#include <format>
 #include <stdexcept>
 #include <utility>
 
 using namespace dolfinx;
 using namespace dolfinx::la;
+
+namespace
+{
+/// Throw std::out_of_range if `i` is not a converged eigenpair index.
+void check_index(EPS eps, PetscInt i)
+{
+  PetscInt nconv = 0;
+  common::petsc::check(EPSGetConverged(eps, &nconv), "EPSGetConverged");
+  if (i < 0 or i >= nconv)
+  {
+    throw std::out_of_range(
+        std::format("Eigenpair index {} is not in [0, {}).", i, nconv));
+  }
+}
+} // namespace
 
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm) : _eps(nullptr)
@@ -98,9 +114,7 @@ EPSConvergedReason SLEPcEigenSolver::solve()
 std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(PetscInt i) const
 {
   assert(_eps);
-
-  // EPSGetEigenvalue checks that the problem has been solved and that i
-  // is in range
+  check_index(_eps, i);
 #ifdef PETSC_USE_COMPLEX
   PetscScalar l;
   common::petsc::check(EPSGetEigenvalue(_eps, i, &l, nullptr),
@@ -117,9 +131,7 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
                                      Vec c, PetscInt i) const
 {
   assert(_eps);
-
-  // EPSGetEigenpair checks that the problem has been solved and that i
-  // is in range
+  check_index(_eps, i);
   common::petsc::check(EPSGetEigenpair(_eps, i, &lr, &lc, r, c),
                        "EPSGetEigenpair");
 }
