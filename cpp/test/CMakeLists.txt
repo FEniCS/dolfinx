@@ -10,10 +10,11 @@ endif()
 
 find_package(Catch2 3 REQUIRED)
 
-# Select the compiler used by the GPU compatibility test.
+# Select the compiler used by the GPU compatibility test. OFF by
+# default: the test compiles every DOLFINx header with the GPU compiler.
 set(
   DOLFINX_TEST_GPU_COMPILER
-  AUTO
+  OFF
   CACHE STRING
   "GPU test compiler (AUTO, OFF, CUDA, HIP)"
 )
@@ -26,6 +27,15 @@ if(NOT DOLFINX_TEST_GPU_COMPILER MATCHES "^(AUTO|OFF|CUDA|HIP)$")
     FATAL_ERROR
     "DOLFINX_TEST_GPU_COMPILER must be AUTO, OFF, CUDA or HIP"
   )
+endif()
+
+# nvcc otherwise uses the first host compiler on PATH, which may not
+# match (or be ABI-compatible with) the C++ compiler.
+if(
+  NOT DEFINED CMAKE_CUDA_HOST_COMPILER
+  AND (NOT CMAKE_CUDA_COMPILER OR CMAKE_CUDA_COMPILER MATCHES "nvcc")
+)
+  set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
 endif()
 
 unset(_gpu_language)
@@ -163,6 +173,21 @@ if(_gpu_language)
   string(TOLOWER "${_gpu_language}" _gpu_lang)
   target_compile_features(unittests PRIVATE ${_gpu_lang}_std_20)
   set_target_properties(unittests PROPERTIES ${_gpu_language}_EXTENSIONS OFF)
+
+  # Developer flags for the GPU compiler, so warnings in DOLFINx headers
+  # are errors. The ROCm clang takes the usual flags. For nvcc, only its
+  # own front-end warnings are made errors: the host compiler is the C++
+  # compiler, whose warnings the C++ build already checks.
+  if(_gpu_language STREQUAL "HIP")
+    set(_gpu_developer_flags -Wall;-Werror;-Wextra;-pedantic;-Wshadow;-g;-O2)
+  else()
+    set(_gpu_developer_flags --Werror=all-warnings;-g;-O2)
+  endif()
+  target_compile_options(
+    unittests
+    PRIVATE
+      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:${_gpu_language}>>:${_gpu_developer_flags}>
+  )
 endif()
 
 # NOTE: Fixes when using Catch2 <= 3.13 with Clang 22 and derivatives.

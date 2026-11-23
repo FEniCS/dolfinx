@@ -17,6 +17,8 @@
 #endif
 #include "poisson.h"
 #include <algorithm>
+#include <basix/cell.h>
+#include <basix/element-families.h>
 #include <basix/finite-element.h>
 #include <cmath>
 #include <cstddef>
@@ -65,6 +67,11 @@ __global__ void axpy(int n, double a, const double* x, double* y)
 
 namespace
 {
+/// Coordinates (3, num_points) passed to interpolation and marker
+/// callbacks.
+using cmdspan3x_t
+    = md::mdspan<const double, md::extents<std::size_t, 3, md::dynamic_extent>>;
+
 /// Create a degree `degree` Lagrange space on `mesh`.
 std::shared_ptr<fem::FunctionSpace<double>>
 create_p_space(std::shared_ptr<mesh::Mesh<double>> mesh, basix::cell::type cell,
@@ -84,10 +91,11 @@ create_p_space(std::shared_ptr<mesh::Mesh<double>> mesh, basix::cell::type cell,
 bool check_interpolation(std::shared_ptr<mesh::Mesh<double>> mesh)
 {
   std::shared_ptr<fem::FunctionSpace<double>> V
-      = create_p_space(mesh, basix::cell::type::triangle, 1);
+      = create_p_space(std::move(mesh), basix::cell::type::triangle, 1);
   fem::Function<double> u(V);
   u.interpolate(
-      [](auto x) -> std::pair<std::vector<double>, std::vector<std::size_t>>
+      [](cmdspan3x_t x)
+          -> std::pair<std::vector<double>, std::vector<std::size_t>>
       {
         std::vector<double> f(x.extent(1));
         for (std::size_t p = 0; p < x.extent(1); ++p)
@@ -111,7 +119,7 @@ bool check_submesh(const mesh::Mesh<double>& mesh)
   const int tdim = mesh.topology()->dim();
   std::vector<std::int32_t> cells
       = mesh::locate_entities(mesh, tdim,
-                              [](auto x)
+                              [](cmdspan3x_t x)
                               {
                                 std::vector<std::int8_t> marker(x.extent(1));
                                 for (std::size_t p = 0; p < x.extent(1); ++p)

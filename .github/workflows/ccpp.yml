@@ -333,7 +333,9 @@ jobs:
             > /etc/apt/sources.list.d/rocm.list
           apt-get -y update
           apt-get install -y --no-install-recommends amdrocm-runtime-dev$ROCM_VERSION
-          echo "GPU_COMPILER=$(dpkg -L amdrocm-llvm$ROCM_VERSION | grep -m1 '/bin/clang++$')" >> $GITHUB_ENV
+          c=$(dpkg -L amdrocm-llvm$ROCM_VERSION | grep -m1 '/bin/clang++$')
+          test -x "$c"
+          echo "GPU_COMPILER=$c" >> $GITHUB_ENV
 
       - name: Install FEniCS Python components
         run: |
