@@ -10,6 +10,60 @@ endif()
 
 find_package(Catch2 3 REQUIRED)
 
+# Select the compiler used by the GPU compatibility test. OFF by
+# default: the test compiles every DOLFINx header with the GPU compiler.
+set(
+  DOLFINX_TEST_GPU_COMPILER
+  OFF
+  CACHE STRING
+  "GPU test compiler (AUTO, OFF, CUDA, HIP)"
+)
+set_property(
+  CACHE DOLFINX_TEST_GPU_COMPILER
+  PROPERTY STRINGS AUTO OFF CUDA HIP
+)
+if(NOT DOLFINX_TEST_GPU_COMPILER MATCHES "^(AUTO|OFF|CUDA|HIP)$")
+  message(
+    FATAL_ERROR
+    "DOLFINX_TEST_GPU_COMPILER must be AUTO, OFF, CUDA or HIP"
+  )
+endif()
+
+# nvcc otherwise uses the first host compiler on PATH, which may not
+# match (or be ABI-compatible with) the C++ compiler.
+if(
+  NOT DEFINED CMAKE_CUDA_HOST_COMPILER
+  AND (NOT CMAKE_CUDA_COMPILER OR CMAKE_CUDA_COMPILER MATCHES "nvcc")
+)
+  set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
+endif()
+
+unset(_gpu_language)
+if(DOLFINX_TEST_GPU_COMPILER STREQUAL "AUTO")
+  # Honour an explicitly selected HIP compiler before probing CUDA;
+  # check_language is a no-op when the compiler is already set.
+  if(CMAKE_HIP_COMPILER)
+    set(_gpu_language HIP)
+  else()
+    include(CheckLanguage)
+    check_language(CUDA)
+    if(CMAKE_CUDA_COMPILER)
+      set(_gpu_language CUDA)
+    else()
+      check_language(HIP)
+      if(CMAKE_HIP_COMPILER)
+        set(_gpu_language HIP)
+      endif()
+    endif()
+  endif()
+elseif(NOT DOLFINX_TEST_GPU_COMPILER STREQUAL "OFF")
+  set(_gpu_language ${DOLFINX_TEST_GPU_COMPILER})
+endif()
+if(_gpu_language)
+  # Enable before creating targets so they inherit GPU architectures.
+  enable_language(${_gpu_language})
+endif()
+
 # FFCx compile: expr.py -> expr.c
 add_custom_command(
   OUTPUT expr.c
@@ -69,6 +123,73 @@ target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx::dolfinx)
 target_compile_features(unittests PRIVATE cxx_std_20 c_std_17)
 set_target_properties(unittests PROPERTIES CXX_EXTENSIONS OFF)
 
+# If a GPU language is enabled, compile DOLFINx headers and code with
+# its compiler.
+if(_gpu_language)
+  # dolfinx_headers.h, included by gpu_compiler.cu, includes every
+  # installed DOLFINx header (the dolfinx target's public header sets,
+  # each of which has a single base directory).
+  get_target_property(_sets dolfinx::dolfinx INTERFACE_HEADER_SETS)
+  set(_includes "")
+  foreach(_set IN LISTS _sets)
+    get_target_property(_files dolfinx::dolfinx HEADER_SET_${_set})
+    get_target_property(_dir dolfinx::dolfinx HEADER_DIRS_${_set})
+    foreach(_file IN LISTS _files)
+      cmake_path(RELATIVE_PATH _file BASE_DIRECTORY "${_dir}")
+      string(APPEND _includes "#include <${_file}>\n")
+    endforeach()
+  endforeach()
+  if(NOT _includes)
+    message(FATAL_ERROR "No DOLFINx headers found for the GPU test.")
+  endif()
+  file(
+    GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dolfinx_headers.h
+    CONTENT "#pragma once\n${_includes}"
+  )
+
+  target_sources(
+    unittests
+    PRIVATE common/gpu_compiler.cpp common/gpu_compiler.cu
+  )
+  set_source_files_properties(
+    common/gpu_compiler.cu
+    PROPERTIES LANGUAGE ${_gpu_language}
+  )
+  if(_gpu_language STREQUAL "HIP")
+    # HIP code built with ROCm's clang against GCC-built DOLFINx and
+    # Basix needs:
+    # - FMT_CONSTEVAL=: the clang rejects fmt 10's consteval format-string
+    #   check in spdlog (logger.h), used by DOLFINx's logging.
+    # - -fclang-abi-compat=17: clang >= 17 mangles template
+    #   type-constraints (e.g. basix::create_element<std::floating_point
+    #   T>) and GCC does not, so symbols would not match at link time.
+    set_source_files_properties(
+      common/gpu_compiler.cu
+      PROPERTIES
+        COMPILE_DEFINITIONS "FMT_CONSTEVAL="
+        COMPILE_OPTIONS "-fclang-abi-compat=17"
+    )
+  endif()
+  string(TOLOWER "${_gpu_language}" _gpu_lang)
+  target_compile_features(unittests PRIVATE ${_gpu_lang}_std_20)
+  set_target_properties(unittests PROPERTIES ${_gpu_language}_EXTENSIONS OFF)
+
+  # Developer flags for the GPU compiler, so warnings in DOLFINx headers
+  # are errors. The ROCm clang takes the usual flags. For nvcc, only its
+  # own front-end warnings are made errors: the host compiler is the C++
+  # compiler, whose warnings the C++ build already checks.
+  if(_gpu_language STREQUAL "HIP")
+    set(_gpu_developer_flags -Wall;-Werror;-Wextra;-pedantic;-Wshadow;-g;-O2)
+  else()
+    set(_gpu_developer_flags --Werror=all-warnings;-g;-O2)
+  endif()
+  target_compile_options(
+    unittests
+    PRIVATE
+      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:${_gpu_language}>>:${_gpu_developer_flags}>
+  )
+endif()
+
 # NOTE: Fixes when using Catch2 <= 3.13 with Clang 22 and derivatives.
 # https://github.com/catchorg/Catch2/blob/devel/docs/release-notes.md#3140
 if(
@@ -108,7 +229,7 @@ if(DEFINED DOLFINX_CXX_DEVELOPER_DEFINITIONS)
   target_compile_definitions(
     unittests
     PRIVATE
-      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX,CUDA,HIP>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
   )
 endif()
 
