@@ -10,6 +10,7 @@
 #include "petsc.h"
 #include "petscsystypes.h"
 #include <cassert>
+#include <dolfinx/common/log.h>
 #include <format>
 #include <stdexcept>
 #include <utility>
@@ -34,6 +35,7 @@ void common::petsc::error(PetscErrorCode error_code,
       static_cast<int>(error_code),
       (error_msg == PETSC_SUCCESS) ? desc
                                    : "(could not retrieve error description)");
+  logger().error("{}", msg);
   throw std::runtime_error(msg);
 }
 //-----------------------------------------------------------------------------

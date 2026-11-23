@@ -9,7 +9,6 @@
 
 #ifdef HAS_SLEPC
 
-#include "common/petsc_test.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cmath>
@@ -99,7 +98,6 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
   int argc = 0;
   char** argv = nullptr;
   REQUIRE(SlepcInitialize(&argc, &argv, nullptr, nullptr) == 0);
-  dolfinx_test::set_petsc_error_handler();
 
   constexpr PetscInt N = 20;
 
@@ -148,15 +146,17 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
       CHECK(VecDestroy(&c) == 0);
     }
 
-    SECTION("Out-of-range indices throw")
+    // SLEPc rejects these itself; the point is that the return code is
+    // checked, so they throw rather than leaving the outputs untouched
+    SECTION("Out-of-range indices throw rather than return garbage")
     {
       PetscScalar lr = 0, lc = 0;
-      CHECK_THROWS_AS(solver.get_eigenvalue(-1), std::out_of_range);
-      CHECK_THROWS_AS(solver.get_eigenvalue(nconv), std::out_of_range);
+      CHECK_THROWS_AS(solver.get_eigenvalue(-1), std::runtime_error);
+      CHECK_THROWS_AS(solver.get_eigenvalue(nconv), std::runtime_error);
       CHECK_THROWS_AS(solver.get_eigenpair(lr, lc, nullptr, nullptr, -1),
-                      std::out_of_range);
+                      std::runtime_error);
       CHECK_THROWS_AS(solver.get_eigenpair(lr, lc, nullptr, nullptr, nconv),
-                      std::out_of_range);
+                      std::runtime_error);
     }
 
     CHECK(MatDestroy(&A) == 0);

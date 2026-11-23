@@ -90,7 +90,6 @@ public:
   /// `nconv` is the number of converged eigenpairs reported by
   /// `EPSGetConverged(eps(), &nconv)`.
   /// @return The eigenvalue.
-  /// @throws std::out_of_range if `i` is not in `[0, nconv)`.
   std::complex<PetscReal> get_eigenvalue(PetscInt i) const;
 
   /// @brief Get the ith eigenpair.
@@ -101,7 +100,6 @@ public:
   /// @param[in] i Index of the eigenpair, in `[0, nconv)`, where
   /// `nconv` is the number of converged eigenpairs reported by
   /// `EPSGetConverged(eps(), &nconv)`.
-  /// @throws std::out_of_range if `i` is not in `[0, nconv)`.
   /// @note For a complex PETSc scalar type the eigenvalue and
   /// eigenvector are held entirely in `lr` and `r`, and `lc` and `c`
   /// are set to zero.
