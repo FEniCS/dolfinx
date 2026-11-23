@@ -23,7 +23,6 @@ set(
   scotchmetisv5
   scotch
   scotcherr
-  z
   bz2
   lzma
 )
@@ -38,6 +37,16 @@ foreach(
     "${CURRENT_INSTALLED_DIR}/lib/${SUPERLU_DIST_SCOTCH_LIBRARY_NAME}.lib "
   )
 endforeach()
+
+# The zlib port uses different library names across versions and triplets.
+find_file(
+  SUPERLU_DIST_ZLIB_LIBRARY
+  NAMES libz.lib z.lib zlib.lib libzs.lib zs.lib zlibstatic.lib
+  PATHS "${CURRENT_INSTALLED_DIR}/lib"
+  NO_DEFAULT_PATH
+  REQUIRED
+)
+string(APPEND SUPERLU_DIST_PARMETIS_LIBRARIES "${SUPERLU_DIST_ZLIB_LIBRARY} ")
 
 vcpkg_cmake_configure(
   SOURCE_PATH "${SOURCE_PATH}"

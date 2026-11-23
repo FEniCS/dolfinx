@@ -1,6 +1,7 @@
 {
   "name": "superlu-dist",
   "version": "9.3.0",
+  "port-version": 1,
   "description": "A general purpose library for the direct solution of large, sparse, nonsymmetric systems of linear equations on high performance distributed memory parallel machines",
   "homepage": "https://github.com/xiaoyeli/superlu_dist",
   "license": "BSD-3-Clause-LBNL",
@@ -19,6 +20,7 @@
     {
       "name": "vcpkg-cmake",
       "host": true
-    }
+    },
+    "zlib"
   ]
 }
