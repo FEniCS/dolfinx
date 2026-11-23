@@ -21,8 +21,8 @@ namespace dolfinx::common
 /// wrappers
 namespace petsc
 {
-/// @brief Print error message for a PETSc call that returned an error
-/// and throw a std::runtime_error.
+/// @brief Throw a std::runtime_error for a PETSc call that returned an
+/// error, with PETSc's description and message for the error.
 /// @param[in] error_code PETSc error code
 /// @param[in] petsc_function Name of the PETSc function that returned
 /// `error_code`

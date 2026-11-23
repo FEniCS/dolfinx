@@ -31,18 +31,7 @@
 #include <vector>
 
 using namespace dolfinx;
-
-namespace
-{
-/// PetscInitialize returns immediately if PETSc is already initialised
-void init_petsc()
-{
-  int argc = 0;
-  char** argv = nullptr;
-  REQUIRE(PetscInitialize(&argc, &argv, nullptr, nullptr) == 0);
-  dolfinx_test::set_petsc_error_handler();
-}
-} // namespace
+using dolfinx_test::init_petsc;
 
 TEST_CASE("PETSc wrappers reject null handles", "[petsc]")
 {

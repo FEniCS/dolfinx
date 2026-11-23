@@ -179,10 +179,7 @@ void check_solution(const Vec x, SNES snes, double root = std::sqrt(2.0))
 
 TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 {
-  int argc = 0;
-  char** argv = nullptr;
-  REQUIRE(PetscInitialize(&argc, &argv, nullptr, nullptr) == 0);
-  dolfinx_test::set_petsc_error_handler();
+  dolfinx_test::init_petsc();
 
   MPI_Comm comm = MPI_COMM_WORLD;
   Vec x, b;

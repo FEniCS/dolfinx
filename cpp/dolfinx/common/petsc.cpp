@@ -24,16 +24,23 @@ void common::petsc::error(PetscErrorCode error_code,
   // Only called from check() with a nonzero error code
   assert(error_code);
 
-  // Fetch PETSc error description
-  const char* desc;
-  PetscErrorCode error_msg = PetscErrorMessage(error_code, &desc, nullptr);
+  // Fetch the PETSc error description and the message of the error
+  // that started it, so the exception is a complete report
+  const char* desc = nullptr;
+#if PETSC_VERSION_GE(3, 25, 0)
+  const char* specific = nullptr;
+#else
+  char* specific = nullptr;
+#endif
+  if (PetscErrorMessage(error_code, &desc, &specific) != PETSC_SUCCESS)
+    desc = "(could not retrieve error description)";
 
   std::string msg = std::format(
       "PETSc error in '{}' at {}:{}: call to '{}' failed with code {}, {}",
       loc.function_name(), loc.file_name(), loc.line(), petsc_function,
-      static_cast<int>(error_code),
-      (error_msg == PETSC_SUCCESS) ? desc
-                                   : "(could not retrieve error description)");
+      static_cast<int>(error_code), desc);
+  if (specific and *specific)
+    msg += std::format(": {}", specific);
   throw std::runtime_error(msg);
 }
 //-----------------------------------------------------------------------------

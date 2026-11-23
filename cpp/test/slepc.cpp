@@ -96,10 +96,7 @@ Mat create_conjugate_pair_matrix(PetscInt num_blocks)
 
 TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
 {
-  int argc = 0;
-  char** argv = nullptr;
-  REQUIRE(SlepcInitialize(&argc, &argv, nullptr, nullptr) == 0);
-  dolfinx_test::set_petsc_error_handler();
+  dolfinx_test::init_slepc();
 
   constexpr PetscInt N = 20;
 
