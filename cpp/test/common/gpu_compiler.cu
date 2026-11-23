@@ -21,8 +21,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <dolfinx.h>
-#include <dolfinx/la/MatrixCSR.h>
 #include <functional>
 #include <memory>
 #include <numeric>
@@ -125,11 +123,9 @@ bool check_submesh(const mesh::Mesh<double>& mesh)
   std::vector<std::int32_t> subcells(
       submesh.topology()->index_map(tdim)->size_local());
   std::iota(subcells.begin(), subcells.end(), 0);
-  std::vector<std::int32_t> parent_cells = cell_map.sub_topology_to_topology(
-      std::span<const std::int32_t>(subcells), false);
-  return cell_map.sub_topology_to_topology(
-             std::span<const std::int32_t>(parent_cells), true)
-         == subcells;
+  std::vector<std::int32_t> parent_cells
+      = cell_map.sub_topology_to_topology(subcells, false);
+  return cell_map.sub_topology_to_topology(parent_cells, true) == subcells;
 }
 
 /// Assemble the FFCx Poisson stiffness matrix (P2, tetrahedra).

@@ -30,11 +30,10 @@ endif()
 
 unset(_gpu_language)
 if(DOLFINX_TEST_GPU_COMPILER STREQUAL "AUTO")
-  # Honour an explicitly selected HIP compiler before probing CUDA.
+  # Honour an explicitly selected HIP compiler before probing CUDA;
+  # check_language is a no-op when the compiler is already set.
   if(CMAKE_HIP_COMPILER)
     set(_gpu_language HIP)
-  elseif(CMAKE_CUDA_COMPILER)
-    set(_gpu_language CUDA)
   else()
     include(CheckLanguage)
     check_language(CUDA)
@@ -118,26 +117,16 @@ set_target_properties(unittests PROPERTIES CXX_EXTENSIONS OFF)
 # its compiler.
 if(_gpu_language)
   # dolfinx_headers.h, included by gpu_compiler.cu, includes every
-  # installed DOLFINx header (the dolfinx target's public header sets)
-  set(_dolfinx dolfinx::dolfinx)
-  get_target_property(_sets ${_dolfinx} INTERFACE_HEADER_SETS)
+  # installed DOLFINx header (the dolfinx target's public header sets,
+  # each of which has a single base directory).
+  get_target_property(_sets dolfinx::dolfinx INTERFACE_HEADER_SETS)
   set(_includes "")
   foreach(_set IN LISTS _sets)
-    get_target_property(_files ${_dolfinx} HEADER_SET_${_set})
-    get_target_property(_dirs ${_dolfinx} HEADER_DIRS_${_set})
+    get_target_property(_files dolfinx::dolfinx HEADER_SET_${_set})
+    get_target_property(_dir dolfinx::dolfinx HEADER_DIRS_${_set})
     foreach(_file IN LISTS _files)
-      foreach(_dir IN LISTS _dirs)
-        cmake_path(IS_PREFIX _dir "${_file}" NORMALIZE _in_dir)
-        if(_in_dir)
-          cmake_path(
-            RELATIVE_PATH _file
-            BASE_DIRECTORY "${_dir}"
-            OUTPUT_VARIABLE _rel
-          )
-          string(APPEND _includes "#include <${_rel}>\n")
-          break()
-        endif()
-      endforeach()
+      cmake_path(RELATIVE_PATH _file BASE_DIRECTORY "${_dir}")
+      string(APPEND _includes "#include <${_file}>\n")
     endforeach()
   endforeach()
   if(NOT _includes)
@@ -164,15 +153,11 @@ if(_gpu_language)
     # - -fclang-abi-compat=17: clang >= 17 mangles template
     #   type-constraints (e.g. basix::create_element<std::floating_point
     #   T>) and GCC does not, so symbols would not match at link time.
-    set_property(
-      SOURCE common/gpu_compiler.cu
-      APPEND
-      PROPERTY COMPILE_DEFINITIONS "FMT_CONSTEVAL="
-    )
-    set_property(
-      SOURCE common/gpu_compiler.cu
-      APPEND
-      PROPERTY COMPILE_OPTIONS "-fclang-abi-compat=17"
+    set_source_files_properties(
+      common/gpu_compiler.cu
+      PROPERTIES
+        COMPILE_DEFINITIONS "FMT_CONSTEVAL="
+        COMPILE_OPTIONS "-fclang-abi-compat=17"
     )
   endif()
   string(TOLOWER "${_gpu_language}" _gpu_lang)
