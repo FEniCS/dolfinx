@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <hdf5.h>
 #include <optional>
 #include <span>
 #include <stdexcept>
@@ -56,6 +57,15 @@ std::optional<H5O_type_t> object_type(hid_t handle, const std::string& name)
 /// @return True if @p name is in the file and has type @p type.
 bool has_object(hid_t handle, std::string_view name, H5O_type_t type)
 {
+  // HDF5 accepts trailing slashes and dot components on dataset paths.
+  while (name.size() > 1)
+  {
+    if (name.ends_with('/') or name.ends_with("/."))
+      name.remove_suffix(1);
+    else
+      break;
+  }
+
   // H5Lexists fails, printing HDF5's error stack, if a group on the
   // path is missing, so check the path one component at a time
   std::size_t end = name.find('/', 1);
@@ -265,14 +275,10 @@ void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
 //-----------------------------------------------------------------------------
 hid_t io::hdf5::open_dataset(hid_t handle, std::string_view path)
 {
-  // Check first: a failed H5Dopen2 prints HDF5's error stack
-  if (!has_object(handle, path, H5O_TYPE_DATASET))
-  {
-    throw std::runtime_error(
-        std::format("HDF5 dataset \"{}\" does not exist.", path));
-  }
-
-  hid_t dset_id = H5Dopen2(handle, std::string(path).c_str(), H5P_DEFAULT);
+  const std::string name(path);
+  hid_t dset_id;
+  H5E_BEGIN_TRY { dset_id = H5Dopen2(handle, name.c_str(), H5P_DEFAULT); }
+  H5E_END_TRY
   if (dset_id < 0)
   {
     throw std::runtime_error(
