@@ -94,8 +94,12 @@ foreach(config IN ITEMS RELEASE DEBUG)
   set(SUPERLU_DIST_PARMETIS_LIBRARIES_${config} "${libs}")
 endforeach()
 
+# SuperLU_DIST's configure writes make.inc and superlu_dist_config.h
+# into the source tree. Its contents differ between configurations
+# (TPL_PARMETIS_LIBRARIES), so configuring in parallel races.
 vcpkg_cmake_configure(
   SOURCE_PATH "${SOURCE_PATH}"
+  DISABLE_PARALLEL_CONFIGURE
   OPTIONS
     -DXSDK_ENABLE_Fortran=OFF
     -Denable_tests=OFF
