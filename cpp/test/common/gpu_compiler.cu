@@ -133,8 +133,8 @@ bool check_submesh(const mesh::Mesh<double>& mesh)
 }
 
 /// Assemble the FFCx Poisson stiffness matrix (P2, tetrahedra).
-/// @return Whether the matrix annihilates constants, and whether
-/// assembly with a Dirichlet boundary condition gives a non-zero matrix.
+/// @return Whether a non-zero matrix annihilates constants, and whether
+/// constrained rows have unit diagonal and zero off-diagonal entries.
 std::pair<bool, bool> check_assembly(MPI_Comm comm)
 {
   auto mesh = std::make_shared<mesh::Mesh<double>>(
@@ -158,6 +158,7 @@ std::pair<bool, bool> check_assembly(MPI_Comm comm)
   A.mult(x, y);
   std::span<const double> y_owned
       = std::span<const double>(y.array()).first(A.index_map(0)->size_local());
+  const bool nonzero = A.squared_norm() > 0.0;
   bool annihilates_constants = std::ranges::all_of(
       y_owned, [](double v) { return std::abs(v) < 1e-12; });
 
@@ -174,7 +175,23 @@ std::pair<bool, bool> check_assembly(MPI_Comm comm)
   fem::set_diagonal<double>(A_bc.mat_set_values(), *V, {std::cref(bc)});
   A_bc.scatter_rev();
 
-  return {annihilates_constants, A_bc.squared_norm() > 0.0};
+  const auto [dofs, num_owned] = bc.dof_indices();
+  bool constrained_rows = true;
+  for (std::int32_t row : dofs.first(num_owned))
+  {
+    bool has_diagonal = false;
+    for (std::int64_t j = A_bc.row_ptr()[row]; j < A_bc.row_ptr()[row + 1]; ++j)
+    {
+      const bool diagonal = A_bc.cols()[j] == row;
+      has_diagonal = has_diagonal or diagonal;
+      constrained_rows
+          = constrained_rows
+            and std::abs(A_bc.values()[j] - (diagonal ? 1.0 : 0.0)) < 1e-12;
+    }
+    constrained_rows = constrained_rows and has_diagonal;
+  }
+
+  return {nonzero and annihilates_constants, constrained_rows};
 }
 } // namespace
 

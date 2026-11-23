@@ -15,8 +15,8 @@ struct GpuCompilerResults
 {
   bool interpolation;    ///< Interpolated values are correct
   bool submesh;          ///< EntityMap round trip recovers the sub-cells
-  bool assembly;         ///< Stiffness matrix annihilates constants
-  bool assembly_with_bc; ///< Assembly with a Dirichlet BC is non-zero
+  bool assembly;         ///< Non-zero stiffness matrix annihilates constants
+  bool assembly_with_bc; ///< Constrained rows have unit diagonal only
 };
 
 /// @brief Run DOLFINx host code compiled by a GPU compiler (nvcc or

@@ -10,20 +10,49 @@ endif()
 
 find_package(Catch2 3 REQUIRED)
 
-# Enable a GPU language: CUDA if nvcc is found (or CMAKE_CUDA_COMPILER
-# is set), else HIP. Before targets are created, so they get the
-# default GPU architectures.
-include(CheckLanguage)
-check_language(CUDA)
-if(CMAKE_CUDA_COMPILER)
-  enable_language(CUDA)
-  set(_gpu_language CUDA)
-else()
-  check_language(HIP)
+# Select the compiler used by the GPU compatibility test.
+set(
+  DOLFINX_TEST_GPU_COMPILER
+  AUTO
+  CACHE STRING
+  "GPU test compiler (AUTO, OFF, CUDA, HIP)"
+)
+set_property(
+  CACHE DOLFINX_TEST_GPU_COMPILER
+  PROPERTY STRINGS AUTO OFF CUDA HIP
+)
+if(NOT DOLFINX_TEST_GPU_COMPILER MATCHES "^(AUTO|OFF|CUDA|HIP)$")
+  message(
+    FATAL_ERROR
+    "DOLFINX_TEST_GPU_COMPILER must be AUTO, OFF, CUDA or HIP"
+  )
+endif()
+
+unset(_gpu_language)
+if(DOLFINX_TEST_GPU_COMPILER STREQUAL "AUTO")
+  # Honour an explicitly selected HIP compiler before probing CUDA.
   if(CMAKE_HIP_COMPILER)
-    enable_language(HIP)
     set(_gpu_language HIP)
+  elseif(CMAKE_CUDA_COMPILER)
+    set(_gpu_language CUDA)
+  else()
+    include(CheckLanguage)
+    check_language(CUDA)
+    if(CMAKE_CUDA_COMPILER)
+      set(_gpu_language CUDA)
+    else()
+      check_language(HIP)
+      if(CMAKE_HIP_COMPILER)
+        set(_gpu_language HIP)
+      endif()
+    endif()
   endif()
+elseif(NOT DOLFINX_TEST_GPU_COMPILER STREQUAL "OFF")
+  set(_gpu_language ${DOLFINX_TEST_GPU_COMPILER})
+endif()
+if(_gpu_language)
+  # Enable before creating targets so they inherit GPU architectures.
+  enable_language(${_gpu_language})
 endif()
 
 # FFCx compile: expr.py -> expr.c
@@ -94,13 +123,8 @@ if(_gpu_language)
   get_target_property(_sets ${_dolfinx} INTERFACE_HEADER_SETS)
   set(_includes "")
   foreach(_set IN LISTS _sets)
-    if(_set STREQUAL "HEADERS")
-      get_target_property(_files ${_dolfinx} HEADER_SET)
-      get_target_property(_dirs ${_dolfinx} HEADER_DIRS)
-    else()
-      get_target_property(_files ${_dolfinx} HEADER_SET_${_set})
-      get_target_property(_dirs ${_dolfinx} HEADER_DIRS_${_set})
-    endif()
+    get_target_property(_files ${_dolfinx} HEADER_SET_${_set})
+    get_target_property(_dirs ${_dolfinx} HEADER_DIRS_${_set})
     foreach(_file IN LISTS _files)
       foreach(_dir IN LISTS _dirs)
         cmake_path(IS_PREFIX _dir "${_file}" NORMALIZE _in_dir)

@@ -11,6 +11,7 @@
 
 #ifdef HAS_PETSC
 
+#include "../common/petsc_test.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -181,11 +182,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
   int argc = 0;
   char** argv = nullptr;
   REQUIRE(PetscInitialize(&argc, &argv, nullptr, nullptr) == 0);
-  // PETSc errors are thrown as exceptions, so do not also print
-  // PETSc's traceback for the errors the tests trigger
-  static const PetscErrorCode handler
-      = PetscPushErrorHandler(PetscReturnErrorHandler, nullptr);
-  REQUIRE(handler == 0);
+  dolfinx_test::set_petsc_error_handler();
 
   MPI_Comm comm = MPI_COMM_WORLD;
   Vec x, b;

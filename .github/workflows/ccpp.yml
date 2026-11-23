@@ -321,6 +321,7 @@ jobs:
       - name: Configure and build (C++)
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
+            -DDOLFINX_TEST_GPU_COMPILER=CUDA \
             -DCMAKE_CUDA_COMPILER=/usr/local/cuda-$CUDA_VERSION/bin/nvcc -B build -S cpp/
           cmake --build build
 
@@ -369,6 +370,7 @@ jobs:
       - name: Configure and build (C++)
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
+            -DDOLFINX_TEST_GPU_COMPILER=HIP \
             -DCMAKE_HIP_COMPILER=$HIP_COMPILER -DCMAKE_HIP_ARCHITECTURES=$HIP_ARCHITECTURES \
             -B build -S cpp/
           cmake --build build
