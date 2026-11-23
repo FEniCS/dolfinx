@@ -9,7 +9,6 @@
 
 #ifdef HAS_SLEPC
 
-#include "call_quietly.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cmath>
@@ -99,6 +98,11 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
   int argc = 0;
   char** argv = nullptr;
   REQUIRE(SlepcInitialize(&argc, &argv, nullptr, nullptr) == 0);
+  // PETSc errors are thrown as exceptions, so do not also print
+  // PETSc's traceback for the errors the tests trigger
+  static const PetscErrorCode handler
+      = PetscPushErrorHandler(PetscReturnErrorHandler, nullptr);
+  REQUIRE(handler == 0);
 
   constexpr PetscInt N = 20;
 
@@ -224,9 +228,7 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     // EPSSetUp raises the error on the EPS communicator, so every rank
     // throws
     la::SLEPcEigenSolver solver(MPI_COMM_WORLD);
-    CHECK_THROWS_AS(dolfinx_test::call_quietly(
-                        [&solver] { static_cast<void>(solver.solve()); }),
-                    std::runtime_error);
+    CHECK_THROWS_AS(solver.solve(), std::runtime_error);
   }
 
   SECTION("Options prefix round-trips and is empty when unset")
