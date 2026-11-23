@@ -10,12 +10,20 @@ endif()
 
 find_package(Catch2 3 REQUIRED)
 
-# Enable CUDA, if nvcc is found or CMAKE_CUDA_COMPILER is set, before
-# targets are created so they get the default CUDA_ARCHITECTURES.
+# Enable a GPU language: CUDA if nvcc is found (or CMAKE_CUDA_COMPILER
+# is set), else HIP. Before targets are created, so they get the
+# default GPU architectures.
 include(CheckLanguage)
 check_language(CUDA)
 if(CMAKE_CUDA_COMPILER)
   enable_language(CUDA)
+  set(_gpu_language CUDA)
+else()
+  check_language(HIP)
+  if(CMAKE_HIP_COMPILER)
+    enable_language(HIP)
+    set(_gpu_language HIP)
+  endif()
 endif()
 
 # FFCx compile: expr.py -> expr.c
@@ -77,9 +85,10 @@ target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx::dolfinx)
 target_compile_features(unittests PRIVATE cxx_std_20 c_std_17)
 set_target_properties(unittests PROPERTIES CXX_EXTENSIONS OFF)
 
-# If CUDA is enabled, compile DOLFINx headers and code with nvcc.
-if(CMAKE_CUDA_COMPILER)
-  # dolfinx_headers.h, included by cuda_nvcc.cu, includes every
+# If a GPU language is enabled, compile DOLFINx headers and code with
+# its compiler.
+if(_gpu_language)
+  # dolfinx_headers.h, included by gpu_compiler.cu, includes every
   # installed DOLFINx header (the dolfinx target's public header sets)
   set(_dolfinx dolfinx::dolfinx)
   get_target_property(_sets ${_dolfinx} INTERFACE_HEADER_SETS)
@@ -108,16 +117,43 @@ if(CMAKE_CUDA_COMPILER)
     endforeach()
   endforeach()
   if(NOT _includes)
-    message(FATAL_ERROR "No DOLFINx headers found for the nvcc test.")
+    message(FATAL_ERROR "No DOLFINx headers found for the GPU test.")
   endif()
   file(
     GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dolfinx_headers.h
     CONTENT "#pragma once\n${_includes}"
   )
 
-  target_sources(unittests PRIVATE common/cuda.cpp common/cuda_nvcc.cu)
-  target_compile_features(unittests PRIVATE cuda_std_20)
-  set_target_properties(unittests PROPERTIES CUDA_EXTENSIONS OFF)
+  target_sources(
+    unittests
+    PRIVATE common/gpu_compiler.cpp common/gpu_compiler.cu
+  )
+  set_source_files_properties(
+    common/gpu_compiler.cu
+    PROPERTIES LANGUAGE ${_gpu_language}
+  )
+  if(_gpu_language STREQUAL "HIP")
+    # HIP code built with ROCm's clang against GCC-built DOLFINx and
+    # Basix needs:
+    # - FMT_CONSTEVAL=: the clang rejects fmt 10's consteval format-string
+    #   check in spdlog (logger.h), used by DOLFINx's logging.
+    # - -fclang-abi-compat=17: clang >= 17 mangles template
+    #   type-constraints (e.g. basix::create_element<std::floating_point
+    #   T>) and GCC does not, so symbols would not match at link time.
+    set_property(
+      SOURCE common/gpu_compiler.cu
+      APPEND
+      PROPERTY COMPILE_DEFINITIONS "FMT_CONSTEVAL="
+    )
+    set_property(
+      SOURCE common/gpu_compiler.cu
+      APPEND
+      PROPERTY COMPILE_OPTIONS "-fclang-abi-compat=17"
+    )
+  endif()
+  string(TOLOWER "${_gpu_language}" _gpu_lang)
+  target_compile_features(unittests PRIVATE ${_gpu_lang}_std_20)
+  set_target_properties(unittests PROPERTIES ${_gpu_language}_EXTENSIONS OFF)
 endif()
 
 # NOTE: Fixes when using Catch2 <= 3.13 with Clang 22 and derivatives.
@@ -159,7 +195,7 @@ if(DEFINED DOLFINX_CXX_DEVELOPER_DEFINITIONS)
   target_compile_definitions(
     unittests
     PRIVATE
-      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX,CUDA>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX,CUDA,HIP>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
   )
 endif()
 

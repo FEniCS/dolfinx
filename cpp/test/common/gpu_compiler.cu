@@ -4,13 +4,17 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-// Compiled by nvcc, as CUDA code built against DOLFINx is: the DOLFINx
-// headers must pass nvcc's host and device front ends. dolfinx_headers.h
-// (generated) includes every installed DOLFINx header. Called from the
-// host-compiled test in cuda.cpp.
+// Compiled as CUDA (nvcc) or HIP, as GPU code built against DOLFINx
+// is: the DOLFINx headers must pass the GPU compiler's host and device
+// front ends. dolfinx_headers.h (generated) includes every installed
+// DOLFINx header. Called from the host-compiled test in
+// gpu_compiler.cpp.
 
-#include "cuda_nvcc.h"
 #include "dolfinx_headers.h"
+#include "gpu_compiler.h"
+#ifdef __HIP__
+#include <hip/hip_runtime.h>
+#endif
 #include "poisson.h"
 #include <algorithm>
 #include <basix/finite-element.h>
@@ -175,7 +179,8 @@ std::pair<bool, bool> check_assembly(MPI_Comm comm)
 } // namespace
 
 //-----------------------------------------------------------------------------
-dolfinx_test::CudaNvccResults dolfinx_test::cuda_nvcc_host_code(MPI_Comm comm)
+dolfinx_test::GpuCompilerResults
+dolfinx_test::gpu_compiler_host_code(MPI_Comm comm)
 {
   auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle(
       comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {8, 8}, mesh::CellType::triangle));
