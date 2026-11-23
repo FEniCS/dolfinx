@@ -125,9 +125,7 @@ public:
   /// `this->sub_topology()`.
   /// @return A list of mapped entity indices. Entities that do not
   /// exist in the target topology are marked as -1.
-  // nvcc 13 crashes on the abbreviated-template form.
-  template <CellRange R>
-  std::vector<std::int32_t> sub_topology_to_topology(R&& entities,
+  std::vector<std::int32_t> sub_topology_to_topology(CellRange auto&& entities,
                                                      bool inverse) const
   {
     std::size_t num_entities = std::ranges::size(entities);
@@ -138,7 +136,7 @@ public:
       // for each index in `entities`, we get the corresponding index in
       // `_topology` using `_sub_topology_to_topology`
       auto mapped
-          = std::forward<R>(entities)
+          = std::forward<decltype(entities)>(entities)
             | std::views::transform([this](std::int32_t i)
                                     { return _sub_topology_to_topology[i]; });
       std::vector<std::int32_t> mapped_v;
@@ -166,7 +164,7 @@ public:
       // `_sub_topology`. If this is the case, mark those entities with
       // -1.
 
-      auto mapped = std::forward<R>(entities)
+      auto mapped = std::forward<decltype(entities)>(entities)
                     | std::views::transform(
                         [&topology_to_sub_topology](std::int32_t i)
                         {
