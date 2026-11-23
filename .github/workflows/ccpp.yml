@@ -286,6 +286,47 @@ jobs:
       - name: Run Python unit tests (MPI, np=3)
         run: mpirun -np 3 python -m pytest -m "petsc4py or adios2" python/test/unit/
 
+  # Compile DOLFINx headers and code with nvcc in the C++ unit tests.
+  nvcc-build:
+    runs-on: ubuntu-26.04
+    needs: [lint]
+    container: "ghcr.io/fenics/test-env:current"
+    env:
+      PETSC_ARCH: linux-gnu-real64-32
+      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
+
+    name: Build and test (nvcc)
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
+      - name: Install nvcc
+        run: |
+          wget -q https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2604/x86_64/cuda-keyring_1.1-1_all.deb
+          dpkg -i cuda-keyring_1.1-1_all.deb
+          apt-get -y update
+          apt-get install -y --no-install-recommends cuda-nvcc-13-5 cuda-cudart-dev-13-5
+
+      - name: Install FEniCS Python components
+        run: |
+          pip install --group python/pyproject.toml:build setuptools
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+
+      - name: Configure and build (C++)
+        run: |
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
+            -DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.5/bin/nvcc -B build -S cpp/
+          cmake --build build
+
+      - name: Run nvcc unit tests (serial and MPI np=2)
+        run: |
+          build/test/unittests "[cuda]"
+          mpirun -np 2 build/test/unittests "[cuda]"
+
   build-and-publish-docs:
     runs-on: ubuntu-26.04
     needs: [lint]
