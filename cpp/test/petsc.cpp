@@ -8,6 +8,7 @@
 
 #ifdef HAS_PETSC
 
+#include "call_quietly.h"
 #include <algorithm>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -292,7 +293,10 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
     Vec x = nullptr, b = nullptr;
     CHECK(MatCreateVecs(A, &x, &b) == 0);
     CHECK(VecSet(b, 1.0) == 0);
-    CHECK_THROWS_AS(solver.solve(x, b, false), std::runtime_error);
+    CHECK_THROWS_AS(dolfinx_test::call_quietly(
+                        [&solver, x, b]
+                        { static_cast<void>(solver.solve(x, b, false)); }),
+                    std::runtime_error);
     CHECK(VecDestroy(&x) == 0);
     CHECK(VecDestroy(&b) == 0);
   }

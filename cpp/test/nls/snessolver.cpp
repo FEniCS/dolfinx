@@ -11,6 +11,7 @@
 
 #ifdef HAS_PETSC
 
+#include "../call_quietly.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -390,7 +391,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // The exception from the callback is re-thrown, not a PETSc error
     try
     {
-      static_cast<void>(solver.solve(x_local));
+      dolfinx_test::call_quietly([&solver, x_local]
+                                 { static_cast<void>(solver.solve(x_local)); });
       FAIL("Expected the callback exception to be re-thrown.");
     }
     catch (const std::runtime_error& e)
@@ -417,7 +419,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     try
     {
-      static_cast<void>(solver.solve(x_local));
+      dolfinx_test::call_quietly([&solver, x_local]
+                                 { static_cast<void>(solver.solve(x_local)); });
       FAIL("Expected the callback exception to be re-thrown.");
     }
     catch (const std::runtime_error& e)
@@ -446,7 +449,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     try
     {
-      static_cast<void>(solver.solve(x_local));
+      dolfinx_test::call_quietly([&solver, x_local]
+                                 { static_cast<void>(solver.solve(x_local)); });
       FAIL("Expected the callback exception to be re-thrown.");
     }
     catch (const std::runtime_error& e)
@@ -469,7 +473,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_options_prefix("max_it_");
     solver.set_from_options();
 
-    CHECK_NOTHROW(solver.solve(x));
+    CHECK_NOTHROW(dolfinx_test::call_quietly(
+        [&solver, x] { static_cast<void>(solver.solve(x)); }));
     SNESConvergedReason reason;
     CHECK(SNESGetConvergedReason(solver.snes(), &reason) == 0);
     CHECK(reason == SNES_DIVERGED_MAX_IT);

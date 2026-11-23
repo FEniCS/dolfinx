@@ -9,6 +9,7 @@
 
 #ifdef HAS_SLEPC
 
+#include "call_quietly.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cmath>
@@ -151,12 +152,21 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     SECTION("Out-of-range indices throw rather than return garbage")
     {
       PetscScalar lr = 0, lc = 0;
-      CHECK_THROWS_AS(solver.get_eigenvalue(-1), std::runtime_error);
-      CHECK_THROWS_AS(solver.get_eigenvalue(nconv), std::runtime_error);
-      CHECK_THROWS_AS(solver.get_eigenpair(lr, lc, nullptr, nullptr, -1),
+      using dolfinx_test::call_quietly;
+      CHECK_THROWS_AS(call_quietly([&solver] { solver.get_eigenvalue(-1); }),
                       std::runtime_error);
-      CHECK_THROWS_AS(solver.get_eigenpair(lr, lc, nullptr, nullptr, nconv),
-                      std::runtime_error);
+      CHECK_THROWS_AS(
+          call_quietly([&solver, nconv] { solver.get_eigenvalue(nconv); }),
+          std::runtime_error);
+      CHECK_THROWS_AS(
+          call_quietly([&solver, &lr, &lc]
+                       { solver.get_eigenpair(lr, lc, nullptr, nullptr, -1); }),
+          std::runtime_error);
+      CHECK_THROWS_AS(
+          call_quietly(
+              [&solver, &lr, &lc, nconv]
+              { solver.get_eigenpair(lr, lc, nullptr, nullptr, nconv); }),
+          std::runtime_error);
     }
 
     CHECK(MatDestroy(&A) == 0);
@@ -225,7 +235,9 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     // EPSSetUp raises the error on the EPS communicator, so every rank
     // throws
     la::SLEPcEigenSolver solver(MPI_COMM_WORLD);
-    CHECK_THROWS_AS(solver.solve(), std::runtime_error);
+    CHECK_THROWS_AS(dolfinx_test::call_quietly(
+                        [&solver] { static_cast<void>(solver.solve()); }),
+                    std::runtime_error);
   }
 
   SECTION("Options prefix round-trips and is empty when unset")

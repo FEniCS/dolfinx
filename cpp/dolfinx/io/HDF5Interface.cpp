@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -20,6 +21,34 @@ using namespace dolfinx;
 
 namespace
 {
+/// @brief Get the type of an object in an HDF5 file.
+/// @param[in] handle HDF5 file handle.
+/// @param[in] name Path of the object. Every group on the path must
+/// exist.
+/// @return Type of the object, or std::nullopt if no link @p name
+/// exists.
+std::optional<H5O_type_t> object_type(hid_t handle, const std::string& name)
+{
+  htri_t link_status = H5Lexists(handle, name.c_str(), H5P_DEFAULT);
+  if (link_status < 0)
+    throw std::runtime_error("Failed to check existence of HDF5 link in group");
+  if (link_status == 0)
+    return std::nullopt;
+
+  H5O_info_t object_info;
+#if H5_VERSION_GE(1, 12, 0)
+  herr_t err = H5Oget_info_by_name3(handle, name.c_str(), &object_info,
+                                    H5O_INFO_BASIC, H5P_DEFAULT);
+#else
+  herr_t err
+      = H5Oget_info_by_name1(handle, name.c_str(), &object_info, H5P_DEFAULT);
+#endif
+  if (err < 0)
+    throw std::runtime_error("Call to H5Oget_info_by_name unsuccessful");
+
+  return object_info.type;
+}
+
 /// @brief Check for an object of a given type in an HDF5 file.
 /// @param[in] handle HDF5 file handle.
 /// @param[in] name Path of the object to check.
@@ -27,25 +56,18 @@ namespace
 /// @return True if @p name is in the file and has type @p type.
 bool has_object(hid_t handle, std::string_view name, H5O_type_t type)
 {
-  const std::string name_str(name);
-  htri_t link_status = H5Lexists(handle, name_str.c_str(), H5P_DEFAULT);
-  if (link_status < 0)
-    throw std::runtime_error("Failed to check existence of HDF5 link in group");
-  if (link_status == 0)
-    return false;
-
-  H5O_info_t object_info;
-#if H5_VERSION_GE(1, 12, 0)
-  herr_t err = H5Oget_info_by_name3(handle, name_str.c_str(), &object_info,
-                                    H5O_INFO_BASIC, H5P_DEFAULT);
-#else
-  herr_t err = H5Oget_info_by_name1(handle, name_str.c_str(), &object_info,
-                                    H5P_DEFAULT);
-#endif
-  if (err < 0)
-    throw std::runtime_error("Call to H5Oget_info_by_name unsuccessful");
-
-  return object_info.type == type;
+  // H5Lexists fails, printing HDF5's error stack, if a group on the
+  // path is missing, so check the path one component at a time
+  std::size_t end = name.find('/', 1);
+  while (end != std::string_view::npos)
+  {
+    if (object_type(handle, std::string(name.substr(0, end))) != H5O_TYPE_GROUP)
+    {
+      return false;
+    }
+    end = name.find('/', end + 1);
+  }
+  return object_type(handle, std::string(name)) == type;
 }
 
 /// @brief Remove an attribute if it is already present.
@@ -243,6 +265,13 @@ void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
 //-----------------------------------------------------------------------------
 hid_t io::hdf5::open_dataset(hid_t handle, std::string_view path)
 {
+  // Check first: a failed H5Dopen2 prints HDF5's error stack
+  if (!has_object(handle, path, H5O_TYPE_DATASET))
+  {
+    throw std::runtime_error(
+        std::format("HDF5 dataset \"{}\" does not exist.", path));
+  }
+
   hid_t dset_id = H5Dopen2(handle, std::string(path).c_str(), H5P_DEFAULT);
   if (dset_id < 0)
   {
