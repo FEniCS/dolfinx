@@ -115,13 +115,29 @@ jobs:
       - name: Install Spack packages
         run: spack -e py install -j $(nproc) --use-buildcache auto
 
-      # Emit only true, so an empty output from another leg cannot overwrite it.
+      # A package installed from a build cache keeps the cache's
+      # .spack/binary_distribution file; one built from source has none.
+      # Emit only true, so an empty output from another leg cannot
+      # overwrite it. Runs, as does the index job, even if the run is
+      # cancelled, so packages autopush has already sent are indexed.
       - name: Check for packages built from source
         id: built
-        if: ${{ !cancelled() && steps.autopush.outcome == 'success' }}
+        if: ${{ always() && steps.autopush.outcome == 'success' }}
         run: |
-          built=$(spack -e py python dolfinx-src/.github/workflows/spack-config/built_from_source.py)
-          if [ "$built" = true ]; then
+          built=$(spack -e py python -c '
+          import os
+          import spack.binary_distribution as bd
+          import spack.environment as ev
+          import spack.mirrors.mirror as mm
+          mirror = mm.MirrorCollection(binary=True)["local-buildcache"]
+          print(any(
+              s.installed
+              and not s.external
+              and mirror.matches_binary(s, "push")
+              and not os.path.exists(bd.buildinfo_file_name(s.prefix))
+              for s in ev.active_environment().all_specs()
+          ))')
+          if [ "$built" = True ]; then
             echo "built=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -200,8 +216,26 @@ jobs:
 
   update-buildcache-index:
     needs: ci-spack-build
-    if: ${{ !cancelled() && needs.ci-spack-build.outputs.built_from_source == 'true' }}
+    if: ${{ always() && needs.ci-spack-build.outputs.built_from_source == 'true' }}
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       packages: write
-    uses: ./.github/workflows/spack-buildcache-index.yml
+    # Each rebuild replaces the whole index. Concurrency groups are
+    # repository-wide, so this serialises across both Spack workflows.
+    concurrency:
+      group: spack-buildcache-index
+      queue: max
+    steps:
+      - name: Set up Spack
+        uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
+        with:
+          spack_ref: v1.2.2
+          packages_ref: c0109598cd38b30d9af1d4fbbbbba23eb2efa828
+          buildcache: false
+
+      - name: Update build cache index
+        run: |
+          spack mirror add --unsigned --oci-username-variable GITHUB_USER \
+            --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
+          spack buildcache update-index local-buildcache
