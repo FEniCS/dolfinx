@@ -216,9 +216,12 @@ jobs:
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
         shell: spack-bash {0}
 
+  # A manual run (workflow_dispatch) always rebuilds the index.
   update-buildcache-index:
     needs: ci-spack-build
-    if: ${{ always() && needs.ci-spack-build.outputs.built_from_source == 'true' }}
+    if: >-
+      ${{ always() && (needs.ci-spack-build.outputs.built_from_source == 'true'
+      || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-26.04
     permissions:
       contents: read

@@ -359,9 +359,12 @@ jobs:
             echo "built=true" >> "$GITHUB_OUTPUT"
           fi
 
+  # A manual run (workflow_dispatch) always rebuilds the index.
   update-buildcache-index:
     needs: ci-build
-    if: ${{ always() && needs.ci-build.outputs.built_from_source == 'true' }}
+    if: >-
+      ${{ always() && (needs.ci-build.outputs.built_from_source == 'true'
+      || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-26.04
     permissions:
       contents: read
