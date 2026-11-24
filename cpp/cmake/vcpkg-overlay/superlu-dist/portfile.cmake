@@ -1,3 +1,13 @@
+# zlib installs an import or a static library depending on the
+# triplet; prefer the matching kind if both are present. Read before
+# vcpkg_check_linkage forces VCPKG_LIBRARY_LINKAGE to static.
+set(SUPERLU_DIST_ZLIB_NAMES z zlib libz)
+if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
+  list(PREPEND SUPERLU_DIST_ZLIB_NAMES zs zlibstatic libzs)
+else()
+  list(APPEND SUPERLU_DIST_ZLIB_NAMES zs zlibstatic libzs)
+endif()
+
 vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 vcpkg_from_github(
   OUT_SOURCE_PATH SOURCE_PATH
@@ -15,41 +25,70 @@ vcpkg_from_github(
 # is a raw (non-target) link line, so scotch's static-library
 # dependencies have to be listed out by hand, since the scotch port
 # is always built static.
-set(
-  SUPERLU_DIST_SCOTCH_LIBRARY_NAMES
-  ptscotchparmetisv3
-  ptscotch
-  ptscotcherr
-  scotchmetisv5
-  scotch
-  scotcherr
-  bz2
-  lzma
-)
-set(SUPERLU_DIST_PARMETIS_LIBRARIES "")
-foreach(
-  SUPERLU_DIST_SCOTCH_LIBRARY_NAME
-  IN
-  LISTS SUPERLU_DIST_SCOTCH_LIBRARY_NAMES
-)
-  string(
-    APPEND SUPERLU_DIST_PARMETIS_LIBRARIES
-    "${CURRENT_INSTALLED_DIR}/lib/${SUPERLU_DIST_SCOTCH_LIBRARY_NAME}.lib "
-  )
-endforeach()
 
-# The zlib port uses different library names across versions and triplets.
-find_file(
-  SUPERLU_DIST_ZLIB_LIBRARY
-  NAMES libz.lib z.lib zlib.lib libzs.lib zs.lib zlibstatic.lib
-  PATHS "${CURRENT_INSTALLED_DIR}/lib"
-  NO_DEFAULT_PATH
-  REQUIRED
-)
-string(APPEND SUPERLU_DIST_PARMETIS_LIBRARIES "${SUPERLU_DIST_ZLIB_LIBRARY} ")
+# Append to the link line `out_var` the first library in `lib_dir`
+# named by ARGN, trying each name with `debug_suffix` first. Library
+# names differ between port versions, triplets and configurations.
+function(superlu_dist_append_library out_var lib_dir debug_suffix)
+  set(file_names "")
+  foreach(name IN LISTS ARGN)
+    list(APPEND file_names "${name}${debug_suffix}.lib" "${name}.lib")
+  endforeach()
+  list(REMOVE_DUPLICATES file_names)
+  find_file(
+    library
+    NAMES ${file_names}
+    PATHS "${lib_dir}"
+    NO_DEFAULT_PATH
+    NO_CACHE
+    REQUIRED
+  )
+  set(${out_var} "${${out_var}}${library} " PARENT_SCOPE)
+endfunction()
+
+# Set `out_var` to the ParMETIS link line from `lib_dir`.
+function(superlu_dist_parmetis_libraries out_var lib_dir debug_suffix)
+  set(libs "")
+  foreach(
+    name
+    ptscotchparmetisv3
+    ptscotch
+    ptscotcherr
+    scotchmetisv5
+    scotch
+    scotcherr
+  )
+    superlu_dist_append_library(libs "${lib_dir}" "${debug_suffix}" ${name})
+  endforeach()
+  superlu_dist_append_library(libs "${lib_dir}" "${debug_suffix}" bz2 libbz2)
+  superlu_dist_append_library(libs "${lib_dir}" "${debug_suffix}" lzma liblzma)
+  superlu_dist_append_library(
+    libs
+    "${lib_dir}"
+    "${debug_suffix}"
+    ${SUPERLU_DIST_ZLIB_NAMES}
+  )
+  set(${out_var} "${libs}" PARENT_SCOPE)
+endfunction()
+
+if(NOT VCPKG_BUILD_TYPE OR VCPKG_BUILD_TYPE STREQUAL "release")
+  superlu_dist_parmetis_libraries(
+    SUPERLU_DIST_PARMETIS_LIBRARIES_RELEASE
+    "${CURRENT_INSTALLED_DIR}/lib"
+    ""
+  )
+endif()
+if(NOT VCPKG_BUILD_TYPE OR VCPKG_BUILD_TYPE STREQUAL "debug")
+  superlu_dist_parmetis_libraries(
+    SUPERLU_DIST_PARMETIS_LIBRARIES_DEBUG
+    "${CURRENT_INSTALLED_DIR}/debug/lib"
+    d
+  )
+endif()
 
 # SuperLU_DIST's configure writes make.inc and superlu_dist_config.h
-# into the source tree, so concurrent Debug/Release configures race.
+# into the source tree, which the Debug and Release configures share,
+# so they must not run in parallel.
 vcpkg_cmake_configure(
   SOURCE_PATH "${SOURCE_PATH}"
   DISABLE_PARALLEL_CONFIGURE
@@ -64,8 +103,11 @@ vcpkg_cmake_configure(
     -DTPL_ENABLE_LAPACKLIB=ON
     -DTPL_ENABLE_PARMETISLIB=ON
     "-DTPL_PARMETIS_INCLUDE_DIRS=${CURRENT_INSTALLED_DIR}/include"
-    "-DTPL_PARMETIS_LIBRARIES=${SUPERLU_DIST_PARMETIS_LIBRARIES}"
     "-DCMAKE_C_FLAGS_INIT=-DSCOTCH_METIS_VERSION=5"
+  OPTIONS_RELEASE
+    "-DTPL_PARMETIS_LIBRARIES=${SUPERLU_DIST_PARMETIS_LIBRARIES_RELEASE}"
+  OPTIONS_DEBUG
+    "-DTPL_PARMETIS_LIBRARIES=${SUPERLU_DIST_PARMETIS_LIBRARIES_DEBUG}"
 )
 vcpkg_cmake_install()
 vcpkg_fixup_pkgconfig()
