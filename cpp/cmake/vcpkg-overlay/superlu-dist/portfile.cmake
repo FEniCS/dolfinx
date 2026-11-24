@@ -48,8 +48,11 @@ find_file(
 )
 string(APPEND SUPERLU_DIST_PARMETIS_LIBRARIES "${SUPERLU_DIST_ZLIB_LIBRARY} ")
 
+# SuperLU_DIST's configure writes make.inc and superlu_dist_config.h
+# into the source tree, so concurrent Debug/Release configures race.
 vcpkg_cmake_configure(
   SOURCE_PATH "${SOURCE_PATH}"
+  DISABLE_PARALLEL_CONFIGURE
   OPTIONS
     -DXSDK_ENABLE_Fortran=OFF
     -Denable_tests=OFF
