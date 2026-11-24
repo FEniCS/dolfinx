@@ -391,7 +391,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // The exception from the callback is re-thrown, not a PETSc error
     try
     {
-      static_cast<void>(solver.solve(x_local));
+      dolfinx_test::without_petsc_traceback(
+          [&solver, x_local] { static_cast<void>(solver.solve(x_local)); });
       FAIL("Expected the callback exception to be re-thrown.");
     }
     catch (const std::runtime_error& e)
@@ -418,7 +419,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     try
     {
-      static_cast<void>(solver.solve(x_local));
+      dolfinx_test::without_petsc_traceback(
+          [&solver, x_local] { static_cast<void>(solver.solve(x_local)); });
       FAIL("Expected the callback exception to be re-thrown.");
     }
     catch (const std::runtime_error& e)
@@ -447,7 +449,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     try
     {
-      static_cast<void>(solver.solve(x_local));
+      dolfinx_test::without_petsc_traceback(
+          [&solver, x_local] { static_cast<void>(solver.solve(x_local)); });
       FAIL("Expected the callback exception to be re-thrown.");
     }
     catch (const std::runtime_error& e)

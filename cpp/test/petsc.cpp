@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/petsc.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
@@ -24,14 +25,43 @@
 #include <numeric>
 #include <petscksp.h>
 #include <petscmat.h>
+#include <petscsys.h>
 #include <petscvec.h>
 #include <span>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 using namespace dolfinx;
 using dolfinx_test::init_petsc;
+
+TEST_CASE("PETSc exceptions describe the current failure", "[petsc]")
+{
+  init_petsc();
+  constexpr std::string_view prior_message = "Unrelated prior failure";
+  dolfinx_test::without_petsc_traceback(
+      [prior_message]
+      {
+        REQUIRE(PetscError(PETSC_COMM_SELF, __LINE__, __func__, __FILE__,
+                           PETSC_ERR_USER_INPUT, PETSC_ERROR_INITIAL, "%s",
+                           prior_message.data())
+                == PETSC_ERR_USER_INPUT);
+      });
+
+  // A callback can return an error code without setting an error message.
+  try
+  {
+    common::petsc::check(PETSC_ERR_LIB, "example callback");
+    FAIL("Expected the PETSc error code to throw.");
+  }
+  catch (const std::runtime_error& e)
+  {
+    const std::string_view message(e.what());
+    CHECK(message.find("example callback") != std::string_view::npos);
+    CHECK(message.find(prior_message) == std::string_view::npos);
+  }
+}
 
 TEST_CASE("PETSc wrappers reject null handles", "[petsc]")
 {
@@ -283,7 +313,10 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
     Vec x = nullptr, b = nullptr;
     CHECK(MatCreateVecs(A, &x, &b) == 0);
     CHECK(VecSet(b, 1.0) == 0);
-    CHECK_THROWS_AS(solver.solve(x, b, false), std::runtime_error);
+    CHECK_THROWS_AS(dolfinx_test::without_petsc_traceback(
+                        [&solver, x, b]
+                        { static_cast<void>(solver.solve(x, b, false)); }),
+                    std::runtime_error);
     CHECK(VecDestroy(&x) == 0);
     CHECK(VecDestroy(&b) == 0);
   }

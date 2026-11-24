@@ -222,7 +222,9 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     // EPSSetUp raises the error on the EPS communicator, so every rank
     // throws
     la::SLEPcEigenSolver solver(MPI_COMM_WORLD);
-    CHECK_THROWS_AS(solver.solve(), std::runtime_error);
+    CHECK_THROWS_AS(dolfinx_test::without_petsc_traceback(
+                        [&solver] { static_cast<void>(solver.solve()); }),
+                    std::runtime_error);
   }
 
   SECTION("Options prefix round-trips and is empty when unset")

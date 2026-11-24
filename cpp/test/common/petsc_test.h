@@ -7,41 +7,51 @@
 #pragma once
 
 #include <catch2/catch_test_macros.hpp>
+#include <exception>
 #include <petscsys.h>
+#include <utility>
 #ifdef HAS_SLEPC
 #include <slepcsys.h>
 #endif
 
 namespace dolfinx_test
 {
-/// Install, once, an error handler that suppresses the tracebacks of
-/// PETSc errors provoked by the tests.
-inline void set_petsc_error_handler()
+/// Run a callable that is expected to provoke a PETSc error without
+/// printing its traceback.
+template <typename F>
+void without_petsc_traceback(F&& f)
 {
-  static const PetscErrorCode error
-      = PetscPushErrorHandler(PetscReturnErrorHandler, nullptr);
-  REQUIRE(error == PETSC_SUCCESS);
+  REQUIRE(PetscPushErrorHandler(PetscReturnErrorHandler, nullptr)
+          == PETSC_SUCCESS);
+  std::exception_ptr exception;
+  try
+  {
+    std::forward<F>(f)();
+  }
+  catch (...)
+  {
+    exception = std::current_exception();
+  }
+  REQUIRE(PetscPopErrorHandler() == PETSC_SUCCESS);
+  if (exception)
+    std::rethrow_exception(exception);
 }
 
-/// Initialise PETSc (a no-op if already initialised) and set the test
-/// error handler.
+/// Initialise PETSc (a no-op if already initialised).
 inline void init_petsc()
 {
   int argc = 0;
   char** argv = nullptr;
   REQUIRE(PetscInitialize(&argc, &argv, nullptr, nullptr) == PETSC_SUCCESS);
-  set_petsc_error_handler();
 }
 
 #ifdef HAS_SLEPC
-/// Initialise SLEPc (a no-op if already initialised) and set the test
-/// error handler.
+/// Initialise SLEPc (a no-op if already initialised).
 inline void init_slepc()
 {
   int argc = 0;
   char** argv = nullptr;
   REQUIRE(SlepcInitialize(&argc, &argv, nullptr, nullptr) == PETSC_SUCCESS);
-  set_petsc_error_handler();
 }
 #endif
 } // namespace dolfinx_test
