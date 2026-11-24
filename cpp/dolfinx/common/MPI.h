@@ -24,7 +24,6 @@
 #include <span>
 #include <stdexcept>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -279,14 +278,6 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                 MPI_Comm comm1, const U& x, int shape1);
 
 /// @cond
-/// @private Type-dependent `false` for use in a `static_assert` that
-/// should only fire when a template is actually instantiated (a bare
-/// `static_assert(false, ...)` would fire unconditionally).
-template <typename T>
-struct dependent_false : std::false_type
-{
-};
-
 /// @private Map a C++ scalar type to its MPI_Datatype. New types are
 /// added here as another `else if constexpr` branch.
 template <typename T>
@@ -314,11 +305,12 @@ MPI_Datatype mpi_datatype()
     return MPI_UINT16_T;
   else if constexpr (std::same_as<T, std::uint32_t>)
     return MPI_UINT32_T;
-  else if constexpr (std::same_as<T, std::uint64_t>)
-    return MPI_UINT64_T;
   else
-    static_assert(dependent_false<T>::value,
+  {
+    static_assert(std::same_as<T, std::uint64_t>,
                   "No MPI datatype registered for this type.");
+    return MPI_UINT64_T;
+  }
 }
 /// @endcond
 
