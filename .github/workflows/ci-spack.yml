@@ -243,4 +243,10 @@ jobs:
         run: |
           spack mirror add --unsigned --oci-username-variable GITHUB_USER \
             --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
-          spack buildcache update-index local-buildcache
+          # The rebuild fetches every package's manifest and config. That is
+          # network-bound, so use more workers than Spack's default of one
+          # per CPU; ghcr.io throughput falls off beyond about 32. One fetch
+          # that exhausts its retries aborts the rebuild, so allow slow
+          # responses longer than the default 10 s.
+          spack -c config:build_jobs:32 -c config:connect_timeout:60 \
+            buildcache update-index local-buildcache
