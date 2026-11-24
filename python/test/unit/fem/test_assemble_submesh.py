@@ -1147,18 +1147,17 @@ def test_mixed_dom_entity_dim_must_match_submesh_dim() -> None:
         fem.form(g * ufl.Measure("dr", domain=msh), entity_maps=[entity_map])
 
 
-def test_mixed_dom_vertex_integral_unsupported() -> None:
-    """Vertex integrals with data on another mesh are not supported.
+def test_mixed_dom_peak_integral_unsupported() -> None:
+    """Peak integrals with data on another mesh are not supported.
 
     Rejected by FFCx while compiling the kernel; `Form` also refuses the
     integral type.
     """
-    msh = create_unit_square(MPI.COMM_WORLD, 2, 2)
-    tdim = msh.topology.dim
-    msh.topology.create_connectivity(tdim - 1, tdim)
-    facets = exterior_facet_indices(msh.topology)
-    smsh, entity_map = create_submesh(msh, tdim - 1, facets)[:2]
+    msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    vertex_map = msh.topology.index_map(0)
+    vertices = np.arange(vertex_map.size_local + vertex_map.num_ghosts, dtype=np.int32)
+    smsh, entity_map = create_submesh(msh, 0, vertices)[:2]
 
-    g = fem.Function(fem.functionspace(smsh, ("Lagrange", 1)))
+    g = fem.Function(fem.functionspace(smsh, ("Lagrange", 0)))
     with pytest.raises(RuntimeError):
-        fem.form(g * ufl.Measure("dP", domain=msh), entity_maps=[entity_map])
+        fem.form(g * ufl.Measure("dp", domain=msh), entity_maps=[entity_map])

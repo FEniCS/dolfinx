@@ -95,6 +95,16 @@ Form<T, U> create_form_factory(
         entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
+  // check alignment of ufcx integral_type and IntegralType.
+  static_assert(static_cast<int>(cell) == static_cast<int>(IntegralType::cell));
+  static_assert(static_cast<int>(exterior_facet)
+                == static_cast<int>(IntegralType::exterior_facet));
+  static_assert(static_cast<int>(interior_facet)
+                == static_cast<int>(IntegralType::interior_facet));
+  static_assert(static_cast<int>(ridge)
+                == static_cast<int>(IntegralType::ridge));
+  static_assert(static_cast<int>(peak) == static_cast<int>(IntegralType::peak));
+
   for (std::size_t c = 0; c < coefficients.size(); ++c)
   {
     if (!coefficients[c])
@@ -207,13 +217,6 @@ Form<T, U> create_form_factory(
   for (std::size_t i = 0; i < num_integrals_type.size(); ++i)
     num_integrals_type[i] = integral_offsets[i + 1] - integral_offsets[i];
 
-  // Create vertices, if required
-  if (num_integrals_type[vertex] > 0)
-  {
-    mesh->topology_mutable()->create_connectivity(0, tdim);
-    mesh->topology_mutable()->create_connectivity(tdim, 0);
-  }
-
   // Create facets, if required
   // NOTE: exterior_facet and interior_facet is declared in ufcx.h
   if (num_integrals_type[exterior_facet] > 0
@@ -230,6 +233,13 @@ Form<T, U> create_form_factory(
     mesh->topology_mutable()->create_entities(tdim - 2);
     mesh->topology_mutable()->create_connectivity(tdim - 2, tdim);
     mesh->topology_mutable()->create_connectivity(tdim, tdim - 2);
+  }
+
+  // Create peaks, if required
+  if (num_integrals_type[peak] > 0)
+  {
+    mesh->topology_mutable()->create_connectivity(tdim - 3, tdim);
+    mesh->topology_mutable()->create_connectivity(tdim, tdim - 3);
   }
 
   // Get list of integral IDs, and load tabulate tensor into memory for
@@ -413,7 +423,7 @@ Form<T, U> create_form_factory(
   // Attach exterior entity integrals
   {
     for (IntegralType itg_type : {IntegralType::exterior_facet,
-                                  IntegralType::vertex, IntegralType::ridge})
+                                  IntegralType::ridge, IntegralType::peak})
     {
       const std::size_t dim = integral_entity_dim(itg_type, tdim);
 
