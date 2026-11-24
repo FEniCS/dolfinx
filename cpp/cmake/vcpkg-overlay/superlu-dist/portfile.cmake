@@ -1,6 +1,13 @@
-# The triplet's linkage, which the dependencies use; vcpkg_check_linkage
-# below sets VCPKG_LIBRARY_LINKAGE to static for this port only.
-set(SUPERLU_DIST_DEPENDENCY_LINKAGE "${VCPKG_LIBRARY_LINKAGE}")
+# zlib installs an import or a static library depending on the
+# triplet; prefer the matching kind if both are present. Read before
+# vcpkg_check_linkage forces VCPKG_LIBRARY_LINKAGE to static.
+set(SUPERLU_DIST_ZLIB_NAMES z zlib libz)
+if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
+  list(PREPEND SUPERLU_DIST_ZLIB_NAMES zs zlibstatic libzs)
+else()
+  list(APPEND SUPERLU_DIST_ZLIB_NAMES zs zlibstatic libzs)
+endif()
+
 vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 vcpkg_from_github(
   OUT_SOURCE_PATH SOURCE_PATH
@@ -39,38 +46,8 @@ function(superlu_dist_append_library out_var lib_dir debug_suffix)
   set(${out_var} "${${out_var}}${library} " PARENT_SCOPE)
 endfunction()
 
-# zlib installs an import or a static library depending on the
-# triplet; prefer the matching kind if both are present.
-set(SUPERLU_DIST_ZLIB_IMPORT_NAMES z zlib libz)
-set(SUPERLU_DIST_ZLIB_STATIC_NAMES zs zlibstatic libzs)
-if(SUPERLU_DIST_DEPENDENCY_LINKAGE STREQUAL "static")
-  set(
-    SUPERLU_DIST_ZLIB_NAMES
-    ${SUPERLU_DIST_ZLIB_STATIC_NAMES}
-    ${SUPERLU_DIST_ZLIB_IMPORT_NAMES}
-  )
-else()
-  set(
-    SUPERLU_DIST_ZLIB_NAMES
-    ${SUPERLU_DIST_ZLIB_IMPORT_NAMES}
-    ${SUPERLU_DIST_ZLIB_STATIC_NAMES}
-  )
-endif()
-
-# Release libraries are in lib/, debug libraries in debug/lib/
-foreach(config IN ITEMS RELEASE DEBUG)
-  if(config STREQUAL "RELEASE")
-    set(lib_dir "${CURRENT_INSTALLED_DIR}/lib")
-    set(debug_suffix "")
-  else()
-    set(lib_dir "${CURRENT_INSTALLED_DIR}/debug/lib")
-    set(debug_suffix "d")
-  endif()
-  string(TOLOWER "${config}" build_type)
-  if(VCPKG_BUILD_TYPE AND NOT VCPKG_BUILD_TYPE STREQUAL build_type)
-    continue()
-  endif()
-
+# Set `out_var` to the ParMETIS link line from `lib_dir`.
+function(superlu_dist_parmetis_libraries out_var lib_dir debug_suffix)
   set(libs "")
   foreach(
     name
@@ -91,12 +68,27 @@ foreach(config IN ITEMS RELEASE DEBUG)
     "${debug_suffix}"
     ${SUPERLU_DIST_ZLIB_NAMES}
   )
-  set(SUPERLU_DIST_PARMETIS_LIBRARIES_${config} "${libs}")
-endforeach()
+  set(${out_var} "${libs}" PARENT_SCOPE)
+endfunction()
+
+if(NOT VCPKG_BUILD_TYPE OR VCPKG_BUILD_TYPE STREQUAL "release")
+  superlu_dist_parmetis_libraries(
+    SUPERLU_DIST_PARMETIS_LIBRARIES_RELEASE
+    "${CURRENT_INSTALLED_DIR}/lib"
+    ""
+  )
+endif()
+if(NOT VCPKG_BUILD_TYPE OR VCPKG_BUILD_TYPE STREQUAL "debug")
+  superlu_dist_parmetis_libraries(
+    SUPERLU_DIST_PARMETIS_LIBRARIES_DEBUG
+    "${CURRENT_INSTALLED_DIR}/debug/lib"
+    d
+  )
+endif()
 
 # SuperLU_DIST's configure writes make.inc and superlu_dist_config.h
-# into the source tree. Its contents differ between configurations
-# (TPL_PARMETIS_LIBRARIES), so configuring in parallel races.
+# into the source tree, which the Debug and Release configures share,
+# so they must not run in parallel.
 vcpkg_cmake_configure(
   SOURCE_PATH "${SOURCE_PATH}"
   DISABLE_PARALLEL_CONFIGURE
