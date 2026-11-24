@@ -286,6 +286,77 @@ jobs:
       - name: Run Python unit tests (MPI, np=3)
         run: mpirun -np 3 python -m pytest -m "petsc4py or adios2" python/test/unit/
 
+  # Compile DOLFINx headers and code with a GPU compiler (nvcc or HIP)
+  # in the C++ unit tests.
+  gpu-build:
+    runs-on: ubuntu-26.04
+    needs: [lint]
+    container: "ghcr.io/fenics/test-env:current"
+    strategy:
+      matrix:
+        include:
+          - language: CUDA
+            cmake_args: ""
+          - language: HIP
+            cmake_args: "-DCMAKE_HIP_ARCHITECTURES=gfx942"
+    env:
+      CUDA_VERSION: "13.5"
+      ROCM_VERSION: "10.2"
+      PETSC_ARCH: linux-gnu-real64-32
+      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
+
+    name: Build and test (${{ matrix.language }})
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
+      - name: Install nvcc
+        if: matrix.language == 'CUDA'
+        run: |
+          wget -q https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2604/x86_64/cuda-keyring_1.1-1_all.deb
+          dpkg -i cuda-keyring_1.1-1_all.deb
+          apt-get -y update
+          v=$(echo "$CUDA_VERSION" | tr . -)
+          apt-get install -y --no-install-recommends cuda-nvcc-$v cuda-cudart-dev-$v
+          echo "GPU_COMPILER=/usr/local/cuda-$CUDA_VERSION/bin/nvcc" >> $GITHUB_ENV
+
+      # ROCm Core SDK from AMD's repository
+      # (https://rocm.docs.amd.com/projects/HIP/en/latest/install/install.html)
+      - name: Install HIP
+        if: matrix.language == 'HIP'
+        run: |
+          mkdir -p /etc/apt/keyrings
+          wget -qO /etc/apt/keyrings/rocm.asc https://stable.repo.amd.com/rocm/gpg/packages.gpg
+          echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.asc] https://stable.repo.amd.com/rocm/core/packages/ubuntu2604 stable main" \
+            > /etc/apt/sources.list.d/rocm.list
+          apt-get -y update
+          apt-get install -y --no-install-recommends amdrocm-runtime-dev$ROCM_VERSION
+          c=$(dpkg -L amdrocm-llvm$ROCM_VERSION | grep -m1 '/bin/clang++$')
+          test -x "$c"
+          echo "GPU_COMPILER=$c" >> $GITHUB_ENV
+
+      - name: Install FEniCS Python components
+        run: |
+          pip install --group python/pyproject.toml:build setuptools
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+
+      - name: Configure and build (C++)
+        run: |
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
+            -DDOLFINX_TEST_GPU_COMPILER=${{ matrix.language }} \
+            -DCMAKE_${{ matrix.language }}_COMPILER=$GPU_COMPILER ${{ matrix.cmake_args }} \
+            -B build -S cpp/
+          cmake --build build
+
+      - name: Run GPU-compiler unit test (serial and MPI np=2)
+        run: |
+          build/test/unittests "[gpu]"
+          mpirun -np 2 build/test/unittests "[gpu]"
+
   build-and-publish-docs:
     runs-on: ubuntu-26.04
     needs: [lint]
