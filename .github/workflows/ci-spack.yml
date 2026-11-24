@@ -124,7 +124,8 @@ jobs:
         id: built
         if: ${{ always() && steps.autopush.outcome == 'success' }}
         run: |
-          built=$(spack -e py python -c '
+          # 'spack python -c' runs a single statement, hence exec.
+          built=$(spack -e py python -c 'exec("""
           import os
           import spack.binary_distribution as bd
           import spack.environment as ev
@@ -136,7 +137,8 @@ jobs:
               and mirror.matches_binary(s, "push")
               and not os.path.exists(bd.buildinfo_file_name(s.prefix))
               for s in ev.active_environment().all_specs()
-          ))')
+          ))
+          """)')
           if [ "$built" = True ]; then
             echo "built=true" >> "$GITHUB_OUTPUT"
           fi
