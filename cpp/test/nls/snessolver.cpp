@@ -14,6 +14,7 @@
 #include "../common/petsc_test.h"
 #include <algorithm>
 #include <array>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <cmath>
 #include <dolfinx/common/log.h>
 #include <dolfinx/nls/SNESSolver.h>
@@ -26,11 +27,11 @@
 #include <span>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
-#include <string>
 #include <utility>
 #include <vector>
 
 using namespace dolfinx;
+using dolfinx_test::without_petsc_traceback;
 
 namespace
 {
@@ -388,17 +389,10 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_J([](const Vec xk, Mat Jmat, Mat)
                  { assemble_jacobian(xk, Jmat); }, J);
 
-    // The exception from the callback is re-thrown, not a PETSc error
-    try
-    {
-      dolfinx_test::without_petsc_traceback(
-          [&solver, x_local] { static_cast<void>(solver.solve(x_local)); });
-      FAIL("Expected the callback exception to be re-thrown.");
-    }
-    catch (const std::runtime_error& e)
-    {
-      CHECK(std::string(e.what()) == "Residual failed");
-    }
+    CHECK_THROWS_MATCHES(
+        without_petsc_traceback([&solver, x_local]
+                                { static_cast<void>(solver.solve(x_local)); }),
+        std::runtime_error, Catch::Matchers::Message("Residual failed"));
 
     CHECK(VecDestroy(&b_local) == 0);
     CHECK(VecDestroy(&x_local) == 0);
@@ -417,16 +411,10 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_J([](const Vec, Mat, Mat)
                  { throw std::runtime_error("Jacobian failed"); }, J);
 
-    try
-    {
-      dolfinx_test::without_petsc_traceback(
-          [&solver, x_local] { static_cast<void>(solver.solve(x_local)); });
-      FAIL("Expected the callback exception to be re-thrown.");
-    }
-    catch (const std::runtime_error& e)
-    {
-      CHECK(std::string(e.what()) == "Jacobian failed");
-    }
+    CHECK_THROWS_MATCHES(
+        without_petsc_traceback([&solver, x_local]
+                                { static_cast<void>(solver.solve(x_local)); }),
+        std::runtime_error, Catch::Matchers::Message("Jacobian failed"));
 
     CHECK(VecDestroy(&b_local) == 0);
     CHECK(VecDestroy(&x_local) == 0);
@@ -447,16 +435,10 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_update([](PetscInt)
                       { throw std::runtime_error("Update failed"); });
 
-    try
-    {
-      dolfinx_test::without_petsc_traceback(
-          [&solver, x_local] { static_cast<void>(solver.solve(x_local)); });
-      FAIL("Expected the callback exception to be re-thrown.");
-    }
-    catch (const std::runtime_error& e)
-    {
-      CHECK(std::string(e.what()) == "Update failed");
-    }
+    CHECK_THROWS_MATCHES(
+        without_petsc_traceback([&solver, x_local]
+                                { static_cast<void>(solver.solve(x_local)); }),
+        std::runtime_error, Catch::Matchers::Message("Update failed"));
 
     CHECK(VecDestroy(&b_local) == 0);
     CHECK(VecDestroy(&x_local) == 0);

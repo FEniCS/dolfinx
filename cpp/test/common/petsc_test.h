@@ -10,9 +10,6 @@
 #include <exception>
 #include <petscsys.h>
 #include <utility>
-#ifdef HAS_SLEPC
-#include <slepcsys.h>
-#endif
 
 namespace dolfinx_test
 {
@@ -40,18 +37,6 @@ void without_petsc_traceback(F&& f)
 /// Initialise PETSc (a no-op if already initialised).
 inline void init_petsc()
 {
-  int argc = 0;
-  char** argv = nullptr;
-  REQUIRE(PetscInitialize(&argc, &argv, nullptr, nullptr) == PETSC_SUCCESS);
+  REQUIRE(PetscInitializeNoArguments() == PETSC_SUCCESS);
 }
-
-#ifdef HAS_SLEPC
-/// Initialise SLEPc (a no-op if already initialised).
-inline void init_slepc()
-{
-  int argc = 0;
-  char** argv = nullptr;
-  REQUIRE(SlepcInitialize(&argc, &argv, nullptr, nullptr) == PETSC_SUCCESS);
-}
-#endif
 } // namespace dolfinx_test

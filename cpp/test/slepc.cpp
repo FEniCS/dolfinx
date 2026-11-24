@@ -18,6 +18,7 @@
 #include <limits>
 #include <petscmat.h>
 #include <slepceps.h>
+#include <slepcsys.h>
 #include <stdexcept>
 #include <utility>
 
@@ -96,7 +97,7 @@ Mat create_conjugate_pair_matrix(PetscInt num_blocks)
 
 TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
 {
-  dolfinx_test::init_slepc();
+  REQUIRE(SlepcInitializeNoArguments() == PETSC_SUCCESS);
 
   constexpr PetscInt N = 20;
 
