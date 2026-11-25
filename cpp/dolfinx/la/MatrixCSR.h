@@ -10,15 +10,18 @@
 #include "Vector.h"
 #include "matrix_csr_impl.h"
 #include <algorithm>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <format>
 #include <mpi.h>
 #include <numeric>
 #include <ranges>
 #include <span>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -108,8 +111,7 @@ public:
   /// result in undefined behaviour (or an assert failure in Debug
   /// mode).
   ///
-  /// @note Matrix block size may be (1, 1) or (BS0, BS1)
-  /// @note Data block size may be (1, 1) or (BS0, BS1)
+  /// @note The data and matrix block sizes may differ. See set().
   ///
   /// @tparam BS0 Row block size of data for insertion
   /// @tparam BS1 Column block size of data for insertion
@@ -118,25 +120,8 @@ public:
   template <int BS0 = 1, int BS1 = 1>
   auto mat_set_values()
   {
-    if ((BS0 != _bs[0] and BS0 > 1 and _bs[0] > 1)
-        or (BS1 != _bs[1] and BS1 > 1 and _bs[1] > 1))
-    {
-      throw std::invalid_argument(
-          "Cannot insert blocks of different size than matrix block size");
-    }
-
-    return [this](const common::LocalIndexRange auto& rows,
-                  const common::LocalIndexRange auto& cols,
-                  std::span<const value_type> data) -> int
-    {
-      this->set<BS0, BS1>(
-          data,
-          std::span<const std::int32_t>(std::ranges::data(rows),
-                                        std::ranges::size(rows)),
-          std::span<const std::int32_t>(std::ranges::data(cols),
-                                        std::ranges::size(cols)));
-      return 0;
-    };
+    return mat_set_values(std::integral_constant<int, BS0>{},
+                          std::integral_constant<int, BS1>{});
   }
 
   /// @brief Insertion functor for adding values to a matrix. It is
@@ -155,8 +140,7 @@ public:
   /// result in undefined behaviour (or an assert failure in Debug
   /// mode).
   ///
-  /// @note Matrix block size may be (1, 1) or (BS0, BS1)
-  /// @note Data block size may be (1, 1) or (BS0, BS1)
+  /// @note The data and matrix block sizes may differ. See add().
   ///
   /// @tparam BS0 Row block size of data for insertion
   /// @tparam BS1 Column block size of data for insertion
@@ -165,25 +149,40 @@ public:
   template <int BS0 = 1, int BS1 = 1>
   auto mat_add_values()
   {
-    if ((BS0 != _bs[0] and BS0 > 1 and _bs[0] > 1)
-        or (BS1 != _bs[1] and BS1 > 1 and _bs[1] > 1))
-    {
-      throw std::invalid_argument(
-          "Cannot insert blocks of different size than matrix block size");
-    }
+    return mat_add_values(std::integral_constant<int, BS0>{},
+                          std::integral_constant<int, BS1>{});
+  }
 
-    return [this](const common::LocalIndexRange auto& rows,
-                  const common::LocalIndexRange auto& cols,
-                  std::span<const value_type> data) -> int
-    {
-      this->add<BS0, BS1>(
-          data,
-          std::span<const std::int32_t>(std::ranges::data(rows),
-                                        std::ranges::size(rows)),
-          std::span<const std::int32_t>(std::ranges::data(cols),
-                                        std::ranges::size(cols)));
-      return 0;
-    };
+  /// @brief Insertion functor for setting values in a matrix, with the
+  /// data block size given as an argument.
+  ///
+  /// As mat_set_values<BS0, BS1>(), which this is with
+  /// `std::integral_constant` block sizes. With `int` block sizes, for
+  /// sizes known only at run time, insertion is slower, so prefer
+  /// compile-time block sizes where they are known.
+  ///
+  /// @param[in] bs0 Row block size of data for insertion
+  /// @param[in] bs1 Column block size of data for insertion
+  /// @return Function for inserting values into `A`
+  auto mat_set_values(impl::BlockSizeArg auto bs0, impl::BlockSizeArg auto bs1)
+  {
+    return mat_insert_values<false>(bs0, bs1);
+  }
+
+  /// @brief Insertion functor for adding values to a matrix, with the
+  /// data block size given as an argument.
+  ///
+  /// As mat_add_values<BS0, BS1>(), which this is with
+  /// `std::integral_constant` block sizes. With `int` block sizes, for
+  /// sizes known only at run time, insertion is slower, so prefer
+  /// compile-time block sizes where they are known.
+  ///
+  /// @param[in] bs0 Row block size of data for insertion
+  /// @param[in] bs1 Column block size of data for insertion
+  /// @return Function for inserting values into `A`
+  auto mat_add_values(impl::BlockSizeArg auto bs0, impl::BlockSizeArg auto bs1)
+  {
+    return mat_insert_values<true>(bs0, bs1);
   }
 
   /// @brief Create a distributed matrix.
@@ -294,31 +293,35 @@ public:
   void set(std::span<const value_type> x, std::span<const std::int32_t> rows,
            std::span<const std::int32_t> cols)
   {
-    check_not_finalized();
-    auto set_fn = [](value_type& y, const value_type& x) { y = x; };
+    set(x, rows, cols, std::integral_constant<int, BS0>{},
+        std::integral_constant<int, BS1>{});
+  }
 
-    std::int32_t num_rows
-        = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts();
-    assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
-    if (_bs[0] == BS0 and _bs[1] == BS1)
-    {
-      impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, set_fn,
-                                 num_rows);
-    }
-    else if (_bs[0] == 1 and _bs[1] == 1)
-    {
-      // Set blocked data in a regular CSR matrix (_bs[0]=1, _bs[1]=1)
-      // with correct sparsity
-      impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
-                                         set_fn, num_rows);
-    }
-    else
-    {
-      assert(BS0 == 1 and BS1 == 1);
-      // Set non-blocked data in a blocked CSR matrix (BS0=1, BS1=1)
-      impl::insert_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, set_fn,
-                                  num_rows, _bs[0], _bs[1]);
-    }
+  /// @brief Set values in the matrix, with the data block size given as
+  /// an argument.
+  ///
+  /// As set<BS0, BS1>(). The data block size may differ from the matrix
+  /// block size. Insertion locates one entry per block when the matrix
+  /// block size is `(bs0, bs1)` or `(1, 1)`, and otherwise one per
+  /// scalar row and matrix block it spans.
+  ///
+  /// @param[in] x The `m` by `n` dense block of values (row-major) to
+  /// set in the matrix
+  /// @param[in] rows The row indices of `x`
+  /// @param[in] cols The column indices of `x`
+  /// @param[in] bs0 Data row block size, an `int` or a
+  /// `std::integral_constant`
+  /// @param[in] bs1 Data column block size, an `int` or a
+  /// `std::integral_constant`
+  /// @pre `bs0` and `bs1` are positive, which is checked in debug
+  /// builds only, as insertion is in hot loops.
+  void set(std::span<const value_type> x, std::span<const std::int32_t> rows,
+           std::span<const std::int32_t> cols, impl::BlockSizeArg auto bs0,
+           impl::BlockSizeArg auto bs1)
+  {
+    insert(
+        x, rows, cols, [](value_type& y, const value_type& x) { y = x; }, bs0,
+        bs1);
   }
 
   /// @brief Accumulate values in the matrix
@@ -340,28 +343,35 @@ public:
   void add(std::span<const value_type> x, std::span<const std::int32_t> rows,
            std::span<const std::int32_t> cols)
   {
-    check_not_finalized();
-    auto add_fn = [](value_type& y, const value_type& x) { y += x; };
+    add(x, rows, cols, std::integral_constant<int, BS0>{},
+        std::integral_constant<int, BS1>{});
+  }
 
-    assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
-    if (_bs[0] == BS0 and _bs[1] == BS1)
-    {
-      impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, add_fn,
-                                 _row_ptr.size());
-    }
-    else if (_bs[0] == 1 and _bs[1] == 1)
-    {
-      // Add blocked data to a regular CSR matrix (_bs[0]=1, _bs[1]=1)
-      impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
-                                         add_fn, _row_ptr.size());
-    }
-    else
-    {
-      assert(BS0 == 1 and BS1 == 1);
-      // Add non-blocked data to a blocked CSR matrix (BS0=1, BS1=1)
-      impl::insert_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, add_fn,
-                                  _row_ptr.size(), _bs[0], _bs[1]);
-    }
+  /// @brief Accumulate values in the matrix, with the data block size
+  /// given as an argument.
+  ///
+  /// As add<BS0, BS1>(). The data block size may differ from the matrix
+  /// block size. Insertion locates one entry per block when the matrix
+  /// block size is `(bs0, bs1)` or `(1, 1)`, and otherwise one per
+  /// scalar row and matrix block it spans.
+  ///
+  /// @param[in] x The `m` by `n` dense block of values (row-major) to
+  /// add to the matrix
+  /// @param[in] rows The row indices of `x`
+  /// @param[in] cols The column indices of `x`
+  /// @param[in] bs0 Data row block size, an `int` or a
+  /// `std::integral_constant`
+  /// @param[in] bs1 Data column block size, an `int` or a
+  /// `std::integral_constant`
+  /// @pre `bs0` and `bs1` are positive, which is checked in debug
+  /// builds only, as insertion is in hot loops.
+  void add(std::span<const value_type> x, std::span<const std::int32_t> rows,
+           std::span<const std::int32_t> cols, impl::BlockSizeArg auto bs0,
+           impl::BlockSizeArg auto bs1)
+  {
+    insert(
+        x, rows, cols, [](value_type& y, const value_type& x) { y += x; }, bs0,
+        bs1);
   }
 
   /// Number of local rows excluding ghost rows
@@ -742,6 +752,72 @@ private:
           "MatrixCSR has been finalized by eliminate_zeros() and can no "
           "longer be modified or scattered.");
     }
+  }
+
+  // Throw if a data block size is not positive.
+  static void check_block_size(int bs0, int bs1)
+  {
+    if (bs0 < 1 or bs1 < 1)
+    {
+      throw std::invalid_argument(
+          std::format("Invalid data block size ({}, {})", bs0, bs1));
+    }
+  }
+
+  // Apply op to the matrix entries of x, with data block size (bs0,
+  // bs1). Implements set() and add().
+  void insert(std::span<const value_type> x, std::span<const std::int32_t> rows,
+              std::span<const std::int32_t> cols, auto op,
+              impl::BlockSizeArg auto bs0, impl::BlockSizeArg auto bs1)
+  {
+    check_not_finalized();
+    auto b0 = impl::int_block_size(bs0);
+    auto b1 = impl::int_block_size(bs1);
+#ifndef NDEBUG
+    check_block_size(b0, b1);
+#endif
+
+    std::int32_t num_rows = num_all_rows();
+    assert(x.size() == rows.size() * cols.size() * b0 * b1);
+    if (_bs[0] == b0 and _bs[1] == b1)
+    {
+      impl::insert_csr(_data, _cols, _row_ptr, x, rows, cols, op, num_rows, b0,
+                       b1);
+    }
+    else if (_bs[0] == 1 and _bs[1] == 1)
+    {
+      // Blocked data in a regular CSR matrix (_bs[0]=1, _bs[1]=1)
+      impl::insert_blocked_csr(_data, _cols, _row_ptr, x, rows, cols, op,
+                               num_rows, b0, b1);
+    }
+    else
+    {
+      // Data in a blocked CSR matrix of another block size
+      impl::insert_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, op,
+                                  num_rows, _bs[0], _bs[1], b0, b1);
+    }
+  }
+
+  // Insertion functor calling add() (Add = true) or set().
+  template <bool Add>
+  auto mat_insert_values(impl::BlockSizeArg auto bs0,
+                         impl::BlockSizeArg auto bs1)
+  {
+    check_block_size(bs0, bs1);
+    return [this, bs0, bs1](const common::LocalIndexRange auto& rows,
+                            const common::LocalIndexRange auto& cols,
+                            std::span<const value_type> data) -> int
+    {
+      std::span<const std::int32_t> r(std::ranges::data(rows),
+                                      std::ranges::size(rows));
+      std::span<const std::int32_t> c(std::ranges::data(cols),
+                                      std::ranges::size(cols));
+      if constexpr (Add)
+        this->add(data, r, c, bs0, bs1);
+      else
+        this->set(data, r, c, bs0, bs1);
+      return 0;
+    };
   }
 };
 //-----------------------------------------------------------------------------

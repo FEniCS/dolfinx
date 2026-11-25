@@ -26,6 +26,7 @@ from dolfinx.fem import (
     assemble_scalar,
     assemble_vector,
     bcs_by_block,
+    create_matrix,
     dirichletbc,
     extract_function_spaces,
     form,
@@ -163,6 +164,165 @@ def test_basic_assembly(mode, dtype) -> None:
     assemble_matrix(A, a)
     A.scatter_reverse()
     assert 4 * normA == pytest.approx(A.squared_norm())
+
+
+def _bc_global_dofs(bc):
+    """Return the global unrolled indices of the DOFs constrained by ``bc``.
+
+    The indices are gathered from all processes: a process can hold a
+    column of a constrained DOF that is not one of its own DOFs, e.g. in
+    a row it owns that other processes also assemble into.
+    """
+    V = bc.function_space
+    bs = V.dofmap.index_map_bs
+    dofs = bc.dof_indices()[0]
+    local = V.dofmap.index_map.local_to_global(dofs // bs) * bs + dofs % bs
+    return np.unique(np.concatenate(V.mesh.comm.allgather(local)))
+
+
+def _assert_allclose(comm, actual, desired, atol):
+    """Assert that arrays are close on every process at once.
+
+    A failure on some processes only would leave the others waiting in
+    the next collective call, so all processes fail together.
+    """
+    close = np.allclose(actual, desired, rtol=1e-7, atol=atol)
+    if not comm.allreduce(close, op=MPI.LAND):
+        np.testing.assert_allclose(actual, desired, atol=atol)
+        raise AssertionError("Arrays are not close on another process.")
+
+
+@pytest.mark.parametrize("block_mode", [la.BlockMode.compact, la.BlockMode.expanded])
+@pytest.mark.parametrize("cell", [CellType.triangle, CellType.tetrahedron])
+@pytest.mark.parametrize("num_components", [None, 4])
+@dtype_parametrize
+def test_assembly_mixed_block_sizes(block_mode, cell, num_components, dtype) -> None:
+    """Assemble forms coupling a scalar and a vector space into MatrixCSR.
+
+    The test and trial spaces have different block sizes, (1, k) and
+    (k, 1), with k = gdim, which has compile-time insertion, or k = 4,
+    which does not. The result is compared with the same coupling
+    assembled one component at a time on scalar spaces, without and
+    with Dirichlet conditions on both spaces.
+    """
+    xtype = dtype(0).real.dtype
+    if cell == CellType.triangle:
+        msh = create_unit_square(MPI.COMM_WORLD, 4, 3, cell, dtype=xtype)
+    else:
+        msh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 2, cell, dtype=xtype)
+    gdim = msh.geometry.dim
+    nc = gdim if num_components is None else num_components
+    Q = functionspace(msh, ("Lagrange", 1))
+    W = functionspace(msh, ("Lagrange", 1, (nc,)))
+    p, q = ufl.TrialFunction(Q), ufl.TestFunction(Q)
+    w, r = ufl.TrialFunction(W), ufl.TestFunction(W)
+
+    fdim = msh.topology.dim - 1
+    facets = locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[0], 0.0))
+    bcs = [
+        dirichletbc(dtype(0), locate_dofs_topological(Q, fdim, facets), Q),
+        dirichletbc(np.zeros(nc, dtype=dtype), locate_dofs_topological(W, fdim, facets), W),
+    ]
+
+    # Coupling blocks of block size (1, nc) and (nc, 1); component i
+    # couples to derivative i % gdim
+    def grad_nc(f):
+        return ufl.as_vector([f.dx(i % gdim) for i in range(nc)])
+
+    forms = [inner(w, grad_nc(q)) * dx, inner(grad_nc(p), r) * dx]
+    atol = 10 * np.finfo(xtype).eps
+    for k, a in enumerate(forms):
+        A = assemble_matrix(form(a, dtype=dtype), block_mode=block_mode)
+        A.scatter_reverse()
+        dense = A.to_dense()
+
+        # The same block, one component of the vector space at a time
+        expected = np.zeros_like(dense)
+        for i in range(nc):
+            if k == 0:
+                ai = inner(p, q.dx(i % gdim)) * dx
+            else:
+                ai = inner(p.dx(i % gdim), q) * dx
+            Ai = assemble_matrix(form(ai, dtype=dtype))
+            Ai.scatter_reverse()
+            if k == 0:
+                expected[:, i::nc] = Ai.to_dense()
+            else:
+                expected[i::nc, :] = Ai.to_dense()
+        _assert_allclose(msh.comm, dense, expected, atol)
+
+        # Rows and columns of constrained DOFs are zeroed
+        bc0, bc1 = (bcs[0], bcs[1]) if k == 0 else (bcs[1], bcs[0])
+        expected[bc0.dof_indices()[0], :] = 0
+        expected[:, _bc_global_dofs(bc1)] = 0
+        A = assemble_matrix(form(a, dtype=dtype), bcs=bcs, block_mode=block_mode)
+        A.scatter_reverse()
+        _assert_allclose(msh.comm, A.to_dense(), expected, atol)
+
+
+@pytest.mark.parametrize("block_mode", [la.BlockMode.compact, la.BlockMode.expanded])
+@pytest.mark.parametrize("cell", [CellType.triangle, CellType.tetrahedron])
+@dtype_parametrize
+def test_assembly_subspace_block_sizes(block_mode, cell, dtype) -> None:
+    """Assemble forms with a sub-space argument into a parent matrix.
+
+    A sub-space is a view into the parent space: its DOF map has block
+    size 1 but the parent's index map and index map block size, so the
+    element data block size, (1, gdim) or (gdim, 1), differs from the
+    (gdim, gdim) block size of a compact parent matrix. The result is
+    compared with the parent-space form restricted to component 0.
+    """
+    xtype = dtype(0).real.dtype
+    if cell == CellType.triangle:
+        msh = create_unit_square(MPI.COMM_WORLD, 4, 3, cell, dtype=xtype)
+    else:
+        msh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 2, cell, dtype=xtype)
+    W = functionspace(msh, ("Lagrange", 1, (msh.geometry.dim,)))
+    W0 = W.sub(0)
+    assert W0.dofmap.bs == 1 and W0.dofmap.index_map_bs == msh.geometry.dim
+    w, r = ufl.TrialFunction(W), ufl.TestFunction(W)
+    w0, r0 = ufl.TrialFunction(W0), ufl.TestFunction(W0)
+
+    atol = 10 * np.finfo(xtype).eps
+    pattern = form(inner(w, r) * dx, dtype=dtype)
+    for a_sub, a in [
+        (inner(w, ufl.grad(r0)) * dx, inner(w, ufl.grad(r[0])) * dx),
+        (inner(ufl.grad(w0), r) * dx, inner(ufl.grad(w[0]), r) * dx),
+    ]:
+        A = create_matrix(pattern, block_mode=block_mode)
+        assemble_matrix(A, form(a_sub, dtype=dtype))
+        A.scatter_reverse()
+        B = assemble_matrix(form(a, dtype=dtype), block_mode=block_mode)
+        B.scatter_reverse()
+        _assert_allclose(msh.comm, A.to_dense(), B.to_dense(), atol)
+
+
+@pytest.mark.parametrize("block_mode", [la.BlockMode.compact, la.BlockMode.expanded])
+@dtype_parametrize
+def test_assembly_large_block_size(block_mode, dtype) -> None:
+    """Assemble a mass matrix of block size 16 into MatrixCSR.
+
+    Block size 16 has no compile-time insertion in the wrappers. The
+    result is compared with the scalar mass matrix.
+    """
+    xtype = dtype(0).real.dtype
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 2, dtype=xtype)
+    shape = (4, 4)
+    bs = math.prod(shape)
+    Q = functionspace(msh, ("Lagrange", 1))
+    T = functionspace(msh, ("Lagrange", 1, shape))
+
+    A = assemble_matrix(
+        form(inner(ufl.TrialFunction(T), ufl.TestFunction(T)) * dx, dtype=dtype),
+        block_mode=block_mode,
+    )
+    A.scatter_reverse()
+    M = assemble_matrix(form(inner(ufl.TrialFunction(Q), ufl.TestFunction(Q)) * dx, dtype=dtype))
+    M.scatter_reverse()
+
+    expected = np.kron(M.to_dense(), np.eye(bs, dtype=dtype))
+    atol = 10 * np.finfo(xtype).eps
+    _assert_allclose(msh.comm, A.to_dense(), expected, atol)
 
 
 def nest_matrix_norm(A):

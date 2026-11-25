@@ -14,7 +14,7 @@ import pytest
 
 import dolfinx.la
 import ufl
-from basix.ufl import element
+from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
 from dolfinx.fem import Expression, Function, discrete_curl, discrete_gradient, functionspace
 from dolfinx.mesh import (
@@ -429,6 +429,74 @@ def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange) -> None:
 
     atol = 100 * np.finfo(dtype).resolution
     assert np.allclose(w_vec.x.array, w.x.array, atol=atol)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("shape", [(2,), (5,), (10,)])
+def test_interpolation_matrix_blocked(dtype, shape) -> None:
+    """Interpolation matrix between blocked spaces of any block size.
+
+    Block size 10 has no compile-time insertion in the wrappers.
+    """
+    from dolfinx.fem import interpolation_matrix
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 4, dtype=dtype)
+    V = functionspace(mesh, ("Lagrange", 1, shape))
+    W = functionspace(mesh, ("Lagrange", 2, shape))
+    G = interpolation_matrix(V, W)
+    G.scatter_reverse()
+    G_sp = G.to_scipy()
+
+    u = Function(V, dtype=dtype)
+    u.interpolate(lambda x: np.vstack([x[0] + (i + 1) * x[1] ** 2 for i in range(shape[0])]))
+    w_vec = Function(W, dtype=dtype)
+    w_vec.interpolate(u)
+
+    # Compute global matrix vector product
+    w = Function(W, dtype=dtype)
+    ux = np.zeros(G_sp.shape[1])
+    ux[: len(u.x.array)] = u.x.array[:]
+    w.x.array[: G_sp.shape[0]] = G_sp @ ux
+    w.x.scatter_forward()
+
+    atol = 100 * np.finfo(dtype).resolution
+    assert np.allclose(w_vec.x.array, w.x.array, atol=atol)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_interpolation_matrix_mixed_subspace(dtype) -> None:
+    """Interpolation matrix from a blocked sub-space of a mixed space.
+
+    The sub-space element has block size 2 and its dofmap block size 1.
+    """
+    from dolfinx.fem import interpolation_matrix
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 4, dtype=dtype)
+    P2 = element("Lagrange", mesh.basix_cell(), 2, shape=(2,), dtype=dtype)
+    P1 = element("Lagrange", mesh.basix_cell(), 1, dtype=dtype)
+    Z = functionspace(mesh, mixed_element([P2, P1]))
+    W = functionspace(mesh, ("Lagrange", 3, (2,)))
+    G = interpolation_matrix(Z.sub(0), W)
+    G.scatter_reverse()
+    G_sp = G.to_scipy()
+
+    def f(x):
+        return np.vstack([x[0] ** 2, x[0] * x[1]])
+
+    z = Function(Z, dtype=dtype)
+    z.sub(0).interpolate(f)
+    w_ref = Function(W, dtype=dtype)
+    w_ref.interpolate(f)
+
+    # Compute global matrix vector product
+    w = Function(W, dtype=dtype)
+    zx = np.zeros(G_sp.shape[1], dtype=dtype)
+    zx[: len(z.x.array)] = z.x.array[:]
+    w.x.array[: G_sp.shape[0]] = G_sp @ zx
+    w.x.scatter_forward()
+
+    atol = 100 * np.finfo(dtype).resolution
+    assert np.allclose(w_ref.x.array, w.x.array, atol=atol)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
