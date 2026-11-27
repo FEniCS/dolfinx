@@ -18,6 +18,7 @@ import numpy.typing as npt
 
 import basix.ufl
 import ufl.algorithms
+import ufl.argument
 import ufl.core.expr
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
@@ -214,7 +215,10 @@ class Expression(Generic[Scalar]):
         ]
         ufl_constants = ufl.algorithms.analysis.extract_constants(e)
         constants = [constant._cpp_object for constant in ufl_constants]
-        arguments = ufl.algorithms.extract_arguments(e)
+        # extract_arguments, with base_form_op_as_expr=True
+        arguments = list(
+            ufl.algorithms.extract_type(e, ufl.argument.BaseArgument, base_form_op_as_expr=True)
+        )
         if len(arguments) == 0:
             self._argument_space = None
         elif len(arguments) == 1:
