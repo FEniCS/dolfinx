@@ -215,7 +215,9 @@ class Expression(Generic[Scalar]):
         ]
         ufl_constants = ufl.algorithms.analysis.extract_constants(e)
         constants = [constant._cpp_object for constant in ufl_constants]
-        # extract_arguments, with base_form_op_as_expr=True
+        # extract_arguments, with base_form_op_as_expr=True.
+        # this disregard UFL BaseFormOperator's dual argument, i.e. treat
+        # it as an expression not as an operator between function spaces.
         arguments = list(
             ufl.algorithms.extract_type(e, ufl.argument.BaseArgument, base_form_op_as_expr=True)
         )
