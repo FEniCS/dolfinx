@@ -1001,3 +1001,24 @@ def test_expression_invalid_entities(dtype, tdim):
     expr = Expression(x[0], np.full((1, tdim - 1), 0.5, dtype=xtype), dtype=dtype)
     with pytest.raises(ValueError, match="entities must have shape"):
         expr.eval(mesh, np.zeros((cells.size, 3), dtype=np.int32))
+
+
+def test_interpolate() -> None:
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+
+    V = functionspace(mesh, ("P", 2))
+    f = Function(V)
+    f.interpolate(lambda x: x[0] ** 2 + 2.0 * x[1] ** 2)
+
+    W = functionspace(mesh, ("DG", 1, (mesh.geometry.dim,)))
+    points = W.element.interpolation_points
+
+    u_ref = Function(W)
+    u_ref.interpolate(Expression(ufl.grad(f), points))
+
+    expr = Expression(ufl.interpolate(ufl.grad(f), W), points)
+    assert expr.argument_space is None
+    u = Function(W)
+    u.interpolate(expr)
+
+    assert np.allclose(u.x.array, u_ref.x.array)
