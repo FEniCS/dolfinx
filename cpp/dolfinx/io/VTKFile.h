@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "FileMode.h"
 #include <concepts>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
@@ -49,7 +50,17 @@ class VTKFile
 public:
   /// Create VTK file
   VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
-          std::string_view file_mode);
+          FileMode file_mode = FileMode::write);
+
+  /// @brief Construct a VTK file using a legacy string mode.
+  ///
+  /// Prefer the type-safe overload taking `FileMode`.
+  /// The only supported mode is `"w"`.
+  VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
+          std::string_view file_mode)
+      : VTKFile(comm, filename, file_mode_from_string(file_mode))
+  {
+  }
 
   // Copy constructor (deleted)
   VTKFile(const VTKFile& file) = delete;

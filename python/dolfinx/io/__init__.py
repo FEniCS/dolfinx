@@ -7,9 +7,9 @@
 
 from dolfinx.common import has_adios2
 from dolfinx.io import gmsh, vtkhdf
-from dolfinx.io.utils import VTKFile, XDMFFile, distribute_entity_data
+from dolfinx.io.utils import FileMode, VTKFile, XDMFFile, distribute_entity_data
 
-__all__ = ["VTKFile", "XDMFFile", "distribute_entity_data", "gmsh", "vtkhdf"]
+__all__ = ["FileMode", "VTKFile", "XDMFFile", "distribute_entity_data", "gmsh", "vtkhdf"]
 
 if has_adios2:
     # VTXWriter requires ADIOS2
