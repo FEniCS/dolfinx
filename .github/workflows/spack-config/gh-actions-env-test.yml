@@ -44,3 +44,9 @@ spack:
       access_pair:
         id_variable: GITHUB_USER
         secret_variable: GITHUB_TOKEN
+      # Develop specs are built at the commit under test and never reused,
+      # nor are packages that depend on them.
+      push:
+        exclude_binary:
+        - dev_path=*
+        - ^dev_path=*

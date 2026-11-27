@@ -32,16 +32,23 @@ env:
   # consuming package, e.g. mesa-glu's libGLU.so.1 for gmsh) are not
   # found at runtime without this.
   LD_LIBRARY_PATH: /opt/view/lib:/opt/view/lib64
+  # Pull requests from forks get a read-only GITHUB_TOKEN, so they must
+  # not push to the build cache. Reads are anonymous.
+  CACHE_PUSH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
 
 jobs:
   ci-spack-build:
     name: AlmaLinux build and test
     runs-on: ubuntu-26.04
     container: ghcr.io/almalinux/almalinux:10
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      built_from_source: ${{ steps.built.outputs.built }}
     strategy:
-      # One compiler failing must not cancel the other: the legs share a
-      # build cache, so a cancelled leg loses its diagnostics and its
-      # pushed binaries.
+      # One compiler failing must not cancel the other: a cancelled leg
+      # loses its diagnostics and the packages it has yet to build.
       fail-fast: false
       matrix:
         compiler: ["gcc", "oneapi"]
@@ -59,6 +66,9 @@ jobs:
           # spack-packages 'develop' at 2026-10-05. Bumping re-solves the
           # graph and can invalidate cached binaries; warm the cache first.
           packages_ref: c0109598cd38b30d9af1d4fbbbbba23eb2efa828
+          # Spack's public cache has none of the packages this
+          # configuration builds, so only the FEniCS cache is used.
+          buildcache: false
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v7
@@ -66,7 +76,16 @@ jobs:
           path: dolfinx-src
 
       - name: Create Spack environment
-        run: spack env create py dolfinx-src/.github/workflows/spack-config/gh-actions-rh.yml
+        run: |
+          spack debug report
+          spack env create py dolfinx-src/.github/workflows/spack-config/gh-actions-rh.yml
+
+      # Push each package as soon as it is built, so a cancelled or
+      # timed-out run keeps it. Exclusions are in the environment file.
+      - name: Enable build cache autopush
+        id: autopush
+        if: env.CACHE_PUSH == 'true'
+        run: spack -e py mirror set --autopush local-buildcache
 
       - name: Add dependencies to environment
         run: |
@@ -96,14 +115,33 @@ jobs:
       - name: Install Spack packages
         run: spack -e py install -j $(nproc) --use-buildcache auto
 
-      - name: Push packages to Spack cache and update index
-        env:
-          GITHUB_USER: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # A package installed from a build cache keeps the cache's
+      # .spack/binary_distribution file; one built from source has none.
+      # Emit only true, so an empty output from another leg cannot
+      # overwrite it. Runs, as does the index job, even if the run is
+      # cancelled, so packages autopush has already sent are indexed.
+      - name: Check for packages built from source
+        id: built
+        if: ${{ always() && steps.autopush.outcome == 'success' }}
         run: |
-          spack debug report
-          spack -d -e py buildcache push --base-image ghcr.io/almalinux/almalinux:10 --allow-missing --update-index local-buildcache
-        if: ${{ !cancelled() }}
+          # 'spack python -c' runs a single statement, hence exec.
+          built=$(spack -e py python -c 'exec("""
+          import os
+          import spack.binary_distribution as bd
+          import spack.environment as ev
+          import spack.mirrors.mirror as mm
+          mirror = mm.MirrorCollection(binary=True)["local-buildcache"]
+          print(any(
+              s.installed
+              and not s.external
+              and mirror.matches_binary(s, "push")
+              and not os.path.exists(bd.buildinfo_file_name(s.prefix))
+              for s in ev.active_environment().all_specs()
+          ))
+          """)')
+          if [ "$built" = True ]; then
+            echo "built=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Load FEniCS testing environment variables
         run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -177,3 +215,38 @@ jobs:
           python -m pytest -n auto -m "not adios2" --durations=50 dolfinx-src/python/test/unit/
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
         shell: spack-bash {0}
+
+  # A manual run (workflow_dispatch) always rebuilds the index.
+  update-buildcache-index:
+    needs: ci-spack-build
+    if: >-
+      ${{ always() && (needs.ci-spack-build.outputs.built_from_source == 'true'
+      || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      packages: write
+    # Each rebuild replaces the whole index. Concurrency groups are
+    # repository-wide, so this serialises across both Spack workflows.
+    concurrency:
+      group: spack-buildcache-index
+      queue: max
+    steps:
+      - name: Set up Spack
+        uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
+        with:
+          spack_ref: v1.2.2
+          packages_ref: c0109598cd38b30d9af1d4fbbbbba23eb2efa828
+          buildcache: false
+
+      - name: Update build cache index
+        run: |
+          spack mirror add --unsigned --oci-username-variable GITHUB_USER \
+            --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
+          # The rebuild fetches every package's manifest and config. That is
+          # network-bound, so use more workers than Spack's default of one
+          # per CPU; ghcr.io throughput falls off beyond about 32. One fetch
+          # that exhausts its retries aborts the rebuild, so allow slow
+          # responses longer than the default 10 s.
+          spack -c config:build_jobs:32 -c config:connect_timeout:60 \
+            buildcache update-index local-buildcache
