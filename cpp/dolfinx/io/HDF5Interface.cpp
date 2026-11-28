@@ -10,6 +10,9 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <hdf5.h>
+#include <optional>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -20,32 +23,32 @@ using namespace dolfinx;
 
 namespace
 {
-/// @brief Check for an object of a given type in an HDF5 file.
+/// @brief Get the type of an object in an HDF5 file.
 /// @param[in] handle HDF5 file handle.
-/// @param[in] name Path of the object to check.
-/// @param[in] type Object type to check for.
-/// @return True if @p name is in the file and has type @p type.
-bool has_object(hid_t handle, std::string_view name, H5O_type_t type)
+/// @param[in] name Path of the object. Every group on the path must
+/// exist.
+/// @return Type of the object, or std::nullopt if no link @p name
+/// exists.
+std::optional<H5O_type_t> object_type(hid_t handle, const std::string& name)
 {
-  const std::string name_str(name);
-  htri_t link_status = H5Lexists(handle, name_str.c_str(), H5P_DEFAULT);
+  htri_t link_status = H5Lexists(handle, name.c_str(), H5P_DEFAULT);
   if (link_status < 0)
     throw std::runtime_error("Failed to check existence of HDF5 link in group");
   if (link_status == 0)
-    return false;
+    return std::nullopt;
 
   H5O_info_t object_info;
 #if H5_VERSION_GE(1, 12, 0)
-  herr_t err = H5Oget_info_by_name3(handle, name_str.c_str(), &object_info,
+  herr_t err = H5Oget_info_by_name3(handle, name.c_str(), &object_info,
                                     H5O_INFO_BASIC, H5P_DEFAULT);
 #else
-  herr_t err = H5Oget_info_by_name1(handle, name_str.c_str(), &object_info,
-                                    H5P_DEFAULT);
+  herr_t err
+      = H5Oget_info_by_name1(handle, name.c_str(), &object_info, H5P_DEFAULT);
 #endif
   if (err < 0)
     throw std::runtime_error("Call to H5Oget_info_by_name unsuccessful");
 
-  return object_info.type == type;
+  return object_info.type;
 }
 
 /// @brief Remove an attribute if it is already present.
@@ -201,7 +204,24 @@ std::filesystem::path io::hdf5::get_filename(hid_t handle)
 //-----------------------------------------------------------------------------
 bool io::hdf5::has_dataset(hid_t handle, std::string_view dataset_path)
 {
-  return has_object(handle, dataset_path, H5O_TYPE_DATASET);
+  // H5Lexists fails, printing HDF5's error stack, if a group on the
+  // path is missing, so check one component at a time. Empty and "."
+  // components are skipped, as HDF5 does.
+  std::string path = dataset_path.starts_with('/') ? "/" : "";
+  std::optional<H5O_type_t> type = H5O_TYPE_GROUP;
+  for (auto c : std::views::split(dataset_path, '/'))
+  {
+    const std::string_view name(c.begin(), c.end());
+    if (name.empty() or name == ".")
+      continue;
+    if (type != H5O_TYPE_GROUP)
+      return false;
+    if (!path.empty() and !path.ends_with('/'))
+      path += '/';
+    path += name;
+    type = object_type(handle, path);
+  }
+  return type == H5O_TYPE_DATASET;
 }
 //-----------------------------------------------------------------------------
 void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
@@ -243,7 +263,23 @@ void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
 //-----------------------------------------------------------------------------
 hid_t io::hdf5::open_dataset(hid_t handle, std::string_view path)
 {
-  hid_t dset_id = H5Dopen2(handle, std::string(path).c_str(), H5P_DEFAULT);
+  // Open with HDF5's error printing off, so that a missing dataset is
+  // reported by the exception only
+  const std::string name(path);
+  hid_t dset_id = H5I_INVALID_HID;
+  H5E_BEGIN_TRY { dset_id = H5Dopen2(handle, name.c_str(), H5P_DEFAULT); }
+  H5E_END_TRY
+  if (dset_id >= 0)
+    return dset_id;
+
+  if (!has_dataset(handle, path))
+  {
+    throw std::runtime_error(
+        std::format("HDF5 dataset \"{}\" does not exist.", path));
+  }
+
+  // Retry so that HDF5 reports the cause through its error handler
+  dset_id = H5Dopen2(handle, name.c_str(), H5P_DEFAULT);
   if (dset_id < 0)
   {
     throw std::runtime_error(
@@ -270,8 +306,9 @@ void io::hdf5::add_group(hid_t handle, std::string_view dataset_path)
   {
     pos++;
     pos = _group_name.find('/', pos);
+    // Groups above parent_name exist, from the previous iteration
     const std::string parent_name(_group_name, 0, pos);
-    if (!has_object(handle, parent_name, H5O_TYPE_GROUP))
+    if (object_type(handle, parent_name) != H5O_TYPE_GROUP)
     {
       const Handle group_id(H5Gcreate2(handle, parent_name.c_str(), H5P_DEFAULT,
                                        H5P_DEFAULT, H5P_DEFAULT),

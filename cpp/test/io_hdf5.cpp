@@ -116,8 +116,20 @@ TEST_CASE("HDF5 dataset round-trip", "[hdf5]")
                           false);
 
   CHECK(io::hdf5::has_dataset(handle, "/group/x"));
+  CHECK(io::hdf5::has_dataset(handle, "/group/x/"));
+  CHECK(io::hdf5::has_dataset(handle, "/group/x/."));
+  CHECK(io::hdf5::has_dataset(handle, "/group/./x"));
+  CHECK(io::hdf5::has_dataset(handle, "//group//x"));
+  CHECK(io::hdf5::has_dataset(handle, "group/x"));
+  CHECK(!io::hdf5::has_dataset(handle, "/group"));
   CHECK(!io::hdf5::has_dataset(handle, "/group/y"));
+  CHECK(!io::hdf5::has_dataset(handle, "/group/x/y"));
+  CHECK(!io::hdf5::has_dataset(handle, "/does/not/exist"));
   CHECK(io::hdf5::get_dataset_shape(handle, "/group/x")
+        == std::vector<std::int64_t>{3, 2});
+  CHECK(io::hdf5::get_dataset_shape(handle, "/group/x/.")
+        == std::vector<std::int64_t>{3, 2});
+  CHECK(io::hdf5::get_dataset_shape(handle, "/group/./x")
         == std::vector<std::int64_t>{3, 2});
 
   // allow_cast = false requires the stored and requested types to match
