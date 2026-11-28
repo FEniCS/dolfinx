@@ -611,6 +611,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     if (pcomm != MPI_COMM_NULL)
     {
       std::vector<idx_t> array(graph.array().begin(), graph.array().end());
+      // Non-null adjncy for an edgeless graph; ParMETIS rejects NULL
+      array.reserve(1);
       std::vector<idx_t> offsets(graph.offsets().begin(),
                                  graph.offsets().end());
 
@@ -681,6 +683,8 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
     if (pcomm != MPI_COMM_NULL)
     {
       std::vector<idx_t> array(graph.array().begin(), graph.array().end());
+      // Non-null adjncy for an edgeless graph; ParMETIS rejects NULL
+      array.reserve(1);
       std::vector<idx_t> offsets(graph.offsets().begin(),
                                  graph.offsets().end());
 
@@ -819,6 +823,8 @@ graph::parmetis::geom_partitioner_kway(double imbalance,
       idx_t ndims = gdim;
 
       std::vector<idx_t> array(graph.array().begin(), graph.array().end());
+      // Non-null adjncy for an edgeless graph; ParMETIS rejects NULL
+      array.reserve(1);
       std::vector<idx_t> offsets(graph.offsets().begin(),
                                  graph.offsets().end());
       std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
