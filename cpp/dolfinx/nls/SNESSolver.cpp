@@ -37,17 +37,17 @@ PetscErrorCode invoke(F&& f, std::exception_ptr& exception)
   }
   catch (const std::exception& e)
   {
-    // Logging matters when the caller ran SNESSolve directly, as
-    // nothing then re-throws `exception`
-    logger().error("Exception raised in a SNES callback: {}", e.what());
+    // Report via PETSc: a direct SNESSolve caller never re-throws
+    // `exception`
     exception = std::current_exception();
-    return PETSC_ERR_LIB;
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_LIB,
+            "Exception raised in a SNES callback: %s", e.what());
   }
   catch (...)
   {
-    logger().error("Unknown exception raised in a SNES callback.");
     exception = std::current_exception();
-    return PETSC_ERR_LIB;
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_LIB,
+            "Unknown exception raised in a SNES callback.");
   }
 }
 } // namespace

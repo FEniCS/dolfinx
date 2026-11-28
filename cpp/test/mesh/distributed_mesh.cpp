@@ -145,6 +145,8 @@ void test_distributed_mesh(const graph::partition_fn& partitioner)
     auto [_cells, _cshape] = infile.read_topology_data("mesh");
     auto [_x, _xshape] = infile.read_geometry_data("mesh");
     CHECK(_cshape[1] == cshape[1]);
+    CHECK(_xshape[1] == xshape[1]);
+    xshape[0] = _xshape[0];
     x = std::move(std::get<std::vector<T>>(_x));
     cells = std::move(_cells);
   }

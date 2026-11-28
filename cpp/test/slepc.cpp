@@ -9,6 +9,7 @@
 
 #ifdef HAS_SLEPC
 
+#include "common/petsc_test.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cmath>
@@ -17,6 +18,7 @@
 #include <limits>
 #include <petscmat.h>
 #include <slepceps.h>
+#include <slepcsys.h>
 #include <stdexcept>
 #include <utility>
 
@@ -95,9 +97,7 @@ Mat create_conjugate_pair_matrix(PetscInt num_blocks)
 
 TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
 {
-  int argc = 0;
-  char** argv = nullptr;
-  REQUIRE(SlepcInitialize(&argc, &argv, nullptr, nullptr) == 0);
+  REQUIRE(SlepcInitializeNoArguments() == PETSC_SUCCESS);
 
   constexpr PetscInt N = 20;
 
@@ -146,17 +146,15 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
       CHECK(VecDestroy(&c) == 0);
     }
 
-    // SLEPc rejects these itself; the point is that the return code is
-    // checked, so they throw rather than leaving the outputs untouched
-    SECTION("Out-of-range indices throw rather than return garbage")
+    SECTION("Out-of-range indices throw")
     {
       PetscScalar lr = 0, lc = 0;
-      CHECK_THROWS_AS(solver.get_eigenvalue(-1), std::runtime_error);
-      CHECK_THROWS_AS(solver.get_eigenvalue(nconv), std::runtime_error);
+      CHECK_THROWS_AS(solver.get_eigenvalue(-1), std::out_of_range);
+      CHECK_THROWS_AS(solver.get_eigenvalue(nconv), std::out_of_range);
       CHECK_THROWS_AS(solver.get_eigenpair(lr, lc, nullptr, nullptr, -1),
-                      std::runtime_error);
+                      std::out_of_range);
       CHECK_THROWS_AS(solver.get_eigenpair(lr, lc, nullptr, nullptr, nconv),
-                      std::runtime_error);
+                      std::out_of_range);
     }
 
     CHECK(MatDestroy(&A) == 0);
@@ -225,7 +223,9 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     // EPSSetUp raises the error on the EPS communicator, so every rank
     // throws
     la::SLEPcEigenSolver solver(MPI_COMM_WORLD);
-    CHECK_THROWS_AS(solver.solve(), std::runtime_error);
+    CHECK_THROWS_AS(dolfinx_test::without_petsc_traceback(
+                        [&solver] { static_cast<void>(solver.solve()); }),
+                    std::runtime_error);
   }
 
   SECTION("Options prefix round-trips and is empty when unset")

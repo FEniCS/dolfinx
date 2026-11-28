@@ -10,7 +10,6 @@
 #include "petsc.h"
 #include "petscsystypes.h"
 #include <cassert>
-#include <dolfinx/common/log.h>
 #include <format>
 #include <stdexcept>
 #include <utility>
@@ -25,18 +24,15 @@ void common::petsc::error(PetscErrorCode error_code,
   // Only called from check() with a nonzero error code
   assert(error_code);
 
-  // Fetch PETSc error description
-  const char* desc;
-  PetscErrorCode error_msg = PetscErrorMessage(error_code, &desc, nullptr);
+  // PETSc's specific message may belong to an earlier failure.
+  const char* desc = nullptr;
+  if (PetscErrorMessage(error_code, &desc, nullptr) != PETSC_SUCCESS or !desc)
+    desc = "(no error description available)";
 
-  std::string msg = std::format(
+  throw std::runtime_error(std::format(
       "PETSc error in '{}' at {}:{}: call to '{}' failed with code {}, {}",
       loc.function_name(), loc.file_name(), loc.line(), petsc_function,
-      static_cast<int>(error_code),
-      (error_msg == PETSC_SUCCESS) ? desc
-                                   : "(could not retrieve error description)");
-  logger().error("{}", msg);
-  throw std::runtime_error(msg);
+      static_cast<int>(error_code), desc));
 }
 //-----------------------------------------------------------------------------
 void common::petsc::set_option(std::string option)
