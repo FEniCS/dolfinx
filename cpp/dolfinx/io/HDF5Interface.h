@@ -284,8 +284,9 @@ void write_dataset(hid_t file_handle, std::string_view dataset_path,
       // Make array extensible, if chunking is set
       std::ranges::fill(maxdims, H5S_UNLIMITED);
 
-      // Set chunk size and limit to 1kB min/1MB max. Only the first
-      // `rank` entries are read.
+      // Chunk whole rows, half of the initial number of rows and limited
+      // to 1024 min/1048576 max rows. The limits are in rows, not bytes.
+      // Only the first `rank` entries are read.
       std::array<hsize_t, 2> chunk_dims{
           std::clamp(dimsf[0] / 2, hsize_t(1024), hsize_t(1048576)),
           rank == 2 ? dimsf[1] : hsize_t(1)};
